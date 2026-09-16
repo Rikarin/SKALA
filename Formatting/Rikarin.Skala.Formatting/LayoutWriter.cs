@@ -298,9 +298,35 @@ public sealed class LayoutWriter {
         // }               ← the `if`'s level, not the `&amp;&amp; second` line's
         // </code>
         var outer = LevelForNested();
+
+        // ⚠ An anchored block nests from the line its anchor was pushed on, which is the governing
+        // expression's line and not the brace's. See IndentKind.Anchor.
+        if (kind == IndentKind.AnchoredBlock) {
+            for (var i = scopes.Count - 1; i >= 0; i--) {
+                if (scopes[i].IsAnchor) {
+                    outer = scopes[i].CloserLevel;
+                    break;
+                }
+            }
+
+            kind = IndentKind.Block;
+        }
+
         scopes.Add(
             kind switch {
                 IndentKind.Block => new Scope(true, outer + indentWidth, line, outer, unconditional),
+
+                // ⚠ The indentation of the line being written, not the level a scope opening now would
+                // nest from: mid-line those differ by every scope opened earlier on this line, and the
+                // oracle's arms follow the line. At a line start nothing is written yet and the level
+                // the line is about to take is the answer.
+                IndentKind.Anchor => new Scope(
+                    false,
+                    0,
+                    int.MaxValue,
+                    atLineStart ? pendingCloserLevel ?? Effective() : CurrentLineIndent(),
+                    IsAnchor: true
+                ),
                 IndentKind.Continuous =>
                     new Scope(false, continuousMultiplier * indentWidth, line, outer, unconditional),
                 IndentKind.OneLevel => new Scope(false, indentWidth, line, outer, unconditional),
@@ -511,6 +537,11 @@ public sealed class LayoutWriter {
     ///     ⚠ <see cref="IndentKind.Align" />, whose <paramref name="Level" /> is an absolute column rather
     ///     than a level. Only <see cref="LevelColumn" /> reads it, for <c>alignment_tab_fill_style</c>.
     /// </param>
+    /// <param name="IsAnchor">
+    ///     ⚠ <see cref="IndentKind.Anchor" />: a marker that adds nothing and whose
+    ///     <paramref name="CloserLevel" /> is the indentation of the line it was pushed on. Read by
+    ///     <see cref="IndentKind.AnchoredBlock" /> alone.
+    /// </param>
     readonly record struct Scope(
         bool IsBlock,
         int Level,
@@ -518,7 +549,8 @@ public sealed class LayoutWriter {
         int CloserLevel,
         bool Unconditional = false,
         int ColumnOutdent = 0,
-        bool IsAlignment = false);
+        bool IsAlignment = false,
+        bool IsAnchor = false);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     int CurrentLineIndent() {

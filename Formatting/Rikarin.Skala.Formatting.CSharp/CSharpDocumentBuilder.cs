@@ -1112,6 +1112,22 @@ public sealed partial class CSharpDocumentBuilder {
         // group to hang it on, and its constraints stay on a 200-column line.
         var run = BeginConstraintRun(node);
 
+        // ⚠ A switch expression's arms nest from the line its governing expression starts on, not
+        // from the line the `{` lands on (SK-DIV-0107). Measured: `var s = (a,\n b) switch {` puts the
+        // arms at 12 and the `}` at 8 — the statement's level plus one — while a block opened at the
+        // brace, inside the `=`'s continuation, put them at 16. The same for `(a\n + b) switch`, for a
+        // chain broken before `.Length switch`, for `F(a,\n b) switch`, for `int s =`, for `s =` and
+        // at a multiplier of 2; under an arrow the two agree already, because the arrow's level is
+        // written before the governing expression begins. The anchor is pushed here, after
+        // VisitPlanned has emitted the gap before the node, so it records the governing expression's
+        // own line.
+        // ⚠ Not under `skala_align_multiline_switch_expression`, whose Align scope is already an absolute
+        // column the arms nest from.
+        var anchored = node is SwitchExpressionSyntax && !AlignsFromOwnColumn(node);
+        if (anchored) {
+            OpenIndent(IndentKind.Anchor);
+        }
+
         foreach (var child in node.ChildNodesAndTokens()) {
             if (child.IsToken) {
                 var token = child.AsToken();
@@ -1144,7 +1160,10 @@ public sealed partial class CSharpDocumentBuilder {
                         frames[^1] = frames[^1] with { Activated = false };
                     }
 
-                    var braceIndent = singleInsideInitializer ? IndentKind.OneLevel : IndentKind.Block;
+                    var braceIndent = singleInsideInitializer ? IndentKind.OneLevel
+                        : anchored ? IndentKind.AnchoredBlock
+                        : IndentKind.Block;
+
                     if (indentBraces) {
                         OpenIndent(braceIndent);
                         EmitToken(token);
@@ -1184,6 +1203,11 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             CloseIndent(singleInsideInitializer ? IndentKind.OneLevel : IndentKind.Block);
+        }
+
+        if (anchored) {
+            EmitUpTo(node.Span.End);
+            CloseIndent(IndentKind.Anchor);
         }
     }
 
@@ -1764,7 +1788,9 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ `None` joins them: it is a scope marker that changes no level, so it must not touch the
         // frame machinery either. It exists so that a construct whose contents take *zero* levels
         // still has a scope for its closing delimiter to be aligned against.
-        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None) {
+        // ⚠ `Anchor` is a marker too, and `AnchoredBlock` is a block in every respect this
+        // bookkeeping cares about; only the writer reads the difference.
+        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None or IndentKind.Anchor) {
             return;
         }
 
@@ -1788,7 +1814,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     The next piece is this scope's own closing delimiter and takes its opener's line level.
     /// </param>
     void CloseIndent(IndentKind kind, bool alignsCloser = false) {
-        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None) {
+        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None or IndentKind.Anchor) {
             doc.Close(alignsCloser);
             return;
         }

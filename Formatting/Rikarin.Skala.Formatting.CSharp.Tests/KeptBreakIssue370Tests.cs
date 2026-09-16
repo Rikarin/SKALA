@@ -565,6 +565,95 @@ public sealed class MultilineItemChopsTheListTests {
 }
 
 /// <summary>
+///     SK-DIV-0107: a switch expression's arms take one level from the line its governing expression
+///     starts on, not from the line its <c>{</c> lands on.
+///     <c>constructs/breaks/switch-over-multiline-governing-expression.cs</c>.
+/// </summary>
+public sealed class SwitchOverMultilineGoverningExpressionTests {
+    [Fact]
+    public void TheArmsNestFromTheGoverningExpressionsLine() =>
+        Oracle.Agrees(
+            """
+            class T {
+                int A(int a, int b) {
+                    var s = (a,
+                        b) switch {
+                        (1, _) => 1,
+                        _ => 2
+                    };
+                    int t = a.ToString()
+                        .Length switch {
+                        1 => 1,
+                        _ => 2
+                    };
+                    return s + t;
+                }
+            }
+            """,
+            """
+            class T {
+                int A(int a, int b) {
+                    var s = (a,
+                        b) switch {
+                        (1, _) => 1,
+                        _ => 2
+                    };
+                    int t = a.ToString()
+                        .Length switch {
+                        1 => 1,
+                        _ => 2
+                    };
+                    return s + t;
+                }
+            }
+            """
+        );
+
+    [Fact]
+    public void UnderAnArrow_AndMidLine_TheSameLineIsTheAnchor() =>
+        Oracle.Agrees(
+            """
+            class T {
+                int B(int a, int b) => (a,
+                    b) switch {
+                    (1, _) => 1,
+                    _ => 2
+                };
+
+                int D(int a, int b) {
+                    var s = a + (a,
+                        b) switch {
+                        (1, _) => 1,
+                        _ => 2
+                    };
+                    return s;
+                }
+            }
+            """,
+            """
+            class T {
+                int B(int a, int b) =>
+                    (a,
+                        b) switch {
+                        (1, _) => 1,
+                        _ => 2
+                    };
+
+                int D(int a, int b) {
+                    var s = a
+                        + (a,
+                            b) switch {
+                            (1, _) => 1,
+                            _ => 2
+                        };
+                    return s;
+                }
+            }
+            """
+        );
+}
+
+/// <summary>
 ///     SK-DIV-0111: a <c>for</c> header is multi-line when a break inside its parentheses
 ///     <em>survives</em> the constructs inside it, not when the source merely holds one — so a break the
 ///     declarators, a binary operator or an invocation re-join leaves the header whole.

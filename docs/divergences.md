@@ -5162,3 +5162,46 @@ shape rather than this entry's.
   `chop_if_long` family; `skala_keep_user_linebreaks`.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/multiline-item-chops-the-list.cs`,
   `MultilineItemChopsTheListTests`, and — closed on the way — `constructs/wrapping/binary-pattern-arrow.cs`.
+
+## SK-DIV-0107 — a switch expression's arms nested from the brace's line, one level too deep
+
+⚠ **Found beside SK-DIV-0101 and reserved by #370.** Measured 2026-09-16 with `Testing ask`, at a
+statement indent of 8:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `var s = (a,` / `b) switch {` / arms / `};` | arms at **12**, `}` at 8 | arms at 16, `}` at 12 |
+| `var s = (a` / `+ b) switch {`, `var s = a.ToString()` / `.Length switch {`, `var s = F(a,` / `b) switch {` | 12 / 8 | 16 / 12 |
+| `int s = (a,` / `b) switch {`, `s = (a,` / `b) switch {` | 12 / 8 | 16 / 12 |
+| `return (a` / `+ b) switch {` | 12 / 8 | 12 / 8 |
+| `=>` / `(a,` / `b) switch {` | arms at 12 — one past the `(a,` line | 12 |
+| `=>` / `(` / `a, b) switch {` (SK-DIV-0101) | arms at 8 — one past the `(`'s line | 8 |
+| `var s = F((a,` / `b) switch {` … `}, 3);` | the list chops; arms one past the `(a,` line | identical |
+| `var s = a + (a,` / `b) switch {` | `a` / `+ (a,` / `b) switch {` with arms one past the `+ (a,` line | identical |
+| the first row at `skala_continuous_indent_multiplier = 2` | arms at **16** — a *continuation*, multiplied | 20 |
+| the first row at `skala_align_multiline_switch_expression = true` | identical on both sides | — |
+
+So the arms take one level from the line the switch expression's *governing expression* starts on,
+whatever else that line is inside. Skala opened the arms' block at the `{` and nested it from the
+level of the `{`'s line, which under `var s =` sits inside the `=`'s continuation — a scope the `=`
+opened eagerly and never wrote a break at — and under `=>` or `return` does not, which is why only
+the declaration and assignment forms diverged.
+
+**Decision: fix.** Two indent kinds in the layout engine: `IndentKind.Anchor`, a marker pushed
+where the governing expression begins that remembers the indentation of the line being written
+(the level a line starting now would take, or the current line's own indent mid-line), and
+`IndentKind.AnchoredBlock`, a block whose outer level is the innermost anchor's rather than the
+brace's line's. `VisitBraced` pushes the anchor for a switch expression after `VisitPlanned` has
+emitted the gap before the node, so it records the governing expression's own line, and not under
+`skala_align_multiline_switch_expression`, whose Align scope is already the column the arms nest from.
+
+⚠ **Adjacent and still open, and already recorded at the key**: the multiplier row. The arms are a
+*continuation* in the oracle (16 = 8 + 2 × 4) and a block in Skala (12 = 8 + 4), the same
+`skala_continuous_indent_multiplier` defect `VisitBraced`'s remarks record for every braced
+initializer; at the export's multiplier of 1 the two are the same number. Not this entry's and not
+in the fixture.
+
+- options: none behind the divergence; `skala_continuous_indent_multiplier` and
+  `skala_align_multiline_switch_expression` measured as above.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/switch-over-multiline-governing-expression.cs`
+  and `SwitchOverMultilineGoverningExpressionTests`.

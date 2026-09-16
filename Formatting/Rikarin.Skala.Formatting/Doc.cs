@@ -206,6 +206,27 @@ public enum IndentKind {
     /// <summary>No change; a scope marker only.</summary>
     None,
 
+    /// <summary>
+    ///     No change; a marker that remembers the indentation of the line it opened on, for an
+    ///     <see cref="AnchoredBlock" /> inside it to nest from.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A switch expression's arms take one level from the line its <em>governing expression</em>
+    ///     starts on, not from the line its <c>{</c> lands on (SK-DIV-0107). The two differ whenever the
+    ///     governing expression is multi-line under a continuation the statement opened but never wrote
+    ///     a break at: <c>var s = (a,\n b) switch {</c> puts the arms at the statement's level plus one,
+    ///     where a block nesting from the <c>{</c>'s line — which sits inside the <c>=</c>'s continuation
+    ///     — put them a level deeper. The anchor is pushed where the governing expression begins and read
+    ///     where the brace opens.
+    /// </remarks>
+    Anchor,
+
+    /// <summary>
+    ///     A <see cref="Block" /> whose outer level is the innermost <see cref="Anchor" />'s recorded
+    ///     indentation rather than the level the brace's own line nests from.
+    /// </summary>
+    AnchoredBlock,
+
     /// <summary>One level less — the nested-statement outdent family.</summary>
     Outdent,
 
