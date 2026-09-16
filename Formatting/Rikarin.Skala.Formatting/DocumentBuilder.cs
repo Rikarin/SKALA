@@ -55,6 +55,39 @@ public sealed class DocumentBuilder {
     /// <summary>Whether the subtree holds a break point of any kind. Stops the two measures above.</summary>
     bool[] breaks = new bool[512];
 
+    /// <summary>
+    ///     Whether the node is certain to hold a line break once laid out: a hard line, a group that
+    ///     always breaks, a preserve group whose source was broken at its own points and which may not
+    ///     re-join — or anything containing one of those.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The containment fact SK-DIV-0007 and SK-DIV-0050 recorded as missing: "a construct that
+    ///     spans lines makes its container span lines". A group whose child is certain has no flat form,
+    ///     which is what makes <c>Use(a &gt; 0\n &amp;&amp; b &gt; 0)</c> chop its argument list around
+    ///     the operator break the author wrote, <c>c ? 1\n + n : 2</c> chop its ternary, and
+    ///     <c>a\n &amp;&amp; b || c</c> chop at the <c>||</c> as well — every one of them the oracle's
+    ///     answer, measured (SK-DIV-0109). It is kept apart from <see cref="flatWidth" /> because a
+    ///     nested group's certainty must reach its container without the nested group's own width
+    ///     becoming unbounded for every measure: the head and point measures stop at an unbounded child,
+    ///     and an <c>=</c> whose value holds a kept operator break still keeps the value on its line.
+    /// </remarks>
+    bool[] certain = new bool[512];
+
+    /// <summary>
+    ///     The groups that own <see cref="GroupFacts.BreaksWithOwner" /> links — a binary chain's
+    ///     chain-wide group — which answer "does the whole chain fit on one line" and are the one kind of
+    ///     container a certain child does not make unbounded.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured both ways, and the asymmetry is the oracle's: <c>a &gt; 0 &amp;&amp; a &lt; 10\n ||
+    ///     a == 20</c> comes back unchanged, while <c>a &gt; 0\n &amp;&amp; a &lt; 10 || a == 20</c>
+    ///     comes back chopped at both operators. The second is the <c>||</c> link containing the broken
+    ///     <c>&amp;&amp;</c> — a child, so it chops. The first would only chop if the chain-wide owner,
+    ///     which contains every link, read the <c>||</c>'s break as its own and broke the whole chain,
+    ///     which is exactly what SK-DIV-0007 measured the obvious fix doing to two committed fixtures.
+    /// </remarks>
+    readonly HashSet<int> chainOwners = [];
+
     int nodeCount;
     int groupCount;
     int root = -1;
@@ -78,7 +111,15 @@ public sealed class DocumentBuilder {
     ///     Records what the fitter needs to know about a group before it meets it, which only the front
     ///     end can answer.
     /// </summary>
-    public void DescribeGroup(int groupId, GroupFacts facts) => this.facts[groupId] = facts;
+    public void DescribeGroup(int groupId, GroupFacts facts) {
+        this.facts[groupId] = facts;
+
+        // ⚠ A link is described before its owner closes — inside it — so the set is complete by
+        // the time Close() asks. See `chainOwners`.
+        if (facts.BreaksWithOwner && facts.Owner >= 0) {
+            chainOwners.Add(facts.Owner);
+        }
+    }
 
     /// <summary>
     ///     A token's text.
@@ -264,10 +305,12 @@ public sealed class DocumentBuilder {
         var breaks = false;
         var stopped = false;
         var pointStopped = false;
+        var childCertain = false;
 
         for (var i = start; i < pending.Count; i++) {
             var child = pending[i];
             children.Add(child);
+            childCertain |= certain[child];
             if (width < Document.Unbounded) {
                 width += flatWidth[child];
             }
@@ -304,6 +347,16 @@ public sealed class DocumentBuilder {
             head = count > 1 ? headWidth[children[childStart + 1]] : 0;
             point = count > 1 ? pointWidth[children[childStart + 1]] : 0;
             breaks = count > 1 && this.breaks[children[childStart + 1]];
+            childCertain = count > 1 && certain[children[childStart + 1]];
+        }
+
+        // ⚠ A group with a certain child has no flat form — "chop if long *or multiline*", one level
+        // up, for every container and not only the delimited lists HidesFlatWidthWhenBroken names.
+        // Except the group that owns a chain's links, whose question is whether the whole chain fits
+        // and whose own links' breaks are not its to take. See `certain` and `chainOwners`.
+        var isGroup = frame.Kind == DocKind.Group;
+        if (isGroup && childCertain && !chainOwners.Contains(frame.Arg1)) {
+            width = Document.Unbounded;
         }
 
         // ⚠ A group that always breaks has no flat form, so nothing that contains it has one either.
@@ -339,6 +392,11 @@ public sealed class DocumentBuilder {
         var index = Allocate(frame.Kind, frame.Arg0, frame.Arg1, default, childStart, width, head);
         pointWidth[index] = point;
         this.breaks[index] = breaks;
+        certain[index] = childCertain
+            || isGroup
+            && ((GroupMode)frame.Arg0 == GroupMode.Break
+                || (GroupMode)frame.Arg0 == GroupMode.Preserve
+                && facts[frame.Arg1] is { SourceBroken: true, JoinsIfFits: false });
         afterPoint[index] = frame.Kind == DocKind.Group ? MeasureSegments(childStart, count, frame.Arg1) : 0;
         nodes[index].Count = count;
         nodes[index].Flags = alignsCloser ? 1 : 0;
@@ -524,6 +582,7 @@ public sealed class DocumentBuilder {
             Array.Resize(ref afterPoint, afterPoint.Length * 2);
             Array.Resize(ref segment, segment.Length * 2);
             Array.Resize(ref breaks, breaks.Length * 2);
+            Array.Resize(ref certain, certain.Length * 2);
         }
 
         ref var node = ref nodes[nodeCount];
@@ -544,6 +603,7 @@ public sealed class DocumentBuilder {
         afterPoint[nodeCount] = 0;
         segment[nodeCount] = 0;
         breaks[nodeCount] = kind == DocKind.Line && (LineKind)arg0 != LineKind.Soft;
+        certain[nodeCount] = width >= Document.Unbounded;
         return nodeCount++;
     }
 

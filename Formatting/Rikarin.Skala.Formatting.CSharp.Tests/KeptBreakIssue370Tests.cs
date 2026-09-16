@@ -474,6 +474,97 @@ public sealed class ChainAfterParenthesisedHeadTests {
 }
 
 /// <summary>
+///     SK-DIV-0109, the binary half of SK-DIV-0007: an item made multi-line by a break the author kept
+///     inside it chops the list around it, and the same containment reaches an outer binary operator,
+///     a ternary and an initializer — while a chain-wide owner is not chopped by its own links.
+///     <c>constructs/breaks/multiline-item-chops-the-list.cs</c>.
+/// </summary>
+public sealed class MultilineItemChopsTheListTests {
+    [Fact]
+    public void AKeptOperatorBreakInsideAnItem_ChopsTheList() =>
+        Oracle.Agrees(
+            """
+            class T {
+                void C(int a = 5
+                    + 6) { }
+
+                void M() {
+                    F(1
+                        + 2, 3);
+                    F(x => x
+                        + 1, 3);
+                }
+
+                void F(object a, int b) { }
+            }
+            """,
+            """
+            class T {
+                void C(
+                    int a = 5
+                        + 6
+                ) { }
+
+                void M() {
+                    F(
+                        1
+                        + 2,
+                        3
+                    );
+                    F(
+                        x => x
+                            + 1,
+                        3
+                    );
+                }
+
+                void F(object a, int b) { }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     Broken at the inner <c>&amp;&amp;</c>, the outer <c>||</c> chops too; broken at the outer
+    ///     <c>||</c>, the inner stays — the chain-wide owner does not read its own links' breaks.
+    /// </summary>
+    [Fact]
+    public void AnOuterOperator_ChopsAroundABrokenInnerOne_AndNotTheReverse() =>
+        Oracle.Agrees(
+            """
+            class T {
+                void M(bool c, int n) {
+                    var z = a > 0
+                        && b > 0 || c;
+                    var q = a > 0 && b > 0
+                        || c;
+                    var r = c ? 1
+                        + n : 2;
+                }
+
+                int a, b;
+            }
+            """,
+            """
+            class T {
+                void M(bool c, int n) {
+                    var z = a > 0
+                        && b > 0
+                        || c;
+                    var q = a > 0 && b > 0
+                        || c;
+                    var r = c
+                        ? 1
+                        + n
+                        : 2;
+                }
+
+                int a, b;
+            }
+            """
+        );
+}
+
+/// <summary>
 ///     SK-DIV-0111: a <c>for</c> header is multi-line when a break inside its parentheses
 ///     <em>survives</em> the constructs inside it, not when the source merely holds one — so a break the
 ///     declarators, a binary operator or an invocation re-join leaves the header whole.

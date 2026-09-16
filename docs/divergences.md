@@ -902,6 +902,16 @@ derivation. The preference fact is the opposite, and that is what makes it the u
 - options: `skala_wrap_arguments_style` (Tier A, `chop_if_long`), `skala_keep_user_linebreaks` (Tier A, `true`)
 - ⚠ status: **half closed** (the chain, at M3.1), half **open**, measured
 
+⚠ **Closed at #370 (SK-DIV-0109): the binary chain's half is done.** The containment fact is a
+per-node `certain` flag in `DocumentBuilder` — a hard line, a group that always breaks, a preserve
+group whose source was broken at its own points and which may not re-join, or anything holding one
+— and a group with a certain child has no flat form. The nested-operator objection was measured on
+one nesting and refuted on the other: `a > 0 && b > 0\n|| c > 0` stays as it is, and `a > 0\n&& b >
+0 || c > 0` comes back from the oracle chopped at *both* operators, because the `||` contains the
+broken `&&`. What must not chop is the chain-wide owner group, which contains every link; it is the
+one container a certain child does not make unbounded. `Use(a > 0\n&& b > 0)` chops now, and
+`binary-operators.cs` and `binary-chains.cs` are unmoved.
+
 ## SK-DIV-0008 — ⚠ half closed: statement conditions are aligned, four other keys are not
 
 `int_align` and all eight `int_align_*` sub-keys are `false`, and so are `align_multiline_argument`,
@@ -3419,6 +3429,12 @@ existed.
 - options: `skala_wrap_before_binary_pattern_op`, `skala_place_expr_method_on_single_line`, `skala_wrap_chained_binary_patterns`
 - ⚠ status: **open**; the ordering fact is missing, and it is shared with SK-DIV-0077.
 
+⚠ **Closed at #370 (SK-DIV-0109).** The containment fact landed for every group at once, and this
+fixture — kept to hold the disagreement still — agrees with the oracle byte for byte without a
+change of its own: the arrow's group now sees a body whose chain is certain to break and has no flat
+form, so `if_owner_is_single_line` reads the declaration as multi-line. The fixture's header says so
+and its expected output was regenerated.
+
 ## SK-DIV-0079 — `skala_xmldoc_wrap_tags_and_pi` wraps a tag's *attributes*, and Skala cannot re-read a header it broke
 
 ⚠ **The sweep called this one `SPURIOUS` and the verdict was about the fixture, not the key.**
@@ -5093,3 +5109,56 @@ lambda body pushed by the chain's level and its `)` given a line of its own in t
 - options: none; `skala_continuous_indent_multiplier` measured at 2 and the rule holds.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/chain-after-parenthesised-head.cs` and
   `ChainAfterParenthesisedHeadTests`.
+
+## SK-DIV-0109 — a list item made multi-line by a kept binary break did not chop the list
+
+⚠ **Found beside SK-DIV-0103 and reserved by #370; the binary half of SK-DIV-0007, and the shape
+SK-DIV-0078 shares.** Measured 2026-09-16 with `Testing ask` on thirty-one shapes:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `void C(int a = 5` / `+ 6) { }` | `void C(` / `int a = 5` / `+ 6` / `) { }` — chopped, `+ 6` a level past the parameter | as written |
+| `F(1` / `+ 2, 3);`, `F(1, 2` / `+ 3);`, `G(1` / `+ 2);` | chopped, the operand flush with its operand | as written |
+| `F((1` / `+ 2), 3)`, `F(x => x` / `+ 1, 3)`, `F(1` / `+ 2` / `+ 3, 4)`, `F(c && a > 0` / `\|\| b > 0, 3)` | chopped | as written |
+| `[System.Obsolete("x"` / `+ "y", true)]` | chopped | as written |
+| `new T { X = 1` / `+ 2, Y = 2 }` | braces broken, elements chopped, `+ 2` a level past `X` | as written |
+| `var t = (1` / `+ 2, 3);` | **as written** — a tuple only fills | as written |
+| `a > 0` / `&& b > 0 \|\| c` | chopped at **both** operators | as written |
+| `a > 0 && b > 0` / `\|\| c` | as written | as written |
+| `c ? 1` / `+ n : 2` | `c` / `? 1` / `+ n` / `: 2` | as written |
+| `F(a` / `&& b) \|\| c;`, `c ? F(a` / `&& b) : false` | the list chops and the operator or ternary around it chops too | as written |
+| `int x = a` / `+ 1, y = 2;` | declarators chopped | as written |
+| `a.B(a` / `+ 1).C()` | argument list chopped and the chain chopped at every dot | as written |
+| `int A() => a` / `+ b;` | `=>` / `a` / `+ b;` | identical |
+| `[1` / `+ 2, 3]`, `new[] { 1` / `+ 2, 3 }` | delimiters broken **and every element on its own line** | as written |
+
+"Chop if long *or multiline*" is universal: a construct that spans lines makes its container span
+lines, whatever the container is. SK-DIV-0007 recorded the missing capability and the reason the
+obvious fix failed — an operator group nested in the next operator's group — and that objection
+turns out to have been measured on the wrong nesting: the oracle *does* chop the outer operator
+around a broken inner one; what it does not do is chop the inner around a broken outer, and that is
+the chain-wide owner's business, not containment's.
+
+**Decision: fix**, in the layout engine. `DocumentBuilder` carries a per-node `certain` flag — a
+hard line, a `Break` group, a `Preserve` group whose source was broken at its own points and which
+may not re-join, or any node containing one — and a group with a certain child has no flat form.
+Kept apart from `flatWidth` so that the nested group's own width stays measurable: the head and
+point measures stop at an unbounded child, and `var x = a` / `+ b` keeps `a` on the `=`'s line. The
+chain-wide owner of `BreaksWithOwner` links (`chainOwners`, filled as links are described) is the
+one container exempt, which is what keeps `a && b` / `|| c` whole and `binary-operators.cs`,
+`binary-patterns.cs` and `binary-chains.cs` unmoved. SK-DIV-0078's fixture agrees without a change
+of its own.
+
+⚠ **Adjacent and still open**: the last row — a *filled* list (`wrap_if_long`: an array
+initializer, a collection expression) with a multi-line element breaks its delimiters under Skala
+and the oracle also puts every remaining element on its own line, where a fill keeps `+ 2, 3`
+together. The tuple, which has no wrap style, fills under both. Not in the fixture. Also the
+levels inside a chopped list that is itself the operand of a broken chain (`F(` / `a` / `&& b` / `)`
+/ `|| c` puts `a` at 16 in the oracle, 12 under Skala) and a declarator's value past its `=`
+(`int x = a` / `+ 1,` — 16 against 12), both SK-DIV-0103's scoping and SK-DIV-0112's adjacent
+shape rather than this entry's.
+
+- options: `skala_wrap_arguments_style`, `skala_wrap_parameters_style` and the rest of the
+  `chop_if_long` family; `skala_keep_user_linebreaks`.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/multiline-item-chops-the-list.cs`,
+  `MultilineItemChopsTheListTests`, and — closed on the way — `constructs/wrapping/binary-pattern-arrow.cs`.
