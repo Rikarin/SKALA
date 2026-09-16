@@ -351,7 +351,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     level again. See <see cref="GroupPlan.HoldsLevel" />.
     /// </summary>
     void HoldContinuationLevel() {
-        doc.OpenIndent(IndentKind.None, false, 0);
+        doc.OpenIndent(IndentKind.None);
         continuousDepth++;
     }
 

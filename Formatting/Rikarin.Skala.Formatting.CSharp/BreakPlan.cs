@@ -992,25 +992,14 @@ public sealed class BreakPlan {
             // next item; true puts it before the comma.
             var gap = options.WrapBeforeComma ? comma : next;
             var other = options.WrapBeforeComma ? next : comma;
-            var broke = BreaksBefore(gap);
-            if (pinsItemBreaks && broke) {
-                Mandatory(gap);
-            } else {
-                Point(gap, group, fill);
-            }
+            interBroken |= PlanItemGap(gap, group, fill, pinsItemBreaks);
 
             // ⚠ The other side is joined for every construct with a wrap style of its own, and kept
-            // where the construct is only filled — see keepsBreakOnEitherSideOfComma. Kept as a
-            // required break rather than a point, because it is not a place this list's style would
-            // ever break at; it is a line the author wrote and the oracle leaves.
-            if (keepsBreakOnEitherSideOfComma && options.KeepsUserBreaksBetweenItems && BreaksBefore(other)) {
-                Mandatory(other);
-                broke = true;
-            } else {
-                Flat(other);
-            }
-
-            interBroken |= broke;
+            // where the construct is only filled — see keepsBreakOnEitherSideOfComma.
+            interBroken |= PlanOtherSideOfComma(
+                other,
+                keepsBreakOnEitherSideOfComma && options.KeepsUserBreaksBetweenItems
+            );
         }
 
         if (wrapBeforeClose) {
@@ -1631,19 +1620,8 @@ public sealed class BreakPlan {
 
             var gap = options.WrapBeforeComma ? comma : next;
             var other = options.WrapBeforeComma ? next : comma;
-            if (keeps && BreaksBefore(gap)) {
-                Mandatory(gap);
-                broken = true;
-            } else {
-                Point(gap, group, true);
-            }
-
-            if (keeps && BreaksBefore(other)) {
-                Mandatory(other);
-                broken = true;
-            } else {
-                Flat(other);
-            }
+            broken |= PlanItemGap(gap, group, true, keeps);
+            broken |= PlanOtherSideOfComma(other, keeps);
         }
 
         Flat(node.GreaterThanToken);
@@ -2895,62 +2873,64 @@ public sealed class BreakPlan {
 
         Describe(
             node,
-            group,
-            GroupMode.Preserve,
-            new GroupFacts(
-                // ⚠ Not preserved when the value opens with a delimiter of its own AND that delimiter
-                // is going to break, which in C# is a collection expression the author broke inside.
-                // Asked directly, `int[] y =\n[\n 1,\n 2\n];` comes back `int[] y = [` while
-                // `= \n new[] {`, `= \n new Thing {` and `= \n Make(` all keep the break the author
-                // wrote. The `=` break and the `[`'s are alternatives rather than a pair.
-                // ⚠ This used to exempt every collection expression, with the remark that "a bracket
-                // that fits on a continuation line still gets the `=` break" — which is what the oracle
-                // does and was not what this did: with SourceBroken false the group was flat unless
-                // too long, and `int[] y =\n[1, 2];` came back joined in a field, a property
-                // initializer, a local and a parameter default alike. Measured on all four; the
-                // oracle keeps the break in every one and joins only `=\n[\n 1, 2\n]`, whose bracket
-                // chops (issue #369, SK-DIV-0103). So the exemption is the bracket that breaks, read
-                // off the source the same way the collection expression's own plan reads it.
-                options.KeepsUserBreaksBetweenItems
-                && broken
-                && !(value is CollectionExpressionSyntax collection && ListBreaksInSource(collection)),
+            new GroupPlan(
+                group,
+                GroupMode.Preserve,
+                new GroupFacts(
+                    // ⚠ Not preserved when the value opens with a delimiter of its own AND that delimiter
+                    // is going to break, which in C# is a collection expression the author broke inside.
+                    // Asked directly, `int[] y =\n[\n 1,\n 2\n];` comes back `int[] y = [` while
+                    // `= \n new[] {`, `= \n new Thing {` and `= \n Make(` all keep the break the author
+                    // wrote. The `=` break and the `[`'s are alternatives rather than a pair.
+                    // ⚠ This used to exempt every collection expression, with the remark that "a bracket
+                    // that fits on a continuation line still gets the `=` break" — which is what the oracle
+                    // does and was not what this did: with SourceBroken false the group was flat unless
+                    // too long, and `int[] y =\n[1, 2];` came back joined in a field, a property
+                    // initializer, a local and a parameter default alike. Measured on all four; the
+                    // oracle keeps the break in every one and joins only `=\n[\n 1, 2\n]`, whose bracket
+                    // chops (issue #369, SK-DIV-0103). So the exemption is the bracket that breaks, read
+                    // off the source the same way the collection expression's own plan reads it.
+                    options.KeepsUserBreaksBetweenItems
+                    && broken
+                    && !(value is CollectionExpressionSyntax collection && ListBreaksInSource(collection)),
 
-                // ⚠ `prefer_wrap_around_eq`, and the reason milestone 2 stopped at presence. The
-                // oracle does break after `=` on a line that is too long — but not always, and
-                // breaking whenever the line is long costs 1.18 points of line fidelity against
-                // leaving it alone (measured on this branch before the ordering rule existed:
-                // 97.47 % → 96.29 %). Which of a long line's candidate points is taken is
-                // GroupFacts.PrefersOuterBreak's rule, and it is what makes this key observable.
-                BreaksIfTooLong: true,
+                    // ⚠ `prefer_wrap_around_eq`, and the reason milestone 2 stopped at presence. The
+                    // oracle does break after `=` on a line that is too long — but not always, and
+                    // breaking whenever the line is long costs 1.18 points of line fidelity against
+                    // leaving it alone (measured on this branch before the ordering rule existed:
+                    // 97.47 % → 96.29 %). Which of a long line's candidate points is taken is
+                    // GroupFacts.PrefersOuterBreak's rule, and it is what makes this key observable.
+                    BreaksIfTooLong: true,
 
-                // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
-                // Every other right-hand side is measured by what is left of the line and breaks
-                // only when its own break is the one worth taking; a query under this key breaks
-                // whenever the whole query does not fit, which is what puts `from` on a line of its
-                // own. Measured at a 70-column margin: `var q = from … select …;` keeps `from` on
-                // the declaration's line at false and moves it down at true, with nothing else in
-                // the file changing.
-                MeasuresHead: !QueryLeadsTheWay(value),
-                PrefersOuterBreak: !QueryLeadsTheWay(value),
+                    // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
+                    // Every other right-hand side is measured by what is left of the line and breaks
+                    // only when its own break is the one worth taking; a query under this key breaks
+                    // whenever the whole query does not fit, which is what puts `from` on a line of its
+                    // own. Measured at a 70-column margin: `var q = from … select …;` keeps `from` on
+                    // the declaration's line at false and moves it down at true, with nothing else in
+                    // the file changing.
+                    MeasuresHead: !QueryLeadsTheWay(value),
+                    PrefersOuterBreak: !QueryLeadsTheWay(value),
 
-                // ⚠ A kept `=` break makes whatever list holds the clause multi-line, and a list that
-                // is multi-line chops — "chop if long *or multiline*", the half of chop_if_long a
-                // delimited list already carries for a nested list. Measured on every owner an `=`
-                // can sit in: a parameter default `void M(int a =\n 5)` chops the parameter list, a
-                // lambda's too; `[Obsolete(Message =\n "x")]` chops the attribute's arguments;
-                // `new T { X =\n 1, Y = 2 }` breaks the braces and chops the elements; `for (int i
-                // =\n 0; …)` chops the header; and `int[] xs =\n [1, 2], ys = [3]` chops the
-                // declarators. Without it Skala kept the break and left every one of those lists
-                // whole, `void B(int a =\n        5) { }` (SK-DIV-0103).
-                HidesFlatWidthWhenBroken: true
-            ),
-            true,
-            spendsUnderDelimiters: IsAListItemsEquals(node),
+                    // ⚠ A kept `=` break makes whatever list holds the clause multi-line, and a list that
+                    // is multi-line chops — "chop if long *or multiline*", the half of chop_if_long a
+                    // delimited list already carries for a nested list. Measured on every owner an `=`
+                    // can sit in: a parameter default `void M(int a =\n 5)` chops the parameter list, a
+                    // lambda's too; `[Obsolete(Message =\n "x")]` chops the attribute's arguments;
+                    // `new T { X =\n 1, Y = 2 }` breaks the braces and chops the elements; `for (int i
+                    // =\n 0; …)` chops the header; and `int[] xs =\n [1, 2], ys = [3]` chops the
+                    // declarators. Without it Skala kept the break and left every one of those lists
+                    // whole, `void B(int a =\n        5) { }` (SK-DIV-0103).
+                    HidesFlatWidthWhenBroken: true
+                ),
+                SpendsIndent: true,
+                SpendsUnderDelimiters: IsAListItemsEquals(node),
 
-            // ⚠ The level is held at zero when the value opens with a parenthesis the author broke
-            // after: `var t =\n(\n 1, 2)` puts the `(` at the statement's own indent. See
-            // HeadsWithAChoppedParenthesis and GroupPlan.HoldsLevel (SK-DIV-0101).
-            holdsLevel: HeadsWithAChoppedParenthesis(value)
+                // ⚠ The level is held at zero when the value opens with a parenthesis the author
+                // broke after: `var t =\n(\n 1, 2)` puts the `(` at the statement's own indent. See
+                // HeadsWithAChoppedParenthesis and GroupPlan.HoldsLevel (SK-DIV-0101).
+                HoldsLevel: HeadsWithAChoppedParenthesis(value)
+            )
         );
     }
 
@@ -3192,60 +3172,61 @@ public sealed class BreakPlan {
         var ownerGroup = OwnerListOf(node) is { } list && delimited.TryGetValue(Key(list), out var id) ? id : -1;
         Describe(
             node,
-            group,
-            GroupMode.Preserve,
-            new GroupFacts(
-                // ⚠ Same exception as the `=`'s, and measured the same way: a collection expression
-                // opens with a delimiter of its own, so the arrow's break and the bracket's are
-                // alternatives rather than a pair. `TheoryData<string> Corpus =>\n[…]` comes back
-                // from the oracle as `Corpus => [` when the bracket has to chop, and
-                // `Vector4[] Planes(…) =>\n    [a, b, c];` keeps the arrow's break when it does not.
-                // Leaving both to the ordering rule is what produces the pair.
-                BreaksBefore(target) && node.Expression is not CollectionExpressionSyntax,
-                PrefersOuterBreak: node.Expression is CollectionExpressionSyntax,
-                BreaksWithOwner: ownerGroup >= 0,
-                Owner: ownerGroup,
-                // skala_keep_existing_expr_member_arrangement = false: a break the author wrote after the
-                // arrow is removed when the declaration fits on one line, and left alone when it
-                // does not. Adding one where the author wrote none is milestone 3's.
-                JoinsIfFits: !options.KeepExistingExprMemberArrangement,
-                // if_owner_is_single_line, the breaking half: the body leaves the declaration's
-                // line exactly when the declaration does not fit on one.
-                // ⚠ Measured against the whole flat width, not the head: "if owner is single line"
-                // means the declaration occupies one line, and a body that spans lines makes it not
-                // single-line however short its first line is. `Target Docs => definition => …` with
-                // a chain under it is the shape that shows the difference. Measuring the head
-                // instead costs 0.12 points of line fidelity on `corpus/real/` and two of the four
-                // preservation corners, which is how the reading was settled rather than argued.
-                // ⚠ And gated on the keep key, the same way a delimited list's placement key is
-                // (see PlanList): `skala_keep_existing_expr_member_arrangement = true` outranks the
-                // placement key in *both* directions, so an arrow the author left on the
-                // declaration's line stays there however unbreakable the body is. Asked directly,
-                // `bool P(object o) => o is {\n First: 1\n };` comes back with the arrow where the
-                // author put it under keep, and moved onto its own line under rearrange — the same
-                // source, the same body, two answers, and only this key between them.
-                BreaksIfTooLong: placement == PlacementStyle.IfOwnerIsSingleLine
-                && !options.KeepExistingExprMemberArrangement
-            ),
+            new GroupPlan(
+                group,
+                GroupMode.Preserve,
+                new GroupFacts(
+                    // ⚠ Same exception as the `=`'s, and measured the same way: a collection expression
+                    // opens with a delimiter of its own, so the arrow's break and the bracket's are
+                    // alternatives rather than a pair. `TheoryData<string> Corpus =>\n[…]` comes back
+                    // from the oracle as `Corpus => [` when the bracket has to chop, and
+                    // `Vector4[] Planes(…) =>\n    [a, b, c];` keeps the arrow's break when it does not.
+                    // Leaving both to the ordering rule is what produces the pair.
+                    BreaksBefore(target) && node.Expression is not CollectionExpressionSyntax,
+                    PrefersOuterBreak: node.Expression is CollectionExpressionSyntax,
+                    BreaksWithOwner: ownerGroup >= 0,
+                    Owner: ownerGroup,
+                    // skala_keep_existing_expr_member_arrangement = false: a break the author wrote after the
+                    // arrow is removed when the declaration fits on one line, and left alone when it
+                    // does not. Adding one where the author wrote none is milestone 3's.
+                    JoinsIfFits: !options.KeepExistingExprMemberArrangement,
+                    // if_owner_is_single_line, the breaking half: the body leaves the declaration's
+                    // line exactly when the declaration does not fit on one.
+                    // ⚠ Measured against the whole flat width, not the head: "if owner is single line"
+                    // means the declaration occupies one line, and a body that spans lines makes it not
+                    // single-line however short its first line is. `Target Docs => definition => …` with
+                    // a chain under it is the shape that shows the difference. Measuring the head
+                    // instead costs 0.12 points of line fidelity on `corpus/real/` and two of the four
+                    // preservation corners, which is how the reading was settled rather than argued.
+                    // ⚠ And gated on the keep key, the same way a delimited list's placement key is
+                    // (see PlanList): `skala_keep_existing_expr_member_arrangement = true` outranks the
+                    // placement key in *both* directions, so an arrow the author left on the
+                    // declaration's line stays there however unbreakable the body is. Asked directly,
+                    // `bool P(object o) => o is {\n First: 1\n };` comes back with the arrow where the
+                    // author put it under keep, and moved onto its own line under rearrange — the same
+                    // source, the same body, two answers, and only this key between them.
+                    BreaksIfTooLong: placement == PlacementStyle.IfOwnerIsSingleLine
+                    && !options.KeepExistingExprMemberArrangement
+                ),
+                SpendsIndent: true,
 
-            true,
+                // ⚠ At `skala_wrap_before_arrow_with_expressions = true` the break point IS the gap before the
+                // `=>`, and the `=>` is this node's own first token — so the point is written before the
+                // group opens, the writer finds the group unresolved, and renders it flat. The same
+                // correction a base list needs under `skala_wrap_before_extends_colon` and a list under
+                // `wrap_before_*_lpar`; see GroupPlan.LeadingGapInside. Until it was made, `true` never
+                // moved the arrow at all and the key's own fixture came back with the declaration
+                // whole.
+                LeadingGapInside: options.WrapBeforeArrowWithExpressions,
 
-            // ⚠ At `skala_wrap_before_arrow_with_expressions = true` the break point IS the gap before the
-            // `=>`, and the `=>` is this node's own first token — so the point is written before the
-            // group opens, the writer finds the group unresolved, and renders it flat. The same
-            // correction a base list needs under `skala_wrap_before_extends_colon` and a list under
-            // `wrap_before_*_lpar`; see GroupPlan.LeadingGapInside. Until it was made, `true` never
-            // moved the arrow at all and the key's own fixture came back with the declaration
-            // whole.
-            options.WrapBeforeArrowWithExpressions,
-
-            // ⚠ The level is held at zero when the body opens with a parenthesis the author broke
-            // after. The oracle writes `object A() =>\n(\n    1, 2);` — the `(` at the member's own
-            // indent, the contents one level in — where Skala put both one level deeper; the paren's
-            // own scope supplies the contents' level, and the arrow's was the one too many. See
-            // HeadsWithAChoppedParenthesis for the boundary and GroupPlan.HoldsLevel for why the level
-            // is held rather than declined (SK-DIV-0101).
-            holdsLevel: HeadsWithAChoppedParenthesis(node.Expression)
+                // ⚠ The level is held at zero when the body opens with a parenthesis the author
+                // broke after. The oracle writes `object A() =>\n(\n    1, 2);` — the `(` at the
+                // member's own indent, the contents one level in — where Skala put both one level
+                // deeper; the paren's own scope supplies the contents' level, and the arrow's was the
+                // one too many. See HeadsWithAChoppedParenthesis for the boundary and
+                // GroupPlan.HoldsLevel for why the level is held rather than declined (SK-DIV-0101).
+                HoldsLevel: HeadsWithAChoppedParenthesis(node.Expression)
+            )
         );
     }
 
@@ -3704,27 +3685,17 @@ public sealed class BreakPlan {
         in GroupFacts facts,
         bool spendsIndent = false,
         bool leadingGapInside = false,
-        bool ownLevel = false,
-        bool spendsUnderDelimiters = false,
-        bool holdsLevel = false
-    ) {
+        bool ownLevel = false
+    ) =>
+        Describe(node, new GroupPlan(group, mode, facts, spendsIndent, leadingGapInside, ownLevel));
+
+    void Describe(SyntaxNode node, GroupPlan plan) {
         var key = Key(node);
         if (!groups.TryGetValue(key, out var plans)) {
             groups[key] = plans = [];
         }
 
-        plans.Add(
-            new GroupPlan(
-                group,
-                mode,
-                facts,
-                spendsIndent,
-                leadingGapInside,
-                ownLevel,
-                spendsUnderDelimiters,
-                holdsLevel
-            )
-        );
+        plans.Add(plan);
     }
 
     void DescribeInner(SyntaxNode node, int group, GroupMode mode, in GroupFacts facts) =>
@@ -3762,6 +3733,40 @@ public sealed class BreakPlan {
         if (!token.IsKind(SyntaxKind.None)) {
             gaps[token.SpanStart] = new(GapRule.Mandatory, -1);
         }
+    }
+
+    /// <summary>
+    ///     Plans the gap on the side of a comma the break lands on: a required break where the
+    ///     author's break is pinned, a point of the group otherwise. Returns whether the source broke
+    ///     there.
+    /// </summary>
+    bool PlanItemGap(SyntaxToken gap, int group, bool fill, bool pins) {
+        var broke = BreaksBefore(gap);
+        if (pins && broke) {
+            Mandatory(gap);
+        } else {
+            Point(gap, group, fill);
+        }
+
+        return broke;
+    }
+
+    /// <summary>
+    ///     Plans the comma's other side: kept as a required break where the construct keeps both
+    ///     sides and the author broke it, flat otherwise. Returns whether it was kept.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A required break rather than a point, because it is not a place the list's style would
+    ///     ever break at; it is a line the author wrote and the oracle leaves (SK-DIV-0104).
+    /// </remarks>
+    bool PlanOtherSideOfComma(SyntaxToken other, bool keeps) {
+        if (keeps && BreaksBefore(other)) {
+            Mandatory(other);
+            return true;
+        }
+
+        Flat(other);
+        return false;
     }
 
     /// <summary>
