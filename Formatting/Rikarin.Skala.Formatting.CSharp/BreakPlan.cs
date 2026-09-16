@@ -238,6 +238,20 @@ public sealed class BreakPlan {
     /// </remarks>
     readonly Dictionary<long, ConstraintRun> constraints = [];
 
+    /// <summary>Every group described, by id — what <see cref="SourceBreakSurvives" /> reads.</summary>
+    readonly Dictionary<int, GroupPlan> byId = [];
+
+    /// <summary>
+    ///     The <c>for</c> headers whose "is the header multi-line" answer waits for the walk to finish.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The header is planned before the clauses inside it, and its answer depends on what those
+    ///     plans do with the author's breaks: <c>for (int i = 0\n, j = 1; …)</c> holds a break the
+    ///     declarators re-join, and reading the source at plan time counted it (SK-DIV-0111). So the
+    ///     header records itself here and <see cref="SettleForHeaders" /> asks the finished gap table.
+    /// </remarks>
+    readonly List<ForStatementSyntax> forHeaders = [];
+
     readonly string source;
     readonly PhaseOneOptions options;
     int[] forced = [];
@@ -254,6 +268,7 @@ public sealed class BreakPlan {
     public static BreakPlan Build(SyntaxNode root, string source, in PhaseOneOptions options) {
         var plan = new BreakPlan(source, options);
         plan.Walk(root);
+        plan.SettleForHeaders();
         plan.CollectForcedBreaks();
         return plan;
     }
@@ -1554,7 +1569,12 @@ public sealed class BreakPlan {
 
         // ⚠ Any break inside the parentheses, not only one at a `;`: `chop_if_long` reads a header the
         // author broke inside its condition as multiline and chops the semicolons too.
+        // ⚠ Any break that *survives*. The clauses inside are planned after the header, and some of
+        // them re-join what the author wrote — a break before a declarator's comma, after a binary
+        // operator, inside an invocation's parentheses — so the answer here is provisional and
+        // SettleForHeaders replaces it once the gap table is complete (SK-DIV-0111).
         var broken = Holds('\n', node.OpenParenToken.Span.End, node.CloseParenToken.SpanStart);
+        forHeaders.Add(node);
 
         Flat(node.FirstSemicolonToken);
         Flat(node.SecondSemicolonToken);
@@ -3719,10 +3739,88 @@ public sealed class BreakPlan {
         }
 
         plans.Add(plan);
+        byId[plan.Id] = plan;
     }
 
-    void DescribeInner(SyntaxNode node, int group, GroupMode mode, in GroupFacts facts) =>
-        inner[Key(node)] = new(group, mode, facts);
+    void DescribeInner(SyntaxNode node, int group, GroupMode mode, in GroupFacts facts) {
+        var plan = new GroupPlan(group, mode, facts);
+        inner[Key(node)] = plan;
+        byId[group] = plan;
+    }
+
+    /// <summary>
+    ///     Whether a break the author wrote before this token is still there once every plan has had
+    ///     its say: the gap is nobody's (so <c>keep_user_linebreaks</c> keeps it), or a required break,
+    ///     or a point of a group that is certain to break.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only meaningful after the walk — a gap not yet planned reads as kept. A point of a fill is
+    ///     re-decided by width and a preserve group that may re-join is not certain, so neither counts;
+    ///     that errs towards "the header stays whole", which is the direction the oracle errs in.
+    /// </remarks>
+    bool SourceBreakSurvives(SyntaxToken token) {
+        if (!BreaksBefore(token)) {
+            return false;
+        }
+
+        if (!gaps.TryGetValue(token.SpanStart, out var spec)) {
+            return options.KeepsUserBreaksBetweenItems;
+        }
+
+        switch (spec.Rule) {
+            case GapRule.Flat:
+                return false;
+
+            case GapRule.Mandatory:
+                return true;
+
+            default:
+                return byId.TryGetValue(spec.Group, out var plan)
+                    && (plan.Mode == GroupMode.Break
+                        || spec.Rule == GapRule.Point && plan.Facts.SourceBroken && !plan.Facts.JoinsIfFits);
+        }
+    }
+
+    /// <summary>
+    ///     <c>chop_if_long</c>'s "or multi-line" for a <c>for</c> header, answered against the finished
+    ///     plan: a header is multi-line when a break inside its parentheses <em>survives</em>, not when
+    ///     the source merely holds one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on both sides (SK-DIV-0111). The oracle leaves <c>for (int i = 0\n, j = 1; …)</c>,
+    ///     <c>for (int i = 0; i &lt;\n n; …)</c> and <c>for (int i = F(\n1); …)</c> on one line — each
+    ///     break is one its own construct re-joins — and chops the header for <c>for (int i = 0,\n j =
+    ///     1; …)</c>, <c>for (…; i &lt; n\n &amp;&amp; j &gt; 0; …)</c> and <c>for (…; i +=\n 1)</c>,
+    ///     where the break is kept. Reading the source alone chopped all six.
+    /// </remarks>
+    void SettleForHeaders() {
+        foreach (var node in forHeaders) {
+            var key = Key(node);
+            if (!inner.TryGetValue(key, out var plan)) {
+                continue;
+            }
+
+            var survives = false;
+            foreach (var token in node.DescendantTokens()) {
+                if (token.SpanStart <= node.OpenParenToken.SpanStart) {
+                    continue;
+                }
+
+                if (token.SpanStart > node.CloseParenToken.SpanStart) {
+                    break;
+                }
+
+                if (SourceBreakSurvives(token)) {
+                    survives = true;
+                    break;
+                }
+            }
+
+            var settled = plan with { Facts = plan.Facts with { SourceBroken = survives } };
+            inner[key] = settled;
+            byId[plan.Id] = settled;
+        }
+    }
 
     void Point(SyntaxToken token, int group, bool fill = false) {
         if (token.IsKind(SyntaxKind.None)) {

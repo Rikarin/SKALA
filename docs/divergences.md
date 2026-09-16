@@ -4927,3 +4927,37 @@ there; the rest are unmeasured and left as found.
 - options: the declaration family above.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/indexer-parameter-list.cs` and
   `IndexerParameterListTests`.
+
+## SK-DIV-0111 — a `for` header chopped on a break the declarators re-joined
+
+⚠ **Found beside SK-DIV-0104 and reserved by #370.** Measured 2026-09-16 with `Testing ask`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `for (int i = 0` / `, j = 1; i < n; i++)` | `for (int i = 0, j = 1; i < n; i++)` — **joined, header whole** | joined, **header chopped** at both `;` |
+| `for (int i = 0; i <` / `n; i++)` | joined, whole | joined, chopped |
+| `for (int i = F(` / `1); i < n; i++)` | joined, whole | joined, chopped |
+| `for (int i = 0, j = 1` / `, k = 2; …)`, `for (int i = 0` / `, j = 1` / `; …)` | joined, whole | joined, chopped |
+| `for (int i = 0,` / `j = 1; …)` | kept, chopped | kept, chopped |
+| `for (…; i < n` / `&& j > 0; …)` | kept, chopped | kept, chopped |
+| `for (` / `int i = 0; …)` | kept, chopped | kept, chopped |
+| `for (…; i +=` / `1)` | kept, chopped, `1` one level past `i +=` | kept, chopped, `1` flush with `i +=` |
+
+`PlanForHeader` read the source for "any break inside the parentheses" — the half of
+`chop_if_long` that `corpus/real/` supplied — and the source is one plan too early: the header is
+planned before the constructs inside it, and a declarator list, a binary operator and an
+invocation's parentheses each re-join a break the author wrote there. "Multi-line" means a break
+that *survives*. The header now records itself during the walk and `SettleForHeaders` answers after
+it, from the finished gap table: a gap nobody planned (kept by `keep_user_linebreaks`), a required
+break, or a point of a group certain to break counts; a `Flat` gap, a fill point and a preserve
+group that may re-join do not.
+
+⚠ **Adjacent and still open**: the last row's value — `i +=` / `1` — takes a level past the
+incrementor in the oracle and none under Skala, the same shape SK-DIV-0103 records for
+`for (int i =` / `0;` and scoped out of `SpendsUnderDelimiters` because `using (var d =` /
+`default(…))` adds none. Not in the fixture.
+
+- options: `skala_wrap_for_stmt_header_style` (`chop_if_long`), `skala_keep_user_linebreaks`,
+  `skala_wrap_multiple_declaration_style` (whose join is the one that was miscounted).
+- ⚠ status: **fixed**, pinned by `constructs/breaks/for-header-surviving-break.cs` and
+  `ForHeaderSurvivingBreakTests`.
