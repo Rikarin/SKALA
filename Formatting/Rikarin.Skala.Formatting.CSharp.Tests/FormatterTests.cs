@@ -967,15 +967,22 @@ public sealed class BreakPositionTests {
     [InlineData("after the parenthesis", "public double this[int index] => ( \n<X>, (state  is  []   )); ")]
     [InlineData("after the comma", "public double this[int index] => (<X>,\n (state  is  []   ));")]
     [InlineData("before the closing parentheses", "public double this[int index] => (<X>, (state  is  []   \n));")]
-    [InlineData("after both the arrow and the parenthesis", "public double this[int index] =>\n (\n<X>, (state  is  []   ));")]
+    [InlineData(
+        "after both the arrow and the parenthesis",
+        "public double this[int index] =>\n (\n<X>, (state  is  []   ));"
+    )]
     public void ATupleLedByACollectionExpression_ConvergesInOnePass_OnTheShapeItsIdentifierTwinTakes(
         string position,
         string member
     ) {
         const string bracket = "[79421, null]";
         const string twin = "first";
-        var source = "internal sealed  class T2  {\n  " + member.Replace("<X>", bracket, StringComparison.Ordinal) + "\n}\n";
-        var twinSource = "internal sealed  class T2  {\n  " + member.Replace("<X>", twin, StringComparison.Ordinal) + "\n}\n";
+        var source = "internal sealed  class T2  {\n  "
+            + member.Replace("<X>", bracket, StringComparison.Ordinal)
+            + "\n}\n";
+        var twinSource = "internal sealed  class T2  {\n  "
+            + member.Replace("<X>", twin, StringComparison.Ordinal)
+            + "\n}\n";
 
         // ⚠ The shape first, because it is the assertion that pins the answer: a test that only asked
         // for idempotency would accept pass one keeping the `(`'s break in any shape at all.
@@ -998,7 +1005,8 @@ public sealed class BreakPositionTests {
     public void ATupleArgumentLedByACollectionExpression_ConvergesInOnePass_OnTheShapeItsIdentifierTwinTakes() {
         const string bracket = "[1.0m, .. rest]";
         const string twin = "first";
-        const string member = "class T {\n  void M() {\n    var v113 = new int(name114: (\n<X>, source?.Value?.Count));\n  }\n}\n";
+        const string member =
+            "class T {\n  void M() {\n    var v113 = new int(name114: (\n<X>, source?.Value?.Count));\n  }\n}\n";
         var source = member.Replace("<X>", bracket, StringComparison.Ordinal);
         var twinSource = member.Replace("<X>", twin, StringComparison.Ordinal);
 
@@ -1036,7 +1044,8 @@ public sealed class BreakPositionTests {
             ["object B() =>", "(", "[1, 2]);", "object C() =>", "(", "[1, 2], 3);"],
             TrimmedLines(formatted).Where(static line => !line.StartsWith("object A", StringComparison.Ordinal)
                 && !line.StartsWith("object D", StringComparison.Ordinal)
-                && line is not ("class T {" or "}"))
+                && line is not ("class T {" or "}")
+            )
         );
         Assert.Equal(formatted, Format.Text(formatted));
     }
