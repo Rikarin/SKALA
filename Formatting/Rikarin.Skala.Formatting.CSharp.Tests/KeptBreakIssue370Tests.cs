@@ -341,6 +341,139 @@ public sealed class EmbeddedStatementAfterMultilineHeaderTests {
 }
 
 /// <summary>
+///     SK-DIV-0112: a call chain headed by a parenthesised expression or a tuple spends no level of its
+///     own once its owner has spent one — under an arrow, an <c>=</c> or a <c>return</c> the dots land
+///     on the parenthesis's column — and still takes one as a statement of its own.
+///     <c>constructs/breaks/chain-after-parenthesised-head.cs</c>.
+/// </summary>
+public sealed class ChainAfterParenthesisedHeadTests {
+    /// <summary>One point before <c>.B</c> only, so the chain has no group and the frame decides.</summary>
+    [Fact]
+    public void AfterTheArrow_TheDotsTakeTheParenthesisColumn() =>
+        Oracle.Agrees(
+            """
+            class T {
+                object A() =>
+                    (
+                        a).B
+                    .C();
+
+                object B() =>
+                    (a
+                        + b).C
+                    .D();
+
+                object a, b;
+            }
+            """,
+            """
+            class T {
+                object A() =>
+                    (
+                        a).B
+                    .C();
+
+                object B() =>
+                    (a
+                        + b).C
+                    .D();
+
+                object a, b;
+            }
+            """
+        );
+
+    /// <summary>
+    ///     Two invoked dots, so the chain has a group of its own and the group decides; a property run
+    ///     broken at every dot, which the frame decides; and a <c>?.</c> whose dot break hangs off
+    ///     WhenNotNull, which the arrow's own walk has to see.
+    /// </summary>
+    [Fact]
+    public void WithAGroup_AndThroughAConditionalAccess_TheSame() =>
+        Oracle.Agrees(
+            """
+            class T {
+                object N() =>
+                    (
+                        a).B()
+                    .C();
+
+                object A() =>
+                    (
+                        a)
+                    .B
+                    .C();
+
+                object E() =>
+                    (
+                        a)?.B
+                    .C();
+
+                object a;
+            }
+            """,
+            """
+            class T {
+                object N() =>
+                    (
+                        a).B()
+                    .C();
+
+                object A() =>
+                    (
+                        a)
+                    .B
+                    .C();
+
+                object E() =>
+                    (
+                        a)?.B
+                    .C();
+
+                object a;
+            }
+            """
+        );
+
+    [Fact]
+    public void AsAStatement_TheChainStillTakesTheStatementsLevel() =>
+        Oracle.Agrees(
+            """
+            class T {
+                object M() {
+                    (a + b).C
+                    .D();
+                    (a + b).C()
+                    .D()
+                    .E();
+                    var v = a.B
+                        .C();
+                    return v;
+                }
+
+                object a, b;
+            }
+            """,
+            """
+            class T {
+                object M() {
+                    (a + b).C
+                        .D();
+                    (a + b).C()
+                        .D()
+                        .E();
+                    var v = a.B
+                        .C();
+                    return v;
+                }
+
+                object a, b;
+            }
+            """
+        );
+}
+
+/// <summary>
 ///     SK-DIV-0111: a <c>for</c> header is multi-line when a break inside its parentheses
 ///     <em>survives</em> the constructs inside it, not when the source merely holds one — so a break the
 ///     declarators, a binary operator or an invocation re-join leaves the header whole.

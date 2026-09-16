@@ -1939,13 +1939,14 @@ public sealed class BreakPlan {
 
         Describe(
             root,
-            group,
-            options.WrapChainedMethodCalls == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
-                options.KeepsUserBreaksBetweenItems && broken,
-                BreaksIfTooLong: true,
-                HidesFlatWidthWhenBroken: true
-            ),
+            new GroupPlan(
+                group,
+                options.WrapChainedMethodCalls == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+                new GroupFacts(
+                    options.KeepsUserBreaksBetweenItems && broken,
+                    BreaksIfTooLong: true,
+                    HidesFlatWidthWhenBroken: true
+                ),
             // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
             // `Break`, at the first break landing before a `.` — and a group's break point never
             // goes through `Break`, so a chain that the fitter chops comes out flush with its
@@ -1965,7 +1966,23 @@ public sealed class BreakPlan {
             // The one-level-per-opening-line collapse in LayoutWriter.Level is what keeps
             // `var x = a.B()\n    .C();` at one: there the `=`'s scope and the chain's open on the
             // same line.
-            ownLevel: true
+                // ⚠ Except when the chain's head is a parenthesised expression or a tuple, which
+                // takes the level only if nothing else is spending one — `spendsIndent`'s rule, not
+                // `ownLevel`'s (SK-DIV-0112). Under an arrow, an `=` or a `return` that has already
+                // spent, the dots of such a chain land on the parenthesis's own column:
+                //     object A() =>            object B() =>           var x =
+                //         (                        (a                      (
+                //             a).B                     + b).C                  a).B
+                //         .C();                    .D();                   .C();
+                // — a single-line head `(a + b).C\n.D()` included, and a tuple, `?.` and `[0]` after
+                // the `)` alike — while the same chain as a statement, with nothing spent yet, puts
+                // them one level in. An invocation head keeps `ownLevel`: `F(\n a\n)\n.B` puts `.B`
+                // one level past the arrow's. Measured on seventeen shapes. The frame half of the
+                // same rule — an author's break before a dot that is not a point — is
+                // CSharpDocumentBuilder's Frame.HoldsLevel.
+                SpendsIndent: ChainHeadIsParenthesised(root),
+                OwnLevel: !ChainHeadIsParenthesised(root)
+            )
         );
 
         bool Link(SyntaxToken gap) {
@@ -2068,6 +2085,50 @@ public sealed class BreakPlan {
 
                 default:
                     return;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Whether the leftmost receiver of a chain — down the spine of invocations, member, element and
+    ///     conditional accesses and postfix <c>!</c> — is a parenthesised expression or a tuple.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Read in two places that must agree: the chain group's <see cref="GroupPlan.HoldsLevel" />
+    ///     here, for a chain with break points of its own, and the chain <em>frame</em> in
+    ///     <see cref="CSharpDocumentBuilder" />, which pays for an author's break before a dot that is
+    ///     not a point — `(a).B\n.C()` has one point, before `.B`, so its group is never described and
+    ///     the frame is the only mechanism there.
+    /// </remarks>
+    internal static bool ChainHeadIsParenthesised(SyntaxNode root) {
+        var node = root;
+        while (true) {
+            switch (node) {
+                case ParenthesizedExpressionSyntax or TupleExpressionSyntax:
+                    return true;
+
+                case InvocationExpressionSyntax invocation:
+                    node = invocation.Expression;
+                    continue;
+
+                case MemberAccessExpressionSyntax access:
+                    node = access.Expression;
+                    continue;
+
+                case ElementAccessExpressionSyntax element:
+                    node = element.Expression;
+                    continue;
+
+                case ConditionalAccessExpressionSyntax conditional:
+                    node = conditional.Expression;
+                    continue;
+
+                case PostfixUnaryExpressionSyntax postfix:
+                    node = postfix.Operand;
+                    continue;
+
+                default:
+                    return false;
             }
         }
     }
@@ -3098,6 +3159,14 @@ public sealed class BreakPlan {
                     break;
 
                 case ConditionalAccessExpressionSyntax conditional:
+                    // ⚠ The dots to the right of the `?` hang off WhenNotNull, not off the spine, so
+                    // a chain the author broke there — `(\n a)?.B\n.C()` — has to be looked for on
+                    // that side too; the oracle keeps the `(` on the continuation for it exactly as
+                    // for `(\n a).B\n.C()` (SK-DIV-0112).
+                    if (BreaksAtADotIn(conditional.WhenNotNull, source)) {
+                        return false;
+                    }
+
                     (receiver, operatorToken) = (conditional.Expression, conditional.OperatorToken);
                     break;
 
@@ -3134,6 +3203,44 @@ public sealed class BreakPlan {
         }
 
         return false;
+    }
+
+    /// <summary>
+    ///     Whether the source breaks before a dot on the left spine of a conditional access's
+    ///     <c>WhenNotNull</c> — the <c>.C</c> of <c>?.B.C()</c>.
+    /// </summary>
+    static bool BreaksAtADotIn(ExpressionSyntax whenNotNull, string source) {
+        var node = whenNotNull;
+        while (true) {
+            switch (node) {
+                case InvocationExpressionSyntax invocation:
+                    node = invocation.Expression;
+                    continue;
+
+                case MemberAccessExpressionSyntax access:
+                    if (BreaksBeforeIn(source, access.OperatorToken)) {
+                        return true;
+                    }
+
+                    node = access.Expression;
+                    continue;
+
+                case ElementAccessExpressionSyntax element:
+                    node = element.Expression;
+                    continue;
+
+                case ConditionalAccessExpressionSyntax nested:
+                    if (BreaksAtADotIn(nested.WhenNotNull, source)) {
+                        return true;
+                    }
+
+                    node = nested.Expression;
+                    continue;
+
+                default:
+                    return false;
+            }
+        }
     }
 
     /// <summary>

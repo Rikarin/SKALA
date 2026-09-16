@@ -5044,3 +5044,52 @@ pushed off. One shape measured; not in the fixture.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/embedded-statement-after-multiline-header.cs`,
   `EmbeddedStatementAfterMultilineHeaderTests` and
   `DocumentBuilderTests.LastResortPoint_LetsTheGroupBeforeItBreakFirst`.
+
+## SK-DIV-0112 — a chain broken at a dot after a parenthesised head took one level too many
+
+⚠ **Found beside SK-DIV-0101 and reserved by #370.** Measured 2026-09-16 with `Testing ask`, on
+twenty-four shapes; the member's indent is 4, a statement's 8:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `=>` / `(` / `a).B` / `.C();` | `(` at 8, `a).B` at 12, `.C()` at **8** | `.C()` at 12 |
+| `=>` / `(` / `a)` / `.B` / `.C();` | dots at 8 | 12 |
+| `=>` / `(a` / `+ b).C` / `.D();` and `=>` / `(a + b).C` / `.D();` | `.D()` at 8 — the head need not be multi-line | 12 |
+| `=>` / `(` / `a, b).C` / `.D();`, `=>` / `(` / `a)?.B` / `.C();`, `=>` / `(` / `a)[0]` / `.C();` | 8 | 12 (and the `?.` put the `(` at 4) |
+| `=>` / `(` / `a).B()` / `.C();` | 8 | 12 |
+| `var x =` / `(` / `a).B` / `.C();`, `return` / `(` / `a).B` / `.C();` | `(` at 12, `a).B` 16, `.C()` **12** | `.C()` at 16 |
+| `=>` / `F(` / `a` / `+ 1` / `)` / `.B` / `.C();` — an invocation head | `F(` 8, `a` 16, `)` 12, dots **12** | identical |
+| `=>` / `a.ToString()` / `.Length` | 8, 12 | identical |
+| `(a + b).C` / `.D();` and `(a + b).C()` / `.D()` / `.E();` as statements | dots at **12** | identical |
+| `var v = a.B` / `.C();` | 12 | identical |
+| at `skala_continuous_indent_multiplier = 2`: `=>` / `(` / `a).B` / `.C();` | `(` 12, `a).B` 20, `.C()` 12 | 20 |
+
+So a call chain whose head is a parenthesised expression or a tuple spends no level of its own
+once its owner has spent one — the dots land on the `(`'s column — and still takes one when it is a
+statement of its own, where nothing has been spent yet. An invocation head keeps the chain's level
+either way. In Skala's terms that is `spendsIndent`'s rule ("a level if no other continuation is
+open") rather than `ownLevel`'s ("a level, always"), which the chain group took for every head.
+
+**Decision: fix**, in the two places a chain's level is paid. The group — a chain with two or more
+invoked dots — asks for `SpendsIndent` instead of `OwnLevel` when `ChainHeadIsParenthesised`. The
+chain *frame*, which pays for an author's break before a dot that is not a point (`(a).B` / `.C()`
+has one point, before `.B`, and no group at all), is marked `HoldsLevel` for the same heads: it
+spends nothing and hands the break outward, so an unspent statement frame still pays and an arrow
+that has already spent does not. And `HeadsWithAChoppedParenthesis` now looks for a dot break on
+the right of a `?.` too, whose dots hang off `WhenNotNull` rather than the spine — it put the `(`
+of `=>` / `(` / `a)?.B` / `.C()` at the member's indent where the oracle keeps the continuation.
+
+⚠ **Adjacent and still open**: with the `(` on the *statement's* first line — `(` / `a).B` /
+`.C();`, `var z = (` / `a).B` / `.C();`, `return (` / `a).B` / `.C();`, `(a` / `+ b).C` / `.D();` —
+the oracle puts the parenthesis's contents two levels in (16) and Skala one (12); the dots agree at
+12 now. The chain's level is spent as a scope over the receiver there, which Skala's one-level-per-
+opening-line collapse does not express. And two shapes met on the way that are not this entry's:
+the oracle re-joins `F(` / `a)` and then breaks before the *property* `.B` of `F(a).B` / `.C()`,
+where Skala keeps `F(a).B` together; and a chain broken after a multi-line lambda argument has its
+lambda body pushed by the chain's level and its `)` given a line of its own in the oracle (`a.B(x
+=> {` / `var y = x;` at 20 / `}` at 16 / `)` at 12 / `.C()` at 12) where Skala writes 16 / 12 / 8 /
+12. Neither is in the fixture.
+
+- options: none; `skala_continuous_indent_multiplier` measured at 2 and the rule holds.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/chain-after-parenthesised-head.cs` and
+  `ChainAfterParenthesisedHeadTests`.

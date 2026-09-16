@@ -582,7 +582,13 @@ public sealed partial class CSharpDocumentBuilder {
                     // an absolute column and everything under it starts there; adding the level the
                     // chain would otherwise pay for puts the operands one indent past the column the
                     // oracle writes them at.
-                    Aligned: AlignsFromOwnColumn(node)
+                    Aligned: AlignsFromOwnColumn(node),
+
+                    // ⚠ And neither does a call chain whose head is a parenthesised expression or a
+                    // tuple: `(\n a).B\n.C()` puts `.C()` on the `(`'s own column (SK-DIV-0112). The
+                    // group half of the same rule is BreakPlan.PlanChainedCalls' HoldsLevel; this is
+                    // the frame half, for an author's break before a dot that is not a point.
+                    HoldsLevel: IsChainRoot(node) && BreakPlan.ChainHeadIsParenthesised(node)
                 )
             );
             Dispatch(node);
@@ -2465,7 +2471,11 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             if (frames[i].Kind == FrameKind.Chain) {
-                if (beforeDot) {
+                // ⚠ A chain that holds its level pays nothing for its dots and passes the break
+                // outward, so a statement whose own continuation is still unspent pays for it and an
+                // arrow or `=` that has already spent does not: `(\n a).B\n.C();` as a statement puts
+                // `.C()` one level in, and under `=>` on the `(`'s own column. See Frame.HoldsLevel.
+                if (beforeDot && !frames[i].HoldsLevel) {
                     return i;
                 }
 
@@ -2505,13 +2515,19 @@ public sealed partial class CSharpDocumentBuilder {
     ///     <c>M() =&gt;</c> is the member's to pay for even though the lambda that follows has already
     ///     been entered.
     /// </param>
+    /// <param name="HoldsLevel">
+    ///     A chain frame that spends nothing for a break before one of its dots and hands the break to
+    ///     the frames outside it: a call chain headed by a parenthesised expression or a tuple
+    ///     (SK-DIV-0112). The frame's other duties are unchanged.
+    /// </param>
     readonly record struct Frame(
         FrameKind Kind,
         bool Activated,
         bool Started = false,
         bool ResetsDepth = false,
         int SavedDepth = 0,
-        bool Aligned = false);
+        bool Aligned = false,
+        bool HoldsLevel = false);
 
     /// <summary>
     ///     Whether the break continues an expression rather than starting a new statement, member or
