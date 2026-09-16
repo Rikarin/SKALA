@@ -5001,3 +5001,46 @@ the arrow (`, new() =>` / `0;`) because the head is wrapped, which is SK-DIV-009
   `skala_continuous_indent_multiplier`, `skala_keep_user_linebreaks` — all measured, none the cause.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/constraint-continuation.cs` and
   `ConstraintContinuationTests` (which also pins the three keyed variants).
+
+## SK-DIV-0106 — an embedded statement pushed off a header the author broke
+
+⚠ **Found beside SK-DIV-0102 and reserved by #370.** Measured 2026-09-16 with `Testing ask`, under
+`skala_keep_existing_embedded_arrangement = true` and brace insertion off:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `while (` / `c) n++;` | `n++` stays on the `)` line | `c)` / `n++;` |
+| `if (` / `c) n++;`, `foreach (` / `var x in xs) n++;`, `lock (` / `xs) n++;` | stays | pushed off |
+| `for (` / `var i = 0; i < n; i++) n++;` | header chopped at both `;`, `n++` stays | pushed off |
+| `while (c` / `&& n > 0) n--;` | stays | stays |
+| a header whose last line is 120 columns and 125 with ` n++;` | the `&&` chain chops, `n++` **stays** after the `)` | chain whole, `n++` pushed off |
+| a 126-column single-line `while (…) n++;` | chain chops, `n++` stays | chain chops, `n++` pushed off |
+| `if (depth < 0) throw new …("…");` overflowing | `throw` pushed off, condition untouched | same |
+| `if (c.ToString().Length > 0 && d.ToString().Length > 0) throw new …("…");` overflowing | `throw` pushed off, condition untouched | same |
+| `while (c)` / `n++;` and `while (` / `c)` / `n++;` | the author's break kept | kept |
+| `if (` / `c) if (n > 0) n++;` | `c)` / `if (n > 0)` / `n++;` — both pushed off | `c)` / `if (n > 0) n++;` |
+
+`PlanEmbeddedStatement` read "an owner that does not fit on one line pushes its statement off that
+line" as "an owner that is multi-line does": the group was resolved against the whole owner's flat
+width, and a kept break in the header made that width unbounded. The oracle asks a narrower
+question, and asks it last: does the statement fit on what is left of the header's *closing* line
+once everything before it has wrapped. That is a fill point measured at the column the writer has
+actually reached — and one taken as a last resort, because the fifth row says the condition chain
+was resolved against a line that still held the statement.
+
+**Decision: fix.** Under keep, a simple owner's gap is a `GapRule.LastResortPoint` — a fill point
+whose flat rendering counts towards the rest-of-line measure of every group before it instead of
+ending it (`LineFlags.LastResort`, in the layout engine's `DocumentBuilder.BreakPoint` and
+`LayoutWriter.AddRemainingSiblings`) — and the author's own break there is pinned as a required
+one. An owner that carries an embedded statement of its own keeps the group point: the oracle
+pushes it off whenever it is multi-line.
+
+⚠ **Adjacent and still open**: the last row's inner `if (n > 0) n++;` — simple, single-line,
+written joined — is broken by the oracle when its owner is itself an embedded statement that was
+pushed off. One shape measured; not in the fixture.
+
+- options: `skala_keep_existing_embedded_arrangement` (`true`; the `false` paths are untouched),
+  `skala_place_simple_embedded_statement_on_same_line` (inert under keep, as before).
+- ⚠ status: **fixed**, pinned by `constructs/breaks/embedded-statement-after-multiline-header.cs`,
+  `EmbeddedStatementAfterMultilineHeaderTests` and
+  `DocumentBuilderTests.LastResortPoint_LetsTheGroupBeforeItBreakFirst`.

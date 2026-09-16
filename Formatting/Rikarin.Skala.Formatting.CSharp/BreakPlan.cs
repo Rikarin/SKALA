@@ -29,7 +29,15 @@ public enum GapRule {
     ///     A break point of a <em>fill</em>: it breaks when what follows would not fit on the line, and
     ///     not merely because its group broke. <c>wrap_if_long</c>.
     /// </summary>
-    FillPoint
+    FillPoint,
+
+    /// <summary>
+    ///     A fill point taken last: the constructs before it on the line wrap first, because the
+    ///     rest-of-line measure they are resolved against runs through this gap rather than ending at
+    ///     it. An embedded statement's gap under <c>keep_existing_embedded_arrangement</c>
+    ///     (SK-DIV-0106). See <see cref="LineFlags.LastResort" />.
+    /// </summary>
+    LastResortPoint
 }
 
 /// <summary>One gap's rule.</summary>
@@ -3382,6 +3390,33 @@ public sealed class BreakPlan {
         }
 
         var group = NewGroup();
+
+        // ⚠ Under keep, a simple statement's gap is a *fill point*, and the author's own break there
+        // is pinned. "An owner that does not fit on one line pushes its statement off that line" was
+        // read as "an owner that is multi-line does", and the oracle separates the two (SK-DIV-0106):
+        //     while (                       while (c
+        //         c) n++;                          && n > 0) n--;     ← both kept on the `)` line
+        // A header the author broke — after the `(`, before an operator — keeps its statement on the
+        // closing line, and so does a header the oracle itself chops for width: a 125-column
+        // `while (…) n++;` comes back with every `&&` on its own line and `n++` still after the `)`.
+        // What pushes the statement off is the *last* line of the header not having room for it —
+        // `if (depth < 0) throw new …(…);` where the throw does not fit — which is exactly what a fill
+        // point measures, at the column the writer has actually reached after the header. A group
+        // point measured the whole owner instead, and any kept break inside the header made that
+        // width unbounded.
+        // ⚠ Simple owners only. An owner that carries an embedded statement of its own — `if (\n c) if
+        // (d) n++;` — is pushed off by the oracle whenever it is multi-line, and keeps the group point.
+        if (keeps && simple) {
+            if (BreaksBefore(first)) {
+                Mandatory(first);
+            } else {
+                Point(first, group, true, true);
+            }
+
+            Describe(owner, group, GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true));
+            return;
+        }
+
         Point(first, group);
         Describe(
             owner,
@@ -3868,7 +3903,7 @@ public sealed class BreakPlan {
         }
     }
 
-    void Point(SyntaxToken token, int group, bool fill = false) {
+    void Point(SyntaxToken token, int group, bool fill = false, bool lastResort = false) {
         if (token.IsKind(SyntaxKind.None)) {
             return;
         }
@@ -3878,7 +3913,10 @@ public sealed class BreakPlan {
             return;
         }
 
-        gaps[token.SpanStart] = new(fill ? GapRule.FillPoint : GapRule.Point, group);
+        gaps[token.SpanStart] = new(
+            lastResort ? GapRule.LastResortPoint : fill ? GapRule.FillPoint : GapRule.Point,
+            group
+        );
     }
 
     /// <summary>A point the source broke stays broken; one it did not stays flat.</summary>

@@ -209,6 +209,138 @@ public sealed class ConstraintContinuationTests {
 }
 
 /// <summary>
+///     SK-DIV-0106: under <c>keep_existing_embedded_arrangement</c> a simple embedded statement leaves
+///     its header's closing line only when it does not fit there — not because the header is
+///     multi-line — and the constructs in the header wrap before it moves.
+///     <c>constructs/breaks/embedded-statement-after-multiline-header.cs</c>.
+/// </summary>
+public sealed class EmbeddedStatementAfterMultilineHeaderTests {
+    /// <summary>
+    ///     <see cref="Oracle.Agrees" /> with brace insertion off, as the corpus has it: the repository's
+    ///     own <c>csharp_prefer_braces</c> would wrap every embedded statement here in a block.
+    /// </summary>
+    static void Agrees(string source, string expected) {
+        var options = OptionResolver.Resolve(
+            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+            [new("csharp_prefer_braces", "false")]
+        ).Options;
+        var once = CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
+        Assert.True(
+            expected.TrimEnd('\n') == once.TrimEnd('\n'),
+            $"Skala's output is not the oracle's.\n--- Skala ---\n{once}\n--- oracle ---\n{expected}"
+        );
+
+        var twice = CSharpFormatter.Format("Test.cs", SourceText.From(once), options).Formatted;
+        Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
+    }
+
+    [Fact]
+    public void AKeptHeaderBreak_LeavesTheStatementOnTheClosingLine() =>
+        Agrees(
+            """
+            class T {
+                void M(bool c, int n, int[] xs) {
+                    while (
+                        c) n++;
+
+                    foreach (
+                        var x in xs) n++;
+
+                    while (c
+                        && n > 0) n--;
+
+                    if (
+                        c) n++;
+                    else n--;
+                }
+            }
+            """,
+            """
+            class T {
+                void M(bool c, int n, int[] xs) {
+                    while (
+                        c) n++;
+
+                    foreach (
+                        var x in xs) n++;
+
+                    while (c
+                           && n > 0) n--;
+
+                    if (
+                        c) n++;
+                    else n--;
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     The header's last line is 120 columns without the statement and 125 with it: the oracle chops
+    ///     the condition and keeps <c>n++</c> after the <c>)</c>, so the condition was resolved against a
+    ///     line that still held the statement — <see cref="GapRule.LastResortPoint" />.
+    /// </summary>
+    [Fact]
+    public void TheHeaderWrapsBeforeTheStatementMoves() =>
+        Agrees(
+            """
+            class T {
+                void M(bool c, int n, int[] xs) {
+                    while (
+                        c && n > 0 && xs.Length > 0 && xs[0] > 0 && xs[1] > 0 && xs[2] > 0 && xs[3] > 0 && xs[4] > 0 && n < 1000000) n++;
+                }
+            }
+            """,
+            """
+            class T {
+                void M(bool c, int n, int[] xs) {
+                    while (
+                        c
+                        && n > 0
+                        && xs.Length > 0
+                        && xs[0] > 0
+                        && xs[1] > 0
+                        && xs[2] > 0
+                        && xs[3] > 0
+                        && xs[4] > 0
+                        && n < 1000000) n++;
+                }
+            }
+            """
+        );
+
+    [Fact]
+    public void AStatementWithNoRoom_StillMoves_AndTheAuthorsOwnBreakIsKept() =>
+        Agrees(
+            """
+            class T {
+                void M(bool c, int depth) {
+                    if (depth < 0) throw new System.InvalidOperationException("a message long enough to run the whole line past the margin");
+
+                    while (c)
+                        depth++;
+
+                    while (c) depth++;
+                }
+            }
+            """,
+            """
+            class T {
+                void M(bool c, int depth) {
+                    if (depth < 0)
+                        throw new System.InvalidOperationException("a message long enough to run the whole line past the margin");
+
+                    while (c)
+                        depth++;
+
+                    while (c) depth++;
+                }
+            }
+            """
+        );
+}
+
+/// <summary>
 ///     SK-DIV-0111: a <c>for</c> header is multi-line when a break inside its parentheses
 ///     <em>survives</em> the constructs inside it, not when the source merely holds one — so a break the
 ///     declarators, a binary operator or an invocation re-join leaves the header whole.

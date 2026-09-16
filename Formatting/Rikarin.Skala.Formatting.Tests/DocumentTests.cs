@@ -70,6 +70,44 @@ public sealed class DocumentBuilderTests {
         Assert.Equal(expected, LayoutWriter.Write(builder.Build(), 80, "    ", "\n").Text);
     }
 
+    /// <summary>
+    ///     A last-resort point (<see cref="LineFlags.LastResort" />) does not end the rest-of-line
+    ///     measure of a group before it, whether the point is that group's direct sibling or sits inside
+    ///     a container: the inner group breaks first, and the point breaks only when what follows still
+    ///     has no room. An ordinary fill point on the same gap ends the measure, so the group stays flat
+    ///     and the point takes the break instead (SK-DIV-0106).
+    /// </summary>
+    [Theory]
+    [InlineData(false, false, "a b\nc")]
+    [InlineData(true, false, "a\nb c")]
+    [InlineData(true, true, "a\nb c")]
+    public void LastResortPoint_LetsTheGroupBeforeItBreakFirst(bool lastResort, bool nested, string expected) {
+        var builder = new DocumentBuilder();
+        var inner = builder.NextGroupId();
+        var outer = builder.NextGroupId();
+        builder.DescribeGroup(inner, new GroupFacts(BreaksIfTooLong: true));
+        builder.OpenGroup(GroupMode.Break, outer);
+        builder.OpenGroup(GroupMode.Preserve, inner);
+        builder.Text("a", new SourceSpan(0, 1));
+        builder.BreakPoint(inner, true);
+        builder.Text("b", new SourceSpan(2, 1));
+        builder.Close();
+        if (nested) {
+            builder.OpenConcat();
+        }
+
+        builder.BreakPoint(outer, true, true, lastResort: lastResort);
+        builder.Text("c", new SourceSpan(4, 1));
+        if (nested) {
+            builder.Close();
+        }
+
+        builder.Close();
+
+        // Four columns: `a b` fits, `a b c` does not.
+        Assert.Equal(expected, LayoutWriter.Write(builder.Build(), 4, "    ", "\n").Text);
+    }
+
     [Fact]
     public void Line_KeepsTheSourcesOwnEnding() {
         // ⚠ enforce_line_ending_style = false means mixed endings are preserved, not normalised.

@@ -2326,6 +2326,7 @@ public sealed partial class CSharpDocumentBuilder {
             switch (spec.Rule) {
                 case GapRule.Point:
                 case GapRule.FillPoint:
+                case GapRule.LastResortPoint:
                     if (preserved is not null) {
                         doc.Space(preserved);
                     }
@@ -2333,11 +2334,12 @@ public sealed partial class CSharpDocumentBuilder {
                     doc.BreakPoint(
                         spec.Group,
                         preserved is null && FlatGapSpace(previous, nextKind, nextToken, gap) != SpaceKind.Forbidden,
-                        spec.Rule == GapRule.FillPoint,
+                        spec.Rule != GapRule.Point,
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                         ? DefaultNewLine()
-                        : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                        : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine(),
+                        spec.Rule == GapRule.LastResortPoint
                     );
                     return;
 

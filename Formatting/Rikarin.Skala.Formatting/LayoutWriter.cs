@@ -803,7 +803,18 @@ public sealed class LayoutWriter {
         var children = document.ChildrenOf(node);
         for (var i = child; i < children.Length; i++) {
             var sibling = children[i];
-            if (document.Nodes[sibling].Kind == DocKind.Line) {
+            ref var slot = ref document.Nodes[sibling];
+            if (slot.Kind == DocKind.Line) {
+                // ⚠ A last-resort point is not the end of the line for anything before it: it is
+                // measured as its flat rendering and the walk goes on. See LineFlags.LastResort.
+                if ((LineKind)slot.Arg0 == LineKind.Soft && ((LineFlags)slot.Flags & LineFlags.LastResort) != 0) {
+                    total = total >= Document.Unbounded
+                        ? Document.Unbounded
+                        : total + (((LineFlags)slot.Flags & LineFlags.FlatSpace) != 0 ? 1 : 0);
+
+                    continue;
+                }
+
                 return true;
             }
 

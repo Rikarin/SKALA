@@ -174,7 +174,18 @@ public sealed class DocumentBuilder {
     ///     The point breaks only when what follows it does not fit, rather than with its group.
     ///     <see cref="LineFlags.FillPoint" />.
     /// </param>
-    public void BreakPoint(int group, bool flatSpace, bool fill = false, int blankLines = 0, string? newLine = null) {
+    /// <param name="lastResort">
+    ///     The point does not end the rest-of-line measure of anything before it.
+    ///     <see cref="LineFlags.LastResort" />.
+    /// </param>
+    public void BreakPoint(
+        int group,
+        bool flatSpace,
+        bool fill = false,
+        int blankLines = 0,
+        string? newLine = null,
+        bool lastResort = false
+    ) {
         var index = pending.Count;
         Leaf(
             DocKind.Line,
@@ -187,8 +198,19 @@ public sealed class DocumentBuilder {
         );
         ref var node = ref nodes[pending[index]];
         node.Arg2 = group;
-        node.Flags = (flatSpace ? (int)LineFlags.FlatSpace : 0) | (fill ? (int)LineFlags.FillPoint : 0);
+        node.Flags = (flatSpace ? (int)LineFlags.FlatSpace : 0)
+            | (fill ? (int)LineFlags.FillPoint : 0)
+            | (lastResort ? (int)LineFlags.LastResort : 0);
+
         ownPoints.Add(group);
+
+        // ⚠ A last-resort point is measured as *not* taken: it counts as its flat rendering and stops
+        // nothing, so a construct before it on the line sees what follows the point as still to come.
+        if (lastResort) {
+            pointWidth[pending[index]] = flatSpace ? 1 : 0;
+            breaks[pending[index]] = false;
+            return;
+        }
 
         // ⚠ A break point stops the point measure, which is what distinguishes it from the head.
         // ⚠ And it contributes nothing to it. "The rest of this line if every break point is taken"

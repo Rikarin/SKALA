@@ -121,7 +121,24 @@ public enum LineFlags {
     ///         entry; this is what lets the last point of a fill ask for it too.
     ///     </para>
     /// </remarks>
-    LastPoint = 4
+    LastPoint = 4,
+
+    /// <summary>
+    ///     A fill point taken only as a last resort: the rest of the line is measured <em>through</em> it,
+    ///     so every construct before it wraps first and the point breaks only when what follows it still
+    ///     has no room after they have.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The oracle's embedded statement (SK-DIV-0106). A 125-column <c>while (c &amp;&amp; … &amp;&amp;
+    ///     n &lt; 1000000) n++;</c> whose header alone is 120 comes back with every <c>&amp;&amp;</c> on
+    ///     its own line and <c>n++</c> still after the <c>)</c>: the condition chain was resolved
+    ///     against a line that included the statement, and only afterwards did the statement's own
+    ///     gap ask whether it fits. An ordinary fill point ends <see cref="LayoutWriter" />'s trailing
+    ///     measure — "the rest of this line if every break point is taken" — so the chain measured 120,
+    ///     stayed whole, and the statement was pushed off instead. A point with this flag contributes
+    ///     its flat rendering to that measure and does not end it; its own decision is still the fill's.
+    /// </remarks>
+    LastResort = 8
 }
 
 /// <summary>
