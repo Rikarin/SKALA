@@ -3712,7 +3712,16 @@ public sealed class BreakPlan {
         }
 
         plans.Add(
-            new GroupPlan(group, mode, facts, spendsIndent, leadingGapInside, ownLevel, spendsUnderDelimiters, holdsLevel)
+            new GroupPlan(
+                group,
+                mode,
+                facts,
+                spendsIndent,
+                leadingGapInside,
+                ownLevel,
+                spendsUnderDelimiters,
+                holdsLevel
+            )
         );
     }
 
