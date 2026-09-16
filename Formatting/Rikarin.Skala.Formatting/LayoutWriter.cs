@@ -316,17 +316,14 @@ public sealed class LayoutWriter {
             kind switch {
                 IndentKind.Block => new Scope(true, outer + indentWidth, line, outer, unconditional),
 
-                // ⚠ The indentation of the line being written, not the level a scope opening now would
-                // nest from: mid-line those differ by every scope opened earlier on this line, and the
-                // oracle's arms follow the line. At a line start nothing is written yet and the level
-                // the line is about to take is the answer.
-                IndentKind.Anchor => new Scope(
-                    false,
-                    0,
-                    int.MaxValue,
-                    atLineStart ? pendingCloserLevel ?? Effective() : CurrentLineIndent(),
-                    IsAnchor: true
-                ),
+                // ⚠ The level a scope opening here would nest from — `outer` — and not the line's own
+                // indentation. The two differ by the delimited scopes opened earlier on this line, and
+                // the oracle counts those: `if (member switch {` nests its arms from the condition's
+                // aligned column and `.OrderBy(pair => pair switch {` from the argument's level, while
+                // `var s = (a,\n b) switch {` nests from the statement's, because the `=`'s continuation
+                // opened on this line is conditional and `LevelForNested` never counts one of those
+                // (SK-DIV-0107, measured on all three).
+                IndentKind.Anchor => new Scope(false, 0, int.MaxValue, outer, IsAnchor: true),
                 IndentKind.Continuous =>
                     new Scope(false, continuousMultiplier * indentWidth, line, outer, unconditional),
                 IndentKind.OneLevel => new Scope(false, indentWidth, line, outer, unconditional),
@@ -983,7 +980,8 @@ public sealed class LayoutWriter {
                 // before a 133-column binary chain that fits nowhere — and not for a last-resort
                 // point: an embedded statement that has no room is pushed off and then chopped, never
                 // left as `if (c) Frobnicate(` (SK-DIV-0106).
-                if (!flat && head < segment && (flags & LineFlags.DelimitedItem) != 0 && (flags & LineFlags.LastResort) == 0) {
+                var delimited = (flags & LineFlags.DelimitedItem) != 0 && (flags & LineFlags.LastResort) == 0;
+                if (!flat && head < segment && delimited) {
                     var continuation = ContinuationColumn(slot.Arg2);
                     var fitsMoved = segment < Document.Unbounded && continuation + segment <= this.width;
                     flat = !fitsMoved && head < Document.Unbounded && column + head <= this.width;

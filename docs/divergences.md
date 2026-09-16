@@ -5143,11 +5143,21 @@ the chain-wide owner's business, not containment's.
 hard line, a `Break` group, a `Preserve` group whose source was broken at its own points and which
 may not re-join, or any node containing one — and a group with a certain child has no flat form.
 Kept apart from `flatWidth` so that the nested group's own width stays measurable: the head and
-point measures stop at an unbounded child, and `var x = a` / `+ b` keeps `a` on the `=`'s line. The
-chain-wide owner of `BreaksWithOwner` links (`chainOwners`, filled as links are described) is the
-one container exempt, which is what keeps `a && b` / `|| c` whole and `binary-operators.cs`,
-`binary-patterns.cs` and `binary-chains.cs` unmoved. SK-DIV-0078's fixture agrees without a change
-of its own.
+point measures stop at an unbounded child, and `var x = a` / `+ b` keeps `a` on the `=`'s line.
+
+⚠ **The chain-wide owner is the one container exempt, and exempting it directly was not enough.**
+Skala's own `IntAlign.cs` holds `row is null` / `|| line != previousLine + 1` / `|| run.Count > 0
+&& !Joins(…)`, and `&&` and `||` are one chain: the links the author broke were certain, the link
+containing them was certain, and that link's now-unbounded width flowed by *summation* into the
+owner, which chopped every link — the `&&` included, which the oracle keeps. So the owner is
+measured by a second width (`ownerWidth`) that only *strong* certainty makes unbounded — a hard
+line, a `Break` group, a broken group that is not a link — and never a link's own break
+(`certainOrigin`); and a link whose operand holds something certain breaks on its own in the fitter
+(`GroupFacts.ChainLink`, the mark that separates a binary link from the expression body, the other
+`BreaksWithOwner` producer). Measured three ways: `a > 0 && a < 10` / `|| a == 20` unchanged,
+`a > 0` / `&& a < 10 || a == 20` chopped at both, and the `IntAlign` shape keeping its `&&`.
+`binary-operators.cs`, `binary-patterns.cs` and `binary-chains.cs` are unmoved, and SK-DIV-0078's
+fixture agrees without a change of its own.
 
 ⚠ **Adjacent and still open**: the last row — a *filled* list (`wrap_if_long`: an array
 initializer, a collection expression) with a multi-line element breaks its delimiters under Skala
@@ -5188,10 +5198,13 @@ opened eagerly and never wrote a break at — and under `=>` or `return` does no
 the declaration and assignment forms diverged.
 
 **Decision: fix.** Two indent kinds in the layout engine: `IndentKind.Anchor`, a marker pushed
-where the governing expression begins that remembers the indentation of the line being written
-(the level a line starting now would take, or the current line's own indent mid-line), and
-`IndentKind.AnchoredBlock`, a block whose outer level is the innermost anchor's rather than the
-brace's line's. `VisitBraced` pushes the anchor for a switch expression after `VisitPlanned` has
+where the governing expression begins that remembers the level a scope opening there would nest
+from — ⚠ not the line's own indentation: `if (member switch {` nests its arms from the condition's
+aligned column (16) and `.OrderBy(pair => pair switch {` from the argument's level (20), both
+delimited scopes opened earlier on the same line, while the `=`'s continuation is conditional and
+`LevelForNested` never counts one opened on the current line, which is exactly the distinction
+the first row needs — and `IndentKind.AnchoredBlock`, a block whose outer level is the innermost
+anchor's rather than the brace's line's. `VisitBraced` pushes the anchor for a switch expression after `VisitPlanned` has
 emitted the gap before the node, so it records the governing expression's own line, and not under
 `skala_align_multiline_switch_expression`, whose Align scope is already the column the arms nest from.
 

@@ -129,8 +129,8 @@ public enum LineFlags {
     ///     has no room after they have.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The oracle's embedded statement (SK-DIV-0106). A 125-column <c>while (c &amp;&amp; … &amp;&amp;
-    ///     n &lt; 1000000) n++;</c> whose header alone is 120 comes back with every <c>&amp;&amp;</c> on
+    ///     ⚠ The oracle's embedded statement (SK-DIV-0106). A 125-column <c>while (…) n++;</c> whose
+    ///     header alone is 120 comes back with every <c>&amp;&amp;</c> of its condition on
     ///     its own line and <c>n++</c> still after the <c>)</c>: the condition chain was resolved
     ///     against a line that included the statement, and only afterwards did the statement's own
     ///     gap ask whether it fits. An ordinary fill point ends <see cref="LayoutWriter" />'s trailing
@@ -595,6 +595,13 @@ public sealed class Document {
 ///     The group a <see cref="GroupMode.Owner" /> group reads its mode from, or the chain group a
 ///     <see cref="BreaksWithOwner" /> group reads, or −1.
 /// </param>
+/// <param name="ChainLink">
+///     ⚠ One operator of a binary chain: a <see cref="BreaksWithOwner" /> group whose owner is the
+///     chain-wide group and nothing else. <see cref="BreaksWithOwner" /> has a second producer — an
+///     expression body, whose owner is its parameter list — and the two containment rules of
+///     SK-DIV-0109 apply to links alone: a link whose operand holds something certain to break breaks
+///     on its own, and the owner it reports to is measured without its links' own breaks.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -604,4 +611,5 @@ public readonly record struct GroupFacts(
     bool HidesFlatWidthWhenBroken = false,
     bool SpendsIndent = false,
     bool BreaksWithOwner = false,
-    int Owner = -1);
+    int Owner = -1,
+    bool ChainLink = false);

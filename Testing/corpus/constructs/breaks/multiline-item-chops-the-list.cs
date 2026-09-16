@@ -46,6 +46,11 @@ public class MultilineItemChopsTheList {
             || c;
         var r = c ? 1
             + n : 2;
+        if (c
+            || n > 0
+            || a > 0 && b > 0) {
+            return;
+        }
     }
 
     [System.Obsolete("x"

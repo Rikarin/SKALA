@@ -100,7 +100,8 @@ public sealed class IndexerParameterListTests {
 ///     value of the keys that move the <c>where</c>. <c>constructs/breaks/constraint-continuation.cs</c>.
 /// </summary>
 public sealed class ConstraintContinuationTests {
-    const string Source = """
+    const string Source =
+        """
         class T {
             void A<T1>() where T1 : class
                 , new() { }
@@ -539,6 +540,11 @@ public sealed class MultilineItemChopsTheListTests {
                         || c;
                     var r = c ? 1
                         + n : 2;
+                    if (c
+                        || n > 0
+                        || a > 0 && b > 0) {
+                        return;
+                    }
                 }
 
                 int a, b;
@@ -556,6 +562,11 @@ public sealed class MultilineItemChopsTheListTests {
                         ? 1
                         + n
                         : 2;
+                    if (c
+                        || n > 0
+                        || a > 0 && b > 0) {
+                        return;
+                    }
                 }
 
                 int a, b;

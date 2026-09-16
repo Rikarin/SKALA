@@ -96,17 +96,43 @@ public sealed class DocumentBuilder {
     bool[] certain = new bool[512];
 
     /// <summary>
+    ///     Where a node's certainty comes from: 0 for none, 1 when it comes only from
+    ///     <see cref="GroupFacts.BreaksWithOwner" /> links whose source was broken, 2 when a hard line, a
+    ///     group that always breaks or a broken group that is not a link is involved.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Read by the chain-wide owner alone. The owner answers "does the whole chain fit on one
+    ///     line" and must not read its own links' breaks as its answer — but it must still read a
+    ///     multi-line lambda or a chopped list inside an operand, which chops the whole chain today and
+    ///     in the oracle. Measured three ways: <c>a &gt; 0 &amp;&amp; a &lt; 10\n || a == 20</c> comes
+    ///     back unchanged; <c>a &gt; 0\n &amp;&amp; a &lt; 10 || a == 20</c> comes back chopped at both
+    ///     operators, because the <c>||</c> link contains the broken <c>&amp;&amp;</c>; and
+    ///     <c>row is null\n || line != n\n || run.Count &gt; 0 &amp;&amp; !Joins(…)</c> keeps its
+    ///     <c>&amp;&amp;</c> — the links the author broke are certain, the link that contains them is
+    ///     certain, and the owner that contains all three is not, or every link would chop. A width
+    ///     the links' certainty had flowed into by summation was what made it chop (SK-DIV-0109).
+    /// </remarks>
+    byte[] certainOrigin = new byte[512];
+
+    /// <summary>
+    ///     The node's flat width with only strong certainty (<see cref="certainOrigin" /> 2) counted as
+    ///     unbounded: what a chain-wide owner sums its children by.
+    /// </summary>
+    int[] ownerWidth = new int[512];
+
+    /// <summary>
     ///     The groups that own <see cref="GroupFacts.BreaksWithOwner" /> links — a binary chain's
     ///     chain-wide group — which answer "does the whole chain fit on one line" and are the one kind of
     ///     container a certain child does not make unbounded.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Measured both ways, and the asymmetry is the oracle's: <c>a &gt; 0 &amp;&amp; a &lt; 10\n ||
-    ///     a == 20</c> comes back unchanged, while <c>a &gt; 0\n &amp;&amp; a &lt; 10 || a == 20</c>
-    ///     comes back chopped at both operators. The second is the <c>||</c> link containing the broken
+    ///     ⚠ Measured both ways, and the asymmetry is the oracle's: a chain broken at its outer
+    ///     <c>||</c> comes back unchanged, while one broken at its inner <c>&amp;&amp;</c> comes back
+    ///     chopped at both operators. The second is the <c>||</c> link containing the broken
     ///     <c>&amp;&amp;</c> — a child, so it chops. The first would only chop if the chain-wide owner,
     ///     which contains every link, read the <c>||</c>'s break as its own and broke the whole chain,
     ///     which is exactly what SK-DIV-0007 measured the obvious fix doing to two committed fixtures.
+    ///     See <see cref="certainOrigin" /> for the width the owner sums instead.
     /// </remarks>
     readonly HashSet<int> chainOwners = [];
 
@@ -138,7 +164,7 @@ public sealed class DocumentBuilder {
 
         // ⚠ A link is described before its owner closes — inside it — so the set is complete by
         // the time Close() asks. See `chainOwners`.
-        if (facts.BreaksWithOwner && facts.Owner >= 0) {
+        if (facts.ChainLink && facts.Owner >= 0) {
             chainOwners.Add(facts.Owner);
         }
     }
@@ -336,13 +362,20 @@ public sealed class DocumentBuilder {
         var stopped = false;
         var pointStopped = false;
         var childCertain = false;
+        byte childOrigin = 0;
+        var owned = 0;
 
         for (var i = start; i < pending.Count; i++) {
             var child = pending[i];
             children.Add(child);
             childCertain |= certain[child];
+            childOrigin = Math.Max(childOrigin, certainOrigin[child]);
             if (width < Document.Unbounded) {
                 width += flatWidth[child];
+            }
+
+            if (owned < Document.Unbounded) {
+                owned += ownerWidth[child];
             }
 
             // The head stops accumulating at the first child that contains a break of its own.
@@ -365,6 +398,10 @@ public sealed class DocumentBuilder {
             width = Document.Unbounded;
         }
 
+        if (owned > Document.Unbounded) {
+            owned = Document.Unbounded;
+        }
+
         if (point > Document.Unbounded) {
             point = Document.Unbounded;
         }
@@ -378,15 +415,25 @@ public sealed class DocumentBuilder {
             point = count > 1 ? pointWidth[children[childStart + 1]] : 0;
             breaks = count > 1 && this.breaks[children[childStart + 1]];
             childCertain = count > 1 && certain[children[childStart + 1]];
+            childOrigin = count > 1 ? certainOrigin[children[childStart + 1]] : (byte)0;
+            owned = count > 1 ? ownerWidth[children[childStart + 1]] : 0;
         }
 
         // ⚠ A group with a certain child has no flat form — "chop if long *or multiline*", one level
         // up, for every container and not only the delimited lists HidesFlatWidthWhenBroken names.
         // Except the group that owns a chain's links, whose question is whether the whole chain fits
-        // and whose own links' breaks are not its to take. See `certain` and `chainOwners`.
+        // and whose own links' breaks are not its to take: it is measured by `ownerWidth`, which
+        // only strong certainty makes unbounded, so the links' own breaks cannot reach it by
+        // summation either. See `certain`, `certainOrigin` and `chainOwners`.
         var isGroup = frame.Kind == DocKind.Group;
-        if (isGroup && childCertain && !chainOwners.Contains(frame.Arg1)) {
+        if (isGroup && chainOwners.Contains(frame.Arg1)) {
+            width = owned;
+        } else if (isGroup && childCertain) {
             width = Document.Unbounded;
+        }
+
+        if (isGroup && childOrigin == 2) {
+            owned = Document.Unbounded;
         }
 
         // ⚠ A group that always breaks has no flat form, so nothing that contains it has one either.
@@ -403,10 +450,12 @@ public sealed class DocumentBuilder {
             && (GroupMode)frame.Arg0 == GroupMode.Preserve
             && facts[frame.Arg1] is { SourceBroken: true, JoinsIfFits: false, HidesFlatWidthWhenBroken: true }) {
             width = Document.Unbounded;
+            owned = Document.Unbounded;
         }
 
         if (frame.Kind == DocKind.Group && (GroupMode)frame.Arg0 == GroupMode.Break) {
             width = Document.Unbounded;
+            owned = Document.Unbounded;
             head = 0;
             breaks = true;
             for (var i = 0; i < count; i++) {
@@ -422,11 +471,14 @@ public sealed class DocumentBuilder {
         var index = Allocate(frame.Kind, frame.Arg0, frame.Arg1, default, childStart, width, head);
         pointWidth[index] = point;
         this.breaks[index] = breaks;
-        certain[index] = childCertain
-            || isGroup
+        var selfCertain = isGroup
             && ((GroupMode)frame.Arg0 == GroupMode.Break
                 || (GroupMode)frame.Arg0 == GroupMode.Preserve
                 && facts[frame.Arg1] is { SourceBroken: true, JoinsIfFits: false });
+        var selfLink = selfCertain && (GroupMode)frame.Arg0 == GroupMode.Preserve && facts[frame.Arg1].ChainLink;
+        certain[index] = childCertain || selfCertain;
+        certainOrigin[index] = Math.Max(childOrigin, selfCertain ? (selfLink ? (byte)1 : (byte)2) : (byte)0);
+        ownerWidth[index] = owned;
         afterPoint[index] = frame.Kind == DocKind.Group ? MeasureSegments(childStart, count, frame.Arg1) : 0;
         nodes[index].Count = count;
         nodes[index].Flags = alignsCloser ? 1 : 0;
@@ -599,7 +651,10 @@ public sealed class DocumentBuilder {
 
                 // A nested group's point that can break ends the head; one that cannot renders flat
                 // and counts as its flat rendering.
-                if (node.Kind == DocKind.Line && (LineKind)node.Arg0 == LineKind.Soft && !headStopped && CanBreak(node.Arg2)) {
+                if (node.Kind == DocKind.Line
+                    && (LineKind)node.Arg0 == LineKind.Soft
+                    && !headStopped
+                    && CanBreak(node.Arg2)) {
                     headStopped = true;
                 }
 
@@ -644,6 +699,8 @@ public sealed class DocumentBuilder {
             Array.Resize(ref segmentHead, segmentHead.Length * 2);
             Array.Resize(ref breaks, breaks.Length * 2);
             Array.Resize(ref certain, certain.Length * 2);
+            Array.Resize(ref certainOrigin, certainOrigin.Length * 2);
+            Array.Resize(ref ownerWidth, ownerWidth.Length * 2);
         }
 
         ref var node = ref nodes[nodeCount];
@@ -666,6 +723,8 @@ public sealed class DocumentBuilder {
         segmentHead[nodeCount] = 0;
         breaks[nodeCount] = kind == DocKind.Line && (LineKind)arg0 != LineKind.Soft;
         certain[nodeCount] = width >= Document.Unbounded;
+        certainOrigin[nodeCount] = width >= Document.Unbounded ? (byte)2 : (byte)0;
+        ownerWidth[nodeCount] = width;
         return nodeCount++;
     }
 

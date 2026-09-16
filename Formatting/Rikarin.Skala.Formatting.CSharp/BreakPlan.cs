@@ -1783,8 +1783,8 @@ public sealed class BreakPlan {
     ///     break the author wrote on either side of a comma.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Measured on both sides (SK-DIV-0105), and the level is the finding: <c>where T : class\n,
-    ///     new()</c> and <c>where T : class,\n new()</c> both put the next constraint on the
+    ///     ⚠ Measured on both sides (SK-DIV-0105), and the level is the finding: a clause broken before
+    ///     the comma and one broken after it both put the next constraint on the
     ///     <c>where</c>'s own column — at <c>skala_indent_type_constraints</c> true and false, at
     ///     <c>skala_place_type_constraints_on_same_line</c> true and false, and at
     ///     <c>skala_continuous_indent_multiplier = 2</c>, where the <c>where</c> moves and the constraint
@@ -1947,25 +1947,25 @@ public sealed class BreakPlan {
                     BreaksIfTooLong: true,
                     HidesFlatWidthWhenBroken: true
                 ),
-            // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
-            // `Break`, at the first break landing before a `.` — and a group's break point never
-            // goes through `Break`, so a chain that the fitter chops comes out flush with its
-            // receiver:
-            //     text.AppendLine("…")
-            //     .AppendLine("…")
-            // The frame machinery still serves breaks the author wrote; this serves the ones the
-            // fitter adds.
-            // ⚠ `ownLevel` rather than `spendsIndent`, which is the difference between "a level if
-            // no other continuation is open" and "a level, always". A chained call takes one even
-            // inside another continuation and a binary chain does not — the asymmetry
-            // CSharpDocumentBuilder.VisitInner records — and the shape that shows it is an
-            // expression-bodied member whose arrow has already broken:
-            //     static void Member(Packer packer) =>
-            //         packer.Enum(a)
-            //             .Enum(b);      ← two levels, not one
-            // The one-level-per-opening-line collapse in LayoutWriter.Level is what keeps
-            // `var x = a.B()\n    .C();` at one: there the `=`'s scope and the chain's open on the
-            // same line.
+                // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
+                // `Break`, at the first break landing before a `.` — and a group's break point never
+                // goes through `Break`, so a chain that the fitter chops comes out flush with its
+                // receiver:
+                //     text.AppendLine("…")
+                //     .AppendLine("…")
+                // The frame machinery still serves breaks the author wrote; this serves the ones the
+                // fitter adds.
+                // ⚠ `ownLevel` rather than `spendsIndent`, which is the difference between "a level if
+                // no other continuation is open" and "a level, always". A chained call takes one even
+                // inside another continuation and a binary chain does not — the asymmetry
+                // CSharpDocumentBuilder.VisitInner records — and the shape that shows it is an
+                // expression-bodied member whose arrow has already broken:
+                //     static void Member(Packer packer) =>
+                //         packer.Enum(a)
+                //             .Enum(b);      ← two levels, not one
+                // The one-level-per-opening-line collapse in LayoutWriter.Level is what keeps
+                // `var x = a.B()\n    .C();` at one: there the `=`'s scope and the chain's open on the
+                // same line.
                 // ⚠ Except when the chain's head is a parenthesised expression or a tuple, which
                 // takes the level only if nothing else is spending one — `spendsIndent`'s rule, not
                 // `ownLevel`'s (SK-DIV-0112). Under an arrow, an `=` or a `return` that has already
@@ -2388,7 +2388,8 @@ public sealed class BreakPlan {
                 // ⚠ Read together with the mode above: when the forced chop set this group to Break,
                 // the owner is irrelevant — Fitter.Decide answers Broken before it looks at any fact.
                 BreaksWithOwner: true,
-                Owner: ChainOwnerOf(node)
+                Owner: ChainOwnerOf(node),
+                ChainLink: true
             ),
             true
         );
@@ -3965,7 +3966,9 @@ public sealed class BreakPlan {
             default:
                 return byId.TryGetValue(spec.Group, out var plan)
                     && (plan.Mode == GroupMode.Break
-                        || spec.Rule == GapRule.Point && plan.Facts.SourceBroken && !plan.Facts.JoinsIfFits);
+                        || spec.Rule == GapRule.Point
+                        && plan.Facts.SourceBroken
+                        && !plan.Facts.JoinsIfFits);
         }
     }
 
@@ -3977,9 +3980,9 @@ public sealed class BreakPlan {
     /// <remarks>
     ///     ⚠ Measured on both sides (SK-DIV-0111). The oracle leaves <c>for (int i = 0\n, j = 1; …)</c>,
     ///     <c>for (int i = 0; i &lt;\n n; …)</c> and <c>for (int i = F(\n1); …)</c> on one line — each
-    ///     break is one its own construct re-joins — and chops the header for <c>for (int i = 0,\n j =
-    ///     1; …)</c>, <c>for (…; i &lt; n\n &amp;&amp; j &gt; 0; …)</c> and <c>for (…; i +=\n 1)</c>,
-    ///     where the break is kept. Reading the source alone chopped all six.
+    ///     break is one its own construct re-joins — and chops the header for a break kept after a
+    ///     declarator's comma, before a binary operator or after an incrementor's <c>+=</c>. Reading the source alone chopped
+    ///     all six.
     /// </remarks>
     void SettleForHeaders() {
         foreach (var node in forHeaders) {

@@ -155,6 +155,16 @@ public sealed class Fitter {
                     return ResolvedMode.Broken;
                 }
 
+                // ⚠ And a link whose operand holds something certain to break breaks on its own:
+                // `a\n&& b || c` chops at the `||` because the `||` contains the broken `&&`, and
+                // `F(\na\n&& b)\n|| c` for the same reason — the containment SK-DIV-0109 gives every
+                // group, applied to a link that otherwise breaks only with its owner. The owner is
+                // measured without its links' own breaks (DocumentBuilder.ownerWidth), so this is the
+                // only way the author's break at an inner operator reaches the outer one.
+                if (facts.ChainLink && m.FlatWidth >= Unbounded) {
+                    return ResolvedMode.Broken;
+                }
+
                 // ⚠ Preserve does not re-flow the author's breaks away by default. Whether it may
                 // join one that fits, and whether it may add one that the author did not write, are
                 // per-construct facts — see GroupFacts for why one rule is not enough.
