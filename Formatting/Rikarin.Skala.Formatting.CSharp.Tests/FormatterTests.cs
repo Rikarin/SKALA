@@ -990,7 +990,8 @@ public sealed class BreakPositionTests {
         var expected = TrimmedLines(Format.Text(twinSource).Replace(twin, bracket, StringComparison.Ordinal));
         Assert.True(
             expected.SequenceEqual(TrimmedLines(once)),
-            $"a break {position} put the bracket-led tuple on a different shape from its twin:\n{once}\n--- twin ---\n{string.Join('\n', expected)}"
+            $"a break {position} put the bracket-led tuple on a different shape from its twin:\n{once}\n"
+            + $"--- twin ---\n{string.Join('\n', expected)}"
         );
 
         var twice = Format.Text(once);
@@ -1014,7 +1015,8 @@ public sealed class BreakPositionTests {
         var expected = TrimmedLines(Format.Text(twinSource).Replace(twin, bracket, StringComparison.Ordinal));
         Assert.True(
             expected.SequenceEqual(TrimmedLines(once)),
-            $"the bracket-led tuple took a different shape from its twin:\n{once}\n--- twin ---\n{string.Join('\n', expected)}"
+            $"the bracket-led tuple took a different shape from its twin:\n{once}\n"
+            + $"--- twin ---\n{string.Join('\n', expected)}"
         );
 
         var twice = Format.Text(once);
@@ -1035,7 +1037,8 @@ public sealed class BreakPositionTests {
     [Fact]
     public void ABreakBeforeAnOpeningBracket_IsJoinedUnlessTheGapBelongsToAParenthesis() {
         var formatted = Format.Text(
-            "class T {\n  object A() => xs is\n[1, 2];\n  object B() => (\n[1, 2]);\n  object C() => (\n[1, 2], 3);\n  object D() => F(\n[1, 2]);\n}\n"
+            "class T {\n  object A() => xs is\n[1, 2];\n  object B() => (\n[1, 2]);\n"
+            + "  object C() => (\n[1, 2], 3);\n  object D() => F(\n[1, 2]);\n}\n"
         );
 
         Assert.Contains("object A() => xs is [1, 2];", formatted, StringComparison.Ordinal);
