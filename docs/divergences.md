@@ -4698,3 +4698,189 @@ The whitespace pass still verifies its token stream before the controlled brace 
 the rewritten text is reparsed and formatted, and edits are diffed against the original input.
 `Testing/corpus/.editorconfig` opts the oracle fixtures out of brace insertion so their
 whitespace and token-preservation checks continue to test the behavior the oracle supplies.
+
+## SK-DIV-0101 — a body that opens with `(`↵ puts the `(` at the owner's indent, not on the continuation
+
+⚠ **Found beside #368 and reserved by #369**, each row shown identically by the identifier twin on
+`master`. Measured 2026-09-16 with `Testing ask` on 26 shapes; the input is the identifier twin of
+#368's counterexample, an expression body broken after both the arrow and the parenthesis:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `object A() =>` / `(` / `1, 2);` | `(` at the **member's** indent (4), `1, 2)` at 8 | `(` at 8, `1, 2)` at 12 |
+| `object B() => (` / `1, 2);` | the arrow breaks (the body is multi-line), then as above | as above |
+| `var t =` / `(` / `1, 2);` | `(` at the **statement's** indent | one level deeper |
+| `f = () =>` / `(` / `1, 2);` | `(` at the statement's indent | one level deeper |
+| `return` / `(` / `1, 2);` | `(` at the statement's indent, `1, 2)` one level in | one level deeper |
+| `=>` / `(` / `first, second).ToString();` | outdented — the parenthesis is the receiver | one level deeper |
+| `=>` / `(` / `a) ? b : c;` | outdented, and the ternary chopped at `?` and `:` | one level deeper |
+| `=>` / `(` / `a, b) switch { … }` | outdented; arms one level from the `(`'s line | one level deeper |
+| `=>` / `(` / `a) + b;` | **kept on the continuation**, and `+ b` chopped | identical |
+| `=>` / `(` / `a).B` / `.C();` | **kept on the continuation** | `(` identical; see below |
+| `=>` / `((` / `1, 2), 3);` | kept on the continuation — the outer `(` is not broken after | identical |
+| `=>` / `(int)(` / `x);`, `=>` / `!(` / `a);` | kept — the `(` does not start the line | identical |
+| `return (` / `1, 2);`, `var u = (` / `1, 2);` | `1, 2)` one level past the owner's line | identical |
+
+So the rule is that a parenthesis or tuple the author broke the line after, when it heads a body,
+is laid out like an opening brace: the `(` at the owner's own indent, the contents one level in,
+the `)` back at the owner's. The continuation the arrow, the `=`, the lambda's arrow or the
+`return` would otherwise spend on the body is not written. The boundary is measured rather than
+guessed: the operand of a binary expression keeps the continuation, and so does the receiver of a
+call chain the author broke at a dot. At `skala_continuous_indent_multiplier = 2` the `(` still
+sits at the owner's indent and the contents go two indents in — the parenthesis's own scope, as
+everywhere else.
+
+**Decision: fix.** `keep_user_linebreaks` keeps the break; what differed was the column, and there
+was no option, ADR or safety property under Skala's answer. `BreakPlan.HeadsWithAChoppedParenthesis`
+walks the body's left spine — receiver of a member access, an invocation, an element access, a
+conditional access; governing expression of a switch expression; condition of a ternary; operand of
+a postfix `!` — to a parenthesised expression or tuple whose first inner token starts a line in the
+source. For the access kinds the operator must sit on the receiver's last line; ⚠ **not for the
+ternary's `?`**, because the oracle chops a ternary whose condition is multi-line and, asked again
+over its own output, keeps the `(` where it put it — reading that break as a broken chain made
+Skala's second pass undo its first. The arrow's and the `=`'s groups then *hold* their level at
+zero (`GroupPlan.HoldsLevel`) rather than declining it: declined, the member's frame was left
+unspent and the chopped ternary's `?` took it, landing `? b` one level too deep. A lambda's arrow
+and a statement's own break go through the builder's frame rather than a group, and
+`CSharpDocumentBuilder.Break` holds the frame's level the same way.
+
+⚠ **Adjacent and still open**: after such a receiver, a call chain the author broke at a dot puts
+`.C()` one level deeper than the oracle (`=>` / `(` / `a).B` / `.C();` — oracle `.C()` at 8, Skala
+at 12). That is the chain's own level on top of the arrow's, and it is not this entry's: the `(`
+is where the oracle puts it. Not in the fixture for that reason.
+
+- options: none identified; measured with the export's own values and at
+  `skala_continuous_indent_multiplier = 2`.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/chopped-parenthesis-body.cs` and
+  `ChoppedParenthesisBodyTests`.
+
+## SK-DIV-0102 — a condition broken right after its `(` continues one level from the statement, not from the parenthesis
+
+⚠ **Found beside #368 and reserved by #369.** Measured 2026-09-16 with `Testing ask`, at a
+statement indent of 8:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `while (` / `c) {` | `c` at **12** | `c` at 15 — the column after `while (` |
+| `switch (` / `n) {` | 12 | 16 |
+| `foreach (` / `var x in xs) {` | 12 | 17 |
+| `for (` / `var i = 0; i < n; i++) {` | 12, and the header chops at 12 | 13 |
+| `using (` / `var d = …) {`, `lock (` / `xs) {` | 12 | 15, 14 |
+| `do { } while (` / `c);` | 12 | 22 |
+| `if (` / `c) {` | 12 | **12** — `if (` is four columns wide |
+| `while (c` / `&& n > 0) {` | **15**, aligned to the parenthesis | 15 |
+| `switch (n` / `+ 1) {` | 16, aligned | 16 |
+| `foreach (var x in` / `new[] { 1 }) {` | 17, aligned | 17 |
+| the same `while (` / `c)` at `skala_continuous_indent_multiplier = 2` | **16** | — |
+
+`skala_align_multiline_statement_conditions = true` aligns a condition to the column after the
+`(`, and Skala's `IndentKind.Align` scope captured that column and applied it to the next line
+whatever was on the anchor's line. The oracle does not align to a column nothing occupies: with the
+first token of the condition on a new line, the condition takes the ordinary continuation from the
+statement, and the multiplier row says which continuation — the multiplied one, not one indent
+width. The `if (` row is why this survived: the two answers coincide there, and `if` is most of
+what the corpus has.
+
+**Decision: fix.** `LayoutWriter.DemoteEmptyAlignment`: when a break is written on the line an
+alignment scope opened on, with the column still at the anchor, the scope becomes a block at its
+opening level plus one continuation. Decided in the writer because only the writer knows the break
+was taken.
+
+⚠ **Adjacent and still open**: `while (` / `c) n++;` — the oracle keeps the embedded statement on
+the header's closing line and Skala moves it to a line of its own. `PlanEmbeddedStatement` reads a
+multi-line header as an owner that does not fit on one line; the oracle distinguishes a header the
+author broke from one that is too wide. Not this entry's mechanism and not in its fixture.
+
+- options: `skala_align_multiline_statement_conditions` (the scope this demotes),
+  `skala_continuous_indent_multiplier` (the fallback's width).
+- ⚠ status: **fixed**, pinned by `constructs/breaks/condition-after-lpar.cs` and
+  `ConditionAfterLparTests`.
+
+## SK-DIV-0103 — a break after a parameter default's `=` is kept, the value indents, and the list chops
+
+⚠ **Found beside #368 and reserved by #369.** Measured 2026-09-16 with `Testing ask`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `void A(int[] a =` / `[1, 2]) { }` | `void A(` / `int[] a =` / `[1, 2]` / `) { }` — kept, chopped, the value one level past the parameter | `void A(int[] a = [1, 2]) { }` — **joined** |
+| `void B(int a =` / `5) { }` | the same shape with `5` | kept, **list not chopped**, `5` at the parameter's column |
+| `void D(int a` / `= 5) { }` | chopped, `= 5` one level past `int a` | chopped, `= 5` flush with `int a` |
+| `int F(int a =` / `5) => a;` | chopped, then `) =>` / `a;` | kept, not chopped, `=> a` on the line |
+| `int[] field =` / `[1, 2];` | **kept** | **joined** |
+| `int[] Prop { get; } =` / `[1, 2];` | **kept** | **joined** |
+| `int[] local =` / `[1, 2];` | **kept** | **joined** |
+| `int[] other =` / `[` / `1, 2` / `];` | `int[] other = [` — the `=` break goes when the bracket is broken | identical |
+| `[Obsolete(Message =` / `"x")]` | the attribute's arguments chop, `"x"` one level past `Message` | kept, not chopped |
+| `new T { X =` / `1, Y = 2 }` | braces broken, elements chopped, `1` one level past `X` | kept, braces joined |
+| `for (int i =` / `0; …)`, `int[] xs =` / `[1, 2], ys = [3];` | header chopped; declarators chopped | kept, not chopped |
+| `void H(int a = 5 +` / `6)`, `void G(int a = F(` / `1))` | joined — those breaks are not points | joined |
+
+Two mechanisms, and the first is a refuted remark. `PlanAroundEquals` exempted every collection
+expression from `SourceBroken`, with the note that "a bracket that fits on a continuation line still
+gets the `=` break" — **true of the oracle and not of Skala**: with the fact false the group was
+flat unless too long, so `int[] y =` / `[1, 2];` came back joined in every owner. The exemption is
+now the bracket that is itself broken in the source (`ListBreaksInSource`), which is the one case
+the note's measurement was about. The second is "chop if long *or multiline*": a kept `=` break
+makes the item multi-line and the oracle chops the list around it, every list measured. The `=`
+group now hides its flat width when broken, as a nested delimited list already did, and — measured
+on the parameter, the attribute argument and the initializer element — spends its level *inside*
+the delimiter (`GroupPlan.SpendsUnderDelimiters`), which the builder's depth rule refused for every
+undelimited continuation because of `M(` / `a` / `+ b)`, where the oracle spends none.
+
+⚠ **Scoped to the three list items measured.** `using (var d =` / `default(…))` keeps `default`
+on the aligned column with no level added, and `for (int i =` / `0;` adds one — two headers, two
+answers — so the extra level is not applied under a statement header. `int this[int a =` / `5]`
+is not chopped by Skala at all: a `BracketedParameterListSyntax` has no plan, which is a separate
+gap. And a parameter made multi-line by a kept *binary* break — `void C(int a = 5` / `+ 6)` — is
+chopped by the oracle and not by Skala, because a binary chain's group does not hide its flat
+width; same for `F(1` / `+ 2, 3)`. Same class, different break, not this entry's.
+
+- options: `skala_keep_user_linebreaks` (keeps the break), `skala_wrap_parameters_style` and its
+  siblings (the chop), `skala_wrap_before_eq = false` (which side the point is on).
+- ⚠ status: **fixed**, pinned by `constructs/breaks/parameter-default-after-eq.cs` and
+  `ParameterDefaultAfterEqTests`.
+
+## SK-DIV-0104 — a break before a comma is kept in a tuple and a type parameter list, and joined everywhere else
+
+⚠ **Found beside #368 and reserved by #369.** Measured 2026-09-16 with `Testing ask`, under the
+export's `skala_wrap_before_comma = false`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `object A() => ([1, 2]` / `, 3);` | `=>` / `([1, 2]` / `, 3);` — kept, `, 3` one level in, the arrow broken | `=> ([1, 2], 3);` — **joined** |
+| `(1` / `, 2` / `, 3)`, `(a: 1` / `, b: 2)`, `var t = (1` / `, 2);` | kept | joined |
+| `(1` / `,` / `2)` | kept on both sides — the comma on a line of its own | joined |
+| `int G<T` / `, U>() => 0;` | kept, `, U` one level in, then `=>` / `0;` | joined |
+| `int G<T,` / `U>() => 0;` | kept, then `=>` / `0;` | **joined** — the pre-existing after-comma path |
+| `F(1` / `, 2)`, `void D(int a` / `, int b)`, `[1` / `, 2]`, `new[] { 1` / `, 2 }`, `new T { X = 1` / `, Y = 2 }`, `new { A = 1` / `, B = 2 }`, `int a = 1` / `, b = 2;`, `[Obsolete("x"` / `, true)]` | joined | joined |
+| `v switch { (1, _) => 1` / `, _ => 2 }` | `(1, _) => 1,` / `_ => 2` | `(1, _) => 1` / `,` / `_ => 2` — **a comma on a line of its own** |
+| `enum E { A` / `, B }` | `A,` / `B` | `A` / `,` / `B` |
+| `is (1` / `, _)`, `(int a` / `, int b) t`, `Dictionary<int` / `, int>` | kept | kept — unplanned gaps |
+
+The line runs between the constructs with a wrap style of their own, whose commas the oracle
+re-lays, and the two it only fills — a tuple has no `wrap_*` key and a type parameter list wraps at
+its own width — where both sides of every comma stay the author's. `PlanList` flattened the
+comma's other side for every caller; the tuple and the type parameter list now keep a break there
+as a required break, which counts as a break between items, so the owner is multi-line and an
+arrow above it breaks as it does for `(1,` / `2)`. ⚠ Two things found on the way: the type
+parameter list's after-comma points were *fill* points, and a fill re-decides by width, so
+`G<T,` / `U>` was re-joined although the group was planned as broken — pinned now, the way a list
+pattern's item breaks are; and a switch expression's arms and an enum's members planned only the
+gap after each comma, so the gap before it fell through to `keep_user_linebreaks` and Skala wrote
+the comma alone on a line. Both join now. The arrow after a type parameter list that keeps a break
+reads it through `TypeParametersKeepABreak`, because `OwnerListOf` hands the arrow the parameter
+list's group and nothing else.
+
+⚠ **Adjacent and still open**: `where T : class` / `, new()` and `where T : class,` / `new()` both
+put the next constraint at the `where`'s column in the oracle and one level in under Skala — a
+constraint clause spends no continuation there — and a second `where` on its own line moves the
+expression body the way SK-DIV-0098 records. A tuple whose next item is itself multi-line,
+`(1` / `, (2` / `, 3))`, breaks before `(2` under Skala's fill because the item's flat width is
+unbounded, where the oracle keeps `, (2` together. `for (int i = 0` / `, j = 1; …)` joins the
+declarator break under both and Skala still chops the header, because `PlanForHeader` reads the
+source for "any break inside the parentheses". None of these is a comma's side.
+
+- options: `skala_wrap_before_comma` (only `false` measured; at `true` the switch and enum gaps are
+  left as they were), `skala_keep_user_linebreaks`.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/break-before-comma.cs` and
+  `BreakBeforeCommaTests`.
