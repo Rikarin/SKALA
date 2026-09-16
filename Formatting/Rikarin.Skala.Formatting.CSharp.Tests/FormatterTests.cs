@@ -56,7 +56,13 @@ public sealed class SpacingTests {
         "class C { void M() { t.GassingRate = 50.0 .CubicCentimetersPerSecond(); } }",
         "t.GassingRate = 50.0.CubicCentimetersPerSecond();"
     )]
-    [InlineData("class C { string M() => 1 .ToString(); }", "string M() => 1 .ToString();")]
+    // ⚠ `1 .ToString()` closes up. This row asserted the opposite for two commits, on the belief
+    // that `1.ToString()` would lex as a real literal; it does not — the lexer needs a digit after
+    // the dot — and the formatter was inserting the space into correct code. See SpaceRules.
+    [InlineData("class C { string M() => 1 .ToString(); }", "string M() => 1.ToString();")]
+    [InlineData("class C { object M() => 120 .DegreesCelsius(); }", "object M() => 120.DegreesCelsius();")]
+    [InlineData("class C { string M() => 1_000 .ToString(); }", "string M() => 1_000.ToString();")]
+    [InlineData("class C { string M() => 0x1F .ToString(); }", "string M() => 0x1F.ToString();")]
     [InlineData(
         "class C { System.Collections.Generic.List<int> M() => new System.Collections.Generic.List < int > (); }",
         "new System.Collections.Generic.List<int>();"

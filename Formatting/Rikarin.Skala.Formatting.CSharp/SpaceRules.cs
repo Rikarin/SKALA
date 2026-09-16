@@ -819,14 +819,17 @@ public static class SpaceRules {
             return true;
         }
 
-        // `1 .ToString()`: without the space `1.` lexes as the start of a real literal. Only an
-        // unsuffixed decimal integer can consume that dot: `50.0.CubicCentimetersPerSecond()`,
-        // `1e2.ToString()` and `1L.ToString()` already have a lexical boundary and must close up.
-        // ⚠ Testing NumericLiteralToken alone put a space after every real literal; testing the last
-        // character alone also puts one in `v2.Count`, one of the commonest shapes in a real tree.
-        if (IsUnsuffixedDecimalInteger(prev) && b == '.' && !next.IsKind(SyntaxKind.DotDotToken)) {
-            return true;
-        }
+        // ⚠ There is deliberately no rule here for `1.ToString()`. One stood in this spot for two
+        // commits, forcing `1 .ToString()` on the stated ground that "without the space `1.` lexes
+        // as the start of a real literal", and it was false: the C# lexer absorbs the dot into a
+        // real literal only when a *digit* follows it, so `120.DegreesCelsius()`, `1.ToString()`,
+        // `1.e5`, `1.f`, `1._5`, `1_000.Meters()` and `0x1F.ToString()` all tokenise as
+        // NumericLiteral · Dot · Identifier — verified with Roslyn's own `ParseTokens`, and the
+        // rewritten form compiles. The rule was *inserting* the space into correct code, and the
+        // shape had never appeared in the conformance corpus, so nothing but its own unit test ever
+        // measured it. ⚠ Even had the premise held, this is the wrong layer to defend it: the
+        // token-stream promise (SK9099) refuses to write any output whose tokens differ from the
+        // input's, so a genuine re-lex fails closed rather than reaching disk.
 
         // ⚠ `List<Dictionary<int, string>>` — the parser splits `>>` in a type context itself, so
         // forcing a space between two closing angles produces `int> >`, which is what a naive
@@ -839,10 +842,6 @@ public static class SpaceRules {
     }
 
     static bool IsWordChar(char c) => char.IsLetterOrDigit(c) || c is '_' or '@' or '$';
-
-    static bool IsUnsuffixedDecimalInteger(SyntaxToken token) =>
-        token.IsKind(SyntaxKind.NumericLiteralToken)
-        && token.Text.All(static c => c is >= '0' and <= '9' or '_');
 
     static bool Combines(char a, char b) =>
         (a, b) switch {
