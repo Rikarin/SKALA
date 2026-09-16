@@ -371,6 +371,7 @@ public sealed class BreakPlan {
         PlanEmbeddedStatement(node, EmbeddedStatementOf(node));
         PlanOnePerLine(node);
         PlanConstraints(node);
+        PlanConstraintList(node);
 
         // ⚠ Before the switch and before the condition's own operators are walked. The walk is
         // pre-order, so the statement is planned first and `PlanOperator` reads what this recorded.
@@ -1767,6 +1768,51 @@ public sealed class BreakPlan {
                 true
             );
         }
+    }
+
+    /// <summary>
+    ///     The constraints inside one <c>where</c> clause: a fill at the clause's own column, keeping a
+    ///     break the author wrote on either side of a comma.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on both sides (SK-DIV-0105), and the level is the finding: <c>where T : class\n,
+    ///     new()</c> and <c>where T : class,\n new()</c> both put the next constraint on the
+    ///     <c>where</c>'s own column — at <c>skala_indent_type_constraints</c> true and false, at
+    ///     <c>skala_place_type_constraints_on_same_line</c> true and false, and at
+    ///     <c>skala_continuous_indent_multiplier = 2</c>, where the <c>where</c> moves and the constraint
+    ///     moves with it. A list too wide for the margin wraps at the last comma that fits, on the same
+    ///     column. Skala had no plan for these gaps, so <c>keep_user_linebreaks</c> kept them and the
+    ///     clause's frame spent a level on each: one indent past the <c>where</c>, two at the multiplier.
+    ///     <para>
+    ///         Both sides of the comma are kept, as a tuple's are (SK-DIV-0104): there is no
+    ///         <c>wrap_*</c> style over the constraints of one clause for the oracle to re-lay them with.
+    ///         The group spends no indent, and <see cref="CSharpDocumentBuilder" /> gives the clause a
+    ///         frame that pays for nothing, so a pinned break lands on the column the clause started at.
+    ///     </para>
+    /// </remarks>
+    void PlanConstraintList(SyntaxNode node) {
+        if (node is not TypeParameterConstraintClauseSyntax { Constraints.Count: > 1 } clause) {
+            return;
+        }
+
+        var group = NewGroup();
+        var keeps = options.KeepsUserBreaksBetweenItems;
+        var broken = false;
+        foreach (var comma in clause.Constraints.GetSeparators()) {
+            var next = comma.GetNextToken();
+            if (next.IsKind(SyntaxKind.None) || next.SpanStart >= clause.Span.End) {
+                continue;
+            }
+
+            broken |= PlanItemGap(next, group, true, keeps);
+            broken |= PlanOtherSideOfComma(comma, keeps);
+        }
+
+        // ⚠ An inner group, opened by the builder after the `where`, and not one around the clause:
+        // a group around the node makes VisitPlanned emit the gap before the `where` outside the
+        // clause's own scope, and that gap is what `skala_indent_type_constraints` indents when there
+        // is no constraint run to spend the level.
+        DescribeInner(node, group, GroupMode.Preserve, new GroupFacts(keeps && broken, BreaksIfTooLong: true));
     }
 
     /// <summary>A declaration's <c>where</c> clauses, whichever of the four kinds it is.</summary>

@@ -4961,3 +4961,43 @@ incrementor in the oracle and none under Skala, the same shape SK-DIV-0103 recor
   `skala_wrap_multiple_declaration_style` (whose join is the one that was miscounted).
 - ⚠ status: **fixed**, pinned by `constructs/breaks/for-header-surviving-break.cs` and
   `ForHeaderSurvivingBreakTests`.
+
+## SK-DIV-0105 — the constraints inside one `where` clause continue on the `where`'s own column
+
+⚠ **Found beside SK-DIV-0104 and reserved by #370.** Measured 2026-09-16 with `Testing ask`, on a
+method and on a type, under the export and at every key that moves the `where`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `void A<T1>() where T1 : class` / `, new() { }` | `void A<T1>()` / `where T1 : class` / `, new() { }` — `, new()` on the **`where`'s column** (8) | `, new()` at 12 |
+| `where T1 : class,` / `new()` | kept, `new()` at 8 | 12 |
+| `where T1 : class` / `, System.IDisposable` / `, new()` | every constraint at 8 | 12 |
+| a 130-column clause on one line | wrapped at the last comma that fits, continuation at 8 | left whole |
+| the same at `skala_continuous_indent_multiplier = 2` | `where` at 12, `, new()` at **12** | 20 |
+| at `skala_indent_type_constraints = false` | `where` at 4, `, new()` at **4** | 8 |
+| at `skala_place_type_constraints_on_same_line = false` | `where` at 8, `, new()` at 8 | 12 |
+| both keys off | 4 and 4 | 8 |
+
+So the constraints of one clause spend no level of their own: the second constraint follows the
+`where` wherever the keys put it. Three things under Skala's answer, none of them an option. The
+gaps between constraints had no plan, so `keep_user_linebreaks` kept them and the clause's own
+frame — a `TypeParameterConstraintClauseSyntax` owns one — spent a continuation level on each.
+Under a run the clause's `NodeLayout.Continuation` arm opened a second scope of its own, on the
+`where`'s line, which reached only the lines inside the clause. And nothing wrapped a clause too
+wide for the margin.
+
+**Decision: fix.** `PlanConstraintList` gives the constraints a fill — points after each comma,
+pinned where the author broke, and the side before the comma kept too, as a tuple's is — described
+as an *inner* group the builder opens after the keyword, because a group around the clause moved
+the gap before the `where` out of the scope `skala_indent_type_constraints` indents when there is no
+run. The clause's frame is marked as paying for nothing (the `Aligned` frame's rule), and the arm's
+scope opens only without a run, where it is what indents the `where` line itself.
+
+⚠ **Adjacent and still open**: `int E<T1>() where T1 : class` / `, new() => 0;` — the oracle breaks
+the arrow (`, new() =>` / `0;`) because the head is wrapped, which is SK-DIV-0098; Skala keeps
+`=> 0` on the line. Not in the fixture.
+
+- options: `skala_indent_type_constraints`, `skala_place_type_constraints_on_same_line`,
+  `skala_continuous_indent_multiplier`, `skala_keep_user_linebreaks` — all measured, none the cause.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/constraint-continuation.cs` and
+  `ConstraintContinuationTests` (which also pins the three keyed variants).

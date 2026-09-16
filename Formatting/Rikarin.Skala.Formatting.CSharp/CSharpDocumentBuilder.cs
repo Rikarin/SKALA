@@ -618,7 +618,13 @@ public sealed partial class CSharpDocumentBuilder {
                 FrameKind.Unit,
                 false,
                 ResetsDepth: node is AnonymousFunctionExpressionSyntax && !IsSoleLambdaArgument(node),
-                SavedDepth: continuousDepth
+                SavedDepth: continuousDepth,
+
+                // ⚠ A `where` clause's continuation lines take no level: `where T : class\n, new()`
+                // puts the next constraint on the `where`'s own column, at every value of every key
+                // measured (SK-DIV-0105). The frame stays — it bounds what the clause's own breaks
+                // may spend — and pays for nothing, which is what an aligned frame already means.
+                Aligned: node is TypeParameterConstraintClauseSyntax
             )
         );
 
@@ -796,18 +802,45 @@ public sealed partial class CSharpDocumentBuilder {
 
                 return;
 
-            case NodeLayout.Continuation when node is TypeParameterConstraintClauseSyntax:
-                // skala_indent_type_constraints: a `where` clause on its own line is a
-                // continuation of the declaration, and the option says whether it takes a level.
-                if (!options.IndentTypeConstraints) {
-                    VisitChildren(node);
-                    return;
+            // skala_indent_type_constraints: a `where` clause on its own line is a continuation of
+            // the declaration, and the option says whether it takes a level.
+            // ⚠ Only without a constraint run, and this arm used to open the scope under a run too.
+            // Under `skala_place_type_constraints_on_same_line = true` the gap before the `where` is
+            // emitted before the clause is entered and the run's group spends the level for it; a
+            // scope opened here then began on the `where`'s own line and reached only the lines
+            // *inside* the clause, one indent past the keyword. The oracle indents none of them:
+            // `where T : class\n, new()` puts `new()` on the `where`'s own column at both values of
+            // this key, at both values of the placement key, and at a multiplier of 2 (SK-DIV-0105).
+            // Without a run the gap is emitted here, under the scope, which is what puts the
+            // `where` a level in — and the clause's lines after it land on that same level because
+            // the clause's frame pays for nothing (see VisitInner).
+            case NodeLayout.Continuation when node is TypeParameterConstraintClauseSyntax clause: {
+                var indents = options.IndentTypeConstraints && !options.PlaceTypeConstraintsOnSameLine;
+                if (indents) {
+                    OpenIndent(IndentKind.Continuous);
                 }
 
-                OpenIndent(IndentKind.Continuous);
+                // The constraints' own fill (BreakPlan.PlanConstraintList), opened inside the clause
+                // so that the gap before the `where` stays outside it.
+                var hasConstraintList = plan.TryInnerGroup(node, out var constraintList);
+                if (hasConstraintList) {
+                    EmitUpTo(clause.Constraints[0].SpanStart);
+                    doc.DescribeGroup(constraintList.Id, constraintList.Facts);
+                    doc.OpenGroup(constraintList.Mode, constraintList.Id);
+                }
+
                 VisitChildren(node);
-                CloseIndent(IndentKind.Continuous);
+                if (hasConstraintList) {
+                    EmitUpTo(node.Span.End);
+                    doc.Close();
+                }
+
+                if (indents) {
+                    CloseIndent(IndentKind.Continuous);
+                }
+
                 return;
+            }
 
             case NodeLayout.Transparent when node is FileScopedNamespaceDeclarationSyntax fileScoped:
                 VisitFileScopedNamespace(fileScoped);

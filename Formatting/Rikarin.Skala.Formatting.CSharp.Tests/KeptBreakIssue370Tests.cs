@@ -1,3 +1,6 @@
+using Microsoft.CodeAnalysis.Text;
+using Rikarin.Skala.Core.Configuration;
+
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
@@ -88,6 +91,120 @@ public sealed class IndexerParameterListTests {
                     0;
             }
             """
+        );
+}
+
+/// <summary>
+///     SK-DIV-0105: the constraints inside one <c>where</c> clause continue on the <c>where</c>'s own
+///     column — a kept break on either side of a comma and a wrap the margin forces alike — at every
+///     value of the keys that move the <c>where</c>. <c>constructs/breaks/constraint-continuation.cs</c>.
+/// </summary>
+public sealed class ConstraintContinuationTests {
+    const string Source = """
+        class T {
+            void A<T1>() where T1 : class
+                , new() { }
+
+            void B<T1>() where T1 : class,
+                new() { }
+
+            void C<T1>() where T1 : System.Collections.Generic.IEnumerable<int>, System.Collections.Generic.IList<int>, System.IDisposable, new() { }
+        }
+        """;
+
+    static string Under(params (string Key, string Value)[] overrides) {
+        var options = OptionResolver.Resolve(
+            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+            [.. overrides.Select(static pair => new KeyValuePair<string, string>(pair.Key, pair.Value))]
+        ).Options;
+        var once = CSharpFormatter.Format("Test.cs", SourceText.From(Source), options).Formatted;
+        var twice = CSharpFormatter.Format("Test.cs", SourceText.From(once), options).Formatted;
+        Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
+        return once.TrimEnd('\n');
+    }
+
+    [Fact]
+    public void UnderTheExport_TheConstraintSitsOnTheWheresColumn() =>
+        Oracle.Agrees(
+            Source,
+            """
+            class T {
+                void A<T1>()
+                    where T1 : class
+                    , new() { }
+
+                void B<T1>()
+                    where T1 : class,
+                    new() { }
+
+                void C<T1>()
+                    where T1 : System.Collections.Generic.IEnumerable<int>, System.Collections.Generic.IList<int>,
+                    System.IDisposable, new() { }
+            }
+            """
+        );
+
+    [Fact]
+    public void WithoutARun_TheClauseStillTakesItsLevel_AndTheConstraintFollowsIt() =>
+        Assert.Equal(
+            """
+            class T {
+                void A<T1>()
+                    where T1 : class
+                    , new() { }
+
+                void B<T1>()
+                    where T1 : class,
+                    new() { }
+
+                void C<T1>()
+                    where T1 : System.Collections.Generic.IEnumerable<int>, System.Collections.Generic.IList<int>,
+                    System.IDisposable, new() { }
+            }
+            """,
+            Under(("skala_place_type_constraints_on_same_line", "false"))
+        );
+
+    [Fact]
+    public void AtAMultiplierOfTwo_TheConstraintFollowsTheWhere() =>
+        Assert.Equal(
+            """
+            class T {
+                void A<T1>()
+                        where T1 : class
+                        , new() { }
+
+                void B<T1>()
+                        where T1 : class,
+                        new() { }
+
+                void C<T1>()
+                        where T1 : System.Collections.Generic.IEnumerable<int>, System.Collections.Generic.IList<int>,
+                        System.IDisposable, new() { }
+            }
+            """,
+            Under(("skala_continuous_indent_multiplier", "2"))
+        );
+
+    [Fact]
+    public void WithTheIndentKeyOff_BothLinesSitOnTheDeclarationsColumn() =>
+        Assert.Equal(
+            """
+            class T {
+                void A<T1>()
+                where T1 : class
+                , new() { }
+
+                void B<T1>()
+                where T1 : class,
+                new() { }
+
+                void C<T1>()
+                where T1 : System.Collections.Generic.IEnumerable<int>, System.Collections.Generic.IList<int>, System.IDisposable,
+                new() { }
+            }
+            """,
+            Under(("skala_indent_type_constraints", "false"), ("skala_place_type_constraints_on_same_line", "false"))
         );
 }
 
