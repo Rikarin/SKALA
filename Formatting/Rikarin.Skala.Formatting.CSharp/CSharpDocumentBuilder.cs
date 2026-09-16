@@ -267,6 +267,7 @@ public sealed partial class CSharpDocumentBuilder {
         // has to be the outer group or the fitter resolves the inner first and the ordering is
         // inverted.
         var indented = new int[planned.Count];
+        var heldLevels = new bool[planned.Count];
         for (var i = 0; i < planned.Count; i++) {
             var plan = planned[i];
             doc.OpenGroup(plan.Mode, plan.Id);
@@ -282,13 +283,27 @@ public sealed partial class CSharpDocumentBuilder {
             // puts its operands on the pattern's own column and not one indent past it.
             indented[i] = aligned
                 ? 0
-                : (plan.SpendsIndent && CanSpendAContinuationLevel(node) ? 1 : 0)
+                : (plan.SpendsIndent && CanSpendAContinuationLevel(node, plan.SpendsUnderDelimiters) ? 1 : 0)
                 + (plan.OwnLevel && !HeaderPaysForTheOwnLevel() ? 1 : 0);
+
+            // ⚠ A held level is spent, as zero columns: the scope is a marker the writer adds nothing
+            // for, counted as a continuation so that no frame further in spends the level the group
+            // has taken. See GroupPlan.HoldsLevel. The fitter is told the level is not spent, because
+            // the column a break lands on is the owner's.
+            var held = plan.HoldsLevel && indented[i] > 0;
+            if (held) {
+                indented[i] = 0;
+            }
 
             // ⚠ Whether the level is actually spent is decided here and not in the plan, and the
             // fitter needs the answer: the ordering rule asks what column a break inside this group
             // lands on, and that is one level deeper only when this group is the one paying for it.
             doc.DescribeGroup(plan.Id, plan.Facts with { SpendsIndent = indented[i] > 0 });
+
+            if (held) {
+                HoldContinuationLevel();
+                heldLevels[i] = true;
+            }
 
             for (var level = 0; level < indented[i]; level++) {
                 OpenIndent(IndentKind.Continuous);
@@ -322,8 +337,27 @@ public sealed partial class CSharpDocumentBuilder {
                 CloseIndent(IndentKind.Continuous);
             }
 
+            if (heldLevels[i]) {
+                ReleaseContinuationLevel();
+            }
+
             doc.Close();
         }
+    }
+
+    /// <summary>
+    ///     Spends a continuation level as zero columns: a <see cref="IndentKind.None" /> scope the writer
+    ///     adds nothing for, counted in <c>continuousDepth</c> so that nothing further in spends the
+    ///     level again. See <see cref="GroupPlan.HoldsLevel" />.
+    /// </summary>
+    void HoldContinuationLevel() {
+        doc.OpenIndent(IndentKind.None, false, 0);
+        continuousDepth++;
+    }
+
+    void ReleaseContinuationLevel() {
+        continuousDepth--;
+        doc.Close();
     }
 
     /// <summary>
@@ -410,12 +444,17 @@ public sealed partial class CSharpDocumentBuilder {
     ///     already inside another one adds nothing. <c>M(\n a\n + b)</c> takes the parenthesis's level
     ///     and not a second one.
     /// </remarks>
-    bool CanSpendAContinuationLevel(SyntaxNode? node = null) {
+    /// <param name="underDelimiters">
+    ///     <see cref="GroupPlan.SpendsUnderDelimiters" />: an open delimited scope does not refuse the
+    ///     level. The frame test below still applies — a frame that has already spent its level does
+    ///     not spend it twice.
+    /// </param>
+    bool CanSpendAContinuationLevel(SyntaxNode? node = null, bool underDelimiters = false) {
         if (node is not null && IsBinaryChainElement(node)) {
             return false;
         }
 
-        if (continuousDepth != 0) {
+        if (continuousDepth != 0 && !underDelimiters) {
             return false;
         }
 
@@ -2336,7 +2375,19 @@ public sealed partial class CSharpDocumentBuilder {
     void Break(int nextPieceIndex, SyntaxToken nextToken, int blanks, string newLine) {
         var frame = FrameToSpend(nextPieceIndex, nextToken);
         if (frame >= 0) {
-            OpenIndent(IndentKind.Continuous);
+            // ⚠ A parenthesis the author broke the line after, heading a body, is laid out like a
+            // brace: `f = () =>\n(\n    1, 2);` and `return\n(\n    1, 2);` put the `(` at the
+            // statement's own indent. The frame's level is held at zero rather than left unspent —
+            // the same answer BreakPlan.PlanExpressionBody and PlanAroundEquals give through
+            // GroupPlan.HoldsLevel, for the breaks a frame pays for: a lambda's arrow and a
+            // statement's own continuation, which never go through a group. The frame closes it
+            // as it closes any level it spent (SK-DIV-0101).
+            if (nextToken.IsKind(SyntaxKind.OpenParenToken) && HeadsABodyWithAChoppedParenthesis(nextToken)) {
+                HoldContinuationLevel();
+            } else {
+                OpenIndent(IndentKind.Continuous);
+            }
+
             frames[frame] = frames[frame] with { Activated = true };
         }
 
@@ -2394,7 +2445,14 @@ public sealed partial class CSharpDocumentBuilder {
                 continue;
             }
 
-            return continuousDepth == 0 && IsContinuation(nextPieceIndex, nextToken) ? i : -1;
+            // ⚠ A break before an `=` spends the level inside a delimited scope too — the frame-side
+            // half of GroupPlan.SpendsUnderDelimiters. `void D(int a\n = 5)` chops the list and the
+            // oracle puts `= 5` one level past `int a`; the depth rule alone left it flush.
+            var spendsUnderDelimiters = nextToken.IsKind(SyntaxKind.EqualsToken)
+                && nextToken.Parent is EqualsValueClauseSyntax { Parent: ParameterSyntax };
+            return (continuousDepth == 0 || spendsUnderDelimiters) && IsContinuation(nextPieceIndex, nextToken)
+                ? i
+                : -1;
         }
 
         return -1;
@@ -2442,6 +2500,50 @@ public sealed partial class CSharpDocumentBuilder {
 
         return !StartsAUnit(nextToken);
     }
+
+    /// <summary>
+    ///     Whether this <c>(</c> opens the parenthesis <see cref="BreakPlan.HeadsWithAChoppedParenthesis" />
+    ///     describes, for a body whose break is a frame's rather than a group's: a lambda's expression
+    ///     body, or the expression of a <c>return</c>, <c>throw</c> or <c>yield return</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The walk goes up from the token to the body root along the same left spine the plan's
+    ///     predicate walks down, and asks that predicate at the top — so the two cannot disagree about
+    ///     which shapes qualify. An arrow clause's or an equals clause's body is excluded here because
+    ///     those are the group's to decide and their break never reaches <see cref="Break" />.
+    /// </remarks>
+    bool HeadsABodyWithAChoppedParenthesis(SyntaxToken open) {
+        if (open.Parent is not (ParenthesizedExpressionSyntax or TupleExpressionSyntax)) {
+            return false;
+        }
+
+        var body = (ExpressionSyntax)open.Parent;
+        while (body.Parent is ExpressionSyntax parent && IsLeftSpineOf(body, parent)) {
+            body = parent;
+        }
+
+        var owned = body.Parent switch {
+            AnonymousFunctionExpressionSyntax lambda => lambda.ExpressionBody == body,
+            ReturnStatementSyntax statement => statement.Expression == body,
+            ThrowStatementSyntax statement => statement.Expression == body,
+            YieldStatementSyntax statement => statement.Expression == body,
+            _ => false
+        };
+
+        return owned && BreakPlan.HeadsWithAChoppedParenthesis(body, source);
+    }
+
+    static bool IsLeftSpineOf(ExpressionSyntax child, ExpressionSyntax parent) =>
+        parent switch {
+            MemberAccessExpressionSyntax access => access.Expression == child,
+            InvocationExpressionSyntax invocation => invocation.Expression == child,
+            ElementAccessExpressionSyntax element => element.Expression == child,
+            ConditionalAccessExpressionSyntax conditional => conditional.Expression == child,
+            SwitchExpressionSyntax switchExpression => switchExpression.GoverningExpression == child,
+            ConditionalExpressionSyntax ternary => ternary.Condition == child,
+            PostfixUnaryExpressionSyntax postfix => postfix.Operand == child,
+            _ => false
+        };
 
     /// <summary>
     ///     True when the token begins something the layout treats as its own line: a statement, a

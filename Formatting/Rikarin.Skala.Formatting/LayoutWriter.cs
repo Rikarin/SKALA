@@ -934,6 +934,22 @@ public sealed class LayoutWriter {
             }
         }
 
+        // ⚠ An alignment column with nothing on it is a continuation level. `align_multiline_statement_conditions`
+        // anchors the condition on the column after the `(` — and when the author broke the line right
+        // there, the oracle does not align to a column nothing occupies: `while (\n c)` puts `c` one
+        // continuation level in from the statement, not at the `(`'s column plus one, and the same for
+        // `switch (`, `foreach (`, `lock (` and `do { } while (`. An `if (` hid it, because `if (` is
+        // four columns wide and the two numbers coincide. Measured at `continuous_indent_multiplier = 2`
+        // as well: the fallback is the multiplied continuation, eight columns, not one indent width
+        // (SK-DIV-0102).
+        //
+        // Decided here rather than in the builder because only the writer knows whether the break
+        // was taken: a Preserve group's kept break and a hard one both arrive as a line written on
+        // the scope's own opening line with the column still at the anchor. "Nothing written since
+        // the anchor" is the column test below — a piece written after the `(` would have moved
+        // `column` past the level the scope captured.
+        DemoteEmptyAlignment();
+
         // ⚠ remove_spaces_on_blank_lines = true: a pending space before a break is never written,
         // which is also what keeps the formatter from producing trailing whitespace at all. ⚠ A gap
         // `disable_space_changes` preserved is discarded here too, and that is exactly why such a
@@ -956,6 +972,40 @@ public sealed class LayoutWriter {
 
         atLineStart = true;
         column = 0;
+    }
+
+    /// <summary>
+    ///     Turns an <see cref="IndentKind.Align" /> scope that is about to align to an empty column into
+    ///     the continuation level it stands in for.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only the innermost scope, only on its own opening line, and only while the column is still
+    ///     the anchor's. A piece written after the anchor — the <c>(</c> of <c>while ((</c>, an operand —
+    ///     moves <c>column</c> past <see cref="Scope.Level" /> and the alignment stands; a scope opened
+    ///     on an earlier line has content under its column already. The pending space is counted on
+    ///     both sides because <see cref="CurrentColumn" /> counted it when the scope was pushed.
+    ///     <para>
+    ///         The replacement is a block at <c>CloserLevel</c> plus one continuation, which is what the
+    ///         alignment replaced: <c>CloserLevel</c> is the level the scope opened at, and the closing
+    ///         delimiter still returns to it. It is a block and not a relative scope because the alignment
+    ///         it replaces was one — "absolute, and nothing below it applies" — and the one measurement
+    ///         that separates the two, <c>continuous_indent_multiplier = 2</c>, is satisfied either way.
+    ///     </para>
+    /// </remarks>
+    void DemoteEmptyAlignment() {
+        if (scopes.Count == 0) {
+            return;
+        }
+
+        var scope = scopes[^1];
+        if (!scope.IsAlignment || scope.OpenLine != line || scope.Level != column + PendingWidth) {
+            return;
+        }
+
+        scopes[^1] = scope with {
+            Level = scope.CloserLevel + continuousMultiplier * indentWidth,
+            IsAlignment = false
+        };
     }
 
     /// <summary>
