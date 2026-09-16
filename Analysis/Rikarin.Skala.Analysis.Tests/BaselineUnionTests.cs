@@ -150,9 +150,9 @@ public sealed class BaselineUnionTests {
     /// <summary>The <c>results[]</c> elements of a baseline file, keyed by rule id, as JSON.</summary>
     static Dictionary<string, JObject> Results(string path) =>
         ((JArray)JObject.Parse(File.ReadAllText(path))["runs"]![0]!["results"]!)
-            .Cast<JObject>()
-            .GroupBy(static result => (string)result["ruleId"]!)
-            .ToDictionary(static group => group.Key, static group => group.Single(), StringComparer.Ordinal);
+        .Cast<JObject>()
+        .GroupBy(static result => (string)result["ruleId"]!)
+        .ToDictionary(static group => group.Key, static group => group.Single(), StringComparer.Ordinal);
 
     static string V3(JObject result) => (string)result["partialFingerprints"]![Fingerprints.Version3]!;
 

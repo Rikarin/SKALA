@@ -78,7 +78,8 @@ public sealed class SearchValuesAnalyzer : DiagnosticAnalyzer {
         var searchType = search.Construct(model.Compilation.GetSpecialType(SpecialType.System_Char));
         var creation = SyntaxFactory.ParseExpression(
             "global::System.Buffers.SearchValues.Create("
-            + SyntaxFactory.Literal(values) + ")"
+            + SyntaxFactory.Literal(values)
+            + ")"
         );
         if (model.GetSpeculativeSymbolInfo(
                 initializer.SpanStart,

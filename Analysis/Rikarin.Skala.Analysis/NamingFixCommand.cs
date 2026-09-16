@@ -262,7 +262,7 @@ public static class NamingFixCommand {
             var guard = FixCommand.TagGuard(path, beforeText.ToString());
             if (!guard.IsEmpty
                 && (await after.GetTextChangesAsync(before, cancellation).ConfigureAwait(false))
-                    .Any(change => guard.Touches(change.Span))) {
+                .Any(change => guard.Touches(change.Span))) {
                 return new NamingFixOutcome(
                     0,
                     [],

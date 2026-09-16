@@ -160,7 +160,7 @@ public static class UnformatCorpus {
                 .Append(" lines; ")
                 .Append(
                     (originalLines == 0 ? 0 : (double)survivingLines / originalLines)
-                        .ToString("P1", CultureInfo.InvariantCulture)
+                    .ToString("P1", CultureInfo.InvariantCulture)
                 )
                 .AppendLine(" of the original's lines survive unchanged");
 

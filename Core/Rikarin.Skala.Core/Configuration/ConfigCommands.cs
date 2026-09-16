@@ -67,7 +67,7 @@ public static class ConfigCommands {
         var rows = (configuredOnly
                 ? resolution.Resolved.Where(static option => !option.IsDefault || option.Refused is not null)
                 : resolution.Resolved)
-                .ToArray();
+            .ToArray();
         var keyWidth = rows.Length == 0 ? 3 : rows.Max(static option => option.Info.Key.Length);
         var valueWidth = Math.Min(
             28,

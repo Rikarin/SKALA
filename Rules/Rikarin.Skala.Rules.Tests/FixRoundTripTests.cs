@@ -108,7 +108,7 @@ public sealed class FixRoundTripTests {
             .Select(entry => entry.Key
                 + " ×"
                 + (entry.Value - (was.TryGetValue(entry.Key, out var count) ? count : 0))
-                    .ToString(CultureInfo.InvariantCulture)
+                .ToString(CultureInfo.InvariantCulture)
             )
             .ToArray();
 
