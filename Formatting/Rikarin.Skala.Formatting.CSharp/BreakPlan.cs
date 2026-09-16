@@ -2923,7 +2923,7 @@ public sealed class BreakPlan {
                     // whole, `void B(int a =\n        5) { }` (SK-DIV-0103).
                     HidesFlatWidthWhenBroken: true
                 ),
-                SpendsIndent: true,
+                true,
                 SpendsUnderDelimiters: IsAListItemsEquals(node),
 
                 // ⚠ The level is held at zero when the value opens with a parenthesis the author
@@ -3208,7 +3208,7 @@ public sealed class BreakPlan {
                     BreaksIfTooLong: placement == PlacementStyle.IfOwnerIsSingleLine
                     && !options.KeepExistingExprMemberArrangement
                 ),
-                SpendsIndent: true,
+                true,
 
                 // ⚠ At `skala_wrap_before_arrow_with_expressions = true` the break point IS the gap before the
                 // `=>`, and the `=>` is this node's own first token — so the point is written before the
@@ -3217,7 +3217,7 @@ public sealed class BreakPlan {
                 // `wrap_before_*_lpar`; see GroupPlan.LeadingGapInside. Until it was made, `true` never
                 // moved the arrow at all and the key's own fixture came back with the declaration
                 // whole.
-                LeadingGapInside: options.WrapBeforeArrowWithExpressions,
+                options.WrapBeforeArrowWithExpressions,
 
                 // ⚠ The level is held at zero when the body opens with a parenthesis the author
                 // broke after. The oracle writes `object A() =>\n(\n    1, 2);` — the `(` at the
