@@ -897,7 +897,23 @@ public sealed class BreakPlan {
             // of a joinable body — a property pattern's among them — and a parenthesis is left
             // alone because `skala_wrap_before_declaration_lpar` and its siblings are real keys that put
             // one on a line of its own.
-            Flat(open);
+            // ⚠ And not when the bracket follows an opening parenthesis, because that gap is the
+            // parenthesis's and not the bracket's (issue #368). A tuple, a parenthesised expression,
+            // an `if (` and a positional pattern all keep a break the author wrote after their `(`
+            // under `keep_user_linebreaks`, and the oracle keeps it whether the next token is an
+            // identifier or a `[`: `=> (\n[1, 2], 3)` comes back with the break exactly where
+            // `=> (\n1, 2)` does, and an invocation's `F(\n[1, 2])` joins for the same reason
+            // `F(\nx)` does — `skala_keep_existing_invocation_parens_arrangement = false`, the
+            // argument list's own rule on the same gap. Flattening it here was the one place a `[`
+            // decided a gap it did not own, and it was not idempotent: the tuple's group was planned
+            // as broken from the source, the arrow saw a multi-line body and broke, and the writer
+            // then joined the only break that had made it multi-line — so pass two, finding a body
+            // that fits, re-joined the arrow. Measured against the oracle on twelve shapes; the
+            // conformance corpus has no `(\n[` outside an argument list, which is why the fuzzer
+            // found it and the sweep did not.
+            if (!open.GetPreviousToken().IsKind(SyntaxKind.OpenParenToken)) {
+                Flat(open);
+            }
         }
 
         if (wrapAfterOpen && !soleLambda) {

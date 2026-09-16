@@ -943,6 +943,107 @@ public sealed class BreakPositionTests {
         Assert.DoesNotContain("});", formatted, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     Issue #368, the Nightly fuzzer's <c>idempotency</c> counterexample: a tuple whose first element
+    ///     is a collection expression, with the author's break after the <c>(</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The issue predicted the fixed point would be the joined form because it fits. Asked, the
+    ///     oracle keeps the break after the <c>(</c> — <c>keep_user_linebreaks</c>, exactly as it does for
+    ///     <c>=&gt; (\n1, 2)</c> — and breaks after the arrow because the body is then multi-line. So the
+    ///     assertion that pins the right answer is not "it fits" but the twin: the bracket-led tuple must
+    ///     land on the shape the identifier-led one does, at every break position. Before the fix the
+    ///     collection expression's own plan flattened the gap in front of its <c>[</c>, which was the
+    ///     tuple's gap and not the bracket's, so pass one broke the arrow for a body that pass one then
+    ///     wrote on one line, and pass two re-joined it.
+    ///     <para>
+    ///         Compared as trimmed lines rather than bytes: which column the <c>(</c> lands in after
+    ///         <c>=&gt;</c> is a separate, pre-existing divergence from the oracle (it writes the
+    ///         parenthesis at the member's own indent) and is not what this test is about.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    [InlineData("after the arrow", "public double this[int index] =>\n (<X>, (state  is  []   ));")]
+    [InlineData("after the parenthesis", "public double this[int index] => ( \n<X>, (state  is  []   )); ")]
+    [InlineData("after the comma", "public double this[int index] => (<X>,\n (state  is  []   ));")]
+    [InlineData("before the closing parentheses", "public double this[int index] => (<X>, (state  is  []   \n));")]
+    [InlineData("after both the arrow and the parenthesis", "public double this[int index] =>\n (\n<X>, (state  is  []   ));")]
+    public void ATupleLedByACollectionExpression_ConvergesInOnePass_OnTheShapeItsIdentifierTwinTakes(
+        string position,
+        string member
+    ) {
+        const string bracket = "[79421, null]";
+        const string twin = "first";
+        var source = "internal sealed  class T2  {\n  " + member.Replace("<X>", bracket, StringComparison.Ordinal) + "\n}\n";
+        var twinSource = "internal sealed  class T2  {\n  " + member.Replace("<X>", twin, StringComparison.Ordinal) + "\n}\n";
+
+        // ⚠ The shape first, because it is the assertion that pins the answer: a test that only asked
+        // for idempotency would accept pass one keeping the `(`'s break in any shape at all.
+        var once = Format.Text(source);
+        var expected = TrimmedLines(Format.Text(twinSource).Replace(twin, bracket, StringComparison.Ordinal));
+        Assert.True(
+            expected.SequenceEqual(TrimmedLines(once)),
+            $"a break {position} put the bracket-led tuple on a different shape from its twin:\n{once}\n--- twin ---\n{string.Join('\n', expected)}"
+        );
+
+        var twice = Format.Text(once);
+        Assert.True(once == twice, $"a break {position} took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
+    }
+
+    /// <summary>
+    ///     The second Nightly seed (<c>12993839194412201349</c>) was the same defect under a different
+    ///     owner: the tuple is a named argument, and the relocated break chopped the argument list.
+    /// </summary>
+    [Fact]
+    public void ATupleArgumentLedByACollectionExpression_ConvergesInOnePass_OnTheShapeItsIdentifierTwinTakes() {
+        const string bracket = "[1.0m, .. rest]";
+        const string twin = "first";
+        const string member = "class T {\n  void M() {\n    var v113 = new int(name114: (\n<X>, source?.Value?.Count));\n  }\n}\n";
+        var source = member.Replace("<X>", bracket, StringComparison.Ordinal);
+        var twinSource = member.Replace("<X>", twin, StringComparison.Ordinal);
+
+        var once = Format.Text(source);
+        var expected = TrimmedLines(Format.Text(twinSource).Replace(twin, bracket, StringComparison.Ordinal));
+        Assert.True(
+            expected.SequenceEqual(TrimmedLines(once)),
+            $"the bracket-led tuple took a different shape from its twin:\n{once}\n--- twin ---\n{string.Join('\n', expected)}"
+        );
+
+        var twice = Format.Text(once);
+        Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
+    }
+
+    /// <summary>
+    ///     The two halves of the bracket rule, side by side: a break in front of a <c>[</c> is joined
+    ///     where the gap is nobody else's, and kept where it is an opening parenthesis's.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Both measured against the oracle. <c>xs is\n[1, 2]</c> is the case the join was written
+    ///     for (constructs/wrapping/patterns.cs); <c>(\n[1, 2])</c> and <c>(\n[1, 2], 3)</c> come back
+    ///     with the break where the author put it, as <c>(\nx)</c> and <c>(\nx, 3)</c> do. An
+    ///     invocation's <c>F(\n[1, 2])</c> still joins — by the argument list's own rule,
+    ///     <c>skala_keep_existing_invocation_parens_arrangement = false</c>, not by the bracket's.
+    /// </remarks>
+    [Fact]
+    public void ABreakBeforeAnOpeningBracket_IsJoinedUnlessTheGapBelongsToAParenthesis() {
+        var formatted = Format.Text(
+            "class T {\n  object A() => xs is\n[1, 2];\n  object B() => (\n[1, 2]);\n  object C() => (\n[1, 2], 3);\n  object D() => F(\n[1, 2]);\n}\n"
+        );
+
+        Assert.Contains("object A() => xs is [1, 2];", formatted, StringComparison.Ordinal);
+        Assert.Contains("object D() => F([1, 2]);", formatted, StringComparison.Ordinal);
+        Assert.Equal(
+            ["object B() =>", "(", "[1, 2]);", "object C() =>", "(", "[1, 2], 3);"],
+            TrimmedLines(formatted).Where(static line => !line.StartsWith("object A", StringComparison.Ordinal)
+                && !line.StartsWith("object D", StringComparison.Ordinal)
+                && line is not ("class T {" or "}"))
+        );
+        Assert.Equal(formatted, Format.Text(formatted));
+    }
+
+    static string[] TrimmedLines(string text) =>
+        text.Split('\n').Select(static line => line.Trim()).Where(static line => line.Length > 0).ToArray();
+
     [Fact]
     public void NoDocument_EverPutsAnOwnerDependentGroupOutsideItsOwner() {
         // ⚠ The invariant that makes the second pass of docs/plan/04 § "The fitting algorithm" a
