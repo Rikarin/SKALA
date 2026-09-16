@@ -8,7 +8,7 @@ namespace Rikarin.Skala.Server.Tests;
 public sealed class Scratch : IDisposable {
     public Scratch(
         string editorConfig =
-        "root = true\n[*.cs]\nindent_size = 4\nresharper_csharp_new_line_before_open_brace = none\ncsharp_new_line_before_open_brace = none\n"
+            "root = true\n[*.cs]\nindent_size = 4\nresharper_csharp_new_line_before_open_brace = none\ncsharp_new_line_before_open_brace = none\n"
     ) {
         Root = Directory.CreateTempSubdirectory("skala-server-").FullName;
         Directory.CreateDirectory(Path.Combine(Root, ".git"));
