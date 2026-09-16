@@ -1002,10 +1002,7 @@ public sealed class LayoutWriter {
             return;
         }
 
-        scopes[^1] = scope with {
-            Level = scope.CloserLevel + continuousMultiplier * indentWidth,
-            IsAlignment = false
-        };
+        scopes[^1] = scope with { Level = scope.CloserLevel + continuousMultiplier * indentWidth, IsAlignment = false };
     }
 
     /// <summary>

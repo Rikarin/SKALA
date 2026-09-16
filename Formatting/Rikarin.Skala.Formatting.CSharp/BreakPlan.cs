@@ -2330,9 +2330,9 @@ public sealed class BreakPlan {
     /// <remarks>
     ///     ⚠ Mirrors that method's condition exactly, and it is the arrow's only way of seeing it:
     ///     <see cref="OwnerListOf" /> hands the arrow the <em>parameter</em> list's group, and a type
-    ///     parameter list has no group the arrow could read. The oracle writes <c>int G&lt;T,\n U&gt;()
-    ///     =&gt;\n 0;</c> — the arrow breaks for a head the type parameters made two lines, exactly as it
-    ///     does for a chopped parameter list (SK-DIV-0104).
+    ///     parameter list has no group the arrow could read. Given <c>int G&lt;T,\n U&gt;() =&gt; 0;</c>
+    ///     the oracle breaks after the arrow too: the type parameters made the head two lines, exactly
+    ///     as a chopped parameter list does (SK-DIV-0104).
     /// </remarks>
     bool TypeParametersKeepABreak(TypeParameterListSyntax? list) {
         if (list is null || !options.KeepsUserBreaksBetweenItems || options.WrapBeforeTypeParameterLangle) {
@@ -2911,7 +2911,8 @@ public sealed class BreakPlan {
                 // oracle keeps the break in every one and joins only `=\n[\n 1, 2\n]`, whose bracket
                 // chops (issue #369, SK-DIV-0103). So the exemption is the bracket that breaks, read
                 // off the source the same way the collection expression's own plan reads it.
-                options.KeepsUserBreaksBetweenItems && broken
+                options.KeepsUserBreaksBetweenItems
+                && broken
                 && !(value is CollectionExpressionSyntax collection && ListBreaksInSource(collection)),
 
                 // ⚠ `prefer_wrap_around_eq`, and the reason milestone 2 stopped at presence. The
@@ -3114,7 +3115,8 @@ public sealed class BreakPlan {
 
         foreach (var comma in collection.Elements.GetSeparators()) {
             var next = comma.GetNextToken();
-            if (!next.IsKind(SyntaxKind.None) && next.SpanStart < collection.CloseBracketToken.SpanStart
+            if (!next.IsKind(SyntaxKind.None)
+                && next.SpanStart < collection.CloseBracketToken.SpanStart
                 && (BreaksBefore(next) || BreaksBefore(comma))) {
                 return true;
             }
