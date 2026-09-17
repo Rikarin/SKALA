@@ -37,7 +37,18 @@ public enum GapRule {
     ///     it. An embedded statement's gap under <c>keep_existing_embedded_arrangement</c>
     ///     (SK-DIV-0106). See <see cref="LineFlags.LastResort" />.
     /// </summary>
-    LastResortPoint
+    LastResortPoint,
+
+    /// <summary>
+    ///     A point of a group that lies <em>after</em> the group's own last token — the gap between an
+    ///     attribute section's <c>]</c> and the parameter it decorates (SK-DIV-0114). It breaks with the
+    ///     group like any point, but the rest-of-line measure the group is resolved against runs through
+    ///     it: the gap breaks only if the group does, so a group asking "do I fit flat?" must count what
+    ///     follows the gap as still on its line. Measured as an ordinary point, a 126-column
+    ///     <c>[Obsolete("…", true)] int a</c> saw its line end at the <c>]</c> and left the arguments
+    ///     whole.
+    /// </summary>
+    FollowingPoint
 }
 
 /// <summary>One gap's rule.</summary>
@@ -421,8 +432,8 @@ public sealed class BreakPlan {
                 );
                 return;
 
-            case AttributeArgumentListSyntax attributeArguments:
-                PlanList(
+            case AttributeArgumentListSyntax attributeArguments: {
+                var arguments = PlanList(
                     node,
                     attributeArguments.OpenParenToken,
                     attributeArguments.CloseParenToken,
@@ -435,7 +446,18 @@ public sealed class BreakPlan {
                     options.MaxInvocationArgumentsOnLine,
                     wrapBeforeOpen: options.WrapBeforeInvocationLpar
                 );
+
+                // ⚠ A parameter's single attribute whose arguments chop pushes the parameter below the
+                // `]` exactly as a section of several attributes does (SK-DIV-0114): the oracle writes
+                // `[Obsolete(\n "x",\n true\n)]\n int a`. The section itself has no group to read, so
+                // the gap after its `]` is a point of the arguments' — see PlanAttributeList.
+                if (arguments >= 0
+                    && attributeArguments.Parent is AttributeSyntax { Parent: AttributeListSyntax { Attributes.Count: 1 } section }) {
+                    FollowingPoint(OwnerTokenAfter(section), arguments);
+                }
+
                 return;
+            }
 
             case ParameterListSyntax { Parent: TypeDeclarationSyntax } primaryParameters:
                 // ⚠ A primary constructor has its own four keys, and they do not agree with the
@@ -547,6 +569,18 @@ public sealed class BreakPlan {
                     conventions.CallingConventions
                 );
 
+                return;
+
+            case AttributeListSyntax { Attributes.Count: > 1 } attributes:
+                PlanAttributeList(attributes);
+                return;
+
+            // ⚠ A parameter's single attribute stays on the parameter's line however the author
+            // broke after the `]`: `[Obsolete]\n int a` comes back as `[Obsolete] int a`, and so does
+            // a type parameter's and a lambda parameter's (SK-DIV-0114). `Flat`, so that the point the
+            // attribute's own arguments register above still wins when they chop.
+            case AttributeListSyntax { Attributes.Count: 1 } single:
+                Flat(OwnerTokenAfter(single));
                 return;
 
             case ForStatementSyntax forStatement:
@@ -984,7 +1018,7 @@ public sealed class BreakPlan {
     ///     business taking. A break kept this way counts as a break between items: the owner is
     ///     multi-line, and an arrow above it breaks exactly as it does for <c>(1,\n 2)</c>.
     /// </param>
-    void PlanList<T>(
+    int PlanList<T>(
         SyntaxNode node,
         SyntaxToken open,
         SyntaxToken close,
@@ -1002,7 +1036,7 @@ public sealed class BreakPlan {
     )
         where T : SyntaxNode {
         if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None) || items.Count == 0) {
-            return;
+            return -1;
         }
 
         // ⚠ The counter wins over everything else, joining included: over the cap the construct is
@@ -1099,7 +1133,7 @@ public sealed class BreakPlan {
             // `grid\n[0, 1]` with the bracket one level in; the gap before an attribute list's `[`
             // is its owner's — a member's, a parameter's — and no list plan owns it.
             if (!open.GetPreviousToken().IsKind(SyntaxKind.OpenParenToken)
-                && node is not (BracketedArgumentListSyntax or AttributeListSyntax)) {
+                && open.Parent is not (BracketedArgumentListSyntax or AttributeListSyntax)) {
                 Flat(open);
             }
         }
@@ -1209,6 +1243,8 @@ public sealed class BreakPlan {
             // under `skala_wrap_before_extends_colon`; see GroupPlan.LeadingGapInside.
             leadingGapInside: wrapBeforeOpen
         );
+
+        return group;
     }
 
     /// <summary>
@@ -1602,7 +1638,7 @@ public sealed class BreakPlan {
     ///         own; the same inputs with <c>F(</c> for <c>(</c> all come back joined (SK-DIV-0104).
     ///     </para>
     /// </remarks>
-    void PlanFilledList<T>(SyntaxNode node, SyntaxToken open, SyntaxToken close, SeparatedSyntaxList<T> items)
+    int PlanFilledList<T>(SyntaxNode node, SyntaxToken open, SyntaxToken close, SeparatedSyntaxList<T> items)
         where T : SyntaxNode =>
         PlanList(
             node,
@@ -1616,6 +1652,47 @@ public sealed class BreakPlan {
             false,
             keepsBreakOnEitherSideOfComma: true
         );
+
+    /// <summary>
+    ///     Several attributes in one section, <c>[A, B,\n C]</c>: a fill, and an owner that leaves the
+    ///     section's line once the section spans lines.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Had no plan at all (SK-DIV-0114, issue #371). Measured on a method, a type, a field, a
+    ///     property, an accessor, a <c>return:</c> target, a parameter, a type parameter and a lambda's
+    ///     parameter: a kept break after a comma, before one, after the <c>[</c> or before the <c>]</c>
+    ///     comes back as written, a section past the margin fills at its commas, and the attributes
+    ///     after the first line up under the <em>first attribute</em> — <c>[Obsolete,\n Serializable]</c>
+    ///     with <c>Serializable</c> one column past the bracket, <c>[return: Obsolete,\n CLSCompliant]</c>
+    ///     with it under <c>Obsolete</c>. That column is
+    ///     <see cref="CSharpDocumentBuilder.AlignsFromOwnColumn" />'s, without a key: no
+    ///     <c>align_*</c> option in the export changes it.
+    ///     <para>
+    ///         ⚠ A parameter or a type parameter leaves the section's line exactly when the section
+    ///         spans lines — kept or filled, the same — and stays on it otherwise, joining even a break the
+    ///         author wrote after the <c>]</c>: <c>[Obsolete, Serializable]\n int a</c> comes back on one
+    ///         line, <c>[Obsolete,\n Serializable] int a</c> with <c>int a</c> below the <c>]</c>. So the
+    ///         gap after the <c>]</c> is a point of the section's own group: flat with the group, broken
+    ///         with it. A member's gap belongs to <see cref="PlanAttributes" /> and its placement key,
+    ///         registered first, and a point never overrides one.
+    ///     </para>
+    /// </remarks>
+    void PlanAttributeList(AttributeListSyntax node) {
+        var group = PlanFilledList(node, node.OpenBracketToken, node.CloseBracketToken, node.Attributes);
+        if (group >= 0) {
+            FollowingPoint(OwnerTokenAfter(node), group);
+        }
+    }
+
+    /// <summary>
+    ///     The token after an attribute section whose gap the section's own layout decides — a
+    ///     parameter's or a type parameter's — or none where <see cref="PlanAttributes" /> and a
+    ///     placement key own it: a member's, an accessor's, a statement's, a primary constructor's.
+    /// </summary>
+    static SyntaxToken OwnerTokenAfter(AttributeListSyntax section) =>
+        section.Parent is ParameterSyntax { Parent.Parent: not TypeDeclarationSyntax } or TypeParameterSyntax
+            ? section.CloseBracketToken.GetNextToken()
+            : default;
 
     /// <summary>
     ///     <c>skala_wrap_for_stmt_header_style = chop_if_long</c>: a <c>for</c> header that does not fit puts
@@ -3388,7 +3465,7 @@ public sealed class BreakPlan {
     bool HeadsWithAChoppedParenthesis(ExpressionSyntax? body) => HeadsWithAChoppedParenthesis(body, source);
 
     /// <summary>Whether <paramref name="source" /> holds a line break in the gap before this token.</summary>
-    static bool BreaksBeforeIn(string source, SyntaxToken token) {
+    internal static bool BreaksBeforeIn(string source, SyntaxToken token) {
         if (token.IsKind(SyntaxKind.None)) {
             return false;
         }
@@ -4154,6 +4231,22 @@ public sealed class BreakPlan {
             lastResort ? GapRule.LastResortPoint : fill ? GapRule.FillPoint : GapRule.Point,
             group
         );
+    }
+
+    /// <summary>
+    ///     A point of a group that lies after the group's last token, measured through by everything
+    ///     before it. See <see cref="GapRule.FollowingPoint" />.
+    /// </summary>
+    void FollowingPoint(SyntaxToken token, int group) {
+        if (token.IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        if (gaps.TryGetValue(token.SpanStart, out var existing) && existing.Rule != GapRule.Flat) {
+            return;
+        }
+
+        gaps[token.SpanStart] = new(GapRule.FollowingPoint, group);
     }
 
     /// <summary>A point the source broke stays broken; one it did not stays flat.</summary>

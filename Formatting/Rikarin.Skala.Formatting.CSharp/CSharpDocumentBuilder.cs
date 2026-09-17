@@ -163,6 +163,7 @@ public sealed partial class CSharpDocumentBuilder {
             // ⚠ The first declarator, past the type. A VariableDeclarationSyntax starts at its type
             // and the oracle aligns the second declarator under the first one's name.
             VariableDeclarationSyntax { Variables: [{ } declarator, ..] } => declarator.SpanStart,
+
             _ => node.SpanStart
         };
 
@@ -226,6 +227,29 @@ public sealed partial class CSharpDocumentBuilder {
                 options.AlignMultilineTypeParameterList && !options.WrapBeforeTypeParameterLangle,
             _ => false
         };
+
+    /// <summary>
+    ///     Several attributes in one section line up under the first one, and no key says so
+    ///     (SK-DIV-0114): <c>[Obsolete,\n Serializable]</c> one column past the bracket,
+    ///     <c>[return: Obsolete,\n CLSCompliant(true)]</c> under <c>Obsolete</c>, at every value of every
+    ///     <c>align_*</c> key in the export. See <c>BreakPlan.PlanAttributeList</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not after <c>[\n</c>: there is nothing on the bracket's line to align to and the oracle
+    ///     gives the attributes the bracket's continuation level. The source is the right witness,
+    ///     because nothing plans a break after a <c>[</c> — a kept one is the only kind there is.
+    ///     <para>
+    ///         ⚠ The scope is the tuple-components one — opened inside <see cref="VisitDelimited" /> once
+    ///         the first attribute's column is known, and closed before the <c>]</c> — rather than
+    ///         <see cref="Visit" />'s, which wraps the whole node: the oracle puts a <c>]</c> the author
+    ///         gave a line of its own back on the owner's indent, and a scope around the node cannot
+    ///         let the bracket out.
+    ///     </para>
+    /// </remarks>
+    static bool IsAnAlignedAttributeSection(SyntaxNode node, string source) =>
+        node is AttributeListSyntax { Attributes: [{ } first, ..] } attributes
+        && attributes.Attributes.Count > 1
+        && !BreakPlan.BreaksBeforeIn(source, first.GetFirstToken());
 
     void VisitPlanned(SyntaxNode node) {
         var planned = plan.GroupsOf(node);
@@ -1269,10 +1293,11 @@ public sealed partial class CSharpDocumentBuilder {
         // component's. Opening it around the node — the way `Visit` does — would read the `(`'s own
         // column and land one to the left.
         var innerIndent = node is TupleExpressionSyntax && options.AlignTupleComponents
-            ? IndentKind.Align
-            : singleInsideParens
-                ? IndentKind.OneLevel
-                : IndentKind.Continuous;
+            || IsAnAlignedAttributeSection(node, source)
+                ? IndentKind.Align
+                : singleInsideParens
+                    ? IndentKind.OneLevel
+                    : IndentKind.Continuous;
 
         // ⚠ Which delimited scopes spend their level unconditionally — that is, even when another
         // scope opened on the same line — and which are collapsed with it. Both answers come from
@@ -1391,6 +1416,13 @@ public sealed partial class CSharpDocumentBuilder {
                 pending = 0;
 
                 if (opened == 0 && levels > 0 && token.SpanStart == open.SpanStart) {
+                    // ⚠ An attribute section's alignment column is the first attribute's, which is
+                    // past a `return:` target when there is one; the scope opens once that much is
+                    // written. See IsAnAlignedAttributeSection.
+                    if (scopeKind == IndentKind.Align && node is AttributeListSyntax { Attributes: [{ } first, ..] }) {
+                        EmitLeadingGapAt(first.SpanStart);
+                    }
+
                     for (var i = 0; i < levels; i++) {
                         // ⚠ Both scopes are unconditional when there are two, and it has to be both.
                         // `outside_and_inside` means "the contents take two levels" and both open on
@@ -2371,6 +2403,7 @@ public sealed partial class CSharpDocumentBuilder {
                 case GapRule.Point:
                 case GapRule.FillPoint:
                 case GapRule.LastResortPoint:
+                case GapRule.FollowingPoint:
                     if (preserved is not null) {
                         doc.Space(preserved);
                     }
@@ -2378,12 +2411,12 @@ public sealed partial class CSharpDocumentBuilder {
                     doc.BreakPoint(
                         spec.Group,
                         preserved is null && FlatGapSpace(previous, nextKind, nextToken, gap) != SpaceKind.Forbidden,
-                        spec.Rule != GapRule.Point,
+                        spec.Rule is GapRule.FillPoint or GapRule.LastResortPoint,
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                         ? DefaultNewLine()
                         : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine(),
-                        spec.Rule == GapRule.LastResortPoint,
+                        spec.Rule is GapRule.LastResortPoint or GapRule.FollowingPoint,
                         IsADelimitedTupleItem(nextToken) || StartsATypeArgument(nextToken),
                         StartsATupleItem(nextToken)
                     );
