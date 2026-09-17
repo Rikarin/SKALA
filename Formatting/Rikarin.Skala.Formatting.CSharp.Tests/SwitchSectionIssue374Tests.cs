@@ -51,7 +51,8 @@ public sealed class SwitchSectionIssue374Tests {
             .SkipWhile(static line => !line.StartsWith("    void S(", StringComparison.Ordinal)
                 && !line.StartsWith("    int S(", StringComparison.Ordinal)
                 && !line.StartsWith("    async ", StringComparison.Ordinal)
-                && !line.StartsWith("    System.Collections", StringComparison.Ordinal))
+                && !line.StartsWith("    System.Collections", StringComparison.Ordinal)
+            )
             .Skip(1)
             .TakeWhile(static line => line != "    }")
             .Select(static line => line.Length > 8 ? line[8..] : line.TrimStart())
@@ -105,18 +106,67 @@ public sealed class SwitchSectionIssue374Tests {
     ///     statement — keeps the label's line.
     /// </summary>
     [Theory]
-    [InlineData("void S(object o) { switch (o) { case 1: break; case 2: break; } }", "case 1: break;", "case 2: break;")]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: break; case 2: break; } }",
+        "case 1: break;",
+        "case 2: break;"
+    )]
     [InlineData("void S(object o) { switch (o) { case 1: M(); break; } }", "case 1: M(); break;")]
-    [InlineData("void S(object o) { switch (o) { case 1: x = 1; break; case 2: x++; break; } }", "case 1: x = 1; break;", "case 2: x++; break;")]
-    [InlineData("int S(object o) { switch (o) { case 1: return 1; default: return 0; } }", "case 1: return 1;", "default: return 0;")]
-    [InlineData("void S(object o) { switch (o) { case 1: break; default: throw new System.Exception(); } }", "case 1: break;", "default: throw new System.Exception();")]
-    [InlineData("void S(object o) { switch (o) { case 1: goto case 2; case 2: break; } }", "case 1: goto case 2;", "case 2: break;")]
-    [InlineData("void S(object o) { while (true) { switch (o) { case 1: continue; } } }", "while (true) {", "    switch (o) {", "        case 1: continue;", "    }", "}")]
-    [InlineData("System.Collections.Generic.IEnumerable<int> S(object o) { switch (o) { case 1: yield return 1; break; case 2: yield break; } }", "case 1: yield return 1; break;", "case 2: yield break;")]
-    [InlineData("void S(object o) { switch (o) { case 1: Run(() => { M(); }); break; } }", "case 1: Run(() => { M(); }); break;")]
-    [InlineData("async System.Threading.Tasks.Task S(object o) { switch (o) { case 1: await System.Threading.Tasks.Task.Delay(1); break; } }", "case 1: await System.Threading.Tasks.Task.Delay(1); break;")]
-    [InlineData("void S(object o) { switch (o) { case 1: M(); break; case int i when i > 2: M(); break; case string { Length: 3 }: break; } }", "case 1: M(); break;", "case int i when i > 2: M(); break;", "case string { Length: 3 }: break;")]
-    [InlineData("void S(object o) { switch (o) { case 1: M(); break; } M(); }", "switch (o) {", "    case 1: M(); break;", "}", "", "M();")]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: x = 1; break; case 2: x++; break; } }",
+        "case 1: x = 1; break;",
+        "case 2: x++; break;"
+    )]
+    [InlineData(
+        "int S(object o) { switch (o) { case 1: return 1; default: return 0; } }",
+        "case 1: return 1;",
+        "default: return 0;"
+    )]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: break; default: throw new System.Exception(); } }",
+        "case 1: break;",
+        "default: throw new System.Exception();"
+    )]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: goto case 2; case 2: break; } }",
+        "case 1: goto case 2;",
+        "case 2: break;"
+    )]
+    [InlineData(
+        "void S(object o) { while (true) { switch (o) { case 1: continue; } } }",
+        "while (true) {",
+        "    switch (o) {",
+        "        case 1: continue;",
+        "    }",
+        "}"
+    )]
+    [InlineData(
+        "System.Collections.Generic.IEnumerable<int> S(object o) { switch (o) { case 1: yield return 1; break; case 2: yield break; } }",
+        "case 1: yield return 1; break;",
+        "case 2: yield break;"
+    )]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: Run(() => { M(); }); break; } }",
+        "case 1: Run(() => { M(); }); break;"
+    )]
+    [InlineData(
+        "async System.Threading.Tasks.Task S(object o) { switch (o) { case 1: await System.Threading.Tasks.Task.Delay(1); break; } }",
+        "case 1: await System.Threading.Tasks.Task.Delay(1); break;"
+    )]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: M(); break; case int i when i > 2: M(); break; case string { Length: 3 }: break; } }",
+        "case 1: M(); break;",
+        "case int i when i > 2: M(); break;",
+        "case string { Length: 3 }: break;"
+    )]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: M(); break; } M(); }",
+        "switch (o) {",
+        "    case 1: M(); break;",
+        "}",
+        "",
+        "M();"
+    )]
     public void ASimpleSection_KeepsTheLabelsLine(string member, params string[] expectedSectionLines) {
         // A row that starts at a label is the switch's contents; any other row is the whole body.
         var isSections = expectedSectionLines[0].StartsWith("case", StringComparison.Ordinal)
@@ -133,19 +183,71 @@ public sealed class SwitchSectionIssue374Tests {
     ///     source wrote and whichever statement is the second one.
     /// </summary>
     [Theory]
-    [InlineData("void S(object o) { switch (o) { case 1: M(); M(); break; } }", "case 1:", "    M();", "    M();", "    break;")]
-    [InlineData("void S(object o) { switch (o) { case 1: M(); M(); M(); break; } }", "case 1:", "    M();", "    M();", "    M();", "    break;")]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: M(); M(); break; } }",
+        "case 1:",
+        "    M();",
+        "    M();",
+        "    break;"
+    )]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: M(); M(); M(); break; } }",
+        "case 1:",
+        "    M();",
+        "    M();",
+        "    M();",
+        "    break;"
+    )]
     [InlineData("void S(object o) { switch (o) { case 1: M(); return; } }", "case 1:", "    M();", "    return;")]
-    [InlineData("void S(object o) { switch (o) { case 1: M(); goto case 2; case 2: break; } }", "case 1:", "    M();", "    goto case 2;", "case 2: break;")]
-    [InlineData("void S(object o) { switch (o) { case 1: M(); throw new System.Exception(); } }", "case 1:", "    M();", "    throw new System.Exception();")]
-    [InlineData("void S(object o) { switch (o) { case 1: x = 1; x = 2; break; } }", "case 1:", "    x = 1;", "    x = 2;", "    break;")]
-    [InlineData("void S(object o) { switch (o) { case 1: var y = 1; break; } }", "case 1:", "    var y = 1;", "    break;")]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: M(); goto case 2; case 2: break; } }",
+        "case 1:",
+        "    M();",
+        "    goto case 2;",
+        "case 2: break;"
+    )]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: M(); throw new System.Exception(); } }",
+        "case 1:",
+        "    M();",
+        "    throw new System.Exception();"
+    )]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: x = 1; x = 2; break; } }",
+        "case 1:",
+        "    x = 1;",
+        "    x = 2;",
+        "    break;"
+    )]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: var y = 1; break; } }",
+        "case 1:",
+        "    var y = 1;",
+        "    break;"
+    )]
     [InlineData("void S(object o) { switch (o) { case 1: int y = 1; } }", "case 1:", "    int y = 1;")]
     [InlineData("void S(object o) { switch (o) { case 1: M(); } }", "case 1: M();")]
     [InlineData("void S(object o) { switch (o) { case 1: if (x > 0) M(); } }", "case 1:", "    if (x > 0) M();")]
-    [InlineData("void S(object o) { switch (o) { case 1: if (x > 0) M(); break; } }", "case 1:", "    if (x > 0) M();", "    break;")]
-    [InlineData("void S(object o) { switch (o) { case 1: lock (o) M(); break; } }", "case 1:", "    lock (o) M();", "    break;")]
-    [InlineData("void S(object o) { switch (o) { case 1: M(); break; default: M(); M(); break; } }", "case 1: M(); break;", "default:", "    M();", "    M();", "    break;")]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: if (x > 0) M(); break; } }",
+        "case 1:",
+        "    if (x > 0) M();",
+        "    break;"
+    )]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: lock (o) M(); break; } }",
+        "case 1:",
+        "    lock (o) M();",
+        "    break;"
+    )]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: M(); break; default: M(); M(); break; } }",
+        "case 1: M(); break;",
+        "default:",
+        "    M();",
+        "    M();",
+        "    break;"
+    )]
     public void AnyOtherSection_BreaksOneStatementPerLine(string member, params string[] expectedSectionLines) =>
         Assert.Equal(["switch (o) {", .. expectedSectionLines.Select(static line => "    " + line), "}"], Body(member));
 
@@ -154,14 +256,27 @@ public sealed class SwitchSectionIssue374Tests {
     ///     stays together; a braced section opens on its label and is expanded by the block's rule.
     /// </summary>
     [Theory]
-    [InlineData("void S(object o) { switch (o) { case 1: case 2: break; case 3: case 4: M(); break; } }", "case 1:", "case 2: break;", "case 3:", "case 4: M(); break;")]
-    [InlineData("void S(object o) { switch (o) { case 1: { M(); break; } } }", "case 1: {", "    M();", "    break;", "}")]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: case 2: break; case 3: case 4: M(); break; } }",
+        "case 1:",
+        "case 2: break;",
+        "case 3:",
+        "case 4: M(); break;"
+    )]
+    [InlineData(
+        "void S(object o) { switch (o) { case 1: { M(); break; } } }",
+        "case 1: {",
+        "    M();",
+        "    break;",
+        "}"
+    )]
     [InlineData("void S(object o) { switch (o) { case 1:\n case 2: break; } }", "case 1:", "case 2: break;")]
     public void LabelsAndBracedSections(string member, params string[] expectedSectionLines) =>
         Assert.Equal(["switch (o) {", .. expectedSectionLines.Select(static line => "    " + line), "}"], Body(member));
 
     [Fact]
-    public void AnEmptySwitch_StaysTogether() => Assert.Equal(["switch (o) { }"], Body("void S(object o) { switch (o) { } }"));
+    public void AnEmptySwitch_StaysTogether() =>
+        Assert.Equal(["switch (o) { }"], Body("void S(object o) { switch (o) { } }"));
 
     /// <summary>
     ///     The sections are one per line wherever the source put the braces: on the first section's
@@ -209,7 +324,11 @@ public sealed class SwitchSectionIssue374Tests {
     [InlineData(101, false, "case 1:", "    {0}();", "    break;")]
     [InlineData(94, true, "case 1:", "    {0}(); break;")]
     [InlineData(95, true, "case 1:", "    {0}();", "    break;")]
-    public void ASimpleSectionAtTheMargin_FillsAsTheOracleDoes(int nameWidth, bool labelBreakKept, params string[] expectedSectionLines) {
+    public void ASimpleSectionAtTheMargin_FillsAsTheOracleDoes(
+        int nameWidth,
+        bool labelBreakKept,
+        params string[] expectedSectionLines
+    ) {
         var name = new string('M', nameWidth);
         var gap = labelBreakKept ? "\n" : " ";
         var body = Body($"void S(object o) {{ switch (o) {{ case 1:{gap}{name}(); break; }} }}");
@@ -267,7 +386,11 @@ public sealed class SwitchSectionIssue374Tests {
 
         // The method's own brace is the declaration key's business (see the test above); the
         // switch's sections and closing brace are on lines of their own at every one of these.
-        Assert.Contains("switch (o) {\n            case 1: break;\n            case 2: break;\n        }", formatted, StringComparison.Ordinal);
+        Assert.Contains(
+            "switch (o) {\n            case 1: break;\n            case 2: break;\n        }",
+            formatted,
+            StringComparison.Ordinal
+        );
     }
 
     /// <summary>
@@ -275,12 +398,44 @@ public sealed class SwitchSectionIssue374Tests {
     ///     leaves the header's line, at the export's <c>keep_existing_embedded_arrangement = true</c>.
     /// </summary>
     [Theory]
-    [InlineData("void S(object o) { if (x > 0) switch (o) { case 1: break; } }", "if (x > 0)", "    switch (o) {", "        case 1: break;", "    }")]
+    [InlineData(
+        "void S(object o) { if (x > 0) switch (o) { case 1: break; } }",
+        "if (x > 0)",
+        "    switch (o) {",
+        "        case 1: break;",
+        "    }"
+    )]
     [InlineData("void S(object o) { while (x > 0) switch (o) { } }", "while (x > 0)", "    switch (o) { }")]
-    [InlineData("void S(object o) { foreach (var i in new[] { 1 }) switch (i) { case 1: break; } }", "foreach (var i in new[] { 1 })", "    switch (i) {", "        case 1: break;", "    }")]
-    [InlineData("void S(object o) { lock (o) switch (o) { case 1: break; } }", "lock (o)", "    switch (o) {", "        case 1: break;", "    }")]
-    [InlineData("void S(object o) { if (x > 0) try { M(); } finally { M(); } }", "if (x > 0)", "    try {", "        M();", "    } finally {", "        M();", "    }")]
-    [InlineData("void S(object o) { if (x > 0)\n switch (o) { case 1: break; } }", "if (x > 0)", "    switch (o) {", "        case 1: break;", "    }")]
+    [InlineData(
+        "void S(object o) { foreach (var i in new[] { 1 }) switch (i) { case 1: break; } }",
+        "foreach (var i in new[] { 1 })",
+        "    switch (i) {",
+        "        case 1: break;",
+        "    }"
+    )]
+    [InlineData(
+        "void S(object o) { lock (o) switch (o) { case 1: break; } }",
+        "lock (o)",
+        "    switch (o) {",
+        "        case 1: break;",
+        "    }"
+    )]
+    [InlineData(
+        "void S(object o) { if (x > 0) try { M(); } finally { M(); } }",
+        "if (x > 0)",
+        "    try {",
+        "        M();",
+        "    } finally {",
+        "        M();",
+        "    }"
+    )]
+    [InlineData(
+        "void S(object o) { if (x > 0)\n switch (o) { case 1: break; } }",
+        "if (x > 0)",
+        "    switch (o) {",
+        "        case 1: break;",
+        "    }"
+    )]
     public void AnEmbeddedSwitchOrTry_LeavesTheHeadersLine(string member, params string[] expected) =>
         Assert.Equal(expected, Body(member));
 

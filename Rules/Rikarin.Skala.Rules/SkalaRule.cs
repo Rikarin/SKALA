@@ -203,19 +203,45 @@ public static class SkalaRule {
     /// </remarks>
     public static bool TryParseLanguageVersion(string floor, out LanguageVersion version) {
         switch (floor) {
-            case "6.0": version = LanguageVersion.CSharp6; return true;
-            case "7.0": version = LanguageVersion.CSharp7; return true;
-            case "7.1": version = LanguageVersion.CSharp7_1; return true;
-            case "7.2": version = LanguageVersion.CSharp7_2; return true;
-            case "7.3": version = LanguageVersion.CSharp7_3; return true;
-            case "8.0": version = LanguageVersion.CSharp8; return true;
-            case "9.0": version = LanguageVersion.CSharp9; return true;
-            case "10.0": version = LanguageVersion.CSharp10; return true;
-            case "11.0": version = LanguageVersion.CSharp11; return true;
-            case "12.0": version = LanguageVersion.CSharp12; return true;
-            case "13.0": version = LanguageVersion.CSharp13; return true;
-            case "14.0": version = LanguageVersion.CSharp14; return true;
-            default: version = LanguageVersion.Default; return false;
+            case "6.0":
+                version = LanguageVersion.CSharp6;
+                return true;
+            case "7.0":
+                version = LanguageVersion.CSharp7;
+                return true;
+            case "7.1":
+                version = LanguageVersion.CSharp7_1;
+                return true;
+            case "7.2":
+                version = LanguageVersion.CSharp7_2;
+                return true;
+            case "7.3":
+                version = LanguageVersion.CSharp7_3;
+                return true;
+            case "8.0":
+                version = LanguageVersion.CSharp8;
+                return true;
+            case "9.0":
+                version = LanguageVersion.CSharp9;
+                return true;
+            case "10.0":
+                version = LanguageVersion.CSharp10;
+                return true;
+            case "11.0":
+                version = LanguageVersion.CSharp11;
+                return true;
+            case "12.0":
+                version = LanguageVersion.CSharp12;
+                return true;
+            case "13.0":
+                version = LanguageVersion.CSharp13;
+                return true;
+            case "14.0":
+                version = LanguageVersion.CSharp14;
+                return true;
+            default:
+                version = LanguageVersion.Default;
+                return false;
         }
     }
 

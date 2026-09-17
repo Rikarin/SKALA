@@ -3895,8 +3895,11 @@ public sealed class BreakPlan {
     ///     shape the oracle lets share the label's line. See <see cref="PlanCaseStatements" />.
     /// </summary>
     static bool IsSimpleSection(SyntaxList<StatementSyntax> statements) =>
-        statements is [var only] && IsSimpleStatement(only)
-        || statements is [var head, BreakStatementSyntax] && IsSimpleStatement(head);
+        statements switch {
+            [var only] => IsSimpleStatement(only),
+            [var head, BreakStatementSyntax] => IsSimpleStatement(head),
+            _ => false
+        };
 
     static bool IsSimpleStatement(StatementSyntax statement) =>
         statement is ExpressionStatementSyntax
