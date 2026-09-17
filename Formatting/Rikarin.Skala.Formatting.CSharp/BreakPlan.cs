@@ -1980,7 +1980,7 @@ public sealed class BreakPlan {
                 // one level past the arrow's. Measured on seventeen shapes. The frame half of the
                 // same rule — an author's break before a dot that is not a point — is
                 // CSharpDocumentBuilder's Frame.HoldsLevel.
-                SpendsIndent: ChainHeadIsParenthesised(root),
+                ChainHeadIsParenthesised(root),
                 OwnLevel: !ChainHeadIsParenthesised(root)
             )
         );
