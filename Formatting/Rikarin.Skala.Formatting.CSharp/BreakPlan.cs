@@ -3704,6 +3704,17 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ A `switch` or a `try` never shares its owner's line, at the export's `keep = true` and
+        // whatever the source wrote: `if (b) switch (o) { case 1: break; }`, the same under `while`,
+        // `foreach`, `lock` and after `else`, an *empty* `if (b) switch (o) { }`, and
+        // `if (b) try { M(); } finally { }` all come back with the statement on the next line
+        // (measured for #374). Neither is "simple" in any reading, and the width rule below cannot
+        // reach the empty switch, which fits; so the break is required rather than planned.
+        if (embedded is SwitchStatementSyntax or TryStatementSyntax) {
+            Mandatory(first);
+            return;
+        }
+
         var keeps = options.KeepExistingEmbeddedArrangement;
         var placement = options.PlaceSimpleEmbeddedStatementOnSameLine;
         var simple = EmbeddedStatementOf(embedded) is null && !IsEmbeddedStatement(owner);
@@ -3766,8 +3777,9 @@ public sealed class BreakPlan {
         node.Parent is { } parent && EmbeddedStatementOf(parent) == node;
 
     /// <summary>
-    ///     A switch section's statements keep the arrangement the author gave them, and break when the
-    ///     section does not fit.
+    ///     A <em>simple</em> switch section — one simple statement, with or without a <c>break;</c> after
+    ///     it — keeps the arrangement the author gave it and fills when it does not fit; any other
+    ///     section puts every statement on a line of its own, and stacked labels each take a line.
     /// </summary>
     /// <remarks>
     ///     ⚠ <c>skala_place_simple_case_statement_on_same_line</c> is read and deliberately not applied, which
@@ -3785,35 +3797,116 @@ public sealed class BreakPlan {
     ///             ⚠ and both again with <c>simple_case_statement_style</c> pushed the same way —
     ///             <c>on_single_line</c> against the broken source, <c>line_break</c> against the joined
     ///             one — because that key is the one this repository's registry claims is masked by this
-    ///             one. Unchanged. Neither key governs the shape; the oracle simply preserves the
-    ///             section, and the registry's note on <c>simple_case_statement_style</c> ("that key is
-    ///             what governs the shape under this export") is wrong about which key wins for the
-    ///             usual reason — it was asked at <c>never</c> against a source that was already broken.
+    ///             one. Unchanged. Neither key governs the shape, and the registry's note on
+    ///             <c>simple_case_statement_style</c> ("that key is what governs the shape under this
+    ///             export") is wrong about which key wins for the usual reason — it was asked at
+    ///             <c>never</c> against a source that was already broken.
     ///         </item>
     ///     </list>
-    ///     The preserve group stays, because it is not the key's: it is what makes a section that
-    ///     overflows the margin break, and it is what the export already produced.
+    ///     <para>
+    ///         ⚠ "The oracle simply preserves the section", which this remark used to conclude, was
+    ///         measured on simple sections only and is false of the rest (issue #374, SK-DIV-0115).
+    ///         Re-measured 2026-09-17 with <c>Testing ask</c> on forty section shapes, the export's
+    ///         values and each of <c>keep_existing_embedded_block_arrangement</c>,
+    ///         <c>keep_existing_declaration_block_arrangement</c>, <c>keep_user_linebreaks</c>,
+    ///         <c>csharp_preserve_single_line_blocks</c> and this key flipped on its own — none moved a
+    ///         section. What the oracle preserves is a section whose statements are <c>[S]</c> or
+    ///         <c>[S, break;]</c> where <c>S</c> is an expression, an empty statement, a <c>return</c>,
+    ///         <c>throw</c>, <c>break</c>, <c>continue</c>, <c>goto</c> or <c>yield</c>:
+    ///         <c>case 1: M(); break;</c>, <c>case 1: x = 1; break;</c>, <c>case 1: await T(); break;</c>,
+    ///         <c>case 1: Run(() =&gt; { M(); }); break;</c>, <c>case 1: yield return 1; break;</c>,
+    ///         <c>case 1: return 1;</c>, <c>default: throw new Exception();</c> and <c>case 1: ;</c> all
+    ///         come back as written. Everything else is broken one statement per line, the first off
+    ///         the label, whatever the author wrote: <c>M(); M(); break;</c>, <c>M(); return;</c>,
+    ///         <c>M(); goto case 2;</c>, <c>M(); continue;</c>, <c>yield return 3; yield break;</c>, a
+    ///         lone <c>int y = 1;</c> or <c>var y = 1; break;</c>, a lone <c>if (b) M();</c>, and
+    ///         <c>lock (o) M(); break;</c> — so "simple" is about the statement's kind and not about
+    ///         its count, and a second statement is tolerated only when it is the <c>break</c>.
+    ///     </para>
+    ///     <para>
+    ///         A simple section is a fill, not an all-or-nothing group, and the previous group here was
+    ///         the latter: <c>case 1:</c> / <c>M(); break;</c> came back from Skala as three lines and
+    ///         from the oracle as written. Measured on the label gap and the gap before the <c>break</c>
+    ///         separately: a kept label break stays, and the tail behind it fills (<c>M(); break;</c>
+    ///         together at 120 columns, <c>break;</c> pushed down at 121); a joined 121-column section
+    ///         moves <c>M(); break;</c> off the label together and splits them only when the tail still
+    ///         overflows. ⚠ But a break the author wrote <em>between</em> the two statements —
+    ///         <c>case 2: M();</c> / <c>break;</c> — breaks the label gap as well: the oracle answers
+    ///         <c>case 2:</c> / <c>M();</c> / <c>break;</c>, and a fill would have kept the first line.
+    ///         The label gap is pinned when the source broke it because a fill point re-decides by width
+    ///         and would re-join it (SK-DIV-0104's trap).
+    ///     </para>
+    ///     <para>
+    ///         Stacked labels never share a line — <c>case 1: case 2: break;</c> comes back as
+    ///         <c>case 1:</c> / <c>case 2: break;</c> — and a braced section is the block's own
+    ///         business: <see cref="PlanOnePerLine" /> expands it, and <see cref="Keeps" /> reads the
+    ///         <em>embedded</em> key for it, which is the one that kept <c>case 1: { M(); }</c> whole.
+    ///         ⚠ A block that is one statement among several (<c>case 1: { M(); } break;</c>) is not
+    ///         planned here beyond its own line: the oracle writes <c>case 1: {</c> with the block at the
+    ///         label's column and <c>break;</c> one level in, a shape neither this plan nor
+    ///         <see cref="CSharpDocumentBuilder.VisitSwitchSection" /> produces yet.
+    ///     </para>
     /// </remarks>
     void PlanCaseStatements(SwitchSectionSyntax node) {
+        for (var i = 1; i < node.Labels.Count; i++) {
+            Mandatory(FirstToken(node.Labels[i]));
+        }
+
         if (node.Statements.Count == 0 || node.Statements is [BlockSyntax]) {
             return;
         }
 
-        var group = NewGroup();
-        var broken = false;
-
-        foreach (var statement in node.Statements) {
-            var first = FirstToken(statement);
-            if (first.IsKind(SyntaxKind.None)) {
-                continue;
+        var first = FirstToken(node.Statements[0]);
+        if (!IsSimpleSection(node.Statements)) {
+            foreach (var statement in node.Statements) {
+                Mandatory(FirstToken(statement));
             }
 
-            Point(first, group);
-            broken |= BreaksBefore(first);
+            return;
         }
 
-        Describe(node, group, GroupMode.Preserve, new GroupFacts(broken, BreaksIfTooLong: true));
+        var tail = node.Statements.Count == 2 ? FirstToken(node.Statements[1]) : default;
+        if (!tail.IsKind(SyntaxKind.None) && BreaksBefore(tail)) {
+            Mandatory(first);
+            Mandatory(tail);
+            return;
+        }
+
+        // ⚠ The label gap is the group's point and the `break`'s is a fill: a 121-column section
+        // moves `M(); break;` off the label *together*, which a fill at the label gap — measuring only
+        // as far as the next point — never did, and the `break` then leaves only if the tail still
+        // overflows. A pinned label gap makes the group unbounded, so the fill still decides.
+        // ⚠ An inner group, opened by the builder at the *last* label: described on the section it
+        // would span the stacked labels' required breaks, measure as unbounded, and push `break;`
+        // off `case 2:` in `case 1:` / `case 2: break;`.
+        var group = NewGroup();
+        if (BreaksBefore(first)) {
+            Mandatory(first);
+        } else {
+            Point(first, group);
+        }
+
+        Point(tail, group, true);
+        DescribeInner(node, group, GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true));
     }
+
+    /// <summary>
+    ///     <c>[S]</c> or <c>[S, break;]</c>, where <c>S</c> is a statement with nothing nested in it — the
+    ///     shape the oracle lets share the label's line. See <see cref="PlanCaseStatements" />.
+    /// </summary>
+    static bool IsSimpleSection(SyntaxList<StatementSyntax> statements) =>
+        statements is [var only] && IsSimpleStatement(only)
+        || statements is [var head, BreakStatementSyntax] && IsSimpleStatement(head);
+
+    static bool IsSimpleStatement(StatementSyntax statement) =>
+        statement is ExpressionStatementSyntax
+            or EmptyStatementSyntax
+            or ReturnStatementSyntax
+            or ThrowStatementSyntax
+            or BreakStatementSyntax
+            or ContinueStatementSyntax
+            or GotoStatementSyntax
+            or YieldStatementSyntax;
 
     /// <summary>
     ///     Every member and every statement gets a line of its own.
@@ -3837,6 +3930,17 @@ public sealed class BreakPlan {
     ///         with the member before it has no answer to <c>skala_blank_lines_around_single_line_field</c>, which
     ///         is why <c>constructs/blank-lines/two-members-on-one-line.cs</c> was committed failing at M2.
     ///     </para>
+    ///     <para>
+    ///         ⚠ A <c>switch</c> statement's sections are statements' peers here and were not (issue #374,
+    ///         SK-DIV-0115): <c>switch (o) { case 1: break; case 2: break; }</c> comes back from the oracle
+    ///         as four lines, one section each and the brace on its own, while the one-line <c>if</c>
+    ///         block beside it was already expanded. Unconditional like the rest, and measured to be:
+    ///         <c>skala_keep_existing_embedded_block_arrangement = true</c> keeps <c>if (b) { M(); }</c>
+    ///         and <c>case 1: { M(); }</c> and still expands the sections; the declaration key,
+    ///         <c>keep_user_linebreaks = false</c> and <c>csharp_preserve_single_line_blocks = false</c>
+    ///         move nothing. An empty <c>switch (o) { }</c> stays together, as an empty block does. What
+    ///         happens <em>inside</em> a section is <see cref="PlanCaseStatements" />'.
+    ///     </para>
     /// </remarks>
     void PlanOnePerLine(SyntaxNode node) {
         switch (node) {
@@ -3848,6 +3952,14 @@ public sealed class BreakPlan {
                 }
 
                 Mandatory(block.CloseBraceToken);
+                return;
+
+            case SwitchStatementSyntax { Sections.Count: > 0 } statement:
+                foreach (var section in statement.Sections) {
+                    Mandatory(FirstToken(section));
+                }
+
+                Mandatory(statement.CloseBraceToken);
                 return;
 
             case TypeDeclarationSyntax { Members.Count: > 0 } type
@@ -3876,9 +3988,15 @@ public sealed class BreakPlan {
     ///     either to <c>true</c> and the oracle keeps <c>void M() { Body(); }</c> and
     ///     <c>if (flag) { First(); }</c> exactly as written. The four-way preservation table is what
     ///     found this — the two <c>keep_existing_* = true</c> corners were the only ones that moved.
+    ///     <para>
+    ///         ⚠ A braced switch section's block, <c>case 1: { M(); }</c>, is the embedded key's too, and a
+    ///         <see cref="SwitchSectionSyntax" /> is not a statement, so the parent test alone sent it to
+    ///         the declaration key. Measured for #374: the embedded key at <c>true</c> keeps it whole, the
+    ///         declaration key at <c>true</c> expands it.
+    ///     </para>
     /// </remarks>
     bool Keeps(BlockSyntax block) =>
-        block.Parent is StatementSyntax
+        block.Parent is StatementSyntax or SwitchSectionSyntax
             ? options.KeepExistingEmbeddedBlockArrangement
             : options.KeepExistingDeclarationBlockArrangement;
 
