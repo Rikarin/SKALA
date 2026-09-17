@@ -49,12 +49,41 @@ public static class SpaceRules {
     ///         its name says — is what put a space Skala had no evidence for into 58 lines of
     ///         <c>corpus/real/</c>.
     ///     </para>
+    ///     <para>
+    ///         ⚠ The gap between a recursive pattern's type and its positional clause is in this set,
+    ///         and <see cref="BeforeOpenParen" /> used to answer it with a space — <c>o is Point (2, 3)</c>
+    ///         — on the remark that an identifier before a parenthesis that is not a call keeps its gap.
+    ///         Asked directly (#373): <c>Point(2, 3)</c> comes back closed, <c>Point (2, 3)</c> comes back
+    ///         spaced, and <c>Point  (2, 3)</c> collapses to one space, in every position a pattern can
+    ///         take — after <c>is</c>, <c>not</c>, <c>case</c>, inside a tuple pattern, as a switch arm,
+    ///         with a property clause behind it and with a generic or qualified type in front. Seven keys
+    ///         were flipped against it (<c>space_before_method_call_parentheses</c> and its empty twin,
+    ///         <c>space_before_method_parentheses</c> and its empty twin, <c>space_before_new_parentheses</c>,
+    ///         <c>space_before_type_parameter_angle</c>, <c>space_before_open_square_brackets</c>); each
+    ///         moved its own control and none moved the pattern. That is the same shape as the range
+    ///         operator's gap: nothing legislates it, so the author's choice survives. ⚠ Only the typed
+    ///         clause. <c>is (1, 2)</c>, <c>case (1, 2)</c> and <c>var (a, b)</c> are governed — the oracle
+    ///         puts the space into <c>is(1, 2)</c> and <c>var(a, b)</c> — and stay with the rule.
+    ///     </para>
     /// </remarks>
-    static bool Ungoverned(SyntaxToken prev, SyntaxToken next) =>
-        prev.IsKind(SyntaxKind.DotDotToken)
-            ? prev.Parent is SpreadElementSyntax or RangeExpressionSyntax { RightOperand: not null }
-            : next.IsKind(SyntaxKind.DotDotToken)
-            && next.Parent is RangeExpressionSyntax { LeftOperand: not null };
+    static bool Ungoverned(SyntaxToken prev, SyntaxToken next) {
+        if (prev.IsKind(SyntaxKind.DotDotToken)) {
+            return prev.Parent is SpreadElementSyntax or RangeExpressionSyntax { RightOperand: not null };
+        }
+
+        if (next.IsKind(SyntaxKind.DotDotToken)) {
+            return next.Parent is RangeExpressionSyntax { LeftOperand: not null };
+        }
+
+        return next.IsKind(SyntaxKind.OpenParenToken) && FollowsItsPatternType(next);
+    }
+
+    /// <summary>
+    ///     True for the <c>(</c> of a positional clause whose recursive pattern names a type, which is
+    ///     the token in front of it: <c>Point(2, 3)</c>, <c>N.Point(2, 3)</c>, <c>Pair&lt;int, int&gt;(1, 2)</c>.
+    /// </summary>
+    static bool FollowsItsPatternType(SyntaxToken open) =>
+        open.Parent is PositionalPatternClauseSyntax { Parent: RecursivePatternSyntax { Type: not null } };
 
     static bool Required(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) {
         var left = prev.Kind();
@@ -494,9 +523,11 @@ public static class SpaceRules {
 
             case ParenthesizedVariableDesignationSyntax:
             case PositionalPatternClauseSyntax:
-                // ⚠ `var (a, b) = …` and `is Point (1, 2)`: an identifier precedes a parenthesis and
-                // it is not a call. Without this the deconstruction reads `var(a, b)`, which is a
-                // shape that appears in every modern C# tree.
+                // ⚠ `var (a, b) = …`, `is (1, 2)` and `case (1, 2)`: what precedes is a keyword or a
+                // separator, not a callee, and the oracle puts the space into `var(a, b)` and
+                // `is(1, 2)` alike. ⚠ This arm used to name `is Point (1, 2)` as its own example and
+                // answer it the same way; a clause that follows its pattern's *type* never reaches
+                // here — the gap is ungoverned and `Ungoverned` resolves it against the source (#373).
                 return !ClingsRight(prev.Kind());
 
             default:
@@ -536,6 +567,13 @@ public static class SpaceRules {
             // `new Dictionary<…> { ["a"] = 1 }` — the gap belongs to the brace, not to the bracket.
             ? WithinBraces(prev.Parent, next, o)
             : next.Parent switch {
+                // ⚠ `void D<[Obsolete] T>()` — an attribute list that opens a type parameter list sits
+                // just inside the angle, and that gap is the angle's: measured with
+                // `space_within_type_parameter_angles = true` the oracle writes `D< [Obsolete] T >`, and
+                // at `false` it closes `D< [Obsolete] T>` up. Answering it as "whatever precedes" put
+                // a space after every leading `<` because `<` clings to nothing on its own (#373).
+                // `E<T, [Obsolete] U>` was never affected: its attribute follows a comma.
+                AttributeListSyntax when IsTypeAngle(prev) => WithinAngles(prev.Parent, o),
                 AttributeListSyntax => !ClingsRight(prev.Kind()),
                 // ⚠ Only a rank specifier that carries no sizes. Measured on `int[] a`, `int[,] b`,
                 // `int[][] c`, `new int[] { 1 }`, `new int[4]` and `new int[2, 2]` in one file: at
