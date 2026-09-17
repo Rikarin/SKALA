@@ -573,7 +573,8 @@ public static class SpaceRules {
                 // at `false` it closes `D< [Obsolete] T>` up. Answering it as "whatever precedes" put
                 // a space after every leading `<` because `<` clings to nothing on its own (#373).
                 // `E<T, [Obsolete] U>` was never affected: its attribute follows a comma.
-                AttributeListSyntax => IsTypeAngle(prev) ? WithinAngles(prev.Parent, o) : !ClingsRight(prev.Kind()),
+                AttributeListSyntax when IsTypeAngle(prev) => WithinAngles(prev.Parent, o),
+                AttributeListSyntax => !ClingsRight(prev.Kind()),
                 // ⚠ Only a rank specifier that carries no sizes. Measured on `int[] a`, `int[,] b`,
                 // `int[][] c`, `new int[] { 1 }`, `new int[4]` and `new int[2, 2]` in one file: at
                 // `space_before_array_rank_brackets = true` the oracle writes `int [] a`,
