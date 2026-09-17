@@ -234,7 +234,8 @@ public static class RuleCorpus {
     public static IReadOnlyList<CorpusFile> Sources(string? tree = null) => [
         .. Corpus.Files(Corpus.Real)
             .Where(file => tree is null
-                || file.RelativePath.StartsWith(tree + "/", StringComparison.Ordinal))
+                || file.RelativePath.StartsWith(tree + "/", StringComparison.Ordinal)
+            )
     ];
 
     /// <summary>

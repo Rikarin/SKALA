@@ -121,7 +121,37 @@ public enum LineFlags {
     ///         entry; this is what lets the last point of a fill ask for it too.
     ///     </para>
     /// </remarks>
-    LastPoint = 4
+    LastPoint = 4,
+
+    /// <summary>
+    ///     A fill point taken only as a last resort: the rest of the line is measured <em>through</em> it,
+    ///     so every construct before it wraps first and the point breaks only when what follows it still
+    ///     has no room after they have.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The oracle's embedded statement (SK-DIV-0106). A 125-column <c>while (…) n++;</c> whose
+    ///     header alone is 120 comes back with every <c>&amp;&amp;</c> of its condition on
+    ///     its own line and <c>n++</c> still after the <c>)</c>: the condition chain was resolved
+    ///     against a line that included the statement, and only afterwards did the statement's own
+    ///     gap ask whether it fits. An ordinary fill point ends <see cref="LayoutWriter" />'s trailing
+    ///     measure — "the rest of this line if every break point is taken" — so the chain measured 120,
+    ///     stayed whole, and the statement was pushed off instead. A point with this flag contributes
+    ///     its flat rendering to that measure and does not end it; its own decision is still the fill's.
+    /// </remarks>
+    LastResort = 8,
+
+    /// <summary>
+    ///     The item after this fill point opens with a delimiter — <c>(</c>, <c>[</c> or <c>{</c> — so
+    ///     when it fits nowhere whole its head may stay on the line and the item break inside.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ SK-DIV-0110, and the boundary is measured rather than derived: the oracle keeps
+    ///     <c>, (2</c> and <c>), [</c> on the line before an item that has no flat form anywhere, and
+    ///     breaks before <c>SixthConditionValueLong &amp;&amp; …</c>, a 133-column chain that fits
+    ///     nowhere either. An opening delimiter may hang at the end of a line; an identifier's item
+    ///     starts a fresh one. The front end sets it, because only it knows the token.
+    /// </remarks>
+    DelimitedItem = 16
 }
 
 /// <summary>
@@ -188,6 +218,27 @@ public enum IndentKind {
 
     /// <summary>No change; a scope marker only.</summary>
     None,
+
+    /// <summary>
+    ///     No change; a marker that remembers the indentation of the line it opened on, for an
+    ///     <see cref="AnchoredBlock" /> inside it to nest from.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A switch expression's arms take one level from the line its <em>governing expression</em>
+    ///     starts on, not from the line its <c>{</c> lands on (SK-DIV-0107). The two differ whenever the
+    ///     governing expression is multi-line under a continuation the statement opened but never wrote
+    ///     a break at: <c>var s = (a,\n b) switch {</c> puts the arms at the statement's level plus one,
+    ///     where a block nesting from the <c>{</c>'s line — which sits inside the <c>=</c>'s continuation
+    ///     — put them a level deeper. The anchor is pushed where the governing expression begins and read
+    ///     where the brace opens.
+    /// </remarks>
+    Anchor,
+
+    /// <summary>
+    ///     A <see cref="Block" /> whose outer level is the innermost <see cref="Anchor" />'s recorded
+    ///     indentation rather than the level the brace's own line nests from.
+    /// </summary>
+    AnchoredBlock,
 
     /// <summary>One level less — the nested-statement outdent family.</summary>
     Outdent,
@@ -285,6 +336,7 @@ public sealed class Document {
     readonly int[] pointWidth;
     readonly int[] afterPoint;
     readonly int[] segment;
+    readonly int[] segmentHead;
     readonly bool[] hasBreak;
     readonly GroupFacts[] facts;
 
@@ -300,6 +352,7 @@ public sealed class Document {
         int[] pointWidth,
         int[] afterPoint,
         int[] segment,
+        int[] segmentHead,
         bool[] hasBreak,
         GroupFacts[] facts
     ) {
@@ -314,6 +367,7 @@ public sealed class Document {
         this.pointWidth = pointWidth;
         this.afterPoint = afterPoint;
         this.segment = segment;
+        this.segmentHead = segmentHead;
         this.hasBreak = hasBreak;
         this.facts = facts;
     }
@@ -401,6 +455,13 @@ public sealed class Document {
     ///     trailing off the end of a line that already has one on it.
     /// </remarks>
     public int SegmentOf(int node) => segment[node];
+
+    /// <summary>
+    ///     The width from a fill point to the first place inside the next item where a break could
+    ///     land, or the whole segment when there is none. A fill that cannot make the item fit whole
+    ///     by breaking here keeps this much on the line instead (SK-DIV-0110).
+    /// </summary>
+    public int SegmentHeadOf(int node) => segmentHead[node];
 
     /// <summary>Whether the subtree holds a break of any kind — a hard line or a break point.</summary>
     public bool HasBreak(int node) => hasBreak[node];
@@ -534,6 +595,13 @@ public sealed class Document {
 ///     The group a <see cref="GroupMode.Owner" /> group reads its mode from, or the chain group a
 ///     <see cref="BreaksWithOwner" /> group reads, or −1.
 /// </param>
+/// <param name="ChainLink">
+///     ⚠ One operator of a binary chain: a <see cref="BreaksWithOwner" /> group whose owner is the
+///     chain-wide group and nothing else. <see cref="BreaksWithOwner" /> has a second producer — an
+///     expression body, whose owner is its parameter list — and the two containment rules of
+///     SK-DIV-0109 apply to links alone: a link whose operand holds something certain to break breaks
+///     on its own, and the owner it reports to is measured without its links' own breaks.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -543,4 +611,5 @@ public readonly record struct GroupFacts(
     bool HidesFlatWidthWhenBroken = false,
     bool SpendsIndent = false,
     bool BreaksWithOwner = false,
-    int Owner = -1);
+    int Owner = -1,
+    bool ChainLink = false);

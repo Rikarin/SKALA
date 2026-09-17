@@ -854,7 +854,7 @@ class Build : NukeBuild {
 
                     Serilog.Log.Information("What a release would publish, and does not:");
                     foreach (var package in (RootDirectory / "artifacts" / "packages").GlobFiles("*.nupkg")
-                                 .OrderBy(static path => path.Name)) {
+                             .OrderBy(static path => path.Name)) {
                         Serilog.Log.Information(
                             "  {Package} — {Size:N0} bytes",
                             package.Name,

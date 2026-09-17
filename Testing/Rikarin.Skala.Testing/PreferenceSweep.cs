@@ -3111,8 +3111,8 @@ public static class PreferenceSweep {
             // renders as a table of dashes with no output in it at all, which is a grid nobody can
             // check.
             foreach (var shown in (artefact.Exemplars ?? [])
-                         .Where(entry => entry.Construct == construct.Id)
-                         .Where(entry => exemplar is null || entry.Outcome is "Third" or "Flat")) {
+                     .Where(entry => entry.Construct == construct.Id)
+                     .Where(entry => exemplar is null || entry.Outcome is "Third" or "Flat")) {
                 builder.Append("What `")
                     .Append(shown.Outcome)
                     .Append("` is, for this construct — total ")

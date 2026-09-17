@@ -582,7 +582,13 @@ public sealed partial class CSharpDocumentBuilder {
                     // an absolute column and everything under it starts there; adding the level the
                     // chain would otherwise pay for puts the operands one indent past the column the
                     // oracle writes them at.
-                    Aligned: AlignsFromOwnColumn(node)
+                    Aligned: AlignsFromOwnColumn(node),
+
+                    // ⚠ And neither does a call chain whose head is a parenthesised expression or a
+                    // tuple: `(\n a).B\n.C()` puts `.C()` on the `(`'s own column (SK-DIV-0112). The
+                    // group half of the same rule is BreakPlan.PlanChainedCalls' HoldsLevel; this is
+                    // the frame half, for an author's break before a dot that is not a point.
+                    HoldsLevel: IsChainRoot(node) && BreakPlan.ChainHeadIsParenthesised(node)
                 )
             );
             Dispatch(node);
@@ -618,7 +624,13 @@ public sealed partial class CSharpDocumentBuilder {
                 FrameKind.Unit,
                 false,
                 ResetsDepth: node is AnonymousFunctionExpressionSyntax && !IsSoleLambdaArgument(node),
-                SavedDepth: continuousDepth
+                SavedDepth: continuousDepth,
+
+                // ⚠ A `where` clause's continuation lines take no level: `where T : class\n, new()`
+                // puts the next constraint on the `where`'s own column, at every value of every key
+                // measured (SK-DIV-0105). The frame stays — it bounds what the clause's own breaks
+                // may spend — and pays for nothing, which is what an aligned frame already means.
+                Aligned: node is TypeParameterConstraintClauseSyntax
             )
         );
 
@@ -796,17 +808,20 @@ public sealed partial class CSharpDocumentBuilder {
 
                 return;
 
-            case NodeLayout.Continuation when node is TypeParameterConstraintClauseSyntax:
-                // skala_indent_type_constraints: a `where` clause on its own line is a
-                // continuation of the declaration, and the option says whether it takes a level.
-                if (!options.IndentTypeConstraints) {
-                    VisitChildren(node);
-                    return;
-                }
-
-                OpenIndent(IndentKind.Continuous);
-                VisitChildren(node);
-                CloseIndent(IndentKind.Continuous);
+            // skala_indent_type_constraints: a `where` clause on its own line is a continuation of
+            // the declaration, and the option says whether it takes a level.
+            // ⚠ Only without a constraint run, and this arm used to open the scope under a run too.
+            // Under `skala_place_type_constraints_on_same_line = true` the gap before the `where` is
+            // emitted before the clause is entered and the run's group spends the level for it; a
+            // scope opened here then began on the `where`'s own line and reached only the lines
+            // *inside* the clause, one indent past the keyword. The oracle indents none of them:
+            // `where T : class\n, new()` puts `new()` on the `where`'s own column at both values of
+            // this key, at both values of the placement key, and at a multiplier of 2 (SK-DIV-0105).
+            // Without a run the gap is emitted here, under the scope, which is what puts the
+            // `where` a level in — and the clause's lines after it land on that same level because
+            // the clause's frame pays for nothing (see VisitInner).
+            case NodeLayout.Continuation when node is TypeParameterConstraintClauseSyntax clause:
+                VisitConstraintClause(clause);
                 return;
 
             case NodeLayout.Transparent when node is FileScopedNamespaceDeclarationSyntax fileScoped:
@@ -816,6 +831,33 @@ public sealed partial class CSharpDocumentBuilder {
             default:
                 VisitChildren(node);
                 return;
+        }
+    }
+
+    /// <summary>A <c>where</c> clause: its level, if it takes one here, and its constraints' fill.</summary>
+    void VisitConstraintClause(TypeParameterConstraintClauseSyntax clause) {
+        var indents = options.IndentTypeConstraints && !options.PlaceTypeConstraintsOnSameLine;
+        if (indents) {
+            OpenIndent(IndentKind.Continuous);
+        }
+
+        // The constraints' own fill (BreakPlan.PlanConstraintList), opened inside the clause so
+        // that the gap before the `where` stays outside it.
+        var hasConstraintList = plan.TryInnerGroup(clause, out var constraintList);
+        if (hasConstraintList) {
+            EmitUpTo(clause.Constraints[0].SpanStart);
+            doc.DescribeGroup(constraintList.Id, constraintList.Facts);
+            doc.OpenGroup(constraintList.Mode, constraintList.Id);
+        }
+
+        VisitChildren(clause);
+        if (hasConstraintList) {
+            EmitUpTo(clause.Span.End);
+            doc.Close();
+        }
+
+        if (indents) {
+            CloseIndent(IndentKind.Continuous);
         }
     }
 
@@ -1073,6 +1115,22 @@ public sealed partial class CSharpDocumentBuilder {
         // group to hang it on, and its constraints stay on a 200-column line.
         var run = BeginConstraintRun(node);
 
+        // ⚠ A switch expression's arms nest from the line its governing expression starts on, not
+        // from the line the `{` lands on (SK-DIV-0107). Measured: `var s = (a,\n b) switch {` puts the
+        // arms at 12 and the `}` at 8 — the statement's level plus one — while a block opened at the
+        // brace, inside the `=`'s continuation, put them at 16. The same for `(a\n + b) switch`, for a
+        // chain broken before `.Length switch`, for `F(a,\n b) switch`, for `int s =`, for `s =` and
+        // at a multiplier of 2; under an arrow the two agree already, because the arrow's level is
+        // written before the governing expression begins. The anchor is pushed here, after
+        // VisitPlanned has emitted the gap before the node, so it records the governing expression's
+        // own line.
+        // ⚠ Not under `skala_align_multiline_switch_expression`, whose Align scope is already an absolute
+        // column the arms nest from.
+        var anchored = node is SwitchExpressionSyntax && !AlignsFromOwnColumn(node);
+        if (anchored) {
+            OpenIndent(IndentKind.Anchor);
+        }
+
         foreach (var child in node.ChildNodesAndTokens()) {
             if (child.IsToken) {
                 var token = child.AsToken();
@@ -1105,7 +1163,10 @@ public sealed partial class CSharpDocumentBuilder {
                         frames[^1] = frames[^1] with { Activated = false };
                     }
 
-                    var braceIndent = singleInsideInitializer ? IndentKind.OneLevel : IndentKind.Block;
+                    var braceIndent = singleInsideInitializer ? IndentKind.OneLevel
+                        : anchored ? IndentKind.AnchoredBlock
+                        : IndentKind.Block;
+
                     if (indentBraces) {
                         OpenIndent(braceIndent);
                         EmitToken(token);
@@ -1145,6 +1206,11 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             CloseIndent(singleInsideInitializer ? IndentKind.OneLevel : IndentKind.Block);
+        }
+
+        if (anchored) {
+            EmitUpTo(node.Span.End);
+            CloseIndent(IndentKind.Anchor);
         }
     }
 
@@ -1725,7 +1791,9 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ `None` joins them: it is a scope marker that changes no level, so it must not touch the
         // frame machinery either. It exists so that a construct whose contents take *zero* levels
         // still has a scope for its closing delimiter to be aligned against.
-        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None) {
+        // ⚠ `Anchor` is a marker too, and `AnchoredBlock` is a block in every respect this
+        // bookkeeping cares about; only the writer reads the difference.
+        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None or IndentKind.Anchor) {
             return;
         }
 
@@ -1749,7 +1817,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     The next piece is this scope's own closing delimiter and takes its opener's line level.
     /// </param>
     void CloseIndent(IndentKind kind, bool alignsCloser = false) {
-        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None) {
+        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None or IndentKind.Anchor) {
             doc.Close(alignsCloser);
             return;
         }
@@ -2293,6 +2361,7 @@ public sealed partial class CSharpDocumentBuilder {
             switch (spec.Rule) {
                 case GapRule.Point:
                 case GapRule.FillPoint:
+                case GapRule.LastResortPoint:
                     if (preserved is not null) {
                         doc.Space(preserved);
                     }
@@ -2300,11 +2369,13 @@ public sealed partial class CSharpDocumentBuilder {
                     doc.BreakPoint(
                         spec.Group,
                         preserved is null && FlatGapSpace(previous, nextKind, nextToken, gap) != SpaceKind.Forbidden,
-                        spec.Rule == GapRule.FillPoint,
+                        spec.Rule != GapRule.Point,
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                         ? DefaultNewLine()
-                        : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                        : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine(),
+                        spec.Rule == GapRule.LastResortPoint,
+                        IsADelimitedTupleItem(nextToken)
                     );
                     return;
 
@@ -2430,7 +2501,11 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             if (frames[i].Kind == FrameKind.Chain) {
-                if (beforeDot) {
+                // ⚠ A chain that holds its level pays nothing for its dots and passes the break
+                // outward, so a statement whose own continuation is still unspent pays for it and an
+                // arrow or `=` that has already spent does not: `(\n a).B\n.C();` as a statement puts
+                // `.C()` one level in, and under `=>` on the `(`'s own column. See Frame.HoldsLevel.
+                if (beforeDot && !frames[i].HoldsLevel) {
                     return i;
                 }
 
@@ -2470,13 +2545,19 @@ public sealed partial class CSharpDocumentBuilder {
     ///     <c>M() =&gt;</c> is the member's to pay for even though the lambda that follows has already
     ///     been entered.
     /// </param>
+    /// <param name="HoldsLevel">
+    ///     A chain frame that spends nothing for a break before one of its dots and hands the break to
+    ///     the frames outside it: a call chain headed by a parenthesised expression or a tuple
+    ///     (SK-DIV-0112). The frame's other duties are unchanged.
+    /// </param>
     readonly record struct Frame(
         FrameKind Kind,
         bool Activated,
         bool Started = false,
         bool ResetsDepth = false,
         int SavedDepth = 0,
-        bool Aligned = false);
+        bool Aligned = false,
+        bool HoldsLevel = false);
 
     /// <summary>
     ///     Whether the break continues an expression rather than starting a new statement, member or
@@ -2986,6 +3067,22 @@ public sealed partial class CSharpDocumentBuilder {
             LockStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
             _ => (default, default)
         };
+
+    /// <summary>
+    ///     Whether the token opens a tuple's item with a delimiter — the one fill whose head the oracle
+    ///     keeps on the line when the item fits nowhere whole (SK-DIV-0110).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The tuple and not every fill, and the boundary is measured. A tuple has no wrap style of
+    ///     its own: `(1\n, (2\n, 3), 4)` keeps `, (2` and keeps `, 4` after the multi-line item. An
+    ///     array initializer keeps a delimited head too (`), [` in `pathological/nested-collection-in-
+    ///     generated-while.cs`) but then breaks *after* the multi-line item (`],\n(null ? …`), a rule
+    ///     Skala does not have; applying the head rule there alone moved `new[] { ("a", …,\n "…"),
+    ///     ("b", …` in Skala's own GateCommands.cs onto the previous item's line, away from the oracle.
+    /// </remarks>
+    static bool IsADelimitedTupleItem(SyntaxToken token) =>
+        token.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken
+        && token.Parent?.Parent is ArgumentSyntax { Parent: TupleExpressionSyntax };
 
     /// <summary>
     ///     ⚠ <c>indent_nested_{for,foreach,while,using,lock,fixed}_stmt = false</c>: a loop directly

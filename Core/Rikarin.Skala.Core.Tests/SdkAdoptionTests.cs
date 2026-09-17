@@ -248,7 +248,7 @@ public sealed class SdkAdoptionTests {
                 .Where(static element => element.Name.LocalName == "Import")
                 .Where(static element =>
                     ((string?)element.Attribute("Project") ?? string.Empty)
-                        .Contains("RuleIds.props", StringComparison.Ordinal)
+                    .Contains("RuleIds.props", StringComparison.Ordinal)
                 ),
             static element => element.Attribute("Condition") is not null
         );

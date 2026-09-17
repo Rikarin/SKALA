@@ -291,7 +291,8 @@ public static class SyntaxCoverage {
         yield return ("collection expression as an argument",
             nodes.OfType<Microsoft.CodeAnalysis.CSharp.Syntax.CollectionExpressionSyntax>()
                 .Count(static collection => collection.Parent
-                    is Microsoft.CodeAnalysis.CSharp.Syntax.ArgumentSyntax));
+                    is Microsoft.CodeAnalysis.CSharp.Syntax.ArgumentSyntax
+                ));
 
         yield return ("nested collection expression",
             nodes.OfType<Microsoft.CodeAnalysis.CSharp.Syntax.CollectionExpressionSyntax>()

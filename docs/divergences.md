@@ -902,6 +902,16 @@ derivation. The preference fact is the opposite, and that is what makes it the u
 - options: `skala_wrap_arguments_style` (Tier A, `chop_if_long`), `skala_keep_user_linebreaks` (Tier A, `true`)
 - ⚠ status: **half closed** (the chain, at M3.1), half **open**, measured
 
+⚠ **Closed at #370 (SK-DIV-0109): the binary chain's half is done.** The containment fact is a
+per-node `certain` flag in `DocumentBuilder` — a hard line, a group that always breaks, a preserve
+group whose source was broken at its own points and which may not re-join, or anything holding one
+— and a group with a certain child has no flat form. The nested-operator objection was measured on
+one nesting and refuted on the other: `a > 0 && b > 0\n|| c > 0` stays as it is, and `a > 0\n&& b >
+0 || c > 0` comes back from the oracle chopped at *both* operators, because the `||` contains the
+broken `&&`. What must not chop is the chain-wide owner group, which contains every link; it is the
+one container a certain child does not make unbounded. `Use(a > 0\n&& b > 0)` chops now, and
+`binary-operators.cs` and `binary-chains.cs` are unmoved.
+
 ## SK-DIV-0008 — ⚠ half closed: statement conditions are aligned, four other keys are not
 
 `int_align` and all eight `int_align_*` sub-keys are `false`, and so are `align_multiline_argument`,
@@ -3419,6 +3429,12 @@ existed.
 - options: `skala_wrap_before_binary_pattern_op`, `skala_place_expr_method_on_single_line`, `skala_wrap_chained_binary_patterns`
 - ⚠ status: **open**; the ordering fact is missing, and it is shared with SK-DIV-0077.
 
+⚠ **Closed at #370 (SK-DIV-0109).** The containment fact landed for every group at once, and this
+fixture — kept to hold the disagreement still — agrees with the oracle byte for byte without a
+change of its own: the arrow's group now sees a body whose chain is certain to break and has no flat
+form, so `if_owner_is_single_line` reads the declaration as multi-line. The fixture's header says so
+and its expected output was regenerated.
+
 ## SK-DIV-0079 — `skala_xmldoc_wrap_tags_and_pi` wraps a tag's *attributes*, and Skala cannot re-read a header it broke
 
 ⚠ **The sweep called this one `SPURIOUS` and the verdict was about the fixture, not the key.**
@@ -4884,3 +4900,370 @@ source for "any break inside the parentheses". None of these is a comma's side.
   left as they were), `skala_keep_user_linebreaks`.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/break-before-comma.cs` and
   `BreakBeforeCommaTests`.
+
+## SK-DIV-0108 — an indexer's bracketed parameter list had no plan at all
+
+⚠ **Found beside SK-DIV-0103 and reserved by #370.** Not a fidelity divergence but a coverage gap:
+`BreakPlan.Plan` visited `ParameterListSyntax` and never `BracketedParameterListSyntax`, so every gap
+inside `this[…]` fell through to `keep_user_linebreaks` and nothing chopped, joined or wrapped.
+Measured 2026-09-16 with `Testing ask`, each shape beside a method twin:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `int this[int a =` / `5] => a;` | `int this[` / `int a =` / `5` / `] =>` / `a;` — chopped, `]` alone, the arrow broken | as written |
+| `int this[int a` / `, string b] => a;` | **joined** — a break before a comma is re-laid, as in a method | as written |
+| `int this[int a,` / `string b, object c] => a;` | chopped, one per line | as written |
+| `int this[` / `long a] => 0;` and `int this[long a` / `] => 0;` | chopped — the kept delimiter break | as written |
+| a 128-column `this[…]` on one line | chopped | as written |
+| `int this[object a =` / `null, string b = null] {` | chopped, `null` a level past its parameter, `] {` | as written |
+
+Every row is byte-identical to its method twin, and the registry has no indexer-specific key, so
+the list takes the declaration family: `skala_wrap_parameters_style`,
+`skala_wrap_after_declaration_lpar`, `skala_wrap_before_declaration_rpar`,
+`skala_max_formal_parameters_on_line`, `skala_keep_existing_declaration_parens_arrangement`,
+`skala_wrap_before_declaration_lpar`. `OwnerListOf` already handed the arrow the indexer's list, so
+the arrow broke as soon as the list had a group to read.
+
+⚠ **The enumeration the issue asked for** — separated, delimited kinds the planner visits and does
+not, from `Testing/corpus/syntax-kinds.txt` against `BreakPlan.Plan`. Visited: `ArgumentList`,
+`AttributeArgumentList`, `ParameterList`, `BracketedParameterList` (now), `TupleExpression`,
+`CollectionExpression`, `ListPattern`, `PropertyPatternClause`, the four `*InitializerExpression`s
+and `WithInitializerExpression`, `AnonymousObjectCreationExpression`, `BaseList`,
+`VariableDeclaration`, `TypeParameterList`, `EnumDeclaration`, `SwitchExpression`, `ForStatement`.
+**Not visited**: `BracketedArgumentList` (`a[i, j]`) and `ImplicitElementAccess`,
+`TypeArgumentList`, `TupleType`, `PositionalPatternClause`, `ParenthesizedVariableDesignation`,
+`AttributeList` (several attributes in one bracket), `ArrayRankSpecifier`,
+`FunctionPointerParameterList` and `FunctionPointerUnmanagedCallingConventionList`, the two
+`Cref*ParameterList`s (inside doc comments), and the constraints inside one
+`TypeParameterConstraintClause` (SK-DIV-0105). For all of those every gap is
+`keep_user_linebreaks`' alone. SK-DIV-0104 measured three of them — a tuple type, a type argument
+list, a positional pattern — keeping a break before a comma, which is also what the oracle does
+there; the rest are unmeasured and left as found.
+
+- options: the declaration family above.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/indexer-parameter-list.cs` and
+  `IndexerParameterListTests`.
+
+## SK-DIV-0111 — a `for` header chopped on a break the declarators re-joined
+
+⚠ **Found beside SK-DIV-0104 and reserved by #370.** Measured 2026-09-16 with `Testing ask`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `for (int i = 0` / `, j = 1; i < n; i++)` | `for (int i = 0, j = 1; i < n; i++)` — **joined, header whole** | joined, **header chopped** at both `;` |
+| `for (int i = 0; i <` / `n; i++)` | joined, whole | joined, chopped |
+| `for (int i = F(` / `1); i < n; i++)` | joined, whole | joined, chopped |
+| `for (int i = 0, j = 1` / `, k = 2; …)`, `for (int i = 0` / `, j = 1` / `; …)` | joined, whole | joined, chopped |
+| `for (int i = 0,` / `j = 1; …)` | kept, chopped | kept, chopped |
+| `for (…; i < n` / `&& j > 0; …)` | kept, chopped | kept, chopped |
+| `for (` / `int i = 0; …)` | kept, chopped | kept, chopped |
+| `for (…; i +=` / `1)` | kept, chopped, `1` one level past `i +=` | kept, chopped, `1` flush with `i +=` |
+
+`PlanForHeader` read the source for "any break inside the parentheses" — the half of
+`chop_if_long` that `corpus/real/` supplied — and the source is one plan too early: the header is
+planned before the constructs inside it, and a declarator list, a binary operator and an
+invocation's parentheses each re-join a break the author wrote there. "Multi-line" means a break
+that *survives*. The header now records itself during the walk and `SettleForHeaders` answers after
+it, from the finished gap table: a gap nobody planned (kept by `keep_user_linebreaks`), a required
+break, or a point of a group certain to break counts; a `Flat` gap, a fill point and a preserve
+group that may re-join do not.
+
+⚠ **Adjacent and still open**: the last row's value — `i +=` / `1` — takes a level past the
+incrementor in the oracle and none under Skala, the same shape SK-DIV-0103 records for
+`for (int i =` / `0;` and scoped out of `SpendsUnderDelimiters` because `using (var d =` /
+`default(…))` adds none. Not in the fixture.
+
+- options: `skala_wrap_for_stmt_header_style` (`chop_if_long`), `skala_keep_user_linebreaks`,
+  `skala_wrap_multiple_declaration_style` (whose join is the one that was miscounted).
+- ⚠ status: **fixed**, pinned by `constructs/breaks/for-header-surviving-break.cs` and
+  `ForHeaderSurvivingBreakTests`.
+
+## SK-DIV-0105 — the constraints inside one `where` clause continue on the `where`'s own column
+
+⚠ **Found beside SK-DIV-0104 and reserved by #370.** Measured 2026-09-16 with `Testing ask`, on a
+method and on a type, under the export and at every key that moves the `where`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `void A<T1>() where T1 : class` / `, new() { }` | `void A<T1>()` / `where T1 : class` / `, new() { }` — `, new()` on the **`where`'s column** (8) | `, new()` at 12 |
+| `where T1 : class,` / `new()` | kept, `new()` at 8 | 12 |
+| `where T1 : class` / `, System.IDisposable` / `, new()` | every constraint at 8 | 12 |
+| a 130-column clause on one line | wrapped at the last comma that fits, continuation at 8 | left whole |
+| the same at `skala_continuous_indent_multiplier = 2` | `where` at 12, `, new()` at **12** | 20 |
+| at `skala_indent_type_constraints = false` | `where` at 4, `, new()` at **4** | 8 |
+| at `skala_place_type_constraints_on_same_line = false` | `where` at 8, `, new()` at 8 | 12 |
+| both keys off | 4 and 4 | 8 |
+
+So the constraints of one clause spend no level of their own: the second constraint follows the
+`where` wherever the keys put it. Three things under Skala's answer, none of them an option. The
+gaps between constraints had no plan, so `keep_user_linebreaks` kept them and the clause's own
+frame — a `TypeParameterConstraintClauseSyntax` owns one — spent a continuation level on each.
+Under a run the clause's `NodeLayout.Continuation` arm opened a second scope of its own, on the
+`where`'s line, which reached only the lines inside the clause. And nothing wrapped a clause too
+wide for the margin.
+
+**Decision: fix.** `PlanConstraintList` gives the constraints a fill — points after each comma,
+pinned where the author broke, and the side before the comma kept too, as a tuple's is — described
+as an *inner* group the builder opens after the keyword, because a group around the clause moved
+the gap before the `where` out of the scope `skala_indent_type_constraints` indents when there is no
+run. The clause's frame is marked as paying for nothing (the `Aligned` frame's rule), and the arm's
+scope opens only without a run, where it is what indents the `where` line itself.
+
+⚠ **Adjacent and still open**: `int E<T1>() where T1 : class` / `, new() => 0;` — the oracle breaks
+the arrow (`, new() =>` / `0;`) because the head is wrapped, which is SK-DIV-0098; Skala keeps
+`=> 0` on the line. Not in the fixture.
+
+- options: `skala_indent_type_constraints`, `skala_place_type_constraints_on_same_line`,
+  `skala_continuous_indent_multiplier`, `skala_keep_user_linebreaks` — all measured, none the cause.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/constraint-continuation.cs` and
+  `ConstraintContinuationTests` (which also pins the three keyed variants).
+
+## SK-DIV-0106 — an embedded statement pushed off a header the author broke
+
+⚠ **Found beside SK-DIV-0102 and reserved by #370.** Measured 2026-09-16 with `Testing ask`, under
+`skala_keep_existing_embedded_arrangement = true` and brace insertion off:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `while (` / `c) n++;` | `n++` stays on the `)` line | `c)` / `n++;` |
+| `if (` / `c) n++;`, `foreach (` / `var x in xs) n++;`, `lock (` / `xs) n++;` | stays | pushed off |
+| `for (` / `var i = 0; i < n; i++) n++;` | header chopped at both `;`, `n++` stays | pushed off |
+| `while (c` / `&& n > 0) n--;` | stays | stays |
+| a header whose last line is 120 columns and 125 with ` n++;` | the `&&` chain chops, `n++` **stays** after the `)` | chain whole, `n++` pushed off |
+| a 126-column single-line `while (…) n++;` | chain chops, `n++` stays | chain chops, `n++` pushed off |
+| `if (depth < 0) throw new …("…");` overflowing | `throw` pushed off, condition untouched | same |
+| `if (c.ToString().Length > 0 && d.ToString().Length > 0) throw new …("…");` overflowing | `throw` pushed off, condition untouched | same |
+| `while (c)` / `n++;` and `while (` / `c)` / `n++;` | the author's break kept | kept |
+| `if (` / `c) if (n > 0) n++;` | `c)` / `if (n > 0)` / `n++;` — both pushed off | `c)` / `if (n > 0) n++;` |
+
+`PlanEmbeddedStatement` read "an owner that does not fit on one line pushes its statement off that
+line" as "an owner that is multi-line does": the group was resolved against the whole owner's flat
+width, and a kept break in the header made that width unbounded. The oracle asks a narrower
+question, and asks it last: does the statement fit on what is left of the header's *closing* line
+once everything before it has wrapped. That is a fill point measured at the column the writer has
+actually reached — and one taken as a last resort, because the fifth row says the condition chain
+was resolved against a line that still held the statement.
+
+**Decision: fix.** Under keep, a simple owner's gap is a `GapRule.LastResortPoint` — a fill point
+whose flat rendering counts towards the rest-of-line measure of every group before it instead of
+ending it (`LineFlags.LastResort`, in the layout engine's `DocumentBuilder.BreakPoint` and
+`LayoutWriter.AddRemainingSiblings`) — and the author's own break there is pinned as a required
+one. An owner that carries an embedded statement of its own keeps the group point: the oracle
+pushes it off whenever it is multi-line.
+
+⚠ **Adjacent and still open**: the last row's inner `if (n > 0) n++;` — simple, single-line,
+written joined — is broken by the oracle when its owner is itself an embedded statement that was
+pushed off. One shape measured; not in the fixture.
+
+- options: `skala_keep_existing_embedded_arrangement` (`true`; the `false` paths are untouched),
+  `skala_place_simple_embedded_statement_on_same_line` (inert under keep, as before).
+- ⚠ status: **fixed**, pinned by `constructs/breaks/embedded-statement-after-multiline-header.cs`,
+  `EmbeddedStatementAfterMultilineHeaderTests` and
+  `DocumentBuilderTests.LastResortPoint_LetsTheGroupBeforeItBreakFirst`.
+
+## SK-DIV-0112 — a chain broken at a dot after a parenthesised head took one level too many
+
+⚠ **Found beside SK-DIV-0101 and reserved by #370.** Measured 2026-09-16 with `Testing ask`, on
+twenty-four shapes; the member's indent is 4, a statement's 8:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `=>` / `(` / `a).B` / `.C();` | `(` at 8, `a).B` at 12, `.C()` at **8** | `.C()` at 12 |
+| `=>` / `(` / `a)` / `.B` / `.C();` | dots at 8 | 12 |
+| `=>` / `(a` / `+ b).C` / `.D();` and `=>` / `(a + b).C` / `.D();` | `.D()` at 8 — the head need not be multi-line | 12 |
+| `=>` / `(` / `a, b).C` / `.D();`, `=>` / `(` / `a)?.B` / `.C();`, `=>` / `(` / `a)[0]` / `.C();` | 8 | 12 (and the `?.` put the `(` at 4) |
+| `=>` / `(` / `a).B()` / `.C();` | 8 | 12 |
+| `var x =` / `(` / `a).B` / `.C();`, `return` / `(` / `a).B` / `.C();` | `(` at 12, `a).B` 16, `.C()` **12** | `.C()` at 16 |
+| `=>` / `F(` / `a` / `+ 1` / `)` / `.B` / `.C();` — an invocation head | `F(` 8, `a` 16, `)` 12, dots **12** | identical |
+| `=>` / `a.ToString()` / `.Length` | 8, 12 | identical |
+| `(a + b).C` / `.D();` and `(a + b).C()` / `.D()` / `.E();` as statements | dots at **12** | identical |
+| `var v = a.B` / `.C();` | 12 | identical |
+| at `skala_continuous_indent_multiplier = 2`: `=>` / `(` / `a).B` / `.C();` | `(` 12, `a).B` 20, `.C()` 12 | 20 |
+
+So a call chain whose head is a parenthesised expression or a tuple spends no level of its own
+once its owner has spent one — the dots land on the `(`'s column — and still takes one when it is a
+statement of its own, where nothing has been spent yet. An invocation head keeps the chain's level
+either way. In Skala's terms that is `spendsIndent`'s rule ("a level if no other continuation is
+open") rather than `ownLevel`'s ("a level, always"), which the chain group took for every head.
+
+**Decision: fix**, in the two places a chain's level is paid. The group — a chain with two or more
+invoked dots — asks for `SpendsIndent` instead of `OwnLevel` when `ChainHeadIsParenthesised`. The
+chain *frame*, which pays for an author's break before a dot that is not a point (`(a).B` / `.C()`
+has one point, before `.B`, and no group at all), is marked `HoldsLevel` for the same heads: it
+spends nothing and hands the break outward, so an unspent statement frame still pays and an arrow
+that has already spent does not. And `HeadsWithAChoppedParenthesis` now looks for a dot break on
+the right of a `?.` too, whose dots hang off `WhenNotNull` rather than the spine — it put the `(`
+of `=>` / `(` / `a)?.B` / `.C()` at the member's indent where the oracle keeps the continuation.
+
+⚠ **Adjacent and still open**: with the `(` on the *statement's* first line — `(` / `a).B` /
+`.C();`, `var z = (` / `a).B` / `.C();`, `return (` / `a).B` / `.C();`, `(a` / `+ b).C` / `.D();` —
+the oracle puts the parenthesis's contents two levels in (16) and Skala one (12); the dots agree at
+12 now. The chain's level is spent as a scope over the receiver there, which Skala's one-level-per-
+opening-line collapse does not express. And two shapes met on the way that are not this entry's:
+the oracle re-joins `F(` / `a)` and then breaks before the *property* `.B` of `F(a).B` / `.C()`,
+where Skala keeps `F(a).B` together; and a chain broken after a multi-line lambda argument has its
+lambda body pushed by the chain's level and its `)` given a line of its own in the oracle (`a.B(x
+=> {` / `var y = x;` at 20 / `}` at 16 / `)` at 12 / `.C()` at 12) where Skala writes 16 / 12 / 8 /
+12. Neither is in the fixture.
+
+- options: none; `skala_continuous_indent_multiplier` measured at 2 and the rule holds.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/chain-after-parenthesised-head.cs` and
+  `ChainAfterParenthesisedHeadTests`.
+
+## SK-DIV-0109 — a list item made multi-line by a kept binary break did not chop the list
+
+⚠ **Found beside SK-DIV-0103 and reserved by #370; the binary half of SK-DIV-0007, and the shape
+SK-DIV-0078 shares.** Measured 2026-09-16 with `Testing ask` on thirty-one shapes:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `void C(int a = 5` / `+ 6) { }` | `void C(` / `int a = 5` / `+ 6` / `) { }` — chopped, `+ 6` a level past the parameter | as written |
+| `F(1` / `+ 2, 3);`, `F(1, 2` / `+ 3);`, `G(1` / `+ 2);` | chopped, the operand flush with its operand | as written |
+| `F((1` / `+ 2), 3)`, `F(x => x` / `+ 1, 3)`, `F(1` / `+ 2` / `+ 3, 4)`, `F(c && a > 0` / `\|\| b > 0, 3)` | chopped | as written |
+| `[System.Obsolete("x"` / `+ "y", true)]` | chopped | as written |
+| `new T { X = 1` / `+ 2, Y = 2 }` | braces broken, elements chopped, `+ 2` a level past `X` | as written |
+| `var t = (1` / `+ 2, 3);` | **as written** — a tuple only fills | as written |
+| `a > 0` / `&& b > 0 \|\| c` | chopped at **both** operators | as written |
+| `a > 0 && b > 0` / `\|\| c` | as written | as written |
+| `c ? 1` / `+ n : 2` | `c` / `? 1` / `+ n` / `: 2` | as written |
+| `F(a` / `&& b) \|\| c;`, `c ? F(a` / `&& b) : false` | the list chops and the operator or ternary around it chops too | as written |
+| `int x = a` / `+ 1, y = 2;` | declarators chopped | as written |
+| `a.B(a` / `+ 1).C()` | argument list chopped and the chain chopped at every dot | as written |
+| `int A() => a` / `+ b;` | `=>` / `a` / `+ b;` | identical |
+| `[1` / `+ 2, 3]`, `new[] { 1` / `+ 2, 3 }` | delimiters broken **and every element on its own line** | as written |
+
+"Chop if long *or multiline*" is universal: a construct that spans lines makes its container span
+lines, whatever the container is. SK-DIV-0007 recorded the missing capability and the reason the
+obvious fix failed — an operator group nested in the next operator's group — and that objection
+turns out to have been measured on the wrong nesting: the oracle *does* chop the outer operator
+around a broken inner one; what it does not do is chop the inner around a broken outer, and that is
+the chain-wide owner's business, not containment's.
+
+**Decision: fix**, in the layout engine. `DocumentBuilder` carries a per-node `certain` flag — a
+hard line, a `Break` group, a `Preserve` group whose source was broken at its own points and which
+may not re-join, or any node containing one — and a group with a certain child has no flat form.
+Kept apart from `flatWidth` so that the nested group's own width stays measurable: the head and
+point measures stop at an unbounded child, and `var x = a` / `+ b` keeps `a` on the `=`'s line.
+
+⚠ **The chain-wide owner is the one container exempt, and exempting it directly was not enough.**
+Skala's own `IntAlign.cs` holds `row is null` / `|| line != previousLine + 1` / `|| run.Count > 0
+&& !Joins(…)`, and `&&` and `||` are one chain: the links the author broke were certain, the link
+containing them was certain, and that link's now-unbounded width flowed by *summation* into the
+owner, which chopped every link — the `&&` included, which the oracle keeps. So the owner is
+measured by a second width (`ownerWidth`) that only *strong* certainty makes unbounded — a hard
+line, a `Break` group, a broken group that is not a link — and never a link's own break
+(`certainOrigin`); and a link whose operand holds something certain breaks on its own in the fitter
+(`GroupFacts.ChainLink`, the mark that separates a binary link from the expression body, the other
+`BreaksWithOwner` producer). Measured three ways: `a > 0 && a < 10` / `|| a == 20` unchanged,
+`a > 0` / `&& a < 10 || a == 20` chopped at both, and the `IntAlign` shape keeping its `&&`.
+`binary-operators.cs`, `binary-patterns.cs` and `binary-chains.cs` are unmoved, and SK-DIV-0078's
+fixture agrees without a change of its own.
+
+⚠ **Adjacent and still open**: the last row — a *filled* list (`wrap_if_long`: an array
+initializer, a collection expression) with a multi-line element breaks its delimiters under Skala
+and the oracle also puts every remaining element on its own line, where a fill keeps `+ 2, 3`
+together. The tuple, which has no wrap style, fills under both. Not in the fixture. Also the
+levels inside a chopped list that is itself the operand of a broken chain (`F(` / `a` / `&& b` / `)`
+/ `|| c` puts `a` at 16 in the oracle, 12 under Skala) and a declarator's value past its `=`
+(`int x = a` / `+ 1,` — 16 against 12), both SK-DIV-0103's scoping and SK-DIV-0112's adjacent
+shape rather than this entry's.
+
+- options: `skala_wrap_arguments_style`, `skala_wrap_parameters_style` and the rest of the
+  `chop_if_long` family; `skala_keep_user_linebreaks`.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/multiline-item-chops-the-list.cs`,
+  `MultilineItemChopsTheListTests`, and — closed on the way — `constructs/wrapping/binary-pattern-arrow.cs`.
+
+## SK-DIV-0107 — a switch expression's arms nested from the brace's line, one level too deep
+
+⚠ **Found beside SK-DIV-0101 and reserved by #370.** Measured 2026-09-16 with `Testing ask`, at a
+statement indent of 8:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `var s = (a,` / `b) switch {` / arms / `};` | arms at **12**, `}` at 8 | arms at 16, `}` at 12 |
+| `var s = (a` / `+ b) switch {`, `var s = a.ToString()` / `.Length switch {`, `var s = F(a,` / `b) switch {` | 12 / 8 | 16 / 12 |
+| `int s = (a,` / `b) switch {`, `s = (a,` / `b) switch {` | 12 / 8 | 16 / 12 |
+| `return (a` / `+ b) switch {` | 12 / 8 | 12 / 8 |
+| `=>` / `(a,` / `b) switch {` | arms at 12 — one past the `(a,` line | 12 |
+| `=>` / `(` / `a, b) switch {` (SK-DIV-0101) | arms at 8 — one past the `(`'s line | 8 |
+| `var s = F((a,` / `b) switch {` … `}, 3);` | the list chops; arms one past the `(a,` line | identical |
+| `var s = a + (a,` / `b) switch {` | `a` / `+ (a,` / `b) switch {` with arms one past the `+ (a,` line | identical |
+| the first row at `skala_continuous_indent_multiplier = 2` | arms at **16** — a *continuation*, multiplied | 20 |
+| the first row at `skala_align_multiline_switch_expression = true` | identical on both sides | — |
+
+So the arms take one level from the line the switch expression's *governing expression* starts on,
+whatever else that line is inside. Skala opened the arms' block at the `{` and nested it from the
+level of the `{`'s line, which under `var s =` sits inside the `=`'s continuation — a scope the `=`
+opened eagerly and never wrote a break at — and under `=>` or `return` does not, which is why only
+the declaration and assignment forms diverged.
+
+**Decision: fix.** Two indent kinds in the layout engine: `IndentKind.Anchor`, a marker pushed
+where the governing expression begins that remembers the level a scope opening there would nest
+from — ⚠ not the line's own indentation: `if (member switch {` nests its arms from the condition's
+aligned column (16) and `.OrderBy(pair => pair switch {` from the argument's level (20), both
+delimited scopes opened earlier on the same line, while the `=`'s continuation is conditional and
+`LevelForNested` never counts one opened on the current line, which is exactly the distinction
+the first row needs — and `IndentKind.AnchoredBlock`, a block whose outer level is the innermost
+anchor's rather than the brace's line's. `VisitBraced` pushes the anchor for a switch expression after `VisitPlanned` has
+emitted the gap before the node, so it records the governing expression's own line, and not under
+`skala_align_multiline_switch_expression`, whose Align scope is already the column the arms nest from.
+
+⚠ **Adjacent and still open, and already recorded at the key**: the multiplier row. The arms are a
+*continuation* in the oracle (16 = 8 + 2 × 4) and a block in Skala (12 = 8 + 4), the same
+`skala_continuous_indent_multiplier` defect `VisitBraced`'s remarks record for every braced
+initializer; at the export's multiplier of 1 the two are the same number. Not this entry's and not
+in the fixture.
+
+- options: none behind the divergence; `skala_continuous_indent_multiplier` and
+  `skala_align_multiline_switch_expression` measured as above.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/switch-over-multiline-governing-expression.cs`
+  and `SwitchOverMultilineGoverningExpressionTests`.
+
+## SK-DIV-0110 — a fill broke before a nested item that carried a kept break of its own
+
+⚠ **Found beside SK-DIV-0104 and reserved by #370.** Measured 2026-09-16 with `Testing ask`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `(1` / `, (2` / `, 3))` | as written — `, (2` together | `(1` / `,` / `(2` / `, 3))` — **a comma alone on a line** |
+| `(1` / `, (2` / `, 3)` / `, (4` / `, 5))` | as written | a lone comma before each nested tuple |
+| `(1` / `, (2` / `, 3), 4)` | as written — `4` stays after the item | lone comma |
+| `(1` / `, G<int` / `, int>())` | as written | lone comma |
+| `(1,` / `(2,` / `3))`, `(1` / `, (2, 3))`, `((1` / `, 2), 3)`, `(1,` / `(2, 3` / `, 4))` | as written | identical |
+| `Resolve(` … `), [` … `]` (the #339 fixture) | `), [` — the 110-column collection's `[` stays on the `)` line and the collection chops inside | `),` / `[` |
+| a collection initializer whose next element is a 104-column object initializer (`SegmentOf`'s remark) | broken before the element, whole | identical |
+| `new[] { First && … && Fifth, Sixth && … && Tenth }` — a 133-column chain that fits nowhere (`indentation/binary-chain-as-an-initializer-element.cs`) | **broken before `Sixth`**, then chopped | identical |
+
+The fill's segment measure read a nested item holding a hard line as infinitely wide, so the point
+in front of it always broke. That rule was #337/#339's fix for an idempotence failure — a break the
+fitter created on pass one and preserved on pass two shortened the item's measured width — and it
+over-corrected: the oracle never breaks before an item that would not fit on a fresh line either.
+Put together with the 104-column case, the rule is that **a fill breaks before an item exactly when
+that makes the item fit whole; otherwise the item's head stays on the line and the item breaks
+inside** — ⚠ for an item that opens with a delimiter. The `Sixth && …` row refutes the rule for an
+identifier-headed item: the oracle breaks before a chain that fits nowhere and Skala, applying the
+head rule there, was no longer idempotent (pass one measured the chain's operator points as unable
+to break on their own, pass two saw them kept). An opening `(`, `[` or `{` may hang at the end of a
+line; an identifier's item starts a fresh one. Five shapes, both sides. That is idempotent by
+construction: an item too wide for any line keeps its head on pass one and breaks inside, and on
+pass two the same item — now certain — is measured the same way.
+
+**Decision: fix**, in the layout engine. `DocumentBuilder` measures a second number per fill point,
+`segmentHead`: the width to the first place inside the next item where a break could land — a hard
+line, or a point of a nested group that can break (always, on width, or because its source was
+broken there and it may not re-join). `LayoutWriter`'s fill decision stays "does the whole item fit
+here"; when it does not, and the item would not fit on a continuation line either, and the item
+opens with a delimiter (`LineFlags.DelimitedItem`, set by the C# builder from the next token), the
+head decides. ⚠ Not for a last-resort point (SK-DIV-0106): an embedded statement with no room is
+pushed off and then chopped, never left as `if (c) Frobnicate(`.
+
+⚠ **Adjacent and still open**: the #339 fixture now agrees on `), [` and disagrees one line later —
+the oracle breaks after the multi-line `]`, and keeps `], (null ? "ss" : 1.5d), []` apart, where
+Skala fills on; a tuple's next item after a multi-line one stays (`, 3), 4)` above). The same
+wrap-style-versus-plain-fill line SK-DIV-0109 records for `[1` / `+ 2, 3]`. One line better and one
+line worse on that fixture; not in this entry's construct.
+
+- options: `skala_keep_user_linebreaks`; the tuple has no wrap style of its own.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/nested-multiline-tuple-item.cs`,
+  `NestedMultilineTupleItemTests` and
+  `DocumentBuilderTests.Fill_KeepsTheHeadOfAnItemThatFitsNowhere_AndMovesOneThatFitsMoved`.

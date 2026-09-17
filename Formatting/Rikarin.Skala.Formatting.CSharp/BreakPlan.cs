@@ -29,7 +29,15 @@ public enum GapRule {
     ///     A break point of a <em>fill</em>: it breaks when what follows would not fit on the line, and
     ///     not merely because its group broke. <c>wrap_if_long</c>.
     /// </summary>
-    FillPoint
+    FillPoint,
+
+    /// <summary>
+    ///     A fill point taken last: the constructs before it on the line wrap first, because the
+    ///     rest-of-line measure they are resolved against runs through this gap rather than ending at
+    ///     it. An embedded statement's gap under <c>keep_existing_embedded_arrangement</c>
+    ///     (SK-DIV-0106). See <see cref="LineFlags.LastResort" />.
+    /// </summary>
+    LastResortPoint
 }
 
 /// <summary>One gap's rule.</summary>
@@ -238,6 +246,20 @@ public sealed class BreakPlan {
     /// </remarks>
     readonly Dictionary<long, ConstraintRun> constraints = [];
 
+    /// <summary>Every group described, by id — what <see cref="SourceBreakSurvives" /> reads.</summary>
+    readonly Dictionary<int, GroupPlan> byId = [];
+
+    /// <summary>
+    ///     The <c>for</c> headers whose "is the header multi-line" answer waits for the walk to finish.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The header is planned before the clauses inside it, and its answer depends on what those
+    ///     plans do with the author's breaks: <c>for (int i = 0\n, j = 1; …)</c> holds a break the
+    ///     declarators re-join, and reading the source at plan time counted it (SK-DIV-0111). So the
+    ///     header records itself here and <see cref="SettleForHeaders" /> asks the finished gap table.
+    /// </remarks>
+    readonly List<ForStatementSyntax> forHeaders = [];
+
     readonly string source;
     readonly PhaseOneOptions options;
     int[] forced = [];
@@ -254,6 +276,7 @@ public sealed class BreakPlan {
     public static BreakPlan Build(SyntaxNode root, string source, in PhaseOneOptions options) {
         var plan = new BreakPlan(source, options);
         plan.Walk(root);
+        plan.SettleForHeaders();
         plan.CollectForcedBreaks();
         return plan;
     }
@@ -356,6 +379,7 @@ public sealed class BreakPlan {
         PlanEmbeddedStatement(node, EmbeddedStatementOf(node));
         PlanOnePerLine(node);
         PlanConstraints(node);
+        PlanConstraintList(node);
 
         // ⚠ Before the switch and before the condition's own operators are walked. The walk is
         // pre-order, so the statement is planned first and `PlanOperator` reads what this recorded.
@@ -423,19 +447,29 @@ public sealed class BreakPlan {
                 return;
 
             case ParameterListSyntax parameters:
-                PlanList(
+                PlanDeclarationParameters(
                     node,
                     parameters.OpenParenToken,
                     parameters.CloseParenToken,
-                    parameters.Parameters,
-                    parameters.Parameters.GetSeparators(),
-                    DeclarationKeeps(parameters),
-                    options.WrapParametersStyle,
-                    options.WrapAfterDeclarationLpar,
-                    options.WrapBeforeDeclarationRpar,
-                    options.MaxFormalParametersOnLine,
-                    wrapBeforeOpen: options.WrapBeforeDeclarationLpar
+                    parameters.Parameters
                 );
+                return;
+
+            // ⚠ An indexer's parameter list had no plan at all (SK-DIV-0108): `int this[int a =\n 5]`
+            // kept the break and chopped nothing, and `int this[int a\n, int b]` kept a comma the
+            // oracle re-lays. The oracle gives the brackets exactly the declaration keys — measured
+            // beside a method twin of every shape: the list chops when an item is multi-line or a
+            // delimiter break is kept, `]` takes a line of its own, the arrow after it breaks, and a
+            // break before a comma is joined. There is no indexer-specific key in the registry to
+            // read instead.
+            case BracketedParameterListSyntax indexerParameters:
+                PlanDeclarationParameters(
+                    node,
+                    indexerParameters.OpenBracketToken,
+                    indexerParameters.CloseBracketToken,
+                    indexerParameters.Parameters
+                );
+
                 return;
 
             case TupleExpressionSyntax tuple:
@@ -628,6 +662,30 @@ public sealed class BreakPlan {
     }
 
     // ── Constructs ───────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    ///     A method's, a local function's, a lambda's or an indexer's parameter list, under the
+    ///     declaration keys. See <see cref="DeclarationKeeps" /> for why a lambda's is here too.
+    /// </summary>
+    void PlanDeclarationParameters(
+        SyntaxNode node,
+        SyntaxToken open,
+        SyntaxToken close,
+        SeparatedSyntaxList<ParameterSyntax> parameters
+    ) =>
+        PlanList(
+            node,
+            open,
+            close,
+            parameters,
+            parameters.GetSeparators(),
+            DeclarationKeeps(),
+            options.WrapParametersStyle,
+            options.WrapAfterDeclarationLpar,
+            options.WrapBeforeDeclarationRpar,
+            options.MaxFormalParametersOnLine,
+            wrapBeforeOpen: options.WrapBeforeDeclarationLpar
+        );
 
     /// <summary>
     ///     <c>skala_wrap_enum_declaration = chop_always</c> with <c>skala_max_enum_members_on_line = 1</c>: one
@@ -1531,7 +1589,12 @@ public sealed class BreakPlan {
 
         // ⚠ Any break inside the parentheses, not only one at a `;`: `chop_if_long` reads a header the
         // author broke inside its condition as multiline and chops the semicolons too.
+        // ⚠ Any break that *survives*. The clauses inside are planned after the header, and some of
+        // them re-join what the author wrote — a break before a declarator's comma, after a binary
+        // operator, inside an invocation's parentheses — so the answer here is provisional and
+        // SettleForHeaders replaces it once the gap table is complete (SK-DIV-0111).
         var broken = Holds('\n', node.OpenParenToken.Span.End, node.CloseParenToken.SpanStart);
+        forHeaders.Add(node);
 
         Flat(node.FirstSemicolonToken);
         Flat(node.SecondSemicolonToken);
@@ -1726,6 +1789,51 @@ public sealed class BreakPlan {
         }
     }
 
+    /// <summary>
+    ///     The constraints inside one <c>where</c> clause: a fill at the clause's own column, keeping a
+    ///     break the author wrote on either side of a comma.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on both sides (SK-DIV-0105), and the level is the finding: a clause broken before
+    ///     the comma and one broken after it both put the next constraint on the
+    ///     <c>where</c>'s own column — at <c>skala_indent_type_constraints</c> true and false, at
+    ///     <c>skala_place_type_constraints_on_same_line</c> true and false, and at
+    ///     <c>skala_continuous_indent_multiplier = 2</c>, where the <c>where</c> moves and the constraint
+    ///     moves with it. A list too wide for the margin wraps at the last comma that fits, on the same
+    ///     column. Skala had no plan for these gaps, so <c>keep_user_linebreaks</c> kept them and the
+    ///     clause's frame spent a level on each: one indent past the <c>where</c>, two at the multiplier.
+    ///     <para>
+    ///         Both sides of the comma are kept, as a tuple's are (SK-DIV-0104): there is no
+    ///         <c>wrap_*</c> style over the constraints of one clause for the oracle to re-lay them with.
+    ///         The group spends no indent, and <see cref="CSharpDocumentBuilder" /> gives the clause a
+    ///         frame that pays for nothing, so a pinned break lands on the column the clause started at.
+    ///     </para>
+    /// </remarks>
+    void PlanConstraintList(SyntaxNode node) {
+        if (node is not TypeParameterConstraintClauseSyntax { Constraints.Count: > 1 } clause) {
+            return;
+        }
+
+        var group = NewGroup();
+        var keeps = options.KeepsUserBreaksBetweenItems;
+        var broken = false;
+        foreach (var comma in clause.Constraints.GetSeparators()) {
+            var next = comma.GetNextToken();
+            if (next.IsKind(SyntaxKind.None) || next.SpanStart >= clause.Span.End) {
+                continue;
+            }
+
+            broken |= PlanItemGap(next, group, true, keeps);
+            broken |= PlanOtherSideOfComma(comma, keeps);
+        }
+
+        // ⚠ An inner group, opened by the builder after the `where`, and not one around the clause:
+        // a group around the node makes VisitPlanned emit the gap before the `where` outside the
+        // clause's own scope, and that gap is what `skala_indent_type_constraints` indents when there
+        // is no constraint run to spend the level.
+        DescribeInner(node, group, GroupMode.Preserve, new GroupFacts(keeps && broken, BreaksIfTooLong: true));
+    }
+
     /// <summary>A declaration's <c>where</c> clauses, whichever of the four kinds it is.</summary>
     static SyntaxList<TypeParameterConstraintClauseSyntax> ConstraintsOf(SyntaxNode? node) =>
         node switch {
@@ -1842,33 +1950,50 @@ public sealed class BreakPlan {
 
         Describe(
             root,
-            group,
-            options.WrapChainedMethodCalls == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
-                options.KeepsUserBreaksBetweenItems && broken,
-                BreaksIfTooLong: true,
-                HidesFlatWidthWhenBroken: true
-            ),
-            // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
-            // `Break`, at the first break landing before a `.` — and a group's break point never
-            // goes through `Break`, so a chain that the fitter chops comes out flush with its
-            // receiver:
-            //     text.AppendLine("…")
-            //     .AppendLine("…")
-            // The frame machinery still serves breaks the author wrote; this serves the ones the
-            // fitter adds.
-            // ⚠ `ownLevel` rather than `spendsIndent`, which is the difference between "a level if
-            // no other continuation is open" and "a level, always". A chained call takes one even
-            // inside another continuation and a binary chain does not — the asymmetry
-            // CSharpDocumentBuilder.VisitInner records — and the shape that shows it is an
-            // expression-bodied member whose arrow has already broken:
-            //     static void Member(Packer packer) =>
-            //         packer.Enum(a)
-            //             .Enum(b);      ← two levels, not one
-            // The one-level-per-opening-line collapse in LayoutWriter.Level is what keeps
-            // `var x = a.B()\n    .C();` at one: there the `=`'s scope and the chain's open on the
-            // same line.
-            ownLevel: true
+            new GroupPlan(
+                group,
+                options.WrapChainedMethodCalls == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+                new GroupFacts(
+                    options.KeepsUserBreaksBetweenItems && broken,
+                    BreaksIfTooLong: true,
+                    HidesFlatWidthWhenBroken: true
+                ),
+                // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
+                // `Break`, at the first break landing before a `.` — and a group's break point never
+                // goes through `Break`, so a chain that the fitter chops comes out flush with its
+                // receiver:
+                //     text.AppendLine("…")
+                //     .AppendLine("…")
+                // The frame machinery still serves breaks the author wrote; this serves the ones the
+                // fitter adds.
+                // ⚠ `ownLevel` rather than `spendsIndent`, which is the difference between "a level if
+                // no other continuation is open" and "a level, always". A chained call takes one even
+                // inside another continuation and a binary chain does not — the asymmetry
+                // CSharpDocumentBuilder.VisitInner records — and the shape that shows it is an
+                // expression-bodied member whose arrow has already broken:
+                //     static void Member(Packer packer) =>
+                //         packer.Enum(a)
+                //             .Enum(b);      ← two levels, not one
+                // The one-level-per-opening-line collapse in LayoutWriter.Level is what keeps
+                // `var x = a.B()\n    .C();` at one: there the `=`'s scope and the chain's open on the
+                // same line.
+                // ⚠ Except when the chain's head is a parenthesised expression or a tuple, which
+                // takes the level only if nothing else is spending one — `spendsIndent`'s rule, not
+                // `ownLevel`'s (SK-DIV-0112). Under an arrow, an `=` or a `return` that has already
+                // spent, the dots of such a chain land on the parenthesis's own column:
+                //     object A() =>            object B() =>           var x =
+                //         (                        (a                      (
+                //             a).B                     + b).C                  a).B
+                //         .C();                    .D();                   .C();
+                // — a single-line head `(a + b).C\n.D()` included, and a tuple, `?.` and `[0]` after
+                // the `)` alike — while the same chain as a statement, with nothing spent yet, puts
+                // them one level in. An invocation head keeps `ownLevel`: `F(\n a\n)\n.B` puts `.B`
+                // one level past the arrow's. Measured on seventeen shapes. The frame half of the
+                // same rule — an author's break before a dot that is not a point — is
+                // CSharpDocumentBuilder's Frame.HoldsLevel.
+                ChainHeadIsParenthesised(root),
+                OwnLevel: !ChainHeadIsParenthesised(root)
+            )
         );
 
         bool Link(SyntaxToken gap) {
@@ -1971,6 +2096,50 @@ public sealed class BreakPlan {
 
                 default:
                     return;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Whether the leftmost receiver of a chain — down the spine of invocations, member, element and
+    ///     conditional accesses and postfix <c>!</c> — is a parenthesised expression or a tuple.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Read in two places that must agree: the chain group's <see cref="GroupPlan.HoldsLevel" />
+    ///     here, for a chain with break points of its own, and the chain <em>frame</em> in
+    ///     <see cref="CSharpDocumentBuilder" />, which pays for an author's break before a dot that is
+    ///     not a point — `(a).B\n.C()` has one point, before `.B`, so its group is never described and
+    ///     the frame is the only mechanism there.
+    /// </remarks>
+    internal static bool ChainHeadIsParenthesised(SyntaxNode root) {
+        var node = root;
+        while (true) {
+            switch (node) {
+                case ParenthesizedExpressionSyntax or TupleExpressionSyntax:
+                    return true;
+
+                case InvocationExpressionSyntax invocation:
+                    node = invocation.Expression;
+                    continue;
+
+                case MemberAccessExpressionSyntax access:
+                    node = access.Expression;
+                    continue;
+
+                case ElementAccessExpressionSyntax element:
+                    node = element.Expression;
+                    continue;
+
+                case ConditionalAccessExpressionSyntax conditional:
+                    node = conditional.Expression;
+                    continue;
+
+                case PostfixUnaryExpressionSyntax postfix:
+                    node = postfix.Operand;
+                    continue;
+
+                default:
+                    return false;
             }
         }
     }
@@ -2230,7 +2399,8 @@ public sealed class BreakPlan {
                 // ⚠ Read together with the mode above: when the forced chop set this group to Break,
                 // the owner is irrelevant — Fitter.Decide answers Broken before it looks at any fact.
                 BreaksWithOwner: true,
-                Owner: ChainOwnerOf(node)
+                Owner: ChainOwnerOf(node),
+                ChainLink: true
             ),
             true
         );
@@ -3001,6 +3171,14 @@ public sealed class BreakPlan {
                     break;
 
                 case ConditionalAccessExpressionSyntax conditional:
+                    // ⚠ The dots to the right of the `?` hang off WhenNotNull, not off the spine, so
+                    // a chain the author broke there — `(\n a)?.B\n.C()` — has to be looked for on
+                    // that side too; the oracle keeps the `(` on the continuation for it exactly as
+                    // for `(\n a).B\n.C()` (SK-DIV-0112).
+                    if (BreaksAtADotIn(conditional.WhenNotNull, source)) {
+                        return false;
+                    }
+
                     (receiver, operatorToken) = (conditional.Expression, conditional.OperatorToken);
                     break;
 
@@ -3037,6 +3215,44 @@ public sealed class BreakPlan {
         }
 
         return false;
+    }
+
+    /// <summary>
+    ///     Whether the source breaks before a dot on the left spine of a conditional access's
+    ///     <c>WhenNotNull</c> — the <c>.C</c> of <c>?.B.C()</c>.
+    /// </summary>
+    static bool BreaksAtADotIn(ExpressionSyntax whenNotNull, string source) {
+        var node = whenNotNull;
+        while (true) {
+            switch (node) {
+                case InvocationExpressionSyntax invocation:
+                    node = invocation.Expression;
+                    continue;
+
+                case MemberAccessExpressionSyntax access:
+                    if (BreaksBeforeIn(source, access.OperatorToken)) {
+                        return true;
+                    }
+
+                    node = access.Expression;
+                    continue;
+
+                case ElementAccessExpressionSyntax element:
+                    node = element.Expression;
+                    continue;
+
+                case ConditionalAccessExpressionSyntax nested:
+                    if (BreaksAtADotIn(nested.WhenNotNull, source)) {
+                        return true;
+                    }
+
+                    node = nested.Expression;
+                    continue;
+
+                default:
+                    return false;
+            }
+        }
     }
 
     /// <summary>
@@ -3293,6 +3509,33 @@ public sealed class BreakPlan {
         }
 
         var group = NewGroup();
+
+        // ⚠ Under keep, a simple statement's gap is a *fill point*, and the author's own break there
+        // is pinned. "An owner that does not fit on one line pushes its statement off that line" was
+        // read as "an owner that is multi-line does", and the oracle separates the two (SK-DIV-0106):
+        //     while (                       while (c
+        //         c) n++;                          && n > 0) n--;     ← both kept on the `)` line
+        // A header the author broke — after the `(`, before an operator — keeps its statement on the
+        // closing line, and so does a header the oracle itself chops for width: a 125-column
+        // `while (…) n++;` comes back with every `&&` on its own line and `n++` still after the `)`.
+        // What pushes the statement off is the *last* line of the header not having room for it —
+        // `if (depth < 0) throw new …(…);` where the throw does not fit — which is exactly what a fill
+        // point measures, at the column the writer has actually reached after the header. A group
+        // point measured the whole owner instead, and any kept break inside the header made that
+        // width unbounded.
+        // ⚠ Simple owners only. An owner that carries an embedded statement of its own — `if (\n c) if
+        // (d) n++;` — is pushed off by the oracle whenever it is multi-line, and keeps the group point.
+        if (keeps && simple) {
+            if (BreaksBefore(first)) {
+                Mandatory(first);
+            } else {
+                Point(first, group, true, true);
+            }
+
+            Describe(owner, group, GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true));
+            return;
+        }
+
         Point(first, group);
         Describe(
             owner,
@@ -3632,10 +3875,7 @@ public sealed class BreakPlan {
     ///     the C# formatter is not wired to. Skala answered to it, which is why the sweep read
     ///     <c>SPURIOUS</c>. SK-DIV-0093.
     /// </remarks>
-    bool DeclarationKeeps(ParameterListSyntax parameters) {
-        _ = parameters;
-        return options.KeepExistingDeclarationParensArrangement;
-    }
+    bool DeclarationKeeps() => options.KeepExistingDeclarationParensArrangement;
 
     static StatementSyntax? EmbeddedStatementOf(SyntaxNode node) =>
         node switch {
@@ -3696,12 +3936,92 @@ public sealed class BreakPlan {
         }
 
         plans.Add(plan);
+        byId[plan.Id] = plan;
     }
 
-    void DescribeInner(SyntaxNode node, int group, GroupMode mode, in GroupFacts facts) =>
-        inner[Key(node)] = new(group, mode, facts);
+    void DescribeInner(SyntaxNode node, int group, GroupMode mode, in GroupFacts facts) {
+        var plan = new GroupPlan(group, mode, facts);
+        inner[Key(node)] = plan;
+        byId[group] = plan;
+    }
 
-    void Point(SyntaxToken token, int group, bool fill = false) {
+    /// <summary>
+    ///     Whether a break the author wrote before this token is still there once every plan has had
+    ///     its say: the gap is nobody's (so <c>keep_user_linebreaks</c> keeps it), or a required break,
+    ///     or a point of a group that is certain to break.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only meaningful after the walk — a gap not yet planned reads as kept. A point of a fill is
+    ///     re-decided by width and a preserve group that may re-join is not certain, so neither counts;
+    ///     that errs towards "the header stays whole", which is the direction the oracle errs in.
+    /// </remarks>
+    bool SourceBreakSurvives(SyntaxToken token) {
+        if (!BreaksBefore(token)) {
+            return false;
+        }
+
+        if (!gaps.TryGetValue(token.SpanStart, out var spec)) {
+            return options.KeepsUserBreaksBetweenItems;
+        }
+
+        switch (spec.Rule) {
+            case GapRule.Flat:
+                return false;
+
+            case GapRule.Mandatory:
+                return true;
+
+            default:
+                return byId.TryGetValue(spec.Group, out var plan)
+                    && (plan.Mode == GroupMode.Break
+                        || spec.Rule == GapRule.Point
+                        && plan.Facts.SourceBroken
+                        && !plan.Facts.JoinsIfFits);
+        }
+    }
+
+    /// <summary>
+    ///     <c>chop_if_long</c>'s "or multi-line" for a <c>for</c> header, answered against the finished
+    ///     plan: a header is multi-line when a break inside its parentheses <em>survives</em>, not when
+    ///     the source merely holds one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on both sides (SK-DIV-0111). The oracle leaves <c>for (int i = 0\n, j = 1; …)</c>,
+    ///     <c>for (int i = 0; i &lt;\n n; …)</c> and <c>for (int i = F(\n1); …)</c> on one line — each
+    ///     break is one its own construct re-joins — and chops the header for a break kept after a
+    ///     declarator's comma, before a binary operator or after an incrementor's <c>+=</c>. Reading
+    ///     the source alone chopped all six.
+    /// </remarks>
+    void SettleForHeaders() {
+        foreach (var node in forHeaders) {
+            var key = Key(node);
+            if (!inner.TryGetValue(key, out var plan)) {
+                continue;
+            }
+
+            var survives = false;
+            foreach (var token in node.DescendantTokens()) {
+                if (token.SpanStart <= node.OpenParenToken.SpanStart) {
+                    continue;
+                }
+
+                if (token.SpanStart > node.CloseParenToken.SpanStart) {
+                    break;
+                }
+
+                if (SourceBreakSurvives(token)) {
+                    survives = true;
+                    break;
+                }
+            }
+
+            var settled = plan with { Facts = plan.Facts with { SourceBroken = survives } };
+            inner[key] = settled;
+            byId[plan.Id] = settled;
+        }
+    }
+
+    void Point(SyntaxToken token, int group, bool fill = false, bool lastResort = false) {
         if (token.IsKind(SyntaxKind.None)) {
             return;
         }
@@ -3711,7 +4031,10 @@ public sealed class BreakPlan {
             return;
         }
 
-        gaps[token.SpanStart] = new(fill ? GapRule.FillPoint : GapRule.Point, group);
+        gaps[token.SpanStart] = new(
+            lastResort ? GapRule.LastResortPoint : fill ? GapRule.FillPoint : GapRule.Point,
+            group
+        );
     }
 
     /// <summary>A point the source broke stays broken; one it did not stays flat.</summary>

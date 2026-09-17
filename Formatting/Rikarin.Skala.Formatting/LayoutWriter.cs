@@ -298,9 +298,32 @@ public sealed class LayoutWriter {
         // }               ← the `if`'s level, not the `&amp;&amp; second` line's
         // </code>
         var outer = LevelForNested();
+
+        // ⚠ An anchored block nests from the line its anchor was pushed on, which is the governing
+        // expression's line and not the brace's. See IndentKind.Anchor.
+        if (kind == IndentKind.AnchoredBlock) {
+            for (var i = scopes.Count - 1; i >= 0; i--) {
+                if (scopes[i].IsAnchor) {
+                    outer = scopes[i].CloserLevel;
+                    break;
+                }
+            }
+
+            kind = IndentKind.Block;
+        }
+
         scopes.Add(
             kind switch {
                 IndentKind.Block => new Scope(true, outer + indentWidth, line, outer, unconditional),
+
+                // ⚠ The level a scope opening here would nest from — `outer` — and not the line's own
+                // indentation. The two differ by the delimited scopes opened earlier on this line, and
+                // the oracle counts those: `if (member switch {` nests its arms from the condition's
+                // aligned column and `.OrderBy(pair => pair switch {` from the argument's level, while
+                // `var s = (a,\n b) switch {` nests from the statement's, because the `=`'s continuation
+                // opened on this line is conditional and `LevelForNested` never counts one of those
+                // (SK-DIV-0107, measured on all three).
+                IndentKind.Anchor => new Scope(false, 0, int.MaxValue, outer, IsAnchor: true),
                 IndentKind.Continuous =>
                     new Scope(false, continuousMultiplier * indentWidth, line, outer, unconditional),
                 IndentKind.OneLevel => new Scope(false, indentWidth, line, outer, unconditional),
@@ -511,6 +534,11 @@ public sealed class LayoutWriter {
     ///     ⚠ <see cref="IndentKind.Align" />, whose <paramref name="Level" /> is an absolute column rather
     ///     than a level. Only <see cref="LevelColumn" /> reads it, for <c>alignment_tab_fill_style</c>.
     /// </param>
+    /// <param name="IsAnchor">
+    ///     ⚠ <see cref="IndentKind.Anchor" />: a marker that adds nothing and whose
+    ///     <paramref name="CloserLevel" /> is the indentation of the line it was pushed on. Read by
+    ///     <see cref="IndentKind.AnchoredBlock" /> alone.
+    /// </param>
     readonly record struct Scope(
         bool IsBlock,
         int Level,
@@ -518,7 +546,8 @@ public sealed class LayoutWriter {
         int CloserLevel,
         bool Unconditional = false,
         int ColumnOutdent = 0,
-        bool IsAlignment = false);
+        bool IsAlignment = false,
+        bool IsAnchor = false);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     int CurrentLineIndent() {
@@ -803,7 +832,16 @@ public sealed class LayoutWriter {
         var children = document.ChildrenOf(node);
         for (var i = child; i < children.Length; i++) {
             var sibling = children[i];
-            if (document.Nodes[sibling].Kind == DocKind.Line) {
+            ref var slot = ref document.Nodes[sibling];
+            if (slot.Kind == DocKind.Line) {
+                // ⚠ A last-resort point is not the end of the line for anything before it: it is
+                // measured as its flat rendering and the walk goes on. See LineFlags.LastResort.
+                if ((LineKind)slot.Arg0 == LineKind.Soft && ((LineFlags)slot.Flags & LineFlags.LastResort) != 0) {
+                    var rendering = ((LineFlags)slot.Flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
+                    total = total >= Document.Unbounded ? Document.Unbounded : total + rendering;
+                    continue;
+                }
+
                 return true;
             }
 
@@ -904,25 +942,7 @@ public sealed class LayoutWriter {
             // It breaks when the next item would not fit and stays put otherwise, which is what
             // makes `wrap_if_long` a fill rather than a chop.
             if (!flat && (flags & LineFlags.FillPoint) != 0) {
-                var width = pendingSpace ? PendingWidth : (flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
-                var column = atLineStart
-                    ? pendingCloserLevel ?? Effective()
-                    : this.column + width;
-                var segment = document.SegmentOf(node);
-
-                // ⚠ At the group's last point the segment ends where the group does, and the line
-                // does not — so what follows the group counts, exactly as it does when a group is
-                // resolved on entry. Without it a 121-column `for` header and a 121-column `if`
-                // condition both measure 118 and decline the break the oracle takes; the missing
-                // three columns are the `) {`. See LineFlags.LastPoint.
-                if ((flags & LineFlags.LastPoint) != 0) {
-                    var trailing = TrailingAfterGroup(stack, slot.Arg2);
-                    segment = segment >= Document.Unbounded || trailing >= Document.Unbounded
-                        ? Document.Unbounded
-                        : segment + trailing;
-                }
-
-                flat = segment < Document.Unbounded && column + segment <= this.width;
+                flat = FillPointStaysFlat(node, slot.Arg2, flags, stack);
             }
 
             if (flat) {
@@ -972,6 +992,65 @@ public sealed class LayoutWriter {
 
         atLineStart = true;
         column = 0;
+    }
+
+    /// <summary>Whether a fill point in a broken group declines its break.</summary>
+    /// <remarks>
+    ///     ⚠ A fill breaks before an item only when that makes the item fit whole. An item that would
+    ///     not fit on a fresh continuation line either — one with a break of its own that is certain,
+    ///     or simply too wide — keeps its head on this line and breaks inside, which is what the oracle
+    ///     writes for <c>(1\n, (2\n, 3))</c> and for a 110-column collection after a chopped call
+    ///     (SK-DIV-0110, #339). An item that fits once moved still moves, whole, as the 104-column
+    ///     initializer <see cref="Document.SegmentOf" /> records.
+    ///     <para>
+    ///         ⚠ Only before an item that opens with a delimiter — measured: the oracle breaks before a
+    ///         133-column binary chain that fits nowhere — and not for a last-resort point: an embedded
+    ///         statement that has no room is pushed off and then chopped, never left as
+    ///         <c>if (c) Frobnicate(</c> (SK-DIV-0106).
+    ///     </para>
+    /// </remarks>
+    bool FillPointStaysFlat(int node, int group, LineFlags flags, Stack<(int Node, int Child)> stack) {
+        var width = pendingSpace ? PendingWidth : (flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
+        var column = atLineStart
+            ? pendingCloserLevel ?? Effective()
+            : this.column + width;
+        var (segment, head) = FillSegment(node, group, flags, stack);
+        if (Fits(column, segment)) {
+            return true;
+        }
+
+        var delimited = (flags & LineFlags.DelimitedItem) != 0 && (flags & LineFlags.LastResort) == 0;
+        if (head >= segment || !delimited) {
+            return false;
+        }
+
+        return !Fits(ContinuationColumn(group), segment) && Fits(column, head);
+    }
+
+    bool Fits(int column, int width) => width < Document.Unbounded && column + width <= this.width;
+
+    /// <summary>The whole width after a fill point and the width to the item's first breakable place.</summary>
+    /// <remarks>
+    ///     ⚠ At the group's last point the segment ends where the group does, and the line does not —
+    ///     so what follows the group counts, exactly as it does when a group is resolved on entry.
+    ///     Without it a 121-column <c>for</c> header and a 121-column <c>if</c> condition both measure
+    ///     118 and decline the break the oracle takes; the missing three columns are the <c>) {</c>. See
+    ///     <see cref="LineFlags.LastPoint" />.
+    /// </remarks>
+    (int Segment, int Head) FillSegment(int node, int group, LineFlags flags, Stack<(int Node, int Child)> stack) {
+        var segment = document.SegmentOf(node);
+        var head = document.SegmentHeadOf(node);
+        if ((flags & LineFlags.LastPoint) == 0) {
+            return (segment, head);
+        }
+
+        var trailing = TrailingAfterGroup(stack, group);
+        var whole = head == segment;
+        segment = segment >= Document.Unbounded || trailing >= Document.Unbounded
+            ? Document.Unbounded
+            : segment + trailing;
+
+        return (segment, whole ? segment : head);
     }
 
     /// <summary>

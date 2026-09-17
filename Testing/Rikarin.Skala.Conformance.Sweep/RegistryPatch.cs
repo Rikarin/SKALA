@@ -145,7 +145,9 @@ public static class RegistryPatch {
         }
 
         return text[..(offset + start)]
-            + "\"" + value + "\""
+            + "\""
+            + value
+            + "\""
             + text[(offset + end)..];
     }
 }
