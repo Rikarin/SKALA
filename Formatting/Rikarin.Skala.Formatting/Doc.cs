@@ -63,6 +63,19 @@ public enum LineKind {
     Preserve
 }
 
+/// <summary>What a <see cref="DocKind.Group" /> node carries in <see cref="DocNode.Flags" />.</summary>
+[Flags]
+public enum GroupFlags {
+    None = 0,
+
+    /// <summary>
+    ///     The measure from the group's first break point ran to the group's end without meeting a
+    ///     break: nothing inside can end the line, so what trails the group lands on it too. Bit 1 is
+    ///     the closer alignment an <see cref="DocKind.Indent" /> node shares the field with.
+    /// </summary>
+    AfterPointRunsToTheEnd = 2
+}
+
 /// <summary>What a <see cref="DocKind.Line" /> node carries in <see cref="DocNode.Flags" />.</summary>
 [Flags]
 public enum LineFlags {
@@ -465,6 +478,13 @@ public sealed class Document {
 
     /// <summary>Whether the subtree holds a break of any kind — a hard line or a break point.</summary>
     public bool HasBreak(int node) => hasBreak[node];
+
+    /// <summary>
+    ///     Whether nothing after a group's first break point can end the line — see
+    ///     <see cref="GroupFlags.AfterPointRunsToTheEnd" />.
+    /// </summary>
+    public bool AfterPointRunsToTheEnd(int node) =>
+        Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.AfterPointRunsToTheEnd) != 0;
 
     /// <summary>What the fitter needs to know about one group beyond its mode and its width.</summary>
     public GroupFacts FactsOf(int group) => facts[group];

@@ -477,9 +477,14 @@ public sealed class DocumentBuilder {
         certain[index] = childCertain || selfOrigin > 0;
         certainOrigin[index] = Math.Max(childOrigin, selfOrigin);
         ownerWidth[index] = owned;
-        afterPoint[index] = frame.Kind == DocKind.Group ? MeasureSegments(childStart, count, frame.Arg1) : 0;
+        var afterPointRuns = false;
+        afterPoint[index] = frame.Kind == DocKind.Group
+            ? MeasureSegments(childStart, count, frame.Arg1, out afterPointRuns)
+            : 0;
+
         nodes[index].Count = count;
-        nodes[index].Flags = alignsCloser ? 1 : 0;
+        nodes[index].Flags = (alignsCloser ? 1 : 0)
+            | (afterPointRuns ? (int)GroupFlags.AfterPointRunsToTheEnd : 0);
         nodes[index].Arg2 = frame.Kind == DocKind.Group ? facts[frame.Arg1].Owner : frame.Arg2;
 
         if (stack.Count == 0) {
@@ -556,7 +561,8 @@ public sealed class DocumentBuilder {
     ///     ⚠ Linear despite the nested loop: the segments partition the children, so each child is
     ///     visited by exactly one of them.
     /// </remarks>
-    int MeasureSegments(int childStart, int count, int group) {
+    int MeasureSegments(int childStart, int count, int group, out bool firstRunsToTheEnd) {
+        firstRunsToTheEnd = false;
         if (!ownPoints.Contains(group)) {
             return 0;
         }
@@ -581,6 +587,13 @@ public sealed class DocumentBuilder {
         if (last >= 0) {
             nodes[last].Flags |= (int)LineFlags.LastPoint;
         }
+
+        // ⚠ Whether the first point's measure reached the group's end without meeting a break —
+        // no point of a nested group that can break, no required line. Then nothing inside the group
+        // will end the line the group is on, and the ordering rule has to count what trails the
+        // group on that line (SK-DIV-0114). Only the *first* point's answer is the group's, because
+        // that is the one AfterPointOf reports.
+        firstRunsToTheEnd = first >= 0 && first == last && !pointStopped;
 
         return first < 0 ? 0 : afterPoint[first];
 

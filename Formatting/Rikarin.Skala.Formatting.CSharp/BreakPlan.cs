@@ -483,6 +483,32 @@ public sealed class BreakPlan {
 
                 return;
 
+            // ⚠ An element access's arguments — `grid[i, j]`, and the `[key] = value` of an implicit
+            // element access in an initializer — had no plan at all (SK-DIV-0114, issue #371). The
+            // oracle chops them like an invocation's arguments: a kept break after a comma or after
+            // the `[` chops the list, a break before a comma is joined, a list that overflows the
+            // margin chops one per line. But the brackets are not the parentheses: there is no
+            // `wrap_after_*_lbracket`, the oracle keeps `grid[\n0` and `1\n]` where it re-lays `F(\n0`
+            // under `skala_keep_existing_invocation_parens_arrangement = false`, and it never adds a
+            // break at either bracket — `cube[a,\n b,\n c,\n d]`, not `cube[\n a,\n …\n]`. So the
+            // delimiters are planned as kept rather than as points, and the items take the argument
+            // keys. Measured beside an invocation twin of every shape.
+            case BracketedArgumentListSyntax elementArguments:
+                PlanList(
+                    node,
+                    elementArguments.OpenBracketToken,
+                    elementArguments.CloseBracketToken,
+                    elementArguments.Arguments,
+                    elementArguments.Arguments.GetSeparators(),
+                    true,
+                    options.WrapArgumentsStyle,
+                    false,
+                    false,
+                    options.MaxInvocationArgumentsOnLine
+                );
+
+                return;
+
             case TupleExpressionSyntax tuple:
                 PlanTuple(tuple);
                 return;
@@ -629,9 +655,20 @@ public sealed class BreakPlan {
                 if (options.WrapBeforeTypeParameterLangle) {
                     PlanBreakBefore(typeParameters, typeParameters.LessThanToken);
                 } else {
-                    PlanTypeParameters(typeParameters);
+                    PlanTypeParameters(node, typeParameters.Parameters, typeParameters.GreaterThanToken);
                 }
 
+                return;
+
+            // ⚠ A type *argument* list had no plan at all (SK-DIV-0114, issue #371), and the oracle
+            // lays it out exactly as it lays out the type parameter list: a fill at the commas when it
+            // runs past the margin — `Generic<A, B,\n C>()` — a kept break after a comma, after the
+            // `<` or before the `>` kept as written with the next argument one level in, a break
+            // before a comma kept too, and an arrow after any of them broken. There is no
+            // `wrap_before_type_argument_langle`, so the fill is the only arm. Measured on a return
+            // type, a local's type, `new Dictionary<…>()` and a generic invocation.
+            case TypeArgumentListSyntax typeArguments:
+                PlanTypeParameters(node, typeArguments.Arguments, typeArguments.GreaterThanToken);
                 return;
 
             // ⚠ `skala_place_type_constraints_on_same_line = false`: the constraints leave the
@@ -1021,7 +1058,12 @@ public sealed class BreakPlan {
             // that fits, re-joined the arrow. Measured against the oracle on twelve shapes; the
             // conformance corpus has no `(\n[` outside an argument list, which is why the fuzzer
             // found it and the sweep did not.
-            if (!open.GetPreviousToken().IsKind(SyntaxKind.OpenParenToken)) {
+            // ⚠ And not for an element access's bracket or an attribute list's (SK-DIV-0114). The
+            // gap before `grid[0, 1]`'s bracket is the receiver's, and the oracle keeps
+            // `grid\n[0, 1]` with the bracket one level in; the gap before an attribute list's `[`
+            // is its owner's — a member's, a parameter's — and no list plan owns it.
+            if (!open.GetPreviousToken().IsKind(SyntaxKind.OpenParenToken)
+                && node is not (BracketedArgumentListSyntax or AttributeListSyntax)) {
                 Flat(open);
             }
         }
@@ -1628,8 +1670,8 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     A type parameter list at <c>skala_wrap_before_type_parameter_langle = false</c>: a fill inside the
-    ///     angle brackets.
+    ///     A type parameter list at <c>skala_wrap_before_type_parameter_langle = false</c>, and a type
+    ///     argument list always: a fill inside the angle brackets.
     /// </summary>
     /// <remarks>
     ///     ⚠ A fill and not a chop, and no key selects between them — there is no
@@ -1642,8 +1684,9 @@ public sealed class BreakPlan {
     ///     The gap after the <c>&lt;</c> is a fill point like every gap between parameters: it breaks
     ///     when what follows it does not fit and not merely because the list is being wrapped, which is
     ///     what keeps the first parameter on the declaration's line above and what puts it on its own
-    ///     line when one parameter alone runs past the margin. The closing <c>&gt;</c> is
-    ///     <see cref="GapRule.Flat" /> — the oracle never gives it a line of its own.
+    ///     line when one parameter alone runs past the margin. The closing <c>&gt;</c> is no point of
+    ///     the group — the oracle never gives it a line of its own — but a break the author wrote before
+    ///     it is kept (SK-DIV-0114), so the gap is left to <c>keep_user_linebreaks</c>.
     ///     <para>
     ///         ⚠ It spends no continuation level, and that is deliberate rather than an omission: the level
     ///         is the angle brackets', opened by <see cref="CSharpDocumentBuilder.VisitDelimited" /> inside
@@ -1664,15 +1707,28 @@ public sealed class BreakPlan {
     ///         narrower arming is the one that costs nothing while the answer is unknown.
     ///     </para>
     /// </remarks>
-    void PlanTypeParameters(TypeParameterListSyntax node) {
-        if (node.Parameters.Count == 0) {
+    void PlanTypeParameters<T>(SyntaxNode node, SeparatedSyntaxList<T> items, SyntaxToken close)
+        where T : SyntaxNode {
+        if (items.Count == 0 || close.IsKind(SyntaxKind.None)) {
             return;
         }
 
         var group = NewGroup();
-        var first = FirstToken(node.Parameters[0]);
-        Point(first, group, true);
-        var broken = BreaksBefore(first);
+        var first = FirstToken(items[0]);
+        var keeps = options.KeepsUserBreaksBetweenItems;
+
+        // ⚠ A type argument list's points are last-resort ones (SK-DIV-0114): everything around the
+        // list wraps first, and the list fills only when what follows still has no room. Measured
+        // against a tuple, which the oracle fills *instead* of breaking at the `=` in front of it
+        // (`var t = (a, b,\n c);`) — the type argument list is the other way round:
+        // `var created = new Dictionary<A, B>();` at 121 columns comes back as
+        // `var created =\n new Dictionary<A, B>();`, and only a list that still overflows on the
+        // continuation line is filled there (`var both =\n new Dictionary<A, B,\n C>();`).
+        // An ordinary fill point ends the `=`'s "does the line end here anyway?" measure at the `<`,
+        // so the `=` stayed and the list filled on the first line. A type *parameter* list has no
+        // `=` before it and keeps its ordinary points — its competitor is the parameter list, and
+        // that trade is measured in the remarks above.
+        var lastResort = node is TypeArgumentListSyntax;
 
         // ⚠ A break the author wrote at a comma is kept, on either side of it, and it is a required
         // break rather than a fill point. A fill point re-decides by width, so `G<T,\n U>()` came
@@ -1684,20 +1740,29 @@ public sealed class BreakPlan {
         // `skala_wrap_before_comma = false` on both sides; no corpus input had an author's break in a
         // type parameter list, which is how both halves survived (SK-DIV-0104). The arrow after such
         // a list breaks, because the owner is no longer one line — see PlanExpressionBody.
-        var keeps = options.KeepsUserBreaksBetweenItems;
-        foreach (var comma in node.Parameters.GetSeparators()) {
+        // ⚠ And the gap after the `<` is pinned the same way (SK-DIV-0114): it was the one fill point
+        // left unpinned, so `void M<\nT, U>()` and `Dictionary<\nstring, int>` came back joined
+        // although the group was planned as broken. The oracle keeps both exactly as written.
+        var broken = PlanItemGap(first, group, true, keeps, lastResort);
+        foreach (var comma in items.GetSeparators()) {
             var next = comma.GetNextToken();
-            if (next.IsKind(SyntaxKind.None) || next.SpanStart >= node.GreaterThanToken.SpanStart) {
+            if (next.IsKind(SyntaxKind.None) || next.SpanStart >= close.SpanStart) {
                 continue;
             }
 
             var gap = options.WrapBeforeComma ? comma : next;
             var other = options.WrapBeforeComma ? next : comma;
-            broken |= PlanItemGap(gap, group, true, keeps);
+            broken |= PlanItemGap(gap, group, true, keeps, lastResort);
             broken |= PlanOtherSideOfComma(other, keeps);
         }
 
-        Flat(node.GreaterThanToken);
+        // ⚠ The closing `>` is nobody's point — the oracle never gives it a line of its own — and it
+        // used to be `Flat` here, which joined a break the author wrote before it. Measured
+        // (SK-DIV-0114): `void M<T, U\n>() { }` and `Dictionary<string, int\n> P()` both come back
+        // with the `>` exactly where the author put it, on the declaration's own indent. So the gap
+        // is left to `keep_user_linebreaks`, as a type argument list's always was, and a kept one
+        // makes the owner multi-line.
+        broken |= keeps && BreaksBefore(close);
 
         Describe(
             node,
@@ -1706,7 +1771,14 @@ public sealed class BreakPlan {
             new GroupFacts(
                 options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: true,
-                MeasuresHead: true
+                // ⚠ Armed by the list's own width for a type parameter list — the trade the remarks
+                // above measure — and by the whole line for a type argument list, whose competitors
+                // are an `=` and an argument list rather than a declaration's parameter list.
+                // Measured (SK-DIV-0114): `var created = new Dictionary<A, B>();` at 121 columns
+                // comes back as `var created =\n new Dictionary<A, B>();` with the list whole, and
+                // arming the list by its own width filled it on the first line instead; a list that
+                // still overflows after the `=` break is filled on the second line.
+                MeasuresHead: node is TypeParameterListSyntax
             )
         );
     }
@@ -4057,12 +4129,12 @@ public sealed class BreakPlan {
     ///     author's break is pinned, a point of the group otherwise. Returns whether the source broke
     ///     there.
     /// </summary>
-    bool PlanItemGap(SyntaxToken gap, int group, bool fill, bool pins) {
+    bool PlanItemGap(SyntaxToken gap, int group, bool fill, bool pins, bool lastResort = false) {
         var broke = BreaksBefore(gap);
         if (pins && broke) {
             Mandatory(gap);
         } else {
-            Point(gap, group, fill);
+            Point(gap, group, fill, lastResort);
         }
 
         return broke;

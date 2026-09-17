@@ -2384,7 +2384,7 @@ public sealed partial class CSharpDocumentBuilder {
                         ? DefaultNewLine()
                         : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine(),
                         spec.Rule == GapRule.LastResortPoint,
-                        IsADelimitedTupleItem(nextToken)
+                        IsADelimitedTupleItem(nextToken) || StartsATypeArgument(nextToken)
                     );
                     return;
 
@@ -3091,7 +3091,28 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     static bool IsADelimitedTupleItem(SyntaxToken token) =>
         token.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken
-        && token.Parent?.Parent is ArgumentSyntax { Parent: TupleExpressionSyntax };
+        && token.Parent?.Parent is ArgumentSyntax { Parent: TypeArgumentListSyntax or TupleExpressionSyntax };
+
+    /// <summary>
+    ///     Whether the token is the first of a type argument — the other fill whose head stays on the
+    ///     line when the item fits nowhere whole (SK-DIV-0114).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on a nested generic with a kept break inside the inner list:
+    ///     <c>List&lt;Dictionary&lt;string,↵int&gt;&gt; nested</c> comes back exactly as written, and a
+    ///     six-deep <c>Dictionary&lt;string, Dictionary&lt;…&gt;&gt;</c> over the margin is broken inside the
+    ///     second list and nowhere outside it. The general fill rule — break before an item that has no
+    ///     flat form — put <c>Dictionary&lt;</c> on a line of its own in both.
+    /// </remarks>
+    static bool StartsATypeArgument(SyntaxToken token) {
+        for (SyntaxNode? node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
+            if (node.Parent is TypeArgumentListSyntax) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>
     ///     ⚠ <c>indent_nested_{for,foreach,while,using,lock,fixed}_stmt = false</c>: a loop directly

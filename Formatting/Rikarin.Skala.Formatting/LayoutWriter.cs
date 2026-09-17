@@ -1003,10 +1003,13 @@ public sealed class LayoutWriter {
     ///     (SK-DIV-0110, #339). An item that fits once moved still moves, whole, as the 104-column
     ///     initializer <see cref="Document.SegmentOf" /> records.
     ///     <para>
-    ///         ⚠ Only before an item that opens with a delimiter — measured: the oracle breaks before a
-    ///         133-column binary chain that fits nowhere — and not for a last-resort point: an embedded
-    ///         statement that has no room is pushed off and then chopped, never left as
-    ///         <c>if (c) Frobnicate(</c> (SK-DIV-0106).
+    ///         ⚠ Only before an item the front end flagged <see cref="LineFlags.DelimitedItem" /> —
+    ///         measured: the oracle breaks before a 133-column binary chain that fits nowhere — and an
+    ///         embedded statement is never flagged: one that has no room is pushed off and then chopped,
+    ///         never left as <c>if (c) Frobnicate(</c> (SK-DIV-0106). A type argument is flagged
+    ///         (SK-DIV-0114): <c>List&lt;Dictionary&lt;string,↵int&gt;&gt;</c> keeps
+    ///         <c>List&lt;Dictionary&lt;</c> on its line, and its points are last-resort ones too, so the
+    ///         flag is read on those.
     ///     </para>
     /// </remarks>
     bool FillPointStaysFlat(int node, int group, LineFlags flags, Stack<(int Node, int Child)> stack) {
@@ -1019,7 +1022,7 @@ public sealed class LayoutWriter {
             return true;
         }
 
-        var delimited = (flags & LineFlags.DelimitedItem) != 0 && (flags & LineFlags.LastResort) == 0;
+        var delimited = (flags & LineFlags.DelimitedItem) != 0;
         if (head >= segment || !delimited) {
             return false;
         }

@@ -104,7 +104,8 @@ public sealed class Fitter {
                 document.PointWidthOf(node),
                 document.AfterPointOf(node),
                 trailing,
-                line
+                line,
+                !document.AfterPointRunsToTheEnd(node)
             )
         );
         modes[id] = mode;
@@ -129,6 +130,11 @@ public sealed class Fitter {
     /// <param name="PointWidth">The width from the group's start to its own first break point.</param>
     /// <param name="AfterPoint">The width from that point to the next one.</param>
     /// <param name="Line">The output line the group is entered on.</param>
+    /// <param name="HoldsABreak">
+    ///     Whether anything after the group's own first break point can end a line: a point that is not
+    ///     a last-resort one, or a required break. When nothing can, the group's trailing text lands on
+    ///     the line the group is on.
+    /// </param>
     readonly record struct Measures(
         int Column,
         int ContinuationColumn,
@@ -137,7 +143,8 @@ public sealed class Fitter {
         int PointWidth,
         int AfterPoint,
         int Trailing,
-        int Line);
+        int Line,
+        bool HoldsABreak);
 
     /// <summary>The mode a group resolved to. Flat until the walk reaches it.</summary>
     public ResolvedMode ModeOf(int group) => modes[group];
@@ -251,6 +258,7 @@ public sealed class Fitter {
             return ResolvedMode.Broken;
         }
 
+
         // What lands on the continuation line if this group breaks and nothing inside it does.
         var tail = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth + OuterBreakMargin(m);
         if (Fits(m.ContinuationColumn, tail, m.Trailing)) {
@@ -258,8 +266,13 @@ public sealed class Fitter {
         }
 
         // What lands on *this* line if the group stays flat and the construct inside wraps instead.
+        // ⚠ Plus the trailing text when nothing inside can wrap at all, because then the line does
+        // not end at an inner point — it ends after the group, `;` included. A type argument list's
+        // points are last-resort ones that the point measure reads through (SK-DIV-0114), so
+        // `var result = Generic<A, B, int>();` reached here with a 120-column line and a semicolon
+        // nobody counted, stayed flat, and filled the list where the oracle breaks at the `=`.
         var line = m.PointWidth >= Unbounded ? Unbounded : m.PointWidth + m.AfterPoint;
-        return Fits(m.Column, line) ? ResolvedMode.Flat : ResolvedMode.Broken;
+        return Fits(m.Column, line, m.HoldsABreak ? 0 : m.Trailing) ? ResolvedMode.Flat : ResolvedMode.Broken;
     }
 
     /// <summary>
