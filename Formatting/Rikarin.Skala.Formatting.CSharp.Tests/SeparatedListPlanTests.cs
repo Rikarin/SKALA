@@ -23,7 +23,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 public sealed class SeparatedListPlanTests {
     /// <summary>
     ///     The kinds the planner deliberately does not visit, each with the measurement behind it. A
-    ///     kind that is not planned and not here fails <see cref="EveryKindHoldingASeparatedList_IsPlannedOrExempted" />.
+    ///     kind that is neither planned nor here fails
+    ///     <see cref="EveryKindHoldingASeparatedList_IsPlannedOrExempted" />.
     /// </summary>
     static readonly IReadOnlyDictionary<Type, string> Exempt = new Dictionary<Type, string> {
         [typeof(TupleTypeSyntax)] =
@@ -37,8 +38,8 @@ public sealed class SeparatedListPlanTests {
         [typeof(PragmaWarningDirectiveTriviaSyntax)] =
             "a directive: the trivia model owns it and it never reaches the walker (NodeLayout.DirectiveNode)",
         [typeof(OrderByClauseSyntax)] =
-            "`orderby a,\\n b` is unmeasured; the query's clauses are PlanQuery's and its orderings are left as "
-            + "written, recorded open in SK-DIV-0114",
+            "`orderby a,` then `b` on the next line is unmeasured; the query's clauses are PlanQuery's and its "
+            + "orderings are left as written, recorded open in SK-DIV-0114",
         [typeof(AllowsConstraintClauseSyntax)] =
             "`allows ref struct` is the one constraint the clause admits, so the list never has a comma"
     };
@@ -51,7 +52,7 @@ public sealed class SeparatedListPlanTests {
     static readonly IReadOnlyDictionary<Type, string> Samples = new Dictionary<Type, string> {
         [typeof(ArgumentListSyntax)] = "class C { void M() { F(1, 2); } }",
         [typeof(BracketedArgumentListSyntax)] = "class C { int M(int[,] g) => g[0, 1]; }",
-        [typeof(AttributeArgumentListSyntax)] = "[System.Obsolete(\"a\", true)] class C { }",
+        [typeof(AttributeArgumentListSyntax)] = """[System.Obsolete("a", true)] class C { }""",
         [typeof(AttributeListSyntax)] = "[System.Obsolete, System.Serializable] class C { }",
         [typeof(ParameterListSyntax)] = "class C { void M(int a, int b) { } }",
         [typeof(BracketedParameterListSyntax)] = "class C { int this[int a, int b] => a; }",
@@ -100,7 +101,9 @@ public sealed class SeparatedListPlanTests {
         // ⚠ Anti-vacuity: a reflection that matched nothing would pass the assertion below for free.
         Assert.True(
             KindsHoldingASeparatedList.Length >= 25,
-            $"only {KindsHoldingASeparatedList.Length.ToString(CultureInfo.InvariantCulture)} kinds hold a separated list: "
+            "only "
+            + KindsHoldingASeparatedList.Length.ToString(CultureInfo.InvariantCulture)
+            + " kinds hold a separated list: "
             + string.Join(", ", KindsHoldingASeparatedList.Select(static type => type.Name))
         );
 
@@ -127,7 +130,7 @@ public sealed class SeparatedListPlanTests {
         Assert.True(both.Length == 0, "Both planned and exempted: " + string.Join(", ", both));
 
         var stale = Exempt.Keys.Concat(Samples.Keys)
-            .Where(type => !KindsHoldingASeparatedList.Contains(type))
+            .Where(static type => !KindsHoldingASeparatedList.Contains(type))
             .Select(static type => type.Name)
             .ToArray();
 

@@ -1417,13 +1417,7 @@ public sealed partial class CSharpDocumentBuilder {
                 pending = 0;
 
                 if (opened == 0 && levels > 0 && token.SpanStart == open.SpanStart) {
-                    // ⚠ An attribute section's alignment column is the first attribute's, which is
-                    // past a `return:` target when there is one; the scope opens once that much is
-                    // written. See IsAnAlignedAttributeSection.
-                    if (scopeKind == IndentKind.Align && node is AttributeListSyntax { Attributes: [{ } first, ..] }) {
-                        EmitLeadingGapAt(first.SpanStart);
-                    }
-
+                    EmitUpToTheAlignmentAnchor(node, scopeKind);
                     for (var i = 0; i < levels; i++) {
                         // ⚠ Both scopes are unconditional when there are two, and it has to be both.
                         // `outside_and_inside` means "the contents take two levels" and both open on
@@ -1462,6 +1456,17 @@ public sealed partial class CSharpDocumentBuilder {
             for (var i = 0; i < opened; i++) {
                 CloseIndent(scopeKind);
             }
+        }
+    }
+
+    /// <summary>
+    ///     An attribute section's alignment column is the first attribute's, which is past a
+    ///     <c>return:</c> target when there is one; the scope opens once that much is written. See
+    ///     <see cref="IsAnAlignedAttributeSection" />.
+    /// </summary>
+    void EmitUpToTheAlignmentAnchor(SyntaxNode node, IndentKind scopeKind) {
+        if (scopeKind == IndentKind.Align && node is AttributeListSyntax { Attributes: [{ } first, ..] }) {
+            EmitLeadingGapAt(first.SpanStart);
         }
     }
 
