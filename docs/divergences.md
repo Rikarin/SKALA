@@ -4943,7 +4943,9 @@ and `WithInitializerExpression`, `AnonymousObjectCreationExpression`, `BaseList`
 `TypeParameterConstraintClause` (SK-DIV-0105). For all of those every gap is
 `keep_user_linebreaks`' alone. SK-DIV-0104 measured three of them — a tuple type, a type argument
 list, a positional pattern — keeping a break before a comma, which is also what the oracle does
-there; the rest are unmeasured and left as found.
+there; the rest are unmeasured and left as found. ⚠ **Closed by SK-DIV-0114** (issue #371): the
+eleven are measured, eight are planned, three are exempted with the measurement, and
+`SeparatedListPlanTests` now reflects the set instead of this paragraph listing it.
 
 - options: the declaration family above.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/indexer-parameter-list.cs` and
@@ -5341,10 +5343,110 @@ parameter list — so Skala's one-pass fixed point is the oracle's answer for *t
 flat input; the test says so. And a property whose type-argument list overflows
 (`IReadOnlyDictionary<…, …, …> LongPropertyName => builder.Items;` at 138 columns) is left at 138 by
 Skala where the oracle fills the type arguments and then breaks the arrow: no plan wraps a type
-argument list in a member's type. Measured, not fixed here.
+argument list in a member's type. Measured, not fixed here — **fixed by SK-DIV-0114**, which gives
+the type argument list the type parameter list's fill; a 121-column property of that shape comes
+back identical to the oracle.
 
 - options: `skala_place_expr_method_on_single_line`, `skala_place_expr_property_on_single_line`,
   `skala_place_expr_accessor_on_single_line` (all `if_owner_is_single_line`),
   `skala_keep_existing_expr_member_arrangement = false`.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/expression-body-after-a-broken-head.cs`,
   `ExpressionBodyAfterABrokenHeadTests`, and the seed's replay.
+
+## SK-DIV-0114 — eleven list-like kinds had no plan at all; eight are planned now and three are exempted by measurement
+
+⚠ **Enumerated by SK-DIV-0108 and filed as issue #371.** `BreakPlan.Plan` never visited
+`BracketedArgumentList` / `ImplicitElementAccess`, `TypeArgumentList`, `TupleType`,
+`PositionalPatternClause`, `ParenthesizedVariableDesignation`, `AttributeList` with several
+attributes, `ArrayRankSpecifier`, `FunctionPointerParameterList`,
+`FunctionPointerUnmanagedCallingConventionList`, `CrefParameterList` or `CrefBracketedParameterList`,
+so a break the author wrote inside any of them was left exactly as written and an overflowing one
+was never wrapped. Measured 2026-09-17 with `Testing ask`, ~230 shapes over twelve probe rounds:
+each kind on a kept break after a comma, before a comma, after the opening delimiter and before the
+closing one, and on a list past the margin, beside its twin.
+
+| kind | after a comma | after the opener | before a comma | past the margin | Skala before |
+|---|---|---|---|---|---|
+| `grid[i, j]`, `[k] = v` | kept, `+1`; the arrow breaks | kept, **and the list chops** | **joined** | chops, one per line, **no break at either bracket** | as written; broke at an operator inside an argument |
+| `Dictionary<K, V>` | kept, `+1`; the arrow breaks | kept, no chop | kept | **fills**, after every break around it | as written; 122-column lines left whole |
+| `(int a, int b)` type | kept, `+1`; the arrow breaks | kept | kept | **never at a comma** — between an element's type and its name, or outside the type | identical |
+| `o is (1, 2)` | kept, `+1` | kept | kept | fills, in a member and a switch arm | as written; left whole |
+| `var (a, b)` | kept, `+1`; under `foreach (` on the condition's aligned column | kept | kept | fills | as written; broke at the `=` |
+| `[A, B]` | kept, **aligned under the first attribute** | kept, `+1` | kept, aligned | fills, aligned | as written, `+1`; chopped the last attribute's arguments |
+| `new int[a, b]` | kept, `+1` | kept | kept | fills | as written; broke at an operator inside a size |
+| `delegate*<A, B>` | kept, `+1` | kept | kept | fills | as written; left whole |
+| `unmanaged[Cdecl, …]` | kept, `+1` | kept | kept | fills | as written; left whole |
+| `cref="M(int, int)"` | kept — by the pinned profile, by the DocComments profile and by Skala's xmldoc formatter alike | | | | identical |
+
+**Decisions.** Element access takes the argument keys with kept delimiters (`PlanList`, `keepExisting`
+true — the oracle keeps `grid[\n0`, `1\n]` and `grid\n[0, 1]` where it re-lays `F(\n0`, and never adds a
+break at a bracket). The type argument list takes the type parameter list's fill, generalised over any
+angle list. Five kinds take the tuple's fill (`PlanFilledList`): positional pattern, designation, array
+rank, both function pointer lists. The attribute section takes the tuple's fill plus an `Align` scope
+opened inside `VisitDelimited` at the first attribute — the tuple-components pattern, because a scope
+around the node cannot let a kept `]\n` out onto the owner's indent — and a `GapRule.FollowingPoint`
+after the `]` for a parameter's or a type parameter's owner. A tuple type and the two cref lists are
+exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
+
+⚠ **Refuted on the way**, each by the oracle:
+- The type parameter twin re-joined a kept `void M<\nT, U>()` (the one fill point `PlanTypeParameters`
+  had left unpinned) and a kept `U\n>` (`Flat(GreaterThanToken)`, whose remark said the oracle never
+  gives the `>` a line — it never *adds* one; it keeps one). Both kept now, `>` on the owner's indent.
+- `NodeLayout` listed the function pointer's `<int, void>` as Parens and its `unmanaged[…]` as Angles.
+  `VisitDelimited` searched each for a delimiter pair it does not hold and neither ever opened a scope:
+  invisible while nothing planned a break inside them, a break at column 4 on pass one and 8 on pass
+  two once something did.
+- A type argument list **yields to everything around it**, where a tuple does not: the oracle fills
+  `var t = (a, b,\n c);` and breaks `var created =\n new Dictionary<A, B>();`, filling the list only if
+  it still overflows on the continuation line. So its points are last-resort ones — which exposed an
+  off-by-one in the ordering rule's second question: it measured the line without the trailing `;`
+  when nothing after the group's first point could break, and `var result = Generic<A, B, int>();`
+  is 120 without the semicolon and 121 with it (`GroupFlags.AfterPointRunsToTheEnd`).
+- The tuple's head rule (SK-DIV-0110) had one half. An identifier-headed item that is merely too wide
+  is broken before (`(1,\n Get(`), but one with a kept break inside keeps its head on the comma's line
+  (`, G<int`, `, Get(`), and the two nested shapes of a positional pattern and a designation do the
+  same. Only the writer's segment measure can tell the reasons apart (`LineFlags.KeepsHeadWhenCertain`).
+  A type argument keeps its head in both cases: `List<Dictionary<string,\n int>>` stays as written, and
+  a six-deep `Dictionary<string, Dictionary<…>>` over the margin breaks inside the second list and
+  nowhere outside it.
+- A parameter's attribute section pushes the parameter below the `]` exactly when the section spans
+  lines — kept or filled, and a single attribute's chopped arguments count — and re-joins a break the
+  author wrote after a one-line section's `]`. Planned as a point measured *through*: as an ordinary
+  point it ended the arguments' rest-of-line measure at the `]`, and a 126-column
+  `[Obsolete("…", true)] int a` left the arguments whole.
+
+⚠ **Recorded, not fixed** — each measured, none with a plan or a key behind Skala's answer:
+- A kept closing delimiter on its own line sits one level in for the oracle and on the owner's indent
+  for Skala: `(int a, int b\n)` as a return type, `o is (1, 2\n)`, `var (a, b\n)`, `delegate*<int, void\n>`,
+  `unmanaged[Cdecl, X\n]` — and the tuple *expression* twin in `return (1, 2\n);` and `var b = (1, 2\n) == t;`,
+  where `=>\n(1, 2\n)` and `Get(\n(1, 2\n))` already agree. Brackets and a type argument list's `>` go to
+  the owner's indent on both sides. Kept out of the constructs.
+- `grid\n[0, 1]`: the oracle indents the bracket one level, Skala leaves it on the receiver's column.
+- A deconstruction *assignment* whose designation overflows: the oracle fills the designation and keeps
+  `x) = Tuple();`; Skala fills and breaks the `=` too, because the assignment's `=` group is entered at
+  the statement's first token, before the designation's fill decides (a declaration's `=` group starts
+  at the `=` and does not have this). Before this entry the 124-column line was left whole.
+- Inside a positional pattern's or a designation's nested item the oracle spends one level per
+  statement (`o is (1\n, (2\n, 3))` puts `, 3` under `, (2`); a tuple expression spends one per
+  parenthesis, and Skala does the tuple's for all three.
+- `Dictionary<A, B, int> Name() =>` and `List<(A a, B b, int c)> list = null;` past the margin: the
+  oracle breaks between the type and the name, or between an element's type and its name (SK-DIV-0024's
+  family); Skala now fills the type argument list instead, where before it left the line whole.
+- Two attribute sections on one parameter, the first multi-line: the oracle puts each following section
+  and the type on its own line; Skala moves only the token after the multi-line one.
+- A type parameter's single attribute whose arguments chop: the oracle keeps `<[Obsolete(` on the `<`'s
+  line with the arguments two levels in; Skala nests them one. And `<[Obsolete] T>` comes back
+  `< [Obsolete] T>` — a pre-existing spacing defect, like `o is Point (2, 3)` for a recursive pattern's
+  type; both filed as issue #373, neither a break.
+- `var result2 = Generic<A, B, int>(1);` at exactly 121 columns fills the list where the oracle breaks
+  the `=`: the ordering rule's second question ends at the arguments' `(`, which is column 120.
+- `orderby a,\n b`: unmeasured, and `OrderByClause` is the one exemption in `SeparatedListPlanTests`
+  without a measurement behind it.
+
+- options: `skala_wrap_arguments_style`, `skala_max_invocation_arguments_on_line` (element access); no key
+  for the fills or the attribute alignment — `PlanFilledList`'s remarks measure that.
+- ⚠ status: **fixed for eight kinds, exempted for three**, pinned by nine `constructs/breaks/` fixtures
+  (`element-access-arguments`, `type-argument-list`, `tuple-type`, `positional-pattern`,
+  `variable-designation`, `array-rank`, `function-pointer-lists`, `attribute-section`,
+  `cref-parameter-list`) and by `SeparatedListPlanTests`, which reflects every `SeparatedSyntaxList`
+  kind Roslyn declares — 31 — and fails on the twelfth.
