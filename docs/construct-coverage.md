@@ -118,6 +118,18 @@ receiver is an integer literal occurred nowhere. That absence is how a `MustSepa
 `120 .DegreesCelsius()` stood for two commits with only its own unit test measuring it (#367). The
 oracle closes up every spaced form and keeps every closed one, and Skala matches it byte for byte.
 
+⚠ `syntax/positional-pattern-after-its-type.cs` and `syntax/attribute-leading-a-type-parameter-list.cs`
+are the twenty-first and twenty-second, from #373, and are the same kind of gap as #367's: a
+`PositionalPatternClause` is in the corpus (`breaks/positional-pattern.cs`, every one of them typeless)
+and a `TypeParameter` carrying an `AttributeList` is not, but the census counts kinds, not the token
+that precedes them, and the two adjacencies — a pattern's *type* against its `(`, and a `<` against
+its first `[` — occurred nowhere.
+Each had a `SpaceRules` arm writing a space the oracle does not, since the first spacing commit, with
+nothing measuring it. The two fixtures answer differently, which is the point of asking: the pattern
+gap is **ungoverned** (the oracle keeps the author's zero or one space and collapses a run, and no
+parenthesis or angle key moves it), where the angle gap is `space_within_type_parameter_angles`'s.
+Skala matches both byte for byte.
+
 ### The cref forms are pinned under one profile of two
 
 ⚠ **A gap this audit could not close, named rather than left implicit.** `cref-member-forms.cs` sits
