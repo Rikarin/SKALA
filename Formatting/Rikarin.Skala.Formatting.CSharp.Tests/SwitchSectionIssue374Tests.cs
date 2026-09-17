@@ -20,6 +20,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     The committed fixture is <c>Testing/corpus/constructs/breaks/switch-sections.cs</c>.
 /// </remarks>
 public sealed class SwitchSectionIssue374Tests {
+    const string Open = "switch (o) {";
+
     /// <summary>
     ///     The repository's configuration as the corpus has it: <c>csharp_prefer_braces</c> off, because
     ///     the root's own <c>true</c> would wrap every embedded statement here in a block (SK-DIV-0100)
@@ -41,23 +43,26 @@ public sealed class SwitchSectionIssue374Tests {
     }
 
     /// <summary>
-    ///     The body of a method, formatted and stable on a second pass, with the method's own lines
-    ///     and indentation removed.
+    ///     The body of a method named <c>S</c>, formatted and stable on a second pass, with the method's
+    ///     own lines and indentation removed.
     /// </summary>
     static string[] Body(string member) {
-        var formatted = FormatWith($"class C {{\n    int x;\n    {member}\n    void M() {{ }}\n}}\n");
+        var formatted = FormatWith(
+            "using System;\nusing System.Collections.Generic;\nusing System.Threading.Tasks;\n"
+            + $"class C {{\n    int x;\n    {member}\n    void M() {{ }}\n    void Run(Action a) {{ }}\n}}\n"
+        );
+
         Assert.Equal(formatted, FormatWith(formatted));
         return formatted.Split('\n')
-            .SkipWhile(static line => !line.StartsWith("    void S(", StringComparison.Ordinal)
-                && !line.StartsWith("    int S(", StringComparison.Ordinal)
-                && !line.StartsWith("    async ", StringComparison.Ordinal)
-                && !line.StartsWith("    System.Collections", StringComparison.Ordinal)
-            )
+            .SkipWhile(static line => !line.Contains(" S(", StringComparison.Ordinal))
             .Skip(1)
             .TakeWhile(static line => line != "    }")
             .Select(static line => line.Length > 8 ? line[8..] : line.TrimStart())
             .ToArray();
     }
+
+    /// <summary>The switch's contents between its braces, each line one level in.</summary>
+    static string[] Sections(IEnumerable<string> lines) => [Open, .. lines.Select(static line => "    " + line), "}"];
 
     /// <summary>The issue's input, and the oracle's answer to it byte for byte.</summary>
     [Fact]
@@ -123,9 +128,9 @@ public sealed class SwitchSectionIssue374Tests {
         "default: return 0;"
     )]
     [InlineData(
-        "void S(object o) { switch (o) { case 1: break; default: throw new System.Exception(); } }",
+        "void S(object o) { switch (o) { case 1: break; default: throw new Exception(); } }",
         "case 1: break;",
-        "default: throw new System.Exception();"
+        "default: throw new Exception();"
     )]
     [InlineData(
         "void S(object o) { switch (o) { case 1: goto case 2; case 2: break; } }",
@@ -133,15 +138,7 @@ public sealed class SwitchSectionIssue374Tests {
         "case 2: break;"
     )]
     [InlineData(
-        "void S(object o) { while (true) { switch (o) { case 1: continue; } } }",
-        "while (true) {",
-        "    switch (o) {",
-        "        case 1: continue;",
-        "    }",
-        "}"
-    )]
-    [InlineData(
-        "System.Collections.Generic.IEnumerable<int> S(object o) { switch (o) { case 1: yield return 1; break; case 2: yield break; } }",
+        "IEnumerable<int> S(object o) { switch (o) { case 1: yield return 1; break; case 2: yield break; } }",
         "case 1: yield return 1; break;",
         "case 2: yield break;"
     )]
@@ -150,33 +147,30 @@ public sealed class SwitchSectionIssue374Tests {
         "case 1: Run(() => { M(); }); break;"
     )]
     [InlineData(
-        "async System.Threading.Tasks.Task S(object o) { switch (o) { case 1: await System.Threading.Tasks.Task.Delay(1); break; } }",
-        "case 1: await System.Threading.Tasks.Task.Delay(1); break;"
+        "async Task S(object o) { switch (o) { case 1: await Task.Delay(1); break; } }",
+        "case 1: await Task.Delay(1); break;"
     )]
     [InlineData(
-        "void S(object o) { switch (o) { case 1: M(); break; case int i when i > 2: M(); break; case string { Length: 3 }: break; } }",
-        "case 1: M(); break;",
+        "void S(object o) { switch (o) { case int i when i > 2: M(); break; case string { Length: 3 }: break; } }",
         "case int i when i > 2: M(); break;",
         "case string { Length: 3 }: break;"
     )]
-    [InlineData(
-        "void S(object o) { switch (o) { case 1: M(); break; } M(); }",
-        "switch (o) {",
-        "    case 1: M(); break;",
-        "}",
-        "",
-        "M();"
-    )]
-    public void ASimpleSection_KeepsTheLabelsLine(string member, params string[] expectedSectionLines) {
-        // A row that starts at a label is the switch's contents; any other row is the whole body.
-        var isSections = expectedSectionLines[0].StartsWith("case", StringComparison.Ordinal)
-            || expectedSectionLines[0].StartsWith("default", StringComparison.Ordinal);
-        string[] expected = isSections
-            ? ["switch (o) {", .. expectedSectionLines.Select(static line => "    " + line), "}"]
-            : expectedSectionLines;
+    public void ASimpleSection_KeepsTheLabelsLine(string member, params string[] sections) =>
+        Assert.Equal(Sections(sections), Body(member));
 
-        Assert.Equal(expected, Body(member));
-    }
+    [Fact]
+    public void ASimpleSectionInALoop_KeepsTheLabelsLine() =>
+        Assert.Equal(
+            ["while (true) {", "    switch (o) {", "        case 1: continue;", "    }", "}"],
+            Body("void S(object o) { while (true) { switch (o) { case 1: continue; } } }")
+        );
+
+    [Fact]
+    public void AStatementAfterTheSwitch_StartsAfterABlankLine() =>
+        Assert.Equal(
+            [Open, "    case 1: M(); break;", "}", "", "M();"],
+            Body("void S(object o) { switch (o) { case 1: M(); break; } M(); }")
+        );
 
     /// <summary>
     ///     Anything else is broken one statement per line, the first off the label — whatever the
@@ -207,10 +201,10 @@ public sealed class SwitchSectionIssue374Tests {
         "case 2: break;"
     )]
     [InlineData(
-        "void S(object o) { switch (o) { case 1: M(); throw new System.Exception(); } }",
+        "void S(object o) { switch (o) { case 1: M(); throw new Exception(); } }",
         "case 1:",
         "    M();",
-        "    throw new System.Exception();"
+        "    throw new Exception();"
     )]
     [InlineData(
         "void S(object o) { switch (o) { case 1: x = 1; x = 2; break; } }",
@@ -248,12 +242,12 @@ public sealed class SwitchSectionIssue374Tests {
         "    M();",
         "    break;"
     )]
-    public void AnyOtherSection_BreaksOneStatementPerLine(string member, params string[] expectedSectionLines) =>
-        Assert.Equal(["switch (o) {", .. expectedSectionLines.Select(static line => "    " + line), "}"], Body(member));
+    public void AnyOtherSection_BreaksOneStatementPerLine(string member, params string[] sections) =>
+        Assert.Equal(Sections(sections), Body(member));
 
     /// <summary>
-    ///     Stacked labels each take a line; the statements stay with the last one; an empty switch
-    ///     stays together; a braced section opens on its label and is expanded by the block's rule.
+    ///     Stacked labels each take a line and the statements stay with the last one; a braced section
+    ///     opens on its label and is expanded by the block's rule.
     /// </summary>
     [Theory]
     [InlineData(
@@ -271,8 +265,8 @@ public sealed class SwitchSectionIssue374Tests {
         "}"
     )]
     [InlineData("void S(object o) { switch (o) { case 1:\n case 2: break; } }", "case 1:", "case 2: break;")]
-    public void LabelsAndBracedSections(string member, params string[] expectedSectionLines) =>
-        Assert.Equal(["switch (o) {", .. expectedSectionLines.Select(static line => "    " + line), "}"], Body(member));
+    public void LabelsAndBracedSections(string member, params string[] sections) =>
+        Assert.Equal(Sections(sections), Body(member));
 
     [Fact]
     public void AnEmptySwitch_StaysTogether() =>
@@ -287,7 +281,7 @@ public sealed class SwitchSectionIssue374Tests {
     [InlineData("void S(object o) {\n switch (o) {\n case 1: break; case 2: break;\n }\n }")]
     [InlineData("void S(object o) {\n switch (o) {\n case 1: break;\n case 2: break; }\n }")]
     public void SectionsJoinedInAnyPartOfTheStatement_AreSeparated(string member) =>
-        Assert.Equal(["switch (o) {", "    case 1: break;", "    case 2: break;", "}"], Body(member));
+        Assert.Equal(Sections(["case 1: break;", "case 2: break;"]), Body(member));
 
     /// <summary>
     ///     A simple section is a fill, not an all-or-nothing group: a kept label break keeps the tail
@@ -296,20 +290,12 @@ public sealed class SwitchSectionIssue374Tests {
     [Fact]
     public void ASimpleSectionsKeptBreaks_AreTheOracles() =>
         Assert.Equal(
-            [
-                "switch (o) {",
-                "    case 1:",
-                "        M(); break;",
-                "    case 2:",
-                "        M();",
-                "        break;",
-                "    case 3:",
-                "        M();",
-                "        break;",
-                "}"
-            ],
+            Sections(
+                ["case 1:", "    M(); break;", "case 2:", "    M();", "    break;", "case 3:", "    M();", "    break;"]
+            ),
             Body(
-                "void S(object o) {\n switch (o) {\n case 1:\n M(); break;\n case 2: M();\n break;\n case 3:\n M();\n break;\n }\n }"
+                "void S(object o) {\n switch (o) {\n case 1:\n M(); break;\n case 2: M();\n break;\n"
+                + " case 3:\n M();\n break;\n }\n }"
             )
         );
 
@@ -327,15 +313,12 @@ public sealed class SwitchSectionIssue374Tests {
     public void ASimpleSectionAtTheMargin_FillsAsTheOracleDoes(
         int nameWidth,
         bool labelBreakKept,
-        params string[] expectedSectionLines
+        params string[] sections
     ) {
         var name = new string('M', nameWidth);
         var gap = labelBreakKept ? "\n" : " ";
         var body = Body($"void S(object o) {{ switch (o) {{ case 1:{gap}{name}(); break; }} }}");
-        Assert.Equal(
-            ["switch (o) {", .. expectedSectionLines.Select(line => "    " + string.Format(null, line, name)), "}"],
-            body
-        );
+        Assert.Equal(Sections(sections.Select(line => string.Format(null, line, name))), body);
     }
 
     /// <summary>
@@ -347,11 +330,20 @@ public sealed class SwitchSectionIssue374Tests {
     [Fact]
     public void ABracedSectionsBlock_IsTheEmbeddedKeys() {
         const string source =
-            "class C {\n    void S(object o, bool b) { switch (o) { case 1: { M(); } case 2: if (b) { M(); } break; } }\n    void M() { }\n}\n";
+            "class C {\n"
+            + "    void S(object o, bool b) { switch (o) { case 1: { M(); } case 2: if (b) { M(); } break; } }\n"
+            + "    void M() { }\n"
+            + "}\n";
 
         var embedded = FormatWith(source, ("skala_keep_existing_embedded_block_arrangement", "true"));
         Assert.Contains(
-            "        switch (o) {\n            case 1: { M(); }\n            case 2:\n                if (b) { M(); }\n\n                break;\n        }\n",
+            "        switch (o) {\n"
+            + "            case 1: { M(); }\n"
+            + "            case 2:\n"
+            + "                if (b) { M(); }\n"
+            + "\n"
+            + "                break;\n"
+            + "        }\n",
             embedded,
             StringComparison.Ordinal
         );
@@ -361,7 +353,15 @@ public sealed class SwitchSectionIssue374Tests {
         // lines. That is the key's own, older gap and not this issue's.
         var declaration = FormatWith(source, ("skala_keep_existing_declaration_block_arrangement", "true"));
         Assert.Contains(
-            "            case 1: {\n                M();\n            }\n            case 2:\n                if (b) {\n                    M();\n                }\n\n                break;\n",
+            "            case 1: {\n"
+            + "                M();\n"
+            + "            }\n"
+            + "            case 2:\n"
+            + "                if (b) {\n"
+            + "                    M();\n"
+            + "                }\n"
+            + "\n"
+            + "                break;\n",
             declaration,
             StringComparison.Ordinal
         );

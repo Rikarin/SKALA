@@ -3704,20 +3704,14 @@ public sealed class BreakPlan {
             return;
         }
 
-        // ⚠ A `switch` or a `try` never shares its owner's line, at the export's `keep = true` and
-        // whatever the source wrote: `if (b) switch (o) { case 1: break; }`, the same under `while`,
-        // `foreach`, `lock` and after `else`, an *empty* `if (b) switch (o) { }`, and
-        // `if (b) try { M(); } finally { }` all come back with the statement on the next line
-        // (measured for #374). Neither is "simple" in any reading, and the width rule below cannot
-        // reach the empty switch, which fits; so the break is required rather than planned.
-        if (embedded is SwitchStatementSyntax or TryStatementSyntax) {
+        if (NeverSharesItsOwnersLine(embedded)) {
             Mandatory(first);
             return;
         }
 
         var keeps = options.KeepExistingEmbeddedArrangement;
         var placement = options.PlaceSimpleEmbeddedStatementOnSameLine;
-        var simple = EmbeddedStatementOf(embedded) is null && !IsEmbeddedStatement(owner);
+        var simple = IsSimpleEmbeddedStatement(owner, embedded);
 
         if (!keeps && placement == PlacementStyle.Never) {
             Mandatory(first);
@@ -3775,6 +3769,25 @@ public sealed class BreakPlan {
     /// <summary>Whether this node is itself somebody else's embedded statement.</summary>
     static bool IsEmbeddedStatement(SyntaxNode node) =>
         node.Parent is { } parent && EmbeddedStatementOf(parent) == node;
+
+    /// <summary>
+    ///     ⚠ A <c>switch</c> or a <c>try</c> never shares its owner's line, at the export's
+    ///     <c>keep = true</c> and whatever the source wrote: <c>if (b) switch (o) { case 1: break; }</c>,
+    ///     the same under <c>while</c>, <c>foreach</c>, <c>lock</c> and after <c>else</c>, an
+    ///     <em>empty</em> <c>if (b) switch (o) { }</c>, and <c>if (b) try { M(); } finally { }</c> all
+    ///     come back with the statement on the next line (measured for #374). Neither is "simple" in
+    ///     any reading, and the width rule cannot reach the empty switch, which fits; so the break is
+    ///     required rather than planned.
+    /// </summary>
+    static bool NeverSharesItsOwnersLine(StatementSyntax embedded) =>
+        embedded is SwitchStatementSyntax or TryStatementSyntax;
+
+    /// <summary>
+    ///     "Simple", in both halves <see cref="PlanEmbeddedStatement" /> measures: the statement carries
+    ///     no embedded statement of its own, and its owner is not itself somebody's embedded statement.
+    /// </summary>
+    static bool IsSimpleEmbeddedStatement(SyntaxNode owner, StatementSyntax embedded) =>
+        EmbeddedStatementOf(embedded) is null && !IsEmbeddedStatement(owner);
 
     /// <summary>
     ///     A <em>simple</em> switch section — one simple statement, with or without a <c>break;</c> after
