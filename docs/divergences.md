@@ -4656,7 +4656,9 @@ not the constraint's presence.
 
 - options: none identified. `skala_keep_existing_expr_member_arrangement = false` is set in the export and
   is a plausible owner, but it was not flipped in this measurement and the entry does not claim it.
-- ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/generic-constraints.cs`.
+- ⚠ status: **fixed by SK-DIV-0113** (#372, 2026-09-17). The rule this entry read off three rows —
+  the head already being wrapped forces the break — is the one the arrow now reads off the writer's
+  own line count, and `constructs/syntax/generic-constraints.cs` moved onto the oracle with it.
 
 ## SK-DIV-0099 — a declaration head that overflows is not broken, and a break already in it is indented one level short
 
@@ -4883,9 +4885,11 @@ parameter list's after-comma points were *fill* points, and a fill re-decides by
 `G<T,` / `U>` was re-joined although the group was planned as broken — pinned now, the way a list
 pattern's item breaks are; and a switch expression's arms and an enum's members planned only the
 gap after each comma, so the gap before it fell through to `keep_user_linebreaks` and Skala wrote
-the comma alone on a line. Both join now. The arrow after a type parameter list that keeps a break
-reads it through `TypeParametersKeepABreak`, because `OwnerListOf` hands the arrow the parameter
-list's group and nothing else.
+the comma alone on a line. Both join now. ⚠ The arrow after a type parameter list that keeps a break
+read it through `TypeParametersKeepABreak` — the source — because `OwnerListOf` handed the arrow the
+parameter list's group and nothing else; that is what made the Nightly fuzzer's pass one and pass two
+disagree once the list was *filled* rather than kept, and SK-DIV-0113 replaced both with the writer's
+line count (#372).
 
 ⚠ **Adjacent and still open**: `where T : class` / `, new()` and `where T : class,` / `new()` both
 put the next constraint at the `where`'s column in the oracle and one level in under Skala — a
@@ -4922,7 +4926,8 @@ the list takes the declaration family: `skala_wrap_parameters_style`,
 `skala_wrap_after_declaration_lpar`, `skala_wrap_before_declaration_rpar`,
 `skala_max_formal_parameters_on_line`, `skala_keep_existing_declaration_parens_arrangement`,
 `skala_wrap_before_declaration_lpar`. `OwnerListOf` already handed the arrow the indexer's list, so
-the arrow broke as soon as the list had a group to read.
+the arrow broke as soon as the list had a group to read (since SK-DIV-0113 the arrow reads the head's
+line count instead, and this fixture's arrow break is one of the six that go red when that is disabled).
 
 ⚠ **The enumeration the issue asked for** — separated, delimited kinds the planner visits and does
 not, from `Testing/corpus/syntax-kinds.txt` against `BreakPlan.Plan`. Visited: `ArgumentList`,
@@ -5009,9 +5014,9 @@ the gap before the `where` out of the scope `skala_indent_type_constraints` inde
 run. The clause's frame is marked as paying for nothing (the `Aligned` frame's rule), and the arm's
 scope opens only without a run, where it is what indents the `where` line itself.
 
-⚠ **Adjacent and still open**: `int E<T1>() where T1 : class` / `, new() => 0;` — the oracle breaks
-the arrow (`, new() =>` / `0;`) because the head is wrapped, which is SK-DIV-0098; Skala keeps
-`=> 0` on the line. Not in the fixture.
+⚠ **Adjacent, and closed since**: `int E<T1>() where T1 : class` / `, new() => 0;` — the oracle breaks
+the arrow (`, new() =>` / `0;`) because the head is wrapped, which is SK-DIV-0098; Skala kept
+`=> 0` on the line until SK-DIV-0113 (#372). Not in this fixture.
 
 - options: `skala_indent_type_constraints`, `skala_place_type_constraints_on_same_line`,
   `skala_continuous_indent_multiplier`, `skala_keep_user_linebreaks` — all measured, none the cause.
@@ -5267,3 +5272,79 @@ line worse on that fixture; not in this entry's construct.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/nested-multiline-tuple-item.cs`,
   `NestedMultilineTupleItemTests` and
   `DocumentBuilderTests.Fill_KeepsTheHeadOfAnItemThatFitsNowhere_AndMovesOneThatFitsMoved`.
+
+## SK-DIV-0113 — an expression body after a head the formatter itself broke kept its arrow until the second pass
+
+⚠ **Found by the Nightly fuzzer** (`idempotency`, seed `7611825995831206751`, issue #372) on the
+first run after #370 merged, and bisected to `e819df5a` (#369, SK-DIV-0104) rather than to #370:
+the issue's attribution was the run's date, not the mechanism. The three lines:
+
+```csharp
+private  IReadOnlyDictionary<IEnumerable<IReadOnlyList<char>>, IEnumerable<IReadOnlyList<char>>> M113<T110, T111, T112>() where T111 : notnull, IEquatable<T111> where T112 : unmanaged, IEquatable<T112 > => builder.Items;
+```
+
+Pass one filled the type parameter list (`M113<T110, T111,` / `T112>() … => builder.Items;`, 113
+columns) and kept the arrow; pass two, given its own output, broke the arrow (`=>` / `builder.Items;`);
+pass three was stable. ⚠ The issue's corrected text called pass one right on the width — line three
+fits — and **the oracle refutes the width reading.** Measured 2026-09-17 with `Testing ask`, on the
+original, on pass one's output, on pass two's, and on eleven variants:
+
+| written | oracle |
+|---|---|
+| the three lines, flat | `…<char>>>` / `M113<…>() where … =>` / `builder.Items;` — breaks between the return type and the name (SK-DIV-0024's third answer), and **breaks the arrow** |
+| pass one's output | **pass two's output** — the kept type-parameter break stays, the arrow breaks, 98 columns |
+| pass two's output, the oracle's own answer above | each unchanged |
+| a kept type-parameter break, one `where` clause, body fitting | arrow broken |
+| two `where` clauses, a short return type, flat and 158 columns | first `where` moved down, then arrow broken |
+| the same with a body that needs the break on its own | the same shape |
+| `M117<T110, T111,` / `T112>() where T111 : notnull => builder.Items;` — 41 columns of head | arrow broken |
+| `… where T111 : notnull` / `where T112 : unmanaged => builder.Items;` | both `where`s on their own lines, arrow broken — SK-DIV-0098's shape |
+| `M119<…>(int a,` / `int b) where T111 : notnull => builder.Items;` | list chopped, `) where T111 : notnull =>` / `builder.Items;` |
+| `IReadOnlyDictionary<object, object>` / `M120<…>() where T111 : notnull => builder.Items;` | as written, arrow broken |
+| `public` / `int O() => 1;` | `public` / `int O() =>` / `1;` — a kept break after a modifier is inside the head |
+| `[Obsolete]` / `public int M() => 1;` and `[Obsolete] public int M() => 1;` | `[Obsolete]` / `public int M() => 1;` — an attribute list is **not** inside the head |
+| a constructor with a chopped parameter list; a local function with a kept type-parameter break | arrow broken, both |
+| `Short<T110>() where T110 : notnull => builder.Items;`, `Two<T110>() where T110 : class, new() => builder.Items;`, `get => 1;` | unchanged |
+
+So `if_owner_is_single_line` means what it says, read off the **output**: the arrow breaks whenever
+any break before it was taken, whoever took it, and the body's fit on the head's last line does not
+enter into it. Skala answered it from two narrower instruments. `PlanExpressionBody` gave the arrow's
+group `BreaksWithOwner` on the *parameter list's* group alone — which sees a chopped list and nothing
+else — and `TypeParametersKeepABreak` read the *source* for a break in the type parameter list, which
+sees the author's break and not the fill's. On pass one the fill's break exists only in the output,
+so neither instrument saw it; on pass two it was in the source. That is the whole defect, and it is
+the same shape SK-DIV-0111 found for a `for` header a commit earlier: the source is one plan too
+early, and here even the finished *plan* is too early, because a fill decides at layout time.
+
+**Decision: fix**, in the layout engine, as one fact and no per-shape rule. The plan puts a
+zero-width `Flat` marker group at the head's first token after the attribute lists (`BreakPlan.markers`,
+opened and closed by `CSharpDocumentBuilder.EmitPiece` after the gap before the token), the fitter
+records the output line every group is entered on (`Fitter.enteredOn`), and the arrow's group carries
+`GroupFacts.BreaksIfOwnerIsMultiLine` with the marker as its `Owner`: it resolves Broken when it is
+entered on a later line than the marker was. Whoever took the break — a chop, a fill, a `where`
+moved down, a kept break `keep_user_linebreaks` left — the writer's line count saw it, and a marker
+placed after the attributes is what keeps `[Obsolete]` / `public int M() => 1;` whole. The parameter
+list's `BreaksWithOwner` and `TypeParametersKeepABreak` are gone: both were this fact, measured
+narrowly. Sabotaged by guarding the check with `m.Line < 0`: six tests go red, all on the
+oracle-equality assertion and not only on idempotency, one of them #370's indexer test whose
+parameter-list owner the marker now carries.
+
+⚠ **Closes SK-DIV-0098 on the way.** That entry's rule — "what forces the break is the head already
+being wrapped, not the constraint's presence" — is this rule, and `constructs/syntax/generic-constraints.cs`
+is the one construct whose Skala output moved under the fix: onto the oracle's,
+`where TResult : class, IReadOnlyCollection<TSubject>, new() =>` / `new TResult();`. The construct
+set went from 43 files differing from the oracle to 42; no other construct moved.
+
+⚠ **Adjacent and not this entry's.** The head wrap on the original three lines is SK-DIV-0024's
+deliberate third answer — the oracle breaks between the return type and `M113`, Skala fills the type
+parameter list — so Skala's one-pass fixed point is the oracle's answer for *that head*, not for the
+flat input; the test says so. And a property whose type-argument list overflows
+(`IReadOnlyDictionary<…, …, …> LongPropertyName => builder.Items;` at 138 columns) is left at 138 by
+Skala where the oracle fills the type arguments and then breaks the arrow: no plan wraps a type
+argument list in a member's type. Measured, not fixed here.
+
+- options: `skala_place_expr_method_on_single_line`, `skala_place_expr_property_on_single_line`,
+  `skala_place_expr_accessor_on_single_line` (all `if_owner_is_single_line`),
+  `skala_keep_existing_expr_member_arrangement = false`.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/expression-body-after-a-broken-head.cs`,
+  `ExpressionBodyAfterABrokenHeadTests`, and the seed's replay.

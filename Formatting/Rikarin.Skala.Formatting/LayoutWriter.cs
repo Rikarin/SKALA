@@ -236,7 +236,7 @@ public sealed class LayoutWriter {
                         // land on, and against the rest of the line as well as its own width. See
                         // Fitter's remarks for why this is not a separate pass, and TrailingWidth
                         // for why the group's own width is not the whole measurement.
-                        fitter.Enter(node, CurrentColumn(), ContinuationColumn(slot.Arg1), TrailingWidth(stack));
+                        fitter.Enter(node, CurrentColumn(), ContinuationColumn(slot.Arg1), TrailingWidth(stack), line);
                         break;
 
                     default:

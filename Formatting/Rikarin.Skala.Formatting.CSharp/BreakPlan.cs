@@ -213,15 +213,6 @@ public sealed class BreakPlan {
     /// </remarks>
     readonly HashSet<int> forcedChop = [];
 
-    /// <summary>The group of a delimited list, keyed by the list node.</summary>
-    /// <remarks>
-    ///     ⚠ Recorded so that a construct <em>outside</em> the list can read whether the list broke.
-    ///     <c>skala_place_expr_method_on_single_line = if_owner_is_single_line</c> asks whether the
-    ///     declaration occupies one line, and a chopped parameter list is the commonest way for it not
-    ///     to — which no width test on the arrow itself can see.
-    /// </remarks>
-    readonly Dictionary<long, int> delimited = [];
-
     /// <summary>
     ///     The group opened <em>inside</em> a construct's delimiters rather than around them.
     /// </summary>
@@ -248,6 +239,20 @@ public sealed class BreakPlan {
 
     /// <summary>Every group described, by id — what <see cref="SourceBreakSurvives" /> reads.</summary>
     readonly Dictionary<int, GroupPlan> byId = [];
+
+    /// <summary>
+    ///     Zero-width <see cref="GroupMode.Flat" /> groups the builder opens and closes at a token, by the
+    ///     token's position: the head markers a <see cref="GroupFacts.BreaksIfOwnerIsMultiLine" /> group
+    ///     reads its owner's line from.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not one of <see cref="groups" /> either, and for the mirror of the constraint run's reason:
+    ///     a group opened around a node is entered at the node's first token, and the head of a
+    ///     declaration begins at a token no node starts at — the first modifier, after the attribute
+    ///     lists. A marker on the declaration itself would be entered before <c>[Attribute]\n</c> and
+    ///     read the attribute's own line as the head's.
+    /// </remarks>
+    readonly Dictionary<int, int> markers = [];
 
     /// <summary>
     ///     The <c>for</c> headers whose "is the header multi-line" answer waits for the walk to finish.
@@ -293,6 +298,12 @@ public sealed class BreakPlan {
 
     /// <summary>The two groups the builder opens around this declaration's <c>where</c> clauses.</summary>
     public bool TryConstraintRun(SyntaxNode node, out ConstraintRun run) => constraints.TryGetValue(Key(node), out run);
+
+    /// <summary>
+    ///     The zero-width marker group the builder opens at the token starting at
+    ///     <paramref name="position" />, if any.
+    /// </summary>
+    public bool TryMarker(int position, out int group) => markers.TryGetValue(position, out group);
 
     /// <summary>Every group the plan created, so the builder can describe them to the document.</summary>
     public IEnumerable<GroupPlan> Groups {
@@ -959,7 +970,6 @@ public sealed class BreakPlan {
             && IsLambdaArgument(items[0]);
 
         var group = NewGroup();
-        delimited[Key(node)] = group;
         var first = FirstToken(items[0]);
         var delimiterBroken = !soleLambda && BreaksBefore(first) || BreaksBefore(close);
 
@@ -2454,51 +2464,30 @@ public sealed class BreakPlan {
         );
     }
 
-    /// <summary>The parameter list whose breaking makes an expression-bodied member multi-line.</summary>
-    static SyntaxNode? OwnerListOf(ArrowExpressionClauseSyntax node) =>
-        node.Parent switch {
-            BaseMethodDeclarationSyntax method => method.ParameterList,
-            LocalFunctionStatementSyntax function => function.ParameterList,
-            IndexerDeclarationSyntax indexer => indexer.ParameterList,
-            _ => null
-        };
-
-    /// <summary>The type parameter list of the declaration an expression body belongs to, if any.</summary>
-    static TypeParameterListSyntax? TypeParametersOf(ArrowExpressionClauseSyntax node) =>
-        node.Parent switch {
-            MethodDeclarationSyntax method => method.TypeParameterList,
-            LocalFunctionStatementSyntax function => function.TypeParameterList,
-            _ => null
-        };
-
     /// <summary>
-    ///     Whether <see cref="PlanTypeParameters" /> is going to keep a break the author wrote at one of
-    ///     this list's commas — which makes the declaration that owns it more than one line.
+    ///     The token an expression-bodied declaration's head begins at: its first token after the
+    ///     attribute lists — the first modifier, or the return type, or the accessor's keyword.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Mirrors that method's condition exactly, and it is the arrow's only way of seeing it:
-    ///     <see cref="OwnerListOf" /> hands the arrow the <em>parameter</em> list's group, and a type
-    ///     parameter list has no group the arrow could read. Given <c>int G&lt;T,\n U&gt;() =&gt; 0;</c>
-    ///     the oracle breaks after the arrow too: the type parameters made the head two lines, exactly
-    ///     as a chopped parameter list does (SK-DIV-0104).
+    ///     ⚠ After the attributes, measured: <c>[Obsolete]\npublic int M() =&gt; 1;</c> keeps the arrow
+    ///     inline and <c>public\nint O() =&gt; 1;</c> breaks it, so the attribute's line is not the head's
+    ///     and the modifier's is (#372). Nothing in the tree starts at that token, which is why the head
+    ///     is a marker at a position rather than a group on a node — see <see cref="markers" />.
     /// </remarks>
-    bool TypeParametersKeepABreak(TypeParameterListSyntax? list) {
-        if (list is null || !options.KeepsUserBreaksBetweenItems || options.WrapBeforeTypeParameterLangle) {
-            return false;
+    static SyntaxToken HeadStartOf(ArrowExpressionClauseSyntax node) {
+        if (node.Parent is null) {
+            return default;
         }
 
-        foreach (var comma in list.Parameters.GetSeparators()) {
-            var next = comma.GetNextToken();
-            if (next.IsKind(SyntaxKind.None) || next.SpanStart >= list.GreaterThanToken.SpanStart) {
+        foreach (var child in node.Parent.ChildNodesAndTokens()) {
+            if (child.AsNode() is AttributeListSyntax) {
                 continue;
             }
 
-            if (BreaksBefore(comma) || BreaksBefore(next)) {
-                return true;
-            }
+            return child.IsToken ? child.AsToken() : child.AsNode()!.GetFirstToken();
         }
 
-        return false;
+        return default;
     }
 
     /// <summary>Whether this expression is the condition of an if, while, do, for or switch.</summary>
@@ -3360,24 +3349,12 @@ public sealed class BreakPlan {
             return;
         }
 
-        // ⚠ `if_owner_is_single_line` when the owner is certainly not: a type parameter list the
-        // author broke stays broken (PlanTypeParameters pins it), so the declaration spans lines
-        // whatever the body measures, and the arrow breaks the way it does for a chopped parameter
-        // list. A required break rather than a group, because there is nothing left to decide; the
-        // body takes the member's continuation level the same way it does under `never`.
-        if (placement == PlacementStyle.IfOwnerIsSingleLine
-            && !options.KeepExistingExprMemberArrangement
-            && TypeParametersKeepABreak(TypeParametersOf(node))) {
-            Mandatory(target);
-            return;
-        }
-
         var group = NewGroup();
         Point(target, group);
 
-        // ⚠ `if_owner_is_single_line`, literally: the owner is the declaration, and the commonest
-        // way for a declaration not to occupy one line is a chopped parameter list. Measured — the
-        // oracle writes
+        // ⚠ `if_owner_is_single_line`, literally: the owner is the declaration, and it is not single
+        // line whenever any break before the arrow is taken. The commonest is a chopped parameter
+        // list — the oracle writes
         //     public void RenderPassSetBindGroup(
         //         WebGpuObject pass,
         //         …
@@ -3385,7 +3362,24 @@ public sealed class BreakPlan {
         //         SetBindGroup(pass, group, bindGroup, dynamicOffsets);
         // and the body's own width says nothing about it: `SetBindGroup(…)` fits on the `) =>` line
         // with sixty columns to spare. A width test on the arrow can never produce this break.
-        var ownerGroup = OwnerListOf(node) is { } list && delimited.TryGetValue(Key(list), out var id) ? id : -1;
+        // ⚠ And not only that one. The oracle breaks the arrow after a filled type parameter list,
+        // after a `where` clause moved down, after a kept break inside a type parameter list
+        // (SK-DIV-0104) and after a kept break following a modifier — eleven shapes, all with
+        // `=> body;` fitting on the head's last line. Reading the parameter list's group for the first
+        // and the source for the third answered two of them and disagreed with itself across passes:
+        // a type parameter fill's break is not in the source until pass two, so pass one kept the
+        // arrow inline and pass two, reading its own break as the author's, moved it (#372). The
+        // answer is the writer's line count — a zero-width marker at the head's first token, and the
+        // arrow breaks when it is entered on a later line than the marker was. Whoever took the break.
+        var head = HeadStartOf(node);
+        var owner = -1;
+        if (placement == PlacementStyle.IfOwnerIsSingleLine
+            && !options.KeepExistingExprMemberArrangement
+            && !head.IsKind(SyntaxKind.None)) {
+            owner = NewGroup();
+            markers[head.SpanStart] = owner;
+        }
+
         Describe(
             node,
             new GroupPlan(
@@ -3400,8 +3394,8 @@ public sealed class BreakPlan {
                     // Leaving both to the ordering rule is what produces the pair.
                     BreaksBefore(target) && node.Expression is not CollectionExpressionSyntax,
                     PrefersOuterBreak: node.Expression is CollectionExpressionSyntax,
-                    BreaksWithOwner: ownerGroup >= 0,
-                    Owner: ownerGroup,
+                    Owner: owner,
+                    BreaksIfOwnerIsMultiLine: owner >= 0,
                     // skala_keep_existing_expr_member_arrangement = false: a break the author wrote after the
                     // arrow is removed when the declaration fits on one line, and left alone when it
                     // does not. Adding one where the author wrote none is milestone 3's.

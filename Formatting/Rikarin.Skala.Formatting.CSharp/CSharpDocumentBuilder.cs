@@ -1936,6 +1936,15 @@ public sealed partial class CSharpDocumentBuilder {
             EmitGap(index, piece.Kind, piece.Span.Start, token);
         }
 
+        // ⚠ After the gap and before the text: a head marker records the line its token lands on,
+        // and the gap before the token is where a break that moves it would be. Before the gap, a
+        // declaration written on its own line under a kept break would read the previous line as
+        // its own. See BreakPlan.TryMarker.
+        if (piece.Kind == PieceKind.Token && plan.TryMarker(piece.Span.Start, out var marker)) {
+            doc.OpenGroup(GroupMode.Flat, marker);
+            doc.Close();
+        }
+
         MarkFramesStarted();
 
         var span = new SourceSpan(piece.Span.Start, piece.Span.Length);
