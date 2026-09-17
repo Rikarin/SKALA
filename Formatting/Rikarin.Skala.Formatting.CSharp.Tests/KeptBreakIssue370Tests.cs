@@ -94,6 +94,22 @@ public sealed class IndexerParameterListTests {
         );
 }
 
+/// <summary>Formats under the repository's options with overrides, and asserts a second-pass fixed point.</summary>
+static class Overridden {
+    const string FileName = "Test.cs";
+
+    public static string Settled(string source, (string Key, string Value)[] overrides) {
+        var options = OptionResolver.Resolve(
+            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, FileName),
+            [.. overrides.Select(static pair => new KeyValuePair<string, string>(pair.Key, pair.Value))]
+        ).Options;
+        var once = CSharpFormatter.Format(FileName, SourceText.From(source), options).Formatted;
+        var twice = CSharpFormatter.Format(FileName, SourceText.From(once), options).Formatted;
+        Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
+        return once;
+    }
+}
+
 /// <summary>
 ///     SK-DIV-0105: the constraints inside one <c>where</c> clause continue on the <c>where</c>'s own
 ///     column — a kept break on either side of a comma and a wrap the margin forces alike — at every
@@ -113,16 +129,8 @@ public sealed class ConstraintContinuationTests {
         }
         """;
 
-    static string Under(params (string Key, string Value)[] overrides) {
-        var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            [.. overrides.Select(static pair => new KeyValuePair<string, string>(pair.Key, pair.Value))]
-        ).Options;
-        var once = CSharpFormatter.Format("Test.cs", SourceText.From(Source), options).Formatted;
-        var twice = CSharpFormatter.Format("Test.cs", SourceText.From(once), options).Formatted;
-        Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
-        return once.TrimEnd('\n');
-    }
+    static string Under(params (string Key, string Value)[] overrides) =>
+        Overridden.Settled(Source, overrides).TrimEnd('\n');
 
     [Fact]
     public void UnderTheExport_TheConstraintSitsOnTheWheresColumn() =>
@@ -221,18 +229,11 @@ public sealed class EmbeddedStatementAfterMultilineHeaderTests {
     ///     own <c>csharp_prefer_braces</c> would wrap every embedded statement here in a block.
     /// </summary>
     static void Agrees(string source, string expected) {
-        var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            [new("csharp_prefer_braces", "false")]
-        ).Options;
-        var once = CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
+        var once = Overridden.Settled(source, [("csharp_prefer_braces", "false")]);
         Assert.True(
             expected.TrimEnd('\n') == once.TrimEnd('\n'),
             $"Skala's output is not the oracle's.\n--- Skala ---\n{once}\n--- oracle ---\n{expected}"
         );
-
-        var twice = CSharpFormatter.Format("Test.cs", SourceText.From(once), options).Formatted;
-        Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
     [Fact]

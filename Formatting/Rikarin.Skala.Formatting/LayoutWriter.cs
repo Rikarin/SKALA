@@ -1014,27 +1014,8 @@ public sealed class LayoutWriter {
         var column = atLineStart
             ? pendingCloserLevel ?? Effective()
             : this.column + width;
-        var segment = document.SegmentOf(node);
-        var head = document.SegmentHeadOf(node);
-
-        // ⚠ At the group's last point the segment ends where the group does, and the line does not
-        // — so what follows the group counts, exactly as it does when a group is resolved on entry.
-        // Without it a 121-column `for` header and a 121-column `if` condition both measure 118 and
-        // decline the break the oracle takes; the missing three columns are the `) {`. See
-        // LineFlags.LastPoint.
-        if ((flags & LineFlags.LastPoint) != 0) {
-            var trailing = TrailingAfterGroup(stack, group);
-            var whole = head == segment;
-            segment = segment >= Document.Unbounded || trailing >= Document.Unbounded
-                ? Document.Unbounded
-                : segment + trailing;
-
-            if (whole) {
-                head = segment;
-            }
-        }
-
-        if (segment < Document.Unbounded && column + segment <= this.width) {
+        var (segment, head) = FillSegment(node, group, flags, stack);
+        if (Fits(column, segment)) {
             return true;
         }
 
@@ -1043,9 +1024,33 @@ public sealed class LayoutWriter {
             return false;
         }
 
-        var continuation = ContinuationColumn(group);
-        var fitsMoved = segment < Document.Unbounded && continuation + segment <= this.width;
-        return !fitsMoved && head < Document.Unbounded && column + head <= this.width;
+        return !Fits(ContinuationColumn(group), segment) && Fits(column, head);
+    }
+
+    bool Fits(int column, int width) => width < Document.Unbounded && column + width <= this.width;
+
+    /// <summary>The whole width after a fill point and the width to the item's first breakable place.</summary>
+    /// <remarks>
+    ///     ⚠ At the group's last point the segment ends where the group does, and the line does not —
+    ///     so what follows the group counts, exactly as it does when a group is resolved on entry.
+    ///     Without it a 121-column <c>for</c> header and a 121-column <c>if</c> condition both measure
+    ///     118 and decline the break the oracle takes; the missing three columns are the <c>) {</c>. See
+    ///     <see cref="LineFlags.LastPoint" />.
+    /// </remarks>
+    (int Segment, int Head) FillSegment(int node, int group, LineFlags flags, Stack<(int Node, int Child)> stack) {
+        var segment = document.SegmentOf(node);
+        var head = document.SegmentHeadOf(node);
+        if ((flags & LineFlags.LastPoint) == 0) {
+            return (segment, head);
+        }
+
+        var trailing = TrailingAfterGroup(stack, group);
+        var whole = head == segment;
+        segment = segment >= Document.Unbounded || trailing >= Document.Unbounded
+            ? Document.Unbounded
+            : segment + trailing;
+
+        return (segment, whole ? segment : head);
     }
 
     /// <summary>

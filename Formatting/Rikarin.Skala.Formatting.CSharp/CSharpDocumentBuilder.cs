@@ -2991,22 +2991,6 @@ public sealed partial class CSharpDocumentBuilder {
 
     // ── Structure helpers ────────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    ///     Whether the token opens a tuple's item with a delimiter — the one fill whose head the oracle
-    ///     keeps on the line when the item fits nowhere whole (SK-DIV-0110).
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ The tuple and not every fill, and the boundary is measured. A tuple has no wrap style of
-    ///     its own: `(1\n, (2\n, 3), 4)` keeps `, (2` and keeps `, 4` after the multi-line item. An
-    ///     array initializer keeps a delimited head too (`), [` in `pathological/nested-collection-in-
-    ///     generated-while.cs`) but then breaks *after* the multi-line item (`],\n(null ? …`), a rule
-    ///     Skala does not have; applying the head rule there alone moved `new[] { ("a", …,\n "…"),
-    ///     ("b", …` in Skala's own GateCommands.cs onto the previous item's line, away from the oracle.
-    /// </remarks>
-    static bool IsADelimitedTupleItem(SyntaxToken token) =>
-        token.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken
-        && token.Parent?.Parent is ArgumentSyntax { Parent: TupleExpressionSyntax };
-
     static (SyntaxToken Open, SyntaxToken Close) BraceTokens(SyntaxNode node) =>
         node switch {
             BlockSyntax block => (block.OpenBraceToken, block.CloseBraceToken),
@@ -3083,6 +3067,22 @@ public sealed partial class CSharpDocumentBuilder {
             LockStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
             _ => (default, default)
         };
+
+    /// <summary>
+    ///     Whether the token opens a tuple's item with a delimiter — the one fill whose head the oracle
+    ///     keeps on the line when the item fits nowhere whole (SK-DIV-0110).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The tuple and not every fill, and the boundary is measured. A tuple has no wrap style of
+    ///     its own: `(1\n, (2\n, 3), 4)` keeps `, (2` and keeps `, 4` after the multi-line item. An
+    ///     array initializer keeps a delimited head too (`), [` in `pathological/nested-collection-in-
+    ///     generated-while.cs`) but then breaks *after* the multi-line item (`],\n(null ? …`), a rule
+    ///     Skala does not have; applying the head rule there alone moved `new[] { ("a", …,\n "…"),
+    ///     ("b", …` in Skala's own GateCommands.cs onto the previous item's line, away from the oracle.
+    /// </remarks>
+    static bool IsADelimitedTupleItem(SyntaxToken token) =>
+        token.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken
+        && token.Parent?.Parent is ArgumentSyntax { Parent: TupleExpressionSyntax };
 
     /// <summary>
     ///     ⚠ <c>indent_nested_{for,foreach,while,using,lock,fixed}_stmt = false</c>: a loop directly
