@@ -593,14 +593,28 @@ public sealed class Document {
 /// </param>
 /// <param name="Owner">
 ///     The group a <see cref="GroupMode.Owner" /> group reads its mode from, or the chain group a
-///     <see cref="BreaksWithOwner" /> group reads, or −1.
+///     <see cref="BreaksWithOwner" /> group reads, or the head marker a
+///     <see cref="BreaksIfOwnerIsMultiLine" /> group reads, or −1.
 /// </param>
 /// <param name="ChainLink">
 ///     ⚠ One operator of a binary chain: a <see cref="BreaksWithOwner" /> group whose owner is the
-///     chain-wide group and nothing else. <see cref="BreaksWithOwner" /> has a second producer — an
-///     expression body, whose owner is its parameter list — and the two containment rules of
-///     SK-DIV-0109 apply to links alone: a link whose operand holds something certain to break breaks
-///     on its own, and the owner it reports to is measured without its links' own breaks.
+///     chain-wide group and nothing else. The two containment rules of SK-DIV-0109 apply to links
+///     alone: a link whose operand holds something certain to break breaks on its own, and the owner
+///     it reports to is measured without its links' own breaks.
+/// </param>
+/// <param name="BreaksIfOwnerIsMultiLine">
+///     ⚠ A <see cref="GroupMode.Preserve" /> group that breaks whenever the writer has started a new
+///     line since it entered the group named by <see cref="Owner" /> — a zero-width
+///     <see cref="GroupMode.Flat" /> marker the front end puts at the first token of the construct
+///     that owns this one. It is <c>if_owner_is_single_line</c> read off the <em>output</em>: the
+///     owner is not single-line when any break before this group was taken, whoever took it — a
+///     chopped parameter list, a filled type parameter list, a <c>where</c> clause moved down, or a
+///     break the author wrote after a modifier and <c>keep_user_linebreaks</c> kept. Reading any one
+///     of those from the source or from one list's group instead is what made pass one keep
+///     <c>=&gt; body;</c> on the line a type parameter fill had just broken, and pass two — now
+///     seeing the break as the author's — move it (#372). Measured on eleven shapes: the oracle
+///     breaks the arrow after every one of them, and after none where only an attribute list
+///     precedes the declaration on its own line, which is why the marker sits after the attributes.
 /// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
@@ -612,4 +626,5 @@ public readonly record struct GroupFacts(
     bool SpendsIndent = false,
     bool BreaksWithOwner = false,
     int Owner = -1,
-    bool ChainLink = false);
+    bool ChainLink = false,
+    bool BreaksIfOwnerIsMultiLine = false);

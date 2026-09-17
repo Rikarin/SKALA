@@ -40,6 +40,13 @@ public sealed class Fitter {
     readonly Document document;
     readonly ResolvedMode[] modes;
     readonly bool[] resolved;
+
+    /// <summary>
+    ///     The output line each group was entered on, for
+    ///     <see cref="GroupFacts.BreaksIfOwnerIsMultiLine" />.
+    /// </summary>
+    readonly int[] enteredOn;
+
     readonly int width;
     readonly int indentWidth;
 
@@ -48,6 +55,7 @@ public sealed class Fitter {
         this.document = document;
         modes = new ResolvedMode[Math.Max(1, document.GroupCount)];
         resolved = new bool[Math.Max(1, document.GroupCount)];
+        enteredOn = new int[Math.Max(1, document.GroupCount)];
         this.width = width;
     }
 
@@ -75,7 +83,13 @@ public sealed class Fitter {
     ///     What still has to be written on this line after the group ends, up to the next break. ⚠ A
     ///     group is not the line it lands on; see <see cref="LayoutWriter" />'s TrailingWidth.
     /// </param>
-    public ResolvedMode Enter(int node, int column, int continuationColumn, int trailing) {
+    /// <param name="line">
+    ///     The output line the group is entered on. ⚠ Recorded for every group and read for the owner
+    ///     of a <see cref="GroupFacts.BreaksIfOwnerIsMultiLine" /> group: "the owner is not single-line"
+    ///     is a fact about the lines the writer has actually written since the owner began, and the
+    ///     writer is the only thing that knows it.
+    /// </param>
+    public ResolvedMode Enter(int node, int column, int continuationColumn, int trailing, int line) {
         ref var slot = ref document.Nodes[node];
         var id = slot.Arg1;
         var facts = document.FactsOf(id);
@@ -89,11 +103,13 @@ public sealed class Fitter {
                 facts.MeasuresHead ? document.HeadWidthOf(node) : document.FlatWidthOf(node),
                 document.PointWidthOf(node),
                 document.AfterPointOf(node),
-                trailing
+                trailing,
+                line
             )
         );
         modes[id] = mode;
         resolved[id] = true;
+        enteredOn[id] = line;
         return mode;
     }
 
@@ -112,6 +128,7 @@ public sealed class Fitter {
     /// </param>
     /// <param name="PointWidth">The width from the group's start to its own first break point.</param>
     /// <param name="AfterPoint">The width from that point to the next one.</param>
+    /// <param name="Line">The output line the group is entered on.</param>
     readonly record struct Measures(
         int Column,
         int ContinuationColumn,
@@ -119,7 +136,8 @@ public sealed class Fitter {
         int BreakWidth,
         int PointWidth,
         int AfterPoint,
-        int Trailing);
+        int Trailing,
+        int Line);
 
     /// <summary>The mode a group resolved to. Flat until the walk reaches it.</summary>
     public ResolvedMode ModeOf(int group) => modes[group];
@@ -152,6 +170,16 @@ public sealed class Fitter {
                 // when it says no, every link breaks, which is what chop_if_long means for a
                 // construct whose points are spread across nested nodes.
                 if (facts.BreaksWithOwner && owner >= 0 && resolved[owner] && modes[owner] == ResolvedMode.Broken) {
+                    return ResolvedMode.Broken;
+                }
+
+                // ⚠ `if_owner_is_single_line`, answered by the output: the owner's marker was entered on
+                // an earlier line than this group, so a break before this group was taken — by a chop,
+                // by a fill, by a kept break, it does not matter which — and the owner spans lines. The
+                // source cannot answer this (a fill's break is not in it until pass two) and neither
+                // can any one list's mode (a `where` moved down is no list's decision). See
+                // GroupFacts.BreaksIfOwnerIsMultiLine (#372).
+                if (facts.BreaksIfOwnerIsMultiLine && owner >= 0 && resolved[owner] && enteredOn[owner] != m.Line) {
                     return ResolvedMode.Broken;
                 }
 

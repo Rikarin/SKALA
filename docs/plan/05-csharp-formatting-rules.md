@@ -426,8 +426,13 @@ taken rather than about a width:
 - **`if_owner_is_single_line` means the owner, and the owner is the declaration.** A chopped parameter
   list makes a declaration multi-line, so the arrow's body leaves its line — and the body's own width
   says nothing about it, because `SetBindGroup(pass, group, bindGroup, offsets)` fits on the `) =>`
-  line with sixty columns to spare. `GroupFacts.BreaksWithOwner` is how the arrow reads the parameter
-  list's resolved mode.
+  line with sixty columns to spare. ⚠ And not only a chopped parameter list: a filled type parameter
+  list, a `where` clause moved down and a kept break after a modifier all do the same, measured on
+  eleven shapes (SK-DIV-0113, #372). The arrow used to read the parameter list's resolved mode
+  through `GroupFacts.BreaksWithOwner` and the type parameter list's kept break from the source, and
+  the two disagreed across passes on a fill's break; it now reads the writer's own line count through
+  `GroupFacts.BreaksIfOwnerIsMultiLine` — a zero-width marker at the head's first token after the
+  attributes, and the arrow breaks when it is entered on a later line than the marker was.
 - **`skala_blank_lines_after_block_statements` applies to a statement that *ends* with a brace**, which is
   not the same as a statement that *is* a block. An `if … else { }`, a `switch { }` and a
   `try … catch { }` all take the blank line, and none of their closing braces hangs from a
