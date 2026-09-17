@@ -272,6 +272,10 @@ public sealed class DocumentBuilder {
     /// <param name="delimitedItem">
     ///     The item after the point opens with a delimiter. <see cref="LineFlags.DelimitedItem" />.
     /// </param>
+    /// <param name="keepsHeadWhenCertain">
+    ///     The item after the point keeps its head when a break inside it is certain.
+    ///     <see cref="LineFlags.KeepsHeadWhenCertain" />.
+    /// </param>
     public void BreakPoint(
         int group,
         bool flatSpace,
@@ -279,7 +283,8 @@ public sealed class DocumentBuilder {
         int blankLines = 0,
         string? newLine = null,
         bool lastResort = false,
-        bool delimitedItem = false
+        bool delimitedItem = false,
+        bool keepsHeadWhenCertain = false
     ) {
         var index = pending.Count;
         Leaf(
@@ -296,7 +301,8 @@ public sealed class DocumentBuilder {
         node.Flags = (flatSpace ? (int)LineFlags.FlatSpace : 0)
             | (fill ? (int)LineFlags.FillPoint : 0)
             | (lastResort ? (int)LineFlags.LastResort : 0)
-            | (delimitedItem ? (int)LineFlags.DelimitedItem : 0);
+            | (delimitedItem ? (int)LineFlags.DelimitedItem : 0)
+            | (keepsHeadWhenCertain ? (int)LineFlags.KeepsHeadWhenCertain : 0);
 
         ownPoints.Add(group);
 

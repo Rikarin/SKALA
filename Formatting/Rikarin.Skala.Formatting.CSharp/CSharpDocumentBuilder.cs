@@ -2384,7 +2384,8 @@ public sealed partial class CSharpDocumentBuilder {
                         ? DefaultNewLine()
                         : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine(),
                         spec.Rule == GapRule.LastResortPoint,
-                        IsADelimitedTupleItem(nextToken) || StartsATypeArgument(nextToken)
+                        IsADelimitedTupleItem(nextToken) || StartsATypeArgument(nextToken),
+                        StartsATupleItem(nextToken)
                     );
                     return;
 
@@ -3091,7 +3092,21 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     static bool IsADelimitedTupleItem(SyntaxToken token) =>
         token.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken
-        && token.Parent?.Parent is ArgumentSyntax { Parent: TypeArgumentListSyntax or TupleExpressionSyntax };
+        && token.Parent?.Parent is ArgumentSyntax { Parent: TupleExpressionSyntax };
+
+    /// <summary>
+    ///     Whether the token is the first of any tuple item — the fill whose identifier-headed items keep
+    ///     their head when a break inside them is certain (SK-DIV-0114).
+    /// </summary>
+    static bool StartsATupleItem(SyntaxToken token) {
+        for (SyntaxNode? node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
+            if (node is ArgumentSyntax { Parent: TupleExpressionSyntax }) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>
     ///     Whether the token is the first of a type argument — the other fill whose head stays on the

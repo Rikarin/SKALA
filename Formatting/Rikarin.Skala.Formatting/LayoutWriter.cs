@@ -1022,8 +1022,13 @@ public sealed class LayoutWriter {
             return true;
         }
 
-        var delimited = (flags & LineFlags.DelimitedItem) != 0;
-        if (head >= segment || !delimited) {
+        // ⚠ An identifier-headed tuple item keeps its head only when the break inside it is certain
+        // — the segment is unbounded — and moves whole when it is merely too wide; a delimited item
+        // keeps its head either way. See LineFlags.KeepsHeadWhenCertain (SK-DIV-0114).
+        var headMayStay = (flags & LineFlags.DelimitedItem) != 0
+            || (flags & LineFlags.KeepsHeadWhenCertain) != 0 && segment >= Document.Unbounded;
+
+        if (head >= segment || !headMayStay) {
             return false;
         }
 
