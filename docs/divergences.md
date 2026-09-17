@@ -5455,3 +5455,72 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
   `variable-designation`, `array-rank`, `function-pointer-lists`, `attribute-section`,
   `cref-parameter-list`) and by `SeparatedListPlanTests`, which reflects every `SeparatedSyntaxList`
   kind Roslyn declares — 31 — and fails on the twelfth.
+
+## SK-DIV-0115 — a `switch` statement written on one line stayed on one line, and a section stayed joined whatever it held
+
+⚠ **Found while measuring #373 and filed as issue #374**, on a probe that happened to write a `switch`
+statement on one line. `BreakPlan.PlanOnePerLine` — "every member and every statement gets a line of
+its own" — walked `BlockSyntax.Statements` and the members of a type and a namespace, and never a
+`SwitchStatementSyntax`'s sections, so `void B(object o) { switch (o) { case 1: break; case 2:
+break; } }` had its method body expanded and its switch left exactly as written, while the one-line
+`if` block beside it was expanded by both sides. Nothing in `corpus/real/` or `constructs/` wrote a
+switch that way, which is why no sweep ever showed it. Measured 2026-09-17 with `Testing ask`, some
+seventy shapes over six probe rounds, at the export's values and with each candidate key flipped alone:
+
+| written | oracle |
+|---|---|
+| `switch (o) { case 1: break; case 2: break; }` | `switch (o) {` / `case 1: break;` / `case 2: break;` / `}` |
+| the same with the braces broken and the sections joined, or the first section on the `{`'s line, or the `}` after the last | the same four lines |
+| `switch (o) { }` | unchanged — an empty switch stays together like an empty block |
+| `case 1: M(); break;`, `x = 1; break;`, `x++; break;`, `await T(); break;`, `Run(() => { M(); }); break;`, `yield return 1; break;`, `case 1: return 1;`, `default: throw …;`, `case 1: goto case 2;`, `case 1: continue;`, `case 1: ;` | **as written** — a *simple* section: `[S]` or `[S, break;]`, `S` an expression, empty, `return`, `throw`, `break`, `continue`, `goto` or `yield` statement |
+| `case 1: M(); M(); break;`, `M(); return;`, `M(); goto case 2;`, `M(); continue;`, `yield return 3; yield break;`, `x = 1; x = 2; break;`, `var y = 1; break;`, a lone `int y = 1;`, a lone `if (b) M();`, `lock (o) M(); break;`, `while (b) M(); break;` | **one statement per line, the first off the label**, whatever the source wrote — including `case 1:` / `M(); M(); break;` and `case 2: M();` / `break;` |
+| `case 1:` / `M(); break;` (simple, label gap kept) | unchanged — the tail stays together |
+| a simple section at 120 columns; at 121; far over | unchanged; `case 1:` / `M(); break;` **together**; `case 1:` / `M();` / `break;` |
+| a kept label gap with a 120-column tail; 121 | unchanged; `break;` pushed down |
+| `case 1: case 2: break;` | `case 1:` / `case 2: break;` — stacked labels never share a line |
+| `case 1: { M(); break; }` | `case 1: {` / `M();` / `break;` / `}` — the block's own rule |
+| `if (b) switch (o) { … }`, under `while`, `foreach`, `lock`, after `else`; `if (b) switch (o) { }`; `if (b) try { M(); } finally { }` | the statement on the next line, every one — even the empty switch, which fits |
+| `skala_keep_existing_embedded_block_arrangement = true` | keeps `if (b) { M(); }` **and `case 1: { M(); }`**, and still separates the sections |
+| `skala_keep_existing_declaration_block_arrangement = true`, `skala_keep_user_linebreaks = false`, `csharp_preserve_single_line_blocks = false`, `skala_place_simple_case_statement_on_same_line` either way | nothing moves |
+
+So the sections' breaks answer to no key, exactly as a block's statements' do not, and the register's
+claim on `PlanCaseStatements` — "the oracle simply preserves the section" — was true of simple sections
+and false of the rest: it had been measured on `case 1: M(); break;` and `case 1:` / `M();` / `break;`
+only. Skala's section group was also all-or-nothing where the oracle's is a fill: `case 1:` /
+`M(); break;` came back as three lines.
+
+Fixed in `BreakPlan.PlanOnePerLine` (a `SwitchStatementSyntax` arm, unconditional),
+`PlanCaseStatements` (a non-simple section is `Mandatory` at every statement; a simple one is a
+`Preserve` group whose label gap is the group's point — pinned when the author broke it — and whose
+`break;` is a fill point; stacked labels are `Mandatory`), `Keeps` (a section's block reads the
+embedded key), `PlanEmbeddedStatement` (a `switch` or `try` is `Mandatory`), and
+`CSharpDocumentBuilder.VisitSwitchSection`, which opens the section's group at the *last* label so the
+stacked labels' required breaks stay outside it — ⚠ with `EmitLeadingGap`, not `EmitUpTo`, which stops
+short of the label's own gap and put the section's required break inside the group, where it made every
+section measure as unbounded.
+
+⚠ Applying the rule to Skala's own source moved `Rules/Rikarin.Skala.Rules/SkalaRule.cs`
+(`case "6.0": version = …; return true;`, thirteen sections) onto three lines each; asked on that exact
+switch, the oracle writes the same, so the drift confirmed the rule.
+
+Not fixed, measured on the way:
+
+- A block that is one statement among several — `case 1: { M(); } break;`, `case 1: M(); { M(); }
+  break;` — is written by the oracle with the block at the **label's** column (`case 1: {` when it is
+  first) and its contents one level in, and the `break;` one level in after it. Skala puts the block one
+  level in like any other statement, with its contents two. Pre-existing for broken input and rare.
+- `case 1: ; break;` — the oracle keeps the space between `:` and the empty statement's `;`; Skala writes
+  `case 1:;`. A spacing gap, not a break.
+- `if (b) M(); else switch (o) { … }` — the oracle writes `if (b) M();` / `else` / `switch (o) {`; Skala
+  now pushes the `switch` down but keeps `M(); else` on one line, and after an embedded switch's `}` the
+  oracle puts `else` on its own line where Skala writes `} else M();`. The `else` after a non-block
+  statement has no plan at all, which is older than this entry.
+- `if (b) using (D()) M();` — the oracle pushes the `using` down (a nested embedded owner); Skala keeps
+  it on the `if`'s line. The "nested embedded statement" rule SK-DIV-0106 left unmeasured.
+- Under `skala_keep_existing_declaration_block_arrangement = true` Skala keeps a method's `{` on its line
+  around a body that is now multi-line (`void S(…) { switch (o) {`); the oracle expands such a body.
+
+- options: none — measured against every candidate above.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/switch-sections.cs` (byte-identical, stable on a
+  second pass) and `SwitchSectionIssue374Tests` (53 rows, each an oracle answer). No `corpus/real/` file
+  moved and no other construct did.
