@@ -115,7 +115,6 @@ public static class NodeLayouts {
             SyntaxKind.ParenthesizedVariableDesignation => NodeLayout.Parens,
             SyntaxKind.PositionalPatternClause => NodeLayout.Parens,
             SyntaxKind.ParenthesizedPattern => NodeLayout.Parens,
-            SyntaxKind.FunctionPointerParameterList => NodeLayout.Parens,
 
             // ── [ ] groups ──────────────────────────────────────────────────────────────────────────
             SyntaxKind.CrefBracketedParameterList => NodeLayout.Brackets,
@@ -127,10 +126,17 @@ public static class NodeLayouts {
             SyntaxKind.ListPattern => NodeLayout.Brackets,
             SyntaxKind.CollectionExpression => NodeLayout.Brackets,
 
+            // ⚠ `delegate* unmanaged[Cdecl, …]`: brackets, and this used to say Angles — with the
+            // function pointer's *parameter* list `<int, void>` down as Parens. The layout names the
+            // delimiter pair `VisitDelimited` looks for, so both lists were searched for tokens they do
+            // not hold and neither ever opened a scope: a break the fill added inside one landed at the
+            // declaration's own column on pass one and one level in on pass two (SK-DIV-0114).
+            SyntaxKind.FunctionPointerUnmanagedCallingConventionList => NodeLayout.Brackets,
+
             // ── < > type argument and type parameter lists ──────────────────────────────────────────
             SyntaxKind.TypeArgumentList => NodeLayout.Angles,
             SyntaxKind.TypeParameterList => NodeLayout.Angles,
-            SyntaxKind.FunctionPointerUnmanagedCallingConventionList => NodeLayout.Angles,
+            SyntaxKind.FunctionPointerParameterList => NodeLayout.Angles,
 
             // ── Statements with an embedded statement that indents when it is not a block ───────────
             SyntaxKind.LabeledStatement => NodeLayout.Embedded,

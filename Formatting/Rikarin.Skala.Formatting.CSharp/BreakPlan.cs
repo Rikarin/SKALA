@@ -510,7 +510,43 @@ public sealed class BreakPlan {
                 return;
 
             case TupleExpressionSyntax tuple:
-                PlanTuple(tuple);
+                PlanFilledList(node, tuple.OpenParenToken, tuple.CloseParenToken, tuple.Arguments);
+                return;
+
+            // ⚠ Five more lists the oracle fills exactly as it fills a tuple, and which had no plan at
+            // all (SK-DIV-0114, issue #371): a kept break inside any of them was left as written and an
+            // overflowing one was never wrapped. See PlanFilledList for the measurements. A tuple *type*
+            // is deliberately absent — the oracle never breaks one at its commas.
+            case PositionalPatternClauseSyntax positional:
+                PlanFilledList(node, positional.OpenParenToken, positional.CloseParenToken, positional.Subpatterns);
+                return;
+
+            case ParenthesizedVariableDesignationSyntax designation:
+                PlanFilledList(node, designation.OpenParenToken, designation.CloseParenToken, designation.Variables);
+                return;
+
+            case ArrayRankSpecifierSyntax rank when rank.Sizes.Any(static size => !size.IsKind(SyntaxKind.OmittedArraySizeExpression)):
+                PlanFilledList(node, rank.OpenBracketToken, rank.CloseBracketToken, rank.Sizes);
+                return;
+
+            case FunctionPointerParameterListSyntax pointerParameters:
+                PlanFilledList(
+                    node,
+                    pointerParameters.LessThanToken,
+                    pointerParameters.GreaterThanToken,
+                    pointerParameters.Parameters
+                );
+
+                return;
+
+            case FunctionPointerUnmanagedCallingConventionListSyntax conventions:
+                PlanFilledList(
+                    node,
+                    conventions.OpenBracketToken,
+                    conventions.CloseBracketToken,
+                    conventions.CallingConventions
+                );
+
                 return;
 
             case ForStatementSyntax forStatement:
@@ -1504,10 +1540,13 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     A tuple's components: <c>(A: 1, B: 2,\n C: 3)</c>.
+    ///     A tuple's components, <c>(A: 1, B: 2,\n C: 3)</c> — and every other delimited list the oracle
+    ///     fills without a wrap-style key: a positional pattern's, a deconstruction designation's, an
+    ///     array rank's, a function pointer's parameters and its calling conventions, and an attribute
+    ///     list's attributes (SK-DIV-0114).
     /// </summary>
     /// <remarks>
-    ///     ⚠ The one delimited construct in this file with no wrap-style key of its own, and that is
+    ///     ⚠ The delimited constructs in this file with no wrap-style key of their own, and that is
     ///     measured rather than assumed. The oracle <em>fills</em> a tuple that does not fit — the
     ///     components run to the margin and the rest go to the next line — and
     ///     <c>skala_wrap_arguments_style = chop_always</c> does not change it, so the style is
@@ -1530,6 +1569,19 @@ public sealed class BreakPlan {
     ///         ⚠ A tuple <em>type</em> is not planned. Asked with one too wide for its line the oracle does
     ///         not break it at its commas at either value of the alignment key — it breaks between an
     ///         element's type and its name — so a plan here would pin a line the oracle does not write.
+    ///         Re-measured for SK-DIV-0114 on a return type, a local's type and a type argument: the same,
+    ///         and a break the author wrote inside one is kept on both sides of the comma and at both
+    ///         parentheses, which <c>keep_user_linebreaks</c> already does without a plan.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The five other kinds routed here were measured one by one (issue #371), each on a kept
+    ///         break after a comma, before a comma, after the opening delimiter, before the closing one,
+    ///         and on a list past the margin: every kept break comes back as written with the next item
+    ///         one level in, and the overflowing list fills at its commas —
+    ///         <c>o is (A, B, C,\n D)</c>, <c>var (a, b, c,\n d) = …</c>, <c>new int[a + b,\n c + d]</c>,
+    ///         <c>delegate*&lt;A, B,\n C, void&gt;</c>, <c>unmanaged[Cdecl, …,\n SuppressGCTransition]</c>.
+    ///         An array rank whose sizes are all omitted (<c>int[,]</c>) has nothing to fill and is left
+    ///         to <c>keep_user_linebreaks</c>.
     ///     </para>
     ///     <para>
     ///         ⚠ It fills like a list pattern rather than like an array initializer, which is the
@@ -1550,13 +1602,14 @@ public sealed class BreakPlan {
     ///         own; the same inputs with <c>F(</c> for <c>(</c> all come back joined (SK-DIV-0104).
     ///     </para>
     /// </remarks>
-    void PlanTuple(TupleExpressionSyntax node) =>
+    void PlanFilledList<T>(SyntaxNode node, SyntaxToken open, SyntaxToken close, SeparatedSyntaxList<T> items)
+        where T : SyntaxNode =>
         PlanList(
             node,
-            node.OpenParenToken,
-            node.CloseParenToken,
-            node.Arguments,
-            node.Arguments.GetSeparators(),
+            open,
+            close,
+            items,
+            items.GetSeparators(),
             true,
             WrapStyle.WrapIfLong,
             false,

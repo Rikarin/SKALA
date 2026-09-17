@@ -3092,21 +3092,37 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     static bool IsADelimitedTupleItem(SyntaxToken token) =>
         token.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken
-        && token.Parent?.Parent is ArgumentSyntax { Parent: TupleExpressionSyntax };
+        && token.Parent?.Parent is { } item
+        && IsATupleShapedItem(item);
 
     /// <summary>
-    ///     Whether the token is the first of any tuple item — the fill whose identifier-headed items keep
-    ///     their head when a break inside them is certain (SK-DIV-0114).
+    ///     Whether the token is the first of any tuple-shaped item — the fills whose identifier-headed
+    ///     items keep their head when a break inside them is certain (SK-DIV-0114).
     /// </summary>
     static bool StartsATupleItem(SyntaxToken token) {
         for (SyntaxNode? node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
-            if (node is ArgumentSyntax { Parent: TupleExpressionSyntax }) {
+            if (IsATupleShapedItem(node)) {
                 return true;
             }
         }
 
         return false;
     }
+
+    /// <summary>
+    ///     An item of a tuple expression, of a positional pattern or of a deconstruction designation —
+    ///     the three parenthesised fills the oracle lays out alike (SK-DIV-0114).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on the two that are not tuples: <c>o is (1, (2,\n 3))</c>, <c>o is (1\n, (2\n, 3))</c>,
+    ///     <c>o is (1, Get(2,\n 3))</c>, <c>var (a, (b,\n c))</c> and <c>var (a\n, (b\n, c))</c> all keep the
+    ///     nested item's head on the outer item's line. An array rank, a function pointer's lists and an
+    ///     attribute list are filled the same way but were not measured on this shape and are left out.
+    /// </remarks>
+    static bool IsATupleShapedItem(SyntaxNode node) =>
+        node is ArgumentSyntax { Parent: TupleExpressionSyntax }
+            or SubpatternSyntax { Parent: PositionalPatternClauseSyntax }
+            or VariableDesignationSyntax { Parent: ParenthesizedVariableDesignationSyntax };
 
     /// <summary>
     ///     Whether the token is the first of a type argument — the other fill whose head stays on the
