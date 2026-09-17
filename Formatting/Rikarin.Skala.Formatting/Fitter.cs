@@ -105,7 +105,8 @@ public sealed class Fitter {
                 document.AfterPointOf(node),
                 trailing,
                 line
-            )
+            ),
+            document.AfterPointRunsToTheEnd(node)
         );
         modes[id] = mode;
         resolved[id] = true;
@@ -142,7 +143,12 @@ public sealed class Fitter {
     /// <summary>The mode a group resolved to. Flat until the walk reaches it.</summary>
     public ResolvedMode ModeOf(int group) => modes[group];
 
-    ResolvedMode Decide(GroupMode mode, in GroupFacts facts, in Measures m) {
+    /// <param name="afterPointRunsToTheEnd">
+    ///     Whether nothing after the group's own first break point can end a line — no point that is
+    ///     not a last-resort one, no required break — so the group's trailing text lands on the line
+    ///     the group is on. See <see cref="GroupFlags.AfterPointRunsToTheEnd" />.
+    /// </param>
+    ResolvedMode Decide(GroupMode mode, in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd) {
         var owner = facts.Owner;
         switch (mode) {
             case GroupMode.Flat:
@@ -152,7 +158,9 @@ public sealed class Fitter {
                 return ResolvedMode.Broken;
 
             case GroupMode.Auto:
-                return Fits(m.Column, m.BreakWidth, m.Trailing) ? ResolvedMode.Flat : Worth(facts, m);
+                return Fits(m.Column, m.BreakWidth, m.Trailing)
+                    ? ResolvedMode.Flat
+                    : Worth(facts, m, afterPointRunsToTheEnd);
 
             case GroupMode.Owner:
                 if (owner < 0 || !resolved[owner]) {
@@ -206,7 +214,7 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
-                return Worth(facts, m);
+                return Worth(facts, m, afterPointRunsToTheEnd);
         }
     }
 
@@ -246,10 +254,11 @@ public sealed class Fitter {
     ///         answer ReSharper gives on the shapes that occur, in one traversal and with no backtracking.
     ///     </para>
     /// </remarks>
-    ResolvedMode Worth(in GroupFacts facts, in Measures m) {
+    ResolvedMode Worth(in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd) {
         if (!facts.PrefersOuterBreak) {
             return ResolvedMode.Broken;
         }
+
 
         // What lands on the continuation line if this group breaks and nothing inside it does.
         var tail = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth + OuterBreakMargin(m);
@@ -258,8 +267,14 @@ public sealed class Fitter {
         }
 
         // What lands on *this* line if the group stays flat and the construct inside wraps instead.
+        // ⚠ Plus the trailing text when nothing inside can wrap at all, because then the line does
+        // not end at an inner point — it ends after the group, `;` included. A type argument list's
+        // points are last-resort ones that the point measure reads through (SK-DIV-0114), so
+        // `var result = Generic<A, B, int>();` reached here with a 120-column line and a semicolon
+        // nobody counted, stayed flat, and filled the list where the oracle breaks at the `=`.
         var line = m.PointWidth >= Unbounded ? Unbounded : m.PointWidth + m.AfterPoint;
-        return Fits(m.Column, line) ? ResolvedMode.Flat : ResolvedMode.Broken;
+        var trailing = afterPointRunsToTheEnd ? m.Trailing : 0;
+        return Fits(m.Column, line, trailing) ? ResolvedMode.Flat : ResolvedMode.Broken;
     }
 
     /// <summary>

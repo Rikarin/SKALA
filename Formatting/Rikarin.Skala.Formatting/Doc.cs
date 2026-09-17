@@ -63,6 +63,19 @@ public enum LineKind {
     Preserve
 }
 
+/// <summary>What a <see cref="DocKind.Group" /> node carries in <see cref="DocNode.Flags" />.</summary>
+[Flags]
+public enum GroupFlags {
+    None = 0,
+
+    /// <summary>
+    ///     The measure from the group's first break point ran to the group's end without meeting a
+    ///     break: nothing inside can end the line, so what trails the group lands on it too. Bit 1 is
+    ///     the closer alignment an <see cref="DocKind.Indent" /> node shares the field with.
+    /// </summary>
+    AfterPointRunsToTheEnd = 2
+}
+
 /// <summary>What a <see cref="DocKind.Line" /> node carries in <see cref="DocNode.Flags" />.</summary>
 [Flags]
 public enum LineFlags {
@@ -151,7 +164,22 @@ public enum LineFlags {
     ///     nowhere either. An opening delimiter may hang at the end of a line; an identifier's item
     ///     starts a fresh one. The front end sets it, because only it knows the token.
     /// </remarks>
-    DelimitedItem = 16
+    DelimitedItem = 16,
+
+    /// <summary>
+    ///     The item after this fill point keeps its head on the line when it is multi-line by a break
+    ///     of its own — a kept one, or one a rule requires — and moves whole when it is merely too wide.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ SK-DIV-0114, the other half of the boundary above, measured on a tuple:
+    ///     <c>(1↵, G&lt;int↵, int&gt;())</c> and <c>(1↵, Get(2,↵3))</c> keep <c>, G&lt;int</c> and
+    ///     <c>, Get(</c> on the comma's line, while <c>(1, Get(…))</c> and <c>(1, G&lt;A, B, C&gt;())</c>
+    ///     over the margin are broken before <c>Get</c> and <c>G</c>. The reason an identifier-headed
+    ///     item spans lines decides, and only the segment measure knows it: a certain break inside makes
+    ///     the segment unbounded, width alone leaves it finite. A <see cref="DelimitedItem" /> keeps
+    ///     its head in both cases.
+    /// </remarks>
+    KeepsHeadWhenCertain = 32
 }
 
 /// <summary>
@@ -465,6 +493,13 @@ public sealed class Document {
 
     /// <summary>Whether the subtree holds a break of any kind — a hard line or a break point.</summary>
     public bool HasBreak(int node) => hasBreak[node];
+
+    /// <summary>
+    ///     Whether nothing after a group's first break point can end the line — see
+    ///     <see cref="GroupFlags.AfterPointRunsToTheEnd" />.
+    /// </summary>
+    public bool AfterPointRunsToTheEnd(int node) =>
+        Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.AfterPointRunsToTheEnd) != 0;
 
     /// <summary>What the fitter needs to know about one group beyond its mode and its width.</summary>
     public GroupFacts FactsOf(int group) => facts[group];

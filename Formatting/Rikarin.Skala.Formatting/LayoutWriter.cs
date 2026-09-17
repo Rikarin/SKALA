@@ -836,8 +836,19 @@ public sealed class LayoutWriter {
             if (slot.Kind == DocKind.Line) {
                 // ⚠ A last-resort point is not the end of the line for anything before it: it is
                 // measured as its flat rendering and the walk goes on. See LineFlags.LastResort.
-                if ((LineKind)slot.Arg0 == LineKind.Soft && ((LineFlags)slot.Flags & LineFlags.LastResort) != 0) {
-                    var rendering = ((LineFlags)slot.Flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
+                // ⚠ Unless it is a plain point of a group already resolved Broken — a following point
+                // whose group has decided — because then it *is* going to break, and what follows it
+                // is not on this line. The arguments of `[Description("…")]\n string? p` are measured
+                // against the `]` when the kept break stays, and against the parameter when it joins
+                // (SK-DIV-0114). A fill point is never read this way: its group being broken does not
+                // say whether it breaks.
+                var flags = (LineFlags)slot.Flags;
+                if ((LineKind)slot.Arg0 == LineKind.Soft && (flags & LineFlags.LastResort) != 0) {
+                    if ((flags & LineFlags.FillPoint) == 0 && fitter.ModeOf(slot.Arg2) == ResolvedMode.Broken) {
+                        return true;
+                    }
+
+                    var rendering = (flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
                     total = total >= Document.Unbounded ? Document.Unbounded : total + rendering;
                     continue;
                 }
@@ -1003,10 +1014,13 @@ public sealed class LayoutWriter {
     ///     (SK-DIV-0110, #339). An item that fits once moved still moves, whole, as the 104-column
     ///     initializer <see cref="Document.SegmentOf" /> records.
     ///     <para>
-    ///         ⚠ Only before an item that opens with a delimiter — measured: the oracle breaks before a
-    ///         133-column binary chain that fits nowhere — and not for a last-resort point: an embedded
-    ///         statement that has no room is pushed off and then chopped, never left as
-    ///         <c>if (c) Frobnicate(</c> (SK-DIV-0106).
+    ///         ⚠ Only before an item the front end flagged <see cref="LineFlags.DelimitedItem" /> —
+    ///         measured: the oracle breaks before a 133-column binary chain that fits nowhere — and an
+    ///         embedded statement is never flagged: one that has no room is pushed off and then chopped,
+    ///         never left as <c>if (c) Frobnicate(</c> (SK-DIV-0106). A type argument is flagged
+    ///         (SK-DIV-0114): <c>List&lt;Dictionary&lt;string,↵int&gt;&gt;</c> keeps
+    ///         <c>List&lt;Dictionary&lt;</c> on its line, and its points are last-resort ones too, so the
+    ///         flag is read on those.
     ///     </para>
     /// </remarks>
     bool FillPointStaysFlat(int node, int group, LineFlags flags, Stack<(int Node, int Child)> stack) {
@@ -1019,8 +1033,14 @@ public sealed class LayoutWriter {
             return true;
         }
 
-        var delimited = (flags & LineFlags.DelimitedItem) != 0 && (flags & LineFlags.LastResort) == 0;
-        if (head >= segment || !delimited) {
+        // ⚠ An identifier-headed tuple item keeps its head only when the break inside it is certain
+        // — the segment is unbounded — and moves whole when it is merely too wide; a delimited item
+        // keeps its head either way. See LineFlags.KeepsHeadWhenCertain (SK-DIV-0114).
+        var headMayStay = (flags & LineFlags.DelimitedItem) != 0
+            || (flags & LineFlags.KeepsHeadWhenCertain) != 0
+            && segment >= Document.Unbounded;
+
+        if (head >= segment || !headMayStay) {
             return false;
         }
 

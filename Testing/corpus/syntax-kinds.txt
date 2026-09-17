@@ -558,7 +558,7 @@ SuppressNullableWarningExpression	Transparent
 NullableDirectiveTrivia	DirectiveNode
 FunctionPointerType	Transparent
 FunctionPointerParameter	Transparent
-FunctionPointerParameterList	Parens
+FunctionPointerParameterList	Angles
 FunctionPointerCallingConvention	Transparent
 InitAccessorDeclaration	Transparent
 WithExpression	Transparent
@@ -566,7 +566,7 @@ WithInitializerExpression	BracedInitializer
 RecordDeclaration	BracedBlock
 DefaultConstraint	Transparent
 PrimaryConstructorBaseType	Transparent
-FunctionPointerUnmanagedCallingConventionList	Angles
+FunctionPointerUnmanagedCallingConventionList	Brackets
 FunctionPointerUnmanagedCallingConvention	Transparent
 RecordStructDeclaration	BracedBlock
 ExpressionColon	Transparent
