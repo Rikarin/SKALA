@@ -1292,12 +1292,13 @@ public sealed partial class CSharpDocumentBuilder {
         // The scope opens after the `(` has been written, so `CurrentColumn` is already the first
         // component's. Opening it around the node — the way `Visit` does — would read the `(`'s own
         // column and land one to the left.
-        var innerIndent = node is TupleExpressionSyntax && options.AlignTupleComponents
+        var innerIndent = node is TupleExpressionSyntax
+            && options.AlignTupleComponents
             || IsAnAlignedAttributeSection(node, source)
-                ? IndentKind.Align
-                : singleInsideParens
-                    ? IndentKind.OneLevel
-                    : IndentKind.Continuous;
+            ? IndentKind.Align
+            : singleInsideParens
+                ? IndentKind.OneLevel
+                : IndentKind.Continuous;
 
         // ⚠ Which delimited scopes spend their level unconditionally — that is, even when another
         // scope opened on the same line — and which are collapsed with it. Both answers come from

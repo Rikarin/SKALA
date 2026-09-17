@@ -5440,6 +5440,11 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
   type; both filed as issue #373, neither a break.
 - `var result2 = Generic<A, B, int>(1);` at exactly 121 columns fills the list where the oracle breaks
   the `=`: the ordering rule's second question ends at the arguments' `(`, which is column 120.
+- A parameter's single attribute with two arguments whose section is *exactly* 120 columns on its own
+  (`[Obsolete("…", true)] int a`): the oracle chops the arguments as well as breaking after the `]`,
+  as if the section were measured with the separator space after it; at 119 it leaves them whole, and
+  a one-argument 104-column `[Description("…")]` joined to a 131-column line breaks after the `]`
+  alone. Skala breaks after the `]` and chops only a section that overflows by itself.
 - `orderby a,\n b`: unmeasured, and `OrderByClause` is the one exemption in `SeparatedListPlanTests`
   without a measurement behind it.
 

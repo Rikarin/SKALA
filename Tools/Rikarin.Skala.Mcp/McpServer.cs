@@ -230,8 +230,7 @@ sealed class SkalaTools(string repositoryRoot) {
     string Fix(
         [Description("Files or directories. Empty means the whole repository.")] string[]? paths = null,
         [Description("Only apply fixes the catalogue marks safe.")] bool safeOnly = true,
-        [Description("Rule ids whose unsafe fixes to apply. Required when safeOnly is false.")]
-        string[]? rules = null,
+        [Description("Rule ids whose unsafe fixes to apply. Required when safeOnly is false.")] string[]? rules = null,
         [Description("Say what would be applied and write nothing.")] bool dryRun = false
     ) {
         var result = FixCommand.Run(

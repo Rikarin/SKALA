@@ -84,12 +84,12 @@ public sealed class SeparatedListPlanTests {
     static Type[] KindsHoldingASeparatedList { get; } = typeof(CSharpSyntaxNode).Assembly
         .GetTypes()
         .Where(static type => type.Namespace == "Microsoft.CodeAnalysis.CSharp.Syntax")
-        .Where(static type => type is { IsClass: true, IsAbstract: false } && type.IsSubclassOf(typeof(CSharpSyntaxNode)))
-        .Where(
-            static type => type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Any(
-                    static property => property.PropertyType.IsGenericType
-                        && property.PropertyType.GetGenericTypeDefinition() == typeof(SeparatedSyntaxList<>)
+        .Where(static type => type is { IsClass: true, IsAbstract: false }
+            && type.IsSubclassOf(typeof(CSharpSyntaxNode))
+        )
+        .Where(static type => type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Any(static property => property.PropertyType.IsGenericType
+                    && property.PropertyType.GetGenericTypeDefinition() == typeof(SeparatedSyntaxList<>)
                 )
         )
         .OrderBy(static type => type.Name, StringComparer.Ordinal)
@@ -139,13 +139,19 @@ public sealed class SeparatedListPlanTests {
         var planned = 0;
         var unplanned = new List<string>();
         foreach (var (type, source) in Samples.OrderBy(static pair => pair.Key.Name, StringComparer.Ordinal)) {
-            var tree = CSharpSyntaxTree.ParseText(source, CSharpFormatter.ParseOptions, cancellationToken: TestContext.Current.CancellationToken);
+            var tree = CSharpSyntaxTree.ParseText(
+                source,
+                CSharpFormatter.ParseOptions,
+                cancellationToken: TestContext.Current.CancellationToken
+            );
             var root = tree.GetRoot(TestContext.Current.CancellationToken);
             var node = root.DescendantNodes().FirstOrDefault(candidate => candidate.GetType() == type);
             Assert.True(node is not null, $"the sample for {type.Name} holds no {type.Name}: {source}");
 
             var plan = BreakPlan.Build(root, source, Format.Options);
-            if (plan.GroupsOf(node!).Count > 0 || plan.TryInnerGroup(node!, out _) || plan.TryConstraintRun(node!, out _)) {
+            if (plan.GroupsOf(node!).Count > 0
+                || plan.TryInnerGroup(node!, out _)
+                || plan.TryConstraintRun(node!, out _)) {
                 planned++;
             } else {
                 unplanned.Add(type.Name);

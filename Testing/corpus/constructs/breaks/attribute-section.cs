@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 
 namespace Constructs.Breaks;
 
@@ -9,8 +10,9 @@ namespace Constructs.Breaks;
 // they take the bracket's continuation level and a `]` on its own line sits on the owner's indent.
 // A parameter or a type parameter leaves the section's line exactly when the section spans lines,
 // kept or filled alike, and re-joins a break the author wrote after a one-line section's `]`; a
-// single attribute whose arguments chop pushes the parameter down the same way. Before this file
-// the section had no plan at all.
+// single attribute does the same through a break after its `]`, added when the joined line overflows
+// and re-joined when it fits, with the arguments chopped only when the section overflows on its own.
+// Before this file the section had no plan at all.
 public class AttributeSection {
     [Obsolete,
         Serializable]
@@ -73,7 +75,9 @@ public class AttributeSection {
     void SingleChoppedArguments([Obsolete("x",
         true)] int a) { }
 
-    void SingleTooLongArguments([Obsolete("a very long message that runs the line out past the margin of one hundred and twenty columns", true)] int a) { }
+    void SingleTooLongArguments([Obsolete("a very long message that runs the line out past the margin of one hundred and twenty columns and on", true)] int a) { }
+
+    void SingleJoinedTooLong([Description("The path `content` will be saved to, so the right .editorconfig section applies.")] string? contentPath = null) { }
 
     void Lambda() {
         Func<int, int> f = ([Obsolete,

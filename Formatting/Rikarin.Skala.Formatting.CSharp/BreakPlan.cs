@@ -433,7 +433,7 @@ public sealed class BreakPlan {
                 return;
 
             case AttributeArgumentListSyntax attributeArguments: {
-                var arguments = PlanList(
+                PlanList(
                     node,
                     attributeArguments.OpenParenToken,
                     attributeArguments.CloseParenToken,
@@ -446,15 +446,6 @@ public sealed class BreakPlan {
                     options.MaxInvocationArgumentsOnLine,
                     wrapBeforeOpen: options.WrapBeforeInvocationLpar
                 );
-
-                // ⚠ A parameter's single attribute whose arguments chop pushes the parameter below the
-                // `]` exactly as a section of several attributes does (SK-DIV-0114): the oracle writes
-                // `[Obsolete(\n "x",\n true\n)]\n int a`. The section itself has no group to read, so
-                // the gap after its `]` is a point of the arguments' — see PlanAttributeList.
-                if (arguments >= 0
-                    && attributeArguments.Parent is AttributeSyntax { Parent: AttributeListSyntax { Attributes.Count: 1 } section }) {
-                    FollowingPoint(OwnerTokenAfter(section), arguments);
-                }
 
                 return;
             }
@@ -547,7 +538,7 @@ public sealed class BreakPlan {
                 PlanFilledList(node, designation.OpenParenToken, designation.CloseParenToken, designation.Variables);
                 return;
 
-            case ArrayRankSpecifierSyntax rank when rank.Sizes.Any(static size => !size.IsKind(SyntaxKind.OmittedArraySizeExpression)):
+            case ArrayRankSpecifierSyntax rank when HasASize(rank):
                 PlanFilledList(node, rank.OpenBracketToken, rank.CloseBracketToken, rank.Sizes);
                 return;
 
@@ -575,13 +566,32 @@ public sealed class BreakPlan {
                 PlanAttributeList(attributes);
                 return;
 
-            // ⚠ A parameter's single attribute stays on the parameter's line however the author
-            // broke after the `]`: `[Obsolete]\n int a` comes back as `[Obsolete] int a`, and so does
-            // a type parameter's and a lambda parameter's (SK-DIV-0114). `Flat`, so that the point the
-            // attribute's own arguments register above still wins when they chop.
-            case AttributeListSyntax { Attributes.Count: 1 } single:
-                Flat(OwnerTokenAfter(single));
+            // ⚠ A parameter's single attribute and the parameter share a line exactly when they fit
+            // on one (SK-DIV-0114): `[Obsolete]\n int a` comes back as `[Obsolete] int a`, a type
+            // parameter's and a lambda parameter's too; `[Description("…96 columns…")] string? p`
+            // — written on one line or two — comes back on two, the arguments whole; and only a
+            // section that overflows on its own chops its arguments, with the parameter below.
+            // Measured on Skala's own McpServer.cs. So the gap after the `]` is a point of a group
+            // that joins if it fits and breaks if it does not, and the arguments in front of it
+            // measure through the point when it stays and stop at the `]` when it breaks — see
+            // LayoutWriter.AddRemainingSiblings.
+            case AttributeListSyntax { Attributes.Count: 1 } single: {
+                var after = OwnerTokenAfter(single);
+                if (after.IsKind(SyntaxKind.None)) {
+                    return;
+                }
+
+                var section = NewGroup();
+                FollowingPoint(after, section);
+                Describe(
+                    node,
+                    section,
+                    GroupMode.Preserve,
+                    new GroupFacts(options.KeepsUserBreaksBetweenItems && BreaksBefore(after), true, true)
+                );
+
                 return;
+            }
 
             case ForStatementSyntax forStatement:
                 PlanForHeader(forStatement);
@@ -1652,6 +1662,10 @@ public sealed class BreakPlan {
             false,
             keepsBreakOnEitherSideOfComma: true
         );
+
+    /// <summary>A rank with at least one written size: <c>[1, 2]</c> and not <c>[,]</c>.</summary>
+    static bool HasASize(ArrayRankSpecifierSyntax rank) =>
+        rank.Sizes.Any(static size => size is not OmittedArraySizeExpressionSyntax);
 
     /// <summary>
     ///     Several attributes in one section, <c>[A, B,\n C]</c>: a fill, and an owner that leaves the

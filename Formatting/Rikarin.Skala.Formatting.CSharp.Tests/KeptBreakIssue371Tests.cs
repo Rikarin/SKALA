@@ -172,14 +172,16 @@ public sealed class AttributeSectionTests {
         );
 
     [Fact]
-    public void AnOverflowingSection_Fills_AndASingleAttributesChoppedArguments_PushTheParameterDown() =>
+    public void AnOverflowingSection_Fills_AndASingleAttribute_BreaksAfterTheBracketBeforeItChopsItsArguments() =>
         Oracle.Agrees(
             """
             class T {
                 [Obsolete("aaa", true), Serializable, CLSCompliant(true), Obsolete("bbb"), Serializable, CLSCompliant(false), Obsolete("ccc")]
                 void M() { }
 
-                void P([Obsolete("a very long message that runs the line out past the margin of one hundred and twenty columns", true)] int a) { }
+                void P([Obsolete("a very long message that runs the line out past the margin of one hundred and twenty columns and on", true)] int a) { }
+
+                void Q([Description("The path `content` will be saved to, so the right .editorconfig section applies.")] string? contentPath = null) { }
             }
             """,
             """
@@ -190,10 +192,15 @@ public sealed class AttributeSectionTests {
 
                 void P(
                     [Obsolete(
-                        "a very long message that runs the line out past the margin of one hundred and twenty columns",
+                        "a very long message that runs the line out past the margin of one hundred and twenty columns and on",
                         true
                     )]
                     int a
+                ) { }
+
+                void Q(
+                    [Description("The path `content` will be saved to, so the right .editorconfig section applies.")]
+                    string? contentPath = null
                 ) { }
             }
             """
