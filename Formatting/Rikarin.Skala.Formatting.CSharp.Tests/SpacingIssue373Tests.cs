@@ -87,7 +87,10 @@ public sealed class SpacingIssue373Tests {
     [InlineData("class C { void F([System.Obsolete] int a) { } }", "void F([System.Obsolete] int a) { }")]
     [InlineData("class C { void G(int a, [System.Obsolete] int b) { } }", "void G(int a, [System.Obsolete] int b) { }")]
     [InlineData("public class H< [System.Obsolete] T> { }", "public class H<[System.Obsolete] T> { }")]
-    [InlineData("public delegate void Del< [System.Obsolete] T>();", "public delegate void Del<[System.Obsolete] T>();")]
+    [InlineData(
+        "public delegate void Del< [System.Obsolete] T>();",
+        "public delegate void Del<[System.Obsolete] T>();"
+    )]
     public void ALeadingAttributeInATypeParameterList_SitsAgainstTheAngle(string source, string expected) =>
         Assert.Contains(expected, Format.Text(source), StringComparison.Ordinal);
 
