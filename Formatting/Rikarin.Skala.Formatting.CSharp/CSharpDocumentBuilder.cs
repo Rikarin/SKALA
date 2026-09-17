@@ -1777,7 +1777,19 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     void VisitSwitchSection(SwitchSectionSyntax node) {
+        // A simple section's group (BreakPlan.PlanCaseStatements) opens at the last label, so that
+        // the required breaks between stacked labels stay outside it and do not make it unbounded.
+        // ⚠ The label's own leading gap — the section's required break — has to be emitted before the
+        // group opens too; `EmitUpTo` stops short of it, and inside the group it is a hard line that
+        // made every section measure as unbounded and break at its label.
+        var hasGroup = plan.TryInnerGroup(node, out var section);
         foreach (var label in node.Labels) {
+            if (hasGroup && label == node.Labels[^1]) {
+                EmitLeadingGap(label);
+                doc.DescribeGroup(section.Id, section.Facts);
+                doc.OpenGroup(section.Mode, section.Id);
+            }
+
             Visit(label);
         }
 
@@ -1816,6 +1828,9 @@ public sealed partial class CSharpDocumentBuilder {
 
         EmitUpTo(node.Span.End);
         CloseIndent(IndentKind.Block);
+        if (hasGroup) {
+            doc.Close();
+        }
     }
 
     // ── Indent scopes ────────────────────────────────────────────────────────────────────────
