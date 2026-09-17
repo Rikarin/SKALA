@@ -447,18 +447,11 @@ public sealed class BreakPlan {
                 return;
 
             case ParameterListSyntax parameters:
-                PlanList(
+                PlanDeclarationParameters(
                     node,
                     parameters.OpenParenToken,
                     parameters.CloseParenToken,
-                    parameters.Parameters,
-                    parameters.Parameters.GetSeparators(),
-                    DeclarationKeeps(parameters),
-                    options.WrapParametersStyle,
-                    options.WrapAfterDeclarationLpar,
-                    options.WrapBeforeDeclarationRpar,
-                    options.MaxFormalParametersOnLine,
-                    wrapBeforeOpen: options.WrapBeforeDeclarationLpar
+                    parameters.Parameters
                 );
                 return;
 
@@ -470,19 +463,13 @@ public sealed class BreakPlan {
             // break before a comma is joined. There is no indexer-specific key in the registry to
             // read instead.
             case BracketedParameterListSyntax indexerParameters:
-                PlanList(
+                PlanDeclarationParameters(
                     node,
                     indexerParameters.OpenBracketToken,
                     indexerParameters.CloseBracketToken,
-                    indexerParameters.Parameters,
-                    indexerParameters.Parameters.GetSeparators(),
-                    options.KeepExistingDeclarationParensArrangement,
-                    options.WrapParametersStyle,
-                    options.WrapAfterDeclarationLpar,
-                    options.WrapBeforeDeclarationRpar,
-                    options.MaxFormalParametersOnLine,
-                    wrapBeforeOpen: options.WrapBeforeDeclarationLpar
+                    indexerParameters.Parameters
                 );
+
                 return;
 
             case TupleExpressionSyntax tuple:
@@ -675,6 +662,30 @@ public sealed class BreakPlan {
     }
 
     // ── Constructs ───────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    ///     A method's, a local function's, a lambda's or an indexer's parameter list, under the
+    ///     declaration keys. See <see cref="DeclarationKeeps" /> for why a lambda's is here too.
+    /// </summary>
+    void PlanDeclarationParameters(
+        SyntaxNode node,
+        SyntaxToken open,
+        SyntaxToken close,
+        SeparatedSyntaxList<ParameterSyntax> parameters
+    ) =>
+        PlanList(
+            node,
+            open,
+            close,
+            parameters,
+            parameters.GetSeparators(),
+            DeclarationKeeps(),
+            options.WrapParametersStyle,
+            options.WrapAfterDeclarationLpar,
+            options.WrapBeforeDeclarationRpar,
+            options.MaxFormalParametersOnLine,
+            wrapBeforeOpen: options.WrapBeforeDeclarationLpar
+        );
 
     /// <summary>
     ///     <c>skala_wrap_enum_declaration = chop_always</c> with <c>skala_max_enum_members_on_line = 1</c>: one
@@ -3864,10 +3875,7 @@ public sealed class BreakPlan {
     ///     the C# formatter is not wired to. Skala answered to it, which is why the sweep read
     ///     <c>SPURIOUS</c>. SK-DIV-0093.
     /// </remarks>
-    bool DeclarationKeeps(ParameterListSyntax parameters) {
-        _ = parameters;
-        return options.KeepExistingDeclarationParensArrangement;
-    }
+    bool DeclarationKeeps() => options.KeepExistingDeclarationParensArrangement;
 
     static StatementSyntax? EmbeddedStatementOf(SyntaxNode node) =>
         node switch {
@@ -3981,8 +3989,8 @@ public sealed class BreakPlan {
     ///     ⚠ Measured on both sides (SK-DIV-0111). The oracle leaves <c>for (int i = 0\n, j = 1; …)</c>,
     ///     <c>for (int i = 0; i &lt;\n n; …)</c> and <c>for (int i = F(\n1); …)</c> on one line — each
     ///     break is one its own construct re-joins — and chops the header for a break kept after a
-    ///     declarator's comma, before a binary operator or after an incrementor's <c>+=</c>. Reading the source alone chopped
-    ///     all six.
+    ///     declarator's comma, before a binary operator or after an incrementor's <c>+=</c>. Reading
+    ///     the source alone chopped all six.
     /// </remarks>
     void SettleForHeaders() {
         foreach (var node in forHeaders) {

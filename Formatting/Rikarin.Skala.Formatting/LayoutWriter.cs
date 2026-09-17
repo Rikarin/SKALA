@@ -837,10 +837,8 @@ public sealed class LayoutWriter {
                 // ⚠ A last-resort point is not the end of the line for anything before it: it is
                 // measured as its flat rendering and the walk goes on. See LineFlags.LastResort.
                 if ((LineKind)slot.Arg0 == LineKind.Soft && ((LineFlags)slot.Flags & LineFlags.LastResort) != 0) {
-                    total = total >= Document.Unbounded
-                        ? Document.Unbounded
-                        : total + (((LineFlags)slot.Flags & LineFlags.FlatSpace) != 0 ? 1 : 0);
-
+                    var rendering = ((LineFlags)slot.Flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
+                    total = total >= Document.Unbounded ? Document.Unbounded : total + rendering;
                     continue;
                 }
 
@@ -944,48 +942,7 @@ public sealed class LayoutWriter {
             // It breaks when the next item would not fit and stays put otherwise, which is what
             // makes `wrap_if_long` a fill rather than a chop.
             if (!flat && (flags & LineFlags.FillPoint) != 0) {
-                var width = pendingSpace ? PendingWidth : (flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
-                var column = atLineStart
-                    ? pendingCloserLevel ?? Effective()
-                    : this.column + width;
-                var segment = document.SegmentOf(node);
-                var head = document.SegmentHeadOf(node);
-
-                // ⚠ At the group's last point the segment ends where the group does, and the line
-                // does not — so what follows the group counts, exactly as it does when a group is
-                // resolved on entry. Without it a 121-column `for` header and a 121-column `if`
-                // condition both measure 118 and decline the break the oracle takes; the missing
-                // three columns are the `) {`. See LineFlags.LastPoint.
-                if ((flags & LineFlags.LastPoint) != 0) {
-                    var trailing = TrailingAfterGroup(stack, slot.Arg2);
-                    var whole = head == segment;
-                    segment = segment >= Document.Unbounded || trailing >= Document.Unbounded
-                        ? Document.Unbounded
-                        : segment + trailing;
-
-                    if (whole) {
-                        head = segment;
-                    }
-                }
-
-                flat = segment < Document.Unbounded && column + segment <= this.width;
-
-                // ⚠ A fill breaks before an item only when that makes the item fit whole. An item
-                // that would not fit on a fresh continuation line either — one with a break of its
-                // own that is certain, or simply too wide — keeps its head on this line and breaks
-                // inside, which is what the oracle writes for `(1\n, (2\n, 3))` and for a
-                // 110-column collection after a chopped call (SK-DIV-0110, #339). An item that fits
-                // once moved still moves, whole, as the 104-column initializer SegmentOf records.
-                // ⚠ Only before an item that opens with a delimiter — measured: the oracle breaks
-                // before a 133-column binary chain that fits nowhere — and not for a last-resort
-                // point: an embedded statement that has no room is pushed off and then chopped, never
-                // left as `if (c) Frobnicate(` (SK-DIV-0106).
-                var delimited = (flags & LineFlags.DelimitedItem) != 0 && (flags & LineFlags.LastResort) == 0;
-                if (!flat && head < segment && delimited) {
-                    var continuation = ContinuationColumn(slot.Arg2);
-                    var fitsMoved = segment < Document.Unbounded && continuation + segment <= this.width;
-                    flat = !fitsMoved && head < Document.Unbounded && column + head <= this.width;
-                }
+                flat = FillPointStaysFlat(node, slot.Arg2, flags, stack);
             }
 
             if (flat) {
@@ -1035,6 +992,60 @@ public sealed class LayoutWriter {
 
         atLineStart = true;
         column = 0;
+    }
+
+    /// <summary>Whether a fill point in a broken group declines its break.</summary>
+    /// <remarks>
+    ///     ⚠ A fill breaks before an item only when that makes the item fit whole. An item that would
+    ///     not fit on a fresh continuation line either — one with a break of its own that is certain,
+    ///     or simply too wide — keeps its head on this line and breaks inside, which is what the oracle
+    ///     writes for <c>(1\n, (2\n, 3))</c> and for a 110-column collection after a chopped call
+    ///     (SK-DIV-0110, #339). An item that fits once moved still moves, whole, as the 104-column
+    ///     initializer <see cref="Document.SegmentOf" /> records.
+    ///     <para>
+    ///         ⚠ Only before an item that opens with a delimiter — measured: the oracle breaks before a
+    ///         133-column binary chain that fits nowhere — and not for a last-resort point: an embedded
+    ///         statement that has no room is pushed off and then chopped, never left as
+    ///         <c>if (c) Frobnicate(</c> (SK-DIV-0106).
+    ///     </para>
+    /// </remarks>
+    bool FillPointStaysFlat(int node, int group, LineFlags flags, Stack<(int Node, int Child)> stack) {
+        var width = pendingSpace ? PendingWidth : (flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
+        var column = atLineStart
+            ? pendingCloserLevel ?? Effective()
+            : this.column + width;
+        var segment = document.SegmentOf(node);
+        var head = document.SegmentHeadOf(node);
+
+        // ⚠ At the group's last point the segment ends where the group does, and the line does not
+        // — so what follows the group counts, exactly as it does when a group is resolved on entry.
+        // Without it a 121-column `for` header and a 121-column `if` condition both measure 118 and
+        // decline the break the oracle takes; the missing three columns are the `) {`. See
+        // LineFlags.LastPoint.
+        if ((flags & LineFlags.LastPoint) != 0) {
+            var trailing = TrailingAfterGroup(stack, group);
+            var whole = head == segment;
+            segment = segment >= Document.Unbounded || trailing >= Document.Unbounded
+                ? Document.Unbounded
+                : segment + trailing;
+
+            if (whole) {
+                head = segment;
+            }
+        }
+
+        if (segment < Document.Unbounded && column + segment <= this.width) {
+            return true;
+        }
+
+        var delimited = (flags & LineFlags.DelimitedItem) != 0 && (flags & LineFlags.LastResort) == 0;
+        if (head >= segment || !delimited) {
+            return false;
+        }
+
+        var continuation = ContinuationColumn(group);
+        var fitsMoved = segment < Document.Unbounded && continuation + segment <= this.width;
+        return !fitsMoved && head < Document.Unbounded && column + head <= this.width;
     }
 
     /// <summary>

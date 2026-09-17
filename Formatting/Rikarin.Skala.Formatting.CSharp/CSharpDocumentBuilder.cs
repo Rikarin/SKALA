@@ -820,33 +820,9 @@ public sealed partial class CSharpDocumentBuilder {
             // Without a run the gap is emitted here, under the scope, which is what puts the
             // `where` a level in — and the clause's lines after it land on that same level because
             // the clause's frame pays for nothing (see VisitInner).
-            case NodeLayout.Continuation when node is TypeParameterConstraintClauseSyntax clause: {
-                var indents = options.IndentTypeConstraints && !options.PlaceTypeConstraintsOnSameLine;
-                if (indents) {
-                    OpenIndent(IndentKind.Continuous);
-                }
-
-                // The constraints' own fill (BreakPlan.PlanConstraintList), opened inside the clause
-                // so that the gap before the `where` stays outside it.
-                var hasConstraintList = plan.TryInnerGroup(node, out var constraintList);
-                if (hasConstraintList) {
-                    EmitUpTo(clause.Constraints[0].SpanStart);
-                    doc.DescribeGroup(constraintList.Id, constraintList.Facts);
-                    doc.OpenGroup(constraintList.Mode, constraintList.Id);
-                }
-
-                VisitChildren(node);
-                if (hasConstraintList) {
-                    EmitUpTo(node.Span.End);
-                    doc.Close();
-                }
-
-                if (indents) {
-                    CloseIndent(IndentKind.Continuous);
-                }
-
+            case NodeLayout.Continuation when node is TypeParameterConstraintClauseSyntax clause:
+                VisitConstraintClause(clause);
                 return;
-            }
 
             case NodeLayout.Transparent when node is FileScopedNamespaceDeclarationSyntax fileScoped:
                 VisitFileScopedNamespace(fileScoped);
@@ -855,6 +831,33 @@ public sealed partial class CSharpDocumentBuilder {
             default:
                 VisitChildren(node);
                 return;
+        }
+    }
+
+    /// <summary>A <c>where</c> clause: its level, if it takes one here, and its constraints' fill.</summary>
+    void VisitConstraintClause(TypeParameterConstraintClauseSyntax clause) {
+        var indents = options.IndentTypeConstraints && !options.PlaceTypeConstraintsOnSameLine;
+        if (indents) {
+            OpenIndent(IndentKind.Continuous);
+        }
+
+        // The constraints' own fill (BreakPlan.PlanConstraintList), opened inside the clause so
+        // that the gap before the `where` stays outside it.
+        var hasConstraintList = plan.TryInnerGroup(clause, out var constraintList);
+        if (hasConstraintList) {
+            EmitUpTo(clause.Constraints[0].SpanStart);
+            doc.DescribeGroup(constraintList.Id, constraintList.Facts);
+            doc.OpenGroup(constraintList.Mode, constraintList.Id);
+        }
+
+        VisitChildren(clause);
+        if (hasConstraintList) {
+            EmitUpTo(clause.Span.End);
+            doc.Close();
+        }
+
+        if (indents) {
+            CloseIndent(IndentKind.Continuous);
         }
     }
 

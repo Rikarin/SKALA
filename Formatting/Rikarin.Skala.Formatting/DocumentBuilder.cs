@@ -71,7 +71,9 @@ public sealed class DocumentBuilder {
     /// </remarks>
     int[] segmentHead = new int[512];
 
-    /// <summary>Each group's mode, by id, for <see cref="segmentHead" /> to know which nested points can break.</summary>
+    /// <summary>
+    ///     Each group's mode, by id, for <see cref="segmentHead" /> to know which nested points can break.
+    /// </summary>
     readonly Dictionary<int, GroupMode> modes = [];
 
     /// <summary>Whether the subtree holds a break point of any kind. Stops the two measures above.</summary>
@@ -471,13 +473,9 @@ public sealed class DocumentBuilder {
         var index = Allocate(frame.Kind, frame.Arg0, frame.Arg1, default, childStart, width, head);
         pointWidth[index] = point;
         this.breaks[index] = breaks;
-        var selfCertain = isGroup
-            && ((GroupMode)frame.Arg0 == GroupMode.Break
-                || (GroupMode)frame.Arg0 == GroupMode.Preserve
-                && facts[frame.Arg1] is { SourceBroken: true, JoinsIfFits: false });
-        var selfLink = selfCertain && (GroupMode)frame.Arg0 == GroupMode.Preserve && facts[frame.Arg1].ChainLink;
-        certain[index] = childCertain || selfCertain;
-        certainOrigin[index] = Math.Max(childOrigin, selfCertain ? (selfLink ? (byte)1 : (byte)2) : (byte)0);
+        var selfOrigin = OwnCertainty(frame);
+        certain[index] = childCertain || selfOrigin > 0;
+        certainOrigin[index] = Math.Max(childOrigin, selfOrigin);
         ownerWidth[index] = owned;
         afterPoint[index] = frame.Kind == DocKind.Group ? MeasureSegments(childStart, count, frame.Arg1) : 0;
         nodes[index].Count = count;
@@ -489,6 +487,28 @@ public sealed class DocumentBuilder {
         } else {
             pending.Add(index);
         }
+    }
+
+    /// <summary>
+    ///     The certainty a group brings of its own — 2 for a group that always breaks or a broken
+    ///     group that is not a link, 1 for a broken link, 0 for anything else. See
+    ///     <see cref="certainOrigin" />.
+    /// </summary>
+    byte OwnCertainty(in Frame frame) {
+        if (frame.Kind != DocKind.Group) {
+            return 0;
+        }
+
+        var mode = (GroupMode)frame.Arg0;
+        if (mode == GroupMode.Break) {
+            return 2;
+        }
+
+        if (mode != GroupMode.Preserve || facts[frame.Arg1] is not { SourceBroken: true, JoinsIfFits: false }) {
+            return 0;
+        }
+
+        return facts[frame.Arg1].ChainLink ? (byte)1 : (byte)2;
     }
 
     public Document Build() {
