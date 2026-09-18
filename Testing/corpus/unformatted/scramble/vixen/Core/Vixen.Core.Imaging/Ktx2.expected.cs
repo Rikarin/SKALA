@@ -1,5 +1,6 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
+
 // SPDX-License-Identifier: Apache-2.0
 
 using System.
@@ -90,7 +91,7 @@ public static class
         // run in. The padding between them is mipPadding and it has to be there — see the remarks
         // on LevelAlignmentOf.
         var alignment = LevelAlignmentOf(texture.Format);
-        var offsets = new int[texture.LevelCount
+        var offsets = new int [texture.LevelCount
         ];
         var cursor = descriptorOffset + descriptor.Length;
         for (var level = texture.LevelCount - 1; level >= 0; level--) {
@@ -100,18 +101,20 @@ public static class
             cursor += texture.Levels[level].Length;
         }
 
-        var file = new byte [cursor];
+        var file = new byte[cursor];
         var span = file
             .AsSpan();
-
         Identifier.CopyTo(span);
         var header = span[
             Identifier.Length..];
+
         BinaryPrimitives.WriteUInt32LittleEndian(header, vkFormat);
         BinaryPrimitives.WriteUInt32LittleEndian(header[4..], TypeSizeOf(texture.Format));
         BinaryPrimitives.WriteUInt32LittleEndian(header[8..], (uint)texture.Width);
         BinaryPrimitives.WriteUInt32LittleEndian(header[12..], (uint)texture.Height);
+
         // Zero rather than one for a 2D texture: the specification says pixelDepth is 0 when the
+
         // texture is not 3D, and a reader that saw 1 would build a 3D texture one slice deep.
         BinaryPrimitives.WriteUInt32LittleEndian(header[16..], texture.Depth > 1 ? (uint)texture.Depth : 0);
         BinaryPrimitives.WriteUInt32LittleEndian(header[20..], texture.LayerCount > 1 ? (uint)texture.LayerCount : 0);
@@ -119,32 +122,39 @@ public static class
         BinaryPrimitives.WriteUInt32LittleEndian(header[28..], (uint)texture.LevelCount);
         BinaryPrimitives.WriteUInt32LittleEndian(header[32..], 0);
         BinaryPrimitives.WriteUInt32LittleEndian(header[36..], (uint)descriptorOffset);
-        BinaryPrimitives
-            .WriteUInt32LittleEndian(header[40..], (uint)descriptor.Length);
-        BinaryPrimitives.WriteUInt32LittleEndian(header[44..], 0);
-        BinaryPrimitives
-            .WriteUInt32LittleEndian(header[48..], 0);
-        BinaryPrimitives.WriteUInt64LittleEndian(header[52..], 0)
-            ;
-        BinaryPrimitives.WriteUInt64LittleEndian(header[60..], 0);
-
+        BinaryPrimitives.WriteUInt32LittleEndian(header[40..], (uint)descriptor.Length);
+        BinaryPrimitives.WriteUInt32LittleEndian(
+            header[44..],
+            0
+        );
+        BinaryPrimitives.WriteUInt32LittleEndian(header[48..], 0);
+        BinaryPrimitives.WriteUInt64LittleEndian(header[52..], 0);
+        BinaryPrimitives.WriteUInt64LittleEndian(
+            header[60..
+            ],
+            0
+        );
         // Smallest level first in the data, largest first in the index.
-        for
-            (var level = 0; level < texture.LevelCount; level++) {
-            var described = texture.Levels[level
-            ];
+        for (var level = 0; level < texture.LevelCount; level++) {
+            var described = texture.Levels[level];
 
             var entry = span[(levelIndexOffset + (level * LevelIndexEntryLength))..];
             BinaryPrimitives.WriteUInt64LittleEndian(entry, (ulong)offsets[level]);
             BinaryPrimitives.WriteUInt64LittleEndian(entry[8..], (ulong)described.Length);
-
             BinaryPrimitives.WriteUInt64LittleEndian(entry[16..], (ulong)described.Length);
-
-            texture.Level(level).CopyTo(span[offsets[level]..]);
+            texture.Level(level)
+                .CopyTo(
+                    span[
+                        offsets[level]..]
+                );
         }
 
-        descriptor.CopyTo(span[descriptorOffset..]);
-        return file;
+        descriptor.CopyTo(
+            span
+                [descriptorOffset..]
+        );
+        return file
+            ;
     }
 
     /// <summary>Reads a texture.</summary>
@@ -153,26 +163,26 @@ public static class
     /// <exception cref="Ktx2Exception">It is not KTX2, or uses something this does not implement.</exception>
     public static TextureData
         Read(ReadOnlySpan<byte> file) {
-        var layout =
-            ReadLayout(file);
+        var layout
+            = ReadLayout(file);
         var texture
             = layout.Allocate(0);
-        for (var
-             level = 0;
+
+        for (var level = 0;
              level < layout.LevelCount;
-             level++) {
-            var described = layout.Levels[level];
-            if (described.Offset + described.Length
-                > file.Length) {
-                throw new Ktx2Exception($"Level {level} points outside the file.")
-                    ;
+             level
+                 ++) {
+            var described = layout.Levels[level]
+                ;
+            if (
+                described.Offset + described.Length > file.Length) {
+                throw new Ktx2Exception($"Level {level} points outside the file.");
             }
 
             file.Slice((int)described.Offset, (int)described.Length).CopyTo(texture.LevelSpan(level));
         }
 
-        return texture
-            ;
+        return texture;
     }
 
     /// <summary>How many bytes of the front of a file <see cref="ReadLayout" /> needs.</summary>
@@ -187,11 +197,13 @@ public static class
     /// <exception cref="Ktx2Exception">It is not KTX2.</exception>
     public static int LayoutLength(ReadOnlySpan<byte> head) {
         if (head.Length < HeaderLength || !head[..Identifier.Length].SequenceEqual(Identifier)) {
-            throw new Ktx2Exception("This is not a KTX2 file: the twelve-byte identifier does not match.");
+            throw
+                new Ktx2Exception("This is not a KTX2 file: the twelve-byte identifier does not match.");
         }
 
         var levelCount = Math.Max(1, (int)BinaryPrimitives.ReadUInt32LittleEndian(head[(Identifier.Length + 28)..]));
-        return HeaderLength + (levelCount * LevelIndexEntryLength);
+        return
+            HeaderLength + (levelCount * LevelIndexEntryLength);
     }
 
     /// <summary>Reads what a file says about itself, without reading a pixel of it.</summary>
@@ -214,8 +226,8 @@ public static class
         var header = file[Identifier.Length..];
         var vkFormat = BinaryPrimitives.ReadUInt32LittleEndian(header);
         var width = (int)BinaryPrimitives.ReadUInt32LittleEndian(header[8..]);
-        var height = (
-            int)BinaryPrimitives.ReadUInt32LittleEndian(header[12..]);
+        var height
+            = (int)BinaryPrimitives.ReadUInt32LittleEndian(header[12..]);
         var depth = Math.Max(
             1,
             (
@@ -223,49 +235,42 @@ public static class
         );
         var layerCount = Math.Max(1, (int)BinaryPrimitives.ReadUInt32LittleEndian(header[20..]));
         var faceCount = Math.Max(1, (int)BinaryPrimitives.ReadUInt32LittleEndian(header[24..]));
-        var levelCount = Math.Max(
-            1,
-            (int)BinaryPrimitives.ReadUInt32LittleEndian(header[28..])
-        );
-        var supercompression = BinaryPrimitives
-            .ReadUInt32LittleEndian(header[32..]);
+        var levelCount = Math.Max(1, (int)BinaryPrimitives.ReadUInt32LittleEndian(header[28..]));
+        var supercompression =
+            BinaryPrimitives.ReadUInt32LittleEndian(header[32..]);
 
-
-        if (supercompression != 0) {
+        if (supercompression != 0
+           ) {
             throw new Ktx2Exception(
                 $"This file uses supercompression scheme {supercompression}, which is not implemented. A Vixen "
                 + "build compresses the bundle chunk a texture lives in instead."
             );
         }
 
-        var indexEnd
-            = HeaderLength + (levelCount * LevelIndexEntryLength);
+        var indexEnd = HeaderLength
+            + (levelCount * LevelIndexEntryLength);
 
-        if
-            (file.Length < indexEnd) {
+        if (file.Length < indexEnd) {
             throw new Ktx2Exception(
                 $"The level index of a {levelCount}-level file runs to byte {indexEnd} and only {file.Length} "
                 + "were given."
             );
         }
 
-        var format
-            = VkFormats.To(vkFormat);
-        var levels =
-            new Ktx2Level[levelCount];
+        var format = VkFormats.To(vkFormat);
+        var levels = new Ktx2Level[levelCount];
 
-        for (var level = 0; level < levelCount; level++) {
+        for (
+            var level = 0;
+            level < levelCount;
+            level++) {
             var entry = file[(HeaderLength + (level * LevelIndexEntryLength))..];
             var offset = (long)BinaryPrimitives.ReadUInt64LittleEndian(entry);
+            var length =
+                (long)BinaryPrimitives.ReadUInt64LittleEndian(entry[8..]);
             var
-                length = (long)BinaryPrimitives.ReadUInt64LittleEndian(entry[8..]);
-            var (levelWidth
-                , levelHeight, levelDepth) = MipChain.ExtentOf(width, height, depth, level);
-            var expected = format
-                    .LevelSize(levelWidth, levelHeight, levelDepth)
-                * layerCount
-                * faceCount;
-
+                (levelWidth, levelHeight, levelDepth) = MipChain.ExtentOf(width, height, depth, level);
+            var expected = format.LevelSize(levelWidth, levelHeight, levelDepth) * layerCount * faceCount;
             if (length != expected) {
                 throw new Ktx2Exception(
                     $"Level {level} says it is {length} bytes; a {format} texture of "
@@ -273,8 +278,7 @@ public static class
                 );
             }
 
-            if
-                (offset < indexEnd) {
+            if (offset < indexEnd) {
                 throw new Ktx2Exception($"Level {level} points outside the file.");
             }
 
@@ -295,19 +299,20 @@ public static class
     ///     <paramref name="firstLevel" />.
     /// </remarks>
     /// <exception cref="Ktx2Exception">The tail runs past the end of what was given.</exception>
-    public static TextureData
-        ReadTail(ReadOnlySpan<byte> file, Ktx2Layout layout, int firstLevel) {
+    public static TextureData ReadTail(ReadOnlySpan<byte> file, Ktx2Layout layout, int firstLevel) {
         ArgumentNullException.ThrowIfNull(layout);
-        var texture =
-            layout.Allocate(firstLevel);
+        var
+            texture = layout.Allocate(firstLevel);
         for (var level = firstLevel; level < layout.LevelCount; level++) {
             var described = layout.Levels[level];
-
             if (described.Offset + described.Length > file.Length) {
-                throw new Ktx2Exception($"Level {level} points outside the file.");
+                throw
+                    new Ktx2Exception($"Level {level} points outside the file.");
             }
 
-            file.Slice((int)described.Offset, (int)described.Length).CopyTo(texture.LevelSpan(level - firstLevel));
+            file
+                .Slice((int)described.Offset, (int)described.Length)
+                .CopyTo(texture.LevelSpan(level - firstLevel));
         }
 
         return texture;
@@ -323,26 +328,24 @@ public static class
     ///     and say so.
     /// </remarks>
     /// <exception cref="Ktx2Exception">It is not KTX2, or the stream ended inside the index.</exception>
-    public static
-        async ValueTask<Ktx2Layout> ReadLayoutAsync(Stream stream, CancellationToken cancellation = default) {
+    public
+        static async ValueTask<Ktx2Layout> ReadLayoutAsync(Stream stream, CancellationToken cancellation = default) {
         ArgumentNullException.ThrowIfNull(stream);
-
         var head = new byte [HeaderLength];
         await Fill(stream, head, cancellation).ConfigureAwait(false);
-
-        var
-            length = LayoutLength(head);
-
+        var length = LayoutLength(head);
         if (length == HeaderLength) {
             return ReadLayout(head);
         }
 
-        var full = new byte[
-            length];
+        var full = new byte[length];
         head.CopyTo(full, 0);
-        await Fill(stream, full.AsMemory(HeaderLength), cancellation).ConfigureAwait(false);
 
-        return ReadLayout(full);
+        await
+            Fill(stream, full.AsMemory(HeaderLength), cancellation).ConfigureAwait(false);
+
+        return ReadLayout(full)
+            ;
     }
 
     /// <summary>Reads a mip tail out of a stream, touching only the bytes it needs.</summary>
@@ -357,8 +360,7 @@ public static class
     /// </remarks>
     /// <exception cref="ArgumentException"><paramref name="stream" /> cannot seek.</exception>
     /// <exception cref="Ktx2Exception">The stream ended inside the tail.</exception>
-    public static async ValueTask<TextureData
-    > ReadTailAsync(
+    public static async ValueTask<TextureData> ReadTailAsync(
         Stream stream,
         Ktx2Layout layout,
         int firstLevel,
@@ -367,8 +369,7 @@ public static class
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(layout);
 
-        if (!
-            stream.CanSeek) {
+        if (!stream.CanSeek) {
             throw new ArgumentException(
                 "A mip tail is read by seeking past the header to the level data, so the stream has to seek. "
                 + "Read the whole file into memory and use ReadTail if it cannot.",
@@ -376,15 +377,22 @@ public static class
             );
         }
 
-        var run = new byte[layout.TailLength(firstLevel)];
+        var
+            run = new byte[layout.TailLength(firstLevel)];
+
         stream.Seek(layout.DataOffset, SeekOrigin.Begin);
         await Fill(stream, run, cancellation).ConfigureAwait(false);
-        var texture
-            = layout.Allocate(firstLevel);
+
+        var texture = layout.Allocate(firstLevel);
+
         for
             (var level = firstLevel; level < layout.LevelCount; level++) {
-            var described = layout.Levels[level];
-            var at = (int)(described.Offset - layout.DataOffset);
+            var described
+                = layout.Levels[level];
+            var at = (int)(described.Offset
+                - layout
+                    .DataOffset);
+
             run.AsSpan(
                     at,
                     (int
@@ -407,28 +415,27 @@ public static class
     ///     <paramref name="stream" /> cannot seek, or <paramref name="destination" /> is too small.
     /// </exception>
     /// <exception cref="Ktx2Exception">The stream ended inside the level.</exception>
-    public static async
-        ValueTask<int> ReadLevelAsync(
-            Stream stream,
-            Ktx2Layout layout,
-            int level,
-            Memory<byte> destination,
-            CancellationToken cancellation = default
-        ) {
+    public static async ValueTask<int
+    > ReadLevelAsync(
+        Stream
+            stream,
+        Ktx2Layout
+            layout,
+        int level,
+        Memory<byte> destination,
+        CancellationToken
+            cancellation = default
+    ) {
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(layout);
-
-        if (!stream
-                .CanSeek) {
-            throw new
-                ArgumentException("Reading one level of a file means seeking to it.", nameof(stream));
+        if
+            (!stream.CanSeek) {
+            throw new ArgumentException("Reading one level of a file means seeking to it.", nameof(stream));
         }
 
-        var
-            described = layout.Levels[level];
-        if (destination.Length
-            < described
-                .Length) {
+        var described
+            = layout.Levels[level];
+        if (destination.Length < described.Length) {
             throw new ArgumentException(
                 $"Level {level} is {described.Length} bytes and {destination.Length} were offered.",
                 nameof(destination)
@@ -442,21 +449,16 @@ public static class
     }
 
     /// <summary>Reads exactly as many bytes as the buffer holds, or says the file was short.</summary>
-    static async ValueTask Fill(
-        Stream stream,
-        Memory<
-            byte> buffer,
-        CancellationToken cancellation
-    ) {
+    static async ValueTask Fill(Stream stream, Memory<byte> buffer, CancellationToken cancellation) {
         var read = 0;
-
         while (read < buffer.Length) {
             var got = await stream.ReadAsync(buffer[read..], cancellation).ConfigureAwait(false);
             if (got == 0) {
                 throw new Ktx2Exception($"The file ended after {read} of the {buffer.Length} bytes this read wanted.");
             }
 
-            read += got;
+            read += got
+                ;
         }
     }
 
@@ -479,7 +481,6 @@ public static class
     /// </remarks>
     static int LevelAlignmentOf(PixelFormat format) {
         var size = format.BlockSize();
-
         return size / GreatestCommonDivisor(size, 4) * 4;
     }
 
@@ -489,23 +490,34 @@ public static class
     ///     <c>Math.Max(size, 4)</c> — but a format three bytes wide would need twelve, and taking the
     ///     shortcut is how a table gets a wrong answer the day somebody adds one.
     /// </remarks>
-    static int GreatestCommonDivisor(int a, int b) => b == 0 ? a : GreatestCommonDivisor(b, a % b);
+    static int GreatestCommonDivisor(
+        int a,
+        int b
+    ) =>
+        b == 0 ? a : GreatestCommonDivisor(b, a % b);
 
     /// <summary>Rounds up to a multiple.</summary>
-    static int AlignUp(int value, int alignment) => (value + alignment - 1) / alignment * alignment;
+    static int AlignUp(
+        int value,
+        int
+            alignment
+    ) =>
+        (value + alignment - 1) / alignment * alignment;
 
     /// <summary>
     ///     A texture's Vulkan <c>typeSize</c>: how many bytes one channel of one texel is, or one for
     ///     anything block-compressed.
     /// </summary>
-    static uint TypeSizeOf(PixelFormat format) =>
+    static uint
+        TypeSizeOf(PixelFormat format) =>
         format.IsCompressed()
             ? 1u
             : format switch {
                 PixelFormat.Rgba16Float
                     or PixelFormat.Rg16Float
                     or PixelFormat.R16Float
-                    or PixelFormat.Rgba16UNorm => 2u,
+                    or PixelFormat.Rgba16UNorm
+                    => 2u,
                 PixelFormat.Rgba32Float
                     or PixelFormat.Rg32Float
                     or PixelFormat.R32Float

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -43,7 +43,6 @@ public sealed class MalformedHeightmapPngTests {
     static long Weigh(Action action) {
         var before = GC.GetAllocatedBytesForCurrentThread();
         action();
-
         return GC.GetAllocatedBytesForCurrentThread() - before;
     }
 
@@ -54,9 +53,9 @@ public sealed class MalformedHeightmapPngTests {
     public void AChunkLengthThatDoesNotFitIsRefusedByName(uint length) {
         var file = Valid();
         BinaryPrimitives.WriteUInt32BigEndian(file.AsSpan(8), length);
+
         var failure =
             Assert.Throws<ArgumentException>(() => TerrainHeightmapPng.Decode(file));
-
         // The message names the file rather than repeating "Specified argument was out of the range
         // of valid values", which is what the slice said and is what an importer used to report.
         Assert.Contains("chunk", failure.Message, StringComparison.OrdinalIgnoreCase);
@@ -74,10 +73,10 @@ public sealed class MalformedHeightmapPngTests {
     ) {
         var file
             = WithSize(width, height);
-
         var allocated = Weigh(()
             => Assert.Throws<ArgumentException>(() => TerrainHeightmapPng.Decode(file))
         );
+
         Assert.True(
             allocated
             < 256
@@ -108,8 +107,8 @@ public sealed class MalformedHeightmapPngTests {
     [Fact]
     public void ASizeTheImageDataCouldNotProduceIsRefusedBeforeTheBufferExists() {
         var file = WithSize(4096, 4096);
-
         var allocated = Weigh(() => Assert.Throws<ArgumentException>(() => TerrainHeightmapPng.Decode(file)));
+
         Assert.True(allocated < 256 * 1024, $"Refusing a {file.Length}-byte file cost {allocated:N0} bytes.");
     }
 
@@ -125,7 +124,8 @@ public sealed class MalformedHeightmapPngTests {
     [Fact]
     public void ImageDataThatDoesNotInflateIsRefusedByName() {
         var truncated = Valid()[..40];
-        Assert.Throws<ArgumentException>(() => TerrainHeightmapPng.Decode(truncated));
+        Assert.Throws<ArgumentException>(() => TerrainHeightmapPng.Decode(truncated))
+            ;
 
         var corrupt = Valid();
         corrupt.AsSpan(45).Fill(0x55);
@@ -137,18 +137,17 @@ public sealed class MalformedHeightmapPngTests {
     public void TheFuzzersZLibExceptionIsRefusedByName() {
         byte[] file = [
             0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+            0x01,
             0x10, 0x00, 0x00, 0x00, 0x00, 0x6A, 0xEE, 0x47,
-            0x16, 0x00, 0x00, 0x00, 0x0B,
-            0x49, 0x44, 0x41,
-            0x54,
-            0x78, 0x7D, 0xB7, 0x7B, 0x31, 0x04, 0xB1,
+            0x16, 0x00, 0x00, 0x00, 0x0B, 0x49, 0x44, 0x41,
+            0x54, 0x78, 0x7D, 0xB7, 0x7B, 0x31, 0x04, 0xB1,
             0x01, 0x09, 0x00, 0x83, 0x0C, 0x54, 0x51, 0xF3,
-            0x00,
-            0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44,
+            0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44,
             0xAE, 0x42, 0x60, 0x82
         ];
-        Assert.Throws<ArgumentException>(() => TerrainHeightmapPng.Decode(file));
+        Assert.Throws<ArgumentException>(() => TerrainHeightmapPng.Decode(file))
+            ;
     }
 
     /// <summary>No malformed file of any shape gets an exception the importer does not catch.</summary>
@@ -157,15 +156,13 @@ public sealed class MalformedHeightmapPngTests {
     ///     the same assertion the fuzz target makes and is here so that the property is checked by
     ///     the project that owns it.
     /// </remarks>
-    [
-        Fact]
-    public void NoSingleFieldCanProduceAnExceptionAnImporterDoesNotCatch() {
+    [Fact]
+    public void NoSingleFieldCanProduceAnExceptionAnImporterDoesNotCatch(
+    ) {
         foreach (var offset in new[] { 8, 16, 20, 24, 33, 37, 41, 45 }) {
             foreach (var value in new uint[] { 0, 1, 0x7FFFFFFF, 0x80000000, 0xFFFFFFFF }) {
                 var file = Valid();
-                if (offset + 4
-                    > file
-                        .Length) {
+                if (offset + 4 > file.Length) {
                     continue;
                 }
 
@@ -185,17 +182,22 @@ public sealed class MalformedHeightmapPngTests {
     public void AWellFormedHeightmapStillDecodes() {
         var samples = new ushort[37 * 23];
 
-        for (var index
-                 = 0;
+        for (var
+             index = 0;
              index < samples.Length;
              index++) {
-            samples[index
-            ] = (ushort)(index * 137);
+            samples[
+                index] = (ushort)(index * 137);
         }
 
-        var decoded = TerrainHeightmapPng.Decode(TerrainHeightmapPng.Encode(37, 23, samples));
-        Assert.Equal(37, decoded.Width)
-            ;
+        var decoded = TerrainHeightmapPng.Decode(
+            TerrainHeightmapPng.Encode(
+                37,
+                23,
+                samples
+            )
+        );
+        Assert.Equal(37, decoded.Width);
         Assert.Equal(23, decoded.Height);
         Assert.Equal(samples, decoded.Samples);
     }

@@ -130,6 +130,16 @@ gap is **ungoverned** (the oracle keeps the author's zero or one space and colla
 parenthesis or angle key moves it), where the angle gap is `space_within_type_parameter_angles`'s.
 Skala matches both byte for byte.
 
+⚠ `syntax/range-operator-gap.cs` is the twenty-third, from #376, and pins the *other* member of the
+ungoverned class: the gap beside a range's `..` and after a spread's. The corpus wrote each of those
+shapes one way, so the oracle's answer for the other spelling lived in a `SpaceRules` remark and in
+[plan 12](plan/12-conformance-and-testing.md) rather than in a fixture. Asked, the oracle keeps every
+closed form closed and every spaced form spaced, collapses a run to one space, and leaves `a[1.. 3]`
+mixed — and inserts the space into the slice pattern's `..var rest`, which is the governed control.
+Skala matches byte for byte, and `FuzzerTests.UngovernedGaps_EitherSpelling_FormatsToTheOraclesAnswer`
+flips every gap in both fixtures and asserts each flipped input formats to the fixture flipped the
+same way.
+
 ### The cref forms are pinned under one profile of two
 
 ⚠ **A gap this audit could not close, named rather than left implicit.** `cref-member-forms.cs` sits

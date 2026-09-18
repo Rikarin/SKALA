@@ -14,7 +14,7 @@ reason — half the corpus is deliberately misformatted, and a formatter that re
 its own test corpus has destroyed its own measurement.
 
 ```
-scramble: 380 files, 76565 lines → 75618 lines; 33.8 % of the original's lines survive unchanged
+scramble: 380 files, 76565 lines → 75629 lines; 33.8 % of the original's lines survive unchanged
 collapse: 380 files, 76565 lines → 30425 lines; 28.2 % of the original's lines survive unchanged
 ```
 

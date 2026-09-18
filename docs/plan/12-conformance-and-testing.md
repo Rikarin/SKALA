@@ -1135,9 +1135,22 @@ Two of them, and both were found by pointing the fuzzer at the corpus.
 governs that gap and the oracle leaves whatever the author wrote there. Asked directly, `jb
 cleanupcode` returns **byte-identical output to Skala** for every spelling of `buffer[1..^2]`,
 `buffer[1 ..^2]` and `buffer[1.. ^2]` — each preserving its input. So asserting absorption there
-would be asserting that Skala should diverge from the oracle. The absorbed mutations skip any gap
-touching a `..`, excluded by token kind rather than by parent shape, so that a *new* preserve class
-would be reported rather than absorbed into the exemption.
+would be asserting that Skala should diverge from the oracle. The absorbed mutations skip every gap
+`SpaceRules.Preserves` answers — the formatter's own predicate, asked at mutation time — and the
+property that replaces the hole is stated: **`ungoverned-gap-preservation`** formats every case as
+written and again with each such gap flipped, reads the author's bit back off both outputs gap by
+gap, and asserts the flipped spelling is a fixed point. `constructs/syntax/range-operator-gap.cs` and
+`positional-pattern-after-its-type.cs` pin the oracle's literal answers for both spellings.
+
+⚠ **The exclusion used to be a hand-kept list — "any gap touching a `..`", by token kind — on the
+argument that a *new* preserve class should be reported rather than absorbed into the exemption.**
+That is what happened: #373 measured the gap between a recursive pattern's type and its positional
+clause as ungoverned, the fuzzer reported it as an absorption violation (#376), and the decision it
+asked for was the one the list already embodied. A second class does not want a longer list; it
+wants the predicate, so that the third is excluded the day it lands, and a named property so that
+the exclusion cannot hide a formatter that absorbs the gap. The `gap-closer` saboteur — a rule that
+answers every ungoverned gap "closed", the shape of the defect #373 removed — is what
+`fuzz --mutation-test` uses to prove the property can fail.
 
 ⚠ **Range consistency as first written could not fail.** "`format(x, range)` ≡ `format(x)` restricted
 to that range's edits" is satisfied by an edit list collapsed into one whole-file edit: it intersects

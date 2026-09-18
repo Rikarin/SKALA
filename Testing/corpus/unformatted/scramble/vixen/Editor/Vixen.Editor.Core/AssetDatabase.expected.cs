@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -56,26 +56,27 @@ public sealed class AssetDatabase {
     const string ScannedPrefix = "scanned\t";
     const string TerminatorPrefix = "end\t";
     Dictionary<AssetId, AssetEntry> byGuid = [];
-    Dictionary<string, AssetEntry> byPath = new(StringComparer.Ordinal);
 
+    Dictionary<string, AssetEntry> byPath = new(StringComparer.Ordinal);
     // The sidecar stamp each entry was read from, by the entry's project-relative path. Held beside
     // the entries rather than inside AssetEntry, which is documented as being the envelope and only
     // the envelope: this is a fact about the file the envelope came out of, not about the asset.
+
     //
     // An entry whose sidecar this scan *wrote* — minted, or re-GUIDed — records MetaStamp.Unknown
     // rather than the stamp the write left behind, which is what makes the next scan open it again.
     Dictionary
         <string, MetaStamp> stamps = new(StringComparer.Ordinal);
-
     // A second, weaker filter over the same question: nothing whose sidecar was written at or after
     // this instant is trusted, however well its stamp matches. It catches an edit by *somebody else*
-
     // that raced this scan — which the stamps cannot know about — on a filesystem whose write times
     // are fine-grained enough to place it. See MetaStamp for what it cannot do. Kinded UTC so that
+
     // it round trips through "O" as a UTC instant rather than as a local one nobody named.
     DateTime trustedBeforeUtc = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
 
-    // Injectable only so that a test can run a clock that leads the filesystem, which is what NTFS
+// Injectable only so that a test can run a clock that leads the filesystem, which is what NTFS
+
     // and DateTime.UtcNow do to each other on Windows. Production always gets the system clock.
     readonly TimeProvider time;
 
@@ -149,18 +150,18 @@ public sealed class AssetDatabase {
         var issues = new ConcurrentBag<AssetIssue>();
 
         // Taken before the walk, and it is what the *next* scan will refuse to trust from. It catches
+
         // an edit by somebody else that landed while this scan was walking, which nothing else here
-        // can see.
+
+// can see.
         //
+
         // ⚠ It is not, and cannot be, the defence against the scan's own writes, which is what this
         // comment used to claim. "A sidecar written while this scan runs has a write time at or after
-// startedUtc" is false wherever the clock is finer-grained than the filesystem's write times:
-
+        // startedUtc" is false wherever the clock is finer-grained than the filesystem's write times:
         // on Windows DateTime.UtcNow resolves through GetSystemTimePreciseAsFileTime while NTFS
-
         // stamps a write from the coarse clock, so a sidecar written a millisecond *after* this line
         // carries a write time up to a tick *before* it, and the next scan trusts it. The scan's own
-
         // writes are therefore recorded as MetaStamp.Unknown instead — a fact, not an inference from
         // two clocks that do not agree.
         var startedUtc = time
@@ -181,8 +182,9 @@ public sealed class AssetDatabase {
         var candidates = survey.Candidates;
         var found = new Scanned
             ?[candidates.Count];
-        var claimed = new bool [candidates.Count];
-        // Parallel because this is an I/O walk over thousands of small files and the cores are idle
+        var claimed = new bool[candidates.Count];
+
+// Parallel because this is an I/O walk over thousands of small files and the cores are idle
         // during it. Each index is written by exactly one iteration, so the arrays need no locking.
         Parallel.For(
             0,
@@ -200,6 +202,7 @@ public sealed class AssetDatabase {
                 );
             }
         );
+
         // After the read rather than before it, because "an orphan" is exactly "a sidecar no asset
         // claimed" and the read has just worked out which those are. A project in order — every
         // sidecar spoken for — never builds the set of paths the search would need.
@@ -220,6 +223,7 @@ public sealed class AssetDatabase {
         var reused =
             0;
         // Insertion is sequential and in path order, so two machines scanning one checkout resolve a
+
         // duplicate the same way. A parallel insert would make the winner depend on thread timing.
         foreach (var scanned in found) {
             if (scanned is not { } present) {
@@ -264,29 +268,27 @@ public sealed class AssetDatabase {
         var temporary = Paths.GuidIndexFile + ".writing";
         using (var writer = new StreamWriter(temporary)) {
             writer.NewLine = "\n";
-            writer.WriteLine(IndexHeader)
+            writer.WriteLine(IndexHeader);
+
+            writer.WriteLine(ScannedPrefix + trustedBeforeUtc.ToString("O", CultureInfo.InvariantCulture))
                 ;
-            writer.WriteLine(ScannedPrefix + trustedBeforeUtc.ToString("O", CultureInfo.InvariantCulture));
 
-            foreach
-                (var entry in byPath.Values.OrderBy(entry => entry.Path, StringComparer.Ordinal)) {
-                var stamp = stamps
-                    .GetValueOrDefault(entry.Path, MetaStamp.Unknown);
-
+            foreach (var entry
+                     in byPath.Values.OrderBy(entry => entry.Path, StringComparer.Ordinal)) {
+                var stamp =
+                    stamps.GetValueOrDefault(entry.Path, MetaStamp.Unknown);
                 writer.WriteLine(
-                        string.Create(
-                            CultureInfo.InvariantCulture,
-                            $"{entry.Guid}\t{entry.MetaVersion}\t{(entry.IsFolder ? 1 : 0)}\t{entry.ImporterTag}\t{stamp.Length}\t{stamp.WrittenUtc.ToString("O", CultureInfo.InvariantCulture)}\t{entry.Path}"
-                        )
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"{entry.Guid}\t{entry.MetaVersion}\t{(entry.IsFolder ? 1 : 0)}\t{entry.ImporterTag}\t{stamp.Length}\t{stamp.WrittenUtc.ToString("O", CultureInfo.InvariantCulture)}\t{entry.Path}"
                     )
-                    ;
+                );
             }
 
             writer.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{TerminatorPrefix}{byPath.Count}"));
         }
 
-        File
-            .Move(temporary, Paths.GuidIndexFile, overwrite: true);
+        File.Move(temporary, Paths.GuidIndexFile, overwrite: true);
     }
 
     /// <summary>Reads the index back, if it is there and it is whole.</summary>
@@ -301,47 +303,55 @@ public sealed class AssetDatabase {
             return false;
         }
 
-        using var reader = new StreamReader(Paths.GuidIndexFile);
-
+        using var reader = new
+            StreamReader(Paths.GuidIndexFile);
         if (reader.ReadLine() != IndexHeader) {
             return false;
         }
 
-        var
-            scanned = reader.ReadLine();
+        var scanned =
+            reader.ReadLine();
         if (scanned is null
             || !scanned.StartsWith(ScannedPrefix, StringComparison.Ordinal)
             || !DateTime.TryParse(
                 scanned[ScannedPrefix.Length..],
                 CultureInfo.InvariantCulture,
-                DateTimeStyles.RoundtripKind,
-                out var cutoff
+                DateTimeStyles
+                    .RoundtripKind,
+                out var
+                    cutoff
             )) {
             return false;
         }
 
-        var entries =
-            new Dictionary<string, AssetEntry>(StringComparer.Ordinal);
-        var read
-            = new Dictionary<string, MetaStamp>(StringComparer.Ordinal);
-        var terminated = false;
+        var
+            entries = new Dictionary<string, AssetEntry>(StringComparer.Ordinal);
+        var read =
+            new Dictionary<string, MetaStamp>(StringComparer.Ordinal);
+        var terminated =
+            false;
 
         while (reader.ReadLine() is { } line) {
             if (line.StartsWith(TerminatorPrefix, StringComparison.Ordinal)) {
-                terminated =
-                    int.TryParse(line[TerminatorPrefix.Length..], CultureInfo.InvariantCulture, out var declared)
+                terminated = int.TryParse(
+                        line[TerminatorPrefix.Length..],
+                        CultureInfo.InvariantCulture,
+                        out var declared
+                    )
                     && declared == entries.Count;
+
                 break;
             }
 
-            var
-                parts = line.Split('\t');
+            var parts = line.Split('\t');
+
             if (parts.Length != 7
                 || !AssetId.TryParse(parts[0], out var guid)
                 || !int.TryParse(parts[1], CultureInfo.InvariantCulture, out var version)
                 || !long.TryParse(parts[4], CultureInfo.InvariantCulture, out var length)
                 || !DateTime.TryParse(
-                    parts[5],
+                    parts
+                        [5],
                     CultureInfo.InvariantCulture,
                     DateTimeStyles.RoundtripKind,
                     out var written
@@ -356,7 +366,8 @@ public sealed class AssetDatabase {
             var entry = new AssetEntry(
                 guid,
                 parts[6],
-                parts[3].Length
+                parts[3
+                ].Length
                 == 0
                     ? null
                     : parts[3],
@@ -364,8 +375,8 @@ public sealed class AssetDatabase {
                 parts[2] == "1"
             );
 
-            entries[entry.Path]
-                = entry;
+            entries[entry
+                .Path] = entry;
             read[entry.Path] = new(length, written);
         }
 
@@ -373,17 +384,18 @@ public sealed class AssetDatabase {
             return false;
         }
 
-        byGuid = []
-            ;
+        byGuid
+            = [];
         byPath = entries;
         stamps = read;
-        trustedBeforeUtc = cutoff
-            .ToUniversalTime();
+        trustedBeforeUtc
+            = cutoff.ToUniversalTime();
         foreach (var entry in entries.Values) {
             byGuid[entry.Guid] = entry;
         }
 
-        return true;
+        return true
+            ;
     }
 
     /// <summary>Whether a scan would change anything.</summary>
@@ -416,16 +428,16 @@ public sealed class AssetDatabase {
             return byPath.Count != 0;
         }
 
-        var survey = Walk();
+        var survey
+            = Walk();
         // Every sidecar must belong to something indexed, or a scan would have an orphan to move.
         if (survey.Candidates.Count != byPath.Count || survey.Sidecars.Count != byPath.Count) {
             return true;
         }
 
-        foreach (var candidate in
-                 survey.Candidates) {
-            var
-                relative = RelativeUnderRoot(candidate.Absolute);
+        foreach (
+            var candidate in survey.Candidates) {
+            var relative = RelativeUnderRoot(candidate.Absolute);
             if (!byPath.TryGetValue(relative, out var entry)
                 || entry.IsFolder != candidate.IsFolder
                 || !survey.Sidecars.TryGetValue(candidate.Absolute, out var stamp)
@@ -438,10 +450,9 @@ public sealed class AssetDatabase {
     }
 
     Survey Walk() {
-        var candidates = new List<(string Absolute, bool IsFolder )>();
+        var candidates = new List<(string Absolute, bool IsFolder)>();
         var
             sidecars = new Dictionary<string, MetaStamp>(StringComparer.Ordinal);
-
         // DirectoryInfo rather than the string overloads: the enumerator already has each entry's
         // length and write time from the directory read, so the per-entry stamp costs no extra stat.
         // Asking File.GetLastWriteTimeUtc afterwards would be a syscall per file for the same answer.
@@ -449,10 +460,10 @@ public sealed class AssetDatabase {
                  new DirectoryInfo(Paths.Assets).EnumerateFileSystemInfos("*", SearchOption.AllDirectories)) {
             if (info is FileInfo file && file.Name.EndsWith(AssetMetaFile.Extension, StringComparison.Ordinal)) {
                 // Keyed by the asset it belongs to rather than by its own name, so that asking "what
-                // is the stamp of this asset's sidecar" is a lookup and not a string concatenation
-
+// is the stamp of this asset's sidecar" is a lookup and not a string concatenation
                 // per asset. At ten thousand assets that concatenation was measurable.
-                sidecars[file.FullName[..^AssetMetaFile.Extension.Length]] = new(file.Length, file.LastWriteTimeUtc);
+                sidecars[file.FullName[..^AssetMetaFile.Extension.Length]
+                ] = new(file.Length, file.LastWriteTimeUtc);
                 continue;
             }
 
@@ -460,8 +471,10 @@ public sealed class AssetDatabase {
         }
 
         // Sorted so that the scan, the duplicate resolution and the report are the same on every
+
         // machine. Directory enumeration order is not a promise any filesystem makes.
-        candidates.Sort(static (left, right) => string.CompareOrdinal(left.Absolute, right.Absolute));
+        candidates
+            .Sort(static (left, right) => string.CompareOrdinal(left.Absolute, right.Absolute));
         return new(candidates, sidecars);
     }
 
@@ -488,12 +501,15 @@ public sealed class AssetDatabase {
     ///     rooted at <see cref="ProjectPaths.Assets" />, so the prefix is known rather than computed —
     ///     and anything that somehow is not gets the careful version.
     /// </remarks>
-    string RelativeUnderRoot(string absolute) {
-        var root
-            = Paths.Root;
-        if (absolute.Length
-            > root
+    string RelativeUnderRoot(
+        string
+            absolute
+    ) {
+        var
+            root = Paths.Root;
+        if (absolute
                 .Length
+            > root.Length
             && absolute.StartsWith(root, StringComparison.Ordinal)
             && (absolute[root.Length] == Path.DirectorySeparatorChar || absolute[root.Length] == '/')) {
             return absolute[(root.Length + 1)..].Replace('\\', '/');
@@ -502,26 +518,29 @@ public sealed class AssetDatabase {
         return Paths.Relative(absolute);
     }
 
-    Scanned
-        ? Read(
-            ( string Absolute, bool IsFolder) candidate,
-            Survey survey,
-            Dictionary
-                <string, AssetEntry> previousEntries,
-            Dictionary<string
-                , MetaStamp> previousStamps,
-            DateTime cutoff,
-            ScanOptions options,
-            ConcurrentBag<AssetIssue> issues
-        ) {
+    Scanned? Read(
+        ( string Absolute, bool IsFolder) candidate,
+        Survey survey,
+        Dictionary<string, AssetEntry
+        > previousEntries,
+        Dictionary<
+            string, MetaStamp> previousStamps,
+        DateTime cutoff,
+        ScanOptions options,
+        ConcurrentBag<AssetIssue> issues
+    ) {
         var relative = RelativeUnderRoot(candidate.Absolute);
-        var hasMeta = survey.Sidecars.TryGetValue(candidate.Absolute, out var stamp);
-
+        var hasMeta = survey.Sidecars
+            .TryGetValue(candidate.Absolute, out var stamp);
         // The whole point: an asset whose sidecar is the size and age the index left it does not get
         // opened, parsed, or thought about again.
         if (hasMeta
             && IsFresh(stamp, relative, previousStamps, cutoff)
-            && previousEntries.TryGetValue(relative, out var kept)
+            && previousEntries.TryGetValue(
+                relative,
+                out
+                var kept
+            )
             && kept.IsFolder == candidate.IsFolder) {
             return new(kept, stamp, true);
         }
@@ -535,16 +554,9 @@ public sealed class AssetDatabase {
             }
 
             var minted = CreateMeta(metaPath);
-            issues.Add(
-                new(
-                    AssetIssueKind
-                        .MetaCreated,
-                    relative,
-                    $"Had no .meta; created one with GUID {minted}."
-                )
-            );
+            issues.Add(new(AssetIssueKind.MetaCreated, relative, $"Had no .meta; created one with GUID {minted}."));
             // No stamp, rather than the one the write just left behind. This scan cannot tell an edit
-            // that lands a microsecond after its own write from the write itself — the two share a
+// that lands a microsecond after its own write from the write itself — the two share a
             // filesystem tick — so it records nothing to trust and the next scan opens the file.
             return new(
                 new(minted, relative, null, MetaMigrationChain.CurrentVersion, candidate.IsFolder),
@@ -585,50 +597,49 @@ public sealed class AssetDatabase {
         // added a file. The one whose recorded source hash still matches its file is the original.
         var incomingMatches = SourceHashMatches(entry);
         var existingMatches = SourceHashMatches(existing);
-
         // If the hashes do not settle it, the one already in the index keeps the GUID — and because
         // insertion is in path order, that is "the first path in order", which is a rule rather than
         // an accident of which file the filesystem handed over first.
         var incomingWins = incomingMatches && !existingMatches;
-        var winner = incomingWins
-            ? entry
-            : existing;
+        var
+            winner = incomingWins ? entry : existing;
         var loser = incomingWins ? existing : entry;
-        var message =
+
+        var message
+            =
             $"'{winner.Path}' and '{loser.Path}' both claim GUID {entry.Guid}. "
             + (incomingMatches != existingMatches
                 ? "The one whose recorded sourceHash still matches its file kept it."
                 : "Neither sourceHash settled it, so the first path in order kept it.");
-        if (
-            !options.ResolveDuplicateGuids) {
+        if (!options.ResolveDuplicateGuids
+           ) {
             byGuid[winner.Guid] = winner;
             issues.Add(new(AssetIssueKind.DuplicateGuid, loser.Path, message + " Nothing was changed."));
             return;
         }
 
-        var minted =
-            ReGuid(loser);
+        var minted = ReGuid(loser);
         var repaired = loser with { Guid = minted };
         byGuid[winner.Guid] = winner;
         byGuid[minted] = repaired;
-        byPath[repaired.Path]
-            = repaired;
-
+        byPath
+            [repaired.Path] = repaired;
 
         // Its sidecar was just rewritten, so the pre-rewrite stamp is a claim about a file that no
         // longer says what it says — the one shape of wrong an index must not persist. Re-stamping it
         // from the rewrite would only move the problem: this scan has no way to distinguish its own
         // write from an edit landing in the same filesystem tick. So it records no stamp at all and
         // the next scan reads the repaired sidecar back, which costs one file and settles it.
-        stamps[repaired.Path] = MetaStamp.Unknown
-            ;
+        stamps[repaired.Path
+        ] = MetaStamp.Unknown;
         issues.Add(
             new(AssetIssueKind.DuplicateGuid, loser.Path, $"{message} '{loser.Path}' was re-GUIDed to {minted}.")
         );
     }
 
     void Quarantine(Survey survey, bool[] claimed, ScanOptions options, ConcurrentBag<AssetIssue> issues) {
-        var spokenFor = 0;
+        var spokenFor =
+            0;
         foreach (var claim in claimed) {
             if (claim) {
                 spokenFor++;
@@ -641,28 +652,27 @@ public sealed class AssetDatabase {
             return;
         }
 
-        var owners = new HashSet<string>(StringComparer.Ordinal);
+        var owners =
+            new HashSet<string>(StringComparer.Ordinal);
         foreach
             (var candidate in survey.Candidates) {
             owners.Add(candidate.Absolute);
         }
 
-// Ordered so that two machines quarantining the same wreckage write the same files in the
+        // Ordered so that two machines quarantining the same wreckage write the same files in the
         // same order.
-        foreach (var owner in survey.Sidecars.Keys.Order(StringComparer.Ordinal)
-                     .ToList()) {
+        foreach (var owner in survey.Sidecars.Keys.Order(StringComparer.Ordinal).ToList()) {
             // A sidecar for a sidecar — `foo.meta.meta` beside a real `foo.meta` — is not an orphan,
             // however little sense it makes, because the file it names is right there. Sidecars are
-// keyed by what they belong to, so "does foo.meta exist" is "is there a sidecar for foo".
+            // keyed by what they belong to, so "does foo.meta exist" is "is there a sidecar for foo".
             if (owners.Contains(owner)
                 || (owner.EndsWith(AssetMetaFile.Extension, StringComparison.Ordinal)
-                    && survey.Sidecars.ContainsKey(owner[..^AssetMetaFile.Extension.Length]))) {
+                    && survey.Sidecars.ContainsKey(owner[..^ AssetMetaFile.Extension.Length]))) {
                 continue;
             }
 
             var meta = owner + AssetMetaFile.Extension;
             var relative = Paths.Relative(meta);
-
             if (!options.QuarantineOrphanMeta) {
                 issues.Add(new(AssetIssueKind.MetaOrphaned, relative, "Its asset is gone. It was left where it is."));
                 continue;
@@ -671,11 +681,8 @@ public sealed class AssetDatabase {
             // Moved, never deleted. A mis-ordered git operation — the asset removed before its
             // sidecar, a partial checkout — is recoverable if the GUID is still somewhere on disk,
             // and is not if the editor helpfully tidied it away.
-            var destination = Path.Combine(
-                Paths.OrphanMeta,
-                Paths.Relative(meta)
-            );
-            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            var destination = Path.Combine(Paths.OrphanMeta, Paths.Relative(meta));
+            Directory.CreateDirectory(Path.GetDirectoryName(destination) !);
             File.Move(meta, destination, overwrite: true);
             survey.Sidecars.Remove(owner);
             issues.Add(
@@ -696,38 +703,41 @@ public sealed class AssetDatabase {
     ///     throw on exactly the file most likely to be in trouble.
     /// </remarks>
     bool SourceHashMatches(AssetEntry entry) {
-        if (entry.IsFolder) {
-            return
-                false;
+        if
+            (entry.IsFolder) {
+            return false;
         }
 
         var absolute = Paths.Absolute(entry.Path);
         var metaPath = AssetMetaFile.PathFor(absolute);
+
         try {
             if (YamlReader.Read(File.ReadAllText(metaPath)) is not YamlMapping root
-                || root[
-                    "importer"] is not YamlMapping importer
-                || importer[
-                    "sourceHash"] is not YamlScalar recorded
-                || recorded.Value.Length == 0) {
+                || root
+                    ["importer"] is not YamlMapping importer
+                || importer["sourceHash"] is not YamlScalar recorded
+                || recorded.Value.Length
+                == 0) {
                 return false;
             }
 
-            return
-                string.Equals(recorded.Value, HashOf(absolute), StringComparison.OrdinalIgnoreCase);
+            return string
+                .Equals(recorded.Value, HashOf(absolute), StringComparison.OrdinalIgnoreCase);
         } catch (Exception failure) when (failure is IOException or YamlParseException) {
             return false;
         }
     }
 
-    AssetId ReGuid(AssetEntry entry) {
-        var
-            metaPath = AssetMetaFile.PathFor(Paths.Absolute(entry.Path));
+    AssetId
+        ReGuid(AssetEntry entry) {
+        var metaPath = AssetMetaFile.PathFor(Paths.Absolute(entry.Path));
         var minted = AssetId.New();
-// Read and rewrite as nodes, so everything the file said other than its GUID — the importer
+
+        // Read and rewrite as nodes, so everything the file said other than its GUID — the importer
         // settings, the addressable block, the comments — comes back out byte for byte.
-        var root =
-            YamlReader.Read(File.ReadAllText(metaPath)) as YamlMapping ?? new YamlMapping();
+        var root = YamlReader.Read(File.ReadAllText(metaPath)) as YamlMapping
+            ?? new
+                YamlMapping();
         root.Set("guid", new YamlScalar(minted.ToString()));
         File.WriteAllText(metaPath, YamlWriter.Write(root));
         return minted;
@@ -735,30 +745,28 @@ public sealed class AssetDatabase {
 
     static AssetId CreateMeta(string metaPath) {
         var minted = AssetId.New();
-
         // No importer key: which importer claims a file is decided at import time, and writing a
         // guess here would be a fact the file asserts and nothing checks.
-        var root = new YamlMapping()
-            .Set("guid", new YamlScalar(minted.ToString()))
-            .Set(
-                "metaVersion",
-                new YamlScalar(
-                    MetaMigrationChain.CurrentVersion.ToString(CultureInfo.InvariantCulture),
-                    YamlScalarStyle.Plain
-                )
-            );
+        var root =
+            new YamlMapping()
+                .Set("guid", new YamlScalar(minted.ToString()))
+                .Set(
+                    "metaVersion",
+                    new YamlScalar(
+                        MetaMigrationChain.CurrentVersion.ToString(CultureInfo.InvariantCulture),
+                        YamlScalarStyle.Plain
+                    )
+                );
         File.WriteAllText(metaPath, YamlWriter.Write(root));
-        return minted;
+        return
+            minted;
     }
 
-    static string HashOf(
-        string
-            path
-    ) {
-        using var stream =
-            File.OpenRead(path);
-        var hash
-            = new XxHash128();
+    static
+        string HashOf(string path) {
+        using var stream = File.OpenRead(path);
+        var
+            hash = new XxHash128();
         hash.Append(stream);
         return Convert.ToHexStringLower(hash.GetCurrentHash());
     }
@@ -773,11 +781,16 @@ public sealed class AssetDatabase {
     ///     that has to happen anyway is also the one that collects every stamp.
     /// </remarks>
     sealed record Survey(
-        List<(string Absolute, bool IsFolder)> Candidates,
+        List<
+            (string Absolute, bool IsFolder)> Candidates,
         Dictionary<string, MetaStamp> Sidecars);
 
     /// <summary>What one candidate produced, and whether the index already knew it.</summary>
-    readonly record struct Scanned(AssetEntry Entry, MetaStamp Stamp, bool Reused);
+    readonly record struct Scanned(
+        AssetEntry Entry,
+        MetaStamp
+            Stamp,
+        bool Reused);
 }
 
 /// <summary>What identifies a sidecar as the one an index entry was read from.</summary>
@@ -830,8 +843,8 @@ public sealed class AssetDatabase {
 ///         without it being a breaking change to anybody.
 ///     </para>
 /// </remarks>
-readonly
-    record struct MetaStamp(long Length, DateTime WrittenUtc) {
+readonly record
+    struct MetaStamp(long Length, DateTime WrittenUtc) {
     /// <summary>No stamp this index will stand behind. Its negative length matches no real file's.</summary>
     /// <remarks>
     ///     Two things reach it: no sidecar there at all, and a sidecar the recording scan wrote
@@ -839,6 +852,6 @@ readonly
     ///     <see cref="AssetDatabase.Save" /> as a length of <c>-1</c>, so a warm start is told the
     ///     same thing the scan that wrote the index knew.
     /// </remarks>
-    public static
-        MetaStamp Unknown { get; } = new(-1, DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc));
+    public static MetaStamp Unknown { get; }
+        = new(-1, DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc));
 }

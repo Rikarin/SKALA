@@ -1,5 +1,6 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
+
 // SPDX-License-Identifier: Apache-2.0
 
 using System.Diagnostics.CodeAnalysis;
@@ -31,7 +32,6 @@ public sealed class ConsoleCommandAttribute : Attribute {
     }
 
     /// <summary>What is typed to run it.</summary>
-
     public string Name { get; }
 
     /// <summary>One line saying what it does, shown by <c>help</c>.</summary>
@@ -100,7 +100,6 @@ public sealed class ConsoleContext {
     /// </remarks>
     public bool TryFlag(int index, out bool value) {
         value = false;
-
         switch (this
                     [index]
                     ?.ToLowerInvariant()) {
@@ -111,6 +110,7 @@ public sealed class ConsoleContext {
             case "off" or "0" or "false" or "no":
                 return
                     true;
+
             default: return false;
         }
     }
@@ -121,7 +121,6 @@ public sealed class ConsoleContext {
 
         while (!rest.IsEmpty) {
             rest = rest.TrimStart();
-
             if (rest.IsEmpty) {
                 break
                     ;
@@ -131,7 +130,6 @@ public sealed class ConsoleContext {
             if (rest[0] == '"') {
                 var close = rest[1..].IndexOf('"');
                 var end = close < 0 ? rest.Length : close + 1;
-
                 arguments.Add(rest[1..end].ToString());
                 rest = close < 0 ? default : rest[(end + 1)..];
                 continue;
@@ -140,7 +138,8 @@ public sealed class ConsoleContext {
             var space = rest.IndexOf(' ');
             if (space < 0) {
                 arguments.Add(rest.ToString());
-                break;
+                break
+                    ;
             }
 
             arguments.Add(rest[..space].ToString());
@@ -153,7 +152,11 @@ public sealed class ConsoleContext {
 /// <param name="Name">What is typed to run it.</param>
 /// <param name="Help">One line saying what it does.</param>
 /// <param name="Run">What it does.</param>
-public sealed record ConsoleCommand(string Name, string Help, Action<ConsoleContext> Run);
+public sealed record ConsoleCommand(
+    string Name,
+    string Help,
+    Action<ConsoleContext>
+        Run);
 
 /// <summary>
 ///     The commands a console can run, and the lines they have written back.
@@ -171,15 +174,13 @@ public sealed record ConsoleCommand(string Name, string Help, Action<ConsoleCont
 ///         socket thread.
 ///     </para>
 /// </remarks>
-public sealed
-    class ConsoleCommands {
+public sealed class ConsoleCommands {
     /// <summary>How many output lines are kept.</summary>
-    public const int MaxOutput =
-        256;
+    public
+        const int MaxOutput = 256;
 
     /// <summary>How many entered lines are remembered.</summary>
-    public const int
-        MaxHistory = 64;
+    public const int MaxHistory = 64;
 
     static readonly Lock ContributionLock = new();
     static readonly List<Action<ConsoleCommands>> Contributions = [];
@@ -187,25 +188,37 @@ public sealed
 
     readonly Dictionary<string, ConsoleCommand> commands = new(StringComparer.OrdinalIgnoreCase);
     readonly List<string> output = [];
-    readonly List<string> history = [];
+
+    readonly List<string>
+        history = [];
+
     readonly ConsoleContext context;
 
     /// <summary>Builds a registry with the built-in commands and every contributed one in it.</summary>
     public ConsoleCommands() {
         context = new(this);
+
         Register("help", "Lists the commands, or explains one: help [command]", Help);
-        Register("clear", "Empties the console output", _ => Clear());
-        Register("echo", "Writes its arguments back", static entry => entry.Write(string.Join(' ', entry.Arguments)));
+        Register(
+            "clear",
+            "Empties the console output",
+            _
+                => Clear()
+        );
+        Register(
+            "echo",
+            "Writes its arguments back",
+            static entry => entry
+                .Write(string.Join(' ', entry.Arguments))
+        );
 
-        Action
-            <ConsoleCommands>[] contributed;
-        lock (ContributionLock
-             ) {
+        Action<ConsoleCommands>[]
+            contributed;
+
+        lock (ContributionLock) {
             contributed = [.. Contributions];
-
-            Live.RemoveAll(reference =>
-                !reference.TryGetTarget(out _)
-            );
+            Live
+                .RemoveAll(reference => !reference.TryGetTarget(out _));
             Live.Add(new(this));
         }
 
@@ -247,11 +260,10 @@ public sealed
     /// </remarks>
     public static void Contribute(Action<ConsoleCommands> register) {
         ArgumentNullException.ThrowIfNull(register);
-
-        ConsoleCommands
-            [] existing;
+        ConsoleCommands[] existing;
         lock (ContributionLock) {
             Contributions.Add(register);
+
             existing = [
                 .. Live
                     .Select(reference => reference.TryGetTarget(out var live) ? live : null)
@@ -265,16 +277,18 @@ public sealed
     }
 
     /// <summary>Everything registered, in no particular order.</summary>
-    public IReadOnlyCollection<ConsoleCommand> Registered => commands.Values;
+    public IReadOnlyCollection<ConsoleCommand>
+        Registered =>
+        commands.Values;
 
     /// <summary>The lines commands have written, oldest first.</summary>
-    public
-        IReadOnlyList<string> Output =>
+    public IReadOnlyList<string>
+        Output =>
         output;
 
     /// <summary>The lines that have been entered, oldest first.</summary>
-    public IReadOnlyList<
-        string> History =>
+    public IReadOnlyList
+        <string> History =>
         history;
 
     /// <summary>Adds a command.</summary>
@@ -286,13 +300,7 @@ public sealed
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(run);
 
-        commands[name] = new(
-            name,
-            help
-            ?? string
-                .Empty,
-            run
-        );
+        commands[name] = new(name, help ?? string.Empty, run);
     }
 
     /// <summary>Removes a command.</summary>
@@ -306,17 +314,14 @@ public sealed
     /// <returns>How many matched.</returns>
     public int Complete(ReadOnlySpan<char> prefix, List<string> matches) {
         ArgumentNullException.ThrowIfNull(matches);
-
         matches.Clear();
-
         foreach (var name in commands.Keys) {
             if (name.AsSpan().StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) {
                 matches.Add(name);
             }
         }
 
-        matches.Sort(StringComparer.OrdinalIgnoreCase)
-            ;
+        matches.Sort(StringComparer.OrdinalIgnoreCase);
         return matches.Count;
     }
 
@@ -333,26 +338,22 @@ public sealed
             return false;
         }
 
-        Remember(line)
-            ;
+        Remember(line);
         Write($"> {line}");
 
-        var trimmed = line.AsSpan().Trim();
-        var space
-            = trimmed.IndexOf(' ');
-        var name = space < 0 ? trimmed : trimmed[..space];
+        var trimmed = line.AsSpan()
+            .Trim();
+        var space = trimmed.IndexOf(' ');
+        var name = space < 0
+            ? trimmed
+            : trimmed[..space];
 
-        if (!commands.TryGetValue(
-                name.ToString(),
-                out
-                var command
-            )) {
+        if (!commands.TryGetValue(name.ToString(), out var command)) {
             Write($"There is no command called '{name}'. Try 'help'.");
             return false;
         }
 
         context.Reset(line, space < 0 ? default : trimmed[space..]);
-
         try {
             command.Run(context);
             return true;
@@ -364,15 +365,14 @@ public sealed
 
     /// <summary>Writes a line of output.</summary>
     /// <param name="text">What to say.</param>
-    public void Write(string text) {
-        output.Add(
-            text
-            ?? string.Empty
-        );
-        if (output.Count > MaxOutput
-           ) {
-            output
-                .RemoveRange(0, output.Count - MaxOutput);
+    public void Write(
+        string text
+    ) {
+        output.Add(text ?? string.Empty);
+
+        if
+            (output.Count > MaxOutput) {
+            output.RemoveRange(0, output.Count - MaxOutput);
         }
     }
 
@@ -398,10 +398,11 @@ public sealed
     [RequiresUnreferencedCode("Scans every type in the assembly for [ConsoleCommand]; trimming may remove them.")]
     public int RegisterFrom(Assembly assembly) {
         ArgumentNullException.ThrowIfNull(assembly);
-        var found
-            = 0;
+
+        var found = 0;
         foreach (var type in assembly.GetTypes()) {
-            found += RegisterFrom(type);
+            found +=
+                RegisterFrom(type);
         }
 
         return found;
@@ -412,19 +413,23 @@ public sealed
     /// <returns>How many were registered.</returns>
     [RequiresUnreferencedCode("Reads the type's methods reflectively; trimming may remove them.")]
     public int RegisterFrom(Type type) {
-        ArgumentNullException.ThrowIfNull(type);
+        ArgumentNullException
+            .ThrowIfNull(type);
         var found =
             0;
-        foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)) {
-            if (method.GetCustomAttribute<ConsoleCommandAttribute>() is not { } attribute) {
+
+        foreach
+            (var method in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)) {
+            if (method.GetCustomAttribute<ConsoleCommandAttribute>()
+                is not { } attribute) {
                 continue;
             }
 
-            var
-                parameters = method.GetParameters();
-            // Refused rather than skipped: a method somebody marked and got the shape wrong on is a
+            var parameters = method.GetParameters();
 
+            // Refused rather than skipped: a method somebody marked and got the shape wrong on is a
             // command they expect to be able to type, and silence is the worst possible answer.
+
             if (parameters.Length != 1 || parameters[0].ParameterType != typeof(ConsoleContext)) {
                 throw new InvalidOperationException(
                     $"[ConsoleCommand] {type.Name}.{method.Name} must be static and take one ConsoleContext."
@@ -436,6 +441,7 @@ public sealed
                 attribute.Help,
                 method.CreateDelegate<Action<ConsoleContext>>()
             );
+
             found++;
         }
 
@@ -444,19 +450,13 @@ public sealed
 
     void Remember(string line) {
         // A repeat of the last line is not worth a history entry — holding Up to find something is
-
         // the thing history is for, and a run of identical entries defeats it.
-        if (history.Count > 0
-            && string.Equals(
-                history[^1],
-                line,
-                StringComparison.Ordinal
-            )) {
+        if (history.Count > 0 && string.Equals(history[^1], line, StringComparison.Ordinal)) {
             return;
         }
 
-        history
-            .Add(line);
+        history.Add(line);
+
         if (history.Count > MaxHistory) {
             history.RemoveRange(0, history.Count - MaxHistory);
         }
@@ -476,9 +476,9 @@ public sealed
         var names = new List<string>(commands.Keys);
         names.Sort(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var name in names) {
-            entry.Write($"{name,-16} {commands[name].Help}")
-                ;
+        foreach (var name in
+                 names) {
+            entry.Write($"{name,-16} {commands[name].Help}");
         }
     }
 }

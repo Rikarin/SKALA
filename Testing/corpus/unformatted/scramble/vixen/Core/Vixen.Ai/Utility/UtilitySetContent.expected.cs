@@ -1,5 +1,6 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
+
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.
@@ -101,9 +102,11 @@ public sealed class UtilityConsiderationContent {
 [DataContract("UtilityCurveKey")]
 public sealed class UtilityCurveKeyContent {
     /// <summary>Where along the input it sits.</summary>
+
     public float Time { get; set; }
 
     /// <summary>What it scores there.</summary>
+
     public float Value { get; set; }
 
     /// <summary>The slope coming in.</summary>
@@ -113,11 +116,19 @@ public sealed class UtilityCurveKeyContent {
     public float OutTangent { get; set; }
 
     /// <summary>How the tangents are worked out.</summary>
-    public TangentMode Mode { get; set; }
+    public TangentMode
+        Mode { get; set; }
 
     /// <summary>This key, as the sampler wants it.</summary>
     /// <returns>The sample.</returns>
-    public CurveSample ToSample() => new(Time, Value, InTangent, OutTangent, Mode);
+    public CurveSample ToSample() =>
+        new(
+            Time,
+            Value,
+            InTangent,
+            OutTangent,
+            Mode
+        );
 }
 
 /// <summary>One thing the agent might do, as a file holds it.</summary>
@@ -127,44 +138,30 @@ public sealed class UtilityCurveKeyContent {
 ///     payoff made visible: a project writes <c>MoveToTask</c> once, declares it once, and gets it in
 ///     a tree, in a utility set and — when P6 lands — in a GOAP plan.
 /// </remarks>
-[
-    DataContract("UtilityAction")]
-public sealed class
-    UtilityActionContent {
+[DataContract("UtilityAction")]
+public sealed
+    class UtilityActionContent {
     /// <summary>What it is called, in the table and in the debug record.</summary>
-
     public string Name { get; set; } = string.Empty;
 
     /// <summary>Which task it runs, as <see cref="BehaviorNodeSchema" /> names it.</summary>
-    public string Task {
-        get;
-        set
-        ;
-    } = string.Empty;
+    public string Task { get; set; } = string.Empty;
 
     /// <summary>The task's fields, by name.</summary>
-    public Dictionary<string, string> Fields {
-        get
-        ;
-        set;
-    } = [];
+    public Dictionary<string, string> Fields { get; set; } = [];
 
     /// <summary>Its multiplier. 1 for ambient, 2–3 for important, 5 for emergency.</summary>
     public float Weight { get; set; } = 1f;
 
     /// <summary>How long after it ends before it may be chosen again, in seconds.</summary>
-
     public float Cooldown { get; set; }
 
     /// <summary>Which group it is in. Higher wins, under the bucketed selector.</summary>
-    public int Bucket {
-        get
-        ;
-        set;
-    }
+    public int Bucket { get; set; }
 
     /// <summary>What decides how good it is.</summary>
-    public List<UtilityConsiderationContent> Considerations { get; set; } = [];
+    public List<UtilityConsiderationContent>
+        Considerations { get; set; } = [];
 }
 
 /// <summary>Which of the scored actions wins, as a file names it.</summary>
@@ -197,8 +194,8 @@ public enum UtilitySelectorKind : byte {
 ///         exactly the way a <c>.vxbt</c> does.
 ///     </para>
 /// </remarks>
-[
-    DataContract("UtilitySet")]
+[DataContract("UtilitySet")
+]
 public
     sealed class UtilitySetContent {
     /// <summary>What a utility set is called on disk.</summary>
@@ -211,11 +208,11 @@ public
     public int Version { get; set; } = Current;
 
     /// <summary>What the set is called.</summary>
-    public string Name { get; set; } = string.Empty;
+    public string
+        Name { get; set; } = string.Empty;
 
     /// <summary>Its blackboard's keys, when it declares its own.</summary>
-    public List<BehaviorKeyContent> Keys { get; set; }
-        = [];
+    public List<BehaviorKeyContent> Keys { get; set; } = [];
 
     /// <summary>What the agent might do.</summary>
     public List<UtilityActionContent> Actions { get; set; } = [];
@@ -224,28 +221,30 @@ public
     public UtilitySelectorKind Selector { get; set; }
 
     /// <summary>How many of the best to consider, for the top-weighted selector.</summary>
-    public int SelectorCount { get; set; } = 3;
+    public int SelectorCount { get; set; } =
+        3;
 
     /// <summary>How much is added to the running action's score.</summary>
-    public float
-        CommitmentBonus { get; set; } = 0.15f;
+    public
+        float CommitmentBonus { get; set; } = 0.15f;
 
     /// <summary>Seconds between decisions.</summary>
-    public float DecisionInterval { get; set; } = 0.2f;
+    public float
+        DecisionInterval { get; set; } = 0.2f;
 
     /// <summary>Builds the blackboard this set's own keys describe.</summary>
     /// <param name="diagnostics">Where to put anything wrong with them.</param>
     /// <returns>The layout.</returns>
-    public BlackboardLayout
-        BuildLayout(ICollection<BehaviorTreeDiagnostic>? diagnostics = null) {
-        var builder = new
-            BlackboardLayoutBuilder();
+    public
+        BlackboardLayout BuildLayout(ICollection<BehaviorTreeDiagnostic>? diagnostics = null) {
+        var builder =
+            new BlackboardLayoutBuilder();
 
         foreach (var key in Keys) {
             try {
                 builder.Add(key.Name, key.Type);
-            } catch (Exception error) when
-                (error is InvalidOperationException or ArgumentException) {
+            } catch (Exception error)
+                when (error is InvalidOperationException or ArgumentException) {
                 diagnostics?.Add(new(Symbol.Intern(key.Name), error.Message));
             }
         }
@@ -258,10 +257,10 @@ public
     public IUtilitySelector BuildSelector() =>
         Selector switch {
             UtilitySelectorKind.WeightedRandom => UtilitySelectors.WeightedRandom,
-            UtilitySelectorKind.TopWeightedRandom
-                => UtilitySelectors.TopWeightedRandom(Math.Max(1, SelectorCount)),
-            UtilitySelectorKind.Bucketed => UtilitySelectors.Bucketed,
-            _ =>
-                UtilitySelectors.Highest
+            UtilitySelectorKind.TopWeightedRandom => UtilitySelectors.TopWeightedRandom(Math.Max(1, SelectorCount)),
+            UtilitySelectorKind.Bucketed => UtilitySelectors
+                .Bucketed,
+            _
+                => UtilitySelectors.Highest
         };
 }

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -90,17 +90,23 @@ static class DibImage {
 
         var width = BinaryPrimitives.ReadInt32LittleEndian(dib[4..]);
         var signedHeight = BinaryPrimitives.ReadInt32LittleEndian(dib[8..]);
-        var bits = BinaryPrimitives.ReadUInt16LittleEndian(dib[14..]);
+        var bits = BinaryPrimitives.ReadUInt16LittleEndian(
+            dib
+                [14..]
+        );
         var compression = BinaryPrimitives.ReadInt32LittleEndian(dib[16..]);
         var paletteEntries = BinaryPrimitives.ReadInt32LittleEndian(dib[32..]);
+
         // int.MinValue has no positive counterpart, so it is rejected before it is negated.
-        if (width <= 0 || width > MaxDimension || signedHeight == 0 || signedHeight == int.MinValue) {
+        if (width <= 0 || width > MaxDimension || signedHeight == 0 || signedHeight == int.MinValue
+           ) {
             return false;
         }
 
-        var topDown
-            = signedHeight < 0;
-        var height = Math.Abs(signedHeight);
+        var topDown = signedHeight < 0;
+        var height
+            = Math.Abs(signedHeight);
+
         if (height > MaxDimension || (long)width * height > MaxPixels) {
             return false;
         }
@@ -116,36 +122,29 @@ static class DibImage {
             return false;
         }
 
-        uint
-            redMask, greenMask, blueMask, alphaMask;
-        var offset =
-            headerSize;
-        if (compression
-            == BiBitfields) {
-            if (headerSize
-                >= V4HeaderSize) {
+        uint redMask, greenMask, blueMask, alphaMask;
+        var offset
+            = headerSize;
+
+        if (compression == BiBitfields) {
+            if (headerSize >= V4HeaderSize
+               ) {
                 // A V4 or V5 header carries the masks in the header itself.
-                redMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[40..]);
-                greenMask =
-                    BinaryPrimitives.ReadUInt32LittleEndian(dib[44..]);
+                redMask
+                    = BinaryPrimitives.ReadUInt32LittleEndian(dib[40..]);
+                greenMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[44..]);
                 blueMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[48..]);
                 alphaMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[52..]);
             } else { // A V3 header carries three of them immediately after it, and never a fourth.
-                if (dib.Length
-                    < headerSize
-                    + 12) {
+                if (dib.Length < headerSize + 12) {
                     return false;
                 }
 
-                redMask = BinaryPrimitives.ReadUInt32LittleEndian(
-                    dib
-                        [headerSize..]
-                );
+                redMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[headerSize..]);
                 greenMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[(headerSize + 4)..]);
                 blueMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[(headerSize + 8)..]);
                 alphaMask = 0;
-                offset +=
-                    12;
+                offset += 12;
             }
         } else {
             // BI_RGB is BGR(A) in memory, which is these masks read as one little-endian word.
@@ -154,66 +153,65 @@ static class DibImage {
             alphaMask = bits == 32 ? 0xFF00_0000u : 0u;
         }
 
-        if (
-            redMask == 0 || greenMask == 0 || blueMask == 0) {
+        if (redMask == 0 || greenMask == 0 || blueMask == 0) {
             return false;
         }
 
         // Present on a V5 header even at 32 bits per pixel, where it is a colour table for the
         // benefit of palettised displays and has to be stepped over rather than read.
-        offset +=
-            paletteEntries * 4;
-        var stride
-            = ((width * bits + 31) / 32) * 4;
+        offset += paletteEntries * 4;
+        var stride = ((width * bits + 31) / 32) * 4;
 
-        if (offset < 0 || stride <= 0 || (long)offset + (long)stride * height > dib.Length) {
-            return false;
+        if (offset
+            < 0
+            || stride <= 0
+            || (long)offset + (long)stride * height > dib.Length) {
+            return false
+                ;
         }
 
-        var pixels = new byte [width
-            * height
-            * 4];
-        var alphaSeen =
-            false;
+        var pixels =
+            new byte [width * height * 4];
+        var alphaSeen = false;
 
-        for (var y = 0; y < height; y++) {
+        for (var y
+                 = 0;
+             y < height;
+             y++) {
             // A bottom-up DIB stores the last row first, which is the common case and not the
-            // interesting one — it is only ever this arithmetic.
-            var source
-                = dib.Slice(offset + (topDown ? y : height - 1 - y) * stride, stride);
-            var destination = pixels.AsSpan(y * width * 4);
+// interesting one — it is only ever this arithmetic.
+            var source = dib.Slice(offset + (topDown ? y : height - 1 - y) * stride, stride);
+            var destination =
+                pixels.AsSpan(y * width * 4);
             for (var x = 0; x < width; x++) {
                 var value = bits switch {
                     32 => BinaryPrimitives.ReadUInt32LittleEndian(source[(x * 4)..]),
                     24 => (uint)(source[x * 3] | (source[x * 3 + 1] << 8) | (source[x * 3 + 2] << 16)),
                     _ => BinaryPrimitives.ReadUInt16LittleEndian(
-                        source[(x
-                            * 2)..]
+                        source
+                            [(x * 2)..]
                     )
                 };
-
-                var alpha = alphaMask == 0
-                    ? (byte)255
-                    : Extract(value, alphaMask);
-                alphaSeen
-                    |= alpha != 0;
-                destination[x * 4] = Extract(value, redMask);
+                var alpha = alphaMask == 0 ? (byte)255 : Extract(value, alphaMask);
+                alphaSeen |= alpha != 0;
+                destination[x
+                    * 4] = Extract(value, redMask);
                 destination[x * 4 + 1] = Extract(value, greenMask);
                 destination[x * 4 + 2] = Extract(value, blueMask);
                 destination[x * 4 + 3] = alpha;
             }
         }
 
-        if (!
-            alphaSeen) {
+        if (!alphaSeen) {
             // Every pixel fully transparent is what an application that left the fourth byte alone
             // produces, and is never what one that meant it produces — an image nobody can see is
             // not something anybody copies. See the remarks.
-            for (var index
-                     = 3;
-                 index < pixels.Length;
-                 index += 4) {
-                pixels[index] = 255;
+            for (
+                var index = 3;
+                index < pixels.Length;
+                index += 4) {
+                pixels[index
+                ] = 255;
             }
         }
 
@@ -231,11 +229,9 @@ static class DibImage {
     ///     <c>CF_DIB</c> and <c>CF_BITMAP</c> from it for applications that ask for those instead.
     ///     Writing the older header would mean writing all three.
     /// </remarks>
-    public
-        static byte[]? Encode(in ClipboardImage image) {
-        var (width, height
-            ) = (image.Size.X, image.Size.Y);
-
+    public static byte
+        []? Encode(in ClipboardImage image) {
+        var (width, height) = (image.Size.X, image.Size.Y);
         if (width <= 0
             || height <= 0
             || width > MaxDimension
@@ -244,51 +240,45 @@ static class DibImage {
             return null;
         }
 
-        var pixels = image.Pixels
-            .Span;
+        var pixels = image.Pixels.Span;
         if (pixels
                 .Length
             < width * height * 4) {
-            return null;
+            return
+                null;
         }
 
         var stride =
             width * 4;
         var dib = new byte[V5HeaderSize + stride * height];
         var header = dib.AsSpan();
-        BinaryPrimitives.WriteInt32LittleEndian(header, V5HeaderSize);
-        BinaryPrimitives.WriteInt32LittleEndian(header[4..], width);
+        BinaryPrimitives
+            .WriteInt32LittleEndian(header, V5HeaderSize);
+        BinaryPrimitives.WriteInt32LittleEndian(header[4..], width)
+            ;
         // Positive, so bottom-up. A negative height is legal and is mishandled by enough
         // applications that writing one is a way to be pasted upside down.
         BinaryPrimitives.WriteInt32LittleEndian(header[8..], height);
         BinaryPrimitives.WriteUInt16LittleEndian(header[12..], 1);
-        BinaryPrimitives
-            .WriteUInt16LittleEndian(header[14..], 32);
+        BinaryPrimitives.WriteUInt16LittleEndian(header[14..], 32)
+            ;
         BinaryPrimitives.WriteInt32LittleEndian(header[16..], BiBitfields);
-        BinaryPrimitives.WriteInt32LittleEndian(
-            header[20..],
-            stride * height
-        );
+        BinaryPrimitives.WriteInt32LittleEndian(header[20..], stride * height);
         BinaryPrimitives.WriteUInt32LittleEndian(header[40..], 0x00FF_0000);
         BinaryPrimitives.WriteUInt32LittleEndian(header[44..], 0x0000_FF00);
         BinaryPrimitives.WriteUInt32LittleEndian(header[48..], 0x0000_00FF);
         BinaryPrimitives.WriteUInt32LittleEndian(header[52..], 0xFF00_0000);
-        BinaryPrimitives.WriteUInt32LittleEndian(
-            header[56..],
-            LcsSrgb
-        );
+        BinaryPrimitives.WriteUInt32LittleEndian(header[56..], LcsSrgb);
         BinaryPrimitives.WriteUInt32LittleEndian(header[108..], LcsGmImages);
         for (var y = 0; y < height; y++) {
             var source = pixels.Slice(y * stride, stride);
-            var destination = header
-                .Slice(V5HeaderSize + (height - 1 - y) * stride, stride);
-
+            var destination
+                = header.Slice(V5HeaderSize + (height - 1 - y) * stride, stride);
             for (var x = 0; x < width; x++) {
                 destination[x * 4] = source[x * 4 + 2];
                 destination[x * 4 + 1] = source[x * 4 + 1];
                 destination[x * 4 + 2] = source[x * 4];
-                destination[x * 4 + 3] = source
-                    [x * 4 + 3];
+                destination[x * 4 + 3] = source[x * 4 + 3];
             }
         }
 
@@ -304,11 +294,11 @@ static class DibImage {
     static byte Extract(uint value, uint mask) {
         var shift = System.Numerics.BitOperations.TrailingZeroCount(mask);
         var maximum = mask >> shift;
-        var channel = (value & mask) >> shift;
-
+        var channel = (value & mask)
+            >> shift;
         return maximum == 0
-            ? (byte
-            )0
-            : (byte)((channel * 255 + maximum / 2) / maximum);
+            ? (byte)0
+            : (byte)
+            ((channel * 255 + maximum / 2) / maximum);
     }
 }

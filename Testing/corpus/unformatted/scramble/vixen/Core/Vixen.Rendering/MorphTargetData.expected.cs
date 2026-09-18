@@ -1,5 +1,6 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
+
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.Core;
@@ -118,6 +119,7 @@ public sealed record
     public Vector3 PositionDelta(int entry) {
         ArgumentOutOfRangeException.ThrowIfNegative(entry);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(entry, Count);
+
         return Dequantize(Positions, entry, PositionScale);
     }
 
@@ -165,10 +167,10 @@ public sealed record
             );
         }
 
-
         var positionScale = Range(positions);
         var
             normalScale = Range(normals);
+
         return new() {
             Name = name,
             Indices = indices.ToArray(),
@@ -212,6 +214,7 @@ public sealed record
         float threshold
     ) {
         ArgumentNullException.ThrowIfNull(name);
+
         if (normals.Length != 0 && normals.Length != positions.Length) {
             throw new ArgumentException(
                 $"'{name}' has {positions.Length} position deltas and {normals.Length} normal deltas.",
@@ -221,21 +224,24 @@ public sealed record
 
         var squared = threshold
             * threshold;
+
         List<int
         > kept = [];
-
         for (var index = 0; index < positions.Length; index++) {
             var moves
                 = positions[index].LengthSquared() > squared;
             var
                 reshades = normals.Length != 0 && normals[index].LengthSquared() > squared;
+
             if (moves || reshades) {
                 kept.Add(index);
             }
         }
 
-        var keptPositions = new Vector3 [kept.Count];
-        var keptNormals = normals.Length == 0 ? [] : new Vector3 [kept.Count];
+        var keptPositions = new Vector3[kept.Count];
+        var keptNormals = normals.Length == 0 ? [] : new Vector3[kept.Count];
+
+
         for (var entry = 0; entry < kept.Count; entry++) {
             keptPositions[entry] = positions[kept[entry]]
                 ;
@@ -252,12 +258,13 @@ public sealed record
     /// <summary>The largest absolute component over a run of deltas, which is the target's range.</summary>
     static float Range(ReadOnlySpan<Vector3> deltas) {
         var range = 0f;
-        foreach (var delta
-                 in deltas) {
+
+        foreach (var
+                     delta in deltas) {
             range = MathF.Max(range, MathF.Abs(delta.X));
             range = MathF.Max(range, MathF.Abs(delta.Y));
-            range = MathF
-                .Max(range, MathF.Abs(delta.Z));
+            range =
+                MathF.Max(range, MathF.Abs(delta.Z));
         }
 
         return range;
@@ -270,33 +277,26 @@ public sealed record
     ///     inside out the moment the weight leaves zero. Zeros are what a zero range quantises to.
     /// </remarks>
     static short[] Quantize(ReadOnlySpan<Vector3> deltas, float range) {
-        var
-            packed = new short[deltas.Length * 3];
+        var packed = new
+            short[deltas.Length * 3];
         if (range <= 0f) {
-            return packed;
+            return packed
+                ;
         }
 
-        var
-            scale = Quantum / range;
-        for (var index = 0;
-             index
-             < deltas
-                 .Length;
-             index++) {
+        var scale = Quantum / range;
+        for (var index = 0; index < deltas.Length; index++) {
             packed[(index * 3) + 0] = Component(
-                deltas[
-                    index].X,
+                deltas
+                    [index].X,
                 scale
             );
             packed[(index * 3) + 1] = Component(deltas[index].Y, scale);
-            packed[(index * 3) + 2] = Component(
-                deltas[index].Z,
-                scale
-            );
+            packed[(index * 3) + 2] = Component(deltas[index].Z, scale);
         }
 
-
-        return packed;
+        return packed
+            ;
     }
 
     static short Component(float value, float scale) =>
@@ -314,6 +314,7 @@ public sealed record
     /// </remarks>
     static Vector3 Dequantize(short[] packed, int entry, float scale) {
         var step = scale / Quantum;
+
         return new(
             packed[(entry * 3) + 0] * step,
             packed[(entry * 3) + 1] * step,

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -74,9 +74,7 @@ public static class DistanceField {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(height);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(scale);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(range);
-
-
-        var channels = new float[width * height * 3];
+        var channels = new float [width * height * 3];
         if (outline.IsEmpty) {
             Array.Fill(channels, 0f);
             return new DistanceFieldBitmap(width, height, range, channels);
@@ -90,17 +88,19 @@ public static class DistanceField {
         );
         var inside =
             GlyphRasterizer.Rasterize(outline, width, height, scale, origin);
+
         // Which way the outline is wound, so "left of the edge" and "inside the shape" agree. Fonts
         // differ, and a hole is wound the other way on purpose — which is exactly what makes a
-        // point inside it come out negative without anything special being said about holes.
+// point inside it come out negative without anything special being said about holes.
         var winding = Winding(edges);
-        // ⚠ <b>Split by channel and precomputed once, because the inner loop runs a few million
-        // times.</b> Every pixel asks three questions and each one used to walk the whole edge list
 
-        // testing a mask, so two thirds of the work was reaching edges that could not answer — and
+        // ⚠ <b>Split by channel and precomputed once, because the inner loop runs a few million
+
+        // times.</b> Every pixel asks three questions and each one used to walk the whole edge list
+// testing a mask, so two thirds of the work was reaching edges that could not answer — and
         // each surviving edge then recomputed its own direction, its length and the reciprocal of
         // both. None of that depends on the pixel. An icon of a hundred and fifty edges took 35ms to
-        // encode before this and 3ms after, which is the difference between an atlas that pays for
+// encode before this and 3ms after, which is the difference between an atlas that pays for
         // itself on first sight and one that stalls the frame an icon first appears in.
         var red = Prepare(edges, EdgeChannels.Red);
         var green = Prepare(edges, EdgeChannels.Green);
@@ -118,9 +118,11 @@ public static class DistanceField {
                 // what the median was for. The first version did exactly that and reconstructed a
                 // square's corner no better than a plain field.
                 var redDistance = Nearest(red, point, winding);
+
                 var greenDistance = Nearest(green, point, winding);
                 var blueDistance = Nearest(blue, point, winding)
                     ;
+
                 // ⚠ The fill still settles the *overall* answer. A sign taken from an edge's
                 // orientation is wrong wherever two contours overlap, and the rasteriser already had
                 // to be right about that — so where the two disagree, the three channels flip
@@ -228,6 +230,7 @@ public static class DistanceField {
         var best = float.MaxValue;
         var bestSquared
             = float.MaxValue;
+
         // ⚠ Larger is worse, so <c>MaxValue</c> is "nothing has answered yet" for this as well —
         // and a first edge that is exactly alongside its point still beats it.
         var bestAlongside = float.MaxValue;
@@ -240,10 +243,10 @@ public static class DistanceField {
                      edge in edges) {
             // ⚠ <b>An exact rejection, not an approximate one.</b> Nothing on a segment can be nearer
             // to a point than the distance to its midpoint less its half length, so an edge whose
-// whole extent lies further away than the best so far cannot improve it and cannot reach
-            // the assignment below — which is what makes skipping it produce the identical field
-            // rather than a cheaper one. On the first edge `best` is <c>MaxValue</c> and the squared
+            // whole extent lies further away than the best so far cannot improve it and cannot reach
+// the assignment below — which is what makes skipping it produce the identical field
 
+            // rather than a cheaper one. On the first edge `best` is <c>MaxValue</c> and the squared
             // reach is infinite, so nothing is skipped before there is an answer to skip against.
             //
             // ⚠ Strictly further, because an edge exactly at the reach is exactly tied — and a tie is
@@ -258,9 +261,9 @@ public static class DistanceField {
             var t = Math.Clamp(Vector2.Dot(point - edge.From, edge.Direction) * edge.InverseLengthSquared, 0f, 1f);
             // ⚠ The far endpoint is the stored one rather than <c>From + Direction</c>, so that two
             // edges clamping to one shared vertex clamp to the <i>same</i> vertex. Reconstructing it
-// by addition loses the last bit, which is enough to turn an exact tie into a near one —
+            // by addition loses the last bit, which is enough to turn an exact tie into a near one —
             // and the whole of the rule below is about what happens at that tie. The near end needs
-            // no such care: <c>t</c> is nought there and the addition is exact.
+// no such care: <c>t</c> is nought there and the addition is exact.
             var closest = t >= 1f ? edge.To : edge.From + (t * edge.Direction);
             var offset = point - closest;
             var
@@ -275,11 +278,11 @@ public static class DistanceField {
             // How far the point lies <i>along</i> this edge past the nearest point on it: nought
             // whenever the segment itself is what is nearest, and growing as the point goes round the
             // corner. Kept un-normalised — the only moment it is compared is a tie, where the two
-// distances are equal by definition and dividing both by the same number decides nothing.
+            // distances are equal by definition and dividing both by the same number decides nothing.
             // ⚠ Worth a sentence, because normalising it took a square root and a divide onto a path
-            // that runs a few million times and cost 28% of the encode where the whole rule costs 11.
+// that runs a few million times and cost 28% of the encode where the whole rule costs 11.
             // Reconstructing the far endpoint arithmetically to lose the branch above was measured
-// too, and is 6% <i>slower</i> than the load it replaces — the branch predicts.
+            // too, and is 6% <i>slower</i> than the load it replaces — the branch predicts.
             var alongside
                 = t > 0f && t < 1f
                     ? 0f
@@ -306,6 +309,7 @@ public static class DistanceField {
     /// <summary>The edges carrying one channel, with everything pixel-independent worked out.</summary>
     static Prepared[] Prepare(List<ColouredEdge> edges, EdgeChannels channel) {
         var prepared = new List<Prepared>(edges.Count);
+
         foreach (var edge in edges) {
             if ((edge.Channels & channel) == 0) {
                 continue;
@@ -314,6 +318,7 @@ public static class DistanceField {
             var direction =
                 edge.To - edge.From;
             var lengthSquared = direction.LengthSquared();
+
             // A zero-length edge has no direction to measure against, and dropping it here is what
             // the per-pixel loop used to do on every pixel.
             if (lengthSquared <= 0f) {
@@ -322,7 +327,6 @@ public static class DistanceField {
 
             var length = MathF
                 .Sqrt(lengthSquared);
-
             prepared.Add(
                 new Prepared(
                     edge.From,

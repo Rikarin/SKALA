@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -62,11 +62,10 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
         WebGpuAdapterInfo info
     ) {
         Limits = limits;
-        this.features = features;
 
+        this.features = features;
         AdapterInfo = info;
         HasSurface = WebGpuInterop.HasSurface();
-
         PreferredSurfaceFormat =
             HasSurface
                 ? (
@@ -87,7 +86,6 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
     }
 
     /// <inheritdoc />
-
     public WgpuTextureFormat PreferredSurfaceFormat { get; }
 
     /// <inheritdoc />
@@ -108,6 +106,7 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
             options
     ) {
         await WebGpuInterop.ImportAsync(options.ModuleUrl).ConfigureAwait(false);
+
         if (!WebGpuInterop.IsSupported()) {
             throw new PlatformNotSupportedException(
                 "This browser has no navigator.gpu. WebGPU is unavailable — take the WebGL2 path, "
@@ -122,14 +121,15 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
                 PreferenceName(options.PowerPreference)
             )
             .ConfigureAwait(false);
+
         if (!string.IsNullOrEmpty(failure)) {
             throw new PlatformNotSupportedException($"WebGPU could not start: {failure}");
         }
 
         return new(ReadLimits(), ReadFeatures(), new(WebGpuInterop.AdapterName(), WgpuAdapterType.Unknown, "browser"));
     }
-
     // ── Resources ───────────────────────────────────────────────────────────────────────────
+
     /// <inheritdoc />
     public WebGpuObject CreateBuffer(in WgpuBufferDescriptor descriptor) =>
         Wrap(WebGpuInterop.CreateBuffer(descriptor.Size, (int)descriptor.Usage, descriptor.Label));
@@ -249,7 +249,6 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
         in WgpuPipelineLayoutDescriptor descriptor
     ) {
         packer.Reset().Int(descriptor.BindGroupLayouts.Length);
-
         foreach (var group in descriptor.BindGroupLayouts) {
             packer.Object(group);
         }
@@ -264,7 +263,6 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
     /// </remarks>
     public WebGpuObject CreateBindGroup(in WgpuBindGroupDescriptor descriptor) {
         packer.Reset().Int(descriptor.Entries.Length);
-
         foreach (var entry in descriptor.Entries) {
             packer.Int((int)entry.Binding)
                 .Object(entry.Buffer)
@@ -324,8 +322,8 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
             .Bool(descriptor.DepthStencil is not null);
         foreach (var buffer in descriptor.VertexBuffers) {
             var attributes = buffer.Attributes ?? [];
-            packer.Long(buffer.ArrayStride).Enum((uint)buffer.StepMode).Int(attributes.Length);
 
+            packer.Long(buffer.ArrayStride).Enum((uint)buffer.StepMode).Int(attributes.Length);
             foreach (var
                          attribute in attributes) {
                 packer.Enum((uint)attribute.Format).Int((int)attribute.ShaderLocation).Long(attribute.Offset)
@@ -355,6 +353,7 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
                 .Int((int)depth.StencilReadMask)
                 .Int((int)depth.StencilWriteMask)
                 .Int(depth.DepthBias);
+
             Face(depth.Front);
             Face(depth.Back);
             packer
@@ -401,8 +400,8 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
             WebGpuInterop.Release((int)handle.Value);
         }
     }
-    // ── Queue ───────────────────────────────────────────────────────────────────────────────
 
+    // ── Queue ───────────────────────────────────────────────────────────────────────────────
     /// <inheritdoc />
     public void WriteBuffer(
         WebGpuObject buffer,
@@ -444,8 +443,8 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
     /// <remarks>A browser has an event loop of its own and nothing to pump.</remarks>
     public void
         Tick() { }
-    // ── Encoding ────────────────────────────────────────────────────────────────────────────
 
+    // ── Encoding ────────────────────────────────────────────────────────────────────────────
     /// <inheritdoc />
     public WebGpuObject CreateCommandEncoder(string label) => Wrap(WebGpuInterop.CreateCommandEncoder(label));
 
@@ -485,7 +484,6 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
         Linear(source);
         Region(destination);
         Extent(width, height, depthOrLayers);
-
         WebGpuInterop.CopyTexture((int)encoder.Value, 0, packer.Written);
     }
 
@@ -502,7 +500,6 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
         Region(source);
         Linear(destination);
         Extent(width, height, depthOrLayers);
-
         WebGpuInterop.CopyTexture((int)encoder.Value, 1, packer.Written);
     }
 
@@ -516,11 +513,10 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
         int depthOrLayers
     ) {
         packer.Reset();
+
         Region(source);
         Region(destination);
-
         Extent(width, height, depthOrLayers);
-
         WebGpuInterop.CopyTexture(
             (int)encoder.Value,
             2,
@@ -557,7 +553,6 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
         );
 
     // ── Render passes ───────────────────────────────────────────────────────────────────────
-
     /// <inheritdoc />
     /// <remarks>
     ///     Layout: a colour attachment count and a depth flag, then per colour attachment view,
@@ -570,7 +565,6 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
         packer.Reset().Int(descriptor.ColourAttachmentCount).Bool(descriptor.DepthStencil is not null);
         for (var index = 0; index < descriptor.ColourAttachmentCount; index++) {
             var attachment = descriptor.ColourAttachments[index];
-
             packer
                 .Object(attachment.View)
                 .Object(attachment.ResolveTarget)
@@ -845,6 +839,8 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
 
     void SetBindGroup(WebGpuObject pass, uint group, WebGpuObject bindGroup, ReadOnlySpan<uint> dynamicOffsets) {
         packer.Reset();
+
+
         foreach (var offset in dynamicOffsets) {
             packer.Int(unchecked((int)offset));
         }
@@ -933,16 +929,15 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
         return value > int.MaxValue ? int.MaxValue : (int)value;
     }
 
-    static HashSet
-        <WgpuFeatureName> ReadFeatures() {
+    static
+        HashSet<WgpuFeatureName> ReadFeatures() {
         var found = new HashSet<WgpuFeatureName>();
 
-        foreach (var name
-                 in WebGpuInterop.ReadFeatures()) {
-            if
-                (Named(name) is { } feature) {
-                found
-                    .Add(feature);
+        foreach (var
+                     name in WebGpuInterop.ReadFeatures()) {
+            if (Named(name) is { } feature
+               ) {
+                found.Add(feature);
             }
         }
 
@@ -955,22 +950,22 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
     ///     meet here. Only the ones <see cref="WebGpuCapabilities.Wanted" /> asks for are listed:
     ///     anything else the browser offers is something nothing above reads.
     /// </remarks>
-    static WgpuFeatureName
-        ? Named(string name) =>
+    static
+        WgpuFeatureName? Named(string name) =>
         name switch {
             "depth-clip-control" => WgpuFeatureName.DepthClipControl,
             "depth32float-stencil8" => WgpuFeatureName.Depth32FloatStencil8,
             "timestamp-query" => WgpuFeatureName.TimestampQuery,
             "texture-compression-bc" => WgpuFeatureName.TextureCompressionBc,
             "texture-compression-etc2" => WgpuFeatureName.TextureCompressionEtc2,
-            "texture-compression-astc"
-                => WgpuFeatureName.TextureCompressionAstc,
+            "texture-compression-astc" => WgpuFeatureName.TextureCompressionAstc,
             "indirect-first-instance" => WgpuFeatureName.IndirectFirstInstance,
             "shader-f16" => WgpuFeatureName.ShaderF16,
             "rg11b10ufloat-renderable" => WgpuFeatureName.Rg11B10UfloatRenderable,
-            "bgra8unorm-storage" => WgpuFeatureName.Bgra8UnormStorage,
 
+            "bgra8unorm-storage" => WgpuFeatureName.Bgra8UnormStorage,
             "float32-filterable" => WgpuFeatureName.Float32Filterable,
+
             _ => null
         };
 }

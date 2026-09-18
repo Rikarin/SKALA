@@ -30,6 +30,18 @@ public sealed record PropertyViolation(string Property, bool Defined, string Det
 public sealed record FormatSaboteur(string Name, string Target, Func<FormatResult, int, FormatResult> Corrupt);
 
 /// <summary>
+///     One gap <see cref="SpaceRules.Preserves" /> answers, in token order, with the author's bit.
+/// </summary>
+/// <param name="Span">The gap between the two tokens.</param>
+/// <param name="Line">Its one-based line, for the report.</param>
+/// <param name="Spaced">
+///     Whether the author wrote any horizontal space — the one bit the formatter carries — or
+///     <c>null</c> when the gap is not a plain run of spaces and tabs (it holds a line break or a
+///     comment) and so has no bit to preserve.
+/// </param>
+public readonly record struct UngovernedGap(TextSpan Span, int Line, bool? Spaced);
+
+/// <summary>
 ///     The seven properties of docs/plan/12 § "Properties", asserted over an arbitrary string.
 /// </summary>
 /// <remarks>
@@ -61,6 +73,26 @@ public static class FuzzProperties {
     public const string Determinism = "determinism";
     public const string RangeConsistency = "range-consistency";
     public const string Absorption = "whitespace-absorption";
+
+    /// <summary>
+    ///     The property <see cref="Absorption" />'s exclusion stands on. For every gap
+    ///     <see cref="SpaceRules.Preserves" /> answers — the range operator's, the spread's, the one between
+    ///     a recursive pattern's type and its positional clause — the formatter writes the author's bit
+    ///     back, one space if any horizontal space was written and none otherwise, in <em>both</em>
+    ///     spellings of the input, and is idempotent over each.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Stated rather than left as a hole. The whitespace mutations skip these gaps because the
+    ///     oracle keeps what the author wrote in them (#373; docs/plan/12 § "Where the properties are
+    ///     not what this document said"), and a skip on its own would let a formatter that absorbed them
+    ///     — the old <c>BeforeOpenParen</c> arm did, in one direction — pass every property. So the case
+    ///     is formatted as written and again with every such gap flipped, and each output is read back
+    ///     gap by gap. The oracle's literal answers for both spellings are pinned by
+    ///     <c>constructs/syntax/positional-pattern-after-its-type</c>; this is the same claim over every
+    ///     input the fuzzer builds.
+    /// </remarks>
+    public const string UngovernedGaps = "ungoverned-gap-preservation";
+
     public const string ArrangementIdempotency = "arrangement-idempotency";
     public const string ArrangementConvergence = "arrangement-convergence";
 
@@ -77,6 +109,7 @@ public static class FuzzProperties {
         Determinism,
         RangeConsistency,
         Absorption,
+        UngovernedGaps,
         ArrangementIdempotency,
         ArrangementConvergence,
         Crash
@@ -124,6 +157,11 @@ public static class FuzzProperties {
                     + result.Original.ToString().Count(static c => c == ' ').ToString(CultureInfo.InvariantCulture)
                     + "\n"
             }
+        ),
+        new FormatSaboteur(
+            "gap-closer",
+            UngovernedGaps,
+            static (result, _) => result with { Formatted = CloseUngovernedGaps(result.Formatted) }
         ),
         new FormatSaboteur(
             "edit-merge",
@@ -266,10 +304,13 @@ public static class FuzzProperties {
             );
         }
 
-        // 1. Idempotency.
+        // 1. Idempotency. Its verdict is kept for 6b, which asserts idempotency of a second spelling
+        //    and must not re-report a defect this check already owns.
+        var idempotent = true;
         try {
             var second = Run(SourceText.From(first.Formatted));
             if (!second.Edits.IsEmpty) {
+                idempotent = false;
                 violations.Add(
                     new PropertyViolation(
                         Idempotency,
@@ -279,11 +320,13 @@ public static class FuzzProperties {
                     )
                 );
             } else if (!string.Equals(second.Formatted, first.Formatted, StringComparison.Ordinal)) {
+                idempotent = false;
                 violations.Add(
                     new PropertyViolation(Idempotency, defined, FirstDifference(first.Formatted, second.Formatted))
                 );
             }
         } catch (Exception exception) when (exception is not OperationCanceledException) {
+            idempotent = false;
             violations.Add(
                 new PropertyViolation(
                     Crash,
@@ -428,6 +471,13 @@ public static class FuzzProperties {
             violations.Add(new PropertyViolation(Absorption, defined, FirstDifference(baseline, first.Formatted)));
         }
 
+        // 6b. Ungoverned gaps — the property the absorption check's exclusion stands on. The gaps
+        //     `SpaceRules.Preserves` answers are the gaps the whitespace mutations may not touch, so
+        //     the formatter's behaviour over them is asserted here instead: the author's bit comes
+        //     back in the output, in the spelling the case has and in the flipped one, and the
+        //     flipped spelling is idempotent.
+        CheckUngovernedGaps(violations, first, Run, symbols, defined, idempotent);
+
         if (!arrangement) {
             return;
         }
@@ -475,6 +525,235 @@ public static class FuzzProperties {
                 )
             );
         }
+    }
+
+    static void CheckUngovernedGaps(
+        ImmutableArray<PropertyViolation>.Builder violations,
+        FormatResult first,
+        Func<SourceText, FormatResult> run,
+        IReadOnlyList<string> symbols,
+        bool defined,
+        bool idempotent
+    ) {
+        if (first.Outcome is not FormatOutcome.Formatted) {
+            return;
+        }
+
+        var source = first.Original.ToString();
+        var gaps = UngovernedGapsOf(source, symbols);
+        if (gaps.IsEmpty) {
+            return;
+        }
+
+        if (ReadBack(source, gaps, first.Formatted, symbols) is { } asWritten) {
+            violations.Add(new PropertyViolation(UngovernedGaps, defined, "as written, " + asWritten));
+        }
+
+        // ⚠ Every flippable gap at once, not one format per gap: a corpus file can hold dozens of
+        // ranges, and the claim is per gap either way because the output is read back gap by gap.
+        var flipped = FlipUngovernedGaps(source, gaps);
+        if (flipped is null) {
+            return;
+        }
+
+        // ⚠ `Preserves` is false wherever `MustSeparate` is true, so closing a preserved gap cannot
+        // re-lex the file. If it ever did, the closed spelling would not be an input that exists and
+        // there would be nothing to assert; token equivalence on the case itself is where a
+        // `MustSeparate` hole is reported.
+        if (Rikarin.Skala.Formatting.CSharp.TokenEquivalence.Compare(
+                first.Original,
+                SourceText.From(flipped),
+                CSharpFormatter.ParseOptionsFor(symbols)
+            ) is not null) {
+            return;
+        }
+
+        FormatResult second;
+        try {
+            second = run(SourceText.From(flipped));
+        } catch (Exception exception) when (exception is not OperationCanceledException) {
+            violations.Add(
+                new PropertyViolation(
+                    Crash,
+                    defined,
+                    "on the flipped spelling of its ungoverned gaps: "
+                    + exception.GetType().Name
+                    + ": "
+                    + exception.Message
+                )
+            );
+
+            return;
+        }
+
+        if (second.Outcome is not FormatOutcome.Formatted) {
+            violations.Add(
+                new PropertyViolation(
+                    UngovernedGaps,
+                    defined,
+                    "the flipped spelling of its ungoverned gaps came back " + second.Outcome
+                )
+            );
+
+            return;
+        }
+
+        if (ReadBack(flipped, UngovernedGapsOf(flipped, symbols), second.Formatted, symbols) is { } asFlipped) {
+            violations.Add(new PropertyViolation(UngovernedGaps, defined, "flipped, " + asFlipped));
+        }
+
+        // ⚠ Only when the spelling the case has is itself a fixed point. A file that is not idempotent
+        // as written is not idempotent flipped either, for the same reason, and `idempotency` has
+        // already reported it — seed 5209185227727739433 (#375) said so twice under two names until
+        // this guard. A red here therefore always means the flip is what broke it.
+        if (!idempotent) {
+            return;
+        }
+
+        var third = run(SourceText.From(second.Formatted));
+        if (!third.Edits.IsEmpty || !string.Equals(third.Formatted, second.Formatted, StringComparison.Ordinal)) {
+            violations.Add(
+                new PropertyViolation(
+                    UngovernedGaps,
+                    defined,
+                    "the flipped spelling is not idempotent: " + FirstDifference(second.Formatted, third.Formatted)
+                )
+            );
+        }
+    }
+
+    /// <summary>
+    ///     The gaps <see cref="SpaceRules.Preserves" /> answers in <paramref name="source" />, in token
+    ///     order, each with the bit the author wrote.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Asked of <c>SpaceRules</c> and not of a list kept here, for the reason
+    ///     <see cref="FuzzMutations.SourceMap.AbsorbableGaps" /> records: a list drifts the day the
+    ///     formatter learns a new ungoverned gap, and this property has to describe that gap from that
+    ///     day. Zero-width tokens are skipped as <see cref="FuzzMutations.SourceMap" /> skips them; the
+    ///     end-of-file token has no gap in front of it worth a bit.
+    /// </remarks>
+    public static ImmutableArray<UngovernedGap> UngovernedGapsOf(string source, IReadOnlyList<string> symbols) {
+        var text = SourceText.From(source);
+        var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptionsFor(symbols));
+        var gaps = ImmutableArray.CreateBuilder<UngovernedGap>();
+        SyntaxToken previous = default;
+        foreach (var token in tree.GetRoot().DescendantTokens(descendIntoTrivia: false)) {
+            if (token.Span.Length == 0) {
+                continue;
+            }
+
+            if (previous.RawKind != 0 && SpaceRules.Preserves(previous, token)) {
+                var span = TextSpan.FromBounds(previous.Span.End, token.SpanStart);
+                var between = source.AsSpan(span.Start, span.Length);
+                bool? spaced = null;
+                if (IsHorizontal(between)) {
+                    spaced = between.Length > 0;
+                }
+
+                gaps.Add(new UngovernedGap(span, text.Lines.GetLineFromPosition(span.Start).LineNumber + 1, spaced));
+            }
+
+            previous = token;
+        }
+
+        return gaps.ToImmutable();
+    }
+
+    /// <summary>
+    ///     <paramref name="source" /> with every gap that carries a bit flipped — the space taken out
+    ///     of a spaced gap, one space put into a closed one — or <c>null</c> if no gap carries a bit.
+    /// </summary>
+    public static string? FlipUngovernedGaps(string source, ImmutableArray<UngovernedGap> gaps) {
+        var flippable = gaps.Where(static gap => gap.Spaced is not null).ToList();
+        if (flippable.Count == 0) {
+            return null;
+        }
+
+        var builder = new System.Text.StringBuilder(source.Length + flippable.Count);
+        var position = 0;
+        foreach (var gap in flippable) {
+            builder.Append(source, position, gap.Span.Start - position);
+            builder.Append(gap.Spaced is true ? "" : " ");
+            position = gap.Span.End;
+        }
+
+        builder.Append(source, position, source.Length - position);
+        return builder.ToString();
+    }
+
+    /// <summary>
+    ///     The first ungoverned gap whose bit the output does not carry, described, or <c>null</c>
+    ///     when every bit came back.
+    /// </summary>
+    /// <remarks>
+    ///     Gap <c>i</c> of the input is gap <c>i</c> of the output because the token streams are the
+    ///     same — that is <see cref="TokenEquivalence" />'s claim, and when the counts differ it is that
+    ///     property's violation, not this one's, so the comparison stands down. A gap the output broke
+    ///     across a line, or the input wrote with a comment in it, has no bit and is skipped on that side.
+    /// </remarks>
+    static string? ReadBack(
+        string input,
+        ImmutableArray<UngovernedGap> inputGaps,
+        string output,
+        IReadOnlyList<string> symbols
+    ) {
+        var outputGaps = UngovernedGapsOf(output, symbols);
+        if (outputGaps.Length != inputGaps.Length) {
+            return null;
+        }
+
+        for (var i = 0; i < inputGaps.Length; i++) {
+            if (inputGaps[i].Spaced is not { } wrote || outputGaps[i].Spaced is not { } got || wrote == got) {
+                continue;
+            }
+
+            return $"ungoverned gap {(i + 1).ToString(CultureInfo.InvariantCulture)} of "
+                + $"{inputGaps.Length.ToString(CultureInfo.InvariantCulture)}, "
+                + $"line {inputGaps[i].Line.ToString(CultureInfo.InvariantCulture)}: the author wrote "
+                + Quote(LineOf(input, inputGaps[i].Span.Start))
+                + " and the formatter wrote "
+                + Quote(LineOf(output, outputGaps[i].Span.Start));
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     The <c>gap-closer</c> saboteur: a rule that answers every ungoverned gap with "closed", which is
+    ///     the shape of the defect #373 removed — <c>BeforeOpenParen</c> answered the pattern gap with a
+    ///     space in every position, whatever the author wrote.
+    /// </summary>
+    static string CloseUngovernedGaps(string formatted) {
+        var gaps = UngovernedGapsOf(formatted, []);
+        var closed = new System.Text.StringBuilder(formatted.Length);
+        var position = 0;
+        foreach (var gap in gaps) {
+            if (gap.Spaced is not true) {
+                continue;
+            }
+
+            closed.Append(formatted, position, gap.Span.Start - position);
+            position = gap.Span.End;
+        }
+
+        closed.Append(formatted, position, formatted.Length - position);
+        return closed.ToString();
+    }
+
+    static bool IsHorizontal(ReadOnlySpan<char> text) {
+        foreach (var character in text) {
+            if (character is not (' ' or '\t')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static string LineOf(string text, int position) {
+        var lines = SourceText.From(text).Lines;
+        return lines[lines.GetLineFromPosition(position).LineNumber].ToString().Trim();
     }
 
     static PipelineResult RunPipeline(

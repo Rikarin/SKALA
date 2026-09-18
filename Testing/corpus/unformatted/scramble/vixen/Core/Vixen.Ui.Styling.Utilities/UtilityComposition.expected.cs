@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -71,7 +71,6 @@ public static class UtilityComposition {
     ///     and a prefixed one is half of a declaration something reads.
     /// </remarks>
     public const string Prefix = "--tw-";
-
     // ── The gradient stops ──────────────────────────────────────────────────────────────────
     //
     // Named as constants because a fragment is referred to in two places that must agree — the family
@@ -149,8 +148,6 @@ public static class UtilityComposition {
 
     /// <summary>Where a conic mask's sweep starts.</summary>
     public const string MaskConicAngle = Prefix + "mask-conic-angle";
-
-
     // ── The mask layers ─────────────────────────────────────────────────────────────────────
     //
     // ⚠ <b>A `mask-image` is a list, and these are the slots the utilities fill it from.</b> Every
@@ -165,6 +162,7 @@ public static class UtilityComposition {
     // instead would make the whole declaration invalid; defaulting them to a *transparent* gradient
     // would erase the element. `DrawListBuilder.Reduce` is what stops the untouched slots costing
     // anything, and it drops them precisely because they are opaque and intersected.
+
     /// <summary>The <c>mask-image</c> layer a linear mask, or a set of edge ramps, fills.</summary>
     public const string MaskLinear = Prefix
         + "mask-linear";
@@ -215,12 +213,11 @@ public static class UtilityComposition {
     //
     // ⚠ Two fragments and *one* property, which is the difference between this pair and the gradient
     // stops above. `translate` takes both axes in one declaration, so `translate-x-2 translate-y-4`
-    // is two classes that must end up as `translate: 8px 16px` — and a utility system emitting one
 
+    // is two classes that must end up as `translate: 8px 16px` — and a utility system emitting one
     // declaration per class cannot express that at all: whichever rule the cascade picked last would
     // win outright and the other axis would silently be zero. That is the case the mechanism exists
     // for, stated in `docs/plan/43-web-styling-parity.md` § A7 and in Tailwind v4's own output.
-
     /// <summary>How far along x a transform moves the box.</summary>
     public const string TranslateX =
         Prefix + "translate-x";
@@ -244,15 +241,15 @@ public static class UtilityComposition {
     public const string ScaleY = Prefix
         + "scale-y";
     // ── The ring ────────────────────────────────────────────────────────────────────────────
-    //
 
-// ⚠ <b>A ring is a <c>box-shadow</c>, not an outline, and Vixen emitted <c>outline-color</c> for
-    // it — a property <i>no</i> version of Tailwind has ever emitted for this family.</b> Worth being
+    //
+    // ⚠ <b>A ring is a <c>box-shadow</c>, not an outline, and Vixen emitted <c>outline-color</c> for
+// it — a property <i>no</i> version of Tailwind has ever emitted for this family.</b> Worth being
     // exact about, because `docs/plan/43-web-styling-parity.md` § D5 records it as "v3's reading" and
-// that is not right either: v3's `ring-blue-500` set `--tw-ring-color` and v3's ring was already a
-    // box-shadow — the shadow is what v3 *introduced* the family for. `outline-color` was this
-// engine's own invention, so `ring-*` was the same failure as `grid-cols-3` and `--scale`: an
-    // emission no engine anywhere could consume, sitting under an `InertProperties.txt` line that
+    // that is not right either: v3's `ring-blue-500` set `--tw-ring-color` and v3's ring was already a
+// box-shadow — the shadow is what v3 *introduced* the family for. `outline-color` was this
+    // engine's own invention, so `ring-*` was the same failure as `grid-cols-3` and `--scale`: an
+// emission no engine anywhere could consume, sitting under an `InertProperties.txt` line that
     // correctly said "nothing reads this" and was therefore never going to be the thing that told
     // anybody. A reader for `outline-color` would have closed the debt and changed nothing.
     //
@@ -286,8 +283,8 @@ public static class UtilityComposition {
     // ── The filter ──────────────────────────────────────────────────────────────────────────
 //
     // ⚠ <b>One fragment and one property, which looks like it did not need the mechanism at all —
-    // and the reason it does is <i>the next</i> filter function rather than this one.</b> CSS's
 
+    // and the reason it does is <i>the next</i> filter function rather than this one.</b> CSS's
     // `filter` is an ordered list, so `blur-2 brightness-50` has to come out as one declaration
     // holding both functions in the right order; two families each emitting a whole `filter` would
     // let the cascade pick one and drop the other, silently, which is exactly the failure
@@ -299,7 +296,9 @@ public static class UtilityComposition {
     // where no engine would ever look for it. `InertProperties.txt` recorded the debt against #28 and
     // could not say *that*, because a property nothing emits and a property nothing reads are
     // indistinguishable from the gate's side. The same shape as `--scale`, `--rotate` and
+
     // `grid-cols-3`, and closed the same way the translation was: give it a prefix and an assembler.
+
     /// <summary>How far a <c>filter: blur()</c> spreads, as a Gaussian standard deviation.</summary>
     /// <remarks>
     ///     ⚠ <b><c>0px</c> and not <c>0</c>, for the reason <see cref="TranslateX" />'s initial gives
@@ -310,8 +309,8 @@ public static class UtilityComposition {
     /// </remarks>
     public const string Blur = Prefix + "blur";
     // ── The seven colour functions ──────────────────────────────────────────────────────────
-    //
 
+    //
     // ⚠ <b>Seven fragments and one property, and this is the case the paragraph above `Blur` said
     // was coming.</b> `filter` is an ordered list, so `grayscale blur-2 brightness-125` has to come
     // out as one declaration holding three functions in a fixed order — and eight families each
@@ -325,6 +324,7 @@ public static class UtilityComposition {
     // `class="brightness-200 invert"` are the same element — cannot express both. v4 fixes the order
 // in its assembler and so does this. Someone who needs the other order writes the `filter`
     // declaration by hand, which is what the arbitrary-property syntax is for.
+
     /// <summary>How much a <c>filter: brightness()</c> scales the colour. One is unchanged.</summary>
     public const string Brightness = Prefix
         + "brightness";
@@ -420,6 +420,7 @@ public static class UtilityComposition {
         [GradientFromPosition] = "0%",
         [GradientViaPosition] = "50%",
         [GradientToPosition] = "100%",
+
         // See the mask fragments' own remark for why the near end is opaque where the gradient's is
         // not: a mask that defaulted to `transparent` at both ends would erase whatever set it.
         [MaskFrom] = "black",
@@ -430,15 +431,14 @@ public static class UtilityComposition {
         [MaskConicAngle] = "0deg",
         // See the mask layers' own remark: an opaque layer is the identity under `intersect`, which
         // is the operator every mask utility emits, so a slot nobody filled costs nothing and says
-        // nothing. The four edges are added below, in the static constructor, because there are
 
+        // nothing. The four edges are added below, in the static constructor, because there are
         // twenty of them and a loop is one place to get it wrong instead of twenty.
         [MaskLinear]
             = MaskOpaque,
         [MaskRadial] = MaskOpaque,
         [
             MaskConic] = MaskOpaque,
-
         // ⚠ <b><c>0px</c> rather than <c>0</c>, and the unit is <i>not</i> doing the work it looks
         // like it is doing — measured, because the plausible reason is wrong.</b> The obvious story is
         // that <see cref="Vixen.Ui.Styling.StyleValue.CanInterpolate" /> compares units, so a
@@ -448,11 +448,12 @@ public static class UtilityComposition {
         // every unit" rule, because `from { width: 0 } to { width: 100px }` is the commonest animation
         // there is. Both spellings interpolate, identically, and it was checked rather than reasoned
         // about. So the unit is only legibility — a generated sheet that reads `translate: 8px 0px`
-        // says what it is; `8px 0` reads like a mistake — and the next person to wonder whether it is
 
+        // says what it is; `8px 0` reads like a mistake — and the next person to wonder whether it is
         // load-bearing has the answer here instead of the argument.
         [TranslateX] = "0px",
         [TranslateY] = "0px",
+
         // ⚠ <b>One, and this is the pair where the identity is not zero — which is the whole reason
         // these are separate fragments rather than a second use of the translations'.</b> A missing
         // translation is no movement, which is zero; a missing scale is no growth, which is one. A
@@ -466,6 +467,7 @@ public static class UtilityComposition {
         // and a number are both legal here and the bare one cannot be misread as a length.
         [ScaleX] = "1",
         [ScaleY] = "1",
+
         // ⚠ <b>Zero, so that a colour on its own paints nothing — which is what v4 does too.</b>
         // `ring-accent` with no width emits only `--tw-ring-color` in Tailwind and therefore no
         // shadow at all; here it emits the assembly with a zero spread, and `EmitShadow` produces a
@@ -476,12 +478,13 @@ public static class UtilityComposition {
         [RingColor] = "currentcolor",
         [
             Blur] = "0px",
+
         // ⚠ <b>Each initial is the identity of <i>its own</i> function, which is one for four of
         // them and zero for three, and getting one of the seven the wrong way round is a filter
         // nobody wrote being applied to every element that wrote any of the others.</b> That is the
         // failure mode this table exists to make impossible and the reason the values are here
         // rather than inside `Filter()`: `brightness(0)` is black and `grayscale(1)` is grey, so a
-        // `grayscale` on its own would turn the box black, and a `brightness-125` on its own would
+// `grayscale` on its own would turn the box black, and a `brightness-125` on its own would
         // turn it grey, and both would look like the other family being broken.
         [Brightness] = "1",
         [Contrast] =
@@ -492,8 +495,8 @@ public static class UtilityComposition {
             = "0",
         [Saturate] = "1",
         [Sepia] = "0",
-        // ⚠ <b>A <i>transparent</i> shadow, because <c>drop-shadow</c> is the one function with no
 
+        // ⚠ <b>A <i>transparent</i> shadow, because <c>drop-shadow</c> is the one function with no
         // length that means "unchanged".</b> Every other initial above is a number the function maps
         // to itself; the nearest thing here would be a zero offset and a zero blur, which is the
         // element painted a second time exactly under itself and is very much not the identity. A
@@ -503,26 +506,27 @@ public static class UtilityComposition {
         // ⚠ Two lengths and not three. `drop-shadow(0 0 transparent)` and `drop-shadow(0 0 0
         // transparent)` are the same shadow, and the grammar takes two lengths as readily as three —
         // so the shorter one is written, because a third zero reads like a blur somebody meant to
-        // fill in.
 
+// fill in.
         [DropShadow] = "0 0 transparent",
+
         // ⚠ <c>0deg</c> and not <c>0</c>, and here the unit is load-bearing rather than legibility.
-
         // <c>hue-rotate()</c> takes an <c>&lt;angle&gt;</c>, and `StyleValueParser` refuses a bare
-        // number for it — see `ParseFunction`, which will not guess degrees. A plain zero would make
 
+        // number for it — see `ParseFunction`, which will not guess degrees. A plain zero would make
         // the whole assembled declaration invalid for every element that set none of the seven,
+
         // which is every element that writes a `blur-*`.
         [HueRotate]
             = "0deg",
+
         // ⚠ <b>The backdrop's nine, and the values are the same identities for the same reason</b> —
-
         // a second table rather than a second use of the first, because they are a second set of
+
         // fragments. See the constants: `filter` and `backdrop-filter` are different properties and
-
         // one element may set both, so `blur-2 backdrop-blur-8` has to be two lengths and not one.
-        // ⚠ <c>opacity</c>'s identity is <b>one</b> and not zero, which is the one place a reader
 
+        // ⚠ <c>opacity</c>'s identity is <b>one</b> and not zero, which is the one place a reader
         // coming from the seven above will guess wrong: `opacity(0)` erases the backdrop entirely,
         // which every element carrying any `backdrop-*` class would then do.
         [BackdropBlur] =
@@ -545,7 +549,7 @@ public static class UtilityComposition {
     static UtilityComposition() {
         // ⚠ Before the snapshot below, which is the whole of why this loop is here rather than beside
         // the table: `Names` is what `IsFragment` and the parity gate read, and twenty fragments
-        // registered after it would be twenty properties the gate calls unexplained.
+// registered after it would be twenty properties the gate calls unexplained.
         foreach (var edge in MaskEdges) {
             Initials[MaskEdge(edge)] = MaskOpaque;
             Initials[MaskEdgeFrom(edge)] = "black";
@@ -574,8 +578,10 @@ public static class UtilityComposition {
     ///     verdict is its assembler's, and a property that only <i>looks</i> like a fragment would
     ///     inherit an explanation it has not earned.
     /// </remarks>
-    public static bool IsFragment(string property) {
-        ArgumentNullException.ThrowIfNull(property);
+    public static bool
+        IsFragment(string property) {
+        ArgumentNullException
+            .ThrowIfNull(property);
         return Initials.ContainsKey(property);
     }
 
@@ -588,8 +594,7 @@ public static class UtilityComposition {
 
         return Initials.TryGetValue(fragment, out var initial)
             ? initial
-            : throw
-                new ArgumentException($"'{fragment}' is not a composition fragment", nameof(fragment));
+            : throw new ArgumentException($"'{fragment}' is not a composition fragment", nameof(fragment));
     }
 
     /// <summary>How an assembler refers to a fragment: a <c>var()</c> carrying its initial value.</summary>
@@ -647,11 +652,10 @@ public static class UtilityComposition {
     ///     A gradient written `to bottom` with the same stops fades the bottom instead, which is a
     ///     perfectly plausible picture and the wrong one.
     /// </remarks>
-    public static string
-        MaskEdgeImage(string edge) {
+    public static
+        string MaskEdgeImage(string edge) {
         var from = $"{Reference(MaskEdgeFrom(edge))} {Reference(MaskEdgeFromPosition(edge))}";
         var to = $"{Reference(MaskEdgeTo(edge))} {Reference(MaskEdgeToPosition(edge))}";
-
         return $"linear-gradient(to {edge}, {from}, {to})";
     }
 
@@ -674,8 +678,8 @@ public static class UtilityComposition {
     ///         correctly all the same.
     ///     </para>
     /// </remarks>
-    public static
-        string MaskImage(string shape, string geometry) {
+    public
+        static string MaskImage(string shape, string geometry) {
         var stops =
             $"{Reference(MaskFrom)} {Reference(MaskFromPosition)}, {Reference(MaskTo)} {Reference(MaskToPosition)}";
 
@@ -693,13 +697,11 @@ public static class UtilityComposition {
     /// </remarks>
     public static string StopList(bool via) {
         var stops = new List<string> { $"{Reference(GradientFrom)} {Reference(GradientFromPosition)}" };
-
         if (via) {
             stops.Add($"{Reference(GradientVia)} {Reference(GradientViaPosition)}");
         }
 
-        stops.Add($"{Reference(GradientTo)} {Reference(GradientToPosition)}")
-            ;
+        stops.Add($"{Reference(GradientTo)} {Reference(GradientToPosition)}");
         return string.Join(", ", stops);
     }
 
@@ -715,8 +717,8 @@ public static class UtilityComposition {
     ///     translate-y-4</c> composes, because the two rules write the same declaration and differ
     ///     only in which fragment they set beside it.
     /// </remarks>
-    public
-        static string Translation() =>
+    public static string
+        Translation() =>
         $"{Reference(TranslateX)} {Reference(TranslateY)}";
 
     /// <summary>The two-axis value a <c>scale</c> declaration takes.</summary>
@@ -757,8 +759,8 @@ public static class UtilityComposition {
     ///         fragment.
     ///     </para>
     /// </remarks>
-    public static
-        string Ring() =>
+    public
+        static string Ring() =>
         $"0 0 0 {Reference(RingWidth)} {Reference(RingColor)}";
 
     /// <summary>The <c>filter</c> declaration the eight filter families assemble into.</summary>
@@ -845,8 +847,8 @@ public static class UtilityComposition {
     ///         <c>UtilityFamilies.BackdropAlongside</c>, which is where the choice is argued.
     ///     </para>
     /// </remarks>
-    public static string BackdropFilter(
-    ) =>
+    public static string BackdropFilter
+        () =>
         $"blur({Reference(BackdropBlur)}) brightness({Reference(BackdropBrightness)}) "
         + $"contrast({Reference(BackdropContrast)}) grayscale({Reference(BackdropGrayscale)}) "
         + $"hue-rotate({Reference(BackdropHueRotate)}) invert({Reference(BackdropInvert)}) "

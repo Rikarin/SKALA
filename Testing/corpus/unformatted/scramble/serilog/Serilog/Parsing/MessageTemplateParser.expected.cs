@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,13 +38,13 @@ public class MessageTemplateParser : IMessageTemplateParser {
     /// <exception cref="ArgumentNullException">When <paramref name="messageTemplate"/> is <code>null</code></exception>
     public MessageTemplate Parse(string messageTemplate) {
         Guard.AgainstNull(messageTemplate);
-
         return new(messageTemplate, Tokenize(messageTemplate));
     }
 
     IEnumerable<MessageTemplateToken> Tokenize(string messageTemplate) {
         if (messageTemplate.Length == 0) {
             yield return EmptyTextToken;
+
             yield break;
         }
 
@@ -60,11 +60,13 @@ public class MessageTemplateParser : IMessageTemplateParser {
             if (nextIndex
                 == messageTemplate.Length)
                 yield break;
+
             var beforeProp
                 = nextIndex;
             var pt = ParsePropertyToken(nextIndex, messageTemplate, out nextIndex);
             if (beforeProp < nextIndex)
                 yield return pt;
+
             if (nextIndex == messageTemplate.Length) yield break;
         }
     }
@@ -81,54 +83,61 @@ public class MessageTemplateParser : IMessageTemplateParser {
             return new TextToken(messageTemplate[first..]);
         }
 
-        next = startAt + 1;
-        var
-            rawText = messageTemplate.Substring(first, next - first);
-        var tagContent = rawText.Substring(1, next - (first + 2));
-        if (tagContent
-                .Length
-            == 0)
-
+        next = startAt + 1
+            ;
+        var rawText = messageTemplate.Substring(first, next - first);
+        var tagContent = rawText.Substring(
+            1,
+            next
+            - (first + 2)
+        );
+        if (
+            tagContent.Length == 0)
             return new TextToken(rawText);
-
         if (!TrySplitTagContent(
                 tagContent,
                 out var propertyNameAndDestructuring,
                 out var format,
-                out
-                var alignment
+                out var alignment
             ))
+
             return new TextToken(rawText);
 
-        var propertyName =
-            propertyNameAndDestructuring;
+        var propertyName
+            = propertyNameAndDestructuring;
         var destructuring = Destructuring.Default;
         if (propertyName.Length != 0 && TryGetDestructuringHint(propertyName[0], out destructuring))
             propertyName = propertyName[1..];
+
         if (propertyName.Length == 0) {
             return new TextToken(rawText);
         }
 
         if (char.IsDigit(
-                propertyName[0
-                ]
+                propertyName
+                    [0]
             )) {
-            for (var i = 0; i < propertyName.Length; ++i) {
-                var c =
-                    propertyName[i];
+            for (var i
+                     = 0;
+                 i < propertyName.Length;
+                 ++i) {
+                var
+                    c = propertyName[i];
                 if (!char.IsDigit(c)) return new TextToken(rawText);
             }
         } else {
             var beginIdent = true;
             for (var i = 0; i < propertyName.Length; ++i) {
                 var c = propertyName[i];
-                if (!TryContinuePropertyName(c, ref beginIdent))
-
-                    return new TextToken(rawText);
+                if (!TryContinuePropertyName(
+                        c,
+                        ref beginIdent
+                    ))
+                    return new TextToken(rawText)
+                        ;
             }
 
-            if (
-                beginIdent) {
+            if (beginIdent) {
                 return new TextToken(rawText);
             }
         }
@@ -140,28 +149,32 @@ public class MessageTemplateParser : IMessageTemplateParser {
             }
         }
 
-        Alignment? alignmentValue = null;
-        if
-            (alignment != null) {
+        Alignment? alignmentValue =
+            null;
+        if (alignment != null) {
             if (alignment[0] == '+') return new TextToken(rawText);
-            if (!int.TryParse(alignment, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var width))
+            if (!int
+                    .TryParse(alignment, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var width))
                 return new TextToken(rawText);
-            var hasDash = alignment[0
-                ]
+            var hasDash = alignment
+                    [0]
                 == '-';
-            var direction = hasDash ? AlignmentDirection.Left : AlignmentDirection.Right
-                ;
+            var direction = hasDash
+                ? AlignmentDirection.Left
+                : AlignmentDirection
+                    .Right;
 
             alignmentValue = new(direction, Math.Abs(width));
         }
 
-        return new PropertyToken(
-            propertyName,
-            rawText,
-            format,
-            alignmentValue,
-            destructuring
-        );
+        return
+            new PropertyToken(
+                propertyName,
+                rawText,
+                format,
+                alignmentValue,
+                destructuring
+            );
     }
 
     static
@@ -174,8 +187,8 @@ public class MessageTemplateParser : IMessageTemplateParser {
         var formatDelim = tagContent.IndexOf(':');
         var alignmentDelim = tagContent.IndexOf(',');
         if (formatDelim == -1 && alignmentDelim == -1) {
-            propertyNameAndDestructuring = tagContent
-                ;
+            propertyNameAndDestructuring
+                = tagContent;
             format = null;
             alignment = null;
             return true;
@@ -183,7 +196,8 @@ public class MessageTemplateParser : IMessageTemplateParser {
 
         if (alignmentDelim == -1 || (formatDelim != -1 && alignmentDelim > formatDelim)) {
             propertyNameAndDestructuring = tagContent[..formatDelim];
-            format = formatDelim == tagContent.Length - 1 ? null : tagContent.Substring(formatDelim + 1);
+            format
+                = formatDelim == tagContent.Length - 1 ? null : tagContent.Substring(formatDelim + 1);
             alignment = null;
             return true;
         }
@@ -205,28 +219,30 @@ public class MessageTemplateParser : IMessageTemplateParser {
             return false;
         }
 
-        alignment = tagContent.Substring(
-            alignmentDelim + 1,
-            formatDelim - alignmentDelim - 1
-        );
-        format = formatDelim == tagContent.Length - 1 ? null : tagContent[(formatDelim + 1)..];
+        alignment = tagContent.Substring(alignmentDelim + 1, formatDelim - alignmentDelim - 1);
+        format
+            = formatDelim == tagContent.Length - 1 ? null : tagContent[(formatDelim + 1)..];
+
         return true;
     }
 
-    static bool TryContinuePropertyName(char c, ref bool beginIdent) {
+    static bool TryContinuePropertyName(
+        char
+            c,
+        ref bool beginIdent
+    ) {
         if (beginIdent) {
-            if (char.IsLetter(c)
-                || c is '_') {
+            if (
+                char.IsLetter(c) || c is '_') {
                 beginIdent = false;
-                return true;
+                return
+                    true;
             }
 
             return false;
         }
 
-        if (char
-                .IsLetterOrDigit(c)
-            || c is '_') {
+        if (char.IsLetterOrDigit(c) || c is '_') {
             return true;
         }
 
@@ -238,24 +254,22 @@ public class MessageTemplateParser : IMessageTemplateParser {
         return false;
     }
 
-    static bool TryGetDestructuringHint(
-        char c,
-        out Destructuring destructuring
-    ) {
+    static
+        bool TryGetDestructuringHint(char c, out Destructuring destructuring) {
         switch (
             c) {
             case '@':
-                destructuring = Destructuring
-                    .Destructure;
-                return true;
-            case
-                '$':
+                destructuring =
+                    Destructuring.Destructure;
+                return true
+                    ;
+            case '$':
                 destructuring = Destructuring.Stringify;
                 return true;
             default:
                 destructuring = Destructuring.Default;
-
-                return false;
+                return false
+                    ;
         }
     }
 
@@ -264,37 +278,37 @@ public class MessageTemplateParser : IMessageTemplateParser {
     ) =>
         c != '}';
 
-    static
-        readonly char[] CurlyBraceChars = ['{', '}'];
+    static readonly char[] CurlyBraceChars = ['{', '}'];
 
     static TextToken ParseTextToken(int startAt, string messageTemplate, out int next) {
         // If we encounter escape sequences like {{ or }}, the result is not a strict substring of the
         // template. But, this requires allocating a StringBuilder, so we try to parse as far as we can first, and
-// only allocate the StringBuilder/fall through to the slow string-building path if we actually need to.
+        // only allocate the StringBuilder/fall through to the slow string-building path if we actually need to.
         // Most of the time we won't hit escapes, so we can get away with just a single Substring() allocation at
         // the end.
         var i = messageTemplate.IndexOfAny(CurlyBraceChars, startAt);
         if (i == -1) { // No more interesting characters in the template, everything left is text.
             next = messageTemplate.Length;
-            return new(messageTemplate[startAt..]);
+            return new(
+                messageTemplate
+                    [startAt..]
+            );
         }
 
         StringBuilder accum;
-        var
-            ch = messageTemplate[i];
+        var ch =
+            messageTemplate[i];
         ++i;
+
         // The character must be either `{` or `}`, since we found its index.
         if (ch == '{') {
-            if (i < messageTemplate.Length
-                && messageTemplate[i
-                ]
-                == '{') {
+            if (i < messageTemplate.Length && messageTemplate[i] == '{') {
                 // Hit an escape sequence; ignore the second (duplicate) `{`, and push the rest onto the
                 // accumulator to start the slow path.
                 accum = new(messageTemplate, startAt, i - startAt, messageTemplate.Length - startAt);
                 ++i;
             } else {
-// Hit the start of a property token. We're done, no StringBuilder was required.
+                // Hit the start of a property token. We're done, no StringBuilder was required.
                 next = i - 1;
                 return next == startAt ? EmptyTextToken : new(messageTemplate.Substring(startAt, i - 1 - startAt));
             }
@@ -309,12 +323,16 @@ public class MessageTemplateParser : IMessageTemplateParser {
 
         // We must have encountered an escaped character sequence: finish the text token, using the
         // accumulator. This is relatively uncommon so we just do it char-by-char.
-        while (i < messageTemplate.Length) {
+        while
+            (i < messageTemplate.Length) {
             ch = messageTemplate[i];
             ++i;
-            if (ch == '{') {
+
+            if (
+                ch == '{') {
                 if (i < messageTemplate.Length && messageTemplate[i] == '{') {
                     accum.Append(ch);
+
                     ++i;
                 } else {
                     next = i - 1;
@@ -322,8 +340,8 @@ public class MessageTemplateParser : IMessageTemplateParser {
                 }
             } else {
                 accum.Append(ch);
-
-                if (ch == '}') {
+                if
+                    (ch == '}') {
                     if (i < messageTemplate.Length && messageTemplate[i] == '}') {
                         ++i;
                     }

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -87,6 +87,7 @@ public sealed class EnvironmentTexture : IDisposable {
         ArgumentNullException
             .ThrowIfNull(graphics);
         ArgumentNullException.ThrowIfNull(prefiltered);
+
         if (prefiltered.Count == 0
            ) {
             throw new ArgumentException(
@@ -98,28 +99,31 @@ public sealed class EnvironmentTexture : IDisposable {
 
         chain
             = [.. prefiltered];
+
         // ⚠ Checked rather than assumed, because the failure is silent: a mip chain whose levels are
         // not successive halves is one the hardware indexes with its own arithmetic, so a rough
         // material reads texels from the wrong place and the picture is merely wrong.
         for (var level = 1;
              level < chain.Length;
-             level
-                 ++) {
-            var expected = Math
-                .Max(1, chain[0].Size >> level);
+             level++) {
+            var expected =
+                Math.Max(1, chain[0].Size >> level);
 
-            if (chain[level].Size != expected) {
+            if (chain[level].Size != expected
+               ) {
                 throw new ArgumentException(
                     $"Level {level} of the chain is {chain[level].Size}² where the level above makes it "
                     + $"{expected}². A mip chain halves, and the hardware assumes so.",
-                    nameof(prefiltered
-                    )
+                    nameof(
+                        prefiltered)
                 );
             }
         }
 
         device = graphics;
-        Format = format;
+        Format = format
+            ;
+
         Create();
     }
 
@@ -138,11 +142,13 @@ public sealed class EnvironmentTexture : IDisposable {
     public static EnvironmentTexture Bake(
         IGraphicsDevice graphics,
         CubeImage source,
-        int mipCount = 5,
-        int samples =
-            64
+        int mipCount =
+            5,
+        int samples
+            = 64
     ) {
-        ArgumentNullException.ThrowIfNull(graphics);
+        ArgumentNullException
+            .ThrowIfNull(graphics);
         ArgumentNullException.ThrowIfNull(source);
         return new(graphics, EnvironmentBaker.Prefilter(source, mipCount, samples));
     }
@@ -160,7 +166,9 @@ public sealed class EnvironmentTexture : IDisposable {
     public int MipCount => chain.Length;
 
     /// <summary>One side of the finest level, in texels.</summary>
-    public int Size => chain[0].Size;
+    public int
+        Size =>
+        chain[0].Size;
 
     /// <summary>The cube.</summary>
     public TextureHandle Texture => texture;
@@ -179,8 +187,8 @@ public sealed class EnvironmentTexture : IDisposable {
     ///     One, for a level whose sky does not change — which is what makes it worth counting. A
     ///     number that climbs every frame is something calling <see cref="Invalidate" /> in a loop.
     /// </remarks>
-    public int
-        Uploads { get; private set; }
+    public
+        int Uploads { get; private set; }
 
     /// <summary>Says the chain's contents changed, so the next upload copies them again.</summary>
     /// <remarks>
@@ -189,7 +197,9 @@ public sealed class EnvironmentTexture : IDisposable {
     ///     array does not have a version, and giving one to <see cref="CubeImage" /> would be a
     ///     version on the wrong type.
     /// </remarks>
-    public void Invalidate() => uploaded = false;
+    public void Invalidate() =>
+        uploaded =
+            false;
 
     /// <summary>Copies the chain up, once, into the cube the constructor allocated.</summary>
     /// <param name="commands">The list to record the copies into.</param>
@@ -203,12 +213,13 @@ public sealed class EnvironmentTexture : IDisposable {
     public bool Upload(ICommandList commands) {
         ArgumentNullException.ThrowIfNull(commands);
         ObjectDisposedException.ThrowIf(disposed, this);
+
         if (uploaded) {
             return false;
         }
-
         // ⚠ Undefined only on the first upload. A cube that was copied into and left in ShaderRead is
         // in ShaderRead, and telling the barrier otherwise discards its contents on a tiler.
+
         Transition(
             commands,
             Uploads == 0 ? ResourceState.Undefined : ResourceState.ShaderRead,
@@ -217,32 +228,34 @@ public sealed class EnvironmentTexture : IDisposable {
         var offset = 0L;
 
         for (var level = 0; level < chain.Length; level++) {
-            var image = chain[level]
+            var image = chain[level
+            ];
+            var faceTexels = image.Size * image.Size
                 ;
-            var faceTexels = image.Size * image.Size;
-            for
-                (var face = 0; face < 6; face++) {
+            for (var
+                 face = 0;
+                 face < 6;
+                 face++) {
                 device.Write(staging, offset, Staged(image.Face((CubeFace)face)));
                 commands.CopyBufferToTexture(
-                    staging,
-                    offset,
-                    new TextureRegion(texture, level, face),
-                    new Int3(
-                        image.Size,
-                        image.Size,
-                        1
+                        staging,
+                        offset,
+                        new TextureRegion(texture, level, face),
+                        new Int3(image.Size, image.Size, 1)
                     )
-                );
+                    ;
 
                 offset += faceTexels * BytesPerTexel;
             }
         }
 
         Transition(commands, ResourceState.CopyDestination, ResourceState.ShaderRead);
+
+
         uploaded = true;
-        Uploads++;
-        return
-            true;
+        Uploads++
+            ;
+        return true;
     }
 
     /// <summary>Points an environment light at this cube.</summary>
@@ -264,26 +277,23 @@ public sealed class EnvironmentTexture : IDisposable {
     ///     </para>
     /// </remarks>
     public void Apply(EnvironmentLight light) {
-        ArgumentNullException.ThrowIfNull(light)
-            ;
-
+        ArgumentNullException.ThrowIfNull(light);
         ObjectDisposedException.ThrowIf(disposed, this);
-        light.Prefiltered = view
-            ;
-        light.Sampler
-            = sampler;
+        light.Prefiltered =
+            view;
+        light.Sampler = sampler;
         light.MipCount = MipCount;
     }
 
     /// <inheritdoc />
     public void Dispose() {
-        if
-            (disposed) {
+        if (disposed) {
             return;
         }
 
-        disposed = true
-            ;
+        disposed =
+            true;
+
         if (view.IsValid) {
             device.Destroy(view);
         }
@@ -296,7 +306,8 @@ public sealed class EnvironmentTexture : IDisposable {
             device.Destroy(staging);
         }
 
-        if (sampler.IsValid) {
+        if (sampler.IsValid
+           ) {
             device.Destroy(sampler);
         }
     }
@@ -307,11 +318,11 @@ public sealed class EnvironmentTexture : IDisposable {
     /// <summary>How many bytes the whole chain occupies, tightly packed.</summary>
     long StagingSize {
         get {
-            var total = 0L
-                ;
+            var total =
+                0L;
 
-            foreach
-                (var level in chain) {
+            foreach (
+                var level in chain) {
                 total += (long)level.Size * level.Size * 6 * BytesPerTexel;
             }
 
@@ -331,31 +342,30 @@ public sealed class EnvironmentTexture : IDisposable {
     /// </remarks>
     ReadOnlySpan<byte> Staged(ReadOnlySpan<Vector3> texels) {
         if (Format == PixelFormat.Rgba32Float) {
-            var wide = new float[texels.Length * 4];
+            var wide = new float[texels.Length * 4]
+                ;
 
             for (var index = 0; index < texels.Length; index++) {
                 wide[(index * 4) + 0] = texels[index].X;
                 wide[(index * 4) + 1] = texels[index].Y;
                 wide[(index * 4) + 2] = texels[index].Z;
-                wide[(index
-                        * 4)
+                wide[(
+                        index * 4)
                     + 3] = 1f;
             }
 
             return MemoryMarshal.AsBytes(wide.AsSpan());
         }
 
-        var narrow = new Half [texels.Length * 4];
-        for (var index = 0;
-             index < texels.Length;
-             index++) {
+        var narrow = new Half[texels.Length * 4];
+
+        for (var index = 0; index < texels.Length; index++) {
             narrow[(index * 4) + 0] = (Half)texels[index].X;
             narrow[(index * 4) + 1] = (Half)texels[index].Y;
+            narrow[(index * 4) + 2] = (Half)texels[index].Z;
             narrow[(index * 4
                 )
-                + 2] = (Half)texels[index].Z;
-            narrow
-                [(index * 4) + 3] = (Half)1f;
+                + 3] = (Half)1f;
         }
 
         return MemoryMarshal.AsBytes(narrow.AsSpan());
@@ -370,22 +380,19 @@ public sealed class EnvironmentTexture : IDisposable {
                 Size,
                 TextureUsage.Sampled | TextureUsage.CopyDestination,
                 MipLevels: MipCount,
-// Six, and the dimension says what they mean. A cube bound as an array is a shader
+                // Six, and the dimension says what they mean. A cube bound as an array is a shader
                 // sampling by layer index where it meant to sample by direction.
                 ArrayLayers: 6,
                 Dimension: TextureDimension.TextureCube,
                 Name: "Environment"
             )
         );
-        view =
-            device.CreateTextureView(texture);
-
+        view
+            = device.CreateTextureView(texture);
 
         staging = device.CreateBuffer(
-            new
-                BufferDescription(StagingSize, BufferUsage.CopySource, MemoryAccess.HostUpload, "Environment.Staging")
+            new BufferDescription(StagingSize, BufferUsage.CopySource, MemoryAccess.HostUpload, "Environment.Staging")
         );
-
         // MaxLod is the chain's last level rather than the default thousand: a roughness that selects
         // past the levels that exist is clamped by the sampler, not by the shader's arithmetic.
         sampler = device.CreateSampler(

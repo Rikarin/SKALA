@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -124,23 +124,22 @@ public static class BindingPlan {
     public static ImmutableArray
         <PlannedBinding> Of(IrShader shader) {
         ArgumentNullException.ThrowIfNull(shader);
-
         var
             plan = ImmutableArray.CreateBuilder<PlannedBinding>();
-
-        // Push constants are deliberately absent: they have no descriptor, so numbering them into
-// a set would give a host a (set, binding) pair to bind against that means nothing.
+// Push constants are deliberately absent: they have no descriptor, so numbering them into
+        // a set would give a host a (set, binding) pair to bind against that means nothing.
         var descriptors = shader.Bindings.Where(b => b.Kind != IrBindingKind.PushConstant).ToArray();
         foreach (var set in descriptors.Select(b => b.Set).Distinct().Order()) {
             var inSet = descriptors.Where(b => b.Set == set).ToArray();
             var binding = 0;
-            if (inSet.Where(b => b.Kind == IrBindingKind.Uniform).ToImmutableArray() is { IsEmpty: false } uniforms) {
+            if (inSet.Where(b => b.Kind == IrBindingKind.Uniform).ToImmutableArray() is { IsEmpty : false } uniforms) {
                 // The per-material block becomes one record of a buffer when the shader declared a
                 // [MaterialIndex]. Still binding 0 of the same set, so nothing else renumbers — what
                 // changes is that the set now holds every material at once and is bound for the
                 // frame rather than for the draw, which is what lets two materials' draws be the
                 // same draw.
                 var record = set == ResourceSet.PerMaterial ? MaterialIndex(shader) : null;
+
                 plan.Add(
                     new(set, binding++, IrBindingKind.Uniform, BlockName(shader, set), uniforms, null) {
                         RecordIndex = record
@@ -149,25 +148,25 @@ public static class BindingPlan {
             }
 
             // Storage buffers last, after textures and samplers, for the same reason the uniform
+
             // block goes first: adding one must not renumber anything that already exists.
             foreach (var kind in (IrBindingKind[]
                      ) [
                          IrBindingKind.Texture,
-
                          IrBindingKind.Sampler,
                          IrBindingKind
                              .StorageBuffer,
                          IrBindingKind.StorageImage, IrBindingKind.AccelerationStructure
                      ]) {
-// A shared binding declared by several features is one binding, recognised by the
+                // A shared binding declared by several features is one binding, recognised by the
 
-                // name they all wrote. Grouped rather than deduplicated in place so that the first
+// name they all wrote. Grouped rather than deduplicated in place so that the first
                 // declaration keeps the slot and the rest become its aliases — every one of them has
-
-// a variable some feature's body refers to, and all of them have to resolve.
+                // a variable some feature's body refers to, and all of them have to resolve.
                 foreach
                     (var group in inSet.Where(b => b.Kind == kind).GroupBy(SharedKey)) {
                     var resource = group.First();
+
                     plan.Add(
                         new(
                             set,
@@ -182,7 +181,8 @@ public static class BindingPlan {
             }
         }
 
-        return plan.ToImmutable();
+        return plan
+            .ToImmutable();
     }
 
     /// <summary>What decides whether two bindings of one kind are the same resource.</summary>
@@ -204,16 +204,15 @@ public static class BindingPlan {
     ///     where a source mistake is reported: <c>IrVerifier</c> says so, with the shader named.
     /// </remarks>
     public static IrBinding? MaterialIndex(
-        IrShader
-            shader
+        IrShader shader
     ) {
         ArgumentNullException.ThrowIfNull(shader);
         return shader.Bindings.FirstOrDefault(binding => binding.IsMaterialIndex);
     }
 
     /// <summary>The name of a set's uniform block.</summary>
-    public static string
-        BlockName(IrShader shader, ResourceSet set) {
+    public static
+        string BlockName(IrShader shader, ResourceSet set) {
         ArgumentNullException.ThrowIfNull(shader);
         return $"{shader.Name}{set}Uniforms";
     }

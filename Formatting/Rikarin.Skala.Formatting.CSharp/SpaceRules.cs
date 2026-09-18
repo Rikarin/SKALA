@@ -32,6 +32,25 @@ public static class SpaceRules {
     }
 
     /// <summary>
+    ///     True exactly when <see cref="Decide" /> answers <see cref="SpaceKind.Preserve" /> for the gap:
+    ///     no key governs it and the formatter writes back the author's own bit — one space if any
+    ///     horizontal space was written, none otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Exposed for the fuzzer. Its absorption property says that whitespace-only mutation never
+    ///     changes the output, and that is false as stated over precisely these gaps, since the oracle
+    ///     keeps what the author wrote in them (#373, docs/plan/12 § "Where the properties are not what
+    ///     this document said"). Its whitespace mutations skip every gap this predicate answers, and they
+    ///     ask <em>this</em> predicate rather than carrying their own list, so the next gap
+    ///     <see cref="Ungoverned" /> learns is excluded the day it lands. Excluding by hand — any gap
+    ///     touching a range operator — was how #376 happened: the positional-pattern gap joined
+    ///     <see cref="Ungoverned" /> and the fuzzer read the oracle's behaviour as a violation.
+    ///     Independent of options, as <see cref="Ungoverned" /> is.
+    /// </remarks>
+    public static bool Preserves(SyntaxToken prev, SyntaxToken next) =>
+        !MustSeparate(prev, next) && Ungoverned(prev, next);
+
+    /// <summary>
     ///     The gaps no rule in the export governs, where the oracle leaves whatever the author wrote.
     /// </summary>
     /// <remarks>

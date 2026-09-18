@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -33,15 +33,15 @@ public sealed class InstanceCullingTests {
         [] Line(int count, float first = 1f, float radius = 0.5f) =>
         [.. Enumerable.Range(0, count).Select(i => new InstanceBounds(new(0f, 0f, first + i), radius))];
 
-    [
-        Fact]
+    [Fact]
     public void EverythingInFrontSurvivesAWideOpenCull() {
         var culler = new InstanceCuller();
         var instances = Line(20);
-        Assert
-            .Equal(20, culler.Cull(instances, [], Settings(), []));
+
+        Assert.Equal(20, culler.Cull(instances, [], Settings(), []));
         Assert.Equal(1, culler.LevelCount);
-        Assert.Equal([.. Enumerable.Range(0, 20).Select(i => (uint)i)], culler.Survivors.ToArray());
+        Assert.Equal([.. Enumerable.Range(0, 20).Select(i => (uint)i)], culler.Survivors.ToArray())
+            ;
     }
 
     [Fact
@@ -50,110 +50,93 @@ public sealed class InstanceCullingTests {
         InstancesBehindTheViewAreDropped() {
         var culler = new InstanceCuller();
         InstanceBounds[] instances = [
-                new(new(0f, 0f, 10f), 0.5f),
-                new(new(0f, 0f, -10f), 0.5f),
-                new(new(0f, 0f, 20f), 0.5f)
-            ]
-            ;
+            new(new(0f, 0f, 10f), 0.5f),
+            new(new(0f, 0f, -10f), 0.5f),
+            new(new(0f, 0f, 20f), 0.5f)
+        ];
+
         Assert.Equal(2, culler.Cull(instances, [], Settings(), []));
         Assert.Equal([0u, 2u], culler.Survivors.ToArray());
     }
 
-    [
-        Fact]
+    [Fact]
     public void TheEndCullDistanceIsMeasuredToTheNearEdgeNotTheCentre() {
         // An instance whose centre is just past the limit but whose canopy is not stays. Measuring
         // to the centre makes a tree blink out while half of it is still inside the range.
-        var culler = new InstanceCuller()
-            ;
+        var culler = new InstanceCuller();
+
         InstanceBounds[] instances = [
             new(new(0f, 0f, 99f), 0.5f),
             new(new(0f, 0f, 100.4f), 1f), new(new(0f, 0f, 120f), 1f)
         ];
+
         Assert.Equal(2, culler.Cull(instances, [], Settings(end: 100f), []));
-        Assert.Equal(
-            [0u, 1u],
-            culler
-                .Survivors.ToArray()
-        );
+        Assert.Equal([0u, 1u], culler.Survivors.ToArray());
     }
 
     [Fact]
     public void AZeroedSettingsCullsEverythingRatherThanNothing() {
         // The zero-value trap, asserted: a forgotten EndCullDistance must not read as "no limit".
-        var culler = new InstanceCuller();
+        var culler = new InstanceCuller()
+            ;
         Assert.Equal(0, culler.Cull(Line(20), [], default, []));
     }
 
     // --- Levels -------------------------------------------------------------
-    [
-        Fact]
-    public void
-        SurvivorsAreBinnedByLevelAndEachRunIsContiguousAndAscending() {
+    [Fact
+    ]
+    public void SurvivorsAreBinnedByLevelAndEachRunIsContiguousAndAscending() {
         var culler
             = new InstanceCuller();
 
         // Instances at 1…20 m; level 0 out to 5, level 1 out to 12, level 2 beyond.
         var instances = Line(20);
+
         Assert.Equal(20, culler.Cull(instances, [], Settings(), [5f, 12f]));
-        Assert.Equal(3, culler.LevelCount);
-
-        var runs = culler.Runs.ToArray();
-
         Assert.Equal(
-            new(
-                0,
-                4
-            ),
-            runs[0]
+            3,
+            culler.LevelCount
         );
+        var runs = culler.Runs.ToArray();
+        Assert.Equal(new(0, 4), runs[0]);
         Assert.Equal(new(4, 7), runs[1]);
         Assert.Equal(new(11, 9), runs[2]);
 
-        var survivors
-            = culler.Survivors.ToArray();
+        var survivors = culler
+            .Survivors.ToArray();
         Assert.Equal(20, survivors.Length);
         Assert.Equal(survivors.Length, survivors.Distinct().Count());
-        foreach (var
-                     run in runs) {
+        foreach
+            (var run in runs) {
             var slice = survivors[run.First..(run.First + run.Count)];
             Assert.Equal(slice.OrderBy(index => index), slice);
         }
     }
 
     [Fact]
-    public void ALevelWithNoSurvivorsIsAnEmptyRunRatherThanAMissingOne
-        () {
+    public
+        void ALevelWithNoSurvivorsIsAnEmptyRunRatherThanAMissingOne() {
         // So the run at slot N is always level N's, which is what lets a caller bind level N's mesh
         // by index instead of reading back which levels happened to survive.
         var culler = new InstanceCuller();
-        culler.Cull(
-            Line(3, first: 1f),
-            [],
-            Settings(),
-            [
-                100f, 200f
-            ]
-        );
+
+        culler.Cull(Line(3, first: 1f), [], Settings(), [100f, 200f]);
+
         Assert.Equal(3, culler.LevelCount);
         Assert.Equal(3, culler.Runs[0].Count);
         Assert.Equal(0, culler.Runs[1].Count);
-        Assert.Equal(
-            0,
-            culler
-                .Runs[2].Count
-        );
+        Assert.Equal(0, culler.Runs[2].Count);
     }
 
     [Fact]
     public void ALevelBoundaryIsInclusiveOfTheFartherLevel() {
         var culler
             = new InstanceCuller();
-// Exactly on the boundary belongs to the coarser level, and the rule is stated so the two
+
+        // Exactly on the boundary belongs to the coarser level, and the rule is stated so the two
         // sides of a seam test can agree about it.
         InstanceBounds[] instances = [new(new(0f, 0f, 10f), 0f)];
         culler.Cull(instances, [], Settings(), [10f]);
-
         Assert.Equal(0, culler.Runs[0].Count);
         Assert.Equal(1, culler.Runs[1].Count);
     }
@@ -167,110 +150,97 @@ public sealed class InstanceCullingTests {
     [Fact]
     public void ParametersMustMatchTheInstancesOrBeAbsent() {
         var culler = new InstanceCuller();
-
         Assert.Throws<ArgumentException>(() => culler.Cull(Line(4), new InstanceParameters[3], Settings(), []));
     }
 
     // --- Parameters and fading ----------------------------------------------
-    [
-        Fact]
+    [Fact
+    ]
     public void AuthoredParametersFollowTheirInstanceThroughCompaction() {
         var culler = new InstanceCuller();
-        InstanceBounds[] instances = [
-            new(new(0f, 0f, 10f), 0.5f), new(new(0f, 0f, -10f), 0.5f),
-            new(new(0f, 0f, 20f), 0.5f)
-        ];
-        var authored = new InstanceParameters [3
-        ];
+        InstanceBounds[] instances
+            = [
+                new(new(0f, 0f, 10f), 0.5f), new(new(0f, 0f, -10f), 0.5f),
+                new(new(0f, 0f, 20f), 0.5f)
+            ];
 
-        for (var index = 0;
-             index < 3;
-             index
-                 ++) {
+        var authored = new InstanceParameters
+            [3];
+        for (var index = 0; index < 3; index++) {
             authored[index] = InstanceParameters.Neutral with { Tint = index, WindPhase = index * 10f };
         }
 
         culler.Cull(instances, authored, Settings(), []);
         // The middle instance was culled, so the survivors' parameters must be 0 and 2 — not 0 and 1.
-        Assert
-            .Equal([0f, 2f], culler.Parameters.ToArray().Select(p => p.Tint));
+        Assert.Equal([0f, 2f], culler.Parameters.ToArray().Select(p => p.Tint));
         Assert.Equal([0f, 20f], culler.Parameters.ToArray().Select(p => p.WindPhase));
     }
 
     [Fact]
     public void WithNoAuthoredParametersEverySurvivorGetsNeutralOnes() {
-        var culler = new
-            InstanceCuller();
+        var culler
+            = new InstanceCuller();
+
+
         culler.Cull(Line(5), [], Settings(), []);
 
         Assert.All(
             culler.Parameters.ToArray(),
             parameter => {
                 Assert.Equal(1f, parameter.Scale);
-                Assert.Equal(1f, parameter.Fade);
+                Assert.Equal(
+                    1f,
+                    parameter.Fade
+                );
             }
         );
     }
 
-    [Fact]
+    [
+        Fact]
     public void FadingRampsFromOneAtTheStartDistanceToZeroAtTheEnd() {
         var culler = new InstanceCuller();
         InstanceBounds[] instances = [
             new(new(0f, 0f, 50f), 0f),
             new(new(0f, 0f, 80f), 0f), new(new(0f, 0f, 90f), 0f)
         ];
+        var settings = Settings(end: 100f, start: 80f) with {
+            Fade
+            = true
+        };
+        culler.Cull(instances, [], settings, []);
 
-        var settings = Settings(end: 100f, start: 80f) with { Fade = true };
-        culler.Cull(
-            instances,
-            [],
-            settings,
-            []
-        );
-        var
-            fades = culler.Parameters.ToArray().Select(p => p.Fade).ToArray();
-
-
+        var fades = culler
+            .Parameters.ToArray()
+            .Select(p => p.Fade)
+            .ToArray();
         Assert.Equal(1f, fades[0], 4);
         Assert.Equal(
             1f,
-            fades[1],
+            fades[1
+            ],
             4
         );
-        Assert.Equal(
-            0.5f,
-            fades
-                [2],
-            4
-        );
+        Assert.Equal(0.5f, fades[2], 4);
     }
 
     [Fact]
     public void WithoutFadingEverySurvivorIsFullyPresent() {
         var culler = new InstanceCuller();
-
-        culler.Cull(
-            Line(
-                5,
-                first
-                : 90f
-            ),
-            [],
-            Settings(end: 100f, start: 80f),
-            []
-        );
+        culler.Cull(Line(5, first: 90f), [], Settings(end: 100f, start: 80f), []);
         Assert.All(culler.Parameters.ToArray(), parameter => Assert.Equal(1f, parameter.Fade));
     }
+    // --- Density ------------------------------------------------------------
 
-// --- Density ------------------------------------------------------------
     [Fact]
-    public void DensityThinsTheFieldRoughlyInProportion(
-    ) {
+    public void
+        DensityThinsTheFieldRoughlyInProportion() {
         var culler
             = new InstanceCuller();
         var instances = Enumerable.Range(0, 4000)
             .Select(i => new InstanceBounds(new(i % 40 * 0.5f, 0f, 10f + (i / 40 * 0.5f)), 0.1f))
             .ToArray();
+
         var full = culler.Cull(instances, [], Settings(), []);
         var half = culler.Cull(instances, [], Settings() with { DensityScale = 0.5f }, []);
         var none = culler.Cull(instances, [], Settings() with { DensityScale = 0f }, []);
@@ -288,16 +258,17 @@ public sealed class InstanceCullingTests {
     ///     satisfy the count assertion above and fail this one.
     /// </remarks>
     [Fact]
-    public void ASmallerDensityKeepsASubsetOfWhatALargerOneKept() {
-        var culler = new
-            InstanceCuller();
-        var
-            instances = Enumerable.Range(0, 2000)
-                .Select(i => new InstanceBounds(new(i % 50 * 0.4f, 0f, 10f + (i / 50 * 0.4f)), 0.1f))
-                .ToArray();
+    public void ASmallerDensityKeepsASubsetOfWhatALargerOneKept
+        () {
+        var culler
+            = new InstanceCuller();
+        var instances = Enumerable.Range(0, 2000)
+            .Select(i => new InstanceBounds(new(i % 50 * 0.4f, 0f, 10f + (i / 50 * 0.4f)), 0.1f))
+            .ToArray();
 
         uint[] At(float density) {
             culler.Cull(instances, [], Settings() with { DensityScale = density }, []);
+
             return culler.Survivors.ToArray();
         }
 
@@ -307,17 +278,13 @@ public sealed class InstanceCullingTests {
 
         Assert.NotEmpty(sparse);
         Assert.All(sparse, index => Assert.Contains(index, medium));
-        Assert.All(medium, index => Assert.Contains(index, dense))
-            ;
+        Assert.All(medium, index => Assert.Contains(index, dense));
     }
 
-    [
-        Fact]
+    [Fact]
     public void DensityIsHashedFromPositionSoAReorderedCellThinsIdentically() {
         // Streaming a cell back in, or re-scattering it, must not change which instances survive.
-        var culler
-            = new InstanceCuller();
-
+        var culler = new InstanceCuller();
         var instances = Enumerable.Range(0, 500)
             .Select(i => new InstanceBounds(new(i % 25 * 0.7f, 0f, 10f + (i / 25 * 0.7f)), 0.1f))
             .ToArray();
@@ -344,10 +311,15 @@ public sealed class InstanceCullingTests {
         DrawCommand[] templates = [
             new() { IndexCount = 900, FirstIndex = 0, VertexOffset = 0 },
             new() { IndexCount = 300, FirstIndex = 900, VertexOffset = 0 },
-            new() { IndexCount = 60, FirstIndex = 1200, VertexOffset = 0 }
+            new() {
+                IndexCount = 60,
+                FirstIndex =
+                    1200,
+                VertexOffset = 0
+            }
         ];
-        var commands = new
-            DrawCommand[3];
+        var commands
+            = new DrawCommand[3];
         culler.FillCommands(templates, 5000u, commands);
         Assert.Equal(900u, commands[0].IndexCount);
         Assert.Equal(4u, commands[0].InstanceCount);
@@ -364,16 +336,12 @@ public sealed class InstanceCullingTests {
     public void AnEmptyLevelGetsAZeroInstanceCommandWhichDrawsNothing() {
         var culler = new InstanceCuller();
 
-        culler.Cull(
-            Line(3),
-            [],
-            Settings(),
-            [100f]
-        );
+        culler.Cull(Line(3), [], Settings(), [100f]);
 
-        var commands = new DrawCommand[2];
+        var commands = new DrawCommand [2];
         culler.FillCommands([new() { IndexCount = 900 }, new() { IndexCount = 300 }], 0u, commands);
-        Assert.Equal(3u, commands[0].InstanceCount);
+        Assert
+            .Equal(3u, commands[0].InstanceCount);
         Assert.Equal(0u, commands[1].InstanceCount);
         Assert.Equal(300u, commands[1].IndexCount);
     }
@@ -382,47 +350,56 @@ public sealed class InstanceCullingTests {
     public void TooFewTemplatesOrTooLittleRoomIsRefused() {
         var culler = new InstanceCuller();
         culler.Cull(Line(3), [], Settings(), [10f]);
-        Assert.Throws<ArgumentException>(() => culler.FillCommands([default], 0u, new DrawCommand [2]));
-        Assert.Throws<ArgumentException>(() => culler.FillCommands([default, default], 0u, new DrawCommand[1]));
+        Assert.Throws<ArgumentException>(() => culler.FillCommands([default], 0u, new DrawCommand[2]))
+            ;
+        Assert.Throws<ArgumentException>(() => culler.FillCommands([default, default], 0u, new DrawCommand [1]));
     }
-// --- Reuse --------------------------------------------------------------
+    // --- Reuse --------------------------------------------------------------
 
     [Fact]
     public void ACullerIsReusableAndDoesNotLeakTheLastFramesAnswer() {
-        var culler = new InstanceCuller();
-        culler.Cull(Line(50), [], Settings(), [5f, 10f]);
+        var culler = new InstanceCuller()
+            ;
+
+        culler.Cull(
+            Line(50),
+            [],
+            Settings(),
+            [5f, 10f]
+        );
         Assert.Equal(50, culler.SurvivorCount);
         culler.Cull(Line(3), [], Settings(), []);
         Assert.Equal(3, culler.SurvivorCount);
         Assert.Equal(1, culler.LevelCount);
         Assert.Equal(3, culler.Survivors.Length);
-        Assert.Equal(3, culler.Parameters.Length);
+        Assert
+            .Equal(3, culler.Parameters.Length);
         Assert.Single(culler.Runs.ToArray());
 
-        culler
-            .Cull([], [], Settings(), []);
+        culler.Cull([], [], Settings(), []);
         Assert.Equal(0, culler.SurvivorCount);
         Assert.Empty(culler.Survivors.ToArray());
     }
 
-    [Fact]
+    [
+        Fact]
     public
         void TheRunsAlwaysPartitionTheSurvivorsExactly() {
         var culler
             = new InstanceCuller();
         foreach (var count in new[] { 0, 1, 7, 64, 513 }) {
-            culler
-                .Cull(Line(count), [], Settings(end: 300f), [5f, 12f, 40f]);
+            culler.Cull(Line(count), [], Settings(end: 300f), [5f, 12f, 40f]);
 
-            var total =
+            var
+                total = 0;
+            var expected =
                 0;
-            var expected = 0;
-
             foreach (var run in culler.Runs) {
                 Assert.Equal(expected, run.First);
-                total += run
-                    .Count;
-                expected += run.Count;
+                total
+                    += run.Count;
+                expected += run.Count
+                    ;
             }
 
             Assert.Equal(culler.SurvivorCount, total);

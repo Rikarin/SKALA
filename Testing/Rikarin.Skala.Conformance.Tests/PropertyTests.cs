@@ -162,8 +162,11 @@ public sealed class PropertyTests {
     [MemberData(nameof(AllFiles))]
     public void WhitespaceMutation_IsAbsorbed(CorpusFile file, bool defined) {
         // ⚠ format(mutate_whitespace(x)) ≡ format(x) — a strong property that the preservation model
-        // makes non-trivial (docs/plan/12 § "Fuzzing"). The mutation here is deliberately the one
-        // phase 1 must absorb completely: extra spaces inside a line.
+        // makes non-trivial (docs/plan/12 § "Fuzzing"). The mutation here is indentation only, and
+        // that is why this twin needs none of the fuzzer's gap exclusion: it never touches the run
+        // between two tokens, so it cannot reach a gap `SpaceRules.Preserves` answers (#376). A
+        // mutation of inter-token gaps added here must take `FuzzMutations.SourceMap.AbsorbableGaps`'s
+        // exclusion with it or it goes red on `o is Point(2, 3)` the way the fuzzer did.
         var result = CorpusFormatter.Format(file, defined);
         if (result.Outcome is not FormatOutcome.Formatted) {
             return;

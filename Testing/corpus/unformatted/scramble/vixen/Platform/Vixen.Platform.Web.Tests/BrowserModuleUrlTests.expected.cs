@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -77,7 +77,6 @@ public class BrowserModuleUrlTests {
     public void ASingleDotResolvesIntoTheRuntimeDirectory() {
         var resolved
             = new Uri(RuntimeModule, "./vixen-platform.js");
-
         Assert.Equal("/_framework/vixen-platform.js", resolved.AbsolutePath);
     }
 
@@ -91,7 +90,6 @@ public class BrowserModuleUrlTests {
     public void TheDefaultModuleUrlResolvesToTheSiteRoot(string project, string moduleName, string moduleUrl) {
         var resolved = new Uri(RuntimeModule, moduleUrl);
 
-
         // First, and separately, because this is the failure that has actually happened and it
         // deserves the sentence rather than a string diff.
         Assert.False(
@@ -102,7 +100,6 @@ public class BrowserModuleUrlTests {
             + "surfaces as 'TypeError: Failed to fetch dynamically imported module' from inside "
             + "CreateAsync. It wants ../ and not ./ — see docs/plan/spikes/web-head/RESULT.md."
         );
-
         // And then the whole of it: the right directory and the file the module name implies.
         Assert.Equal($"/{moduleName}.js", resolved.AbsolutePath);
     }
@@ -121,6 +118,7 @@ public class BrowserModuleUrlTests {
         var fileName = Path
             .GetFileName(new Uri(RuntimeModule, moduleUrl).AbsolutePath);
         var shipped = Path.Combine(RepositoryRoot(), "Platform", project, "wwwroot", fileName);
+
         Assert.True(
             File.Exists(shipped),
             $"{project}'s default module URL '{moduleUrl}' names {fileName}, and there is no such "
@@ -154,12 +152,13 @@ public class BrowserModuleUrlTests {
             $"{project}.csproj does not ship wwwroot\\{fileName}, which its module '{moduleName}' "
             + "is imported from. Nothing would copy it, and the import would 404."
         );
-
         var
             declaration = text[item..];
         var end = declaration.IndexOf("/>", StringComparison.Ordinal);
-        Assert.True(end >= 0, $"the <None> item for {fileName} in {project}.csproj is not closed.");
-        declaration = declaration[..end];
+        Assert
+            .True(end >= 0, $"the <None> item for {fileName} in {project}.csproj is not closed.");
+        declaration = declaration[..end]
+            ;
         Assert.True(
             declaration.Contains("contentFiles/any/any/", StringComparison.Ordinal),
             $"{project}.csproj ships wwwroot\\{fileName} but does not pack it to "
@@ -168,12 +167,14 @@ public class BrowserModuleUrlTests {
             + $"lands instead, the import will 404. The declaration reads:{Environment.NewLine}"
             + declaration
         );
+
         // The value and not merely the attribute: CopyToOutputDirectory="Never" is spelled the same
         // as not asking for a copy at all, and produces the same published page — one that 404s on
         // its own binding. Anything that is not "Never" copies.
         Assert.True(
             declaration.Contains("CopyToOutputDirectory", StringComparison.Ordinal)
-            && !declaration.Contains("CopyToOutputDirectory=\"Never\"", StringComparison.Ordinal),
+            && !declaration
+                .Contains("CopyToOutputDirectory=\"Never\"", StringComparison.Ordinal),
             $"{project}.csproj does not copy wwwroot\\{fileName} to its output, so a project "
             + $"reference — which is how the samples and the spike head consume it — gets no "
             + $"{fileName} at all. The declaration reads:{Environment.NewLine}{declaration}"
@@ -182,8 +183,8 @@ public class BrowserModuleUrlTests {
 
     /// <summary>The repository root, found by walking up rather than by counting directories.</summary>
     static string RepositoryRoot() {
-        for (var directory = new
-                 DirectoryInfo(AppContext.BaseDirectory);
+        for (var directory
+                 = new DirectoryInfo(AppContext.BaseDirectory);
              directory is not null;
              directory = directory.Parent) {
             if (File.Exists(Path.Combine(directory.FullName, "Vixen.slnx"))) {

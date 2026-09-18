@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -27,7 +27,7 @@ public sealed partial class Lowerer {
         SyntaxNode? syntax
     ) {
         // Substitution first, and before the cache: inside `Box<float4>` a `T` is an `f32`, and
-// caching the unsubstituted symbol would hand the next instantiation the wrong answer.
+        // caching the unsubstituted symbol would hand the next instantiation the wrong answer.
         if (substitution is { IsEmpty: false }) {
             type = substitution.Substitute(type);
         }
@@ -55,6 +55,7 @@ public sealed partial class Lowerer {
 
         switch (type) {
             case PrimitiveTypeSymbol primitive: return LowerPrimitive(primitive, syntax);
+
             case BuiltInNamedTypeSymbol builtIn:
                 return builtIn.SpecialType switch {
                         SpecialType.Texture2D => new IrTextureType(IrTextureDimension.Texture2D, Float4),
@@ -94,10 +95,11 @@ public sealed partial class Lowerer {
                     ? NotRepresentable(type, syntax)
                     : new IrTextureType(IrTextureDimension.Texture2D, element);
             }
-            // Its own IR type rather than a flag on IrTextureType, because a sampled image and a
-            // storage image are two descriptor types and two SPIR-V image types. The format is
 
-// already on the symbol — the binder folded the declaration's `[Format]` in — and it
+            // Its own IR type rather than a flag on IrTextureType, because a sampled image and a
+
+// storage image are two descriptor types and two SPIR-V image types. The format is
+            // already on the symbol — the binder folded the declaration's `[Format]` in — and it
             // has to survive to both backends, so it travels in the type.
             case StorageImageTypeSymbol { Format : { } format } image:
                 return new IrStorageImageType(
@@ -105,6 +107,7 @@ public sealed partial class Lowerer {
                     LowerType(image.ElementType, syntax),
                     format
                 );
+
             // Only reachable when RVN2123 already refused the declaration, which stops the
             // compilation before this runs; kept honest rather than assumed.
             case StorageImageTypeSymbol:
@@ -121,7 +124,6 @@ public sealed partial class Lowerer {
             case TupleTypeSymbol tuple
                 :
                 return LowerTuple(tuple, syntax);
-
             default: return NotRepresentable(type, syntax);
         }
     }
@@ -134,6 +136,7 @@ public sealed partial class Lowerer {
                ) {
             case TypeKind.Void:
                 return IrScalarType.Void;
+
             case TypeKind.Scalar: return LowerScalar(type.SpecialType) ?? NotRepresentable(type, syntax);
 
             case TypeKind.Vector: {
@@ -149,6 +152,7 @@ public sealed partial class Lowerer {
                     ? NotRepresentable(type, syntax)
                     : new IrMatrixType(component, type.Rows, type.Columns);
             }
+
             default
                 :
                 return NotRepresentable(type, syntax);
@@ -171,7 +175,6 @@ public sealed partial class Lowerer {
             SpecialType.Int64 => IrScalarType.Int64,
             SpecialType.UInt64
                 => IrScalarType.UInt64,
-
             _ => null
         };
 
@@ -204,7 +207,6 @@ public sealed partial class Lowerer {
             new List<IrField>(tuple.ElementTypes.Count);
         var members =
             tuple.GetMembers().OfType<FieldSymbol>().ToArray();
-
         foreach (var member in members) {
             var elementType = LowerType(member.Type, syntax);
             if (elementType.IsVoid) {
@@ -218,7 +220,6 @@ public sealed partial class Lowerer {
 
         var name = TupleName(fields)
             ;
-
         // A linked library's copy of the same shape, reused rather than duplicated. This is
         // necessary, not an optimisation: a tuple has no declaration to match on, so without it a
         // library function returning `(float, float)` would return a different type from the one the
@@ -234,8 +235,8 @@ public sealed partial class Lowerer {
 
         var structType = new IrStructType(name);
         structType.SetFields([.. fields]);
-        tuples[tuple
-        ] = structType;
+        tuples[
+            tuple] = structType;
         module.Add(structType);
         return structType;
     }
@@ -245,7 +246,9 @@ public sealed partial class Lowerer {
     /// </summary>
     static string TupleName(IReadOnlyList<IrField> fields) {
         var parts = fields.Select(f => Identifier(f.Type.Name));
-        return "Tuple_" + string.Join('_', parts);
+        return "Tuple_"
+            + string
+                .Join('_', parts);
     }
 
     /// <summary>An IR type name reduced to an identifier: <c>vec&lt;f32,3&gt;</c> → <c>vec_f32_3</c>.</summary>
@@ -255,7 +258,8 @@ public sealed partial class Lowerer {
             cleaned = cleaned.Replace("__", "_", StringComparison.Ordinal);
         }
 
-        return cleaned.Trim('_');
+        return cleaned.Trim('_')
+            ;
     }
 
     IrType NotRepresentable(TypeSymbol type, SyntaxNode? syntax) {
