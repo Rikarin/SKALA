@@ -462,7 +462,10 @@ public sealed class DocumentBuilder {
         if (frame.Kind == DocKind.Group
             && (GroupMode)frame.Arg0 == GroupMode.Preserve
             && facts[frame.Arg1] is {
-                SourceBroken: true, JoinsIfFits: false, HidesFlatWidthWhenBroken: true, KeptOnlyIfTailFits: false
+                SourceBroken: true,
+                JoinsIfFits: false,
+                HidesFlatWidthWhenBroken: true,
+                KeptOnlyIfTailFits: false
             }) {
             width = Document.Unbounded;
             owned = Document.Unbounded;

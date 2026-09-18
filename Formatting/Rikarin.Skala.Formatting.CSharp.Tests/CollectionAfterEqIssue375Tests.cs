@@ -945,5 +945,4 @@ public sealed class CollectionAfterEqIssue375Tests {
             }
             """
         );
-
 }
