@@ -454,9 +454,19 @@ public sealed class DocumentBuilder {
         // `Report(Diagnostic.Create(` into two lines as soon as the inner call is broken, although
         // the outer call's own flat width is 59 columns and fits with room to spare. That is the
         // "chop if long *or multiline*" half of chop_if_long, one level up.
+        // ⚠ Except a group whose kept break may yet yield to the delimiter after it
+        // (GroupFacts.KeptOnlyIfTailFits): the fitter decides that by this very width, so it stays
+        // measurable. The group's certainty still reaches its container through `certain` above —
+        // the value is multi-line whichever of the two breaks is taken — so the container chops
+        // exactly as before; only the group's own number is left honest.
         if (frame.Kind == DocKind.Group
             && (GroupMode)frame.Arg0 == GroupMode.Preserve
-            && facts[frame.Arg1] is { SourceBroken: true, JoinsIfFits: false, HidesFlatWidthWhenBroken: true }) {
+            && facts[frame.Arg1] is {
+                SourceBroken: true,
+                JoinsIfFits: false,
+                HidesFlatWidthWhenBroken: true,
+                KeptOnlyIfTailFits: false
+            }) {
             width = Document.Unbounded;
             owned = Document.Unbounded;
         }
@@ -485,7 +495,7 @@ public sealed class DocumentBuilder {
         ownerWidth[index] = owned;
         var afterPointRuns = false;
         afterPoint[index] = frame.Kind == DocKind.Group
-            ? MeasureSegments(childStart, count, frame.Arg1, out afterPointRuns)
+            ? MeasureSegments(childStart, count, frame.Arg1, out afterPointRuns, out segment[index])
             : 0;
 
         nodes[index].Count = count;
@@ -567,8 +577,9 @@ public sealed class DocumentBuilder {
     ///     ⚠ Linear despite the nested loop: the segments partition the children, so each child is
     ///     visited by exactly one of them.
     /// </remarks>
-    int MeasureSegments(int childStart, int count, int group, out bool firstRunsToTheEnd) {
+    int MeasureSegments(int childStart, int count, int group, out bool firstRunsToTheEnd, out int firstSegment) {
         firstRunsToTheEnd = false;
+        firstSegment = 0;
         if (!ownPoints.Contains(group)) {
             return 0;
         }
@@ -600,6 +611,15 @@ public sealed class DocumentBuilder {
         // group on that line (SK-DIV-0114). Only the *first* point's answer is the group's, because
         // that is the one AfterPointOf reports.
         firstRunsToTheEnd = first >= 0 && first == last && !pointStopped;
+
+        // ⚠ The first point's flat segment is the group's too, beside its point width: for a group
+        // with one point it is everything past that point, which is the tail a kept break that may
+        // yield to the delimiter after it is measured by (GroupFacts.KeptOnlyIfTailFits). Flat, and
+        // not the point width, because the question is whether the whole value fits on the line it
+        // would move to — the point measure stops at the bracket's own first point, one column in.
+        if (first >= 0) {
+            firstSegment = segment[first];
+        }
 
         return first < 0 ? 0 : afterPoint[first];
 
