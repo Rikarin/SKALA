@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -110,23 +110,28 @@ public sealed class SystemGraph {
         Dictionary<SystemPhase, List<SystemNode>> byPhase = [];
 
     /// <summary>The phases that have systems in them, in execution order.</summary>
-    public IEnumerable<SystemPhase
-    > Phases =>
-        Enum.GetValues<SystemPhase>().Where(phase => byPhase.ContainsKey(phase));
+    public IEnumerable<
+        SystemPhase> Phases =>
+        Enum
+            .GetValues<SystemPhase>()
+            .Where(phase => byPhase.ContainsKey(phase));
 
     /// <summary>The systems in a phase, in execution order.</summary>
     /// <param name="phase">The phase.</param>
     /// <returns>Its systems, or an empty list.</returns>
-    public
-        IReadOnlyList<SystemNode> InPhase(SystemPhase phase) =>
-        byPhase
-            .TryGetValue(phase, out var nodes)
+    public IReadOnlyList<SystemNode
+    > InPhase(SystemPhase phase) =>
+        byPhase.TryGetValue(
+            phase,
+            out
+            var nodes
+        )
             ? nodes
             : [];
 
     /// <summary>Every system, in phase order and then in execution order.</summary>
-    public IEnumerable<
-        SystemNode> All =>
+    public IEnumerable
+        <SystemNode> All =>
         Phases.SelectMany(InPhase);
 
     /// <summary>Builds the graph from systems in registration order.</summary>
@@ -139,42 +144,44 @@ public sealed class SystemGraph {
     public static SystemGraph Build(IReadOnlyList<ISystem> systems) {
         ArgumentNullException.ThrowIfNull(systems);
 
-        var
-            graph = new SystemGraph();
-        var grouped = new Dictionary<SystemPhase, List<
-            ISystem>>();
+        var graph = new SystemGraph();
+        var grouped = new Dictionary<SystemPhase, List
+            <ISystem>>();
         foreach (var system in systems) {
             var phase = PhaseOf(system.GetType());
-            if (!grouped.TryGetValue(phase, out var members)) {
-                grouped
-                    [phase] = members = [];
+            if (!grouped
+                    .TryGetValue(phase, out var members)) {
+                grouped[phase] = members = [];
             }
 
             members.Add(system);
         }
 
-        foreach (var (
-                     phase, members) in grouped) {
-            var types =
-                new Type [members.Count];
-            for (var
-                 position = 0;
-                 position < members.Count;
-                 position++) {
-                types[position] = members[position].GetType();
+        foreach (var
+                     (phase, members) in grouped) {
+            var types
+                = new Type[members.Count];
+
+            for (
+                var position = 0;
+                position < members.Count;
+                position++) {
+                types[position] = members[position].GetType()
+                    ;
             }
 
-            var
-                ordered = new List<SystemNode>(members.Count);
-            foreach
-                (var position in Sort(phase, types, everywhere: null, unsatisfied: null)) {
-                var system = members[position];
-                var
-                    access = system is IDeclaredAccess declared
-                        ? declared.Access
-                        : SystemAccess.FromAttributes(system.GetType());
-                ordered
-                    .Add(new(system, phase, access, ordered.Count));
+            var ordered = new List<SystemNode>(members.Count);
+            foreach (var position in
+                     Sort(phase, types, everywhere: null, unsatisfied: null)) {
+                var system = members[position]
+                    ;
+                var access = system is IDeclaredAccess
+                    declared
+                    ? declared
+                        .Access
+                    : SystemAccess
+                        .FromAttributes(system.GetType());
+                ordered.Add(new(system, phase, access, ordered.Count));
             }
 
             Connect(ordered);
@@ -207,17 +214,17 @@ public sealed class SystemGraph {
     public static SystemPlan Plan(IReadOnlyList<Type> systemTypes) {
         ArgumentNullException.ThrowIfNull(systemTypes);
 
-        var everywhere = new Dictionary<Type
-            , SystemPhase>();
+        var everywhere = new Dictionary<
+            Type, SystemPhase>();
         var grouped = new Dictionary<SystemPhase, List<Type>>();
-        foreach (var type in systemTypes
-                ) {
+        foreach (var type in
+                 systemTypes) {
             var phase = PhaseOf(type);
-            everywhere[type] = phase
-                ;
-            if (!grouped.TryGetValue(phase, out var members)) {
-                grouped
-                    [phase] = members = [];
+            everywhere[type] =
+                phase;
+            if (!grouped
+                    .TryGetValue(phase, out var members)) {
+                grouped[phase] = members = [];
             }
 
             members.Add(type);
@@ -225,16 +232,14 @@ public sealed class SystemGraph {
 
         var placements = new List<SystemPlacement>(systemTypes.Count);
         var unsatisfied = new List<string>();
-
-        // Phase order rather than dictionary order, so the plan reads down the frame.
-        foreach (
-            var phase in Enum.GetValues<SystemPhase>()) {
+// Phase order rather than dictionary order, so the plan reads down the frame.
+        foreach
+            (var phase in Enum.GetValues<SystemPhase>()) {
             if (!grouped.TryGetValue(phase, out var members)) {
                 continue;
             }
 
             var order = 0;
-
             foreach (var position in Sort(phase, members, everywhere, unsatisfied)) {
                 placements.Add(new(members[position], phase, order++));
             }
@@ -245,7 +250,10 @@ public sealed class SystemGraph {
 
     /// <summary>Which phase a system type belongs to. Without an attribute, <see cref="SystemPhase.Update" />.</summary>
     static SystemPhase PhaseOf(Type systemType) =>
-        systemType.GetCustomAttribute<UpdateInGroupAttribute>(inherit: true)?.Phase ?? SystemPhase.Update;
+        systemType.GetCustomAttribute<UpdateInGroupAttribute>(inherit: true)
+            ?
+            .Phase
+        ?? SystemPhase.Update;
 
     /// <summary>Topologically sorts one phase's systems, and returns their positions in run order.</summary>
     /// <param name="phase">The phase being sorted, which the cycle message names.</param>
@@ -257,37 +265,32 @@ public sealed class SystemGraph {
     ///     with the same symptom.
     /// </param>
     /// <param name="unsatisfied">Told about every edge that was dropped, or <see langword="null" />.</param>
-    static List<
-        int> Sort(
-        SystemPhase
-            phase,
-        IReadOnlyList<Type> members,
-        IReadOnlyDictionary<Type, SystemPhase>? everywhere,
-        List<string>? unsatisfied
-    ) {
-        var
-            index = new Dictionary<Type, int>();
+    static List
+        <int> Sort(
+            SystemPhase phase,
+            IReadOnlyList<Type> members,
+            IReadOnlyDictionary<Type, SystemPhase>? everywhere,
+            List<string>? unsatisfied
+        ) {
+        var index = new Dictionary<Type, int>();
         for (var position = 0; position < members.Count; position++) {
             index[members[position]] = position;
         }
 
-        var successors = new List<int> [members.Count
-        ];
-        var incoming
-            = new int [members.Count];
+        var successors = new List<int>[members.Count];
+        var
+            incoming = new int [members.Count];
         for (var position = 0;
-             position
-             < members.Count;
+             position < members.Count;
              position++) {
             successors[position] = [];
         }
 
         for (var position = 0;
              position < members.Count;
-             position
-                 ++) {
-            var type
-                = members[position];
+             position++) {
+            var
+                type = members[position];
             foreach (var attribute in type.GetCustomAttributes<UpdateBeforeAttribute>(inherit: true)) {
                 if (index.TryGetValue(attribute.SystemType, out var after)) {
                     Link(position, after, successors, incoming);
@@ -298,12 +301,7 @@ public sealed class SystemGraph {
 
             foreach (var attribute in type.GetCustomAttributes<UpdateAfterAttribute>(inherit: true)) {
                 if (index.TryGetValue(attribute.SystemType, out var before)) {
-                    Link(
-                        before,
-                        position,
-                        successors,
-                        incoming
-                    );
+                    Link(before, position, successors, incoming);
                 } else if (unsatisfied is not null) {
                     unsatisfied.Add(Explain(type, "UpdateAfter", attribute.SystemType, phase, everywhere));
                 }
@@ -313,29 +311,30 @@ public sealed class SystemGraph {
         // Kahn's algorithm with a ready set ordered by registration position, so a graph with no
         // constraints comes out in the order it was written and a graph with some constraints keeps
         // that order everywhere the constraints do not speak.
-        var ready = new PriorityQueue<int
-            , int>();
-
+        var ready = new PriorityQueue<
+            int, int>();
         for (var position = 0; position < members.Count; position++) {
             if (incoming[position] == 0) {
                 ready.Enqueue(position, position);
             }
         }
 
-        var ordered
-            = new List<int>(members.Count);
+        var
+            ordered = new List<int>(members.Count);
+
         while (ready.TryDequeue(out var position, out _)) {
             ordered.Add(position);
 
-            foreach (var successor in successors[
-                         position]) {
+            foreach (var successor in successors
+                         [position]) {
                 if (--incoming[successor] == 0) {
                     ready.Enqueue(successor, successor);
                 }
             }
         }
 
-        if (ordered.Count != members.Count) {
+        if (ordered.Count
+            != members.Count) {
             var stuck = Enumerable.Range(0, members.Count)
                 .Where(position => incoming[position] > 0)
                 .Select(position => members[position].Name);
@@ -358,16 +357,17 @@ public sealed class SystemGraph {
     ///     the phase order and impossible where it does not, and either way the attribute is not
     ///     doing what its author thought.
     /// </remarks>
-    static string Explain(
-        Type declaring,
-        string attribute,
-        Type named,
-        SystemPhase phase,
-        IReadOnlyDictionary<Type, SystemPhase>? everywhere
-    ) =>
-        everywhere
-            is not null
-        && everywhere.TryGetValue(named, out var other)
+    static string
+        Explain(
+            Type declaring,
+            string attribute,
+            Type named,
+            SystemPhase phase,
+            IReadOnlyDictionary<Type, SystemPhase>? everywhere
+        ) =>
+        everywhere is not null
+        && everywhere
+            .TryGetValue(named, out var other)
             ? $"{declaring.Name}'s [{attribute}(typeof({named.Name}))] does nothing: {named.Name} is in "
             + $"the {other} phase and {declaring.Name} is in {phase}, and ordering only ever applies "
             + "within a phase. Phases already run in their declared order."
@@ -391,21 +391,20 @@ public sealed class SystemGraph {
     }
 
     static void Connect(
-        List<
-            SystemNode> ordered
+        List
+            <SystemNode> ordered
     ) {
         for (var position = 0; position < ordered.Count; position++) {
             var dependencies = new List<int>();
 
             for (var earlier = 0; earlier < position; earlier++) {
                 if (ordered[position].Access.ConflictsWith(ordered[earlier].Access)) {
-                    dependencies.Add(earlier)
-                        ;
+                    dependencies.Add(earlier);
                 }
             }
 
-            ordered[
-                position].DependsOn = dependencies;
+            ordered
+                [position].DependsOn = dependencies;
         }
     }
 
@@ -423,10 +422,7 @@ public sealed class SystemGraph {
                     .Append('.')
                     .Append(node.Name)
                     .Append("\" [label=\"")
-                    .Append(
-                        node
-                            .Name
-                    )
+                    .Append(node.Name)
                     .Append("\\n")
                     .Append(node.Access)
                     .Append("\"];\n");
@@ -436,8 +432,8 @@ public sealed class SystemGraph {
         }
 
         foreach (var phase in Phases) {
-            var nodes
-                = InPhase(phase);
+            var
+                nodes = InPhase(phase);
             foreach (var node in nodes) {
                 foreach (var dependency in node.DependsOn) {
                     text.Append("  \"")
@@ -460,9 +456,9 @@ public sealed class SystemGraph {
     /// <summary>Renders the graph as Mermaid, which pastes straight into a pull request.</summary>
     /// <returns>The Mermaid source.</returns>
     public string ToMermaid() {
-        var text = new StringBuilder("flowchart LR\n");
-        foreach
-            (var phase in Phases) {
+        var text = new StringBuilder("flowchart LR\n")
+            ;
+        foreach (var phase in Phases) {
             var nodes = InPhase(phase);
             text.Append("  subgraph ").Append(phase).Append('\n');
 

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -108,7 +108,6 @@ public sealed record RealmSpec {
         new Dictionary<string, string>(StringComparer.Ordinal);
 
     /// <summary>Whether this spec names a runnable shard.</summary>
-
     public bool IsValid =>
         Shard
             .IsValid
@@ -133,11 +132,9 @@ public sealed record RealmSpec {
         KeyValueText.Write(text, "hard", Capacity.HardCap.ToString(CultureInfo.InvariantCulture));
         KeyValueText.Write(text, "tick", TickRate.ToString(CultureInfo.InvariantCulture));
         KeyValueText.Write(text, "seed", Seed.ToString(CultureInfo.InvariantCulture));
-
         if (ClusterEndpoint.Length > 0) {
             KeyValueText.Write(text, "cluster", ClusterEndpoint);
         }
-
 
         foreach (var option in Options) {
             // Prefixed, so a game's option can never collide with a field this record grows later —
@@ -171,11 +168,13 @@ public sealed record RealmSpec {
             )
             || !shard.IsValid) {
             error = "`shard` is missing or is not a guid";
+
             return false;
         }
 
         var
             map = Field(fields, "map");
+
         if
             (map.Length == 0) {
             error = "`map` is missing";
@@ -190,25 +189,23 @@ public sealed record RealmSpec {
             )) {
             error
                 = "`content` is missing or is not a 64-bit hexadecimal hash";
-
             return false;
         }
 
         if (!Enum.TryParse<ShardKind>(Field(fields, "kind"), ignoreCase: false, out var kind)) {
             error = "`kind` is missing or is not one of " + string.Join(", ", Enum.GetNames<ShardKind>());
-
             return false;
         }
 
         if (!int.TryParse(Field(fields, "port"), CultureInfo.InvariantCulture, out var port)) {
             error = "`port` is missing or is not a number";
-
             return false;
         }
 
         var endpoint = new RealmEndpoint(Field(fields, "host"), port);
         if (!endpoint.IsValid && !endpoint.IsUnbound) {
             error = $"`{endpoint}` is not an endpoint a client could be sent to";
+
             return false;
         }
 
@@ -216,14 +213,13 @@ public sealed record RealmSpec {
             || !int.TryParse(Field(fields, "hard"), CultureInfo.InvariantCulture, out var hard)) {
             error
                 = "`soft` and `hard` are missing or are not numbers";
-
             return false;
         }
 
         var capacity = new ShardCapacity(soft, hard);
-
         if (!capacity.IsValid) {
             error = $"a capacity of {capacity} is not one a shard could honour";
+
             return false;
         }
 
@@ -260,14 +256,13 @@ public sealed record RealmSpec {
             ClusterEndpoint = Field(fields, "cluster"),
             Options = options
         };
-
         return true;
     }
 
     /// <summary>The arguments a placement backend launches a realm with.</summary>
     /// <returns><see cref="ArgumentName" /> and the encoded spec, in that order.</returns>
-    public IReadOnlyList<
-        string> ToCommandLine() =>
+    public IReadOnlyList
+        <string> ToCommandLine() =>
         [ArgumentName, Encode()];
 
     /// <summary>Finds the spec a realm process was started with.</summary>
@@ -284,19 +279,19 @@ public sealed record RealmSpec {
     ///     the environment is what a pod template inherits, and inheriting a stale one is exactly the
     ///     accident this order prevents.
     /// </remarks>
-    public static
-        bool TryRead(
-            IReadOnlyList
-                <string>? arguments,
+    public
+        static bool TryRead(
+            IReadOnlyList<string>? arguments,
             Func<string, string?>? environment,
             out RealmSpec? spec,
-            out string
-                error
+            out
+                string error
         ) {
         spec = null;
+
         if (arguments is not null) {
-            for (var index =
-                     0;
+            for (var index
+                     = 0;
                  index < arguments.Count - 1;
                  index++) {
                 if (string.Equals(arguments[index], ArgumentName, StringComparison.Ordinal)) {
@@ -307,13 +302,12 @@ public sealed record RealmSpec {
 
         var read = environment ?? Environment.GetEnvironmentVariable;
         var fromEnvironment = read(EnvironmentVariable);
-        if (
-            !string.IsNullOrEmpty(fromEnvironment)) {
+        if
+            (!string.IsNullOrEmpty(fromEnvironment)) {
             return TryDecode(fromEnvironment, out spec, out error);
         }
 
         error = $"no {ArgumentName} argument and no {EnvironmentVariable} environment variable";
-
         return false;
     }
 
@@ -325,13 +319,17 @@ public sealed record RealmSpec {
     ///     reference, so a spec would never equal itself after a round trip through
     ///     <see cref="Encode" /> — which is the one comparison anybody makes of these.
     /// </remarks>
-    public
-        bool Equals(RealmSpec? other) =>
+    public bool Equals(
+        RealmSpec?
+            other
+    ) =>
         other is not null
         && Shard == other.Shard
         && Key == other.Key
         && Kind == other.Kind
-        && Endpoint == other.Endpoint
+        && Endpoint
+        == other
+            .Endpoint
         && Capacity == other.Capacity
         && TickRate == other.TickRate
         && Seed == other.Seed
@@ -343,14 +341,17 @@ public sealed record RealmSpec {
         HashCode.Combine(Shard, Key, Kind, Endpoint, Capacity, TickRate, Seed, Options.Count);
 
     /// <inheritdoc />
-    public override string
-        ToString() =>
-        string.Create(CultureInfo.InvariantCulture, $"{Kind} shard {Shard} of {Key} at {Endpoint}");
+    public override
+        string ToString() =>
+        string.Create(
+            CultureInfo.InvariantCulture,
+            $"{Kind} shard {Shard} of {Key} at {Endpoint}"
+        );
 
     static bool SameOptions(
         IReadOnlyDictionary<string, string> left,
-        IReadOnlyDictionary<string, string>
-            right
+        IReadOnlyDictionary<string, string
+        > right
     ) {
         if (left.Count != right.Count) {
             return false;
@@ -367,8 +368,7 @@ public sealed record RealmSpec {
     }
 
     static string Field(
-        Dictionary
-            <string, string> fields,
+        Dictionary<string, string> fields,
         string key
     ) =>
         fields.GetValueOrDefault(key, "");

@@ -1,5 +1,6 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
+
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.Graphics;
@@ -9,7 +10,6 @@ using Vixen.Raven.Reflection;
 using Vixen.Shaders;
 using RavenStage = Vixen
     .Raven.Symbols.ShaderStage;
-
 
 namespace Vixen.ShaderCompiler;
 
@@ -52,6 +52,7 @@ public static class EffectTranslator {
         ArgumentNullException.ThrowIfNull(effect);
         var reflection = effect.Reflection;
         var block = BlockOf(reflection);
+
         return new() {
             ShaderName = effect.Name,
             Target = effect.Target,
@@ -59,39 +60,37 @@ public static class EffectTranslator {
                 effect.SourceHash,
             Permutations = [.. Permutations(effect)],
             Composition = [
-                .. composition.Slots
-                    .Select(slot => new EffectComposeBinding(slot.Key, slot.Value))
+                .. composition
+                    .Slots.Select(slot => new EffectComposeBinding(slot.Key, slot.Value))
             ],
             Stages = [
-                .. effect.Modules.Select(module => new EffectStageData(
-                        Stage(module.Stage),
-                        [.. module.Bytes],
-                        module.Name
-                    )
-                )
+                .. effect
+                    .Modules.Select(module => new EffectStageData(Stage(module.Stage), [.. module.Bytes], module.Name))
             ],
             Bindings = [.. Bindings(reflection)],
             ConstantBufferSize = block?.Binding.Size ?? 0,
             Parameters = [
-                .. Parameters(
-                    effect.Name,
-                    reflection
+                .. Parameters(effect.Name, reflection)
+            ],
+            VertexInputs = [
+                .. reflection.VertexInputs.Select(input => new EffectVertexInputData(
+                        input.Name,
+                        input.Location,
+                        Kind(input.Type)
+                    )
                 )
             ],
-            VertexInputs
-                = [
-                    .. reflection.VertexInputs.Select(input =>
-                        new EffectVertexInputData(input.Name, input.Location, Kind(input.Type))
-                    )
-                ],
             PushConstants = [
                 .. reflection.PushConstants.Select(range => new EffectPushConstantData(
                         Stages(range.Stages),
                         range.Offset,
                         range.Size,
                         [
-                            .. range.Members.Select(member =>
-                                new EffectPushConstantMember(member.Name, member.Offset, member.Size)
+                            .. range.Members.Select(member => new EffectPushConstantMember(
+                                    member.Name,
+                                    member.Offset,
+                                    member.Size
+                                )
                             )
                         ]
                     )
@@ -107,12 +106,10 @@ public static class EffectTranslator {
     ///     every key the shader declares — the two lists are different on purpose, and taking the
     ///     values from the wrong one is how a variant ends up keyed on a flag it never branched on.
     /// </remarks>
-    static IEnumerable
-        <EffectPermutationValue> Permutations(CompiledEffect effect) {
-        foreach (var
-                     (name, value) in effect.PermutationKey) {
-            var declared = effect
-                .Reflection.Permutations.FirstOrDefault(permutation => permutation.Name == name);
+    static
+        IEnumerable<EffectPermutationValue> Permutations(CompiledEffect effect) {
+        foreach (var (name, value) in effect.PermutationKey) {
+            var declared = effect.Reflection.Permutations.FirstOrDefault(permutation => permutation.Name == name);
             yield return new(
                 Qualified(effect.Name, name),
                 // "default" is Raven's way of saying nobody supplied one, which the engine spells as
@@ -120,15 +117,15 @@ public static class EffectTranslator {
                 // two spellings of one variant get two cache entries.
                 value == "default" ? declared?.DefaultValue ?? value : value,
                 Kind(declared?.Type),
-                declared?.DefaultValue
-                ?? string.Empty
+                declared?.DefaultValue ?? string.Empty
             );
         }
     }
 
-    static IEnumerable<EffectBindingData> Bindings(RavenReflection reflection) {
-        foreach (var
-                     set in reflection.Sets) {
+    static IEnumerable<EffectBindingData> Bindings(
+        RavenReflection reflection
+    ) {
+        foreach (var set in reflection.Sets) {
             foreach (var binding in set.Bindings) {
                 yield return new(
                     binding.Name,
@@ -174,8 +171,8 @@ public static class EffectTranslator {
     ///     binding is in has up to four, and a translation that kept only the first would leave three
     ///     sets' worth of values with no offsets at all.
     /// </remarks>
-    static
-        IEnumerable<UniformBlock> Blocks(RavenReflection reflection) {
+    static IEnumerable<UniformBlock
+    > Blocks(RavenReflection reflection) {
         foreach (var set in reflection.Sets) {
             foreach (var binding in set.Bindings) {
                 if (binding.Type == DescriptorType.UniformBuffer && binding.Members.Length > 0) {
@@ -191,30 +188,21 @@ public static class EffectTranslator {
         UniformBlock block
     ) {
         var slot = (DescriptorSetSlot)block.Set;
+
         foreach (var parameter in reflection.Parameters) {
             if (parameter.Set != block.Set || parameter.Binding != block.Binding.Binding) {
-                continue;
+                continue
+                    ;
             }
 
-            var
-                kind = Kind(parameter.Type);
-            var marker = parameter.Name.IndexOf(
-                "[]",
-                StringComparison
-                    .Ordinal
-            );
+            var kind = Kind(parameter.Type);
+            var marker = parameter.Name
+                .IndexOf("[]", StringComparison.Ordinal);
             if (marker < 0) {
-                yield return new(
-                    Qualified(
-                        shaderName,
-                        parameter.Name
-                    ),
-                    kind,
-                    parameter.Offset,
-                    parameter.Size,
-                    slot
-                );
-                continue;
+                yield return
+                    new(Qualified(shaderName, parameter.Name), kind, parameter.Offset, parameter.Size, slot);
+                continue
+                    ;
             }
 
             var count = ElementCount(
@@ -222,17 +210,16 @@ public static class EffectTranslator {
                     .Binding,
                 parameter.Name[..marker]
             );
-            for (var index = 0;
-                 index < count;
-                 index++) {
+            for (
+                var index = 0;
+                index < count;
+                index++) {
                 var name =
                     $"{parameter.Name[..marker]}[{index.ToString(System.Globalization.CultureInfo.InvariantCulture)}]{parameter.Name[(marker + 2)..]}";
                 yield return new(
                     Qualified(shaderName, name),
                     kind,
-                    parameter
-                        .Offset
-                    + (index * parameter.ArrayStride),
+                    parameter.Offset + (index * parameter.ArrayStride),
                     parameter.Size,
                     slot
                 );
@@ -251,13 +238,10 @@ public static class EffectTranslator {
     /// </remarks>
     static
         int ElementCount(BindingInfo binding, string arrayName) {
-        foreach (var member in
-                 binding.Members) {
-            if (
-                string.Equals(member.Name, arrayName, StringComparison.Ordinal)) {
-                return member
-                        .Type.ArrayLength
-                    ?? 0;
+        foreach (var member
+                 in binding.Members) {
+            if (string.Equals(member.Name, arrayName, StringComparison.Ordinal)) {
+                return member.Type.ArrayLength ?? 0;
             }
         }
 
@@ -274,12 +258,16 @@ public static class EffectTranslator {
         foreach (var set in reflection.Sets) {
             foreach (var binding in set.Bindings) {
                 if (binding.Type == DescriptorType.UniformBuffer && binding.Members.Length > 0) {
-                    return new(set.Set, binding);
+                    return new(
+                        set.Set,
+                        binding
+                    );
                 }
             }
         }
 
-        return null;
+        return null
+            ;
     }
 
     /// <summary>The engine's name for a parameter: the shader's, qualified by the shader.</summary>
@@ -288,25 +276,27 @@ public static class EffectTranslator {
     ///     global. Unqualified, the second one to load would find a key of the first one's type and
     ///     either throw or — worse, if the types happened to agree — write at the first one's offset.
     /// </remarks>
-    static string Qualified(string shaderName, string name) => $"{shaderName}.{name}";
+    static string Qualified(
+        string shaderName,
+        string name
+    ) =>
+        $"{shaderName}.{name}";
 
     static Vixen.Graphics
         .ShaderStage Stage(RavenStage stage) =>
         stage switch {
-            RavenStage.Vertex => Vixen.Graphics.ShaderStage.Vertex,
-            RavenStage.Fragment => Vixen
-                .Graphics.ShaderStage.Fragment,
+            RavenStage.Vertex => Vixen.Graphics.ShaderStage
+                .Vertex,
+            RavenStage.Fragment => Vixen.Graphics.ShaderStage.Fragment,
             RavenStage.Geometry => Vixen.Graphics.ShaderStage.Geometry,
             RavenStage.Compute => Vixen.Graphics.ShaderStage.Compute,
             _ => Vixen.Graphics.ShaderStage.None
         };
 
-    static Vixen.Graphics.ShaderStage Stages(
-        ShaderStages stages
-    ) {
-        var result =
-            Vixen.Graphics.ShaderStage.None;
-
+    static
+        Vixen.Graphics.ShaderStage Stages(ShaderStages stages) {
+        var result = Vixen.Graphics.ShaderStage.None
+            ;
         if (stages.HasFlag(ShaderStages.Vertex)) {
             result |= Vixen.Graphics.ShaderStage.Vertex;
         }
@@ -316,34 +306,36 @@ public static class EffectTranslator {
             result |= Vixen.Graphics.ShaderStage.Fragment;
         }
 
-        if
-            (stages.HasFlag(ShaderStages.Geometry)) {
-            result |= Vixen.Graphics.ShaderStage.Geometry;
+        if (stages.HasFlag(ShaderStages.Geometry)) {
+            result |= Vixen
+                .Graphics.ShaderStage.Geometry;
         }
 
         if
             (stages.HasFlag(ShaderStages.Compute)) {
-            result |= Vixen.Graphics.ShaderStage
-                .Compute;
+            result |= Vixen.Graphics
+                .ShaderStage.Compute;
         }
 
-        return result;
+        return
+            result;
     }
 
-    static
-        DescriptorKind Kind(DescriptorType type) =>
+    static DescriptorKind Kind(
+        DescriptorType type
+    ) =>
         type switch {
             DescriptorType.UniformBuffer => DescriptorKind.UniformBuffer,
-            DescriptorType.StorageBuffer => DescriptorKind.StorageBuffer,
             DescriptorType
-                .SampledTexture => DescriptorKind.SampledTexture,
+                .StorageBuffer => DescriptorKind.StorageBuffer,
+            DescriptorType.SampledTexture => DescriptorKind.SampledTexture,
             DescriptorType.Sampler => DescriptorKind.Sampler,
             DescriptorType.StorageImage => DescriptorKind.StorageTexture,
             // Spelled out rather than left to the fallback below, which would silently make the
-// scene's hierarchy a uniform buffer — a layout the driver refuses at best.
-            DescriptorType.AccelerationStructure => DescriptorKind.AccelerationStructure,
-            _
-                => DescriptorKind.UniformBuffer
+            // scene's hierarchy a uniform buffer — a layout the driver refuses at best.
+            DescriptorType
+                .AccelerationStructure => DescriptorKind.AccelerationStructure,
+            _ => DescriptorKind.UniformBuffer
         };
 
     /// <summary>The CLR type a value has, by the rule the binding generator uses.</summary>
@@ -356,43 +348,44 @@ public static class EffectTranslator {
     /// </remarks>
     static ShaderValueKind Kind(ShaderDataType? type) {
         if (type is null || type.IsStruct) {
-            return ShaderValueKind
-                .Unknown;
+            return ShaderValueKind.Unknown;
         }
 
-        if (type.IsMatrix) {
-            return (
-                type.Rows, type.Columns) switch {
+        if
+            (type.IsMatrix) {
+            return (type.Rows, type.Columns) switch {
                 (4, 4) => ShaderValueKind.Matrix4x4,
-                (3, 3) => ShaderValueKind.Matrix3x3,
 
-                _ => ShaderValueKind.Unknown
+                (3, 3) => ShaderValueKind.Matrix3x3,
+                _ => ShaderValueKind
+                    .Unknown
             };
         }
 
         return type.Scalar switch {
             IrTypeKind.Float => type.Rows switch {
                 1 => ShaderValueKind.Float,
-                2 => ShaderValueKind.Float2,
-                3 => ShaderValueKind
-                    .Float3,
+                2
+                    => ShaderValueKind.Float2,
+                3 => ShaderValueKind.Float3,
                 4 => ShaderValueKind.Float4,
                 _ => ShaderValueKind.Unknown
             },
             IrTypeKind.Int => type.Rows switch {
                 1 => ShaderValueKind.Int,
-                2
-                    => ShaderValueKind.Int2,
+                2 => ShaderValueKind.Int2,
                 3 => ShaderValueKind.Int3,
-                4
-                    => ShaderValueKind.Int4,
+                4 => ShaderValueKind.Int4,
                 _ => ShaderValueKind.Unknown
             },
             IrTypeKind.UInt => type.Rows == 1 ? ShaderValueKind.UInt : ShaderValueKind.Unknown,
             IrTypeKind.Bool => type.Rows == 1 ? ShaderValueKind.Bool : ShaderValueKind.Unknown,
-            IrTypeKind.Double => type.Rows == 1 ? ShaderValueKind.Double : ShaderValueKind.Unknown,
-            _ => ShaderValueKind
-                .Unknown
+            IrTypeKind.Double => type
+                    .Rows
+                == 1
+                    ? ShaderValueKind.Double
+                    : ShaderValueKind.Unknown,
+            _ => ShaderValueKind.Unknown
         };
     }
 

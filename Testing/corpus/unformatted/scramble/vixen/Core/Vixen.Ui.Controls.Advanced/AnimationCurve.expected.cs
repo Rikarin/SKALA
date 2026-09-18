@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -145,8 +145,11 @@ public sealed class
     /// <returns>Where it landed in time order.</returns>
     public int Add(CurveKey key) {
         ArgumentNullException.ThrowIfNull(key);
+
         keys.Add(key);
+
         Sort();
+
         return
             keys.IndexOf(key);
     }
@@ -198,6 +201,7 @@ public sealed class
         key
             .Time = time;
         key.Value = value;
+
         Sort();
     }
 
@@ -220,44 +224,41 @@ public sealed class
 
         if (keys.Count <= StackKeys) {
             Span<CurveSample> stack = stackalloc CurveSample[StackKeys];
-            Fill(stack);
 
+            Fill(stack);
             return CurveEvaluation.Evaluate(stack[..keys.Count], time);
         }
 
-        var rented = ArrayPool<CurveSample>.Shared.Rent(keys.Count);
+        var rented = ArrayPool<CurveSample>
+            .Shared.Rent(keys.Count);
         try {
             Fill(rented);
+
             return CurveEvaluation.Evaluate(rented.AsSpan(0, keys.Count), time);
         } finally {
-            ArrayPool<CurveSample>.Shared
-                .Return(rented);
+            ArrayPool<CurveSample>.Shared.Return(rented);
         }
     }
 
     /// <summary>The two slopes that actually govern a segment, after the modes have had their say.</summary>
     /// <param name="index">The segment's first key.</param>
     /// <returns>The outgoing slope of the first and the incoming slope of the second.</returns>
-    public (float Outgoing, float Incoming
-        ) Slopes(int index) {
-        if (keys.Count <= StackKeys) {
-            Span<CurveSample> stack =
-                stackalloc CurveSample[StackKeys];
+    public ( float Outgoing, float
+        Incoming ) Slopes(int index) {
+        if (keys.Count
+            <= StackKeys) {
+            Span<CurveSample> stack
+                = stackalloc CurveSample[StackKeys];
             Fill(stack);
 
             return CurveEvaluation.Slopes(stack[..keys.Count], index);
         }
 
-        var rented = ArrayPool<
-            CurveSample>.Shared.Rent(keys.Count);
-
+        var rented =
+            ArrayPool<CurveSample>.Shared.Rent(keys.Count);
         try {
             Fill(rented);
-            return CurveEvaluation.Slopes(
-                rented
-                    .AsSpan(0, keys.Count),
-                index
-            );
+            return CurveEvaluation.Slopes(rented.AsSpan(0, keys.Count), index);
         } finally {
             ArrayPool<CurveSample>.Shared.Return(rented);
         }
@@ -271,13 +272,13 @@ public sealed class
     ///     and the stack path covers every curve a person has ever drawn by hand.
     /// </remarks>
     void Fill(
-        Span<CurveSample
-        > buffer
+        Span
+            <CurveSample> buffer
     ) {
-        for (
-            var index = 0;
-            index < keys.Count;
-            index++) {
+        for (var index = 0;
+             index
+             < keys.Count;
+             index++) {
             var key = keys[index];
             buffer[index] = new(key.Time, key.Value, key.InTangent, key.OutTangent, key.Mode);
         }

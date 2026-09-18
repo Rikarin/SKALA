@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -21,8 +21,9 @@ public sealed class FoliageGrowthTests {
     static FoliageGrowthSettings Field => FoliageGrowthSettings.Over(new(0f, 0f), new(200f, 200f)) with { Steps = 6 };
 
     static
-        ( FoliageVolume Volume, int Type) Sown(FoliageType? type = null) {
+        (FoliageVolume Volume, int Type) Sown(FoliageType? type = null) {
         var volume = new FoliageVolume(new(32f));
+
         return (volume, volume.AddType(type ?? Pine));
     }
 
@@ -30,7 +31,6 @@ public sealed class FoliageGrowthTests {
     public void AForestGrows() {
         var (volume, type) = Sown();
         var result = FoliageGrowth.Simulate(volume, Ground.Flat, Field);
-
         Assert.True(result.Placed > 0, "the simulation grew nothing at all.");
         Assert.Equal(
             result.Placed,
@@ -51,7 +51,6 @@ public sealed class FoliageGrowthTests {
             , _) = Sown();
         var (second
             , _) = Sown();
-
         var a = FoliageGrowth.Simulate(first, Ground.Flat, Field);
         var b = FoliageGrowth.Simulate(second, Ground.Flat, Field);
         Assert.Equal(a, b);
@@ -86,7 +85,6 @@ public sealed class FoliageGrowthTests {
         var again = FoliageGrowth.Simulate(volume, Ground.Flat, Field);
 
         Assert.Equal(first.Placed, again.Placed);
-
         Assert.Equal(first.Placed, volume.InstanceCount);
     }
 
@@ -109,7 +107,6 @@ public sealed class FoliageGrowthTests {
                 1f
             )
         );
-
         FoliageGrowth.Simulate(
             grown,
             Ground.Flat,
@@ -142,6 +139,7 @@ public sealed class FoliageGrowthTests {
         Fact]
     public void SpreadClumpsAForestAndASowingAloneDoesNot() {
         var open = Pine.Ecology with { ShadeTolerance = 1f };
+
         var (sowingOnly, _) = Sown(
             Pine with {
                 Ecology = open
@@ -169,12 +167,14 @@ public sealed class FoliageGrowthTests {
         var
             sownRatio = VarianceToMean(sownPoints, Field, Pine.Ecology.SpreadDistance);
         var grownRatio = VarianceToMean(grownPoints, Field, Pine.Ecology.SpreadDistance);
+
         Assert
             .True(
                 grownRatio > sownRatio,
                 $"a sowing scored {sownRatio:0.00} and a spread forest {grownRatio:0.00}; spread is "
                 + "not clumping anything at the scale it works over."
             );
+
         Assert.True(grownRatio > 1f, $"a spread forest scored {grownRatio:0.00}, which is not clumped.");
     }
 
@@ -196,16 +196,15 @@ public sealed class FoliageGrowthTests {
             .Simulate(grown, Ground.Flat, Field with { Steps = 8 });
 
         var points = Positions(grown);
-
         Assert.True(
             points
                 .Length
             > 40,
             $"only {points.Length} trees to measure."
         );
+
         var
             ratio = ClarkEvans(points, Field.Area);
-
         Assert.True(
             ratio > 0.5f,
             $"a shaded forest scored {ratio:0.000}; competition should space it out past chance."
@@ -217,9 +216,9 @@ public sealed class FoliageGrowthTests {
     public void ShadeToleranceDecidesHowDenseAForestGets() {
         var intolerant = Pine with { Ecology = Pine.Ecology with { ShadeTolerance = 0f } };
         var tolerant = Pine with { Ecology = Pine.Ecology with { ShadeTolerance = 1f } };
-
         var (dark, _) = Sown(intolerant);
         var (light, _) = Sown(tolerant);
+
         var shaded = FoliageGrowth.Simulate(dark, Ground.Flat, Field);
         var open = FoliageGrowth.Simulate(light, Ground.Flat, Field);
 
@@ -241,6 +240,7 @@ public sealed class FoliageGrowthTests {
     public void TheCanopyGrowsWithThePlant() {
         var ecology =
             FoliageEcology.Tree with { ShadeRadius = 8f, MaxAge = 4f };
+
         Assert.Equal(0f, ecology.ShadeAt(0f));
         Assert.Equal(4f, ecology.ShadeAt(2f), 3);
         Assert.Equal(8f, ecology.ShadeAt(4f), 3);
@@ -259,11 +259,11 @@ public sealed class FoliageGrowthTests {
         var oak = FoliageType.Of("Oak") with {
             Radius = 3f, Ecology = FoliageEcology.Tree with { SeedDensity = 0.004f, Priority = 20, ShadeTolerance = 1f }
         };
+
         var volume = new FoliageVolume(new(32f));
         var scrubType = volume.AddType(scrub);
         var oakType = volume
             .AddType(oak);
-
         var result = FoliageGrowth.Simulate(volume, Ground.Flat, Field);
         Assert.True(
             result.Displaced
@@ -284,8 +284,8 @@ public sealed class FoliageGrowthTests {
         var clearing = FoliageBlocker.Around(new(100f, 100f), 30f)
             ;
         var result = FoliageGrowth.Simulate(volume, Ground.Flat, Field, [clearing]);
-
         Assert.True(result.Blocked > 0, "the blocker refused nothing.");
+
         foreach (var position in Positions(volume)) {
             Assert.False(
                 clearing.Contains(new(position.X, 0f, position.Y)),
@@ -303,12 +303,11 @@ public sealed class FoliageGrowthTests {
     public void MovingABlockerRegrowsWhatItCovered() {
         var
             (volume, _) = Sown();
-
         FoliageGrowth.Simulate(volume, Ground.Flat, Field, [FoliageBlocker.Around(new(100f, 100f), 30f)]);
+
         var withClearing = volume.InstanceCount;
 
         FoliageGrowth.Simulate(volume, Ground.Flat, Field);
-
         Assert.True(volume.InstanceCount > withClearing);
         Assert.Contains(Positions(volume), at => Vector2.Distance(at, new(100f, 100f)) < 30f);
     }
@@ -327,9 +326,7 @@ public sealed class FoliageGrowthTests {
     public void SaplingsAreSmallerThanTrees() {
         var (volume,
             _) = Sown();
-
-
-// Past the maximum age, so the sowing is grown and the last step's seedlings are not. At or
+        // Past the maximum age, so the sowing is grown and the last step's seedlings are not. At or
         // below it every plant is one cohort and every scale is the same, which is correct and
         // measures nothing.
         FoliageGrowth.Simulate(
@@ -340,6 +337,7 @@ public sealed class FoliageGrowthTests {
                 6
             }
         );
+
         var scales = volume.Chunks.SelectMany(chunk =>
                 chunk.Instances
             )
@@ -358,7 +356,6 @@ public sealed class FoliageGrowthTests {
         var (volume, _)
             = Sown(slow);
         var result = FoliageGrowth.Simulate(volume, Ground.Flat, Field);
-
         Assert.Equal(0, result.Sprouted);
         Assert.True(result.Sown > 0);
         Assert
@@ -381,6 +378,7 @@ public sealed class FoliageGrowthTests {
         >(()
             => FoliageGrowth.Simulate(volume, Ground.Flat, Field with { Size = new(0f, 100f) })
         );
+
         Assert.Contains("no area", thrown.Message, StringComparison.Ordinal);
     }
 
@@ -389,7 +387,6 @@ public sealed class FoliageGrowthTests {
         var (volume, type) = Sown(Types.Tree);
 
         var result = FoliageGrowth.Simulate(volume, Ground.Flat, Field);
-
         Assert.Equal(0, result.Sown);
         Assert.Equal(0, volume.CountOf(type));
     }
@@ -398,7 +395,12 @@ public sealed class FoliageGrowthTests {
         FoliageVolume volume
     ) => [
         .. volume.Chunks.SelectMany(chunk => chunk.Instances)
-            .Select(instance => new Vector2(instance.Position.X, instance.Position.Z))
+            .Select(instance => new Vector2(
+                    instance
+                        .Position.X,
+                    instance.Position.Z
+                )
+            )
             .OrderBy(at => at.X)
             .ThenBy(at => at.Y)
     ];
@@ -411,17 +413,17 @@ public sealed class FoliageGrowthTests {
     static float VarianceToMean(Vector2[] points, in FoliageGrowthSettings region, float cellSize) {
         var across = Math.Max(1, (int)MathF.Floor(region.Size.X / cellSize));
         var down = Math.Max(1, (int)MathF.Floor(region.Size.Y / cellSize));
-        var counts = new int [across * down];
-
+        var counts = new int[across
+            * down];
         foreach (var point in points) {
             var x = Math.Clamp((int)((point.X - region.Origin.X) / cellSize), 0, across - 1);
             var z = Math.Clamp((int)((point.Y - region.Origin.Y) / cellSize), 0, down - 1);
-            counts
-                [(z * across) + x]++;
+
+            counts[(z * across) + x]++;
         }
 
-        var mean = (float)counts
-            .Average();
+        var mean = (float)
+            counts.Average();
         var variance = counts.Sum(count => (count - mean) * (count - mean)) / counts.Length;
 
         return variance / MathF.Max(mean, 1e-6f);
@@ -429,11 +431,12 @@ public sealed class FoliageGrowthTests {
 
     static float MeanNearestNeighbour(Vector2[] points) {
         var total = 0f;
-
         foreach (var point in points) {
-            var nearest = float.PositiveInfinity;
-            foreach (var
-                         other in points) {
+            var nearest = float
+                .PositiveInfinity;
+
+            foreach (
+                var other in points) {
                 if (other == point) {
                     continue;
                 }

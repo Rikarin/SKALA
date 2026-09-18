@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -137,12 +137,15 @@ static class WebGpuLoader {
             }
 
             NativeLibraries.Register(typeof(Silk.NET.WebGPU.WebGPU).Assembly);
+
             foreach (var candidate in Candidates()) {
                 if (!NativeLibrary.TryLoad(candidate, out var handle)) {
                     continue;
                 }
 
-                var missing = Required.Where(name => !NativeLibrary.TryGetExport(handle, name, out _)).ToArray();
+                var missing = Required
+                    .Where(name => !NativeLibrary.TryGetExport(handle, name, out _))
+                    .ToArray();
 
                 if (missing.Length > 0) {
                     // Not `continue`: a library that loaded under the right name and exports the
@@ -151,6 +154,7 @@ static class WebGpuLoader {
                     failure = TooNew(candidate, missing);
                     api = null;
                     reason = failure;
+
                     return false;
                 }
 
@@ -159,15 +163,16 @@ static class WebGpuLoader {
                 DevicePoll = NativeLibrary.TryGetExport(handle, "wgpuDevicePoll", out var poll) ? poll : 0;
                 IsWgpuNative = DevicePoll != 0;
                 api = loaded;
+
                 reason = null;
-                return true
-                    ;
+                return
+                    true;
             }
 
-            failure =
-                InstallHint();
-            api = null
-                ;
+            failure
+                = InstallHint();
+            api =
+                null;
             reason = failure;
             return false;
         }
@@ -185,43 +190,37 @@ static class WebGpuLoader {
     static
         readonly string[] Libraries = ["wgpu_native", "webgpu_dawn", "webgpu"];
 
-    static Silk.NET.WebGPU.
-        WebGPU FromHandle(nint handle) =>
-        new(
-            new
-                LamdaNativeContext(name => NativeLibrary.TryGetExport(handle, name, out var address) ? address : 0)
-        );
+    static Silk.NET.WebGPU
+        .WebGPU FromHandle(nint handle) =>
+        new(new LamdaNativeContext(name => NativeLibrary.TryGetExport(handle, name, out var address) ? address : 0));
 
     static IEnumerable<string> Candidates() {
         foreach (var library in Libraries) {
-            foreach (
-                var candidate in NativeLibraries.Candidates(library)) {
+            foreach
+                (var candidate in NativeLibraries.Candidates(library)) {
                 yield return candidate;
             }
         }
 
         // Undecorated last, so the OS searches its own paths only after the application's own layout
-// has been given the chance to answer. A machine-wide copy beating the one an application
+        // has been given the chance to answer. A machine-wide copy beating the one an application
         // shipped and was tested against is the failure this ordering exists to prevent.
         foreach (var library in Libraries) {
             foreach (var name in NativeLibraryNames.For(library)) {
-                yield return
-                    name;
+                yield
+                    return name;
             }
         }
     }
 
-
     static IEnumerable<string> Prefixes() {
-        var explicitly = Environment.GetEnvironmentVariable("VIXEN_WEBGPU_PATH")
-            ;
-
+        var explicitly = Environment.GetEnvironmentVariable("VIXEN_WEBGPU_PATH");
         if (!string.IsNullOrEmpty(explicitly)) {
             yield return explicitly;
         }
 
-        if (
-            OperatingSystem.IsMacOS()) {
+        if
+            (OperatingSystem.IsMacOS()) {
             yield return "/opt/homebrew/lib";
             yield return "/usr/local/lib";
             yield break;
@@ -229,14 +228,13 @@ static class WebGpuLoader {
 
         if (OperatingSystem.IsLinux()) {
             yield return "/usr/lib/x86_64-linux-gnu";
-            yield
-                return "/usr/lib64";
+            yield return "/usr/lib64";
             yield return "/usr/local/lib";
         }
     }
 
-    static
-        string TooNew(string path, string[] missing) =>
+
+    static string TooNew(string path, string[] missing) =>
         $"'{path}' is a WebGPU implementation this binding cannot call: it does not export "
         + $"{string.Join(", ", missing)}. Those entry points were removed from webgpu.h in 2024 and "
         + "Silk.NET.WebGPU 2.23.0 still declares them, so a newer Dawn or wgpu-native is not "

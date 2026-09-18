@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -19,7 +19,8 @@ public class CliTests : IDisposable {
     readonly StringWriter output = new();
     readonly StringWriter error = new();
 
-    public CliTests() {
+    public CliTests(
+    ) {
         Directory.CreateDirectory(directory);
     }
 
@@ -34,8 +35,8 @@ public class CliTests : IDisposable {
     [Fact]
     public void The_documented_invocation_works_front_to_back() {
 // Exactly what the README says: raven compile --target glsl <input> <output>
-        var exitCode = Invoke("compile", "--target", "glsl", Fixture("lambert.rvn"), At(""));
-
+        var exitCode =
+            Invoke("compile", "--target", "glsl", Fixture("lambert.rvn"), At(""));
         Assert.Equal(0, exitCode);
         Assert.True(File.Exists(At("Lambert.vert.glsl")));
         Assert.True(File.Exists(At("Lambert.frag.glsl")));
@@ -54,22 +55,17 @@ public class CliTests : IDisposable {
         Assert.Equal("", output.ToString());
         var verbose = new StringWriter();
         RavenCommand.Create(verbose, new StringWriter())
-            .Parse(
-                [
-                    "compile", Fixture("lambert.rvn"),
-                    At("verbose"), "--verbose"
-                ]
-            )
-            .Invoke();
+            .Parse(["compile", Fixture("lambert.rvn"), At("verbose"), "--verbose"])
+            .Invoke()
+            ;
 
-        Assert
-            .Contains("Lambert.vert.glsl", verbose.ToString());
+        Assert.Contains("Lambert.vert.glsl", verbose.ToString());
         Assert.Contains("Lambert.frag.glsl", verbose.ToString());
     }
 
-    [Fact]
-    public
-        void A_single_stage_shader_can_be_written_to_a_named_file() {
+    [Fact
+    ]
+    public void A_single_stage_shader_can_be_written_to_a_named_file() {
         var input = Write(
             "one.rvn",
             """
@@ -84,7 +80,8 @@ public class CliTests : IDisposable {
 
             """
         );
-        Assert.Equal(0, Invoke("compile", input, At("one.frag.glsl")));
+        Assert
+            .Equal(0, Invoke("compile", input, At("one.frag.glsl")));
         Assert.Contains("#version 450", File.ReadAllText(At("one.frag.glsl")));
     }
 
@@ -92,7 +89,14 @@ public class CliTests : IDisposable {
     public void A_named_file_cannot_hold_more_than_one_stage() {
         // Two stages need two files, and guessing a second name would be worse
         // than saying so.
-        Assert.Equal(2, Invoke("compile", Fixture("lambert.rvn"), At("everything.glsl")));
+        Assert.Equal(
+            2,
+            Invoke(
+                "compile",
+                Fixture("lambert.rvn"),
+                At("everything.glsl")
+            )
+        );
         Assert.Contains("names a single file", error.ToString());
         Assert.False(File.Exists(At("everything.glsl")));
     }
@@ -106,9 +110,10 @@ public class CliTests : IDisposable {
     [Fact]
     public void Emit_ir_writes_the_dump_alongside() {
         Assert.Equal(0, Invoke("compile", Fixture("lambert.rvn"), At(""), "--emit-ir"));
-        var ir
-            = File.ReadAllText(At("lambert.ir"));
-        Assert.Contains("shader Lambert", ir);
+        var
+            ir = File.ReadAllText(At("lambert.ir"));
+        Assert
+            .Contains("shader Lambert", ir);
     }
 
     [Fact]
@@ -128,16 +133,10 @@ public class CliTests : IDisposable {
             """
         );
 
-        Assert.Equal(
-            1,
-            Invoke(
-                "compile",
-                input,
-                At("")
-            )
-        );
+        Assert.Equal(1, Invoke("compile", input, At("")));
         var reported = error.ToString();
-        Assert.Contains("bad.rvn(6,23): error RVN2010", reported);
+        Assert.Contains("bad.rvn(6,23): error RVN2010", reported)
+            ;
         Assert.Contains("return float4(missing, 0, 0, 1)", reported);
         Assert.Contains("^^^^^^^", reported);
         Assert.Contains("compilation failed with 1 error", reported);
@@ -147,11 +146,17 @@ public class CliTests : IDisposable {
 
     [Fact]
     public void A_syntax_error_stops_before_the_binder_can_pile_on() {
-        var input = Write("syntax.rvn", "package A\n\nshader S {\n    func F(: float {\n}\n")
-            ;
-        Assert.Equal(1, Invoke("compile", input, At("")));
-        var
-            reported = error.ToString();
+        var input = Write("syntax.rvn", "package A\n\nshader S {\n    func F(: float {\n}\n");
+        Assert.Equal(
+            1,
+            Invoke(
+                "compile",
+                input,
+                At("")
+            )
+        );
+        var reported =
+            error.ToString();
         Assert.Contains("RVN1001", reported);
         Assert.DoesNotContain("RVN2", reported);
     }
@@ -161,28 +166,22 @@ public class CliTests : IDisposable {
         // The shader gives a binding a default; a descriptor-backed variable cannot carry
         // one, so it stays host-side data and SPIR-V says so — once, however many stages
         // come out of the shader.
-        Assert.Equal(
-            0,
-            Invoke("compile", "-t", "spirv", Fixture("lambert.rvn"), At(""))
-        );
-        var reported = error.ToString();
+        Assert.Equal(0, Invoke("compile", "-t", "spirv", Fixture("lambert.rvn"), At("")));
+
+        var reported = error
+            .ToString();
         Assert.Contains("info RVN4003", reported);
         Assert.Equal(1, Occurrences(reported, "RVN4003"));
     }
 
     [Fact]
     public void A_binary_target_writes_bytes_and_can_write_its_listing_too() {
-        Assert.Equal(
-            0,
-            Invoke("compile", "-t", "spirv", Fixture("lambert.rvn"), At(""), "--emit-listing")
-        );
-        var binary =
-            File.ReadAllBytes(At("Lambert.frag.spv"));
+        Assert.Equal(0, Invoke("compile", "-t", "spirv", Fixture("lambert.rvn"), At(""), "--emit-listing"));
+
+        var binary
+            = File.ReadAllBytes(At("Lambert.frag.spv"));
         Assert.Equal(0x03, binary[0]);
-        Assert.Equal(
-            0x02,
-            binary[1]
-        );
+        Assert.Equal(0x02, binary[1]);
         Assert.Equal(0x23, binary[2]);
         Assert.Equal(0x07, binary[3]);
 
@@ -199,12 +198,7 @@ public class CliTests : IDisposable {
     [Fact]
     public void An_unknown_target_is_rejected_and_the_known_ones_are_listed() {
         var code = CompileDriver.Run(
-            new() {
-                Inputs
-                    = [Fixture("lambert.rvn")],
-                Output = At(""),
-                Target = "hlsl"
-            },
+            new() { Inputs = [Fixture("lambert.rvn")], Output = At(""), Target = "hlsl" },
             output,
             error
         );
@@ -236,14 +230,7 @@ public class CliTests : IDisposable {
 
             """
         );
-        Assert.Equal(
-            1,
-            Invoke(
-                "compile",
-                input,
-                At("")
-            )
-        );
+        Assert.Equal(1, Invoke("compile", input, At("")));
         Assert.Contains("no entry points", error.ToString());
     }
 
@@ -266,9 +253,9 @@ public class CliTests : IDisposable {
 
             """
         );
+
         Assert.Equal(0, Invoke("compile", library, At("Math.rvnlib"), "--emit-library"));
-        Assert
-            .True(File.Exists(At("Math.rvnlib")));
+        Assert.True(File.Exists(At("Math.rvnlib")));
         var consumer = Write(
             "lit.rvn",
             """
@@ -290,6 +277,7 @@ public class CliTests : IDisposable {
         );
 
         Assert.Equal(0, Invoke("compile", consumer, At("out"), "--reference", At("Math.rvnlib")));
+
         // The library's body, linked in and emitted as an ordinary function.
         var glsl = File.ReadAllText(At(Path.Combine("out", "Lit.frag.glsl")));
         Assert.Contains("float Saturate(float x)", glsl, StringComparison.Ordinal);
@@ -323,8 +311,7 @@ public class CliTests : IDisposable {
         Assert.Equal(2, Invoke("compile", Fixture("lambert.rvn"), At(""), "--reference", Fixture("lambert.rvn")));
         Assert.Contains(
             "magic number does not match",
-            error
-                .ToString()
+            error.ToString()
         );
     }
 
@@ -349,10 +336,10 @@ public class CliTests : IDisposable {
 
             """
         );
+
         Assert.Equal(1, Invoke("compile", library, At("Leaky.rvnlib"), "--emit-library"));
         Assert.Contains("RVN5001", error.ToString());
-        Assert
-            .False(File.Exists(At("Leaky.rvnlib")));
+        Assert.False(File.Exists(At("Leaky.rvnlib")));
     }
 
     int Invoke(params string[] args) =>
@@ -361,20 +348,25 @@ public class CliTests : IDisposable {
             : (int)ExitCode.UsageError;
 
     ParseResult Parse(
-        params string[]
-            args
+        params string[
+        ] args
     ) =>
         RavenCommand.Create(output, error).Parse(args);
 
     string At(string relative) => Path.Combine(directory, relative);
 
-    string Write(string name, string source) {
+    string Write(
+        string name,
+        string source
+    ) {
         var path = At(name);
         File.WriteAllText(path, source);
+
         return path;
     }
 
-    static int Occurrences(string text, string value) {
+    static int
+        Occurrences(string text, string value) {
         var count = 0;
         for (var i = text.IndexOf(value, StringComparison.Ordinal);
              i >= 0;
@@ -386,13 +378,5 @@ public class CliTests : IDisposable {
     }
 
     // bin/Debug/net10.0 -> Tests project root -> Fixtures
-    static string Fixture(string file) =>
-        Path.Combine(
-            AppContext.BaseDirectory,
-            "..",
-            "..",
-            "..",
-            "Fixtures",
-            file
-        );
+    static string Fixture(string file) => Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Fixtures", file);
 }

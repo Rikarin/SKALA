@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -57,10 +57,10 @@ static class KeyValueText {
     ) {
         fields = new(StringComparer.Ordinal);
         error = "";
+
         if (
             string.IsNullOrWhiteSpace(text)) {
             error = "it is empty";
-
             return
                 false;
         }
@@ -68,6 +68,7 @@ static class KeyValueText {
         foreach (var range in text.AsSpan().Split(';')) {
             var
                 pair = text.AsSpan()[range];
+
             if
                 (pair.IsEmpty) {
                 continue;
@@ -80,7 +81,6 @@ static class KeyValueText {
             }
 
             var key = Unescape(pair[..separator]);
-
             if (!fields.TryAdd(key, Unescape(pair[(separator + 1)..]))) {
                 error = $"`{key}` appears twice";
 
@@ -90,8 +90,8 @@ static class KeyValueText {
 
         if (fields.Count == 0) {
             error = "it holds no fields";
-
-            return false;
+            return
+                false;
         }
 
         return true;
@@ -99,25 +99,21 @@ static class KeyValueText {
 
     static void Escape(StringBuilder text, string value) {
         foreach (var character in value) {
-            switch (character) {
-                case
-                    '%':
-                    text.Append("%25")
-                        ;
+            switch (character
+                   ) {
+                case '%':
+                    text.Append("%25");
 
                     break;
-
                 case ';':
                     text.Append("%3B");
                     break;
-
                 case '=':
                     text.Append("%3D");
-                    break;
 
+                    break;
                 default:
                     text.Append(character);
-
                     break;
             }
         }
@@ -128,38 +124,45 @@ static class KeyValueText {
             return value.ToString();
         }
 
-        var text = new StringBuilder(value.Length);
+        var text = new StringBuilder(
+            value
+                .Length
+        );
         for (var index = 0; index < value.Length; index++) {
             if (value[index] == '%' && index + 2 < value.Length) {
-                var pair
-                    = value.Slice(index + 1, 2);
+                var pair = value.Slice(index + 1, 2);
+
                 if (pair.Equals("25", StringComparison.OrdinalIgnoreCase)) {
-                    text.Append('%');
-                    index +=
-                        2;
-                    continue;
-                }
-
-                if (pair.Equals("3B", StringComparison.OrdinalIgnoreCase)) {
-                    text
-                        .Append(';');
-                    index
-                        += 2;
-                    continue;
-                }
-
-                if (pair
-                    .Equals("3D", StringComparison.OrdinalIgnoreCase)) {
-                    text.Append('=');
+                    text.Append('%')
+                        ;
                     index += 2;
                     continue;
+                }
+
+                if (
+                    pair.Equals("3B", StringComparison.OrdinalIgnoreCase)) {
+                    text.Append(';');
+                    index += 2;
+
+                    continue;
+                }
+
+                if
+                    (pair.Equals("3D", StringComparison.OrdinalIgnoreCase)) {
+                    text.Append('=');
+                    index += 2;
+                    continue
+                        ;
                 }
             }
 
             // A stray `%` is kept rather than rejected. This is not a URL and nothing else escapes
             // here, so the only way to produce one is to have written it, and losing it would make
             // the round trip lossy for a character no rule forbids.
-            text.Append(value[index]);
+            text.Append(
+                value
+                    [index]
+            );
         }
 
         return text.ToString();

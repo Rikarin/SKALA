@@ -1,12 +1,14 @@
-// SPDX-FileCopyrightText: Copyright (c) Rikarin
-      // SPDX-License-Identifier: Apache-2.0
-      using Vixen. Core    .  Mathematics  ;
-              using Vixen.Rendering
-;
- using
-       Vixen.Rendering  .   VirtualGeometry;
-                namespace Vixen
-         .Editor   .Assets  .    Models;
+		// SPDX-FileCopyrightText: Copyright (c) Rikarin
+            
+ // SPDX-License-Identifier: Apache-2.0
+          using Vixen    .  Core  .Mathematics;
+using Vixen.Rendering
+			;
+using
+               Vixen  .   Rendering.VirtualGeometry;
+    namespace   Vixen
+           .Editor  .    Assets. Models    ;
+               
 /// <summary>The decisions about a model that need the whole model, taken once, at build time.</summary>
 /// <remarks>
 ///     <para>
@@ -32,48 +34,46 @@
 ///         failure points back at the build that caused it.
 ///     </para>
 /// </remarks>
-public static    class
-ModelCompiler {
+public static class
+   ModelCompiler {
     /// <summary>Builds one mesh's cluster DAG, or refuses it.</summary>
     /// <param name="mesh">The mesh, as it came out of the importer.</param>
     /// <param name="settings">How big clusters and groups are.</param>
     /// <param name="report">Where to say what happened.</param>
     /// <returns>The DAG, or null if the mesh has no triangles or its DAG did not validate.</returns>
     /// <exception cref="ArgumentNullException">The mesh or the report is null.</exception>
-               public static
-    MeshletMesh? CompileMeshlets(
-           MeshData mesh   ,
-               MeshletBuildSettings  settings,
-        Action<
-   ImportSeverity,  string    >  report
-   )  {  ArgumentNullException.ThrowIfNull(mesh);
-    ArgumentNullException .ThrowIfNull
-                (report);
- if (mesh  .   TriangleCount == 0    ) {    return null;
-         }
-        var input    = ToBuildInput(mesh );
-              var built   = MeshletBuilder .Build
-   (   input , settings);
- var problems = MeshletValidator   .
-Validate(built, input);
+   public static
+    MeshletMesh? CompileMeshlets   (
+                MeshData  mesh,
+ MeshletBuildSettings settings,
+         Action  <
+ImportSeverity    ,  string  >  report
+              ) { ArgumentNullException.ThrowIfNull(mesh );
+   ArgumentNullException.ThrowIfNull
+ (report );
+if  (   mesh.TriangleCount    == 0    ) { return null    ;
 
-        if (problems.Count == 0 ) {
-            return   built  ;
-                }
-               
-      
-      // Every problem, and then it fails once — the habit `SceneImporter` set, for the same reason:
-        
-        // a build that stopped at the first one would make fixing a mesh a sequence of builds.
- report(
-     ImportSeverity    .Error,
+        }
+        var input = ToBuildInput (mesh)   ;
+                var built = MeshletBuilder   . Build
+               (input, settings);
+      var problems   = MeshletValidator.
+      Validate(built, input );
+        if (problems. Count == 0   )  {
+            return built    ;
+ }
+     
+              // Every problem, and then it fails once — the habit `SceneImporter` set, for the same reason:
+       // a build that stopped at the first one would make fixing a mesh a sequence of builds.
+                report(
+               ImportSeverity.  Error,
             $"'{mesh.Name}' produced a cluster hierarchy that is not crack-free, so it has none. "
-              +  string.
-       Join(   " ", problems)
-                )   ;
-               return   null;
-          }
-  
+          + string   .
+  Join(" ",   problems   )
+ );
+             
+        return null  ;
+    }
     /// <summary>
     ///     How many bytes of attributes a page vertex carries beside its quantized position.
     /// </summary>
@@ -82,8 +82,8 @@ Validate(built, input);
     ///     <see cref="MeshletPageBuilder.PositionSize" /> makes a page vertex sixteen bytes — a
     ///     device word boundary per vertex, without padding to reach one.
     /// </remarks>
- public const  int PageAttributeStride
-             =    10;
+    public const    int PageAttributeStride
+          =   10;
     /// <summary>
     ///     The same, for a skinned mesh: eight more bytes of bone influences after the coordinate.
     /// </summary>
@@ -92,12 +92,13 @@ Validate(built, input);
     ///     untouched — see <see cref="MeshletPageSet.InfluenceOffset" /> for why this is per mesh
     ///     rather than a fixed layout every mesh pays for.
     /// </remarks>
-    public   const
-int SkinnedPageAttributeStride = PageAttributeStride +  MeshletPageBuilder.  InfluenceSize  ;
+     public const
+      int SkinnedPageAttributeStride =  PageAttributeStride +  MeshletPageBuilder  .InfluenceSize;
+
     /// <summary>Where a skinned page vertex's influences begin, in bytes from the vertex.</summary>
-    public const int PageInfluenceOffset = MeshletPageBuilder    .   PositionSize + PageAttributeStride
-          ;
-     
+  public const int PageInfluenceOffset    =   MeshletPageBuilder.PositionSize + PageAttributeStride
+;
+    
     /// <summary>Packs a DAG's geometry into pages, quantized against one grid.</summary>
     /// <param name="mesh">The mesh, as it came out of the importer.</param>
     /// <param name="meshlets">Its DAG, from <see cref="CompileMeshlets" />.</param>
@@ -119,50 +120,50 @@ int SkinnedPageAttributeStride = PageAttributeStride +  MeshletPageBuilder.  Inf
     ///         not the shipping one. See <c>docs/plan/22-virtualized-geometry.md</c> phase 5.
     ///     </para>
     /// </remarks>
-      public static MeshletPageSet  ? CompilePages( MeshData mesh,
-        MeshletMesh meshlets ,
-  Action<ImportSeverity, string  >   report
-)
-    {
-               ArgumentNullException    .ThrowIfNull  (mesh); ArgumentNullException.ThrowIfNull(meshlets);
-     ArgumentNullException.ThrowIfNull(   report)   ;
-		if    (mesh.    IsSkinned && OutOfPalette
-             (mesh  )  is { } offender    ) {
-	report    (
-               ImportSeverity.
-Error    ,
+               public  static MeshletPageSet? CompilePages ( MeshData mesh ,
+     MeshletMesh meshlets,
+		Action<ImportSeverity  ,   string    > report
+             )
+	{
+               ArgumentNullException  .ThrowIfNull(mesh); ArgumentNullException.ThrowIfNull(meshlets);
+        ArgumentNullException.   ThrowIfNull(   report    );
+     
+             if (    mesh.IsSkinned &&  OutOfPalette
+                (  mesh) is {    } offender    ) {   
+     report    (
+                ImportSeverity.
+        Error,
                 $"'{mesh.Name}' weights a vertex to bone {offender}, and a page vertex stores a bone "
-     +
+             +
 $"index in one byte — so a skeleton it can page has at most "
                 + $"{MeshletPageBuilder.MaxBones} bones. "
-             + "The mesh has a cluster hierarchy and no pages."
-                );
-     return null   ;
-                }
-        
-             try   { return MeshletPageBuilder    .Build(
-        meshlets,
-                mesh .Positions,   
-                PageAttributes(mesh) , new   ( ) {
-            AttributeStride  =
-  mesh .IsSkinned ? SkinnedPageAttributeStride    : PageAttributeStride,
-                InfluenceOffset  = mesh    .  IsSkinned ?   PageInfluenceOffset :    -1 }
-          );
-                } catch (
-             ArgumentException failure) {
-   // A cluster that does not fit a page, or positions the grid was not built over. Both are
-         // build errors about this mesh rather than bugs in the packer, and both leave the mesh
-             // with a DAG and no pages — which draws through the classic path and says why.
-        report    (  
-         ImportSeverity
-  . Error,
+        + "The mesh has a cluster hierarchy and no pages."
+            )   ;
+
+            return   null;
+  }  
+                try {    return MeshletPageBuilder.Build (
+          meshlets,
+                mesh.Positions,
+             PageAttributes( mesh)   , new(  ) {
+   AttributeStride =
+         mesh .IsSkinned    ? SkinnedPageAttributeStride :  PageAttributeStride,
+             InfluenceOffset    =  mesh.   IsSkinned ?    PageInfluenceOffset : -1 }
+        );
+         } catch (
+  ArgumentException failure    ) {
+           // A cluster that does not fit a page, or positions the grid was not built over. Both are
+        // build errors about this mesh rather than bugs in the packer, and both leave the mesh
+ // with a DAG and no pages — which draws through the classic path and says why.
+ report(
+                ImportSeverity
+        .Error,
                 $"'{mesh.Name}' has a cluster hierarchy that could not be paged, so it has no pages. "
-           + failure.Message );
-        
- return null
- ;
-        } }
-        
+                + failure.Message );
+
+            return    null
+;
+	}   }
     /// <summary>
     ///     The per-vertex bytes that ride along with a quantized position, in source-vertex order.
     /// </summary>
@@ -173,25 +174,25 @@ $"index in one byte — so a skeleton it can page has at most "
     ///     missing normals or texture coordinates gets zeros for them rather than a shorter stride,
     ///     because a stride that varied per mesh would have to be carried per mesh.
     /// </remarks>
-    static    byte   []   PageAttributes  (MeshData    mesh    ) {   var   stride  = mesh.IsSkinned ?    SkinnedPageAttributeStride : PageAttributeStride  ;
-        var attributes = new byte   [    mesh.   Positions   .Length * stride   ] ;
-
+         static byte   [  ] PageAttributes    (    MeshData mesh   )   {  var stride = mesh.    IsSkinned ? SkinnedPageAttributeStride  : PageAttributeStride;
+                var attributes =   new    byte[   mesh   .Positions.Length   * stride ];
         for (
-	var i = 0  ; i < mesh.Positions.Length; i ++) {
-         var  normal =    i
-                <  mesh. Normals   .Length ? mesh.Normals[i] : Vector3.   Zero;
-            var uv = i < mesh.TexCoords.    Length ?   mesh.TexCoords  [  i]    :  Vector2.Zero;  var at = i * stride;
-   Half
-                (attributes.AsSpan   (at    )    , normal.   X   )   ;
-      Half(attributes.  AsSpan(at + 2)  , normal  .    Y); Half  (attributes.   AsSpan( at + 4  ), normal.Z  );
-			Half(  attributes.AsSpan (   at  + 6),    uv. X   );
-            Half(attributes   .AsSpan(
-at + 8  ), uv. Y);
+   var i  = 0; i < mesh.Positions.Length ; i++  ) {   
+                var    normal  = i
+      < mesh   .Normals.Length ? mesh.Normals[i] :   Vector3.Zero ;
+			var uv = i < mesh.    TexCoords.   Length ? mesh  .  TexCoords[    i  ] : Vector2.  Zero; var at = i * stride;
 
-        if (mesh.IsSkinned   ) { Influences(    attributes .  AsSpan(   at +   PageAttributeStride)  , mesh,   i);
-         } }   
-           
-       return attributes    ;    }
+            Half
+(attributes   .AsSpan    (    at ),   normal   .   X); 
+        Half(  attributes.AsSpan(at +  2)  ,    normal.Y)  ; Half(   attributes. AsSpan (at  + 4), normal  .Z)  ;
+         Half(attributes .   AsSpan  (at + 6    ), uv   .X);
+           Half   (attributes.AsSpan(
+       at  + 8), uv.Y);
+   
+              if (mesh   .IsSkinned) {    Influences (  attributes.   AsSpan(   at +  PageAttributeStride),   mesh, i );
+ }    }
+ return    attributes;    }
+               
     /// <summary>
     ///     One vertex's four bone indices and four weights, a byte each.
     /// </summary>
@@ -210,38 +211,39 @@ at + 8  ), uv. Y);
     ///         the path a shipped asset takes.
     ///     </para>
     /// </remarks>
-   static void    Influences(
-              Span<byte  > destination ,   MeshData mesh , int vertex) {
- var at = vertex    *   4;
- if ( 
-               at  +   4 >   mesh.BoneWeights    .Length)  {
-            destination[..MeshletPageBuilder.InfluenceSize].Clear( )    ; destination[4] = byte.  MaxValue;
-       return
-;
-}
-         for (var i = 0   ; i < 4; i++)
-{
-  var index =
-           at    + i < mesh    .BoneIndices   .  Length ? mesh.BoneIndices  [   at + i    ]  : 0   ;
-              var
-    weight   = Math.Clamp(mesh.BoneWeights[  at + i]  , 0f    , 1f);
-destination[i] =    (    byte  )Math. Clamp (index, 0  , MeshletPageBuilder .MaxBones -   1); destination[ 4 + i] =   (byte)MathF   . Round(    weight * byte.  MaxValue    );
-          } }
-
-    /// <summary>The first bone index the page format cannot store, or null if every one fits.</summary>
-      static  int? OutOfPalette( MeshData    mesh) {
-     foreach (var    index in mesh.BoneIndices)    {
-		if (index < 0 || index >= MeshletPageBuilder  .  MaxBones    )   {
-                return index;
-}
+    static void Influences(
+       Span  <byte >   destination, MeshData mesh, int vertex) {
+        var at    =   vertex * 4  ;
+if   (
+         at +   4 > mesh    .BoneWeights.  Length) {
+            destination[..MeshletPageBuilder.InfluenceSize] .    Clear(); destination[4]  = byte.MaxValue ;
+  
+           return;
               }
-           return null    ;
-    }   
-             static   void  Half  (    Span<
-byte> destination, float value    ) =>
-          BitConverter.
-TryWriteBytes    (destination, BitConverter.HalfToInt16Bits((   System . Half)value ));
-   
+    
+for (   var i = 0; i < 4; i    ++
+          ) {
+var index
+      = at    + i   <  mesh.BoneIndices.Length  ?   mesh.BoneIndices    [  at +   i   ] : 0;
+     var weight
+		= Math.Clamp(  mesh.BoneWeights[  at +    i], 0f, 1f);   
+            destination    [    i  ] = ( byte )Math.Clamp  (index , 0,   MeshletPageBuilder.MaxBones - 1 ) ; destination[4   + i] =   ( byte)    MathF.Round(  weight    * byte.  MaxValue);
+} }
+              
+    /// <summary>The first bone index the page format cannot store, or null if every one fits.</summary>
+           static int    ? OutOfPalette(MeshData mesh    ) {
+        foreach (var index in    mesh .BoneIndices) {
+             if (index < 0  ||  index    >=   MeshletPageBuilder .MaxBones)    {
+                return   index  ;
+          }
+        }
+   return  null    ;
+}  
+
+          static void Half (Span
+<byte>    destination, float    value) =>
+ BitConverter
+ .TryWriteBytes(destination, BitConverter   . HalfToInt16Bits ((System .Half)value    )) ;
     /// <summary>A mesh as the DAG builder wants it.</summary>
     /// <param name="mesh">The mesh.</param>
     /// <returns>The builder's input.</returns>
@@ -250,15 +252,14 @@ TryWriteBytes    (destination, BitConverter.HalfToInt16Bits((   System . Half)va
     ///     them, which is worth being able to say out loud: a compile that quietly rewrote the mesh
     ///     it was handed would make the order the importer does its work in matter.
     /// </remarks>
-static
-MeshletBuildInput ToBuildInput    (MeshData mesh)   =>
-          new  () {
-            Positions = mesh   .Positions,  Indices    = mesh .Indices,
- Normals =  mesh  .Normals , Tangents = mesh.Tangents,
- TexCoords    = mesh    .TexCoords ,  
-           BoneIndices =    mesh    .BoneIndices
-     ,
-            BoneWeights = mesh. BoneWeights    ,
-            MaterialIndex = mesh.MaterialIndex };
+           static MeshletBuildInput   ToBuildInput  (MeshData mesh) =>
+     new   () {
+            Positions  =    mesh. Positions, Indices =  mesh  .Indices ,
+            Normals = mesh.Normals, Tangents    = mesh    .Tangents ,
+            TexCoords =    mesh    .TexCoords,
+          BoneIndices = mesh .
+   BoneIndices    ,
+            BoneWeights = mesh.BoneWeights,
+             MaterialIndex = mesh.MaterialIndex   };
 }
-          
+      

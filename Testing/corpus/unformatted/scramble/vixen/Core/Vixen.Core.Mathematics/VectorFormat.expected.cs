@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -29,14 +29,14 @@ static class VectorFormat {
         IFormatProvider? provider,
         ReadOnlySpan<float> components
     ) {
-        // Counted separately and published only on success: ISpanFormattable requires charsWritten
-
+// Counted separately and published only on success: ISpanFormattable requires charsWritten
         // to be 0 when the destination was too small, not however far we got before running out.
         charsWritten
             = 0;
         provider ??= DefaultProvider;
         var count =
             0;
+
         if (!TryAppend(destination, ref count, "(")) {
             return false;
         }
@@ -53,8 +53,8 @@ static class VectorFormat {
                 return false;
             }
 
-            count +=
-                written;
+            count
+                += written;
         }
 
         if (!TryAppend(destination, ref count, ")")) {
@@ -66,12 +66,12 @@ static class VectorFormat {
     }
 
     public static string ToString(
-        string
-            ? format,
+        string? format,
         IFormatProvider? provider,
         ReadOnlySpan<float> components
     ) {
         // Enough for sixteen "G"-formatted floats and the delimiters, so every type here fits. A
+
         // custom format wide enough to overflow it falls back rather than truncating.
         Span<char> buffer = stackalloc char[640];
         return TryFormat(buffer, out var written, format, provider, components)
@@ -83,16 +83,10 @@ static class VectorFormat {
             );
     }
 
-    static string FormatSlow(
-        string? format,
-        IFormatProvider
-            ? provider,
-        ReadOnlySpan<float> components
-    ) {
+    static string FormatSlow(string? format, IFormatProvider? provider, ReadOnlySpan<float> components) {
         provider ??= DefaultProvider;
-        var builder =
-            new System.Text.StringBuilder("(");
-
+        var
+            builder = new System.Text.StringBuilder("(");
         for (var i = 0; i < components.Length; i++) {
             if (i > 0) {
                 builder.Append(", ");
@@ -104,15 +98,15 @@ static class VectorFormat {
         return builder.Append(')').ToString();
     }
 
-    static
-        bool TryAppend(Span<char> destination, ref int charsWritten, ReadOnlySpan<char> text) {
+    static bool TryAppend(Span<char> destination, ref int charsWritten, ReadOnlySpan<char> text) {
         if (destination.Length - charsWritten < text.Length) {
             return false;
         }
 
-        text.CopyTo(destination[charsWritten..]);
-        charsWritten += text.Length
-            ;
+        text
+            .CopyTo(destination[charsWritten..]);
+        charsWritten +=
+            text.Length;
         return true;
     }
 }

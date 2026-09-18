@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
-	// SPDX-License-Identifier: Apache-2.0
-           
-namespace  Vixen.   Ui   .   Styling   . Utilities;
+         // SPDX-License-Identifier: Apache-2.0
+      
+namespace Vixen.   Ui   .   Styling   . Utilities;  
+	
 /// <summary>The <c>--tw-*</c> fragments utilities contribute to, and what each one is worth unset.</summary>
 /// <remarks>
 ///     <para>
@@ -52,7 +53,7 @@ namespace  Vixen.   Ui   .   Styling   . Utilities;
 ///         Neither is a prerequisite: both are refinements to a mechanism that works without them.
 ///     </para>
 /// </remarks>
-public    static class   UtilityComposition {
+		public    static class   UtilityComposition {
     /// <summary>The prefix every fragment name carries.</summary>
     /// <remarks>
     ///     Tailwind's, kept rather than renamed. The names are an implementation detail of the utility
@@ -68,34 +69,33 @@ public    static class   UtilityComposition {
     ///     draw: an unprefixed <c>--name</c> is a value parked where no engine will ever look for it,
     ///     and a prefixed one is half of a declaration something reads.
     /// </remarks>
-	public   const string   Prefix = "--tw-"
-		;
-
-    // ── The gradient stops ──────────────────────────────────────────────────────────────────
-               //
-    // Named as constants because a fragment is referred to in two places that must agree — the family
-         // that sets it and the assembler that reads it — and a typo in either is a silent no-op rather
+    public   const string   Prefix = "--tw-"
+;
+               // ── The gradient stops ──────────────────────────────────────────────────────────────────
+    //
+         // Named as constants because a fragment is referred to in two places that must agree — the family
+    // that sets it and the assembler that reads it — and a typo in either is a silent no-op rather
     // than a compile error. The whole point of the mechanism is that those two places are far apart.
-
-    /// <summary>The gradient's first stop colour.</summary>
-              public  const string GradientFrom    = Prefix + "gradient-from";
-    /// <summary>The gradient's middle stop colour, when there is one.</summary>
-       public
-    const string GradientVia = Prefix + "gradient-via" ;
               
+    /// <summary>The gradient's first stop colour.</summary>
+       public  const string GradientFrom    = Prefix + "gradient-from";
+    
+    /// <summary>The gradient's middle stop colour, when there is one.</summary>
+              public
+        const string GradientVia = Prefix + "gradient-via" ;
     /// <summary>The gradient's last stop colour.</summary>
-        public const string GradientTo = Prefix +
-         "gradient-to";
+         public const string GradientTo = Prefix +
+			"gradient-to";
     /// <summary>Where the first stop sits.</summary>
-			public  const string    GradientFromPosition   =   Prefix    +   "gradient-from-position"; 
+public  const string    GradientFromPosition   =   Prefix    +   "gradient-from-position";
 
     /// <summary>Where the middle stop sits.</summary>
     public
-const string GradientViaPosition = Prefix  + "gradient-via-position";
-
+const string GradientViaPosition = Prefix  + "gradient-via-position"; 
     /// <summary>Where the last stop sits.</summary>
 public
 const string GradientToPosition = Prefix  + "gradient-to-position" ;
+
     /// <summary>The assembled stop list every gradient assembler interpolates.</summary>
     /// <remarks>
     ///     ⚠ <b>This one's initial value <i>is</i> the two-stop list, and that is what makes a missing
@@ -106,31 +106,32 @@ const string GradientToPosition = Prefix  + "gradient-to-position" ;
     ///     adding a middle stop is the one thing the fallback cannot express — which leaves exactly
     ///     one family in the table with an alongside declaration instead of three.
     /// </remarks>
-    public   const  string   GradientStops = Prefix   + "gradient-stops";
-        // ── The mask stops ──────────────────────────────────────────────────────────────────────
-            //
- // ⚠ <b>A second set rather than the gradient's, and they cannot be shared however alike they
-    // look.</b> An element may carry a background gradient and a mask at once — <c>bg-linear-to-r
-   // from-accent to-surface-3 mask-linear-from-70%</c> is an ordinary thing to write — and one set
+        public   const  string   GradientStops = Prefix   + "gradient-stops";
+            // ── The mask stops ──────────────────────────────────────────────────────────────────────
+ //
+    // ⚠ <b>A second set rather than the gradient's, and they cannot be shared however alike they
+   // look.</b> An element may carry a background gradient and a mask at once — <c>bg-linear-to-r
+             // from-accent to-surface-3 mask-linear-from-70%</c> is an ordinary thing to write — and one set
              // of fragments would make the mask's stops overwrite the background's silently.
-             //
-			// ⚠ <b>And the initials are the other way up from the gradient's, because a mask's job is the
-             // opposite of a fill's.</b> A gradient with no stops set should paint nothing, so both of its
-      // ends default to <c>transparent</c>. A mask with no stops set must show everything, so its near
-   // end defaults to <c>black</c> — opaque, and therefore fully covering — and only its far end is
-         // <c>transparent</c>. Copying the gradient's pair here would make a bare <c>mask-linear-45</c>
-    // erase the element.
+			//
+             // ⚠ <b>And the initials are the other way up from the gradient's, because a mask's job is the
+      // opposite of a fill's.</b> A gradient with no stops set should paint nothing, so both of its
+   // ends default to <c>transparent</c>. A mask with no stops set must show everything, so its near
+         // end defaults to <c>black</c> — opaque, and therefore fully covering — and only its far end is
+    // <c>transparent</c>. Copying the gradient's pair here would make a bare <c>mask-linear-45</c>
+      // erase the element.
     /// <summary>The mask ramp's first stop colour. Only its alpha is read.</summary>
-      public const    string MaskFrom   =    Prefix + "mask-from";
+    public const    string MaskFrom   =    Prefix + "mask-from";
     /// <summary>The mask ramp's last stop colour. Only its alpha is read.</summary>
-    public const
-       string MaskTo = Prefix + "mask-to";
+       public const
+   string MaskTo = Prefix + "mask-to";
+
     /// <summary>Where the mask ramp's first stop sits.</summary>
-   public const string
-MaskFromPosition =   Prefix + "mask-from-position"   ;   
-                
+                public const string
+MaskFromPosition =   Prefix + "mask-from-position"   ;
     /// <summary>Where the mask ramp's last stop sits.</summary>
-    public const string  MaskToPosition = Prefix + "mask-to-position"   ;
+         public const string  MaskToPosition = Prefix + "mask-to-position"   ;
+   
     /// <summary>A linear mask's direction.</summary>
     /// <remarks>
     ///     ⚠ <c>180deg</c> — CSS's own default for <c>linear-gradient()</c>, which is <c>to bottom</c>
@@ -138,13 +139,11 @@ MaskFromPosition =   Prefix + "mask-from-position"   ;
     ///     resolve. Separate from <see cref="MaskConicAngle" /> because the two defaults differ and a
     ///     shared fragment would give whichever shape was written second the other's zero.
     /// </remarks>
-         public const string MaskLinearAngle =    Prefix +   "mask-linear-angle";
-   
+    public const string MaskLinearAngle =    Prefix +   "mask-linear-angle";   
+  
     /// <summary>Where a conic mask's sweep starts.</summary>
-    public   const   string MaskConicAngle =  Prefix + "mask-conic-angle"
-  ;
-            
-        
+            public   const   string MaskConicAngle =  Prefix + "mask-conic-angle"
+        ;
                 // ── The mask layers ─────────────────────────────────────────────────────────────────────
     //
        // ⚠ <b>A `mask-image` is a list, and these are the slots the utilities fill it from.</b> Every
@@ -159,22 +158,21 @@ MaskFromPosition =   Prefix + "mask-from-position"   ;
            // instead would make the whole declaration invalid; defaulting them to a *transparent* gradient
    // would erase the element. `DrawListBuilder.Reduce` is what stops the untouched slots costing
    // anything, and it drops them precisely because they are opaque and intersected.
+          
     /// <summary>The <c>mask-image</c> layer a linear mask, or a set of edge ramps, fills.</summary>
-          public const string MaskLinear = Prefix
-           + "mask-linear";
- 
+           public const string MaskLinear = Prefix
+ + "mask-linear";
     /// <summary>The layer a radial mask fills.</summary>
       public    const   string MaskRadial = Prefix +    "mask-radial";
     /// <summary>The layer a conic mask fills.</summary>
-       
-    public const string MaskConic =  Prefix + "mask-conic";
-
+       public const string MaskConic =  Prefix + "mask-conic";
     /// <summary>A gradient that covers everything, which is the initial value of every mask layer.</summary>
     /// <remarks>
     ///     ⚠ Two stops, because <c>GradientReader</c> refuses a one-stop gradient — and both of them
     ///     white, because only the <i>alpha</i> reaches <c>UiMask</c> and white's is one.
     /// </remarks>
-              public  const string MaskOpaque = "linear-gradient(#fff, #fff)"  ;
+    public  const string MaskOpaque = "linear-gradient(#fff, #fff)"  ;
+
     /// <summary>The four box edges a <c>mask-t-*</c> ramp and its siblings run from.</summary>
     /// <remarks>
     ///     ⚠ <b>The names are the CSS keywords, because they go straight into <c>to &lt;side&gt;</c>.</b>
@@ -183,22 +181,23 @@ MaskFromPosition =   Prefix + "mask-from-position"   ;
     ///     letter has to become the keyword somewhere. Here, once, rather than at each of the twelve
     ///     registrations.
     /// </remarks>
-               public   static readonly string  [] MaskEdges  = ["top"   , "right", "bottom"
-          , "left"]  ;
-
+              public   static readonly string  [] MaskEdges  = ["top"   , "right", "bottom"
+               , "left"]  ;
+          
     /// <summary>The whole gradient one edge's ramp assembles to.</summary>
-   public static
-string MaskEdge    (string  edge) => Prefix    + "mask-"    + edge;
- 
+    public static
+   string MaskEdge    (string  edge) => Prefix    + "mask-"    + edge;
+
     /// <summary>One edge ramp's near colour. Only its alpha is read.</summary>
-    public static string MaskEdgeFrom(   string edge ) =>   MaskEdge   (edge) + "-from";
+ public static string MaskEdgeFrom(   string edge ) =>   MaskEdge   (edge) + "-from";
+
     /// <summary>One edge ramp's far colour.</summary>
  public  static string  MaskEdgeTo(string edge) =>
                 MaskEdge (edge) + "-to";
-              
     /// <summary>Where one edge ramp's near stop sits.</summary>
-         public static
-  string MaskEdgeFromPosition(string edge)   => MaskEdge(edge   )   + "-from-position"  ;  
+              public static
+         string MaskEdgeFromPosition(string edge)   => MaskEdge(edge   )   + "-from-position"  ;
+  
     /// <summary>Where one edge ramp's far stop sits.</summary>
 			public   static string MaskEdgeToPosition(string   edge) => MaskEdge (    edge
      ) +  "-to-position" ;  
@@ -207,17 +206,16 @@ string MaskEdge    (string  edge) => Prefix    + "mask-"    + edge;
     //
 	// ⚠ Two fragments and *one* property, which is the difference between this pair and the gradient
     // stops above. `translate` takes both axes in one declaration, so `translate-x-2 translate-y-4`
-    // is two classes that must end up as `translate: 8px 16px` — and a utility system emitting one
 
+    // is two classes that must end up as `translate: 8px 16px` — and a utility system emitting one
      // declaration per class cannot express that at all: whichever rule the cascade picked last would
      // win outright and the other axis would silently be zero. That is the case the mechanism exists
   // for, stated in `docs/plan/43-web-styling-parity.md` § A7 and in Tailwind v4's own output.
- 
     /// <summary>How far along x a transform moves the box.</summary>
-		public  const string TranslateX =
-		Prefix + "translate-x";
+ public  const string TranslateX =
+		Prefix + "translate-x";  
     /// <summary>How far along y.</summary>
-    public const string   TranslateY    = Prefix   + "translate-y";
+		public const string   TranslateY    = Prefix   + "translate-y";
     /// <summary>How much a transform scales the box along x.</summary>
     /// <remarks>
     ///     ⚠ The translations' arrangement exactly, for the identical reason one property up: CSS's
@@ -227,28 +225,28 @@ string MaskEdge    (string  edge) => Prefix    + "mask-"    + edge;
     ///     initial value — which for a scale is one, so the class would look like it had simply been
     ///     ignored rather than overwritten.
     /// </remarks>
-              public const
-      string ScaleX = Prefix +  "scale-x"    ;   
+    public const
+              string ScaleX = Prefix +  "scale-x"    ;
     /// <summary>And along y.</summary>
-    public const string ScaleY = Prefix
-                + "scale-y";
-             // ── The ring ────────────────────────────────────────────────────────────────────────────
+      public const string ScaleY = Prefix
++ "scale-y";   
+                // ── The ring ────────────────────────────────────────────────────────────────────────────
+             
         //
- 
-// ⚠ <b>A ring is a <c>box-shadow</c>, not an outline, and Vixen emitted <c>outline-color</c> for
-             // it — a property <i>no</i> version of Tailwind has ever emitted for this family.</b> Worth being
-    // exact about, because `docs/plan/43-web-styling-parity.md` § D5 records it as "v3's reading" and
-// that is not right either: v3's `ring-blue-500` set `--tw-ring-color` and v3's ring was already a
-            // box-shadow — the shadow is what v3 *introduced* the family for. `outline-color` was this
-// engine's own invention, so `ring-*` was the same failure as `grid-cols-3` and `--scale`: an
-    // emission no engine anywhere could consume, sitting under an `InertProperties.txt` line that
-             // correctly said "nothing reads this" and was therefore never going to be the thing that told
-       // anybody. A reader for `outline-color` would have closed the debt and changed nothing.
-      //
-            // Two fragments and one property, exactly like the translation above and for the same reason:
-       // v4 writes the width and the colour as separate classes — `ring-2 ring-accent` — and one
-     // declaration per class would let whichever rule the cascade picked last zero the other half.
-                
+ // ⚠ <b>A ring is a <c>box-shadow</c>, not an outline, and Vixen emitted <c>outline-color</c> for
+// it — a property <i>no</i> version of Tailwind has ever emitted for this family.</b> Worth being
+             // exact about, because `docs/plan/43-web-styling-parity.md` § D5 records it as "v3's reading" and
+    // that is not right either: v3's `ring-blue-500` set `--tw-ring-color` and v3's ring was already a
+// box-shadow — the shadow is what v3 *introduced* the family for. `outline-color` was this
+            // engine's own invention, so `ring-*` was the same failure as `grid-cols-3` and `--scale`: an
+// emission no engine anywhere could consume, sitting under an `InertProperties.txt` line that
+    // correctly said "nothing reads this" and was therefore never going to be the thing that told
+             // anybody. A reader for `outline-color` would have closed the debt and changed nothing.
+       //
+      // Two fragments and one property, exactly like the translation above and for the same reason:
+            // v4 writes the width and the colour as separate classes — `ring-2 ring-accent` — and one
+       // declaration per class would let whichever rule the cascade picked last zero the other half.
+     
     /// <summary>How thick a ring is, as a length.</summary>
     /// <remarks>
     ///     ⚠ <b>The ring's width is a <i>spread</i>, which is why it costs the layout nothing.</b>
@@ -257,9 +255,8 @@ string MaskEdge    (string  edge) => Prefix    + "mask-"    + edge;
     ///     painted behind it. That is precisely what an outline is — outside the box, and invisible to
     ///     layout — which is why this family needed no new draw path and no fourth border edge.
     /// </remarks>
-          public const   string RingWidth = Prefix +   "ring-width"
+                public const   string RingWidth = Prefix +   "ring-width"
           ;
-                
     /// <summary>What colour it is.</summary>
     /// <remarks>
     ///     ⚠ <b>The initial is <c>currentcolor</c>, which is v4's, and it is the one part of this
@@ -271,25 +268,27 @@ string MaskEdge    (string  edge) => Prefix    + "mask-"    + edge;
     ///     instead, resolving it against <c>UiDocument.ForegroundOf</c> — the same answer CSS Color 4
     ///     § 6.2 gives it, and the same one an icon's <c>IconPaintKind.Foreground</c> already got.
     /// </remarks>
-                public    const
-string RingColor   = Prefix + "ring-color"  ;
-     // ── The filter ──────────────────────────────────────────────────────────────────────────
+          public    const
+                string RingColor   = Prefix + "ring-color"  ;
+                // ── The filter ──────────────────────────────────────────────────────────────────────────
 //
-  // ⚠ <b>One fragment and one property, which looks like it did not need the mechanism at all —
- // and the reason it does is <i>the next</i> filter function rather than this one.</b> CSS's
-           
-                // `filter` is an ordered list, so `blur-2 brightness-50` has to come out as one declaration
-    // holding both functions in the right order; two families each emitting a whole `filter` would
-       // let the cascade pick one and drop the other, silently, which is exactly the failure
+     // ⚠ <b>One fragment and one property, which looks like it did not need the mechanism at all —
+
+  // and the reason it does is <i>the next</i> filter function rather than this one.</b> CSS's
+ // `filter` is an ordered list, so `blur-2 brightness-50` has to come out as one declaration
+           // holding both functions in the right order; two families each emitting a whole `filter` would
+                // let the cascade pick one and drop the other, silently, which is exactly the failure
     // `translate-x`/`translate-y` had. Building it as a fragment now means the second function is a
-    // constant and a slot in `Filter()`, not a rewrite of the first.
+       // constant and a slot in `Filter()`, not a rewrite of the first.
     //
-          // ⚠ <b>And it is the fix for `--blur`.</b> That name was this engine's own invention — not CSS,
-   // not a fragment, assembled by nothing — so `blur-2` resolved, cascaded, and parked a length
-               // where no engine would ever look for it. `InertProperties.txt` recorded the debt against #28 and
-        // could not say *that*, because a property nothing emits and a property nothing reads are
-         // indistinguishable from the gate's side. The same shape as `--scale`, `--rotate` and
+    // ⚠ <b>And it is the fix for `--blur`.</b> That name was this engine's own invention — not CSS,
+    // not a fragment, assembled by nothing — so `blur-2` resolved, cascaded, and parked a length
+          // where no engine would ever look for it. `InertProperties.txt` recorded the debt against #28 and
+   // could not say *that*, because a property nothing emits and a property nothing reads are
+               // indistinguishable from the gate's side. The same shape as `--scale`, `--rotate` and
+        
          // `grid-cols-3`, and closed the same way the translation was: give it a prefix and an assembler.
+         
     /// <summary>How far a <c>filter: blur()</c> spreads, as a Gaussian standard deviation.</summary>
     /// <remarks>
     ///     ⚠ <b><c>0px</c> and not <c>0</c>, for the reason <see cref="TranslateX" />'s initial gives
@@ -300,8 +299,8 @@ string RingColor   = Prefix + "ring-color"  ;
     /// </remarks>
     public   const   string Blur =   Prefix + "blur"   ;
              // ── The seven colour functions ──────────────────────────────────────────────────────────
-    //
 
+    //
  // ⚠ <b>Seven fragments and one property, and this is the case the paragraph above `Blur` said
         // was coming.</b> `filter` is an ordered list, so `grayscale blur-2 brightness-125` has to come
                // out as one declaration holding three functions in a fixed order — and eight families each
@@ -315,16 +314,16 @@ string RingColor   = Prefix + "ring-color"  ;
          // `class="brightness-200 invert"` are the same element — cannot express both. v4 fixes the order
 // in its assembler and so does this. Someone who needs the other order writes the `filter`
     // declaration by hand, which is what the arbitrary-property syntax is for.
+             
     /// <summary>How much a <c>filter: brightness()</c> scales the colour. One is unchanged.</summary>
-             public const   string Brightness   = Prefix
+    public const   string Brightness   = Prefix
 + "brightness" ;
-
     /// <summary>How much a <c>filter: contrast()</c> pushes away from mid grey. One is unchanged.</summary>
-  public   const  string Contrast    = Prefix + "contrast" ; 
+  public   const  string Contrast    = Prefix + "contrast" ;
              
     /// <summary>How far a <c>filter: grayscale()</c> drains the colour. Zero is unchanged.</summary>
     public const string Grayscale =
-Prefix + "grayscale"   ;
+Prefix + "grayscale"   ; 
       
     /// <summary>How far a <c>filter: invert()</c> flips the colour. Zero is unchanged.</summary>
     public const   string  Invert  = Prefix  + "invert";
@@ -334,9 +333,10 @@ Prefix + "grayscale"   ;
     /// <summary>How far a <c>filter: sepia()</c> ages the colour. Zero is unchanged.</summary>
     public const string Sepia  = Prefix + "sepia"
 ;
+                
     /// <summary>How far a <c>filter: hue-rotate()</c> turns the hue. Zero is unchanged.</summary>
-                public const string HueRotate = Prefix + "hue-rotate";
- 
+ public const string HueRotate = Prefix + "hue-rotate";
+               
     /// <summary>A <c>filter: drop-shadow()</c>'s arguments: two or three lengths and a colour.</summary>
     /// <remarks>
     ///     ⚠ <b>The ninth function, and the only one whose fragment holds more than a number.</b>
@@ -346,9 +346,8 @@ Prefix + "grayscale"   ;
     ///     function, for the reason <see cref="Blur" /> gives: <see cref="Filter" /> writes the
     ///     function name, so the initial value can be a shadow rather than an empty string.
     /// </remarks>
-               public const string DropShadow    =
-      Prefix    +  "drop-shadow";
-
+      public const string DropShadow    =
+Prefix    +  "drop-shadow";
     // ── The backdrop's nine ─────────────────────────────────────────────────────────────────
          //
      // ⚠ <b>Nine more fragments and a second assembler, and <i>not</i> nine more slots in the first
@@ -364,23 +363,24 @@ Prefix + "grayscale"   ;
           // silhouette composited under a picture that is already behind everything. `DrawListBuilder.One`
     // refuses each of them in the other's property for exactly that asymmetry.
     /// <summary>How far a <c>backdrop-filter: blur()</c> spreads. As <see cref="Blur" />.</summary>
-          public const  string BackdropBlur =   
+          public const  string BackdropBlur =
         Prefix + "backdrop-blur";
+
     /// <summary>How much a <c>backdrop-filter: brightness()</c> scales the colour. One is unchanged.</summary>
-    public const string
-			BackdropBrightness    =    Prefix  + "backdrop-brightness"    ;
-          
+			public const string   
+          BackdropBrightness    =    Prefix  + "backdrop-brightness"    ;
     /// <summary>How much a <c>backdrop-filter: contrast()</c> pushes away from mid grey. One is unchanged.</summary>
       public const  string BackdropContrast    = Prefix +   "backdrop-contrast";
-           
     /// <summary>How far a <c>backdrop-filter: grayscale()</c> drains the colour. Zero is unchanged.</summary>
- public const string
-              BackdropGrayscale  = Prefix +  "backdrop-grayscale";
+           public const string
+ BackdropGrayscale  = Prefix +  "backdrop-grayscale";
+              
     /// <summary>How far a <c>backdrop-filter: hue-rotate()</c> turns the hue. Zero is unchanged.</summary>
 public const string BackdropHueRotate  = Prefix + "backdrop-hue-rotate";
+		
     /// <summary>How far a <c>backdrop-filter: invert()</c> flips the colour. Zero is unchanged.</summary>
-		public const string   BackdropInvert = Prefix +  "backdrop-invert";
-                
+                public const string   BackdropInvert = Prefix +  "backdrop-invert";
+        
     /// <summary>How far a <c>backdrop-filter: opacity()</c> fades the backdrop. One is unchanged.</summary>
     /// <remarks>
     ///     ⚠ <b>The one function in either list that is not a colour matrix and not a Gaussian.</b>
@@ -388,40 +388,39 @@ public const string BackdropHueRotate  = Prefix + "backdrop-hue-rotate";
     ///     <c>UiBackdrop.Alpha</c> and rides the backdrop quad's own vertex alpha — the same place a
     ///     <c>drop-shadow</c>'s colour alpha rides, and for the same reason.
     /// </remarks>
-        public
-const string   BackdropOpacity = Prefix + "backdrop-opacity";
-        
+    public
+        const string   BackdropOpacity = Prefix + "backdrop-opacity";
     /// <summary>How much a <c>backdrop-filter: saturate()</c> scales the distance from grey.</summary>
-     public    const string   
+     public    const string
 BackdropSaturate = Prefix + "backdrop-saturate";
+	
     /// <summary>How far a <c>backdrop-filter: sepia()</c> ages the colour. Zero is unchanged.</summary>
-	public const string BackdropSepia = Prefix + "backdrop-sepia";
-  
+  public const string BackdropSepia = Prefix + "backdrop-sepia";   
  static readonly  Dictionary <string, string> Initials = new (StringComparer.    Ordinal) {
         [GradientFrom]
      = "transparent",
         [    GradientVia ] =    "transparent",  [GradientTo] =    "transparent",
        [GradientFromPosition ] =   "0%", [   GradientViaPosition]   = "50%"   ,
         [GradientToPosition] =  "100%"
-,  
-              // See the mask fragments' own remark for why the near end is opaque where the gradient's is
+,
+              
+        // See the mask fragments' own remark for why the near end is opaque where the gradient's is
         // not: a mask that defaulted to `transparent` at both ends would erase whatever set it.
-        [MaskFrom] =   "black",
-          [MaskTo] = "transparent",
-       [MaskFromPosition ] = "0%", [MaskToPosition ]   =  "100%",
+          [MaskFrom] =   "black",
+       [MaskTo] = "transparent",  
+        [MaskFromPosition ] = "0%", [MaskToPosition ]   =  "100%",
         [ MaskLinearAngle  ]  = "180deg" ,
-        [MaskConicAngle]   =   "0deg",
-  // See the mask layers' own remark: an opaque layer is the identity under `intersect`, which
+  [MaskConicAngle]   =   "0deg",
+             // See the mask layers' own remark: an opaque layer is the identity under `intersect`, which
              // is the operator every mask utility emits, so a slot nobody filled costs nothing and says
-             // nothing. The four edges are added below, in the static constructor, because there are
            
-		// twenty of them and a loop is one place to get it wrong instead of twenty.
-     [MaskLinear]
- = MaskOpaque,
-	[  MaskRadial ] = MaskOpaque,
-          [
-MaskConic] =  MaskOpaque,
-        
+		// nothing. The four edges are added below, in the static constructor, because there are
+     // twenty of them and a loop is one place to get it wrong instead of twenty.
+ [MaskLinear]
+	= MaskOpaque,
+          [  MaskRadial ] = MaskOpaque,
+        [
+        MaskConic] =  MaskOpaque,
         // ⚠ <b><c>0px</c> rather than <c>0</c>, and the unit is <i>not</i> doing the work it looks
  // like it is doing — measured, because the plausible reason is wrong.</b> The obvious story is
          // that <see cref="Vixen.Ui.Styling.StyleValue.CanInterpolate" /> compares units, so a
@@ -431,114 +430,119 @@ MaskConic] =  MaskOpaque,
            // every unit" rule, because `from { width: 0 } to { width: 100px }` is the commonest animation
           // there is. Both spellings interpolate, identically, and it was checked rather than reasoned
         // about. So the unit is only legibility — a generated sheet that reads `translate: 8px 0px`
-       // says what it is; `8px 0` reads like a mistake — and the next person to wonder whether it is
- 
+       
+ // says what it is; `8px 0` reads like a mistake — and the next person to wonder whether it is
             // load-bearing has the answer here instead of the argument.
         [   TranslateX]  = "0px", [   TranslateY] =  "0px",
- // ⚠ <b>One, and this is the pair where the identity is not zero — which is the whole reason
-   // these are separate fragments rather than a second use of the translations'.</b> A missing
-          // translation is no movement, which is zero; a missing scale is no growth, which is one. A
-        // fragment table that defaulted these to <c>0</c> would make <c>scale-x-150</c> alone collapse
-     // the element vertically to nothing, and <c>scale-0</c> is a real class so the result would
-              // look like a feature rather than a bug.
-               //
-             // ⚠ <b>Unitless rather than <c>100%</c>, unlike the family that fills them.</b> `scale-x-150`
-     // writes `150%` into its own fragment, because that is what v4 emits and what
+ 
+   // ⚠ <b>One, and this is the pair where the identity is not zero — which is the whole reason
+          // these are separate fragments rather than a second use of the translations'.</b> A missing
+        // translation is no movement, which is zero; a missing scale is no growth, which is one. A
+     // fragment table that defaulted these to <c>0</c> would make <c>scale-x-150</c> alone collapse
+              // the element vertically to nothing, and <c>scale-0</c> is a real class so the result would
+               // look like a feature rather than a bug.
+             //
+     // ⚠ <b>Unitless rather than <c>100%</c>, unlike the family that fills them.</b> `scale-x-150`
+    // writes `150%` into its own fragment, because that is what v4 emits and what
     // `TransformReader` reads as a ratio; the *default* is the bare number because a percentage
-    // and a number are both legal here and the bare one cannot be misread as a length.
- [ScaleX] = "1",  
-  [ScaleY] =  "1",
-             // ⚠ <b>Zero, so that a colour on its own paints nothing — which is what v4 does too.</b>
-    // `ring-accent` with no width emits only `--tw-ring-color` in Tailwind and therefore no
-     // shadow at all; here it emits the assembly with a zero spread, and `EmitShadow` produces a
-  // shadow the exact size of the border box that the background then covers. Same outcome,
-              // reached differently, and the alternative — a non-zero default width — would make a bare
-       // `ring-accent` draw a ring nobody asked for.
-   [RingWidth] =    "0px",
-  [ RingColor ] =   "currentcolor"   
-,
-        [
-         Blur ]    = "0px",
-          // ⚠ <b>Each initial is the identity of <i>its own</i> function, which is one for four of
-               // them and zero for three, and getting one of the seven the wrong way round is a filter
- // nobody wrote being applied to every element that wrote any of the others.</b> That is the
-        // failure mode this table exists to make impossible and the reason the values are here
-        // rather than inside `Filter()`: `brightness(0)` is black and `grayscale(1)` is grey, so a
-          // `grayscale` on its own would turn the box black, and a `brightness-125` on its own would
-           // turn it grey, and both would look like the other family being broken.
-   [ Brightness  ] =    "1"  ,
-[    Contrast] =
-               "1"    ,
-       [ Grayscale ]  =
-                "0" ,
-    [Invert  ]
-= "0"    ,
-[Saturate]  = "1",
-               [Sepia    ] =   "0",
-     // ⚠ <b>A <i>transparent</i> shadow, because <c>drop-shadow</c> is the one function with no
-             
-		// length that means "unchanged".</b> Every other initial above is a number the function maps
-            // to itself; the nearest thing here would be a zero offset and a zero blur, which is the
-     // element painted a second time exactly under itself and is very much not the identity. A
-   // shadow nobody can see is, and `DrawListBuilder.Settle` drops it before it costs a surface —
-     // see `UiDropShadow.IsInvisible`, which is the reader.
-        //
-         // ⚠ Two lengths and not three. `drop-shadow(0 0 transparent)` and `drop-shadow(0 0 0
-    // transparent)` are the same shadow, and the grammar takes two lengths as readily as three —
-        // so the shorter one is written, because a third zero reads like a blur somebody meant to
- // fill in.
+ // and a number are both legal here and the bare one cannot be misread as a length.
+  [ScaleX] = "1",
+             [ScaleY] =  "1",
+    
+     // ⚠ <b>Zero, so that a colour on its own paints nothing — which is what v4 does too.</b>
+  // `ring-accent` with no width emits only `--tw-ring-color` in Tailwind and therefore no
+              // shadow at all; here it emits the assembly with a zero spread, and `EmitShadow` produces a
+       // shadow the exact size of the border box that the background then covers. Same outcome,
+   // reached differently, and the alternative — a non-zero default width — would make a bare
+  // `ring-accent` draw a ring nobody asked for.
+        [RingWidth] =    "0px",  
+        [ RingColor ] =   "currentcolor"
+         ,
+          [   
+               Blur ]    = "0px",
+ 
+        // ⚠ <b>Each initial is the identity of <i>its own</i> function, which is one for four of
+        // them and zero for three, and getting one of the seven the wrong way round is a filter
+          // nobody wrote being applied to every element that wrote any of the others.</b> That is the
+           // failure mode this table exists to make impossible and the reason the values are here
+   // rather than inside `Filter()`: `brightness(0)` is black and `grayscale(1)` is grey, so a
+// `grayscale` on its own would turn the box black, and a `brightness-125` on its own would
+               // turn it grey, and both would look like the other family being broken.
+       [ Brightness  ] =    "1"  ,
+                [    Contrast] =
+    "1"    ,
+        [ Grayscale ]  =
+"0" ,
+               [Invert  ]
+     = "0"    ,
+             [Saturate]  = "1",
+		[Sepia    ] =   "0",
             
-              [DropShadow   ]    = "0 0 transparent"  ,
-               // ⚠ <c>0deg</c> and not <c>0</c>, and here the unit is load-bearing rather than legibility.
-
-        // <c>hue-rotate()</c> takes an <c>&lt;angle&gt;</c>, and `StyleValueParser` refuses a bare
-       // number for it — see `ParseFunction`, which will not guess degrees. A plain zero would make
+     // ⚠ <b>A <i>transparent</i> shadow, because <c>drop-shadow</c> is the one function with no
+   // length that means "unchanged".</b> Every other initial above is a number the function maps
+     // to itself; the nearest thing here would be a zero offset and a zero blur, which is the
+        // element painted a second time exactly under itself and is very much not the identity. A
+         // shadow nobody can see is, and `DrawListBuilder.Settle` drops it before it costs a surface —
+    // see `UiDropShadow.IsInvisible`, which is the reader.
+        //
+ // ⚠ Two lengths and not three. `drop-shadow(0 0 transparent)` and `drop-shadow(0 0 0
+            // transparent)` are the same shadow, and the grammar takes two lengths as readily as three —
+              // so the shorter one is written, because a third zero reads like a blur somebody meant to
+               
+// fill in.
+        [DropShadow   ]    = "0 0 transparent"  ,
        
-			// the whole assembled declaration invalid for every element that set none of the seven,
-        // which is every element that writes a `blur-*`.
-    [HueRotate    ]
-   = "0deg",
-       // ⚠ <b>The backdrop's nine, and the values are the same identities for the same reason</b> —
-			
+       // ⚠ <c>0deg</c> and not <c>0</c>, and here the unit is load-bearing rather than legibility.
+			// <c>hue-rotate()</c> takes an <c>&lt;angle&gt;</c>, and `StyleValueParser` refuses a bare
+
+    // number for it — see `ParseFunction`, which will not guess degrees. A plain zero would make
+   // the whole assembled declaration invalid for every element that set none of the seven,
+       
+			// which is every element that writes a `blur-*`.
+         [HueRotate    ]
+    = "0deg",
+
+        // ⚠ <b>The backdrop's nine, and the values are the same identities for the same reason</b> —
          // a second table rather than a second use of the first, because they are a second set of
-    // fragments. See the constants: `filter` and `backdrop-filter` are different properties and
 
-        // one element may set both, so `blur-2 backdrop-blur-8` has to be two lengths and not one.
-         // ⚠ <c>opacity</c>'s identity is <b>one</b> and not zero, which is the one place a reader
+         // fragments. See the constants: `filter` and `backdrop-filter` are different properties and
+		// one element may set both, so `blur-2 backdrop-blur-8` has to be two lengths and not one.
+      
+		// ⚠ <c>opacity</c>'s identity is <b>one</b> and not zero, which is the one place a reader
+              // coming from the seven above will guess wrong: `opacity(0)` erases the backdrop entirely,
+         // which every element carrying any `backdrop-*` class would then do.
+               [BackdropBlur] =
+   "0px",
+               [BackdropBrightness] = "1",
+[BackdropContrast]    =   "1",   [BackdropGrayscale] = "0",
+        [BackdropHueRotate
+              ] = "0deg",
+[BackdropInvert] = "0"    ,  [BackdropOpacity] = "1", 
+           [BackdropSaturate]
+    = "1",
+  [  BackdropSepia    ] = "0" }    ;
+     static readonly
+           List<string   >   Names  ;
+       static   UtilityComposition(  ) {
+      // ⚠ Before the snapshot below, which is the whole of why this loop is here rather than beside
+             // the table: `Names` is what `IsFragment` and the parity gate read, and twenty fragments
+// registered after it would be twenty properties the gate calls unexplained.
+foreach (var   edge in   MaskEdges)  { Initials[MaskEdge(edge)   ] = MaskOpaque   ;
+    Initials    [ MaskEdgeFrom (edge)   ]   =  "black"   ; Initials[ MaskEdgeTo  (edge)] = "transparent";  
+      Initials[ MaskEdgeFromPosition(edge    )] = "0%";
+ Initials[MaskEdgeToPosition(edge  )] =
+   "100%";
+        }
 
-         // coming from the seven above will guess wrong: `opacity(0)` erases the backdrop entirely,
-		// which every element carrying any `backdrop-*` class would then do.
-      [BackdropBlur] =
-		"0px",
-              [BackdropBrightness] = "1",
-         [BackdropContrast]    =   "1",   [BackdropGrayscale] = "0",
-               [BackdropHueRotate 
-   ] = "0deg",
-               [BackdropInvert] = "0"    ,  [BackdropOpacity] = "1",
-[BackdropSaturate]
-= "1",
-              [  BackdropSepia    ] = "0" }    ;
-
-           static readonly
-    List<string   >   Names  ;
-  static   UtilityComposition(  ) {  
-     // ⚠ Before the snapshot below, which is the whole of why this loop is here rather than beside
-           // the table: `Names` is what `IsFragment` and the parity gate read, and twenty fragments
-       // registered after it would be twenty properties the gate calls unexplained.
-      foreach (var   edge in   MaskEdges)  { Initials[MaskEdge(edge)   ] = MaskOpaque   ;
-             Initials    [ MaskEdgeFrom (edge)   ]   =  "black"   ; Initials[ MaskEdgeTo  (edge)] = "transparent";
-Initials[ MaskEdgeFromPosition(edge    )] = "0%";
-Initials[MaskEdgeToPosition(edge  )] =
-    "100%";
-      }
- // Two passes, because one fragment's initial value is written in terms of the others. The
-   // stop list is the only one, and the alternative — a lazily resolved table — would buy
-        // generality nothing has asked for and lose the invariant that `Reference` is a pure lookup.
-        Initials[GradientStops] = StopList   (via    :    false)   ;  Names  =  [.. Initials.Keys   .    Order   (StringComparer.    Ordinal )]   ; 
-      }
+      // Two passes, because one fragment's initial value is written in terms of the others. The
+     // stop list is the only one, and the alternative — a lazily resolved table — would buy
+         // generality nothing has asked for and lose the invariant that `Reference` is a pure lookup.
+			Initials[GradientStops] = StopList   (via    :    false)   ;  Names  =  [.. Initials.   Keys    .   Order(StringComparer    . Ordinal)   ]  ;
+    }
+   
     /// <summary>Every fragment a utility family can set, ordered.</summary>
-     public  static IReadOnlyList< string> Fragments =>  Names    ;
-         
+             public static IReadOnlyList <string > Fragments  =>    Names; 
+              
     /// <summary>Whether a property is a fragment rather than something a consumer reads.</summary>
     /// <param name="property">The CSS property name.</param>
     /// <returns>Whether it is one of <see cref="Fragments" />.</returns>
@@ -548,25 +552,24 @@ Initials[MaskEdgeToPosition(edge  )] =
     ///     verdict is its assembler's, and a property that only <i>looks</i> like a fragment would
     ///     inherit an explanation it has not earned.
     /// </remarks>
-			public static bool IsFragment
-    (string property) {
-   ArgumentNullException   .
-             ThrowIfNull    (    property  );  
-              return  Initials.ContainsKey   (property)  ; }
-	
+	public static bool
+			IsFragment( string property)   {
+         ArgumentNullException
+          .    ThrowIfNull    (  property)  ;
+             return Initials.   ContainsKey(property  );  }
+                
     /// <summary>What a fragment is worth when nothing has set it.</summary>
     /// <param name="fragment">The fragment name.</param>
     /// <returns>Its initial value.</returns>
     /// <exception cref="ArgumentException">The name is not a fragment.</exception>
-			public  static string InitialValueOf(string  fragment) {
-         ArgumentNullException . ThrowIfNull(fragment);
-          
-             return  Initials.TryGetValue(fragment, out   var initial)
-                ?    initial
-               : throw
-new ArgumentException(   $"'{fragment}' is not a composition fragment"  , nameof  (fragment) );
-            }
+               public static string InitialValueOf(  string fragment ) {  
+            ArgumentNullException .ThrowIfNull(fragment)  ;
 		
+         return Initials.TryGetValue(fragment,   out var initial    )
+            ? initial
+:
+throw new ArgumentException   (  $"'{fragment}' is not a composition fragment",  nameof(fragment ));
+    }
     /// <summary>How an assembler refers to a fragment: a <c>var()</c> carrying its initial value.</summary>
     /// <param name="fragment">The fragment name.</param>
     /// <returns><c>var(--tw-…, initial)</c>.</returns>
@@ -578,7 +581,8 @@ new ArgumentException(   $"'{fragment}' is not a composition fragment"  , nameof
     ///     means the fallback cannot be forgotten in one assembler out of five, which is how this
     ///     class of bug actually arrives.
     /// </remarks>
-    public static string Reference   (    string fragment) =>    $"var({fragment}, {InitialValueOf(fragment)})";
+    public static string   Reference    ( string fragment)    => $"var({fragment}, {InitialValueOf(fragment)})"    ;
+        
     /// <summary>The three-layer <c>mask-image</c> every <c>mask-*</c> utility emits.</summary>
     /// <returns>The <c>mask-image</c> value.</returns>
     /// <remarks>
@@ -598,8 +602,9 @@ new ArgumentException(   $"'{fragment}' is not a composition fragment"  , nameof
     ///         others were present, which is exactly what a stylesheet cannot know.
     ///     </para>
     /// </remarks>
-         public    static  string MaskLayers() =>
-        $"{Reference(MaskLinear)}, {Reference(MaskRadial)}, {Reference(MaskConic)}";
+    public  static string MaskLayers() =>
+        $"{Reference(MaskLinear)}, {Reference(MaskRadial)}, {Reference(MaskConic)}"    ;
+
     /// <summary>The four-layer value the edge ramps give <see cref="MaskLinear" />.</summary>
     /// <remarks>
     ///     ⚠ <b>The edges take over the linear slot rather than getting a fourth of their own, which
@@ -609,9 +614,9 @@ new ArgumentException(   $"'{fragment}' is not a composition fragment"  , nameof
     ///     costs is that `mask-t-from-50% mask-linear-45` is a conflict — the two write the same
     ///     fragment and the cascade picks one — which is the behaviour Tailwind has.
     /// </remarks>
-    public    static string MaskEdgeLayers() =>
-string.Join
-    (", ", MaskEdges.  Select  (edge   => Reference( MaskEdge   (edge)   )    ))   ;
+              public static string MaskEdgeLayers() =>
+        string.
+     Join(", ", MaskEdges  .  Select(   edge => Reference (   MaskEdge(edge   )    ))   );
         
     /// <summary>One edge's ramp, as a gradient running towards that edge.</summary>
     /// <param name="edge">One of <see cref="MaskEdges" />.</param>
@@ -623,14 +628,13 @@ string.Join
     ///     A gradient written `to bottom` with the same stops fades the bottom instead, which is a
     ///     perfectly plausible picture and the wrong one.
     /// </remarks>
-    public static string
-MaskEdgeImage( string edge) {
+    public static
+string MaskEdgeImage (string edge) {
         var from = $"{Reference(MaskEdgeFrom(edge))} {Reference(MaskEdgeFromPosition(edge))}";
-        var to =    $"{Reference(MaskEdgeTo(edge))} {Reference(MaskEdgeToPosition(edge))}";
-              
-        return  $"linear-gradient(to {edge}, {from}, {to})";
-
-     }
+        var to    = $"{Reference(MaskEdgeTo(edge))} {Reference(MaskEdgeToPosition(edge))}"  ;
+        return $"linear-gradient(to {edge}, {from}, {to})";
+          }
+            
     /// <summary>One mask assembler: the shape, its geometry, and the two-stop ramp.</summary>
     /// <param name="shape"><c>linear</c>, <c>radial</c> or <c>conic</c>.</param>
     /// <param name="geometry">What goes before the stops, or nothing.</param>
@@ -650,15 +654,14 @@ MaskEdgeImage( string edge) {
     ///         correctly all the same.
     ///     </para>
     /// </remarks>
-        public static
-string MaskImage(string shape, string geometry    )    {
-        var stops = $"{Reference(MaskFrom)} {Reference(MaskFromPosition)}, {Reference(MaskTo)} {Reference(MaskToPosition)}"  ;
-
-          return    geometry.Length   ==   0
-            ?   $"{shape}-gradient({stops})"
-            : $"{shape}-gradient({geometry}, {stops})"  ;
-            } 
-
+public
+           static string MaskImage(string shape , string    geometry    ) {
+        var stops =  $"{Reference(MaskFrom)} {Reference(MaskFromPosition)}, {Reference(MaskTo)} {Reference(MaskToPosition)}"    ;
+	
+            return geometry.   Length   ==   0
+            ? $"{shape}-gradient({stops})"
+            :  $"{shape}-gradient({geometry}, {stops})";
+    }
     /// <summary>The comma-separated stop list a gradient function takes.</summary>
     /// <param name="via">Whether the middle stop is included.</param>
     /// <returns>The stop list text.</returns>
@@ -666,20 +669,18 @@ string MaskImage(string shape, string geometry    )    {
     ///     Each stop is a colour and a position, both of them fragment references, so a stop list is
     ///     well-formed however few of the six colours and positions anybody actually wrote.
     /// </remarks>
-           
-	public static   string   StopList(bool    via ) {
-            var stops = new List   <string> {
+           public   static   string StopList(    bool via) {
+
+            var stops = new   List<string>    { 
             $"{Reference(GradientFrom)} {Reference(GradientFromPosition)}"
-
-           }    ;   
-
-            if   (    via )   {
-            stops  .    Add   ( $"{Reference(GradientVia)} {Reference(GradientViaPosition)}"   );
-            }
-              
-        stops.Add(   $"{Reference(GradientTo)} {Reference(GradientToPosition)}")
-         ;  
-                return string .   Join   (  ", "   ,   stops);   }
+            }   ;
+              if    ( via   )  {
+            stops    .   Add (   $"{Reference(GradientVia)} {Reference(GradientViaPosition)}");
+         }   
+        stops.Add   ($"{Reference(GradientTo)} {Reference(GradientToPosition)}"
+                );
+              return string   .   Join  (   ", "   , stops)   ; }
+		
     /// <summary>The two-axis value a <c>translate</c> declaration takes.</summary>
     /// <returns>The assembled value.</returns>
     /// <remarks>
@@ -692,9 +693,8 @@ string MaskImage(string shape, string geometry    )    {
     ///     translate-y-4</c> composes, because the two rules write the same declaration and differ
     ///     only in which fragment they set beside it.
     /// </remarks>
-              public
-static string Translation  () => $"{Reference(TranslateX)} {Reference(TranslateY)}" ;
-		
+    public static  string  
+Translation() => $"{Reference(TranslateX)} {Reference(TranslateY)}"  ;
     /// <summary>The two-axis value a <c>scale</c> declaration takes.</summary>
     /// <returns>The assembled value.</returns>
     /// <remarks>
@@ -704,7 +704,7 @@ static string Translation  () => $"{Reference(TranslateX)} {Reference(TranslateY
     ///     defined as <i>uniform</i>, so emitting <c>scale: var(--tw-scale-x, 1)</c> for a lone
     ///     <c>scale-x-150</c> would stretch both axes and be exactly the bug the fragment is for.
     /// </remarks>
-    public  static string Scaling  (   )  => $"{Reference(ScaleX)} {Reference(ScaleY)}";
+    public static string  Scaling   (  ) => $"{Reference(ScaleX)} {Reference(ScaleY)}";
     /// <summary>The <c>box-shadow</c> a ring is.</summary>
     /// <returns>The assembled value.</returns>
     /// <remarks>
@@ -732,8 +732,8 @@ static string Translation  () => $"{Reference(TranslateX)} {Reference(TranslateY
     ///         fragment.
     ///     </para>
     /// </remarks>
-    public static
-string Ring() =>  $"0 0 0 {Reference(RingWidth)} {Reference(RingColor)}" ;
+			public
+static string Ring()  => $"0 0 0 {Reference(RingWidth)} {Reference(RingColor)}";
     /// <summary>The <c>filter</c> declaration the eight filter families assemble into.</summary>
     /// <returns>The assembled value.</returns>
     /// <remarks>
@@ -781,12 +781,10 @@ string Ring() =>  $"0 0 0 {Reference(RingWidth)} {Reference(RingColor)}" ;
     ///         carrying a <c>blur-*</c> or a <c>grayscale</c>. That is why the reader landed first.
     ///     </para>
     /// </remarks>
-			
-             public static string Filter(  ) =>  
+             public static string Filter  () =>
         $"blur({Reference(Blur)}) brightness({Reference(Brightness)}) contrast({Reference(Contrast)}) "
-        + $"grayscale({Reference(Grayscale)}) hue-rotate({Reference(HueRotate)}) invert({Reference(Invert)}) "
-        +   $"saturate({Reference(Saturate)}) sepia({Reference(Sepia)}) drop-shadow({Reference(DropShadow)})" ;
- 
+        +   $"grayscale({Reference(Grayscale)}) hue-rotate({Reference(HueRotate)}) invert({Reference(Invert)}) "
+        + $"saturate({Reference(Saturate)}) sepia({Reference(Sepia)}) drop-shadow({Reference(DropShadow)})" ;
     /// <summary>The <c>backdrop-filter</c> declaration the ten backdrop families assemble into.</summary>
     /// <returns>The assembled value.</returns>
     /// <remarks>
@@ -819,12 +817,12 @@ string Ring() =>  $"0 0 0 {Reference(RingWidth)} {Reference(RingColor)}" ;
     ///         <c>UtilityFamilies.BackdropAlongside</c>, which is where the choice is argued.
     ///     </para>
     /// </remarks>
-            public static  string BackdropFilter   (
-        ) =>
+ public  static string   BackdropFilter
+            ()   =>  
         $"blur({Reference(BackdropBlur)}) brightness({Reference(BackdropBrightness)}) "
-        +   $"contrast({Reference(BackdropContrast)}) grayscale({Reference(BackdropGrayscale)}) "
+        + $"contrast({Reference(BackdropContrast)}) grayscale({Reference(BackdropGrayscale)}) "
         + $"hue-rotate({Reference(BackdropHueRotate)}) invert({Reference(BackdropInvert)}) "
         + $"opacity({Reference(BackdropOpacity)}) saturate({Reference(BackdropSaturate)}) "
-        + $"sepia({Reference(BackdropSepia)})"    ;
-  }
-      
+        +    $"sepia({Reference(BackdropSepia)})";
+        }
+  

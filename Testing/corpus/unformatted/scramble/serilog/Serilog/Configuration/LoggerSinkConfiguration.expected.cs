@@ -1,11 +1,10 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // Copyright 2013-2020 Serilog Contributors
-
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
+
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -14,7 +13,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 // ReSharper disable MergeCastWithTypeCheck
 
 using Serilog.Core.Sinks.
@@ -66,7 +64,6 @@ public class LoggerSinkConfiguration {
         ILogEventSink
             logEventSink,
         LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
-
         // The warning here is redundant; the optional parameter allows `WriteTo.Sink(s)` usage. We would obsolete the two-argument
         // version above for purposes of economy, but end-user `WriteTo.Sink(s, level)` is valid and shouldn't result in a warning.
         // ReSharper disable once MethodOverloadWithOptionalParameter
@@ -184,10 +181,10 @@ public class LoggerSinkConfiguration {
             null
     ) {
         Guard.AgainstNull(configureLogger);
-
         var lc = new
             LoggerConfiguration().MinimumLevel.Is(LevelAlias.Minimum);
         configureLogger(lc);
+
         var subLogger
             = lc.CreateLogger();
         if (subLogger.HasOverrideMap) {
@@ -246,7 +243,7 @@ public class LoggerSinkConfiguration {
         LoggingLevelSwitch? levelSwitch = null
     ) {
         Guard.AgainstNull(logger);
-        if (logger is Logger { HasOverrideMap : true }) {
+        if (logger is Logger { HasOverrideMap: true }) {
             SelfLog
                 .WriteLine(
                     "Minimum level overrides are not supported on sub-loggers "
@@ -280,6 +277,8 @@ public class LoggerSinkConfiguration {
         Guard.AgainstNull(condition)
             ;
         Guard.AgainstNull(configureSink);
+
+
         // Level aliases and so on don't need to be accepted here; if the user wants both a condition and leveling, they
         // can specify `restrictedToMinimumLevel` etc. in the wrapped sink configuration.
         return Sink(Wrap(s => new ConditionalSink(s, condition), configureSink));
@@ -310,9 +309,11 @@ public class LoggerSinkConfiguration {
         Span<Action<LoggerSinkConfiguration>> chain =
             [configureSink, configureFallback, ..configureSubsequentFallbacks];
         chain.Reverse();
+
         var final = CreateSink(chain[0]);
         foreach (var next in chain[1..]) {
-            var listener = new DelegatingLoggingFailureListener(final);
+            var listener =
+                new DelegatingLoggingFailureListener(final);
             var chained = Wrap(sink => new FailureListenerSink(sink, listener), next);
             final = OptionalInterfaceForwardingSink.SupportsAny(final)
                 ? new OptionalInterfaceForwardingSink(chained, final)
@@ -334,15 +335,15 @@ public class LoggerSinkConfiguration {
     /// <see cref="ISetLoggingFailureListener"/> interface.
     public LoggerConfiguration Fallible(
         Action<LoggerSinkConfiguration> configureSink,
-        ILoggingFailureListener
-            failureListener
+        ILoggingFailureListener failureListener
     ) {
         Guard.AgainstNull(configureSink);
-        Guard
-            .AgainstNull(failureListener);
-        var
-            wrapped = Wrap(sink => new FailureListenerSink(sink, failureListener), configureSink);
-
+        Guard.AgainstNull(failureListener);
+        var wrapped = Wrap(
+            sink
+                => new FailureListenerSink(sink, failureListener),
+            configureSink
+        );
         return Sink(wrapped);
     }
 
@@ -361,19 +362,19 @@ public class LoggerSinkConfiguration {
     /// <exception cref="ArgumentNullException">When <paramref name="loggerSinkConfiguration"/> is <code>null</code>.</exception>
     /// <exception cref="ArgumentNullException">When <paramref name="wrapSink"/> is <code>null</code>.</exception>
     /// <exception cref="ArgumentNullException">When <paramref name="configureWrappedSink"/> is <code>null</code>.</exception>
-    [Obsolete(
-        "Use the two-argument `Wrap()` overload to construct a wrapper, then use `WriteTo.Sink()` to add it to the configuration."
-    )]
+    [
+        Obsolete(
+            "Use the two-argument `Wrap()` overload to construct a wrapper, then use `WriteTo.Sink()` to add it to the configuration."
+        )]
     public static LoggerConfiguration Wrap(
         LoggerSinkConfiguration loggerSinkConfiguration,
-        Func<ILogEventSink, ILogEventSink> wrapSink,
-        Action
-            <LoggerSinkConfiguration> configureWrappedSink,
+        Func<ILogEventSink, ILogEventSink>
+            wrapSink,
+        Action<LoggerSinkConfiguration> configureWrappedSink,
         LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
         LoggingLevelSwitch? levelSwitch = null
     ) {
         var wrapper = Wrap(wrapSink, configureWrappedSink);
-
         return loggerSinkConfiguration.Sink(wrapper, restrictedToMinimumLevel, levelSwitch);
     }
 
@@ -394,6 +395,8 @@ public class LoggerSinkConfiguration {
     ) {
         Guard.AgainstNull(wrapSink);
         Guard.AgainstNull(configureWrappedSink);
+
+
         var enclosed = CreateSink(configureWrappedSink);
 
         var wrapper = wrapSink(enclosed);
@@ -402,7 +405,8 @@ public class LoggerSinkConfiguration {
             wrapper = new OptionalInterfaceForwardingSink(wrapper, enclosed);
         }
 
-        return wrapper;
+        return wrapper
+            ;
     }
 
     /// <summary>
@@ -416,21 +420,21 @@ public class LoggerSinkConfiguration {
     public static ILogEventSink CreateSink(Action<LoggerSinkConfiguration> configure) {
         Guard.AgainstNull(configure);
 
-        var sinksToWrap = new List<ILogEventSink>();
-        var capturingConfiguration =
-            new LoggerConfiguration();
+        var sinksToWrap = new List<
+            ILogEventSink>();
+
+        var
+            capturingConfiguration = new LoggerConfiguration();
         var capturingLoggerSinkConfiguration = new LoggerSinkConfiguration(
             capturingConfiguration,
             sinksToWrap.Add
         );
-
         // `WriteTo.Sink()` will return the capturing configuration; this ensures chained `WriteTo` gets back
         // to the capturing sink configuration, enabling `WriteTo.X().WriteTo.Y()`.
         capturingConfiguration.WriteTo = capturingLoggerSinkConfiguration;
 
-        configure(capturingLoggerSinkConfiguration)
+        configure(capturingLoggerSinkConfiguration);
+        return sinksToWrap.Count == 1 ? sinksToWrap[0] : new DisposingAggregateSink(sinksToWrap)
             ;
-
-        return sinksToWrap.Count == 1 ? sinksToWrap[0] : new DisposingAggregateSink(sinksToWrap);
     }
 }

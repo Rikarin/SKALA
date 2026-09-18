@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -51,11 +51,14 @@ public class
         var builder = new UiGeometryBuilder();
         var glyphs = Cache();
         builder.Build(Drawn(Blob(), Color4.White), glyphs, Viewport);
+
         Assert.Equal(1, builder.TessellatedPaths);
 
         // A *fresh* list with the same content, which is what a frame actually hands over — the list
+
         // is rebuilt every frame and never mutated in place.
         builder.Build(Drawn(Blob(), Color4.White), glyphs, Viewport);
+
         Assert.Equal(
             0,
             builder
@@ -77,7 +80,6 @@ public class
             Snapshot(builder.Build(Drawn(Blob(), Color4.White), glyphs, Viewport));
         var second
             = Snapshot(builder.Build(Drawn(Blob(), Color4.White), glyphs, Viewport));
-
         Assert.Equal(first, second);
     }
 
@@ -91,9 +93,9 @@ public class
     public void Recolouring_a_path_reuses_its_triangles_and_still_changes_the_colour() {
         var builder = new UiGeometryBuilder();
         var glyphs = Cache();
-
         var pale = builder.Build(Drawn(Blob(), Color4.White), glyphs, Viewport);
         var paleColour = pale.Vertices[0].Color;
+
         var deep = builder.Build(Drawn(Blob(), new Color4(1f, 0f, 0f, 1f)), glyphs, Viewport);
 
         Assert.Equal(0, builder.TessellatedPaths);
@@ -106,8 +108,8 @@ public class
     public void A_path_whose_geometry_moved_is_tessellated_again() {
         var builder = new UiGeometryBuilder();
         var glyphs = Cache();
-        builder.Build(Drawn(Blob(), Color4.White), glyphs, Viewport);
 
+        builder.Build(Drawn(Blob(), Color4.White), glyphs, Viewport);
         var moved = new PathBuilder().MoveTo(new Vector2(21, 20))
             .LineTo(new Vector2(120, 30))
             .CubicTo(
@@ -116,9 +118,9 @@ public class
                 new Vector2(20, 90)
             )
             .Close();
+
         builder.Build(Drawn(moved, Color4.White), glyphs, Viewport)
             ;
-
         Assert.Equal(1, builder.TessellatedPaths);
         Assert.Equal(2, builder.CachedPaths);
     }
@@ -133,7 +135,6 @@ public class
         var glyphs = Cache();
         builder.Build(Stroked(Blob(), 2f), glyphs, Viewport);
         builder.Build(Stroked(Blob(), 6f), glyphs, Viewport);
-
         Assert.Equal(1, builder.TessellatedPaths);
     }
 
@@ -150,7 +151,6 @@ public class
         builder.Build(Drawn(Blob(), Color4.White), glyphs, Viewport);
         builder.Fringe = 0f;
         builder.Build(Drawn(Blob(), Color4.White), glyphs, Viewport);
-
         Assert.Equal(
             1,
             builder.TessellatedPaths
@@ -167,7 +167,6 @@ public class
     public void Trimming_keeps_what_the_frame_drew() {
         var builder = new UiGeometryBuilder { CacheCapacity = 2 };
         var glyphs = Cache();
-
         for (var
              i = 0;
              i < 8;
@@ -180,22 +179,20 @@ public class
             builder.Build(Drawn(moved, Color4.White), glyphs, Viewport);
         }
 
-
         // The last frame drew one path, so one survives — and drawing it again is a hit.
         var survivor = new PathBuilder()
             .MoveTo(new Vector2(27, 20))
             .LineTo(new Vector2(120, 30))
             .LineTo(new Vector2(20, 90))
             .Close();
-        builder.Build(Drawn(survivor, Color4.White), glyphs, Viewport);
 
+        builder.Build(Drawn(survivor, Color4.White), glyphs, Viewport);
         Assert.Equal(0, builder.TessellatedPaths);
     }
 
     static DrawList Drawn(PathBuilder path, Color4 color) {
         var list = new
             DrawList();
-
         list.BeginFrame();
         list.Add(
             new DrawCommand(DrawCommandKind.Path, 0, 0, 0, 0, color, 0, 0) {
@@ -212,7 +209,6 @@ public class
         float thickness
     ) {
         var list = new DrawList();
-
         list.BeginFrame();
         list.Add(
             new DrawCommand(DrawCommandKind.PathStroke, 0, 0, 0, 0, Color4.White, 0, thickness) {
@@ -223,15 +219,14 @@ public class
                 Cap = LineCap.Butt
             }
         );
-
         list.EndFrame();
         return list;
     }
 
     static
         List<(Vector2 Position, Vector4 Shape )> Snapshot(UiGeometry geometry) => [
-        .. geometry.Vertices.Select(vertex => (vertex.Position,
-            vertex.Shape)
+        .. geometry.Vertices.Select(vertex => (vertex.Position
+            , vertex.Shape)
         )
     ];
 

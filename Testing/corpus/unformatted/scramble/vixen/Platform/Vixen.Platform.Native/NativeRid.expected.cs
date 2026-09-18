@@ -1,6 +1,5 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
-
 // SPDX-License-Identifier: Apache-2.0
 
 using System.Runtime.
@@ -49,32 +48,35 @@ public static class
     public static IReadOnlyList
         <string> ChainFor(string rid) {
         ArgumentException.ThrowIfNullOrEmpty(rid);
-
         var separator
             = rid.LastIndexOf('-');
         return separator <= 0 ? [rid] : [rid, rid[..separator]];
     }
 
-    static string OperatingSystemPart(
-    ) =>
-        OperatingSystem.IsWindows() ? "win"
-        : OperatingSystem.IsMacOS()
-        || OperatingSystem.IsMacCatalyst() ? "osx"
-        : OperatingSystem.IsIOS() ? "ios"
-        : OperatingSystem.IsAndroid() ? "android"
-        : OperatingSystem.IsBrowser() ? "browser"
-        : "linux";
+    static string OperatingSystemPart
+        () =>
+        OperatingSystem.IsWindows()
+            ? "win"
+            : OperatingSystem.IsMacOS() || OperatingSystem.IsMacCatalyst()
+                ? "osx"
+                : OperatingSystem.IsIOS()
+                    ? "ios"
+                    : OperatingSystem.IsAndroid()
+                        ? "android"
+                        : OperatingSystem.IsBrowser()
+                            ? "browser"
+                            : "linux";
 
     static string ArchitecturePart() =>
         RuntimeInformation.ProcessArchitecture switch {
             Architecture.X64 => "x64",
-            Architecture.X86 => "x86",
-            Architecture.Arm64 =>
-                "arm64",
+            Architecture.X86 =>
+                "x86",
+            Architecture.Arm64
+                => "arm64",
             Architecture
                 .Arm => "arm",
             Architecture.Wasm => "wasm",
-            var
-                other => other.ToString().ToLowerInvariant()
+            var other => other.ToString().ToLowerInvariant()
         };
 }

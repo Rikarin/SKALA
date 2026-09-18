@@ -1,5 +1,6 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
+
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.Core.Mathematics;
@@ -60,20 +61,18 @@ public static class
         var input = ToBuildInput(mesh);
         var built = MeshletBuilder.Build(input, settings);
         var problems = MeshletValidator.Validate(built, input);
-
         if (problems.Count == 0) {
             return built;
         }
 
-
         // Every problem, and then it fails once — the habit `SceneImporter` set, for the same reason:
-
         // a build that stopped at the first one would make fixing a mesh a sequence of builds.
         report(
             ImportSeverity.Error,
             $"'{mesh.Name}' produced a cluster hierarchy that is not crack-free, so it has none. "
             + string.Join(" ", problems)
         );
+
         return null;
     }
 
@@ -131,6 +130,7 @@ public static class
         ArgumentNullException.ThrowIfNull(mesh);
         ArgumentNullException.ThrowIfNull(meshlets);
         ArgumentNullException.ThrowIfNull(report);
+
         if (mesh.IsSkinned && OutOfPalette(mesh) is { } offender) {
             report(
                 ImportSeverity.Error,
@@ -139,6 +139,7 @@ public static class
                 + $"{MeshletPageBuilder.MaxBones} bones. "
                 + "The mesh has a cluster hierarchy and no pages."
             );
+
             return null;
         }
 
@@ -182,8 +183,7 @@ public static class
     /// </remarks>
     static byte[] PageAttributes(MeshData mesh) {
         var stride = mesh.IsSkinned ? SkinnedPageAttributeStride : PageAttributeStride;
-        var attributes = new byte [mesh.Positions.Length * stride];
-
+        var attributes = new byte[mesh.Positions.Length * stride];
         for (
             var i = 0;
             i < mesh.Positions.Length;
@@ -194,6 +194,7 @@ public static class
                     : Vector3.Zero;
             var uv = i < mesh.TexCoords.Length ? mesh.TexCoords[i] : Vector2.Zero;
             var at = i * stride;
+
             Half(attributes.AsSpan(at), normal.X);
             Half(attributes.AsSpan(at + 2), normal.Y);
             Half(attributes.AsSpan(at + 4), normal.Z);
@@ -236,15 +237,18 @@ public static class
             at + 4 > mesh.BoneWeights.Length) {
             destination[..MeshletPageBuilder.InfluenceSize].Clear();
             destination[4] = byte.MaxValue;
-            return
-                ;
+
+            return;
         }
 
-        for (var i = 0; i < 4; i++) {
-            var index =
-                at + i < mesh.BoneIndices.Length ? mesh.BoneIndices[at + i] : 0;
-            var
-                weight = Math.Clamp(mesh.BoneWeights[at + i], 0f, 1f);
+        for (var i = 0;
+             i < 4;
+             i++
+            ) {
+            var index
+                = at + i < mesh.BoneIndices.Length ? mesh.BoneIndices[at + i] : 0;
+            var weight
+                = Math.Clamp(mesh.BoneWeights[at + i], 0f, 1f);
             destination[i] = (byte)Math.Clamp(index, 0, MeshletPageBuilder.MaxBones - 1);
             destination[4 + i] = (byte)MathF.Round(weight * byte.MaxValue);
         }
@@ -262,11 +266,12 @@ public static class
     }
 
     static void Half(
-        Span<
-            byte> destination,
+        Span
+            <byte> destination,
         float value
     ) =>
-        BitConverter.TryWriteBytes(destination, BitConverter.HalfToInt16Bits((System.Half)value));
+        BitConverter
+            .TryWriteBytes(destination, BitConverter.HalfToInt16Bits((System.Half)value));
 
     /// <summary>A mesh as the DAG builder wants it.</summary>
     /// <param name="mesh">The mesh.</param>
@@ -276,8 +281,7 @@ public static class
     ///     them, which is worth being able to say out loud: a compile that quietly rewrote the mesh
     ///     it was handed would make the order the importer does its work in matter.
     /// </remarks>
-    static
-        MeshletBuildInput ToBuildInput(MeshData mesh) =>
+    static MeshletBuildInput ToBuildInput(MeshData mesh) =>
         new() {
             Positions = mesh.Positions,
             Indices = mesh.Indices,

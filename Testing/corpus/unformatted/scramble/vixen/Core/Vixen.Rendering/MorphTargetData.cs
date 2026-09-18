@@ -1,11 +1,12 @@
+        // SPDX-FileCopyrightText: Copyright (c) Rikarin
 			
-     // SPDX-FileCopyrightText: Copyright (c) Rikarin
-               // SPDX-License-Identifier: Apache-2.0
-using Vixen    .Core;
-    using Vixen.   Core.   Mathematics ;
-namespace
-             Vixen    .Rendering   ;
-     
+     // SPDX-License-Identifier: Apache-2.0
+               
+using Vixen  .    Core;
+    using Vixen.Core   .Mathematics   ;
+
+             namespace
+     Vixen .    Rendering;
 /// <summary>One blend shape: what a named expression does to the vertices it touches.</summary>
 /// <remarks>
 ///     <para>
@@ -41,7 +42,7 @@ namespace
 ///         <see cref="MorphKernel" />'s remarks would need.
 ///     </para>
 /// </remarks>
-                [DataContract("MorphTarget"   )]
+                [   DataContract("MorphTarget")   ]
   public sealed record
          MorphTargetData {
     /// <summary>The largest magnitude a quantised component can carry.</summary>
@@ -52,7 +53,7 @@ namespace
     ///     one value a test is most likely to use.
     /// </remarks>
   public const int
-         Quantum =   32767;
+         Quantum = 32767   ;
       
     /// <summary>What the shape is called — <c>browRaise</c>, <c>jawOpen</c>, an ARKit name.</summary>
     /// <remarks>
@@ -60,20 +61,19 @@ namespace
     ///     re-exporting a mesh with the shapes in a different order does not silently re-target every
     ///     curve on the character.
     /// </remarks>
- public    string   Name   
-  { get; set ;   } = string.Empty;
-
+ public string    Name
+  {   get; set; }   = string.Empty;   
     /// <summary>Which vertices this target moves, ascending.</summary>
-  public    int[ ] Indices {    get    ;  set;  } =  []   ;
+    public int    [] Indices { get    ;    set  ; }  = [  ];
+  
     /// <summary>The largest position-delta component in this target, in the mesh's units.</summary>
-    public float
-PositionScale { get;    set; }
-        
+    public   float
+PositionScale { get; set    ; }
     /// <summary>Three quantised components per entry, against <see cref="PositionScale" />.</summary>
-   public    short[] Positions { get; set;   }    = []
-             ;
+        public short    [] Positions { get; set; }   =    [ ]
+   ;
     /// <summary>The largest normal-delta component in this target.</summary>
-             public   float NormalScale {   get  ; set   ; }
+             public float   NormalScale { get   ;  set;   } 
     /// <summary>
     ///     Three quantised components per entry against <see cref="NormalScale" />, or empty.
     /// </summary>
@@ -82,13 +82,15 @@ PositionScale { get;    set; }
     ///     same reason: an array of zeros says every normal delta is zero, which is a different claim
     ///     and one a compiler could not tell from a bug.
     /// </remarks>
-         public
-  short   [] Normals   { get;   set  ; } = [    ];
+             public
+         short[   ] Normals {   get; set   ;  } = [ ]    ;
+  
     /// <summary>How many vertices this target moves.</summary>
-          public int Count   => Indices   .Length;
+          public int Count =>   Indices.   Length;
     /// <summary>Whether it carries normal deltas as well as position deltas.</summary>
      public bool
-        HasNormals => Normals.   Length >  0    ;   
+        HasNormals => Normals.Length   > 0  ;
+
     /// <summary>What this target costs, resident, not counting its name.</summary>
     /// <remarks>
     ///     Sixteen bytes an entry with normals, ten without: four for the index, six for each
@@ -97,29 +99,29 @@ PositionScale { get;    set; }
     ///     "is it resident" is yes and the answer for a crowd is one shared mesh.
     /// </remarks>
     public
-long SizeInBytes   =>
-               (Indices.Length *  (long)   sizeof(  int)  ) + (    Positions .  Length * (long)sizeof(short    ))
-   + (Normals    . Length   * (long   )sizeof
-     (short));
-       
+               long    SizeInBytes =>
+   (   Indices.Length * (  long)sizeof   (int  ))  + (Positions    . Length  * (long)sizeof(short)    )   
+     + (Normals.    Length *   (long)   sizeof
+       (short));
     /// <summary>The position delta of one entry, dequantised.</summary>
     /// <param name="entry">Which entry, in <c>[0, <see cref="Count" />)</c>.</param>
     /// <returns>The delta, in the mesh's units.</returns>
     /// <exception cref="ArgumentOutOfRangeException">The entry is outside the target.</exception>
-    public Vector3 PositionDelta  (int entry   ) { ArgumentOutOfRangeException  .ThrowIfNegative(entry); 
-               ArgumentOutOfRangeException   .ThrowIfGreaterThanOrEqual(
-                entry    , Count)  ;
-        return Dequantize(    Positions, entry, PositionScale  )   ; }
+    public Vector3 PositionDelta(  int entry)   { ArgumentOutOfRangeException .  ThrowIfNegative(entry);
+               ArgumentOutOfRangeException.   ThrowIfGreaterThanOrEqual(
+                entry,    Count);
 
+        return  Dequantize(Positions    , entry, PositionScale)  ;   }
+                
     /// <summary>The normal delta of one entry, dequantised. Zero where there are none.</summary>
     /// <param name="entry">Which entry, in <c>[0, <see cref="Count" />)</c>.</param>
     /// <returns>The delta.</returns>
     /// <exception cref="ArgumentOutOfRangeException">The entry is outside the target.</exception>
-                public    Vector3   NormalDelta(  int entry) { ArgumentOutOfRangeException    .ThrowIfNegative  (  entry);
-               ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(entry,  Count);
-              return
-               HasNormals ? Dequantize ( Normals   ,  entry, NormalScale) : Vector3.Zero ;
-         }   
+               public Vector3    NormalDelta   (int  entry) { ArgumentOutOfRangeException .    ThrowIfNegative(  entry  );
+              ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(entry, Count  );
+               return
+         HasNormals ? Dequantize( Normals ,   entry  , NormalScale ) : Vector3 .Zero;
+     }
     /// <summary>Builds a target from deltas that are already sparse.</summary>
     /// <param name="name">What the shape is called.</param>
     /// <param name="indices">The vertices it moves, ascending.</param>
@@ -128,38 +130,37 @@ long SizeInBytes   =>
     /// <returns>The quantised target.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="name" /> is null.</exception>
     /// <exception cref="ArgumentException">The spans disagree in length.</exception>
-     public static MorphTargetData Encode (
-    string
-         name,
-	ReadOnlySpan    <int   >    indices  , ReadOnlySpan<Vector3> positions ,
-		ReadOnlySpan<    Vector3
-> normals
-           )  {
-       ArgumentNullException .ThrowIfNull  (name)
-           ;
-    if (positions .Length  != indices .Length) { throw   new ArgumentException(
-                $"'{name}' has {indices.Length} indices and {positions.Length} position deltas."    ,
-          nameof  (positions    ) );
- }
-        if (normals  .   Length !=
-           0 && normals.Length != indices.   Length  ) {
- throw new ArgumentException(
-                $"'{name}' has {indices.Length} indices and {normals.Length} normal deltas. A target "
-                +  "carries a normal delta for every vertex it moves, or none at all."   ,
-            nameof(normals)
-               )    ;
+    public static MorphTargetData Encode(
+         string
+	name ,
+		ReadOnlySpan<    int>   indices    ,  ReadOnlySpan<Vector3> positions,
+        ReadOnlySpan <Vector3
+           >    normals
+       ) {
+           ArgumentNullException  . ThrowIfNull(  name)
+    ;   
+          if (positions. Length !=  indices. Length) { throw new   ArgumentException(
+                $"'{name}' has {indices.Length} indices and {positions.Length} position deltas.",
+ nameof    (  positions)    );
         }
+           if (normals.  Length   !=  
+ 0 && normals.Length != indices.Length   )  {
+            throw new ArgumentException (
+                $"'{name}' has {indices.Length} indices and {normals.Length} normal deltas. A target "
+            + "carries a normal delta for every vertex it moves, or none at all."  ,
+               nameof   (normals)
+            );
+        }
+          var    positionScale =   Range (positions);
+                var
+               normalScale   = Range    (  normals) ;   
 
-          
-                var positionScale   = Range(positions)   ;   
-               var
-normalScale =    Range  (normals ) ;
-    return new()    { Name = name,
-     Indices =  indices.ToArray(),   PositionScale  = positionScale ,  
-            Positions    = Quantize
-(positions,    positionScale)   ,
- NormalScale  = normalScale,
-Normals    =  normals .Length == 0    ? [] : Quantize(normals , normalScale) };
+    return new() {    Name = name,   
+     Indices = indices  .ToArray(), PositionScale   =  positionScale ,
+            Positions =    Quantize
+(positions, positionScale    ),
+ NormalScale   =  normalScale,
+Normals =    normals  . Length == 0 ?    [] : Quantize(normals, normalScale) } ;
         }
                 
     /// <summary>Builds a target from one delta per vertex, dropping the ones that do not move.</summary>
@@ -188,83 +189,87 @@ Normals    =  normals .Length == 0    ? [] : Quantize(normals , normalScale) };
     ///         file with no shapes in it.
     ///     </para>
     /// </remarks>
-  public static MorphTargetData Sparsify (    string name,
-             ReadOnlySpan   <Vector3    > positions,
-	ReadOnlySpan   <Vector3  > normals   , float   threshold
+  public static MorphTargetData Sparsify( string    name,
+             
+	ReadOnlySpan<   Vector3>    positions ,
+        ReadOnlySpan<   Vector3>  normals,   float threshold
+             )   {
+             ArgumentNullException. ThrowIfNull    ( name  )    ;
+      
+if (normals.Length != 0 && normals .  Length != positions   .Length) { throw  new ArgumentException    (
+                $"'{name}' has {positions.Length} position deltas and {normals.Length} normal deltas."  ,
+             nameof(   normals)
+            )  ;
+			}
+        var squared = threshold 
+        * threshold;
+ 
+    List   <int
+>  kept =    []; 
+              for ( var index = 0; index < positions.Length    ; index++) {
+            var moves
+= positions[index].    LengthSquared   (    ) >    squared   ;
+          var
+                reshades = normals .  Length    != 0 && normals[   index  ].   LengthSquared( )    > squared;
 
-             ) {   
-             ArgumentNullException .    ThrowIfNull (  name    );   
-      if (normals.Length != 0 && normals  . Length !=   positions.Length) {  throw new    ArgumentException  (
-                $"'{name}' has {positions.Length} position deltas and {normals.Length} normal deltas.",
-nameof   (normals  )
-             );
-        }
-			var squared = threshold
-* threshold   ;
-        List<  int
- > kept    = [];
-    
-        for (var index = 0; index < positions.    Length; index++) {
-              var moves
-= positions[index]    .   LengthSquared    ()    >   squared ;
-var
-          reshades = normals  .    Length != 0 && normals   [  index]   .LengthSquared (    ) > squared   ;
-                if (  moves ||  reshades    )   {
-                kept.
-         Add   (   index); 
-            }
-        }
-         var keptPositions = new Vector3   [    kept  .Count]  ; var    keptNormals   = normals.Length  == 0 ? [    ] :   new Vector3    [kept.  Count   ]; 
-    for (var entry =    0; entry <  kept   .Count; entry++) {
-keptPositions    [ entry] = positions[kept[ entry ]]
-   ;
-                if (
-                normals.Length != 0)   {
-  keptNormals[   entry]
-=  normals  [kept [entry ] ];
-               }
-        }
-               
-          return    Encode(name   , [.. kept], keptPositions    ,   keptNormals ) ;
+         if   (moves  || reshades  )    {
+                kept   .
+Add(   index   );
+         }
     }
+var keptPositions = new Vector3[   kept    .  Count];  var keptNormals    =   normals.Length ==  0 ? [ ]    : new   Vector3[    kept.Count  ]   ;
+   
+                
+                for (var entry = 0    ; entry < kept  .   Count; entry++) {
+  keptPositions[    entry ] = positions[kept[entry ] ]
+;
+               if (
+normals.Length != 0) {
+               keptNormals   [entry   ]   
+          = normals  [  kept[ entry] ] ;
+            }
+             }
+             return Encode    (name,   [.. kept], keptPositions    ,   keptNormals ) ;
+              
+                }
     /// <summary>The largest absolute component over a run of deltas, which is the target's range.</summary>
-             static float   Range(  ReadOnlySpan   <Vector3>  deltas) { var   range = 0f ;
-             foreach ( var delta
-              in    deltas    ) {
+static float   Range(  ReadOnlySpan   <Vector3>  deltas) { var   range = 0f ;
+          
+        foreach ( var
+          delta in    deltas    ) {
                 range  =  MathF.Max(range, MathF   .   Abs(delta.X    ))  ; range = MathF  .    Max(range    , MathF.Abs(delta    .Y)) ;
-range = MathF
-          .   Max(  range,    MathF.  Abs(delta   .   Z));   
+              range =
+          MathF.   Max(  range,    MathF.  Abs(delta   .   Z));
         }
-          return    range    ; }
+        return    range    ; }
     /// <summary>Three signed shorts per delta, against a range.</summary>
     /// <remarks>
     ///     ⚠ A zero range is a target whose deltas are all zero, and dividing by it would write
     ///     <c>NaN</c> into every entry — which decodes back to <c>NaN</c> and turns the whole mesh
     ///     inside out the moment the weight leaves zero. Zeros are what a zero range quantises to.
     /// </remarks>
-                static short [] Quantize( ReadOnlySpan<Vector3> deltas  , float   range) {
-              var
-          packed   = new short[ deltas  .  Length *   3]  ;
-        if (range   <= 0f) {
-            return packed;
-               }
-       var
-             scale = Quantum /   range    ;
-        for (var index = 0; index   < deltas
-        .    Length;    index++)  {
-            packed  [(   index * 3) + 0 ]    = Component(deltas[
-      index].X   , scale );
-            packed [(index  * 3)   +   1  ] =   Component( deltas [index].  Y,   scale);
-        packed[(index * 3) + 2  ]  =    Component (   deltas[    index ].    Z    ,
-      scale)   ;
-}
-
-          
-			return packed;
-           }
-              
-             static  short Component(float value ,   float scale    )   => (short)   Math  .  Clamp(   (    int)MathF.Round(value * scale), -  Quantum   , Quantum  )  ;
-
+               static short [] Quantize( ReadOnlySpan<Vector3> deltas  , float   range)
+       {
+             var packed   = new
+short[deltas .  Length  * 3   ];
+        if  (range <=   0f) {
+            return packed
+      ;
+        }
+        var scale = Quantum /
+      range;  
+for   (    var index = 0; index <
+deltas.   Length;    index++    ) {
+          packed[  (  index *   3) + 0] = Component    (deltas  
+			[index].X, scale   );
+           packed [( index * 3  ) + 1   ]   =  Component(   deltas[ index ].Y,  scale)   ;
+              packed[(index * 3) + 2] =  Component  (    deltas [   index]    . Z
+             , scale    )    ;
+        }
+ return packed 
+ ;
+          }
+static   short Component(  float value, float scale )   => (    short   )Math.Clamp   (  (  int)   MathF    .Round(value * scale), -Quantum, Quantum  )   ;
     /// <summary>
     ///     One entry's triple, dequantised — and the arithmetic the compute kernel transliterates.
     /// </summary>
@@ -275,10 +280,10 @@ range = MathF
     ///     last bit on some entries and not others. <c>MorphScatter.rvn</c> spells it the same way for the
     ///     same reason.
     /// </remarks>
- static Vector3 Dequantize    (  short []  packed, int   entry, float   scale) {   var step =  scale / Quantum;
- return   new( packed[    (entry * 3)  +  0] *   step,  
-          packed[(entry *  3) + 1] * step, packed[(entry   * 3) + 2]    * step
-); }
-            }  
+            static Vector3  Dequantize  (short[    ]  packed , int  entry, float   scale) {   var step =   scale / Quantum  ;
                
-			
+			return new( packed   [(entry *    3) + 0]  *  step,
+        packed[   (entry * 3) +  1] * step, packed[(entry * 3)   + 2] * step  
+      );    }
+          } 
+     

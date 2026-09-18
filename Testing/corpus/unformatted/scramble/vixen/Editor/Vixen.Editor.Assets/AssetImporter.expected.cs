@@ -1,6 +1,5 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
-
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.Core.Reflection;
@@ -25,8 +24,8 @@ public sealed class ImporterAttribute(
 }
 
 /// <summary>Anything that turns a source file into artefacts.</summary>
-public interface
-    IAssetImporter {
+public
+    interface IAssetImporter {
     /// <summary>
     ///     What it is called in a <c>.meta</c> file and in the cache key — its settings type's
     ///     <c>[DataContract]</c> name.
@@ -40,16 +39,15 @@ public interface
     int Version { get; }
 
     /// <summary>What its settings are.</summary>
-    Type
-        SettingsType { get; }
+    Type SettingsType { get; }
 
     /// <summary>Which extensions it claims.</summary>
-    IReadOnlyList<string> Extensions { get; }
+    IReadOnlyList<string>
+        Extensions { get; }
 
     /// <summary>Makes a settings object with every default in place.</summary>
     /// <returns>The settings.</returns>
-    IImportSettings
-        CreateSettings();
+    IImportSettings CreateSettings();
 
     /// <summary>Imports one asset.</summary>
     /// <param name="context">Everything it is allowed to read, and everything it must declare.</param>
@@ -77,10 +75,10 @@ public interface
 ///         in sync.
 ///     </para>
 /// </remarks>
-public abstract class AssetImporter
-    <TSettings> : IAssetImporter
-    where TSettings : class
-    , IImportSettings, new() {
+public abstract class
+    AssetImporter<TSettings> : IAssetImporter
+    where TSettings :
+    class, IImportSettings, new() {
     /// <inheritdoc />
     public abstract int Version { get; }
 
@@ -88,22 +86,23 @@ public abstract class AssetImporter
     public Type SettingsType => typeof(TSettings);
 
     /// <inheritdoc />
-    public string
-        Name =>
+    public
+        string Name =>
         TypeRegistry.TryGet<TSettings>(out var descriptor)
-            ? descriptor.Alias
+            ? descriptor
+                .Alias
             : throw new InvalidOperationException(
                 $"{typeof(TSettings).Name} has no descriptor, so this importer has no name. Give it "
                 + "[DataContract], which is also what makes it the tag in a .meta file."
             );
 
     /// <inheritdoc />
-    public IReadOnlyList<string
-    > Extensions =>
+    public IReadOnlyList<
+        string> Extensions =>
         (Attribute.GetCustomAttribute(
             GetType(),
-            typeof(
-                ImporterAttribute)
+            typeof
+                (ImporterAttribute)
         ) as ImporterAttribute)?.Extensions
         ?? throw new InvalidOperationException(
             $"{GetType().Name} has no [Importer] attribute, so nothing knows which files it claims."
@@ -113,9 +112,14 @@ public abstract class AssetImporter
     public IImportSettings CreateSettings() => new TSettings();
 
     /// <inheritdoc />
-    public ValueTask<ImportResult> ImportAsync(ImportContext context, CancellationToken cancellationToken = default) {
+    public ValueTask<ImportResult> ImportAsync(
+        ImportContext context,
+        CancellationToken cancellationToken = default
+    ) {
         ArgumentNullException.ThrowIfNull(context);
-        return context.Settings is TSettings settings
+
+        return context.Settings is TSettings
+            settings
             ? ImportAsync(context, settings, cancellationToken)
             : throw new ArgumentException(
                 $"{Name} was handed {context.Settings.GetType().Name} rather than {typeof(TSettings).Name}.",

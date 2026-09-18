@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -135,10 +135,10 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
 
     readonly Dictionary<NodeGraphModel, Watched> watched = [];
 
-    readonly List<(NodeGraphModel Graph
-        , NodeId Node )> recent = [];
+    readonly List<( NodeGraphModel Graph
+        , NodeId Node)> recent = [];
 
-    readonly List<( NodeGraphModel Graph, NodeId
+    readonly List<(NodeGraphModel Graph, NodeId
         Node)> dirty = [];
 
     bool disposed;
@@ -257,10 +257,11 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
             && entry.Revision == revision) {
             // ⚠ The first of three gates, and the only one that runs sixty times a second. Nothing
             // about this graph has changed since the source was emitted, so there is nothing to
-            // emit — every `NodeGraphCommand` calls `NodeGraphModel.Touch`, which is what moves the
+// emit — every `NodeGraphCommand` calls `NodeGraphModel.Touch`, which is what moves the
             // revision on. Without it, a canvas of fifty nodes walks fifty closures and builds fifty
             // strings on every frame in which nobody did anything.
             Touch(key);
+
             return Answer(
                 entry,
                 out
@@ -276,6 +277,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
         );
 
         Emissions++;
+
         if (compilation.Artefact is not { } source) {
             return false;
         }
@@ -285,12 +287,11 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
         if (entry is not null) {
             entry.Revision = revision;
 
-            // The second gate: the graph changed and this node's expression did not. Moving a node,
+// The second gate: the graph changed and this node's expression did not. Moving a node,
             // renaming a property, editing a value on a node this one does not depend on — all of
             // them arrive here and none of them costs a compilation.
             if (!string.Equals(entry.Source, source.Source, StringComparison.Ordinal)) {
                 entry.Source = source.Source;
-
                 if (
                     !dirty.Contains(key)) {
                     dirty.Add(key);
@@ -311,7 +312,6 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
     /// <summary>What a node's preview is, once it is known there is nothing to recompute.</summary>
     static bool Answer(Entry entry, out NodePreview preview) {
         preview = default;
-
         if (entry.Image == 0) {
             return
                 false;
@@ -335,7 +335,6 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
     /// </remarks>
     public int Update() {
         ObjectDisposedException.ThrowIf(disposed, this);
-
         if (dirty.Count == 0) {
             return 0;
         }
@@ -343,6 +342,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
         var taken = Math.Min(RebuildsPerUpdate, dirty.Count);
         List<(
             NodeGraphModel Graph, NodeId Node)> built = [];
+
         for (var index = 0; index < taken; index++) {
             var key = dirty[index];
             if (entries.TryGetValue(key, out var entry) && Build(key.Node, entry)) {
@@ -442,14 +442,16 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
             when (failure is ShaderCompilationException or ArgumentException or IOException) {
             // ⚠ A refusal rather than a throw. A half-wired graph emits Raven that does not type
             // check every few seconds while somebody is building one, and an editor that fell over
+
             // when a preview did not compile would be an editor nobody could author a graph in.
             entry.Refusal = failure.Message;
+
             Refusals++;
             return false;
         }
 
         // The one resource this binds is the uniform block holding the two transforms. Anything else
-        // — a texture, a sampler — is a material's and a preview has no material.
+// — a texture, a sampler — is a material's and a preview has no material.
         foreach
             (var binding in effect.Bindings) {
             if (binding.Kind is not (DescriptorKind.UniformBuffer or DescriptorKind.DynamicUniformBuffer)) {
@@ -463,8 +465,8 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
 
         entry.Refusal = null;
         Ensure(id, entry);
-
         var block = effect.BlockOf(DescriptorSetSlot.PerMaterial);
+
         if (block.Exists) {
             entry.Constants = device.CreateBuffer(
                 new(block.Size, BufferUsage.Uniform, MemoryAccess.HostUpload, "shader graph preview constants")
@@ -472,6 +474,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
 
             device
                 .Write(entry.Constants, 0, Transforms(block));
+
             entry.Descriptors = device.CreateDescriptorSet(
                     effect.SetLayouts[(int)DescriptorSetSlot.PerMaterial],
                     "shader graph preview"
@@ -491,6 +494,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
                     "shader graph preview quad"
                 )
             );
+
             device.Write(
                 entry
                     .Vertices,
@@ -522,13 +526,14 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
                 layout.Length > 0
                     ? [new VertexBufferLayout(layout.Stride, layout.Elements)]
                     : [],
-                // Two-sided: a quad whose winding disagrees with the rasterizer draws nothing at all,
+// Two-sided: a quad whose winding disagrees with the rasterizer draws nothing at all,
                 // and that failure is indistinguishable from a preview nobody implemented.
                 Rasterizer: RasterizerState.TwoSided,
                 DepthStencil: DepthStencilState.Disabled,
                 Name: "shader graph preview"
             )
         );
+
         return true;
     }
 
@@ -542,7 +547,6 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
                 ]
             )
         );
-
         commands.BeginRenderPass(
             new RenderPassDescription(
                 [new ColourAttachment(entry.View, LoadAction.Clear, StoreAction.Store, new Color4(0f, 0f, 0f, 1f))],
@@ -553,7 +557,6 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
         commands.SetViewport(new Viewport(0f, 0f, Size, Size));
         commands.SetScissor(new ScissorRect(0, 0, Size, Size));
         commands.BindPipeline(entry.Pipeline);
-
         if (
             entry.Descriptors.IsValid) {
             commands.BindDescriptorSet(DescriptorSetSlot.PerMaterial, entry.Descriptors);
@@ -565,7 +568,6 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
 
         commands.Draw(Quad.Length);
         commands.EndRenderPass();
-
         commands
             .Barrier(
                 new BarrierGroup(
@@ -573,6 +575,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
                     [new TextureBarrier(entry.Texture, ResourceState.ColourTarget, ResourceState.ShaderRead)]
                 )
             );
+
 
         entry.State = ResourceState.ShaderRead;
         Draws++;
@@ -584,7 +587,6 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
             return;
         }
 
-
         entry.Texture = device.CreateTexture(
             new(
                 Format,
@@ -594,6 +596,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
                 Name: $"shader graph preview {id}"
             )
         );
+
         entry.View = device
             .CreateTextureView(entry.Texture);
         entry.State = ResourceState.Undefined;
@@ -602,7 +605,6 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
                     .View
             )
             ?? 0;
-
         Created++;
     }
 
@@ -643,7 +645,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
     /// </remarks>
     static byte[
     ] Transforms(EffectBlock block) {
-        var bytes = new byte[
+        var bytes = new byte [
             block.Size];
 
         foreach (var parameter in block.Members) {
@@ -679,20 +681,20 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
     ///     out for one would put the texture coordinate where the shader is looking for a position.
     ///     What each attribute holds is <see cref="Corner" />'s.
     /// </remarks>
-    static (float
-        [] Vertices, Layout Layout) Geometry(Effect effect) {
-        List
-            <VertexElement> elements = [];
-        List<(int Lanes, Func<Corner, Vector4> Of )
-        > readers = [];
-        var offset = 0;
+    static (
+        float[] Vertices, Layout Layout ) Geometry(Effect effect) {
+        List<VertexElement>
+            elements = [];
+        List<( int Lanes, Func<Corner, Vector4> Of
+            )> readers = [];
+        var offset = 0
+            ;
 
-        foreach
-            (var input in effect.VertexInputs.OrderBy(input => input.Location)) {
-            var
-                lanes = LanesOf(input.Kind);
-            if (
-                lanes == 0) {
+        foreach (var input in effect.VertexInputs.OrderBy(input => input.Location)) {
+            var lanes = LanesOf(input.Kind);
+
+            if
+                (lanes == 0) {
                 continue;
             }
 
@@ -702,33 +704,33 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
         }
 
         var stride = offset;
-        var floats = new
-            List<float>(Quad.Length * Math.Max(1, stride / sizeof(float)));
-
+        var floats =
+            new List<float>(Quad.Length * Math.Max(1, stride / sizeof(float)));
         foreach (var corner in Quad) {
             foreach (var (lanes, of) in readers) {
-                var value =
-                    of(corner);
-
-                for (var lane = 0; lane < lanes; lane++) {
+                var value
+                    = of(corner);
+                for (var lane = 0;
+                     lane
+                     < lanes;
+                     lane++) {
                     floats.Add(
-                        lane
-                            switch {
-                                0 => value.X,
-                                1 => value.Y,
-                                2 => value.Z,
-                                _ => value.W
-                            }
+                        lane switch {
+                            0 => value.X,
+                            1 => value.Y,
+                            2 => value.Z,
+                            _ => value.W
+                        }
                     );
                 }
             }
         }
 
-        return ([.. floats], new Layout(stride, [.. elements]));
+        return ([.. floats],
+            new Layout(stride, [.. elements]));
     }
 
-    static int
-        LanesOf(ShaderValueKind kind) =>
+    static int LanesOf(ShaderValueKind kind) =>
         kind switch {
             ShaderValueKind.Float => 1,
             ShaderValueKind.Float2 => 2,
@@ -741,8 +743,8 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
         lanes switch {
             1 => VertexFormat
                 .Float32,
-            2
-                => VertexFormat.Float32X2,
+
+            2 => VertexFormat.Float32X2,
             3 => VertexFormat.Float32X3,
             _ => VertexFormat.Float32X4
         };
@@ -753,9 +755,10 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
             "texcoord" => corner => new Vector4(corner.Uv.X, corner.Uv.Y, 0f, 0f),
             // Facing the viewer, so a graph reading a world normal previews a flat surface rather than
             // one whose normal is zero — which normalises to a NaN and shades as nothing.
-            "normal" => _ => new Vector4(0f, 0f, 1f, 0f),
-            "colour"
-                => _ => new Vector4(1f, 1f, 1f, 1f),
+            "normal" => _
+                => new Vector4(0f, 0f, 1f, 0f),
+            "colour" => _ =>
+                new Vector4(1f, 1f, 1f, 1f),
             _ => corner => new Vector4(corner.Position.X, corner.Position.Y, 0f, 1f)
         };
 
@@ -772,51 +775,51 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
     ///         targets with it.
     ///     </para>
     /// </remarks>
-    int Watch(NodeGraphModel graph) {
+    int Watch(
+        NodeGraphModel graph
+    ) {
         if (watched.TryGetValue(graph, out var watching)) {
             return watching.Revision;
         }
 
-        var
-            state = new Watched();
+        var state = new Watched();
 
         state.Handler = _ => state.Revision++;
         graph.Changed += state.Handler;
-        watched[graph] = state;
-
-        return state
-            .Revision;
+        watched[graph] =
+            state;
+        return state.Revision;
     }
 
-    void Touch(( NodeGraphModel Graph, NodeId Node) key) {
+    void Touch(
+        (NodeGraphModel Graph, NodeId Node) key
+    ) {
         recent.Remove(key);
         recent.Add(key);
     }
 
-    void Evict
-        () {
-        while (recent
-                   .Count
-               > Math.Max(1, Capacity)) {
-            var oldest = recent[0];
+    void Evict() {
+        while (recent.Count > Math.Max(1, Capacity)) {
+            var oldest = recent[0
+            ];
 
             recent.RemoveAt(0);
             dirty
                 .Remove(oldest);
-
-            if (entries.Remove(oldest, out var entry)) {
+            if (
+                entries.Remove(oldest, out var entry)) {
                 Destroy(entry);
             }
         }
     }
 
     /// <summary>Destroys what a rebuild replaces, keeping the target and its number.</summary>
-    void
-        Release(Entry entry) {
-        if (entry.Pipeline.IsValid) {
+    void Release(Entry entry) {
+        if
+            (entry.Pipeline.IsValid) {
             device.Destroy(entry.Pipeline);
-            entry.Pipeline =
-                default;
+            entry
+                .Pipeline = default;
         }
 
         if (entry.Vertex.IsValid) {
@@ -824,22 +827,22 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
             entry.Vertex = default;
         }
 
-        if
-            (entry.Fragment.IsValid) {
+
+        if (entry.Fragment.IsValid) {
             device.Destroy(entry.Fragment);
-            entry.Fragment = default;
+            entry.Fragment
+                = default;
         }
 
         if (entry.Descriptors.IsValid) {
             device.Destroy(entry.Descriptors);
-            entry.Descriptors = default
-                ;
+            entry.Descriptors = default;
         }
 
         if (entry.Constants.IsValid) {
             device.Destroy(entry.Constants);
-            entry.Constants =
-                default;
+            entry
+                .Constants = default;
         }
 
         if (entry.Vertices.IsValid) {
@@ -849,8 +852,8 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
     }
 
     void Destroy(Entry entry) {
-        Release(entry)
-            ;
+        Release(entry);
+
         if (!entry.Texture.IsValid) {
             return;
         }
@@ -859,13 +862,11 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
         // memory and the next frame that draws it is undefined rather than wrong.
         if (entry.Image != 0) {
             images?.Release(entry.Image);
-
             entry.Image = 0;
         }
 
         device.Destroy(entry.View);
         device.Destroy(entry.Texture);
-
         entry
             .Texture = default;
         entry.View = default;
@@ -880,32 +881,23 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
     ///     produces a preview that is perfectly plausible and upside down.
     /// </remarks>
     readonly record struct Corner(
-        Vector2 Position,
         Vector2
-            Uv);
+            Position,
+        Vector2 Uv);
 
-    static readonly
-        Corner[] Quad = [
-            new(
-                new Vector2(
-                    -1f,
-                    1f
-                ),
-                new Vector2(0f, 0f)
-            ),
-            new(new Vector2(-1f, -1f), new Vector2(0f, 1f)), new(new Vector2(1f, 1f), new Vector2(1f, 0f)),
-            new(new Vector2(1f, 1f), new Vector2(1f, 0f)),
-            new(new Vector2(-1f, -1f), new Vector2(0f, 1f)),
-            new(new Vector2(1f, -1f), new Vector2(1f, 1f))
-        ];
+    static readonly Corner[] Quad = [
+        new(new Vector2(-1f, 1f), new Vector2(0f, 0f)),
+        new(new Vector2(-1f, -1f), new Vector2(0f, 1f)), new(new Vector2(1f, 1f), new Vector2(1f, 0f)),
+        new(new Vector2(1f, 1f), new Vector2(1f, 0f)),
+        new(new Vector2(-1f, -1f), new Vector2(0f, 1f)),
+        new(new Vector2(1f, -1f), new Vector2(1f, 1f))
+    ];
 
     readonly record struct Layout(
-        int Stride,
-        VertexElement
-            [] Elements) {
-        public int
-            Length =>
-            Elements.Length;
+        int
+            Stride,
+        VertexElement[] Elements) {
+        public int Length => Elements.Length;
     }
 
     /// <summary>One graph's revision, and the handler that moves it.</summary>
@@ -914,32 +906,29 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
         public Action<NodeGraphModel> Handler = _ => { };
     }
 
-    sealed class
-        Entry {
-        public required string Source { get; set; }
+    sealed class Entry {
+        public required
+            string Source { get; set; }
 
         /// <summary>The graph revision this source was emitted at.</summary>
-
         public int Revision { get; set; }
 
         /// <summary>Why this node has no picture, or null when it has one or has not been built.</summary>
-        public string? Refusal {
-            get
-            ;
-            set;
-        }
+        public string?
+            Refusal { get; set; }
 
         public TextureHandle Texture;
         public TextureViewHandle View;
         public ResourceState State = ResourceState.Undefined;
         public ulong Image;
-        public PipelineHandle Pipeline;
 
         public
-            ShaderHandle Vertex;
+            PipelineHandle Pipeline;
 
+        public ShaderHandle Vertex;
         public ShaderHandle Fragment;
         public BufferHandle Constants;
+
         public BufferHandle Vertices;
         public DescriptorSetHandle Descriptors;
     }

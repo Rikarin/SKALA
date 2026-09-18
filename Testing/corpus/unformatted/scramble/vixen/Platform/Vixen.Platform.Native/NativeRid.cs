@@ -1,11 +1,12 @@
-   // SPDX-FileCopyrightText: Copyright (c) Rikarin
+   
+        // SPDX-FileCopyrightText: Copyright (c) Rikarin
+              // SPDX-License-Identifier: Apache-2.0
+         
+     using System.Runtime.
+      InteropServices;
           
-// SPDX-License-Identifier: Apache-2.0
-        using System.Runtime.
-         InteropServices;
-                
-  namespace Vixen. Platform.Native   ;
- 
+namespace Vixen. Platform.Native   ;
+            
 /// <summary>Which runtime identifier this process is, and what it will accept instead.</summary>
 /// <remarks>
 ///     <para>
@@ -22,21 +23,21 @@
 ///         let the fat binary inside sort out the architecture.
 ///     </para>
 /// </remarks>
-  public  static    class
-            NativeRid {
+ public  static    class
+             NativeRid {
     /// <summary>The runtime identifier this process is running as — <c>osx-arm64</c>.</summary>
     public static string    Current { get;  }   = $"{OperatingSystemPart()}-{ArchitecturePart()}"    ;
-      
+    
     /// <summary>The operating-system half on its own — <c>osx</c>.</summary>
-  public static  string CurrentOperatingSystem { get    ;   } = OperatingSystemPart
-        ();
-          
+                public static  string CurrentOperatingSystem { get    ;   } = OperatingSystemPart
+();
     /// <summary>
     ///     The identifiers a native directory may be named, most specific first.
     /// </summary>
     /// <returns>The chain — <c>osx-arm64</c>, then <c>osx</c>.</returns>
-               public static
-           IReadOnlyList   <  string>  Chain { get; } = [Current  , CurrentOperatingSystem] ;
+          public static
+               IReadOnlyList   <  string>  Chain { get; } = [Current  , CurrentOperatingSystem] ;
+           
     /// <summary>The chain for a runtime identifier other than this process's.</summary>
     /// <param name="rid">The identifier — <c>win-x64</c>.</param>
     /// <returns>It, and its operating-system half if it has one.</returns>
@@ -47,31 +48,29 @@
     public static IReadOnlyList
         <string> ChainFor (string rid   ) {
         ArgumentException  .ThrowIfNullOrEmpty(rid );
-
-   var separator  
-               = rid  .LastIndexOf('-');
-         return  separator <= 0   ? [rid    ]   :    [rid   , rid[..separator]] ;   }
-   static string OperatingSystemPart(
-  ) =>  
-        OperatingSystem  .IsWindows    () ?
-"win"
-           : OperatingSystem.IsMacOS(    )
-			|| OperatingSystem.IsMacCatalyst()   ? "osx"
-     :    OperatingSystem  .    IsIOS() ?  "ios" 
-         : OperatingSystem.IsAndroid    (  ) ? "android" : OperatingSystem.    IsBrowser()    ? "browser"
-      : "linux";
- 
-    static string    ArchitecturePart    () =>
-        RuntimeInformation. ProcessArchitecture   switch  { Architecture.X64 => "x64",
-     Architecture    .   X86 => "x86"
+        var separator
+   = rid  .LastIndexOf('-');
+               return  separator <= 0   ? [rid    ]   :    [rid   , rid[..separator] ]   ; }  
+         static string OperatingSystemPart
+   ()  =>
+  OperatingSystem.    IsWindows()
+? "win"  
+        : OperatingSystem.IsMacOS    (
+           ) || OperatingSystem.IsMacCatalyst(   ) ?    "osx"
+			:  OperatingSystem    .IsIOS()  ? "ios"
+     : OperatingSystem.    IsAndroid  () ? "android" : OperatingSystem    .IsBrowser(    ) ? "browser"
+         : "linux"; 
+      static    string    ArchitecturePart() =>
+ RuntimeInformation .   ProcessArchitecture  switch { Architecture. X64 => "x64"    ,
+            Architecture   .X86 =>
+        "x86",
+     Architecture.Arm64
+=>    "arm64",
+            Architecture
+             .    Arm => "arm"    ,
+            Architecture    .Wasm => "wasm"   
 ,
-            Architecture.Arm64 =>
-             "arm64"    ,
-            Architecture   
-.Arm    => "arm",
-            Architecture    .    Wasm => "wasm",
-		var
-other =>   other. ToString().ToLowerInvariant()
-            }   ;
-
-}
+            var other   => other .ToString().ToLowerInvariant(   )
+		
+        };
+            }

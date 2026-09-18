@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -61,7 +61,6 @@ public readonly record struct RealmVersion(string Build, ulong Content) {
         }
 
         var separator = text.LastIndexOf('+');
-
         if (separator <= 0
             || !ulong.TryParse(
                 text
@@ -76,6 +75,7 @@ public readonly record struct RealmVersion(string Build, ulong Content) {
 
         version
             = new(text[..separator], content);
+
         return true;
     }
 
@@ -90,7 +90,9 @@ public readonly record struct RealmVersion(string Build, ulong Content) {
         Content == other.Content && string.Equals(Build ?? "", other.Build ?? "", StringComparison.Ordinal);
 
     /// <inheritdoc />
-    public override int GetHashCode() => HashCode.Combine(Build ?? "", Content);
+    public override int GetHashCode(
+    ) =>
+        HashCode.Combine(Build ?? "", Content);
 
     /// <inheritdoc />
     public override string ToString() =>

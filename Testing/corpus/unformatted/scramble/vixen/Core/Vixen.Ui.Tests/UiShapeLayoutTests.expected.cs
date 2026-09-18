@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -58,7 +58,7 @@ namespace Tests;
 /// </remarks>
 public class UiShapeLayoutTests {
     /// <summary>The C# property, and the shader field it has to sit on top of, in order.</summary>
-    static readonly ( string Property, string Field )[] Lanes = [
+    static readonly (string Property, string Field)[] Lanes = [
         ("Size", "size"),
         ("RadiiX", "radiiX"),
         ("RadiiY", "radiiY"), ("Axis", "axis"),
@@ -78,15 +78,17 @@ public class UiShapeLayoutTests {
         () {
         var members =
             Reflected().Members;
+
         foreach (var (property, field) in Lanes) {
             Assert.True(
                 members.TryGetValue(field, out var member),
                 $"`Ui.rvn`'s UiShape has no `{field}`, which `UiShape.{property}` is supposed to be."
             );
             Assert.Equal(member.Offset, OffsetOf(property));
+
 // Every lane is a `float4` on both sides. A scalar beside a vector is the specific
             // mistake std430 and sequential layout disagree about, so its size is worth asserting
-// rather than assuming from the type name.
+            // rather than assuming from the type name.
             Assert.Equal(
                 16,
                 member
@@ -196,6 +198,7 @@ public class UiShapeLayoutTests {
         );
         Assert.Equal(1f, shape.Size.W);
         Assert.Equal(0f, shape.Axis.W);
+
         // And with no axis at all it is a flat fill, which is the same zero the flag had.
         var flat = new UiShape(new Vector2(4f, 4f), 0f, default, default, Vector2.Zero);
 
@@ -214,7 +217,6 @@ public class UiShapeLayoutTests {
             .FirstOrDefault(candidate =>
                 candidate.Name == property || candidate.Name == $"<{property}>k__BackingField"
             );
-
         Assert.True(field is not null, $"UiShape has no field behind `{property}`.")
             ;
         return
@@ -222,8 +224,9 @@ public class UiShapeLayoutTests {
     }
 
     /// <summary>What the committed reflection says the <c>shapes</c> buffer's element looks like.</summary>
-    static (int Size, IReadOnlyDictionary<string, Member> Members ) Reflected() {
+    static ( int Size, IReadOnlyDictionary<string, Member> Members) Reflected() {
         using var document = JsonDocument.Parse(File.ReadAllText(ReflectionPath()));
+
         var shapes = document.RootElement
             .GetProperty("Sets")
             .EnumerateArray()
@@ -232,10 +235,9 @@ public class UiShapeLayoutTests {
         var
             members = new Dictionary<string, Member>(StringComparer.Ordinal);
         foreach (var member in shapes.GetProperty("Members").EnumerateArray()) {
-            var name = member.GetProperty("Name").GetString()!;
+            var name = member.GetProperty("Name").GetString() !;
 
             // The buffer's own entry is the whole struct under the binding's name; the lanes are
-
             // `shapes.<field>`. Skipping by shape rather than by name keeps this working if the
             // binding is ever renamed.
             if (!name.StartsWith("shapes.", StringComparison.Ordinal)) {
@@ -244,9 +246,7 @@ public class UiShapeLayoutTests {
 
             members[name["shapes.".Length..]] = new Member(
                 member.GetProperty("Offset").GetInt32(),
-                member
-                    .GetProperty("Size")
-                    .GetInt32()
+                member.GetProperty("Size").GetInt32()
             );
         }
 
@@ -255,22 +255,18 @@ public class UiShapeLayoutTests {
 
     /// <summary>The editor's shader directory, found the way the golden suite finds it.</summary>
     static string ReflectionPath() {
-        for (var directory = new DirectoryInfo(
-                 AppContext
-                     .BaseDirectory
-             );
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
              directory is not null;
              directory = directory.Parent) {
             var candidate = Path.Combine(
-                directory.FullName,
-                "Editor",
-                "Vixen.Editor.Host",
-                "Shaders",
-                "UiBox.reflect.json"
-            );
-
-            if
-                (File.Exists(candidate)) {
+                    directory.FullName,
+                    "Editor",
+                    "Vixen.Editor.Host",
+                    "Shaders",
+                    "UiBox.reflect.json"
+                )
+                ;
+            if (File.Exists(candidate)) {
                 return candidate;
             }
         }
@@ -283,6 +279,5 @@ public class UiShapeLayoutTests {
 
     record struct Member(
         int Offset,
-        int
-            Size);
+        int Size);
 }

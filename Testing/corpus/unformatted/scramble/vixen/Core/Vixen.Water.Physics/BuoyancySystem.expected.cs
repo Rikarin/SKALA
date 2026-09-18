@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -59,7 +59,6 @@ namespace Vixen.Water.Physics;
 )]
 public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : SystemBase, IDeclaredAccess {
     readonly PhysicsScene scene = scene ?? throw new ArgumentNullException(nameof(scene));
-
     readonly QueryDescription bodies = new QueryDescription().WithAll<BuoyancyBody, PhysicsBody>();
 
     readonly List<Entity
@@ -163,7 +162,9 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
         // is a native call the ECS cannot see into. Nothing scheduled may still be reading what it
         // writes.
         dependency.Complete();
+
         Step(context.World);
+
         return dependency;
     }
 
@@ -173,6 +174,7 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
     /// <remarks>Public so a test can step without standing up a runner.</remarks>
     public void Step(World world) {
         ArgumentNullException.ThrowIfNull(world);
+
         Floating = 0;
         Pontoons = 0;
         WetPontoons = 0;
@@ -181,9 +183,9 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
         var gravity = scene.World.Gravity.Y;
         // ⚠ One entity at a time, and not a span. BuoyancyBody holds an array of pontoons, which
         // makes it a managed component: its values live in the world's store and the chunk holds
-        // handles, so ReadValues would throw. The transforms and velocities beside it are unmanaged
 
-        // and are read per entity here anyway, because the loop is already one at a time.
+        // handles, so ReadValues would throw. The transforms and velocities beside it are unmanaged
+// and are read per entity here anyway, because the loop is already one at a time.
         asked.Clear();
         foreach (var chunk in world.Chunks(bodies)) {
             asked.AddRange(chunk.Entities[..chunk.Count]);
@@ -196,44 +198,40 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
 
     void Apply(World world, Entity entity, float gravity) {
         var authored = world.Read<BuoyancyBody>(entity);
-        if (authored.Pontoons is not {
-                Length
-                : > 0
-            } pontoons) {
+        if (authored.Pontoons is not { Length : > 0 } pontoons) {
             return;
         }
 
-        var body
-            = world.Read<PhysicsBody>(entity).Handle;
+        var
+            body = world.Read<PhysicsBody>(entity).Handle;
         // ⚠ Out of the simulation and not out of a component. `WorldTransform` is written by
         // `TransformSystem`, which runs in LateUpdate — so in this phase it holds *last frame's*
         // pose, and a boat would be floated where it was rather than where it is. The one-frame lag
         // that produces is exactly the class of bug § D2's whole seam exists to prevent, and the
         // simulation already has the answer to hand.
         scene.World.GetTransform(body, out var position, out var rotation);
-
         // ⚠ Unit scale, and it is not an oversight: Jolt has no notion of a scaled body — a scaled
         // shape is baked into the shape itself — so a placement built with the entity's authored
         // scale would move the pontoons somewhere the collider is not.
-        var placement
-            = Matrix4x4.Compose(Vector3.One, rotation, position);
-        var velocity = scene.World.GetLinearVelocity(body);
-        Pontoons += pontoons
-            .Length;
+        var
+            placement = Matrix4x4.Compose(Vector3.One, rotation, position);
+        var velocity = scene.World
+            .GetLinearVelocity(body);
+        Pontoons +=
+            pontoons.Length;
+
         // ⚠ The centre of the body, not of a pontoon — QueryAt picks a *zone*, and a hull is smaller
         // than a window by orders of magnitude. Asking per pontoon would be four containment walks
         // per step for an answer that differs only for a boat straddling two zones, which is the
         // authoring mistake QueryAt's own remarks refuse to resolve.
-        var origin =
-            position;
+        var origin
+            = position;
         if (Surface.QueryAt(new(origin.X, origin.Z)) is not { } query) {
             Dry(world, entity, pontoons.Length);
             return;
         }
 
-        if (forces.Length
-            < pontoons
-                .Length) {
+        if (forces.Length < pontoons.Length) {
             forces = new BuoyancyForce[pontoons.Length];
         }
 
@@ -242,45 +240,40 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
         var wet = Buoyancy.Solve(
             in evaluator,
             pontoons,
-            in placement,
+            in
+            placement,
             velocity,
             gravity,
             authored.Settings,
-            Surface.WaterTime,
-            forces
-                .AsSpan(0, pontoons.Length)
+            Surface
+                .WaterTime,
+            forces.AsSpan(0, pontoons.Length)
         );
-        LastCount =
-            pontoons.Length;
+        LastCount
+            = pontoons.Length;
         WetPontoons += wet;
-
-
         var lift = 0f;
         var submerged = 0f;
-        var was = world.Has<BuoyancyState>(entity)
-            ? world.Read
-                    <BuoyancyState>(entity)
-                .Wet
-            : 0;
+        var was = world.Has<BuoyancyState>(entity) ? world.Read<BuoyancyState>(entity).Wet : 0;
+
         for (var index = 0; index < pontoons.Length; index++) {
             var force = forces[index];
 
             submerged += force.Submerged;
-
-            if (force.Submerged
-                <= 0f) {
+            if (force.Submerged <= 0f) {
                 continue;
             }
 
             lift += force.Force.Y;
             Disturb(in force, velocity, entered: was == 0);
-
             // At the pontoon's own world position, which is what makes the hull pitch. A force at
             // the centre of mass would be a boat that bobs and never rolls.
-            scene.World.ApplyForce(body, force.Force, force.Position);
+            scene
+                .World.ApplyForce(body, force.Force, force.Position);
         }
 
-        if (wet > 0) {
+        if (wet
+            > 0) {
             Floating++;
         }
 
@@ -291,8 +284,7 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
                 Total = pontoons.Length,
                 Submerged = submerged / pontoons.Length,
                 Lift = lift,
-                SurfaceHeight
-                    = query.Height(new(origin.X, origin.Z), Surface.WaterTime)
+                SurfaceHeight = query.Height(new(origin.X, origin.Z), Surface.WaterTime)
             }
         );
     }
@@ -312,44 +304,43 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
     ///         settles.
     ///     </para>
     /// </remarks>
-    void Disturb(
-        in BuoyancyForce force,
-        Vector3 velocity,
-        bool entered
-    ) {
+    void Disturb(in BuoyancyForce force, Vector3 velocity, bool entered) {
         if (Disturbances is not { } queue) {
-            return
-                ;
+            return;
         }
 
-        var lateral = new Vector2(velocity.X, velocity.Z).Length();
-        var falling = -velocity.Y;
+        var lateral = new Vector2(
+            velocity
+                .X,
+            velocity.Z
+        ).Length();
+        var falling = -velocity.Y
+            ;
+
         if
             (entered && falling >= SplashSpeed) {
-            queue
-                .Add(
-                    new(
-                        new(force.Position.X, force.Position.Z),
-                        1f,
-                        -falling * force.Submerged,
-                        WaterDisturbanceKind.Splash,
-                        force.SurfaceHeight
-                    )
-                );
+            queue.Add(
+                new(
+                    new(force.Position.X, force.Position.Z),
+                    1f,
+                    -falling * force.Submerged,
+                    WaterDisturbanceKind.Splash,
+                    force.SurfaceHeight
+                )
+            );
             return;
         }
 
         if (lateral >= WakeSpeed) {
-            queue
-                .Add(
-                    new(
-                        new(force.Position.X, force.Position.Z),
-                        0.75f,
-                        -lateral * 0.2f * force.Submerged,
-                        WaterDisturbanceKind.Wake,
-                        force.SurfaceHeight
-                    )
-                );
+            queue.Add(
+                new(
+                    new(force.Position.X, force.Position.Z),
+                    0.75f,
+                    -lateral * 0.2f * force.Submerged,
+                    WaterDisturbanceKind.Wake,
+                    force.SurfaceHeight
+                )
+            );
         }
     }
 
