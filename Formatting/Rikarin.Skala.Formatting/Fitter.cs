@@ -106,7 +106,8 @@ public sealed class Fitter {
                 trailing,
                 line
             ),
-            document.AfterPointRunsToTheEnd(node)
+            document.AfterPointRunsToTheEnd(node),
+            document.SegmentOf(node)
         );
         modes[id] = mode;
         resolved[id] = true;
@@ -148,7 +149,14 @@ public sealed class Fitter {
     ///     not a last-resort one, no required break — so the group's trailing text lands on the line
     ///     the group is on. See <see cref="GroupFlags.AfterPointRunsToTheEnd" />.
     /// </param>
-    ResolvedMode Decide(GroupMode mode, in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd) {
+    /// <param name="tail">
+    ///     The flat width past the group's own first point — <see cref="Document.SegmentOf" /> on the
+    ///     group — for <see cref="GroupFacts.KeptOnlyIfTailFits" />. ⚠ Not <c>FlatWidth − PointWidth</c>:
+    ///     that difference counts the point's own flat space, and the oracle's boundary is exact — a
+    ///     kept <c>=\n[…];</c> whose continuation line is 120 columns stays, and 121 gives the break
+    ///     to the bracket.
+    /// </param>
+    ResolvedMode Decide(GroupMode mode, in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd, int tail) {
         var owner = facts.Owner;
         switch (mode) {
             case GroupMode.Flat:
@@ -205,6 +213,15 @@ public sealed class Fitter {
                 // join one that fits, and whether it may add one that the author did not write, are
                 // per-construct facts — see GroupFacts for why one rule is not enough.
                 if (facts.SourceBroken) {
+                    // ⚠ A kept break that is one of two alternatives — the `=`'s or the `[`'s after
+                    // it — is kept exactly when the value fits flat on the line it would move to.
+                    // Measured on the flat width and not the head: `= [` always fits, and a bracket
+                    // that is going to break is the case where the oracle gives the break to the
+                    // bracket. See GroupFacts.KeptOnlyIfTailFits (#375).
+                    if (facts.KeptOnlyIfTailFits) {
+                        return Fits(m.ContinuationColumn, tail, m.Trailing) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                    }
+
                     return facts.JoinsIfFits && Fits(m.Column, m.FlatWidth, m.Trailing)
                         ? ResolvedMode.Flat
                         : ResolvedMode.Broken;

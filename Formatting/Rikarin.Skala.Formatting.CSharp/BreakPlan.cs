@@ -3252,22 +3252,7 @@ public sealed class BreakPlan {
                 group,
                 GroupMode.Preserve,
                 new GroupFacts(
-                    // ⚠ Not preserved when the value opens with a delimiter of its own AND that delimiter
-                    // is going to break, which in C# is a collection expression the author broke inside.
-                    // Asked directly, `int[] y =\n[\n 1,\n 2\n];` comes back `int[] y = [` while
-                    // `= \n new[] {`, `= \n new Thing {` and `= \n Make(` all keep the break the author
-                    // wrote. The `=` break and the `[`'s are alternatives rather than a pair.
-                    // ⚠ This used to exempt every collection expression, with the remark that "a bracket
-                    // that fits on a continuation line still gets the `=` break" — which is what the oracle
-                    // does and was not what this did: with SourceBroken false the group was flat unless
-                    // too long, and `int[] y =\n[1, 2];` came back joined in a field, a property
-                    // initializer, a local and a parameter default alike. Measured on all four; the
-                    // oracle keeps the break in every one and joins only `=\n[\n 1, 2\n]`, whose bracket
-                    // chops (issue #369, SK-DIV-0103). So the exemption is the bracket that breaks, read
-                    // off the source the same way the collection expression's own plan reads it.
-                    options.KeepsUserBreaksBetweenItems
-                    && broken
-                    && !(value is CollectionExpressionSyntax collection && ListBreaksInSource(collection)),
+                    options.KeepsUserBreaksBetweenItems && broken,
 
                     // ⚠ `prefer_wrap_around_eq`, and the reason milestone 2 stopped at presence. The
                     // oracle does break after `=` on a line that is too long — but not always, and
@@ -3296,7 +3281,13 @@ public sealed class BreakPlan {
                     // =\n 0; …)` chops the header; and `int[] xs =\n [1, 2], ys = [3]` chops the
                     // declarators. Without it Skala kept the break and left every one of those lists
                     // whole, `void B(int a =\n        5) { }` (SK-DIV-0103).
-                    HidesFlatWidthWhenBroken: true
+                    HidesFlatWidthWhenBroken: true,
+
+                    // ⚠ And a kept break before a collection expression yields to the bracket when the
+                    // bracket is going to break: `= [` is what the oracle writes for one that is chopped,
+                    // too wide for the line below, or holds a multi-line element, and `=\n[1, 2]` for
+                    // one that fits there (issue #375). See BreakYieldsToTheBracket.
+                    KeptOnlyIfTailFits: BreakYieldsToTheBracket(value)
                 ),
                 true,
                 SpendsUnderDelimiters: IsAListItemsEquals(node),
@@ -3308,6 +3299,33 @@ public sealed class BreakPlan {
             )
         );
     }
+
+    /// <summary>
+    ///     Whether a kept break at an <c>=</c> is one of two alternatives — the <c>=</c>'s or the
+    ///     bracket's after it — so that it is kept exactly when the value fits flat on the continuation
+    ///     line. See <see cref="GroupFacts.KeptOnlyIfTailFits" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A collection expression and nothing else, and the boundary is the oracle's: asked with the
+    ///     same multi-line lambda as the element, <c>var t =\n new[] { 1, () => {…} };</c> and
+    ///     <c>var t =\n (1, () => {…});</c> keep the <c>=</c> break, while <c>=\n[1, () => {…}]</c>
+    ///     comes back <c>= [</c> — in a local, a field, a property initializer, a deconstruction, a
+    ///     parameter default, a lambda's parameter default, an object initializer's element, a named
+    ///     attribute argument, a <c>using</c> header and a <c>for</c> header alike, and on either side of
+    ///     the <c>=</c> (issue #375). The same collection written to fit on the line below keeps the
+    ///     break in every one of them: 120 columns stays and 121 gives the break to the bracket.
+    ///     <para>
+    ///         ⚠ This replaces a source test. The exemption used to be "a collection the author broke at
+    ///         one of its own gaps" (<c>ListBreaksInSource</c>, SK-DIV-0103), which answers the same
+    ///         question for one of the three reasons a bracket breaks and not for the other two — too
+    ///         wide for the continuation line, or an element that spans lines. The second was the
+    ///         Nightly's seed 5209185227727739433: a list chopped around a multi-line lambda has no break
+    ///         at its own gaps on pass one, so the <c>=</c> break was kept, and has them on pass two, so
+    ///         it was joined. Only the fitter can answer "does the bracket fit", and it answers it the
+    ///         same way from either pass's output.
+    ///     </para>
+    /// </remarks>
+    static bool BreakYieldsToTheBracket(ExpressionSyntax value) => value is CollectionExpressionSyntax;
 
     bool QueryLeadsTheWay(ExpressionSyntax value) => options.WrapBeforeLinqExpression && value is QueryExpressionSyntax;
 
@@ -3491,34 +3509,6 @@ public sealed class BreakPlan {
 
         for (var i = previous.Span.End; i < token.SpanStart && i < source.Length; i++) {
             if (source[i] == '\n') {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>Whether a bracketed list holds a break the author wrote at one of its own gaps.</summary>
-    /// <remarks>
-    ///     ⚠ The delimiter gaps and the item gaps, and not "a newline anywhere inside": a multi-line
-    ///     element — a lambda, a nested initializer — does not by itself put the bracket on the
-    ///     <c>=</c>'s line. Read from the source rather than from the list's plan, because the clause
-    ///     is planned before the list it holds.
-    /// </remarks>
-    bool ListBreaksInSource(CollectionExpressionSyntax collection) {
-        if (collection.Elements.Count == 0) {
-            return BreaksBefore(collection.CloseBracketToken);
-        }
-
-        if (BreaksBefore(FirstToken(collection.Elements[0])) || BreaksBefore(collection.CloseBracketToken)) {
-            return true;
-        }
-
-        foreach (var comma in collection.Elements.GetSeparators()) {
-            var next = comma.GetNextToken();
-            if (!next.IsKind(SyntaxKind.None)
-                && next.SpanStart < collection.CloseBracketToken.SpanStart
-                && (BreaksBefore(next) || BreaksBefore(comma))) {
                 return true;
             }
         }

@@ -481,6 +481,12 @@ public sealed class Document {
     ///     broken before that element by the oracle — so a fill asks "does the whole next item fit",
     ///     not "does the next item's first line fit". Measuring the head instead leaves multi-line items
     ///     trailing off the end of a line that already has one on it.
+    ///     <para>
+    ///         On a group node it is the group's <em>first</em> point's segment — the same convention
+    ///         <see cref="AfterPointOf" /> already follows — which for a group with one point is
+    ///         everything past that point: the tail <see cref="GroupFacts.KeptOnlyIfTailFits" /> is
+    ///         measured by. Zero for a group that owns no point.
+    ///     </para>
     /// </remarks>
     public int SegmentOf(int node) => segment[node];
 
@@ -651,6 +657,21 @@ public sealed class Document {
 ///     breaks the arrow after every one of them, and after none where only an attribute list
 ///     precedes the declaration on its own line, which is why the marker sits after the attributes.
 /// </param>
+/// <param name="KeptOnlyIfTailFits">
+///     ⚠ A <see cref="SourceBroken" /> group whose kept break is an <em>alternative</em> to a delimiter's
+///     own rather than a pair with it: the break survives exactly when what follows the point fits flat
+///     on the continuation line, and otherwise the group stays flat and the delimiter breaks instead.
+///     It is the <c>=</c> before a collection expression (issue #375): the oracle keeps
+///     <c>int[] x =\n [1, 2];</c> and every <c>=\n[…]</c> whose bracket fits on the line below, and
+///     writes <c>x = [</c> for one that does not — because it is too wide for that line, because the
+///     author broke it at one of its own gaps, or because an element inside it spans lines. Reading the
+///     source for the second reason alone was the instrument that disagreed with itself across passes:
+///     a list chopped around a multi-line element has no break at its own gaps on pass one and has them
+///     on pass two. The tail is the group's flat width past its point, so the front end must leave that
+///     width measurable — the group is still certain to make its container multi-line, whichever of the
+///     two breaks is taken, and <see cref="DocumentBuilder" /> keeps its certainty while declining to
+///     hide its width.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -662,4 +683,5 @@ public readonly record struct GroupFacts(
     bool BreaksWithOwner = false,
     int Owner = -1,
     bool ChainLink = false,
-    bool BreaksIfOwnerIsMultiLine = false);
+    bool BreaksIfOwnerIsMultiLine = false,
+    bool KeptOnlyIfTailFits = false);
