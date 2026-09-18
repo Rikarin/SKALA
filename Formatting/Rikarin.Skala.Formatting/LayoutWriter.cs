@@ -191,8 +191,21 @@ public sealed class LayoutWriter {
     void Walk() {
         var stack = new Stack<(int Node, int Child)>();
         stack.Push((document.Root, 0));
+        Run(stack, int.MaxValue);
+    }
 
-        while (stack.Count > 0) {
+    /// <summary>
+    ///     Writes the document from the frames on <paramref name="stack" /> until the stack is empty or
+    ///     the writer has moved past output line <paramref name="untilLine" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The whole walk and a speculative one are the same loop. <see cref="NextLineFitsBeside" />
+    ///     runs it on a copy of the frames to write one line ahead and then rolls the writer back, and
+    ///     that is only sound because there is no second loop with its own reading of a frame: whatever
+    ///     the real walk will do with the line, the speculative one did first, with the same code.
+    /// </remarks>
+    void Run(Stack<(int Node, int Child)> stack, int untilLine) {
+        while (stack.Count > 0 && line <= untilLine) {
             var (node, child) = stack.Pop();
             ref var slot = ref document.Nodes[node];
 
@@ -842,6 +855,13 @@ public sealed class LayoutWriter {
                 // against the `]` when the kept break stays, and against the parameter when it joins
                 // (SK-DIV-0114). A fill point is never read this way: its group being broken does not
                 // say whether it breaks.
+                // ⚠ A point that only yields to its predecessors (LineFlags.YieldsToPredecessors) is
+                // not read through here at all. This walk is reached from *inside* the point's group —
+                // a direct sibling on the stack is one the walk is standing beside — and inside the
+                // list the point is an ordinary fill point: the nested `List<Guid>` in a type argument
+                // list's first argument sees its line end at the outer comma, stays whole, and the
+                // comma breaks (issue #377). The `=` in front of the list reads the list through the
+                // builder's point width, which still counts the point as not taken.
                 var flags = (LineFlags)slot.Flags;
                 if ((LineKind)slot.Arg0 == LineKind.Soft && (flags & LineFlags.LastResort) != 0) {
                     if ((flags & LineFlags.FillPoint) == 0 && fitter.ModeOf(slot.Arg2) == ResolvedMode.Broken) {
@@ -956,6 +976,18 @@ public sealed class LayoutWriter {
                 flat = FillPointStaysFlat(node, slot.Arg2, flags, stack);
             }
 
+            // ⚠ And a point taken only when the line it creates would not have fit beside it is
+            // decided by writing that line: see NextLineFitsBeside. ⚠ Only while its group is still
+            // on the line it was entered on — a section that spans lines, by a kept break between
+            // its attributes or by arguments that chopped, moves the parameter down whatever the
+            // parameter's width (SK-DIV-0114), and that is read off the output like
+            // GroupFacts.BreaksIfOwnerIsMultiLine is (#372), not off the source.
+            if (!flat
+                && (flags & LineFlags.BreaksOnlyIfNextLineOverflows) != 0
+                && fitter.EnteredOn(slot.Arg2) == line) {
+                flat = NextLineFitsBeside(ref slot, flags, stack);
+            }
+
             if (flat) {
                 if ((flags & LineFlags.FlatSpace) != 0) {
                     pendingSpace = true;
@@ -964,6 +996,13 @@ public sealed class LayoutWriter {
                 return;
             }
         }
+
+        TakeBreak(ref slot);
+    }
+
+    /// <summary>Writes a break: the line ends here and the next one begins.</summary>
+    void TakeBreak(ref DocNode slot) {
+        var kind = (LineKind)slot.Arg0;
 
         // ⚠ An alignment column with nothing on it is a continuation level. `align_multiline_statement_conditions`
         // anchors the condition on the column after the `(` — and when the author broke the line right
@@ -1003,6 +1042,127 @@ public sealed class LayoutWriter {
 
         atLineStart = true;
         column = 0;
+    }
+
+    /// <summary>
+    ///     Whether the line a break at <paramref name="slot" /> would create fits beside it instead —
+    ///     written ahead, measured, and rolled back.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The gap after a parameter's single attribute section
+    ///     (<see cref="LineFlags.BreaksOnlyIfNextLineOverflows" />, issue #377). The question is "does
+    ///     <c>[Obsolete]</c> plus the parameter's <em>first line</em> fit", and the first line is not a
+    ///     number the document holds: it is where the type argument
+    ///     list's fill, laid out from the continuation column, takes its first break — a decision made
+    ///     point by point, at the writer's own columns, with the head-keeping rule and the trailing
+    ///     measure in it. A second implementation of that walk here would be the duplicated
+    ///     indentation model <see cref="Fitter" />'s remarks warn against, one that disagrees a column
+    ///     at a time. So the writer takes the break, writes the line the real walk would write, reads
+    ///     its width off the output, and restores everything: the text, the anchors, the scopes, the
+    ///     line and column, the pending gap and the fitter's decisions for every group it entered.
+    ///     <para>
+    ///         ⚠ Sound because every decision on that line is monotone in the column. A group or fill
+    ///         point that stayed flat did so against a measure no wider than the line, and the line
+    ///         fits at the joined column too; one that broke would break there as well. The real walk
+    ///         then re-decides each of them at the joined column and lands on the same first break — or
+    ///         an earlier one, whose line is shorter still, so pass two, reading that break as kept,
+    ///         reaches the same join.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Nested: the line written ahead may hold another such point, which speculates in turn.
+    ///         Each writes at most one line, so the work stays linear in the line.
+    ///     </para>
+    /// </remarks>
+    bool NextLineFitsBeside(ref DocNode slot, LineFlags flags, Stack<(int Node, int Child)> stack) {
+        var gap = pendingSpace ? PendingWidth : (flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
+        var column = atLineStart ? pendingCloserLevel ?? Effective() : this.column + gap;
+
+        var checkpoint = Checkpoint();
+        TakeBreak(ref slot);
+        var lineStart = output.Length;
+        Run(new Stack<(int Node, int Child)>(stack.Reverse()), line);
+        var width = LineContentWidth(lineStart);
+        Restore(checkpoint);
+
+        return Fits(column, width);
+    }
+
+    /// <summary>The width of the output line beginning at <paramref name="start" />, less its indentation.</summary>
+    int LineContentWidth(int start) {
+        var end = start;
+        while (end < output.Length && output[end] != '\n') {
+            end++;
+        }
+
+        if (end > start && output[end - 1] == '\r') {
+            end--;
+        }
+
+        var content = start;
+        while (content < end && output[content] is ' ' or '\t') {
+            content++;
+        }
+
+        var indent = TextWidth.Advance(output.ToString(start, content - start), 0);
+        return TextWidth.Advance(output.ToString(content, end - content), indent) - indent;
+    }
+
+    /// <summary>Everything the walk mutates, for <see cref="NextLineFitsBeside" /> to roll back to.</summary>
+    /// <remarks>
+    ///     ⚠ Fields and an initializer rather than a positional record: fourteen constructor parameters
+    ///     is a <c>SK7005</c> finding of the formatter's own, and the one this replaces would be new.
+    /// </remarks>
+    struct WriterState {
+        public int Output;
+        public int Anchors;
+        public Scope[] Scopes;
+        public int Column;
+        public int Line;
+        public int? PendingCloserLevel;
+        public bool AtLineStart;
+        public bool PendingSpace;
+        public string? PendingSpaceText;
+        public bool CreatedLineSpace;
+        public SourceSpan PendingAnchorSpan;
+        public int PendingAnchorToken;
+        public bool HasPendingAnchor;
+        public Fitter.Mark Fitter;
+    }
+
+    WriterState Checkpoint() =>
+        new() {
+            Output = output.Length,
+            Anchors = anchors.Count,
+            Scopes = scopes.ToArray(),
+            Column = column,
+            Line = line,
+            PendingCloserLevel = pendingCloserLevel,
+            AtLineStart = atLineStart,
+            PendingSpace = pendingSpace,
+            PendingSpaceText = pendingSpaceText,
+            CreatedLineSpace = createdLineSpace,
+            PendingAnchorSpan = pendingAnchorSpan,
+            PendingAnchorToken = pendingAnchorToken,
+            HasPendingAnchor = hasPendingAnchor,
+            Fitter = fitter.MarkForRollback()
+        };
+
+    void Restore(in WriterState state) {
+        output.Length = state.Output;
+        anchors.RemoveRange(state.Anchors, anchors.Count - state.Anchors);
+        scopes.Clear();
+        scopes.AddRange(state.Scopes);
+        column = state.Column;
+        line = state.Line;
+        pendingCloserLevel = state.PendingCloserLevel;
+        atLineStart = state.AtLineStart;
+        pendingSpace = state.PendingSpace;
+        pendingSpaceText = state.PendingSpaceText;
+        createdLineSpace = state.CreatedLineSpace;
+        pendingAnchorSpan = state.PendingAnchorSpan;
+        pendingAnchorToken = state.PendingAnchorToken;
+        hasPendingAnchor = state.HasPendingAnchor;
+        fitter.Rollback(state.Fitter);
     }
 
     /// <summary>Whether a fill point in a broken group declines its break.</summary>

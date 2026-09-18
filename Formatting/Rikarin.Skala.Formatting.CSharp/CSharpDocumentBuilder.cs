@@ -2424,6 +2424,7 @@ public sealed partial class CSharpDocumentBuilder {
                 case GapRule.Point:
                 case GapRule.FillPoint:
                 case GapRule.LastResortPoint:
+                case GapRule.YieldingFillPoint:
                 case GapRule.FollowingPoint:
                     if (preserved is not null) {
                         doc.Space(preserved);
@@ -2431,15 +2432,11 @@ public sealed partial class CSharpDocumentBuilder {
 
                     doc.BreakPoint(
                         spec.Group,
-                        preserved is null && FlatGapSpace(previous, nextKind, nextToken, gap) != SpaceKind.Forbidden,
-                        spec.Rule is GapRule.FillPoint or GapRule.LastResortPoint,
+                        PointFlags(spec.Rule, previous, nextKind, nextToken, gap, preserved is null),
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                         ? DefaultNewLine()
-                        : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine(),
-                        spec.Rule is GapRule.LastResortPoint or GapRule.FollowingPoint,
-                        IsADelimitedTupleItem(nextToken) || StartsATypeArgument(nextToken),
-                        StartsATupleItem(nextToken)
+                        : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
                     );
                     return;
 
@@ -3131,6 +3128,51 @@ public sealed partial class CSharpDocumentBuilder {
             LockStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
             _ => (default, default)
         };
+
+    /// <summary>The flags a planned point carries into the document, from its rule and its gap.</summary>
+    /// <param name="renders">
+    ///     Whether the gap renders as the space rules say when the point stays flat — false when a
+    ///     preserved run already stands in front of the point and is that rendering.
+    /// </param>
+    LineFlags PointFlags(
+        GapRule rule,
+        Piece previous,
+        PieceKind nextKind,
+        SyntaxToken nextToken,
+        string gap,
+        bool renders
+    ) {
+        var flags = LineFlags.None;
+        if (renders && FlatGapSpace(previous, nextKind, nextToken, gap) != SpaceKind.Forbidden) {
+            flags |= LineFlags.FlatSpace;
+        }
+
+        if (rule is GapRule.FillPoint or GapRule.LastResortPoint or GapRule.YieldingFillPoint) {
+            flags |= LineFlags.FillPoint;
+        }
+
+        if (rule is GapRule.LastResortPoint or GapRule.FollowingPoint) {
+            flags |= LineFlags.LastResort;
+        }
+
+        if (rule == GapRule.YieldingFillPoint) {
+            flags |= LineFlags.YieldsToPredecessors;
+        }
+
+        if (rule == GapRule.FollowingPoint) {
+            flags |= LineFlags.BreaksOnlyIfNextLineOverflows;
+        }
+
+        if (IsADelimitedTupleItem(nextToken) || StartsATypeArgument(nextToken)) {
+            flags |= LineFlags.DelimitedItem;
+        }
+
+        if (StartsATupleItem(nextToken)) {
+            flags |= LineFlags.KeepsHeadWhenCertain;
+        }
+
+        return flags;
+    }
 
     /// <summary>
     ///     Whether the token opens a tuple's item with a delimiter — the one fill whose head the oracle

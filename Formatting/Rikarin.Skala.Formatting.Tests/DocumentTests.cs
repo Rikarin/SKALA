@@ -26,7 +26,7 @@ public sealed class DocumentBuilderTests {
         var group = builder.NextGroupId();
         builder.OpenGroup(GroupMode.Break, group);
         builder.Text("a,", new SourceSpan(0, 2));
-        builder.BreakPoint(group, true, true);
+        builder.BreakPoint(group, LineFlags.FlatSpace | LineFlags.FillPoint);
         if (nested) {
             builder.OpenGroup(GroupMode.Break, builder.NextGroupId());
         }
@@ -54,16 +54,16 @@ public sealed class DocumentBuilderTests {
         builder.DescribeGroup(inner, new GroupFacts(preserveBreak, HidesFlatWidthWhenBroken: true));
         builder.OpenGroup(GroupMode.Break, outer);
         builder.Text("a,", new SourceSpan(0, 2));
-        builder.BreakPoint(outer, true, true);
+        builder.BreakPoint(outer, LineFlags.FlatSpace | LineFlags.FillPoint);
         builder.OpenConcat();
         builder.OpenGroup(mode, inner);
         builder.Text("b", new SourceSpan(3, 1));
-        builder.BreakPoint(inner, true);
+        builder.BreakPoint(inner, LineFlags.FlatSpace);
         builder.Text("c", new SourceSpan(5, 1));
         builder.Close();
         builder.Close();
         builder.Text(",", new SourceSpan(6, 1));
-        builder.BreakPoint(outer, true, true);
+        builder.BreakPoint(outer, LineFlags.FlatSpace | LineFlags.FillPoint);
         builder.Text("d", new SourceSpan(8, 1));
         builder.Close();
 
@@ -89,14 +89,17 @@ public sealed class DocumentBuilderTests {
         builder.OpenGroup(GroupMode.Break, outer);
         builder.OpenGroup(GroupMode.Preserve, inner);
         builder.Text("a", new SourceSpan(0, 1));
-        builder.BreakPoint(inner, true);
+        builder.BreakPoint(inner, LineFlags.FlatSpace);
         builder.Text("b", new SourceSpan(2, 1));
         builder.Close();
         if (nested) {
             builder.OpenConcat();
         }
 
-        builder.BreakPoint(outer, true, true, lastResort: lastResort);
+        builder.BreakPoint(
+            outer,
+            LineFlags.FlatSpace | LineFlags.FillPoint | (lastResort ? LineFlags.LastResort : LineFlags.None)
+        );
         builder.Text("c", new SourceSpan(4, 1));
         if (nested) {
             builder.Close();
@@ -106,6 +109,113 @@ public sealed class DocumentBuilderTests {
 
         // Four columns: `a b` fits, `a b c` does not.
         Assert.Equal(expected, LayoutWriter.Write(builder.Build(), 4, "    ", "\n").Text);
+    }
+
+    /// <summary>
+    ///     A point that yields to its predecessors (<see cref="LineFlags.YieldsToPredecessors" />) is
+    ///     the end of the line for a group <em>inside</em> its list: the inner group in the first item
+    ///     stays flat and the list's own point breaks. A last-resort point on the same gap is read
+    ///     through from inside as well, so the inner group breaks first (issue #377).
+    /// </summary>
+    [Theory]
+    [InlineData(LineFlags.FillPoint, "a b\nc")]
+    [InlineData(LineFlags.FillPoint | LineFlags.YieldsToPredecessors, "a b\nc")]
+    [InlineData(LineFlags.FillPoint | LineFlags.LastResort, "a\nb c")]
+    public void YieldingPoint_EndsTheLineForAGroupInsideItsList(LineFlags point, string expected) {
+        var builder = new DocumentBuilder();
+        var inner = builder.NextGroupId();
+        var outer = builder.NextGroupId();
+        builder.DescribeGroup(inner, new GroupFacts(BreaksIfTooLong: true));
+        builder.OpenGroup(GroupMode.Break, outer);
+        builder.OpenGroup(GroupMode.Preserve, inner);
+        builder.Text("a", new SourceSpan(0, 1));
+        builder.BreakPoint(inner, LineFlags.FlatSpace);
+        builder.Text("b", new SourceSpan(2, 1));
+        builder.Close();
+        builder.BreakPoint(outer, LineFlags.FlatSpace | point);
+        builder.Text("c", new SourceSpan(4, 1));
+        builder.Close();
+
+        // Four columns: `a b` fits, `a b c` does not.
+        Assert.Equal(expected, LayoutWriter.Write(builder.Build(), 4, "    ", "\n").Text);
+    }
+
+    /// <summary>
+    ///     The other half: a group <em>before</em> the list is measured through a yielding point exactly
+    ///     as through a last-resort one, so it wraps first and the list fills only what still has no
+    ///     room. An ordinary fill point ends that group's measure at the list's gap.
+    /// </summary>
+    [Theory]
+    [InlineData(LineFlags.FillPoint, "a b c\nd")]
+    [InlineData(LineFlags.FillPoint | LineFlags.YieldsToPredecessors, "a\nb c d")]
+    [InlineData(LineFlags.FillPoint | LineFlags.LastResort, "a\nb c d")]
+    public void YieldingPoint_IsReadThroughByAGroupBeforeItsList(LineFlags point, string expected) {
+        var builder = new DocumentBuilder();
+        var inner = builder.NextGroupId();
+        var list = builder.NextGroupId();
+        builder.DescribeGroup(inner, new GroupFacts(BreaksIfTooLong: true));
+        builder.OpenGroup(GroupMode.Preserve, inner);
+        builder.Text("a", new SourceSpan(0, 1));
+        builder.BreakPoint(inner, LineFlags.FlatSpace);
+        builder.Text("b", new SourceSpan(2, 1));
+        builder.Close();
+        builder.OpenGroup(GroupMode.Break, list);
+        builder.Text(" c", new SourceSpan(3, 2));
+        builder.BreakPoint(list, LineFlags.FlatSpace | point);
+        builder.Text("d", new SourceSpan(6, 1));
+        builder.Close();
+
+        // Six columns: `a b c` fits, `a b c d` does not; `b c d` fits after `a` has gone up.
+        Assert.Equal(expected, LayoutWriter.Write(builder.Build(), 6, "    ", "\n").Text);
+    }
+
+    /// <summary>
+    ///     A point taken only when the next line overflows (<see cref="LineFlags.BreaksOnlyIfNextLineOverflows" />):
+    ///     the writer lays the next line out ahead, and joins when that line fits beside the point. The
+    ///     list is too wide for the line either way; what decides is where its fill breaks first when
+    ///     it stands alone — after <c>x,</c> the join fits, after <c>xxxxx,</c> it does not. A hard line
+    ///     inside the point's own group takes the question away: the group spans lines, so the point
+    ///     breaks (issue #377).
+    /// </summary>
+    [Theory]
+    [InlineData("x,", false, "[A] T<x,\nyyyyyy>")]
+    [InlineData("xxxxx,", false, "[A]\nT<xxxxx,\nyyyyyy>")]
+    [InlineData("x,", true, "[A\n]\nT<x,\nyyyyyy>")]
+    public void DeferredPoint_JoinsExactlyWhenTheNextLineFitsBesideIt(string first, bool multiLine, string expected) {
+        var builder = new DocumentBuilder();
+        var section = builder.NextGroupId();
+        var list = builder.NextGroupId();
+        builder.DescribeGroup(section, new GroupFacts(JoinsIfFits: true, BreaksIfTooLong: true));
+        builder.DescribeGroup(list, new GroupFacts(BreaksIfTooLong: true));
+        builder.OpenConcat();
+        builder.OpenGroup(GroupMode.Preserve, section);
+        builder.Text("[A", new SourceSpan(0, 2));
+        if (multiLine) {
+            builder.Line(LineKind.Hard);
+        }
+
+        builder.Text("]", new SourceSpan(2, 1));
+        builder.Close();
+        builder.BreakPoint(
+            section,
+            LineFlags.FlatSpace | LineFlags.LastResort | LineFlags.BreaksOnlyIfNextLineOverflows
+        );
+        builder.OpenGroup(GroupMode.Preserve, list);
+        builder.Text("T<", new SourceSpan(4, 2));
+        builder.Text(first, new SourceSpan(6, first.Length));
+        builder.BreakPoint(list, LineFlags.FlatSpace | LineFlags.FillPoint | LineFlags.YieldsToPredecessors);
+        builder.Anchor(new SourceSpan(12, 7), 1);
+        builder.Text("yyyyyy>", new SourceSpan(12, 7));
+        builder.Close();
+        builder.Close();
+
+        // Nine columns: `T<x, yyyyyy>` is twelve and never fits, `[A] T<x,` is eight, `[A] T<xxxxx,` twelve.
+        var layout = LayoutWriter.Write(builder.Build(), 9, "    ", "\n");
+        Assert.Equal(expected, layout.Text);
+
+        // ⚠ The speculative line leaves nothing behind: the one anchor is the real walk's, at the
+        // position the real walk wrote the token.
+        Assert.Equal(expected.IndexOf("yyyyyy>", StringComparison.Ordinal), Assert.Single(layout.Anchors).OutputStart);
     }
 
     /// <summary>
@@ -121,7 +231,7 @@ public sealed class DocumentBuilderTests {
         var group = builder.NextGroupId();
         builder.OpenGroup(GroupMode.Break, group);
         builder.Text("a,", new SourceSpan(0, 2));
-        builder.BreakPoint(group, true, true, delimitedItem: true);
+        builder.BreakPoint(group, LineFlags.FlatSpace | LineFlags.FillPoint | LineFlags.DelimitedItem);
 
         // ⚠ A nested *group*: a hard line at the fill's own depth merely ends the segment, and it
         // is a line inside an item that made the item measure as unbounded (#337, #339).
@@ -130,7 +240,7 @@ public sealed class DocumentBuilderTests {
         builder.Line(LineKind.Hard);
         builder.Text("b2,", new SourceSpan(6, 3));
         builder.Close();
-        builder.BreakPoint(group, true, true);
+        builder.BreakPoint(group, LineFlags.FlatSpace | LineFlags.FillPoint);
         builder.Text("cccccc", new SourceSpan(10, 6));
         builder.Close();
 
@@ -253,7 +363,7 @@ public sealed class FitterTests {
         builder.DescribeGroup(group, facts);
         builder.OpenGroup(mode, group);
         builder.Text("a", new SourceSpan(0, 1));
-        builder.BreakPoint(group, true);
+        builder.BreakPoint(group, LineFlags.FlatSpace);
         builder.Text("b", new SourceSpan(2, 1));
         builder.Close();
 
@@ -271,7 +381,7 @@ public sealed class FitterTests {
         builder.OpenGroup(GroupMode.Auto, owner);
         builder.Text("aaaa", new SourceSpan(0, 4));
         builder.OpenGroup(GroupMode.Owner, child);
-        builder.BreakPoint(child, true);
+        builder.BreakPoint(child, LineFlags.FlatSpace);
         builder.Text("bbbb", new SourceSpan(5, 4));
         builder.Close();
         builder.Close();

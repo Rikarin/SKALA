@@ -5373,7 +5373,7 @@ closing one, and on a list past the margin, beside its twin.
 |---|---|---|---|---|---|
 | `grid[i, j]`, `[k] = v` | kept, `+1`; the arrow breaks | kept, **and the list chops** | **joined** | chops, one per line, **no break at either bracket** | as written; broke at an operator inside an argument |
 | `Dictionary<K, V>` | kept, `+1`; the arrow breaks | kept, no chop | kept | **fills**, after every break around it | as written; 122-column lines left whole |
-| `(int a, int b)` type | kept, `+1`; the arrow breaks | kept | kept | **never at a comma** — between an element's type and its name, or outside the type | identical |
+| `(int a, int b)` type | kept, `+1`; the arrow breaks | kept | kept | ⚠ **at the rightmost gap that fits**, a comma or a type/name gap alike — see the correction under SK-DIV-0119; this row said "never at a comma" | identical |
 | `o is (1, 2)` | kept, `+1` | kept | kept | fills, in a member and a switch arm | as written; left whole |
 | `var (a, b)` | kept, `+1`; under `foreach (` on the condition's aligned column | kept | kept | fills | as written; broke at the `=` |
 | `[A, B]` | kept, **aligned under the first attribute** | kept, `+1` | kept, aligned | fills, aligned | as written, `+1`; chopped the last attribute's arguments |
@@ -5402,8 +5402,11 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
   two once something did.
 - A type argument list **yields to everything around it**, where a tuple does not: the oracle fills
   `var t = (a, b,\n c);` and breaks `var created =\n new Dictionary<A, B>();`, filling the list only if
-  it still overflows on the continuation line. So its points are last-resort ones — which exposed an
-  off-by-one in the ordering rule's second question: it measured the line without the trailing `;`
+  it still overflows on the continuation line. So its points were made last-resort ones — ⚠ which was
+  one half too many: "around" is not "inside", and a last-resort point is read through by the list's
+  own arguments too, so a list nested in the first argument broke before the outer comma did
+  (SK-DIV-0119, issue #377; the points yield to what precedes the list now and to nothing inside it).
+  The last-resort measure exposed an off-by-one in the ordering rule's second question: it measured the line without the trailing `;`
   when nothing after the group's first point could break, and `var result = Generic<A, B, int>();`
   is 120 without the semicolon and 121 with it (`GroupFlags.AfterPointRunsToTheEnd`).
 - The tuple's head rule (SK-DIV-0110) had one half. An identifier-headed item that is merely too wide
@@ -5647,3 +5650,81 @@ left for its own measurement. Recorded, not fixed.
 - options: `skala_indent_pars = inside` (the level a grouping spends when it does), no key for the
   transparency.
 - ⚠ status: **open**.
+
+## SK-DIV-0119 — a parameter's attribute section joins its parameter by the parameter's first line, and the oracle answers that gap twice
+
+⚠ **Found by the Nightly fuzzer (seed 6103756300633105773) and filed as issue #377.** The 409-character
+input has `[Obsolete] Dictionary<(Dictionary<Guid, List<Guid>> First, StringBuilder Second),
+List<(Dictionary<Guid, List<Guid>> First, StringBuilder Second)>> p15` as the third parameter of a
+chopped list; pass one put `[Obsolete]` on its own line and pass two joined it back, twelve characters
+at offset 937. Two mechanisms, neither the one the issue named exactly, measured 2026-09-18 with
+`Testing ask` over eighteen shapes and the oracle's own second and third passes.
+
+**The first mechanism is fixed and is not about tuples.** `PlanTypeParameters` had made the type
+argument list's points *last-resort* ones so that the list yields to the `=` in front of it
+(SK-DIV-0114), and a last-resort point is read through by everything before it — the list's own first
+argument included. The `List<Guid>` nested in that argument measured its rest-of-line through the outer
+comma, saw the whole 145-column parameter, resolved broken and broke at its own `<`; the outer comma
+then broke as well. `Dictionary<Dictionary<A, List<B>>, List<Dictionary<A, B>>>` with no tuple anywhere
+did the same. The oracle breaks the outer comma and leaves every nested list whole, in a parameter, a
+return type, a local's type and after `var created =`. The points now *yield to what precedes the list
+and to nothing inside it* (`GapRule.YieldingFillPoint`, `LineFlags.YieldsToPredecessors`): the builder
+still measures them as not taken, so the `=` and an argument list ahead of the list wrap first; the
+writer's rest-of-line walk, which is what a construct inside the list reads, ends at them like at any
+fill point. The embedded statement's gap keeps the full last-resort reading (SK-DIV-0106).
+
+**The second mechanism is the oracle's, and this entry records Skala's choice.** The gap after a
+single-attribute section joins or breaks by fit (0114), and the oracle measures the fit against a
+different thing on each pass:
+
+| written | oracle | Skala now |
+|---|---|---|
+| the fuzzer's input, flat, 156 columns | `[Obsolete]` / `Dictionary<(…Second),` / `List<…>> p15` | `[Obsolete] Dictionary<(…Second),` / `List<…>> p15` |
+| the oracle's own answer above | `[Obsolete] Dictionary<(…Second),` / `List<…>> p15` — **joined** | the same |
+| the joined form | unchanged — the fixed point | unchanged |
+| `[Obsolete]` / the flat parameter (a kept break after the `]`) | `[Obsolete]` alone; joined on the next pass | joined |
+| `[Obsolete] Dictionary<One, Two, Two> p15`, 107 columns: fits alone at column 12, not after `[Obsolete] ` | `[Obsolete]` alone, the list whole — stable | the same |
+| `[Obsolete] Dictionary<One, Two, Two, Two> p15`: alone at column 12 its first line is 103 | `[Obsolete]` alone, `Two,` / `Two> p15` — stable, and stable given back | the same |
+| `[Obsolete] Dictionary<(Guid First, StringBuilder Second), List<(Guid First, StringBuilder Second)>> p15`, 120 | joined, whole | the same |
+| `var both =` / `new Dictionary<One, Two,` / `Two>();` — #371's shape, given back | the `=` break **kept** | the same |
+
+So the re-join is the `]` gap's alone, not a general second-pass habit, and what the oracle settles on
+is: *the section stays alone exactly when `[Obsolete] ` plus the parameter's first line, as laid out
+alone, does not fit.* A source-shaped rule cannot give that answer to both inputs (SK-DIV-0116's
+lesson), and neither the plan nor the document holds "the first line" — it is where the fill breaks,
+decided point by point at the writer's columns. So the writer decides it by writing it: at a
+`FollowingPoint` whose group broke and is still on the line it was entered on, `LayoutWriter` takes the
+break on a checkpoint, writes the next line with the same loop the real walk uses, reads its width off
+the output, rolls everything back — text, anchors, scopes, line, column, pending gap, and the fitter's
+decisions through a journal — and joins when that line fits beside the section
+(`LineFlags.BreaksOnlyIfNextLineOverflows`, `LayoutWriter.NextLineFitsBeside`). A section that spans
+lines never asks: the parameter goes below it whatever its width (0114), read off `Fitter.EnteredOn`.
+
+⚠ **The deliberate part.** On the flat input Skala writes the oracle's *second* answer, not its first,
+so `Skala(input) ≠ oracle(input)` for one input class — a flat, attributed, overflowing parameter whose
+first line fits beside the section — and `Skala(x) = oracle(x)` for the oracle's own output and for
+every already-formatted repository, where this shape can only exist in its fixed-point form. The
+alternative, keeping the oracle's first answer and refusing to re-join it, would un-join
+`[Obsolete] Dictionary<(…),` in code Rider considers final. The fixed point is the answer the oracle
+returns unchanged, and #372's rule for choosing between passes stands.
+
+⚠ **Refuted on the way.** 0114's row "a tuple type is never broken at a comma — between an element's
+type and its name, or outside the type" was measured on one shape. Measured on four more, the oracle
+breaks a tuple type at the *rightmost gap that fits*, a comma or a type/name gap alike:
+`(…, Dictionary<Guid, List<Guid>> Third, StringBuilder` / `Fourth, …)` at exactly 120 columns, and
+`List<(…, Dictionary<Guid, List<Guid>> Third,` / `StringBuilder Fourth)> p15` when `StringBuilder`
+would not fit; and it goes inside a tuple-typed argument rather than breaking the list's comma before
+it — `Dictionary<(tuple), (Dictionary<Guid, List<Guid>> Third,` / `StringBuilder Fourth)>`. Skala has
+no plan for a tuple type's interior (the SK-DIV-0024 family) and breaks inside its nested generics
+instead, so a tuple with nested generics that overflows on its own is still divergent; the fuzzer's
+input is not, because there the outer comma is what breaks. The exemption stands with the corrected
+reason.
+
+- options: `skala_keep_user_linebreaks` (the kept `]` break), no key for the join.
+- ⚠ status: **fixed** for the first mechanism and **deliberate** for the second, pinned by
+  `constructs/breaks/nested-list-in-a-type-argument.cs` (byte-identical, stable on a second pass, the
+  only construct the change moved; it holds the shapes the oracle answers once) and
+  `TypeArgumentIssue377Tests` (nine cases, each an oracle answer or the oracle's fixed point; six go red
+  with the yielding points made last-resort again, two with the speculative line removed, and
+  `AttributeSectionTests` went red on the first cut that speculated for a multi-line section). All
+  eleven recorded Nightly seeds replay clean.

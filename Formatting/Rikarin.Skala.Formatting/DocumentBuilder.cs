@@ -257,36 +257,18 @@ public sealed class DocumentBuilder {
     /// <summary>
     ///     A break point: a gap the layout may or may not break at, owned by <paramref name="group" />.
     /// </summary>
-    /// <param name="flatSpace">
-    ///     What the gap renders as when the group stays flat. ⚠ Not uniform across a construct's own
-    ///     points: the gap after <c>(</c> is nothing and the gap after <c>,</c> is a space.
+    /// <param name="flags">
+    ///     What the point is: its flat rendering (<see cref="LineFlags.FlatSpace" /> — ⚠ not uniform
+    ///     across a construct's own points: the gap after <c>(</c> is nothing and the gap after
+    ///     <c>,</c> is a space), whether it is a fill's (<see cref="LineFlags.FillPoint" />), what it
+    ///     yields to (<see cref="LineFlags.LastResort" />, <see cref="LineFlags.YieldsToPredecessors" />,
+    ///     <see cref="LineFlags.BreaksOnlyIfNextLineOverflows" />) and what the item after it opens
+    ///     with (<see cref="LineFlags.DelimitedItem" />, <see cref="LineFlags.KeepsHeadWhenCertain" />).
+    ///     <see cref="LineFlags.LastPoint" /> is the builder's own to set when the group closes.
     /// </param>
-    /// <param name="fill">
-    ///     The point breaks only when what follows it does not fit, rather than with its group.
-    ///     <see cref="LineFlags.FillPoint" />.
-    /// </param>
-    /// <param name="lastResort">
-    ///     The point does not end the rest-of-line measure of anything before it.
-    ///     <see cref="LineFlags.LastResort" />.
-    /// </param>
-    /// <param name="delimitedItem">
-    ///     The item after the point opens with a delimiter. <see cref="LineFlags.DelimitedItem" />.
-    /// </param>
-    /// <param name="keepsHeadWhenCertain">
-    ///     The item after the point keeps its head when a break inside it is certain.
-    ///     <see cref="LineFlags.KeepsHeadWhenCertain" />.
-    /// </param>
-    public void BreakPoint(
-        int group,
-        bool flatSpace,
-        bool fill = false,
-        int blankLines = 0,
-        string? newLine = null,
-        bool lastResort = false,
-        bool delimitedItem = false,
-        bool keepsHeadWhenCertain = false
-    ) {
+    public void BreakPoint(int group, LineFlags flags, int blankLines = 0, string? newLine = null) {
         var index = pending.Count;
+        var flatSpace = (flags & LineFlags.FlatSpace) != 0;
         Leaf(
             DocKind.Line,
             (int)LineKind.Soft,
@@ -298,17 +280,16 @@ public sealed class DocumentBuilder {
         );
         ref var node = ref nodes[pending[index]];
         node.Arg2 = group;
-        node.Flags = (flatSpace ? (int)LineFlags.FlatSpace : 0)
-            | (fill ? (int)LineFlags.FillPoint : 0)
-            | (lastResort ? (int)LineFlags.LastResort : 0)
-            | (delimitedItem ? (int)LineFlags.DelimitedItem : 0)
-            | (keepsHeadWhenCertain ? (int)LineFlags.KeepsHeadWhenCertain : 0);
+        node.Flags = (int)(flags & ~LineFlags.LastPoint);
 
         ownPoints.Add(group);
 
         // ⚠ A last-resort point is measured as *not* taken: it counts as its flat rendering and stops
         // nothing, so a construct before it on the line sees what follows the point as still to come.
-        if (lastResort) {
+        // A point that yields to its predecessors is measured the same way here — these are the
+        // numbers a construct *before the group* reads — and the two part only in LayoutWriter's
+        // rest-of-line walk, which is what a construct inside the group reads (issue #377).
+        if ((flags & (LineFlags.LastResort | LineFlags.YieldsToPredecessors)) != 0) {
             pointWidth[pending[index]] = flatSpace ? 1 : 0;
             breaks[pending[index]] = false;
             return;

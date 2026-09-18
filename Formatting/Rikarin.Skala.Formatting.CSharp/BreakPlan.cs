@@ -40,6 +40,17 @@ public enum GapRule {
     LastResortPoint,
 
     /// <summary>
+    ///     A fill point that yields to what stands before its <em>list</em> and to nothing inside it: a
+    ///     type argument list's (SK-DIV-0114). The <c>=</c> or the argument list in front of the list is
+    ///     resolved against a line that runs through this gap, as with <see cref="LastResortPoint" />;
+    ///     a list nested in one of the arguments sees its line end here, as at any fill point, so the
+    ///     outer comma breaks before anything inside an argument does: the break lands after
+    ///     <c>…Second),</c> and never inside <c>List&lt;Guid&gt;</c> (issue #377). See
+    ///     <see cref="LineFlags.YieldsToPredecessors" />.
+    /// </summary>
+    YieldingFillPoint,
+
+    /// <summary>
     ///     A point of a group that lies <em>after</em> the group's own last token — the gap between an
     ///     attribute section's <c>]</c> and the parameter it decorates (SK-DIV-0114). It breaks with the
     ///     group like any point, but the rest-of-line measure the group is resolved against runs through
@@ -47,6 +58,13 @@ public enum GapRule {
     ///     follows the gap as still on its line. Measured as an ordinary point, a 126-column
     ///     <c>[Obsolete("…", true)] int a</c> saw its line end at the <c>]</c> and left the arguments
     ///     whole.
+    ///     <para>
+    ///         ⚠ And it is not taken merely because the group broke: the writer lays out the line the
+    ///         break would create and joins the two when that line fits beside the section
+    ///         (<see cref="LineFlags.BreaksOnlyIfNextLineOverflows" />, issue #377). "The whole
+    ///         parameter fits" and "the parameter's first line fits" are the oracle's two answers to the
+    ///         same gap, one per pass; the second is the one it returns unchanged.
+    ///     </para>
     /// </summary>
     FollowingPoint
 }
@@ -1861,10 +1879,10 @@ public sealed class BreakPlan {
         var first = FirstToken(items[0]);
         var keeps = options.KeepsUserBreaksBetweenItems;
 
-        // ⚠ A type argument list's points are last-resort ones (SK-DIV-0114): everything around the
-        // list wraps first, and the list fills only when what follows still has no room. Measured
-        // against a tuple, which the oracle fills *instead* of breaking at the `=` in front of it
-        // (`var t = (a, b,\n c);`) — the type argument list is the other way round:
+        // ⚠ A type argument list's points yield to what precedes the list (SK-DIV-0114): everything
+        // *around* the list wraps first, and the list fills only when what follows still has no
+        // room. Measured against a tuple, which the oracle fills *instead* of breaking at the `=` in
+        // front of it (`var t = (a, b,\n c);`) — the type argument list is the other way round:
         // `var created = new Dictionary<A, B>();` at 121 columns comes back as
         // `var created =\n new Dictionary<A, B>();`, and only a list that still overflows on the
         // continuation line is filled there (`var both =\n new Dictionary<A, B,\n C>();`).
@@ -1872,7 +1890,13 @@ public sealed class BreakPlan {
         // so the `=` stayed and the list filled on the first line. A type *parameter* list has no
         // `=` before it and keeps its ordinary points — its competitor is the parameter list, and
         // that trade is measured in the remarks above.
-        var lastResort = node is TypeArgumentListSyntax;
+        // ⚠ "Around" and not "before": the points were last-resort ones until issue #377, and a
+        // last-resort point is read through by the list's own arguments too, so a list nested in the
+        // first argument saw the whole line, broke first, and `Dictionary<(Dictionary<Guid,
+        // List<Guid>> First, …), List<…>>` came back as `List<\nGuid>>` where the oracle breaks the
+        // outer comma — with or without the tuple. The outer list decides before anything inside an
+        // argument does, which is the same rule every other list already has.
+        var yields = node is TypeArgumentListSyntax;
 
         // ⚠ A break the author wrote at a comma is kept, on either side of it, and it is a required
         // break rather than a fill point. A fill point re-decides by width, so `G<T,\n U>()` came
@@ -1887,7 +1911,7 @@ public sealed class BreakPlan {
         // ⚠ And the gap after the `<` is pinned the same way (SK-DIV-0114): it was the one fill point
         // left unpinned, so `void M<\nT, U>()` and `Dictionary<\nstring, int>` came back joined
         // although the group was planned as broken. The oracle keeps both exactly as written.
-        var broken = PlanItemGap(first, group, true, keeps, lastResort);
+        var broken = PlanItemGap(first, group, true, keeps, yields);
         foreach (var comma in items.GetSeparators()) {
             var next = comma.GetNextToken();
             if (next.IsKind(SyntaxKind.None) || next.SpanStart >= close.SpanStart) {
@@ -1896,7 +1920,7 @@ public sealed class BreakPlan {
 
             var gap = options.WrapBeforeComma ? comma : next;
             var other = options.WrapBeforeComma ? next : comma;
-            broken |= PlanItemGap(gap, group, true, keeps, lastResort);
+            broken |= PlanItemGap(gap, group, true, keeps, yields);
             broken |= PlanOtherSideOfComma(other, keeps);
         }
 
@@ -4355,7 +4379,15 @@ public sealed class BreakPlan {
         }
     }
 
-    void Point(SyntaxToken token, int group, bool fill = false, bool lastResort = false) {
+    /// <param name="lastResort">
+    ///     The fill point yields to everything before it, the header's own constructs included:
+    ///     <see cref="GapRule.LastResortPoint" />.
+    /// </param>
+    /// <param name="yields">
+    ///     The fill point yields to what precedes its list and to nothing inside it:
+    ///     <see cref="GapRule.YieldingFillPoint" />.
+    /// </param>
+    void Point(SyntaxToken token, int group, bool fill = false, bool lastResort = false, bool yields = false) {
         if (token.IsKind(SyntaxKind.None)) {
             return;
         }
@@ -4366,7 +4398,10 @@ public sealed class BreakPlan {
         }
 
         gaps[token.SpanStart] = new(
-            lastResort ? GapRule.LastResortPoint : fill ? GapRule.FillPoint : GapRule.Point,
+            lastResort ? GapRule.LastResortPoint
+            : yields ? GapRule.YieldingFillPoint
+            : fill ? GapRule.FillPoint
+            : GapRule.Point,
             group
         );
     }
@@ -4413,12 +4448,15 @@ public sealed class BreakPlan {
     ///     author's break is pinned, a point of the group otherwise. Returns whether the source broke
     ///     there.
     /// </summary>
-    bool PlanItemGap(SyntaxToken gap, int group, bool fill, bool pins, bool lastResort = false) {
+    /// <param name="yields">
+    ///     The point yields to what precedes the list: <see cref="GapRule.YieldingFillPoint" />.
+    /// </param>
+    bool PlanItemGap(SyntaxToken gap, int group, bool fill, bool pins, bool yields = false) {
         var broke = BreaksBefore(gap);
         if (pins && broke) {
             Mandatory(gap);
         } else {
-            Point(gap, group, fill, lastResort);
+            Point(gap, group, fill, yields: yields);
         }
 
         return broke;

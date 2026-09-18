@@ -179,7 +179,52 @@ public enum LineFlags {
     ///     the segment unbounded, width alone leaves it finite. A <see cref="DelimitedItem" /> keeps
     ///     its head in both cases.
     /// </remarks>
-    KeepsHeadWhenCertain = 32
+    KeepsHeadWhenCertain = 32,
+
+    /// <summary>
+    ///     A fill point that yields to what stands <em>before its group</em> and to nothing inside it:
+    ///     a construct in front of the list is measured through the point, as through a
+    ///     <see cref="LastResort" /> one, so an <c>=</c> or an argument list ahead of the list wraps
+    ///     first; a construct inside one of the list's own items sees its line end at the point, as at
+    ///     any fill point, so the list's comma breaks before anything nested in an item does.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The type argument list's points (SK-DIV-0114), and the half of "last resort" they were
+    ///     never measured for. Flagged <see cref="LastResort" />, the <c>List&lt;Guid&gt;</c> nested in the
+    ///     first argument of <c>Dictionary&lt;(…, List&lt;Guid&gt;&gt; First, …), List&lt;…&gt;&gt;</c> measured
+    ///     its rest-of-line through the outer comma, saw the whole 145-column parameter, resolved
+    ///     broken and broke at its own <c>&lt;</c> — <c>List&lt;↵Guid&gt;&gt;</c> — where the oracle
+    ///     breaks the outer list at that comma and leaves every nested list whole; the same on
+    ///     <c>Dictionary&lt;Dictionary&lt;A, List&lt;B&gt;&gt;, List&lt;…&gt;&gt;</c> with no tuple anywhere (issue
+    ///     #377). The embedded statement's gap, which the flag was written for, is the other way round:
+    ///     the header's own <c>&amp;&amp;</c> chain wraps before the statement is pushed off
+    ///     (SK-DIV-0106), so that one keeps <see cref="LastResort" />. <see cref="DocumentBuilder" />
+    ///     measures both as not taken; only <see cref="LayoutWriter" />'s rest-of-line walk tells them
+    ///     apart.
+    /// </remarks>
+    YieldsToPredecessors = 64,
+
+    /// <summary>
+    ///     A point of a broken group that is still not taken when the line it would create fits beside
+    ///     it: the writer lays that line out, measures it, and joins the two when
+    ///     <c>column + gap + line ≤ width</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The gap after a parameter's single attribute section (issue #377). The oracle decides it
+    ///     twice and differently: on a flat <c>[Obsolete] Dictionary&lt;(…), List&lt;…&gt;&gt; p15</c> that runs
+    ///     to 156 columns it puts <c>[Obsolete]</c> on its own line and fills the list below; on its
+    ///     own output it joins <c>[Obsolete] Dictionary&lt;(…),</c> because the kept comma break now ends
+    ///     the measure at 92. The joined form is its fixed point, measured stable; <c>[Obsolete]</c>
+    ///     stays alone exactly when the parameter's <em>first line as laid out alone</em> does not fit
+    ///     after it — a 107-column three-argument list that fits alone at column 12 and a
+    ///     four-argument list whose first line is 103 wide both keep it alone, a first line of 70
+    ///     joins. Skala reaches that fixed point from either input in one pass, which the oracle's
+    ///     first answer cannot be made to do: a source-shaped rule gives one answer to the flat input
+    ///     and another to its own output (#375's shape). The first line is what the writer would write,
+    ///     so the writer writes it — speculatively, on a checkpoint it rolls back — rather than a
+    ///     second copy of the fill's rules guessing at it.
+    /// </remarks>
+    BreaksOnlyIfNextLineOverflows = 128
 }
 
 /// <summary>
