@@ -50,6 +50,15 @@ public sealed class Fitter {
     readonly int width;
     readonly int indentWidth;
 
+    /// <summary>
+    ///     The groups resolved since the outermost open <see cref="Mark" />, in order, so that a
+    ///     speculative walk can be undone group by group rather than by copying three arrays.
+    /// </summary>
+    readonly List<int> journal = [];
+
+    /// <summary>How many marks are open; the journal is kept only while one is.</summary>
+    int marks;
+
     public Fitter(Document document, int width, int indentWidth = 4) {
         this.indentWidth = Math.Max(1, indentWidth);
         this.document = document;
@@ -112,7 +121,43 @@ public sealed class Fitter {
         modes[id] = mode;
         resolved[id] = true;
         enteredOn[id] = line;
+        if (marks > 0) {
+            journal.Add(id);
+        }
+
         return mode;
+    }
+
+    /// <summary>A point to roll the fitter back to: see <see cref="MarkForRollback" />.</summary>
+    public readonly record struct Mark(int Journal, int OwnerUnresolved);
+
+    /// <summary>
+    ///     Starts recording the groups resolved from here on, so that <see cref="Rollback" /> can forget
+    ///     them again.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ For <see cref="LayoutWriter" />'s speculative line only. A group is entered once by the
+    ///     walk, so the groups a speculation resolves are exactly the ones it entered and none of them
+    ///     was resolved before the mark; forgetting them leaves the fitter as it was. Marks nest, and
+    ///     the journal is dropped when the last one closes so that the ordinary walk pays nothing.
+    /// </remarks>
+    public Mark MarkForRollback() {
+        marks++;
+        return new(journal.Count, OwnerUnresolved);
+    }
+
+    /// <summary>Forgets every group resolved since <paramref name="mark" />.</summary>
+    public void Rollback(Mark mark) {
+        for (var i = journal.Count - 1; i >= mark.Journal; i--) {
+            var id = journal[i];
+            modes[id] = ResolvedMode.Flat;
+            resolved[id] = false;
+            enteredOn[id] = 0;
+        }
+
+        journal.RemoveRange(mark.Journal, journal.Count - mark.Journal);
+        OwnerUnresolved = mark.OwnerUnresolved;
+        marks--;
     }
 
     /// <summary>The six numbers a group is resolved against.</summary>
@@ -143,6 +188,9 @@ public sealed class Fitter {
 
     /// <summary>The mode a group resolved to. Flat until the walk reaches it.</summary>
     public ResolvedMode ModeOf(int group) => modes[group];
+
+    /// <summary>The output line a resolved group was entered on.</summary>
+    public int EnteredOn(int group) => enteredOn[group];
 
     /// <param name="afterPointRunsToTheEnd">
     ///     Whether nothing after the group's own first break point can end a line — no point that is

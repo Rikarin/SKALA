@@ -28,8 +28,9 @@ public sealed class SeparatedListPlanTests {
     /// </summary>
     static readonly IReadOnlyDictionary<Type, string> Exempt = new Dictionary<Type, string> {
         [typeof(TupleTypeSyntax)] =
-            "the oracle never breaks a tuple type at a comma — one past the margin breaks between an element's type "
-            + "and its name, or outside the type — and a kept break inside one is keep_user_linebreaks' (SK-DIV-0114)",
+            "the oracle breaks a tuple type past the margin at the rightmost gap that fits — a comma or the gap "
+            + "between an element's type and its name alike, the SK-DIV-0024 family and no list's fill (SK-DIV-0119 "
+            + "corrected 0114's 'never at a comma') — and a kept break inside one is keep_user_linebreaks'",
         [typeof(CrefParameterListSyntax)] =
             "inside a documentation comment, which the walk never enters; the xmldoc formatter keeps a break there "
             + "and so does the oracle profile that formats doc comments (SK-DIV-0006, SK-DIV-0114)",
