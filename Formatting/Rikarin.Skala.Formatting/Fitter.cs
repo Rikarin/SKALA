@@ -209,22 +209,8 @@ public sealed class Fitter {
                     return ResolvedMode.Broken;
                 }
 
-                // ⚠ Preserve does not re-flow the author's breaks away by default. Whether it may
-                // join one that fits, and whether it may add one that the author did not write, are
-                // per-construct facts — see GroupFacts for why one rule is not enough.
                 if (facts.SourceBroken) {
-                    // ⚠ A kept break that is one of two alternatives — the `=`'s or the `[`'s after
-                    // it — is kept exactly when the value fits flat on the line it would move to.
-                    // Measured on the flat width and not the head: `= [` always fits, and a bracket
-                    // that is going to break is the case where the oracle gives the break to the
-                    // bracket. See GroupFacts.KeptOnlyIfTailFits (#375).
-                    if (facts.KeptOnlyIfTailFits) {
-                        return Fits(m.ContinuationColumn, tail, m.Trailing) ? ResolvedMode.Broken : ResolvedMode.Flat;
-                    }
-
-                    return facts.JoinsIfFits && Fits(m.Column, m.FlatWidth, m.Trailing)
-                        ? ResolvedMode.Flat
-                        : ResolvedMode.Broken;
+                    return KeepOrJoin(facts, m, tail);
                 }
 
                 if (!facts.BreaksIfTooLong || Fits(m.Column, m.BreakWidth, m.Trailing)) {
@@ -233,6 +219,26 @@ public sealed class Fitter {
 
                 return Worth(facts, m, afterPointRunsToTheEnd);
         }
+    }
+
+    /// <summary>What a <see cref="GroupMode.Preserve" /> group whose source was broken does with the break.</summary>
+    /// <remarks>
+    ///     ⚠ Preserve does not re-flow the author's breaks away by default. Whether it may join one that
+    ///     fits, and whether it may add one that the author did not write, are per-construct facts — see
+    ///     <see cref="GroupFacts" /> for why one rule is not enough.
+    /// </remarks>
+    ResolvedMode KeepOrJoin(in GroupFacts facts, in Measures m, int tail) {
+        // ⚠ A kept break that is one of two alternatives — the `=`'s or the `[`'s after it — is kept
+        // exactly when the value fits flat on the line it would move to. Measured on the flat width
+        // and not the head: `= [` always fits, and a bracket that is going to break is the case where
+        // the oracle gives the break to the bracket. See GroupFacts.KeptOnlyIfTailFits (#375).
+        if (facts.KeptOnlyIfTailFits) {
+            return Fits(m.ContinuationColumn, tail, m.Trailing) ? ResolvedMode.Broken : ResolvedMode.Flat;
+        }
+
+        return facts.JoinsIfFits && Fits(m.Column, m.FlatWidth, m.Trailing)
+            ? ResolvedMode.Flat
+            : ResolvedMode.Broken;
     }
 
     /// <summary>

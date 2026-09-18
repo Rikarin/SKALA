@@ -20,6 +20,14 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </remarks>
 public sealed class CollectionAfterEqIssue375Tests {
     /// <summary>
+    ///     The run of elements the width rows share, interpolated so that no line of this file is over
+    ///     120 columns while the formatted content is byte for byte the oracle's: on the continuation
+    ///     line `[{Numbers}, 1234];` is 120 columns and `[{Numbers}, 12345];` is 121.
+    /// </summary>
+    const string Numbers = "1000000, 2000000, 3000000, 4000000, 5000000, 6000000,"
+        + " 7000000, 8000000, 9000000, 10000000, 11000000";
+
+    /// <summary>
     ///     The fuzzer's four lines. One pass equals two, and the <c>=</c> line and the closing bracket
     ///     are the oracle's. ⚠ The three lines between them are not, for two reasons that are not this
     ///     issue's and are recorded beside it: the oracle keeps <c>null!, ((</c> together, because a
@@ -452,23 +460,23 @@ public sealed class CollectionAfterEqIssue375Tests {
     [Fact]
     public void ACollectionTooWideForTheLineBelow_GivesTheBreakToTheBracket() =>
         Oracle.Agrees(
-            """
+            $$"""
             namespace P;
 
             public class C {
                 void M() {
                     int[] x =
-            [1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000, 13];
+            [{{Numbers}}, 12000000, 13];
                 }
             }
             """,
-            """
+            $$"""
             namespace P;
 
             public class C {
                 void M() {
                     int[] x = [
-                        1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000, 8000000, 9000000, 10000000, 11000000,
+                        {{Numbers}},
                         12000000, 13
                     ];
                 }
@@ -479,23 +487,23 @@ public sealed class CollectionAfterEqIssue375Tests {
     [Fact]
     public void ACollectionThatFitsTheLineBelow_KeepsTheBreak() =>
         Oracle.Agrees(
-            """
+            $$"""
             namespace P;
 
             public class C {
                 void M() {
                     int[] x =
-            [1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 123];
+            [{{Numbers}}, 123];
                 }
             }
             """,
-            """
+            $$"""
             namespace P;
 
             public class C {
                 void M() {
                     int[] x =
-                        [1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 123];
+                        [{{Numbers}}, 123];
                 }
             }
             """
@@ -504,23 +512,23 @@ public sealed class CollectionAfterEqIssue375Tests {
     [Fact]
     public void AContinuationLineOfExactlyOneHundredAndTwenty_KeepsTheBreak() =>
         Oracle.Agrees(
-            """
+            $$"""
             namespace P;
 
             public class C {
                 void M() {
                     int[] x =
-            [1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 1234];
+            [{{Numbers}}, 1234];
                 }
             }
             """,
-            """
+            $$"""
             namespace P;
 
             public class C {
                 void M() {
                     int[] x =
-                        [1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 1234];
+                        [{{Numbers}}, 1234];
                 }
             }
             """
@@ -529,23 +537,23 @@ public sealed class CollectionAfterEqIssue375Tests {
     [Fact]
     public void AContinuationLineOfOneHundredAndTwentyOne_GivesTheBreakToTheBracket() =>
         Oracle.Agrees(
-            """
+            $$"""
             namespace P;
 
             public class C {
                 void M() {
                     int[] x =
-            [1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12345];
+            [{{Numbers}}, 12345];
                 }
             }
             """,
-            """
+            $$"""
             namespace P;
 
             public class C {
                 void M() {
                     int[] x = [
-                        1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12345
+                        {{Numbers}}, 12345
                     ];
                 }
             }
