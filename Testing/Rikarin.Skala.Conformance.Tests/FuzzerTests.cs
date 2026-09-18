@@ -437,6 +437,206 @@ public sealed class FuzzerTests {
     }
 
     /// <summary>
+    ///     ⚠ The whitespace mutations may not touch a gap <see cref="SpaceRules.Preserves" /> answers.
+    /// </summary>
+    /// <remarks>
+    ///     #376: <c>widen-gap</c> put a space into <c>o is Point(2, 3)</c>, the formatter kept it — which
+    ///     is what the oracle does, #373 measured it in every position — and the absorption property
+    ///     called the difference a violation. The exclusion used to be a hand-kept list ("any gap touching
+    ///     a <c>..</c>"), which is why the range operator never tripped the property and the pattern gap
+    ///     did the day it joined <c>SpaceRules.Ungoverned</c>. It is now the formatter's own predicate, so
+    ///     this test asks the mutation, not the list: over a file holding one of each ungoverned gap and
+    ///     one governed gap of the same surface shape, every draw of <c>widen-gap</c> must leave the two
+    ///     ungoverned gaps as written, and at least one draw must widen the governed one — or the file is
+    ///     no longer being fuzzed and the assertion above it is vacuous.
+    /// </remarks>
+    [Fact]
+    public void WidenGap_LeavesEveryUngovernedGapAlone() {
+        const string source = """
+                              class C {
+                                  bool P(object o) => o is Point(2, 3);
+                                  int[] R(int[] a) => a[1..2];
+                                  void M (int x) { }
+                              }
+                              record Point(int X, int Y);
+                              """;
+
+        static int After(string marker) => source.IndexOf(marker, StringComparison.Ordinal) + marker.Length;
+        var pattern = After("o is Point");
+        var rangeLeft = After("a[1");
+        var rangeRight = After("a[1..");
+        var governed = After("void M");
+
+        // The map first: the two ungoverned gaps are gaps — a structural mutation may still split a
+        // line there — and are not absorbable; the governed one is both.
+        var map = FuzzMutations.SourceMap.Of(source, Corpus.PropertySymbols);
+        Assert.Contains(map.Gaps, gap => gap.Start == pattern && gap.Length == 0);
+        Assert.Contains(map.Gaps, gap => gap.Start == rangeLeft && gap.Length == 0);
+        Assert.Contains(map.Gaps, gap => gap.Start == rangeRight && gap.Length == 0);
+        Assert.DoesNotContain(map.AbsorbableGaps, gap => gap.Start == pattern);
+        Assert.DoesNotContain(map.AbsorbableGaps, gap => gap.Start == rangeLeft);
+        Assert.DoesNotContain(map.AbsorbableGaps, gap => gap.Start == rangeRight);
+        Assert.Contains(map.AbsorbableGaps, gap => gap.Start == governed && gap.Length == 1);
+
+        // Then the mutated text itself, which is what the property is asserted over.
+        var applied = 0;
+        var widenedTheGovernedGap = 0;
+        for (ulong seed = 0; seed < 200; seed++) {
+            var text = FuzzMutations.Apply(
+                FuzzMutations.WidenGap,
+                source,
+                new FuzzRandom(seed),
+                Corpus.PropertySymbols
+            );
+            if (text is null) {
+                continue;
+            }
+
+            applied++;
+
+            // ⚠ Walked token to token rather than matched as a substring: the gaps *around* each
+            // probe — `o`→`is`, `void`→`M` — are governed and may be widened in the same draw.
+            static int SkipSpaces(string text, int index) {
+                while (text[index] == ' ') {
+                    index++;
+                }
+
+                return index;
+            }
+
+            var afterIs = SkipSpaces(text, text.IndexOf(" is ", StringComparison.Ordinal) + " is".Length);
+            Assert.StartsWith("Point(", text[afterIs..], StringComparison.Ordinal);
+            Assert.Contains("1..2", text, StringComparison.Ordinal);
+
+            var m = SkipSpaces(text, text.IndexOf("void", StringComparison.Ordinal) + "void".Length);
+            Assert.Equal('M', text[m]);
+            var open = SkipSpaces(text, m + 1);
+            Assert.Equal('(', text[open]);
+            if (open - (m + 1) > 1) {
+                widenedTheGovernedGap++;
+            }
+        }
+
+        Assert.True(
+            applied > 100,
+            $"only {applied.ToString(CultureInfo.InvariantCulture)} of 200 draws mutated the file"
+        );
+        Assert.True(
+            widenedTheGovernedGap > 0,
+            "no draw widened the governed gap `M (x)`; the exclusion has been widened until the file is not fuzzed"
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ The property the exclusion above stands on, against the oracle's own answers: for every
+    ///     ungoverned gap, the closed spelling and the spaced spelling each format to what the oracle
+    ///     returns for that spelling, and each is a fixed point.
+    /// </summary>
+    /// <remarks>
+    ///     The two constructs carry every shape twice, closed and spaced, and the oracle returned each as
+    ///     written — that is what "ungoverned" means and how #373 established it. So the oracle's answer
+    ///     for an input with one gap flipped is <em>known</em>: it is the fixture with the same gap
+    ///     flipped, because the fixture already holds the other spelling of that shape in the
+    ///     neighbouring member. Each flippable gap is flipped on its own and then all of them together,
+    ///     and each input is formatted twice. <see cref="FuzzProperties.UngovernedGaps" /> is the same
+    ///     claim without the oracle — the bit comes back — over every input the fuzzer builds.
+    ///     <para>
+    ///         ⚠ The count guards are not decoration. If <c>SpaceRules.Preserves</c> stopped answering these
+    ///         gaps the flips would be empty and every assertion would pass over the unflipped file.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    [InlineData("positional-pattern-after-its-type", false)]
+    [InlineData("positional-pattern-after-its-type", true)]
+    [InlineData("range-operator-gap", false)]
+    [InlineData("range-operator-gap", true)]
+    public void UngovernedGaps_EitherSpelling_FormatsToTheOraclesAnswer(string construct, bool defined) {
+        var file = Corpus.Files(Corpus.Constructs)
+            .Single(entry => string.Equals(
+                    entry.RelativePath.Replace('\\', '/'),
+                    "syntax/" + construct + ".cs",
+                    StringComparison.Ordinal
+                )
+            );
+
+        var source = File.ReadAllText(file.Path);
+        var oracle = TextNormalisation.Normalise(OracleFixture.Read(file));
+        IReadOnlyList<string> symbols = defined ? Corpus.PropertySymbols : [];
+
+        var gaps = FuzzProperties.UngovernedGapsOf(source, symbols);
+        var oracleGaps = FuzzProperties.UngovernedGapsOf(oracle, symbols);
+        Assert.True(
+            gaps.Count(static gap => gap.Spaced is true) >= 3,
+            "the construct no longer holds spaced spellings"
+        );
+        Assert.True(
+            gaps.Count(static gap => gap.Spaced is false) >= 3,
+            "the construct no longer holds closed spellings"
+        );
+        Assert.Equal(gaps.Length, oracleGaps.Length);
+
+        // As written, first: the flipped claims below are read off this one.
+        Assert.Equal(oracle, TextNormalisation.Normalise(CorpusFormatter.Format(file, source, defined).Formatted));
+        for (var i = 0; i < gaps.Length; i++) {
+            if (gaps[i].Spaced is { } wrote) {
+                Assert.Equal(wrote, oracleGaps[i].Spaced);
+            }
+        }
+
+        var flips = new List<int[]>();
+        for (var i = 0; i < gaps.Length; i++) {
+            if (gaps[i].Spaced is not null) {
+                flips.Add([i]);
+            }
+        }
+
+        flips.Add([.. flips.Select(static flip => flip[0])]);
+        foreach (var flip in flips) {
+            var input = FuzzProperties.FlipUngovernedGaps(source, [.. flip.Select(i => gaps[i])])!;
+            var expected = FuzzProperties.FlipUngovernedGaps(oracle, [.. flip.Select(i => oracleGaps[i])])!;
+            var first = CorpusFormatter.Format(file, input, defined);
+            Assert.Equal(FormatOutcome.Formatted, first.Outcome);
+            Assert.Equal(TextNormalisation.Normalise(expected), TextNormalisation.Normalise(first.Formatted));
+
+            var second = CorpusFormatter.Format(file, first.Formatted, defined);
+            Assert.Empty(second.Edits);
+        }
+    }
+
+    /// <summary>
+    ///     ⚠ <see cref="FuzzProperties.UngovernedGaps" /> holds over the two constructs as the fuzzer
+    ///     asserts it, and reports when a formatter absorbs the gap.
+    /// </summary>
+    /// <remarks>
+    ///     The <c>gap-closer</c> saboteur is the defect #373 removed, in the other direction: a rule that
+    ///     answers an ungoverned gap. A property that stays green under it is the hole the exclusion
+    ///     would otherwise be.
+    /// </remarks>
+    [Theory]
+    [InlineData("positional-pattern-after-its-type")]
+    [InlineData("range-operator-gap")]
+    public void UngovernedGaps_IsAssertedByTheFuzzer_AndTripsOnAClosingRule(string construct) {
+        var path = Path.Combine(Corpus.SetRoot(Corpus.Constructs), "syntax", construct + ".cs");
+        var source = File.ReadAllText(path);
+        var options = Fuzzer.OptionsFor(path);
+
+        var cancellation = TestContext.Current.CancellationToken;
+        var clean = FuzzProperties.Check(path, source, options, Corpus.PropertySymbols, cancellation: cancellation);
+        Assert.Empty(clean);
+
+        var closer = FuzzProperties.Saboteurs.Single(static saboteur => saboteur.Name == "gap-closer");
+        var sabotaged = FuzzProperties.Check(
+            path,
+            source,
+            options,
+            Corpus.PropertySymbols,
+            saboteur: closer,
+            cancellation: cancellation
+        );
+        Assert.Contains(sabotaged, static violation => violation.Property == FuzzProperties.UngovernedGaps);
+    }
+
+    /// <summary>
     ///     A short, fixed-seed run, so the driver itself is exercised on every commit.
     /// </summary>
     /// <remarks>

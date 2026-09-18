@@ -587,12 +587,19 @@ public static class FuzzMutations {
         ///     tools turn <c>a[1..3]</c>, <c>a[1 .. 3]</c> and <c>a[1.. 3]</c> into three different
         ///     outputs — byte-identical to each other, and each preserving its input.
         ///     <para>
-        ///         So <c>format(mutate_whitespace(x)) ≡ format(x)</c> is <b>false as stated</b> for that one
-        ///         gap class, and asserting it there would be asserting that Skala should diverge from the
-        ///         oracle. Excluded by token kind rather than by parent shape: <c>Preserve</c> is produced
-        ///         only for a <c>..</c>, so "any gap touching a <c>..</c>" is a conservative superset that
-        ///         does not have to track which parent shapes qualify — and if a *new* preserve class ever
-        ///         appears, the fuzzer will find it, which is the outcome that wants a decision.
+        ///         So <c>format(mutate_whitespace(x)) ≡ format(x)</c> is <b>false as stated</b> for that gap
+        ///         class, and asserting it there would be asserting that Skala should diverge from the
+        ///         oracle. ⚠ The exclusion is <c>SpaceRules.Preserves</c> itself — the predicate the
+        ///         formatter decides the gap by — and not a list kept here. It used to be a list, "any
+        ///         gap touching a <c>..</c>", on the argument that a new preserve class should be
+        ///         <em>found</em> rather than absorbed into the exemption; #373 then found one (the gap
+        ///         between a recursive pattern's type and its positional clause, <c>o is Point (2, 3)</c>),
+        ///         the fuzzer duly reported it (#376), and the decision it asked for was the same one
+        ///         every time: the oracle keeps the author's bit, so the property may not assert
+        ///         otherwise. What replaces the hole is a stated property rather than a wider list:
+        ///         <c>FuzzProperties.UngovernedGaps</c> asserts, for every gap this predicate answers,
+        ///         that the formatter writes the author's bit back in both spellings and is idempotent
+        ///         over each.
         ///     </para>
         /// </remarks>
         public IReadOnlyList<TextSpan> AbsorbableGaps { get; private set; } = [];
@@ -844,9 +851,7 @@ public static class FuzzMutations {
                         && !InVerbatimRegion(start)) {
                         var gap = TextSpan.FromBounds(start, end);
                         gaps.Add(gap);
-                        if (!previous.IsKind(SyntaxKind.DotDotToken)
-                            && !token.IsKind(SyntaxKind.DotDotToken)
-                            && !InOtherDisabledText(start)) {
+                        if (!SpaceRules.Preserves(previous, token) && !InOtherDisabledText(start)) {
                             absorbable.Add(gap);
                         }
                     }
