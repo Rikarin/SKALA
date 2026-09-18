@@ -4838,7 +4838,11 @@ expression from `SourceBroken`, with the note that "a bracket that fits on a con
 gets the `=` break" — **true of the oracle and not of Skala**: with the fact false the group was
 flat unless too long, so `int[] y =` / `[1, 2];` came back joined in every owner. The exemption is
 now the bracket that is itself broken in the source (`ListBreaksInSource`), which is the one case
-the note's measurement was about. The second is "chop if long *or multiline*": a kept `=` break
+the note's measurement was about. ⚠ **Superseded by SK-DIV-0116** (issue #375): the source test
+answered one of the three reasons a bracket breaks and disagreed with itself across passes, and its
+remark that a multi-line element "does not by itself put the bracket on the `=`'s line" was measured
+on elements the oracle re-joins. The rule is the fitter's now, and the rows above still hold. The
+second is "chop if long *or multiline*": a kept `=` break
 makes the item multi-line and the oracle chops the list around it, every list measured. The `=`
 group now hides its flat width when broken, as a nested delimited list already did, and — measured
 on the parameter, the attribute argument and the initializer element — spends its level *inside*
@@ -5524,3 +5528,122 @@ Not fixed, measured on the way:
 - ⚠ status: **fixed**, pinned by `constructs/breaks/switch-sections.cs` (byte-identical, stable on a
   second pass) and `SwitchSectionIssue374Tests` (53 rows, each an oracle answer). No `corpus/real/` file
   moved and no other construct did.
+
+## SK-DIV-0116 — a kept `=` break before a collection expression was read off the source, and the two passes read different sources
+
+⚠ **Found by the Nightly fuzzer (seed 5209185227727739433) and filed as issue #375.**
+`var (a58, b59) =` / `[null!, ((x,` / `y) => {` / `})];` kept the `=` break on pass one and joined
+`= [` on pass two. SK-DIV-0103 had made the `=` group's `SourceBroken` false for "a collection
+expression the author broke at one of its own gaps" (`ListBreaksInSource`), and that is a fact about
+the *source*: a list chopped around a multi-line element has no break at its own gaps on pass one and
+has them on pass two. ⚠ The issue guessed pass two wrong, from 0103's "kept for a declarator"; the
+oracle refutes the guess, and the deconstruction was incidental — `var x =` with the same element does
+the same. Measured 2026-09-18 with `Testing ask`, some sixty shapes over four probe rounds:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `var (a, b) =` / `[1, 2];`, `int[] x =` / `[1, 2];`, `(a, b) =` / `[1, 2];`, `int[] F =` / `[1, 2];` (field), a property, `new C { X =` / `[1], Y = 2 }`, `using (var d =` / `[1, 2])` | **kept**, the value one level in | identical |
+| `var (a, b) =` / `(1, 2);`, `=` / `Make();` | kept | identical |
+| `var (a, b) = [` / `1, 2];`, `int[] x = [` / `1, 2];` | `= [` / `1, 2` / `];` | identical |
+| `=` / `[null!, ((x,` / `y) => { })];` in a local, a deconstruction, a deconstruction assignment, a field | **`= [`**, the element's break kept inside | `=` / `[` — **kept, and joined on pass two** |
+| `=` / `[1, () => {` / `A();` / `B();` / `}];` in a local, a parameter default, an initializer element, a named attribute argument, a `using` header, a `for` header, and with the break *before* the `=` | `= [` in every one (the parameter list chops around it; `int[] x` / `= [` keeps the break before the `=`) | kept |
+| `=` / `[[` / `1], [2]];`, `=` / `[1, F(2)` / `];`, `=` / `[1, // c` / `2];` | `= [` | kept for the first; `= [` for the other two |
+| `=` / `[…]` whose continuation line is **120** columns; 121; 128 | kept; `= [` and the list fills; the same | kept, kept, kept |
+| `=` / `new[] { 1, () => {` / … `} };`, `=` / `(1, () => {` / … `});` | **kept** — the rule is the bracket's alone | identical |
+| `=` / `[1, () => {` / `return 2;` / `}];`, `=` / `[1, new C {` / `X = 1` / `}];`, `=` / `[1 +` / `2, 3];`, `=` / `[1, F(` / `2)];` | the element is **re-joined** (`{ return 2; }`, `{ X = 1 }`, `1 + 2`, `F(2)`) and the `=` break kept | the block body stays multi-line and the `=` now joins — the body join is older than this entry and not the `=`'s |
+
+So the `=` break and the bracket's are alternatives, as 0103 said, and the choice is made by width, not
+by the source: the `=` break survives exactly when the collection fits flat on the continuation line,
+and every bracket that will not fit there — too wide, broken at a gap, or holding an element that
+spans lines — takes the break itself. Only the fitter can ask that, and it answers the same from either
+pass's output. Fixed as `GroupFacts.KeptOnlyIfTailFits`, set by `BreakPlan.PlanAroundEquals` for a
+collection-valued `=` (`BreakYieldsToTheBracket`) and resolved in `Fitter.Decide` against the group's
+first point's flat segment — which `DocumentBuilder` now stores on the group node beside `AfterPoint`,
+because `FlatWidth − PointWidth` counts the point's own flat space and the oracle's boundary is exact.
+`DocumentBuilder` leaves that group's flat width measurable (its certainty still reaches the container
+through `certain`, so a parameter list around it still chops), and `ListBreaksInSource` is gone.
+
+⚠ Two things were refuted on the way. `ListBreaksInSource`'s remark that "a multi-line element — a
+lambda, a nested initializer — does not by itself put the bracket on the `=`'s line" had been measured
+on `() => {` / `return 2;` / `}` and `new C {` / `X = 1` / `}`, both of which the oracle joins onto one
+line before deciding anything, so it measured a non-event; with an element the oracle cannot join, the
+bracket takes the break every time. And issue #375's claim that SK-DIV-0114 already listed this row is
+not so: 0114's "deconstruction *assignment*" row is the designation that overflows and pulls the `=`
+down with it (`x) = Tuple();`), a different defect that still stands.
+
+Measured and not fixed here, each with a number of its own below: the collection's fill around the
+multi-line lambda (SK-DIV-0117) and the lambda's parenthesised parameter list inside a grouping
+parenthesis (SK-DIV-0118). And a lambda parameter default `(object[] a =` / `[1, () => {…}]) => 0` is
+`SK9010` under Skala's parser — Roslyn reads `(object[] a` as an invalid expression term — so the
+oracle's answer for it (`= [`, chopped) has no Skala side to compare.
+
+- options: `skala_keep_user_linebreaks` (keeps the break), `skala_wrap_before_eq = false` (which side
+  the point is on; the break before the `=` at `true`'s side is kept and the bracket still breaks), no
+  key for the choice itself.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/collection-after-eq.cs` (byte-identical, stable on
+  a second pass, the only construct the change moved) and `CollectionAfterEqIssue375Tests` (31 rows,
+  each an oracle answer; ten go red under master's `BreakPlan.cs`, eight of them on oracle equality).
+  All ten recorded Nightly seeds replay clean.
+
+## SK-DIV-0117 — a collection expression's fill breaks before a multi-line element that keeps its head in the oracle, and never after one
+
+⚠ **Found beside SK-DIV-0116 and reserved by #375.** The fuzzer's element `((x,` / `y) => { })` came
+back from Skala as `null!,` / `((` and from the oracle as `null!, ((`. Measured 2026-09-18 with
+`Testing ask`:
+
+| written | oracle | Skala |
+|---|---|---|
+| `[null!, ((x,` / `y) => { })]`, `[null!, (x,` / `y) => { }]`, the same with a two-statement block body | `null!, ((` — the head stays, the parameters break inside | `null!,` / `((` |
+| `[1, F(() => {` / `A();` / `B();` / `}), 2]` | `1, F(() => {` … `),` / `2` | `1,` / `F(() => {` … `), 2` |
+| `[1, () => {` / `A();` / `B();` / `}, 2, 3]`, `new object[] { 1, () => {` … `}, 2, 3 }` | `1, () => {` … `},` / `2, 3` — a **break after** the multi-line element | `}, 2, 3` |
+| `[1, o switch { 1 => 2, _ => 3 }, 2]` | `1, o switch {` / arms / `},` / `2` | `1,` / `o switch {` … `}, 2` |
+| `[[1], [` / `2], [3]]` | `[1], [` / `2` / `],` / `[3]` | `[1],` / `[` / `2` / `], [3]` |
+| `[1, () => {` … `}, 2,` / `3]` | `},` / `2,` / `3` — the kept break stays too | `}, 2,` / `3` |
+| `[1, ("a…" 131 columns, 2), 3]`, `[1, F("a…", 2), 3]` | `1,` / `("a…",` / `2),` / `3` — a merely-too-wide element is broken **before**, delimited or not, and after | before only |
+| `(1, () => {` … `}, 2, 3)` (tuple), `M2(1, () => {` … `}, 2, 3)` | the tuple keeps `}, 2, 3)`; the argument list chops | identical |
+| `[1, new C {` / `X = 1,` / `Y = 2` / `}, 2]` | the initializer is re-joined | identical |
+
+So a collection expression's element follows the tuple's second head rule (SK-DIV-0114's
+`KeepsHeadWhenCertain`: a head stays exactly when the break inside the element is certain, and a
+merely-too-wide element moves whole) and the array initializer's after rule (SK-DIV-0110's note: a
+break after every multi-line element), and Skala has neither for it — `DelimitedItem` and
+`KeepsHeadWhenCertain` are flagged for tuple-shaped items only, and no fill has the after rule. The
+block-bodied lambda keeps its head in Skala by accident: its hard line sits at the fill's own depth, so
+`MeasureSegments` ends the segment there instead of making it unbounded, and the head "fits". The after
+rule needs to know that the *element* spanned lines and not that a line was broken since the last
+point — a break the author pinned between two elements would otherwise read as the previous element
+spanning lines — which is a per-element marker in the #372 pattern, not a line count. Recorded, not
+fixed.
+
+- options: none — `skala_wrap_list_pattern = wrap_if_long` and `skala_keep_existing_list_patterns_arrangement`
+  govern the fill and the pinned breaks, neither the head nor the after rule.
+- ⚠ status: **open**.
+
+## SK-DIV-0118 — a grouping parenthesis spends a level of its own inside the list it wraps, and the oracle does not
+
+⚠ **Found beside SK-DIV-0116 and reserved by #375.** `var f = ((x,` / `y) => { });` comes back from
+the oracle with `x` one level past the statement and the `)` on the statement's indent, and from Skala
+with `x` two levels in and the `)` one. Measured 2026-09-18 with `Testing ask`, sixteen shapes:
+
+| written | oracle | Skala |
+|---|---|---|
+| `var f = ((x,` / `y) => { });`, `return ((x,` / `y) => { });`, `(Func<…>)((x,` / `y) => 0)`, `((int x,` / `int y) => { })`, `((x,` / `y) => { }).Invoke(1, 2)` | `((` / `x,` (**+1**) / `y` / `) => { }` (**+0**) | `x` at +2, `)` at +1 |
+| `M2(((x,` / `y) => { }));`, `M2(1, ((x,` / `y) => { }));` | the argument at +1, `x` at +2, `)` at +1 — the grouping adds nothing to what `M2((x,` / `y) => { })` already gets | `x` at +3, `)` at +2 |
+| `var t = ((` / `1, 2));`, `var t = (((` / `1, 2)));`, `var t = ((1,` / `2));` | `1, 2` at **+1** however many parentheses | +2, +3, +2 |
+| `var b = (F((` / `1 + 2)));`, `M2((` / `1 + 2));` | the argument list chops — `F(` / `(` (+1) / `1 + 2)` (+2) / `)` — and the grouping around `F` adds nothing | `(F((` / `1 + 2)` at +3 |
+| `var b = ((` / `1 + 2)` / `* 3);`, `if ((a` / `== b))`, `if ((` / `a == b))`, `if (((` / `a)` / `== b))` | the grouping **does** spend: `1 + 2)` at +2, `* 3)` at +1; `a == b` one past the aligned column; `a)` two past it | identical |
+| `var f = ((x, y) => {` / `A();` / `B();` / `});`, `var f = (` / `(x, y) => { });` | the body at +1; `(x, y) => { }` at +1 | identical |
+
+So a grouping parenthesis is unconditional among groupings and statement conditions — the builder's
+remark on `if ((expr` / `== value))` is right — and transparent to a tuple, a lambda's parameter list
+or an argument list that opens on its line: the list's contents take one level from the owner and the
+list's closer returns to the owner's indent, whatever wraps the list. `CSharpDocumentBuilder.PlanDelimited`
+marks every `ParenthesizedExpressionSyntax` scope `unconditional`, and `LayoutWriter.Level` then counts
+it for the list's lines and for the list's closer alike. The fix is a third kind of scope in the writer
+— a grouping that a delimited list opened on the same line absorbs, on the list's lines and at the
+list's push — which touches the one-level-per-line rule that 1.7 points of fidelity sit on, and is
+left for its own measurement. Recorded, not fixed.
+
+- options: `skala_indent_pars = inside` (the level a grouping spends when it does), no key for the
+  transparency.
+- ⚠ status: **open**.
