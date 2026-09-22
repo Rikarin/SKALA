@@ -51,6 +51,13 @@ public sealed partial class CSharpDocumentBuilder {
     int verbatimUntil = -1;
     int continuousDepth;
 
+    /// <summary>
+    ///     How many continuation levels the groups of the node being entered opened themselves — the
+    ///     count <see cref="VisitPlanned" /> hands <see cref="VisitInner" /> so that a chain frame can
+    ///     tell its own group's level from the depth outside the chain. See <see cref="Frame.EntryDepth" />.
+    /// </summary>
+    int levelsOpenedByOwnGroups;
+
     /// <summary>Group id to the plan that created it, built on first use by <c>SpansLines</c>.</summary>
     Dictionary<int, GroupPlan>? groupPlans;
 
@@ -254,6 +261,7 @@ public sealed partial class CSharpDocumentBuilder {
     void VisitPlanned(SyntaxNode node) {
         var planned = plan.GroupsOf(node);
         if (planned.Count == 0) {
+            levelsOpenedByOwnGroups = 0;
             VisitInner(node);
             return;
         }
@@ -349,6 +357,7 @@ public sealed partial class CSharpDocumentBuilder {
             OpenIndent(IndentKind.OutdentColumns, columns: outdent);
         }
 
+        levelsOpenedByOwnGroups = indented.Sum() + heldLevels.Count(static held => held);
         VisitInner(node);
         EmitUpTo(node.Span.End);
 
@@ -612,7 +621,15 @@ public sealed partial class CSharpDocumentBuilder {
                     // tuple: `(\n a).B\n.C()` puts `.C()` on the `(`'s own column (SK-DIV-0112). The
                     // group half of the same rule is BreakPlan.PlanChainedCalls' HoldsLevel; this is
                     // the frame half, for an author's break before a dot that is not a point.
-                    HoldsLevel: IsChainRoot(node) && BreakPlan.ChainHeadIsParenthesised(node)
+                    HoldsLevel: IsChainRoot(node) && BreakPlan.ChainHeadIsParenthesised(node),
+
+                    // ⚠ And a chain pays its level once. The group half — PlanChainedCalls' OwnLevel —
+                    // opens a continuation scope over the whole chain when the chain has points, and
+                    // it is already open here, because VisitPlanned opens the node's groups before it
+                    // calls VisitInner; the frame half must then not spend a second one for an
+                    // author's break before a dot that is not a point. The depth *outside* the
+                    // node's own groups is what tells the two apart at the break: see FrameToSpend.
+                    EntryDepth: continuousDepth - levelsOpenedByOwnGroups
                 )
             );
             Dispatch(node);
@@ -2567,7 +2584,17 @@ public sealed partial class CSharpDocumentBuilder {
                 // arrow or `=` that has already spent does not: `(\n a).B\n.C();` as a statement puts
                 // `.C()` one level in, and under `=>` on the `(`'s own column. See Frame.HoldsLevel.
                 if (beforeDot && !frames[i].HoldsLevel) {
-                    return i;
+                    // ⚠ And a chain whose group has already opened its level (PlanChainedCalls'
+                    // OwnLevel, a continuation scope over the whole chain) pays nothing more for an
+                    // author's break before a dot that is not a point. Measured on #380: the oracle
+                    // keeps `alpha.Foo(a)` / `.Bar()` / `.Baz` / `.Qux()` at one level throughout,
+                    // and `Get()["k"]` / `.Members` / `.Select(…)` / `.OrderBy(…)` likewise; this
+                    // frame used to spend a second level at `.Qux` and `.Select`, which the writer's
+                    // same-line collapse hid only while no point break came before the kept one
+                    // (`alpha.Members` / `.Select(…)` / `.OrderBy(…)` was fine, `alpha.Foo(a)` /
+                    // `.Bar()` / `.Baz` / `.Qux()` was not). The level is paid; nothing outside
+                    // this chain pays either.
+                    return continuousDepth > frames[i].EntryDepth ? -1 : i;
                 }
 
                 continue;
@@ -2611,6 +2638,11 @@ public sealed partial class CSharpDocumentBuilder {
     ///     the frames outside it: a call chain headed by a parenthesised expression or a tuple
     ///     (SK-DIV-0112). The frame's other duties are unchanged.
     /// </param>
+    /// <param name="EntryDepth">
+    ///     The continuation depth when the frame was pushed. A chain frame spends for a break before
+    ///     one of its dots only while the depth is still this one — once the chain's own group has
+    ///     opened its level inside the frame, the level is paid.
+    /// </param>
     readonly record struct Frame(
         FrameKind Kind,
         bool Activated,
@@ -2618,7 +2650,8 @@ public sealed partial class CSharpDocumentBuilder {
         bool ResetsDepth = false,
         int SavedDepth = 0,
         bool Aligned = false,
-        bool HoldsLevel = false);
+        bool HoldsLevel = false,
+        int EntryDepth = 0);
 
     /// <summary>
     ///     Whether the break continues an expression rather than starting a new statement, member or

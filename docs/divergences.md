@@ -5791,14 +5791,47 @@ plus the same level; and a call-headed chain that is the left operand of `??` ta
 oracle and one in Skala, SK-DIV-0068's third item. The construct names all three in its header and
 holds none of them.
 
+⚠ **A second mechanism, found applying the fix to Skala's own source (ADR-015) and fixed with it: a
+chain paid its level twice.** Ten files drifted under the new planner and the oracle, asked about
+each original shape, rewrote every one the way Skala now does — `TrimmedLines(formatted)` /
+`.Where(…)`, `TopLevelExpressions(declaration)` / `.Any(expression => {`, `Sources()` / `.Select(…)`,
+`full[root.Length..]` / `.Split(` — so the drift confirmed the rule. But two of the ten came out one
+level too deep after an author's break before a dot that is *not* a point, and the same shape with an
+identifier head was already wrong on `09f5e59d`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `var s6 = alpha.Foo(a)` / `.Bar()` / `.Baz` / `.Qux();` | every dot at 12 | `.Qux()` at **16** |
+| `var s8 = Foo(a)` / `.Baz` / `.Qux();` | 12 | `.Qux()` at 16 |
+| `var s2 = Get()["k"]` / `.Members` / `.Select(…)` / `.OrderBy(…)` / `.ToList();` | 12 | `.Select` on at 16 |
+| `var s3 = diagnostics[0].Location.SourceTree!` / `.GetText(…)` / `.Lines[…]` / `.ToString();` | 12 | `.Lines` on at 16 |
+| `var s1 = alpha.Members` / `.Select(…)` / `.OrderBy(…)` / `.ToList();` | 12 | 12 |
+| `OptionResolver.Resolve(…)` / `.Configured` / `.ToDictionary(…)` under `=>` | `.ToDictionary` at 12 | **16** |
+| `"""…"""` (multi-line) / `.Replace(…)` / `.Replace(…)` under `=>` | 12 | 16 |
+| `builder.Append("| [")` / … / `// comment` / `.Append(…)` × 8 | 16 throughout | 20 after the comment |
+
+The chain's level is paid in two places that did not know about each other: the group — `OwnLevel`,
+a continuation scope `VisitPlanned` opens over the whole chain when it has points — and the chain
+*frame*, which spends at an author's break before a dot that is not a point (`.Qux` of a `.Baz.Qux()`
+run, `.Select` after `.Members`, `.Lines` feeding an indexer). `FrameToSpend`'s chain arm spent
+without asking whether the group already had, and the writer's one-level-per-opening-line collapse
+hid the second level exactly when the kept break came *before* any point break (`s1`) and exposed
+it otherwise (`s6`), or when the head spanned lines (the raw string). The frame now records the
+continuation depth outside its owner's groups (`Frame.EntryDepth`, `levelsOpenedByOwnGroups`) and
+spends only while the depth is still that one. Measured on the eight shapes above and on the ten
+drifted files; the eleven other Skala files the once-paid level moved (`.Configured` /
+`.ToDictionary`, `.RootElement` / `.GetProperty`, `.Candidates` / `.Single`, the `.Append` run) are
+each the oracle's answer, asked. Nothing in `constructs/` moved.
+
 - options: `skala_wrap_chained_method_calls` (measured at all three values; the fill is SK-DIV-0129),
   `skala_wrap_before_first_method_call` (the export's `false`; at `true` nothing changes for a dot-less
   head, which has no first dot), `skala_wrap_after_property_in_chained_method_calls` (the export's
   `false`; `.Prop.Other` and `.Items[0]` travel as before).
 - ⚠ status: **fixed**, pinned by `constructs/breaks/two-segment-chain-with-a-call-root.cs`
   (thirty-six shapes, byte-identical; 43 → 42 divergent files under `dump constructs`, nothing else
-  moved) and `ChainWithACallRootIssue380Tests` (seven tests; six go red with the flag never set, the
-  seventh is the not-a-call control and must stay green).
+  moved) and `ChainWithACallRootIssue380Tests` (eight tests; six go red with the flag never set, the
+  not-a-call control must stay green either way, and the once-paid-level test goes red with the
+  frame spending unconditionally again).
 
 ## SK-DIV-0129 — the chain fill breaks before a last link the oracle keeps the head of
 

@@ -269,14 +269,14 @@ public sealed class ChainWithACallRootIssue380Tests {
     [Fact]
     public void TheChainKey_MovesTheAnswer_AndTheFirstCallIsTheInnermostOne() {
         const string Short = """
-            var s1 = SomeMethod(a, b).Other(c, d);
-                    var s2 = x.Other(c, d);
-                    var d7 = arr[0].Other(c, d);
-                    var d8 = x.Items[0].Other(c, d);
-                    var e1 = alpha.SomeMethod(a, b)[0].Other(c, d);
-                    var e2 = alpha.SomeMethod(a, b).Other(c, d)[0].Third(e);
-                    var e4 = SomeMethod(a, b).Other(c, d)[0].Third(e);
-            """;
+                             var s1 = SomeMethod(a, b).Other(c, d);
+                                     var s2 = x.Other(c, d);
+                                     var d7 = arr[0].Other(c, d);
+                                     var d8 = x.Items[0].Other(c, d);
+                                     var e1 = alpha.SomeMethod(a, b)[0].Other(c, d);
+                                     var e2 = alpha.SomeMethod(a, b).Other(c, d)[0].Third(e);
+                                     var e4 = SomeMethod(a, b).Other(c, d)[0].Third(e);
+                             """;
 
         var chopped = FormatWith(Statement(Short), ("skala_wrap_chained_method_calls", "chop_always"));
         Assert.Equal(
@@ -339,5 +339,48 @@ public sealed class ChainWithACallRootIssue380Tests {
                  """
             )
         );
+    }
+
+    /// <summary>
+    ///     ⚠ A chain pays its level once. An author's break before a dot that is not a point — the
+    ///     <c>.Qux</c> of a <c>.Baz.Qux()</c> run, the <c>.Select</c> after <c>.Members</c>, the
+    ///     <c>.Lines</c> feeding an indexer — is the chain <em>frame</em>'s to pay, and the chain's
+    ///     group has already opened the same level when it has a point break before it. The oracle
+    ///     keeps every dot of these at one level; Skala put the link after the kept break one deeper,
+    ///     on an identifier head (<c>alpha.Foo(a)</c>) as much as on a call head, and the writer's
+    ///     same-line collapse hid it only while the kept break came before any point break
+    ///     (<c>alpha.Members</c> / <c>.Select</c>, which was already right). Found applying SK-DIV-0128
+    ///     to Skala's own <c>OptionRegistryModel.cs</c> and <c>LinqChainAndLoopShapeBatchTests.cs</c>.
+    /// </summary>
+    [Fact]
+    public void AKeptBreakBeforeANonPointDot_AfterAPointBreak_TakesNoSecondLevel() {
+        const string Kept = """
+                            var s2 = Get()["k"]
+                                        .Members
+                                        .Select(static a => new KeyValuePair<string, string>(a.Key, a.Value))
+                                        .OrderBy(static a => a.Key, StringComparer.Ordinal)
+                                        .ToList();
+                                    var s3 = diagnostics[0].Location.SourceTree!
+                                        .GetText(TestContext.Current.CancellationToken)
+                                        .Lines[diagnostics[0].Location.GetLineSpan().StartLinePosition.Line]
+                                        .ToString();
+                                    var s5 = Foo(a)
+                                        .Bar()
+                                        .Baz
+                                        .Qux();
+                                    var s6 = alpha.Foo(a)
+                                        .Bar()
+                                        .Baz
+                                        .Qux();
+                                    var s8 = Foo(a)
+                                        .Baz
+                                        .Qux();
+                                    var s1 = alpha.Members
+                                        .Select(static a => new KeyValuePair<string, string>(a.Key, a.Value))
+                                        .OrderBy(static a => a.Key, StringComparer.Ordinal)
+                                        .ToList();
+                            """;
+
+        Oracle.Agrees(Statement(Kept), Statement(Kept));
     }
 }
