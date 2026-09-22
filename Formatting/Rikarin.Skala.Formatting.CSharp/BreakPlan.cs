@@ -2150,7 +2150,11 @@ public sealed class BreakPlan {
     ///         <c>F(…).Other(…)</c> no chain, so the last argument list took the break instead
     ///         (issue #380, SK-DIV-0128). ⚠ A parenthesised call <c>(F(…)).Other(…)</c>, an object
     ///         creation <c>new T(…).Other(…)</c> and a bare <c>x?.Other(…)</c> are <em>not</em> calls at
-    ///         the head: the oracle chops their argument list, measured (SK-DIV-0129).
+    ///         the head: the oracle chops their argument list, measured. ⚠ The <c>wrap_if_long</c> fill
+    ///         below is a separate and open matter (SK-DIV-0129): the oracle keeps a <em>last</em>
+    ///         link's <c>.Other(</c> on the line and chops its arguments even when the whole link would
+    ///         fit on the continuation line, and breaks before a middle link; this fill measures the
+    ///         whole link, on a property root as much as on a call root.
     ///     </para>
     /// </remarks>
     void PlanChainedCalls(SyntaxNode root) {
