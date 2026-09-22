@@ -40,6 +40,11 @@ public sealed class CollectionAfterEqIssue379Tests {
     ///     <c>10, 10, …, last</c>: a bracket of an exact width. With twenty-four tens and a nine-letter
     ///     last element it is 107 columns, which at indent 12 with the <c>;</c> is a 120-column line.
     /// </summary>
+    /// <summary>The last element of a <see cref="Tens" /> list, at the two widths the boundaries need.</summary>
+    const string Six = "aaaaaa";
+
+    const string Nine = "aaaaaaaaa";
+
     static string Tens(int count, string last) => string.Join(", ", Enumerable.Repeat("10", count).Append(last));
 
     // ---- the seed's class: the `=` at the margin, the bracket glued past it ----------------------
@@ -319,7 +324,7 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 void M() {
-                    {{T(47)}} v9 = [{{Tens(24, "aaaaaaaaa")}}];
+                    {{T(47)}} v9 = [{{Tens(24, Nine)}}];
                 }
             }
             """,
@@ -329,7 +334,7 @@ public sealed class CollectionAfterEqIssue379Tests {
             public class C {
                 void M() {
                     {{T(47)}} v9 =
-                        [{{Tens(24, "aaaaaaaaa")}}];
+                        [{{Tens(24, Nine)}}];
                 }
             }
             """
@@ -343,7 +348,7 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 void M() {
-                    {{T(47)}} v9 = [{{Tens(25, "aaaaaa")}}];
+                    {{T(47)}} v9 = [{{Tens(25, Six)}}];
                 }
             }
             """,
@@ -353,7 +358,7 @@ public sealed class CollectionAfterEqIssue379Tests {
             public class C {
                 void M() {
                     {{T(47)}} v9 = [
-                        {{Tens(25, "aaaaaa")}}
+                        {{Tens(25, Six)}}
                     ];
                 }
             }
@@ -369,7 +374,7 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 void M() {
-                    {{T(87)}} v9 = [{{Tens(24, "aaaaaaaaa")}}];
+                    {{T(87)}} v9 = [{{Tens(24, Nine)}}];
                 }
             }
             """,
@@ -379,7 +384,7 @@ public sealed class CollectionAfterEqIssue379Tests {
             public class C {
                 void M() {
                     {{T(87)}} v9 =
-                        [{{Tens(24, "aaaaaaaaa")}}];
+                        [{{Tens(24, Nine)}}];
                 }
             }
             """
@@ -391,7 +396,7 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 void M() {
-                    {{T(87)}} v9 = [{{Tens(25, "aaaaaa")}}];
+                    {{T(87)}} v9 = [{{Tens(25, Six)}}];
                 }
             }
             """,
@@ -401,7 +406,7 @@ public sealed class CollectionAfterEqIssue379Tests {
             public class C {
                 void M() {
                     {{T(87)}} v9 = [
-                        {{Tens(25, "aaaaaa")}}
+                        {{Tens(25, Six)}}
                     ];
                 }
             }
@@ -419,10 +424,10 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 void M() {
-                    var ddddd = [{{Tens(24, "aaaaaa")}}];
-                    var dddddd = [{{Tens(24, "aaaaaa")}}];
-                    int[] ddd = [{{Tens(24, "aaaaaa")}}];
-                    object[] d = [{{Tens(24, "aaaaaa")}}];
+                    var ddddd = [{{Tens(24, Six)}}];
+                    var dddddd = [{{Tens(24, Six)}}];
+                    int[] ddd = [{{Tens(24, Six)}}];
+                    object[] d = [{{Tens(24, Six)}}];
                 }
             }
             """,
@@ -432,15 +437,15 @@ public sealed class CollectionAfterEqIssue379Tests {
             public class C {
                 void M() {
                     var ddddd = [
-                        {{Tens(24, "aaaaaa")}}
+                        {{Tens(24, Six)}}
                     ];
                     var dddddd =
-                        [{{Tens(24, "aaaaaa")}}];
+                        [{{Tens(24, Six)}}];
                     int[] ddd = [
-                        {{Tens(24, "aaaaaa")}}
+                        {{Tens(24, Six)}}
                     ];
                     object[] d =
-                        [{{Tens(24, "aaaaaa")}}];
+                        [{{Tens(24, Six)}}];
                 }
             }
             """
@@ -456,8 +461,8 @@ public sealed class CollectionAfterEqIssue379Tests {
             public class C {
                 void M() {
                     {
-                        var ddddd = [{{Tens(23, "aaaaaa")}}];
-                        var dddddd = [{{Tens(23, "aaaaaa")}}];
+                        var ddddd = [{{Tens(23, Six)}}];
+                        var dddddd = [{{Tens(23, Six)}}];
                     }
                 }
             }
@@ -469,10 +474,10 @@ public sealed class CollectionAfterEqIssue379Tests {
                 void M() {
                     {
                         var ddddd = [
-                            {{Tens(23, "aaaaaa")}}
+                            {{Tens(23, Six)}}
                         ];
                         var dddddd =
-                            [{{Tens(23, "aaaaaa")}}];
+                            [{{Tens(23, Six)}}];
                     }
                 }
             }
@@ -493,8 +498,8 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 void M() {
-                    using (var dddd = [{{Tens(22, "aaaaaa")}}]) { }
-                    using (var ddddd = [{{Tens(22, "aaaaaa")}}]) { }
+                    using (var dddd = [{{Tens(22, Six)}}]) { }
+                    using (var ddddd = [{{Tens(22, Six)}}]) { }
                 }
             }
             """,
@@ -504,11 +509,11 @@ public sealed class CollectionAfterEqIssue379Tests {
             public class C {
                 void M() {
                     using (var dddd = [
-                               {{Tens(22, "aaaaaa")}}
+                               {{Tens(22, Six)}}
                            ]) { }
 
                     using (var ddddd =
-                           [{{Tens(22, "aaaaaa")}}]) { }
+                           [{{Tens(22, Six)}}]) { }
                 }
             }
             """
@@ -521,9 +526,9 @@ public sealed class CollectionAfterEqIssue379Tests {
             namespace P;
 
             public class C {
-                int[] G = [{{Tens(25, "aaaaaa")}}];
+                int[] G = [{{Tens(25, Six)}}];
 
-                int[] Gggggg = [{{Tens(25, "aaaaaa")}}];
+                int[] Gggggg = [{{Tens(25, Six)}}];
             }
             """,
             $$"""
@@ -531,11 +536,11 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 int[] G = [
-                    {{Tens(25, "aaaaaa")}}
+                    {{Tens(25, Six)}}
                 ];
 
                 int[] Gggggg =
-                    [{{Tens(25, "aaaaaa")}}];
+                    [{{Tens(25, Six)}}];
             }
             """
         );
@@ -554,7 +559,7 @@ public sealed class CollectionAfterEqIssue379Tests {
             public class C {
                 void M() {
                     object[] ddddddddd;
-                    ddddddddd = [{{Tens(24, "aaaaaa")}}];
+                    ddddddddd = [{{Tens(24, Six)}}];
                 }
             }
             """,
@@ -565,7 +570,7 @@ public sealed class CollectionAfterEqIssue379Tests {
                 void M() {
                     object[] ddddddddd;
                     ddddddddd = [
-                        {{Tens(24, "aaaaaa")}}
+                        {{Tens(24, Six)}}
                     ];
                 }
             }
@@ -584,7 +589,7 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 void M() {
-                    var   ddddd   =   [{{Tens(24, "aaaaaa")}}];
+                    var   ddddd   =   [{{Tens(24, Six)}}];
                 }
             }
             """;
@@ -594,7 +599,7 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 void M() {
-                    var ddddd = [{{Tens(24, "aaaaaa")}}];
+                    var ddddd = [{{Tens(24, Six)}}];
                 }
             }
             """;
@@ -619,8 +624,8 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 void M() {
-                    Dictionary<{{T(100)}}, int> d = [{{Tens(24, "aaaaaa")}}];
-                    Dictionary<{{T(100)}}, int> dddddd = [{{Tens(24, "aaaaaa")}}];
+                    Dictionary<{{T(100)}}, int> d = [{{Tens(24, Six)}}];
+                    Dictionary<{{T(100)}}, int> dddddd = [{{Tens(24, Six)}}];
                 }
             }
             """,
@@ -631,11 +636,11 @@ public sealed class CollectionAfterEqIssue379Tests {
                 void M() {
                     Dictionary<{{T(100)}},
                         int> d = [
-                        {{Tens(24, "aaaaaa")}}
+                        {{Tens(24, Six)}}
                     ];
                     Dictionary<{{T(100)}},
                         int> dddddd =
-                        [{{Tens(24, "aaaaaa")}}];
+                        [{{Tens(24, Six)}}];
                 }
             }
             """
@@ -652,7 +657,7 @@ public sealed class CollectionAfterEqIssue379Tests {
                 void M() {
                     Dictionary<{{T(100)}},
                         int> d =
-                        [{{Tens(24, "aaaaaa")}}];
+                        [{{Tens(24, Six)}}];
                 }
             }
             """,
@@ -663,7 +668,7 @@ public sealed class CollectionAfterEqIssue379Tests {
                 void M() {
                     Dictionary<{{T(100)}},
                         int> d =
-                        [{{Tens(24, "aaaaaa")}}];
+                        [{{Tens(24, Six)}}];
                 }
             }
             """
@@ -726,9 +731,9 @@ public sealed class CollectionAfterEqIssue379Tests {
             namespace P;
 
             public class C {
-                object[] {{new string('P', 45)}} => [{{Tens(25, "aaaaaaaaa")}}];
+                object[] {{new string('P', 45)}} => [{{Tens(25, Nine)}}];
 
-                object[] {{new string('Q', 45)}} => [{{Tens(26, "aaaaaa")}}];
+                object[] {{new string('Q', 45)}} => [{{Tens(26, Six)}}];
             }
             """,
             $$"""
@@ -736,10 +741,10 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 object[] {{new string('P', 45)}} =>
-                    [{{Tens(25, "aaaaaaaaa")}}];
+                    [{{Tens(25, Nine)}}];
 
                 object[] {{new string('Q', 45)}} => [
-                    {{Tens(26, "aaaaaa")}}
+                    {{Tens(26, Six)}}
                 ];
             }
             """
@@ -753,10 +758,10 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 object[] Q1 =>
-            [{{Tens(25, "aaaaaaaaa")}}];
+            [{{Tens(25, Nine)}}];
 
                 object[] Q2 =>
-            [{{Tens(26, "aaaaaa")}}];
+            [{{Tens(26, Six)}}];
             }
             """,
             $$"""
@@ -764,10 +769,10 @@ public sealed class CollectionAfterEqIssue379Tests {
 
             public class C {
                 object[] Q1 =>
-                    [{{Tens(25, "aaaaaaaaa")}}];
+                    [{{Tens(25, Nine)}}];
 
                 object[] Q2 => [
-                    {{Tens(26, "aaaaaa")}}
+                    {{Tens(26, Six)}}
                 ];
             }
             """

@@ -25,8 +25,11 @@ public sealed class ArmArrowIssue378Tests {
     const string Six = "(firstArgumentValue, secondArgumentValue, thirdArgumentValue,"
         + " fourthArgumentValue, fifthArgumentValue, sixthArgumentValue)";
 
-    const string Seven = "{ Length: > 3, Name: \"ssssssssssssssssssssssssssssss\", Kind: not null,"
-        + " Value.Length: > 2, Other: \"ssssssssssssssssssssssssssssssssss\", Last: 1, Tail: \"ssssssssssssssssss\" }";
+    const string Seven = """{ Length: > 3, Name: "ssssssssssssssssssssssssssssss", Kind: not null,"""
+        + """ Value.Length: > 2, Other: "ssssssssssssssssssssssssssssssssss", Last: 1, Tail: "ssssssssssssssssss" }""";
+
+    /// <summary>The <c>case</c> keyword a label's pattern follows, hoisted so the file names it once.</summary>
+    const string Case = "case ";
 
     /// <summary>A two-subpattern property pattern whose <c>}</c> lands on <paramref name="column" />.</summary>
     static string Pattern(int column, string before = "", int indent = 12) {
@@ -54,8 +57,8 @@ public sealed class ArmArrowIssue378Tests {
     public void TheFirstSeedsArm_KeepsThePattern_AndSettlesInOnePass() {
         const string cast = "Cast<IReadOnlyDictionary<(decimal First, StringBuilder Second),"
             + " (decimal First, StringBuilder Second)>, TimeSpan>";
-        const string arguments = "(out var o143, name144: 48278, name145: \"ssssssssssssssssss\","
-            + " name146: \"sssssssssssss\")";
+        const string arguments = """(out var o143, name144: 48278, name145: "ssssssssssssssssss","""
+            + """ name146: "sssssssssssss")""";
         var once = Format.Text(Switch($"            {{ Length: > 0 }} => {cast}{arguments},"));
         Assert.Equal(once, Format.Text(once));
         Assert.Contains("            { Length: > 0 } =>\n                Cast<", once, StringComparison.Ordinal);
@@ -171,9 +174,9 @@ public sealed class ArmArrowIssue378Tests {
     [Fact]
     public void ACaseLabelsColon_IsNotAMovableBreak() =>
         Oracle.Agrees(
-            Cases($"{Pattern(119, "case ")}:", $"{Pattern(120, "case ")}:"),
+            Cases($"{Pattern(119, Case)}:", $"{Pattern(120, Case)}:"),
             Cases(
-                $"{Pattern(119, "case ")}:",
+                $"{Pattern(119, Case)}:",
                 "            case {\n                Length: > 0, Name: \""
                 + new string('s', 78)
                 + "\"\n            }:"
@@ -223,13 +226,13 @@ public sealed class ArmArrowIssue378Tests {
     public void TheWhenGap_MovesOnlyWhenItsHeadHasNoRoom() =>
         Oracle.Agrees(
             Cases(
-                $"{Pattern(120, "case ")} when Bind{Ten}:",
-                $"{Pattern(121, "case ")} when Bind{Ten}:",
+                $"{Pattern(120, Case)} when Bind{Ten}:",
+                $"{Pattern(121, Case)} when Bind{Ten}:",
                 "            case SomeVeryLongTypeName someVeryLongVariableName"
                 + " when Bind(first, second, third, fourth, fifth, sixth, seventh):"
             ),
             Cases(
-                $"{Pattern(120, "case ")}\n                when Bind{Ten}:",
+                $"{Pattern(120, Case)}\n                when Bind{Ten}:",
                 "            case {\n                Length: > 0, Name: \""
                 + new string('s', 79)
                 + $"\"\n            }} when Bind{Ten}:",
@@ -256,7 +259,7 @@ public sealed class ArmArrowIssue378Tests {
     public void TheLambdasArrow_KeepsTheWhenOnTheLabelsLine() =>
         Oracle.Agrees(
             Cases(
-                "            case { Length: > 3, Name: \"sssssssssssssssssssssss\" } when static x =>"
+                """            case { Length: > 3, Name: "sssssssssssssssssssssss" } when static x =>"""
                 + " Convert<CancellationToken, CancellationToken>(x, cancellationToken, anotherArgument):",
                 "            case 1\n                when x:"
             ),
@@ -433,7 +436,7 @@ public sealed class ArmArrowIssue378Tests {
             + " + yetAnotherLongValueName + more;\n"
             + "        var other = new Thing { Alpha = 1, Beta = 2 } + someOtherRatherLongValueName"
             + " + yetAnotherLongValueName + moreValues;\n"
-            + "        var third = value is { Length: > 0, Name: \"sssssssssssss\" }"
+            + """        var third = value is { Length: > 0, Name: "sssssssssssss" }"""
             + " ? someRatherLongExpressionForTheTrueBranch(first) : other;\n"
             + "    }\n}\n",
             """
