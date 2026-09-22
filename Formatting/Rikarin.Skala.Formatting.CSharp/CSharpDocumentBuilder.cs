@@ -705,7 +705,9 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     bool IsSoleLambdaArgument(SyntaxNode node) =>
         options.PlaceSingleMethodArgumentLambdaOnSameLine
-        && node.Parent is ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } };
+        // ⚠ And not a named argument, which the oracle lays out like any other argument — the same
+        // exclusion BreakPlan.IsLambdaArgument makes (issue #378).
+        && node.Parent is ArgumentSyntax { NameColon: null, Parent: ArgumentListSyntax { Arguments.Count: 1 } };
 
     /// <summary>
     ///     A break is attributed to the innermost statement, member or accessor, because those are the

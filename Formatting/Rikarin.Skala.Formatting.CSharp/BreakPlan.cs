@@ -4668,8 +4668,19 @@ public sealed class BreakPlan {
             _ => null
         };
 
+    /// <summary>
+    ///     The single lambda argument <c>place_single_method_argument_lambda_on_same_line</c> keeps on
+    ///     the call's line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not a named one. Measured for issue #378 on the second Nightly seed's label and on a local:
+    ///     <c>Bind&lt;…&gt;(name48: x49 =&gt; …)</c> comes back from the oracle with <c>(</c> broken and the
+    ///     argument on its own line, exactly as <c>(name48: (true ? 1 : 2))</c> does, while the same call
+    ///     with <c>(x49 =&gt; …)</c> keeps the lambda on the <c>(</c> line and breaks its arrow. The
+    ///     name makes it an ordinary argument.
+    /// </remarks>
     static bool IsLambdaArgument(SyntaxNode item) =>
-        item is ArgumentSyntax { Expression: AnonymousFunctionExpressionSyntax };
+        item is ArgumentSyntax { NameColon: null, Expression: AnonymousFunctionExpressionSyntax };
 
     /// <summary>
     ///     The outermost link of an <c>a.B().C()</c> chain — the node the whole chain's group hangs from.
