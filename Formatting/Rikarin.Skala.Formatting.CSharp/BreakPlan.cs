@@ -3402,7 +3402,7 @@ public sealed class BreakPlan {
     ///         <c>object[] P =&gt;\n[…]</c> is kept for a 120-column continuation line and written
     ///         <c>P =&gt; [</c> at 121, a flat <c>P =&gt; […]</c> that does not fit breaks the arrow
     ///         exactly when the bracket fits below, and a bracket that does not is glued —
-    ///         <c>=&gt; [</c> up to column 120 from a flat line, and at 123 when the chopped bracket is
+    ///         <c>=&gt; [</c> up to column 120 from a flat line, and at 122 when the chopped bracket is
     ///         given back, where the oracle re-joins Skala's old <c>=&gt;</c> break rather than move the
     ///         name down. Only the glue's own overhang differs: for the arrow the oracle counts the
     ///         <c>[</c> and moves the name down from 121, for the <c>=</c> it counts up to the <c>=</c>.
