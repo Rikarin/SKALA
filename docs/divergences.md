@@ -5734,6 +5734,184 @@ reason.
   `AttributeSectionTests` went red on the first cut that speculated for a multi-line section). All
   eleven recorded Nightly seeds replay clean.
 
+## SK-DIV-0120 — a switch arm's arrow and the gap before a `when` had no break point, so a property pattern chopped itself to rescue a tail it could not rescue
+
+⚠ **Found by the Nightly fuzzer (seeds 2801382500469017888, 13095184792041486380 and
+11255509907099259375) and filed as issue #378.** A property pattern heading a switch-expression arm or
+a `case` label, followed by a tail that overflows: pass one chopped the pattern, pass two joined it
+back. The pattern's rest-of-line measure ran straight through the arm's `=>` into the body — through a
+type argument list's yielding points (SK-DIV-0119) to the first argument — because neither side of the
+arrow, nor the gap before a `when`, had a plan at all; on pass two the body's fill had left a kept
+break that ended the measure. Measured 2026-09-22 with `Testing ask`, some two hundred shapes over
+nineteen probe rounds, on flat input sized with `awk '{print length($0)}'`:
+
+**The pattern is decided by its own extent up to the next movable break**, and the issue's rule 1 is
+confirmed exactly: at indent 12, `}` at 120 stays and 121 chops; `}:` at 120 chops because a colon
+cannot move; `} when …` at 120 stays and the `when` moves. What a point at the arrow and at the `when`
+gives the trailing measure is precisely that boundary.
+
+**The arm's arrow is not the `=`'s rule.** Measured on eleven body shapes — an argument list, a
+chain, an object initializer, a ternary, a binary chain, a string, an identifier, a lambda — the body
+leaves the head's line exactly when the head up to the body's first break point does not fit:
+`1 => Body(` stays and the six arguments chop; `…YetAnother => Body(first, second, third, fourth,
+fifth),` at 123 columns chops the arguments although the whole call would have fitted on the
+continuation line, which is where the `=`'s `PrefersOuterBreak` takes the outer break (SK-DIV-0005);
+`…AndMore =>` / `SomeVeryLongIdentifier…,` when nothing inside can break. That is the ordering rule's
+second question asked alone — `GroupFacts.BreaksOnlyIfHeadOverflows` — and the issue's rule 2 for the
+`when` ("a `PrefersOuterBreak` point like `=`") is **refined**: `case SomeVeryLongTypeName x when
+Bind(` stays and the seven arguments chop below it although `when Bind(first, …, seventh):` would have
+fitted whole on the line below; a `when` inside an arm reads the same way. The issue's *mechanism*
+(taken when the tail's first inner point does not fit) was right; its label was not.
+
+**The arrow is never left past the margin** (the issue's rule 3, confirmed on a pattern head and on
+`SomeLongConstant.Value when x…`): `}` at 117 gives `{ … } =>` / `Body(`; `}` at 118 — ` =>` ending at
+121 — gives `{ … }` / `=> Body(`, and the body follows the arrow on its line however wide, 140 columns
+measured, with its arguments chopping there if they must; once the arrow has moved down the body's
+break is never taken (`GroupFacts.FlatIfOwnerBroke`). A break the author wrote on either side of the
+arrow, or before a `when`, is kept even when everything fits.
+
+⚠ **Refuted: "in a case label the chopped pattern fills, in an arm it chops."** Two ends of one rule.
+A property pattern that overflows puts its braces on their own lines *first* and chops the
+subpatterns only when they still do not fit at the continuation column — `case {` / `Length: > 0,
+Name: "…"` / `}:` for two subpatterns of 92 columns, one per line for seven that reach 123; `SomeType {`
+/ … / `} => 1,` in an arm and `value is {` / … / `}` in a statement the same way. It was never a fill:
+seven subpatterns whose first four would have shared a line came back one per line. And a bare `{`
+that opens an arm's line has four columns of continuation against the four its `{ ` and ` }` took, so
+its subpatterns never fit below when the whole did not fit above — the issue's `}` at 121 with two
+subpatterns had a 121-column continuation line and measured nothing. `PlanPropertyPattern` is
+`PlanBracedElements`' outer/inner split; `PlanList`'s one group chopped every subpattern as soon as the
+braces broke.
+
+⚠ **A second defect fell out of the boundary.** `Fitter.Worth`'s second question — "where does this
+line end if the group stays flat and the construct inside wraps" — was one column lenient at every
+`=`: the point measure skipped the point's own flat space, which a fill adds at the writer's column
+(`FillPointStaysFlat`) and the ordering rule never did. `{ … } =>` at 121 stayed until
+`MeasureSegments` started the point width with it. No construct moved on the correction.
+
+Mechanics: the group before the `=>` and the body's group are opened by the walk over the arm's
+children (`BreakPlan.openedAt`, the constraint run's mechanism generalised) because no node starts at
+the `=>` and a group described on an *aligned* body would not own the gap before it; the `when`
+clause's group is described on its node with the gap inside; both spend the arm's or label's
+continuation level and hold it at zero before a parenthesis the author broke after (SK-DIV-0101).
+
+- options: `skala_wrap_property_pattern = chop_if_long`, `skala_place_simple_property_pattern_on_single_line`,
+  `skala_keep_existing_property_patterns_arrangement`, `skala_wrap_before_arrow_with_expressions = false`
+  (the break before the arrow is the fallback, not the option), `skala_keep_user_linebreaks`.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/property-pattern-head.cs` and
+  `constructs/breaks/case-label-when.cs` (both byte-identical to the oracle; the construct set stays at
+  42 pairs differing) and `ArmArrowIssue378Tests` (eighteen cases; six go red with the arm's plan
+  disabled). No construct and no `corpus/real/` file moves against master; the three seeds and five
+  older ones replay clean.
+
+## SK-DIV-0121 — a head measures through an arrow whose body cannot break, and the oracle draws a second boundary inside that family
+
+⚠ **Found beside SK-DIV-0120 (issue #378), on Vixen's `Ktx2.cs`.** With the arrow a break point, an
+`or` chain of 115 columns before `=> 2u,` that master chopped came back flat — the chain no longer saw
+the seven columns that pushed it over. Measured on twenty-five arms: with a body that has no break
+point of its own, the oracle lets the *head* break in preference to the arrow — `{ … } => 2u,` at 122
+chops the pattern, braces first, and `A or B or C or D => 2u,` chops every `or` — where the same heads
+before `=> Body(…)` stay whole and the arrow or the arguments break. So a construct before the arrow
+reads through it, body included (`GroupFlags.ArrowBodyRunsToTheEnd`, set when the body's group closes
+with no point of its own and never for a kept arrow break), the way it reads a last-resort point.
+
+⚠ **Deliberate for the wider bodies.** The oracle's rule inside that family depends on both widths:
+
+| `{ … } => body,` at | body | oracle |
+|---|---|---|
+| 122 | `2u`, `value`, `someValue`, `identifier` (2–10) | pattern chops, arrow stays |
+| 122 | `identifierX` … `SomeVeryLongIdentifierWithNoBreak` (11–33) | `{ … } =>` / `body,` |
+| 126 | `2u` | pattern chops |
+| 130 | `someValue` (9), `identifierXY` (12) | pattern chops |
+| 126 / 134 / 140 | 14–15 / 22–23 / 28–29 | arrow, at head lines of 110 and 111 alike |
+| 122, `or` chain head | 10 or 11 | arrow; at 2 the chain chops |
+| 123, an unbreakable member-access head | `2u` | the head's last dot breaks |
+
+No statement of it survived the next probe — the body's width, the head line's width and the overflow
+each mattered somewhere — so Skala reads through the arrow for every such body. That is the reading
+that keeps Rider's own output in both cases: a chopped pattern before a short body is not re-joined
+(the one-group plan would have, and the arrow-first plan re-joined it and broke the arrow), and a kept
+arrow break before a wide body is kept. On flat input with a body of eleven or more characters at 122
+columns Skala chops the pattern where the oracle moves the body down. A `when` head reads through the
+same way and moves where the oracle keeps it (`SomeLongConstant.Value when x… =>` / `SomeIdentifier,`).
+
+- options: none; `skala_wrap_before_arrow_with_expressions` names the other side.
+- ⚠ status: **fixed** for the short bodies, **deliberate** for the wider ones, pinned by
+  `ArmArrowIssue378Tests.AShortBody_ChopsThePatternRatherThanTheArrow` (red with the read-through
+  disabled) and `constructs/breaks/property-pattern-head.cs`. `Ktx2.cs` is back on master's output.
+
+## SK-DIV-0122 — a lambda's arrow moves its body down from a column that moves with the indent, and Skala takes the arm's rule instead
+
+⚠ **Found beside SK-DIV-0120 (issue #378).** The lambda's `=>` had no plan either, and the third seed
+needs one: it is the lambda's arrow point at column 105 that keeps `case { … } when static x =>` on the
+label's line, where without it the `when` measured through the whole type argument list. Measured on
+forty flat shapes and on the oracle's answers to eleven `corpus/real/` inputs:
+
+| shape (`var thrown = Assert.Throws<ArgumentException>(() => …`, indent 8) | oracle |
+|---|---|
+| `FoliageGrowth.Sxxx…(a, b)` with `(` at column 84–87, any two or three arguments | `Sxxx…(` stays, the arguments chop |
+| the same with `(` at 88 or beyond | `() =>` / the whole call below |
+| the same at indent 12 | boundary between 89 and 90 |
+| the same at indent 16 | `(` at 96 still chops |
+| a one-argument body, `(` at 82 | the body moves down, whole |
+| `x => Convert(` with six arguments, in a local | the arguments chop |
+| `= someParameterName => Convert<…>(a, b);`, `(` at 119 | the body moves down |
+| `= someParameterName => x.LongProperty;` | the `=` breaks |
+| `[.. xs.Select(module => new X(a, b, c))]` at 127 | left at 121 columns; at 137 the body moves down |
+
+The `=`'s rule (SK-DIV-0005's `PrefersOuterBreak`, margin included) predicts every "moves down" row and
+none of the chops; the arm's rule (SK-DIV-0120) predicts every chop and none of the moves; the column
+that separates them is not the same at three indents and vanishes under a `=`. **Skala takes the arm's
+rule**: on `corpus/real/` it moves no file against master, where the `=`'s rule moved eleven — five
+toward the oracle (`KeyValuePairSettings.cs`, `NineSliceImageTests.cs`, three Null-device tests) and
+five away (`FoliageGrowthTests.cs`, `UvStackingTests.cs`, `MeshletPageBuilderTests.cs`,
+`NullDeviceTests.cs`, `EffectTranslator.cs`) — and it is the reading the common test-code shape
+`Assert.Throws<E>(() => Call(a, b))` gets from the oracle. The one-argument body and the far-right
+head are the shapes left divergent; a kept break after a lambda's arrow is kept as before.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the `(` stays joined and the
+  `)` moves for a sole lambda; unchanged), no key for the arrow.
+- ⚠ status: **deliberate**, recorded with the table; `ArmArrowIssue378Tests.TheLambdasArrow_FollowsTheArmsRule`
+  pins the shapes both agree on and `TheLambdasArrow_KeepsTheWhenOnTheLabelsLine` the third seed's.
+
+## SK-DIV-0123 — a named lambda argument was the "single method argument lambda" and the oracle lays it out as an argument
+
+⚠ **Found on the second seed of issue #378.** `when Bind<…>(name48: x49 => (true ? 60582 : 39311)):`
+came back from the oracle with the `(` broken and the argument on its own line — `Bind<…>(` /
+`name48: x49 => …` / `):` — exactly as `(name48: (true ? 1 : 2))` does, while the same call with
+`(x49 => …)` keeps the lambda on the `(` line and breaks its arrow, in a label and in a local alike.
+`IsLambdaArgument` read any argument whose expression is a lambda, so the named one kept its `(`
+joined and the type argument list in front of it filled instead. Both predicates — the plan's and
+the builder's frame reset — now exclude a `NameColon`.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line = true`.
+- ⚠ status: **fixed**, pinned by `ArmArrowIssue378Tests.ANamedLambdaArgument_IsNotTheSoleLambda` and
+  `TheSecondSeedsLabel_MovesTheWhenDown`. No construct and no real file moved.
+
+## SK-DIV-0124 — three adjacent shapes measured beside issue #378 and left as found
+
+Recorded so that the next probe starts from a measurement rather than a guess; none is this issue's
+mechanism and none affects idempotency.
+
+- **The chain's first dot is a fallback break.** `…Yes => builder.WithFirstThing(first).With…` at 219
+  columns comes back as `…Yes => builder` / `.WithFirstThing(first)` / `.WithSecondThing(second)` …:
+  with `skala_wrap_before_first_method_call = false` the first dot is still taken when the head
+  `builder.WithFirstThing(` has no room, and Skala has no point there, so the arm's arrow breaks
+  instead (`…Yes =>` / `builder.WithFirstThing(first)` / …). The `AlignsFromOwnColumn` remark on
+  `align_multiline_calls_chain` had measured the same at a 70-column margin. A pure member-access
+  chain (`A.B.C.D.MoreValue => 2u,` at 123) breaks before its last dot in the oracle and has no plan
+  in Skala either.
+- **A binary *pattern* chain with a kept break at its outer link is chopped by the oracle even when it
+  fits**: `PixelFormat.Rgba16Float or PixelFormat.Rg16Float` / `or PixelFormat.Rgba16UNorm => 2u,`
+  comes back with every `or` on its own line. SK-DIV-0109 measured the opposite for a binary
+  *expression* chain (`a && b` / `|| c` stays whole); whether the two kinds differ or the arm context
+  does is unmeasured. Skala keeps the one break, on master and now.
+- **A property pattern that is the first operand of a broken `&&` chain sits one level deeper in the
+  oracle**: `var b = value is {` / `Length: …` at 16 / `}` at 12 / `&& other;` at 12, where Skala
+  writes the subpatterns at 12 and the `}` at 8. The chain's containment (SK-DIV-0109) is right; the
+  operand's own indentation under it is the SK-DIV-0107 family's.
+
+- ⚠ status: **measured, not fixed**.
+
 ## SK-DIV-0125 — a break before a collection expression was added by the ordering rule and kept by the bracket's fit, and the two rules disagreed across passes
 
 ⚠ **Found by the Nightly fuzzer (seed 3296757264995743770) and filed as issue #379**, the mirror image
