@@ -5797,11 +5797,25 @@ continuation level and hold it at zero before a parenthesis the author broke aft
 - options: `skala_wrap_property_pattern = chop_if_long`, `skala_place_simple_property_pattern_on_single_line`,
   `skala_keep_existing_property_patterns_arrangement`, `skala_wrap_before_arrow_with_expressions = false`
   (the break before the arrow is the fallback, not the option), `skala_keep_user_linebreaks`.
+⚠ **A second round of seeds, and the first cut of the head measure was wrong on them.** Nightly
+857717698562573229 (a `when` in an *arm* rather than a label) and 2742638269065363150 chopped the
+pattern and joined it back once the arrow was a break point: the arrow's head ran through a type
+argument list's *yielding* points (SK-DIV-0119) to the end of the body, so the arrow broke and the
+pattern chopped behind it. Making the head stop at a yielding point fixed both and moved
+`case { … } when static x => Convert<A,` onto the label's line, where the oracle writes `=>` /
+`Convert<A, B>(…)`. The boundary is what follows the list: `new Dictionary<A, B>()` and
+`Materialise<A, B>()` have nothing ordinary after the type arguments and the oracle fills the list on
+the arm's line; `Cast<…, TimeSpan>(out var o, …)` and `Convert<A, B>(x, y, z)` have an argument list of
+their own and the oracle moves the whole body below the arrow. So the head measures to the first
+yielding point **only when no ordinary point follows it** (`DocumentBuilder.MeasureSegments`' yield
+candidate, for `BreaksOnlyIfHeadOverflows` groups alone).
+
 - ⚠ status: **fixed**, pinned by `constructs/breaks/property-pattern-head.cs` and
-  `constructs/breaks/case-label-when.cs` (both byte-identical to the oracle; the construct set stays at
-  42 pairs differing) and `ArmArrowIssue378Tests` (eighteen cases; six go red with the arm's plan
-  disabled). No construct and no `corpus/real/` file moves against master; the three seeds and five
-  older ones replay clean.
+  `constructs/breaks/case-label-when.cs` (both byte-identical to the oracle; the construct set goes
+  from 44 to 42 pairs differing over the same corpus) and `ArmArrowIssue378Tests` (nineteen cases; six
+  go red with the arm's plan disabled). No other construct and no `corpus/real/` file moves against
+  master; twelve seeds replay clean — the five of this class, the four older ones the brief names, and
+  #379's and #372's.
 
 ## SK-DIV-0121 — a head measures through an arrow whose body cannot break, and the oracle draws a second boundary inside that family
 

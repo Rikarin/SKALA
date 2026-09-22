@@ -378,6 +378,50 @@ public sealed class ArmArrowIssue378Tests {
     }
 
     /// <summary>
+    ///     ⚠ The fourth and fifth seeds (857717698562573229, a <c>when</c> in an <em>arm</em>, and
+    ///     2742638269065363150): the arrow's head ran through a type argument list's yielding points
+    ///     (#377) to the end of the body, so the arrow broke and the pattern chopped behind it. The
+    ///     head stops at the first yielding point when nothing ordinary can break after it —
+    ///     <c>new Dictionary&lt;A, B&gt;()</c> and <c>Materialise&lt;A, B&gt;()</c> end in <c>()</c> — and
+    ///     reads through it when something can, which is why <c>Convert&lt;A, B&gt;(x, y, z)</c> above
+    ///     and the first seed's <c>Cast&lt;…&gt;(out var o, …)</c> move below their arrow.
+    /// </summary>
+    [Fact]
+    public void AYieldingPointBoundsTheHead_OnlyWhenNothingOrdinaryFollowsIt() {
+        Oracle.Agrees(
+            "class C {\n"
+            + "    public static object Create20() =>\n"
+            + "        state switch {\n"
+            + "            { Length: > 0 } => new Dictionary<(object? First, DateTime Second_wwwwwwwwwwwwwwwwwww),"
+            + " List<(object? First, DateTime Second_wwwwwwwwwwwwwwwwwww)>>(),\n"
+            + "            _ => ('c' | null)\n        };\n}\n",
+            "class C {\n"
+            + "    public static object Create20() =>\n"
+            + "        state switch {\n"
+            + "            { Length: > 0 } => new Dictionary<(object? First, DateTime Second_wwwwwwwwwwwwwwwwwww),\n"
+            + "                List<(object? First, DateTime Second_wwwwwwwwwwwwwwwwwww)>>(),\n"
+            + "            _ => ('c' | null)\n        };\n}\n"
+        );
+
+        // ⚠ Not oracle-equality: the oracle puts the break *after* `when`, a gap no plan owns and
+        // `keep_user_linebreaks` leaves alone. What the seed was about — the pattern whole and the
+        // clause on its line — is asserted, and one pass equals two.
+        var once = Format.Text(
+            "class C {\n    object M() {\n        return state switch {\n"
+            + "            DateTime { P25: not null } when Materialise<List<bool>,"
+            + " IReadOnlyDictionary<(int? First, TimeSpan Second), (int? First, TimeSpan Second)>>() => 1,\n"
+            + "            _ => 0\n        };\n    }\n}\n"
+        );
+
+        Assert.Equal(once, Format.Text(once));
+        Assert.Contains(
+            "            DateTime { P25: not null } when Materialise<List<bool>,\n",
+            once,
+            StringComparison.Ordinal
+        );
+    }
+
+    /// <summary>
     ///     Unchanged and kept: an argument list, an initializer and a pattern under <c>is</c> are not
     ///     chopped when only the tail overflows — the operator or the <c>?</c> breaks.
     /// </summary>
