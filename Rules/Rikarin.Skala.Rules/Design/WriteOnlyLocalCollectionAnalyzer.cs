@@ -194,9 +194,8 @@ public sealed class WriteOnlyLocalCollectionAnalyzer : DiagnosticAnalyzer {
                     && assignment.Left == access
                     && assignment.Parent is ExpressionStatementSyntax;
 
-            case MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
-            } member when member.Expression == reference:
+            case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } member
+                when member.Expression == reference:
                 return member.Parent is InvocationExpressionSyntax invocation
                     && invocation.Expression == member
                     && invocation.Parent is ExpressionStatementSyntax

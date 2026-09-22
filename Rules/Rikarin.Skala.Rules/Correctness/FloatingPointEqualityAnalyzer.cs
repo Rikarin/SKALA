@@ -26,8 +26,7 @@ public sealed class FloatingPointEqualityAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
         if (model.GetOperation(binary, cancellation) is not IBinaryOperation {
-                OperatorMethod: null,
-                IsLifted: false
+                OperatorMethod: null, IsLifted: false
             } operation
             || !IsFloating(operation.LeftOperand.Type)
             || !IsFloating(operation.RightOperand.Type)

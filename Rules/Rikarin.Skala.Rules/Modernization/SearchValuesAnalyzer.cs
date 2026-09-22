@@ -110,8 +110,7 @@ public sealed class SearchValuesAnalyzer : DiagnosticAnalyzer {
                 || !SymbolEqualityComparer.Default.Equals(call.TargetMethod.ContainingType, extensions)
                 || call.TargetMethod.Parameters.Length != 2
                 || call.TargetMethod.Parameters[1].Type is not INamedTypeSymbol {
-                    Name: "ReadOnlySpan",
-                    TypeArguments.Length: 1
+                    Name: "ReadOnlySpan", TypeArguments.Length: 1
                 } needles
                 || needles.TypeArguments[0].SpecialType != SpecialType.System_Char
                 || invocation.ArgumentList.Arguments[invocation.ArgumentList.Arguments.Count - 1] != argument

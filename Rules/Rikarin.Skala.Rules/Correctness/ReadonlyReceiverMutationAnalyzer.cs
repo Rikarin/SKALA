@@ -51,8 +51,7 @@ public sealed class ReadonlyReceiverMutationAnalyzer : DiagnosticAnalyzer {
         var cancellation = context.CancellationToken;
         if (context.Node is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax }
             || model.GetOperation(context.Node, cancellation) is not IInvocationOperation {
-                Instance: { } receiver,
-                TargetMethod: { } method
+                Instance: { } receiver, TargetMethod: { } method
             }
             || Describe(receiver) is not { } description
             || !StructMutation.WritesItsOwnInstanceState(model, method, context.Node.SyntaxTree, cancellation)
@@ -77,9 +76,8 @@ public sealed class ReadonlyReceiverMutationAnalyzer : DiagnosticAnalyzer {
         receiver switch {
             IParameterReferenceOperation { Parameter: { RefKind: RefKind.In } parameter } =>
                 "the `in` parameter `" + parameter.Name + "`",
-            IParameterReferenceOperation {
-                Parameter: { RefKind: RefKind.RefReadOnlyParameter } parameter
-            } => "the `ref readonly` parameter `" + parameter.Name + "`",
+            IParameterReferenceOperation { Parameter: { RefKind: RefKind.RefReadOnlyParameter } parameter } =>
+                "the `ref readonly` parameter `" + parameter.Name + "`",
             ILocalReferenceOperation { Local: { RefKind: RefKind.RefReadOnly } local } =>
                 "the `ref readonly` local `" + local.Name + "`",
             ILocalReferenceOperation { Local: { RefKind: RefKind.None } local } when IsByValueForeachVariable(local) =>

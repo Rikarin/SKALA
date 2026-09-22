@@ -77,8 +77,7 @@ public sealed class ConstantReturningMethodAnalyzer : DiagnosticAnalyzer {
             || method.ExplicitInterfaceImplementations.Length != 0
             || method.Parameters.Length == 0
             || method.ContainingType is not {
-                TypeKind: TypeKind.Class or TypeKind.Struct,
-                DeclaringSyntaxReferences.Length: 1
+                TypeKind: TypeKind.Class or TypeKind.Struct, DeclaringSyntaxReferences.Length: 1
             }) {
             return;
         }

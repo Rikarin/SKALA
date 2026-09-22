@@ -67,10 +67,7 @@ public sealed class FieldBackedPropertyAnalyzer : DiagnosticAnalyzer {
             || !accessors.Accessors.Any(static accessor => accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
             || accessors.Accessors.Any(static accessor => accessor.Body is null && accessor.ExpressionBody is null)
             || model.GetDeclaredSymbol(property, cancellation) is not IPropertySymbol {
-                RefKind: RefKind.None,
-                IsAbstract: false,
-                IsVirtual: false,
-                IsOverride: false
+                RefKind: RefKind.None, IsAbstract: false, IsVirtual: false, IsOverride: false
             } symbol
             || symbol.IsStatic != field.IsStatic
             || !SymbolEqualityComparer.IncludeNullability.Equals(symbol.Type, field.Type)

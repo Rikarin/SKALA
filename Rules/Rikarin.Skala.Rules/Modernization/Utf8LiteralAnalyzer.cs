@@ -43,8 +43,7 @@ public sealed class Utf8LiteralAnalyzer : DiagnosticAnalyzer {
         if (Utf8EncodingCall.Bind(model, invocation, cancellation) is not { } call
             || call.TargetMethod.Parameters[0].Type.SpecialType != SpecialType.System_String
             || model.GetConstantValue(invocation.ArgumentList.Arguments[0].Expression, cancellation) is not {
-                HasValue: true,
-                Value: string text
+                HasValue: true, Value: string text
             }
             || text.Any(static character => character > 127)
             || !ConstantDependencies.AreFileLocal(model, invocation.ArgumentList.Arguments[0].Expression, cancellation)

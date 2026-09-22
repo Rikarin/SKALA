@@ -705,7 +705,9 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     bool IsSoleLambdaArgument(SyntaxNode node) =>
         options.PlaceSingleMethodArgumentLambdaOnSameLine
-        && node.Parent is ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } };
+        // ⚠ And not a named argument, which the oracle lays out like any other argument — the same
+        // exclusion BreakPlan.IsLambdaArgument makes (issue #378).
+        && node.Parent is ArgumentSyntax { NameColon: null, Parent: ArgumentListSyntax { Arguments.Count: 1 } };
 
     /// <summary>
     ///     A break is attributed to the innermost statement, member or accessor, because those are the
@@ -958,8 +960,22 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     void VisitChildren(SyntaxNode node) {
         var run = BeginConstraintRun(node);
+        List<(int Indented, bool Held)>? opened = null;
 
         foreach (var child in node.ChildNodesAndTokens()) {
+            // ⚠ A group that begins at a child of this node rather than at a node of its own — a
+            // switch arm's `=>` and the body after it (issue #378). Opened before the gap that
+            // precedes the child, so that the gap is the group's first point, and closed after the
+            // last child; the same shape as the constraint run's. See BreakPlan.TryOpenedAt.
+            if (plan.TryOpenedAt(node, child.SpanStart, out var plans)) {
+                opened ??= [];
+                foreach (var planned in plans) {
+                    opened.Add(OpenGroupAt(planned, node));
+                }
+
+                EmitLeadingGapAt(child.SpanStart);
+            }
+
             if (child.IsToken) {
                 EmitToken(child.AsToken());
                 continue;
@@ -969,6 +985,51 @@ public sealed partial class CSharpDocumentBuilder {
                 VisitConstrainedChild(node, inner, ref run);
             }
         }
+
+        if (opened is null) {
+            return;
+        }
+
+        EmitUpTo(node.Span.End);
+        for (var i = opened.Count - 1; i >= 0; i--) {
+            CloseGroupAt(opened[i]);
+        }
+    }
+
+    /// <summary>
+    ///     Opens one of <see cref="BreakPlan.TryOpenedAt" />'s groups with the continuation level it
+    ///     spends, or holds, exactly as <see cref="VisitPlanned" /> opens a group described on a node.
+    /// </summary>
+    (int Indented, bool Held) OpenGroupAt(GroupPlan planned, SyntaxNode node) {
+        doc.OpenGroup(planned.Mode, planned.Id);
+        var indented = planned.SpendsIndent && CanSpendAContinuationLevel(node, planned.SpendsUnderDelimiters) ? 1 : 0;
+        var held = planned.HoldsLevel && indented > 0;
+        if (held) {
+            indented = 0;
+        }
+
+        doc.DescribeGroup(planned.Id, planned.Facts with { SpendsIndent = indented > 0 });
+        if (held) {
+            HoldContinuationLevel();
+        }
+
+        for (var level = 0; level < indented; level++) {
+            OpenIndent(IndentKind.Continuous);
+        }
+
+        return (indented, held);
+    }
+
+    void CloseGroupAt((int Indented, bool Held) opened) {
+        for (var level = 0; level < opened.Indented; level++) {
+            CloseIndent(IndentKind.Continuous);
+        }
+
+        if (opened.Held) {
+            ReleaseContinuationLevel();
+        }
+
+        doc.Close();
     }
 
     /// <summary>What a constraint run needs while the declaration's children are being written.</summary>

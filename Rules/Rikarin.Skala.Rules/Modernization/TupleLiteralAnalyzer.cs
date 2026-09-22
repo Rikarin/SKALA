@@ -161,8 +161,7 @@ public sealed class TupleLiteralAnalyzer : DiagnosticAnalyzer {
             InvocationExpressionSyntax {
                 Expression:
                 MemberAccessExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                    Name.Identifier.ValueText: "Create"
+                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name.Identifier.ValueText: "Create"
                 }
             } invocation => invocation.ArgumentList,
             _ => null
@@ -193,8 +192,7 @@ public sealed class TupleLiteralAnalyzer : DiagnosticAnalyzer {
             }
 
             if (name.Parent is not MemberAccessExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                    Name: IdentifierNameSyntax member
+                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name: IdentifierNameSyntax member
                 } access
                 || access.Expression != name
                 || !IsElement(member.Identifier.ValueText)) {

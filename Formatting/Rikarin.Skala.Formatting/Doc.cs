@@ -73,7 +73,27 @@ public enum GroupFlags {
     ///     break: nothing inside can end the line, so what trails the group lands on it too. Bit 1 is
     ///     the closer alignment an <see cref="DocKind.Indent" /> node shares the field with.
     /// </summary>
-    AfterPointRunsToTheEnd = 2
+    AfterPointRunsToTheEnd = 2,
+
+    /// <summary>
+    ///     An arrow group — <see cref="GroupFacts.BreaksOnlyIfHeadOverflows" />, not broken in the
+    ///     source — whose body holds no break point of its own, so that the constructs <em>before</em>
+    ///     the arrow measure their rest-of-line through it, body included, and break in preference to it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on twenty-five switch arms (issue #378). <c>{ … } =&gt; 2u,</c> at 122 columns
+    ///     comes back from the oracle with the pattern's braces apart and the arrow untouched, and
+    ///     <c>A or B or C or D =&gt; 2u,</c> with every <c>or</c> chopped, where the same heads followed
+    ///     by <c>=&gt; Body(…)</c> stay whole and the arrow or the arguments break. A body that can break
+    ///     inside ends the line the head is measured against; one that cannot is part of it. ⚠ Not the
+    ///     whole of the oracle's rule: with a body that runs to the end but is wide enough — eleven
+    ///     characters at 122 columns, more as the overflow grows — the oracle moves the body down and
+    ///     leaves the head whole, by a boundary that depends on both widths and is recorded, not
+    ///     modelled. Skala reads through the arrow for every such body, which is the reading that
+    ///     preserves Rider's own output in both cases: a chopped pattern before a short body is not
+    ///     re-joined, and a kept arrow break before a wide one is kept.
+    /// </remarks>
+    ArrowBodyRunsToTheEnd = 4
 }
 
 /// <summary>What a <see cref="DocKind.Line" /> node carries in <see cref="DocNode.Flags" />.</summary>
@@ -552,6 +572,13 @@ public sealed class Document {
     public bool AfterPointRunsToTheEnd(int node) =>
         Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.AfterPointRunsToTheEnd) != 0;
 
+    /// <summary>
+    ///     Whether the node is an arrow group whose body cannot break, so that the rest-of-line measure
+    ///     of what precedes it runs through it — see <see cref="GroupFlags.ArrowBodyRunsToTheEnd" />.
+    /// </summary>
+    public bool ArrowBodyRunsToTheEnd(int node) =>
+        Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.ArrowBodyRunsToTheEnd) != 0;
+
     /// <summary>What the fitter needs to know about one group beyond its mode and its width.</summary>
     public GroupFacts FactsOf(int group) => facts[group];
 
@@ -744,6 +771,28 @@ public sealed class Document {
 ///         The arrow of an expression body has none either down to a head of eight.
 ///     </para>
 /// </param>
+/// <param name="BreaksOnlyIfHeadOverflows">
+///     ⚠ A group that breaks only when the line up to the first break point <em>inside</em> it
+///     overflows — the ordering rule's second question asked alone, never its first. It is a switch
+///     expression arm's <c>=&gt;</c>, a lambda's <c>=&gt;</c> and the gap before a <c>when</c> (issue
+///     #378): the oracle keeps <c>1 =&gt; Body(</c> and chops the arguments whenever <c>Body(</c> fits on
+///     the head's line — even when the whole body would have fitted on the continuation line, which
+///     is the case the <c>=</c>'s <see cref="PrefersOuterBreak" /> takes — and moves the body down only
+///     when the head up to that point does not fit: <c>… =&gt;</c> / <c>SomeVeryLongIdentifier,</c>, or
+///     <c>{ … } when static x =&gt;</c> / <c>Convert&lt;…&gt;(…)</c> where the lambda's arrow point at
+///     column 105 is what fits. Measured on eleven body shapes — an argument list, a chain, an
+///     initializer, a ternary, a binary chain, a string, an identifier — and on <c>when</c> in a case
+///     label and in an arm alike.
+/// </param>
+/// <param name="FlatIfOwnerBroke">
+///     ⚠ A group that stays flat whenever the group named by <see cref="Owner" /> broke: its break and
+///     the owner's are alternatives, and the owner's is the one taken first. The gap after a switch
+///     arm's <c>=&gt;</c> reads the gap before it (issue #378): when <c> =&gt;</c> itself has no room on
+///     the head's line the arrow moves down and the body follows it on the arrow's line, however wide
+///     — <c>{ … }</c> / <c>=&gt; SomeVeryLongIdentifier…,</c> at 140 columns is what the oracle
+///     writes, never <c>=&gt;</c> alone on a line. A break the author wrote after the arrow is kept
+///     regardless; the fact is read after <see cref="SourceBroken" />.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -757,4 +806,6 @@ public readonly record struct GroupFacts(
     bool ChainLink = false,
     bool BreaksIfOwnerIsMultiLine = false,
     bool BreaksOnlyIfTailFits = false,
-    int MinimumHead = 0);
+    int MinimumHead = 0,
+    bool BreaksOnlyIfHeadOverflows = false,
+    bool FlatIfOwnerBroke = false);

@@ -144,7 +144,8 @@ public sealed class CommentedCodeAnalyzer : DiagnosticAnalyzer {
                 case ThrowStatementSyntax { Expression: not null }:
                     atomic++;
                     break;
-                case LocalDeclarationStatementSyntax local when local.Declaration.Variables.All(static variable => variable.Initializer is not null
+                case LocalDeclarationStatementSyntax local when local.Declaration.Variables.All(static variable =>
+                    variable.Initializer is not null
                 ):
                     atomic++;
                     break;

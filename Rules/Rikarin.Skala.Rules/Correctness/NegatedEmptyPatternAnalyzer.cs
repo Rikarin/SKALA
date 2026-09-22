@@ -58,10 +58,7 @@ public sealed class NegatedEmptyPatternAnalyzer : DiagnosticAnalyzer {
         // `not (1, 2)` is positional and `not { } x` binds a designation; none of them is a null check.
         // A parenthesised `not ({ })` is a different node kind and is declined with them.
         if (not.Pattern is not RecursivePatternSyntax {
-                Type: null,
-                PositionalPatternClause: null,
-                Designation: null,
-                PropertyPatternClause: { } properties
+                Type: null, PositionalPatternClause: null, Designation: null, PropertyPatternClause: { } properties
             }
             || properties.Subpatterns.Count > 0) {
             return;

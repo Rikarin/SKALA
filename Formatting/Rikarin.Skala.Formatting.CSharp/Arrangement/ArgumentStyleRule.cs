@@ -296,8 +296,7 @@ public sealed class DiscardDeclarationRule : ArrangementRule {
             // here; the `var` rule is what decides whether that type stays, and the table above is
             // what says the two are separate decisions.
             return node.Expression is DeclarationExpressionSyntax {
-                Type: IdentifierNameSyntax { Identifier.ValueText: "var" },
-                Designation: DiscardDesignationSyntax
+                Type: IdentifierNameSyntax { Identifier.ValueText: "var" }, Designation: DiscardDesignationSyntax
             }
                     ? visited.WithExpression(SyntaxFactory.IdentifierName("_").WithTriviaFrom(visited.Expression))
                     : visited;

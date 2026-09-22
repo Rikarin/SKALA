@@ -138,8 +138,7 @@ internal static class PatternSafety {
         && !binary.ContainsDirectives
         && !RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(binary.SyntaxTree, binary.Span)
         && model.GetOperation(binary, cancellation) is IBinaryOperation {
-            OperatorMethod: null,
-            Type.SpecialType: SpecialType.System_Boolean
+            OperatorMethod: null, Type.SpecialType: SpecialType.System_Boolean
         }
         && !NullComparison.InsideExpressionTree(model, binary, cancellation);
 }

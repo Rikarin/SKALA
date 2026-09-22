@@ -138,6 +138,13 @@ public sealed class DocumentBuilder {
     /// </remarks>
     readonly HashSet<int> chainOwners = [];
 
+    /// <summary>
+    ///     The groups before a switch arm's <c>=&gt;</c> whose body group closed with no break point of
+    ///     its own — see <see cref="GroupFlags.ArrowBodyRunsToTheEnd" />. The body's group closes first
+    ///     and names its owner; the owner reads the set when it closes.
+    /// </summary>
+    readonly HashSet<int> arrowBodiesRunningToTheEnd = [];
+
     int nodeCount;
     int groupCount;
     int root = -1;
@@ -443,10 +450,7 @@ public sealed class DocumentBuilder {
         if (frame.Kind == DocKind.Group
             && (GroupMode)frame.Arg0 == GroupMode.Preserve
             && facts[frame.Arg1] is {
-                SourceBroken: true,
-                JoinsIfFits: false,
-                HidesFlatWidthWhenBroken: true,
-                BreaksOnlyIfTailFits: false
+                SourceBroken: true, JoinsIfFits: false, HidesFlatWidthWhenBroken: true, BreaksOnlyIfTailFits: false
             }) {
             width = Document.Unbounded;
             owned = Document.Unbounded;
@@ -479,9 +483,25 @@ public sealed class DocumentBuilder {
             ? MeasureSegments(childStart, count, frame.Arg1, out afterPointRuns, out segment[index])
             : 0;
 
+        // ⚠ An arrow whose body cannot break is read through by what precedes it (issue #378):
+        // `{ … } => 2u,` chops the pattern and `A or B or C => 2u,` chops the chain, where the same
+        // heads before `=> Body(…)` stay whole. The body's group knows it when its segments are
+        // measured; the group before the arrow learns it from the body's, which closes first and
+        // names it as its owner. A kept arrow break is a break the head sees, so a source-broken
+        // arrow is never read through. See GroupFlags.ArrowBodyRunsToTheEnd.
+        var arrowRuns = false;
+        if (frame.Kind == DocKind.Group
+            && facts[frame.Arg1] is { BreaksOnlyIfHeadOverflows: true, SourceBroken: false } arrow) {
+            arrowRuns = afterPointRuns || arrowBodiesRunningToTheEnd.Contains(frame.Arg1);
+            if (arrowRuns && arrow.FlatIfOwnerBroke && arrow.Owner >= 0) {
+                arrowBodiesRunningToTheEnd.Add(arrow.Owner);
+            }
+        }
+
         nodes[index].Count = count;
         nodes[index].Flags = (alignsCloser ? 1 : 0)
-            | (afterPointRuns ? (int)GroupFlags.AfterPointRunsToTheEnd : 0);
+            | (afterPointRuns ? (int)GroupFlags.AfterPointRunsToTheEnd : 0)
+            | (arrowRuns ? (int)GroupFlags.ArrowBodyRunsToTheEnd : 0);
         nodes[index].Arg2 = frame.Kind == DocKind.Group ? facts[frame.Arg1].Owner : frame.Arg2;
 
         if (stack.Count == 0) {
@@ -559,6 +579,15 @@ public sealed class DocumentBuilder {
     ///     visited by exactly one of them.
     /// </remarks>
     int MeasureSegments(int childStart, int count, int group, out bool firstRunsToTheEnd, out int firstSegment) {
+        // ⚠ An arrow's head ends at a yielding point when nothing ordinary can break after it, and
+        // reads through it when something can. The same gap answers the `=`'s question the other way
+        // — a type argument list's points are "not taken" for the construct in front of the list, so
+        // `var x =` breaks and the list fills below (#377) — and the oracle keeps
+        // `{ … } => new Dictionary<A,` / `List<…>>(),` on the arm's line while moving
+        // `Cast<…, TimeSpan>(out var o, …)` below its arrow: the second has an argument list of its
+        // own after the type arguments, the first has `()`. Measured on four such bodies, in a case
+        // label's `when`, in an arm and after a lambda's arrow (issue #378).
+        var stopsAtYieldingPoints = facts[group].BreaksOnlyIfHeadOverflows;
         firstRunsToTheEnd = false;
         firstSegment = 0;
         if (!ownPoints.Contains(group)) {
@@ -570,6 +599,10 @@ public sealed class DocumentBuilder {
         var flat = 0;
         var point = 0;
         var pointStopped = false;
+
+        // The point width at the segment's first yielding point, or −1: what the head measures to
+        // when no ordinary point follows it. See stopsAtYieldingPoints.
+        var yieldPoint = -1;
         var pointDepth = 0;
         var head = 0;
         var headStopped = false;
@@ -591,7 +624,10 @@ public sealed class DocumentBuilder {
         // will end the line the group is on, and the ordering rule has to count what trails the
         // group on that line (SK-DIV-0114). Only the *first* point's answer is the group's, because
         // that is the one AfterPointOf reports.
-        firstRunsToTheEnd = first >= 0 && first == last && !pointStopped;
+        firstRunsToTheEnd = first >= 0
+            && first == last
+            && !pointStopped
+            && !(stopsAtYieldingPoints && yieldPoint >= 0);
 
         // ⚠ The first point's flat segment is the group's too, beside its point width: for a group
         // with one point it is everything past that point, which is the tail a kept break that may
@@ -607,7 +643,9 @@ public sealed class DocumentBuilder {
         void Flush() {
             if (current >= 0) {
                 segment[current] = flat;
-                afterPoint[current] = point;
+                afterPoint[current] = stopsAtYieldingPoints && !pointStopped && yieldPoint >= 0
+                    ? yieldPoint
+                    : point;
                 segmentHead[current] = Math.Min(head, flat);
             }
         }
@@ -628,8 +666,17 @@ public sealed class DocumentBuilder {
                     Flush();
                     current = child;
                     pointDepth = depth;
+                    yieldPoint = -1;
                     flat = 0;
-                    point = 0;
+
+                    // ⚠ The point measure starts with the point's own flat rendering, the segment
+                    // does not. The segment is what a fill reads, and the fill adds the gap's width
+                    // at the writer's column itself (LayoutWriter.FillPointStaysFlat); the point
+                    // width is what the ordering rule's second question reads — "where does this
+                    // line end if the group stays flat" — and a group that stays flat writes the
+                    // space. Without it the question was one column lenient at every `=` and left
+                    // `{ … } =>` at 121 columns where the oracle moves the arrow down (issue #378).
+                    point = ((LineFlags)nodes[child].Flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
                     pointStopped = false;
                     head = 0;
                     headStopped = false;
@@ -709,6 +756,13 @@ public sealed class DocumentBuilder {
                 }
 
                 if (!pointStopped) {
+                    if (yieldPoint < 0
+                        && node.Kind == DocKind.Line
+                        && (LineKind)node.Arg0 == LineKind.Soft
+                        && ((LineFlags)node.Flags & LineFlags.YieldsToPredecessors) != 0) {
+                        yieldPoint = point;
+                    }
+
                     point += pointWidth[child];
                     pointStopped = breaks[child];
                 }

@@ -41,8 +41,7 @@ internal static class Utf8EncodingCall {
             || !SymbolEqualityComparer.Default.Equals(call.TargetMethod.ContainingType, encoding)
             || call.TargetMethod.Parameters.Length != 1
             || call.Instance is not IPropertyReferenceOperation {
-                Property.Name: "UTF8",
-                Property.IsStatic: true
+                Property.Name: "UTF8", Property.IsStatic: true
             } receiver
             || !SymbolEqualityComparer.Default.Equals(receiver.Property.ContainingType, encoding)) {
             return null;

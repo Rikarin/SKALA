@@ -155,8 +155,7 @@ public sealed class OverwrittenElementAnalyzer : DiagnosticAnalyzer {
                 } assignment
             }
             || access.ArgumentList.Arguments[0] is not {
-                NameColon: null,
-                RefKindKeyword.RawKind: (int)SyntaxKind.None
+                NameColon: null, RefKindKeyword.RawKind: (int)SyntaxKind.None
             } argument
             || !CallShape.IsPlainNamePath(access.Expression)) {
             return null;

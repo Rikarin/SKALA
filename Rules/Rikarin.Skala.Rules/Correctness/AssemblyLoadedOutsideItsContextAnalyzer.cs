@@ -87,9 +87,7 @@ public sealed class AssemblyLoadedOutsideItsContextAnalyzer : DiagnosticAnalyzer
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
         if (model.GetSymbolInfo(invocation, cancellation).Symbol is not IMethodSymbol {
-                IsStatic: true,
-                Parameters.Length: 1,
-                ContainingType: { } containing
+                IsStatic: true, Parameters.Length: 1, ContainingType: { } containing
             }
             || containing.ToDisplayString() != "System.Reflection.Assembly") {
             return;

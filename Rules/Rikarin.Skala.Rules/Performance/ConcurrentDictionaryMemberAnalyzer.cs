@@ -251,8 +251,7 @@ public sealed class ConcurrentDictionaryMemberAnalyzer : DiagnosticAnalyzer {
         }
 
         if (expression is not MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                Name.Identifier.ValueText: "Count"
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name.Identifier.ValueText: "Count"
             } access) {
             return null;
         }

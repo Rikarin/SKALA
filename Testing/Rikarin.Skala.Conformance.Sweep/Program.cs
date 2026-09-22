@@ -310,7 +310,8 @@ int Defaults(IReadOnlyCollection<string>? inProcess) {
 
 string Summary(SweepRun run) {
     var lines = Enum.GetValues<SweepOutcome>()
-        .Select(outcome => $"{outcome.ToString().ToUpperInvariant()}: {Count(run.Options.Count(o => o.Outcome == outcome))}"
+        .Select(outcome =>
+            $"{outcome.ToString().ToUpperInvariant()}: {Count(run.Options.Count(o => o.Outcome == outcome))}"
         );
     return string.Join("   ", lines)
         + $"\noracle wall clock {run.OracleWallClock.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)} s"

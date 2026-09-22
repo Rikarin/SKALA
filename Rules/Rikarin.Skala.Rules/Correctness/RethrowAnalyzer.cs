@@ -178,8 +178,7 @@ public sealed class RethrowAnalyzer : DiagnosticAnalyzer {
                     return true;
 
                 case ArgumentSyntax {
-                    Expression: IdentifierNameSyntax argument,
-                    RefOrOutKeyword.RawKind: not (int)SyntaxKind.None
+                    Expression: IdentifierNameSyntax argument, RefOrOutKeyword.RawKind: not (int)SyntaxKind.None
                 } when string.Equals(argument.Identifier.ValueText, name, StringComparison.Ordinal):
                     return true;
             }

@@ -27,8 +27,7 @@ public sealed class ReadonlyStructMutationAnalyzer : DiagnosticAnalyzer {
         var cancellation = context.CancellationToken;
         if (context.Node is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access }
             || model.GetSymbolInfo(PatternSafety.Unwrap(access.Expression), cancellation).Symbol is not IFieldSymbol {
-                IsReadOnly: true,
-                Type.TypeKind: TypeKind.Struct
+                IsReadOnly: true, Type.TypeKind: TypeKind.Struct
             }
             || model.GetOperation(context.Node, cancellation) is not IInvocationOperation {
                 Instance: IFieldReferenceOperation { Field.IsReadOnly: true } receiver,

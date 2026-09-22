@@ -89,8 +89,7 @@ public sealed class IdenticalOperandsAnalyzer : DiagnosticAnalyzer {
         // because the comparison operators went to `CS1718`; the note stays because the next rule
         // that reaches for `OperatorMethod` to mean "not a built-in operation" will get it wrong too.
         if (model.GetOperation(binary, cancel) is not IBinaryOperation {
-                OperatorMethod: null,
-                IsLifted: false
+                OperatorMethod: null, IsLifted: false
             } operation) {
             return;
         }

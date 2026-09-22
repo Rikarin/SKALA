@@ -245,7 +245,8 @@ public sealed class CompilationScopedBucketTests {
         string.Join(
             "\n",
             outcome.Findings
-                .Select(static finding => $"{finding.RuleId} {Path.GetFileName(finding.Path)}:{finding.Line}:{finding.Column}"
+                .Select(static finding =>
+                    $"{finding.RuleId} {Path.GetFileName(finding.Path)}:{finding.Line}:{finding.Column}"
                 )
                 .Order(StringComparer.Ordinal)
         );

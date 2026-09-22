@@ -63,8 +63,7 @@ public sealed class ListPatternAnalyzer : DiagnosticAnalyzer {
                 } recursive
             } combined
             && recursive.PropertyPatternClause!.Subpatterns[0] is {
-                NameColon.Name.Identifier.ValueText: "Length",
-                Pattern: ConstantPatternSyntax constant
+                NameColon.Name.Identifier.ValueText: "Length", Pattern: ConstantPatternSyntax constant
             }) {
             receiver = combined.Expression;
             lengthExpression = constant.Expression;

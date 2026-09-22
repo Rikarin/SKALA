@@ -85,10 +85,8 @@ public sealed class CachedEmptyInstanceAnalyzer : DiagnosticAnalyzer {
 
     static void Analyze(SyntaxNodeAnalysisContext context, IReadOnlyDictionary<ISymbol, string> table) {
         var (written, isDefault) = context.Node switch {
-            ObjectCreationExpressionSyntax {
-                ArgumentList: null or { Arguments.Count: 0 },
-                Initializer: null
-            } creation => (creation.Type, false),
+            ObjectCreationExpressionSyntax { ArgumentList: null or { Arguments.Count: 0 }, Initializer: null } creation
+                => (creation.Type, false),
             DefaultExpressionSyntax defaultExpression => (defaultExpression.Type, true),
             _ => (null, false)
         };

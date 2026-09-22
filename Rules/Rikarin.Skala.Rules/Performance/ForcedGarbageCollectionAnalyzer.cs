@@ -55,9 +55,7 @@ public sealed class ForcedGarbageCollectionAnalyzer : DiagnosticAnalyzer {
         var invocation = (InvocationExpressionSyntax)context.Node;
         var cancellation = context.CancellationToken;
         if (context.SemanticModel.GetSymbolInfo(invocation, cancellation).Symbol is not IMethodSymbol {
-                Name: "Collect",
-                IsStatic: true,
-                ContainingType: { Name: "GC" } container
+                Name: "Collect", IsStatic: true, ContainingType: { Name: "GC" } container
             }
             || container.ContainingNamespace?.ToDisplayString() != "System"
             || container.ContainingType is not null

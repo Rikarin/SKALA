@@ -114,7 +114,8 @@ public static partial class SkalaCommandLine {
         };
 
         var duplication = new Option<bool>("--duplication") {
-            Description = "Also run token-level clone detection (SK7020). Off by default: it is a whole-repository pass."
+            Description =
+                "Also run token-level clone detection (SK7020). Off by default: it is a whole-repository pass."
         };
 
         // ⚠ docs/plan/13 § "Analysis" promised this and nothing implemented it, so the sentence

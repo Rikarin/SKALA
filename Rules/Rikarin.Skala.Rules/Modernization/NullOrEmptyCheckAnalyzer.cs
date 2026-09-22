@@ -170,8 +170,7 @@ public sealed class NullOrEmptyCheckAnalyzer : DiagnosticAnalyzer {
 
     static ExpressionSyntax? LengthReceiver(ExpressionSyntax expression) =>
         expression is MemberAccessExpressionSyntax {
-            RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-            Name.Identifier.ValueText: "Length"
+            RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name.Identifier.ValueText: "Length"
         } access
             ? access.Expression
             : null;

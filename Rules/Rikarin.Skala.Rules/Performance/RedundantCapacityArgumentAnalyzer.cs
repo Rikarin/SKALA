@@ -55,8 +55,7 @@ public sealed class RedundantCapacityArgumentAnalyzer : DiagnosticAnalyzer {
             || !literal.IsKind(SyntaxKind.NumericLiteralExpression)
             || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(arguments.SyntaxTree, arguments.Span)
             || context.SemanticModel.GetSymbolInfo(creation, cancellation).Symbol is not IMethodSymbol {
-                MethodKind: MethodKind.Constructor,
-                Parameters.Length: 1
+                MethodKind: MethodKind.Constructor, Parameters.Length: 1
             } constructor
             || constructor.Parameters[0] is not { Name: "capacity", Type.SpecialType: SpecialType.System_Int32 }) {
             return;
@@ -66,8 +65,7 @@ public sealed class RedundantCapacityArgumentAnalyzer : DiagnosticAnalyzer {
         if (!Defaults.TryGetValue(MetadataName(type), out var standard)
             || type.Locations.Any(static location => location.IsInSource)
             || context.SemanticModel.GetConstantValue(literal, cancellation) is not {
-                HasValue: true,
-                Value: int written
+                HasValue: true, Value: int written
             }
             || written != standard
             || !type.InstanceConstructors.Any(static candidate => candidate.Parameters.Length == 0

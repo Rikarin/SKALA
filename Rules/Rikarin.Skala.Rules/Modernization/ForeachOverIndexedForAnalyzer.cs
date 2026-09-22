@@ -193,13 +193,11 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
     static bool IsUnitStepOn(ExpressionSyntax incrementor, string index) =>
         incrementor switch {
             PostfixUnaryExpressionSyntax {
-                RawKind: (int)SyntaxKind.PostIncrementExpression,
-                Operand: IdentifierNameSyntax post
+                RawKind: (int)SyntaxKind.PostIncrementExpression, Operand: IdentifierNameSyntax post
             } =>
                 string.Equals(post.Identifier.ValueText, index, StringComparison.Ordinal),
             PrefixUnaryExpressionSyntax {
-                RawKind: (int)SyntaxKind.PreIncrementExpression,
-                Operand: IdentifierNameSyntax pre
+                RawKind: (int)SyntaxKind.PreIncrementExpression, Operand: IdentifierNameSyntax pre
             } =>
                 string.Equals(pre.Identifier.ValueText, index, StringComparison.Ordinal),
             _ => false

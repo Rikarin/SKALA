@@ -106,8 +106,7 @@ public sealed class ComputedPropertyAnalyzer : DiagnosticAnalyzer {
         }
 
         if (model.GetDeclaredSymbol(property, cancellation) is not IPropertySymbol {
-                IsAbstract: false,
-                RefKind: RefKind.None
+                IsAbstract: false, RefKind: RefKind.None
             } symbol
             || symbol.ContainingType.DeclaringSyntaxReferences.Length != 1
             || symbol.ContainingType.GetAttributes()

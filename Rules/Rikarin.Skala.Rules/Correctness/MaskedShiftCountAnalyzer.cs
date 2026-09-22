@@ -39,8 +39,7 @@ public sealed class MaskedShiftCountAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
         if (model.GetOperation(binary, cancellation) is not IBinaryOperation {
-                OperatorMethod: null,
-                IsLifted: false
+                OperatorMethod: null, IsLifted: false
             }) {
             return;
         }

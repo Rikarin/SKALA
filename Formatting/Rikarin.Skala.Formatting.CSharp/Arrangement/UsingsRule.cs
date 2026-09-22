@@ -567,8 +567,7 @@ public sealed class EmptyStringRule : ArrangementRule {
             }
 
             if (model.GetSymbolInfo(node).Symbol is not IFieldSymbol {
-                    IsStatic: true,
-                    ContainingType.SpecialType: SpecialType.System_String
+                    IsStatic: true, ContainingType.SpecialType: SpecialType.System_String
                 }) {
                 return visited;
             }

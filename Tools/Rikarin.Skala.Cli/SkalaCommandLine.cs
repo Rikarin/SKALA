@@ -348,7 +348,8 @@ public static partial class SkalaCommandLine {
         // the first release regardless. The cost of the gate is measured, not assumed — see the M4
         // numbers in docs/plan/15.
         var aggressive = new Option<bool>("--aggressive") {
-            Description = "Also remove redundant parentheses. Off by default; the export asks for it and Skala does not."
+            Description =
+                "Also remove redundant parentheses. Off by default; the export asks for it and Skala does not."
         };
 
         var include = new Option<string[]>("--include") {

@@ -43,8 +43,7 @@ public sealed class SpanDecodingAnalyzer : DiagnosticAnalyzer {
         var cancellation = context.CancellationToken;
         if (Utf8EncodingCall.Bind(model, invocation, cancellation) is not { } call
             || call.TargetMethod.Parameters[0].Type is not IArrayTypeSymbol {
-                ElementType.SpecialType: SpecialType.System_Byte,
-                Rank: 1
+                ElementType.SpecialType: SpecialType.System_Byte, Rank: 1
             }
             || model.GetOperation(copy, cancellation) is not IInvocationOperation allocation
             || allocation.TargetMethod.Name != "ToArray"

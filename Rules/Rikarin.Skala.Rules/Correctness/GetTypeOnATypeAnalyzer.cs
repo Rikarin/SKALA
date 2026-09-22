@@ -69,9 +69,7 @@ public sealed class GetTypeOnATypeAnalyzer : DiagnosticAnalyzer {
         // for `System_Object` — the obvious spelling — silences this rule on every fixture it exists
         // for, which is how it was found.
         if (model.GetSymbolInfo(invocation, cancellation).Symbol is not IMethodSymbol {
-                Parameters.Length: 0,
-                IsStatic: false,
-                ReturnType: { } returned
+                Parameters.Length: 0, IsStatic: false, ReturnType: { } returned
             }
             || !IsOrDerivesFrom(returned, systemType)) {
             return;

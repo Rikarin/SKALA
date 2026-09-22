@@ -43,8 +43,7 @@ public sealed class SelfPropertyOperationAnalyzer : DiagnosticAnalyzer {
             right = assignment.Right;
         } else if (context.Node is BinaryExpressionSyntax binary
                    && model.GetOperation(binary, cancellation) is IBinaryOperation {
-                       OperatorMethod: null,
-                       IsLifted: false
+                       OperatorMethod: null, IsLifted: false
                    }) {
             left = binary.Left;
             right = binary.Right;

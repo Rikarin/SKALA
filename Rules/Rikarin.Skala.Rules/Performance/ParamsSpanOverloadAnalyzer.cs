@@ -37,8 +37,7 @@ public sealed class ParamsSpanOverloadAnalyzer : DiagnosticAnalyzer {
             || model.GetOperation(invocation, cancellation) is not IInvocationOperation call
             || call.TargetMethod.Parameters.Length != arguments.Count
             || call.TargetMethod.Parameters[arguments.Count - 1] is not {
-                IsParams: true,
-                Type: IArrayTypeSymbol { Rank: 1 } array
+                IsParams: true, Type: IArrayTypeSymbol { Rank: 1 } array
             }
             || NullComparison.InsideExpressionTree(model, invocation, cancellation)) {
             return;
