@@ -2748,21 +2748,8 @@ public sealed class BreakPlan {
     ///     and the modifier's is (#372). Nothing in the tree starts at that token, which is why the head
     ///     is a marker at a position rather than a group on a node — see <see cref="markers" />.
     /// </remarks>
-    static SyntaxToken HeadStartOf(ArrowExpressionClauseSyntax node) {
-        if (node.Parent is null) {
-            return default;
-        }
-
-        foreach (var child in node.Parent.ChildNodesAndTokens()) {
-            if (child.AsNode() is AttributeListSyntax) {
-                continue;
-            }
-
-            return child.IsToken ? child.AsToken() : child.AsNode()!.GetFirstToken();
-        }
-
-        return default;
-    }
+    static SyntaxToken HeadStartOf(ArrowExpressionClauseSyntax node) =>
+        node.Parent is null ? default : FirstTokenAfterAttributes(node.Parent);
 
     /// <summary>Whether this expression is the condition of an if, while, do, for or switch.</summary>
     static bool IsStatementCondition(SyntaxNode node) {
@@ -3304,6 +3291,23 @@ public sealed class BreakPlan {
             broken = BreaksBefore(FirstToken(value));
         }
 
+        // ⚠ A collection-valued `=` measures its head from the first token of the construct that
+        // owns it — the statement, the field's first modifier, a header's `(` — and only the writer
+        // knows that token's column, so it is a marker in the #372 pattern. Shared when two
+        // declarators sit under one type: `int[] xs = [1], ys = [2]` has one statement start.
+        // ⚠ No marker when the head starts at the group's own first token — an assignment, a named
+        // attribute argument: a marker there would be entered after the group it serves, and the
+        // group's own point width is the head.
+        var yieldsToTheBracket = BreakYieldsToTheBracket(value);
+        var head = -1;
+        if (yieldsToTheBracket
+            && EqualsHeadStartOf(node) is { RawKind: not 0 } headToken
+            && headToken != FirstToken(node)
+            && !markers.TryGetValue(headToken.SpanStart, out head)) {
+            head = NewGroup();
+            markers[headToken.SpanStart] = head;
+        }
+
         Describe(
             node,
             new GroupPlan(
@@ -3341,11 +3345,15 @@ public sealed class BreakPlan {
                     // whole, `void B(int a =\n        5) { }` (SK-DIV-0103).
                     HidesFlatWidthWhenBroken: true,
 
-                    // ⚠ And a kept break before a collection expression yields to the bracket when the
-                    // bracket is going to break: `= [` is what the oracle writes for one that is chopped,
-                    // too wide for the line below, or holds a multi-line element, and `=\n[1, 2]` for
-                    // one that fits there (issue #375). See BreakYieldsToTheBracket.
-                    KeptOnlyIfTailFits: BreakYieldsToTheBracket(value)
+                    // ⚠ And a break before a collection expression yields to the bracket when the
+                    // bracket is going to break, kept or added alike: `= [` is what the oracle writes for
+                    // one that is chopped, too wide for the line below, or holds a multi-line element,
+                    // and `=\n[1, 2]` for one that fits there (issues #375 and #379). See
+                    // BreakYieldsToTheBracket. An added break also needs a head of twelve columns,
+                    // measured from the marker; see GroupFacts.MinimumHead.
+                    BreaksOnlyIfTailFits: yieldsToTheBracket,
+                    Owner: head,
+                    MinimumHead: yieldsToTheBracket ? MinimumEqualsHead : 0
                 ),
                 true,
                 SpendsUnderDelimiters: IsAListItemsEquals(node),
@@ -3359,9 +3367,9 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     Whether a kept break at an <c>=</c> is one of two alternatives — the <c>=</c>'s or the
-    ///     bracket's after it — so that it is kept exactly when the value fits flat on the continuation
-    ///     line. See <see cref="GroupFacts.KeptOnlyIfTailFits" />.
+    ///     Whether a break at an <c>=</c> or an <c>=&gt;</c> is one of two alternatives — its own or the
+    ///     bracket's after it — so that it is kept, and added, exactly when the value fits flat on the
+    ///     continuation line. See <see cref="GroupFacts.BreaksOnlyIfTailFits" />.
     /// </summary>
     /// <remarks>
     ///     ⚠ A collection expression and nothing else, and the boundary is the oracle's: asked with the
@@ -3372,6 +3380,34 @@ public sealed class BreakPlan {
     ///     attribute argument, a <c>using</c> header and a <c>for</c> header alike, and on either side of
     ///     the <c>=</c> (issue #375). The same collection written to fit on the line below keeps the
     ///     break in every one of them: 120 columns stays and 121 gives the break to the bracket.
+    ///     <para>
+    ///         ⚠ The flat direction has the same boundary and no margin (issue #379, the Nightly's seed
+    ///         3296757264995743770). From a flat line too long to keep, the oracle breaks after the
+    ///         <c>=</c> exactly when the bracket fits flat on the line below — a 120-column continuation
+    ///         line moves down, 121 is written <c>= [</c> and filled, with the <c>=</c> at column 60 and
+    ///         at 100 alike — and it writes <c>= [</c> for a bracket that will not fit there even when
+    ///         the <c>[</c> lands past the margin: <c>T v = [</c> at 122 columns, the line measured only
+    ///         up to the <c>=</c>, in a local, a field, a property initializer and an assignment, and at
+    ///         125 for an assignment with nothing before the <c>=</c> that could break. Once the
+    ///         <c>=</c> passes column 120 the oracle breaks the gap between the type and the name
+    ///         instead, which Skala has no plan for (SK-DIV-0024's family), so Skala writes the glued
+    ///         form there too — the answer the oracle itself gives when no earlier gap exists, and a
+    ///         fixed point of both formatters. The ordering rule had been answering the flat direction:
+    ///         its second question took the <c>=</c> break as soon as <c>= [</c> overhung, and its first
+    ///         declined one the oracle takes whenever the continuation line was within the fitted
+    ///         margin of the width; pass two, reading either as the author's, reversed it.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The arrow of an expression body follows the same rule, measured the same way:
+    ///         <c>object[] P =&gt;\n[…]</c> is kept for a 120-column continuation line and written
+    ///         <c>P =&gt; [</c> at 121, a flat <c>P =&gt; […]</c> that does not fit breaks the arrow
+    ///         exactly when the bracket fits below, and a bracket that does not is glued —
+    ///         <c>=&gt; [</c> up to column 120 from a flat line, and at 122 when the chopped bracket is
+    ///         given back, where the oracle re-joins Skala's old <c>=&gt;</c> break rather than move the
+    ///         name down. Only the glue's own overhang differs: for the arrow the oracle counts the
+    ///         <c>[</c> and moves the name down from 121, for the <c>=</c> it counts up to the <c>=</c>.
+    ///         Neither gap is Skala's, and the fact does not need the difference.
+    ///     </para>
     ///     <para>
     ///         ⚠ This replaces a source test. The exemption used to be "a collection the author broke at
     ///         one of its own gaps" (<c>ListBreaksInSource</c>, SK-DIV-0103), which answers the same
@@ -3384,6 +3420,72 @@ public sealed class BreakPlan {
     ///     </para>
     /// </remarks>
     static bool BreakYieldsToTheBracket(ExpressionSyntax value) => value is CollectionExpressionSyntax;
+
+    /// <summary>
+    ///     The head a flat line needs before the oracle adds a break after a collection-valued
+    ///     <c>=</c>: twelve columns from the owning construct's first token through the <c>=</c>.
+    ///     See <see cref="GroupFacts.MinimumHead" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A constant, not three indents: measured at <c>indent_size = 2</c> the boundary is the same
+    ///     eleven-glues, twelve-breaks. <c>var items = […]</c> is eleven and glues; <c>var results =</c>
+    ///     is thirteen and breaks (issue #379).
+    /// </remarks>
+    const int MinimumEqualsHead = 12;
+
+    /// <summary>
+    ///     The token a collection-valued <c>=</c> measures its head from: the first token of the
+    ///     construct that owns the <c>=</c>, after any attribute lists — or the <c>(</c> of a
+    ///     <c>using</c>, <c>for</c> or <c>fixed</c> header, whose declaration the oracle measures from
+    ///     the parenthesis. See <see cref="MinimumEqualsHead" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ From the parenthesis and not from the statement: <c>using (var dddd = […]) { }</c> glues
+    ///     and <c>using (var ddddd = […]) { }</c> breaks, which is eleven against twelve counted from
+    ///     the <c>(</c> and seventeen against eighteen counted from <c>using</c> — the same floor as a
+    ///     local's only from the parenthesis. <c>for (var i = […];</c> glues and <c>for (var iiiii =</c>
+    ///     breaks, eight against twelve from its <c>(</c>. An assignment and a named attribute
+    ///     argument measure from their own first token (<c>d = [</c> and <c>Values = [</c> glue,
+    ///     <c>Xxxxxxxxxx =</c> and <c>Valuesxxxx =</c> break at twelve), which for an expression
+    ///     statement is the statement's start. Attribute lists are skipped for the reason the arrow's
+    ///     head skips them (#372); whether the oracle counts them is not measured.
+    /// </remarks>
+    static SyntaxToken EqualsHeadStartOf(SyntaxNode node) {
+        switch (node) {
+            case AssignmentExpressionSyntax or AttributeArgumentSyntax:
+                return node.GetFirstToken();
+
+            case EqualsValueClauseSyntax {
+                Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration }
+            }:
+                return declaration.Parent switch {
+                    UsingStatementSyntax statement => statement.OpenParenToken,
+                    ForStatementSyntax statement => statement.OpenParenToken,
+                    FixedStatementSyntax statement => statement.OpenParenToken,
+                    { } owner => FirstTokenAfterAttributes(owner),
+                    null => declaration.GetFirstToken()
+                };
+
+            case EqualsValueClauseSyntax { Parent: { } owner }:
+                return FirstTokenAfterAttributes(owner);
+
+            default:
+                return node.GetFirstToken();
+        }
+    }
+
+    /// <summary>The first token of <paramref name="node" /> that is not inside an attribute list.</summary>
+    static SyntaxToken FirstTokenAfterAttributes(SyntaxNode node) {
+        foreach (var child in node.ChildNodesAndTokens()) {
+            if (child.AsNode() is AttributeListSyntax) {
+                continue;
+            }
+
+            return child.IsToken ? child.AsToken() : child.AsNode()!.GetFirstToken();
+        }
+
+        return node.GetFirstToken();
+    }
 
     bool QueryLeadsTheWay(ExpressionSyntax value) => options.WrapBeforeLinqExpression && value is QueryExpressionSyntax;
 
@@ -3655,9 +3757,13 @@ public sealed class BreakPlan {
                     // alternatives rather than a pair. `TheoryData<string> Corpus =>\n[…]` comes back
                     // from the oracle as `Corpus => [` when the bracket has to chop, and
                     // `Vector4[] Planes(…) =>\n    [a, b, c];` keeps the arrow's break when it does not.
-                    // Leaving both to the ordering rule is what produces the pair.
-                    BreaksBefore(target) && node.Expression is not CollectionExpressionSyntax,
-                    PrefersOuterBreak: node.Expression is CollectionExpressionSyntax,
+                    // Leaving both to the ordering rule is what produces the pair — and leaving the
+                    // choice to the ordering rule's margin glued `=> [` before a bracket the oracle
+                    // moves down whole (a 120-column continuation line, #379). The choice is the
+                    // bracket's fit below, exactly as for the `=`: see BreakYieldsToTheBracket.
+                    BreaksBefore(target) && !BreakYieldsToTheBracket(node.Expression),
+                    PrefersOuterBreak: BreakYieldsToTheBracket(node.Expression),
+                    BreaksOnlyIfTailFits: BreakYieldsToTheBracket(node.Expression),
                     Owner: owner,
                     BreaksIfOwnerIsMultiLine: owner >= 0,
                     // skala_keep_existing_expr_member_arrangement = false: a break the author wrote after the

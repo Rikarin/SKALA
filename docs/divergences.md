@@ -5587,6 +5587,11 @@ oracle's answer for it (`= [`, chopped) has no Skala side to compare.
   a second pass, the only construct the change moved) and `CollectionAfterEqIssue375Tests` (31 rows,
   each an oracle answer; ten go red under master's `BreakPlan.cs`, eight of them on oracle equality).
   All ten recorded Nightly seeds replay clean.
+- ⚠ **Correction, 2026-09-22 (SK-DIV-0125, issue #379).** "Only the fitter can ask that, and it
+  answers it the same way from either pass's output" described the kept path this entry added; a flat
+  line still went through the ordering rule's margin, and the two disagreed exactly at the margin —
+  the same pair of passes in the other order. The fact is `GroupFacts.BreaksOnlyIfTailFits` now and
+  decides both directions; the rows above still hold.
 
 ## SK-DIV-0117 — a collection expression's fill breaks before a multi-line element that keeps its head in the oracle, and never after one
 
@@ -5728,6 +5733,165 @@ reason.
   with the yielding points made last-resort again, two with the speculative line removed, and
   `AttributeSectionTests` went red on the first cut that speculated for a multi-line section). All
   eleven recorded Nightly seeds replay clean.
+
+## SK-DIV-0125 — a break before a collection expression was added by the ordering rule and kept by the bracket's fit, and the two rules disagreed across passes
+
+⚠ **Found by the Nightly fuzzer (seed 3296757264995743770) and filed as issue #379**, the mirror image
+of SK-DIV-0116. A declarator whose `=` landed at column 120 after a type argument list had broken
+(`… Second)> v72 =`) broke after the `=` on pass one and was written `= [` at 122 columns on pass two,
+which the oracle leaves alone. SK-DIV-0116 had made the *kept* direction the fitter's — a kept `=`
+break survives iff the bracket fits flat on the continuation line — while a flat line still went
+through the ordering rule (SK-DIV-0002/0005), whose second question took the `=` break as soon as
+`= [` overhung the margin and whose first declined one whenever the continuation line was within the
+fitted margin of 120. Pass two read pass one's break as the author's and applied 0116's rule to it.
+Measured 2026-09-22 with `Testing ask`, some 140 shapes over twelve probe rounds, every `=` column
+counted with `awk`, and the oracle's own second pass over every answer byte-identical:
+
+| written, flat | oracle | Skala before |
+|---|---|---|
+| `T…T v9 = […]` with the `=` at 100, 110, 116, 118 and the bracket too wide for the line below | `T…T v9 = [`, chopped, `]` on the statement's indent | identical |
+| the same with the `=` at **119** and **120** (`[` at 121 and 122) | **`= [`, past the margin** — the line is measured up to the `=` | `=` / `[` — and `= [` on pass two |
+| the `=` at 120, `[1, 2, 3]` (fits below) | `=` / `[1, 2, 3];` | identical |
+| the `=` at 120, `[1, () => {` / `A();` / `B();` / `}]` | `= [`, chopped around the element | `=` / `[`, then `= [` on pass two |
+| `Dictionary<T…T, int> v9 = […]` with the `=` at 116, 118, **120** | the list whole, `= [` glued (122 at 120) | `=` / `[` at 120 |
+| a field, a property initializer `{ get; } =`, with the `=` at 120 | `= [` at 122 | `=` / `[` |
+| `a…a = […]` (an assignment, nothing before the `=`) with the `=` at **123** | **`= [` at 125** | `=` / `[`, then `= [` on pass two |
+| the `=` at **60** and at **100**, a bracket whose continuation line is 100 … 118, **120** | `=` / `[…];` — down whole, up to a 120-column line | `= [` and filled from a 108-column continuation line up (the margin) |
+| the same, continuation line **121** | `= [`, filled | identical |
+| `T…T v9 = new[] { … }`, `= new List<int> { … }` with the `=` at 118, 120 | `=` / `new[] {` … (the initializer's own rule) | identical |
+| `object[] P…P => […]` with the `[` at **120**; at a 120-column continuation line from `=>` at 60 | `=> [` at 120, chopped; `=>` / `[…]` | identical; `=> [` (the margin) |
+| the same, continuation line 121 | `=> [`, filled | identical |
+| `object[] Q =>` / `[…]` (kept) at a 120-column continuation line; 121 | kept; `=> [` | `=> [` for both (the margin) |
+| Skala's old `=>` / `[` chopped output with the `[` at 122, given back | **re-joined to `=> [` at 122** | kept |
+
+So from a flat line the `=` break before a collection expression is *added* by the rule it is *kept*
+by: exactly when the bracket fits flat on the continuation line, 120 columns included and 121 not,
+wherever the `=` is — no margin, where `Fitter.OuterBreakMargin` had stopped eleven columns short for
+this shape — and otherwise `= [` is written and the bracket chopped, whatever that does to the `=`'s
+line. Fixed as `GroupFacts.BreaksOnlyIfTailFits` (SK-DIV-0116's `KeptOnlyIfTailFits`, renamed because
+it now decides both directions), consulted on the flat path of `Fitter.Decide` before the ordering
+rule, for the `=` and for the arrow of an expression body alike; `= new[] {` is untouched.
+
+⚠ **What Skala writes where the oracle breaks a gap Skala does not plan.** From the `=` at 121 — and
+from the `[` at 121 for the arrow, whose glue the oracle measures through the bracket — the oracle
+breaks the gap between the type and the name (`T…T` / `v9 = [`, `object[]` / `P…P => [`), a gap
+Skala has no plan for (SK-DIV-0024's family; SK-DIV-0127 records the shapes). Skala writes the glued
+form there: `= [` at 123 and beyond, which is the oracle's own answer when nothing before the `=` can
+break (the assignment row, 125) and its answer for the arrow's chopped bracket given back (the last
+row), and it is a fixed point of both formatters — before this entry Skala's answer there was
+`=` / `[` on pass one and `= [` on pass two. And the oracle's fixed point for the seed puts the
+bracket's contents one level past the statement and `]` on the statement's indent, where pass one had
+them one level deeper; Skala now writes that from either input.
+
+⚠ **Correction to SK-DIV-0116.** Its closing paragraph says the fitter "answers it the same way from
+either pass's output". That was true of the kept path it added and not of the flat path, which kept
+the ordering rule's answer; the two agreed only when the margin and the bracket's fit happened to
+coincide, which is why #375's thirty-one kept-break cases and its construct could not see this. The
+fact's name in that entry is the old one.
+
+Found beside this and fixed in the same change: the twelve-column head an added break needs
+(SK-DIV-0126). Not chased: inside the seed's bracket the oracle joined `((x, y) => {` / `return null;` /
+`})` to one line from the flat input and left it multi-line in pass two; Skala keeps it multi-line both
+times, stably (SK-DIV-0117/0118's neighbourhood, nothing new measured).
+
+- options: `skala_wrap_before_eq = false` (which side the point is on; the `true` side's floor is
+  not measured), `skala_keep_user_linebreaks` (the kept direction, SK-DIV-0116), no key for the
+  choice itself.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/collection-after-eq-at-the-margin.cs`
+  (byte-identical, stable on a second pass; no other construct moved against master's formatter,
+  42 of the set differing from the oracle on both) and `CollectionAfterEqIssue379Tests` (26 cases,
+  each an oracle answer except the two fixed points named above; sixteen go red with the flat path
+  handed back to the ordering rule, three with the arrow's fact removed). The seed and the four
+  recorded Nightly seeds replay clean.
+
+## SK-DIV-0126 — an added break after a collection-valued `=` needs a head of twelve columns, counted from the owner's scope or from the `=`'s own line
+
+⚠ **Found beside SK-DIV-0125 and reserved by #379.** With the flat direction decided by the bracket's
+fit alone, `using (var d = […]) { }` and `var d = […];` came back broken after the `=` where the
+oracle glues `= [` for a bracket that fits the line below with room to spare. Measured 2026-09-22 with
+`Testing ask`, one column at a time:
+
+| written, flat, the bracket fitting the line below | oracle | Skala before |
+|---|---|---|
+| `var dd =` … `var ddddd = […]` (heads 8 … 11), `int[] d =` … `int[] ddd =` (9 … 11) | `var ddddd = [`, chopped | `var ddddd =` / `[…]` |
+| `var dddddd =`, `var ddddddd =` (12, 13), `object[] d =` (12), `int[] dddddddd =` (16) | `=` / `[…]` | identical |
+| the same heads at a nested block's indent; at `indent_size = 2` | 11 glues, 12 breaks — a width, not a column, and not three indents | 11 broke |
+| `using (var d =` … `using (var dddd = […]) { }`; `using (int[] d =` | `= [`, chopped — **11 from the `(`** (17 from `using`) | broken after the `=` |
+| `using (var ddddd =`, `using (object[] d =` | `=` / `[…]) { }` — 12 from the `(` | identical |
+| `for (var i = […];` (8 from the `(`); `for (var iiiii =` (12) | `= [`; `=` / `[…]` | broken; identical |
+| `int[] G = […]` (7), `int[] Gggggg =` (12), fields | `= [`; `=` / `[…]` | broken; identical |
+| `X = […]` in a chopped initializer (3), `Xxxxxxxxxx =` (12); `[Wide(Values = […])]` (8), `Valuesxxxx =` (12) | `= [`; `=` / `[…]` | broken; identical |
+| `d = […]`, `ddddddddd = […]` (assignments, 3 and 11) | `= [` | broken |
+| `Dictionary<T…T,` / `int> d = […]` — the `=` on the second line of a broken type argument list (8 from the line's start); `int> dddddd =` (13) | `int> d = [`; `int> dddddd =` / `[…]` | broken; identical |
+| `int[] x =` / `[1, 2]` (kept, 9) and `Dictionary<…,` / `int> d =` / `[…]` (kept, 8) | **kept** | identical |
+| `T[] P => […]` (an arrow, 8), `int[] P => […]` (10) | `=>` / `[…]` — no floor down to eight | identical |
+
+So the oracle does not *add* a break after a collection-valued `=` unless the head — from the first
+token of the construct that owns the `=` through the `=` itself — is at least twelve columns, and the
+construct's scope is where the count starts: a statement's first token (`using var d =` counts the
+`using`), a field's first modifier, and the `(` of a `using` or `for` header, so that `(var dddd =`
+is eleven and `(var ddddd =` twelve, the same floor a local has. When the head already spans lines the
+count starts at the `=`'s own line. A kept break has no floor, and neither has the arrow. What
+ReSharper computes there is not known; twelve is a constant across the indent sizes and depths
+measured, and it is not a saving against the continuation column (that would be eight for a local and
+eleven under `using (`).
+
+Fixed as `GroupFacts.MinimumHead`, set to `BreakPlan.MinimumEqualsHead` (12) on a collection-valued
+`=`. The width is read off the writer's columns and never off the syntax — the fuzzer widens gaps, and
+`var   ddddd   =` is seventeen characters in the source and eleven once written, so a source measure
+would break on pass one and glue on pass two. The owner's first token is a zero-width marker in #372's
+pattern (`BreakPlan.EqualsHeadStartOf`: after the attribute lists, or the header's `(`), whose column
+`Fitter.enteredAt` records beside the line `enteredOn` already did; an assignment and a named attribute
+argument start at their own head and use the group's point width, because a marker at the group's own
+first token would be entered after the group it serves. When the marker landed on an earlier line the
+head runs from the current line's first column, which `LayoutWriter` now passes to `Fitter.Enter`.
+
+⚠ Refuted on the way, in order: that the exception was the `using` statement's (round four had only a
+one-letter name); that it was the header's (`using (var ddddddddd =` breaks); that a head spanning
+lines was past any floor (the oracle counts the second line alone). And `GroupFacts` went from twelve
+primary-constructor parameters to thirteen, which re-fingerprints its baselined SK7005 hint.
+
+- options: none — no key names the floor; `skala_wrap_before_eq = true` puts the point before the
+  `=` and the floor's spelling there (through the name, two columns less) is not measured; an
+  override run produced the export's answers unchanged and could not be confirmed to have taken.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/collection-after-eq-at-the-margin.cs` (the
+  `ShortHeads` method and the two fields) and `CollectionAfterEqIssue379Tests` (six cases go red with
+  the floor set to zero, seven with the marker removed and the head measured from the `=`, and the
+  widened-gap case is the idempotency argument).
+
+## SK-DIV-0127 — from column 121 the oracle breaks a declarator between its type and its name, and once at exactly 121 it prefers that gap to the `=`
+
+⚠ **Found beside SK-DIV-0125 and reserved by #379.** Skala plans no break between a declaration's
+type and its name (the SK-DIV-0024 family; 0114 and 0119 record the tuple-type rows). Measured
+2026-09-22 with `Testing ask`, an unbreakable `T…T` type:
+
+| written, flat | oracle | Skala now |
+|---|---|---|
+| `T…T v9 = […]` with the `=` at **121**, 122, 123, 124, 130, 138, the bracket too wide for the line below | `T…T` / `v9 = [`, chopped one level in | `T…T v9 = [` — glued past the margin, chopped |
+| the same with `[1, 2, 3]` | `T…T` / `v9 = [1, 2, 3];` | `T…T v9 =` / `[1, 2, 3];` |
+| `int v…v = […]` with the `=` at 123 (a single-token type) | `int` / `v…v = [` | `int v…v = [` |
+| a field, a property initializer, `= new[] { … }`, `= new List<int> { … }` with the `=` at 121 or 123 | the type/name gap breaks | `= [` glued; `=` / `new[] {` |
+| `Dictionary<T…T, int> v9 = […]` with the `=` at 121, 123 | `Dictionary<T…T, int>` / `v9 = [` — the type/name gap, not the list's comma | `Dictionary<T…T,` / `int> v9 = [` — the list's comma |
+| `object[] P…P => […]` with the `[` at 121, 122, 123, 125 | `object[]` / `P…P => [` | `P…P => [` glued |
+| Skala's old `T…T v9 =` / `[` chopped output with the `=` at 123, given back | `T…T` / `v9 = [` | `T…T v9 = [` at 125 |
+| `T…T v9 = [1, 2, 3];` at **exactly 121 columns** (the `=` at 110); a field at 121; a local at 121 with six elements | **the type/name gap breaks** — `T…T` / `v9 = [1, 2, 3];` | `T…T v9 =` / `[1, 2, 3];` |
+| the same shapes at 122 … 127 columns, and at 121 with no type/name gap (`v…v = [1, 2, 3];`) | `=` / `[1, 2, 3];` | identical |
+| `using (var d…d = [1, 2]) { }`, a 100-letter name, 131 columns | `using` / `(var d…d =` / `[1, 2]) { }` | `using (var d…d =` / `[1, 2]) { }` |
+
+Three things, one gap. First, past the `=` at 120 the oracle's rescue is the type/name gap, and the
+row for a type argument list says it prefers that gap to the list's own comma — the *rightmost* gap
+that fits, as 0119's correction found for tuple types. Skala has no such point, so its answer is
+SK-DIV-0125's glued form, which is stable and is what the oracle itself writes when no earlier gap
+exists; the divergence is the missing plan, not the rule. Second, a line of exactly 121 columns whose
+bracket fits below breaks the type/name gap where 122 and every wider line break the `=` — measured
+three times on three owners and absent without the gap, so a real one-column quirk of the oracle's and
+not a sizing error; it goes with the gap. Third, the `using` header row is the oracle breaking after
+the keyword itself, which nothing in Skala or in the export's keys describes. Recorded, not fixed: a
+type/name plan touches the SK-DIV-0024 position, which was taken with a measurement and is not this
+entry's to reopen.
+
+- options: none — no key governs the type/name gap.
+- ⚠ status: **open**.
 
 ## SK-DIV-0128 — a chain was counted in dots, and a call at its head has none
 
