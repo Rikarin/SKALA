@@ -744,6 +744,28 @@ public sealed class Document {
 ///         The arrow of an expression body has none either down to a head of eight.
 ///     </para>
 /// </param>
+/// <param name="BreaksOnlyIfHeadOverflows">
+///     ⚠ A group that breaks only when the line up to the first break point <em>inside</em> it
+///     overflows — the ordering rule's second question asked alone, never its first. It is a switch
+///     expression arm's <c>=&gt;</c>, a lambda's <c>=&gt;</c> and the gap before a <c>when</c> (issue
+///     #378): the oracle keeps <c>1 =&gt; Body(</c> and chops the arguments whenever <c>Body(</c> fits on
+///     the head's line — even when the whole body would have fitted on the continuation line, which
+///     is the case the <c>=</c>'s <see cref="PrefersOuterBreak" /> takes — and moves the body down only
+///     when the head up to that point does not fit: <c>… =&gt;</c> / <c>SomeVeryLongIdentifier,</c>, or
+///     <c>{ … } when static x =&gt;</c> / <c>Convert&lt;…&gt;(…)</c> where the lambda's arrow point at
+///     column 105 is what fits. Measured on eleven body shapes — an argument list, a chain, an
+///     initializer, a ternary, a binary chain, a string, an identifier — and on <c>when</c> in a case
+///     label and in an arm alike.
+/// </param>
+/// <param name="FlatIfOwnerBroke">
+///     ⚠ A group that stays flat whenever the group named by <see cref="Owner" /> broke: its break and
+///     the owner's are alternatives, and the owner's is the one taken first. The gap after a switch
+///     arm's <c>=&gt;</c> reads the gap before it (issue #378): when <c> =&gt;</c> itself has no room on
+///     the head's line the arrow moves down and the body follows it on the arrow's line, however wide
+///     — <c>{ … }</c> / <c>=&gt; SomeVeryLongIdentifier…,</c> at 140 columns is what the oracle
+///     writes, never <c>=&gt;</c> alone on a line. A break the author wrote after the arrow is kept
+///     regardless; the fact is read after <see cref="SourceBroken" />.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -757,4 +779,6 @@ public readonly record struct GroupFacts(
     bool ChainLink = false,
     bool BreaksIfOwnerIsMultiLine = false,
     bool BreaksOnlyIfTailFits = false,
-    int MinimumHead = 0);
+    int MinimumHead = 0,
+    bool BreaksOnlyIfHeadOverflows = false,
+    bool FlatIfOwnerBroke = false);

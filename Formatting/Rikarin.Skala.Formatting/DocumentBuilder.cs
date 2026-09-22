@@ -629,7 +629,15 @@ public sealed class DocumentBuilder {
                     current = child;
                     pointDepth = depth;
                     flat = 0;
-                    point = 0;
+
+                    // ⚠ The point measure starts with the point's own flat rendering, the segment
+                    // does not. The segment is what a fill reads, and the fill adds the gap's width
+                    // at the writer's column itself (LayoutWriter.FillPointStaysFlat); the point
+                    // width is what the ordering rule's second question reads — "where does this
+                    // line end if the group stays flat" — and a group that stays flat writes the
+                    // space. Without it the question was one column lenient at every `=` and left
+                    // `{ … } =>` at 121 columns where the oracle moves the arrow down (issue #378).
+                    point = ((LineFlags)nodes[child].Flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
                     pointStopped = false;
                     head = 0;
                     headStopped = false;

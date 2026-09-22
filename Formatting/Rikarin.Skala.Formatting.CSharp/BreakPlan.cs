@@ -284,6 +284,22 @@ public sealed class BreakPlan {
     readonly Dictionary<int, int> markers = [];
 
     /// <summary>
+    ///     Groups the builder opens before the gap that precedes one child of a node — a token or a
+    ///     nested node — and closes at the end of that node, keyed by the node and the child's
+    ///     position. Outermost first.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The constraint run's mechanism, generalised: a switch expression arm's <c>=&gt;</c> is a
+    ///     token, so no node begins at it, and the group that owns the gap before it — the arrow moves
+    ///     down when it has no room (issue #378) — has to be opened by the walk over the arm's children
+    ///     and closed after the body. The body's own group is opened the same way rather than described
+    ///     on the body node, because <see cref="CSharpDocumentBuilder" /> emits the gap before an
+    ///     <em>aligned</em> node before it opens that node's groups, and a point emitted outside its
+    ///     group is rendered flat; a group opened here owns the gap whatever the body is.
+    /// </remarks>
+    readonly Dictionary<(long Node, int Position), List<GroupPlan>> openedAt = [];
+
+    /// <summary>
     ///     The <c>for</c> headers whose "is the header multi-line" answer waits for the walk to finish.
     /// </summary>
     /// <remarks>
@@ -334,6 +350,20 @@ public sealed class BreakPlan {
     /// </summary>
     public bool TryMarker(int position, out int group) => markers.TryGetValue(position, out group);
 
+    /// <summary>
+    ///     The groups the builder opens before the gap preceding the child of <paramref name="node" />
+    ///     that starts at <paramref name="position" />, outermost first, and closes at the node's end.
+    /// </summary>
+    public bool TryOpenedAt(SyntaxNode node, int position, out IReadOnlyList<GroupPlan> plans) {
+        if (openedAt.TryGetValue((Key(node), position), out var found)) {
+            plans = found;
+            return true;
+        }
+
+        plans = [];
+        return false;
+    }
+
     /// <summary>Every group the plan created, so the builder can describe them to the document.</summary>
     public IEnumerable<GroupPlan> Groups {
         get {
@@ -350,6 +380,12 @@ public sealed class BreakPlan {
             foreach (var run in constraints.Values) {
                 yield return run.Outer;
                 yield return run.Inner;
+            }
+
+            foreach (var plans in openedAt.Values) {
+                foreach (var plan in plans) {
+                    yield return plan;
+                }
             }
         }
     }
@@ -656,26 +692,19 @@ public sealed class BreakPlan {
                 return;
 
             case PropertyPatternClauseSyntax propertyPattern:
-                PlanList(
-                    node,
-                    propertyPattern.OpenBraceToken,
-                    propertyPattern.CloseBraceToken,
-                    propertyPattern.Subpatterns,
-                    propertyPattern.Subpatterns.GetSeparators(),
-                    options.KeepExistingPropertyPatternsArrangement,
-                    options.WrapPropertyPattern,
-                    // ⚠ Not `wrap_after_expression_lbrace` / `wrap_before_expression_rbrace`.
-                    // Measured at both values of each, in both the unprefixed spelling the export
-                    // writes and a `csharp_`-prefixed one: the oracle returns
-                    // `constructs/wrapping/initializers.cs` byte-identical every time, while a
-                    // negative control on the same file — `skala_wrap_array_initializer_style =
-                    // chop_always` — rewrites it. The C# formatter does not read them; a wrapped
-                    // braced construct always puts its braces on their own lines, which is what
-                    // these two constants say. See PhaseOneOptions.Ids.
-                    true,
-                    true,
-                    placeOnSingleLine: options.PlaceSimplePropertyPatternOnSingleLine
-                );
+                PlanPropertyPattern(propertyPattern);
+                return;
+
+            case SwitchExpressionArmSyntax arm:
+                PlanArmArrow(arm);
+                return;
+
+            case WhenClauseSyntax whenClause:
+                PlanWhenClause(whenClause);
+                return;
+
+            case LambdaExpressionSyntax { ExpressionBody: { } lambdaBody } lambda:
+                PlanLambdaArrow(lambda, lambdaBody);
                 return;
 
             case SubpatternSyntax subpattern:
@@ -3806,6 +3835,255 @@ public sealed class BreakPlan {
                 // one too many. See HeadsWithAChoppedParenthesis for the boundary and
                 // GroupPlan.HoldsLevel for why the level is held rather than declined (SK-DIV-0101).
                 HoldsLevel: HeadsWithAChoppedParenthesis(node.Expression)
+            )
+        );
+    }
+
+    /// <summary>
+    ///     A switch expression arm's <c>=&gt;</c>: the gap after it, and the gap before it as the
+    ///     fallback when the arrow itself has no room.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Neither gap had a plan (issue #378), so both were <c>keep_user_linebreaks</c>' and the
+    ///     property pattern heading the arm measured its rest-of-line straight through the arrow into
+    ///     the body — through a type argument list's yielding points to the first argument — and
+    ///     chopped itself at <c>}</c> = 119 to rescue a tail it cannot rescue. On the second pass the
+    ///     body's fill had left a kept break that ended the measure, and the pattern joined again. The
+    ///     oracle decides the pattern by its own extent up to the arrow — <c>}</c> at 120 stays, 121
+    ///     chops — which is what a point at the arrow gives the trailing measure.
+    ///     <para>
+    ///         The arrow's own rule is not the <c>=</c>'s. Measured on eleven body shapes: the body
+    ///         leaves the head's line only when the head up to the body's first break point does not
+    ///         fit — <c>1 =&gt; Body(</c> stays and the arguments chop even when
+    ///         <c>Body(first, …, fifth),</c> would have fitted whole on the continuation line, where
+    ///         the <c>=</c>'s <see cref="GroupFacts.PrefersOuterBreak" /> would have taken the outer
+    ///         break — and <c>… =&gt;</c> / <c>SomeVeryLongIdentifier,</c> when it does not. And the
+    ///         arrow is never left past the margin: <c>}</c> at 117 gives <c>{ … } =&gt;</c> /
+    ///         <c>Body(</c>, <c>}</c> at 118 — <c> =&gt;</c> ending at 121 — gives <c>{ … }</c> /
+    ///         <c>=&gt; Body(</c>, the body continuing on the arrow's line however wide (140 columns
+    ///         measured) and the arguments chopping there if they must. The same boundary on a
+    ///         non-pattern head, <c>SomeLongConstant.Value when x =&gt;</c>.
+    ///         <c>skala_wrap_before_arrow_with_expressions = false</c> is in force; the break before the
+    ///         arrow is the fallback and not the option. A break the author wrote on either side is
+    ///         kept even when everything fits — <c>1 =&gt;</c> / <c>Body(first),</c> and <c>1</c> /
+    ///         <c>=&gt; Body(first),</c> both come back as written.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Two groups and not two points of one: a group resolved Broken breaks every point it
+    ///         owns, and the oracle takes exactly one of the two. The group before the arrow is opened
+    ///         by the walk over the arm's children (<see cref="openedAt" />) because no node starts at
+    ///         the <c>=&gt;</c>; the body's is opened the same way so that it owns the gap even when the
+    ///         body aligns. Both spend the arm's continuation level — the body lands one level in from
+    ///         the arm, as a kept break already put it — and hold it at zero when the body opens with
+    ///         a parenthesis the author broke after (SK-DIV-0101).
+    ///     </para>
+    /// </remarks>
+    void PlanArmArrow(SwitchExpressionArmSyntax arm) {
+        var arrow = arm.EqualsGreaterThanToken;
+        if (arrow.IsKind(SyntaxKind.None) || arm.Expression is null) {
+            return;
+        }
+
+        var before = NewGroup();
+        Point(arrow, before);
+        OpenAt(
+            arm,
+            arrow.SpanStart,
+            new GroupPlan(
+                before,
+                GroupMode.Preserve,
+                new GroupFacts(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(arrow),
+                    BreaksIfTooLong: true,
+                    BreaksOnlyIfHeadOverflows: true
+                ),
+                true
+            )
+        );
+
+        PlanArrowBody(
+            arm,
+            arm.Expression,
+            new GroupFacts(
+                BreaksIfTooLong: true,
+                Owner: before,
+                BreaksOnlyIfHeadOverflows: true,
+                FlatIfOwnerBroke: true
+            )
+        );
+    }
+
+    /// <summary>A lambda's <c>=&gt;</c>: the gap after it, under the <c>=</c>'s ordering rule.</summary>
+    /// <remarks>
+    ///     ⚠ Not the switch arm's rule, and the two were measured apart (issue #378). A lambda's body
+    ///     moves down whenever that alone finishes the job — <c>Func&lt;int, int&gt; f = someParameterName
+    ///     =&gt;</c> / <c>Convert&lt;CancellationToken, CancellationToken&gt;(…);</c> although
+    ///     <c>Convert&lt;…&gt;(</c> still fitted at column 119, and <c>M(someParameterName =&gt;</c> /
+    ///     <c>ConvertTheValue&lt;…&gt;(…)</c> / <c>);</c> for a sole argument — and otherwise stays and
+    ///     lets the body's own construct wrap: <c>f = x =&gt; Convert(</c> with six arguments chopped
+    ///     below, because the whole call would not fit on the continuation line either. That is
+    ///     <see cref="GroupFacts.PrefersOuterBreak" />'s two questions in the <c>=</c>'s order, margin
+    ///     included: a four-line answer where the same body under a switch arm's arrow keeps
+    ///     <c>=&gt; Body(</c> and chops. The point is also what keeps <c>case { … } when static x
+    ///     =&gt;</c> on its label's line — the <c>when</c> measures its head up to this point at column
+    ///     105 and stops, where without it the whole type argument list was the head. Only the gap
+    ///     after the arrow is planned; the gap before a lambda's arrow stays <c>keep_user_linebreaks</c>'.
+    /// </remarks>
+    void PlanLambdaArrow(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
+        PlanArrowBody(lambda, body, new GroupFacts(BreaksIfTooLong: true, MeasuresHead: true, PrefersOuterBreak: true));
+
+    /// <summary>The group over an arrow's body, opened before the gap that follows the arrow.</summary>
+    /// <param name="facts">
+    ///     The rule the body breaks by; the kept break and the level are added here. A break the
+    ///     author wrote after either arrow is kept even when everything fits.
+    /// </param>
+    void PlanArrowBody(SyntaxNode owner, ExpressionSyntax body, in GroupFacts facts) {
+        var first = FirstToken(body);
+        if (first.IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        var group = NewGroup();
+        Point(first, group);
+        OpenAt(
+            owner,
+            body.SpanStart,
+            new GroupPlan(
+                group,
+                GroupMode.Preserve,
+                facts with { SourceBroken = options.KeepsUserBreaksBetweenItems && BreaksBefore(first) },
+                true,
+                HoldsLevel: HeadsWithAChoppedParenthesis(body)
+            )
+        );
+    }
+
+    /// <summary>The gap before a <c>when</c>, in a case label and in a switch expression arm.</summary>
+    /// <remarks>
+    ///     ⚠ There was no break point before a <c>when</c> at all (issue #378), so a case label whose
+    ///     property pattern ended at column 120 chopped the pattern to make room for the clause. The
+    ///     oracle breaks before the <c>when</c>, one level in from <c>case</c>, and by the arrow's rule
+    ///     rather than the <c>=</c>'s: the clause moves down exactly when <c>when</c> plus the
+    ///     condition's head up to its first break point has no room on the label's line —
+    ///     <c>case { … }</c> / <c>when Bind(first, …, tenth):</c> — and stays when it has, even when
+    ///     the whole clause would have fitted on the line below: <c>case SomeVeryLongTypeName
+    ///     someVeryLongVariableName when Bind(</c> stays and the arguments chop, in a label with a
+    ///     declaration pattern and in an arm with <c>{ … } when Bind(</c> / <c>) =&gt; Body(first),</c>
+    ///     alike. A kept break before the <c>when</c> is kept (<c>case 1</c> / <c>when x:</c>), and so
+    ///     is one after it, which this plan leaves to <c>keep_user_linebreaks</c>.
+    /// </remarks>
+    void PlanWhenClause(WhenClauseSyntax node) {
+        var keyword = node.WhenKeyword;
+        if (keyword.IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        var group = NewGroup();
+        Point(keyword, group);
+        Describe(
+            node,
+            group,
+            GroupMode.Preserve,
+            new GroupFacts(
+                options.KeepsUserBreaksBetweenItems && BreaksBefore(keyword),
+                BreaksIfTooLong: true,
+                BreaksOnlyIfHeadOverflows: true
+            ),
+            true,
+            leadingGapInside: true
+        );
+    }
+
+    void OpenAt(SyntaxNode node, int position, GroupPlan plan) {
+        var key = (Key(node), position);
+        if (!openedAt.TryGetValue(key, out var plans)) {
+            openedAt[key] = plans = [];
+        }
+
+        plans.Add(plan);
+        byId[plan.Id] = plan;
+    }
+
+    /// <summary>
+    ///     A property pattern's braces and its subpatterns: <c>skala_wrap_property_pattern</c>,
+    ///     <c>skala_keep_existing_property_patterns_arrangement</c> and
+    ///     <c>skala_place_simple_property_pattern_on_single_line</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two groups, the braced initializer's split (<see cref="PlanBracedElements" />), and not
+    ///     <see cref="PlanList" />'s one. Measured on twenty shapes for issue #378: a property pattern
+    ///     that overflows puts its braces on their own lines <em>first</em>, and chops the subpatterns
+    ///     only when they still do not fit on the continuation line — <c>case {</c> /
+    ///     <c>Length: &gt; 0, Name: "…"</c> / <c>}:</c> for two subpatterns of 92 columns, one per line for
+    ///     seven that reach 123; <c>SomeType {</c> / <c>Length: …, Name: …</c> / <c>} =&gt; 1,</c> in an
+    ///     arm and <c>value is {</c> / … / <c>}</c> in a statement the same way. The one-group plan
+    ///     chopped every subpattern as soon as the braces broke. ⚠ The issue's reading — "in a case label
+    ///     the chopped pattern fills, in an arm it chops" — was two ends of one rule: a bare <c>{</c> that
+    ///     opens an arm's line has four columns of continuation against the four its <c>{ </c> and
+    ///     <c> }</c> took, so its subpatterns never fit below when the whole did not fit above, and it was
+    ///     never a fill — seven subpatterns whose first four would have shared a line came back one per
+    ///     line.
+    ///     <para>
+    ///         The keys keep the readings <see cref="PlanList" /> established: the placement key at
+    ///         <c>false</c> forces the braces apart and re-flows the subpatterns by width (the inner group
+    ///         decides at the continuation column, which is what "keeps a three-subpattern clause of 98
+    ///         columns together" was measuring), <c>chop_always</c> is gated on the keep key, and the
+    ///         gap before an opening <em>bracket</em> is not this construct's.
+    ///     </para>
+    /// </remarks>
+    void PlanPropertyPattern(PropertyPatternClauseSyntax node) {
+        var open = node.OpenBraceToken;
+        var close = node.CloseBraceToken;
+        var items = node.Subpatterns;
+        if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None) || items.Count == 0) {
+            return;
+        }
+
+        var keepExisting = options.KeepExistingPropertyPatternsArrangement;
+        var joins = options.PlaceSimplePropertyPatternOnSingleLine && !keepExisting;
+        var forced = !options.PlaceSimplePropertyPatternOnSingleLine && !keepExisting;
+        var chopsAlways = options.WrapPropertyPattern == WrapStyle.ChopAlways && !keepExisting;
+
+        var outer = NewGroup();
+        var first = FirstToken(items[0]);
+        var delimiterBroken = BreaksBefore(first) || BreaksBefore(close);
+        Point(first, outer);
+        Point(close, outer);
+
+        var inner = NewGroup();
+        var interBroken = false;
+        foreach (var comma in items.GetSeparators()) {
+            var next = comma.GetNextToken();
+            if (next.IsKind(SyntaxKind.None) || next.SpanStart >= close.SpanStart) {
+                continue;
+            }
+
+            var gap = options.WrapBeforeComma ? comma : next;
+            var other = options.WrapBeforeComma ? next : comma;
+            Point(gap, inner);
+            Flat(other);
+            interBroken |= BreaksBefore(gap);
+        }
+
+        var keeps = options.KeepsUserBreaksBetweenItems;
+        var broken = chopsAlways || forced || keeps && interBroken || keeps && keepExisting && delimiterBroken;
+
+        Describe(
+            node,
+            outer,
+            chopsAlways || forced ? GroupMode.Break : GroupMode.Preserve,
+            new GroupFacts(broken, joins, true, HidesFlatWidthWhenBroken: true)
+        );
+
+        DescribeInner(
+            node,
+            inner,
+            chopsAlways ? GroupMode.Break : GroupMode.Preserve,
+            new GroupFacts(
+                chopsAlways || keeps && interBroken,
+                joins || forced,
+                true,
+                HidesFlatWidthWhenBroken: true
             )
         );
     }

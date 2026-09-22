@@ -286,6 +286,14 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ The two sides of a switch arm's `=>` are alternatives: once the arrow itself has
+                // moved down, the body follows it on the arrow's line and never takes a line of its
+                // own, however wide (issue #378). Read after the kept break, so that a break the
+                // author wrote after the arrow survives. See GroupFacts.FlatIfOwnerBroke.
+                if (facts.FlatIfOwnerBroke && owner >= 0 && resolved[owner] && modes[owner] == ResolvedMode.Broken) {
+                    return ResolvedMode.Flat;
+                }
+
                 if (!facts.BreaksIfTooLong || Fits(m.Column, m.BreakWidth, m.Trailing)) {
                     return ResolvedMode.Flat;
                 }
@@ -412,14 +420,13 @@ public sealed class Fitter {
     ///     </para>
     /// </remarks>
     ResolvedMode Worth(in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd) {
-        if (!facts.PrefersOuterBreak) {
-            return ResolvedMode.Broken;
-        }
-
-
-        // What lands on the continuation line if this group breaks and nothing inside it does.
-        var tail = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth + OuterBreakMargin(m);
-        if (Fits(m.ContinuationColumn, tail, m.Trailing)) {
+        if (facts.PrefersOuterBreak) {
+            // What lands on the continuation line if this group breaks and nothing inside it does.
+            var tail = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth + OuterBreakMargin(m);
+            if (Fits(m.ContinuationColumn, tail, m.Trailing)) {
+                return ResolvedMode.Broken;
+            }
+        } else if (!facts.BreaksOnlyIfHeadOverflows) {
             return ResolvedMode.Broken;
         }
 
@@ -429,6 +436,9 @@ public sealed class Fitter {
         // points are last-resort ones that the point measure reads through (SK-DIV-0114), so
         // `var result = Generic<A, B, int>();` reached here with a 120-column line and a semicolon
         // nobody counted, stayed flat, and filled the list where the oracle breaks at the `=`.
+        // ⚠ A switch arm's arrow, a lambda's and a `when` ask only this question (issue #378): the
+        // oracle never moves the body down to spare the construct inside it a break, and moves it
+        // exactly when the head up to that construct's first point has no room on the line.
         var line = m.PointWidth >= Unbounded ? Unbounded : m.PointWidth + m.AfterPoint;
         var trailing = afterPointRunsToTheEnd ? m.Trailing : 0;
         return Fits(m.Column, line, trailing) ? ResolvedMode.Flat : ResolvedMode.Broken;
