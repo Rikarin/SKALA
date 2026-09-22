@@ -169,8 +169,7 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
         var inferred = member.Expression switch {
             IdentifierNameSyntax identifier => identifier.Identifier.Text,
             MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                Name: IdentifierNameSyntax accessed
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name: IdentifierNameSyntax accessed
             } => accessed.Identifier.Text,
             _ => null
         };

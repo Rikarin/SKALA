@@ -498,7 +498,8 @@ public sealed class AnalysisTests {
         string.Join(
             "\n",
             report.Reportable
-                .Select(static finding => $"{finding.RuleId} {Path.GetFileName(finding.Path)}:{finding.Line}:{finding.Column} {finding.Message}"
+                .Select(static finding =>
+                    $"{finding.RuleId} {Path.GetFileName(finding.Path)}:{finding.Line}:{finding.Column} {finding.Message}"
                 )
                 .Order(StringComparer.Ordinal)
         );

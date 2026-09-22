@@ -65,9 +65,7 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
         var cancellation = context.CancellationToken;
         if (model.GetOperation(invocation, cancellation) is not IInvocationOperation operation
             || operation.TargetMethod is not {
-                Name: "Format",
-                IsStatic: true,
-                ContainingType.SpecialType: SpecialType.System_String
+                Name: "Format", IsStatic: true, ContainingType.SpecialType: SpecialType.System_String
             } method
             || method.Parameters.Length < 2
             || method.Parameters[0].Type.SpecialType != SpecialType.System_String) {
@@ -175,8 +173,7 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
         CancellationToken cancellation
     ) {
         if (model.GetSymbolInfo(invocation, cancellation).Symbol is not IMethodSymbol {
-                Name: "ToString",
-                Parameters.Length: 0
+                Name: "ToString", Parameters.Length: 0
             }
             || !RewriteGuards.IsPlainNamePath(call.Expression)
             || model.GetTypeInfo(call.Expression, cancellation).Type is not {

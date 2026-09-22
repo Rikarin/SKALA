@@ -62,8 +62,7 @@ public sealed class PropertyPatternAnalyzer : DiagnosticAnalyzer {
                 model.GetSymbolInfo(PatternSafety.Unwrap(member.Expression), cancellation).Symbol
             )
             || model.GetSymbolInfo(member, cancellation).Symbol is not (IPropertySymbol {
-                IsStatic: false,
-                RefKind: RefKind.None
+                IsStatic: false, RefKind: RefKind.None
             }
                 or IFieldSymbol { IsStatic: false })) {
             return;

@@ -59,8 +59,7 @@ public sealed class IndexOfComparedToPositiveAnalyzer : DiagnosticAnalyzer {
         // would need an `int?` that no covered `IndexOf` returns. Kept as the statement of intent,
         // the way SK2053 keeps its own `IsLifted` clause, and not credited as the thing that works.
         if (model.GetOperation(binary, cancellation) is not IBinaryOperation {
-                OperatorMethod: null,
-                IsLifted: false
+                OperatorMethod: null, IsLifted: false
             }) {
             return;
         }

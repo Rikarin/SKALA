@@ -206,8 +206,7 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
         InvocationExpressionSyntax invocation
     ) {
         if (invocation.Expression is not MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                Expression: TypeOfExpressionSyntax typeOf
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Expression: TypeOfExpressionSyntax typeOf
             } access
             || invocation.ArgumentList.Arguments.Count != 1) {
             return null;
@@ -270,8 +269,7 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
         }
 
         if (model.GetSymbolInfo(call, cancellation).Symbol is not IMethodSymbol {
-                Name: "GetType",
-                Parameters.Length: 0
+                Name: "GetType", Parameters.Length: 0
             } method
             || method.ContainingType?.SpecialType != SpecialType.System_Object) {
             return false;

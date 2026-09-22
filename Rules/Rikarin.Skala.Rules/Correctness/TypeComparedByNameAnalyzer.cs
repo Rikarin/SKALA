@@ -179,8 +179,7 @@ public sealed class TypeComparedByNameAnalyzer : DiagnosticAnalyzer {
             } getType
             || getType.Name.Identifier.ValueText != "GetType"
             || model.GetSymbolInfo(call, cancellation).Symbol is not IMethodSymbol {
-                Parameters.Length: 0,
-                IsStatic: false
+                Parameters.Length: 0, IsStatic: false
             }) {
             return;
         }

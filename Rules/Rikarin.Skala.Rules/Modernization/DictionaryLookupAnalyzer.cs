@@ -117,8 +117,7 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
     ) {
         if (statement.Statement is not BlockSyntax { Statements.Count: > 0 } block
             || block.Statements[0] is not LocalDeclarationStatementSyntax {
-                UsingKeyword.RawKind: (int)SyntaxKind.None,
-                Declaration: { Variables.Count: 1 } declaration
+                UsingKeyword.RawKind: (int)SyntaxKind.None, Declaration: { Variables.Count: 1 } declaration
             } first
             || first.Modifiers.Count > 0) {
             return;

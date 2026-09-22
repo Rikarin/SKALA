@@ -161,9 +161,8 @@ public sealed class CollectionExpressionAnalyzer : DiagnosticAnalyzer {
                 return HasWrittenReturnType(statement) ? "the return type" : null;
 
             // `x = new T[] { … };` where `x` already has a type.
-            case AssignmentExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleAssignmentExpression
-            } assignment when ReferenceEquals(assignment.Right, value)
+            case AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment
+                when ReferenceEquals(assignment.Right, value)
                 && RewriteGuards.IsPlainNamePath(assignment.Left):
                 return "the assignment target";
 

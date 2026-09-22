@@ -178,8 +178,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
         left switch {
             IdentifierNameSyntax identifier => identifier.Identifier.ValueText == name,
             MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                Expression: ThisExpressionSyntax
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Expression: ThisExpressionSyntax
             } access => access.Name.Identifier.ValueText == name,
             _ => false
         };
@@ -273,8 +272,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
             // name is the one exception to "no invocations", and it is safe because the compiler
             // refuses any `nameof` argument that is not a name.
             case InvocationExpressionSyntax {
-                Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" },
-                ArgumentList.Arguments.Count: 1
+                Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" }, ArgumentList.Arguments.Count: 1
             }:
                 return true;
 

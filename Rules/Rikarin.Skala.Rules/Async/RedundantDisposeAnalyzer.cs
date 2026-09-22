@@ -59,8 +59,7 @@ public sealed class RedundantDisposeAnalyzer : DiagnosticAnalyzer {
         // needs no symbols.
         if (invocation.ArgumentList.Arguments.Count != 0
             || invocation.Expression is not MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                Expression: IdentifierNameSyntax receiver
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Expression: IdentifierNameSyntax receiver
             } access) {
             return;
         }

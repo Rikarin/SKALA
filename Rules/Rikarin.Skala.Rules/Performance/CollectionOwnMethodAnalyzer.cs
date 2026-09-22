@@ -200,13 +200,10 @@ public sealed class CollectionOwnMethodAnalyzer : DiagnosticAnalyzer {
     static bool HasPredicateMethod(INamedTypeSymbol collection, string name, ITypeSymbol element) {
         foreach (var member in collection.GetMembers(name)) {
             if (member is IMethodSymbol {
-                    IsStatic: false,
-                    DeclaredAccessibility: Accessibility.Public,
-                    Parameters.Length: 1
+                    IsStatic: false, DeclaredAccessibility: Accessibility.Public, Parameters.Length: 1
                 } method
                 && method.Parameters[0].Type is INamedTypeSymbol {
-                    Name: "Predicate",
-                    TypeArguments.Length: 1
+                    Name: "Predicate", TypeArguments.Length: 1
                 } predicate
                 && SymbolEqualityComparer.Default.Equals(predicate.TypeArguments[0], element)) {
                 return true;

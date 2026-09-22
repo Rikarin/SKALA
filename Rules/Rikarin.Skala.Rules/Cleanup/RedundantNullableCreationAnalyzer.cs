@@ -73,8 +73,7 @@ public sealed class RedundantNullableCreationAnalyzer : DiagnosticAnalyzer {
         }
 
         if (model.GetTypeInfo(creation.Type, cancellation).Type is not INamedTypeSymbol {
-                ConstructedFrom.SpecialType: SpecialType.System_Nullable_T,
-                TypeArguments.Length: 1
+                ConstructedFrom.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
             } nullable) {
             return;
         }

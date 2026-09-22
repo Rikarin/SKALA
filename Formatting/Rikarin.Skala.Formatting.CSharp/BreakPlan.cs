@@ -3916,16 +3916,22 @@ public sealed class BreakPlan {
     /// <summary>A lambda's <c>=&gt;</c>: the gap after it, under the <c>=</c>'s ordering rule.</summary>
     /// <remarks>
     ///     ⚠ Not the switch arm's rule, and the two were measured apart (issue #378). A lambda's body
-    ///     moves down whenever that alone finishes the job — <c>Func&lt;int, int&gt; f = someParameterName
-    ///     =&gt;</c> / <c>Convert&lt;CancellationToken, CancellationToken&gt;(…);</c> although
+    ///     moves down whenever that alone finishes the job —
+    ///     <c>
+    /// Func&lt;int, int&gt; f = someParameterName
+    ///     =&gt;
+    ///     </c> / <c>Convert&lt;CancellationToken, CancellationToken&gt;(…);</c> although
     ///     <c>Convert&lt;…&gt;(</c> still fitted at column 119, and <c>M(someParameterName =&gt;</c> /
     ///     <c>ConvertTheValue&lt;…&gt;(…)</c> / <c>);</c> for a sole argument — and otherwise stays and
     ///     lets the body's own construct wrap: <c>f = x =&gt; Convert(</c> with six arguments chopped
     ///     below, because the whole call would not fit on the continuation line either. That is
     ///     <see cref="GroupFacts.PrefersOuterBreak" />'s two questions in the <c>=</c>'s order, margin
     ///     included: a four-line answer where the same body under a switch arm's arrow keeps
-    ///     <c>=&gt; Body(</c> and chops. The point is also what keeps <c>case { … } when static x
-    ///     =&gt;</c> on its label's line — the <c>when</c> measures its head up to this point at column
+    ///     <c>=&gt; Body(</c> and chops. The point is also what keeps
+    ///     <c>
+    /// case { … } when static x
+    ///     =&gt;
+    ///     </c> on its label's line — the <c>when</c> measures its head up to this point at column
     ///     105 and stops, where without it the whole type argument list was the head. Only the gap
     ///     after the arrow is planned; the gap before a lambda's arrow stays <c>keep_user_linebreaks</c>'.
     /// </remarks>
@@ -3966,8 +3972,11 @@ public sealed class BreakPlan {
     ///     rather than the <c>=</c>'s: the clause moves down exactly when <c>when</c> plus the
     ///     condition's head up to its first break point has no room on the label's line —
     ///     <c>case { … }</c> / <c>when Bind(first, …, tenth):</c> — and stays when it has, even when
-    ///     the whole clause would have fitted on the line below: <c>case SomeVeryLongTypeName
-    ///     someVeryLongVariableName when Bind(</c> stays and the arguments chop, in a label with a
+    ///     the whole clause would have fitted on the line below:
+    ///     <c>
+    /// case SomeVeryLongTypeName
+    ///     someVeryLongVariableName when Bind(
+    ///     </c> stays and the arguments chop, in a label with a
     ///     declaration pattern and in an arm with <c>{ … } when Bind(</c> / <c>) =&gt; Body(first),</c>
     ///     alike. A kept break before the <c>when</c> is kept (<c>case 1</c> / <c>when x:</c>), and so
     ///     is one after it, which this plan leaves to <c>keep_user_linebreaks</c>.

@@ -72,8 +72,7 @@ public sealed class DiscardAssignmentAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
         if (model.GetDeclaredSymbol(declarator, cancellation) is not ILocalSymbol {
-                RefKind: RefKind.None,
-                IsConst: false
+                RefKind: RefKind.None, IsConst: false
             } local
             || IsRead(model, local, declarator, cancellation)
             || NameIsTaken(model, statement.SpanStart, cancellation)

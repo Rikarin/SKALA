@@ -114,8 +114,7 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
         }
 
         if (model.GetDeclaredSymbol(declarator, cancellation) is not ILocalSymbol {
-                RefKind: RefKind.None,
-                IsConst: false
+                RefKind: RefKind.None, IsConst: false
             } local) {
             return;
         }

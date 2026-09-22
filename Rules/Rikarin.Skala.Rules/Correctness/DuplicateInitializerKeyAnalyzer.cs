@@ -94,8 +94,7 @@ public sealed class DuplicateInitializerKeyAnalyzer : DiagnosticAnalyzer {
         var entries = context.Node switch {
             CollectionExpressionSyntax expression => Elements(expression),
             BaseObjectCreationExpressionSyntax {
-                ArgumentList: null or { Arguments.Count: 0 },
-                Initializer: { } initializer
+                ArgumentList: null or { Arguments.Count: 0 }, Initializer: { } initializer
             } => Elements(initializer),
             _ => null
         };
@@ -221,8 +220,7 @@ public sealed class DuplicateInitializerKeyAnalyzer : DiagnosticAnalyzer {
     static (ExpressionSyntax? Key, Form Form) KeyOf(ExpressionSyntax element, bool isSet) =>
         element switch {
             InitializerExpressionSyntax {
-                RawKind: (int)SyntaxKind.ComplexElementInitializerExpression,
-                Expressions.Count: 2
+                RawKind: (int)SyntaxKind.ComplexElementInitializerExpression, Expressions.Count: 2
             } complex => (complex.Expressions[0], Form.Add),
             AssignmentExpressionSyntax {
                 RawKind: (int)SyntaxKind.SimpleAssignmentExpression,

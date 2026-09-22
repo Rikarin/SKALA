@@ -67,9 +67,7 @@ public sealed class EnumGetValuesAnalyzer : DiagnosticAnalyzer {
         var cancellation = context.CancellationToken;
         var model = context.SemanticModel;
         if (model.GetSymbolInfo(invocation, cancellation).Symbol is not IMethodSymbol {
-                IsStatic: true,
-                Arity: 0,
-                Parameters.Length: 1
+                IsStatic: true, Arity: 0, Parameters.Length: 1
             } method
             || !SymbolEqualityComparer.Default.Equals(method.ContainingType, enumType)) {
             return;
@@ -100,9 +98,8 @@ public sealed class EnumGetValuesAnalyzer : DiagnosticAnalyzer {
         invocation.Parent switch {
             ForEachStatementSyntax statement => ReferenceEquals(statement.Expression, invocation),
             ForEachVariableStatementSyntax statement => ReferenceEquals(statement.Expression, invocation),
-            MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
-            } access => ReferenceEquals(access.Expression, invocation),
+            MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access =>
+                ReferenceEquals(access.Expression, invocation),
             _ => false
         };
 }

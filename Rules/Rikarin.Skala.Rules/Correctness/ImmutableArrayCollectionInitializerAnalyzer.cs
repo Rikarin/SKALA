@@ -63,8 +63,7 @@ public sealed class ImmutableArrayCollectionInitializerAnalyzer : DiagnosticAnal
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var creation = (ObjectCreationExpressionSyntax)context.Node;
         if (creation.Initializer is not {
-                RawKind: (int)SyntaxKind.CollectionInitializerExpression,
-                Expressions.Count: > 0
+                RawKind: (int)SyntaxKind.CollectionInitializerExpression, Expressions.Count: > 0
             } initializer
             || initializer.Expressions.Any(static element => element is InitializerExpressionSyntax)
             || context.SemanticModel.GetSymbolInfo(creation.Type, context.CancellationToken).Symbol
@@ -107,9 +106,8 @@ public sealed class ImmutableArrayCollectionInitializerAnalyzer : DiagnosticAnal
                 (generic.Identifier.ValueText, generic.TypeArgumentList.Arguments[0]),
             QualifiedNameSyntax { Right: GenericNameSyntax { TypeArgumentList.Arguments.Count: 1 } right } qualified =>
                 (qualified.Left + "." + right.Identifier.ValueText, right.TypeArgumentList.Arguments[0]),
-            AliasQualifiedNameSyntax {
-                Name: GenericNameSyntax { TypeArgumentList.Arguments.Count: 1 } name
-            } alias => (alias.Alias + "::" + name.Identifier.ValueText, name.TypeArgumentList.Arguments[0]),
+            AliasQualifiedNameSyntax { Name: GenericNameSyntax { TypeArgumentList.Arguments.Count: 1 } name } alias =>
+                (alias.Alias + "::" + name.Identifier.ValueText, name.TypeArgumentList.Arguments[0]),
             _ => (null, null)
         };
 }

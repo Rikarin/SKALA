@@ -181,9 +181,8 @@ public sealed class PatternSimplificationAnalyzer : DiagnosticAnalyzer {
             IsPatternExpressionSyntax test => model.GetTypeInfo(test.Expression, cancellation).Type,
             SwitchExpressionArmSyntax { Parent: SwitchExpressionSyntax expression } =>
                 model.GetTypeInfo(expression.GoverningExpression, cancellation).Type,
-            CasePatternSwitchLabelSyntax {
-                Parent: SwitchSectionSyntax { Parent: SwitchStatementSyntax statement }
-            } => model.GetTypeInfo(statement.Expression, cancellation).Type,
+            CasePatternSwitchLabelSyntax { Parent: SwitchSectionSyntax { Parent: SwitchStatementSyntax statement } } =>
+                model.GetTypeInfo(statement.Expression, cancellation).Type,
             _ => null
         };
     }

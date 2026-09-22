@@ -120,7 +120,8 @@ public sealed class ModernizationIntegrationTests {
 
     static string[] Describe(RunReport report) =>
         report.Reportable
-            .Select(static finding => $"{finding.RuleId}:{finding.Path}:{finding.Line}:{finding.Column}:{finding.Message}"
+            .Select(static finding =>
+                $"{finding.RuleId}:{finding.Path}:{finding.Line}:{finding.Column}:{finding.Message}"
             )
             .Order(StringComparer.Ordinal)
             .ToArray();

@@ -83,8 +83,7 @@ public sealed class NameofExpressionAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
         if (model.GetTypeInfo(typeOf.Type, cancellation).Type is not INamedTypeSymbol {
-                Arity: 0,
-                TypeKind: not (TypeKind.Error or TypeKind.Dynamic or TypeKind.TypeParameter)
+                Arity: 0, TypeKind: not (TypeKind.Error or TypeKind.Dynamic or TypeKind.TypeParameter)
             } type) {
             return;
         }
@@ -121,8 +120,7 @@ public sealed class NameofExpressionAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
         if (model.GetSymbolInfo(member, cancellation).Symbol is not IFieldSymbol {
-                IsConst: true,
-                ContainingType: { TypeKind: TypeKind.Enum } declaring
+                IsConst: true, ContainingType: { TypeKind: TypeKind.Enum } declaring
             } field
             || field.ConstantValue is null) {
             return;

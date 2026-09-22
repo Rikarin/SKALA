@@ -227,8 +227,7 @@ public sealed class ConstantPatternOverSequenceEqualAnalyzer : DiagnosticAnalyze
                 ArgumentList.Arguments.Count: 0,
                 Expression:
                 MemberAccessExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                    Name.Identifier.ValueText: "AsSpan"
+                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name.Identifier.ValueText: "AsSpan"
                 } asSpan
             }) {
             expression = PatternSafety.Unwrap(asSpan.Expression);

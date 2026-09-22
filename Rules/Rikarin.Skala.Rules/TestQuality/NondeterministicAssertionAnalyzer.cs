@@ -108,8 +108,7 @@ public sealed class NondeterministicAssertionAnalyzer : DiagnosticAnalyzer {
         return invocation.TargetMethod.Name is "Next" or "NextInt64" or "NextDouble" or "NextSingle"
             && IsFrameworkType(invocation.TargetMethod.ContainingType, "System.Random", model.Compilation)
             && (invocation.Instance is IPropertyReferenceOperation {
-                    Property.Name: "Shared",
-                    Property.IsStatic: true
+                    Property.Name: "Shared", Property.IsStatic: true
                 } shared
                 && IsFrameworkType(shared.Property.ContainingType, "System.Random", model.Compilation)
                 || invocation.Instance is IObjectCreationOperation { Arguments.Length: 0, Type: { } type }

@@ -192,9 +192,8 @@ public sealed class UnreadStringBuilderAnalyzer : DiagnosticAnalyzer {
                 case ExpressionStatementSyntax:
                     return true;
 
-                case MemberAccessExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
-                } access when access.Expression == expression: {
+                case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access
+                    when access.Expression == expression: {
                     if (Array.IndexOf(Writes, access.Name.Identifier.ValueText) < 0
                         || access.Parent is not InvocationExpressionSyntax chained) {
                         return false;

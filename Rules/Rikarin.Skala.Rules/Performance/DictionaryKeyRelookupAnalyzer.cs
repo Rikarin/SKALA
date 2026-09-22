@@ -143,8 +143,7 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
     static void Analyze(SyntaxNodeAnalysisContext context, List<INamedTypeSymbol> dictionaries) {
         var loop = (ForEachStatementSyntax)context.Node;
         if (loop.Expression is not MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                Name.Identifier.ValueText: "Keys"
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name.Identifier.ValueText: "Keys"
             } keys
             || !CallShape.IsPlainNamePath(keys.Expression)) {
             return;

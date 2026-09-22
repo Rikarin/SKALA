@@ -48,8 +48,7 @@ public sealed class NonnegativeSizeComparisonAnalyzer : DiagnosticAnalyzer {
         // see through a conditional access, and `int?` is not a fixed-width integral type. It is
         // kept as the statement of intent, not credited as the thing that works.
         if (model.GetOperation(binary, cancellation) is not IBinaryOperation {
-                OperatorMethod: null,
-                IsLifted: false
+                OperatorMethod: null, IsLifted: false
             }) {
             return;
         }

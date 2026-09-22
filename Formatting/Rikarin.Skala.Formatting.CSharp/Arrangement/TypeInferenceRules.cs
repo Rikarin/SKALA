@@ -323,9 +323,8 @@ public sealed class ObjectCreationRule : ArrangementRule {
                 // is `CS8754: There is no target type for 'new(...)'`. A discard imposes nothing; it
                 // takes whatever it is given. Asked semantically rather than by spelling, because a
                 // local genuinely named `_` is a real target.
-                case AssignmentExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression
-                } assignment when assignment.Right == node
+                case AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment
+                    when assignment.Right == node
                     && model.GetSymbolInfo(assignment.Left).Symbol is not IDiscardSymbol:
                     return model.GetTypeInfo(assignment.Left).Type;
 

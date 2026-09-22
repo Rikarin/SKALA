@@ -102,10 +102,7 @@ public sealed class MergedPropertyPatternAnalyzer : DiagnosticAnalyzer {
         value = null;
 
         if (Unwrap(pattern) is not RecursivePatternSyntax {
-                Type: null,
-                PositionalPatternClause: null,
-                Designation: null,
-                PropertyPatternClause.Subpatterns.Count: 1
+                Type: null, PositionalPatternClause: null, Designation: null, PropertyPatternClause.Subpatterns.Count: 1
             } recursive) {
             return false;
         }

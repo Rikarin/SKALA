@@ -181,8 +181,7 @@ public sealed class WithExpressionRewritesAllAnalyzer : DiagnosticAnalyzer {
         foreach (var expression in with.Initializer.Expressions) {
             cancellation.ThrowIfCancellationRequested();
             if (expression is not AssignmentExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
-                    Left: IdentifierNameSyntax member
+                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Left: IdentifierNameSyntax member
                 } assignment) {
                 return null;
             }

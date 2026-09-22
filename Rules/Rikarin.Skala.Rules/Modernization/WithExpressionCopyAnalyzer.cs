@@ -256,9 +256,8 @@ public sealed class WithExpressionCopyAnalyzer : DiagnosticAnalyzer {
             EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax or PropertyDeclarationSyntax } => true,
             ReturnStatementSyntax or ArrowExpressionClauseSyntax or YieldStatementSyntax => true,
             ArgumentSyntax { RefKindKeyword.RawKind: (int)SyntaxKind.None, NameColon: null } => true,
-            AssignmentExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleAssignmentExpression
-            } assignment => ReferenceEquals(assignment.Right, creation),
+            AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment =>
+                ReferenceEquals(assignment.Right, creation),
             InitializerExpressionSyntax => true,
             _ => false
         };

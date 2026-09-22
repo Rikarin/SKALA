@@ -48,14 +48,11 @@ public sealed class StatelessPrivateMethodAnalyzer : DiagnosticAnalyzer {
                 .OfType<TypeDeclarationSyntax>()
                 .Any(static type => type.Modifiers.Any(SyntaxKind.PartialKeyword))
             || model.GetDeclaredSymbol(declaration, cancellation) is not {
-                MethodKind: MethodKind.Ordinary,
-                IsStatic: false,
-                DeclaredAccessibility: Accessibility.Private
+                MethodKind: MethodKind.Ordinary, IsStatic: false, DeclaredAccessibility: Accessibility.Private
             } method
             || method.ExplicitInterfaceImplementations.Length != 0
             || method.ContainingType is not {
-                TypeKind: TypeKind.Class or TypeKind.Struct,
-                DeclaringSyntaxReferences.Length: 1
+                TypeKind: TypeKind.Class or TypeKind.Struct, DeclaringSyntaxReferences.Length: 1
             }) {
             return;
         }

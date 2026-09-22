@@ -104,7 +104,8 @@ public sealed class PerformanceAndConcurrencyBatchTests {
     [InlineData("System.Random.Shared.NextSingle()")]
     [InlineData("new System.Random().Next()")]
     public void AssertionSources_AreBoundAndDeduplicatedPerAssertion(string expression) {
-        var source = $"class C {{ [Xunit.Fact] public void M() {{ Xunit.Assert.Equal({expression}, {expression}); }} }}";
+        var source =
+            $"class C {{ [Xunit.Fact] public void M() {{ Xunit.Assert.Equal({expression}, {expression}); }} }}";
         Assert.Single(Analyze(RuleFixtures.Compile(source, "test.cs")), static finding => finding.Id == "SK8007");
     }
 

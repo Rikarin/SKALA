@@ -151,8 +151,7 @@ public sealed class PropertyPatternRule : ArrangementRule {
                 }
 
                 if (reference.GetSyntax() is PropertyDeclarationSyntax {
-                        ExpressionBody: null,
-                        AccessorList: { } list
+                        ExpressionBody: null, AccessorList: { } list
                     } declaration
                     && !declaration.Modifiers.Any(SyntaxKind.PartialKeyword)
                     && list.Accessors.All(static a => a.Body is null && a.ExpressionBody is null)) {

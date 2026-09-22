@@ -72,8 +72,7 @@ public sealed class SortBeforeFilterAnalyzer : DiagnosticAnalyzer {
         // ⚠ Plain member access at both levels. A conditional access binds through a
         // MemberBindingExpression, and swapping two of those means moving the binding as well.
         if (filter.Expression is not MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                Name.Identifier.ValueText: "Where"
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name.Identifier.ValueText: "Where"
             } filterAccess
             || filter.ArgumentList.Arguments.Count != 1
             || filterAccess.Expression is not InvocationExpressionSyntax sort

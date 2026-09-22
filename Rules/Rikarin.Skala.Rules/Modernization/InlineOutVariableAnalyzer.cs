@@ -71,8 +71,7 @@ public sealed class InlineOutVariableAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
         if (model.GetDeclaredSymbol(declarator, cancellation) is not ILocalSymbol {
-                RefKind: RefKind.None,
-                IsConst: false
+                RefKind: RefKind.None, IsConst: false
             } local) {
             return;
         }

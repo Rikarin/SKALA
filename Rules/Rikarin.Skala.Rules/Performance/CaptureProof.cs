@@ -80,8 +80,7 @@ internal static class CaptureProof {
     static bool InsideNameOf(SyntaxNode node, SyntaxNode scope, SemanticModel model, CancellationToken cancellation) {
         for (var current = node.Parent; current is not null && current != scope; current = current.Parent) {
             if (current is InvocationExpressionSyntax {
-                    Expression: IdentifierNameSyntax { Identifier.Text: "nameof" },
-                    ArgumentList.Arguments.Count: 1
+                    Expression: IdentifierNameSyntax { Identifier.Text: "nameof" }, ArgumentList.Arguments.Count: 1
                 } invocation
                 && model.GetSymbolInfo(invocation, cancellation).Symbol is null) {
                 return true;

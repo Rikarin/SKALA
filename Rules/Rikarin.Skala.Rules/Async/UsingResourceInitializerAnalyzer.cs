@@ -118,8 +118,7 @@ public sealed class UsingResourceInitializerAnalyzer : DiagnosticAnalyzer {
             // indexed one (`[0] = v`) and a collection element are different rewrites, and none of
             // the three is what this rule was proposed for.
             if (expression is not AssignmentExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
-                    Left: IdentifierNameSyntax member
+                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Left: IdentifierNameSyntax member
                 } assignment
                 || assignment.Right is InitializerExpressionSyntax) {
                 return;

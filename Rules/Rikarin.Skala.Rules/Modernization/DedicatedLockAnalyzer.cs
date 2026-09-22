@@ -84,8 +84,7 @@ public sealed class DedicatedLockAnalyzer : DiagnosticAnalyzer {
                 Type.SpecialType: SpecialType.System_Object
             } field
             || model.GetSymbolInfo(creation, cancellation).Symbol is not IMethodSymbol {
-                Parameters.Length: 0,
-                ContainingType.SpecialType: SpecialType.System_Object
+                Parameters.Length: 0, ContainingType.SpecialType: SpecialType.System_Object
             }) {
             return;
         }

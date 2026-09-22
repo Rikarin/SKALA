@@ -28,8 +28,7 @@ public sealed class ImmediateMaterializationAnalyzer : DiagnosticAnalyzer {
         if (!loop.AwaitKeyword.IsKind(SyntaxKind.None)
             || PatternSafety.Unwrap(loop.Expression) is not InvocationExpressionSyntax invocation
             || model.GetOperation(invocation, cancellation) is not IInvocationOperation {
-                TargetMethod.Name: "ToList" or "ToArray",
-                Arguments.Length: 1
+                TargetMethod.Name: "ToList" or "ToArray", Arguments.Length: 1
             } call
             || !HotPathLinqAnalyzer.IsEnumerable(call.TargetMethod, context.Compilation)
             || call.Arguments[0].Value.Syntax is not ExpressionSyntax source

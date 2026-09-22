@@ -54,8 +54,7 @@ public sealed class NanComparisonAnalyzer : DiagnosticAnalyzer {
         // user-defined `operator ==` is a method call whose answer is not the IEEE one. Neither is
         // rewritable into `IsNaN`, so neither is reported.
         if (model.GetOperation(binary, cancellation) is not IBinaryOperation {
-                OperatorMethod: null,
-                IsLifted: false
+                OperatorMethod: null, IsLifted: false
             } operation
             || !IsFloating(operation.LeftOperand.Type)
             || !IsFloating(operation.RightOperand.Type)) {

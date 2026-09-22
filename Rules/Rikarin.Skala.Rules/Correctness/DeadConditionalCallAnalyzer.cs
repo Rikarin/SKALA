@@ -189,8 +189,7 @@ public sealed class DeadConditionalCallAnalyzer : DiagnosticAnalyzer {
                 // `#if !X` — the branch was taken, so `X` is not defined.
                 case IfDirectiveTriviaSyntax conditionalDirective
                     when conditionalDirective.Condition is PrefixUnaryExpressionSyntax {
-                        RawKind: (int)SyntaxKind.LogicalNotExpression,
-                        Operand: IdentifierNameSyntax negated
+                        RawKind: (int)SyntaxKind.LogicalNotExpression, Operand: IdentifierNameSyntax negated
                     }:
                     result.Add(negated.Identifier.ValueText);
                     break;

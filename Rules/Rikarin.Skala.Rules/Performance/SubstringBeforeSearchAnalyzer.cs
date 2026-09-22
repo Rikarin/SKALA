@@ -68,8 +68,7 @@ public sealed class SubstringBeforeSearchAnalyzer : DiagnosticAnalyzer {
             || searchAccess.Name.Identifier.ValueText is not ("IndexOf" or "IndexOfAny")
             || searchAccess.Expression is not InvocationExpressionSyntax substring
             || substring.Expression is not MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                Name.Identifier.ValueText: "Substring"
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name.Identifier.ValueText: "Substring"
             } substringAccess) {
             return;
         }
@@ -250,8 +249,7 @@ public sealed class SubstringBeforeSearchAnalyzer : DiagnosticAnalyzer {
     static bool IsSideEffectFree(ExpressionSyntax expression) =>
         expression is LiteralExpressionSyntax
         || expression is PrefixUnaryExpressionSyntax {
-            RawKind: (int)SyntaxKind.UnaryMinusExpression,
-            Operand: LiteralExpressionSyntax
+            RawKind: (int)SyntaxKind.UnaryMinusExpression, Operand: LiteralExpressionSyntax
         }
         || CallShape.IsPlainNamePath(expression);
 }

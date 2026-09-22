@@ -56,8 +56,7 @@ public sealed class RedundantSuppressFinalizeAnalyzer : DiagnosticAnalyzer {
 
         if (invocation.ArgumentList.Arguments.Count != 1
             || invocation.ArgumentList.Arguments[0] is not {
-                RefOrOutKeyword.RawKind: (int)SyntaxKind.None,
-                Expression: ThisExpressionSyntax
+                RefOrOutKeyword.RawKind: (int)SyntaxKind.None, Expression: ThisExpressionSyntax
             }) {
             return;
         }
@@ -65,8 +64,7 @@ public sealed class RedundantSuppressFinalizeAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
         if (model.GetSymbolInfo(invocation, cancellation).Symbol is not IMethodSymbol {
-                IsStatic: true,
-                Name: "SuppressFinalize"
+                IsStatic: true, Name: "SuppressFinalize"
             } method
             || !SymbolEqualityComparer.Default.Equals(
                 method.ContainingType,

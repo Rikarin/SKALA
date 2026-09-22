@@ -32,8 +32,7 @@ public sealed class SignedModulusEqualityAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
         if (model.GetOperation(binary, cancellation) is not IBinaryOperation {
-                OperatorMethod: null,
-                IsLifted: false
+                OperatorMethod: null, IsLifted: false
             }) {
             return;
         }
@@ -53,9 +52,7 @@ public sealed class SignedModulusEqualityAnalyzer : DiagnosticAnalyzer {
         }
 
         if (model.GetOperation(modulus, cancellation) is not IBinaryOperation {
-                OperatorKind: BinaryOperatorKind.Remainder,
-                OperatorMethod: null,
-                IsLifted: false
+                OperatorKind: BinaryOperatorKind.Remainder, OperatorMethod: null, IsLifted: false
             } operation) {
             return;
         }

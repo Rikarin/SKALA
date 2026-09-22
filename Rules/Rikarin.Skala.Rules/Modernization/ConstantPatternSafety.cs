@@ -10,9 +10,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 internal static class ConstantPatternSafety {
     public static ExpressionSyntax? NonNullReceiver(ExpressionSyntax expression) =>
         PatternSafety.Unwrap(expression) switch {
-            BinaryExpressionSyntax comparison when comparison.IsKind(
-                SyntaxKind.NotEqualsExpression
-            ) => NullComparison.OperandOf(comparison),
+            BinaryExpressionSyntax comparison when comparison.IsKind(SyntaxKind.NotEqualsExpression) =>
+                NullComparison.OperandOf(comparison),
             IsPatternExpressionSyntax {
                 Pattern:
                 UnaryPatternSyntax {

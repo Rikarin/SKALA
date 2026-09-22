@@ -76,8 +76,7 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
     static void Analyze(SyntaxNodeAnalysisContext context, ImmutableArray<INamedTypeSymbol> commands) {
         var assignment = (AssignmentExpressionSyntax)context.Node;
         if (assignment.Left is not MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                Name.Identifier.ValueText: "CommandText"
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name.Identifier.ValueText: "CommandText"
             } target) {
             return;
         }
