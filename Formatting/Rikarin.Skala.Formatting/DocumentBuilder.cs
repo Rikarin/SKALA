@@ -582,6 +582,15 @@ public sealed class DocumentBuilder {
     ///     visited by exactly one of them.
     /// </remarks>
     int MeasureSegments(int childStart, int count, int group, out bool firstRunsToTheEnd, out int firstSegment) {
+        // ⚠ An arrow's head ends at a yielding point when nothing ordinary can break after it, and
+        // reads through it when something can. The same gap answers the `=`'s question the other way
+        // — a type argument list's points are "not taken" for the construct in front of the list, so
+        // `var x =` breaks and the list fills below (#377) — and the oracle keeps
+        // `{ … } => new Dictionary<A,` / `List<…>>(),` on the arm's line while moving
+        // `Cast<…, TimeSpan>(out var o, …)` below its arrow: the second has an argument list of its
+        // own after the type arguments, the first has `()`. Measured on four such bodies, in a case
+        // label's `when`, in an arm and after a lambda's arrow (issue #378).
+        var stopsAtYieldingPoints = facts[group].BreaksOnlyIfHeadOverflows;
         firstRunsToTheEnd = false;
         firstSegment = 0;
         if (!ownPoints.Contains(group)) {
@@ -593,6 +602,10 @@ public sealed class DocumentBuilder {
         var flat = 0;
         var point = 0;
         var pointStopped = false;
+
+        // The point width at the segment's first yielding point, or −1: what the head measures to
+        // when no ordinary point follows it. See stopsAtYieldingPoints.
+        var yieldPoint = -1;
         var pointDepth = 0;
         var head = 0;
         var headStopped = false;
@@ -614,7 +627,10 @@ public sealed class DocumentBuilder {
         // will end the line the group is on, and the ordering rule has to count what trails the
         // group on that line (SK-DIV-0114). Only the *first* point's answer is the group's, because
         // that is the one AfterPointOf reports.
-        firstRunsToTheEnd = first >= 0 && first == last && !pointStopped;
+        firstRunsToTheEnd = first >= 0
+            && first == last
+            && !pointStopped
+            && !(stopsAtYieldingPoints && yieldPoint >= 0);
 
         // ⚠ The first point's flat segment is the group's too, beside its point width: for a group
         // with one point it is everything past that point, which is the tail a kept break that may
@@ -630,7 +646,9 @@ public sealed class DocumentBuilder {
         void Flush() {
             if (current >= 0) {
                 segment[current] = flat;
-                afterPoint[current] = point;
+                afterPoint[current] = stopsAtYieldingPoints && !pointStopped && yieldPoint >= 0
+                    ? yieldPoint
+                    : point;
                 segmentHead[current] = Math.Min(head, flat);
             }
         }
@@ -651,6 +669,7 @@ public sealed class DocumentBuilder {
                     Flush();
                     current = child;
                     pointDepth = depth;
+                    yieldPoint = -1;
                     flat = 0;
 
                     // ⚠ The point measure starts with the point's own flat rendering, the segment
@@ -740,6 +759,13 @@ public sealed class DocumentBuilder {
                 }
 
                 if (!pointStopped) {
+                    if (yieldPoint < 0
+                        && node.Kind == DocKind.Line
+                        && (LineKind)node.Arg0 == LineKind.Soft
+                        && ((LineFlags)node.Flags & LineFlags.YieldsToPredecessors) != 0) {
+                        yieldPoint = point;
+                    }
+
                     point += pointWidth[child];
                     pointStopped = breaks[child];
                 }
