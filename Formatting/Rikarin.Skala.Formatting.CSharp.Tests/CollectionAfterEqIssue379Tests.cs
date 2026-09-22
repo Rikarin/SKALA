@@ -605,6 +605,70 @@ public sealed class CollectionAfterEqIssue379Tests {
         Assert.Equal(once, Format.Text(once));
     }
 
+    /// <summary>
+    ///     ⚠ A head that already spans lines is measured from the <c>=</c>'s own line, not from the
+    ///     owner's first token: the second line of a broken type argument list, <c>int&gt; d =</c>, is
+    ///     eight and glues; <c>int&gt; dddddd =</c> is thirteen and breaks. The first cut waived the
+    ///     floor for a multi-line head and would have broken the first of these.
+    /// </summary>
+    [Fact]
+    public void AHeadThatSpansLines_IsMeasuredFromItsOwnLine() =>
+        Oracle.Agrees(
+            $$"""
+            namespace P;
+
+            public class C {
+                void M() {
+                    Dictionary<{{T(100)}}, int> d = [{{Tens(24, "aaaaaa")}}];
+                    Dictionary<{{T(100)}}, int> dddddd = [{{Tens(24, "aaaaaa")}}];
+                }
+            }
+            """,
+            $$"""
+            namespace P;
+
+            public class C {
+                void M() {
+                    Dictionary<{{T(100)}},
+                        int> d = [
+                        {{Tens(24, "aaaaaa")}}
+                    ];
+                    Dictionary<{{T(100)}},
+                        int> dddddd =
+                        [{{Tens(24, "aaaaaa")}}];
+                }
+            }
+            """
+        );
+
+    /// <summary>The kept form of the eight-column second line stays: a kept break has no floor there either.</summary>
+    [Fact]
+    public void AKeptBreak_OnAHeadThatSpansLines_HasNoFloor() =>
+        Oracle.Agrees(
+            $$"""
+            namespace P;
+
+            public class C {
+                void M() {
+                    Dictionary<{{T(100)}},
+                        int> d =
+                        [{{Tens(24, "aaaaaa")}}];
+                }
+            }
+            """,
+            $$"""
+            namespace P;
+
+            public class C {
+                void M() {
+                    Dictionary<{{T(100)}},
+                        int> d =
+                        [{{Tens(24, "aaaaaa")}}];
+                }
+            }
+            """
+        );
+
     /// <summary>A kept break has no floor: #375's <c>int[] x =</c> is nine columns and stays.</summary>
     [Fact]
     public void AKeptBreak_HasNoFloor() =>

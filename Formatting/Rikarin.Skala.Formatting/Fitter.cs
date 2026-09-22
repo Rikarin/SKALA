@@ -105,7 +105,14 @@ public sealed class Fitter {
     ///     is a fact about the lines the writer has actually written since the owner began, and the
     ///     writer is the only thing that knows it.
     /// </param>
-    public ResolvedMode Enter(int node, int column, int continuationColumn, int trailing, int line) {
+    /// <param name="lineStart">
+    ///     The column the current output line's first character landed on. ⚠ For
+    ///     <see cref="GroupFacts.MinimumHead" />: a head that already spans lines is measured from the
+    ///     line the group is on, not from its owner's first token — the oracle glues
+    ///     <c>Dictionary&lt;…,</c> / <c>int&gt; d = [</c> (an eight-column second line) and breaks
+    ///     <c>int&gt; dddddd =</c> (thirteen), the same floor counted from the line (#379).
+    /// </param>
+    public ResolvedMode Enter(int node, int column, int continuationColumn, int trailing, int line, int lineStart) {
         ref var slot = ref document.Nodes[node];
         var id = slot.Arg1;
         var facts = document.FactsOf(id);
@@ -123,7 +130,8 @@ public sealed class Fitter {
                 line
             ),
             document.AfterPointRunsToTheEnd(node),
-            document.SegmentOf(node)
+            document.SegmentOf(node),
+            lineStart
         );
         modes[id] = mode;
         resolved[id] = true;
@@ -213,7 +221,15 @@ public sealed class Fitter {
     ///     kept <c>=\n[…];</c> whose continuation line is 120 columns stays, and 121 gives the break
     ///     to the bracket.
     /// </param>
-    ResolvedMode Decide(GroupMode mode, in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd, int tail) {
+    /// <param name="lineStart">The column the current line's first character landed on; see <see cref="Enter" />.</param>
+    ResolvedMode Decide(
+        GroupMode mode,
+        in GroupFacts facts,
+        in Measures m,
+        bool afterPointRunsToTheEnd,
+        int tail,
+        int lineStart
+    ) {
         var owner = facts.Owner;
         switch (mode) {
             case GroupMode.Flat:
@@ -286,7 +302,9 @@ public sealed class Fitter {
                 // read as the author's (#379, the mirror image of #375). See
                 // GroupFacts.BreaksOnlyIfTailFits.
                 if (facts.BreaksOnlyIfTailFits) {
-                    return TailFits(m, tail) && HeadIsWideEnough(facts, m) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                    return TailFits(m, tail) && HeadIsWideEnough(facts, m, lineStart)
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
                 }
 
                 return Worth(facts, m, afterPointRunsToTheEnd);
@@ -335,11 +353,14 @@ public sealed class Fitter {
     /// <remarks>
     ///     ⚠ Read off the writer's columns and not off the syntax, because the head's width in the
     ///     source is not its width in the output: the fuzzer widens gaps, and a floor measured on the
-    ///     source would pass on pass one and fail on pass two. A head that already spans lines — the
-    ///     marker landed on an earlier line than the group — is past any floor; what the oracle does
-    ///     with a short second line is not measured, and a full first line is not a short head.
+    ///     source would pass on pass one and fail on pass two. ⚠ And from the line's own start when the
+    ///     owner's first token is on an earlier line: measured, the oracle glues <c>int&gt; d = [</c>
+    ///     on the second line of a broken type argument list and breaks after <c>int&gt; dddddd =</c>,
+    ///     the same eleven-against-twelve counted from the line. The first cut waived the floor for a
+    ///     head that spans lines, on the argument that a full first line is not a short head; the
+    ///     oracle does not count the first line at all.
     /// </remarks>
-    bool HeadIsWideEnough(in GroupFacts facts, in Measures m) {
+    bool HeadIsWideEnough(in GroupFacts facts, in Measures m, int lineStart) {
         if (facts.MinimumHead <= 0) {
             return true;
         }
@@ -350,11 +371,8 @@ public sealed class Fitter {
             return m.PointWidth >= facts.MinimumHead;
         }
 
-        if (!resolved[owner] || enteredOn[owner] != m.Line) {
-            return true;
-        }
-
-        return m.Column + m.PointWidth - enteredAt[owner] >= facts.MinimumHead;
+        var from = resolved[owner] && enteredOn[owner] == m.Line ? enteredAt[owner] : lineStart;
+        return m.Column + m.PointWidth - from >= facts.MinimumHead;
     }
 
     /// <summary>
