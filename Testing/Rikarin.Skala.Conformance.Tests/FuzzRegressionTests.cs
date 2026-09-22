@@ -39,6 +39,19 @@ public sealed class FuzzRegressionTests {
     [InlineData(11149039553341969427UL)]
     [InlineData(13458345604094946523UL)]
     [InlineData(6636340479617988337UL)]
+
+    // ⚠ The Nightly's September findings, kept here because the runs they came from are deleted
+    // once fixed: this theory is the only record that replays. The first six are one class —
+    // a property pattern heading a switch arm or a `case` label, chopped on pass one and joined
+    // on pass two (#378) — and the last is the flat direction of a collection-valued `=` (#379).
+    [InlineData(2801382500469017888UL)]
+    [InlineData(13095184792041486380UL)]
+    [InlineData(11255509907099259375UL)]
+    [InlineData(857717698562573229UL)]
+    [InlineData(14871250529025744122UL)]
+    [InlineData(2742638269065363150UL)]
+    [InlineData(7611825995831206751UL)]
+    [InlineData(3296757264995743770UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
