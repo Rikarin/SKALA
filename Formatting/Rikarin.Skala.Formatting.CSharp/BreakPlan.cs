@@ -3998,8 +3998,10 @@ public sealed class BreakPlan {
                 BreaksIfTooLong: true,
                 BreaksOnlyIfHeadOverflows: true
             ),
+            // spendsIndent, leadingGapInside: the gap before the `when` is the group's own first
+            // point, so the group has to open before it (GroupPlan.LeadingGapInside).
             true,
-            leadingGapInside: true
+            true
         );
     }
 
