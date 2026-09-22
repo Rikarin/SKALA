@@ -2140,19 +2140,35 @@ public sealed class BreakPlan {
     ///     .Select(x => x.Id);
     ///     </code>
     ///     and not a break before <c>.Where</c>.
+    ///     <para>
+    ///         ⚠ "The first call" is counted in calls, not in dots, and the first call need not have a
+    ///         dot at all. <c>SomeMethod(a, b).Other(c, d)</c> is a chain of <em>two</em> calls to the
+    ///         oracle — at <c>chop_always</c> it chops before <c>.Other</c> where <c>x.Other(c, d)</c>
+    ///         stays whole — so its only dot is a point, and the same holds for a generic
+    ///         <c>F&lt;T&gt;(…)</c>, a delegate invocation <c>handler(a)(b)</c> and an element access
+    ///         <c>arr[0]</c> or <c>x.Items[0]</c> at the head. Counting dots alone made
+    ///         <c>F(…).Other(…)</c> no chain, so the last argument list took the break instead
+    ///         (issue #380, SK-DIV-0128). ⚠ A parenthesised call <c>(F(…)).Other(…)</c>, an object
+    ///         creation <c>new T(…).Other(…)</c> and a bare <c>x?.Other(…)</c> are <em>not</em> calls at
+    ///         the head: the oracle chops their argument list, measured (SK-DIV-0129).
+    ///     </para>
     /// </remarks>
     void PlanChainedCalls(SyntaxNode root) {
         var dots = new List<SyntaxToken>();
+        var headIsACall = false;
         Collect(root);
 
-        if (dots.Count < 2) {
+        // A chain is two calls or more. The dots count the calls reached through one; a dot-less
+        // call at the head is the other.
+        if (dots.Count < 2 && !headIsACall) {
             return;
         }
 
-        // skala_wrap_before_first_method_call = false: the first invoked dot stays with its receiver.
+        // skala_wrap_before_first_method_call = false: the first invoked dot stays with its receiver
+        // — unless the first call is the dot-less head, in which case there is no dot to keep.
         // ⚠ The list is built outermost-first by the walk below, so the *last* entry is the first
         // dot of the chain.
-        var first = options.WrapBeforeFirstMethodCall ? dots.Count : dots.Count - 1;
+        var first = options.WrapBeforeFirstMethodCall || headIsACall ? dots.Count : dots.Count - 1;
         var group = NewGroup();
         var broken = false;
 
@@ -2292,15 +2308,24 @@ public sealed class BreakPlan {
                         }
 
                         dots.Add(dot);
+                        headIsACall = false;
                         Collect(receiver);
                         return;
                     }
 
                     if (invocation.Expression is MemberBindingExpressionSyntax binding) {
                         dots.Add(ChainDot(binding));
+                        headIsACall = false;
                         return;
                     }
 
+                    // A call with no dot of its own — `F(…)`, `F<T>(…)`, `handler(a)(b)` — is the
+                    // chain's first call. ⚠ Not a parenthesised one: `(F(…)).Other(…)` reaches the
+                    // parenthesis below and stops, and the oracle chops `.Other`'s arguments there.
+                    // ⚠ Every call arm assigns the flag and the walk is outermost-first, so the value
+                    // left standing is the innermost call's: `a.B()[0].C()`'s first call is `a.B()`,
+                    // and its `.B` stays with `a`.
+                    headIsACall = true;
                     Collect(invocation.Expression);
                     return;
 
@@ -2337,6 +2362,11 @@ public sealed class BreakPlan {
                     return;
 
                 case ElementAccessExpressionSyntax element:
+                    // ⚠ An indexer is a call to the oracle. `arr[0].Other(c, d)` and
+                    // `x.Items[0].Other(c, d)` both chop before `.Other` at `chop_always`, exactly as
+                    // `F(a).Other(c, d)` does and `x.Other(c, d)` does not; so the `[0]` is the
+                    // chain's first call and the dot after it is a point. Measured on #380.
+                    headIsACall = true;
                     Collect(element.Expression);
                     return;
 
