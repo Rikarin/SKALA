@@ -883,6 +883,20 @@ public sealed class LayoutWriter {
                 return true;
             }
 
+            // ⚠ An arrow whose body has no break point of its own does not end the line for the
+            // head before it: `{ … } => 2u,` and `A or B or C => 2u,` are measured with the arrow
+            // and the body, and the pattern or the chain breaks rather than the arrow (issue #378).
+            // The arrow's own points are still points — the group breaks by its own rule when the
+            // head has nothing left to give — but a construct before it reads the body as part of
+            // its line, the way it reads a last-resort point. See GroupFlags.ArrowBodyRunsToTheEnd.
+            if (document.ArrowBodyRunsToTheEnd(sibling)) {
+                var flat = document.FlatWidthOf(sibling);
+                total = total >= Document.Unbounded || flat >= Document.Unbounded
+                    ? Document.Unbounded
+                    : total + flat;
+                continue;
+            }
+
             var width = document.PointWidthOf(sibling);
             total = total >= Document.Unbounded || width >= Document.Unbounded
                 ? Document.Unbounded

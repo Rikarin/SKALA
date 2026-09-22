@@ -73,7 +73,27 @@ public enum GroupFlags {
     ///     break: nothing inside can end the line, so what trails the group lands on it too. Bit 1 is
     ///     the closer alignment an <see cref="DocKind.Indent" /> node shares the field with.
     /// </summary>
-    AfterPointRunsToTheEnd = 2
+    AfterPointRunsToTheEnd = 2,
+
+    /// <summary>
+    ///     An arrow group — <see cref="GroupFacts.BreaksOnlyIfHeadOverflows" />, not broken in the
+    ///     source — whose body holds no break point of its own, so that the constructs <em>before</em>
+    ///     the arrow measure their rest-of-line through it, body included, and break in preference to it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on twenty-five switch arms (issue #378). <c>{ … } =&gt; 2u,</c> at 122 columns
+    ///     comes back from the oracle with the pattern's braces apart and the arrow untouched, and
+    ///     <c>A or B or C or D =&gt; 2u,</c> with every <c>or</c> chopped, where the same heads followed
+    ///     by <c>=&gt; Body(…)</c> stay whole and the arrow or the arguments break. A body that can break
+    ///     inside ends the line the head is measured against; one that cannot is part of it. ⚠ Not the
+    ///     whole of the oracle's rule: with a body that runs to the end but is wide enough — eleven
+    ///     characters at 122 columns, more as the overflow grows — the oracle moves the body down and
+    ///     leaves the head whole, by a boundary that depends on both widths and is recorded, not
+    ///     modelled. Skala reads through the arrow for every such body, which is the reading that
+    ///     preserves Rider's own output in both cases: a chopped pattern before a short body is not
+    ///     re-joined, and a kept arrow break before a wide one is kept.
+    /// </remarks>
+    ArrowBodyRunsToTheEnd = 4
 }
 
 /// <summary>What a <see cref="DocKind.Line" /> node carries in <see cref="DocNode.Flags" />.</summary>
@@ -551,6 +571,13 @@ public sealed class Document {
     /// </summary>
     public bool AfterPointRunsToTheEnd(int node) =>
         Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.AfterPointRunsToTheEnd) != 0;
+
+    /// <summary>
+    ///     Whether the node is an arrow group whose body cannot break, so that the rest-of-line measure
+    ///     of what precedes it runs through it — see <see cref="GroupFlags.ArrowBodyRunsToTheEnd" />.
+    /// </summary>
+    public bool ArrowBodyRunsToTheEnd(int node) =>
+        Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.ArrowBodyRunsToTheEnd) != 0;
 
     /// <summary>What the fitter needs to know about one group beyond its mode and its width.</summary>
     public GroupFacts FactsOf(int group) => facts[group];

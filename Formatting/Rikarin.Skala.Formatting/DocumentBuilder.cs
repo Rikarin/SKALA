@@ -138,6 +138,13 @@ public sealed class DocumentBuilder {
     /// </remarks>
     readonly HashSet<int> chainOwners = [];
 
+    /// <summary>
+    ///     The groups before a switch arm's <c>=&gt;</c> whose body group closed with no break point of
+    ///     its own — see <see cref="GroupFlags.ArrowBodyRunsToTheEnd" />. The body's group closes first
+    ///     and names its owner; the owner reads the set when it closes.
+    /// </summary>
+    readonly HashSet<int> arrowBodiesRunningToTheEnd = [];
+
     int nodeCount;
     int groupCount;
     int root = -1;
@@ -479,9 +486,25 @@ public sealed class DocumentBuilder {
             ? MeasureSegments(childStart, count, frame.Arg1, out afterPointRuns, out segment[index])
             : 0;
 
+        // ⚠ An arrow whose body cannot break is read through by what precedes it (issue #378):
+        // `{ … } => 2u,` chops the pattern and `A or B or C => 2u,` chops the chain, where the same
+        // heads before `=> Body(…)` stay whole. The body's group knows it when its segments are
+        // measured; the group before the arrow learns it from the body's, which closes first and
+        // names it as its owner. A kept arrow break is a break the head sees, so a source-broken
+        // arrow is never read through. See GroupFlags.ArrowBodyRunsToTheEnd.
+        var arrowRuns = false;
+        if (frame.Kind == DocKind.Group
+            && facts[frame.Arg1] is { BreaksOnlyIfHeadOverflows: true, SourceBroken: false } arrow) {
+            arrowRuns = afterPointRuns || arrowBodiesRunningToTheEnd.Contains(frame.Arg1);
+            if (arrowRuns && arrow.FlatIfOwnerBroke && arrow.Owner >= 0) {
+                arrowBodiesRunningToTheEnd.Add(arrow.Owner);
+            }
+        }
+
         nodes[index].Count = count;
         nodes[index].Flags = (alignsCloser ? 1 : 0)
-            | (afterPointRuns ? (int)GroupFlags.AfterPointRunsToTheEnd : 0);
+            | (afterPointRuns ? (int)GroupFlags.AfterPointRunsToTheEnd : 0)
+            | (arrowRuns ? (int)GroupFlags.ArrowBodyRunsToTheEnd : 0);
         nodes[index].Arg2 = frame.Kind == DocKind.Group ? facts[frame.Arg1].Owner : frame.Arg2;
 
         if (stack.Count == 0) {

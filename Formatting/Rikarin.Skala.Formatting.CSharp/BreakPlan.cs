@@ -3930,7 +3930,7 @@ public sealed class BreakPlan {
     ///     after the arrow is planned; the gap before a lambda's arrow stays <c>keep_user_linebreaks</c>'.
     /// </remarks>
     void PlanLambdaArrow(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
-        PlanArrowBody(lambda, body, new GroupFacts(BreaksIfTooLong: true, MeasuresHead: true, PrefersOuterBreak: true));
+        PlanArrowBody(lambda, body, new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true));
 
     /// <summary>The group over an arrow's body, opened before the gap that follows the arrow.</summary>
     /// <param name="facts">
