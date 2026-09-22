@@ -47,6 +47,12 @@ public sealed class Fitter {
     /// </summary>
     readonly int[] enteredOn;
 
+    /// <summary>
+    ///     The column each group was entered at, for the head marker a
+    ///     <see cref="GroupFacts.MinimumHead" /> group measures its head from.
+    /// </summary>
+    readonly int[] enteredAt;
+
     readonly int width;
     readonly int indentWidth;
 
@@ -65,6 +71,7 @@ public sealed class Fitter {
         modes = new ResolvedMode[Math.Max(1, document.GroupCount)];
         resolved = new bool[Math.Max(1, document.GroupCount)];
         enteredOn = new int[Math.Max(1, document.GroupCount)];
+        enteredAt = new int[Math.Max(1, document.GroupCount)];
         this.width = width;
     }
 
@@ -121,6 +128,7 @@ public sealed class Fitter {
         modes[id] = mode;
         resolved[id] = true;
         enteredOn[id] = line;
+        enteredAt[id] = column;
         if (marks > 0) {
             journal.Add(id);
         }
@@ -153,6 +161,7 @@ public sealed class Fitter {
             modes[id] = ResolvedMode.Flat;
             resolved[id] = false;
             enteredOn[id] = 0;
+            enteredAt[id] = 0;
         }
 
         journal.RemoveRange(mark.Journal, journal.Count - mark.Journal);
@@ -199,7 +208,7 @@ public sealed class Fitter {
     /// </param>
     /// <param name="tail">
     ///     The flat width past the group's own first point — <see cref="Document.SegmentOf" /> on the
-    ///     group — for <see cref="GroupFacts.KeptOnlyIfTailFits" />. ⚠ Not <c>FlatWidth − PointWidth</c>:
+    ///     group — for <see cref="GroupFacts.BreaksOnlyIfTailFits" />. ⚠ Not <c>FlatWidth − PointWidth</c>:
     ///     that difference counts the point's own flat space, and the oracle's boundary is exact — a
     ///     kept <c>=\n[…];</c> whose continuation line is 120 columns stays, and 121 gives the break
     ///     to the bracket.
@@ -265,6 +274,21 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ A break that is one of two alternatives — the `=`'s or the bracket's after it — is
+                // added by the same rule it is kept by: exactly when the value fits flat on the line it
+                // would move to, and never as a way of making *this* line fit. The oracle writes
+                // `T v = [` at 122 columns and lets the bracket chop rather than break after the `=`
+                // before a bracket that would not fit below, and moves a bracket that does fit below
+                // down whole right up to a 120-column continuation line, where the ordering rule's
+                // fitted margin stops eleven columns short. Answering the flat direction with that
+                // rule and the kept direction with this one is what made pass two undo pass one:
+                // the `=` broke on a flat line and was given back to the bracket as soon as it was
+                // read as the author's (#379, the mirror image of #375). See
+                // GroupFacts.BreaksOnlyIfTailFits.
+                if (facts.BreaksOnlyIfTailFits) {
+                    return TailFits(m, tail) && HeadIsWideEnough(facts, m) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                }
+
                 return Worth(facts, m, afterPointRunsToTheEnd);
         }
     }
@@ -279,14 +303,58 @@ public sealed class Fitter {
         // ⚠ A kept break that is one of two alternatives — the `=`'s or the `[`'s after it — is kept
         // exactly when the value fits flat on the line it would move to. Measured on the flat width
         // and not the head: `= [` always fits, and a bracket that is going to break is the case where
-        // the oracle gives the break to the bracket. See GroupFacts.KeptOnlyIfTailFits (#375).
-        if (facts.KeptOnlyIfTailFits) {
-            return Fits(m.ContinuationColumn, tail, m.Trailing) ? ResolvedMode.Broken : ResolvedMode.Flat;
+        // the oracle gives the break to the bracket. See GroupFacts.BreaksOnlyIfTailFits (#375).
+        if (facts.BreaksOnlyIfTailFits) {
+            return TailFits(m, tail) ? ResolvedMode.Broken : ResolvedMode.Flat;
         }
 
         return facts.JoinsIfFits && Fits(m.Column, m.FlatWidth, m.Trailing)
             ? ResolvedMode.Flat
             : ResolvedMode.Broken;
+    }
+
+    /// <summary>
+    ///     Whether what follows the group's own point fits flat on the continuation line — the one
+    ///     question a <see cref="GroupFacts.BreaksOnlyIfTailFits" /> group is resolved by, from a kept
+    ///     break and from a flat line alike.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ No margin. <see cref="OuterBreakMargin" /> is fitted to right-hand sides the oracle stops
+    ///     moving down well before the line below is full; a collection expression is not one of them.
+    ///     Measured from a flat source with the <c>=</c> at column 60 and again at 100, one column at a
+    ///     time: a bracket whose continuation line would be 120 columns moves down whole, 121 is
+    ///     written <c>= [</c> and filled — the same boundary the kept direction has (#375, #379), and
+    ///     the same for an expression body's arrow.
+    /// </remarks>
+    bool TailFits(in Measures m, int tail) => Fits(m.ContinuationColumn, tail, m.Trailing);
+
+    /// <summary>
+    ///     Whether the head — from the owner's first token, the marker <see cref="GroupFacts.Owner" />
+    ///     names, through the group's own point — reaches <see cref="GroupFacts.MinimumHead" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Read off the writer's columns and not off the syntax, because the head's width in the
+    ///     source is not its width in the output: the fuzzer widens gaps, and a floor measured on the
+    ///     source would pass on pass one and fail on pass two. A head that already spans lines — the
+    ///     marker landed on an earlier line than the group — is past any floor; what the oracle does
+    ///     with a short second line is not measured, and a full first line is not a short head.
+    /// </remarks>
+    bool HeadIsWideEnough(in GroupFacts facts, in Measures m) {
+        if (facts.MinimumHead <= 0) {
+            return true;
+        }
+
+        // No marker: the group starts at its own head, and the point width is the head.
+        var owner = facts.Owner;
+        if (owner < 0) {
+            return m.PointWidth >= facts.MinimumHead;
+        }
+
+        if (!resolved[owner] || enteredOn[owner] != m.Line) {
+            return true;
+        }
+
+        return m.Column + m.PointWidth - enteredAt[owner] >= facts.MinimumHead;
     }
 
     /// <summary>

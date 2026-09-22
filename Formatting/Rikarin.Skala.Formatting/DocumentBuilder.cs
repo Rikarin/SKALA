@@ -436,7 +436,7 @@ public sealed class DocumentBuilder {
         // the outer call's own flat width is 59 columns and fits with room to spare. That is the
         // "chop if long *or multiline*" half of chop_if_long, one level up.
         // ⚠ Except a group whose kept break may yet yield to the delimiter after it
-        // (GroupFacts.KeptOnlyIfTailFits): the fitter decides that by this very width, so it stays
+        // (GroupFacts.BreaksOnlyIfTailFits): the fitter decides that by this very width, so it stays
         // measurable. The group's certainty still reaches its container through `certain` above —
         // the value is multi-line whichever of the two breaks is taken — so the container chops
         // exactly as before; only the group's own number is left honest.
@@ -446,7 +446,7 @@ public sealed class DocumentBuilder {
                 SourceBroken: true,
                 JoinsIfFits: false,
                 HidesFlatWidthWhenBroken: true,
-                KeptOnlyIfTailFits: false
+                BreaksOnlyIfTailFits: false
             }) {
             width = Document.Unbounded;
             owned = Document.Unbounded;
@@ -595,7 +595,7 @@ public sealed class DocumentBuilder {
 
         // ⚠ The first point's flat segment is the group's too, beside its point width: for a group
         // with one point it is everything past that point, which is the tail a kept break that may
-        // yield to the delimiter after it is measured by (GroupFacts.KeptOnlyIfTailFits). Flat, and
+        // yield to the delimiter after it is measured by (GroupFacts.BreaksOnlyIfTailFits). Flat, and
         // not the point width, because the question is whether the whole value fits on the line it
         // would move to — the point measure stops at the bracket's own first point, one column in.
         if (first >= 0) {

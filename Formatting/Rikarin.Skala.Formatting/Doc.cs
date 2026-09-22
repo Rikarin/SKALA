@@ -529,7 +529,7 @@ public sealed class Document {
     ///     <para>
     ///         On a group node it is the group's <em>first</em> point's segment — the same convention
     ///         <see cref="AfterPointOf" /> already follows — which for a group with one point is
-    ///         everything past that point: the tail <see cref="GroupFacts.KeptOnlyIfTailFits" /> is
+    ///         everything past that point: the tail <see cref="GroupFacts.BreaksOnlyIfTailFits" /> is
     ///         measured by. Zero for a group that owns no point.
     ///     </para>
     /// </remarks>
@@ -702,20 +702,47 @@ public sealed class Document {
 ///     breaks the arrow after every one of them, and after none where only an attribute list
 ///     precedes the declaration on its own line, which is why the marker sits after the attributes.
 /// </param>
-/// <param name="KeptOnlyIfTailFits">
-///     ⚠ A <see cref="SourceBroken" /> group whose kept break is an <em>alternative</em> to a delimiter's
-///     own rather than a pair with it: the break survives exactly when what follows the point fits flat
-///     on the continuation line, and otherwise the group stays flat and the delimiter breaks instead.
-///     It is the <c>=</c> before a collection expression (issue #375): the oracle keeps
-///     <c>int[] x =\n [1, 2];</c> and every <c>=\n[…]</c> whose bracket fits on the line below, and
-///     writes <c>x = [</c> for one that does not — because it is too wide for that line, because the
-///     author broke it at one of its own gaps, or because an element inside it spans lines. Reading the
-///     source for the second reason alone was the instrument that disagreed with itself across passes:
-///     a list chopped around a multi-line element has no break at its own gaps on pass one and has them
-///     on pass two. The tail is the group's flat width past its point, so the front end must leave that
-///     width measurable — the group is still certain to make its container multi-line, whichever of the
-///     two breaks is taken, and <see cref="DocumentBuilder" /> keeps its certainty while declining to
-///     hide its width.
+/// <param name="BreaksOnlyIfTailFits">
+///     ⚠ A group whose break is an <em>alternative</em> to a delimiter's own rather than a pair with it:
+///     the break is taken — kept when the author wrote it, added when the line is too long — exactly
+///     when what follows the point fits flat on the continuation line, and otherwise the group stays
+///     flat and the delimiter breaks instead, <em>whatever that does to the line the delimiter lands
+///     on</em>. It is the <c>=</c> and the <c>=&gt;</c> before a collection expression (issues #375 and
+///     #379): the oracle keeps <c>int[] x =\n [1, 2];</c> and every <c>=\n[…]</c> whose bracket fits on
+///     the line below, breaks a flat <c>T v = […];</c> after the <c>=</c> exactly when the bracket fits
+///     there — 120 columns on the continuation line, 121 not, with no margin and however far left the
+///     <c>=</c> is — and writes <c>x = [</c> for one that does not, because it is too wide for that
+///     line, because the author broke it at one of its own gaps, or because an element inside it spans
+///     lines. ⚠ From a flat source the ordering rule used to answer this with
+///     <see cref="PrefersOuterBreak" />'s fitted margin, which took the <c>=</c> break for a bracket the
+///     oracle glues (<c>T v = [</c> at 122 columns, the bracket overhanging, and the line measured only
+///     up to the <c>=</c>) and declined it for one the oracle moves down whole; and the kept path then
+///     undid pass one on pass two. Reading the source for the second reason alone had been the earlier
+///     instrument that disagreed with itself across passes: a list chopped around a multi-line element
+///     has no break at its own gaps on pass one and has them on pass two. The tail is the group's flat
+///     width past its point, so the front end must leave that width measurable — the group is still
+///     certain to make its container multi-line, whichever of the two breaks is taken, and
+///     <see cref="DocumentBuilder" /> keeps its certainty while declining to hide its width.
+/// </param>
+/// <param name="MinimumHead">
+///     ⚠ For a <see cref="BreaksOnlyIfTailFits" /> group on a flat line: the break is not <em>added</em>
+///     unless the head — from the first token of the construct that owns the <c>=</c> through the
+///     group's own point — is at least this many columns wide; below it the group stays flat and the
+///     bracket breaks, whatever fits where. Zero means no such floor. The owner's first token is the
+///     marker named by <see cref="Owner" />, and the fitter reads the column it landed on.
+///     <para>
+///         Measured on the oracle one column at a time (issue #379): <c>var ddddd = […];</c> comes back
+///         <c>var ddddd = [</c> and <c>var dddddd = […];</c> comes back <c>var dddddd =\n[…];</c> for the
+///         same bracket, which fits the line below either way — an 11-column head glues and a 12-column
+///         head breaks, and the same for <c>int[] d =</c> through <c>int[] ddd =</c> against
+///         <c>object[] d =</c>, for a field, a <c>for</c> header, an initializer element and a named
+///         attribute argument, at <c>indent_size = 2</c> and at a nested block's indent alike. The head
+///         starts at the construct's own scope, not at the line: under <c>using (</c> it is measured from
+///         the parenthesis — <c>(var dddd =</c> is 11 and glues, <c>(var ddddd =</c> is 12 and breaks —
+///         so it is not a column, not a saving against the continuation line, and not tied to the
+///         indent. A <em>kept</em> break has no floor: <c>int[] x =\n[1, 2];</c> is kept at nine (#375).
+///         The arrow of an expression body has none either down to a head of eight.
+///     </para>
 /// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
@@ -729,4 +756,5 @@ public readonly record struct GroupFacts(
     int Owner = -1,
     bool ChainLink = false,
     bool BreaksIfOwnerIsMultiLine = false,
-    bool KeptOnlyIfTailFits = false);
+    bool BreaksOnlyIfTailFits = false,
+    int MinimumHead = 0);
