@@ -61,20 +61,21 @@ static class StructMutation {
             return false;
         }
 
-        return TopLevelExpressions(declaration).Any(expression => {
-                var target = model.GetOperation(expression, cancellation) switch {
-                    IAssignmentOperation assignment => assignment.Target,
-                    IIncrementOrDecrementOperation increment => increment.Target,
-                    _ => null
-                };
+        return TopLevelExpressions(declaration)
+            .Any(expression => {
+                    var target = model.GetOperation(expression, cancellation) switch {
+                        IAssignmentOperation assignment => assignment.Target,
+                        IIncrementOrDecrementOperation increment => increment.Target,
+                        _ => null
+                    };
 
-                return target is IFieldReferenceOperation {
-                    Field.IsStatic: false,
-                    Instance:
-                    IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance }
-                };
-            }
-        );
+                    return target is IFieldReferenceOperation {
+                        Field.IsStatic: false,
+                        Instance:
+                        IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance }
+                    };
+                }
+            );
     }
 
     static IEnumerable<ExpressionSyntax> TopLevelExpressions(MethodDeclarationSyntax declaration) =>

@@ -132,7 +132,7 @@ public sealed class ArrangementRoutingTests {
     public void SkalasSide_ArrangesACleanupFixture_RatherThanOnlyFormattingIt() {
         var candidate = SweepPlan.Build([])
             .Candidates
-                .Single(static c => c.Key == "dotnet_style_qualification_for_field");
+            .Single(static c => c.Key == "dotnet_style_qualification_for_field");
 
         var path = candidate.Fixture.Path;
         var arranged = SkalaSide.Format(path, candidate.Key, "true");
@@ -163,8 +163,8 @@ public sealed class ArrangementRoutingTests {
         var implemented = ArrangementOptions.Implemented.ToHashSet();
         var candidates = SweepPlan.Build([])
             .Candidates
-                .Where(candidate => implemented.Contains(candidate.Info.Id))
-                .ToArray();
+            .Where(candidate => implemented.Contains(candidate.Info.Id))
+            .ToArray();
 
         var batches = ScratchTree.Batches(
             candidates,

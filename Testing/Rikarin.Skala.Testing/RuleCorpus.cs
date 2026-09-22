@@ -205,7 +205,8 @@ public static class RuleCorpus {
     ///     cannot bind — turning every count into a floor.
     /// </remarks>
     public static IReadOnlyList<string> Trees() => [
-        .. Sources().Select(static file => file.RelativePath.Split('/')[0])
+        .. Sources()
+            .Select(static file => file.RelativePath.Split('/')[0])
             .Distinct(StringComparer.Ordinal)
             .OrderBy(static name => name, StringComparer.Ordinal)
     ];

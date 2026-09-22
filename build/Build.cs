@@ -700,10 +700,11 @@ class Build : NukeBuild {
         var full = System.IO.Path.GetFullPath(path);
         var root = System.IO.Path.GetPathRoot(full) ?? string.Empty;
         var resolved = root;
-        foreach (var segment in full[root.Length..].Split(
-                     System.IO.Path.DirectorySeparatorChar,
-                     System.StringSplitOptions.RemoveEmptyEntries
-                 )) {
+        foreach (var segment in full[root.Length..]
+                     .Split(
+                         System.IO.Path.DirectorySeparatorChar,
+                         System.StringSplitOptions.RemoveEmptyEntries
+                     )) {
             var next = System.IO.Path.Combine(resolved, segment);
             var info = new System.IO.DirectoryInfo(next);
             resolved = info.LinkTarget is null

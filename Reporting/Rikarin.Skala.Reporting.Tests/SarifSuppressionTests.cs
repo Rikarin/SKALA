@@ -46,8 +46,8 @@ public sealed class SarifSuppressionTests {
     static JsonElement Results(RunReport report) =>
         JsonDocument.Parse(SarifWriter.Serialize(SarifWriter.Build(report)))
             .RootElement
-                .GetProperty("runs")[0]
-                .GetProperty("results");
+            .GetProperty("runs")[0]
+            .GetProperty("results");
 
     /// <summary>
     ///     ⚠ Suppressed, and still present. Both halves are the assertion.
@@ -166,8 +166,8 @@ public sealed class SarifSuppressionTests {
         var narrowed = RuleIds(
             JsonDocument.Parse(SarifWriter.Serialize(SarifWriter.BuildWithoutSuppressed(report)))
                 .RootElement
-                    .GetProperty("runs")[0]
-                    .GetProperty("results")
+                .GetProperty("runs")[0]
+                .GetProperty("results")
         );
 
         // Present in the full log — the accepted finding and the pragma-suppressed one both survive,

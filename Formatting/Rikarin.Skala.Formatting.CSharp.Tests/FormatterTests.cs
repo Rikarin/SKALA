@@ -1045,10 +1045,11 @@ public sealed class BreakPositionTests {
         Assert.Contains("object D() => F([1, 2]);", formatted, StringComparison.Ordinal);
         Assert.Equal(
             ["object B() =>", "(", "[1, 2]);", "object C() =>", "(", "[1, 2], 3);"],
-            TrimmedLines(formatted).Where(static line => !line.StartsWith("object A", StringComparison.Ordinal)
-                && !line.StartsWith("object D", StringComparison.Ordinal)
-                && line is not ("class T {" or "}")
-            )
+            TrimmedLines(formatted)
+                .Where(static line => !line.StartsWith("object A", StringComparison.Ordinal)
+                    && !line.StartsWith("object D", StringComparison.Ordinal)
+                    && line is not ("class T {" or "}")
+                )
         );
         Assert.Equal(formatted, Format.Text(formatted));
     }
@@ -1437,7 +1438,7 @@ public sealed class SubpatternBreakTests {
             ("skala_align_multiline_property_pattern", aligned),
             ("skala_max_line_length", margin)
         )
-                .Split('\n');
+            .Split('\n');
 
         var name = Array.FindIndex(
             lines,
