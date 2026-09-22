@@ -3455,7 +3455,9 @@ public sealed class BreakPlan {
             case AssignmentExpressionSyntax or AttributeArgumentSyntax:
                 return node.GetFirstToken();
 
-            case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } }:
+            case EqualsValueClauseSyntax {
+                Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration }
+            }:
                 return declaration.Parent switch {
                     UsingStatementSyntax statement => statement.OpenParenToken,
                     ForStatementSyntax statement => statement.OpenParenToken,

@@ -706,9 +706,9 @@ public sealed class Document {
 ///     ⚠ A group whose break is an <em>alternative</em> to a delimiter's own rather than a pair with it:
 ///     the break is taken — kept when the author wrote it, added when the line is too long — exactly
 ///     when what follows the point fits flat on the continuation line, and otherwise the group stays
-///     flat and the delimiter breaks instead, <em>whatever that does to the line the delimiter lands
-///     on</em>. It is the <c>=</c> and the <c>=&gt;</c> before a collection expression (issues #375 and
-///     #379): the oracle keeps <c>int[] x =\n [1, 2];</c> and every <c>=\n[…]</c> whose bracket fits on
+///     flat and the delimiter breaks instead, <em>whatever that does to the delimiter's line</em>. It
+///     is the <c>=</c> and the <c>=&gt;</c> before a collection expression (issues #375 and #379): the
+///     oracle keeps <c>int[] x =\n [1, 2];</c> and every <c>=\n[…]</c> whose bracket fits on
 ///     the line below, breaks a flat <c>T v = […];</c> after the <c>=</c> exactly when the bracket fits
 ///     there — 120 columns on the continuation line, 121 not, with no margin and however far left the
 ///     <c>=</c> is — and writes <c>x = [</c> for one that does not, because it is too wide for that
