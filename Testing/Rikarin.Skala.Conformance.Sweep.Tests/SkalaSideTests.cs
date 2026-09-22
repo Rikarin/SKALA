@@ -68,7 +68,7 @@ public sealed class SkalaSideTests {
     public void SkalasSide_IsRawBytes_NotNormalisedText() {
         var candidate = SweepPlan.Build([])
             .Candidates
-                .Single(static c => c.Key == "skala_insert_final_newline");
+            .Single(static c => c.Key == "skala_insert_final_newline");
 
         var on = KeyFlipSweep.FormatWithSkala(candidate, "true");
         var off = KeyFlipSweep.FormatWithSkala(candidate, "false");

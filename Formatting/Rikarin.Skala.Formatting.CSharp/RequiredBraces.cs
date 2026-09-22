@@ -142,10 +142,10 @@ static class RequiredBraces {
                         .WithTrailingTrivia(SyntaxFactory.EndOfLine(newLine))
                 )
                 // A trailing // comment must not consume the inserted closing brace.
-                    .WithCloseBraceToken(
-                        SyntaxFactory.Token(SyntaxKind.CloseBraceToken)
-                            .WithLeadingTrivia(SyntaxFactory.EndOfLine(newLine))
-                            .WithTrailingTrivia(SyntaxFactory.EndOfLine(newLine))
-                    );
+                .WithCloseBraceToken(
+                    SyntaxFactory.Token(SyntaxKind.CloseBraceToken)
+                        .WithLeadingTrivia(SyntaxFactory.EndOfLine(newLine))
+                        .WithTrailingTrivia(SyntaxFactory.EndOfLine(newLine))
+                );
     }
 }

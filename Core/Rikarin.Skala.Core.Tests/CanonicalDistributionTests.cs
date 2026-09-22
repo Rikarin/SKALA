@@ -104,7 +104,7 @@ public sealed class CanonicalDistributionTests {
     static Dictionary<OptionId, string> Configured(EditorConfigDocument document, string probe) =>
         OptionResolver.Resolve(EditorConfigChain.Of(probe, document))
             .Configured
-                .ToDictionary(static option => option.Info.Id, static option => option.Value);
+            .ToDictionary(static option => option.Info.Id, static option => option.Value);
 
     /// <summary>
     ///     No key is assigned twice in one section of the payload.
@@ -156,10 +156,10 @@ public sealed class CanonicalDistributionTests {
         Assert.NotEmpty(canonical.Assignments);
         var unknown = canonical.Assignments
             // `root` is an EditorConfig directive, not an option, and is one of the two fixes.
-                .Where(static a => a.Key != "root" && !OptionRegistry.TryResolve(a.Key, out _))
-                .Select(static a => a.Key)
-                .Distinct(StringComparer.Ordinal)
-                .ToArray();
+            .Where(static a => a.Key != "root" && !OptionRegistry.TryResolve(a.Key, out _))
+            .Select(static a => a.Key)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
 
         Assert.True(
             unknown.Length == 0,

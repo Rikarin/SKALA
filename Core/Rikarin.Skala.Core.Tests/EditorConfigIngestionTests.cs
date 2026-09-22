@@ -130,8 +130,8 @@ public sealed class EditorConfigIngestionTests {
     static string[] ConfiguredOptions(EditorConfigChain chain) => [
         .. OptionResolver.Resolve(chain)
             .Configured
-                .Select(static option => option.Id + " = " + option.Value)
-                .OrderBy(static entry => entry, StringComparer.Ordinal)
+            .Select(static option => option.Id + " = " + option.Value)
+            .OrderBy(static entry => entry, StringComparer.Ordinal)
     ];
 
     [Theory]

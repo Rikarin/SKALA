@@ -61,9 +61,8 @@ public sealed class ModernizationBatchTests {
         below = below.WithOptions(below.Options.WithNullableContextOptions(NullableContextOptions.Disable));
         Assert.DoesNotContain(Analyze(below), static diagnostic => diagnostic.Id == "SK1011");
         Assert.Single(
-            Analyze(
-                RuleFixtures.Compile(source, "test.cs", LanguageVersion.CSharp8)
-            ).Where(static diagnostic => diagnostic.Id == "SK1011")
+            Analyze(RuleFixtures.Compile(source, "test.cs", LanguageVersion.CSharp8))
+                .Where(static diagnostic => diagnostic.Id == "SK1011")
         );
     }
 
@@ -93,7 +92,8 @@ public sealed class ModernizationBatchTests {
                          }
                      }
                      """;
-        var diagnostics = Analyze(RuleFixtures.Compile(source, "test.cs")).Where(static d => d.Id == "SK3003")
+        var diagnostics = Analyze(RuleFixtures.Compile(source, "test.cs"))
+            .Where(static d => d.Id == "SK3003")
             .ToArray();
         Assert.Equal(expected, diagnostics.Length);
         Assert.All(

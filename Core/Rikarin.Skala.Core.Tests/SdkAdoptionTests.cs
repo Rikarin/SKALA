@@ -143,9 +143,9 @@ public sealed class SdkAdoptionTests {
         var declared = document.Descendants()
             .First(static element => element.Name.LocalName == "SkalaRuleIds")
             .Value
-                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .OrderBy(static id => id, StringComparer.Ordinal)
-                .ToArray();
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .OrderBy(static id => id, StringComparer.Ordinal)
+            .ToArray();
 
         using var rules = JsonDocument.Parse(
             File.ReadAllText(Path.Combine(RepositoryPaths.Root, "Rules", "Rikarin.Skala.Rules.Metadata", "rules.json"))

@@ -167,7 +167,8 @@ internal static class OptionRegistryReader {
                 values.Add(new OptionEnumValue(name, Naming.Pascal(name), value["summary"].AsString() ?? string.Empty));
             }
 
-            var aliases = member.Value["valueAliases"].Members
+            var aliases = member.Value["valueAliases"]
+                .Members
                 .Select(static a => new KeyValuePair<string, string>(a.Key, a.Value.AsString() ?? string.Empty))
                 .OrderBy(static a => a.Key, StringComparer.Ordinal)
                 .ToList();

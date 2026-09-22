@@ -90,7 +90,8 @@ public sealed class PatternAndCorrectnessBatchTests {
                          bool Overflow({{type}} value) => value > {{type}}.MaxValue;
                      }
                      """;
-        var diagnostics = Analyze(RuleFixtures.Compile(source, "test.cs")).Where(static d => d.Id == "SK2001")
+        var diagnostics = Analyze(RuleFixtures.Compile(source, "test.cs"))
+            .Where(static d => d.Id == "SK2001")
             .ToArray();
         Assert.Equal(4, diagnostics.Length);
         Assert.Equal(

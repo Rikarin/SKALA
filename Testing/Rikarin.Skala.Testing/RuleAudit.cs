@@ -205,11 +205,12 @@ public static class RuleAudit {
             return "no fix to verify.";
         }
 
-        var trees = loaded.Units[0].Compilation.SyntaxTrees.ToDictionary(
-            static tree => Path.GetFullPath(tree.FilePath),
-            static tree => tree,
-            StringComparer.Ordinal
-        );
+        var trees = loaded.Units[0]
+            .Compilation.SyntaxTrees.ToDictionary(
+                static tree => Path.GetFullPath(tree.FilePath),
+                static tree => tree,
+                StringComparer.Ordinal
+            );
 
         var before = loaded.Units[0].Compilation;
         var updated = before;

@@ -134,7 +134,8 @@ public sealed class LoadingTests {
         Assert.Equal(["DEBUG"], loaded.Units[0].PreprocessorSymbols);
         Assert.Contains(
             "Debug",
-            loaded.Units[0].Compilation.SyntaxTrees.First()
+            loaded.Units[0]
+                .Compilation.SyntaxTrees.First()
                 .GetRoot(TestContext.Current.CancellationToken)
                 .DescendantTokens()
                 .Select(static token => token.ValueText)
