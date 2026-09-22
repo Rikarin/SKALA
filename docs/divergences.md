@@ -5728,3 +5728,104 @@ reason.
   with the yielding points made last-resort again, two with the speculative line removed, and
   `AttributeSectionTests` went red on the first cut that speculated for a multi-line section). All
   eleven recorded Nightly seeds replay clean.
+
+## SK-DIV-0128 — a chain was counted in dots, and a call at its head has none
+
+⚠ **Issue #380, measured 2026-09-22 on `09f5e59d` with `Testing ask`** over fifty-two flat shapes in
+four probes, each also given back to the oracle (its second pass was byte-identical on all of them),
+and with `skala_wrap_chained_method_calls` flipped to `chop_always` and to `wrap_if_long` as the
+control. The issue's line, 149 columns at indent 8:
+
+```csharp
+var a3 = SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb, ccccccccccccccc).Other(ddddddddddddddddddddddddddddddddddd, eeeeeeeeeeeeeeeeeeeeee, ffffffff);
+// oracle: breaks the chain              Skala before: chops the last call
+var a3 = SomeMethod(…)                   var a3 = SomeMethod(…).Other(
+    .Other(…);                               ddddddddddddddddddddddddddddddddddd,
+                                             eeeeeeeeeeeeeeeeeeeeee,
+                                             ffffffff
+                                         );
+```
+
+`PlanChainedCalls` collected the chain's dots and returned when there were fewer than two, and then
+kept the last collected dot with its receiver for `skala_wrap_before_first_method_call = false`. So
+`SomeMethod(…).Other(…)` — one dot — planned no group at all, and the last argument list took the
+break; SK-DIV-0030's symptom on a chain with nothing conditional in it. **The oracle counts calls, not
+dots**, and the proof is the key rather than the width:
+
+| written, 120-column margin | `chop_if_long` (export) | `chop_always` |
+|---|---|---|
+| `var s1 = SomeMethod(a, b).Other(c, d);` | unchanged | `SomeMethod(a, b)` / `.Other(c, d)` |
+| `var s2 = x.Other(c, d);` | unchanged | **unchanged** |
+| `var d7 = arr[0].Other(c, d);` | unchanged | `arr[0]` / `.Other(c, d)` |
+| `var d8 = x.Items[0].Other(c, d);` | unchanged | `x.Items[0]` / `.Other(c, d)` |
+| `var d9 = x.Other(c, d).Third(e);` | unchanged | `x.Other(c, d)` / `.Third(e)` |
+| `var e1 = alpha.SomeMethod(a, b)[0].Other(c, d);` | unchanged | `alpha.SomeMethod(a, b)[0]` / `.Other(c, d)` |
+| `var e2 = alpha.SomeMethod(a, b).Other(c, d)[0].Third(e);` | unchanged | `alpha.SomeMethod(a, b)` / `.Other(c, d)[0]` / `.Third(e)` |
+
+So `SomeMethod(a, b)` is a call and the chain's first one; `.Other` is the second, and the dot before
+the second call is a point. ⚠ **An indexer is a call too**: `arr[0]` and `x.Items[0]` behave exactly as
+`SomeMethod(a, b)` does, with `.Items` staying on the head's line. And the first call is the
+*innermost* call on the spine and nothing else: `alpha.SomeMethod(a, b)[0]` keeps `.SomeMethod` with
+`alpha`, a `[0]` behind it notwithstanding. The heads that are **not** calls, each of which the oracle
+chops the last argument list for exactly as Skala already did: an identifier (`xxx….Other(`), an object
+creation (`new SomeType(…).Other(`), a parenthesised call (`(SomeMethod(…)).Other(`) and a bare
+conditional access (`xxx…?.Other(`). At the export's value, over the margin, the oracle breaks before
+`.Other` after `F(…)`, `F<T>(…)`, `handler(a)(b)`, `F(…)[0]`, `F(…)?`, `F(…).Prop`, `await F(…)`,
+`arr[0]`, `arr[0][1]` and `x.Items[0]`; as a statement, an argument, a `return` and an expression body;
+and when `.Other`'s own arguments do not fit on the continuation line either it breaks the chain *and*
+chops them one level past it. A three-call chain `F(…).Other(…).Third(…)` goes one call per line, where
+Skala had broken before `.Third` and chopped `.Other`.
+
+**Decision: fix.** `Collect` marks whether the innermost call on the spine has a dot — every call arm
+assigns the flag and the walk is outermost-first, so the head's value is the one left standing — and
+a chain is two calls, not two dots: with a dot-less head every collected dot is a point, and
+`wrap_before_first_method_call = false` has no dot to keep.
+
+⚠ **Refined on the way, and not this entry's.** Three shapes in the probes diverge after the fix and
+each is a fact already recorded: a chopped root argument list under a chain that breaks (`var a5 =
+SomeMethod(` / arguments at **16** / `)` at **12** / `.Other(d)` at 12 in the oracle, 12 / 8 / 12 in
+Skala) is SK-DIV-0112's "adjacent and still open" half — *the chain's level is spent as a scope over
+the receiver* — and it is identical for `alpha.SomeMethod(` (`c1`, `c2`), so it is not a call-root
+fact; a chain ending in a property after a chopped root (`F(` / … / `)` / `.Property`) is SK-DIV-0066
+plus the same level; and a call-headed chain that is the left operand of `??` takes two levels in the
+oracle and one in Skala, SK-DIV-0068's third item. The construct names all three in its header and
+holds none of them.
+
+- options: `skala_wrap_chained_method_calls` (measured at all three values; the fill is SK-DIV-0129),
+  `skala_wrap_before_first_method_call` (the export's `false`; at `true` nothing changes for a dot-less
+  head, which has no first dot), `skala_wrap_after_property_in_chained_method_calls` (the export's
+  `false`; `.Prop.Other` and `.Items[0]` travel as before).
+- ⚠ status: **fixed**, pinned by `constructs/breaks/two-segment-chain-with-a-call-root.cs`
+  (thirty-six shapes, byte-identical; 43 → 42 divergent files under `dump constructs`, nothing else
+  moved) and `ChainWithACallRootIssue380Tests` (seven tests; six go red with the flag never set, the
+  seventh is the not-a-call control and must stay green).
+
+## SK-DIV-0129 — the chain fill breaks before a last link the oracle keeps the head of
+
+⚠ **Found beside SK-DIV-0128, at a non-export value, and open.** With `skala_wrap_chained_method_calls
+= wrap_if_long` in an appended `[*.cs]` section, the issue's line and every two-call chain like it:
+
+| written, 120-column margin, indent 8 | oracle | Skala |
+|---|---|---|
+| `var a3 = SomeMethod(…).Other(ddd…, eee…, fff);` (149) | `…).Other(` / three arguments at 12 / `);` | `SomeMethod(…)` / `.Other(…);` |
+| `var p1 = alpha.SomeMethod(…).Other(…);` — a **property** root | the same | the same |
+| `var b5 = this.SomeMethod(…).Other(…);` | the same | the same |
+| `var a7 = SomeMethod(…).Other(…).Third(…);` (168) | `SomeMethod(…)` / `.Other(…).Third(…);` | the same |
+| `var a5 = SomeMethod(` long `).Other(d);` | arguments at 12, `).Other(d);` at 8 | the same |
+
+The oracle's fill keeps a **last** link's `.Other(` on the line and chops its arguments — even though
+the whole link, 71 columns, would fit on the continuation line at 12 — and breaks before a **middle**
+link (`a7`, where `.Other(…)` whole does not fit on the first line). Skala's fill measures the whole
+link at every point, so it breaks before `.Other` in `a3` and agrees on `a7` and `a5`. It is not the
+delimited-item head rule the tuple and type-argument fills have (SK-DIV-0110, SK-DIV-0114 — "keep the
+head when the item fits nowhere whole"), because here the item fits whole on the next line and the
+oracle still keeps its head; the boundary between the last link and a middle one is what has not been
+measured. ⚠ `p1` and `b5` run through code SK-DIV-0128 did not touch, so the divergence predates it;
+call-headed chains used to escape it by having no group at all, which is the zero from a disabled
+check. The export's `chop_if_long` is conformant on every one of these shapes.
+
+- options: `skala_wrap_chained_method_calls = wrap_if_long` only; `chop_if_long` and `chop_always` are
+  conformant on the same inputs.
+- ⚠ status: **open**, size S–M; measure the last-link/middle-link boundary on a two-, three- and
+  four-call chain with each link's width varied before wiring a head measure into the chain fill.
+  Recorded in `ChainWithACallRootIssue380Tests`' remarks and deliberately not asserted there.
