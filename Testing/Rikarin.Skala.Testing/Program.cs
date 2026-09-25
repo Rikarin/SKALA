@@ -849,7 +849,7 @@ static int UnformatCommand(string[] arguments) {
         case "regenerate":
             if (OracleRunner.FindExecutableOrNull() is null) {
                 Console.Error.WriteLine(
-                    "jb is not installed. `dotnet tool install -g JetBrains.Skala.GlobalTools --version 2025.2.6`."
+                    "jb is not installed. `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`."
                 );
 
                 return 2;
@@ -903,7 +903,7 @@ static int Restamp(string[] args) {
 static int Regenerate(string[] sets, string? only) {
     if (OracleRunner.FindExecutableOrNull() is null) {
         Console.Error.WriteLine(
-            "jb is not installed. `dotnet tool install -g JetBrains.Skala.GlobalTools --version 2025.2.6`."
+            "jb is not installed. `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`."
         );
         return 2;
     }
