@@ -165,7 +165,7 @@ public static partial class SkalaCommandLine {
         };
 
         var check = new Option<bool>("--check") {
-            Description = "Report what would change and write nothing. Exit 1 when there is anything."
+            Description = "Report what would change and write nothing. Exit 2 when there is anything."
         };
         var diff = new Option<bool>("--diff") { Description = "Print a unified diff over the edits." };
         var range = new Option<string?>("--range") {
@@ -338,7 +338,7 @@ public static partial class SkalaCommandLine {
         };
 
         var check = new Option<bool>("--check") {
-            Description = "Report what would change and write nothing. Exit 1 when there is anything."
+            Description = "Report what would change and write nothing. Exit 2 when there is anything."
         };
         var diff = new Option<bool>("--diff") { Description = "Print a unified diff over the edits." };
         var quiet = new Option<bool>("--quiet") { Description = "Print nothing but diagnostics." };
