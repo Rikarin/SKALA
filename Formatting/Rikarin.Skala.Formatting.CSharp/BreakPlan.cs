@@ -365,6 +365,7 @@ public sealed class BreakPlan {
 
     readonly string source;
     readonly PhaseOneOptions options;
+    IReadOnlySet<Microsoft.CodeAnalysis.Text.TextSpan>? captured;
     int[] forced = [];
     int nextGroup;
 
@@ -376,8 +377,17 @@ public sealed class BreakPlan {
     /// <summary>Group ids handed out; the builder pre-allocates that many on the document.</summary>
     public int GroupCount => nextGroup;
 
-    public static BreakPlan Build(SyntaxNode root, string source, in PhaseOneOptions options) {
-        var plan = new BreakPlan(source, options);
+    /// <param name="captured">
+    ///     The captured-argument expressions the builder emits verbatim (#432). Nothing inside one is
+    ///     planned: a group it would open is never opened, and a break point in it is never a gap.
+    /// </param>
+    public static BreakPlan Build(
+        SyntaxNode root,
+        string source,
+        in PhaseOneOptions options,
+        IReadOnlySet<Microsoft.CodeAnalysis.Text.TextSpan>? captured = null
+    ) {
+        var plan = new BreakPlan(source, options) { captured = captured };
         plan.Walk(root);
         plan.SettleForHeaders();
         plan.CollectForcedBreaks();
@@ -497,6 +507,10 @@ public sealed class BreakPlan {
     ///     construct's break point wins over the nested construct's non-point.
     /// </remarks>
     void Walk(SyntaxNode node) {
+        if (captured is { Count: > 0 } && node is ExpressionSyntax && captured.Contains(node.Span)) {
+            return;
+        }
+
         Plan(node);
         foreach (var child in node.ChildNodes()) {
             Walk(child);

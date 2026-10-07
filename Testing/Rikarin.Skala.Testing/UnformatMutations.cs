@@ -447,7 +447,7 @@ public static class Unformat {
     }
 
     static string? Restructure(string source, FuzzRandom random) {
-        var map = FuzzMutations.SourceMap.Of(source, Corpus.PropertySymbols);
+        var map = FuzzMutations.SourceMap.Of(source, Corpus.PropertySymbols, false);
 
         // ⚠ `absorbing: true` even though these are structural edits. That flag is what folds in the
         // *other* symbol set's disabled text, and a line break moved into the `#else` branch of a
@@ -510,7 +510,7 @@ public static class Unformat {
     }
 
     static string? Respace(string source, FuzzRandom random) {
-        var map = FuzzMutations.SourceMap.Of(source, Corpus.PropertySymbols);
+        var map = FuzzMutations.SourceMap.Of(source, Corpus.PropertySymbols, false);
         var edits = new List<(int Position, int Delete, string Insert)>();
 
         foreach (var gap in map.AbsorbableGaps) {

@@ -636,11 +636,22 @@ public static class FuzzMutations {
         public IReadOnlyList<TextSpan> OccurrencesOf(string name) =>
             identifiers.TryGetValue(name, out var spans) ? spans : [];
 
-        public static SourceMap Of(string source, IReadOnlyList<string> symbols) {
+        /// <param name="source">The file.</param>
+        /// <param name="symbols">The preprocessor symbols it is parsed with.</param>
+        /// <param name="capturedIsData">
+        ///     Whether a <c>[CallerArgumentExpression]</c>-captured argument is protected like an
+        ///     interpolated string (#432, SK-DIV-0187). ⚠ <c>true</c> for the fuzzer, whose properties ask
+        ///     whether Skala absorbs a mutation, and Skala keeps a captured argument's text by design.
+        ///     <c>false</c> for <see cref="UnformatMutations" />: the unformat differential measures Skala
+        ///     against the oracle on degraded input, the oracle reformats a captured argument, so
+        ///     scrambling one is still a fair measurement — and protecting it would move the committed
+        ///     population without a reason.
+        /// </param>
+        public static SourceMap Of(string source, IReadOnlyList<string> symbols, bool capturedIsData = true) {
             var text = SourceText.From(source);
             var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptionsFor(symbols));
             var map = new SourceMap(source, text, tree);
-            map.Build();
+            map.Build(capturedIsData);
             return map;
         }
 
@@ -705,7 +716,7 @@ public static class FuzzMutations {
 
         bool DirectiveLine(int line) => Text.Lines[line].ToString().TrimStart().StartsWith('#');
 
-        void Build() {
+        void Build(bool capturedIsData) {
             var root = Tree.GetRoot();
 
             // Lines that carry data rather than whitespace: anything a token or an interpolated
@@ -750,6 +761,14 @@ public static class FuzzMutations {
                     verbatimRegions.Add(node.Span);
                     Protect(node.SpanStart, node.Span.End, false);
                 }
+            }
+
+            // ⚠ A captured argument is verbatim too (#432, SK-DIV-0187): its text is a string a
+            // `[CallerArgumentExpression]` parameter receives, so a mutation inside it is data the
+            // formatter must keep, not whitespace it may absorb.
+            foreach (var span in capturedIsData ? CapturedArguments.Find(root) : []) {
+                verbatimRegions.Add(span);
+                Protect(span.Start, span.End, false);
             }
 
             foreach (var trivia in root.DescendantTrivia(descendIntoTrivia: true)) {

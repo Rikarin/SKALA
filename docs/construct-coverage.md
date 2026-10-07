@@ -81,7 +81,8 @@ found were modern C#, and none of them was visible to the kind census:**
 
 ## What was added
 
-Nineteen fixtures, all in `constructs/syntax/`.
+Nineteen fixtures, all in `constructs/syntax/`. A later file there, `syntax/caller-argument-expression.cs`
+(#432), is not from this audit: it pins SK-DIV-0187, the one divergence a captured argument causes.
 
 | fixture | the kinds and shapes it introduces |
 |---|---|

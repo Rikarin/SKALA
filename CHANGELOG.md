@@ -13,6 +13,17 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Changed — `skala format` no longer changes what a `[CallerArgumentExpression]` argument captures (#432)
+
+A captured argument's text reaches the program as a string, so formatting `Check(a   <   b)` changed
+what it printed while the token stream stayed identical and `SK9099` stayed silent. The expression is
+now emitted byte-identical, as an interpolated string already was; the gaps around it and every
+argument nothing captures are formatted as before. Which arguments are captured is decided from the
+file alone, so `format --check` agrees in every load mode — see SK-DIV-0187 for the list and for what
+it misses. ⚠ A divergence from the oracle, which formats them. Corpus effect: none on `corpus/real/`,
+`pathological/` or `unformatted/` (their 222 captured arguments are single identifiers); one new
+construct, `syntax/caller-argument-expression.cs`, pins the divergence.
+
 ### Changed — `SK0209` removes parentheses around a `switch`, a lambda, a query, a `?:` and an assignment where the oracle does (#392)
 
 ⚠ **An arrangement output change.** `skala arrange` used to keep those five kinds of parenthesised

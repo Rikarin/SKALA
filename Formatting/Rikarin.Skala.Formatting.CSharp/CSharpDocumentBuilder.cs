@@ -47,6 +47,13 @@ public sealed partial class CSharpDocumentBuilder {
     readonly List<Frame> frames = [];
 
     readonly HashSet<int> verbatimMembers = [];
+
+    /// <summary>
+    ///     The expressions a <c>[CallerArgumentExpression]</c> parameter may capture, emitted
+    ///     byte-for-byte (#432). See <see cref="CapturedArguments" />.
+    /// </summary>
+    readonly HashSet<TextSpan> captured;
+
     readonly string path;
     BreakPlan plan = null!;
 
@@ -90,6 +97,7 @@ public sealed partial class CSharpDocumentBuilder {
         this.options = options;
         this.outputLines = outputLines;
         (pieces, tokens) = SourcePieces.Split(root, text);
+        captured = [.. CapturedArguments.Find(root)];
     }
 
     /// <param name="path">The file's path, for diagnostics.</param>
@@ -120,7 +128,7 @@ public sealed partial class CSharpDocumentBuilder {
         // constructs at once and only a pass that sees both can decide which one owns it
         // (see BreakPlan's remarks). Ids are handed out here so that the plan's numbering and the
         // document's agree.
-        plan = BreakPlan.Build(root, source, options);
+        plan = BreakPlan.Build(root, source, options, captured);
         for (var i = 0; i < plan.GroupCount; i++) {
             doc.NextGroupId();
         }
@@ -153,6 +161,16 @@ public sealed partial class CSharpDocumentBuilder {
     ///     </code>
     /// </remarks>
     void Visit(SyntaxNode node) {
+        // ⚠ #432: the compiler hands this expression's source text to a `[CallerArgumentExpression]`
+        // parameter, so a moved space or a re-wrapped line changes what the program prints — the
+        // interpolated string's reason for being verbatim, reached through a call instead of a
+        // literal. Before every scope this node would open: its groups were never planned
+        // (BreakPlan.Walk stops here too), and the gaps around it still belong to the list it sits in.
+        if (IsCaptured(node)) {
+            EmitVerbatim(node);
+            return;
+        }
+
         if (!AlignsFromOwnColumn(node)) {
             VisitPlanned(node);
             return;
@@ -167,6 +185,31 @@ public sealed partial class CSharpDocumentBuilder {
         VisitPlanned(node);
         EmitUpTo(node.Span.End);
         CloseIndent(IndentKind.Align);
+    }
+
+    /// <summary>Whether <paramref name="node" /> is a captured argument's whole expression.</summary>
+    /// <remarks>
+    ///     ⚠ Not when a formatter tag sits inside it. The tag's region runs past the expression's end,
+    ///     and only <see cref="EmitPiece" /> reaching the tag opens it; a verbatim chunk would swallow
+    ///     the tag and format everything after it that the author switched off. The text before the tag
+    ///     is then formatted — the narrower of the two holes, and one nobody has written.
+    /// </remarks>
+    bool IsCaptured(SyntaxNode node) {
+        if (captured.Count == 0 || node is not ExpressionSyntax || !captured.Contains(node.Span)) {
+            return false;
+        }
+
+        foreach (var trivia in node.DescendantTrivia(node.Span)) {
+            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
+                var comment = trivia.ToString();
+                if (FormatterTagGuard.IsOffTag(comment, options.Tags)
+                    || FormatterTagGuard.IsOnTag(comment, options.Tags)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     /// <summary>The position the alignment column is read at.</summary>

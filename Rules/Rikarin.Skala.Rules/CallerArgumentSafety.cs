@@ -91,6 +91,35 @@ public static class CallerArgumentSafety {
         return false;
     }
 
+    /// <summary>Every span of <paramref name="model" />'s tree the compiler captures as text.</summary>
+    /// <remarks>
+    ///     The semantic answer to the question <c>CapturedArguments.Find</c> answers from syntax for the
+    ///     formatter (#432), and what that one is measured against; see SK-DIV-0187.
+    ///     <para>
+    ///         ⚠ Narrower than <see cref="CapturedSpans" /> by the parentheses, and measured: the compiler
+    ///         captures <c>Check(( a   &lt;   b ))</c> as <c>a   &lt;   b</c>. The fix guard keeps the wider
+    ///         span — an edit that touches a parenthesis touches the text inside it anyway — and this,
+    ///         which is a count, answers with exactly what is captured.
+    ///     </para>
+    /// </remarks>
+    public static IEnumerable<TextSpan> CapturedTextSpans(SemanticModel model, CancellationToken cancellation) {
+        var root = model.SyntaxTree.GetRoot(cancellation);
+        foreach (var node in root.DescendantNodes()) {
+            if (!IsCallShaped(node)) {
+                continue;
+            }
+
+            foreach (var span in CapturedSpans(model, node, cancellation)) {
+                var captured = root.FindNode(span, getInnermostNodeForTie: true);
+                while (captured is ParenthesizedExpressionSyntax { Expression: var inner }) {
+                    captured = inner;
+                }
+
+                yield return captured.Span == span || captured is not ExpressionSyntax ? span : captured.Span;
+            }
+        }
+    }
+
     /// <summary>Overlap, or contact at either end: an insertion at the edge of the text joins it.</summary>
     static bool Touches(TextSpan captured, TextSpan edit) => edit.Start <= captured.End && edit.End >= captured.Start;
 
