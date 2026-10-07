@@ -389,12 +389,10 @@ public sealed class ArrangeCommandTests {
                                                }
                                                """),
         ("Predefined.cs", "predefined type", """
-                                             using System;
-
                                              namespace P;
 
                                              public static class Predefined {
-                                                 public static int M(String s) => s.Length;
+                                                 public static int M(System.String s) => s.Length;
                                              }
                                              """),
         ("StaticQualifier.cs", "static member qualifier", """
