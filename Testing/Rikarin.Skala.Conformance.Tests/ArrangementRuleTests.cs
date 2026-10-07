@@ -1208,6 +1208,126 @@ public sealed class ArrangementRuleTests {
         Assert.Contains("using System.Reflection;\nusing System.Xml;", arranged, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     ⚠ #381: a using the compiler calls unnecessary is removable only if it is also well-formed.
+    /// </summary>
+    /// <remarks>
+    ///     Roslyn reports <c>CS8019</c> for a directive that does not resolve, beside the
+    ///     <c>CS0246</c>/<c>CS0234</c> that says why, so a filter on <c>CS8019</c> alone deleted every
+    ///     row below. Each row carries an unused, resolvable <c>using System.Text;</c> and a used
+    ///     <c>using System;</c> in the same file, and asserts both, because a fix that simply stopped
+    ///     removing would pass every "kept" assertion: the removal has to stay live in the very
+    ///     compilation that keeps the broken directive.
+    ///     <para>
+    ///         ⚠ The <c>Unused</c> assertion is the one that can fail for the <c>global</c> and
+    ///         <c>static</c> rows. <c>UsingsRule.IsRemovable</c> already refuses both shapes, so the
+    ///         output keeps them whatever the set says; the set is still asserted, because it is the
+    ///         compiler-facing half and the next caller of <c>Unused</c> may not have that guard.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The compilation's references are <see cref="SharedFrameworkReferences" />, which is
+    ///         exactly what the loose loader binds against; the workspace half is asserted end to end in
+    ///         <c>ArrangeCommandTests</c>.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    [InlineData("using Xyz.Alpha;", "Xyz.Alpha", "CS0246")]
+    [InlineData("using System.DoesNotExist;", "System.DoesNotExist", "CS0234")]
+    [InlineData("using A = Missing.Type;", "A=Missing.Type", "CS0246")]
+    [InlineData("using static Missing.Statics;", "Missing.Statics", "CS0246")]
+    [InlineData("global using Glob.Missing;", "Glob.Missing", "CS0246")]
+    public void AnUnresolvableUsing_IsKept_WhileAnUnusedResolvableOneBesideItGoes(
+        string directive,
+        string key,
+        string error
+    ) {
+        // `global using` must precede every other using, so it leads; the others follow `System`.
+        var block = directive.StartsWith("global ", StringComparison.Ordinal)
+            ? directive + "\nusing System;\nusing System.Text;"
+            : "using System;\nusing System.Text;\n" + directive;
+        var source = block + "\n\npublic class Probe {\n    public void M() => Console.WriteLine();\n}\n";
+
+        var (model, tree) = Bind(source);
+        var ids = model.GetDiagnostics(null, TestContext.Current.CancellationToken)
+            .Select(static d => d.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
+        // The premise, measured rather than assumed: the compiler calls the broken directive both
+        // unnecessary and unresolvable. If a Roslyn update stops saying CS8019 here, this row is no
+        // longer testing the second predicate and should say so by failing.
+        Assert.Contains("CS8019", ids);
+        Assert.Contains(error, ids);
+
+        var unused = UsingsRule.Unused(model, tree, TestContext.Current.CancellationToken);
+        Assert.DoesNotContain(key, unused);
+        Assert.Contains("System.Text", unused);
+        Assert.DoesNotContain("System", unused);
+
+        var arranged = Pipeline(source).Text;
+        Assert.Contains(directive, arranged, StringComparison.Ordinal);
+        Assert.Contains("using System;", arranged, StringComparison.Ordinal);
+        Assert.DoesNotContain("using System.Text;", arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #381's scope: the well-formedness predicate reads the directive's own span, not the file.
+    /// </summary>
+    /// <remarks>
+    ///     A file that does not compile three methods down still has an answer about
+    ///     <c>using System.Text;</c>. A predicate widened to "any error in the file" would pass every
+    ///     row of <see cref="AnUnresolvableUsing_IsKept_WhileAnUnusedResolvableOneBesideItGoes" /> and
+    ///     fail this.
+    /// </remarks>
+    [Fact]
+    public void AnErrorElsewhereInTheFile_DoesNotStopAnUnusedResolvableUsingGoing() {
+        const string source = """
+                              using System;
+                              using System.Text;
+
+                              public class Probe {
+                                  public void M() {
+                                      Console.WriteLine();
+                                      Undefined x = null;
+                                  }
+                              }
+
+                              """;
+
+        var (model, tree) = Bind(source);
+        Assert.Contains(
+            model.GetDiagnostics(null, TestContext.Current.CancellationToken),
+            static d => d.Severity == DiagnosticSeverity.Error
+        );
+
+        var unused = UsingsRule.Unused(model, tree, TestContext.Current.CancellationToken);
+        Assert.Equal(["System.Text"], unused);
+
+        var arranged = Pipeline(source).Text;
+        Assert.DoesNotContain("using System.Text;", arranged, StringComparison.Ordinal);
+        Assert.Contains("using System;", arranged, StringComparison.Ordinal);
+    }
+
+    static (SemanticModel Model, SyntaxTree Tree) Bind(string source) {
+        var tree = CSharpSyntaxTree.ParseText(
+            SourceText.From(source),
+            CSharpFormatter.ParseOptions,
+            "/arrangement/Probe.cs",
+            TestContext.Current.CancellationToken
+        );
+        var compilation = CSharpCompilation.Create(
+            "probe",
+            [tree],
+            SharedFrameworkReferences.Value,
+            new CSharpCompilationOptions(
+                OutputKind.DynamicallyLinkedLibrary,
+                allowUnsafe: true,
+                nullableContextOptions: NullableContextOptions.Enable
+            )
+        );
+
+        return (compilation.GetSemanticModel(tree), tree);
+    }
+
     /// <summary>One arrange-and-format pipeline run over a loose source string.</summary>
     /// <param name="implicitUsings">
     ///     ⚠ Whether the compilation carries the SDK's <c>global using</c>s, as
