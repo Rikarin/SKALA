@@ -7550,7 +7550,7 @@ string and a disabled block still advance it.
 Measured beside it and not this entry: `c /* a` / `b */ ? 1 : 2` is chopped at both `?` and `:` by the
 oracle, where Skala breaks before `?` only; `new[] { /* a` / `b */ 1, 2 }` keeps `1` after the comment and
 `new List<int> { /* a` / `b */ 1 }` breaks after it, where Skala breaks both; and `o is /* a` / `b */ string`
-in an expression body, which Skala breaks before `is` (all three #440).
+in an expression body, which Skala breaks before `is` (all three #440, resolved as SK-DIV-0205).
 
 - options: none.
 - ⚠ status: **resolved**. Pinned by `MultiLineCommentPointIssue435Tests` and
@@ -7631,3 +7631,63 @@ so the break pays the statement's continuation level. What stays open is SK-DIV-
 
 - options: `skala_indent_pars`, `skala_align_tuple_components`
 - ⚠ status: **open**, measured.
+## SK-DIV-0205 — the neighbours of a block comment that spans lines: a ternary, `is`/`as`, an array's opener, a fill
+
+#440 named three shapes SK-DIV-0200 measured beside it. Asked of `jb cleanupcode` 2025.2.6 under
+`SkalaFormatOnly`, each turned out to be a different defect, and the probes around them found two more:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `c /* a` / `b */ ? 1 : 2`, `c ? 1 /* a` / `b */ : 2`, a nested one, `Compute(c) /* a` / `b */ ? …` | chopped at both `?` and `:` | broken at one sign only |
+| `o is /* a` / `b */ string`, `o as /* a` / `b */ string`, `o /* a` / `b */ is string`, under `&&` and in an expression body | as written | broken before `is` |
+| `x.Long.Property is SomeType` past the margin, after an `=` that did not suffice, under `&&` | `… is` / `SomeType`, one level past the operand's line | `…` / `is SomeType` |
+| the same when breaking after the `=` alone fits | `=` / `… as SomeType` | broken before `as` |
+| `o` / `is string` written broken | kept | identical |
+| `x is not SomeType`, `is null`, `is string text` past the margin | after `is`, as above | not broken at all — an `is` pattern had no plan |
+| `if (x is` / `string)` and `while (…` as the whole condition | the type on the condition's aligned column | — |
+| `new[] { /* a` / `b */ 1, 2 }`, `new int[] {`, `int[] x = {`, `[/* a` / `b */ 1, 2]` | `1` kept after the comment | broken after it |
+| `new List<int> { /* a` / `b */ 1 }`, an object and a dictionary initializer | broken after the comment | identical |
+| `new[] { 1, 2, /* a` / `b */ 3 }` (a fill) | `1, 2, /* a` kept on one line | `1,` / `2, /* a` |
+| `new[] { 1, 2 /* a` / `b */, 3 }`, the same in a collection expression and a list pattern | `2 /* a` / `b */,` / `3` | `1,` / `2 /* a` / `b */, 3` |
+
+Five causes, one fix each:
+
+- ⚠ `BreakPlan.BreaksBeforeIn` read every `\n` in the gap as the author's break, and a block comment's own
+  line breaks are in the gap. The ternary keeps an author's break one sign at a time, so it pinned the one
+  sign the comment happened to precede and left the other flat. A newline inside a `/* */` or `/** */`
+  trivia no longer counts; the ternary's group then has no flat form and chops at both signs, as
+  everything else holding such a comment already did.
+- ⚠ `is` and `as` were planned as binary operators, so their break went *before* the keyword. They are
+  planned on their own now (`PlanTypeTest`): a last-resort point after the keyword, so an `=` in front
+  reads through it and breaks first when that alone fits, one level past the line it is on, and none of
+  its own as a statement's whole condition. An `is` pattern with no break point of its own is planned
+  the same way; one with `or`/`and`, a property, list or parenthesized pattern still wraps inside itself.
+  `StopsAtAMultiLineComment` gains the two keywords.
+- An array initializer's `{` and a collection expression's `[` head a fill rather than a chop, and the
+  oracle keeps the first element after a comment that spans lines there. They join
+  `StopsAtAMultiLineComment`; an object or collection initializer's `{` does not.
+- ⚠ A fill measured an item holding such a comment as infinitely wide, so the item before it moved to a
+  line of its own. `DocumentBuilder.MeasureSegments` now ends a segment at a moved comment's first
+  line, which is where the oracle's measure ends (`99999999, /* a comment that is long` moves down only
+  when that line does not fit). A raw string and a frozen comment keep their unbounded width.
+- An item ending in such a comment before its comma ends its line in a fill: the comment belongs to the
+  item, and the next point is a required break (`BreakPlan.EndsInAMultiLineComment`).
+
+⚠ The level also applies to an author's break kept *before* the keyword: `|| x` / `is null` and
+`… is not T` / `declaration` land one level past the operand's line. That reformatted 42 of Skala's own
+files; each was asked of the oracle, and 41 moved towards its output. The one that moved away is the
+last open row below.
+
+Measured beside it and left **open**: `return x.Long.Property as string` whose operand alone overflows,
+which the oracle breaks *before* `as`; `x is > 5 and < 10`, where the oracle breaks after the `=` and
+Skala at the `and`; an item that is itself multi-line in a fill (`new[] { 1, Compute(` … `), 4 }` puts
+`4` on a line of its own in the oracle; Skala keeps it and moves `Compute(` down); and an empty
+`new int[] { /* a` / `b */ }`, which the oracle closes on a line of its own. Each was the same before
+this entry. ⚠ One is new: a kept break before `is` in a lambda body that is an argument —
+`.Count(c => c.Parent` / `is ArgumentSyntax` — is one level past the line in the oracle, and Skala now
+stacks the argument list's level and the type test's own (`Testing/Rikarin.Skala.Testing/SyntaxCoverage.cs`).
+
+- options: `skala_wrap_ternary_expr_style`, `skala_wrap_array_initializer_style` and
+  `skala_align_multiline_statement_conditions` at their exported values.
+- ⚠ status: **resolved** except the four open rows. Pinned by `MultiLineCommentNeighboursIssue440Tests`
+  and `constructs/breaks/multi-line-comment-neighbours.cs`.

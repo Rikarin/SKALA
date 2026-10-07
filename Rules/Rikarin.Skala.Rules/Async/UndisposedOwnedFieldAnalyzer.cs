@@ -80,7 +80,7 @@ public sealed class UndisposedOwnedFieldAnalyzer : DiagnosticAnalyzer {
     ) {
         var declaration = (TypeDeclarationSyntax)context.Node;
         if (context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken)
-            is not INamedTypeSymbol owner
+                is not INamedTypeSymbol owner
             || owner.TypeKind == TypeKind.Error
             // ⚠ A partial type's other half may hold the disposal, and it is not in this tree.
             || owner.DeclaringSyntaxReferences.Length != 1
@@ -103,7 +103,7 @@ public sealed class UndisposedOwnedFieldAnalyzer : DiagnosticAnalyzer {
                 // in two rather than two predicates that happen to be near each other.
                 if (variable.Initializer?.Value is not BaseObjectCreationExpressionSyntax
                     || context.SemanticModel.GetDeclaredSymbol(variable, context.CancellationToken)
-                    is not IFieldSymbol symbol
+                        is not IFieldSymbol symbol
                     || symbol.DeclaredAccessibility != Accessibility.Private
                     || symbol.Type.TypeKind == TypeKind.Error
                     || symbol.NullableAnnotation == NullableAnnotation.Annotated

@@ -87,7 +87,7 @@ public sealed class SearchValuesAnalyzer : DiagnosticAnalyzer {
                 creation,
                 SpeculativeBindingOption.BindAsExpression
             ).Symbol
-            is not IMethodSymbol creator
+                is not IMethodSymbol creator
             || !SymbolEqualityComparer.Default.Equals(creator.ContainingType, factory)
             || !SymbolEqualityComparer.Default.Equals(creator.ReturnType, searchType)) {
             return;
@@ -128,7 +128,7 @@ public sealed class SearchValuesAnalyzer : DiagnosticAnalyzer {
                     replacement,
                     SpeculativeBindingOption.BindAsExpression
                 ).Symbol
-                is not IMethodSymbol method
+                    is not IMethodSymbol method
                 || !SymbolEqualityComparer.Default.Equals(method.ContainingType, extensions)
                 || method.Parameters.Length is not (1 or 2)
                 || !SymbolEqualityComparer.Default.Equals(
@@ -170,7 +170,7 @@ public sealed class SearchValuesAnalyzer : DiagnosticAnalyzer {
             ArrayCreationExpressionSyntax { Initializer: { } array } => array.Expressions,
             ImplicitArrayCreationExpressionSyntax { Initializer: { } array } => array.Expressions,
             CollectionExpressionSyntax collection when collection.Elements.All(static element => element
-                is ExpressionElementSyntax
+                    is ExpressionElementSyntax
             )
                 => collection.Elements.OfType<ExpressionElementSyntax>().Select(static element => element.Expression),
             _ => null

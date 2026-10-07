@@ -112,7 +112,7 @@ public sealed class LoggedAndRethrownAnalyzer : DiagnosticAnalyzer {
 
         foreach (var invocation in Owned<InvocationExpressionSyntax>(clause)) {
             if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-                is not IMethodSymbol method
+                    is not IMethodSymbol method
                 || !IsLoggingCall(method, sinks)
                 || invocation.ArgumentList is null
                 || !Mentions(context, invocation.ArgumentList, caught)) {

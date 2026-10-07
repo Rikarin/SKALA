@@ -40,7 +40,7 @@ public sealed class ObsoleteWithoutMessageAnalyzer : DiagnosticAnalyzer {
     static void Analyze(SyntaxNodeAnalysisContext context, INamedTypeSymbol obsolete) {
         var attribute = (AttributeSyntax)context.Node;
         if (context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol
-            is not IMethodSymbol constructor
+                is not IMethodSymbol constructor
             || !SymbolEqualityComparer.Default.Equals(constructor.ContainingType, obsolete)) {
             return;
         }

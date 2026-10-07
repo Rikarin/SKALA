@@ -59,7 +59,7 @@ public sealed class RedundantStringCallAnalyzer : DiagnosticAnalyzer {
         // what separates `s.ToString()` from `((object)s).ToString()` and from `count.ToString()`,
         // which look the same and are three different calls.
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol method
+                is not IMethodSymbol method
             || method.ContainingType.SpecialType != SpecialType.System_String) {
             return;
         }
@@ -288,7 +288,7 @@ public sealed class RedundantStringCallAnalyzer : DiagnosticAnalyzer {
             || argument.Parent is not BaseArgumentListSyntax list
             || list.Parent is not { } call
             || context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol
-            is not IMethodSymbol method) {
+                is not IMethodSymbol method) {
             return null;
         }
 

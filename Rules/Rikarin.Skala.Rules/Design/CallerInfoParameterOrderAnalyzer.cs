@@ -71,7 +71,7 @@ public sealed class CallerInfoParameterOrderAnalyzer : DiagnosticAnalyzer {
         }
 
         if (context.SemanticModel.GetDeclaredSymbol(context.Node, context.CancellationToken)
-            is not IMethodSymbol method
+                is not IMethodSymbol method
             || method.Parameters.Length != list.Parameters.Count) {
             return;
         }

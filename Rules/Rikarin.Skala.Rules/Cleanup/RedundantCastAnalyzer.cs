@@ -170,7 +170,7 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
             || generic.TypeArgumentList.Arguments.Count == 0
             || !SpeculativeBinding.CanBindDetached(invocation)
             || context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol method) {
+                is not IMethodSymbol method) {
             return;
         }
 

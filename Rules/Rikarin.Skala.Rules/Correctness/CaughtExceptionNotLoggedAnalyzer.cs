@@ -69,7 +69,7 @@ public sealed class CaughtExceptionNotLoggedAnalyzer : DiagnosticAnalyzer {
     static void Analyze(SyntaxNodeAnalysisContext context, ImmutableArray<INamedTypeSymbol> loggers) {
         var invocation = (InvocationExpressionSyntax)context.Node;
         if (context.SemanticModel.GetOperation(invocation, context.CancellationToken)
-            is not IInvocationOperation operation
+                is not IInvocationOperation operation
             || !MessageTemplate.DeclaredBy(operation, loggers)
             || !IsErrorLevel(operation.TargetMethod.Name)
             || MessageTemplate.FindTemplate(operation) is not { } template) {

@@ -384,7 +384,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
             if (constructor.IsImplicitlyDeclared
                 || constructor.DeclaringSyntaxReferences.Length != 1
                 || constructor.DeclaringSyntaxReferences[0].GetSyntax()
-                is not ConstructorDeclarationSyntax declaration
+                    is not ConstructorDeclarationSyntax declaration
                 || !facts.Constructors.TryGetValue(constructor.OriginalDefinition, out var summary)) {
                 return false;
             }

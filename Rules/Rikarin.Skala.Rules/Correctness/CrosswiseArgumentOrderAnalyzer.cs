@@ -74,7 +74,7 @@ public sealed class CrosswiseArgumentOrderAnalyzer : DiagnosticAnalyzer {
         var arguments = list.Arguments;
         if (arguments.Count < 2
             || context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol
-            is not IMethodSymbol method) {
+                is not IMethodSymbol method) {
             return;
         }
 

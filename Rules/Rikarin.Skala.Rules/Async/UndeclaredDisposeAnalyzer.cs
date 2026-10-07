@@ -82,7 +82,7 @@ public sealed class UndeclaredDisposeAnalyzer : DiagnosticAnalyzer {
         // ⚠ Another part of a partial may carry the base list, and it is not in this tree.
         if (declaration.Modifiers.Any(static modifier => modifier.IsKind(SyntaxKind.PartialKeyword))
             || context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken)
-            is not INamedTypeSymbol owner
+                is not INamedTypeSymbol owner
             || owner.TypeKind == TypeKind.Error
             // ⚠ `SK3532`'s subject. A `ref struct`'s `Dispose()` *is* the disposal contract — the
             // language's pattern rule binds `using` to it with no interface in sight — so reporting

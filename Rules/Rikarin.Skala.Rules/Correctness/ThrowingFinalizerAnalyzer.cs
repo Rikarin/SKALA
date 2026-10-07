@@ -77,7 +77,7 @@ public sealed class ThrowingFinalizerAnalyzer : DiagnosticAnalyzer {
             }
 
             if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-                is not IMethodSymbol callee
+                    is not IMethodSymbol callee
                 || !SymbolEqualityComparer.Default.Equals(callee.ContainingType, owner)
                 || callee.MethodKind != MethodKind.Ordinary) {
                 continue;

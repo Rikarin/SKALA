@@ -78,7 +78,7 @@ public sealed class ParamsSpanOverloadAnalyzer : DiagnosticAnalyzer {
                 proposed,
                 SpeculativeBindingOption.BindAsExpression
             ).Symbol
-            is not IMethodSymbol alternative
+                is not IMethodSymbol alternative
             || !SymbolEqualityComparer.Default.Equals(alternative.ContainingType, call.TargetMethod.ContainingType)
             || !SymbolEqualityComparer.Default.Equals(alternative.ReturnType, call.TargetMethod.ReturnType)
             || alternative.IsStatic != call.TargetMethod.IsStatic

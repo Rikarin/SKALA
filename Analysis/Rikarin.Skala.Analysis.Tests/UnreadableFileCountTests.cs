@@ -153,7 +153,7 @@ public sealed class UnreadableFileCountTests {
         scratch.Write(OpenName, Unformatted);
         if (scratch.WriteUnreadable("LockedA.cs", Locked) is null
             || scratch.WriteUnreadable("LockedB.cs", Locked.Replace("Locked", "LockedB", StringComparison.Ordinal))
-            is null) {
+                is null) {
             Assert.Skip(Skip);
             return;
         }

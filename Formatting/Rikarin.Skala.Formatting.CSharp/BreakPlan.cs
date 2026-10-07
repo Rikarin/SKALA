@@ -796,6 +796,14 @@ public sealed class BreakPlan {
                 PlanDeclarators(declaration);
                 return;
 
+            case BinaryExpressionSyntax binary when IsTypeTest(binary):
+                PlanTypeTest(binary, binary.OperatorToken, binary.Right);
+                return;
+
+            case IsPatternExpressionSyntax isPattern when IsUnbreakablePattern(isPattern.Pattern):
+                PlanTypeTest(isPattern, isPattern.IsKeyword, isPattern.Pattern);
+                return;
+
             case BinaryExpressionSyntax binary:
                 if (IsChainRootOperator(binary)) {
                     PlanChainWide(binary, options.WrapChainedBinaryExpressions);
@@ -1517,6 +1525,10 @@ public sealed class BreakPlan {
                 Point(comma, inner, fill);
                 Flat(next);
                 interBroken |= BreaksBefore(comma);
+            } else if (fill && EndsInAMultiLineComment(next)) {
+                Flat(comma);
+                Mandatory(next);
+                interBroken |= BreaksBefore(next);
             } else {
                 Flat(comma);
                 Point(next, inner, fill);
@@ -2911,6 +2923,76 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
+    ///     Whether <paramref name="node" /> is the whole condition of an <c>if</c>, <c>while</c>, <c>do</c> or
+    ///     <c>for</c>, whose aligned column is the level a type test's break lands on.
+    /// </summary>
+    static bool IsAHeaderCondition(SyntaxNode node) =>
+        node.Parent switch {
+            IfStatementSyntax header => header.Condition == node,
+            WhileStatementSyntax header => header.Condition == node,
+            DoStatementSyntax header => header.Condition == node,
+            ForStatementSyntax header => header.Condition == node,
+            _ => false
+        };
+
+    /// <summary>
+    ///     Whether a pattern has no break point of its own — a type, a constant, a declaration, a
+    ///     relational or a negated one — so the only place an <c>is</c> before it can wrap is the keyword.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A pattern with points of its own — <c>or</c>/<c>and</c>, a property or list pattern, a
+    ///     parenthesized one — wraps inside itself first: <c>is not (A</c> / <c>or B)</c>, never
+    ///     <c>is</c> / <c>not (A or B)</c>. Planning the keyword there broke the #418 chain fixture.
+    /// </remarks>
+    static bool IsUnbreakablePattern(PatternSyntax pattern) =>
+        !pattern.DescendantNodesAndSelf()
+            .Any(static node => node is BinaryPatternSyntax
+                    or RecursivePatternSyntax
+                    or ListPatternSyntax
+                    or ParenthesizedPatternSyntax
+            );
+
+    /// <summary>Whether a binary expression is <c>is</c> or <c>as</c> with a type on its right.</summary>
+    static bool IsTypeTest(BinaryExpressionSyntax binary) =>
+        binary.IsKind(SyntaxKind.IsExpression) || binary.IsKind(SyntaxKind.AsExpression);
+
+    /// <summary>
+    ///     <c>is</c> and <c>as</c>: the break point is <em>after</em> the keyword, whatever
+    ///     <c>skala_wrap_before_binary_opsign</c> says, and a break the author wrote before it is kept.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured (#440), and it is not the binary operators' rule although Roslyn calls both a
+    ///     binary expression. Past the margin the oracle writes <c>…PropertyName is</c> /
+    ///     <c>SomeTypeName;</c> one level past the operand's line, after an <c>=</c> break that did not
+    ///     suffice and under an <c>&amp;&amp;</c> alike; it breaks after the <c>=</c> instead when that
+    ///     alone fits; <c>o</c> / <c>is string</c> written broken is kept; and a comment that spans lines
+    ///     after the keyword keeps the type on its last line (<c>o is /* a</c> / <c>b */ string</c>).
+    ///     Planned as a binary operator before it, the break went before the keyword, and the comment's
+    ///     unbounded width took it on every line that held one.
+    /// </remarks>
+    void PlanTypeTest(SyntaxNode node, SyntaxToken keyword, SyntaxNode right) {
+        var group = NewGroup();
+        var after = FirstToken(right);
+        var broken = BreaksAfterTheLastCommentIn(source, after);
+        if (broken && options.KeepsUserBreaksBetweenItems) {
+            Mandatory(after);
+        } else {
+            Point(after, group, lastResort: true);
+        }
+
+        // ⚠ The level covers a kept break *before* the keyword too: `|| x` / `is null` and
+        // `… is not T` / `declaration` sit one level past the operand's line in the oracle, which is what
+        // reformatted 42 of Skala's own files when this landed — each one asked of the oracle and agreed.
+        Describe(
+            node,
+            group,
+            GroupMode.Preserve,
+            new GroupFacts(BreaksIfTooLong: true),
+            ownLevel: !IsAHeaderCondition(node)
+        );
+    }
+
+    /// <summary>
     ///     A property-pattern subpattern's own break point: after its <c>:</c>, landing on the
     ///     subpattern's own column.
     /// </summary>
@@ -3090,7 +3172,9 @@ public sealed class BreakPlan {
     static bool SameChain(SyntaxNode? parent, SyntaxNode child) =>
         (parent, child) switch {
             (BinaryExpressionSyntax outer, BinaryExpressionSyntax inner) =>
-                Precedence(outer.OperatorToken.Kind()) == Precedence(inner.OperatorToken.Kind()),
+                !IsTypeTest(outer)
+                && !IsTypeTest(inner)
+                && Precedence(outer.OperatorToken.Kind()) == Precedence(inner.OperatorToken.Kind()),
             (BinaryPatternSyntax, BinaryPatternSyntax) => true,
             _ => false
         };
@@ -4030,8 +4114,34 @@ public sealed class BreakPlan {
         }
 
         for (var i = previous.Span.End; i < token.SpanStart && i < source.Length; i++) {
-            if (source[i] == '\n') {
+            if (source[i] == '\n' && !InsideABlockComment(previous, token, i)) {
                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     Whether <paramref name="position" />, in the gap between the two tokens, is inside a block
+    ///     comment — a <c>/* … */</c> or a <c>/** … */</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A comment's own line breaks are not the author's break between the tokens (#440). Read as
+    ///     one, <c>c ? 1 /* a</c> / <c>b */ : 2</c> was "broken before the <c>:</c>" and a ternary that
+    ///     keeps the author's breaks one sign at a time broke there and nowhere else; the oracle chops
+    ///     it at both signs, as it chops anything holding a comment that spans lines.
+    /// </remarks>
+    static bool InsideABlockComment(SyntaxToken previous, SyntaxToken token, int position) =>
+        IsInBlockComment(previous.TrailingTrivia, position) || IsInBlockComment(token.LeadingTrivia, position);
+
+    static bool IsInBlockComment(SyntaxTriviaList trivia, int position) {
+        foreach (var piece in trivia) {
+            if (piece.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                || piece.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {
+                if (piece.FullSpan.Contains(position)) {
+                    return true;
+                }
             }
         }
 
@@ -5552,13 +5662,40 @@ public sealed class BreakPlan {
     /// </remarks>
     bool PlanItemGap(SyntaxToken gap, int group, bool fill, bool pins, bool yields = false) {
         var broke = BreaksBefore(gap);
-        if (pins && BreaksAfterTheLastCommentIn(source, gap)) {
+        if (pins && BreaksAfterTheLastCommentIn(source, gap) || fill && EndsInAMultiLineComment(gap)) {
             Mandatory(gap);
         } else {
             Point(gap, group, fill, yields: yields);
         }
 
         return broke;
+    }
+
+    /// <summary>
+    ///     Whether the item before the comma in front of <paramref name="gap" /> ends in a block comment that
+    ///     spans lines: <c>2 /* a</c> / <c>b */, 3</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on a fill (#440): the oracle puts the next item on a line of its own,
+    ///     <c>2 /* a</c> / <c>b */,</c> / <c>3</c>, where the same comment after the comma keeps it —
+    ///     <c>2, /* a</c> / <c>b */ 3</c>. The comment belongs to the item it follows, and an item that
+    ///     spans lines ends its line.
+    /// </remarks>
+    static bool EndsInAMultiLineComment(SyntaxToken gap) {
+        var comma = gap.GetPreviousToken();
+        if (!comma.IsKind(SyntaxKind.CommaToken)) {
+            return false;
+        }
+
+        foreach (var trivia in comma.LeadingTrivia.Concat(comma.GetPreviousToken().TrailingTrivia)) {
+            if ((trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia))
+                && trivia.ToFullString().Contains('\n')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

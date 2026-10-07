@@ -61,7 +61,7 @@ public sealed class SpanDecodingAnalyzer : DiagnosticAnalyzer {
                 replacementNode,
                 SpeculativeBindingOption.BindAsExpression
             ).Symbol
-            is not IMethodSymbol replacementMethod
+                is not IMethodSymbol replacementMethod
             || !SymbolEqualityComparer.Default.Equals(
                 replacementMethod.ContainingType,
                 call.TargetMethod.ContainingType

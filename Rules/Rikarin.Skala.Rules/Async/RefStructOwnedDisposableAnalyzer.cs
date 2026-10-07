@@ -71,7 +71,7 @@ public sealed class RefStructOwnedDisposableAnalyzer : DiagnosticAnalyzer {
     ) {
         var declaration = (StructDeclarationSyntax)context.Node;
         if (context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken)
-            is not INamedTypeSymbol owner
+                is not INamedTypeSymbol owner
             || !owner.IsRefLikeType
             // ⚠ Another part of a partial may hold the `Dispose`, and it is not in this tree.
             || owner.DeclaringSyntaxReferences.Length != 1
@@ -86,7 +86,7 @@ public sealed class RefStructOwnedDisposableAnalyzer : DiagnosticAnalyzer {
 
             foreach (var variable in field.Declaration.Variables) {
                 if (context.SemanticModel.GetDeclaredSymbol(variable, context.CancellationToken)
-                    is not IFieldSymbol symbol
+                        is not IFieldSymbol symbol
                     || symbol.Type.TypeKind == TypeKind.Error
                     || !symbol.Type.IsRefLikeType
                     || !HasPatternDispose(symbol.Type)

@@ -76,7 +76,7 @@ public sealed class PlatformDependentPathComparisonAnalyzer : DiagnosticAnalyzer
         var invocation = (InvocationExpressionSyntax)context.Node;
         if (invocation.ArgumentList is not { } arguments
             || context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol method
+                is not IMethodSymbol method
             || method.ContainingType.SpecialType != SpecialType.System_String) {
             return;
         }

@@ -111,7 +111,7 @@ public sealed class DiscardedCaughtExceptionAnalyzer : DiagnosticAnalyzer {
             }
 
             if (context.SemanticModel.GetSymbolInfo(creation, context.CancellationToken).Symbol
-                is not IMethodSymbol constructor
+                    is not IMethodSymbol constructor
                 || !HasChainingOverload(context, creation, created, constructor, exception)) {
                 continue;
             }

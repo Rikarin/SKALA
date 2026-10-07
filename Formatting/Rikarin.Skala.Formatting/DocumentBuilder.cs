@@ -649,6 +649,9 @@ public sealed class DocumentBuilder {
         var head = 0;
         var headStopped = false;
 
+        // Whether the current segment met a comment that spans lines, which ends it. See Walk.
+        var ended = false;
+
         Walk(childStart, count, 0);
 
         // ⚠ The point still open when the walk ends is the group's last, and it is flagged here
@@ -707,6 +710,7 @@ public sealed class DocumentBuilder {
                 if (IsOwnBreakPoint(child, group)) {
                     Flush();
                     current = child;
+                    ended = false;
                     pointDepth = depth;
                     yieldPoint = -1;
                     flat = 0;
@@ -743,7 +747,10 @@ public sealed class DocumentBuilder {
                     // A nested group can require a break using only soft points (for example,
                     // a switch expression). Splicing its children must not restore a flat form
                     // the group itself has already ruled out.
-                    if (current >= 0 && node.Kind == DocKind.Group && flatWidth[child] >= Document.Unbounded) {
+                    if (current >= 0
+                        && !ended
+                        && node.Kind == DocKind.Group
+                        && flatWidth[child] >= Document.Unbounded) {
                         flat = Document.Unbounded;
                     }
 
@@ -775,6 +782,29 @@ public sealed class DocumentBuilder {
                 }
 
                 if (current < 0) {
+                    continue;
+                }
+
+                // ⚠ A block comment that spans lines ends the segment at its first line rather than
+                // making it infinite (#440). The oracle's fill asks whether the next item fits up to
+                // where its line ends, and a comment's own line break ends it: `1, 2, /* a` / `b */ 3`
+                // keeps `2` beside `1`, and `99999999, /* a comment that is long` moves down only
+                // when that first line does not fit. Measured as unbounded, the item before every
+                // such comment went to a line of its own. Only a moved comment: a raw string or a
+                // frozen comment keeps its unbounded width.
+                if (node.Kind == DocKind.Verbatim
+                    && flatWidth[child] >= Document.Unbounded
+                    && ((VerbatimFlags)node.Flags & (VerbatimFlags.ShiftWithLine | VerbatimFlags.AlignStarred)) != 0
+                    && depth == pointDepth) {
+                    if (flat < Document.Unbounded) {
+                        flat += headWidth[child];
+                    }
+
+                    ended = true;
+                    continue;
+                }
+
+                if (ended) {
                     continue;
                 }
 

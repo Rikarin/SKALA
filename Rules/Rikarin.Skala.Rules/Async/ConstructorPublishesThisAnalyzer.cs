@@ -279,7 +279,7 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
         INamedTypeSymbol owner
     ) {
         if (context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol
-            is not IEventSymbol published
+                is not IEventSymbol published
             || !Reaches(context, assignment.Right, owner)) {
             return;
         }

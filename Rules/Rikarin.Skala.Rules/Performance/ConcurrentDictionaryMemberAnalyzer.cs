@@ -179,7 +179,7 @@ public sealed class ConcurrentDictionaryMemberAnalyzer : DiagnosticAnalyzer {
         // and #412's audit measured `custom Any / none / 10` becoming `any / 1`. Only `Enumerable`'s
         // pair is the whole-table copy the rewrite removes and the count it preserves.
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol called
+                is not IMethodSymbol called
             || (called.ReducedFrom ?? called).OriginalDefinition.ContainingType
             is not {
                 Name: "Enumerable",

@@ -100,7 +100,7 @@ public sealed class AsyncOnlyToAwaitAnalyzer : DiagnosticAnalyzer {
         }
 
         if (context.SemanticModel.GetDeclaredSymbol(context.Node, context.CancellationToken)
-            is not IMethodSymbol declared
+                is not IMethodSymbol declared
             || declared.ReturnType is not INamedTypeSymbol returned
             || !tasks.Contains(returned.OriginalDefinition)) {
             return;

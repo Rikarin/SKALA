@@ -72,7 +72,7 @@ public sealed class RestatedCallerInfoArgumentAnalyzer : DiagnosticAnalyzer {
         var arguments = list.Arguments;
         if (arguments.Count == 0
             || context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol
-            is not IMethodSymbol method) {
+                is not IMethodSymbol method) {
             return;
         }
 

@@ -63,7 +63,7 @@ public sealed class LogTemplateDuplicatePropertyAnalyzer : DiagnosticAnalyzer {
 
     static void Analyze(SyntaxNodeAnalysisContext context, ImmutableArray<INamedTypeSymbol> loggers) {
         if (context.SemanticModel.GetOperation(context.Node, context.CancellationToken)
-            is not IInvocationOperation operation
+                is not IInvocationOperation operation
             || !MessageTemplate.DeclaredBy(operation, loggers)
             || MessageTemplate.FindTemplate(operation) is not { } template
             || template.Value.ConstantValue is not { HasValue: true, Value: string text }) {

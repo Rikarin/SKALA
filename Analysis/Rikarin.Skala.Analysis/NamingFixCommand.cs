@@ -226,7 +226,7 @@ public static class NamingFixCommand {
 
         if (attempted == MaximumRenames
             && await FindFirstAsync(solution, analyzers, allowed, rejected, cancellation).ConfigureAwait(false)
-            is not null) {
+                is not null) {
             return new NamingFixOutcome(
                 applied,
                 [],

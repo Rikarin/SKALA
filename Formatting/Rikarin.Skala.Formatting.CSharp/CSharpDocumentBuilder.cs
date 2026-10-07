@@ -3042,6 +3042,14 @@ public sealed partial class CSharpDocumentBuilder {
         || token.Parent is AssignmentExpressionSyntax assignment
         && assignment.OperatorToken == token
         || token.IsKind(SyntaxKind.EqualsGreaterThanToken)
+        || token.IsKind(SyntaxKind.IsKeyword)
+        && token.Parent is BinaryExpressionSyntax or IsPatternExpressionSyntax
+        || token.IsKind(SyntaxKind.OpenBraceToken)
+        && token.Parent.IsKind(SyntaxKind.ArrayInitializerExpression)
+        || token.IsKind(SyntaxKind.OpenBracketToken)
+        && token.Parent is CollectionExpressionSyntax
+        || token.IsKind(SyntaxKind.AsKeyword)
+        && token.Parent is BinaryExpressionSyntax
         || token.IsKind(SyntaxKind.ColonToken)
         && token.Parent is NameColonSyntax;
 
