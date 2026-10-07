@@ -6281,7 +6281,7 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "Literal",
-      "summary": "Undocumented export property; classified as C#-relevant by vocabulary.",
+      "summary": "The empty string's spelling, applied by `skala arrange` (SK0206). `empty_literal` rewrites `string.Empty` to `\"\"`; `string_empty` rewrites `\"\"` to `string.Empty` everywhere a non-constant is legal and leaves constant contexts (const, attribute arguments, default parameter values, case labels, patterns) alone. The oracle performs neither direction (SK-DIV-0013, SK-DIV-0137), so both are pinned by ArrangementRuleTests and the key stays Tier D. Until #383 `string_empty` did nothing.",
       "since": "0.1",
       "oracle": "constructs/arrangement/redundancy/empty-string.cs",
       "templateLine": 730,

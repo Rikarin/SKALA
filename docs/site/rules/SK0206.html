@@ -27,14 +27,14 @@
 </tbody>
 </table>
 <h2 id="why">Why</h2>
-<p>The configured cleanup style chooses between the empty literal and <code>string.Empty</code>. Binding prevents a same-named member on another type from being mistaken for the framework field.</p>
+<p><code>skala_empty_string</code> chooses between the empty literal and <code>string.Empty</code>, and both values rewrite: <code>empty_literal</code> turns <code>string.Empty</code> into <code>&quot;&quot;</code>, <code>string_empty</code> turns <code>&quot;&quot;</code> (and <code>@&quot;&quot;</code>) into <code>string.Empty</code>. Binding prevents a same-named member on another type from being mistaken for the framework field.</p>
 <h2 id="example">Example</h2>
 <p>Instead of:</p>
 <pre class="bad"><code>var text = &quot;&quot;;</code></pre>
 <p>Write:</p>
 <pre class="good"><code>var text = string.Empty;</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>None relative to the effective configuration. Only the framework string type is recognised.</p>
+<p>None relative to the effective configuration. Only the framework string type is recognised. Under <code>string_empty</code> every position that requires a constant is left alone, because <code>string.Empty</code> is not one: <code>const</code> declarations and their initializers, attribute arguments, default parameter values, <code>case</code> labels and <code>goto case</code>, and patterns. So are <code>$&quot;&quot;</code>, <code>&quot;&quot;u8</code> and any <code>&quot;&quot;</code> inside an expression tree.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><a href="../options/literal.html#skala_empty_string"><code>skala_empty_string</code></a></li>

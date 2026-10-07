@@ -6218,3 +6218,31 @@ check. The export's `chop_if_long` is conformant on every one of these shapes.
 - ⚠ status: **open**, size S–M; measure the last-link/middle-link boundary on a two-, three- and
   four-call chain with each link's width varied before wiring a head measure into the chain fill.
   Recorded in `ChainWithACallRootIssue380Tests`' remarks and deliberately not asserted there.
+
+## SK-DIV-0137 — `skala_empty_string = string_empty` rewrites `""` to `string.Empty`, which the oracle never does, and declines every constant context
+
+SK-DIV-0013's measurement covers both directions: `jb cleanupcode` 2025.2.6 rewrites neither
+`string.Empty` to `""` nor `""` to `string.Empty`. Until #383 Skala performed only the first, and the
+second value — the one this repository's own `.editorconfig` sets, and the registry default — did
+nothing at all, which is indistinguishable from "the code already complies". Skala now performs
+both, for the same reason SK-DIV-0013 gives for the first: the export asks for it and the key's
+declared domain promises it. Both are pinned by `ArrangementRuleTests`, not by the oracle, and SK0206
+stays outside the oracle-comparable filter.
+
+⚠ The two directions are not mirror images. `""` is a compile-time constant and `string.Empty` a
+`static readonly` field, so every position that demands a constant accepts the first and rejects the
+second. The rule declines, at the rewrite: `const` fields and locals (and any expression inside their
+initializers, `const string A = "" + B;`), attribute arguments, default parameter values (method,
+lambda, local function, indexer, delegate, primary constructor), `case ""`, `goto case ""`, and every
+pattern (`is ""`, switch-expression arm patterns, property and list patterns). It also declines `$""`
+and `$@""` (interpolated strings, not literals), `""u8` (a `ReadOnlySpan<byte>`), and any `""` inside
+an expression tree — there it would compile, but a `ConstantExpression` becomes a `MemberExpression`
+and a query provider is handed a different tree. `@""` is rewritten: it is the same empty string.
+
+Declining at the rule rather than relying on safety layer 2 is deliberate: the layer's unit is the
+file, so one `case ""` would revert every other rule's rewrite in it.
+
+Measured on this repository's own source with `skala arrange --include SK0206 --load=binlog`: 33
+sites in 18 files rewritten, every constant-context `""` left alone, no file reverted.
+
+- options: `skala_empty_string`
