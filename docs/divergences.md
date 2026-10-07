@@ -6708,3 +6708,54 @@ comment, and Skala has never taken it (#411).
 
 - options: none.
 - ⚠ status: **resolved** except the last row, which is **open**.
+
+## SK-DIV-0180 — a `/** … */` comment was written without its `/**`, so every file holding one was refused
+
+⚠ **The issue (#415) found it inside an expression; it was everywhere.** `M(1 /** e09 */, 2);` was
+refused with SK9099 (`'C:/** e09 */' became 'T8216:'`) — and so was `/** <summary>Doc.</summary> */`
+above a member, `/** … */` above a statement, `M(); /** … */` at the end of a line, and a starred
+multi-line `/**` block. `corpus/` held no `/**` at all, which is how nothing measured it.
+
+Roslyn lexes `/**` as `MultiLineDocumentationCommentTrivia` wherever it stands, under
+`DocumentationMode.Parse` — which the formatter always uses (#388); under `None` the same text is a plain
+`MultiLineCommentTrivia`. The `/**` is the `DocumentationCommentExteriorTrivia` leading the structure's
+first token, and a *structured* trivia's `Span` and `ToString()` both exclude the structure's own leading
+trivia. `SourcePieces.Make` cut the piece's text from `Span`, so the builder wrote ` e09 */`. The xmldoc
+sub-formatter was never involved: it declines `/** */` outright. `SourcePieces.TextOf` is now the one
+answer (the full span for this kind only — a directive's full span carries the newline its end token
+trails), and the blank-line width measure and the formatter-tag guard read the same text.
+
+Once readable, the oracle treats `/** … */` as the block comment it looks like, measured with
+`Testing ask` under `SkalaFormatOnly` and `SkalaDocComments`:
+
+| written | oracle | Skala before | Skala now |
+|---|---|---|---|
+| any `/** … */` | formatted | SK9099, file untouched | formatted, comment byte-identical |
+| `/** single */ public int F;`, `/** s1 */ E();` | broken after the comment | — | identical (`PointSurvivesComments`) |
+| `a, /** f */ b` past the margin; `x /** h */ + y` broken; `a,` / `/** f */ b` chopped | SK-DIV-0165's shapes, comment for comment | — | identical |
+| `/**/`, `/***/` | left alone (plain comments to Roslyn) | identical | identical |
+| `M(1 /** e09 */ , 2)`, `M(1, /** e10 */2)` | `/** e09 */,` and `/** e10 */2` | — | `/** e09 */ ,` and `/** e10 */ 2`: #410, the same for `/* */` |
+| a multi-line `/**` whose first line moves | continuation lines shift with it | — | continuation lines stay put: #428, the same for a non-starred `/* */` |
+| `/** top */ public class D { }` at the top level | broken after the comment | — | kept: #429, the same for `/* */` |
+
+Pinned by `BlockDocCommentIssue415Tests` (byte-identity of the comment and of the token stream across
+fourteen positions, the Roslyn premise under both documentation modes, and a `/** @formatter:off */`
+region) and `constructs/trivia/slash-star-star-comments.cs`. The fuzzer now injects `/** … */` own-line
+and in a gap (`doc-comment-line`, `doc-comment-inline`).
+
+- options: none.
+- ⚠ status: **resolved**; the last three rows belong to #410, #428 and #429.
+
+## SK-DIV-0181 — `SkalaDocComments` rebuilds a one-line `/** … */` above a member; Skala keeps it
+
+Under `SkalaDocComments` (`CSharpFormatDocComments` on) the oracle rewrites
+`/** <summary>Doc.</summary> */` above a member as three lines — `/**`, ` * <summary>Doc.</summary>`,
+` */` — and `/** single */` likewise. Under `SkalaFormatOnly` it leaves both alone, and so does Skala:
+`XmlDocFormatter` declines `/** */` by design, because re-wrapping one means inventing the `*` prefix
+convention the author did not necessarily use. Rider's behaviour is the requirement where the two
+profiles differ (SK-DIV-0006), so this is a real divergence and not a profile artefact — but no
+construct under `xmldoc/` asks about `/** */` (`Corpus.DocCommentBearing` is chosen by `///` lines), so
+it has no fixture yet, and the rebuild's rules for a starred multi-line block were not probed.
+
+- options: none.
+- ⚠ status: **open**.

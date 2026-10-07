@@ -237,7 +237,7 @@ public static class SourcePieces {
 
     /// <summary>The source text a trivia piece owns.</summary>
     /// <remarks>
-    ///     ⚠ Issue #415. <see cref="SyntaxTrivia.Span" /> of a <em>structured</em> trivia excludes its
+    ///     ⚠ Issue #415, SK-DIV-0180. <see cref="SyntaxTrivia.Span" /> of a <em>structured</em> trivia excludes its
     ///     structure's leading and trailing trivia, and a <c>/** … */</c> comment's <c>/**</c> opener is
     ///     exactly that: the <see cref="SyntaxKind.DocumentationCommentExteriorTrivia" /> leading the
     ///     structure's first token. Read through <c>Span</c>, every <c>/** … */</c> anywhere in a file —

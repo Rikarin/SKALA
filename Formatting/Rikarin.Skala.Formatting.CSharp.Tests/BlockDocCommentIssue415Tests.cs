@@ -117,6 +117,71 @@ public sealed class BlockDocCommentIssue415Tests {
             """
         );
 
+    /// <summary>
+    ///     #409's break point after a block comment holds for a <c>/** … */</c> too, under
+    ///     <c>SkalaFormatOnly</c> and <c>SkalaDocComments</c> alike.
+    /// </summary>
+    [Fact]
+    public void ABreakPointAfterASlashStarStar_BreaksAfterTheComment() =>
+        Oracle.Agrees(
+            """
+            class T {
+                void A() {
+                    var a = new D(name175: nameof(value), /** f */  name176: Cast<ValueTask<Dictionary<string, Guid?>>, int>($"n={items[0]} and {source?.Value}", 12345));
+                }
+
+                void G() {
+                    Compute(alphaArgumentValue, /** f */ betaArgumentValue, gammaArgumentValue, /** g */ deltaArgumentValue, epsilonArgumentValue);
+                }
+
+                void H() {
+                    var x = alphaArgumentValue + betaArgumentValue + gammaArgumentValue /** h */ + deltaArgumentValue + epsilonArgument;
+                }
+
+                void J() {
+                    M(alpha,
+                        /** f */ beta);
+                }
+            }
+            """,
+            """
+            class T {
+                void A() {
+                    var a = new D(
+                        name175: nameof(value), /** f */
+                        name176: Cast<ValueTask<Dictionary<string, Guid?>>, int>($"n={items[0]} and {source?.Value}", 12345)
+                    );
+                }
+
+                void G() {
+                    Compute(
+                        alphaArgumentValue, /** f */
+                        betaArgumentValue,
+                        gammaArgumentValue, /** g */
+                        deltaArgumentValue,
+                        epsilonArgumentValue
+                    );
+                }
+
+                void H() {
+                    var x = alphaArgumentValue
+                        + betaArgumentValue
+                        + gammaArgumentValue /** h */
+                        + deltaArgumentValue
+                        + epsilonArgument;
+                }
+
+                void J() {
+                    M(
+                        alpha,
+                        /** f */
+                        beta
+                    );
+                }
+            }
+            """
+        );
+
     /// <summary>The positions where the oracle leaves the comment exactly where it was.</summary>
     [Fact]
     public void WhereTheOracleLeavesIt_SoDoesSkala() =>
