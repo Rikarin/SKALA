@@ -52,6 +52,24 @@ public sealed class FuzzRegressionTests {
     [InlineData(2742638269065363150UL)]
     [InlineData(7611825995831206751UL)]
     [InlineData(3296757264995743770UL)]
+
+    // ⚠ Fourteen consecutive Nightly runs, 2026-09-23 to 2026-10-06, all on one commit and all one
+    // defect: a switch arm whose body is a multi-line raw string. The pattern before the arrow read
+    // the body's unbounded flat width as its own line and chopped; pass two re-joined it.
+    [InlineData(2120897534779346985UL)]
+    [InlineData(9749290611115768490UL)]
+    [InlineData(15958279914763084359UL)]
+    [InlineData(15444912073777749680UL)]
+    [InlineData(18393674522974205944UL)]
+    [InlineData(12485847646168391438UL)]
+    [InlineData(7912736926820264633UL)]
+    [InlineData(16468989038966499649UL)]
+    [InlineData(7775043994036919290UL)]
+    [InlineData(16738553386079377947UL)]
+    [InlineData(5651812525606868025UL)]
+    [InlineData(11606463289314822479UL)]
+    [InlineData(15931495183721029956UL)]
+    [InlineData(15010799596576293816UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

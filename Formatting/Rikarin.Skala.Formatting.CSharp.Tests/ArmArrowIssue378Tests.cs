@@ -425,6 +425,37 @@ public sealed class ArmArrowIssue378Tests {
     }
 
     /// <summary>
+    ///     An arm whose body is a multi-line raw string: the head's line ends at the literal's first
+    ///     newline, so the pattern is measured against <c>""\"</c> and stays whole, with or without a
+    ///     <c>when</c>. Expected strings are the oracle's, measured 2026-10-07.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Fourteen consecutive Nightly runs (2026-09-23 to 2026-10-06) were this one defect. The body
+    ///     has no break point, so the head read through the arrow into it (#378), and a multi-line
+    ///     literal's flat width is unbounded: the pattern chopped on pass one, the chop pushed the
+    ///     <c>when</c> onto its own line, and pass two — measuring up to a kept break — re-joined it.
+    /// </remarks>
+    [Theory]
+    [InlineData(" when _cache", "                                               ")]
+    [InlineData("", "                                   ")]
+    public void AnArmsRawStringBody_EndsTheHeadsLineAtItsFirstNewline(string when, string body) =>
+        Oracle.Agrees(
+            "internal sealed class T6 {\n"
+            + $"  public long P7 => state switch {{ double {{ P14: \"k\" }}{when} => \"\"\"\n"
+            + "  { \"json\": true }\n"
+            + "  \"\"\" };\n"
+            + "}\n",
+            "internal sealed class T6 {\n"
+            + "    public long P7 =>\n"
+            + "        state switch {\n"
+            + $"            double {{ P14: \"k\" }}{when} => \"\"\"\n"
+            + $"{body}{{ \"json\": true }}\n"
+            + $"{body}\"\"\"\n"
+            + "        };\n"
+            + "}\n"
+        );
+
+    /// <summary>
     ///     Unchanged and kept: an argument list, an initializer and a pattern under <c>is</c> are not
     ///     chopped when only the tail overflows — the operator or the <c>?</c> breaks.
     /// </summary>
