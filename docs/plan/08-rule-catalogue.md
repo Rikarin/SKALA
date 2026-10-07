@@ -2748,7 +2748,12 @@ guard for it. `SK1073` stays unsafe by design: replacing a fresh `EventArgs` wit
 is the rule, and identity is what changes (a set of three becomes a set of one); its expression-tree
 defect is fixed. `SK1082` stays unsafe by design: on a null receiver the exception type changes, and a
 non-null-by-construction proof was written, measured and withdrawn, because it declined the rule's own
-positives and every parameter receiver. `CrossFixtureFixTests.TheModernizationFix_OnItsOwnExecutableFixtures_PreservesTheResult`
+positives and every parameter receiver. ⚠ **#437 is the same difference and takes the same decision**:
+`SK4030`'s `Any`/`All`/`FirstOrDefault`/`Contains` rewrites over a list turn `ArgumentNullException`
+into `NullReferenceException` on a null receiver, and `SK4030` stays unsafe for that alone. The
+nullable flow state is not a runtime proof — `!` and an oblivious caller both defeat it — so the
+exception type on a null receiver is the one difference these two rules keep, outside what `fixIsSafe`
+promises for them, and a `Fact` pins it for each. `CrossFixtureFixTests.TheModernizationFix_OnItsOwnExecutableFixtures_PreservesTheResult`
 runs the fifteen rules with executable fixtures whatever the catalogue says, and a `Fact` each pins
 the two by-design changes.
 

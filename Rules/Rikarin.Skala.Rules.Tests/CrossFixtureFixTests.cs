@@ -302,6 +302,36 @@ public sealed class CrossFixtureFixTests {
     }
 
     /// <summary>
+    ///     ⚠ #437: why <c>SK4030</c> stays unsafe, decided with <c>SK1082</c>. Each <c>Enumerable</c> call it
+    ///     rewrites checks its source and the list's own method is an instance call, so a null receiver
+    ///     throws <c>ArgumentNullException</c> before and <c>NullReferenceException</c> after.
+    /// </summary>
+    [Fact]
+    public void TheListMethodRewrite_OnANullReceiver_ChangesTheException() {
+        var cancellation = TestContext.Current.CancellationToken;
+        const string source = """
+                              using System.Collections.Generic;
+                              using System.Linq;
+
+                              public static class Probe {
+                                  static List<int>? Find(bool found) => found ? new List<int> { 1 } : null;
+
+                                  public static bool Run() {
+                                      var list = Find(false)!;
+                                      return list.Any(x => x > 0);
+                                  }
+                              }
+                              """;
+        var before = RuleFixtures.Compile(source, PlantedPath);
+        var (id, text) = Assert.Single(FixedTexts(source, before, static rule => rule == "SK4030", cancellation));
+
+        Assert.Equal("SK4030", id);
+        Assert.Contains("list.Exists(", text, StringComparison.Ordinal);
+        Assert.Equal("throws ArgumentNullException", Probe(before, cancellation));
+        Assert.Equal("throws NullReferenceException", Probe(RuleFixtures.Compile(text, PlantedPath), cancellation));
+    }
+
+    /// <summary>
     ///     ⚠ #423: why <c>SK2064</c> stays unsafe with its guard fixed. On the null guard the rule
     ///     exists for, <c>&amp;</c> throws and <c>&amp;&amp;</c> does not: the finding is the behaviour
     ///     change, as it is for <c>SK2181</c>, which ships unsafe for the same reason.
