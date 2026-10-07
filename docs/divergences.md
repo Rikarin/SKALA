@@ -7775,3 +7775,17 @@ divergence before SK-DIV-0205. SK-DIV-0205's stacked level had happened to land 
 - options: none.
 - ⚠ status: **resolved**. Pinned by `TypeTestLevelIssue445Tests` and `constructs/breaks/type-test-level.cs`.
 
+
+## SK-DIV-0207 — a local function's attributes are each on a line of their own under every key
+
+#444's fifth shape. Skala read `skala_place_method_attribute_on_same_line` for a local function, as for a
+method, so at `always` it joined `[Obsolete] void Local() { }`. Measured with `jb cleanupcode` 2025.2.6:
+with the method key at `always` and at `if_owner_is_single_line`, `skala_place_attribute_on_same_line =
+true`, both together, and `skala_keep_existing_attribute_arrangement = true`, every local function comes
+back `[Obsolete]` / `void Local() { }` — two sections on two lines — while a method in the same class moves
+with the keys. `BreakPlan.PlanAttributes` now breaks every section of a local function, and the method
+key no longer names it. A block comment after the last section still leaves that gap to the author
+(SK-DIV-0199): `[Obsolete] /* c */ void Local() { }` is kept on one line by the oracle too.
+
+- options: none reach it.
+- ⚠ status: **resolved**. Pinned by `LocalFunctionAttributeIssue444Tests`.

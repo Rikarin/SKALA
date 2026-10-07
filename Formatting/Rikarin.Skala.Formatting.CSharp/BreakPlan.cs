@@ -5235,6 +5235,19 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ A local function's attribute sections are each on a line of their own whatever any key says
+        // (#444, SK-DIV-0207). Measured with the method key at `always` and `if_owner_is_single_line`,
+        // `skala_place_attribute_on_same_line = true`, both together and
+        // `skala_keep_existing_attribute_arrangement = true`: `[Obsolete] void Local() { }` comes back
+        // `[Obsolete]` / `void Local() { }` every time, and a method beside it moves with the keys.
+        if (node is LocalFunctionStatementSyntax) {
+            foreach (var token in AttributeGaps(node, lists)) {
+                Mandatory(token);
+            }
+
+            return;
+        }
+
         var placement = AttributePlacement(node);
         if (placement == PlacementStyle.Never) {
             // skala_keep_existing_attribute_arrangement = true leaves whatever the author wrote.
@@ -5412,8 +5425,7 @@ public sealed class BreakPlan {
                 or ConstructorDeclarationSyntax
                 or DestructorDeclarationSyntax
                 or OperatorDeclarationSyntax
-                or ConversionOperatorDeclarationSyntax
-                or LocalFunctionStatementSyntax =>
+                or ConversionOperatorDeclarationSyntax =>
                 options.PlaceMethodAttributeOnSameLine,
             // ⚠ `event Action E;` is an accessor holder too, and it used to be read as a field here.
             // Measured, and it is the same finding `resharper_place_event_attribute_on_same_line`'s
