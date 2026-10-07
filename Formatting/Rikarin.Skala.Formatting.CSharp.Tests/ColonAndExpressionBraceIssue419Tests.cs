@@ -149,6 +149,20 @@ public sealed class ColonAndExpressionBraceIssue419Tests {
     }
 
     /// <summary>
+    ///     ⚠ A preserved gap that held a line break has no author's bit, so the next line's indentation
+    ///     cannot decide it: the fuzzer's whitespace-absorption property found <c>X</c> / <c>    : 1</c>
+    ///     joined as <c>X : 1</c> and the same input unindented as <c>X: 1</c> (seed
+    ///     7764980540680690061). Not the oracle's answer — it keeps the break and expands the pattern
+    ///     (#436) — but Skala's, and the same at every indentation.
+    /// </summary>
+    [Theory]
+    [InlineData("var v = o is P { X\n: 1 };")]
+    [InlineData("var v = o is P { X\n            : 1 };")]
+    [InlineData("var v = o is P { X  \n    : 1 };")]
+    public void AJoinedSubpatternColon_TakesNoSpaceFromTheNextLinesIndent(string statement) =>
+        AssertFormats(InMethod(statement), "        var v = o is P { X: 1 };");
+
+    /// <summary>
     ///     Every expression brace reads the array-initializer key, whatever stands just inside it.
     /// </summary>
     [Theory]

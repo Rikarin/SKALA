@@ -3351,8 +3351,16 @@ public sealed partial class CSharpDocumentBuilder {
         // is a one-bit question — did the author write any horizontal space — and the answer is
         // still Required or Forbidden by the time the document is built. Keeping the third state
         // alive all the way to the writer would mean carrying the source into it for one construct.
+        // ⚠ A gap being joined has no author's bit: what the author wrote there was a line ending, and
+        // neither the next line's indentation nor a trailing space before the ending is a space between
+        // the two tokens. Reading them made `{ X` / `    : 1 }` come back `X : 1` and the same input
+        // unindented `X: 1`, which the fuzzer's whitespace-absorption property found on #419's
+        // subpattern colon (seed 7764980540680690061). Joined, the gap takes no space.
         return kind == SpaceKind.Preserve
-            ? HasSpace(previous.Span.End, nextToken.SpanStart) ? SpaceKind.Required : SpaceKind.Forbidden
+            ? HasSpace(previous.Span.End, nextToken.SpanStart)
+            && !HasLineBreak(previous.Span.End, nextToken.SpanStart)
+                ? SpaceKind.Required
+                : SpaceKind.Forbidden
             : kind;
     }
 
