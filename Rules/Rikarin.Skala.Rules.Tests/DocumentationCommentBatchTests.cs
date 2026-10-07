@@ -20,7 +20,9 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     as exact text.
 /// </remarks>
 public sealed class DocumentationCommentBatchTests {
-    static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [new ReturnsOnVoidMemberAnalyzer()];
+    static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
+        new ReturnsOnVoidMemberAnalyzer(), new OrphanInheritdocAnalyzer()
+    ];
 
     [Fact]
     public void TheReturnsFix_TakesTheWholeLine() {
@@ -125,6 +127,83 @@ public sealed class DocumentationCommentBatchTests {
         Assert.DoesNotContain(
             Run(Source, DocumentationMode.None),
             static d => d.Id == RuleIds.ReturnsDocumentedOnVoidMember
+        );
+    }
+
+    [Fact]
+    public void WithoutDocumentationParsing_TheInheritdocRuleIsSilent() {
+        const string Source = """
+            /// <summary>A cache.</summary>
+            public sealed class Cache {
+                /// <inheritdoc />
+                public void Orphan() { }
+            }
+            """;
+
+        Assert.Single(Run(Source, DocumentationMode.Parse), static d => d.Id == RuleIds.InheritdocWithNothingToInherit);
+        Assert.DoesNotContain(
+            Run(Source, DocumentationMode.None),
+            static d => d.Id == RuleIds.InheritdocWithNothingToInherit
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ The corpus sweep's whole first result: 150 findings, every one a member implementing an
+    ///     interface the compilation could not resolve. A fixture cannot hold this shape — the harness
+    ///     rejects a fixture that does not compile — so it is pinned here, in each of the three ways a
+    ///     hierarchy fails to bind, beside a canary that the same compilation still reports a real orphan.
+    /// </summary>
+    [Theory]
+    [InlineData("IMissing", "public void Emit() { }")]
+    [InlineData("MissingBase", "public void Emit() { }")]
+    [InlineData("System.IEquatable<Missing>", "public bool Equals(Missing? other) => false;")]
+    public void AnUnboundHierarchy_IsNotJudged(string baseList, string member) {
+        var source = $$"""
+            /// <summary>A sink.</summary>
+            public sealed class Sink : {{baseList}} {
+                /// <inheritdoc />
+                {{member}}
+            }
+
+            /// <summary>A canary in the same compilation.</summary>
+            public sealed class Canary {
+                /// <inheritdoc />
+                public void Orphan() { }
+            }
+            """;
+
+        var findings = Run(source, DocumentationMode.Parse)
+            .Where(static d => d.Id == RuleIds.InheritdocWithNothingToInherit)
+            .ToArray();
+
+        var finding = Assert.Single(findings);
+        Assert.Contains("`Orphan`", finding.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheInheritdocFix_RestoresThePartialDefinitionsProse() {
+        const string Source = """
+            /// <summary>A loader.</summary>
+            public sealed partial class Loader {
+                /// <summary>Loads everything.</summary>
+                public partial void Load();
+
+                /// <inheritdoc />
+                public partial void Load() { }
+            }
+            """;
+
+        Assert.Equal(
+            """
+            /// <summary>A loader.</summary>
+            public sealed partial class Loader {
+                /// <summary>Loads everything.</summary>
+                public partial void Load();
+
+                public partial void Load() { }
+            }
+            """,
+            Apply(Source, RuleIds.InheritdocWithNothingToInherit)
         );
     }
 

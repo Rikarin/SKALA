@@ -3224,7 +3224,25 @@ the tag. It reads Roslyn's parsed documentation trivia, so under a binlog whose 
 line when nothing else shares it, and is unsafe for `SK0003`'s reason. Measured: zero over the three
 vendored trees (398 `<returns>` blocks) and Skala's own source, with a planted probe firing in each.
 
-`SK7102` a `<returns>` element on a member declared `void`, or on a constructor or finalizer.
+⚠ **`SK7103` is `SK7100`'s resolver read inverted, and Roslyn's own expansion decided every
+boundary.** A probe called the IDE's internal `GetDocumentationComment(expandInheritdoc: true)` on
+each shape (#391). It follows an override, an explicit or implicit interface member, a base constructor
+with the same parameters, and a class's base type — and nothing else, so a `new`-hiding member and a
+member of a nested type expand to nothing and are reported. `System.Object`/`System.ValueType` count
+as nothing: Roslyn does resolve a base-less class to "Supports all classes in the .NET class
+hierarchy…", which documents `object`. ⚠ **#391's "a partial method whose other part documents it
+must not fire" is refuted**: both halves carry the *implementation's* comment, so an `<inheritdoc/>`
+there masks the definition's summary and the member renders blank — deleting it is the repair. ⚠ The
+first corpus sweep's 150 findings were all members of types whose interfaces did not bind (`CS0246`
+in the vendored slice), so an unbound hierarchy is not judged. The fix deletes the orphan, unsafe:
+the member is then honestly undocumented to `CS1591` and `SK7010`. Like `SK7102` it is silent under a
+binlog parsed with `DocumentationMode.None` (#388) — measured on the corpus binlogs with
+`GenerateDocumentationFile` off. Zero findings over the three vendored trees and Skala's own source,
+with a planted orphan firing in each compilation.
+
+`SK7102` a `<returns>` element on a member declared `void`, or on a constructor or finalizer. ·
+`SK7103` an `<inheritdoc/>` on a declaration with no override, interface member, matching base
+constructor or base type to inherit from.
 
 ### Logging declarations — `SK7110`–`SK7119`
 
@@ -3508,8 +3526,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **364** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **328** | **90.9 %** |
+| Rules this document names | **365** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **329** | **90.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, then withdrawn or never built | **3** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
