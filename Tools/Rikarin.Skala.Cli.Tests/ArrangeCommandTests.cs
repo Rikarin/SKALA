@@ -5,6 +5,8 @@ namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>The standalone arrangement command's project-loading contract.</summary>
 public sealed class ArrangeCommandTests {
+    const string Command = "arrange";
+
     [Fact]
     public void DefaultArrange_ClearsTheSemanticFindingReportedByDefaultVerify() {
         using var scratch = new Scratch();
@@ -45,7 +47,7 @@ public sealed class ArrangeCommandTests {
             """
         );
 
-        var arranged = CliRunner.Run("arrange", caller);
+        var arranged = CliRunner.Run(Command, caller);
 
         Assert.Equal(0, arranged.ExitCode);
         Assert.Contains("Callee.Sum(first: 1, second: 2)", File.ReadAllText(caller), StringComparison.Ordinal);
@@ -79,12 +81,12 @@ public sealed class ArrangeCommandTests {
             """
         );
 
-        var arranged = CliRunner.Run("arrange", "--load=none", "--include", "SK0209", file);
+        var arranged = CliRunner.Run(Command, "--load=none", "--include", "SK0209", file);
 
         Assert.Equal(0, arranged.ExitCode);
         Assert.Contains("=> a + b;", File.ReadAllText(file), StringComparison.Ordinal);
 
-        var rejected = CliRunner.Run("arrange", "--check", "--load=none", "--aggressive", file);
+        var rejected = CliRunner.Run(Command, "--check", "--load=none", "--aggressive", file);
 
         Assert.Equal(3, rejected.ExitCode);
         Assert.Contains(
@@ -157,7 +159,7 @@ public sealed class ArrangeCommandTests {
             """
         );
 
-        var arranged = RunIn(Path.Combine(scratch.Root, "App"), "arrange");
+        var arranged = RunIn(Path.Combine(scratch.Root, "App"), Command);
 
         Assert.Equal(0, arranged.ExitCode);
         var rewritten = File.ReadAllText(caller);
@@ -187,13 +189,13 @@ public sealed class ArrangeCommandTests {
         // LoadRequest.BinlogPath, since nothing else in the run knows this file.
         var named = scratch.Write("named.binlog", "not a binary log");
 
-        var withBinlog = CliRunner.Run("arrange", "--check", "--load=binlog", "--binlog", named, file);
+        var withBinlog = CliRunner.Run(Command, "--check", "--load=binlog", "--binlog", named, file);
 
         Assert.DoesNotContain("Unrecognized command or argument", withBinlog.StandardError, StringComparison.Ordinal);
         Assert.Contains(named, withBinlog.StandardOutput + withBinlog.StandardError, StringComparison.Ordinal);
 
         var withFresh = CliRunner.Run(
-            "arrange",
+            Command,
             "--check",
             "--load=binlog",
             "--binlog",
