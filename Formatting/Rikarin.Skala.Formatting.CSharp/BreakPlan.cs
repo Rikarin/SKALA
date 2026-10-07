@@ -727,6 +727,10 @@ public sealed class BreakPlan {
                 PlanAnonymousObject(anonymous);
                 return;
 
+            case CollectionExpressionSyntax { Elements.Count: 0 } empty:
+                CloseAfterAMultiLineComment(empty.OpenBracketToken, empty.CloseBracketToken);
+                return;
+
             case CollectionExpressionSyntax collection:
                 PlanList(
                     node,
@@ -1485,7 +1489,12 @@ public sealed class BreakPlan {
         bool array
     )
         where T : SyntaxNode {
-        if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None) || items.Count == 0) {
+        if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        if (items.Count == 0) {
+            CloseAfterAMultiLineComment(open, close);
             return;
         }
 
@@ -5764,6 +5773,32 @@ public sealed class BreakPlan {
         }
 
         return broke;
+    }
+
+    /// <summary>
+    ///     An empty initializer or collection expression that holds nothing but a block comment spanning
+    ///     lines closes on a line of its own (#444, SK-DIV-0209).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on an array initializer, a collection and an object initializer and a collection
+    ///     expression, the comment written beside the opener and on its own line alike:
+    ///     <c>new int[] { /* a</c> / <c>b */</c> / <c>};</c>. A comment on one line, <c>new int[] { /* a */ }</c>,
+    ///     stays as it is. An argument list is not this: the oracle moves its comment, which is another
+    ///     question.
+    /// </remarks>
+    void CloseAfterAMultiLineComment(SyntaxToken open, SyntaxToken close) {
+        if (open.GetNextToken() != close) {
+            return;
+        }
+
+        foreach (var trivia in open.TrailingTrivia.Concat(close.LeadingTrivia)) {
+            if ((trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia))
+                && trivia.ToFullString().Contains('\n')) {
+                Mandatory(close);
+                return;
+            }
+        }
     }
 
     /// <summary>

@@ -3054,9 +3054,10 @@ public sealed partial class CSharpDocumentBuilder {
         || token.IsKind(SyntaxKind.IsKeyword)
         && token.Parent is BinaryExpressionSyntax or IsPatternExpressionSyntax
         || token.IsKind(SyntaxKind.OpenBraceToken)
-        && token.Parent.IsKind(SyntaxKind.ArrayInitializerExpression)
+        && token.Parent is InitializerExpressionSyntax { Expressions.Count: > 0 } array
+        && array.IsKind(SyntaxKind.ArrayInitializerExpression)
         || token.IsKind(SyntaxKind.OpenBracketToken)
-        && token.Parent is CollectionExpressionSyntax
+        && token.Parent is CollectionExpressionSyntax { Elements.Count: > 0 }
         || token.IsKind(SyntaxKind.AsKeyword)
         && token.Parent is BinaryExpressionSyntax
         || token.IsKind(SyntaxKind.ColonToken)

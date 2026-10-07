@@ -7789,3 +7789,19 @@ key no longer names it. A block comment after the last section still leaves that
 
 - options: none reach it.
 - ⚠ status: **resolved**. Pinned by `LocalFunctionAttributeIssue444Tests`.
+
+## SK-DIV-0209 — an empty container holding only a comment that spans lines closes on a line of its own
+
+#444's fourth shape. `new int[] { /* a` / `b */ };` comes back from the oracle as `new int[] { /* a` /
+`b */` / `};`, and the same for a collection, an object and an anonymous initializer, a `/** */` comment, a
+comment the author put on its own line, and a collection expression's `]`. A one-line `{ /* a */ }` stays
+as written. Skala joined the closer onto the comment's last line: an empty container has no elements, so no
+plan reached its closer. `BreakPlan.CloseAfterAMultiLineComment` requires the break; and SK-DIV-0205's rule
+that an array initializer's `{` and a collection expression's `[` keep their first element after such a
+comment now applies only where there is an element, since otherwise it hid the closer's break.
+
+Measured beside it and left open: `Foo(/* a` / `b */)` — the oracle moves the comment to column 0 on a line
+of its own, a shape that is about comment placement and not about the closer.
+
+- options: none.
+- ⚠ status: **resolved**. Pinned by `EmptyContainerCommentIssue444Tests`.
