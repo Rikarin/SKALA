@@ -2644,6 +2644,39 @@ counting every one would make the warning noise. The lesson generalises: a compi
 fix compiles, not that it preserves behaviour, so `CrossFixtureFixTests` now also runs every fixture
 that declares a `Probe.Run()` before and after each safe fix.
 
+⚠ **#423: "evaluating this has no observable effect" is one predicate family, read off the operation,
+and nine guards that each answered it syntactically are routed through it.** `RewriteGuards.IsFreeToRepeat`
+admits what runs no code anybody wrote — literals and constants, locals, parameters, `this`,
+non-`volatile` fields, the getter of a non-virtual source auto-property or positional record property,
+`string.Length`, `Array.Length`, `Nullable<T>.HasValue`, and the language's own operators,
+conversions, `?:`, `??`, `?.` and patterns over them — and declines every other getter and every
+user-defined operator and conversion. `RewriteGuards.IsFreeToSkip` adds that it cannot throw: no
+member read through a receiver that may be `null`, no checked or `decimal` arithmetic, no division or
+remainder by anything but a constant other than `0` and `-1`, no explicit conversion that can fail.
+Collapsing two adjacent evaluations into one needs the first (`SK1041`'s receiver, `SK1044`, `SK1052`,
+and `IsStorageNamePath`, which is now the shape test joined to it); deleting, skipping or reordering an
+evaluation needs the second (`SK2051`, `SK2200`, `SK4030`, `SK4032`'s search arguments). `SK2064` asks
+the first on purpose: a throw on the right is the defect it reports.
+
+⚠ **The accepted trade-off that `IsPlainNamePath` stated — "a property whose getter is not idempotent
+between two adjacent reads is already a bug the rule is reporting rather than causing" — is withdrawn.**
+#412's audit measured it as a behaviour change in a working program, `reads=2` → `reads=1` and
+`NullReferenceException` → a value, and nothing in those rules reports the getter. `IsPlainNamePath`
+is a shape test and says so.
+
+Five rules flip back to safe, each with every executable fixture's `Probe` unchanged: `SK1041`,
+`SK1044` and `SK1052`, whose only other measured defect was `[CallerArgumentExpression]` text, which
+#422 now decides in the host per call site (each carries an executable capture fixture); `SK2051`,
+whose constant result is now also written as a literal of the operation's own type — a bare `0` made
+`var r = x * 0;` on a `long` an `int`, which the runtime sweep caught; and `SK4032`. Three stay unsafe
+for a reason outside #423: `SK4030` for the live list size `Find` and `TrueForAll` read (#430),
+`SK2200` for a read before the overwrite through a helper, an interface or a getter (#431), and
+`SK2064` by construction — on the null guard it exists for, `&` throws and `&&` does not. `SK1041` is
+semantic now: it binds the compound form speculatively, and so no longer runs under `--load=loose`. `CrossFixtureFixTests.TheEvaluationCountFix_OnItsOwnExecutableFixtures_PreservesTheResult`
+runs all eight rules' fixes on their own `Probe` fixtures whatever the catalogue says, so the guard is
+already proved on the day each of those flips. Measured on the reference corpus before and after: the
+eight rules found 9 findings before and 9 after, none lost.
+
 ⚠ **`SK4020` and `SK4002` are asserted never to fire on the same declaration.** One reports a capture
 and the other the absence of every capture; they are complements, and a report carrying both would be
 one decision billed twice. The assertion lives in the batch tests rather than in a `supersedes`

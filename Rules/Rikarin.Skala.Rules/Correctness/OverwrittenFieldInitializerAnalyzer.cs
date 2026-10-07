@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.Modernization;
@@ -34,30 +35,44 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSymbolAction(Analyze, SymbolKind.NamedType);
+        context.RegisterOperationAction(Analyze, OperationKind.FieldInitializer);
     }
 
-    static void Analyze(SymbolAnalysisContext context) {
-        var type = (INamedTypeSymbol)context.Symbol;
+    /// <summary>
+    ///     One field initializer, against every constructor of its type that runs it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ An operation action rather than the symbol action it was until #423, because whether the
+    ///     initializer may be deleted is now a semantic question — <see cref="RewriteGuards.IsFreeToSkip(IOperation)" />
+    ///     on the value — and a symbol action has no model of its own (RS1030).
+    /// </remarks>
+    static void Analyze(OperationAnalysisContext context) {
+        var initializer = (IFieldInitializerOperation)context.Operation;
+        if (initializer.InitializedFields.Length != 1
+            || initializer.InitializedFields[0] is not {
+                IsStatic: false,
+                IsConst: false,
+                IsImplicitlyDeclared: false,
+                DeclaredAccessibility: Accessibility.Private
+            } field) {
+            return;
+        }
+
+        var type = field.ContainingType;
         if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct) || type.IsRecord) {
             return;
         }
 
-        if (RunningConstructors(type, context.CancellationToken) is not { Count: > 0 } running) {
+        // ⚠ The fix deletes the initializer, so its evaluation must be free to skip: no getter, no
+        // user-defined conversion or operator, and no throw (#423). `IsSideEffectFree`, the syntactic
+        // test this replaced, admitted `Counter.Next` and `(W)4` as a name path and a cast, and the
+        // audit measured both running before the fix and not after.
+        if (!RewriteGuards.IsFreeToSkip(initializer.Value)
+            || RunningConstructors(type, context.CancellationToken) is not { Count: > 0 } running) {
             return;
         }
 
-        foreach (var member in type.GetMembers()) {
-            context.CancellationToken.ThrowIfCancellationRequested();
-            if (member is IFieldSymbol {
-                    IsStatic: false,
-                    IsConst: false,
-                    IsImplicitlyDeclared: false,
-                    DeclaredAccessibility: Accessibility.Private
-                } field) {
-                Examine(context, type, field, running);
-            }
-        }
+        Examine(context, type, field, running);
     }
 
     /// <summary>
@@ -96,7 +111,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>One private instance field, against every constructor that runs its initializer.</summary>
     static void Examine(
-        SymbolAnalysisContext context,
+        OperationAnalysisContext context,
         INamedTypeSymbol type,
         IFieldSymbol field,
         List<ConstructorDeclarationSyntax> running
@@ -107,8 +122,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (!IsSideEffectFree(initializer.Value)
-            || ReferencedInAnOverride(type, field, context.CancellationToken)) {
+        if (ReferencedInAnOverride(type, field, context.CancellationToken)) {
             return;
         }
 
@@ -233,51 +247,5 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
         }
 
         return false;
-    }
-
-    /// <summary>
-    ///     ⚠ The forms the fix may delete. The fix removes the initializer, so anything that could do
-    ///     work while producing its value is declined rather than reported.
-    /// </summary>
-    static bool IsSideEffectFree(ExpressionSyntax expression) {
-        switch (expression) {
-            case LiteralExpressionSyntax:
-            case DefaultExpressionSyntax:
-            case TypeOfExpressionSyntax:
-            case SizeOfExpressionSyntax:
-            case IdentifierNameSyntax:
-            case PredefinedTypeSyntax:
-            case ThisExpressionSyntax:
-                return true;
-
-            case ParenthesizedExpressionSyntax parenthesized:
-                return IsSideEffectFree(parenthesized.Expression);
-
-            case CastExpressionSyntax cast:
-                return IsSideEffectFree(cast.Expression);
-
-            case PrefixUnaryExpressionSyntax {
-                RawKind:
-                (int)SyntaxKind.UnaryMinusExpression
-                    or (int)SyntaxKind.UnaryPlusExpression
-                    or (int)SyntaxKind.BitwiseNotExpression
-                    or (int)SyntaxKind.LogicalNotExpression
-            } unary:
-                return IsSideEffectFree(unary.Operand);
-
-            case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access:
-                return RewriteGuards.IsPlainNamePath(access);
-
-            // ⚠ `nameof` is an invocation in the tree and a constant in the language. Admitting it by
-            // name is the one exception to "no invocations", and it is safe because the compiler
-            // refuses any `nameof` argument that is not a name.
-            case InvocationExpressionSyntax {
-                Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" }, ArgumentList.Arguments.Count: 1
-            }:
-                return true;
-
-            default:
-                return false;
-        }
     }
 }

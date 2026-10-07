@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Modernization;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Correctness;
@@ -38,8 +39,9 @@ namespace Rikarin.Skala.Rules.Correctness;
 /// if (ValidateName(x) &amp;
 ///         ValidateAge(x))
 ///         </c> is written that way so both validators run and both messages are
-///         collected; short-circuiting it deletes work. Only a right operand built from names,
-///         member-access paths, literals and tests over them is reported.
+///         collected; short-circuiting it deletes work. Only a right operand that runs no code
+///         anybody wrote is reported — <c>RewriteGuards.IsFreeToRepeat</c>, which declines a getter
+///         that is not an auto-property's and every user-defined operator and conversion (#423).
 ///     </para>
 ///     <para>
 ///         ⚠
@@ -79,11 +81,16 @@ public sealed class NonShortCircuitBooleanAnalyzer : DiagnosticAnalyzer {
                 Type.SpecialType: SpecialType.System_Boolean,
                 LeftOperand.Type.SpecialType: SpecialType.System_Boolean,
                 RightOperand.Type.SpecialType: SpecialType.System_Boolean
-            }) {
+            } operation) {
             return;
         }
 
-        if (!ExpressionIdentity.IsRepeatable(binary.Right)
+        // ⚠ #423: the right operand must run no code anybody wrote, read off the operation rather than
+        // the syntax. The syntactic test this replaced admitted a getter, a user-defined operator and a
+        // user-defined conversion, and the fix then skipped them: `a & Logged` ran the getter once and
+        // `a && Logged` ran it zero times. A throw is still admitted, because a throw on the right is
+        // the defect this rule reports — and that is why its fix is not marked safe.
+        if (!RewriteGuards.IsFreeToRepeat(operation.RightOperand)
             || IsBitwise(binary.Parent)
             || IsBitwise(binary.Left)
             || IsBitwise(binary.Right)) {

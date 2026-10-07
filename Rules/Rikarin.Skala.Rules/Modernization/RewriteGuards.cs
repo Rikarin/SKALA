@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,17 +25,24 @@ internal static class RewriteGuards {
     ///     Whether an expression is a chain of plain names — <c>x</c>, <c>this.x</c>, <c>a.b.c</c>.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The same predicate <c>SK1030</c> needs, and for the same reason. No invocation, no element
-    ///     access and no <c>await</c> anywhere in it: each can have a side effect, and every rule here
-    ///     either evaluates such an expression a different number of times than the original did or
-    ///     moves it to a different point in the program. On a chain of names both are free.
+    ///     A <em>shape</em> test and nothing more: no invocation, no element access and no <c>await</c>
+    ///     anywhere in it, which is what a rewrite that repeats the text of an expression needs before
+    ///     it can even ask the semantic question.
     ///     <para>
-    ///         ⚠ A property access is a method call and is <em>not</em> free in general. It is admitted
-    ///         anyway, because excluding it would silence every rule here on <c>this.Items</c> and
-    ///         <c>Options.Map</c>, which is most of their value — and because no rule in this namespace
-    ///         moves such an expression across a statement boundary: the rewrites collapse two adjacent
-    ///         evaluations in the same statement into one. A property whose getter is not idempotent
-    ///         between two adjacent reads is already a bug the rule is reporting rather than causing.
+    ///         ⚠
+    ///         <b>
+    ///             It does not answer "may this be evaluated a different number of times", and it used
+    ///             to claim it did.
+    ///         </b> The remark that stood here admitted every property as an accepted trade-off —
+    ///         excluding getters would silence these rules on <c>this.Items</c>, and "a property whose
+    ///         getter is not idempotent between two adjacent reads is already a bug the rule is
+    ///         reporting rather than causing". #412's audit ran both versions and refuted it: the rules
+    ///         report nothing about the getter, and the fix changes a working program — <c>SK1041</c>
+    ///         read a counting getter twice before and once after, <c>SK1044</c> and <c>SK1052</c> turned
+    ///         a <c>NullReferenceException</c> into a value (#423). A rewrite that changes how many times
+    ///         a path runs asks <see cref="IsFreeToRepeat(IOperation)" /> or
+    ///         <see cref="IsFreeToSkip(IOperation)" />; <see cref="IsStorageNamePath" /> is this shape
+    ///         test joined to the first of them.
     ///     </para>
     /// </remarks>
     public static bool IsPlainNamePath(ExpressionSyntax expression) {
@@ -71,42 +79,315 @@ internal static class RewriteGuards {
     ///     contrived one — and <c>SK1015</c>, <c>SK1031</c> and <c>SK1033</c> read a getter once where
     ///     the source read it twice. A property from metadata is declined because its body cannot be
     ///     seen; an auto-property's accessors are the compiler's and touch only its backing field.
+    ///     <para>
+    ///         ⚠ #423 moved the semantic half onto <see cref="IsFreeToRepeat(IOperation)" />, so this
+    ///         and the evaluation-count guards of <c>SK1041</c>, <c>SK1044</c>, <c>SK1052</c>,
+    ///         <c>SK2051</c>, <c>SK2064</c>, <c>SK2200</c>, <c>SK4030</c> and <c>SK4032</c> are one
+    ///         definition rather than nine. Two things changed for the rules that already used it: a
+    ///         <c>volatile</c> field is no longer storage, and a positional record property and three
+    ///         framework getters now are.
+    ///     </para>
     /// </remarks>
     public static bool IsStorageNamePath(
         ExpressionSyntax expression,
         SemanticModel model,
         CancellationToken cancellation
-    ) {
-        if (!IsPlainNamePath(expression)) {
+    ) =>
+        IsPlainNamePath(expression) && IsFreeToRepeat(expression, model, cancellation);
+
+    /// <summary>
+    ///     ⚠ Whether evaluating the expression twice, back to back, is indistinguishable from evaluating
+    ///     it once: it runs no code anybody wrote, so the only thing it can do is produce a value or
+    ///     throw — and a throw happens on the first evaluation either way.
+    /// </summary>
+    /// <remarks>
+    ///     The question a rewrite asks when it collapses two adjacent evaluations into one —
+    ///     <c>x == null || x.Length == 0</c> into <c>string.IsNullOrEmpty(x)</c>, <c>x = x + 1</c> into
+    ///     <c>x += 1</c>. Admitted, recursively: literals and constants, locals, parameters,
+    ///     <c>this</c>/<c>base</c>, non-<c>volatile</c> fields, the getter of a non-virtual
+    ///     auto-property declared in source or of a positional record property, <c>string.Length</c>,
+    ///     <c>Array.Length</c> and <c>Nullable&lt;T&gt;.HasValue</c>, and the language's own conversions
+    ///     and operators over them, <c>?:</c>, <c>??</c>, <c>?.</c>, <c>is</c> and patterns. Declined:
+    ///     every other getter, every user-defined operator and conversion — <c>==</c> included — an
+    ///     invocation, an indexer, an allocation, an assignment, <c>await</c>, <c>dynamic</c>, a
+    ///     deconstruction or list pattern, and a concatenation that would call some type's
+    ///     <c>ToString</c>.
+    ///     <para>
+    ///         ⚠ A static field's first read may run its type's static constructor, which this does not
+    ///         count as an effect: the constructor runs once per process whatever the count, and
+    ///         <c>beforefieldinit</c> already leaves its timing to the runtime.
+    ///     </para>
+    /// </remarks>
+    public static bool IsFreeToRepeat(IOperation? operation) => operation is not null && Admits(operation, true);
+
+    /// <inheritdoc cref="IsFreeToRepeat(IOperation)" />
+    public static bool IsFreeToRepeat(
+        ExpressionSyntax expression,
+        SemanticModel model,
+        CancellationToken cancellation
+    ) =>
+        IsFreeToRepeat(model.GetOperation(expression, cancellation));
+
+    /// <summary>
+    ///     ⚠ Whether the expression may be evaluated zero times instead of once, or moved past another
+    ///     evaluation: <see cref="IsFreeToRepeat(IOperation)" />, and it also cannot throw.
+    /// </summary>
+    /// <remarks>
+    ///     The question a rewrite asks when it deletes an evaluation (<c>x * 0</c> → <c>0</c>, an
+    ///     initializer every constructor overwrites), skips it (<c>&amp;</c> → <c>&amp;&amp;</c>, a
+    ///     lambda body over an empty list) or reorders it against another. On top of the repeat test it
+    ///     declines a member read through a receiver that may be <c>null</c> — so <c>this.f</c>, a
+    ///     static member and a member of a value-typed receiver qualify and <c>other.f</c> does not —
+    ///     checked or <c>decimal</c> arithmetic, a division or remainder by anything but a constant
+    ///     other than <c>0</c> and <c>-1</c>, and every explicit conversion that can fail. #412's audit
+    ///     measured each of these as the program's behaviour changing: <c>b!.f * 0</c> → <c>0</c> no
+    ///     longer throws (#423).
+    /// </remarks>
+    public static bool IsFreeToSkip(IOperation? operation) => operation is not null && Admits(operation, false);
+
+    /// <inheritdoc cref="IsFreeToSkip(IOperation)" />
+    public static bool IsFreeToSkip(ExpressionSyntax expression, SemanticModel model, CancellationToken cancellation) =>
+        IsFreeToSkip(model.GetOperation(expression, cancellation));
+
+    static bool Admits(IOperation operation, bool mayThrow) {
+        if (operation.ConstantValue.HasValue) {
+            return true;
+        }
+
+        if (operation.Type?.TypeKind is TypeKind.Dynamic or TypeKind.Pointer or TypeKind.FunctionPointer) {
             return false;
         }
 
-        foreach (var node in expression.DescendantNodesAndSelf()) {
-            if (node is not SimpleNameSyntax name) {
-                continue;
-            }
+        switch (operation) {
+            case ILiteralOperation:
+            case ILocalReferenceOperation:
+            case IParameterReferenceOperation:
+            case IInstanceReferenceOperation:
+            case IConditionalAccessInstanceOperation:
+            case IDefaultValueOperation:
+            case ITypeOfOperation:
+                return true;
 
-            switch (model.GetSymbolInfo(name, cancellation).Symbol) {
-                case ILocalSymbol or IParameterSymbol or IFieldSymbol or INamespaceOrTypeSymbol:
-                    continue;
-                case IPropertySymbol property when IsSourceAutoProperty(property, cancellation):
-                    continue;
-                default:
+            case IFieldReferenceOperation field:
+                return !field.Field.IsVolatile && Receiver(field.Instance, mayThrow);
+
+            case IPropertyReferenceOperation property:
+                return property.Arguments.IsEmpty
+                    && IsStorage(property.Property)
+                    && Receiver(property.Instance, mayThrow);
+
+            case IConversionOperation conversion:
+                return IsLanguageOwn(conversion.OperatorMethod)
+                    && (mayThrow || !CanThrow(conversion))
+                    && Admits(conversion.Operand, mayThrow);
+
+            case IBinaryOperation binary:
+                return IsLanguageOwn(binary.OperatorMethod)
+                    && (mayThrow || !CanThrow(binary))
+                    && !CallsToString(binary)
+                    && Admits(binary.LeftOperand, mayThrow)
+                    && Admits(binary.RightOperand, mayThrow);
+
+            case IUnaryOperation unary:
+                return IsLanguageOwn(unary.OperatorMethod)
+                    && (mayThrow || !(unary.IsChecked && unary.OperatorKind == UnaryOperatorKind.Minus))
+                    && Admits(unary.Operand, mayThrow);
+
+            case IConditionalOperation conditional:
+                return Admits(conditional.Condition, mayThrow)
+                    && Admits(conditional.WhenTrue, mayThrow)
+                    && (conditional.WhenFalse is null || Admits(conditional.WhenFalse, mayThrow));
+
+            case ICoalesceOperation coalesce:
+                return IsLanguageOwn(coalesce.ValueConversion.MethodSymbol)
+                    && Admits(coalesce.Value, mayThrow)
+                    && Admits(coalesce.WhenNull, mayThrow);
+
+            case IConditionalAccessOperation access:
+                return Admits(access.Operation, mayThrow) && Admits(access.WhenNotNull, mayThrow);
+
+            case IIsTypeOperation isType:
+                return Admits(isType.ValueOperand, mayThrow);
+
+            case IIsPatternOperation isPattern:
+                return Admits(isPattern.Value, mayThrow) && AdmitsPattern(isPattern.Pattern, mayThrow);
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    ///     A pattern tests its input without throwing — a property subpattern is skipped on <c>null</c>
+    ///     — so only what it reads matters: the members of a property pattern, and no
+    ///     <c>Deconstruct</c>, <c>ITuple</c>, indexer or <c>Length</c>/<c>Count</c> of a list pattern.
+    /// </summary>
+    static bool AdmitsPattern(IPatternOperation pattern, bool mayThrow) {
+        switch (pattern) {
+            case IConstantPatternOperation constant:
+                return Admits(constant.Value, mayThrow);
+
+            case IRelationalPatternOperation relational:
+                return Admits(relational.Value, mayThrow);
+
+            case ITypePatternOperation:
+            case IDeclarationPatternOperation:
+            case IDiscardPatternOperation:
+                return true;
+
+            case INegatedPatternOperation negated:
+                return AdmitsPattern(negated.Pattern, mayThrow);
+
+            case IBinaryPatternOperation binary:
+                return AdmitsPattern(binary.LeftPattern, mayThrow) && AdmitsPattern(binary.RightPattern, mayThrow);
+
+            case IRecursivePatternOperation recursive:
+                if (recursive.DeconstructSymbol is not null || !recursive.DeconstructionSubpatterns.IsEmpty) {
                     return false;
-            }
+                }
+
+                foreach (var subpattern in recursive.PropertySubpatterns) {
+                    if (!Admits(subpattern.Member, mayThrow) || !AdmitsPattern(subpattern.Pattern, mayThrow)) {
+                        return false;
+                    }
+                }
+
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    ///     A static member has no receiver; an instance member's receiver is evaluated first, and may be
+    ///     <c>null</c> unless it is <c>this</c>, the already-tested receiver of a <c>?.</c>, or a value.
+    /// </summary>
+    static bool Receiver(IOperation? instance, bool mayThrow) =>
+        instance is null
+        || (Admits(instance, mayThrow)
+            && (mayThrow
+                || instance is IInstanceReferenceOperation or IConditionalAccessInstanceOperation
+                || instance.Type?.IsValueType == true));
+
+    /// <summary>
+    ///     A getter that runs no code a person wrote: an auto-property's, a positional record
+    ///     property's, and three framework getters that only read a length or a flag.
+    /// </summary>
+    static bool IsStorage(IPropertySymbol property) {
+        if (property.IsIndexer || property.GetMethod is null) {
+            return false;
         }
 
-        return true;
+        switch (property.ContainingType.SpecialType) {
+            case SpecialType.System_String:
+                return property.Name == "Length";
+            case SpecialType.System_Array:
+                return property.Name is "Length" or "LongLength";
+        }
+
+        if (property.ContainingType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T) {
+            return property.Name == "HasValue";
+        }
+
+        return IsSourceAutoProperty(property, CancellationToken.None);
     }
 
     static bool IsSourceAutoProperty(IPropertySymbol property, CancellationToken cancellation) =>
         property is { IsVirtual: false, IsAbstract: false, IsOverride: false, IsExtern: false, IsIndexer: false }
         && property.ContainingType.TypeKind != TypeKind.Interface
         && property.DeclaringSyntaxReferences.Length == 1
-        && property.DeclaringSyntaxReferences[0].GetSyntax(cancellation) is PropertyDeclarationSyntax {
-            ExpressionBody: null, AccessorList.Accessors: { Count: > 0 } accessors
+        && property.DeclaringSyntaxReferences[0].GetSyntax(cancellation) switch {
+            PropertyDeclarationSyntax { ExpressionBody: null, AccessorList.Accessors: { Count: > 0 } accessors } =>
+                accessors.All(static accessor => accessor is { Body: null, ExpressionBody: null }),
+            // ⚠ A positional record property: `IsImplicitlyDeclared` is false for it, and the parameter
+            // is where it is written down. The compiler writes its accessors.
+            ParameterSyntax => property.ContainingType.IsRecord,
+            _ => false
+        };
+
+    /// <summary>
+    ///     ⚠ Built in, for this purpose: no method at all, or one of the two framework types whose
+    ///     operators the compiler routes through a method — <c>string</c>'s equality and
+    ///     <c>decimal</c>'s arithmetic — and which run no code anybody else wrote.
+    /// </summary>
+    static bool IsLanguageOwn(IMethodSymbol? method) =>
+        method is null || method.ContainingType.SpecialType is SpecialType.System_String or SpecialType.System_Decimal;
+
+    static bool CanThrow(IBinaryOperation binary) {
+        var isDecimal = IsDecimal(binary.Type)
+            || IsDecimal(binary.LeftOperand.Type)
+            || IsDecimal(binary.RightOperand.Type);
+        switch (binary.OperatorKind) {
+            case BinaryOperatorKind.Add:
+            case BinaryOperatorKind.Subtract:
+            case BinaryOperatorKind.Multiply:
+                return binary.IsChecked || isDecimal;
+
+            case BinaryOperatorKind.Divide:
+            case BinaryOperatorKind.Remainder:
+                if (binary.Type?.SpecialType is SpecialType.System_Single or SpecialType.System_Double) {
+                    return false;
+                }
+
+                // ⚠ `int.MinValue / -1` throws `OverflowException` unchecked as well, and so does `%`.
+                return isDecimal
+                    || binary.RightOperand.ConstantValue is not { HasValue: true, Value: { } divisor }
+                    || System.Convert.ToDecimal(divisor, System.Globalization.CultureInfo.InvariantCulture) is 0m
+                        or -1m;
+
+            default:
+                return false;
         }
-        && accessors.All(static accessor => accessor is { Body: null, ExpressionBody: null });
+    }
+
+    static bool CanThrow(IConversionOperation conversion) {
+        var common = conversion.Conversion;
+        if (common.IsIdentity) {
+            return false;
+        }
+
+        // ⚠ An explicit conversion to or from `decimal` is always checked; an implicit one cannot fail.
+        if (IsDecimal(conversion.Type) || IsDecimal(conversion.Operand.Type)) {
+            return !common.IsImplicit;
+        }
+
+        if (common.IsImplicit) {
+            return false;
+        }
+
+        // Explicit numeric narrows silently unless checked; an explicit reference conversion, an unboxing
+        // and `T?` → `T` can all throw.
+        return !common.IsNumeric || conversion.IsChecked;
+    }
+
+    /// <summary>
+    ///     ⚠ A concatenation calls <c>ToString</c> on each operand that is not already text — an
+    ///     override somebody wrote, for any type but the primitives.
+    /// </summary>
+    static bool CallsToString(IBinaryOperation binary) {
+        if (binary.OperatorKind != BinaryOperatorKind.Add || binary.Type?.SpecialType != SpecialType.System_String) {
+            return false;
+        }
+
+        return !IsText(binary.LeftOperand) || !IsText(binary.RightOperand);
+
+        static bool IsText(IOperation operand) {
+            while (operand is IConversionOperation { IsImplicit: true } conversion) {
+                operand = conversion.Operand;
+            }
+
+            return operand.Type is null
+                || operand.ConstantValue.HasValue
+                || operand.Type.SpecialType is >= SpecialType.System_Boolean and <= SpecialType.System_String;
+        }
+    }
+
+    static bool IsDecimal(ITypeSymbol? type) =>
+        type is not null
+        && (type.SpecialType == SpecialType.System_Decimal
+            || (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable
+                && nullable.TypeArguments[0].SpecialType == SpecialType.System_Decimal));
 
     /// <summary>Whether two expressions are the same text, ignoring trivia.</summary>
     public static bool Same(ExpressionSyntax left, ExpressionSyntax right) =>
