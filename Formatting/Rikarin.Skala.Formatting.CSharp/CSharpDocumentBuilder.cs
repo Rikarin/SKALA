@@ -2867,7 +2867,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        if (ShouldJoin(previous, nextKind, nextToken)) {
+        if (ShouldJoin(previous, nextKind, nextToken) || JoinsWithoutKeptBreaks(previous, nextKind, nextToken)) {
             EmitFlatGap(previous, nextKind, nextToken, gap);
             return;
         }
@@ -3219,6 +3219,15 @@ public sealed partial class CSharpDocumentBuilder {
             if (node.Parent is SubpatternSyntax subpattern && subpattern.Pattern == node) {
                 return true;
             }
+
+            // ⚠ So does the operand after a spread's or a slice pattern's `..` when the author broke
+            // after it: `1, ..` / `a` puts `a` on the element's column, not one level in (#439).
+            if (node.Parent is SpreadElementSyntax spread
+                && spread.Expression == node
+                || node.Parent is SlicePatternSyntax slice
+                && slice.Pattern == node) {
+                return true;
+            }
         }
 
         // ⚠ A `do` statement's trailing `while` starts its own line at the `do`'s level, exactly as
@@ -3516,6 +3525,29 @@ public sealed partial class CSharpDocumentBuilder {
     ///     ⚠ Never across a comment or a directive. Joining <c>// note</c> with the <c>{</c> below it
     ///     would put the brace inside the comment.
     /// </remarks>
+    /// <summary>
+    ///     An author's break in a gap no rule governs, which only <c>keep_user_linebreaks</c> was keeping.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ At <c>keep_user_linebreaks = false</c> (and <c>keep_existing_linebreaks = false</c>, which
+    ///     answers the same) the oracle joins a break on either side of a range's or a spread's
+    ///     <c>..</c>, after a slice pattern's <c>..</c>, before a positional pattern's <c>(</c> and before a
+    ///     label's colon (#439). No plan owns those gaps, so Skala kept every one. Joined, each takes its
+    ///     bit from the indentation of the line it ended on (<see cref="FlatGapSpace" />): <c>a[1</c> /
+    ///     <c>..2]</c> gives <c>a[1..2]</c>, <c>a[1</c> / <c>    ..2]</c> gives <c>a[1 ..2]</c>, and the
+    ///     slice pattern's governed gap gives <c>.. var rest</c> as it would written flat.
+    /// </remarks>
+    bool JoinsWithoutKeptBreaks(Piece previous, PieceKind nextKind, SyntaxToken nextToken) {
+        if (options.KeepsUserBreaksBetweenItems || previous.Kind != PieceKind.Token || nextKind != PieceKind.Token) {
+            return false;
+        }
+
+        var previousToken = tokens[previous.TokenIndex];
+        return SpaceRules.Preserves(previousToken, nextToken)
+            || previousToken.IsKind(SyntaxKind.DotDotToken)
+            && previousToken.Parent is SlicePatternSyntax;
+    }
+
     bool ShouldJoin(Piece previous, PieceKind nextKind, SyntaxToken nextToken) {
         if (previous.Kind != PieceKind.Token || nextKind != PieceKind.Token) {
             return false;
