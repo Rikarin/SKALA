@@ -7511,7 +7511,7 @@ and joins and chops at `always` without the comment (#438).
 
 - options: the six `skala_place_*_attribute_on_same_line` keys and
   `skala_keep_existing_attribute_arrangement`, none of which moves the last gap when a comment is in it.
-- ⚠ status: **resolved** except the terminator corner, which is **open** (#438). Pinned by
+- ⚠ status: **resolved** except the terminator corner, which is **open** (#438, measured further in SK-DIV-0201). Pinned by
   `AttributeCommentIssue434Tests` and `constructs/breaks/comment-after-the-last-attribute.cs`.
 
 ## SK-DIV-0200 — after a block comment that spans lines, an `=` or an arrow keeps its value on the comment's line
@@ -7691,3 +7691,54 @@ stacks the argument list's level and the type test's own (`Testing/Rikarin.Skala
   `skala_align_multiline_statement_conditions` at their exported values.
 - ⚠ status: **resolved** except the four open rows. Pinned by `MultiLineCommentNeighboursIssue440Tests`
   and `constructs/breaks/multi-line-comment-neighbours.cs`.
+
+## SK-DIV-0201 — when an attribute's join is declined past the margin
+
+#438 claimed, from four shapes, that the oracle declines to join an attribute exactly when the joined line
+overflows *only by its terminator* (`) { }` at 121 with the `)` at 117; a field whose value ends at 120
+before its `;`). Asked of `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly` on about a hundred generated
+shapes, each one column wider than the last from the 120-column margin, in two families: the placement
+key at `always` with no comment, and a block comment in the last gap (`[Obsolete] /* c */ public …`, which
+every placement key treats alike — SK-DIV-0199). "Declined" means the attribute alone on its line with the
+declaration whole below it.
+
+| joined line past the margin | `always`, no comment | comment in the gap |
+|---|---|---|
+| a method, `) { }`, the `)` at 117–120 | declined | declined |
+| the same, the `)` at 121 | joined, the parameters chopped | joined, the parameters chopped |
+| a method with a block body, `) {` past, the `)` at 119–120 | declined | declined |
+| an abstract method, the `)` past | joined, the parameters chopped | — |
+| a field `= a + b + …;` whose value ends at 120 | declined | declined |
+| a field whose value ends at 121–128 | joined, the `=` broken | **declined** (identifiers); declined at 121 and joined at 134 (literals) |
+| `{ get; set; }` 1–9 columns past | joined, the accessor list expanded | declined |
+| `{ get; set; } = …;` 1–7 past | joined, the `=` broken | joined, the `=` broken |
+| a property `=> …;`, 1 past / 3–7 past | joined, the arrow broken | declined / joined, the arrow broken |
+| a method `=> …;`, 1–2 past | joined, the arrow broken | joined, the arrow broken |
+| `= Compute(a, …);` whose `)` ends at 120 / past it | declined / joined, the call chopped | declined / joined, the call chopped |
+| an event field, 1–3 past | declined | — |
+
+**At `always` the claim holds**, and it is now Skala's rule: the join is declined exactly when the joined
+line overflows by its terminator alone — `;` after a field's value (and, by analogy and not measured at
+121, an abstract signature), ` { }` after
+an empty body, ` {` before a block body — and kept otherwise, the declaration wrapping inside itself. An
+expression body is no terminator (the arrow breaks), nor is an accessor list (it expands); an event field
+has nothing the oracle wraps inside it, so any overflow declines. `BreakPlan.TerminatorOf` gives each owner
+its terminator, and the join's point is a group whose `GroupFacts.Terminator` asks the fitter exactly that
+question. ⚠ A break the author wrote inside the signature — pass two of a joined line whose `=` wrapped —
+skips the group: the head measure reads through a kept point, so the second pass measured the line one
+column short and declined what the first had joined. Local functions are not covered: the oracle never
+joins their attribute at `always`, a divergence of its own.
+
+⚠ **With a comment in the gap the claim is refuted.** A field whose value runs past the margin is still
+declined, a property's arrow and a `Compute(…)` call are declined at one column past and joined at three,
+and the same field shape is joined or declined by what its value is made of. No reading tried survived the
+next probe, so none is wired: Skala leaves that gap to the author (SK-DIV-0199) and agrees wherever the
+joined line fits, which is every row SK-DIV-0199 pins and the common case.
+
+Measured beside it and not this entry: at `always`, `[Obsolete] public int S = Compute(a, …);` past the
+margin is joined and the call chopped by the oracle, where Skala breaks after the `=` and leaves the call
+whole; the same happens without any attribute, so it is the `=`'s ordering rule.
+
+- options: the six `skala_place_*_attribute_on_same_line` keys.
+- ⚠ status: **resolved** at `always`; **open** for a comment in the gap. Pinned by
+  `AttributeJoinTerminatorIssue438Tests`.

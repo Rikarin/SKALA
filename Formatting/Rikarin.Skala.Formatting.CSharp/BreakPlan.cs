@@ -5251,6 +5251,24 @@ public sealed class BreakPlan {
                 Flat(token);
             }
 
+            // ⚠ The join is declined when the joined line overflows by its terminator alone (#438). See
+            // GroupFacts.Terminator and TerminatorOf.
+            var terminator = TerminatorOf(node);
+            var last = lists[^1].CloseBracketToken.GetNextToken();
+            if (terminator > 0
+                && !last.IsKind(SyntaxKind.None)
+                && last.SpanStart <= node.Span.End
+                && !BreaksInsideTheSignature(node, last)) {
+                var joining = NewGroup();
+                Point(last, joining);
+                Describe(
+                    node,
+                    joining,
+                    GroupMode.Preserve,
+                    new GroupFacts(MeasuresHead: true, Terminator: terminator)
+                );
+            }
+
             return;
         }
 
@@ -5271,6 +5289,62 @@ public sealed class BreakPlan {
             new GroupFacts(broken, true, true)
         );
     }
+
+    /// <summary>
+    ///     The width of what ends a declaration's first line after its signature, for the owners
+    ///     <c>always</c>'s joining half was measured on; zero for every other owner.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 one column at a time at
+    ///     <c>place_*_attribute_on_same_line = always</c> (#438, SK-DIV-0201). A method with an empty body
+    ///     is joined at 120 columns, declined at 121–124 with its <c>)</c> at 117–120, and joined with its
+    ///     parameters chopped once the <c>)</c> is at 121; a block body's <c> {</c> and a field's <c>;</c>
+    ///     are the same. ⚠ An expression body is not a terminator: the arrow breaks instead
+    ///     (<c>[Obsolete] public int A(…) =&gt;</c> / the body), and neither is a property's accessor
+    ///     list, which expands. ⚠ Nor a local function, whose attribute the oracle never joins at all at
+    ///     <c>always</c> (a separate divergence). Every other owner keeps the plain join.
+    /// </remarks>
+    static int TerminatorOf(SyntaxNode node) =>
+        node switch {
+            BaseMethodDeclarationSyntax { ExpressionBody: not null } => 0,
+            BaseMethodDeclarationSyntax { Body: { } body } => body.Statements.Count == 0 ? 4 : 2,
+            BaseMethodDeclarationSyntax => 1,
+            FieldDeclarationSyntax => 1,
+
+            // ⚠ An event field has nothing the oracle wraps inside it, so any overflow declines the join:
+            // `[Obsolete] public event Action<int, …> E;` at 121, 122 and 123 columns alike.
+            EventFieldDeclarationSyntax => WholeLine,
+            _ => 0
+        };
+
+    /// <summary>
+    ///     Whether the author broke the line anywhere between the declaration's first token and its body
+    ///     or terminator — after an <c>=</c>, inside the parameters.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The idempotence of <see cref="TerminatorOf" />'s group. A joined line whose <c>=</c> or parameter
+    ///     list then wrapped comes back with that break in the source, and the kept break ends the joined
+    ///     line there; measured through it instead — the head measure does not stop at a kept point —
+    ///     the line read one column short of the first pass's and the join was declined on pass two.
+    /// </remarks>
+    bool BreaksInsideTheSignature(SyntaxNode node, SyntaxToken first) {
+        var end = node switch {
+            BaseMethodDeclarationSyntax { Body: { } body } => body.SpanStart,
+            BaseMethodDeclarationSyntax { ExpressionBody: { } arrow } => arrow.SpanStart,
+            _ => node.Span.End
+        };
+
+        foreach (var token in node.DescendantTokens()) {
+            if (token.SpanStart > first.SpanStart && token.SpanStart < end && BreaksBefore(token)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>A terminator as wide as any line: the join is declined whenever the line overflows.</summary>
+    const int WholeLine = 1 << 20;
 
     /// <summary>
     ///     <c>skala_max_attribute_length_for_same_line</c>: an attribute run wider than the cap does not join

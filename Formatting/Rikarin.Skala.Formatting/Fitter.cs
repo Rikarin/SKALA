@@ -294,6 +294,13 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ Broken exactly when only the terminator overflows. See GroupFacts.Terminator.
+                if (facts.Terminator > 0) {
+                    return !Fits(m.Column, m.BreakWidth) && Fits(m.Column, m.BreakWidth - facts.Terminator)
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
+                }
+
                 if (!facts.BreaksIfTooLong || Fits(m.Column, m.BreakWidth, m.Trailing)) {
                     return ResolvedMode.Flat;
                 }
