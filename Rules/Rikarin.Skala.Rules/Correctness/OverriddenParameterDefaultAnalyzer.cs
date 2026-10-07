@@ -8,6 +8,7 @@ using Rikarin.Skala.Rules.Modernization;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq;
 
 namespace Rikarin.Skala.Rules.Correctness;
 
@@ -77,7 +78,41 @@ public sealed class OverriddenParameterDefaultAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        Compare(context, declaration.ParameterList, method, Overridden(method));
+        // ⚠ A partial method's defaults are the definition's (#400): the implementation omits them, and
+        // one it wrote anyway is CS1066 and ignored. Read from the implementation, every agreeing pair
+        // looked like a disagreement. `params` is different — both halves must say it (CS0758) — so a
+        // `params` edit on the definition is made on the implementation too, and declined when the
+        // implementation is in another file, where this file's edit list cannot reach it.
+        if (method.PartialDefinitionPart is not null) {
+            return;
+        }
+
+        var partner = Partner(method, declaration, context.CancellationToken);
+        Compare(context, declaration.ParameterList, method, Overridden(method), partner);
+    }
+
+    /// <summary>
+    ///     The implementation's parameter list, when <paramref name="method" /> is a partial definition and
+    ///     its implementation is in this file; an empty list when it is somewhere else; null when there is
+    ///     no other half to keep in step.
+    /// </summary>
+    static BaseParameterListSyntax? Partner(
+        IMethodSymbol method,
+        MethodDeclarationSyntax declaration,
+        System.Threading.CancellationToken cancellation
+    ) {
+        if (method.PartialImplementationPart is not { } implementation) {
+            return null;
+        }
+
+        foreach (var reference in implementation.DeclaringSyntaxReferences) {
+            if (reference.SyntaxTree == declaration.SyntaxTree
+                && reference.GetSyntax(cancellation) is MethodDeclarationSyntax syntax) {
+                return syntax.ParameterList;
+            }
+        }
+
+        return SyntaxFactory.ParameterList();
     }
 
     static void AnalyzeIndexer(SyntaxNodeAnalysisContext context) {
@@ -90,7 +125,7 @@ public sealed class OverriddenParameterDefaultAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        Compare(context, declaration.ParameterList, indexer, Overridden(indexer));
+        Compare(context, declaration.ParameterList, indexer, Overridden(indexer), partner: null);
     }
 
     /// <summary>
@@ -147,7 +182,8 @@ public sealed class OverriddenParameterDefaultAnalyzer : DiagnosticAnalyzer {
         SyntaxNodeAnalysisContext context,
         BaseParameterListSyntax list,
         ISymbol member,
-        ISymbol? overridden
+        ISymbol? overridden,
+        BaseParameterListSyntax? partner
     ) {
         if (overridden is null) {
             return;
@@ -174,7 +210,10 @@ public sealed class OverriddenParameterDefaultAnalyzer : DiagnosticAnalyzer {
             var theirs = expected[i];
 
             if (mine.IsParams != theirs.IsParams) {
-                if (!ParamsEdit(syntax, theirs.IsParams, edits)) {
+                if (!ParamsEdit(syntax, theirs.IsParams, edits)
+                    || (partner is not null
+                        && (partner.Parameters.Count <= i
+                            || !ParamsEdit(partner.Parameters[i], theirs.IsParams, edits)))) {
                     return;
                 }
 
@@ -213,7 +252,7 @@ public sealed class OverriddenParameterDefaultAnalyzer : DiagnosticAnalyzer {
             Diagnostic.Create(
                 Descriptor,
                 first.Identifier.GetLocation(),
-                FixEdits.Pack(edits.ToArray()),
+                FixEdits.Pack(edits.OrderBy(static edit => edit.Span.Start).ToArray()),
                 "The "
                 + what
                 + " for '"

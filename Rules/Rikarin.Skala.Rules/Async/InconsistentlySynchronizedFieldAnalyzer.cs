@@ -310,11 +310,15 @@ public sealed class InconsistentlySynchronizedFieldAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
+        // ⚠ A call binds to a partial method's definition and the body being examined is its
+        // implementation's, which is a different symbol (#400). Compared as declared, `Reset()` called
+        // under the lock was never this `Reset`, and its writes all read as unguarded.
+        symbol = PartialDefinitionOf(symbol);
         foreach (var statement in locks) {
             foreach (var invocation in statement.Statement.DescendantNodes().OfType<InvocationExpressionSyntax>()) {
                 var invoked = model.Of(invocation).GetSymbolInfo(invocation, cancellation).Symbol;
                 if (invoked is not null
-                    && SymbolEqualityComparer.Default.Equals(invoked.OriginalDefinition, symbol)) {
+                    && SymbolEqualityComparer.Default.Equals(PartialDefinitionOf(invoked.OriginalDefinition), symbol)) {
                     return false;
                 }
             }
@@ -322,6 +326,9 @@ public sealed class InconsistentlySynchronizedFieldAnalyzer : DiagnosticAnalyzer
 
         return true;
     }
+
+    static ISymbol PartialDefinitionOf(ISymbol symbol) =>
+        symbol is IMethodSymbol { PartialDefinitionPart: { } definition } ? definition : symbol;
 
     /// <summary>Every node of a type declaration that belongs to <em>this</em> type.</summary>
     /// <remarks>

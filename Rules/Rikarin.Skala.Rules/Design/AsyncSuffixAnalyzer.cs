@@ -67,8 +67,17 @@ public sealed class AsyncSuffixAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ A partial method is one name with two declarations (#400): the definition carries the finding,
+        // and `async` is legal only on the implementation, so the definition alone reads as "named
+        // asynchronous and nothing about it is". Its attributes are already merged across both halves.
+        if (method.PartialDefinitionPart is not null) {
+            return;
+        }
+
         var carriesSuffix = method.Name.EndsWith(Suffix, StringComparison.Ordinal);
-        var isAsynchronous = vocabulary.IsAsynchronous(method.ReturnType) || method.IsAsync;
+        var isAsynchronous = vocabulary.IsAsynchronous(method.ReturnType)
+            || method.IsAsync
+            || method.PartialImplementationPart is { IsAsync: true };
         if (carriesSuffix == isAsynchronous || vocabulary.NamedByConvention(method)) {
             return;
         }

@@ -158,7 +158,7 @@ public sealed class FixedKeyDerivationSaltAnalyzer : DiagnosticAnalyzer {
         INamedTypeSymbol? encoding,
         INamedTypeSymbol? convert
     ) {
-        if (AsyncContext.IsTestMethod(syntax)) {
+        if (AsyncContext.IsTestMethod(syntax, context.Operation.SemanticModel, context.CancellationToken)) {
             return;
         }
 

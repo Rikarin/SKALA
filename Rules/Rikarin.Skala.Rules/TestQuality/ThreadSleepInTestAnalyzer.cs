@@ -63,7 +63,7 @@ public sealed class ThreadSleepInTestAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (!AsyncContext.IsTestMethod(invocation)) {
+        if (!AsyncContext.IsTestMethod(invocation, context.SemanticModel, context.CancellationToken)) {
             return;
         }
 

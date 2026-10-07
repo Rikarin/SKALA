@@ -395,20 +395,19 @@ public sealed class RedundantDeclarationAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static void AnalyzeOverride(SyntaxNodeAnalysisContext context) {
         var method = (MethodDeclarationSyntax)context.Node;
-        if (!Has(method.Modifiers, SyntaxKind.OverrideKeyword)
-            || Has(method.Modifiers, SyntaxKind.SealedKeyword)
-            || method.AttributeLists.Count > 0
-            || method.TypeParameterList is not null
-            || method.ReturnType is not PredefinedTypeSyntax returnType
-            || !returnType.Keyword.IsKind(SyntaxKind.VoidKeyword)
-            || !IsDeletable(method)) {
+        if (!Has(method.Modifiers, SyntaxKind.OverrideKeyword) || !IsBareOverride(method)) {
             return;
         }
 
-        foreach (var parameter in method.ParameterList.Parameters) {
-            if (parameter.Default is not null || parameter.AttributeLists.Count > 0) {
-                return;
-            }
+        // ⚠ A partial override is one member written twice (#400), and the definition is where its
+        // attributes, its documentation comment and its defaults are written. Reading the implementation
+        // alone reported an override the definition documents, and deleting the implementation alone left
+        // a definition with accessibility and no body: CS8795. Both halves are read and both deleted, or
+        // — with the other half out of sight in another file — neither.
+        var sibling = PartialMembers.IsPartialMember(method) ? PartialMembers.Sibling(method) : null;
+        if (PartialMembers.IsPartialMember(method)
+            && (sibling is not MethodDeclarationSyntax definition || !IsBareOverride(definition))) {
+            return;
         }
 
         // ⚠ Not a list pattern. `Rikarin.Skala.Rules` targets netstandard2.0 (ADR-006: it loads into
@@ -429,13 +428,46 @@ public sealed class RedundantDeclarationAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        Report(
-            context,
-            method.Identifier.GetLocation(),
-            method.FullSpan,
-            "the override does nothing but call the base implementation, which is what happens when there "
-            + "is no override at all"
+        const string message = "the override does nothing but call the base implementation, which is what happens "
+            + "when there is no override at all";
+        if (sibling is null) {
+            Report(context, method.Identifier.GetLocation(), method.FullSpan, message);
+            return;
+        }
+
+        context.ReportDiagnostic(
+            Diagnostic.Create(
+                Descriptor,
+                method.Identifier.GetLocation(),
+                sibling.SpanStart < method.SpanStart
+                    ? FixEdits.Pack((sibling.FullSpan, string.Empty), (method.FullSpan, string.Empty))
+                    : FixEdits.Pack((method.FullSpan, string.Empty), (sibling.FullSpan, string.Empty)),
+                message
+            )
         );
+    }
+
+    /// <summary>
+    ///     The override carries nothing of its own: no <c>sealed</c>, attribute, type parameter, default or
+    ///     parameter attribute, no comment or directive around it, and it returns <c>void</c>.
+    /// </summary>
+    static bool IsBareOverride(MethodDeclarationSyntax method) {
+        if (Has(method.Modifiers, SyntaxKind.SealedKeyword)
+            || method.AttributeLists.Count > 0
+            || method.TypeParameterList is not null
+            || method.ReturnType is not PredefinedTypeSyntax returnType
+            || !returnType.Keyword.IsKind(SyntaxKind.VoidKeyword)
+            || !IsDeletable(method)) {
+            return false;
+        }
+
+        foreach (var parameter in method.ParameterList.Parameters) {
+            if (parameter.Default is not null || parameter.AttributeLists.Count > 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
