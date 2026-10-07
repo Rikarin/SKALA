@@ -2032,7 +2032,7 @@
     "Outcome": "Spurious",
     "OracleDistinct": 1,
     "SkalaDistinct": 2,
-    "BaselineAgrees": false,
+    "BaselineAgrees": true,
     "Fixture": "constructs/arrangement/redundancy/braces-redundant.cs",
     "Values": [
       {
@@ -2326,8 +2326,8 @@
       {
         "Value": "string_empty",
         "OracleHash": "0bcdfae3",
-        "SkalaHash": "0bcdfae3",
-        "Agree": true
+        "SkalaHash": "6eee954a",
+        "Agree": false
       }
     ]
   },
@@ -4224,7 +4224,7 @@
     "Outcome": "Spurious",
     "OracleDistinct": 1,
     "SkalaDistinct": 2,
-    "BaselineAgrees": false,
+    "BaselineAgrees": true,
     "Fixture": "constructs/arrangement/redundancy/null-checking-pattern.cs",
     "Values": [
       {
