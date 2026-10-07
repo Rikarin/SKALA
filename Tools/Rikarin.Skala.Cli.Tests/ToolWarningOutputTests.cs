@@ -31,7 +31,9 @@ public sealed class ToolWarningOutputTests : IClassFixture<ToolWarningOutputTest
 
     readonly Tree tree;
 
-    public ToolWarningOutputTests(Tree tree) => this.tree = tree;
+    public ToolWarningOutputTests(Tree tree) {
+        this.tree = tree;
+    }
 
     CliRun Check(string format, string path) =>
         CliRunner.Run(
