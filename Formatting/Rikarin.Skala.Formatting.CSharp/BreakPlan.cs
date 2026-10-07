@@ -3013,6 +3013,17 @@ public sealed class BreakPlan {
                 FromLine: !IsAHeaderCondition(node)
             )
         );
+
+        // ⚠ The break goes *before* the keyword exactly when the operand fits on its line and the operand
+        // with the keyword does not (#444, SK-DIV-0210). Measured on `return <operand> as string;` a
+        // column at a time: with the operand ending at 117 the oracle writes `… as` / `string;`, at 118,
+        // 119 and 120 it writes `…` / `as string;`, and past 120 it wraps inside the operand. A break the
+        // author wrote there is theirs, and is kept unplanned as before.
+        if (node is BinaryExpressionSyntax && !BreaksBefore(keyword)) {
+            var before = NewGroup();
+            Point(keyword, before, lastResort: true);
+            Describe(node, before, GroupMode.Preserve, new GroupFacts(KeywordWidth: keyword.Span.Length));
+        }
     }
 
     /// <summary>

@@ -294,6 +294,18 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ Broken exactly when the keyword is what overflows. See GroupFacts.KeywordWidth.
+                if (facts.KeywordWidth > 0) {
+                    if (m.FlatWidth >= Unbounded || tail >= Unbounded) {
+                        return ResolvedMode.Flat;
+                    }
+
+                    var operand = m.FlatWidth - tail - 1;
+                    return Fits(m.Column, operand) && !Fits(m.Column, operand + 1 + facts.KeywordWidth)
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
+                }
+
                 // ⚠ Broken exactly when only the terminator overflows. See GroupFacts.Terminator.
                 if (facts.Terminator > 0) {
                     return !Fits(m.Column, m.BreakWidth) && Fits(m.Column, m.BreakWidth - facts.Terminator)

@@ -904,6 +904,12 @@ public sealed class Document {
 ///     chops the parameters when the <c>)</c> itself is past the margin, and declines the join — the
 ///     attribute on its own line — when only the terminator is. Zero for any other group.
 /// </param>
+/// <param name="KeywordWidth">
+///     ⚠ The width of the keyword after this group's one point, for the point before an <c>is</c> or an
+///     <c>as</c> (#444, SK-DIV-0210): broken exactly when the operand before the point fits on its line
+///     and the operand with a space and the keyword does not. The operand is the group's flat width less
+///     the segment after its point and the point's own space. Zero for any other group.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -921,4 +927,5 @@ public readonly record struct GroupFacts(
     bool BreaksOnlyIfHeadOverflows = false,
     bool FlatIfOwnerBroke = false,
     bool Continues = false,
-    int Terminator = 0);
+    int Terminator = 0,
+    int KeywordWidth = 0);

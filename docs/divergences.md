@@ -7849,3 +7849,28 @@ element of one on a line of its own, and that fill was not re-measured here.
 - options: `skala_wrap_array_initializer_style = wrap_if_long`, the exported value.
 - ⚠ status: **resolved**. Pinned by `ArrayElementDraftIssue444Tests` and
   `constructs/breaks/array-element-draft.cs`.
+
+## SK-DIV-0210 — `is`/`as` breaks before its keyword when only the keyword overflows
+
+#444's first shape. Measured on `return <operand> as string;` and `var value = <operand> is T;` a column at
+a time with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`:
+
+| operand ends at | oracle, `return … as string;` | oracle, `var value = … is T;` | Skala before |
+|---|---|---|---|
+| 114–117 | `… as` / `string;` | `=` / `… is` / `T;` | identical |
+| 118–120 | `…` / `as string;` | `=` / `… is` / `T;` | `… as` / `string;` past the margin |
+| 121–124 | `receiver` / `.Property… as` / `string;` | `receiver` / `.Property… is` / `T;`, no `=` break | `… as` / `string;` past the margin; `=` / … |
+| `x` / `is T` written broken | kept | kept | identical |
+
+The middle row is wired: the gap before the keyword is a point of its own group (`GroupFacts.KeywordWidth`),
+broken exactly when the operand fits on its line and the operand with a space and the keyword does not,
+and planned only where the author did not already break there. The break lands one level past the
+operand's line (SK-DIV-0206).
+
+⚠ Left **open**, the last row: past the margin the oracle wraps *inside a simple member access* —
+`receiver` / `.Property…`, the dot one level in plus one — a break point Skala does not have outside a
+chain of calls, and after an `=` it declines the `=` break to do it. Wiring that is a member-access wrap
+of its own, not this rule.
+
+- options: none.
+- ⚠ status: **resolved** for the band, **open** past it. Pinned by `TypeTestKeywordIssue444Tests`.
