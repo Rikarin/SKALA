@@ -35,14 +35,37 @@ public static class XmlDocOracle {
                 StringComparison.Ordinal
             );
 
-        /// <summary>The option key this file is named after, or null when it is not named after one.</summary>
-        public string Key => Path.GetFileNameWithoutExtension(File.Path);
+        /// <summary>
+        ///     Whether this row is attributed to an option key: true exactly for a file under
+        ///     <c>constructs/xmldoc/</c>.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ <b>Attribution is by subtree, not by file name (#396).</b> A doc-comment row outside
+        ///     <c>xmldoc/</c> is a <em>shape</em> row: it is compared byte for byte like every other row and
+        ///     its disagreement fails a test, but it carries no key and no tier verdict. The file name is
+        ///     not evidence of a key there — <c>trivia/skala_space_after_triple_slash.cs</c> is named after
+        ///     one and pins nothing about it — and a shape file such as <c>syntax/cref-member-forms.cs</c>
+        ///     has no key to name. Only <c>xmldoc/</c> enforces one file per key
+        ///     (<c>EveryDocCommentedFile_IsNamedAfterARegistryKey</c>), so only there does the name mean
+        ///     anything, and a tier judged off a name nothing enforces is a verdict attributed to whatever
+        ///     the file happened to be called.
+        /// </remarks>
+        public bool IsKeyed => File.RelativePath.StartsWith(Corpus.XmlDocPrefix, StringComparison.Ordinal);
+
+        /// <summary>The option key this row is attributed to, or null for a shape row.</summary>
+        public string? Key => IsKeyed ? Path.GetFileNameWithoutExtension(File.Path) : null;
+
+        /// <summary>The key for a keyed row, the corpus path for a shape row: what a report prints.</summary>
+        public string Label => Key ?? File.RelativePath;
     }
 
-    /// <summary>Every doc-commented corpus file with a committed doc-comment fixture, measured.</summary>
+    /// <summary>
+    ///     Every construct holding a <c>///</c> line that has a committed doc-comment fixture, measured:
+    ///     the keyed rows of <c>xmldoc/</c> and the shape rows outside it.
+    /// </summary>
     public static IReadOnlyList<Row> Rows() {
         var rows = new List<Row>();
-        foreach (var file in Corpus.DocCommented()) {
+        foreach (var file in Corpus.DocCommentBearing().UnionBy(Corpus.DocCommented(), static file => file.Path)) {
             if (!file.HasFixtureFor(OracleProfile.DocComments)) {
                 continue;
             }
@@ -64,11 +87,12 @@ public static class XmlDocOracle {
     public static string Measure() {
         var rows = Rows();
         var builder = new StringBuilder();
-        builder.AppendLine("── constructs/xmldoc ── Skala against the SkalaDocComments profile ──");
+        builder.AppendLine("── constructs with a /// line ── Skala against the SkalaDocComments profile ──");
         builder.AppendLine();
 
-        foreach (var row in rows.OrderBy(static row => row.Key, StringComparer.Ordinal)) {
-            builder.Append(row.Agrees ? "  agrees    " : "  DIVERGES  ").AppendLine(row.Key);
+        foreach (var row in rows.OrderBy(static row => !row.IsKeyed)
+                     .ThenBy(static row => row.Label, StringComparer.Ordinal)) {
+            builder.Append(row.Agrees ? "  agrees    " : "  DIVERGES  ").AppendLine(row.Label);
         }
 
         builder.AppendLine();
@@ -78,9 +102,9 @@ public static class XmlDocOracle {
             .AppendLine(" files agree byte for byte.");
 
         foreach (var row in rows.Where(static row => !row.Agrees)
-                     .OrderBy(static row => row.Key, StringComparer.Ordinal)) {
+                     .OrderBy(static row => row.Label, StringComparer.Ordinal)) {
             builder.AppendLine();
-            builder.Append("──── ").AppendLine(row.Key);
+            builder.Append("──── ").AppendLine(row.Label);
             foreach (var line in Diff(row)) {
                 builder.AppendLine(line);
             }

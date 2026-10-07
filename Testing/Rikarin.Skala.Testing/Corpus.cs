@@ -50,15 +50,21 @@ public static class Corpus {
     public const string ArrangementPrefix = "arrangement/";
 
     /// <summary>
-    ///     The subtree of <see cref="Constructs" /> that the documentation-comment sub-formatter owns,
-    ///     and the only part of the corpus that carries a <see cref="OracleProfile.DocComments" />
-    ///     fixture.
+    ///     The subtree of <see cref="Constructs" /> that the documentation-comment sub-formatter owns:
+    ///     one file per option key, routed to <see cref="OracleProfile.DocComments" /> by
+    ///     <see cref="OracleProfile.For(string)" />.
     /// </summary>
     /// <remarks>
     ///     ⚠ Same economics as <see cref="ArrangementPrefix" />, and the same reason for the boundary. A
     ///     doc-comment fixture beside a file with no <c>///</c> in it is byte-identical to the
     ///     format-only fixture beside it by construction, which measures nothing and costs an oracle run
     ///     to commit.
+    ///     <para>
+    ///         ⚠ It is no longer the only part of the corpus with a doc-comment fixture (#396): every
+    ///         construct holding a <c>///</c> line carries one, see <see cref="DocCommentBearing" />.
+    ///         What this subtree still owns alone is the key: only a file under it is attributed to an
+    ///         option and judged for that option's tier.
+    ///     </para>
     ///     <para>
     ///         ⚠ <see cref="Real" /> is deliberately <em>not</em> in here yet, and that is a scope
     ///         decision rather than a claim that it would say nothing — it would say a great deal, and
@@ -205,17 +211,61 @@ public static class Corpus {
     ];
 
     /// <summary>
-    ///     The files a documentation-comment fixture is expected for: <c>constructs/xmldoc/</c>.
+    ///     The key-named doc-comment constructs: <c>constructs/xmldoc/</c>.
     /// </summary>
     /// <remarks>
-    ///     ⚠ This is the set <c>./build.sh Oracle</c> regenerates under
-    ///     <see cref="OracleProfile.DocComments" />, and the set <c>XmlDocOracleTests</c> compares Skala
-    ///     against. It is what makes the <c>resharper_xmldoc_*</c> family measurable at all.
+    ///     ⚠ This is the set whose rows <c>XmlDocOracleTests</c> attributes to an option key and judges
+    ///     for that key's tier. It is what makes the <c>resharper_xmldoc_*</c> family measurable at all.
+    ///     It is no longer the whole set <c>./build.sh Oracle</c> regenerates under
+    ///     <see cref="OracleProfile.DocComments" /> — that is <see cref="DocCommentBearing" />, of which
+    ///     this is a subset.
     /// </remarks>
     public static IReadOnlyList<CorpusFile> DocCommented() => [
         .. Files(Constructs)
             .Where(static file => file.RelativePath.StartsWith(XmlDocPrefix, StringComparison.Ordinal))
     ];
+
+    /// <summary>
+    ///     Every construct that holds a documentation-comment line, wherever it sits: the files a
+    ///     <see cref="OracleProfile.DocComments" /> fixture is owed for.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>A superset of <see cref="DocCommented" />, and the difference is #396.</b> Choosing the
+    ///     doc-comment set by subtree left eight constructs outside <c>xmldoc/</c> — 77 <c>///</c> lines,
+    ///     two of them whole cref grammars — carrying only a <see cref="OracleProfile.FormatOnly" />
+    ///     fixture. That profile never formats a doc comment (SK-DIV-0006) and the differential compares
+    ///     it on <see cref="FidelityBasis.OutsideDocComments" />, so those lines were not even in a
+    ///     denominator: asserted by nothing. Asking one of them ad hoc is how #382's third shape was
+    ///     found, so the unasked lines had a measured cost.
+    ///     <para>
+    ///         ⚠ This is the set the fixtures are <em>generated and owed</em> for, and deliberately not
+    ///         the set <see cref="OracleProfile.For(string)" /> routes. The sweep and the frozen outputs
+    ///         still ask a file outside <c>xmldoc/</c> under <see cref="OracleProfile.FormatOnly" />;
+    ///         the doc-comment fixture is a second question about the same file, like the cleanup
+    ///         fixture beside a <see cref="Real" /> file, and neither replaces the other.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Decided by content rather than by a list, so that a new construct with a <c>///</c> line
+    ///         is owed a fixture the day it is committed. <c>XmlDocOracleTests</c> holds the invariant.
+    ///     </para>
+    /// </remarks>
+    public static IReadOnlyList<CorpusFile> DocCommentBearing() => [
+        .. Files(Constructs).Where(static file => HoldsDocCommentLine(File.ReadLines(file.Path)))
+    ];
+
+    /// <summary>
+    ///     Whether any of these lines is a documentation-comment line: <c>///</c> after indentation, and
+    ///     not <c>////</c>, which C# reads as an ordinary line comment.
+    /// </summary>
+    public static bool HoldsDocCommentLine(IEnumerable<string> lines) =>
+        lines.Any(static line => IsDocCommentLine(line));
+
+    /// <inheritdoc cref="HoldsDocCommentLine" />
+    public static bool IsDocCommentLine(string line) {
+        var trimmed = line.AsSpan().TrimStart();
+        return trimmed.StartsWith("///", StringComparison.Ordinal)
+            && !trimmed.StartsWith("////", StringComparison.Ordinal);
+    }
 
     /// <summary>xUnit theory data: one row per file in a set.</summary>
     public static IEnumerable<object[]> TheoryData(string set) =>

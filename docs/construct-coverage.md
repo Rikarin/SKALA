@@ -140,23 +140,24 @@ Skala matches byte for byte, and `FuzzerTests.UngovernedGaps_EitherSpelling_Form
 flips every gap in both fixtures and asserts each flipped input formats to the fixture flipped the
 same way.
 
-### The cref forms are pinned under one profile of two
+### The cref forms are pinned under both profiles
 
-⚠ **A gap this audit could not close, named rather than left implicit.** `cref-member-forms.cs` sits
-in `constructs/syntax/`, so the fixture beside it is the **format-only** answer. The doc-comment
-profile is the one that actually walks a cref, and it is only ever run over `constructs/xmldoc/` —
-which `XmlDocOracleTests` asserts is **one file per option key**, because the doc-comment verdict is
-attributed by file name. A fixture named after a construct cannot live there without attributing its
-measurement to nothing, and `TheSplit_IsTwentyThreeFilesAgainstNone` pins the subtree's size besides.
+⚠ **This was a gap this audit could not close, and #396 closed it.** `cref-member-forms.cs` sits in
+`constructs/syntax/`, so the profile routing gave it the **format-only** answer alone, and the
+doc-comment profile — the one that actually walks a cref — was only ever run over `constructs/xmldoc/`,
+where a row is attributed to a key by file name. Since #396 the doc-comment fixture is owed to every
+construct holding a `///` line, and a row outside `xmldoc/` is a *shape* row: compared byte for byte,
+attributed to no key ([plan 12](plan/12-conformance-and-testing.md) § "Every construct with a `///`
+line is asked under the doc-comment profile"). `cref-member-forms.cs` and `breaks/cref-parameter-list.cs`
+both carry one, and Skala agrees with both.
 
-What the doc-comment profile does to these forms *was* measured by hand while the oracle was
-installed, on a deliberately mis-spaced probe:
+What is still pinned nowhere is the doc-comment profile's answer on a *mis-spaced* cref. It was
+measured by hand while the oracle was installed:
 `<see    cref="Ext.extension(string).IsBlank"   />` comes back
 `<see cref="Ext.extension(string).IsBlank" />` at the standard indent, identically to an ordinary
-`<see cref="Ext.Ordinary(int)" />`. So the sub-formatter treats an extension cref exactly as it
-treats a name cref. **That measurement is written down here and pinned nowhere**, and pinning it needs
-`XmlDocOracle`'s row model to admit a file that is not named after a key — a design change, not an
-addition, and out of scope for a coverage pass.
+`<see cref="Ext.Ordinary(int)" />`, so the sub-formatter treats an extension cref exactly as it treats
+a name cref. The committed file spells every cref the way the oracle leaves it, so its fixture pins
+that the forms survive, not that they are normalised.
 
 ## The eight that were not filled, and why
 
