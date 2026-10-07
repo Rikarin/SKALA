@@ -149,6 +149,196 @@ internal static class RewriteGuards {
     public static bool IsFreeToSkip(ExpressionSyntax expression, SemanticModel model, CancellationToken cancellation) =>
         IsFreeToSkip(model.GetOperation(expression, cancellation));
 
+    /// <summary>
+    ///     ⚠ Whether running <paramref name="operation" /> can execute no code but the language's own and
+    ///     a handful of framework methods over text and numbers — so nothing it does can reach an object
+    ///     it was not handed as storage.
+    /// </summary>
+    /// <remarks>
+    ///     A different question from <see cref="IsFreeToRepeat(IOperation)" />: a <em>body</em> may write
+    ///     locals and fields, branch, return and throw, because none of that runs a method. What it may
+    ///     not do is call one — an invocation, an allocation, a getter or setter that is not storage, an
+    ///     indexer, a user-defined operator or conversion, a <c>foreach</c>, a deconstruction, an
+    ///     interpolated string, a local function or <c>dynamic</c> — unless the call is to a method
+    ///     declared on <c>string</c>, <c>char</c>, <c>bool</c>, a numeric primitive or <c>Math</c>, is not
+    ///     generic, and takes only parameters of those types or an enum. Such a method runs no user code,
+    ///     since nothing it is handed has a <c>ToString</c> or <c>Equals</c> somebody wrote. The question a
+    ///     rewrite asks when the code it moves into another method can only be proved to behave the
+    ///     same if it cannot reach that method's state — #430's predicate that grows the list it scans.
+    /// </remarks>
+    public static bool RunsNoOtherCode(IOperation? operation) => RunsNoOtherCode(operation, true);
+
+    /// <summary>
+    ///     <see cref="RunsNoOtherCode(IOperation)" />, and with <paramref name="mayThrow" /> false it also
+    ///     cannot throw: the receiver of every member read is <c>this</c>, a value or an already-tested
+    ///     <c>?.</c> receiver, and no array element, framework call, checked or <c>decimal</c> arithmetic,
+    ///     division by a non-constant, or failing conversion — <see cref="IsFreeToSkip(IOperation)" />'s
+    ///     terms, over a body.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #431: a constructor that throws before it overwrites a field leaves the initialized value
+    ///     where a finalizer or a leaked <c>this</c> reads it — measured <c>5</c> before deleting the
+    ///     initializer and <c>0</c> after, both ways.
+    /// </remarks>
+    public static bool RunsNoOtherCode(IOperation? operation, bool mayThrow) {
+        if (operation is null) {
+            return false;
+        }
+
+        var pending = new Stack<IOperation>();
+        pending.Push(operation);
+        while (pending.Count > 0) {
+            var current = pending.Pop();
+            if (!IsInertStep(current, mayThrow)) {
+                return false;
+            }
+
+            foreach (var child in current.ChildOperations) {
+                pending.Push(child);
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>One node of <see cref="RunsNoOtherCode(IOperation, bool)" />, judged without its children.</summary>
+    static bool IsInertStep(IOperation operation, bool mayThrow) {
+        if (operation.Type?.TypeKind is TypeKind.Dynamic or TypeKind.Pointer or TypeKind.FunctionPointer) {
+            return false;
+        }
+
+        switch (operation) {
+            case IBlockOperation:
+            case IReturnOperation:
+            case IExpressionStatementOperation:
+            case IVariableDeclarationGroupOperation:
+            case IVariableDeclarationOperation:
+            case IVariableDeclaratorOperation:
+            case IVariableInitializerOperation:
+            case IConditionalOperation:
+            case IBranchOperation:
+            case ILabeledOperation:
+            case IEmptyOperation:
+            case ILiteralOperation:
+            case ILocalReferenceOperation:
+            case IParameterReferenceOperation:
+            case IInstanceReferenceOperation:
+            case IConditionalAccessInstanceOperation:
+            case IConditionalAccessOperation:
+            case IDefaultValueOperation:
+            case ITypeOfOperation:
+            case ISizeOfOperation:
+            case INameOfOperation:
+            case ISimpleAssignmentOperation:
+            case IDiscardOperation:
+            case IIsTypeOperation:
+            case IIsPatternOperation:
+            case ITypePatternOperation:
+            case IDeclarationPatternOperation:
+            case IDiscardPatternOperation:
+            case IConstantPatternOperation:
+            case IRelationalPatternOperation:
+            case INegatedPatternOperation:
+            case IBinaryPatternOperation:
+            case IPropertySubpatternOperation:
+            case IArgumentOperation:
+                return true;
+
+            case ICoalesceOperation coalesce:
+                return IsLanguageOwn(coalesce.ValueConversion.MethodSymbol);
+
+            case IFieldReferenceOperation field:
+                return mayThrow || CannotBeNull(field.Instance);
+
+            case IArrayElementReferenceOperation:
+                return mayThrow;
+
+            case IRecursivePatternOperation recursive:
+                return recursive.DeconstructSymbol is null && recursive.DeconstructionSubpatterns.IsEmpty;
+
+            case IPropertyReferenceOperation property:
+                return property.Arguments.IsEmpty
+                    && IsStorage(property.Property)
+                    && (mayThrow || CannotBeNull(property.Instance));
+
+            case IConversionOperation conversion:
+                return IsLanguageOwn(conversion.OperatorMethod) && (mayThrow || !CanThrow(conversion));
+
+            case IBinaryOperation binary:
+                return IsLanguageOwn(binary.OperatorMethod)
+                    && !CallsToString(binary)
+                    && (mayThrow || !CanThrow(binary));
+
+            case IUnaryOperation unary:
+                return IsLanguageOwn(unary.OperatorMethod)
+                    && (mayThrow || !(unary.IsChecked && unary.OperatorKind == UnaryOperatorKind.Minus));
+
+            case IIncrementOrDecrementOperation increment:
+                return increment.OperatorMethod is null && (mayThrow || !increment.IsChecked);
+
+            case ICompoundAssignmentOperation compound:
+                return IsLanguageOwn(compound.OperatorMethod)
+                    && IsLanguageOwn(compound.InConversion.MethodSymbol)
+                    && IsLanguageOwn(compound.OutConversion.MethodSymbol)
+                    && !(compound.OperatorKind == BinaryOperatorKind.Add
+                        && compound.Type?.SpecialType == SpecialType.System_String
+                        && compound.Value.Type?.SpecialType is not (SpecialType.System_String
+                            or SpecialType.System_Char))
+                    && (mayThrow
+                        || (!compound.IsChecked
+                            && !IsDecimal(compound.Type)
+                            && compound.OperatorKind is not (BinaryOperatorKind.Divide
+                                or BinaryOperatorKind.Remainder)));
+
+            case IInvocationOperation invocation:
+                return mayThrow && IsInertFrameworkMethod(invocation.TargetMethod);
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    ///     A receiver a member read through cannot find <c>null</c>: none, <c>this</c>, a tested <c>?.</c> receiver or a
+    ///     value.
+    /// </summary>
+    static bool CannotBeNull(IOperation? instance) =>
+        instance is null or IInstanceReferenceOperation or IConditionalAccessInstanceOperation
+        || instance.Type?.IsValueType == true;
+
+    /// <summary>
+    ///     A non-generic framework method on text, a character, a flag or a number, whose every parameter
+    ///     is one of those or an enum — so it is handed nothing with code of its own to run.
+    /// </summary>
+    static bool IsInertFrameworkMethod(IMethodSymbol method) {
+        if (method.IsGenericMethod
+            || method.MethodKind != MethodKind.Ordinary
+            || !method.Locations.All(static l => l.IsInMetadata)) {
+            return false;
+        }
+
+        var owner = method.ContainingType;
+        if (!IsPlainValue(owner)
+            && !(owner is {
+                Name: "Math" or "MathF",
+                ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
+            })) {
+            return false;
+        }
+
+        foreach (var parameter in method.Parameters) {
+            if (parameter.RefKind != RefKind.None || !IsPlainValue(parameter.Type)) {
+                return false;
+            }
+        }
+
+        return true;
+
+        static bool IsPlainValue(ITypeSymbol type) =>
+            type.TypeKind == TypeKind.Enum
+            || type.SpecialType is >= SpecialType.System_Boolean and <= SpecialType.System_String;
+    }
+
     static bool Admits(IOperation operation, bool mayThrow) {
         if (operation.ConstantValue.HasValue) {
             return true;

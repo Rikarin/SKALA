@@ -149,7 +149,7 @@
 | [SK2192](SK2192.md) | `==` on spans compares memory locations | warning | review | no |
 | [SK2193](SK2193.md) | `ImmutableArray<T>` is built with a collection initializer | error | review | no |
 | [SK2194](SK2194.md) | The captured primary constructor parameter is assigned | warning | — | no |
-| [SK2200](SK2200.md) | The field initializer is overwritten by every constructor | warning | review | no |
+| [SK2200](SK2200.md) | The field initializer is overwritten by every constructor | warning | safe | no |
 | [SK2201](SK2201.md) | The unsubscription passes an anonymous function | warning | — | no |
 | [SK2202](SK2202.md) | The modification sits inside a conditional invocation | warning | — | yes |
 | [SK2210](SK2210.md) | The constant index or range cannot be valid | warning | — | no |

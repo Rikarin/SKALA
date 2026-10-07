@@ -33,7 +33,15 @@ namespace Rikarin.Skala.Rules.Performance;
 ///         <c>true</c> over zero elements; <c>Any</c> and <c>Exists</c> both return <c>false</c>;
 ///         <c>FirstOrDefault</c> and <c>Find</c> both return <c>default(T)</c> — including for a value
 ///         type, where <c>First</c>/<c>Single</c> would have thrown and neither of these does. Nothing
-///         in the table changes a return, which is why the fix is safe.
+///         in the table changes a return on a list nobody changes.
+///     </para>
+///     <para>
+///         ⚠ <b>On a list somebody changes mid-scan, every pair disagrees (#430)</b>, <c>Exists</c>
+///         included: the list's own methods re-read <c>_size</c> and <c>_items</c> on every step, and
+///         <c>Enumerable</c> over a <c>List&lt;T&gt;</c> walks a span taken once. So over a
+///         <c>List&lt;T&gt;</c> the predicate has to run no code that could do it —
+///         <see cref="RewriteGuards.RunsNoOtherCode" />. The fix is still not safe: on a <c>null</c>
+///         receiver <c>ArgumentNullException</c> becomes <c>NullReferenceException</c> (#437).
 ///     </para>
 ///     <para>
 ///         ⚠ The receiver's type is matched against <c>List&lt;T&gt;</c> and
@@ -171,6 +179,21 @@ public sealed class CollectionOwnMethodAnalyzer : DiagnosticAnalyzer {
                 return;
             }
 
+            // ⚠ #430: `Find`, `Exists` and `TrueForAll` read the list's live state on every step — its
+            // `_size`, and its `_items` after a reallocation — where `Enumerable` over a `List<T>`
+            // iterates a span taken once (.NET 10) or a version-checked enumerator that throws (older
+            // runtimes). A predicate that grows the list made `All` answer `False` and `TrueForAll`
+            // `True`; one that grew it and then wrote an element made `Any` see `[1,2,3]` and `Exists`
+            // `[1,7,3]`, so `Exists` is not the exception the issue thought it was. Only a predicate that
+            // runs no code at all can be proved not to do that, and an `ImmutableList<T>` cannot be
+            // changed by anything.
+            if (IsMutable(collection)
+                && !RewriteGuards.RunsNoOtherCode(
+                    (model.GetOperation(argument.Expression, cancellation) as IAnonymousFunctionOperation)?.Body
+                )) {
+                return;
+            }
+
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     Descriptor,
@@ -188,6 +211,9 @@ public sealed class CollectionOwnMethodAnalyzer : DiagnosticAnalyzer {
             return;
         }
     }
+
+    static bool IsMutable(INamedTypeSymbol collection) =>
+        collection.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.List<T>";
 
     static bool Matches(INamedTypeSymbol type, List<INamedTypeSymbol> receivers) {
         foreach (var receiver in receivers) {
