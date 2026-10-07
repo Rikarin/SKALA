@@ -2582,6 +2582,29 @@ silently.
 copy now returns the current one. That is the bug the defensive copies were hiding, and it arrives as
 a behaviour change on the day somebody applies a modifier the compiler accepts without complaint.
 
+⚠ **#412: inside the struct, the modifier can create a defensive copy as well as remove one, and that
+change the rule must decline.** A captured primary-constructor parameter is a field the struct never
+declares; `readonly` makes it readonly, and a non-`readonly` member called on a value-typed capture
+then runs against a copy. `struct Tally(Counter c) { void Bump() => c.Increment(); }` counts 1 as
+written and 0 after the fix, and it compiles, so `CrossFixtureFixTests` — which recompiles after every
+safe fix — passed it. Each shape was run both ways before it was decided: a method, property getter,
+indexer getter or event accessor that is not `readonly`, through any chain of struct fields, an
+interface member through a type-parameter capture with or without a `struct` constraint, a struct's
+own override of an `object` member, and `foreach` over the capture all change the result, and decline.
+An `in` extension, a deconstruction, `using`, `await`, interpolation, a property pattern, a method
+group, a `ref readonly` local and an inherited `object` member all already work on a copy and stay
+eligible. A `this ref` extension on the capture is `CS9116` under `readonly` — a `ref` argument without
+the keyword — so it is a write in the shared definition and `SK2194` now reports it too; on `this` it
+is `CS1605`, and declines. ⚠ The reverse correction came out of the same run: `+=` on an event of a
+struct capture had counted as a write since #408, but `readonly` compiles it (against a copy), so it
+moved from the shared write definition to the copy predicate, and `SK2194` stops calling a
+subscription an assignment. Roslyn has no public "this call is on a copy" query, so the test is the compiler's input to
+that decision — `IMethodSymbol.IsReadOnly` on the member actually called. ⚠ `SK2194` does not share
+the new predicate: a non-`readonly` call is not an assignment, most such members do not mutate, and
+counting every one would make the warning noise. The lesson generalises: a compile sweep proves a safe
+fix compiles, not that it preserves behaviour, so `CrossFixtureFixTests` now also runs every fixture
+that declares a `Probe.Run()` before and after each safe fix.
+
 ⚠ **`SK4020` and `SK4002` are asserted never to fire on the same declaration.** One reports a capture
 and the other the absence of every capture; they are complements, and a report carrying both would be
 one decision billed twice. The assertion lives in the batch tests rather than in a `supersedes`

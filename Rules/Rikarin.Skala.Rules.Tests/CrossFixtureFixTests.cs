@@ -1,8 +1,11 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Reflection;
+using System.Runtime.Loader;
 
 namespace Rikarin.Skala.Rules.Tests;
 
@@ -95,12 +98,130 @@ public sealed class CrossFixtureFixTests {
         );
     }
 
+    /// <summary>
+    ///     ⚠ #412: <b>compiling is not meaning the same thing.</b> Every safe fix applied to every
+    ///     fixture that can be executed — one declaring a <c>Probe</c> type with a public static
+    ///     parameterless <c>Run</c> — and both versions run.
+    /// </summary>
+    /// <remarks>
+    ///     <c>SK4022</c>'s <c>readonly</c> compiled on a struct that called a mutating method on its
+    ///     captured struct, and redirected the call to a defensive copy: the sweep above passed it, and
+    ///     only running the program shows the difference. Execution is opt-in, because a fixture is a
+    ///     shape and not a program, and calling arbitrary members of every fixture would run their
+    ///     side effects; a fixture that wants its fix's behaviour pinned adds a <c>Probe</c>.
+    /// </remarks>
+    [Fact]
+    public void EverySafeFix_OnEveryExecutableFixture_PreservesTheResult() {
+        var cancellation = TestContext.Current.CancellationToken;
+        var failures = new ConcurrentBag<string>();
+        var compared = 0;
+
+        Parallel.ForEach(
+            RuleFixtures.All().Where(static fixture => File.ReadAllText(fixture.Path).Contains("class Probe", StringComparison.Ordinal)),
+            new ParallelOptions { CancellationToken = cancellation },
+            fixture => {
+                var source = File.ReadAllText(fixture.Path);
+                var before = RuleFixtures.Compile(source, fixture.Path);
+                if (Probe(before, cancellation) is not { } expected) {
+                    return;
+                }
+
+                foreach (var (id, text) in FixedTexts(source, before, cancellation)) {
+                    var after = RuleFixtures.Compile(text, fixture.Path);
+                    if (after.GetDiagnostics(cancellation).Any(static d => d.Severity == DiagnosticSeverity.Error)) {
+                        continue; // The compile sweep's finding, not this one's.
+                    }
+
+                    Interlocked.Increment(ref compared);
+                    var actual = Probe(after, cancellation);
+                    if (actual != expected) {
+                        failures.Add($"{CrossRuleBaseline.Key(fixture.Path)}: {id} changes Probe.Run() from {expected} to {actual ?? "<no result>"}");
+                    }
+                }
+            }
+        );
+
+        // Anti-vacuity: SK4022's own executable positives alone are five fixed versions.
+        Assert.True(compared >= 5, $"Only {compared} fixed version(s) were executed.");
+        Assert.True(
+            failures.IsEmpty,
+            $"{failures.Count} safe fix(es) out of {compared} executed change what the program does:\n  "
+            + string.Join("\n  ", failures.Order(StringComparer.Ordinal))
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ The instrument check for the runtime sweep: a probe whose result moves must be seen, and
+    ///     one that does not must not.
+    /// </summary>
+    [Fact]
+    public void TheProbe_SeesAChangedResult_AndNotAnUnchangedOne() {
+        var cancellation = TestContext.Current.CancellationToken;
+        const string source = "public static class Probe { public static int Run() => 1 + 1; }";
+        var two = Probe(RuleFixtures.Compile(source, "planted.cs"), cancellation);
+
+        Assert.Equal("2", two);
+        Assert.Equal(two, Probe(RuleFixtures.Compile(source.Replace("1 + 1", "2", StringComparison.Ordinal), "planted.cs"), cancellation));
+        Assert.NotEqual(two, Probe(RuleFixtures.Compile(source.Replace("1 + 1", "1 - 1", StringComparison.Ordinal), "planted.cs"), cancellation));
+        Assert.Null(Probe(RuleFixtures.Compile("public static class Probe { }", "planted.cs"), cancellation));
+    }
+
+    /// <summary>
+    ///     <c>Probe.Run()</c>'s result as invariant text, or <see langword="null" /> when the compilation
+    ///     declares no such member; an exception is a result too, by type name.
+    /// </summary>
+    static string? Probe(Compilation compilation, CancellationToken cancellation) {
+        using var image = new MemoryStream();
+        if (!compilation.Emit(image, cancellationToken: cancellation).Success) {
+            return null;
+        }
+
+        image.Position = 0;
+        var context = new AssemblyLoadContext(Guid.NewGuid().ToString(), true);
+        try {
+            var run = context.LoadFromStream(image)
+                .GetTypes()
+                .FirstOrDefault(static type => type.Name == "Probe")
+                ?.GetMethod("Run", BindingFlags.Public | BindingFlags.Static, Type.EmptyTypes);
+            if (run is null) {
+                return null;
+            }
+
+            try {
+                return Convert.ToString(run.Invoke(null, null), CultureInfo.InvariantCulture) ?? "<null>";
+            } catch (TargetInvocationException thrown) {
+                return "throws " + thrown.InnerException?.GetType().Name;
+            }
+        } finally {
+            context.Unload();
+        }
+    }
+
     /// <summary>Each safe-fix rule's edits on one source, applied rule by rule, and what they broke.</summary>
     static List<string> Regressions(string source, string path, ref int applied, CancellationToken cancellation) {
         var before = RuleFixtures.Compile(source, path);
-        var findings = RuleFixtures.Analyze(before, SkalaAnalyzers.All, cancellation);
         var result = new List<string>();
+        foreach (var (id, text) in FixedTexts(source, before, cancellation)) {
+            Interlocked.Increment(ref applied);
+            var broken = NewErrors(before, text, path, cancellation);
+            if (broken.Length > 0) {
+                result.Add(id + " introduces " + string.Join(", ", broken));
+            }
+        }
 
+        return result;
+    }
+
+    /// <summary>
+    ///     The source after each safe-fix rule's edits, one rule at a time — grouped as <c>skala fix</c>
+    ///     applies a pass.
+    /// </summary>
+    static IEnumerable<(string Id, string Text)> FixedTexts(
+        string source,
+        CSharpCompilation before,
+        CancellationToken cancellation
+    ) {
+        var findings = RuleFixtures.Analyze(before, SkalaAnalyzers.All, cancellation);
         foreach (var group in findings
                      .Where(static diagnostic => RuleCatalog.Find(diagnostic.Id) is { HasFix: true, FixIsSafe: true })
                      .GroupBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal)
@@ -124,14 +245,8 @@ public sealed class CrossFixtureFixTests {
                 consumed = start;
             }
 
-            Interlocked.Increment(ref applied);
-            var broken = NewErrors(before, text, path, cancellation);
-            if (broken.Length > 0) {
-                result.Add(group.Key + " introduces " + string.Join(", ", broken));
-            }
+            yield return (group.Key, text);
         }
-
-        return result;
     }
 
     /// <summary>The error ids the edited text has more of than the original, counted per id.</summary>
