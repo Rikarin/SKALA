@@ -1472,8 +1472,9 @@ public static class Ids {
     // ⚠ Inert, and measured in both directions. Asked at both values on `public C() : base(1)`
     // beside `public C(int a): this()` — one written with the space, one without — the oracle
     // returns both as ` : `. It is an unprefixed export key sitting among the C++ colon family
-    // (`space_before_colon_in_bitfield_declarator` and the rest); the C# formatter spends one space
-    // in front of a constructor initializer's colon and offers no way to ask for none.
+    // (`space_before_colon_in_bitfield_declarator` and the rest). ⚠ The C# formatter does offer a
+    // way to ask for none, and this note used to say it did not: that colon is
+    // `space_before_colon_in_inheritance_clause`'s, which gives `C(): base(1)` at `false` (#419).
     public static readonly OptionId SpaceBeforeColonInCtorInitializer =
         OfInert("skala_space_before_colon_in_ctor_initializer");
 
