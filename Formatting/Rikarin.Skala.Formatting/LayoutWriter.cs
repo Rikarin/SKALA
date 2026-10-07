@@ -556,6 +556,18 @@ public sealed class LayoutWriter {
                 // question from "how many levels does this line take".
                 IndentKind.OutdentColumns =>
                     new Scope(false, 0, line, outer, unconditional, Math.Max(0, columns)),
+
+                // ⚠ The indentation of the line being written, or of the line about to start when the
+                // scope opens right after a break. See IndentKind.FromLine.
+                IndentKind.FromLine =>
+                    new Scope(
+                        false,
+                        FromLineBase() + indentWidth,
+                        line,
+                        outer,
+                        unconditional,
+                        IsFromLine: true
+                    ),
                 _ => new Scope(false, 0, int.MaxValue, outer, unconditional)
             }
         );
@@ -925,6 +937,19 @@ public sealed class LayoutWriter {
                 return Math.Max(0, level + (levelsOnly && scope.IsAlignment ? scope.CloserLevel : scope.Level));
             }
 
+            // ⚠ Absolute, as a block is, but only for a line after the one it opened on: the operand's
+            // own line, and anything opened on it, is laid out as if the scope were not there. A scope
+            // inside it that opened on that same line and already spent its level here takes the
+            // operand line's own indentation as its base rather than the scope's level on top:
+            // `var a = Compute(` / arguments one level in, `)` back — not two (#445).
+            if (scope.IsFromLine) {
+                if (scope.OpenLine < line) {
+                    return Math.Max(0, level + (blocked == scope.OpenLine ? scope.Level - indentWidth : scope.Level));
+                }
+
+                continue;
+            }
+
             // ⚠ Absolute, as a block is: everything outside a lifted list is already in `Lifted`.
             // Unless a broken construct inside the list opened on the list's own line, which is the
             // innermost broken construct around this line and continues the ordinary way.
@@ -1023,9 +1048,26 @@ public sealed class LayoutWriter {
         bool IsAnchor = false,
         bool IsGrouping = false,
         int Lifted = -1,
-        int AlignedCloser = -1);
+        int AlignedCloser = -1,
+        bool IsFromLine = false);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
+    /// <summary>
+    ///     The indentation an <see cref="IndentKind.FromLine" /> scope counts its level from: the line's
+    ///     own, or an alignment column opened on this line — a statement condition's, whose content starts
+    ///     past the <c>(</c> rather than at the line's indentation.
+    /// </summary>
+    int FromLineBase() {
+        var indent = atLineStart ? pendingCloserLevel ?? Effective() : CurrentLineIndent();
+        for (var i = scopes.Count - 1; i >= 0; i--) {
+            if (scopes[i].IsAlignment && scopes[i].OpenLine == line) {
+                return Math.Max(indent, scopes[i].Level);
+            }
+        }
+
+        return indent;
+    }
+
     int CurrentLineIndent() {
         var start = output.Length;
         while (start > 0 && output[start - 1] != '\n') {

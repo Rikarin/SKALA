@@ -7631,6 +7631,7 @@ so the break pays the statement's continuation level. What stays open is SK-DIV-
 
 - options: `skala_indent_pars`, `skala_align_tuple_components`
 - ⚠ status: **open**, measured.
+
 ## SK-DIV-0205 — the neighbours of a block comment that spans lines: a ternary, `is`/`as`, an array's opener, a fill
 
 #440 named three shapes SK-DIV-0200 measured beside it. Asked of `jb cleanupcode` 2025.2.6 under
@@ -7683,9 +7684,8 @@ which the oracle breaks *before* `as`; `x is > 5 and < 10`, where the oracle bre
 Skala at the `and`; an item that is itself multi-line in a fill (`new[] { 1, Compute(` … `), 4 }` puts
 `4` on a line of its own in the oracle; Skala keeps it and moves `Compute(` down); and an empty
 `new int[] { /* a` / `b */ }`, which the oracle closes on a line of its own. Each was the same before
-this entry. ⚠ One is new: a kept break before `is` in a lambda body that is an argument —
-`.Count(c => c.Parent` / `is ArgumentSyntax` — is one level past the line in the oracle, and Skala now
-stacks the argument list's level and the type test's own (`Testing/Rikarin.Skala.Testing/SyntaxCoverage.cs`).
+this entry. ⚠ One was new — a kept break before `is` in a lambda that is an argument, where this entry's
+level stacked on the argument list's — and is SK-DIV-0206, resolved.
 
 - options: `skala_wrap_ternary_expr_style`, `skala_wrap_array_initializer_style` and
   `skala_align_multiline_statement_conditions` at their exported values.
@@ -7742,3 +7742,36 @@ whole; the same happens without any attribute, so it is the `=`'s ordering rule.
 - options: the six `skala_place_*_attribute_on_same_line` keys.
 - ⚠ status: **resolved** at `always`; **open** for a comment in the gap. Pinned by
   `AttributeJoinTerminatorIssue438Tests`.
+
+## SK-DIV-0206 — a type test's break is one level past its operand's line, not past what that line opened
+
+#445, introduced by SK-DIV-0205. That entry gave `is` and `as` a level of their own, stacked on whatever
+was open, and an argument list opened on the operand's line was open:
+`nodes.Count(static collection => collection.Parent` / `is ArgumentSyntax` went eight columns in, where
+the oracle writes four. Measured with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`:
+
+| written | oracle | Skala with SK-DIV-0205 |
+|---|---|---|
+| a lambda that is an argument, `x => x` / `is T`, kept or added, at the statement or inside a chain | one level past the line the lambda is on | two |
+| `Compute(` / `collection.Parent` / `is T` (the operand on a line of its own inside the list) | one level past the operand's line | identical |
+| `\|\| x` / `is null` in a header, `= x` / `is T`, `=>` / `o` / `is string`, `return o` / `is string` | one level past the operand's line | identical |
+| `var a = Compute(` / arguments / `) is string`, and under `&&` | the arguments one level past the line, `)` back on it | two levels, `)` one |
+| `var a = Compute(` / arguments / `)` / `is string` (the author's break before `is`) | the arguments two levels in, `)` and `is` one | identical, by `GroupFacts.Continues` |
+| `if (x … as` / `string` / `== null)` | one level past the condition's aligned column | identical |
+
+A new scope kind, `IndentKind.FromLine`, is the rule: one level past the indentation of the line the
+operand starts on — or past an alignment column opened on that line, a condition's — and nothing on that
+line itself. A scope opened inside it on the same line takes the line's own indentation as its base, so
+the list on the operand's line keeps its one level. `GroupFacts.Continues` is set only when the author
+broke before the keyword: the group resolves broken whenever the expression is too long, which said
+nothing about whether `)` / `is` was written.
+
+Skala's own source, asked file by file: `SyntaxCoverage.cs` moves to the oracle's column.
+`Rules/…/Modernization/SearchValuesAnalyzer.cs` moves one line away from it, and not because of this
+rule: there the operand's line is a switch arm whose `when` clause the oracle lays out one level deeper
+(`)` at 16 and `is` at 20; Skala writes `)` at 12), which is the arm's own continuation and was a
+divergence before SK-DIV-0205. SK-DIV-0205's stacked level had happened to land on 20.
+
+- options: none.
+- ⚠ status: **resolved**. Pinned by `TypeTestLevelIssue445Tests` and `constructs/breaks/type-test-level.cs`.
+

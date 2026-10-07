@@ -432,7 +432,20 @@ public enum IndentKind {
     ///     needs it: a condition broken across lines is laid out from the column just after the
     ///     statement's <c>(</c>, which is not a multiple of the indent width.
     /// </remarks>
-    Align
+    Align,
+
+    /// <summary>
+    ///     One level past the indentation of the line the scope opens on, whatever else is open there.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ An <c>is</c> or <c>as</c> breaks one level past its operand's <em>line</em> (#445): under
+    ///     <c>|| x</c> it lands four past the <c>||</c> line, and inside a lambda that is an argument —
+    ///     <c>nodes.Count(c =&gt; c.Parent</c> / <c>is ArgumentSyntax</c> — four past the
+    ///     <c>nodes.Count(</c> line, not eight: the argument list opened on that line adds nothing. A
+    ///     continuation level stacked on whatever was open counted the argument list too. Absolute, as a
+    ///     block is: a scope opened inside it composes on top of it.
+    /// </remarks>
+    FromLine
 }
 
 /// <summary>

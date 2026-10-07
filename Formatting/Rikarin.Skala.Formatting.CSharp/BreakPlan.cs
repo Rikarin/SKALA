@@ -133,7 +133,8 @@ public readonly record struct GroupPlan(
     bool LeadingGapInside = false,
     bool OwnLevel = false,
     bool SpendsUnderDelimiters = false,
-    HeldLevel HoldsLevel = HeldLevel.None);
+    HeldLevel HoldsLevel = HeldLevel.None,
+    bool FromLine = false);
 
 /// <summary>
 ///     Whether a group spends its continuation level as zero columns. See <see cref="GroupPlan.HoldsLevel" />.
@@ -2981,14 +2982,22 @@ public sealed class BreakPlan {
         }
 
         // ⚠ The level covers a kept break *before* the keyword too: `|| x` / `is null` and
-        // `… is not T` / `declaration` sit one level past the operand's line in the oracle, which is what
-        // reformatted 42 of Skala's own files when this landed — each one asked of the oracle and agreed.
+        // `… is not T` / `declaration` sit one level past the operand's line in the oracle (#440).
+        // ⚠ And it is one level past that *line*, not past everything open on it (#445): inside a lambda
+        // that is an argument, `nodes.Count(c => c.Parent` / `is ArgumentSyntax` is four columns in, not
+        // eight. IndentKind.FromLine.
         Describe(
             node,
-            group,
-            GroupMode.Preserve,
-            new GroupFacts(BreaksIfTooLong: true),
-            ownLevel: !IsAHeaderCondition(node)
+            new GroupPlan(
+                group,
+                GroupMode.Preserve,
+                // ⚠ A list on the operand's line nests from the keyword's line only when the author broke
+                // before the keyword: `Compute(` / … / `)` / `is string` keeps its arguments two levels in,
+                // `Compute(` / … / `) is string` one (#445). Resolving broken is not enough, because this
+                // group resolves broken whenever the expression is too long, whether or not it wraps.
+                new GroupFacts(BreaksIfTooLong: true, Continues: BreaksBefore(keyword)),
+                FromLine: !IsAHeaderCondition(node)
+            )
         );
     }
 

@@ -437,6 +437,11 @@ public sealed partial class CSharpDocumentBuilder {
                 OpenContinuation(plan, level);
             }
 
+            // ⚠ One level past the operand's line, not stacked on what that line opened (#445).
+            if (plan.FromLine && !aligned) {
+                OpenIndent(IndentKind.FromLine);
+            }
+
             if (i + 1 == gapAfter) {
                 EmitLeadingGap(node);
             }
@@ -462,6 +467,10 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         for (var i = planned.Count - 1; i >= 0; i--) {
+            if (planned[i].FromLine && !aligned) {
+                CloseIndent(IndentKind.FromLine);
+            }
+
             for (var level = 0; level < indented[i]; level++) {
                 CloseIndent(IndentKind.Continuous);
             }
@@ -2184,7 +2193,7 @@ public sealed partial class CSharpDocumentBuilder {
 
         // ⚠ `Single` belongs here and not below: it is a continuation scope whose width happens not
         // to be multiplied, so it composes and does not reset the continuation context.
-        if (kind is IndentKind.Continuous or IndentKind.Align or IndentKind.OneLevel) {
+        if (kind is IndentKind.Continuous or IndentKind.Align or IndentKind.OneLevel or IndentKind.FromLine) {
             continuousDepth++;
             return;
         }
@@ -2207,7 +2216,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        if (kind is IndentKind.Continuous or IndentKind.Align or IndentKind.OneLevel) {
+        if (kind is IndentKind.Continuous or IndentKind.Align or IndentKind.OneLevel or IndentKind.FromLine) {
             continuousDepth--;
         } else {
             if (frames[^1].Activated) {
