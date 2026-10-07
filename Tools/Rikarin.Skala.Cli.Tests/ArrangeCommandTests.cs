@@ -56,6 +56,45 @@ public sealed class ArrangeCommandTests {
     }
 
     /// <summary>
+    ///     Redundant parentheses go with no flag, and <c>--aggressive</c> — the flag that once gated
+    ///     them — is rejected rather than silently accepted.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #389: the gate was lifted and the flag stayed, parsed and inert, while <c>--help</c> and
+    ///     <c>SK0209</c>'s catalogue text went on saying removal was off without it. Both halves are
+    ///     here because each catches a different way back: re-adding the option fails the exit-code
+    ///     assertion, and re-gating the rule fails the first one.
+    /// </remarks>
+    [Fact]
+    public void Arrange_RemovesRedundantParenthesesByDefault_AndHasNoAggressiveFlag() {
+        using var scratch = new Scratch();
+        var file = scratch.Write(
+            "Sum.cs",
+            """
+            namespace P;
+
+            public static class Sum {
+                public static int Of(int a, int b) => (a + b);
+            }
+            """
+        );
+
+        var arranged = CliRunner.Run("arrange", "--load=none", "--include", "SK0209", file);
+
+        Assert.Equal(0, arranged.ExitCode);
+        Assert.Contains("=> a + b;", File.ReadAllText(file), StringComparison.Ordinal);
+
+        var rejected = CliRunner.Run("arrange", "--check", "--load=none", "--aggressive", file);
+
+        Assert.Equal(3, rejected.ExitCode);
+        Assert.Contains(
+            "Unrecognized option '--aggressive'",
+            rejected.StandardOutput + rejected.StandardError,
+            StringComparison.Ordinal
+        );
+    }
+
+    /// <summary>
     ///     A solution nested below the Git root is still the workspace target when <c>arrange</c>
     ///     is run from that project without an explicit path.
     /// </summary>
