@@ -356,7 +356,7 @@ public sealed class ArrangementRuleTests {
         var output = Declined(
             Attempt(
                 EmptyStringProbe,
-                only: ArrangeIds.EmptyString,
+                ArrangeIds.EmptyString,
                 overrides: [new KeyValuePair<string, string>("skala_empty_string", "string_empty")]
             )
         );
@@ -377,7 +377,7 @@ public sealed class ArrangementRuleTests {
     static ArrangementResult AttemptEmptyString(string member, string style) =>
         Attempt(
             EmptyStringPreamble + "\n    " + member + "\n}\n",
-            only: ArrangeIds.EmptyString,
+            ArrangeIds.EmptyString,
             overrides: [new KeyValuePair<string, string>("skala_empty_string", style)]
         );
 
