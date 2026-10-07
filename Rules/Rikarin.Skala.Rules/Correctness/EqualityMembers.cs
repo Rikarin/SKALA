@@ -217,8 +217,8 @@ static class EqualityMembers {
         // not a second member: an implementation `get => field;` canonicalises to the property, exactly as
         // an auto-property does, or the finding names `<Name>k__BackingField`.
         return model.GetSymbolInfo(body, cancellation).Symbol is IFieldSymbol {
-            IsStatic: false, AssociatedSymbol: null
-        } resolved
+                IsStatic: false, AssociatedSymbol: null
+            } resolved
             && SymbolEqualityComparer.Default.Equals(resolved.ContainingType, property.ContainingType)
                 ? resolved
                 : null;
