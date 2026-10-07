@@ -7326,7 +7326,7 @@ blank-line rule that a comment above a declaration is part of it asks whether th
 the line, not only its last comment.
 
 Not this entry, measured beside it and left open: `[Obsolete] /* c */ public void M() { }` stays one line
-in the oracle while Skala breaks after the comment; a blank line before an own-line comment in an
+in the oracle while Skala breaks after the comment (#434, since SK-DIV-0199); a blank line before an own-line comment in an
 enum's chopped member list and before `/* s3 */ static void Local()` at the top level, which the oracle
 writes; and `namespace N2 { /* b3 */` followed by a blank line, which it does not.
 
@@ -7470,3 +7470,87 @@ followed by interfaces puts its arguments two levels past the `:` line where Ska
 - options: `skala_wrap_extends_list_style`, `skala_wrap_before_extends_colon`,
   `skala_place_primary_constructor_initializer_on_same_line`
 - ⚠ status: **open**, measured.
+## SK-DIV-0199 — a block comment after the last attribute section leaves the gap to the author
+
+#434: `[Obsolete] /* c */ public void M() { }` comes back from the oracle on one line, and Skala broke
+after the comment. #409's `PointSurvivesComments` carried the placement keys' break past every block
+comment in the gap, and this is the one gap where the oracle does not. Measured with `jb cleanupcode`
+2025.2.6 under `SkalaFormatOnly`, on a method, a constructor, a destructor, an operator, an indexer, a
+property, a field, an event with and without accessors, an accessor, a type, a delegate, an interface
+member, a local function and a record's positional parameter, under the export (`never`), at `always`
+and `if_owner_is_single_line` for all six placement keys, and with
+`skala_keep_existing_attribute_arrangement = true`:
+
+| written | oracle, every key value | Skala before |
+|---|---|---|
+| `[Obsolete] /* c */ public void M() { }`, single-line, multi-line or `/** */`, one comment or two | one line | broken after the comment |
+| `[Obsolete] /* c */` / `public void M() { }` | kept on two lines, at `always` too | identical |
+| `[Obsolete]` / `/* c */ public void M() { }` | kept | broken after the comment as well: three lines |
+| `[Obsolete] /* c */` / `/* d */ public void M()` | kept | broken after `/* d */` |
+| `public int P { [Obsolete] /* c */ get; set; }` | one line | the accessor list expanded around the broken accessor |
+| `record R([Obsolete] /* c */ int A, …)` | one line | the parameter list chopped |
+| `[Obsolete] /* c */ [Serializable] public void M()` (the comment *between* sections) | `[Obsolete] /* c */` / `[Serializable]` / `public void M()` at `never`, one line at `always` | identical |
+| `[Obsolete] [Serializable] /* c */ public void M()` | `[Obsolete]` / `[Serializable] /* c */ public void M()` | the last gap broken too |
+| `[Obsolete] /* c */ public void M(…)` whose parameter list ends past the margin | the parameters chopped, the attribute on the line | identical |
+| `[assembly: A] /* c */ [assembly: B]` | broken after the comment | identical |
+
+So it is the token after the comment that decides, not the comment: the gap after a declaration's last
+section is the author's, in both directions, under every key. `CSharpDocumentBuilder.EndsAnAttributeRun`
+keeps `PointSurvivesComments` from planning it; the gap between two sections is still planned.
+
+⚠ One corner stays **open**, and it is not a rule Skala's fitter can state yet. A line that overflows only
+by its terminator is broken after the comment by the oracle: `[Obsolete] /* c */ public void M(…) { }` at
+121 columns whose `)` is at 117, and a field at 121 whose value ends at 120 before its `;`. One column
+further left, at 120, both stay whole; with the `)` past the margin the parameters chop instead; with
+the value past it the `=` breaks. The same shape *without* the comment at `always` is the same answer —
+the oracle declines to join `[Obsolete] public void M(…) { }` at 121 with the `)` at 117 and joins it at
+125 with the `)` at 121 — so it is the placement key's own joining half, whose measure excludes the
+terminator, and not a fact about comments. Skala chops the parameters at 121 and breaks after the `=`,
+and joins and chops at `always` without the comment (#438).
+
+- options: the six `skala_place_*_attribute_on_same_line` keys and
+  `skala_keep_existing_attribute_arrangement`, none of which moves the last gap when a comment is in it.
+- ⚠ status: **resolved** except the terminator corner, which is **open** (#438). Pinned by
+  `AttributeCommentIssue434Tests` and `constructs/breaks/comment-after-the-last-attribute.cs`.
+
+## SK-DIV-0200 — after a block comment that spans lines, an `=` or an arrow keeps its value on the comment's line
+
+#435: `int y = /* gap` / `gap2 */ 1;` comes back from the oracle as written, and Skala put `1;` on a
+line of its own. #409 (SK-DIV-0165) planned the `=`'s point past the comment, and a comment that spans
+lines has no flat width, so the group around it could never fit and broke. Measured with `jb
+cleanupcode` 2025.2.6 under `SkalaFormatOnly` on about sixty shapes:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `= /* a` / `b */ 1` after a local, a field, a property initializer, an assignment, `+=`, `??=`, a parameter default, an attribute's named argument, an anonymous object's and a `with`'s member, a `for` header, a `using` declaration, a second declarator; `/** */` the same | kept | `1` on a line of its own |
+| a lambda's `=> /* a` / `b */ 1`, a switch arm's, a named argument's `a: /* a` / `b */ 1` | kept | the same break |
+| `return`, `throw`, `yield return`, `? /* a` / `b */ 1`, `a + /* a` / `b */ b`, `a[/* a` / `b */ 0]` | kept | identical (no point there) |
+| `= /* a` / `b */ aaa + bbb…` and `= /* a` / `b */ Compute(…)` past the margin | the value wraps inside itself: `b */ aaa` / `+ bbb`, `b */ Compute(` / the arguments one level in / `)` at the statement | broken after the comment, and the arguments and `)` one level deeper still |
+| `= /* a` / `b */ x switch {` and `= /* a` / `b */ Compute(…).Then(…)` broken at its dots | the arms and the dots one level in from the statement | two levels in |
+| `= /* a` / `b */` / `1` and `=` / `/* a` / `b */ 1` (the author's break after or before) | kept | identical |
+| `M(1, /* a` / `b */ 2)`, `a /* a` / `b */ + b`, `M(1, 2 /* a` / `b */)` | the list chopped, or the operator broken, after the comment | identical |
+| `new int[] { 1, /* c` / `d */ 2 }` (a fill) | `2` kept after the comment | identical |
+
+So it is not "never break after a comment that spans lines": a list that chops breaks at every point,
+this one included, and a fill decides by what fits after it. The tokens that head a single value — an
+`=`, a compound assignment, a lambda's or a switch arm's arrow, a named argument's colon — never break
+after one, not even when the value cannot fit, where after a one-line comment the `=` does
+(SK-DIV-0165's `= /* f */` / `"…"` row is unchanged). `CSharpDocumentBuilder.StopsAtAMultiLineComment`
+keeps `PointSurvivesComments` from planning those gaps when a comment in the run spans lines, so the
+author's break is kept and none is added.
+
+⚠ The second half was found only once the first landed. The writer counted a block comment's own line
+breaks as lines, so the `=`'s conditional continuation scope, opened on the comment's first line,
+applied to everything opened after its last — a chopped call's arguments and `)`, a switch's arms, a
+chain's dots each one level too deep. The oracle reads the comment as one line. `LayoutWriter.WritePiece`
+no longer advances its line counter over a moved block comment (`ShiftWithLine`, `AlignStarred`); a raw
+string and a disabled block still advance it.
+
+Measured beside it and not this entry: `c /* a` / `b */ ? 1 : 2` is chopped at both `?` and `:` by the
+oracle, where Skala breaks before `?` only; `new[] { /* a` / `b */ 1, 2 }` keeps `1` after the comment and
+`new List<int> { /* a` / `b */ 1 }` breaks after it, where Skala breaks both; and `o is /* a` / `b */ string`
+in an expression body, which Skala breaks before `is` (all three #440).
+
+- options: none.
+- ⚠ status: **resolved**. Pinned by `MultiLineCommentPointIssue435Tests` and
+  `constructs/breaks/multi-line-comment-before-a-value.cs`.

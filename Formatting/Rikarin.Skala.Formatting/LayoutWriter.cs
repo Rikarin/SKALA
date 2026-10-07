@@ -2023,6 +2023,16 @@ public sealed class LayoutWriter {
 
         // A multi-line piece — a raw string, a disabled block — moves the line counter with it, so
         // that scopes opened before it still know which side of a break they are on.
+        // ⚠ …but a block comment's lines do not. The oracle nests what follows `= /* a` / `b */` from the
+        // statement's line, as if the comment were one line: `b */ Compute(` chops its arguments one
+        // level in and its `)` at the statement, `b */ x switch {` puts the arms one level in, and a
+        // chain broken after it lines its dots up one level in. Counted as a new line, the `=`'s
+        // continuation scope, opened on the comment's first line, applied to all three (#435). These
+        // two flags are the moved block comments; a frozen starred one keeps its column and counts.
+        if ((flags & (VerbatimFlags.ShiftWithLine | VerbatimFlags.AlignStarred)) != 0) {
+            return;
+        }
+
         line += text.AsSpan().Count('\n');
     }
 }

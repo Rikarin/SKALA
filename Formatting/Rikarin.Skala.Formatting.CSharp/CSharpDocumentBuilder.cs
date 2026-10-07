@@ -2916,6 +2916,16 @@ public sealed partial class CSharpDocumentBuilder {
     ///         Leaving those two gaps unplanned keeps the common case.
     ///     </para>
     ///     <para>
+    ///         ⚠ A third: the gap after a declaration's last attribute section. The placement keys'
+    ///         break does not survive a comment there in either direction (#434,
+    ///         <see cref="EndsAnAttributeRun" />).
+    ///     </para>
+    ///     <para>
+    ///         ⚠ And when a comment in the run spans lines, the tokens that head a single value — an
+    ///         <c>=</c>, an arrow, a named argument's colon — do not carry their point past it (#435,
+    ///         <see cref="StopsAtAMultiLineComment" />).
+    ///     </para>
+    ///     <para>
     ///         A line comment is never in the run: the gap after it holds a newline the point would be
     ///         free to join, and joining puts the token inside the comment. Neither is a directive, a
     ///         <c>///</c> documentation comment or a formatter tag.
@@ -2930,19 +2940,25 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     bool PointSurvivesComments(int lastPieceIndex) {
         var lineComment = false;
+        var spansLines = false;
         for (var i = lastPieceIndex; i >= 0; i--) {
             var piece = pieces[i];
             switch (piece.Kind) {
                 case PieceKind.BlockComment or PieceKind.BlockDocComment
                     when !FormatterTagGuard.IsOffTag(piece.Text, options.Tags)
                     && !FormatterTagGuard.IsOnTag(piece.Text, options.Tags):
+                    spansLines |= piece.Text.AsSpan().IndexOfAny('\n', '\r') >= 0;
                     continue;
                 case PieceKind.LineComment when i != lastPieceIndex:
                     // Only on the way to the file's start, below: a `//` header above the run.
                     lineComment = true;
                     continue;
                 case PieceKind.Token:
-                    return !lineComment && i != lastPieceIndex && !StopsAtAComment(tokens[piece.TokenIndex]);
+                    return !lineComment
+                        && i != lastPieceIndex
+                        && !StopsAtAComment(tokens[piece.TokenIndex])
+                        && !EndsAnAttributeRun(tokens[piece.TokenIndex])
+                        && !(spansLines && StopsAtAMultiLineComment(tokens[piece.TokenIndex]));
                 default:
                     return false;
             }
@@ -2963,6 +2979,65 @@ public sealed partial class CSharpDocumentBuilder {
         token.IsKind(SyntaxKind.OpenParenToken)
         || token.IsKind(SyntaxKind.EqualsGreaterThanToken)
         && token.Parent is ArrowExpressionClauseSyntax;
+
+    /// <summary>
+    ///     The tokens whose break point does not survive a block comment that spans lines (#435): an
+    ///     <c>=</c> or a compound assignment, a lambda's or a switch arm's <c>=&gt;</c>, and a named
+    ///     argument's <c>:</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured: <c>int y = /* a</c> / <c>b */ 1;</c> keeps <c>1</c> after the comment, and so does
+    ///     every <c>=</c> asked — a local, a field, a property initializer, an assignment, <c>+=</c> and
+    ///     <c>??=</c>, a parameter default, an attribute's named argument, an anonymous object's and a
+    ///     <c>with</c>'s member, a <c>for</c> header, a <c>using</c> declaration — and a lambda's and a
+    ///     switch arm's arrow and a named argument's colon. ⚠ Not even when the value cannot fit: the
+    ///     oracle wraps inside the value instead (<c>b */ Compute(</c> / the arguments chopped,
+    ///     <c>b */ aaa</c> / <c>+ bbb</c>), where after a one-line comment it breaks after the comment
+    ///     (SK-DIV-0165). A break the author wrote after the comment is kept, and so is one before it.
+    ///     <para>
+    ///         ⚠ Not every point does this, so it is not "never break after a multi-line comment". A
+    ///         chopped list still breaks after one — <c>M(</c> / <c>1, /* a</c> / <c>b */</c> / <c>2</c>
+    ///         — and so does a chopped binary operator or closer whose operand ends in one; a fill
+    ///         (<c>new int[] { 1, /* c</c> / <c>d */ 2 }</c>) decides by what fits after it, as Skala's fill
+    ///         already did. Each of those is a point of a list that breaks at every point, which is
+    ///         where the comment's own lines make the oracle chop; these tokens head a single value.
+    ///     </para>
+    /// </remarks>
+    static bool StopsAtAMultiLineComment(SyntaxToken token) =>
+        token.IsKind(SyntaxKind.EqualsToken)
+        || token.Parent is AssignmentExpressionSyntax assignment
+        && assignment.OperatorToken == token
+        || token.IsKind(SyntaxKind.EqualsGreaterThanToken)
+        || token.IsKind(SyntaxKind.ColonToken)
+        && token.Parent is NameColonSyntax;
+
+    /// <summary>
+    ///     Whether <paramref name="token" /> is the <c>]</c> of the last attribute section before what the
+    ///     sections decorate, so that a block comment after it leaves the gap to the author (#434).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on every owner the placement keys name — method, constructor, destructor, operator,
+    ///     indexer, property, event, field, accessor, type, delegate, local function, record parameter —
+    ///     and under every value: <c>[Obsolete] /* c */ public void M() { }</c> stays on one line at
+    ///     <c>never</c>, and <c>[Obsolete] /* c */</c> / <c>public void M() { }</c> stays on two at
+    ///     <c>always</c>, <c>if_owner_is_single_line</c> and with
+    ///     <c>skala_keep_existing_attribute_arrangement = true</c>. A comment the author put on the next
+    ///     line (<c>[Obsolete]</c> / <c>/* c */ public void M()</c>) keeps both its breaks the same way.
+    ///     The attribute's own point does not survive the comment, so nothing is added and nothing taken
+    ///     away; a declaration too long for the line chops its parameters with the attribute still on it.
+    ///     <para>
+    ///         ⚠ Only the <em>last</em> section's gap. Between two sections the point does survive:
+    ///         <c>[Obsolete] /* c */ [Serializable] public void M()</c> comes back as
+    ///         <c>[Obsolete] /* c */</c> / <c>[Serializable]</c> / <c>public void M()</c> at <c>never</c>
+    ///         and joined at <c>always</c>, so the token after the comment decides, not the comment.
+    ///         <c>[assembly: A] /* c */ [assembly: B]</c> is the same between-sections case at the top level.
+    ///     </para>
+    /// </remarks>
+    static bool EndsAnAttributeRun(SyntaxToken token) =>
+        token.IsKind(SyntaxKind.CloseBracketToken)
+        && token.Parent is AttributeListSyntax
+        && token.GetNextToken() is var next
+        && !(next.IsKind(SyntaxKind.OpenBracketToken) && next.Parent is AttributeListSyntax);
 
     /// <summary>
     ///     Emits a break, spending the statement's one continuous indent level if this is the break
