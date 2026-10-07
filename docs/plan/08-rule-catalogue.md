@@ -7165,14 +7165,19 @@ positional clause, no subpattern and no designation, which matches exactly the n
 `SK2174` `unparenthesised-precedence-mix` — an operand of a shift or bitwise operator that is itself
 an unparenthesised binary expression of a different precedence family.
 
-⚠ **`SK2174` could not ship until the `SK0209` boundary was settled, and it is settled by
-construction rather than by agreement.** `skala arrange` removes redundant parentheses;
-`ParenthesesRedundancy.MayRemove` refuses when the parent is a shift or a bitwise
-operator, because `resharper_parentheses_non_obvious_operations` names exactly those. Every pair of
-parentheses `SK2174` adds has such a parent, so the arranger will not take one back. ⚠ **Refuted as
-"unconditional", which this used to say**: it holds at the default
-`skala_parentheses_redundancy_style = remove_if_not_clarifies_precedence` only. At `remove` the
-arranger strips them as the oracle does, and `skala fix` and `skala arrange` undo each other (#394). ⚠ **The other direction was checked
+⚠ **`SK2174` could not ship until the `SK0209` boundary was settled, and it is settled by two
+facts, one per value of `skala_parentheses_redundancy_style`.** At the default
+`remove_if_not_clarifies_precedence`, `ParenthesesRedundancy.MayRemove` refuses a *binary* operand of
+a shift or a bitwise operator, because `resharper_parentheses_non_obvious_operations` names exactly
+those, and every pair of parentheses `SK2174` adds is around such an operand. At `remove` —
+ReSharper's "Always" — the arranger strips them as the oracle does, and `SK2174` reads the key and is
+silent. ⚠ **This said "settled by construction" and that the arranger refused "unconditionally",
+and neither was true**: at `remove`, `skala fix` and `skala arrange` undid each other on every run
+(#394). The arranger is the half that matches the oracle, so the rule moved rather than the arranger
+diverging; `FixAndArrangeTests` runs fix, arrange and fix at each value and asserts a fixed point.
+⚠ The rule reads the key by literal (`Rikarin.Skala.Rules` cannot see the option registry), so
+`OptionRegistryTests.TheAnalyzerReadOptions_HaveExactlyOneSpelling` now holds it to one spelling and
+no value aliases. ⚠ **The other direction was checked
 too**: `CodeCleanupTask_AddMissingParentheses` exists in the oracle and **no committed profile
 enables it**, so the formatter is not already doing this.
 

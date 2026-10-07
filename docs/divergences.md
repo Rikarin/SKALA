@@ -6355,3 +6355,47 @@ Measured on this repository's own source with `skala arrange --include SK0206 --
 sites in 18 files rewritten, every constant-context `""` left alone, no file reverted.
 
 - options: `skala_empty_string`
+
+## SK-DIV-0145 — SK0209 kept five kinds of parenthesised expression whole, and the oracle removes them wherever the parse allows
+
+⚠ **Filed as issue #392 for `switch` expressions; the same guess covered four more kinds.**
+`ParenthesesRedundancy.MayRemove` returned `false` for an assignment, a conditional, a lambda, a
+query and a `switch` expression inside parentheses, declined every interpolation hole, and declined
+every operand of a shift or bitwise operator — each on the belief that the oracle leaves them alone.
+Measured 2026-10-07 with `Testing ask --profile=SkalaCleanup` over five probes of 130 members (three of
+them at both values of `skala_parentheses_redundancy_style` — identical on every row but the canary
+`a | (b & c)`, which moved, proving the override live), the oracle removes them wherever the parse
+allows and keeps:
+
+| kept by the oracle | why |
+|---|---|
+| before `.`, `?.`, `(`, `[`, `!`, `..`; after `!`, `-`, `await` or a cast | the parse needs them |
+| `f ?? (() => 1)`, `b ?? (from …)`, `s ?? (a ? x : y)`, `(a ? b : c) + 1`, `(x = a) + 1`, `$"{(b ? 1 : 2)}"` | the parse needs them |
+| `b & (x == 1)`, `a & (b + 1)` — a *binary* operand of a non-obvious operation, `is`/`as` excepted | `resharper_parentheses_non_obvious_operations` |
+| `(v switch { … }) with { … }`, `(v switch { … }) switch { … }` | **not** the parse — Roslyn reads both the same without |
+| `=> throw (v switch { … })`, `=> throw (e ?? x)`, but not `=> throw (E())` nor `throw (…);` as a statement | **not** the parse |
+
+Skala now leaves the five kinds to the re-parse proof and keeps the two "not the parse" rows by
+name. ⚠ **The proof had a hole the guesses had hidden**: it re-parsed the outermost *expression*,
+which stops at an argument, an interpolation hole, a `switch` arm or a query clause. With the first
+pair gone, `F((a < b), c > (x = 1))` is a call to a generic method `a<b, c>`, and the old proof —
+re-parsing `a < b` alone — called the removal safe; under `--load=none`, where nothing re-binds,
+`skala arrange` wrote that program. The proof now climbs through those nodes, and stops at `ref`,
+which does not parse on its own (found by the arrangement differential on Vixen's `PolyMeshDetail`
+the first time the climb reached through `[…]`). A comment inside the parentheses was also deleted
+with them, `return (/* why */ a + b);` becoming `return a + b;`; it is carried out now.
+
+What is left is one divergence, and Skala's side is the oracle's own second pass:
+`F((a < b), c > (d))` comes back from the oracle as `F((a < b), c > d)` and from that as
+`F(a < b, c > d)`. Skala loops to a fixed point and writes the latter in one run.
+
+The arrangement differential is unchanged on the 414 files it had (2 106 of 4 053 spans before and
+after, measured with both `RedundancyRules.cs` versions on one tree): none of them carries these
+shapes. `constructs/arrangement/redundancy/parentheses-shapes.cs` adds the single-line ones under
+both profiles (18 of 19 spans agree; the nineteenth is the formatter's space after
+`/* why */`, not this rule), and `RedundantParenthesesIssue392Tests` pins the multi-line `switch`
+rows arranged and never formatted, because a parenthesised multi-line `switch` is indented a level
+too deep by the formatter (#393).
+
+- rule: `SK0209`. options: `skala_parentheses_redundancy_style` (both values).
+- status: **fixed**, except the second-pass row, which is kept on purpose.
