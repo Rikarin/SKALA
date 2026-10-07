@@ -93,7 +93,8 @@ public static class PartialConstructorDefinitions {
     static ImmutableArray<ConstructorDeclarationSyntax> Collect(SyntaxNode root) {
         var builder = ImmutableArray.CreateBuilder<ConstructorDeclarationSyntax>();
         foreach (var node in root.DescendantNodes(static node =>
-                     node is CompilationUnitSyntax or BaseNamespaceDeclarationSyntax or TypeDeclarationSyntax)) {
+                     node is CompilationUnitSyntax or BaseNamespaceDeclarationSyntax or TypeDeclarationSyntax
+                 )) {
             if (node is ConstructorDeclarationSyntax constructor && PartialMembers.IsDefinition(constructor)) {
                 builder.Add(constructor);
             }
@@ -175,8 +176,14 @@ public static class PartialConstructorDefinitions {
         }
     }
 
+    /// <summary>
+    ///     ⚠ Defers every registration into one compilation-start action, so that <see cref="Start" /> is
+    ///     the only place a node action is wrapped and one dispatch serves a whole analyzer: an action
+    ///     registered in <c>Initialize</c> and one registered at compilation start are the same action
+    ///     to the driver.
+    /// </summary>
     sealed class Root(AnalysisContext inner) : AnalysisContext {
-        readonly Dispatch dispatch = new();
+        readonly List<Action<CompilationStartAnalysisContext>> deferred = [];
 
         public override void EnableConcurrentExecution() => inner.EnableConcurrentExecution();
 
@@ -184,54 +191,66 @@ public static class PartialConstructorDefinitions {
             inner.ConfigureGeneratedCodeAnalysis(analysisMode);
 
         public override void RegisterCompilationStartAction(Action<CompilationStartAnalysisContext> action) =>
-            inner.RegisterCompilationStartAction(start => action(new Start(start)));
+            Defer(action);
 
         public override void RegisterCompilationAction(Action<CompilationAnalysisContext> action) =>
-            inner.RegisterCompilationAction(action);
+            Defer(start => start.RegisterCompilationEndAction(action));
 
         public override void RegisterSemanticModelAction(Action<SemanticModelAnalysisContext> action) =>
-            inner.RegisterSemanticModelAction(action);
+            Defer(start => start.RegisterSemanticModelAction(action));
 
         public override void RegisterSymbolAction(
             Action<SymbolAnalysisContext> action,
-            ImmutableArray<SymbolKind> symbolKinds
-        ) => inner.RegisterSymbolAction(action, symbolKinds);
+            ImmutableArray<SymbolKind> kinds
+        ) =>
+            Defer(start => start.RegisterSymbolAction(action, kinds));
 
-        public override void RegisterSymbolStartAction(Action<SymbolStartAnalysisContext> action, SymbolKind symbolKind) =>
-            inner.RegisterSymbolStartAction(action, symbolKind);
+        public override void RegisterSymbolStartAction(Action<SymbolStartAnalysisContext> action, SymbolKind kind) =>
+            Defer(start => start.RegisterSymbolStartAction(action, kind));
 
-        public override void RegisterCodeBlockStartAction<TLanguageKindEnum>(
-            Action<CodeBlockStartAnalysisContext<TLanguageKindEnum>> action
-        ) => inner.RegisterCodeBlockStartAction(action);
+        public override void RegisterCodeBlockStartAction<TKind>(Action<CodeBlockStartAnalysisContext<TKind>> action) =>
+            Defer(start => start.RegisterCodeBlockStartAction(action));
 
         public override void RegisterCodeBlockAction(Action<CodeBlockAnalysisContext> action) =>
-            inner.RegisterCodeBlockAction(action);
+            Defer(start => start.RegisterCodeBlockAction(action));
 
         public override void RegisterSyntaxTreeAction(Action<SyntaxTreeAnalysisContext> action) =>
-            inner.RegisterSyntaxTreeAction(action);
+            Defer(start => start.RegisterSyntaxTreeAction(action));
 
         public override void RegisterAdditionalFileAction(Action<AdditionalFileAnalysisContext> action) =>
-            inner.RegisterAdditionalFileAction(action);
+            Defer(start => start.RegisterAdditionalFileAction(action));
 
         public override void RegisterOperationAction(
             Action<OperationAnalysisContext> action,
-            ImmutableArray<OperationKind> operationKinds
-        ) => inner.RegisterOperationAction(action, operationKinds);
+            ImmutableArray<OperationKind> kinds
+        ) =>
+            Defer(start => start.RegisterOperationAction(action, kinds));
 
         public override void RegisterOperationBlockStartAction(Action<OperationBlockStartAnalysisContext> action) =>
-            inner.RegisterOperationBlockStartAction(action);
+            Defer(start => start.RegisterOperationBlockStartAction(action));
 
         public override void RegisterOperationBlockAction(Action<OperationBlockAnalysisContext> action) =>
-            inner.RegisterOperationBlockAction(action);
+            Defer(start => start.RegisterOperationBlockAction(action));
 
-        public override void RegisterSyntaxNodeAction<TLanguageKindEnum>(
+        public override void RegisterSyntaxNodeAction<TKind>(
             Action<SyntaxNodeAnalysisContext> action,
-            ImmutableArray<TLanguageKindEnum> syntaxKinds
-        ) {
-            inner.RegisterSyntaxNodeAction(Dispatch.Guarded(action), syntaxKinds);
-            if (syntaxKinds is ImmutableArray<SyntaxKind> kinds && dispatch.Add(action, kinds)) {
-                inner.RegisterSemanticModelAction(dispatch.Run);
+            ImmutableArray<TKind> kinds
+        ) =>
+            Defer(start => start.RegisterSyntaxNodeAction(action, kinds));
+
+        void Defer(Action<CompilationStartAnalysisContext> registration) {
+            deferred.Add(registration);
+            if (deferred.Count > 1) {
+                return;
             }
+
+            inner.RegisterCompilationStartAction(start => {
+                    var wrapped = new Start(start);
+                    foreach (var each in deferred) {
+                        each(wrapped);
+                    }
+                }
+            );
         }
     }
 
@@ -251,14 +270,19 @@ public static class PartialConstructorDefinitions {
         public override void RegisterSymbolAction(
             Action<SymbolAnalysisContext> action,
             ImmutableArray<SymbolKind> symbolKinds
-        ) => inner.RegisterSymbolAction(action, symbolKinds);
+        ) =>
+            inner.RegisterSymbolAction(action, symbolKinds);
 
-        public override void RegisterSymbolStartAction(Action<SymbolStartAnalysisContext> action, SymbolKind symbolKind) =>
+        public override void RegisterSymbolStartAction(
+            Action<SymbolStartAnalysisContext> action,
+            SymbolKind symbolKind
+        ) =>
             inner.RegisterSymbolStartAction(action, symbolKind);
 
         public override void RegisterCodeBlockStartAction<TLanguageKindEnum>(
             Action<CodeBlockStartAnalysisContext<TLanguageKindEnum>> action
-        ) => inner.RegisterCodeBlockStartAction(action);
+        ) =>
+            inner.RegisterCodeBlockStartAction(action);
 
         public override void RegisterCodeBlockAction(Action<CodeBlockAnalysisContext> action) =>
             inner.RegisterCodeBlockAction(action);
@@ -272,7 +296,8 @@ public static class PartialConstructorDefinitions {
         public override void RegisterOperationAction(
             Action<OperationAnalysisContext> action,
             ImmutableArray<OperationKind> operationKinds
-        ) => inner.RegisterOperationAction(action, operationKinds);
+        ) =>
+            inner.RegisterOperationAction(action, operationKinds);
 
         public override void RegisterOperationBlockStartAction(Action<OperationBlockStartAnalysisContext> action) =>
             inner.RegisterOperationBlockStartAction(action);

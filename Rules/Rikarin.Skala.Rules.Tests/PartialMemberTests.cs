@@ -353,10 +353,12 @@ public sealed class PartialMemberTests {
         Assert.NotEmpty(found);
         var edits = found.SelectMany(static diagnostic => Enumerable.Range(0, EditCount(diagnostic))
                 .Select(index => (
-                    Start: Number(diagnostic, FixEdits.StartKey(index)),
-                    Length: Number(diagnostic, FixEdits.LengthKey(index)),
-                    Text: diagnostic.Properties[FixEdits.TextKey(index)] ?? string.Empty
-                )))
+                        Start: Number(diagnostic, FixEdits.StartKey(index)),
+                        Length: Number(diagnostic, FixEdits.LengthKey(index)),
+                        Text: diagnostic.Properties[FixEdits.TextKey(index)] ?? string.Empty
+                    )
+                )
+        )
             .OrderByDescending(static edit => edit.Start)
             .ToArray();
         Assert.NotEmpty(edits);

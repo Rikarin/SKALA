@@ -64,8 +64,10 @@ public sealed class PartialConstructorDefinitionTests {
         var compilation = RuleFixtures.Compile(Shapes, "Shapes.cs");
         var recorder = new Recorder(compilation);
         var calls = new List<SyntaxNode>();
-        PartialConstructorDefinitions.Visiting(new Root(recorder))
+        var root = new Root(recorder);
+        PartialConstructorDefinitions.Visiting(root)
             .RegisterSyntaxNodeAction(context => calls.Add(context.Node), SyntaxKind.ConstructorDeclaration);
+        root.Start();
 
         var tree = compilation.SyntaxTrees[0];
         var model = compilation.GetSemanticModel(tree);
@@ -82,6 +84,7 @@ public sealed class PartialConstructorDefinitionTests {
         };
         foreach (var (node, symbol) in handed) {
             foreach (var (action, _) in recorder.Nodes) {
+                // The obsolete constructor is the test-only way to do what a driver would.
 #pragma warning disable CS0618
                 action(new(node, symbol, model, new([]), static _ => { }, static _ => true, default));
 #pragma warning restore CS0618
@@ -103,7 +106,9 @@ public sealed class PartialConstructorDefinitionTests {
         var missing = new List<string>();
         foreach (var analyzer in SkalaAnalyzers.All) {
             var recorder = new Recorder(compilation);
-            analyzer.Initialize(new Root(recorder));
+            var root = new Root(recorder);
+            analyzer.Initialize(root);
+            root.Start();
             if (recorder.Nodes.Count > 0 && !recorder.Dispatched) {
                 missing.Add(analyzer.GetType().Name);
             }
@@ -122,6 +127,7 @@ public sealed class PartialConstructorDefinitionTests {
         return [.. counter.Seen];
     }
 
+    // A probe analyzer: not registered, not shipped, with a descriptor of its own.
 #pragma warning disable RS1001, RS1036, RS1038, RS1041, RS2008
     sealed class Counter(bool wrapped) : DiagnosticAnalyzer {
         static readonly DiagnosticDescriptor Descriptor = new(
@@ -142,7 +148,9 @@ public sealed class PartialConstructorDefinitionTests {
             context.EnableConcurrentExecution();
             var registrar = wrapped ? PartialConstructorDefinitions.Visiting(context) : context;
             registrar.RegisterCompilationStartAction(start => start.RegisterSyntaxNodeAction(
-                    node => Seen.Add(node.Node.Kind() + "@" + node.Node.GetLocation().GetLineSpan().StartLinePosition.Line),
+                    node => Seen.Add(
+                        node.Node.Kind() + "@" + node.Node.GetLocation().GetLineSpan().StartLinePosition.Line
+                    ),
                     SyntaxKind.ConstructorDeclaration,
                     SyntaxKind.MethodDeclaration,
                     SyntaxKind.Parameter
@@ -169,7 +177,10 @@ public sealed class PartialConstructorDefinitionTests {
             ImmutableArray<SymbolKind> symbolKinds
         ) { }
 
-        public override void RegisterSymbolStartAction(Action<SymbolStartAnalysisContext> action, SymbolKind symbolKind) { }
+        public override void RegisterSymbolStartAction(
+            Action<SymbolStartAnalysisContext> action,
+            SymbolKind symbolKind
+        ) { }
 
         public override void RegisterCodeBlockStartAction<TLanguageKindEnum>(
             Action<CodeBlockStartAnalysisContext<TLanguageKindEnum>> action
@@ -191,16 +202,29 @@ public sealed class PartialConstructorDefinitionTests {
         public override void RegisterSyntaxNodeAction<TLanguageKindEnum>(
             Action<SyntaxNodeAnalysisContext> action,
             ImmutableArray<TLanguageKindEnum> syntaxKinds
-        ) => Nodes.Add((action, [.. syntaxKinds.Cast<SyntaxKind>()]));
+        ) =>
+            Nodes.Add((action, [.. syntaxKinds.Cast<SyntaxKind>()]));
     }
 
+    /// <summary>
+    ///     Runs compilation-start actions once registration is over, as the driver does, rather than as
+    ///     each is registered.
+    /// </summary>
     sealed class Root(Recorder inner) : AnalysisContext {
+        readonly List<Action<CompilationStartAnalysisContext>> starts = [];
+
+        public void Start() {
+            foreach (var start in starts) {
+                start(inner);
+            }
+        }
+
         public override void EnableConcurrentExecution() { }
 
         public override void ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags analysisMode) { }
 
         public override void RegisterCompilationStartAction(Action<CompilationStartAnalysisContext> action) =>
-            action(inner);
+            starts.Add(action);
 
         public override void RegisterCompilationAction(Action<CompilationAnalysisContext> action) { }
 
@@ -212,7 +236,10 @@ public sealed class PartialConstructorDefinitionTests {
             ImmutableArray<SymbolKind> symbolKinds
         ) { }
 
-        public override void RegisterSymbolStartAction(Action<SymbolStartAnalysisContext> action, SymbolKind symbolKind) { }
+        public override void RegisterSymbolStartAction(
+            Action<SymbolStartAnalysisContext> action,
+            SymbolKind symbolKind
+        ) { }
 
         public override void RegisterCodeBlockStartAction<TLanguageKindEnum>(
             Action<CodeBlockStartAnalysisContext<TLanguageKindEnum>> action
@@ -234,6 +261,7 @@ public sealed class PartialConstructorDefinitionTests {
         public override void RegisterSyntaxNodeAction<TLanguageKindEnum>(
             Action<SyntaxNodeAnalysisContext> action,
             ImmutableArray<TLanguageKindEnum> syntaxKinds
-        ) => inner.RegisterSyntaxNodeAction(action, syntaxKinds);
+        ) =>
+            inner.RegisterSyntaxNodeAction(action, syntaxKinds);
     }
 }

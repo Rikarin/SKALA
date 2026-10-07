@@ -151,22 +151,23 @@ public static class SkalaRule {
         Action<SyntaxNodeAnalysisContext> analyze,
         SyntaxKind kind
     ) =>
-        PartialConstructorDefinitions.Visiting(context).RegisterCompilationStartAction(start => {
-                if (!supported(start.Compilation)) {
-                    return;
-                }
+        PartialConstructorDefinitions.Visiting(context)
+            .RegisterCompilationStartAction(start => {
+                    if (!supported(start.Compilation)) {
+                        return;
+                    }
 
-                var unavailable = FrameworkAvailability.PathsWithout(start.Options, supported);
-                start.RegisterSyntaxNodeAction(
-                    node => {
-                        if (unavailable.IsEmpty || !unavailable.Contains(node.Node.SyntaxTree.FilePath)) {
-                            analyze(node);
-                        }
-                    },
-                    kind
-                );
-            }
-        );
+                    var unavailable = FrameworkAvailability.PathsWithout(start.Options, supported);
+                    start.RegisterSyntaxNodeAction(
+                        node => {
+                            if (unavailable.IsEmpty || !unavailable.Contains(node.Node.SyntaxTree.FilePath)) {
+                                analyze(node);
+                            }
+                        },
+                        kind
+                    );
+                }
+            );
 
     public static void RegisterWithEnumerable(
         AnalysisContext context,
@@ -174,19 +175,20 @@ public static class SkalaRule {
         SyntaxKind kind,
         Action<SyntaxNodeAnalysisContext, INamedTypeSymbol> analyze
     ) =>
-        PartialConstructorDefinitions.Visiting(context).RegisterCompilationStartAction(start => {
-                if (!MeetsLanguageVersion(start.Compilation, languageVersion)) {
-                    return;
-                }
+        PartialConstructorDefinitions.Visiting(context)
+            .RegisterCompilationStartAction(start => {
+                    if (!MeetsLanguageVersion(start.Compilation, languageVersion)) {
+                        return;
+                    }
 
-                var enumerable = start.Compilation.GetTypeByMetadataName("System.Linq.Enumerable");
-                if (enumerable is null) {
-                    return;
-                }
+                    var enumerable = start.Compilation.GetTypeByMetadataName("System.Linq.Enumerable");
+                    if (enumerable is null) {
+                        return;
+                    }
 
-                start.RegisterSyntaxNodeAction(node => analyze(node, enumerable), kind);
-            }
-        );
+                    start.RegisterSyntaxNodeAction(node => analyze(node, enumerable), kind);
+                }
+            );
 
     /// <summary>
     ///     Maps a rule's declared <c>languageVersion</c> onto the Roslyn version it means.
