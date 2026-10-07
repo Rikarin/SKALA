@@ -152,6 +152,44 @@ hiding place; and the exclusion has a stated expiry — enabling `CSharpFormatDo
 marking one's own homework; excluding "the files that have doc comments" would hide a real
 regression in the code around them.
 
+### ⚠ Every construct with a `///` line is asked under the doc-comment profile (#396)
+
+The exclusion above is only honest where something else asks about the excluded lines. Under
+`constructs/` that something is the `SkalaDocComments` profile's `.xmldoc.expected.cs`, and until
+#396 it was generated for `constructs/xmldoc/` alone — because `OracleProfile.For` routes by subtree.
+Eight constructs outside it held 77 `///` lines that were in no denominator and in no fixture. One of
+them, asked by hand at a non-export value, is where #382's third shape was found.
+
+**The decisions, taken and recorded here:**
+
+- **The set a doc-comment fixture is owed for is chosen by content, not by subtree.**
+  `Corpus.DocCommentBearing()` is every construct holding a `///` line (a `////` line comment
+  excluded); `./build.sh Oracle` regenerates the doc-comment profile over it, and
+  `XmlDocOracleTests.EveryConstructWithADocCommentLine_HasADocCommentFixture` fails for a construct
+  that lacks one. A new construct with a doc comment is owed its fixture the day it is committed.
+- **`OracleProfile.For` is unchanged.** It answers a different question — which profile the key-flip
+  sweep and the frozen outputs ask a file under — and moving the eight would re-route the sweep.
+  The doc-comment fixture is a *second* question about the same file, as the cleanup fixture is beside
+  a `real/` file.
+- **A doc-comment row is attributed to a key by subtree, never by file name.** A row under
+  `constructs/xmldoc/` is *keyed*: the file is named after a key (asserted), and the key's tier is
+  judged on it. A row anywhere else is a *shape* row: compared byte for byte like every row, a
+  disagreement fails `EveryShapeRow_AgreesWithItsDocCommentFixture`, and it carries no key and no tier
+  verdict. A name nothing enforces is not evidence — `trivia/skala_space_after_triple_slash.cs` is
+  named after a key and pins nothing about it, and `syntax/cref-member-forms.cs` has no key to name.
+  The keyed ratchet (`TheSplit_IsTwentyThreeFilesAgainstNone`) counts keyed rows only, so a key's
+  regression cannot hide behind a shape's agreement.
+- **`outside doc comments` keeps its meaning for the format-only fixture of such a file.** That
+  fixture still never formats a doc comment, so its `///` lines are still excluded from the
+  differential; what changed is that they are now asserted, whole-file, by the doc-comment row. The
+  basis's expiry above is unchanged and still applies to `real/` and `pathological/`, which are out of
+  this decision's scope (273 and 1 files with a `///` line respectively, measured 2026-10-07).
+
+Measured when it landed: all eight shape rows agree with the oracle at the repository's
+configuration, and seven of the eight doc-comment fixtures are byte-identical to the format-only
+fixture beside them — the eighth, `trivia/a-comment-keeps-its-trailing-space.cs`, is where the
+doc-comment profile drops a trailing space and indents the summary text, and Skala does both.
+
 ### ⚠ Both symbol sets, by default
 
 `./build.sh Fidelity` runs the whole differential **twice** — once with no preprocessor symbols and

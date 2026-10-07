@@ -39,6 +39,32 @@ public sealed class XmlDocOracleTests {
         }
     }
 
+    /// <summary>Every construct holding a <c>///</c> line, keyed or not.</summary>
+    public static TheoryData<string> Bearing {
+        get {
+            var data = new TheoryData<string>();
+            foreach (var file in Corpus.DocCommentBearing()) {
+                data.Add(file.RelativePath);
+            }
+
+            return data;
+        }
+    }
+
+    /// <summary>The doc-comment constructs outside <c>xmldoc/</c>: compared, never attributed to a key.</summary>
+    public static TheoryData<string> Shapes {
+        get {
+            var data = new TheoryData<string>();
+            foreach (var file in Corpus.DocCommentBearing()) {
+                if (!file.RelativePath.StartsWith(Corpus.XmlDocPrefix, StringComparison.Ordinal)) {
+                    data.Add(file.RelativePath);
+                }
+            }
+
+            return data;
+        }
+    }
+
     [Fact]
     public void TheDocCommentedSubtree_IsNotEmpty() {
         // ⚠ A theory over an empty set passes, which is how a corpus subtree that stopped being
@@ -69,19 +95,82 @@ public sealed class XmlDocOracleTests {
     }
 
     /// <summary>
+    ///     ⚠ #396's invariant: a construct that holds a <c>///</c> line, anywhere under
+    ///     <c>constructs/</c>, carries a doc-comment fixture.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The only profile that formats a doc comment is <see cref="OracleProfile.DocComments" />;
+    ///     the format-only fixture beside every construct returns its doc comments as written and the
+    ///     differential compares it outside them. Eight constructs outside <c>xmldoc/</c> — 77 <c>///</c>
+    ///     lines, one file of which is where #382's third shape turned up once it was asked — sat with
+    ///     no fixture that asks, and nothing noticed, because the doc-comment set was chosen by subtree.
+    ///     This enumerates by content.
+    /// </remarks>
+    [Theory]
+    [MemberData(nameof(Bearing))]
+    public void EveryConstructWithADocCommentLine_HasADocCommentFixture(string relativePath) {
+        var file = Corpus.DocCommentBearing().Single(candidate => candidate.RelativePath == relativePath);
+        Assert.True(
+            file.HasFixtureFor(OracleProfile.DocComments),
+            $"constructs/{relativePath} holds a /// line and has no committed {OracleProfile.DocComments.Suffix}, "
+            + "so no fixture asks the oracle about its doc comments: the format-only fixture never formats one "
+            + "and the differential excludes /// lines from its denominator. Run "
+            + $"./build.sh Oracle --only {relativePath[..^".cs".Length]}"
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ The set above reaches outside <c>xmldoc/</c>, or the invariant restates the old one.
+    /// </summary>
+    [Fact]
+    public void TheDocCommentBearingSet_ReachesOutsideTheKeyedSubtree() {
+        var bearing = Corpus.DocCommentBearing().Select(static file => file.Path).ToHashSet(StringComparer.Ordinal);
+        Assert.All(Corpus.DocCommented(), file => Assert.Contains(file.Path, bearing));
+        Assert.True(
+            bearing.Count > Corpus.DocCommented().Count,
+            "every construct with a /// line sits under xmldoc/: either the eight #396 found have moved, or "
+            + "the enumeration stopped reading content."
+        );
+    }
+
+    /// <summary>
+    ///     A shape row agrees with its doc-comment fixture. It is judged for agreement and nothing else.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ No tier is read here and none can be: a shape row is not attributed to a key (see
+    ///     <see cref="XmlDocOracle.Row.IsKeyed" />). A disagreement is a formatter defect at the
+    ///     repository's configuration; the fix is the formatter, or a <c>docs/divergences.md</c> entry
+    ///     and an exception named here — never a regenerated fixture.
+    /// </remarks>
+    [Theory]
+    [MemberData(nameof(Shapes))]
+    public void EveryShapeRow_AgreesWithItsDocCommentFixture(string relativePath) {
+        var row = XmlDocOracle.Rows().Single(candidate => candidate.File.RelativePath == relativePath);
+        Assert.False(row.IsKeyed);
+        Assert.Null(row.Key);
+        Assert.True(
+            row.Agrees,
+            $"constructs/{relativePath} disagrees with its doc-comment fixture:\n"
+            + string.Join("\n", XmlDocOracle.Diff(row))
+        );
+    }
+
+    /// <summary>
     ///     Tier A here means the fixture matches; Tier D means it does not, and both are asserted.
     /// </summary>
     [Theory]
     [MemberData(nameof(Files))]
     public void TheRecordedTier_IsWhatTheDocCommentFixtureSays(string relativePath) {
         var row = XmlDocOracle.Rows().Single(candidate => candidate.File.RelativePath == relativePath);
-        Assert.True(OptionRegistry.TryResolve(row.Key, out var id));
+        Assert.True(row.IsKeyed);
+        var key = row.Key!;
+        Assert.True(OptionRegistry.TryResolve(key, out var id));
         var tier = OptionRegistry.Get(id).Tier;
 
         if (tier == OptionTier.A) {
             Assert.True(
                 row.Agrees,
-                $"{row.Key} is Tier A and its doc-comment fixture disagrees with Skala:\n"
+                $"{key} is Tier A and its doc-comment fixture disagrees with Skala:\n"
                 + string.Join("\n", XmlDocOracle.Diff(row))
                 + "\n\nTier A is a claim that Skala reproduces Rider's behaviour. Either fix the formatter or "
                 + "demote the key to D with a docs/divergences.md entry carrying the shape above."
@@ -96,7 +185,7 @@ public sealed class XmlDocOracleTests {
         // one of the six demoted at c0691cb7 does exactly that — and demanding `!row.Agrees` of
         // those turns a correct demotion into a test failure. What must still be caught is the
         // stale reason: Tier D with no evidence behind it from any instrument.
-        if (Unswept.Contains(row.Key)) {
+        if (Unswept.Contains(key)) {
             // ⚠ The third cause, and the one this file had no room for. These keys were fixed and
             // now reproduce their fixtures; none of them has ever been swept, so
             // `Unsubstantiated()` cannot speak for them, and a fixture is not a Tier A claim —
@@ -105,7 +194,7 @@ public sealed class XmlDocOracleTests {
             // swept*. The sweep on master decides, and the list shrinks to nothing when it does.
             Assert.True(
                 row.Agrees,
-                $"{row.Key} is on the awaiting-the-sweep list and its doc-comment fixture no longer "
+                $"{key} is on the awaiting-the-sweep list and its doc-comment fixture no longer "
                 + "agrees:\n"
                 + string.Join("\n", XmlDocOracle.Diff(row))
                 + "\n\nThat list means 'fixed, and waiting only to be swept'. Either the fix regressed, "
@@ -129,8 +218,8 @@ public sealed class XmlDocOracleTests {
         }
 
         Assert.True(
-            !row.Agrees || SweepVerdicts.Unsubstantiated().Contains(row.Key),
-            $"{row.Key} is Tier {tier}, Skala reproduces its doc-comment fixture byte for byte, and the "
+            !row.Agrees || SweepVerdicts.Unsubstantiated().Contains(key),
+            $"{key} is Tier {tier}, Skala reproduces its doc-comment fixture byte for byte, and the "
             + "committed key-flip sweep does not contradict it either. Tier D in this family means "
             + "'measured against the oracle, and disagreeing' — by the fixture, or by the sweep at a value "
             + "the fixture does not reach. With neither saying so the reason is stale: promote it to A in "
@@ -247,14 +336,20 @@ public sealed class XmlDocOracleTests {
         // outputs are hashed against — did not have to move. It is attributed by its name like every
         // other row, and it exists because the first file is rebuilt at either value of its key and so
         // could not tell the oracle's per-comment rule from Skala's old per-line one.
-        var rows = XmlDocOracle.Rows();
+        //
+        // ⚠ Keyed rows only (#396). The eight shape rows outside xmldoc/ are counted separately below
+        // and are not in this ratchet: they are attributed to no key, and adding them here would let a
+        // key's regression hide behind a shape's agreement.
+        var all = XmlDocOracle.Rows();
+        var rows = all.Where(static row => row.IsKeyed).ToArray();
         var agreeing = rows.Count(static row => row.Agrees);
-        Assert.Equal(23, rows.Count);
+        Assert.Equal(8, all.Count(static row => !row.IsKeyed));
+        Assert.Equal(23, rows.Length);
         Assert.Equal(22, rows.Select(static row => row.Key).Distinct(StringComparer.Ordinal).Count());
         Assert.True(
             agreeing >= 23,
             $"{agreeing.ToString(CultureInfo.InvariantCulture)} of "
-            + $"{rows.Count.ToString(CultureInfo.InvariantCulture)} doc-comment fixtures agree; the committed "
+            + $"{rows.Length.ToString(CultureInfo.InvariantCulture)} doc-comment fixtures agree; the committed "
             + "measurement is 23. This is a ratchet and it is now at the ceiling: a fall is a regression, and "
             + "the key that fell is named by TheRecordedTier_IsWhatTheDocCommentFixtureSays."
         );

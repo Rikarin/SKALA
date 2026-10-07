@@ -1,0 +1,7 @@
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaDocComments generated=2026-10-07
+class C {
+    int _a;
+
+    /// <summary>Docs.</summary>
+    void M() { }
+}

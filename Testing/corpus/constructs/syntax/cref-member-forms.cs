@@ -9,14 +9,12 @@ using System.Collections.Generic;
 ///     fixture.
 /// </summary>
 /// <remarks>
-///     ⚠ In <c>constructs/syntax/</c> rather than <c>constructs/xmldoc/</c>, and the fixture beside it
-///     is therefore the <b>format-only</b> answer alone. <c>constructs/xmldoc/</c> is one file per
-///     option key by an invariant <c>XmlDocOracleTests</c> asserts — the doc-comment verdict keys off
-///     the file name — so a fixture named after a *construct* cannot live there without attributing
-///     its measurement to nothing. What this pins is that the format-only profile returns every cref
-///     form untouched and formats the code around them, which is a real pin and a weaker one than the
-///     doc-comment profile would give. See docs/construct-coverage.md § "The cref forms are pinned
-///     under one profile of two" for what is still unmeasured and what it would take.
+///     ⚠ In <c>constructs/syntax/</c> rather than <c>constructs/xmldoc/</c>, because
+///     <c>constructs/xmldoc/</c> is one file per option key and this pins a shape. It carries both
+///     fixtures: the <b>format-only</b> one, which returns every cref form untouched and formats the
+///     code around them, and since #396 the <b>doc-comment</b> one, which walks the crefs. The
+///     doc-comment row is a shape row — compared byte for byte, attributed to no key. See
+///     docs/construct-coverage.md § "The cref forms are pinned under both profiles".
 /// </remarks>
 class CrefMemberForms {
     /// <summary>The plain forms, for the pair the others are read against.</summary>
