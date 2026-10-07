@@ -15,6 +15,9 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>constructs/blank-lines/a-comment-glued-between-two-members.cs</c>.
 /// </remarks>
 public sealed class SingleLineIsAnOutputFactIssue414Tests {
+    /// <summary>The accessor key most of these cases set, named once (SK7083).</summary>
+    const string AroundAccessor = "skala_blank_lines_around_accessor";
+
     /// <summary>The oracle's answer under the repository's export with <paramref name="overrides" /> on top.</summary>
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
@@ -61,7 +64,7 @@ public sealed class SingleLineIsAnOutputFactIssue414Tests {
                 }
             }
             """,
-            ("skala_blank_lines_around_accessor", "1")
+            (AroundAccessor, "1")
         );
 
     /// <summary>
@@ -93,7 +96,7 @@ public sealed class SingleLineIsAnOutputFactIssue414Tests {
                 }
             }
             """,
-            ("skala_blank_lines_around_accessor", "1"),
+            (AroundAccessor, "1"),
             ("skala_keep_blank_lines_in_declarations", "0")
         );
 
@@ -264,7 +267,7 @@ public sealed class SingleLineIsAnOutputFactIssue414Tests {
                 }
             }
             """,
-            ("skala_blank_lines_around_accessor", "1")
+            (AroundAccessor, "1")
         );
 
     /// <summary><c>class B {</c>↵<c>}</c> comes back <c>class B { }</c> and takes <c>blank_lines_around_single_line_type</c>.</summary>
@@ -851,7 +854,7 @@ public sealed class SingleLineIsAnOutputFactIssue414Tests {
                 int _d;
             }
             """,
-            ("skala_blank_lines_around_accessor", "1"),
+            (AroundAccessor, "1"),
             ("skala_blank_lines_around_single_line_type", "0")
         );
 
@@ -890,7 +893,7 @@ public sealed class SingleLineIsAnOutputFactIssue414Tests {
                 }
             }
             """,
-            ("skala_blank_lines_around_accessor", "1"),
+            (AroundAccessor, "1"),
             ("skala_blank_lines_around_single_line_type", "0")
         );
 
@@ -917,7 +920,7 @@ public sealed class SingleLineIsAnOutputFactIssue414Tests {
                 class D { }
             }
             """,
-            ("skala_blank_lines_around_accessor", "1"),
+            (AroundAccessor, "1"),
             ("skala_blank_lines_around_single_line_type", "0")
         );
 
@@ -948,7 +951,7 @@ public sealed class SingleLineIsAnOutputFactIssue414Tests {
                 }
             }
             """,
-            ("skala_blank_lines_around_accessor", "1"),
+            (AroundAccessor, "1"),
             ("skala_blank_lines_around_single_line_type", "0")
         );
 }

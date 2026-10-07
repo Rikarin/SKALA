@@ -534,9 +534,10 @@ public sealed partial class CSharpDocumentBuilder {
     /// <remarks>
     ///     ⚠ Measured for #414 (SK-DIV-0172), and not what <see cref="StickyStart" /> would suggest: a
     ///     plain comment is not part of the member it sits <em>above</em> for the gap below that member,
-    ///     but the member it sits <em>under</em> is not single-line for the gap above it. <c>int _x;</c> / <c>int _a;</c> /
-    ///     <c>// c</c> / <c>int _b;</c> / <c>int _d;</c> comes back with a blank between <c>_x</c> and
-    ///     <c>_a</c> and above the comment, and none between <c>_b</c> and <c>_d</c> — for fields, methods,
+    ///     but the member it sits <em>under</em> is not single-line for the gap above it.
+    ///     <c>int _x;</c> / <c>int _a;</c> / <c>// c</c> / <c>int _b;</c> / <c>int _d;</c> comes back
+    ///     with a blank between <c>_x</c> and <c>_a</c> and above the comment, and none between
+    ///     <c>_b</c> and <c>_d</c> — for fields, methods,
     ///     local functions, accessors and types, for <c>//</c> and <c>/* */</c>, for one comment line or
     ///     two, and before a type's <c>}</c> as before a member. Not when a blank line separates the
     ///     member from the comment or the comment from what follows, not before a <c>#region</c>, not for
