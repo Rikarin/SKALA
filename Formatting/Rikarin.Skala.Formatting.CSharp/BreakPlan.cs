@@ -4724,9 +4724,36 @@ public sealed class BreakPlan {
                 MembersOnOwnLines(type.Members, type.CloseBraceToken);
                 return;
 
-            case NamespaceDeclarationSyntax { Members.Count: > 0 } declaration
-                when !options.KeepExistingDeclarationBlockArrangement:
+            // ⚠ A namespace's `using` and `extern alias` are its lines too: `namespace N { using System; }`
+            // comes back from the oracle as three lines, with no member to have put it there (#429).
+            case NamespaceDeclarationSyntax declaration
+                when !options.KeepExistingDeclarationBlockArrangement
+                && declaration.Members.Count + declaration.Usings.Count + declaration.Externs.Count > 0:
+                OnOwnLines(declaration.Externs);
+                OnOwnLines(declaration.Usings);
                 MembersOnOwnLines(declaration.Members, declaration.CloseBraceToken);
+                return;
+
+            // ⚠ The file's own level had no arm, so nothing put a top-level declaration on a line of its
+            // own: `public class A { } public class B { }`, `using A; using B;` and `/* top */ public
+            // class D { }` all stayed one line, where the oracle breaks before each (#429). A type's
+            // members were planned and the file's were not, and #409's comment rule only ever reaches a
+            // gap the plan has. Measured on every kind the level holds — `extern alias`, `using`, an
+            // `[assembly: …]` list, a type, a delegate, an enum, a namespace, a top-level statement —
+            // with and without a block comment before it, and unmoved by
+            // `skala_keep_existing_declaration_block_arrangement`: the oracle answers it with the same
+            // bytes at both values, so this is not a declaration block's key.
+            case CompilationUnitSyntax unit:
+                OnOwnLines(unit.Externs);
+                OnOwnLines(unit.Usings);
+                OnOwnLines(unit.AttributeLists);
+                OnOwnLines(unit.Members);
+                return;
+
+            case FileScopedNamespaceDeclarationSyntax declaration:
+                OnOwnLines(declaration.Externs);
+                OnOwnLines(declaration.Usings);
+                OnOwnLines(declaration.Members);
                 return;
 
             case AccessorListSyntax { Accessors.Count: > 0 } accessors:
@@ -4923,6 +4950,12 @@ public sealed class BreakPlan {
         return block.Parent is AccessorDeclarationSyntax or AnonymousFunctionExpressionSyntax
             ? !(broken && Keeps(block))
             : !broken && Keeps(block);
+    }
+
+    void OnOwnLines<T>(SyntaxList<T> nodes) where T : SyntaxNode {
+        foreach (var node in nodes) {
+            Mandatory(FirstToken(node));
+        }
     }
 
     void MembersOnOwnLines(SyntaxList<MemberDeclarationSyntax> members, SyntaxToken close) {

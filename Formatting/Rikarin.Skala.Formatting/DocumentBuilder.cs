@@ -203,7 +203,16 @@ public sealed class DocumentBuilder {
     }
 
     /// <summary>Raw text, copied byte-for-byte and never reindented.</summary>
-    public void Verbatim(string value, SourceSpan source, VerbatimFlags flags = VerbatimFlags.None) {
+    /// <param name="sourceLineIndent">
+    ///     The leading whitespace of the source line the text starts on, which
+    ///     <see cref="VerbatimFlags.ShiftWithLine" /> measures its shift from; <c>null</c> otherwise.
+    /// </param>
+    public void Verbatim(
+        string value,
+        SourceSpan source,
+        VerbatimFlags flags = VerbatimFlags.None,
+        string? sourceLineIndent = null
+    ) {
         var index = pending.Count;
         var multiline = ContainsNewLine(value);
         Leaf(
@@ -216,6 +225,9 @@ public sealed class DocumentBuilder {
             multiline ? FirstLineWidth(value) : TextWidth.Measure(value)
         );
         nodes[pending[index]].Flags = (int)flags;
+        if (sourceLineIndent is not null) {
+            nodes[pending[index]].Arg2 = AddString(sourceLineIndent);
+        }
     }
 
     public void Space(SpaceKind kind) =>

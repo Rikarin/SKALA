@@ -299,6 +299,24 @@ public sealed partial class CSharpDocumentBuilder {
         return nextToken.IsKind(SyntaxKind.CloseBraceToken);
     }
 
+    /// <summary>
+    ///     Whether the comments that end at the last piece emitted began on a line of their own — the
+    ///     first of them starts a line, and nothing but comments follows it up to here.
+    /// </summary>
+    bool CommentRunStartsLine() {
+        for (var i = lastPiece; i >= 0; i--) {
+            if (!pieces[i].IsComment) {
+                return false;
+            }
+
+            if (pieces[i].StartsLine) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     int RequiredBlankLines(Piece previous, int nextPieceIndex, SyntaxToken nextToken) {
         var required = 0;
 
@@ -347,7 +365,11 @@ public sealed partial class CSharpDocumentBuilder {
         // fixture, one flip — at `stick_comment = false` the oracle still returns
         // `// about M` hard against `void M() { }` with the blank line above the comment, and Skala
         // put a blank line between them. That was the whole of the key's `SPURIOUS` row.
-        if (previous.IsComment && previous.StartsLine) {
+        //
+        // ⚠ The run of comments starts the line, not necessarily the last one: `/* x */ /* y */` above
+        // `public class L { }` is one comment line, and the oracle writes no blank below it. Reachable
+        // since #429 breaks after the run, where the two used to share the class's line.
+        if (previous.IsComment && CommentRunStartsLine()) {
             return required;
         }
 
