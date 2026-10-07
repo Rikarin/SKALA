@@ -70,6 +70,11 @@ public sealed class FuzzRegressionTests {
     [InlineData(11606463289314822479UL)]
     [InlineData(15931495183721029956UL)]
     [InlineData(15010799596576293816UL)]
+
+    // #409 (found by `fuzz --seed=404002`): `nameof(value), /* f */ name176: …` past the margin. The
+    // block comment hid the list's point after the comma, so pass one chopped `nameof(` instead and
+    // pass two re-joined it.
+    [InlineData(7005158519080377895UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
