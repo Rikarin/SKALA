@@ -279,15 +279,71 @@ public static class XmlDocFormatter {
         // wraps identically however deeply its declaration is nested, and the file's own columns run
         // `codeIndent + 3` past the margin. `XmlDocOptions.MaxLineLength` carries the argument this
         // replaces, and why the argument lost.
-        var budget = options.MaxLineLength - marker.Length;
+        //
+        // ⚠ **The marker's column is reserved whether or not the marker space is written** (#382,
+        // SK-DIV-0132). This line used to subtract `marker.Length`, which is 0 at
+        // `space_after_triple_slash = false`, so the key bought a column of prose. Asked at both
+        // values on the same inputs, the oracle opens a `<summary>` and breaks a body line at the
+        // same content width either way: a body whose text after `///` is 120 columns wide breaks at
+        // `false` exactly as one 121 columns wide (marker included) does at `true`. Skala used to
+        // keep the first on one line.
+        var budget = options.MaxLineLength - 1;
         if (XmlDocRenderer.Render(nodes, options, budget) is not { } lines || lines.Length == 0) {
             return new Attempt(default, null, XmlDocRefusalReason.Glue);
         }
 
+        var text = Rendered(lines, indent, marker, runNewLine);
+
+        // ⚠ A comment the run would otherwise leave alone keeps its own markers, and this is the
+        // oracle's rule rather than a concession. Measured on one file holding two comments with the
+        // same two blank `///` lines between the same two tags, both under
+        // `max_blank_lines_between_tags = 3` so neither line had to go: the comment whose summary was
+        // too long to fit came back rewrapped **and** with `/// ` on its blank lines, and the comment
+        // that needed no other change came back byte-identical, bare `///` and all. SK-DIV-0006
+        // records the same shape from the other end — the oracle does not put the marker space into
+        // `///<summary>Docs.</summary>` on a comment it is otherwise not touching.
+        //
+        // ⚠ **The comparison is per comment, not per line** (#382, SK-DIV-0132). It used to strip one
+        // space after each line's `///` independently, and that was wrong in both directions. A
+        // comment whose lines disagree — `///<summary>` over `/// <returns>` — matched modulo a
+        // per-line space and was kept, where the oracle rebuilds it at either value. And a markerless
+        // comment with indented content — `///<summary>`, `///    <para>` — lost the first column of
+        // its *content* indentation to the strip, failed to match, and was rebuilt with markers the
+        // oracle never adds. What the oracle keeps is a comment that is, as a whole, what it would
+        // write at *one* of the key's two values: so render both and compare each.
+        //
+        // ⚠ With one exception on the other value's side, measured after the rule above was in place
+        // and found on `constructs/syntax/cref-member-forms.cs`: a comment holding a break between a
+        // word and a sibling element is kept only in the configured convention. See
+        // `XmlDocLine.BesideAnElement`.
+        if (Matches(source, first.LineNumber, last.LineNumber, text, runNewLine, options.SpaceAfterTripleSlash)
+            || (!lines.Any(static line => line.BesideAnElement)
+                && Matches(
+                    source,
+                    first.LineNumber,
+                    last.LineNumber,
+                    Rendered(lines, indent, options.SpaceAfterTripleSlash ? string.Empty : " ", runNewLine),
+                    runNewLine,
+                    !options.SpaceAfterTripleSlash
+                ))) {
+            text = source.ToString(span);
+        }
+
+        // ⚠ The property, checked on every comment of every run rather than on a fixture. Nothing
+        // else in this file is allowed to be the last word: an oracle-less formatter that only
+        // checks itself against its own reading of a settings page is a formatter that will one day
+        // eat a sentence.
+        return XmlDocSignature.RoundTrips(structure, text, options.SpaceAfterTripleSlash)
+            ? new Attempt(span, text, null)
+            : new Attempt(default, null, XmlDocRefusalReason.RoundTrip);
+    }
+
+    /// <summary>The rendered lines, written as <c>///</c> lines with the given marker.</summary>
+    static string Rendered(ImmutableArray<XmlDocLine> lines, string indent, string marker, string newLine) {
         var rendered = new StringBuilder();
         for (var i = 0; i < lines.Length; i++) {
             if (i > 0) {
-                rendered.Append(runNewLine);
+                rendered.Append(newLine);
             }
 
             // ⚠ The marker space is written on a verbatim line too, and that is SK-DIV-0023 closed
@@ -315,73 +371,42 @@ public static class XmlDocFormatter {
             }
         }
 
-        var text = rendered.ToString();
-
-        // ⚠ A comment the run would otherwise leave alone keeps its own markers, and this is the
-        // oracle's rule rather than a concession. Measured on one file holding two comments with the
-        // same two blank `///` lines between the same two tags, both under
-        // `max_blank_lines_between_tags = 3` so neither line had to go: the comment whose summary was
-        // too long to fit came back rewrapped **and** with `/// ` on its blank lines, and the comment
-        // that needed no other change came back byte-identical, bare `///` and all. SK-DIV-0006
-        // records the same shape from the other end — the oracle does not put the marker space into
-        // `///<summary>Docs.</summary>` on a comment it is otherwise not touching.
-        //
-        // ⚠ The comparison is per line and modulo one space after the marker, because that space is
-        // the only thing the marker option can add. Anything else that differs — a re-flowed word, an
-        // element that moved, a blank line removed — is a real change and the rebuild is what the
-        // oracle does too.
-        if (DiffersOnlyInTheMarker(source, first.LineNumber, last.LineNumber, text, runNewLine)) {
-            text = source.ToString(span);
-        }
-
-        // ⚠ The property, checked on every comment of every run rather than on a fixture. Nothing
-        // else in this file is allowed to be the last word: an oracle-less formatter that only
-        // checks itself against its own reading of a settings page is a formatter that will one day
-        // eat a sentence.
-        return XmlDocSignature.RoundTrips(structure, text, options.SpaceAfterTripleSlash)
-            ? new Attempt(span, text, null)
-            : new Attempt(default, null, XmlDocRefusalReason.RoundTrip);
+        return rendered.ToString();
     }
 
     /// <summary>One comment's outcome: a replacement, or the reason there is not one.</summary>
     readonly record struct Attempt(TextSpan Span, string? Text, XmlDocRefusalReason? Reason);
 
     /// <summary>
-    ///     Whether the re-wrap changed nothing but the space behind the <c>///</c>.
+    ///     Whether the source's lines are exactly this rendering's, one for one.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Line for line, and one space at most, because that is the only thing
-    ///     <c>space_after_triple_slash</c> can add or take away. A comment that is otherwise already in
-    ///     the shape the renderer would give it is one the oracle returns untouched, markers included.
+    ///     ⚠ One allowance, and only under the spaced rendering: a blank line written <c>/// </c>
+    ///     matches a source <c>///</c>. Measured (#382): a spaced comment with a bare blank line comes
+    ///     back byte-identical at both values, while a markerless comment with a <c>/// </c> blank
+    ///     line is rebuilt at both — the trailing space is a difference to the markerless rendering
+    ///     and the missing one is not a difference to the spaced rendering.
     /// </remarks>
-    static bool DiffersOnlyInTheMarker(SourceText source, int firstLine, int lastLine, string text, string newLine) {
+    static bool Matches(SourceText source, int firstLine, int lastLine, string text, string newLine, bool spaced) {
         var produced = text.Split(newLine);
         if (produced.Length != lastLine - firstLine + 1) {
             return false;
         }
 
         for (var i = 0; i < produced.Length; i++) {
-            if (!string.Equals(
-                    WithoutMarkerSpace(source.Lines[firstLine + i].ToString()),
-                    WithoutMarkerSpace(produced[i]),
-                    StringComparison.Ordinal
-                )) {
+            var line = source.Lines[firstLine + i].ToString();
+            if (string.Equals(line, produced[i], StringComparison.Ordinal)) {
+                continue;
+            }
+
+            if (!spaced
+                || produced[i].AsSpan().TrimStart() is not "/// "
+                || !string.Equals(line, produced[i][..^1], StringComparison.Ordinal)) {
                 return false;
             }
         }
 
         return true;
-    }
-
-    /// <summary>The line with one space after its <c>///</c> removed, when there is one.</summary>
-    static string WithoutMarkerSpace(string line) {
-        var slashes = line.IndexOf("///", StringComparison.Ordinal);
-        if (slashes < 0) {
-            return line;
-        }
-
-        var after = slashes + 3;
-        return after < line.Length && line[after] == ' ' ? line[..after] + line[(after + 1)..] : line;
     }
 
     /// <summary>

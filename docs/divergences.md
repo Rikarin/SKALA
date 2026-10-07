@@ -571,6 +571,12 @@ with the same two blank `///` lines between the same two tags, under
 /// <returns>A value.</returns>
 ```
 
+⚠ **Correction, 2026-10-07 (SK-DIV-0132, issue #382).** "Line for line, modulo one space after the
+`///`" is not what the oracle does; the two agree only on comments whose lines all carry the marker
+the same way, which every probe above did. The oracle's rule is per comment — it keeps a comment that
+is, as a whole, its own rendering at *one* of `space_after_triple_slash`'s two values — and the
+per-line rule kept a comment the oracle rebuilds and rebuilt one it keeps. SK-DIV-0132 has the table.
+
 ⚠ **The row this was found from was `skala_xmldoc_max_blank_lines_between_tags`, and the key had
 nothing to do with it.** The sweep reported it `Divergent` at `3`, where Skala wrote `/// ` and the
 oracle wrote `///`; the count was right on both sides and the *marker* was the disagreement, on a
@@ -6218,3 +6224,92 @@ check. The export's `chop_if_long` is conformant on every one of these shapes.
 - ⚠ status: **open**, size S–M; measure the last-link/middle-link boundary on a two-, three- and
   four-call chain with each link's width varied before wiring a head measure into the chain fill.
   Recorded in `ChainWithACallRootIssue380Tests`' remarks and deliberately not asserted there.
+
+## SK-DIV-0132 — a doc comment kept as written was decided line by line, and the oracle decides it per comment
+
+⚠ **Filed as issue #382, whose headline claim the oracle refutes.** The issue read
+`///<summary>A lone element.</summary>` surviving `skala format` at `skala_space_after_triple_slash
+= true` as the key being ignored, and inferred — `jb cleanupcode` was not available to it — that the
+oracle under `OracleProfile.DocComments` would add the space. Asked, it does not: the line comes back
+byte-identical, as SK-DIV-0006 had already recorded for `///<summary>Docs.</summary>`. What the issue
+did get right is that the fixture it found, `constructs/trivia/skala_space_after_triple_slash.cs`,
+cannot fail: it carries only a `SkalaFormatOnly` fixture, that profile switches
+`CSharpFormatDocComments` off, and the differential measures `FormatOnly` fixtures outside doc
+comments, so its one `///` line is not even in the denominator.
+
+Asking the key at **both** values, on every shape the issue's class suggested, found two real
+defects. Measured 2026-10-07 with `Testing ask --profile=SkalaDocComments
+skala_space_after_triple_slash=<value>` over 169 probe files on the repository's `.editorconfig`
+(the blank-line rows with `skala_xmldoc_max_blank_lines_between_tags = 3` so the line survives):
+
+| written | oracle at `true` | oracle at `false` | Skala before |
+|---|---|---|---|
+| `///<summary>A.</summary>` (one element) | kept | kept | identical |
+| `///Plain text.`, a lone `///`, a lone `/// ` | kept | kept | identical |
+| `////<summary>…` (a line comment), `///<summary>…` under an inactive `#if` | kept | kept | identical |
+| `/// <summary>One space.</summary>` | kept | **kept** | identical |
+| `///\t<summary>…`, `///  <summary>…` | `/// <summary>…` | `///<summary>…` | identical |
+| `///<summary>A.</summary>` / `/// <returns>B.</returns>`, and the reverse | **both lines `/// `** | **both lines `///`** | **kept** — one space per line was "only the marker" |
+| `///<summary>` / `///    <para>A.</para>` / `///</summary>` (the markerless rendering) | **kept** | kept | **rebuilt with markers** at `true` — the strip took the content's first column |
+| `/// <summary>` / `///     <para>A.</para>` / `/// </summary>` (the spaced rendering) | kept | **kept** | **rebuilt without** at `false`, the same way |
+| `///<summary>` / `///     <para>A.</para>` / `///</summary>` (neither) | `/// ` on all three | `///    <para>` | **kept** at both |
+| `///<summary>A.</summary>` / `///` / `///<returns>B.</returns>` | kept | kept | identical |
+| `/// <summary>A.</summary>` / `///` / `/// <returns>B.</returns>` | kept | kept | identical |
+| `///<summary>A.</summary>` / `/// ` / `///<returns>B.</returns>` | `/// ` on all three | `///` on all three | **kept** at both |
+| a markerless body line 120 columns after the `///` | broken at the last word | **broken at the last word** | kept whole at `false` |
+
+So the oracle keeps a comment when it is, as a whole, what the oracle would write at one of the
+key's two values, and rebuilds it at the configured value otherwise. The only slack is a blank line:
+the spaced rendering's `/// ` matches a bare `///` (the bare-blank spaced rows), but the markerless
+rendering's `///` does not match `/// ` (the last blank row, rebuilt at both values).
+
+⚠ **With one exception, found only after that rule was implemented**, by asking the doc-comment
+profile about the eight constructs below that had never been asked it: on
+`constructs/syntax/cref-member-forms.cs` at `false`, three spaced comments came back markerless and
+the others came back untouched. A comment in the *other* value's convention is rebuilt when it holds
+a line break between a word and a sibling element, inside an element:
+
+| break between | other convention | measured on |
+|---|---|---|
+| `Text,` / `<see cref="M" /> and more.`, `Text,` / `<see cref="M" />`, `Text,` / `<b>bold</b> more.` | **rebuilt** | both values (the markerless mirror at `true` too) |
+| `Text <c>x</c>` / `more text.`, `Text, <see cref="M" />` / `and more.` | **rebuilt** | `false` |
+| `Text,` / `<para>A.</para>`, `<para>A.</para>` / `Text.`, `Text,` / an opened `<para>`, an opened `</para>` / `Text.` | **rebuilt** | `false`; the opened `<para>` at `true` too |
+| word / word, at any width | kept | both |
+| `<para>A.</para>` / `<para>B.</para>`, `<see/>` / `<see/>`, `<list>` / `<item>` / `</list>` | kept | both |
+| `<summary>` / first content, last content / `</summary>` (the enclosing tags) | kept | both |
+| `Text <see cref="M" />,` / `more.`, `Text <c>x</c>.` / `more text.` (punctuation glued to the element) | kept | `false` |
+| `/// Plain text.` / `/// <summary>A.</summary>` (directly under the marker) | kept | `false` |
+
+The member the comment documents does not matter (indexer, operator, conversion, property, field and
+method were all asked), nor does an unresolved cref. `XmlDocLine.BesideAnElement` carries the fact
+out of the renderer, which knows each line's first and last unit and whether that unit is a word, an
+element, or the inside of an opened element's own tag.
+
+Skala compared line by line, modulo one space after each `///`, which agrees with that rule exactly
+when every line carries the marker the same way — every probe SK-DIV-0006 took. It disagreed in both
+directions off that diagonal: a mixed comment was kept, and a markerless comment with indented
+content lost one column of its *content* indentation to the strip, failed the comparison and was
+rebuilt with markers at `true` (in `corpus/real/` terms, any already-formatted markerless comment
+with a `<para>` or a wrapped body). `XmlDocFormatter.Replacement` now renders the comment at both
+marker values and keeps the source when it equals either one.
+
+The last row is the second defect, and it has nothing to do with keeping. The wrap budget was
+`max_line_length - marker.Length`, which is a column wider at `false`. The oracle breaks at the same
+content width at both values — swept from 80 to 119 characters of single-line `<summary>` text at
+code indents 4 and 8, and on body lines 117 … 122 columns wide, it opens and breaks at exactly the
+same input at `false` as at `true` — so the marker's column is reserved whether or not the space is
+written. The budget is now `max_line_length - 1`.
+
+After all three: 0 of the 338 file-value pairs diverge. On master's formatter the same 338 had 45
+diverging, 12 of them at `true`, and `syntax/cref-member-forms.cs` was one of them at `false`.
+`constructs/xmldoc/marker/skala_space_after_triple_slash.cs` pins the shapes at the export's `true`
+— the key's own file one directory up is rebuilt at either value, so it could not tell the two rules
+apart, and it stays where it is because the sweep and the frozen outputs are hashed against it.
+`XmlDocSubFormatterTests.SpaceAfterTripleSlash_KeepsACommentThatIsTheRenderingAtEitherValue` and
+`TheWrapBudget_ReservesTheMarkerColumnAtBothValues` and
+`TheOtherConvention_IsKeptOnlyWithoutABreakBesideAnElement` carry `false` and the blank-line rows, which the
+corpus cannot reach (its configuration is the export's, with `max_blank_lines_between_tags = 0`).
+
+- options: `skala_space_after_triple_slash` (both values), `skala_xmldoc_max_line_length` at
+  `skala_space_after_triple_slash = false`.
+- status: **fixed**. Tier unchanged (A).
