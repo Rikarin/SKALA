@@ -48,19 +48,19 @@
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
 <tr><td><a href="SK0230.html">SK0230</a></td><td>The <code>with</code> expression or object initializer is empty</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>yes</td></tr>
-<tr><td><a href="SK0231.html">SK0231</a></td><td>The string call produces the string it was given</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK0232.html">SK0232</a></td><td>The argument or signature element is redundant</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK0231.html">SK0231</a></td><td>The string call produces the string it was given</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK0232.html">SK0232</a></td><td>The argument or signature element is redundant</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK0233.html">SK0233</a></td><td>The syntax is redundant</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK0234.html">SK0234</a></td><td>The cast or type argument is redundant</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
-<tr><td><a href="SK0240.html">SK0240</a></td><td>The control flow does nothing</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>yes</td></tr>
+<tr><td><a href="SK0240.html">SK0240</a></td><td>The control flow does nothing</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK0241.html">SK0241</a></td><td>The modifier has no effect</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK0242.html">SK0242</a></td><td>The <code>#nullable</code> directive changes nothing</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK0243.html">SK0243</a></td><td>The qualifier is redundant</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
-<tr><td><a href="SK0244.html">SK0244</a></td><td>The declaration adds nothing</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>yes</td></tr>
+<tr><td><a href="SK0244.html">SK0244</a></td><td>The declaration adds nothing</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK0250.html">SK0250</a></td><td>The discard designation is redundant</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK0260.html">SK0260</a></td><td>The boolean expression says the same thing twice</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK0261.html">SK0261</a></td><td>The attribute writes out what the language already supplies</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
-<tr><td><a href="SK0280.html">SK0280</a></td><td>The base list names an interface it already has</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK0280.html">SK0280</a></td><td>The base list names an interface it already has</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK0281.html">SK0281</a></td><td>The attribute promises to set members that do not exist</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK0282.html">SK0282</a></td><td>The record writes out the property its parameter generates</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK0290.html">SK0290</a></td><td>The explicit <code>Nullable&lt;T&gt;</code> construction converts nothing</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
@@ -85,7 +85,7 @@
 <tr><td><a href="SK2012.html">SK2012</a></td><td>Review a self-operation on an automatic property</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2013.html">SK2013</a></td><td>An exception is constructed and then discarded</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2014.html">SK2014</a></td><td>An empty catch silently discards an exception</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
-<tr><td><a href="SK2015.html">SK2015</a></td><td><code>throw ex;</code> resets the stack trace</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>yes</td></tr>
+<tr><td><a href="SK2015.html">SK2015</a></td><td><code>throw ex;</code> resets the stack trace</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK2016.html">SK2016</a></td><td>A logger message is interpolated before it is logged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2017.html">SK2017</a></td><td>The exception names a parameter that does not exist</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2030.html">SK2030</a></td><td>Detect NaN with IsNaN rather than equality</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
@@ -129,7 +129,7 @@
 <tr><td><a href="SK2112.html">SK2112</a></td><td>The local is declared nullable and is never null</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2113.html">SK2113</a></td><td>The service resolution is null-forgiven instead of required</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2120.html">SK2120</a></td><td>A bitwise operator combines members of a consecutively numbered enum</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
-<tr><td><a href="SK2121.html">SK2121</a></td><td>The <code>as</code> operator tests a conversion that always succeeds</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2121.html">SK2121</a></td><td>The <code>as</code> operator tests a conversion that always succeeds</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2130.html">SK2130</a></td><td>A static field initializer reads a field declared below it</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2131.html">SK2131</a></td><td>The get-only property is never assigned</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2132.html">SK2132</a></td><td>The accessor uses another property's backing field</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
@@ -247,10 +247,10 @@
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
-<tr><td><a href="SK3501.html">SK3501</a></td><td>A disposable is created in a local and never disposed</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3501.html">SK3501</a></td><td>A disposable is created in a local and never disposed</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK3502.html">SK3502</a></td><td>A type owns a disposable field but is not disposable</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3503.html">SK3503</a></td><td>An <code>IAsyncDisposable</code> is disposed synchronously</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK3510.html">SK3510</a></td><td>A variable already owned by <code>using</code> is disposed again</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3510.html">SK3510</a></td><td>A variable already owned by <code>using</code> is disposed again</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK3511.html">SK3511</a></td><td>The <code>using</code> resource is built with an object initializer</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK3512.html">SK3512</a></td><td>A variable captured by <code>using</code> is returned</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3530.html">SK3530</a></td><td>The disposable field is not disposed by <code>Dispose</code></td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
@@ -385,15 +385,15 @@
 <tr><td><a href="SK4007.html">SK4007</a></td><td>Review large struct arguments in loops</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK4010.html">SK4010</a></td><td>A <code>Where</code> the next operator could have taken as its predicate</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK4020.html">SK4020</a></td><td>The lambda captures nothing and is not <code>static</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
-<tr><td><a href="SK4021.html">SK4021</a></td><td>The private method does not use instance state</td><td><span class="tag sev-hint">hint</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK4021.html">SK4021</a></td><td>The private method does not use instance state</td><td><span class="tag sev-hint">hint</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK4022.html">SK4022</a></td><td>The struct is never mutated and is not <code>readonly</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK4023.html">SK4023</a></td><td>The capacity argument matches the default</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK4024.html">SK4024</a></td><td><code>GC.Collect</code> is called from application code</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK4030.html">SK4030</a></td><td>The collection's own method answers this faster than the LINQ extension</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK4031.html">SK4031</a></td><td>The loop looks up a key it is already holding</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK4031.html">SK4031</a></td><td>The loop looks up a key it is already holding</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK4032.html">SK4032</a></td><td><code>Substring</code> is called to feed a search that takes a start index</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK4033.html">SK4033</a></td><td>The <code>ConcurrentDictionary</code> member taken is the expensive one</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
-<tr><td><a href="SK4034.html">SK4034</a></td><td>The collection is sorted before it is filtered</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK4034.html">SK4034</a></td><td>The collection is sorted before it is filtered</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK4040.html">SK4040</a></td><td>The property copies a collection it could have returned unchanged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK4041.html">SK4041</a></td><td>The <code>StringBuilder</code> is filled and never read</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
@@ -429,7 +429,7 @@
 <tr><td><a href="SK8007.html">SK8007</a></td><td>Use controlled assertion input</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK8020.html">SK8020</a></td><td>A class with <code>[TestMethod]</code> members carries no <code>[TestClass]</code></td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK8021.html">SK8021</a></td><td>The test class declares no test</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
-<tr><td><a href="SK8022.html">SK8022</a></td><td>The assertion's expected and actual arguments are swapped</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK8022.html">SK8022</a></td><td>The assertion's expected and actual arguments are swapped</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 </tbody>
 </table>
 </div>

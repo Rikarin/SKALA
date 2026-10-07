@@ -4,8 +4,10 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Modernization;
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Rikarin.Skala.Rules.TestQuality;
 
@@ -98,6 +100,14 @@ public sealed class SwappedAssertionArgumentsAnalyzer : DiagnosticAnalyzer {
         // makes reordering the two arguments unobservable as well as type-safe.
         if (model.GetConstantValue(expected.Expression, cancellation).HasValue
             || !model.GetConstantValue(actual.Expression, cancellation).HasValue) {
+            return;
+        }
+
+        // ⚠ #425: the constant is free to move, but converting it to the parameter type may not be.
+        // A user-defined implicit conversion is code, and swapping the arguments runs it before the
+        // other argument instead of after — #412's audit measured "measure, convert 5" become
+        // "convert 5, measure". The constant argument as passed must run nothing.
+        if (!call.Arguments.Any(argument => argument.Syntax == actual && RewriteGuards.IsFreeToSkip(argument.Value))) {
             return;
         }
 

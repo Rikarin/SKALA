@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.Modernization;
@@ -92,7 +93,14 @@ public sealed class RedundantStringCallAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (!IsDefinitelyNotNull(context, access.Expression)) {
+        // ⚠ #425: the flow state is a promise the annotations make, not a fact about the value. An
+        // oblivious parameter, or one a caller filled with `null!`, reads NotNull and holds null, and
+        // then `s.ToString()` threw where `s` hands the null on. Only a receiver that cannot be null
+        // at run time is one whose call does nothing.
+        if (!IsDefinitelyNotNull(context, access.Expression)
+            || !IsNeverNull(
+                context.SemanticModel.GetOperation(Unparenthesized(access.Expression), context.CancellationToken)
+            )) {
             return;
         }
 
@@ -337,6 +345,59 @@ public sealed class RedundantStringCallAnalyzer : DiagnosticAnalyzer {
     static bool IsDefinitelyNotNull(SyntaxNodeAnalysisContext context, ExpressionSyntax expression) =>
         context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Nullability.FlowState
         != NullableFlowState.MaybeNull;
+
+    /// <summary>
+    ///     ⚠ Whether the string value cannot be <see langword="null" /> at run time, whatever the
+    ///     annotations say: a non-null constant, an interpolation, a concatenation, a construction, or a
+    ///     choice between two of those.
+    /// </summary>
+    /// <remarks>
+    ///     #412's audit measured <c>s.ToString()</c> → <c>s</c> turning a <c>NullReferenceException</c>
+    ///     into a null for an oblivious parameter and for one passed <c>null!</c>; both read
+    ///     <see cref="NullableFlowState.NotNull" />. <c>ToCharArray()</c> in a <c>foreach</c> does not
+    ///     ask this: the loop over the string reads <c>Length</c> before the first element and throws
+    ///     the same exception at the same point.
+    /// </remarks>
+    /// <summary>⚠ C# has no parenthesized operation: the model answers null for the parentheses.</summary>
+    static ExpressionSyntax Unparenthesized(ExpressionSyntax expression) {
+        while (expression is ParenthesizedExpressionSyntax parenthesized) {
+            expression = parenthesized.Expression;
+        }
+
+        return expression;
+    }
+
+    static bool IsNeverNull(IOperation? operation) {
+        while (true) {
+            switch (operation) {
+                case null:
+                    return false;
+                case { ConstantValue: { HasValue: true } constant }:
+                    return constant.Value is not null;
+                case IParenthesizedOperation parenthesized:
+                    operation = parenthesized.Operand;
+                    continue;
+                case IConversionOperation { Conversion.IsIdentity: true } conversion:
+                    operation = conversion.Operand;
+                    continue;
+                case IInterpolatedStringOperation or IObjectCreationOperation:
+                    return true;
+                // ⚠ The language's concatenation reports a synthesized `string` operator method, not
+                // none; a user-defined `+` returning a string is declared on some other type.
+                case IBinaryOperation { OperatorKind: BinaryOperatorKind.Add } binary:
+                    return binary.Type?.SpecialType == SpecialType.System_String
+                        && (binary.OperatorMethod is null
+                            || binary.OperatorMethod.ContainingType?.SpecialType == SpecialType.System_String);
+                case IConditionalOperation { WhenFalse: not null } conditional:
+                    return IsNeverNull(conditional.WhenTrue) && IsNeverNull(conditional.WhenFalse);
+                case ICoalesceOperation coalesce:
+                    operation = coalesce.WhenNull;
+                    continue;
+                default:
+                    return false;
+            }
+        }
+    }
 
     static void Report(SyntaxNodeAnalysisContext context, TextSpan span, string replacement, string message) {
         if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, span)) {

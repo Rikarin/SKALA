@@ -1,17 +1,23 @@
 using System;
 
+// The try block calls nothing, so no `finally` can sit beneath the `catch` — the one the statement
+// carries itself runs after the `catch` either way.
 class C {
-    public static void Save() {
+    static readonly int[] Values = new int[4];
+    static int _closed;
+
+    public static int Read(int index) {
+        var value = 0;
         try {
-            Run();
-        } catch (InvalidOperationException) {
+            value = Values[index];
+        } catch (IndexOutOfRangeException) {
             throw;
         } finally {
-            Close();
+            _closed++;
         }
+
+        return value;
     }
 
-    static void Run() { }
-
-    static void Close() { }
+    public static int Closed => _closed;
 }

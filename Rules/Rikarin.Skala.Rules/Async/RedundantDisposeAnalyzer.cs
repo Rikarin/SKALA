@@ -111,6 +111,18 @@ public sealed class RedundantDisposeAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ #425: three ways the deleted call was not the one the `using` makes, each measured by
+        // #412's audit. A plain `using` calls `Dispose`, so an awaited `DisposeAsync` on it is the only
+        // asynchronous disposal there is. A public `Dispose` beside an explicit `IDisposable.Dispose` is
+        // a different method from the one the `using` calls. And a call that is not the last thing the
+        // scope does disposes earlier than the `using` would: `w.Dispose()` flushed a writer that the
+        // next statement read back ("hello" → "").
+        if (asynchronous.Value != IsAwaitUsing(owner)
+            || !IsTheContract(local.Type, asynchronous.Value ? asyncDisposable : disposable, method)
+            || !IsTheLastThingTheScopeDoes(context, statement, owner, local)) {
+            return;
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
@@ -119,6 +131,101 @@ public sealed class RedundantDisposeAnalyzer : DiagnosticAnalyzer {
                 "`" + local.Name + "` is already disposed by its `using`, so this call is redundant"
             )
         );
+    }
+
+    static bool IsAwaitUsing(StatementSyntax owner) =>
+        owner switch {
+            UsingStatementSyntax use => !use.AwaitKeyword.IsKind(SyntaxKind.None),
+            LocalDeclarationStatementSyntax declaration => !declaration.AwaitKeyword.IsKind(SyntaxKind.None),
+            _ => false
+        };
+
+    /// <summary>Whether the called method is the interface member the <c>using</c> itself calls.</summary>
+    static bool IsTheContract(ITypeSymbol type, INamedTypeSymbol? contract, IMethodSymbol method) {
+        if (contract is null) {
+            return false;
+        }
+
+        foreach (var member in contract.GetMembers(method.Name)) {
+            if (member is not IMethodSymbol { Parameters.IsEmpty: true } required) {
+                continue;
+            }
+
+            return SymbolEqualityComparer.Default.Equals(method, required)
+                || SymbolEqualityComparer.Default.Equals(type.FindImplementationForInterfaceMember(required), method);
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     ⚠ Whether nothing runs between the call and the <c>using</c>'s own disposal: the statement is
+    ///     the last of its block, every block out to the scope is the last of its own, and no other
+    ///     <c>using</c> declared later in the scope is disposed in between.
+    /// </summary>
+    /// <remarks>
+    ///     A <c>return</c> of a literal, or of a local or parameter other than the resource, may follow:
+    ///     reading one runs nothing the disposal can have changed, and the <c>using</c> disposes as the
+    ///     <c>return</c> leaves.
+    /// </remarks>
+    static bool IsTheLastThingTheScopeDoes(
+        SyntaxNodeAnalysisContext context,
+        StatementSyntax statement,
+        StatementSyntax owner,
+        ILocalSymbol resource
+    ) {
+        var scope = owner is UsingStatementSyntax use ? use.Statement : owner.Parent;
+        if (scope is not BlockSyntax) {
+            return false;
+        }
+
+        SyntaxNode current = statement;
+        while (!ReferenceEquals(current, scope)) {
+            if (current.Parent is not BlockSyntax block) {
+                return false;
+            }
+
+            var index = block.Statements.IndexOf((StatementSyntax)current);
+            var rest = block.Statements.Count - index - 1;
+            if (rest > 1
+                || (rest == 1
+                    && (!ReferenceEquals(block, scope)
+                        || !IsAnInertReturn(context, block.Statements[index + 1], resource)))) {
+                return false;
+            }
+
+            current = block;
+        }
+
+        foreach (var node in scope.DescendantNodes()) {
+            if (node is LocalDeclarationStatementSyntax { UsingKeyword.RawKind: not (int)SyntaxKind.None } later
+                && !ReferenceEquals(later, owner)
+                && later.SpanStart > owner.SpanStart) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static bool IsAnInertReturn(SyntaxNodeAnalysisContext context, StatementSyntax next, ILocalSymbol resource) {
+        if (next is not ReturnStatementSyntax returned) {
+            return false;
+        }
+
+        switch (returned.Expression) {
+            case null:
+            case LiteralExpressionSyntax:
+                return true;
+
+            case IdentifierNameSyntax name:
+                var symbol = context.SemanticModel.GetSymbolInfo(name, context.CancellationToken).Symbol;
+                return symbol is ILocalSymbol { RefKind: RefKind.None } or IParameterSymbol { RefKind: RefKind.None }
+                    && !SymbolEqualityComparer.Default.Equals(symbol, resource);
+
+            default:
+                return false;
+        }
     }
 
     /// <summary>

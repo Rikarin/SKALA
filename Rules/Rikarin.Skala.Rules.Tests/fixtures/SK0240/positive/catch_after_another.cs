@@ -1,18 +1,21 @@
 using System;
-using System.IO;
 
 class C {
-    static void Log(Exception error) { }
+    static readonly int[] Values = new int[4];
+    static Exception? _last;
 
-    public static void Save() {
+    public static int Read(int index) {
+        var value = 0;
         try {
-            Run();
-        } catch (IOException error) {
-            Log(error);
+            value = Values[index];
+        } catch (IndexOutOfRangeException error) {
+            _last = error;
         } catch (InvalidOperationException) {
             throw;
         }
+
+        return value;
     }
 
-    static void Run() { }
+    public static Exception? Last => _last;
 }

@@ -58,11 +58,11 @@ public sealed class CleanupRedundancyBatchTests {
         "using System.Collections.Generic; static class C { static List<int> M() => new List<int> { }; }",
         "using System.Collections.Generic; static class C { static List<int> M() => new List<int>(); }"
     )]
-    // SK0231 — `ToString()` on something already a string.
+    // SK0231 — `ToString()` on something already a string, and never null (#425).
     [InlineData(
         "SK0231",
-        "static class C { static string M(string s) => s.ToString(); }",
-        "static class C { static string M(string s) => s; }"
+        """static class C { static string M(string s) => (s + "!").ToString(); }""",
+        """static class C { static string M(string s) => (s + "!"); }"""
     )]
     // SK0231 — the `foreach` copy, which is the allocation rather than the noise.
     [InlineData(
@@ -106,11 +106,12 @@ public sealed class CleanupRedundancyBatchTests {
         "static class C { static int R(bool c = true) => c ? 1 : 0; static int M() => R(true); }",
         "static class C { static int R(bool c = true) => c ? 1 : 0; static int M() => R(); }"
     )]
-    // SK0232 — the delegate creation becomes the method group the conversion would have taken.
+    // SK0232 — the delegate creation becomes the method group the conversion would have taken. An
+    // instance method, because a static one's conversion is cached and the identity would change (#425).
     [InlineData(
         "SK0232",
-        "using System; static class C { static void H(object? s, EventArgs e) { } static EventHandler M() { EventHandler h = new EventHandler(H); return h; } }",
-        "using System; static class C { static void H(object? s, EventArgs e) { } static EventHandler M() { EventHandler h = H; return h; } }"
+        "using System; sealed class C { int n; void H(object? s, EventArgs e) => n++; EventHandler M() { EventHandler h = new EventHandler(H); return h; } }",
+        "using System; sealed class C { int n; void H(object? s, EventArgs e) => n++; EventHandler M() { EventHandler h = H; return h; } }"
     )]
     // SK0232 — one lambda parameter loses its type and its parentheses together.
     [InlineData(

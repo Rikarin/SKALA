@@ -1,10 +1,16 @@
-using System;
 using System.Collections.Generic;
+using System.Text;
 
-public sealed class Report {
-    public static void Write(Dictionary<string, int> totals) {
+// The dictionary is created here and handed nowhere, so nothing the loop calls can change an entry
+// between reaching it and reading it.
+public static class Probe {
+    public static string Run() {
+        var totals = new Dictionary<string, int> { ["a"] = 1, ["b"] = 2 };
+        var written = new StringBuilder();
         foreach (var key in totals.Keys) {
-            Console.WriteLine(key + ": " + totals[key]);
+            written.Append(key + ": " + totals[key] + ";");
         }
+
+        return written.ToString();
     }
 }

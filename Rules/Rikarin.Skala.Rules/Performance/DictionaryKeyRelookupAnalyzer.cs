@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 
 namespace Rikarin.Skala.Rules.Performance;
@@ -202,7 +203,9 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
             }
         }
 
-        if (lookups.Count == 0) {
+        if (lookups.Count == 0
+            || !IsImmutable(dictionary)
+            && !NothingElseReachesItDuringTheLoop(model, loop, dictionarySymbol, cancellation)) {
             return;
         }
 
@@ -249,6 +252,87 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
                 + " time(s) per iteration"
             )
         );
+    }
+
+    static bool IsImmutable(INamedTypeSymbol dictionary) =>
+        dictionary.OriginalDefinition.ToDisplayString() is "System.Collections.Immutable.ImmutableDictionary<TKey, TValue>"
+            or "System.Collections.Immutable.ImmutableSortedDictionary<TKey, TValue>"
+            or "System.Collections.Frozen.FrozenDictionary<TKey, TValue>";
+
+    /// <summary>
+    ///     ⚠ Whether nothing but the loop's own reads can touch the dictionary while it is enumerated.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The deconstructed value is read once, when the entry is reached; the indexer read the
+    ///         dictionary as it stood at the lookup. Since .NET Core 3.0 an indexer write to an existing
+    ///         key and a <c>Remove</c> during enumeration do not throw, so anything that changes an entry
+    ///         between the two reads is observed by the indexer and not by the value. #412's audit
+    ///         measured both: <c>Bump(d, key)</c> before the lookup printed the stale value, and
+    ///         <c>d.Remove(key)</c> stopped throwing <c>KeyNotFoundException</c> (#425).
+    ///     </para>
+    ///     <para>
+    ///         Provable for one shape: a local holding a dictionary the method created, which is never
+    ///         handed anywhere — not passed, assigned, returned or captured — and which the loop body
+    ///         only reads. A field or a parameter may be reached by any call in the body, and those
+    ///         decline; an immutable dictionary cannot change and is admitted whatever holds it.
+    ///     </para>
+    /// </remarks>
+    static bool NothingElseReachesItDuringTheLoop(
+        SemanticModel model,
+        ForEachStatementSyntax loop,
+        ISymbol dictionary,
+        CancellationToken cancellation
+    ) {
+        if (dictionary is not ILocalSymbol { DeclaringSyntaxReferences.Length: 1 } local
+            || local.DeclaringSyntaxReferences[0].GetSyntax(cancellation) is not VariableDeclaratorSyntax {
+                Initializer.Value: BaseObjectCreationExpressionSyntax
+            } declarator) {
+            return false;
+        }
+
+        foreach (var name in Enclosing(loop).DescendantNodes().OfType<IdentifierNameSyntax>()) {
+            if (name.Identifier.ValueText != local.Name
+                || declarator.Span.Contains(name.Span)
+                || !Resolves(model, name, local, cancellation)) {
+                continue;
+            }
+
+            if (name.Ancestors()
+                    .Any(static ancestor => ancestor is AnonymousFunctionExpressionSyntax
+                            or LocalFunctionStatementSyntax
+                    )) {
+                return false;
+            }
+
+            var inside = loop.Statement.Span.Contains(name.Span);
+            switch (name.Parent) {
+                case ElementAccessExpressionSyntax access when access.Expression == name:
+                    if (inside && IsWritten(access)) {
+                        return false;
+                    }
+
+                    break;
+
+                case MemberAccessExpressionSyntax access when access.Expression == name:
+                    if (inside
+                        && access.Name.Identifier.ValueText is not ("ContainsKey"
+                            or "TryGetValue"
+                            or "Count"
+                            or "Keys"
+                            or "Values"
+                            or "Comparer")) {
+                        return false;
+                    }
+
+                    break;
+
+                default:
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     static bool Contains(List<INamedTypeSymbol> dictionaries, INamedTypeSymbol type) {

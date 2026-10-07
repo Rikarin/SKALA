@@ -103,6 +103,12 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ #425: a `using` local is read-only, so a struct one is copied before every mutating call
+        // and a field write is CS1654. #412's audit measured both. A disposable struct is declined.
+        if (type.IsValueType) {
+            return;
+        }
+
         // ⚠ Ownership passed *inward*. `new StreamReader(stream)` disposes `stream` when the reader
         // is disposed, so a `using` here closes something the caller may still be holding.
         foreach (var argument in creation.ArgumentList?.Arguments ?? default) {
@@ -114,6 +120,13 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
 
         var body = EnclosingBody(statement);
         if (body is null || IsIterator(body)) {
+            return;
+        }
+
+        // ⚠ #425: a `goto` that jumps over a `using` declaration into its scope is CS8648, and one that
+        // jumps back over it is CS8649. Any `goto` in the body declines, rather than working out which
+        // label lies where.
+        if (body.DescendantNodes().Any(static node => node is GotoStatementSyntax)) {
             return;
         }
 
@@ -215,6 +228,10 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
                         }
                     }
 
+                    if (!CannotCarryTheObject(context, conditional)) {
+                        return false;
+                    }
+
                     read = true;
                     continue;
 
@@ -240,10 +257,21 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
     ///     on, and the rule cannot follow the product.
     /// </remarks>
     static bool HandsOutADisposable(SyntaxNodeAnalysisContext context, ExpressionSyntax read) {
-        var produced = read.Parent is InvocationExpressionSyntax invocation
-            && ReferenceEquals(invocation.Expression, read)
-                ? invocation
-                : read;
+        var invoked = read.Parent is InvocationExpressionSyntax invocation
+            && ReferenceEquals(invocation.Expression, read);
+        var produced = invoked ? (ExpressionSyntax)read.Parent! : read;
+
+        // ⚠ #425: and not only a disposable. Whatever a read hands out may be tied to the object
+        // and outlive the scope by another route — a second local, a field, a captured delegate.
+        // #412's audit measured `var token = cts.Token; return token;` (ObjectDisposedException at the
+        // caller) and `s_read = stream.ReadByte;` (a method group that keeps the stream). Only a read
+        // whose result cannot carry the object is admitted: nothing, a primitive, a string or an enum,
+        // a value nothing keeps, or a member being written rather than read. ⚠ A method group needs
+        // no check of its own: it has no type, so it is never one of those. A separate guard for it
+        // was written and its sabotage turned nothing red.
+        if (!CannotCarryTheObject(context, produced)) {
+            return true;
+        }
 
         var type = context.SemanticModel.GetTypeInfo(produced, context.CancellationToken).Type;
         if (type is null || type.SpecialType != SpecialType.None || type.TypeKind == TypeKind.Error) {
@@ -260,6 +288,24 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
 
         return string.Equals(type.ToDisplayString(), "System.IDisposable", StringComparison.Ordinal)
             || string.Equals(type.ToDisplayString(), "System.IAsyncDisposable", StringComparison.Ordinal);
+    }
+
+    static bool CannotCarryTheObject(SyntaxNodeAnalysisContext context, ExpressionSyntax produced) {
+        if (produced.Parent is ExpressionStatementSyntax
+            || produced.Parent is AssignmentExpressionSyntax assignment
+            && ReferenceEquals(assignment.Left, produced)) {
+            return true;
+        }
+
+        return context.SemanticModel.GetTypeInfo(produced, context.CancellationToken).Type switch {
+            null => false,
+            { SpecialType: SpecialType.System_Void or SpecialType.System_String } => true,
+            { TypeKind: TypeKind.Enum } => true,
+            var type => type.SpecialType is >= SpecialType.System_Boolean
+                and <= SpecialType.System_Double
+                or SpecialType.System_Decimal
+                or SpecialType.System_DateTime,
+        };
     }
 
     static SyntaxNode? EnclosingBody(SyntaxNode node) {

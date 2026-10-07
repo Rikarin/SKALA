@@ -549,4 +549,72 @@ public sealed class CrossFixtureFixTests {
                 )
         ];
     }
+
+    /// <summary>
+    ///     ⚠ #425: the rules whose fixes #412's audit measured changing a program for a reason of their
+    ///     own — a value's representation, a delegate's identity, a scan order, an exception pass, a
+    ///     disposal's timing — each against its own executable fixtures, whether the catalogue calls its
+    ///     fix safe or not.
+    /// </summary>
+    /// <remarks>
+    ///     Every recorded shape is a negative fixture with a <c>Probe</c>, so the guard declines it and
+    ///     nothing is applied there; a sabotaged guard turns the negative red. What this theory adds is
+    ///     the positive side: each rule has an executable positive whose fix is applied and run, so a
+    ///     guard that admits a shape it should not shows up here as a changed result. <c>SK4010</c>,
+    ///     <c>SK7110</c> and <c>SK2113</c> stay unsafe by construction (an exception message, a log
+    ///     category, a throw where null was returned), and the first is pinned here all the same.
+    /// </remarks>
+    public static TheoryData<string> SemanticChangeRules =>
+        new(
+            "SK0231",
+            "SK0232",
+            "SK0240",
+            "SK0244",
+            "SK0280",
+            "SK2015",
+            "SK2121",
+            "SK3501",
+            "SK3510",
+            "SK4010",
+            "SK4021",
+            "SK4031",
+            "SK4034",
+            "SK8022"
+        );
+
+    [Theory]
+    [MemberData(nameof(SemanticChangeRules))]
+    public void TheSemanticFix_OnItsOwnExecutableFixtures_PreservesTheResult(string id) =>
+        TheEvaluationCountFix_OnItsOwnExecutableFixtures_PreservesTheResult(id);
+
+    /// <summary>
+    ///     ⚠ #425: why <c>SK4010</c> stays unsafe. Folding the predicate into <c>First</c> keeps the
+    ///     exception's type and changes its message, and the message is what the fix rewrites.
+    /// </summary>
+    [Fact]
+    public void TheFoldedPredicate_OnNoMatch_ChangesTheExceptionMessage() {
+        var cancellation = TestContext.Current.CancellationToken;
+        const string source = """
+                              using System;
+                              using System.Collections.Generic;
+                              using System.Linq;
+
+                              public static class Probe {
+                                  public static string Run() {
+                                      var values = new List<int> { 1, 2 };
+                                      try {
+                                          return values.Where(value => value > 5).First().ToString();
+                                      } catch (InvalidOperationException thrown) {
+                                          return thrown.Message;
+                                      }
+                                  }
+                              }
+                              """;
+        var before = RuleFixtures.Compile(source, PlantedPath);
+        var (id, text) = Assert.Single(FixedTexts(source, before, static rule => rule == "SK4010", cancellation));
+
+        Assert.Equal("SK4010", id);
+        Assert.Contains("values.First(value => value > 5)", text, StringComparison.Ordinal);
+        Assert.NotEqual(Probe(before, cancellation), Probe(RuleFixtures.Compile(text, PlantedPath), cancellation));
+    }
 }

@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Modernization;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -141,6 +142,18 @@ public sealed class WhereBeforeOperatorAnalyzer : DiagnosticAnalyzer {
             || Original(where) is not { Parameters.Length: 2 } whereDefinition
             || !SymbolEqualityComparer.Default.Equals(whereDefinition.ContainingType, enumerable)
             || !IsPredicate(whereDefinition.Parameters[1].Type)) {
+            return;
+        }
+
+        // ⚠ #425: `Last(p)` and `LastOrDefault(p)` on an `IList<T>` that is not a `List<T>` or an array
+        // scan backward from the end and stop at the first match, where `Where(p).Last()` ran `p` on every
+        // element in order. #412's audit measured it on `Collection<T>`: a predicate that threw on the
+        // first element stopped throwing, and one that logged saw `4` instead of `1,2,3,4`. (A second
+        // audit run that reported no difference used a `List<T>`.) Only a predicate that runs nothing
+        // and cannot throw makes the visiting order unobservable.
+        if (consumerAccess.Name.Identifier.ValueText is "Last" or "LastOrDefault"
+            && (filter.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax { ExpressionBody: { } body }
+                || !RewriteGuards.IsFreeToSkip(body, model, cancellation))) {
             return;
         }
 

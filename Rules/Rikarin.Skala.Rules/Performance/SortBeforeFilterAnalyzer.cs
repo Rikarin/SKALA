@@ -4,8 +4,10 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Modernization;
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 
 namespace Rikarin.Skala.Rules.Performance;
 
@@ -118,9 +120,25 @@ public sealed class SortBeforeFilterAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ #425: moving the filter in front of the sort changes when each function runs and on what —
+        // the predicate sees source order instead of sorted order, and the key selector no longer runs
+        // on an element the filter drops. #412's audit measured a stateful predicate pick `1,3` where it
+        // had picked `3,5`, and a throwing key selector over a dropped element stop throwing. Both
+        // lambdas must be expressions that run nothing and cannot throw, and a comparer declines.
+        if (sort.ArgumentList.Arguments.Count > 1
+            || !IsInert(model, filter.ArgumentList.Arguments[0].Expression, cancellation)
+            || (sort.ArgumentList.Arguments.Count == 1
+                && !IsInert(model, sort.ArgumentList.Arguments[0].Expression, cancellation))) {
+            return;
+        }
+
         var tree = filter.SyntaxTree;
         var sortText = tree.GetText(cancellation).ToString(sortSpan);
         var filterText = tree.GetText(cancellation).ToString(filterSpan);
+
+        if (!KeepsItsMeaning(model, filter, sortSpan, filterSpan, sortText, filterText, cancellation)) {
+            return;
+        }
 
         context.ReportDiagnostic(
             Diagnostic.Create(
@@ -150,6 +168,75 @@ public sealed class SortBeforeFilterAnalyzer : DiagnosticAnalyzer {
         && Array.IndexOf(Sk4010Consumers, access.Name.Identifier.ValueText) >= 0;
 
     static IMethodSymbol Original(IMethodSymbol method) => (method.ReducedFrom ?? method).OriginalDefinition;
+
+    /// <summary>A lambda whose body is an expression that runs nothing and cannot throw.</summary>
+    static bool IsInert(SemanticModel model, ExpressionSyntax argument, CancellationToken cancellation) =>
+        argument is LambdaExpressionSyntax { ExpressionBody: { } body }
+        && RewriteGuards.IsFreeToSkip(body, model, cancellation);
+
+    /// <summary>
+    ///     ⚠ Whether the reordered pipeline, now typed <c>IOrderedEnumerable&lt;T&gt;</c> rather than
+    ///     <c>IEnumerable&lt;T&gt;</c>, means the same where it stands.
+    /// </summary>
+    /// <remarks>
+    ///     #412's audit: the wider type re-binds an overload that takes it, and a <c>var</c> infers it.
+    ///     The rewrite is bound where it lands: the call it is the receiver of must be the same method,
+    ///     a call it is an argument of must be the same method, and anywhere else it must convert to the
+    ///     same type as before. A <c>foreach</c> enumerates it either way.
+    /// </remarks>
+    static bool KeepsItsMeaning(
+        SemanticModel model,
+        InvocationExpressionSyntax filter,
+        TextSpan sortSpan,
+        TextSpan filterSpan,
+        string sortText,
+        string filterText,
+        CancellationToken cancellation
+    ) {
+        var text = filter.ToString();
+        var offset = filter.SpanStart;
+        var rewritten = text.Substring(0, sortSpan.Start - offset)
+            + filterText
+            + text.Substring(sortSpan.End - offset, filterSpan.Start - sortSpan.End)
+            + sortText;
+        if (!FixRebind.TrySpeculate(
+                model,
+                filter,
+                SyntaxFactory.ParseExpression(rewritten),
+                out var speculative,
+                out var placed
+            )) {
+            return false;
+        }
+
+        switch (filter.Parent) {
+            case ForEachStatementSyntax loop when loop.Expression == filter:
+                return true;
+
+            case MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax call } access
+                when access.Expression == filter:
+                return placed.Parent is MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax rebound }
+                    && FixRebind.Same(
+                        model.GetSymbolInfo(call, cancellation).Symbol,
+                        speculative.GetSymbolInfo(rebound, cancellation).Symbol
+                    );
+
+            case ArgumentSyntax { Parent.Parent: { } call }:
+                if (placed.Parent?.Parent?.Parent is not { } enclosing
+                    || !FixRebind.Same(
+                        model.GetSymbolInfo(call, cancellation).Symbol,
+                        speculative.GetSymbolInfo(enclosing, cancellation).Symbol
+                    )) {
+                    return false;
+                }
+
+                break;
+        }
+
+        var before = model.GetTypeInfo(filter, cancellation).ConvertedType;
+        var after = speculative.GetTypeInfo(placed, cancellation).ConvertedType;
+        return before is not null && SymbolEqualityComparer.Default.Equals(before, after);
+    }
 
     static bool IsPredicate(ITypeSymbol type) =>
         type is INamedTypeSymbol { Name: "Func", TypeArguments.Length: 2 } func

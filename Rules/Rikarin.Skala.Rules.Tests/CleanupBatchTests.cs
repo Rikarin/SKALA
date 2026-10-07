@@ -111,8 +111,8 @@ public sealed class CleanupBatchTests {
     ///     the wrong one through, which is text that does not compile rather than a worse suggestion.
     /// </remarks>
     [Theory]
-    [InlineData("catch_sole", "Write(path, payload);")]
-    [InlineData("catch_general", "Run();")]
+    [InlineData("catch_sole", "value = Values[index];")]
+    [InlineData("catch_general", "total = Values[first];")]
     public void SK0240_UnwrapsTheTryWhenTheRethrowIsTheOnlyClause(string name, string kept) {
         var path = Path.Combine(RuleFixtures.Root, "SK0240", "positive", name + ".cs");
         var after = Apply(File.ReadAllText(path), Findings(path, "SK0240"));
@@ -172,7 +172,7 @@ public sealed class CleanupBatchTests {
         Assert.DoesNotContain("try", after, StringComparison.Ordinal);
         Assert.DoesNotContain("catch", after, StringComparison.Ordinal);
         Assert.DoesNotContain("finally", after, StringComparison.Ordinal);
-        Assert.Contains("Run();", after, StringComparison.Ordinal);
+        Assert.Contains("_value = Values[index];", after, StringComparison.Ordinal);
     }
 
     /// <summary>

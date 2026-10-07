@@ -1,13 +1,12 @@
 using System.Threading;
 
-public sealed class Deadline {
-    // The source outlives nothing: `Work` is synchronous and has returned before the end of the
-    // scope, so disposing there is exactly right.
-    public void Run() {
+// Every read hands back a bool or nothing, so nothing the source owns leaves the scope and disposing
+// it at the end is exactly right.
+public static class Probe {
+    public static bool Run() {
         var source = new CancellationTokenSource();
-        source.CancelAfter(1000);
-        Work(source.Token);
+        source.Cancel();
+        var cancelled = source.IsCancellationRequested;
+        return cancelled;
     }
-
-    static void Work(CancellationToken token) { }
 }

@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Metadata;
@@ -291,9 +292,15 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
             // ⚠ A `when` clause is an expression that runs, so an arm carrying one is not inert even
             // when its value agrees; and a pattern that binds a name makes two syntactically identical
             // expressions mean different things.
+            // ⚠ #425: and a pattern whose test runs code — a property subpattern's getter, a
+            // `Deconstruct` — is evaluated once with the arm and never without it. #412's audit
+            // measured `{ P: 1 } => "x"` reading `P` once before the deletion and zero times after.
             if (arm.WhenClause is not null
                 || BindsAName(arm.Pattern)
-                || !SyntaxFactory.AreEquivalent(arm.Expression, last.Expression, false)) {
+                || !SyntaxFactory.AreEquivalent(arm.Expression, last.Expression, false)
+                || context.SemanticModel.GetOperation(arm, context.CancellationToken)
+                is not ISwitchExpressionArmOperation { Pattern: var pattern }
+                || !RewriteGuards.IsFreeToSkip(pattern)) {
                 break;
             }
 
@@ -494,7 +501,8 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
             foreach (var label in section.Labels) {
                 if (label.IsKind(SyntaxKind.DefaultSwitchLabel)
                     || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, LabelSpan(label))
-                    || !HasNoDirective(label)) {
+                    || !HasNoDirective(label)
+                    || !IsUnreachableByLaterLabels(context, statement, section, label)) {
                     continue;
                 }
 
@@ -563,6 +571,91 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
         ) is not null;
 
     /// <summary>
+    ///     ⚠ Whether a value this label matches would still reach <c>default:</c> without it, rather
+    ///     than a <c>case</c> further down — and whether the label's own test runs nothing.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <c>default:</c> is tried last, but every <c>case</c> is tried in source order, so a label
+    ///         sharing a section with <c>default:</c> is redundant only if no later label could take
+    ///         its values. #412's audit measured both directions: <c>case 5: default:</c> above
+    ///         <c>case &gt; 4:</c> sent <c>5</c> to the later section once the label was gone, and so
+    ///         did <c>case int n when n &gt; 0: default:</c> above <c>case 5:</c>.
+    ///     </para>
+    ///     <para>
+    ///         Two shapes are decidable. No later section has a <c>case</c> at all. Or the label is a
+    ///         constant and every later label is a constant too: two constant labels matching one value
+    ///         is CS0152, so no later constant can take this one's value. A pattern label below, or a
+    ///         pattern label here, is the open case and is declined.
+    ///     </para>
+    /// </remarks>
+    static bool IsUnreachableByLaterLabels(
+        SyntaxNodeAnalysisContext context,
+        SwitchStatementSyntax statement,
+        SwitchSectionSyntax section,
+        SwitchLabelSyntax label
+    ) {
+        if (context.SemanticModel.GetOperation(label, context.CancellationToken) is not ICaseClauseOperation clause) {
+            return false;
+        }
+
+        // The label's own test is deleted with it, so it may run nothing: a property pattern's getter
+        // or a `when` that calls something happened once and would not happen at all.
+        switch (clause) {
+            case ISingleValueCaseClauseOperation single:
+                if (!RewriteGuards.IsFreeToSkip(single.Value)) {
+                    return false;
+                }
+
+                break;
+
+            case IPatternCaseClauseOperation patterned:
+                if (!RewriteGuards.IsFreeToSkip(patterned.Pattern)
+                    || (patterned.Guard is { } guard && !RewriteGuards.IsFreeToSkip(guard))) {
+                    return false;
+                }
+
+                break;
+
+            default:
+                return false;
+        }
+
+        var isConstant = IsConstant(clause);
+        var later = false;
+        foreach (var other in statement.Sections) {
+            if (other == section) {
+                later = true;
+                continue;
+            }
+
+            if (!later) {
+                continue;
+            }
+
+            foreach (var otherLabel in other.Labels) {
+                if (otherLabel.IsKind(SyntaxKind.DefaultSwitchLabel)) {
+                    continue;
+                }
+
+                if (!isConstant
+                    || !IsConstant(context.SemanticModel.GetOperation(otherLabel, context.CancellationToken))) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>A <c>case</c> label that is one constant and nothing else, however Roslyn shapes it.</summary>
+    static bool IsConstant(IOperation? clause) =>
+        clause is ISingleValueCaseClauseOperation { Value.ConstantValue.HasValue: true }
+            or IPatternCaseClauseOperation {
+                Guard: null, Pattern: IConstantPatternOperation { Value.ConstantValue.HasValue: true },
+            };
+
+    /// <summary>
     ///     The label and the whitespace up to the next token, so deleting it does not orphan a line.
     /// </summary>
     static TextSpan LabelSpan(SwitchLabelSyntax label) =>
@@ -625,6 +718,17 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
 
         var tree = context.Node.SyntaxTree;
         if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, clause.Span)) {
+            return false;
+        }
+
+        // ⚠ #425: the `catch` is where the first pass of exception handling stops, so every `finally`
+        // beneath it runs before an outer `when` filter sees the rethrow. Deleted, the outer filter
+        // runs first — #412's audit measured "finally, filter" become "filter, finally" with the
+        // `finally` in a called method. Only a try block that runs no code but the language's own (and
+        // #430's inert framework methods over text and numbers) can reach no `finally` that matters.
+        if (!RewriteGuards.RunsNoOtherCode(
+                context.SemanticModel.GetOperation(statement.Block, context.CancellationToken)
+            )) {
             return false;
         }
 

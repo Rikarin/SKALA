@@ -149,6 +149,13 @@ internal static class RewriteGuards {
     public static bool IsFreeToSkip(ExpressionSyntax expression, SemanticModel model, CancellationToken cancellation) =>
         IsFreeToSkip(model.GetOperation(expression, cancellation));
 
+    /// <inheritdoc cref="IsFreeToSkip(IOperation)" />
+    /// <remarks>
+    ///     A pattern a rewrite deletes — an arm of a switch, a <c>case</c> label — is tested zero times
+    ///     instead of once: no property getter, <c>Deconstruct</c> or <c>ITuple</c> may run in it (#425).
+    /// </remarks>
+    public static bool IsFreeToSkip(IPatternOperation? pattern) => pattern is not null && AdmitsPattern(pattern, false);
+
     /// <summary>
     ///     ⚠ Whether running <paramref name="operation" /> can execute no code but the language's own and
     ///     a handful of framework methods over text and numbers — so nothing it does can reach an object
