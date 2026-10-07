@@ -1247,7 +1247,6 @@ public static class PreferenceSweep {
 
             return new Artefact(
                 "sk-div-preference-sweep",
-
                 Version,
                 "jb cleanupcode",
                 runner.Version,

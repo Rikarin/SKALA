@@ -73,7 +73,13 @@ public sealed partial class CSharpDocumentBuilder {
         // 1. Caps. The author's runs are truncated, never extended.
         var cap = Math.Max(0, declaration ? options.KeepBlankLinesInDeclarations : options.KeepBlankLinesInCode);
 
-        // 0. ⚠ Inside a `///` run the blank count is structure, and none of the three systems below
+        // 1½. ⚠ Neither keep key reaches inside a construct: the oracle keeps an author's blank line
+        // only in front of something that stands on a line of its own (#426, SK-DIV-0196).
+        if (!BlankLineMayStandBefore(previous, nextToken)) {
+            cap = 0;
+        }
+
+        // 0.⚠ Inside a `///` run the blank count is structure, and none of the three systems below
         // gets a vote. Roslyn ends a documentation comment at a blank line, so the gap between two
         // `///` lines is the only whitespace in the language where 0 → 1 *splits one trivia into
         // two* and 1 → 0 fuses two into one. Either is a changed token stream, the safety net
@@ -292,11 +298,20 @@ public sealed partial class CSharpDocumentBuilder {
             return false;
         }
 
-        if (previous.Kind == PieceKind.Token && tokens[previous.TokenIndex].IsKind(SyntaxKind.OpenBraceToken)) {
+        if (previous.Kind == PieceKind.Token && IsBraceOpening(tokens[previous.TokenIndex])) {
             return true;
         }
 
-        return nextToken.IsKind(SyntaxKind.CloseBraceToken);
+        // ⚠ A collection expression's brackets are braces to this key (#426, SK-DIV-0196): measured,
+        // `1, 2, 3` / blank / `];` loses the blank at `true` and keeps it at `false`, as a `}` does.
+        return nextToken.IsKind(SyntaxKind.CloseBraceToken)
+            || nextToken.IsKind(SyntaxKind.CloseBracketToken)
+            && nextToken.Parent is CollectionExpressionSyntax;
+
+        static bool IsBraceOpening(SyntaxToken token) =>
+            token.IsKind(SyntaxKind.OpenBraceToken)
+            || token.IsKind(SyntaxKind.OpenBracketToken)
+            && token.Parent is CollectionExpressionSyntax;
     }
 
     /// <summary>
@@ -1421,6 +1436,100 @@ public sealed partial class CSharpDocumentBuilder {
     ///     Declarations or code? The caps differ (<c>keep_blank_lines_in_declarations</c> against
     ///     <c>keep_blank_lines_in_code</c>) and so do the removal keys.
     /// </summary>
+    /// <summary>
+    ///     Whether an author's blank line in front of <paramref name="token" /> survives at all — the
+    ///     keep keys cap it — or is taken out whatever they say.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 under <c>SkalaFormatOnly</c> (#426,
+    ///     SK-DIV-0196). The issue saw the blank between a trailing comment and <c>)</c>; the rule is
+    ///     wider and the comment was incidental. The oracle removes a blank line in every gap inside an
+    ///     argument, parameter, type-argument, attribute, base or declarator list, an element access, an
+    ///     object, collection, anonymous or <c>with</c> initializer, a property pattern, a tuple, a chain,
+    ///     a query, a conditional and a constraint list, after a declaration's <c>=</c> or an expression
+    ///     body's <c>=&gt;</c>, after <c>return</c>, between two attribute lists and before a
+    ///     statement's <c>;</c> — before the closer as between the items. It keeps one before a
+    ///     statement, a member, an accessor, a switch section or label, a switch expression arm, a
+    ///     collection-expression element, <c>else</c>, <c>catch</c> and <c>finally</c>.
+    ///     <list type="bullet">
+    ///         <item>
+    ///             Before a comment it keeps it (<c>1,</c> / blank / <c>// c</c> / <c>2</c>), and between
+    ///             two comments: a comment piece arrives here as <c>None</c>, so that gap is not asked.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ <b>After a <c>//</c> comment inside braces it keeps it too, and only there.</b> In an
+    ///             initializer, an anonymous object and a property pattern, <c>1, // e</c> / blank /
+    ///             <c>2</c> and <c>{ // e</c> / blank / <c>1</c> keep the blank, and so does
+    ///             <c>2 // e</c> / blank / <c>}</c> where <c>remove_blank_lines_near_braces_in_code</c> is
+    ///             false. In an argument list, an element access, a type-argument or attribute list and
+    ///             a conditional the same comment changes nothing, and after a <c>/* */</c> the blank goes
+    ///             everywhere.
+    ///         </item>
+    ///         <item>
+    ///             A brace or bracket that opens or closes a block, a body, a switch expression or a
+    ///             collection expression is left to <c>remove_blank_lines_near_braces_*</c>, which the
+    ///             oracle follows there at both values.
+    ///         </item>
+    ///     </list>
+    /// </remarks>
+    static bool BlankLineMayStandBefore(Piece previous, SyntaxToken token) {
+        if (token.IsKind(SyntaxKind.None) || token.IsKind(SyntaxKind.EndOfFileToken)) {
+            return true;
+        }
+
+        if (token.Kind() is SyntaxKind.OpenBraceToken or SyntaxKind.CloseBraceToken
+            && IsBody(token.Parent)
+            || token.Kind() is SyntaxKind.OpenBracketToken or SyntaxKind.CloseBracketToken
+            && token.Parent is CollectionExpressionSyntax) {
+            return true;
+        }
+
+        var afterLineComment = previous.Kind == PieceKind.LineComment;
+        if (afterLineComment && token.IsKind(SyntaxKind.CloseBraceToken) && IsBracedList(token.Parent)) {
+            return true;
+        }
+
+        for (var node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
+            switch (node) {
+                case StatementSyntax:
+                case MemberDeclarationSyntax:
+                case AccessorDeclarationSyntax:
+                case SwitchSectionSyntax:
+                case SwitchLabelSyntax:
+                case SwitchExpressionArmSyntax:
+                case CollectionElementSyntax:
+                case ElseClauseSyntax:
+                case CatchClauseSyntax:
+                case FinallyClauseSyntax:
+                case UsingDirectiveSyntax:
+                case ExternAliasDirectiveSyntax:
+                case AttributeListSyntax { Parent: CompilationUnitSyntax }:
+                    return true;
+                default:
+                    if (afterLineComment && IsBracedList(node.Parent)) {
+                        return true;
+                    }
+
+                    break;
+            }
+        }
+
+        return false;
+
+        static bool IsBody(SyntaxNode? node) =>
+            node is BlockSyntax
+                or BaseTypeDeclarationSyntax
+                or BaseNamespaceDeclarationSyntax
+                or AccessorListSyntax
+                or SwitchStatementSyntax
+                or SwitchExpressionSyntax;
+
+        static bool IsBracedList(SyntaxNode? node) =>
+            node is InitializerExpressionSyntax
+                or AnonymousObjectCreationExpressionSyntax
+                or PropertyPatternClauseSyntax;
+    }
+
     static bool InDeclarationContext(SyntaxToken token) {
         for (var node = token.Parent; node is not null; node = node.Parent) {
             switch (node) {
