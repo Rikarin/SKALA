@@ -1218,7 +1218,9 @@ public static class Ids {
 
     public static readonly OptionId IndentSize = Of("skala_indent_size");
     public static readonly OptionId TabWidth = OfInert("skala_tab_width");
+
     public static readonly OptionId IndentStyle = Of("skala_indent_style");
+
     // ⚠ Inert for the same reason `TabWidth` above is, and the reason is the *corpus* rather than the
     // key: every committed fixture is indented with spaces, and with spaces all three values spell the
     // identical column. `LayoutWriter.WriteIndentTo` now writes three distinct layouts under tabs, each
@@ -2120,6 +2122,7 @@ public static class Ids {
     // absolute column, and a level count has nothing to say about a column. All four values return
     // the same file while that key is on; turn it off and the family's table applies here too.
     public static readonly OptionId IndentStatementPars = OfInert("skala_indent_statement_pars");
+
     // ⚠ SK-DIV-0041's shape is RESOLVED, and the sentence that carried it was wrong on its own
     // terms. It read: at `none` the oracle gives a `>` the author left on its own line the level of
     // its opener's line, Skala leaves it on the ambient continuation, and that "needs a zero-level
@@ -2245,7 +2248,9 @@ public static class Ids {
 
     public static readonly OptionId BlankLinesAroundNamespace = Of("skala_blank_lines_around_namespace");
     public static readonly OptionId BlankLinesAroundRegion = Of("skala_blank_lines_around_region");
+
     public static readonly OptionId BlankLinesInsideRegion = Of("skala_blank_lines_inside_region");
+
     // ⚠ No longer inert, and the reason they were is the reason to record. Both were `OfInert` on
     // "the removal rules win over skala_blank_lines_inside_type outright" — which was true of Skala and
     // not of the oracle. Asked at `jb cleanupcode` 2025.2.6 under this repository's own
@@ -2390,7 +2395,9 @@ public static class Ids {
 
     public static readonly OptionId WrapBeforeBinaryOpsign = Of("skala_wrap_before_binary_opsign");
     public static readonly OptionId WrapBeforeBinaryPatternOp = Of("skala_wrap_before_binary_pattern_op");
+
     public static readonly OptionId WrapBeforeTernaryOpsigns = Of("skala_wrap_before_ternary_opsigns");
+
     // ⚠ No longer inert. Milestone 2 recorded that no input could tell its two values apart,
     // because M2 never *added* a break at either side of an `=` and the key only chooses a side.
     // M3 added one — GroupFacts.PrefersOuterBreak — and the key became observable the moment it
@@ -2832,6 +2839,7 @@ public static class Ids {
         Of("skala_xmldoc_linebreaks_inside_tags_for_multiline_elements");
 
     public static readonly OptionId XmlDocSpaceBeforeSelfClosing = Of("skala_xmldoc_space_before_self_closing");
+
     // ⚠ Inert, and the sweep's `SPURIOUS` on both of them was right about the direction and wrong
     // about the cause. They were promoted on a fixture that agrees at `4`/`space` — which is what
     // the *C#* `indent_size` also produces — and the fixture could not tell the two keys apart.
