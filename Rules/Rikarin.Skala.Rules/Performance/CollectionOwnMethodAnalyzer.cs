@@ -2,8 +2,10 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Modernization;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -271,8 +273,17 @@ public sealed class CollectionOwnMethodAnalyzer : DiagnosticAnalyzer {
         }
 
         // ⚠ The value moves out of the lambda and is evaluated once per call rather than once per
-        // element — for a name path that is the same thing, and for anything else it is not.
-        return CallShape.IsPlainNamePath(other) || other is LiteralExpressionSyntax ? other : null;
+        // element — so on an empty list once rather than never. #423: a name path is not enough, since
+        // `Any(x => x == cursor.Next)` ran a counting getter once per element and `Contains(cursor.Next)`
+        // once, and a receiver that is null throws where the lambda never ran. The value has to be
+        // free to skip, read off the operand the comparison actually evaluates.
+        if ((!CallShape.IsPlainNamePath(other) && other is not LiteralExpressionSyntax)
+            || model.GetOperation(equality, cancellation) is not IBinaryOperation comparison
+            || !RewriteGuards.IsFreeToSkip(other == equality.Left ? comparison.LeftOperand : comparison.RightOperand)) {
+            return null;
+        }
+
+        return other;
     }
 
     static bool IsParameter(

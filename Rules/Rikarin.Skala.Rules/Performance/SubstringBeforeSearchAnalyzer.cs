@@ -2,9 +2,12 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Modernization;
 using System.Collections.Immutable;
+using System.Threading;
 
 namespace Rikarin.Skala.Rules.Performance;
 
@@ -101,16 +104,22 @@ public sealed class SubstringBeforeSearchAnalyzer : DiagnosticAnalyzer {
 
         // ⚠ The offset is inserted as the second positional argument, so a named argument anywhere
         // in the list makes the written order and the parameter order two different things.
+        // ⚠ Evaluation order changes: `n` and the `Substring` call used to run before the search
+        // arguments, and now the arguments run first. #423: a name path did not remove the question —
+        // two getters printed "Start, Needle" before and "Needle, Start" after. The arguments, which
+        // move, must be free to skip: no code anybody wrote and no throw, so nothing can tell when
+        // they ran. The offset keeps its place relative to everything observable and only has to run
+        // no code of its own — a getter there could change what an argument reads.
         foreach (var argument in search.ArgumentList.Arguments) {
-            if (argument.NameColon is not null || !IsSideEffectFree(argument.Expression)) {
+            if (argument.NameColon is not null
+                || !IsSideEffectFree(argument.Expression)
+                || !RewriteGuards.IsFreeToSkip(ArgumentValue(model, argument, cancellation))) {
                 return;
             }
         }
 
-        // ⚠ Evaluation order changes: `n` used to run before the search arguments and now runs
-        // after them. Demanding that both sides are name paths or literals removes the question
-        // rather than reasoning about it.
-        if (!IsSideEffectFree(offset.Expression)) {
+        if (!IsSideEffectFree(offset.Expression)
+            || !RewriteGuards.IsFreeToRepeat(ArgumentValue(model, offset, cancellation))) {
             return;
         }
 
@@ -246,7 +255,11 @@ public sealed class SubstringBeforeSearchAnalyzer : DiagnosticAnalyzer {
         }
     }
 
-    /// <summary>A literal, or a path of names; anything else may run something when it is read.</summary>
+    /// <summary>The value an argument passes, conversions to the parameter's type included.</summary>
+    static IOperation? ArgumentValue(SemanticModel model, ArgumentSyntax argument, CancellationToken cancellation) =>
+        model.GetOperation(argument, cancellation) is IArgumentOperation { Value: var value } ? value : null;
+
+    /// <summary>A literal, or a path of names: the shape the rewrite moves. What it runs is asked separately.</summary>
     static bool IsSideEffectFree(ExpressionSyntax expression) =>
         expression is LiteralExpressionSyntax
         || expression is PrefixUnaryExpressionSyntax {

@@ -65,7 +65,12 @@ public sealed class NullOrEmptyCheckAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (!RewriteGuards.IsPlainNamePath(target) || !RewriteGuards.Same(target, other)) {
+        // ⚠ #423: the path is read twice by the original and once by the call, so every link must be
+        // storage. A getter used to be admitted as a plain name, and `s.Name == null || s.Name.Length
+        // == 0` over a getter answering differently the second time went from
+        // `NullReferenceException` to `False`.
+        if (!RewriteGuards.IsStorageNamePath(target, context.SemanticModel, cancellation)
+            || !RewriteGuards.Same(target, other)) {
             return;
         }
 

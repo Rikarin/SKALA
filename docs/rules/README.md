@@ -84,7 +84,7 @@
 | [SK2043](SK2043.md) | The hash code depends on state that can change | warning | — | no |
 | [SK2044](SK2044.md) | The equality members are inconsistent with each other | warning | — | no |
 | [SK2050](SK2050.md) | Integer division feeds a fractional result | warning | review | no |
-| [SK2051](SK2051.md) | The arithmetic has a result its constant operand already fixes | warning | review | no |
+| [SK2051](SK2051.md) | The arithmetic has a result its constant operand already fixes | warning | safe | no |
 | [SK2052](SK2052.md) | The shift count is masked to a different count | warning | — | no |
 | [SK2053](SK2053.md) | The size comparison is decided by a count never being negative | warning | — | no |
 | [SK2054](SK2054.md) | A signed modulus result is compared for equality with a non-zero value | warning | — | no |
@@ -299,13 +299,13 @@
 | [SK1034](SK1034.md) | Use the `Count` property, not `Count()` or `Any()` **(retired)** | — | safe | no |
 | [SK1035](SK1035.md) | Use `Enum.GetValues<T>()` | suggestion | review | no |
 | [SK1040](SK1040.md) | Use `T?` instead of `Nullable<T>` | suggestion | safe | no |
-| [SK1041](SK1041.md) | Use a compound assignment | suggestion | review | yes |
+| [SK1041](SK1041.md) | Use a compound assignment | suggestion | safe | no |
 | [SK1042](SK1042.md) | The nested `if` statements can be combined | suggestion | review | yes |
 | [SK1043](SK1043.md) | The `for` loop is a `while` | suggestion | safe | yes |
-| [SK1044](SK1044.md) | Use `string.IsNullOrEmpty` | suggestion | review | no |
+| [SK1044](SK1044.md) | Use `string.IsNullOrEmpty` | suggestion | safe | no |
 | [SK1050](SK1050.md) | Use pattern matching instead of a test-and-cast | suggestion | review | no |
 | [SK1051](SK1051.md) | Simplify the pattern | suggestion | safe | no |
-| [SK1052](SK1052.md) | Merge the `?:` into a conditional access | suggestion | review | no |
+| [SK1052](SK1052.md) | Merge the `?:` into a conditional access | suggestion | safe | no |
 | [SK1053](SK1053.md) | Use a discard | suggestion | safe | no |
 | [SK1054](SK1054.md) | Inline the `out` variable declaration | suggestion | review | no |
 | [SK1060](SK1060.md) | Use an index-from-end expression | suggestion | review | no |
@@ -358,7 +358,7 @@
 | [SK4024](SK4024.md) | `GC.Collect` is called from application code | warning | — | no |
 | [SK4030](SK4030.md) | The collection's own method answers this faster than the LINQ extension | suggestion | review | no |
 | [SK4031](SK4031.md) | The loop looks up a key it is already holding | warning | review | no |
-| [SK4032](SK4032.md) | `Substring` is called to feed a search that takes a start index | suggestion | review | no |
+| [SK4032](SK4032.md) | `Substring` is called to feed a search that takes a start index | suggestion | safe | no |
 | [SK4033](SK4033.md) | The `ConcurrentDictionary` member taken is the expensive one | warning | review | no |
 | [SK4034](SK4034.md) | The collection is sorted before it is filtered | suggestion | review | no |
 | [SK4040](SK4040.md) | The property copies a collection it could have returned unchanged | suggestion | review | no |

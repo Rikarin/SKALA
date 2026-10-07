@@ -2,9 +2,11 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
+using System.Threading;
 
 namespace Rikarin.Skala.Rules.Modernization;
 
@@ -31,7 +33,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     <para>
 ///         ⚠ The other half is evaluation count, the same guard <c>SK1030</c> carries.
 ///         <c>a[i] = a[i] + 1</c> evaluates the indexer twice and <c>a[i] += 1</c> evaluates it once, so
-///         the target is required to be a chain of plain names.
+///         the target is required to be a chain of plain names — and, since #423, one whose receiver
+///         runs no getter, which is why the rule is semantic now.
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -70,7 +73,8 @@ public sealed class CompoundAssignmentAnalyzer : DiagnosticAnalyzer {
         // Everything between the target and the binary operator disappears. A comment in there is
         // content, and a directive is worse than content.
         var deleted = TextSpan.FromBounds(assignment.Left.Span.End, binary.OperatorToken.Span.End);
-        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(assignment.SyntaxTree, deleted)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(assignment.SyntaxTree, deleted)
+            || !EvaluatesTheSame(context.SemanticModel, assignment, binary, text, context.CancellationToken)) {
             return;
         }
 
@@ -84,6 +88,61 @@ public sealed class CompoundAssignmentAnalyzer : DiagnosticAnalyzer {
                 + "`"
             )
         );
+    }
+
+    /// <summary>
+    ///     ⚠ Whether <c>x op= y</c> runs exactly what <c>x = x op y</c> ran (#423).
+    /// </summary>
+    /// <remarks>
+    ///     The long form evaluates the target's receiver twice — once as the place to store, once to
+    ///     read — and the compound form once, so the receiver must be
+    ///     <see cref="RewriteGuards.IsFreeToRepeat(IOperation)" />. The last link need not be: a
+    ///     property's getter and setter each run once in both forms. #412's audit measured
+    ///     <c>h.Current.X = h.Current.X + 5</c> over a counting getter as two reads before and one
+    ///     after.
+    ///     <para>
+    ///         ⚠ And the operator must be the same method. C# 14 lets a type declare an instance
+    ///         <c>operator +=</c>, which <c>a += 1</c> binds and <c>a = a + 1</c> never does: the audit
+    ///         measured an alias of <c>a</c> left untouched before and mutated after. The compound form
+    ///         is bound speculatively and must resolve to the binary operator's own method.
+    ///     </para>
+    /// </remarks>
+    static bool EvaluatesTheSame(
+        SemanticModel model,
+        AssignmentExpressionSyntax assignment,
+        BinaryExpressionSyntax binary,
+        string text,
+        CancellationToken cancellation
+    ) {
+        if (model.GetOperation(assignment, cancellation) is not ISimpleAssignmentOperation operation
+            || model.GetOperation(binary, cancellation) is not IBinaryOperation arithmetic) {
+            return false;
+        }
+
+        var receiver = operation.Target switch {
+            ILocalReferenceOperation or IParameterReferenceOperation => null,
+            IFieldReferenceOperation field => field.Instance,
+            IPropertyReferenceOperation { Arguments.IsEmpty: true } property => property.Instance,
+            _ => operation.Target
+        };
+
+        if (receiver is not null && !RewriteGuards.IsFreeToRepeat(receiver)) {
+            return false;
+        }
+
+        if (arithmetic.OperatorMethod is null) {
+            return true;
+        }
+
+        var compound = SyntaxFactory.ParseExpression(
+            assignment.Left.WithoutTrivia() + " " + text + "= " + binary.Right.WithoutTrivia()
+        );
+        var bound = model.GetSpeculativeSymbolInfo(
+            assignment.SpanStart,
+            compound,
+            SpeculativeBindingOption.BindAsExpression
+        );
+        return SymbolEqualityComparer.Default.Equals(bound.Symbol, arithmetic.OperatorMethod);
     }
 
     /// <summary>

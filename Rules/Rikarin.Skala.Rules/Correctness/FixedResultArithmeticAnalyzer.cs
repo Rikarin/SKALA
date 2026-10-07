@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Modernization;
 using System.Collections.Immutable;
 using System.Globalization;
 
@@ -45,7 +46,7 @@ public sealed class FixedResultArithmeticAnalyzer : DiagnosticAnalyzer {
         var cancellation = context.CancellationToken;
         if (model.GetOperation(binary, cancellation) is not IBinaryOperation {
                 OperatorMethod: null, IsLifted: false
-            }) {
+            } operation) {
             return;
         }
 
@@ -83,17 +84,33 @@ public sealed class FixedResultArithmeticAnalyzer : DiagnosticAnalyzer {
         // where that evaluation provably has none. Anything else is left alone rather than reported
         // without a fix: doc 08's round trip requires every positive finding of a fixable rule to
         // carry edits.
-        if (model.GetOperation(value, cancellation) is ILocalReferenceOperation
-            or IParameterReferenceOperation
-            or IFieldReferenceOperation { Field.IsVolatile: false }) {
+        // ⚠ #423: "none" includes a throw. This accepted any field reference whatever its receiver,
+        // so `Make().f * 0` → `0` dropped the call and `b!.f * 0` → `0` dropped the
+        // `NullReferenceException`; both were measured by running the two versions.
+        if (RewriteGuards.IsFreeToSkip(constantIsOnTheRight ? operation.LeftOperand : operation.RightOperand)) {
             Report(
                 context,
                 binary,
                 "always produces " + outcome.Value.ToString(CultureInfo.InvariantCulture),
-                (binary.Span, outcome.Value.ToString(CultureInfo.InvariantCulture))
+                (binary.Span, Literal(outcome.Value, result!))
             );
         }
     }
+
+    /// <summary>
+    ///     ⚠ The constant spelled as a literal of the operation's own type. #423's sweep ran
+    ///     <c>var r = x * 0;</c> on a <c>long</c> and found the fix's bare <c>0</c> had made <c>r</c> an
+    ///     <c>int</c>: a different overload, a different generic argument, a different
+    ///     <c>GetType()</c>.
+    /// </summary>
+    static string Literal(decimal value, ITypeSymbol type) =>
+        value.ToString(CultureInfo.InvariantCulture)
+        + type.SpecialType switch {
+            SpecialType.System_UInt32 => "U",
+            SpecialType.System_Int64 => "L",
+            SpecialType.System_UInt64 => "UL",
+            _ => string.Empty
+        };
 
     /// <summary>The sentinel for "the surviving operand is the answer".</summary>
     const decimal Identity = decimal.MinValue;

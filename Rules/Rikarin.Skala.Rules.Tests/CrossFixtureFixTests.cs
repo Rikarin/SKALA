@@ -159,6 +159,77 @@ public sealed class CrossFixtureFixTests {
     }
 
     /// <summary>
+    ///     ⚠ #423's eight rules, which change how many times or in what order an expression is
+    ///     evaluated, each against its own executable fixtures — whether the catalogue calls its fix
+    ///     safe or not.
+    /// </summary>
+    /// <remarks>
+    ///     The sweep above executes safe fixes only, and three of these rules stay unsafe for a reason
+    ///     that is not evaluation count — a list's live size (#430), a read before the overwrite (#431),
+    ///     and <c>SK2064</c> by construction. Their evaluation-count shapes are pinned here all the same,
+    ///     so the guard is already proved on the day the other defect is fixed and the rule flips. An
+    ///     edit to <c>[CallerArgumentExpression]</c> text is still left out, as the host leaves it (#422).
+    /// </remarks>
+    public static TheoryData<string> EvaluationCountRules =>
+        new("SK1041", "SK1044", "SK1052", "SK2051", "SK2064", "SK2200", "SK4030", "SK4032");
+
+    [Theory]
+    [MemberData(nameof(EvaluationCountRules))]
+    public void TheEvaluationCountFix_OnItsOwnExecutableFixtures_PreservesTheResult(string id) {
+        var cancellation = TestContext.Current.CancellationToken;
+        var failures = new List<string>();
+        var compared = 0;
+
+        foreach (var fixture in RuleFixtures.All().Where(fixture => fixture.RuleId == id)) {
+            var source = File.ReadAllText(fixture.Path);
+            if (!source.Contains("class Probe", StringComparison.Ordinal)) {
+                continue;
+            }
+
+            var before = RuleFixtures.Compile(source, fixture.Path);
+            var expected = Probe(before, cancellation);
+            Assert.True(expected is not null, $"{fixture}: declares a Probe that does not run.");
+            foreach (var (_, text) in FixedTexts(source, before, rule => rule == id, cancellation)) {
+                compared++;
+                var actual = Probe(RuleFixtures.Compile(text, fixture.Path), cancellation);
+                if (actual != expected) {
+                    failures.Add($"{fixture}: Probe.Run() went from {expected} to {actual ?? "<no result>"}");
+                }
+            }
+        }
+
+        // Anti-vacuity: each of the eight has at least one executable positive.
+        Assert.True(compared > 0, $"{id}: no fixed version of any of its own fixtures was executed.");
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+    }
+
+    /// <summary>
+    ///     ⚠ #423: why <c>SK2064</c> stays unsafe with its guard fixed. On the null guard the rule
+    ///     exists for, <c>&amp;</c> throws and <c>&amp;&amp;</c> does not: the finding is the behaviour
+    ///     change, as it is for <c>SK2181</c>, which ships unsafe for the same reason.
+    /// </summary>
+    [Fact]
+    public void TheShortCircuitRewrite_OnTheGuardItReports_ChangesTheResult() {
+        var cancellation = TestContext.Current.CancellationToken;
+        const string source = """
+                              public sealed class Node { public bool Ready; }
+
+                              public static class Probe {
+                                  static bool Go(Node? node) => node != null & node.Ready;
+
+                                  public static bool Run() => Go(null);
+                              }
+                              """;
+        var before = RuleFixtures.Compile(source, PlantedPath);
+        var (id, text) = Assert.Single(FixedTexts(source, before, static rule => rule == "SK2064", cancellation));
+
+        Assert.Equal("SK2064", id);
+        Assert.Contains("node != null && node.Ready", text, StringComparison.Ordinal);
+        Assert.Equal("throws NullReferenceException", Probe(before, cancellation));
+        Assert.Equal("False", Probe(RuleFixtures.Compile(text, PlantedPath), cancellation));
+    }
+
+    /// <summary>
     ///     ⚠ The instrument check for the runtime sweep: a probe whose result moves must be seen, and
     ///     one that does not must not.
     /// </summary>
@@ -260,6 +331,19 @@ public sealed class CrossFixtureFixTests {
         string source,
         CSharpCompilation before,
         CancellationToken cancellation
+    ) =>
+        FixedTexts(source, before, null, cancellation);
+
+    /// <summary>
+    ///     The same, for the rules <paramref name="applies" /> names whatever the catalogue says of them —
+    ///     still minus an edit to <c>[CallerArgumentExpression]</c> text, which the host never marks safe
+    ///     (#422) — or for every finding the host would apply as safe when it is <see langword="null" />.
+    /// </summary>
+    static IEnumerable<(string Id, string Text)> FixedTexts(
+        string source,
+        CSharpCompilation before,
+        Func<string, bool>? applies,
+        CancellationToken cancellation
     ) {
         var findings = RuleFixtures.Analyze(before, SkalaAnalyzers.All, cancellation);
 
@@ -268,7 +352,16 @@ public sealed class CrossFixtureFixTests {
         var models = new Dictionary<SyntaxTree, SemanticModel>();
         foreach (var group in findings
                      .Where(diagnostic => diagnostic.Location.SourceTree is { } tree
-                         && FixEdits.IsSafe(diagnostic, Model(models, before, tree), cancellation)
+                         && (applies is null
+                                 ? FixEdits.IsSafe(diagnostic, Model(models, before, tree), cancellation)
+                                 : applies(diagnostic.Id)
+                                 && !FixEdits.Read(diagnostic)
+                                     .Any(edit => CallerArgumentSafety.ChangesCapturedText(
+                                             Model(models, before, tree),
+                                             edit.Span,
+                                             cancellation
+                                         )
+                                     ))
                      )
                      .GroupBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal)
                      .OrderBy(static group => group.Key, StringComparer.Ordinal)) {

@@ -99,7 +99,7 @@
 <tr><td><a href="SK2043.html">SK2043</a></td><td>The hash code depends on state that can change</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2044.html">SK2044</a></td><td>The equality members are inconsistent with each other</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2050.html">SK2050</a></td><td>Integer division feeds a fractional result</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK2051.html">SK2051</a></td><td>The arithmetic has a result its constant operand already fixes</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2051.html">SK2051</a></td><td>The arithmetic has a result its constant operand already fixes</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2052.html">SK2052</a></td><td>The shift count is masked to a different count</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2053.html">SK2053</a></td><td>The size comparison is decided by a count never being negative</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2054.html">SK2054</a></td><td>A signed modulus result is compared for equality with a non-zero value</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
@@ -329,13 +329,13 @@
 <tr><td><a href="SK1034.html">SK1034</a></td><td>Use the <code>Count</code> property, not <code>Count()</code> or <code>Any()</code> <span class="tag retired">retired</span></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1035.html">SK1035</a></td><td>Use <code>Enum.GetValues&lt;T&gt;()</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK1040.html">SK1040</a></td><td>Use <code>T?</code> instead of <code>Nullable&lt;T&gt;</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
-<tr><td><a href="SK1041.html">SK1041</a></td><td>Use a compound assignment</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>yes</td></tr>
+<tr><td><a href="SK1041.html">SK1041</a></td><td>Use a compound assignment</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1042.html">SK1042</a></td><td>The nested <code>if</code> statements can be combined</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>yes</td></tr>
 <tr><td><a href="SK1043.html">SK1043</a></td><td>The <code>for</code> loop is a <code>while</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
-<tr><td><a href="SK1044.html">SK1044</a></td><td>Use <code>string.IsNullOrEmpty</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK1044.html">SK1044</a></td><td>Use <code>string.IsNullOrEmpty</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1050.html">SK1050</a></td><td>Use pattern matching instead of a test-and-cast</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK1051.html">SK1051</a></td><td>Simplify the pattern</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
-<tr><td><a href="SK1052.html">SK1052</a></td><td>Merge the <code>?:</code> into a conditional access</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK1052.html">SK1052</a></td><td>Merge the <code>?:</code> into a conditional access</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1053.html">SK1053</a></td><td>Use a discard</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1054.html">SK1054</a></td><td>Inline the <code>out</code> variable declaration</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK1060.html">SK1060</a></td><td>Use an index-from-end expression</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
@@ -391,7 +391,7 @@
 <tr><td><a href="SK4024.html">SK4024</a></td><td><code>GC.Collect</code> is called from application code</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK4030.html">SK4030</a></td><td>The collection's own method answers this faster than the LINQ extension</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK4031.html">SK4031</a></td><td>The loop looks up a key it is already holding</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK4032.html">SK4032</a></td><td><code>Substring</code> is called to feed a search that takes a start index</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK4032.html">SK4032</a></td><td><code>Substring</code> is called to feed a search that takes a start index</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK4033.html">SK4033</a></td><td>The <code>ConcurrentDictionary</code> member taken is the expensive one</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK4034.html">SK4034</a></td><td>The collection is sorted before it is filtered</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK4040.html">SK4040</a></td><td>The property copies a collection it could have returned unchanged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>

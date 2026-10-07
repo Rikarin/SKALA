@@ -16,13 +16,12 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     <b>
 ///         This rewrite evaluates the receiver once where the original evaluated it twice, and that
 ///         is the whole of its risk.
-///     </b> It is stated rather than hidden: on a property with a
-///     non-idempotent getter the two programs differ, and the rule admits property paths anyway for
-///     the reason <see cref="RewriteGuards.IsPlainNamePath" /> gives — excluding them would silence it
-///     on <c>this.Items</c> and <c>Options.Map</c>, which is most of its value, and the two reads it
-///     collapses are adjacent within one expression. What it does <em>not</em> admit is an invocation,
-///     an indexer or an <c>await</c> anywhere in the receiver: those are the ones whose second
-///     evaluation is visibly a second call.
+///     </b> So every link of the receiver must be storage —
+///     <see cref="RewriteGuards.IsStorageNamePath" />. ⚠ It used to admit every property, on the
+///     argument that excluding them would silence the rule on <c>this.Items</c>; #412's audit ran a
+///     getter that answers differently the second time and the fix turned a
+///     <c>NullReferenceException</c> into a value (#423). An auto-property is still admitted, and an
+///     invocation, an indexer or an <c>await</c> never was.
 ///     <para>
 ///         ⚠ <b>The branch's type must be a reference type and must be the conditional's own type.</b>
 ///         <c>x != null ? x.Count : null</c> is a target-typed <c>int?</c> and <c>x?.Count</c> is an
@@ -65,7 +64,7 @@ public sealed class MergedConditionalAccessAnalyzer : DiagnosticAnalyzer {
         var access = checksForNull ? conditional.WhenFalse : conditional.WhenTrue;
         var empty = checksForNull ? conditional.WhenTrue : conditional.WhenFalse;
         if (!PatternSafety.Unwrap(empty).IsKind(SyntaxKind.NullLiteralExpression)
-            || !RewriteGuards.IsPlainNamePath(receiver)) {
+            || !RewriteGuards.IsStorageNamePath(receiver, context.SemanticModel, context.CancellationToken)) {
             return;
         }
 

@@ -17,11 +17,11 @@
 <tbody>
 <tr><th>Category</th><td>Modernization</td></tr>
 <tr><th>Default severity</th><td><span class="tag sev-suggestion">suggestion</span></td></tr>
-<tr><th>Scope</th><td>Syntax</td></tr>
-<tr><th>Needs a compilation</th><td>no</td></tr>
-<tr><th>Runs under <code>--load=loose</code></th><td>yes</td></tr>
+<tr><th>Scope</th><td>Semantic</td></tr>
+<tr><th>Needs a compilation</th><td>yes</td></tr>
+<tr><th>Runs under <code>--load=loose</code></th><td>no</td></tr>
 <tr><th>Cached per file</th><td>yes</td></tr>
-<tr><th>Fix</th><td>yes, review it</td></tr>
+<tr><th>Fix</th><td>yes, safe</td></tr>
 <tr><th>Language version floor</th><td>—</td></tr>
 <tr><th>Since</th><td>2.0</td></tr>
 </tbody>
@@ -34,7 +34,7 @@
 <p>Write:</p>
 <pre class="good"><code>count += 1;</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>The direction is safe and the reverse is not: C# defines <code>x op= y</code> as <code>x = (T)(x op y)</code> with an explicit conversion back to the target's type, which the long form lacks — <code>byte b; b = b + 1;</code> does not compile at all, so the rule never sees the shapes where the conversion differs. A cast on the right-hand side is therefore never unwrapped: <code>long l; l = (int)(l + 1);</code> truncates and <code>l += 1</code> does not. Only whole expression statements are reported, the target must be a chain of plain names so that the two forms evaluate it the same number of times, and the binary operator's left operand must be that same target textually — which excludes <code>x = x + a + b</code>, whose left operand is <code>x + a</code>. <code>&amp;&amp;</code> and <code>||</code> have no compound spelling and are excluded. Comments and preprocessor directives between the target and the operator are excluded because the fix deletes that text. ⚠ <strong>The fix is not safe (#412's audit, measured by running both versions):</strong> Under C# 14 a type may declare an instance <code>operator +=</code>, which <code>a += 1</code> binds and <code>a = a + 1</code> does not; and the <code>[CallerArgumentExpression]</code> text of an enclosing argument changes.</p>
+<p>The direction is safe and the reverse is not: C# defines <code>x op= y</code> as <code>x = (T)(x op y)</code> with an explicit conversion back to the target's type, which the long form lacks — <code>byte b; b = b + 1;</code> does not compile at all, so the rule never sees the shapes where the conversion differs. A cast on the right-hand side is therefore never unwrapped: <code>long l; l = (int)(l + 1);</code> truncates and <code>l += 1</code> does not. Only whole expression statements are reported, the target must be a chain of plain names, and the binary operator's left operand must be that same target textually — which excludes <code>x = x + a + b</code>, whose left operand is <code>x + a</code>. <code>&amp;&amp;</code> and <code>||</code> have no compound spelling and are excluded. Comments and preprocessor directives between the target and the operator are excluded because the fix deletes that text. ⚠ <strong>#423: the receiver of the target must run no code.</strong> The long form evaluates it twice and the compound form once, so <code>h.Current.X = h.Current.X + 5</code> over a counting getter is declined — the audit measured two reads before and one after. The last link may be any property, because its getter and setter each run once in both forms. A C# 14 instance <code>operator +=</code> is declined too: the compound form is bound speculatively and must resolve to the binary operator's own method, which is why the rule is now semantic. ⚠ Inside an argument a <code>[CallerArgumentExpression]</code> parameter captures (<code>Debug.Assert</code> on .NET 9+, <code>ArgumentNullException.ThrowIfNull</code>, test asserts) the rewrite changes the captured string, so the finding's fix is not marked safe there — #422 decides it in the host, per call site, and this rule's executable fixture pins it. With that and #423's guard, every executable fixture's <code>Probe</code> is unchanged and the fix is safe again.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK1041.severity</code></li>
