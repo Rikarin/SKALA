@@ -478,9 +478,7 @@ public static class TaintAnalysis {
         ///     from a request is tainted". <c>request.Query.Count</c> is an <c>int</c> and stops here;
         ///     <c>request.Query["id"]</c> is a <c>StringValues</c> and does not.
         /// </remarks>
-        static bool CarriesText(ITypeSymbol? type) => CarriesText(type, 0);
-
-        static bool CarriesText(ITypeSymbol? type, int depth) {
+        static bool CarriesText(ITypeSymbol? type, int depth = 0) {
             // ⚠ Bounded. A deeply nested generic is not worth an unbounded walk inside an analyzer,
             // and stopping early is the safe direction: it under-taints.
             if (type is null || depth > 3) {
