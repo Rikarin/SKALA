@@ -327,99 +327,110 @@ public sealed class ArrangeCommandTests {
 
     /// <summary>One shape per semantic arrangement rule; each file is otherwise formatted and arranged.</summary>
     static readonly (string File, string Rule, string Source)[] SemanticShapes = [
-        ("F.cs", "usings", """
-                           using System;
-                           using System.Text;
+        ("F.cs", "usings",
+            """
+            using System;
+            using System.Text;
 
-                           namespace P;
+            namespace P;
 
-                           public class D {
-                               public void M() => Console.WriteLine();
-                           }
-                           """),
-        ("Var.cs", "var", """
-                          namespace P;
+            public class D {
+                public void M() => Console.WriteLine();
+            }
+            """),
+        ("Var.cs", "var",
+            """
+            namespace P;
 
-                          public static class Var {
-                              public static int M() {
-                                  Thing t = Thing.Create();
-                                  return t.Count;
-                              }
-                          }
-                          """),
-        ("ObjectCreation.cs", "target-typed new", """
-                                                  namespace P;
+            public static class Var {
+                public static int M() {
+                    Thing t = Thing.Create();
+                    return t.Count;
+                }
+            }
+            """),
+        ("ObjectCreation.cs", "target-typed new",
+            """
+            namespace P;
 
-                                                  public sealed class ObjectCreation {
-                                                      readonly Thing thing = new Thing();
+            public sealed class ObjectCreation {
+                readonly Thing thing = new Thing();
 
-                                                      public int M() => thing.Count;
-                                                  }
-                                                  """),
-        ("DefaultValue.cs", "default literal", """
-                                               using System.Threading;
+                public int M() => thing.Count;
+            }
+            """),
+        ("DefaultValue.cs", "default literal",
+            """
+            using System.Threading;
 
-                                               namespace P;
+            namespace P;
 
-                                               public static class DefaultValue {
-                                                   public static int M(CancellationToken c = default(CancellationToken)) => 0;
-                                               }
-                                               """),
-        ("NullChecking.cs", "is not null", """
-                                           namespace P;
+            public static class DefaultValue {
+                public static int M(CancellationToken c = default(CancellationToken)) => 0;
+            }
+            """),
+        ("NullChecking.cs", "is not null",
+            """
+            namespace P;
 
-                                           public static class NullChecking {
-                                               public static bool M(object o) => o == null;
-                                           }
-                                           """),
-        ("EmptyString.cs", "empty string literal", """
-                                                   namespace P;
+            public static class NullChecking {
+                public static bool M(object o) => o == null;
+            }
+            """),
+        ("EmptyString.cs", "empty string literal",
+            """
+            namespace P;
 
-                                                   public static class EmptyString {
-                                                       public static string M() => string.Empty;
-                                                   }
-                                                   """),
-        ("ThisQualifier.cs", "this qualifier", """
-                                               namespace P;
+            public static class EmptyString {
+                public static string M() => string.Empty;
+            }
+            """),
+        ("ThisQualifier.cs", "this qualifier",
+            """
+            namespace P;
 
-                                               public sealed class ThisQualifier {
-                                                   readonly int count = 1;
+            public sealed class ThisQualifier {
+                readonly int count = 1;
 
-                                                   public int M() => this.count;
-                                               }
-                                               """),
-        ("Predefined.cs", "predefined type", """
-                                             namespace P;
+                public int M() => this.count;
+            }
+            """),
+        ("Predefined.cs", "predefined type",
+            """
+            namespace P;
 
-                                             public static class Predefined {
-                                                 public static int M(System.String s) => s.Length;
-                                             }
-                                             """),
-        ("StaticQualifier.cs", "static member qualifier", """
-                                                          namespace P;
+            public static class Predefined {
+                public static int M(System.String s) => s.Length;
+            }
+            """),
+        ("StaticQualifier.cs", "static member qualifier",
+            """
+            namespace P;
 
-                                                          public static class StaticQualifier {
-                                                              static int Helper() => 1;
+            public static class StaticQualifier {
+                static int Helper() => 1;
 
-                                                              public static int M() => StaticQualifier.Helper();
-                                                          }
-                                                          """),
-        ("ArgumentStyle.cs", "argument style", """
-                                               namespace P;
+                public static int M() => StaticQualifier.Helper();
+            }
+            """),
+        ("ArgumentStyle.cs", "argument style",
+            """
+            namespace P;
 
-                                               public static class ArgumentStyle {
-                                                   static int Take(int value, bool flag) => flag ? value : 0;
+            public static class ArgumentStyle {
+                static int Take(int value, bool flag) => flag ? value : 0;
 
-                                                   public static int M() => Take(value: 1, flag: true);
-                                               }
-                                               """),
-        ("PropertyPattern.cs", "property pattern", """
-                                                   namespace P;
+                public static int M() => Take(value: 1, flag: true);
+            }
+            """),
+        ("PropertyPattern.cs", "property pattern",
+            """
+            namespace P;
 
-                                                   public static class PropertyPattern {
-                                                       public static bool M(Flags f) => f.A && !f.B;
-                                                   }
-                                                   """)
+            public static class PropertyPattern {
+                public static bool M(Flags f) => f.A && !f.B;
+            }
+            """)
     ];
 
     /// <summary><c>arrange --check</c>'s per-file lines: <c>path␣␣rule name, rule name</c>.</summary>
@@ -455,8 +466,7 @@ public sealed class ArrangeCommandTests {
         return result;
     }
 
-    static string[] Names(string list) =>
-        [.. list.Trim().Split(", ").Order(StringComparer.Ordinal)];
+    static string[] Names(string list) => [.. list.Trim().Split(", ").Order(StringComparer.Ordinal)];
 
     static string Render(IReadOnlyDictionary<string, string[]> map) =>
         string.Join(
