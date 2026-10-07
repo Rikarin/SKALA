@@ -57,7 +57,9 @@ public sealed class NullConditionalAssignmentAnalyzer : DiagnosticAnalyzer {
         var cancellation = context.CancellationToken;
 
         var guarded = NonNullOperand(model, statement.Condition, cancellation);
-        if (guarded is null || !RewriteGuards.IsPlainNamePath(guarded)) {
+        // ⚠ Storage, not merely a name path: `if (o.Current is not null) o.Current.X = v` reads the
+        // getter twice and `o.Current?.X = v` once (#412's audit, measured).
+        if (guarded is null || !RewriteGuards.IsStorageNamePath(guarded, model, cancellation)) {
             return;
         }
 

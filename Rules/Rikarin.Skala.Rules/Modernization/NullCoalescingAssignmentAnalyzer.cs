@@ -52,7 +52,11 @@ public sealed class NullCoalescingAssignmentAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (!IsPlainNamePath(assignment.Left) || !IsPlainNamePath(coalesce.Left)) {
+        // ⚠ Storage, not merely a name path (#412's audit, measured): `Name = Name ?? d` calls the
+        // setter every time and `Name ??= d` only when it was null, which is every
+        // INotifyPropertyChanged setter's event; and a getter on the path was read twice before.
+        if (!RewriteGuards.IsStorageNamePath(assignment.Left, context.SemanticModel, context.CancellationToken)
+            || !RewriteGuards.IsStorageNamePath(coalesce.Left, context.SemanticModel, context.CancellationToken)) {
             return;
         }
 
@@ -75,31 +79,6 @@ public sealed class NullCoalescingAssignmentAnalyzer : DiagnosticAnalyzer {
                 "Use `??=`: `" + assignment.Left + " ??= " + Trim(coalesce.Right.ToString()) + "`"
             )
         );
-    }
-
-    /// <summary>
-    ///     Whether an expression is a chain of plain names — <c>x</c>, <c>this.x</c>, <c>a.b.c</c>.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ No element access and no invocation anywhere in it. Both can have side effects and both
-    ///     are evaluated a different number of times by the two forms.
-    /// </remarks>
-    static bool IsPlainNamePath(ExpressionSyntax expression) {
-        while (true) {
-            switch (expression) {
-                case IdentifierNameSyntax:
-                case ThisExpressionSyntax:
-                case BaseExpressionSyntax:
-                    return true;
-
-                case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access:
-                    expression = access.Expression;
-                    continue;
-
-                default:
-                    return false;
-            }
-        }
     }
 
     static bool ContainsComment(SyntaxTree tree, TextSpan span) {

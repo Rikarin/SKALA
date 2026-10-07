@@ -81,7 +81,7 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
         }
 
         var key = invocation.ArgumentList.Arguments[0].Expression;
-        if (!IsStable(access.Expression) || !IsStable(key)) {
+        if (!IsStable(access.Expression, context) || !IsStable(key, context)) {
             return;
         }
 
@@ -224,7 +224,7 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
         // `mesh.AddPosition(…)`, which mutates the mesh, and `edited.ToMeshData(…)`, which builds
         // one; the first is a behaviour change and the second is an allocation added to the common
         // path. So the value has to be something already computed.
-        if (!IsStable(value)) {
+        if (!IsStable(value, context)) {
             return;
         }
 
@@ -296,8 +296,14 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
     ///     ⚠ Both rewrites evaluate the receiver and the key once where the original evaluated them
     ///     twice, so both have to be expressions for which that is not observable.
     /// </summary>
-    static bool IsStable(ExpressionSyntax expression) =>
-        RewriteGuards.IsPlainNamePath(expression) || expression is LiteralExpressionSyntax;
+    /// <remarks>
+    ///     ⚠ Storage, not merely a name path: <c>d[s.Key]</c> through a getter with a side effect read
+    ///     it twice before and once after, and <c>d[5] = s.Value</c> read it once only when the key was
+    ///     absent (#412's audit, measured by running both).
+    /// </remarks>
+    static bool IsStable(ExpressionSyntax expression, SyntaxNodeAnalysisContext context) =>
+        RewriteGuards.IsStorageNamePath(expression, context.SemanticModel, context.CancellationToken)
+        || expression is LiteralExpressionSyntax;
 
     /// <summary>The condition with any <c>!</c> and parentheses stripped, and whether it had one.</summary>
     static (bool Negated, ExpressionSyntax Condition) Unwrap(ExpressionSyntax condition) {
