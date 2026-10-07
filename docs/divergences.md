@@ -6606,3 +6606,38 @@ the parenthesis's contents a level past its dots. Recorded, not fixed.
 
 - options: `skala_wrap_chained_method_calls`.
 - ⚠ status: **open**.
+
+## SK-DIV-0165 — a break point whose gap holds a block comment breaks after the comment
+
+⚠ **Found by `fuzz --seed=404002`** (#409, case 7005158519080377895): `name175: nameof(value), /* f */
+name176: …` past the margin chopped `nameof(` / `value` / `)` on pass one and joined it on pass two.
+The builder planned only a gap between two *tokens*, so a comment anywhere in a gap left it
+unplanned and the group lost that point. The line overflowed, the only breaks left on it were inside
+the items, and pass two re-decided them. Measured with `Testing ask` on about seventy shapes:
+
+| written | oracle | Skala before | Skala now |
+|---|---|---|---|
+| `a, /* f */ b` past the margin in every list the export re-lays — arguments, parameters, attribute arguments, type arguments, base types, declarators, enum members, switch arms; one comment or two | `a, /* f */` / `b` | `a, /* f */ b` kept on one line and a break taken inside an item instead, sometimes not idempotent | identical |
+| `a,` / `/* f */ b` (a comment the author put on its own line) in a chopped list | `a,` / `/* f */` / `b` | `/* f */ b` | identical |
+| `(alpha,` / `/* f */ beta)`, and the same in a type argument list and a designation (fills that keep an author's break) | `/* f */ beta)` left whole | identical | identical: the pin reads only the stretch after the last comment (`BreakPlan.PlanItemGap`), else the newly planned point became a third line |
+| `b /* f */)` and `c /* f */]` before a chopped closer; `a /* f */ + b`, `a /* f */ .B()`, `a /* f */ ? b : c` broken | the break after the comment | the comment and the token kept together | identical |
+| `{ /* f */ "a", …` and `[/* f */ a, …` past the margin | `{ /* f */` / the items | a fill after the comment | identical |
+| `= /* f */ "…"` and a lambda's `=> /* f */ "…"` that cannot fit | `= /* f */` / `"…"` | the line left past the margin, or broken before the lambda | identical |
+| `Compute(/* f */ a, b, …)` chopped, and `int P => /* f */ Compute(a, …)` | `Compute( /* f */ a,` / `b,` …, and `=> /* f */ Compute(` / the arguments chopped: the wrap after `(` and after an expression body's arrow stops at the comment | identical | identical |
+| `Compute(/* f */ "…")` and `int P => /* f */ "…"` where the lone item cannot fit | `Compute( /* f */` / `"…"`, `=> /* f */` / `"…"` | `Compute( /* f */ "…"` past the margin | **unchanged, open** |
+
+`CSharpDocumentBuilder.PointSurvivesComments` plans the gap between the last block comment and the
+token when every piece back to the previous token is a block comment, the previous token is not `(`
+or an expression body's `=>` (the sixth row), and no comment is a formatter tag. A line comment is
+never in the run: the point after it could stay flat and join the token into the comment. The last
+row is the oracle breaking past the comment only when nothing else fits, which the plan cannot say
+for one point of a chopped list; the chopped case is the common one. Pinned by
+`constructs/breaks/comment-before-a-break-point.cs` and `CommentBeforeABreakPointIssue409Tests`.
+
+Two neighbours found on the same probes are not this entry. The space between a block comment and
+the token after it (Skala writes `/* f */ ,` where the oracle writes `/* f */,`) is #410. The
+oracle's break after a named argument's colon (`name176:` / `Cast<…>(`) happens with or without the
+comment, and Skala has never taken it (#411).
+
+- options: none.
+- ⚠ status: **resolved** except the last row, which is **open**.

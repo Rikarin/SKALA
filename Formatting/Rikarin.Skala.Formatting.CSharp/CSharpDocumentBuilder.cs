@@ -2492,8 +2492,10 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ The break plan only ever governs a gap between two tokens. A comment or a directive in
         // the gap makes it untouchable: joining `a + // note` with `b` puts `b` inside the comment,
         // and breaking before a directive moves code across it.
+        // ⚠ …except for the one comment that can stand between a point and its token: a block comment
+        // after the token before the point. See PointSurvivesComments for what the oracle does there.
         var spec = default(GapSpec);
-        var planned = previous.Kind == PieceKind.Token
+        var planned = (previous.Kind == PieceKind.Token || PointSurvivesComments(lastPiece))
             && nextKind == PieceKind.Token
             && plan.TryGap(nextStart, out spec);
 
@@ -2579,6 +2581,65 @@ public sealed partial class CSharpDocumentBuilder {
             LineEnding.Cr => "\r",
             _ => "\n"
         };
+
+    /// <summary>
+    ///     Whether the break point planned before the next token is still a point when the gap holds
+    ///     block comments — the run of pieces back from <paramref name="lastPieceIndex" /> to the
+    ///     previous token is block comments and nothing else.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The oracle puts the break <em>after</em> the comments, never before them: given
+    ///     <c>name175: nameof(value), /* f */ name176: …</c> past the margin it writes
+    ///     <c>name175: nameof(value), /* f */</c> / <c>name176: …</c>, and the same for every list it
+    ///     re-lays (arguments, parameters, attribute arguments, type arguments, base types,
+    ///     declarators, enum members, switch arms), for a break before <c>)</c> or <c>]</c>, after
+    ///     <c>{</c> or <c>[</c>, after <c>=</c> and a lambda's arrow, and before a binary operator, a
+    ///     <c>?</c> and a <c>.</c>. A comment on a line of its own (<c>alpha,</c> / <c>/* f */ beta</c>)
+    ///     is no different: the oracle breaks after it too. Skala used to leave every such gap
+    ///     unplanned, so the group lost the point: the line overflowed, the only breaks left on it were
+    ///     inside the items, and pass two — reading those breaks back — re-decided them (#409).
+    ///     <para>
+    ///         ⚠ Two tokens are the exception, and both are measured, not assumed. After <c>(</c>:
+    ///         <c>Compute( /* f */ alpha, beta, …)</c> chopped stays <c>Compute( /* f */ alpha,</c> with
+    ///         only the later items on lines of their own. After an expression body's <c>=&gt;</c>:
+    ///         <c>int P =&gt; /* f */ Compute(alpha, …)</c> chops the call where the same line without
+    ///         the comment breaks after the arrow. In both the oracle's wrap stops at the comment, and
+    ///         breaks past it only when the item cannot fit any other way (<c>Compute( /* f */</c> /
+    ///         <c>"…"</c>, <c>=&gt; /* f */</c> / <c>"…"</c>), which Skala does not (SK-DIV-0165).
+    ///         Leaving those two gaps unplanned keeps the common case.
+    ///     </para>
+    ///     <para>
+    ///         A line comment is never in the run: the gap after it holds a newline the point would be
+    ///         free to join, and joining puts the token inside the comment. Neither is a directive, a
+    ///         documentation comment or a formatter tag.
+    ///     </para>
+    /// </remarks>
+    bool PointSurvivesComments(int lastPieceIndex) {
+        for (var i = lastPieceIndex; i >= 0; i--) {
+            var piece = pieces[i];
+            switch (piece.Kind) {
+                case PieceKind.BlockComment
+                    when !FormatterTagGuard.IsOffTag(piece.Text, options.Tags)
+                    && !FormatterTagGuard.IsOnTag(piece.Text, options.Tags):
+                    continue;
+                case PieceKind.Token:
+                    return i != lastPieceIndex && !StopsAtAComment(tokens[piece.TokenIndex]);
+                default:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     The two tokens whose wrap the oracle does not carry past a comment after them: <c>(</c> and
+    ///     an expression body's <c>=&gt;</c>. See <see cref="PointSurvivesComments" />.
+    /// </summary>
+    static bool StopsAtAComment(SyntaxToken token) =>
+        token.IsKind(SyntaxKind.OpenParenToken)
+        || token.IsKind(SyntaxKind.EqualsGreaterThanToken)
+        && token.Parent is ArrowExpressionClauseSyntax;
 
     /// <summary>
     ///     Emits a break, spending the statement's one continuous indent level if this is the break

@@ -3756,6 +3756,24 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
+    ///     Whether <paramref name="source" /> holds a line break between this token and the end of the
+    ///     last comment in the gap before it — the whole gap when it holds no comment.
+    /// </summary>
+    internal static bool BreaksAfterTheLastCommentIn(string source, SyntaxToken token) {
+        if (token.IsKind(SyntaxKind.None) || token.GetPreviousToken().IsKind(SyntaxKind.None)) {
+            return false;
+        }
+
+        for (var i = token.SpanStart - 1; i >= 0 && i < source.Length && char.IsWhiteSpace(source[i]); i--) {
+            if (source[i] == '\n') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     ///     <c>place_expr_{method,property,accessor}_on_single_line = if_owner_is_single_line</c>: the
     ///     body shares the declaration's line exactly when the declaration fits on one.
     /// </summary>
@@ -4941,9 +4959,16 @@ public sealed class BreakPlan {
     /// <param name="yields">
     ///     The point yields to what precedes the list: <see cref="GapRule.YieldingFillPoint" />.
     /// </param>
+    /// <remarks>
+    ///     ⚠ The pin reads only the stretch after the last comment in the gap, because that is where the
+    ///     point is (CSharpDocumentBuilder.PointSurvivesComments). <c>(alpha,</c> / <c>/* f */ beta)</c>
+    ///     is an author's break <em>before</em> the comment, which the gap in front of the comment keeps
+    ///     by itself; pinning the point as well put <c>beta</c> on a third line, and the oracle keeps
+    ///     <c>/* f */ beta)</c> (#409). Whether the list broke at all is still the whole gap's answer.
+    /// </remarks>
     bool PlanItemGap(SyntaxToken gap, int group, bool fill, bool pins, bool yields = false) {
         var broke = BreaksBefore(gap);
-        if (pins && broke) {
+        if (pins && BreaksAfterTheLastCommentIn(source, gap)) {
             Mandatory(gap);
         } else {
             Point(gap, group, fill, yields: yields);
