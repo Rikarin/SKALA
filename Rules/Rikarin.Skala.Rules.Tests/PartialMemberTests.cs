@@ -256,13 +256,13 @@ public sealed class PartialMemberTests {
         Assert.Empty(Of(diagnostics, "SK6003"));
     }
 
-    private const string Logging = """
-                                   namespace Microsoft.Extensions.Logging {
-                                       interface ILogger { }
+    const string Logging = """
+                           namespace Microsoft.Extensions.Logging {
+                               interface ILogger { }
 
-                                       interface ILogger<out TCategoryName> : ILogger { }
-                                   }
-                                   """;
+                               interface ILogger<out TCategoryName> : ILogger { }
+                           }
+                           """;
 
     [Fact]
     public void ALoggerOnAPartialConstructor_IsFixedOnBothHalves() {
