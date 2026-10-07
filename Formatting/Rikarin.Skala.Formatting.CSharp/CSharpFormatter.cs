@@ -206,23 +206,28 @@ public static class CSharpFormatter {
         var root = tree.GetRoot();
         XmlDocComments.Report(path, text, root, diagnostics);
 
-        var built = CSharpDocumentBuilder.Build(path, text, root, options);
-        diagnostics.AddRange(built.Diagnostics);
-
         var indentUnit = options.UseTabs ? "\t" : new string(' ', options.IndentSize);
         var newLine = DefaultNewLine(text, options);
-        var layout = LayoutWriter.Write(
-            built.Document,
-            options.MaxLineLength,
-            indentUnit,
-            newLine,
-            options.ContinuousIndentMultiplier,
-            // ⚠ `disable_indenter = true` and the writer needs the input, because "keep the leading
-            // whitespace the author wrote" cannot be answered from the document alone. Materialised
-            // only when the key is on, so the ordinary path does not pay for a whole-file string.
-            options.DisableIndenter ? text.ToString() : null,
-            options.TabFill
-        );
+        var built = CSharpDocumentBuilder.Build(path, text, root, options);
+        var layout = Lay(built.Document, options, indentUnit, newLine, text);
+
+        // ⚠ "Single-line" is a fact about the output, and the builder decides blank lines before the
+        // writer has decided anything (issue #414). So the first layout answers every node a blank-line
+        // rule asked about, and a disagreement with what the builder guessed builds the document again
+        // on the layout's answers. A blank run changes no column and no group's mode, so the second
+        // layout has the first one's lines and the answers hold; the loop is bounded rather than trusted.
+        for (var round = 0; round < 2 && built.LineQuestions is { Count: > 0 } questions; round++) {
+            var answers = OutputLines.Read(questions, layout, options.MaxLineLength, out var disagrees);
+            if (!disagrees) {
+                break;
+            }
+
+            built = CSharpDocumentBuilder.Build(path, text, root, options, answers);
+            layout = Lay(built.Document, options, indentUnit, newLine, text);
+        }
+
+        diagnostics.AddRange(built.Diagnostics);
+
         // ⚠ Two post-passes over the laid-out text, and the order between them is a decision.
         // The xmldoc sub-formatter goes first because it re-wraps comments against the *final* code
         // indentation, and column alignment goes second because it measures the widest of a run of
@@ -537,6 +542,26 @@ public static class CSharpFormatter {
                 ? "(forced at token 0: 'A' became 'B')"
                 : null;
     }
+
+    static Layout Lay(
+        Document document,
+        in PhaseOneOptions options,
+        string indentUnit,
+        string newLine,
+        SourceText text
+    ) =>
+        LayoutWriter.Write(
+            document,
+            options.MaxLineLength,
+            indentUnit,
+            newLine,
+            options.ContinuousIndentMultiplier,
+            // ⚠ `disable_indenter = true` and the writer needs the input, because "keep the leading
+            // whitespace the author wrote" cannot be answered from the document alone. Materialised
+            // only when the key is on, so the ordinary path does not pay for a whole-file string.
+            options.DisableIndenter ? text.ToString() : null,
+            options.TabFill
+        );
 
     static string DefaultNewLine(SourceText text, in PhaseOneOptions options) {
         if (options.EnforceLineEndingStyle) {

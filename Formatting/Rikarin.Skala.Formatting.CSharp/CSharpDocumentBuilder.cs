@@ -8,7 +8,14 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>The document, plus what building it had to say.</summary>
-public sealed record BuiltDocument(Document Document, IReadOnlyList<SkalaDiagnostic> Diagnostics);
+/// <param name="LineQuestions">
+///     Every node a blank-line rule asked "does this occupy one output line", with the answer it went on;
+///     see <see cref="OutputLines" />.
+/// </param>
+public sealed record BuiltDocument(
+    Document Document,
+    IReadOnlyList<SkalaDiagnostic> Diagnostics,
+    IReadOnlyList<LineQuestion>? LineQuestions = null);
 
 /// <summary>
 ///     Turns a parsed C# file into the language-agnostic document IR.
@@ -58,21 +65,51 @@ public sealed partial class CSharpDocumentBuilder {
     /// </summary>
     int levelsOpenedByOwnGroups;
 
-    /// <summary>Group id to the plan that created it, built on first use by <c>SpansLines</c>.</summary>
+    /// <summary>Group id to the plan that created it, built on first use by <c>GuessesSpansLines</c>.</summary>
     Dictionary<int, GroupPlan>? groupPlans;
 
-    CSharpDocumentBuilder(string path, SourceText text, SyntaxNode root, in PhaseOneOptions options) {
+    /// <summary>
+    ///     Whether each node occupies one line within the margin, read off an earlier layout of this same
+    ///     file, or null on the first build. See <c>OccupiesOneLine</c>.
+    /// </summary>
+    readonly IReadOnlyDictionary<TextSpan, bool>? outputLines;
+
+    readonly List<LineQuestion> lineQuestions = [];
+
+    CSharpDocumentBuilder(
+        string path,
+        SourceText text,
+        SyntaxNode root,
+        in PhaseOneOptions options,
+        IReadOnlyDictionary<TextSpan, bool>? outputLines
+    ) {
         this.path = path;
         this.text = text;
         source = text.ToString();
         this.options = options;
+        this.outputLines = outputLines;
         (pieces, tokens) = SourcePieces.Split(root, text);
     }
 
-    public static BuiltDocument Build(string path, SourceText text, SyntaxNode root, in PhaseOneOptions options) {
-        var builder = new CSharpDocumentBuilder(path, text, root, options);
+    /// <param name="path">The file's path, for diagnostics.</param>
+    /// <param name="text">The file.</param>
+    /// <param name="root">Its parsed tree.</param>
+    /// <param name="options">The resolved configuration.</param>
+    /// <param name="outputLines">
+    ///     ⚠ The answers an earlier layout of the same document gave to its
+    ///     <see cref="BuiltDocument.LineQuestions" />, keyed by node span; null on the first build. See
+    ///     <see cref="OutputLines" />.
+    /// </param>
+    public static BuiltDocument Build(
+        string path,
+        SourceText text,
+        SyntaxNode root,
+        in PhaseOneOptions options,
+        IReadOnlyDictionary<TextSpan, bool>? outputLines = null
+    ) {
+        var builder = new CSharpDocumentBuilder(path, text, root, options, outputLines);
         builder.Run(root);
-        return new(builder.doc.Build(), builder.diagnostics);
+        return new(builder.doc.Build(), builder.diagnostics, builder.lineQuestions);
     }
 
     void Run(SyntaxNode root) {

@@ -6986,3 +6986,80 @@ point before a closer joining an author's break after a comment (#421).
 
 - options: `skala_space_before_trailing_comment`, `skala_space_around_assignment_op`, `skala_space_around_lambda_arrow`, and every key the first class reads.
 - ⚠ status: **resolved** except the three rows marked open.
+## SK-DIV-0171 — a member the formatter joins took the multi-line member's blank lines
+
+⚠ **Issue #414**, found working #405. `CSharpDocumentBuilder.IsSingleLine` decided
+`blank_lines_around_single_line_*` against `blank_lines_around_*` from the member's *source* lines, and
+its width test covered only the breaking direction. A member written over lines that the formatter
+joins kept the multi-line member's blank lines. Measured 2026-10-07 with `Testing ask`:
+
+| written | key | oracle | Skala before |
+|---|---|---|---|
+| `get {` / `return _n;` / `}` beside `set { _n = value; }` | `blank_lines_around_accessor = 1` | `get { return _n; }`, no blank | joined, and a blank under it |
+| `get =>` / `_n;` | `blank_lines_around_accessor = 1` | joined, no blank | a blank under it |
+| `void LocalWraps() { _n = Math.Max(` / `_n,` / `1); }` between statements | reflow-keep corner | joined, no blank either side | a blank either side |
+| `int B() =>` / `2;` between one-line methods | the export | joined, no blank | a blank either side |
+| `int[] _b = new[] {` / `1, 2, 3` / `};` between fields | the export | joined, no blank | a blank either side |
+| `int K() =>` / `2;` between local functions | the export | joined, no blank | a blank either side |
+| `public C() {` / `}` between fields | the export | `public C() { }`, no blank | a blank either side |
+| `class B {` / `}` beside one-line types | `blank_lines_around_single_line_type = 0` | `class B { }`, no blank | a blank either side |
+
+Stable on a second pass under the export, because the blank is then preserved; at
+`keep_blank_lines_in_declarations = 0` the second pass removed it, a non-idempotency. Four of the export
+rows are in no option's name, and ten blank-lines constructs (`around-a-constructor`,
+`between-a-field-and-a-method`, …) had been divergent for this reason alone.
+
+⚠ The decision now comes from the writer. Every node a blank-line rule asks about — a member for the
+single-line keys, a statement or a switch section for the multi-line ones — is recorded with the
+answer the builder went on; `CSharpFormatter` lays the document out, `OutputLines` reads each node off
+the anchors of its first and last token (one output line, and that line within the margin), and on any
+disagreement builds the document again on the layout's answers. A blank run moves no column and no
+group, so the second layout has the first one's lines; the loop is bounded at two rebuilds. The plan
+could not answer it: a one-statement block's join (#405), a re-joined argument list and an `Auto`
+group are the fitter's. The source and plan guesses stay as the first build's answers, so a file
+whose guesses are right is laid out once. The margin half keeps SK-DIV-0024's unbroken
+`int` / `Aaaa…;` (one Skala line, two of the oracle's) multi-line, as the width test always had.
+Pinned by `constructs/blank-lines/a-member-the-writer-joins.cs` and
+`SingleLineIsAnOutputFactIssue414Tests`.
+
+- options: every `skala_blank_lines_around_single_line_*` and `skala_blank_lines_around_*` key that has
+  one, `skala_blank_lines_after_multiline_statements`, `skala_blank_lines_before_multiline_statements`,
+  `skala_blank_lines_around_multiline_case_section`.
+- ⚠ status: **resolved**.
+
+## SK-DIV-0172 — a plain comment glued between two members makes both multi-line for the gap above
+
+⚠ Found by #414's fix: three constructs (`consecutive-comments-above-a-member`,
+`stick-comment-moves-the-blank-above-the-comment`, `trivia/skala_stick_comment`) had passed only
+because their `void M() {` / `}` was multi-line in the source. Read off the output it is
+`void M() { }`, and the oracle still writes the blank above its comment. Measured with `Testing ask` on
+twenty-four shapes under the export, at `blank_lines_around_field = 0` and with
+`blank_lines_around_accessor = 1`, `blank_lines_around_single_line_type = 0`:
+
+- A member with a plain comment on the line directly above it is multi-line **for the gap above the
+  comment** and single-line for the gap under the member: `int _a;` / `// c` / `void B() { }` /
+  `void D() { }` takes `blank_lines_around_invocable` above the comment at `blank_lines_around_field = 0`
+  and nothing between `B` and `D`.
+- ⚠ A member with such a comment glued **under** it is multi-line for the gap above that member:
+  `int _x;` / `int _a;` / `// c` / `int _b;` writes a blank between `_x` and `_a`. Before a type's `}`
+  too: `int _a;` / `int _b;` / `// c` / `}` writes one between `_a` and `_b`, and nothing between `_b` and
+  the comment. For fields, methods, local functions, accessors and types; for `//` and `/* */`; for one
+  comment line or two.
+- Glued means no blank line on either side of the comment run. A blank between the member and the
+  comment, or between the comment and what follows, glues nothing; nor does a comment on the member's
+  own line, a comment before a `#region`, or a `///` run (which belongs to the member below and was
+  already handled).
+
+Skala reads it in `RequiredBlankLines` (`GluedCommentRunEnd`, `GluedToTheCommentBelow`). ⚠ The
+blank under the comment is read as the output keeps it — after the cap and the near-brace removal —
+while the oracle reads the source. At `keep_blank_lines_in_declarations = 0`, `int _b;` / `// c` /
+blank / `}` therefore takes the blank above `_b` on Skala's first pass and only on the oracle's second.
+⚠ And the rule is not idempotent in the oracle either, because the blank it adds above the comment
+un-glues the member above on the next pass: at `keep_blank_lines_in_declarations = 0` the oracle
+writes the blank between `_x` and `_a` and removes it on its own second pass. Skala does the same on
+both passes; under the export's cap of 2 the blank is preserved and both are stable. Pinned by
+`constructs/blank-lines/a-comment-glued-between-two-members.cs`.
+
+- options: the same keys as SK-DIV-0171.
+- ⚠ status: **resolved**, except the `keep_blank_lines_in_declarations = 0` second pass, which follows
+  the oracle's non-idempotency and is **open**.
