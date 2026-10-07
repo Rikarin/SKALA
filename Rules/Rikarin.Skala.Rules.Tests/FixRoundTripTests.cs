@@ -128,7 +128,7 @@ public sealed class FixRoundTripTests {
         );
     }
 
-    static Dictionary<string, int> ErrorsById(Compilation compilation, CancellationToken cancellation) {
+    internal static Dictionary<string, int> ErrorsById(Compilation compilation, CancellationToken cancellation) {
         var result = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var diagnostic in compilation.GetDiagnostics(cancellation)) {
             if (diagnostic.Severity != DiagnosticSeverity.Error) {
@@ -141,7 +141,7 @@ public sealed class FixRoundTripTests {
         return result;
     }
 
-    static IEnumerable<(int Start, int Length, string Text)> ReadEdits(Diagnostic diagnostic) {
+    internal static IEnumerable<(int Start, int Length, string Text)> ReadEdits(Diagnostic diagnostic) {
         if (!diagnostic.Properties.TryGetValue(FixEdits.CountKey, out var countText)
             || !int.TryParse(countText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var count)) {
             yield break;

@@ -79,7 +79,8 @@ public sealed class DiscardAssignmentAnalyzer : DiagnosticAnalyzer {
             || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
                 statement.SyntaxTree,
                 statement.Declaration.Span
-            )) {
+            )
+            || Discarded(model, statement.Declaration.Type, initializer, cancellation) is not { } discarded) {
             return;
         }
 
@@ -87,7 +88,7 @@ public sealed class DiscardAssignmentAnalyzer : DiagnosticAnalyzer {
             Diagnostic.Create(
                 Descriptor,
                 declarator.Identifier.GetLocation(),
-                FixEdits.Pack((statement.Declaration.Span, "_ = " + initializer)),
+                FixEdits.Pack((statement.Declaration.Span, "_ = " + discarded)),
                 "`" + local.Name + "` is assigned and never read; that is what `_` is for"
             )
         );
@@ -161,6 +162,58 @@ public sealed class DiscardAssignmentAnalyzer : DiagnosticAnalyzer {
     static bool NameIsTaken(SemanticModel model, int position, CancellationToken cancellation) {
         cancellation.ThrowIfCancellationRequested();
         return model.LookupSymbols(position, name: "_").Length > 0;
+    }
+
+    /// <summary>
+    ///     ⚠ The initializer as it has to be written once the declared type is gone, or <c>null</c> when
+    ///     the declared type is doing work a discard cannot do.
+    /// </summary>
+    /// <remarks>
+    ///     A discard has no type, so whatever the declaration's type contributed to the initializer is
+    ///     lost with it (#402). Two things can be lost:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             ⚠ <b>The target of a target-typed <c>new()</c>.</b> <c>Local local = new();</c>
+    ///             became <c>_ = new();</c>, which is <c>CS8754</c>. The type moves into the creation
+    ///             instead — <c>_ = new Local();</c> calls the same constructor — when the declared type
+    ///             is a name or a keyword. A <c>T?</c> declines, because <c>new T?()</c> is
+    ///             <c>CS8628</c> for a reference type, and so does a tuple type, because
+    ///             <c>new (int, int)()</c> is <c>CS8181</c>. ⚠ An <em>alias</em> to a tuple type is a
+    ///             name and <c>new Alias()</c> compiles — measured, after a first draft assumed otherwise.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ <b>A user-defined implicit conversion.</b> <c>Wrapper w = Make();</c> runs
+    ///             <c>op_Implicit</c>, and <c>_ = Make();</c> does not: the fix would compile and delete
+    ///             a call. Built-in conversions — boxing, a reference conversion, a numeric widening —
+    ///             have no effect worth keeping.
+    ///         </item>
+    ///     </list>
+    ///     The other initializers that take their type from the declaration — <c>default</c>, a
+    ///     collection expression, a lambda, a method group, <c>null</c>, <c>stackalloc</c>, a tuple
+    ///     literal or a conditional — never reach here, because <see cref="HasEffect" /> admits none of
+    ///     them; each has a negative fixture that says so.
+    /// </remarks>
+    static string? Discarded(
+        SemanticModel model,
+        TypeSyntax declared,
+        ExpressionSyntax initializer,
+        CancellationToken cancellation
+    ) {
+        if (model.GetConversion(initializer, cancellation).IsUserDefined) {
+            return null;
+        }
+
+        if (initializer is not ImplicitObjectCreationExpressionSyntax creation) {
+            return initializer.ToString();
+        }
+
+        if (declared.IsVar || declared is not (NameSyntax or PredefinedTypeSyntax)) {
+            return null;
+        }
+
+        var text = initializer.ToString();
+        var split = creation.NewKeyword.Span.End - initializer.SpanStart;
+        return text.Substring(0, split) + " " + declared + text.Substring(split);
     }
 
     /// <summary>Whether evaluating the initializer is the reason the statement is there.</summary>
