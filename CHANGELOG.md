@@ -16,7 +16,7 @@ missed it says so and by how much; three of them were, and one of those is still
 ### Removed — `skala arrange --aggressive`, which had done nothing since its gate was lifted (#389)
 
 ⚠ **Breaking, for anyone whose script passes `--aggressive`**: `skala arrange` now rejects it as an
-unrecognized option. It is removed rather than accepted-and-ignored for the reason the daemon flags
+unrecognized option, at exit 3. It is removed rather than accepted-and-ignored for the reason the daemon flags
 were — a flag that is silently a no-op lies to the next person who reads a script containing it.
 
 The flag gated redundant-parenthesis removal (`SK0209`) for the first release. The gate was lifted

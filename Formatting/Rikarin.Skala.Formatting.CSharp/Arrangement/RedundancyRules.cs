@@ -497,6 +497,11 @@ public static class ParenthesesRedundancy {
             // A lambda, a query or a `switch` arm inside parentheses is a readability decision the
             // oracle also leaves alone.
             //
+            // ⚠ Refuted for `switch` (#392): asked under the cleanup profile, the oracle removes the
+            // parentheses around a `switch` expression in a `return`, a `var` initializer, an arrow
+            // body and a binary operand, and keeps them only before `.Member`, where the parse needs
+            // them. Not yet changed here.
+            //
             // ⚠ `IsPatternExpressionSyntax` was on this list and is not: `(o is string s) && …` looks
             // like a case where the parentheses earn their keep, and the oracle removes them. Doc 00's
             // non-negotiable 9 makes the reference tool a test subject rather than a specification,

@@ -34,7 +34,7 @@
 <p>Write:</p>
 <pre class="good"><code>return value;</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>None relative to the effective configuration: a removal that would change the parse is refused by construction. Parentheses the configuration keeps for clarity remain — around the operands of shift and bitwise operators, and around a nested <code>&amp;&amp;</code>, <code>||</code> or <code>??</code> under <code>always_for_clarity</code> — and so do parentheses around an assignment, a conditional, a lambda, a query or a <code>switch</code> expression, inside an interpolation, or after a cast-shaped <code>(A)(b)</code>. Formatter-off regions are excluded. To keep every parenthesis, exclude the rule with <code>skala arrange --exclude SK0209</code>.</p>
+<p>None relative to the effective configuration: a removal that would change the parse is refused by construction. At the default <code>remove_if_not_clarifies_precedence</code>, parentheses the configuration keeps for clarity remain — around the operands of shift and bitwise operators, and around a nested <code>&amp;&amp;</code>, <code>||</code> or <code>??</code> under <code>always_for_clarity</code>; <code>remove</code> takes those too, as the oracle does. At either value so do parentheses around an assignment, a conditional, a lambda, a query or a <code>switch</code> expression, inside an interpolation, or after a cast-shaped <code>(A)(b)</code>. Formatter-off regions are excluded. To keep every parenthesis, exclude the rule with <code>skala arrange --exclude SK0209</code>.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><a href="../options/parentheses.html#skala_parentheses_redundancy_style"><code>skala_parentheses_redundancy_style</code></a></li>

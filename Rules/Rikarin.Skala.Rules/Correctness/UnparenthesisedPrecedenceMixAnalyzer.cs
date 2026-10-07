@@ -25,11 +25,13 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///             The boundary against <c>SK0209</c> is settled by construction, and settling it was the
 ///             condition on shipping this at all.
 ///         </b> <c>skala arrange</c> removes redundant parentheses,
-///         and <c>ParenthesesRedundancy.MayRemove</c> refuses unconditionally when the parent is a shift
-///         or a bitwise operator, because <c>resharper_parentheses_non_obvious_operations</c> names
-///         exactly those. Every pair of parentheses this rule adds has such a parent, so the arranger
-///         will never take one back and <c>skala fix</c> and <c>skala arrange</c> cannot
-///         fight.
+///         and at the default <c>remove_if_not_clarifies_precedence</c>
+///         <c>ParenthesesRedundancy.MayRemove</c> refuses when the parent is a shift or a bitwise
+///         operator, because <c>resharper_parentheses_non_obvious_operations</c> names exactly those.
+///         Every pair of parentheses this rule adds has such a parent, so the arranger will not take
+///         one back. ⚠ This said "unconditionally" and it is not: at <c>remove</c> the arranger
+///         strips them as the oracle does, and <c>skala fix</c> and <c>skala arrange</c> undo each
+///         other (#394).
 ///     </para>
 ///     <para>
 ///         ⚠ <b>Disjoint from <c>SK2064</c> by construction.</b> A comparison operand under <c>&amp;</c>
