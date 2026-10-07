@@ -33,8 +33,16 @@ public static class Arranger {
     ///         <c>new object()</c> where the oracle writes <c>new()</c>.
     ///     </para>
     ///     <para>
-    ///         <see cref="BodyStyleRule" /> runs last so that the expression it lifts into <c>=&gt;</c> is the
-    ///         already-arranged one, and the pair reaches a fixed point in one pass rather than two.
+    ///         <see cref="BodyStyleRule" /> runs after every rule that rewrites the expression it lifts into
+    ///         <c>=&gt;</c>, so the arrow carries the already-arranged one, and the pair reaches a fixed point
+    ///         in one pass rather than two.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ But <em>before</em> <see cref="RedundantParenthesesRule" />, because the heuristic reads the
+    ///         returned value as written (#399): the oracle converts <c>return (_n = a);</c> to
+    ///         <c>=&gt; _n = a;</c> and keeps <c>return _n = a;</c> a block. After the parentheses are gone
+    ///         the two are one tree, and running last refused the first. The parentheses rule strips the
+    ///         pair from the arrow exactly as it would have from the <c>return</c>.
     ///     </para>
     /// </remarks>
     public static ImmutableArray<ArrangementRule> Rules(ImmutableHashSet<string>? removableUsings = null) => [
@@ -51,11 +59,11 @@ public static class Arranger {
         new StaticQualifierRule(),
         new DiscardDeclarationRule(),
         new RedundantBracesRule(),
+        new BodyStyleRule(),
         new RedundantParenthesesRule(),
         new TrailingCommaRule(),
         new NamespaceBodyRule(),
-        new UsingsRule(removableUsings),
-        new BodyStyleRule()
+        new UsingsRule(removableUsings)
     ];
 
     /// <summary>Arranges text that has already been read, with options already resolved.</summary>

@@ -123,6 +123,20 @@ a `return` with a value — or, in an accessor, an expression statement; (b) it 
 because it has no return value at all, so `skala_constructor_or_destructor_body = expression_body` would
 otherwise be a setting that could never fire.
 
+⚠ **#399 found a sixth condition, and it is a list of syntax kinds, not a measure.** (f) The block
+stays when the expression contains — anywhere, in an argument, in an anonymous object's member — a
+`switch` expression, a lambda or anonymous method, or an *array* initializer (`new[] { … }`,
+`new int[] { … }`, `stackalloc[] { … }`); and a `return` whose value *is* an assignment
+(`return _n = a;`, `+=`, `??=`) stays a block, while an assignment nested inside the value, or an
+assignment expression *statement* in an accessor, converts. A one-line `() => 1` keeps its block; a
+five-line chopped sum, a multi-line query, a raw string and a multi-line object initializer all
+convert, so "the result would be multi-line" is refuted. Object and collection initializers, anonymous
+objects, collection expressions and `with` convert. It holds for every member kind that converts, a
+setter and a constructor at `expression_body` included, and lifts entirely at
+`skala_use_heuristics_for_body_style = false`. An accessor that is *already* an arrow collapses onto
+its owner whatever it holds — `{ get => () => 1; }` becomes `P => () => 1;`. Pinned by
+`constructs/arrangement/body-style/heuristics-expression.cs`.
+
 `skala_accessor_owner_body = expression_body` has two shapes and the key names only one: a property whose
 only accessor is a `get` collapses onto the **property** (`public int P => _n;`); a property with
 more than one accessor keeps its accessor list and each accessor gets an expression body. An indexer
