@@ -220,18 +220,46 @@ public static class SourcePieces {
         }
     }
 
-    static Piece Make(PieceKind kind, SyntaxTrivia trivia, SourceText text) =>
-        new(
+    static Piece Make(PieceKind kind, SyntaxTrivia trivia, SourceText text) {
+        var span = TextOf(trivia);
+        return new(
             kind,
-            trivia.Span,
-            text.ToString(trivia.Span),
+            span,
+            text.ToString(span),
             -1,
-            StartsLine(text, trivia.SpanStart),
+            StartsLine(text, span.Start),
             // ⚠ `DirectiveTriviaSyntax.IsActive` is the only thing that distinguishes a directive
             // inside a branch the preprocessor skipped from one that governs compiled code. The
             // structure is materialised for directives only, which is where the flag exists.
             trivia.IsDirective && trivia.GetStructure() is DirectiveTriviaSyntax { IsActive: false }
         );
+    }
+
+    /// <summary>The source text a trivia piece owns.</summary>
+    /// <remarks>
+    ///     ⚠ Issue #415. <see cref="SyntaxTrivia.Span" /> of a <em>structured</em> trivia excludes its
+    ///     structure's leading and trailing trivia, and a <c>/** … */</c> comment's <c>/**</c> opener is
+    ///     exactly that: the <see cref="SyntaxKind.DocumentationCommentExteriorTrivia" /> leading the
+    ///     structure's first token. Read through <c>Span</c>, every <c>/** … */</c> anywhere in a file —
+    ///     before a member, before a statement, inside an argument list — was written back as
+    ///     <c> … */</c>, the remainder re-lexed as tokens, and the file was refused with <c>SK9099</c>.
+    ///     <para>
+    ///         Only the documentation comment takes the full span. A directive is structured too, and its
+    ///         full span carries the line ending its end-of-directive token trails, which the directive
+    ///         piece must not own.
+    ///     </para>
+    /// </remarks>
+    public static TextSpan TextOf(SyntaxTrivia trivia) =>
+        trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia) ? trivia.FullSpan : trivia.Span;
+
+    /// <summary>
+    ///     The text of <see cref="TextOf" />'s span. ⚠ Not <see cref="SyntaxTrivia.ToString" />, which drops
+    ///     a <c>/** … */</c>'s opener for the same reason <see cref="SyntaxTrivia.Span" /> does.
+    /// </summary>
+    public static string TextOfString(SyntaxTrivia trivia) {
+        var span = TextOf(trivia);
+        return trivia.ToFullString().Substring(span.Start - trivia.FullSpan.Start, span.Length);
+    }
 
     /// <summary>True when only whitespace separates <paramref name="position" /> from the line start.</summary>
     static bool StartsLine(SourceText text, int position) {

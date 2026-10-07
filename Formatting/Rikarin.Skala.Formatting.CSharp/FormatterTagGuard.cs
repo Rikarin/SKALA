@@ -148,17 +148,20 @@ public sealed class FormatterTagGuard {
                 continue;
             }
 
-            var text = trivia.ToString();
+            // ⚠ Through TextOf: a `/** … */`'s Span and ToString both leave out its `/**` (#415), and
+            // the region must cover the whole comment the builder's piece covers.
+            var span = SourcePieces.TextOf(trivia);
+            var text = SourcePieces.TextOfString(trivia);
             if (start < 0) {
                 if (IsOffTag(text, tags)) {
-                    start = trivia.SpanStart;
+                    start = span.Start;
                 }
 
                 continue;
             }
 
             if (IsOnTag(text, tags)) {
-                regions.Add(TextSpan.FromBounds(start, trivia.Span.End));
+                regions.Add(TextSpan.FromBounds(start, span.End));
                 start = -1;
             }
         }

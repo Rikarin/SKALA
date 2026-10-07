@@ -2646,14 +2646,21 @@ public sealed partial class CSharpDocumentBuilder {
     ///     <para>
     ///         A line comment is never in the run: the gap after it holds a newline the point would be
     ///         free to join, and joining puts the token inside the comment. Neither is a directive, a
-    ///         documentation comment or a formatter tag.
+    ///         <c>///</c> documentation comment or a formatter tag.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ A <c>/** … */</c> comment is in the run (#415, SK-DIV-0180). Roslyn lexes <c>/**</c> as
+    ///         documentation wherever it stands, inside an argument list included, and the oracle treats
+    ///         it as the block comment it looks like: <c>/** single */ public int F;</c> and
+    ///         <c>/** s1 */ E();</c> are broken after the comment exactly as <c>/* … */</c> is, under
+    ///         <c>SkalaFormatOnly</c> and <c>SkalaDocComments</c> alike.
     ///     </para>
     /// </remarks>
     bool PointSurvivesComments(int lastPieceIndex) {
         for (var i = lastPieceIndex; i >= 0; i--) {
             var piece = pieces[i];
             switch (piece.Kind) {
-                case PieceKind.BlockComment
+                case PieceKind.BlockComment or PieceKind.BlockDocComment
                     when !FormatterTagGuard.IsOffTag(piece.Text, options.Tags)
                     && !FormatterTagGuard.IsOnTag(piece.Text, options.Tags):
                     continue;

@@ -1077,7 +1077,8 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        width += (options.SpaceBeforeTrailingComment ? 1 : 0) + TextWidth.Measure(trivia.ToString());
+        // ⚠ Through TextOf, not ToString: a `/** … */`'s ToString is its text without the `/**` (#415).
+        width += (options.SpaceBeforeTrailingComment ? 1 : 0) + TextWidth.Measure(SourcePieces.TextOfString(trivia));
         comments = true;
     }
 
