@@ -42,8 +42,12 @@ public sealed class FixTagTests {
         var path = scratch.Write("Thrower.cs", Source);
         ConfigurationCache.Clear();
 
+        // ⚠ SK2015 is named explicitly because #412 measured its fix changing behaviour and it is no
+        // longer `fixIsSafe`; the tag is what is under test here, not the rule's safety.
         FixCommand.Run(
-            new FixRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root] },
+            new FixRequest {
+                RepositoryRoot = scratch.Root, Paths = [scratch.Root], SafeOnly = false, Include = ["SK2015"]
+            },
             TestContext.Current.CancellationToken
         );
 
