@@ -376,7 +376,8 @@ public static class SpaceRules {
 
         // ⚠ A label's empty statement is not a semicolon's gap: `e:;`, `e: ;` and `e:   ;` all come back
         // `e: ;`, and `space_before_semicolon` moves every other `;` and not this one (#433).
-        if (right == SyntaxKind.SemicolonToken && next.Parent is EmptyStatementSyntax { Parent: LabeledStatementSyntax }) {
+        if (right == SyntaxKind.SemicolonToken
+            && next.Parent is EmptyStatementSyntax { Parent: LabeledStatementSyntax }) {
             return true;
         }
 

@@ -27,7 +27,8 @@ public sealed class LabelledStatementIssue433Tests {
     }
 
     static string InMethod(string statements) =>
-        "class L {\n    void M(int a) { }\n\n    void T(int k) {\n        " + statements
+        "class L {\n    void M(int a) { }\n\n    void T(int k) {\n        "
+        + statements
         + "\n        goto a;\n    }\n}\n";
 
     static void AssertFormats(string statements, string expected, params (string Key, string Value)[] overrides) {

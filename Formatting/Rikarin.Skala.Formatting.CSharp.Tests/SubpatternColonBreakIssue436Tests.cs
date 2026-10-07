@@ -45,14 +45,20 @@ public sealed class SubpatternColonBreakIssue436Tests {
         "var p = o is P { X: 1, Y\n            : 2 };",
         "        var p = o is P {\n            X: 1,\n            Y\n            : 2\n        };\n"
     )]
-    [InlineData("var p = o is P { Q.X\n            : 1 };", "        var p = o is P {\n            Q.X\n            : 1\n        };\n")]
+    [InlineData(
+        "var p = o is P { Q.X\n            : 1 };",
+        "        var p = o is P {\n            Q.X\n            : 1\n        };\n"
+    )]
     [InlineData(
         "var p = o is P { Q: { X\n            : 1 } };",
         "        var p = o is P {\n            Q: {\n                X\n                : 1\n            }\n        };\n"
     )]
     [InlineData("var p = o is P (A\n            : 1, B: 2);", "        var p = o is P (A\n            : 1, B: 2);\n")]
     [InlineData("var p = (a\n            : 1, b: 2);", "        var p = (a\n            : 1, b: 2);\n")]
-    [InlineData("M(a\n            : 1, b: 2);", "        M(\n            a\n            : 1,\n            b: 2\n        );\n")]
+    [InlineData(
+        "M(a\n            : 1, b: 2);",
+        "        M(\n            a\n            : 1,\n            b: 2\n        );\n"
+    )]
     public void AnAuthorsBreakBeforeTheColon_IsKept(string statement, string expected) =>
         AssertFormats(statement, expected);
 
@@ -84,5 +90,8 @@ public sealed class SubpatternColonBreakIssue436Tests {
     /// <summary>A break after the colon was already the subpattern's own point, and is unchanged.</summary>
     [Fact]
     public void ABreakAfterTheColon_IsUnchanged() =>
-        AssertFormats("var p = o is P { X:\n            1 };", "        var p = o is P {\n            X:\n            1\n        };\n");
+        AssertFormats(
+            "var p = o is P { X:\n            1 };",
+            "        var p = o is P {\n            X:\n            1\n        };\n"
+        );
 }

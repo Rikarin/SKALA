@@ -2750,8 +2750,8 @@ public sealed partial class CSharpDocumentBuilder {
                 nextToken,
                 ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                 newLines == 0
-                    ? DefaultNewLine()
-                    : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                ? DefaultNewLine()
+                : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
             );
 
             return;
@@ -3639,7 +3639,8 @@ public sealed partial class CSharpDocumentBuilder {
         && token.Parent.AncestorsAndSelf()
             .TakeWhile(node => node.GetFirstToken() == token)
             .Any(static node => node is StatementSyntax and not EmptyStatementSyntax
-                && node.Parent is LabeledStatementSyntax);
+                && node.Parent is LabeledStatementSyntax
+            );
 
     static bool FollowsItsDeclarationsType(SyntaxToken token) =>
         token.IsKind(SyntaxKind.IdentifierToken)
