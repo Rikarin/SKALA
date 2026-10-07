@@ -149,14 +149,15 @@ public sealed class CollectionCallShapeBatchTests {
     /// <summary>
     ///     ⚠ The compared value leaves the lambda, so it is evaluated once instead of once per
     ///     element. A call there is a change to the program even when the answer is the same.
+    ///     An <c>ImmutableList</c>, because over a <c>List</c> the call declines the predicate outright (#430).
     /// </summary>
     [Fact]
     public void AComputedComparisonValueIsNotHoistedIntoContains() {
         const string source = """
-                              using System.Collections.Generic;
+                              using System.Collections.Immutable;
                               using System.Linq;
                               public sealed class Registry {
-                                  public static bool Knows(List<int> codes) => codes.Any(code => code == Wanted());
+                                  public static bool Knows(ImmutableList<int> codes) => codes.Any(code => code == Wanted());
 
                                   static int Wanted() => 7;
                               }
