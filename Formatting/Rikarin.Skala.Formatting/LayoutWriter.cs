@@ -109,6 +109,12 @@ public sealed class LayoutWriter {
     int pendingAnchorToken = -1;
     bool hasPendingAnchor;
 
+    /// <summary>The chain group <see cref="ChainBreaksInside" /> is watching, or -1.</summary>
+    int watchedChain = -1;
+
+    /// <summary>Whether <see cref="watchedChain" /> has taken a point since the watch began.</summary>
+    bool watchedChainBroke;
+
     readonly int continuousMultiplier;
     readonly int indentWidth;
     readonly int width;
@@ -204,8 +210,14 @@ public sealed class LayoutWriter {
     ///     that is only sound because there is no second loop with its own reading of a frame: whatever
     ///     the real walk will do with the line, the speculative one did first, with the same code.
     /// </remarks>
-    void Run(Stack<(int Node, int Child)> stack, int untilLine) {
-        while (stack.Count > 0 && line <= untilLine) {
+    /// <param name="stack">The frames to write from; consumed.</param>
+    /// <param name="untilLine">The last output line to write.</param>
+    /// <param name="floor">
+    ///     How many frames to leave on the stack: <see cref="ChainBreaksInside" /> writes one scope's
+    ///     contents and stops when the scope closes.
+    /// </param>
+    void Run(Stack<(int Node, int Child)> stack, int untilLine, int floor = 0) {
+        while (stack.Count > floor && line <= untilLine) {
             var (node, child) = stack.Pop();
             ref var slot = ref document.Nodes[node];
 
@@ -241,7 +253,17 @@ public sealed class LayoutWriter {
                         continue;
 
                     case DocKind.Indent:
-                        Push((IndentKind)slot.Arg0, (IndentFlags)slot.Arg1, slot.Arg2, stack);
+                        if (((IndentFlags)slot.Arg1 & HeldConditions) != 0) {
+                            Push(
+                                HeldOrSpent(node, (IndentKind)slot.Arg0, (IndentFlags)slot.Arg1, slot.Arg2, stack),
+                                IndentFlags.None,
+                                0,
+                                stack
+                            );
+                        } else {
+                            Push((IndentKind)slot.Arg0, (IndentFlags)slot.Arg1, slot.Arg2, stack);
+                        }
+
                         break;
 
                     case DocKind.Group:
@@ -290,6 +312,92 @@ public sealed class LayoutWriter {
         }
     }
 
+    const IndentFlags HeldConditions = IndentFlags.HeldWhileOwnerFlat | IndentFlags.HeldWhileChainWhole;
+
+    /// <summary>
+    ///     The kind a conditionally held scope opens as: <see cref="IndentKind.None" /> — a held level —
+    ///     while every condition it names holds, its own kind once one fails.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The owner's condition is already decided: the scope is the first child of the group that
+    ///     owns it, and that group was resolved when the walk entered it (issue #406). The chain's is
+    ///     not, so it is asked last and only when the owner's did not already spend the level; see
+    ///     <see cref="ChainBreaksInside" /> (issue #407).
+    /// </remarks>
+    IndentKind HeldOrSpent(
+        int node,
+        IndentKind kind,
+        IndentFlags conditions,
+        int chainGroup,
+        Stack<(int Node, int Child)> stack
+    ) {
+        if ((conditions & IndentFlags.HeldWhileOwnerFlat) != 0 && OwnerBroke(stack)) {
+            return kind;
+        }
+
+        if ((conditions & IndentFlags.HeldWhileChainWhole) != 0
+            && chainGroup >= 0
+            && ChainBreaksInside(node, chainGroup, stack)) {
+            return kind;
+        }
+
+        return IndentKind.None;
+    }
+
+    /// <summary>Whether the nearest group around the top of <paramref name="stack" /> resolved broken.</summary>
+    bool OwnerBroke(Stack<(int Node, int Child)> stack) {
+        foreach (var (ancestor, _) in stack) {
+            ref var slot = ref document.Nodes[ancestor];
+            if (slot.Kind == DocKind.Group) {
+                return fitter.ModeOf(slot.Arg1) == ResolvedMode.Broken;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     Whether <paramref name="chainGroup" /> takes one of its points when the contents of the scope
+    ///     at <paramref name="node" /> are written with the scope held — written ahead, watched, and
+    ///     rolled back.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <see cref="HeldLevel" />'s <c>WhileChainWhole</c>, and the question is a fill's (issue
+    ///     #407, SK-DIV-0158): under <c>wrap_if_long</c> a chain breaks before a dot point by point,
+    ///     by width, at the writer's own columns, and whether it breaks decides the level the
+    ///     columns are counted from. The same reason <see cref="NextLineFitsBeside" /> gives applies:
+    ///     a second model of the fill here would disagree a column at a time, so the writer writes
+    ///     the scope's contents held, reads the answer off its own decisions, and restores everything.
+    ///     <para>
+    ///         ⚠ Sound because the answer is monotone in the level. Held is the shallower of the two
+    ///         layouts, so a chain that breaks there breaks spent as well, and the real walk then
+    ///         writes it broken; one that stays whole held is written held, exactly as speculated.
+    ///         Pass two reads a fill's break back as the author's, which disqualifies the hold from the
+    ///         source and spends the level — the same layout.
+    ///     </para>
+    /// </remarks>
+    bool ChainBreaksInside(int node, int chainGroup, Stack<(int Node, int Child)> stack) {
+        var (watched, broke) = (watchedChain, watchedChainBroke);
+        var checkpoint = Checkpoint();
+        watchedChain = chainGroup;
+        watchedChainBroke = false;
+
+        Push(IndentKind.None, IndentFlags.None, 0, stack);
+        var ahead = new Stack<(int Node, int Child)>(stack.Reverse());
+        var floor = ahead.Count;
+        var children = document.ChildrenOf(node);
+        ahead.Push((node, 1));
+        if (children.Length > 0) {
+            ahead.Push((children[0], 0));
+        }
+
+        Run(ahead, int.MaxValue, floor);
+        var answer = watchedChainBroke;
+        Restore(checkpoint);
+        (watchedChain, watchedChainBroke) = (watched, broke);
+        return answer;
+    }
+
     /// <summary>
     ///     Opens an indentation scope, recording the line it opened on.
     /// </summary>
@@ -309,6 +417,7 @@ public sealed class LayoutWriter {
     /// </remarks>
     void Push(IndentKind kind, IndentFlags flags, int columns, Stack<(int Node, int Child)> ancestors) {
         var unconditional = (flags & IndentFlags.Unconditional) != 0;
+
 
         // ⚠ The closing delimiter goes back to the level the scope was opened AT, not to the level
         // of the physical line the opener happened to land on. The two differ whenever a condition
@@ -1202,6 +1311,10 @@ public sealed class LayoutWriter {
             }
         }
 
+        if (watchedChain >= 0 && kind == LineKind.Soft && slot.Arg2 == watchedChain) {
+            watchedChainBroke = true;
+        }
+
         TakeBreak(ref slot);
     }
 
@@ -1331,6 +1444,7 @@ public sealed class LayoutWriter {
         public SourceSpan PendingAnchorSpan;
         public int PendingAnchorToken;
         public bool HasPendingAnchor;
+        public bool WatchedChainBroke;
         public Fitter.Mark Fitter;
     }
 
@@ -1349,6 +1463,7 @@ public sealed class LayoutWriter {
             PendingAnchorSpan = pendingAnchorSpan,
             PendingAnchorToken = pendingAnchorToken,
             HasPendingAnchor = hasPendingAnchor,
+            WatchedChainBroke = watchedChainBroke,
             Fitter = fitter.MarkForRollback()
         };
 
@@ -1367,6 +1482,7 @@ public sealed class LayoutWriter {
         pendingAnchorSpan = state.PendingAnchorSpan;
         pendingAnchorToken = state.PendingAnchorToken;
         hasPendingAnchor = state.HasPendingAnchor;
+        watchedChainBroke = state.WatchedChainBroke;
         fitter.Rollback(state.Fitter);
     }
 

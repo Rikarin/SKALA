@@ -346,6 +346,19 @@ public sealed class DocumentBuilder {
             columns
         );
 
+    /// <summary>
+    ///     Opens a continuation scope that is a held level until one of <paramref name="conditions" />
+    ///     fails: <see cref="IndentFlags.HeldWhileOwnerFlat" />, <see cref="IndentFlags.HeldWhileChainWhole" />
+    ///     over <paramref name="chainGroup" />, or both.
+    /// </summary>
+    public void OpenHeldIndent(IndentKind kind, IndentFlags conditions, int chainGroup) =>
+        Open(
+            DocKind.Indent,
+            (int)kind,
+            (int)(conditions & (IndentFlags.HeldWhileOwnerFlat | IndentFlags.HeldWhileChainWhole)),
+            chainGroup
+        );
+
     public void OpenConcat() => Open(DocKind.Concat, 0, 0);
 
     /// <summary>Opens an <see cref="DocKind.IfBroken" /> over a group; its two children are Then and Else.</summary>

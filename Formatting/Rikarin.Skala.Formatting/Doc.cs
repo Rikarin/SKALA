@@ -294,7 +294,24 @@ public enum IndentFlags {
     ///     inside the parenthesis broke (<see cref="GroupFacts.Continues" />): <c>(y switch { … }</c> /
     ///     <c>+ 1)</c> puts the arms two levels in (issue #393, SK-DIV-0148).
     /// </summary>
-    Grouping = 2
+    Grouping = 2,
+
+    /// <summary>
+    ///     ⚠ A held level while the group that owns the scope stays flat, and a continuation level once
+    ///     it broke. The owner is the nearest group around the scope — the scope is its first child —
+    ///     and the writer has entered it, and so resolved it, before it reaches the scope. A switch
+    ///     arm's group before its <c>=&gt;</c> is the one user (issue #406, SK-DIV-0157).
+    /// </summary>
+    HeldWhileOwnerFlat = 4,
+
+    /// <summary>
+    ///     ⚠ A held level while the chain group whose id the node carries in place of a column count
+    ///     takes none of its points, and a continuation level once it takes one. Nothing has decided
+    ///     that when the scope opens — the chain is inside it, and a fill decides point by point at
+    ///     the writer's columns — so the writer lays the scope's contents out held, watches the chain,
+    ///     and rolls back before deciding (issue #407, SK-DIV-0158).
+    /// </summary>
+    HeldWhileChainWhole = 8
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
