@@ -35,7 +35,7 @@ public sealed class CommentBehindADeclarationsTypeIssue420Tests {
     [InlineData("var /*k01*/v1 = 1;", "        var /*k01*/\n            v1 = 1;\n")]
     [InlineData("int /*k02*/ v2 = 1;", "        int /*k02*/\n            v2 = 1;\n")]
     [InlineData(
-        "(int, string) /*k03*/ v3 = (1, \"\");",
+        """(int, string) /*k03*/ v3 = (1, "");""",
         "        (int, string) /*k03*/\n            v3 = (1, \"\");\n"
     )]
     [InlineData("System.Func<int> /*k04*/ v4 = null;", "        System.Func<int> /*k04*/\n            v4 = null;\n")]

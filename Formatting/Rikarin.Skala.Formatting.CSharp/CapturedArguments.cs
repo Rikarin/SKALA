@@ -58,6 +58,8 @@ public static class CapturedArguments {
     static readonly int[] First = [0];
     static readonly int[] FirstTwo = [0, 1];
 
+    const string OutOfRange = "ArgumentOutOfRangeException";
+
     /// <summary>
     ///     ⚠ Measured, not remembered: every public parameter carrying
     ///     <c>CallerArgumentExpressionAttribute</c> in <c>Microsoft.NETCore.App.Ref</c> 10.0.12,
@@ -87,15 +89,15 @@ public static class CapturedArguments {
         new("ArgumentNullException", "ThrowIfNull", First, 2, ParamName),
         new("ArgumentException", "ThrowIfNullOrEmpty", First, 2, ParamName),
         new("ArgumentException", "ThrowIfNullOrWhiteSpace", First, 2, ParamName),
-        new("ArgumentOutOfRangeException", "ThrowIfZero", First, 2, ParamName),
-        new("ArgumentOutOfRangeException", "ThrowIfNegative", First, 2, ParamName),
-        new("ArgumentOutOfRangeException", "ThrowIfNegativeOrZero", First, 2, ParamName),
-        new("ArgumentOutOfRangeException", "ThrowIfEqual", First, 3, ParamName),
-        new("ArgumentOutOfRangeException", "ThrowIfNotEqual", First, 3, ParamName),
-        new("ArgumentOutOfRangeException", "ThrowIfGreaterThan", First, 3, ParamName),
-        new("ArgumentOutOfRangeException", "ThrowIfGreaterThanOrEqual", First, 3, ParamName),
-        new("ArgumentOutOfRangeException", "ThrowIfLessThan", First, 3, ParamName),
-        new("ArgumentOutOfRangeException", "ThrowIfLessThanOrEqual", First, 3, ParamName),
+        new(OutOfRange, "ThrowIfZero", First, 2, ParamName),
+        new(OutOfRange, "ThrowIfNegative", First, 2, ParamName),
+        new(OutOfRange, "ThrowIfNegativeOrZero", First, 2, ParamName),
+        new(OutOfRange, "ThrowIfEqual", First, 3, ParamName),
+        new(OutOfRange, "ThrowIfNotEqual", First, 3, ParamName),
+        new(OutOfRange, "ThrowIfGreaterThan", First, 3, ParamName),
+        new(OutOfRange, "ThrowIfGreaterThanOrEqual", First, 3, ParamName),
+        new(OutOfRange, "ThrowIfLessThan", First, 3, ParamName),
+        new(OutOfRange, "ThrowIfLessThanOrEqual", First, 3, ParamName),
         new("Assert", "That", FirstTwo, int.MaxValue, NUnitNames),
         new("Assert", "ThatAsync", FirstTwo, int.MaxValue, NUnitNames),
         new("Assert", "ByVal", FirstTwo, int.MaxValue, NUnitNames),
@@ -295,13 +297,13 @@ public static class CapturedArguments {
         AddDeclared(invocation, invocation.ArgumentList.Arguments, declaration, spans);
     }
 
-    /// <summary>Delegate type name to the names of the locals, parameters, fields and properties of that type.</summary>
+    /// <summary>
+    ///     Delegate type name to the names of the locals, parameters, fields and properties of that type.
+    /// </summary>
     static Dictionary<string, HashSet<string>> DelegateVariables(SyntaxNode root, List<Declared> declared) {
         var types = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-        foreach (var declaration in declared) {
-            if (declaration.Kind == CallKind.Delegate) {
-                types.TryAdd(declaration.Name, new HashSet<string>(StringComparer.Ordinal));
-            }
+        foreach (var declaration in declared.Where(static declaration => declaration.Kind == CallKind.Delegate)) {
+            types.TryAdd(declaration.Name, new HashSet<string>(StringComparer.Ordinal));
         }
 
         foreach (var node in root.DescendantNodes()) {
@@ -512,7 +514,7 @@ public static class CapturedArguments {
             ConstructorDeclarationSyntax constructor => (CallKind.Creation, constructor.Identifier.ValueText),
             TypeDeclarationSyntax type => (CallKind.Creation, type.Identifier.ValueText),
             IndexerDeclarationSyntax => (CallKind.Element, "this"),
-            DelegateDeclarationSyntax @delegate => (CallKind.Delegate, @delegate.Identifier.ValueText),
+            DelegateDeclarationSyntax delegateType => (CallKind.Delegate, delegateType.Identifier.ValueText),
             _ => ((CallKind?)null, string.Empty)
         };
         if (kind is not { } callKind) {

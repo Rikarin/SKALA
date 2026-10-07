@@ -199,18 +199,19 @@ public sealed partial class CSharpDocumentBuilder {
             return false;
         }
 
-        foreach (var trivia in node.DescendantTrivia(node.Span)) {
-            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
-                var comment = trivia.ToString();
-                if (FormatterTagGuard.IsOffTag(comment, options.Tags)
-                    || FormatterTagGuard.IsOnTag(comment, options.Tags)) {
-                    return false;
-                }
+        // Reached only for a captured argument, so the iterator is not on the per-node path.
+        foreach (var trivia in node.DescendantTrivia(node.Span).Where(IsLineOrBlockComment)) {
+            var comment = trivia.ToString();
+            if (FormatterTagGuard.IsOffTag(comment, options.Tags) || FormatterTagGuard.IsOnTag(comment, options.Tags)) {
+                return false;
             }
         }
 
         return true;
     }
+
+    static bool IsLineOrBlockComment(SyntaxTrivia trivia) =>
+        trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia);
 
     /// <summary>The position the alignment column is read at.</summary>
     /// <remarks>
