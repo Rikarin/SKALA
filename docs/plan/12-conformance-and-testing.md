@@ -1122,7 +1122,7 @@ keep the file parsing the way it parsed before, drawn by weight from a seeded st
 | class | mutations |
 |---|---|
 | **absorbed** — whitespace and nothing else | `indent`, `trailing-space`, `widen-gap`, `collapse-gap`, `tabs` |
-| **structural** — parse-preserving, information-bearing | `comment-line`, `comment-inline`, `trailing-comment`, `blank-lines`, `remove-blank-line`, `if-true`, `if-disabled`, `region`, `pragma`, `line-endings`, `bom`, `widen-identifier`, `join-line`, `split-line` |
+| **structural** — parse-preserving, information-bearing | `comment-line`, `doc-comment-line`, `comment-inline`, `doc-comment-inline`, `trailing-comment`, `blank-lines`, `remove-blank-line`, `if-true`, `if-disabled`, `region`, `pragma`, `line-endings`, `bom`, `widen-identifier`, `join-line`, `split-line` |
 
 The absorbed five carry the strong property, `format(mutate_whitespace(x)) ≡ format(x)`, which the
 preserve-and-repair model of ADR-002 makes genuinely hard rather than trivially true.

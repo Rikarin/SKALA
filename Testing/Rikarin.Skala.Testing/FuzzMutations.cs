@@ -57,6 +57,8 @@ public static class FuzzMutations {
     public const string Tabs = "tabs";
     public const string CommentLine = "comment-line";
     public const string CommentInline = "comment-inline";
+    public const string DocCommentLine = "doc-comment-line";
+    public const string DocCommentInline = "doc-comment-inline";
     public const string TrailingComment = "trailing-comment";
     public const string BlankLines = "blank-lines";
     public const string RemoveBlankLine = "remove-blank-line";
@@ -93,8 +95,14 @@ public static class FuzzMutations {
         (WidenGap, MutationClass.Absorbed, 10),
         (CollapseGap, MutationClass.Absorbed, 6),
         (Tabs, MutationClass.Absorbed, 6),
-        (CommentLine, MutationClass.Structural, 7),
-        (CommentInline, MutationClass.Structural, 7),
+        // ⚠ The two `/** … */` productions (#415) take their weight out of the `//` and `/* */` ones
+        // directly above them rather than adding to the total. `Pick` walks the cumulative weights, so
+        // a total that moves re-targets every recorded seed; carved out of its neighbour, only the
+        // draws that landed in the carved-off slots change.
+        (CommentLine, MutationClass.Structural, 5),
+        (DocCommentLine, MutationClass.Structural, 2),
+        (CommentInline, MutationClass.Structural, 5),
+        (DocCommentInline, MutationClass.Structural, 2),
         (TrailingComment, MutationClass.Structural, 5),
         (BlankLines, MutationClass.Structural, 6),
         (RemoveBlankLine, MutationClass.Structural, 4),
@@ -153,7 +161,17 @@ public static class FuzzMutations {
                 static (random, indent) =>
                     indent + "// fuzz " + random.Next(1000).ToString(CultureInfo.InvariantCulture) + "\n"
             ),
+            // ⚠ `/**` is documentation to Roslyn wherever it stands — inside an argument list too — and
+            // its trivia's Span leaves the opener out. Every file holding one was refused with SK9099
+            // until #415, and neither comment production above could have found it.
+            DocCommentLine => InsertLines(
+                map,
+                random,
+                static (random, indent) =>
+                    indent + "/** fuzz " + random.Next(1000).ToString(CultureInfo.InvariantCulture) + " */\n"
+            ),
             CommentInline => InsertAtGap(map, random, "/* f */"),
+            DocCommentInline => InsertAtGap(map, random, "/** d */"),
             TrailingComment => Trailing(map, random, " // fuzz"),
             BlankLines => InsertLines(map, random, static (random, _) => new string('\n', random.Next(1, 4))),
             RemoveBlankLine => RemoveBlank(map, random),
@@ -285,7 +303,7 @@ public static class FuzzMutations {
         return edits.Count == 0 ? null : Splice(map.Source, edits);
     }
 
-    // ── the structural fourteen ──────────────────────────────────────────────────────────────────
+    // ── the structural sixteen ───────────────────────────────────────────────────────────────────
 
     static string? InsertLines(SourceMap map, FuzzRandom random, Func<FuzzRandom, string, string> body) {
         var boundaries = map.LineBoundaries;
