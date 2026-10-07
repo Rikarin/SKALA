@@ -4560,16 +4560,22 @@ public sealed class BreakPlan {
     /// <remarks>
     ///     ⚠ Unconditional, which is not what the option names suggest and is what the oracle does.
     ///     <c>csharp_preserve_single_line_blocks = true</c> is in the export and reads like permission
-    ///     to leave <c>void M() { Call(); Call(); }</c> alone; ReSharper ignores it, and
+    ///     to leave <c>void M() { Call(); Call(); }</c> alone; ReSharper ignores it there, and
     ///     <c>class B { public int P => 1; public int Q => 2; }</c> comes back as five lines. There is
     ///     no width test and no <c>keep_user_linebreaks</c> in it: a body with anything in it is broken.
+    ///     ⚠ Not ignored everywhere, measured for #405: at <c>false</c> the oracle also expands every
+    ///     one-statement accessor, lambda and anonymous-method block, <c>get { return _n; }</c> included.
+    ///     Skala does not read the key (Tier D), so that corner is not honoured.
     ///     <para>
-    ///         ⚠ Three exclusions, each measured rather than assumed. An <em>empty</em> body stays together
-    ///         (<c>skala_empty_block_style = together</c>). An accessor's body does not break —
-    ///         <c>get { return _street; }</c> comes back from the oracle exactly as written, and
-    ///         <c>public int X { get; set; }</c> is one line and has its own spacing keys. And a lambda's or
-    ///         anonymous method's block does not, because the call it is an argument to keeps it on its line:
-    ///         <c>Register(() => { Body(); });</c> comes back whole.
+    ///         ⚠ Two exclusions, each measured rather than assumed. An <em>empty</em> body stays together
+    ///         (<c>skala_empty_block_style = together</c>). And a one-statement block that may share its
+    ///         owner's line — an accessor's, a lambda's, an anonymous method's always, a method's or an
+    ///         <c>if</c>'s under its <c>keep_existing_*_block_arrangement</c> key — does exactly when its
+    ///         statement ends up on that line (<see cref="MayShareItsOwnersLine" />, issue #405).
+    ///         ⚠ This used to read "an accessor's body does not break" and "a lambda's block does not",
+    ///         from <c>get { return _street; }</c> and <c>Register(() => { Body(); });</c>, which come back
+    ///         whole because they fit; <c>get { return Math.Max(</c>↵<c>…); }</c> and
+    ///         <c>() => { A(); B(); }</c> are broken open.
     ///     </para>
     ///     <para>
     ///         It is also what makes "single line" a stable property of the output. A member sharing a line
@@ -4590,9 +4596,24 @@ public sealed class BreakPlan {
     /// </remarks>
     void PlanOnePerLine(SyntaxNode node) {
         switch (node) {
-            case BlockSyntax { Statements.Count: > 0 } block
-                when block.Parent is not (AnonymousFunctionExpressionSyntax or AccessorDeclarationSyntax)
-                && !Keeps(block):
+            case BlockSyntax { Statements.Count: > 0 } block when MayShareItsOwnersLine(block):
+                var group = NewGroup();
+                Point(FirstToken(block.Statements[0]), group);
+                Point(block.CloseBraceToken, group);
+                var head = HeadMarkerOf(block);
+                Describe(
+                    block,
+                    group,
+                    GroupMode.Preserve,
+                    new GroupFacts(
+                        BreaksIfTooLong: true,
+                        Owner: head,
+                        BreaksIfOwnerIsMultiLine: head >= 0
+                    )
+                );
+                return;
+
+            case BlockSyntax { Statements.Count: > 0 } block:
                 foreach (var statement in block.Statements) {
                     Mandatory(FirstToken(statement));
                 }
@@ -4642,9 +4663,101 @@ public sealed class BreakPlan {
     ///     </para>
     /// </remarks>
     bool Keeps(BlockSyntax block) =>
-        block.Parent is StatementSyntax or SwitchSectionSyntax
+        block.Parent is (StatementSyntax and not LocalFunctionStatementSyntax)
+            or SwitchSectionSyntax
+            or AnonymousFunctionExpressionSyntax
             ? options.KeepExistingEmbeddedBlockArrangement
             : options.KeepExistingDeclarationBlockArrangement;
+
+    /// <summary>
+    ///     Whether a block may stay on its owner's line — and then it does exactly when everything in it
+    ///     ends up on that line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ "Ends up on that line" is the fitter's containment fact and nothing more: a statement that
+    ///     wraps by a kept break, an always-chopped switch, a lambda block of its own or the margin gives
+    ///     the block an unbounded flat width, and the group breaks. A look-ahead that wrote the block flat
+    ///     on a checkpoint and broke it if that spanned lines was built, and dropped because no probe could
+    ///     redden it: a kept <c>=</c>, a kept chain dot, <c>=</c>↵<c>[1, 2]</c>, a verbatim string's
+    ///     newline, a type-argument fill, a broken ternary, a broken query, a nested lambda arrow and a
+    ///     property pattern all answered identically without it (SK-DIV-0162). A non-idempotency here — a
+    ///     block kept flat on pass one whose statement wrapped for a reason the document does not count as
+    ///     certain — is where to put it back.
+    ///     ⚠ One rule for every block, measured on accessors, lambdas, anonymous methods, methods,
+    ///     local functions, <c>if</c> and <c>while</c> (issue #405, SK-DIV-0162). A block with more than
+    ///     one statement never does, at every key: <c>set { _n = value; _n++; }</c> comes back four
+    ///     lines under the export and under both <c>keep_existing_*_block_arrangement = true</c>, as
+    ///     <c>void M() { A(); B(); }</c> and <c>if (c) { A(); B(); }</c> do. A one-statement block does
+    ///     when its owner allows it:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             an accessor's, a lambda's and an anonymous method's always — and the author's break
+    ///             is not a reason to keep it broken: <c>get {</c>↵<c>return _n;</c>↵<c>}</c> and
+    ///             <c>() => {</c>↵<c>_n = 1;</c>↵<c>}</c> are joined; the one key that keeps them is the
+    ///             one <see cref="Keeps" /> names — the declaration key for the accessor, ⚠ the
+    ///             <em>embedded</em> key for the lambda — and under it a block broken at either of its
+    ///             own gaps is broken at both;
+    ///         </item>
+    ///         <item>
+    ///             a method's, a local function's or an <c>if</c>'s only under its key, and only as
+    ///             written on one line.
+    ///         </item>
+    ///     </list>
+    ///     <para>
+    ///         ⚠ A local function's block is the <em>declaration</em> key's although a local function is a
+    ///         statement: <c>void L() { A(); }</c> is kept under the declaration key and expanded under
+    ///         the embedded one. Routed by the parent's base type it went to the embedded key and was
+    ///         expanded where the oracle keeps it.
+    ///     </para>
+    /// </remarks>
+    /// <summary>
+    ///     The head marker of the declaration or function a one-line block belongs to, or −1 for a
+    ///     statement's block, which has none.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A block stays on its owner's line only while the owner is on one line: measured for #405,
+    ///     <c>delegate(</c>↵<c>int first) { return first; }</c>, <c>(</c>↵<c>int first) =&gt; { … }</c>,
+    ///     <c>(int first)</c>↵<c>=&gt; { … }</c>, and under the declaration key <c>void N(</c>↵<c>int x)
+    ///     { M(); }</c> and the same local function all come back with the block broken open, while
+    ///     <c>[Obsolete]</c>↵<c>get { return _n; }</c> keeps it — the attribute's line is not the head's,
+    ///     as for an expression body (#372). ⚠ Not an <c>if</c>: <c>if (a</c>↵<c>&amp;&amp; b) { M(); }</c>
+    ///     stays whole under the embedded key, as an embedded statement stays on a broken header's last
+    ///     line (SK-DIV-0106). Read off the writer's lines, like
+    ///     <see cref="GroupFacts.BreaksIfOwnerIsMultiLine" /> everywhere else: a parameter list the fitter
+    ///     chops is not in the source on pass one.
+    ///     <para>
+    ///         This is SK-DIV-0077's block half: Skala used to write <c>) { return first; }</c> on the line
+    ///         that closes a parameter list broken across three.
+    ///     </para>
+    /// </remarks>
+    int HeadMarkerOf(BlockSyntax block) {
+        if (block.Parent is null or (StatementSyntax and not LocalFunctionStatementSyntax) or SwitchSectionSyntax) {
+            return -1;
+        }
+
+        var head = FirstTokenAfterAttributes(block.Parent);
+        if (head.IsKind(SyntaxKind.None) || head == block.OpenBraceToken) {
+            return -1;
+        }
+
+        if (!markers.TryGetValue(head.SpanStart, out var marker)) {
+            marker = NewGroup();
+            markers[head.SpanStart] = marker;
+        }
+
+        return marker;
+    }
+
+    bool MayShareItsOwnersLine(BlockSyntax block) {
+        if (block.Statements.Count != 1) {
+            return false;
+        }
+
+        var broken = BreaksBefore(FirstToken(block.Statements[0])) || BreaksBefore(block.CloseBraceToken);
+        return block.Parent is AccessorDeclarationSyntax or AnonymousFunctionExpressionSyntax
+            ? !(broken && Keeps(block))
+            : !broken && Keeps(block);
+    }
 
     void MembersOnOwnLines(SyntaxList<MemberDeclarationSyntax> members, SyntaxToken close) {
         foreach (var member in members) {
@@ -4876,9 +4989,16 @@ public sealed class BreakPlan {
     ///     argument on its own line, exactly as <c>(name48: (true ? 1 : 2))</c> does, while the same call
     ///     with <c>(x49 =&gt; …)</c> keeps the lambda on the <c>(</c> line and breaks its arrow. The
     ///     name makes it an ordinary argument.
+    ///     <para>
+    ///         ⚠ And not an anonymous method, which the key's name says and which was not measured until
+    ///         #405 made one-line blocks break (SK-DIV-0163): <c>Register(delegate { A(); B(); })</c> comes
+    ///         back <c>Register(</c> / <c>delegate {</c> … <c>}</c> / <c>);</c>, as an ordinary argument does,
+    ///         alone or after another argument, with or without <c>()</c>, while <c>Register(() =&gt; {</c>
+    ///         keeps its line.
+    ///     </para>
     /// </remarks>
     static bool IsLambdaArgument(SyntaxNode item) =>
-        item is ArgumentSyntax { NameColon: null, Expression: AnonymousFunctionExpressionSyntax };
+        item is ArgumentSyntax { NameColon: null, Expression: LambdaExpressionSyntax };
 
     /// <summary>
     ///     The outermost link of an <c>a.B().C()</c> chain — the node the whole chain's group hangs from.

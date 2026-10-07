@@ -713,6 +713,7 @@ public sealed partial class CSharpDocumentBuilder {
         options.PlaceSingleMethodArgumentLambdaOnSameLine
         // ⚠ And not a named argument, which the oracle lays out like any other argument — the same
         // exclusion BreakPlan.IsLambdaArgument makes (issue #378).
+        && node is LambdaExpressionSyntax
         && node.Parent is ArgumentSyntax { NameColon: null, Parent: ArgumentListSyntax { Arguments.Count: 1 } };
 
     /// <summary>
@@ -1434,7 +1435,7 @@ public sealed partial class CSharpDocumentBuilder {
         // would otherwise be collapsed into whatever the lambda's body opens.
         var unconditional = node is ParenthesizedExpressionSyntax
             || options.PlaceSingleMethodArgumentLambdaOnSameLine
-            && node is ArgumentListSyntax { Arguments: [{ Expression: AnonymousFunctionExpressionSyntax }] };
+            && node is ArgumentListSyntax { Arguments: [{ Expression: LambdaExpressionSyntax }] };
 
         // ⚠ A collection expression's elements are elements, like an initializer's: a chain broken
         // inside one takes its own continuation level rather than living off the bracket's.
