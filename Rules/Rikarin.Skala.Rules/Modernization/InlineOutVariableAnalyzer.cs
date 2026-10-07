@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Rikarin.Skala.Rules.Modernization;
 
@@ -79,6 +80,11 @@ public sealed class InlineOutVariableAnalyzer : DiagnosticAnalyzer {
 
         // Exactly one `out` argument naming the local, and every other mention of it inside the same
         // statement. Two out-arguments would be two declarations of one name.
+        // ⚠ #425: and no mention inside a lambda or a local function. A variable declared in a loop's
+        // condition is a new variable on every iteration where the local before the loop was one, so a
+        // closure that captured it sees another variable: measured for #412's audit, three lambdas
+        // printed `4 4 4` before the fix and `1 2 3` after it. Declined for every statement kind, not
+        // only loops — a capture is rare enough here that telling the safe ones apart is not worth it.
         ArgumentSyntax? target = null;
         foreach (var node in following.DescendantNodes()) {
             cancellation.ThrowIfCancellationRequested();
@@ -89,6 +95,14 @@ public sealed class InlineOutVariableAnalyzer : DiagnosticAnalyzer {
                     local
                 )) {
                 continue;
+            }
+
+            if (identifier.Ancestors()
+                    .TakeWhile(ancestor => ancestor != following)
+                    .Any(static ancestor => ancestor is AnonymousFunctionExpressionSyntax
+                            or LocalFunctionStatementSyntax
+                    )) {
+                return;
             }
 
             if (identifier.Parent is ArgumentSyntax { RefKindKeyword.RawKind: (int)SyntaxKind.OutKeyword } argument) {

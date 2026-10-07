@@ -75,7 +75,8 @@ span cannot say that. A declined fix keeps its edits; `skala fix --include` appl
 With the guard in place `SK1040`, `SK1051`, `SK1053` and `SK1062` went back to `fixIsSafe: true` — the
 capture was the only defect #412 measured for them, and each has an executable fixture inside a
 capturing argument. `SK1041`, `SK1044` and `SK1052` (#423), and `SK1054`, `SK1060`,
-`SK1061`, `SK1063` and `SK1064` (#425) stay unsafe for the other defects #412 measured in them.
+`SK1061`, `SK1063` and `SK1064` (#425) stayed unsafe for the other defects #412 measured in them until
+those were guarded too.
 
 ⚠ **A fix is text, and the parser and the binder read it afresh (#424).** #412's audit found fifteen
 safe fixes broken the same two ways: a deleted token changed how the code *around* it parsed
@@ -2707,6 +2708,55 @@ action and its scope is `Compilation`, outside the per-file cache. The old name-
 (`ReferencedInAnOverride`, `Reaches`, `Mentions`) are gone; each new guard was sabotaged alone and the
 pairs that mask each other together. Cost: the rule had no findings on the vendored corpus or on Skala
 before this change, so the corpus cannot measure what it gave up.
+
+⚠ **#425: fourteen of the sixteen modernization fixes #412 made unsafe are guarded and safe again; two
+are unsafe by design.** Each measured shape is declined by the narrowest question that tells it apart,
+asked through a shared predicate wherever one exists, and each is an executable negative fixture whose
+`Probe` reproduces the audit's number when the guard is removed:
+
+- Value copies: `SK1091` asks `PrimaryConstructorWrites.RunsOnACopyUnderReadonly` — #412's own
+  question for `SK4022` — of every reference, because a property hands out a copy where a field is the
+  storage. `SK1071` requires the arguments ahead of a carried member to run no code
+  (`IsFreeToRepeat`) wherever the receiver's state can change: a mutable record struct, or a
+  by-reference parameter.
+- Overloads and target types: `FixRebind.BindsTheSurroundingsAlike` binds the rewritten expression in
+  place and requires the same converted type and the same symbol for every enclosing expression.
+  `SK1072` (the inlined elements re-picked an overload), `SK1063` (a `$""` bound an
+  interpolated-string handler that `string.Format` never could) and `SK1081` (with `ToList()` gone,
+  `ToArray()` bound to the receiver's own) ask it. `SK1035` binds the generic call where a member
+  access stands and requires an explicitly typed loop variable of the enum or `object`.
+- Operators: `SK1010` asks `Nullable<T>`'s `T` for a non-lifted `operator ==(T?, T?)`; `SK1042`
+  requires every merged condition to be a `bool` already — `operator true`/`&` types merge into a
+  different computation — and is `Semantic` now; `SK1064` reads `IsChecked` off both bound
+  conversions, which sees a lambda inside `checked { }`, and so drops its compilation-wide
+  `CheckForOverflowUnderflow` gate.
+- Scope and names: `SK1006` declines when the enclosing block holds any label (CS8649, CS0158), or
+  mentions anywhere outside the block a name the block declares — the compile sweep found CS0844 on
+  `SK3511`'s fixture the moment the fix was marked safe, a defect the audit had not;
+  `SK1054` declines a local any lambda or local function captures (per-iteration freshness);
+  `SK1060` declines a `Count` subtraction on a type that also has `Length`, and asks
+  `IsStorageNamePath` of the receiver it now evaluates once; `SK1061` declines a `file` type, whose
+  metadata name is mangled.
+- `SK1081`'s element-type guard compared a node with itself and was a no-op.
+
+⚠ **Two decisions about what counts as observable.** The identity of an empty array *is* observable
+in practice — a fresh `new object[] { }` is a common lock and sentinel — so `SK1001` declines an empty
+array creation rather than produce `Array.Empty<T>()`. A `List<T>`'s *capacity* is not: `[1, 2, 3]`
+is sized to 3 where three `Add` calls leave 4, but capacity is the growth policy's, documented as an
+implementation detail and already different between runtime versions, so `SK1001` is safe without a
+guard for it. `SK1073` stays unsafe by design: replacing a fresh `EventArgs` with the cached instance
+is the rule, and identity is what changes (a set of three becomes a set of one); its expression-tree
+defect is fixed. `SK1082` stays unsafe by design: on a null receiver the exception type changes, and a
+non-null-by-construction proof was written, measured and withdrawn, because it declined the rule's own
+positives and every parameter receiver. `CrossFixtureFixTests.TheModernizationFix_OnItsOwnExecutableFixtures_PreservesTheResult`
+runs the fifteen rules with executable fixtures whatever the catalogue says, and a `Fact` each pins
+the two by-design changes.
+
+Measured on the reference corpus before and after (synthetic `net10.0` project per tree,
+`ImplicitUsings`, `*.expected.cs` excluded, `--load=binlog`, an anti-vacuity probe firing every rule):
+146 findings before and 142 after. All four lost are `SK1042` merges whose condition calls a type the
+vendored slice does not carry (`TrimConfiguration`, `JsonReader`, `StringUtils`), so the condition is
+an error type and not provably a `bool`; in the real projects each is a `bool` and would fire.
 
 ⚠ **`SK4020` and `SK4002` are asserted never to fire on the same declaration.** One reports a capture
 and the other the absence of every capture; they are complements, and a report carrying both would be

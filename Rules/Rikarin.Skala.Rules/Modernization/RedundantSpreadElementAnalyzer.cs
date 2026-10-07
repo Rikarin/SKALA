@@ -112,6 +112,28 @@ public sealed class RedundantSpreadElementAnalyzer : DiagnosticAnalyzer {
         var elements = spread.SyntaxTree.GetText(cancellation)
             .ToString(TextSpan.FromBounds(first.SpanStart, last.Span.End));
 
+        // ⚠ #425: a collection expression is typed by its target, and an overloaded call picks the
+        // target by what each element converts to. The spread of a `long[]` offers only `long`s;
+        // the bare literals it held convert to `int` as well, and the better conversion wins. Measured
+        // for #412's audit: `M(List<long>)` → `M(List<int>)`, `N(object[])` → `N(int[])`, and
+        // `N(object[])` → `N(List<long>)` for one boxed element. So the collection, with the spread
+        // already inlined, is bound where it stands and must land where it landed.
+        var offset = outer.SpanStart;
+        var inlined = outer.ToString();
+        inlined = inlined.Substring(0, spread.SpanStart - offset)
+            + elements
+            + inlined.Substring(spread.Span.End - offset);
+        if (!FixRebind.TrySpeculate(
+                model,
+                outer,
+                SyntaxFactory.ParseExpression(inlined),
+                out var speculative,
+                out var placed
+            )
+            || !FixRebind.BindsTheSurroundingsAlike(model, outer, speculative, placed, cancellation)) {
+            return;
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,

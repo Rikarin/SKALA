@@ -17,11 +17,11 @@
 <tbody>
 <tr><th>Category</th><td>Modernization</td></tr>
 <tr><th>Default severity</th><td><span class="tag sev-suggestion">suggestion</span></td></tr>
-<tr><th>Scope</th><td>Syntax</td></tr>
-<tr><th>Needs a compilation</th><td>no</td></tr>
-<tr><th>Runs under <code>--load=loose</code></th><td>yes</td></tr>
+<tr><th>Scope</th><td>Semantic</td></tr>
+<tr><th>Needs a compilation</th><td>yes</td></tr>
+<tr><th>Runs under <code>--load=loose</code></th><td>no</td></tr>
 <tr><th>Cached per file</th><td>yes</td></tr>
-<tr><th>Fix</th><td>yes, review it</td></tr>
+<tr><th>Fix</th><td>yes, safe</td></tr>
 <tr><th>Language version floor</th><td>—</td></tr>
 <tr><th>Since</th><td>2.0</td></tr>
 <tr><th>Supersedes</th><td>S1066</td></tr>
@@ -41,7 +41,7 @@
     Ship(order);
 }</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>A whole chain is one finding reported at its top, so the fix never overlaps another and the rule is silent after its own fix. Any <code>else</code> anywhere in the chain excludes it, as does an outer body holding anything besides the inner <code>if</code>. An operand that <code>&amp;&amp;</code> would capture — <code>||</code>, <code>??</code>, a conditional or an assignment — is parenthesised rather than merged flat. Names a merged condition introduces (a pattern variable, an <code>out var</code>) have their scope widened by the rewrite, so the whole member is scanned for a colliding declaration first and the finding is dropped if one exists; the scan deliberately over-bails, counting names that could never conflict. Comments and preprocessor directives anywhere outside the surviving body exclude the chain, and so does a <code>#</code> inside a condition's string literal. ⚠ <strong>The fix is not safe (#412's audit, measured by running both versions):</strong> Merging nested <code>if</code>s into <code>&amp;&amp;</code> routes through a type's user-defined <code>operator true</code>/<code>false</code>/<code>&amp;</code> (<code>SqlBoolean</code>), which evaluates differently from two nested tests.</p>
+<p>A whole chain is one finding reported at its top, so the fix never overlaps another and the rule is silent after its own fix. Any <code>else</code> anywhere in the chain excludes it, as does an outer body holding anything besides the inner <code>if</code>. An operand that <code>&amp;&amp;</code> would capture — <code>||</code>, <code>??</code>, a conditional or an assignment — is parenthesised rather than merged flat. Names a merged condition introduces (a pattern variable, an <code>out var</code>) have their scope widened by the rewrite, so the whole member is scanned for a colliding declaration first and the finding is dropped if one exists; the scan deliberately over-bails, counting names that could never conflict. Comments and preprocessor directives anywhere outside the surviving body exclude the chain, and so does a <code>#</code> inside a condition's string literal. ⚠ <strong>#425: every merged condition must already be a `bool`.</strong> <code>a &amp;&amp; b</code> asks the operands' type for <code>operator &amp;</code> and <code>operator false</code> first, so on <code>SqlBoolean</code> or any three-valued type the merged condition is another computation — #412's audit measured &quot;left, end&quot; → &quot;left, right, end&quot; and &quot;both&quot; → nothing — and <code>bool &amp;&amp; Flag</code> with only <code>operator true</code> is CS0019. That needs the semantic model, so the rule is <code>Semantic</code> now and no longer runs under <code>--load=loose</code>. With that, and every executable fixture's <code>Probe</code> unchanged, the fix is safe again.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK1042.severity</code></li>

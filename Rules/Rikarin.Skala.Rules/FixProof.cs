@@ -305,7 +305,13 @@ public static class FixRebind {
                     model.TryGetSpeculativeSemanticModel(position, (ArrowExpressionClauseSyntax)rewritten, out result);
                     break;
 
-                case EqualsValueClauseSyntax initializer:
+                // ⚠ #425: Roslyn speculates an initializer of a field, a property, a parameter or an
+                // enum member, and refuses a local's — which answered "not proved" for every rewrite
+                // inside `List<T> xs = …;`. A local's initializer is speculated through its statement.
+                case EqualsValueClauseSyntax initializer
+                    when initializer.Parent is not VariableDeclaratorSyntax {
+                        Parent.Parent: not (FieldDeclarationSyntax or EventFieldDeclarationSyntax)
+                    }:
                     rewritten = initializer.ReplaceNode(original, annotated);
                     model.TryGetSpeculativeSemanticModel(position, (EqualsValueClauseSyntax)rewritten, out result);
                     break;
@@ -406,6 +412,75 @@ public static class FixRebind {
 
         return true;
     }
+
+    /// <summary>
+    ///     Whether the replacement <paramref name="placed" />, bound by
+    ///     <see cref="TrySpeculate(SemanticModel, SyntaxNode, SyntaxNode, out SemanticModel, out SyntaxNode)" />,
+    ///     converts to what <paramref name="original" /> converted to, and leaves every expression around
+    ///     it converting to the same type and binding to the same symbol, out to the speculated construct.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #425: for a rewrite whose result is target-typed or overload-sensitive — a collection
+    ///     expression, an interpolated string, a receiver whose static type changes. Each binds by what
+    ///     it is offered, so the question is not whether the new text binds but whether the call it
+    ///     stands in still picks the overload it picked: #412's audit measured <c>[.. new long[] { 1 }]</c>
+    ///     → <c>[1]</c> moving <c>M(List&lt;long&gt;)</c> to <c>M(List&lt;int&gt;)</c>, a <c>$""</c>
+    ///     binding an interpolated-string handler <c>string.Format</c> never could, and a deleted
+    ///     <c>.ToList()</c> leaving <c>ToArray()</c> to the receiver's own instance method. Symbols are
+    ///     compared exactly, type arguments included: an inferred <c>T</c> that changes is a different
+    ///     call even where the definition is the same.
+    /// </remarks>
+    public static bool BindsTheSurroundingsAlike(
+        SemanticModel model,
+        SyntaxNode original,
+        SemanticModel speculative,
+        SyntaxNode placed,
+        CancellationToken cancellation
+    ) {
+        if (original is ExpressionSyntax
+            && !SymbolEqualityComparer.Default.Equals(
+                model.GetTypeInfo(original, cancellation).ConvertedType,
+                speculative.GetTypeInfo(placed, cancellation).ConvertedType
+            )) {
+            return false;
+        }
+
+        for (SyntaxNode? was = original.Parent, now = placed.Parent;
+             was is not null && now is not null;
+             was = was.Parent, now = now.Parent) {
+            if (was.RawKind != now.RawKind) {
+                return false;
+            }
+
+            if (was is ExpressionSyntax or ArgumentSyntax
+                && (!Corresponds(
+                        model.GetSymbolInfo(was, cancellation).Symbol,
+                        speculative.GetSymbolInfo(now, cancellation).Symbol
+                    )
+                    || !SymbolEqualityComparer.Default.Equals(
+                        model.GetTypeInfo(was, cancellation).ConvertedType,
+                        speculative.GetTypeInfo(now, cancellation).ConvertedType
+                    ))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    ///     The same symbol, or — for one the speculated construct declares itself, which the speculative
+    ///     model declares afresh — one of the same kind and name.
+    /// </summary>
+    static bool Corresponds(ISymbol? was, ISymbol? now) =>
+        SymbolEqualityComparer.Default.Equals(was, now)
+        || was is ILocalSymbol
+            or IParameterSymbol
+            or IRangeVariableSymbol
+            or IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction }
+        && now is not null
+        && was.Kind == now.Kind
+        && was.Name == now.Name;
 
     /// <summary>Whether <paramref name="node" /> binds, in <paramref name="model" />, to <paramref name="intended" />.</summary>
     /// <remarks>

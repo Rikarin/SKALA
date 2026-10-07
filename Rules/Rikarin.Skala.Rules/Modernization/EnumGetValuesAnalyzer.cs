@@ -80,11 +80,11 @@ public sealed class EnumGetValuesAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (!IsSafePosition(invocation)) {
+        var replacement = access.Expression + ".GetValues<" + typeOf.Type + ">()";
+        if (!IsSafePosition(invocation, replacement, model, cancellation)) {
             return;
         }
 
-        var replacement = access.Expression + ".GetValues<" + typeOf.Type + ">()";
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
@@ -95,12 +95,60 @@ public sealed class EnumGetValuesAnalyzer : DiagnosticAnalyzer {
         );
     }
 
-    static bool IsSafePosition(InvocationExpressionSyntax invocation) =>
-        invocation.Parent switch {
-            ForEachStatementSyntax statement => ReferenceEquals(statement.Expression, invocation),
-            ForEachVariableStatementSyntax statement => ReferenceEquals(statement.Expression, invocation),
-            MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access =>
-                ReferenceEquals(access.Expression, invocation),
-            _ => false
-        };
+    /// <summary>
+    ///     Whether the expression's type changing from <c>Array</c> to <c>T[]</c> is invisible here.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #425: "a <c>foreach</c> collection" was not enough, because the loop's element type is the
+    ///     collection's. Measured for #412's audit: <c>foreach (var v in …)</c> makes <c>v</c> an
+    ///     <c>object</c> before and the enum after, so <c>Show(v)</c> picked another overload and
+    ///     <c>v = "x"</c> became CS0029; and <c>foreach (long n in …)</c> unboxed an <c>object</c> before
+    ///     (<c>InvalidCastException</c>) and converts an enum after. So the loop variable must be written
+    ///     as the enum itself or as <c>object</c>, which are exactly the two types that read the same
+    ///     element both ways. A member access must bind, with the generic call in its place, to the very
+    ///     same member — <c>Cast&lt;T&gt;()</c>, <c>Length</c> — and not to one the typed array newly
+    ///     makes applicable.
+    /// </remarks>
+    static bool IsSafePosition(
+        InvocationExpressionSyntax invocation,
+        string replacement,
+        SemanticModel model,
+        System.Threading.CancellationToken cancellation
+    ) {
+        switch (invocation.Parent) {
+            case ForEachStatementSyntax statement when ReferenceEquals(statement.Expression, invocation):
+                if (statement.Type.IsVar) {
+                    return false;
+                }
+
+                var element = model.GetTypeInfo(statement.Type, cancellation).Type;
+                var enumType = model.GetTypeInfo(
+                    ((TypeOfExpressionSyntax)invocation.ArgumentList.Arguments[0].Expression).Type,
+                    cancellation
+                ).Type;
+                return element is not null
+                    && (element.SpecialType == SpecialType.System_Object
+                        || SymbolEqualityComparer.Default.Equals(element, enumType));
+
+            case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access
+                when ReferenceEquals(access.Expression, invocation):
+                var was = model.GetSymbolInfo(access, cancellation).Symbol;
+                return was is not null
+                    && FixRebind.TrySpeculate(
+                        model,
+                        invocation,
+                        SyntaxFactory.ParseExpression(replacement),
+                        out var speculative,
+                        out var placed
+                    )
+                    && placed.Parent is MemberAccessExpressionSyntax rebound
+                    && SymbolEqualityComparer.Default.Equals(
+                        was,
+                        speculative.GetSymbolInfo(rebound, cancellation).Symbol
+                    );
+
+            default:
+                return false;
+        }
+    }
 }

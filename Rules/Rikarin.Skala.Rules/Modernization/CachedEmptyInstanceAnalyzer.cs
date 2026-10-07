@@ -114,7 +114,11 @@ public sealed class CachedEmptyInstanceAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(node.SyntaxTree, node.Span)) {
+        // ⚠ #425: inside an expression tree the creation is a `New` node and the member a
+        // `MemberAccess` node, and a query provider translates the two differently — measured for
+        // #412's audit as `e.Body.NodeType` `New` → `MemberAccess` for `() => new Guid()`.
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(node.SyntaxTree, node.Span)
+            || NullComparison.InsideExpressionTree(model, node, cancellation)) {
             return;
         }
 

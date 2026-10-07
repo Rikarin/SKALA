@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 
 namespace Rikarin.Skala.Rules.Modernization;
@@ -105,6 +106,23 @@ public sealed class IndexFromEndAnalyzer : DiagnosticAnalyzer {
         var cancellation = context.CancellationToken;
         if (model.GetTypeInfo(receiver, cancellation).Type is not { } type
             || !SupportsIndexFromEnd(model.Compilation, type)) {
+            return;
+        }
+
+        // ⚠ #425: the language's implicit index support reads `Length` when the type has one and
+        // `Count` only when it does not, so on a type that declares both, `b[b.Count - 1]` and `b[^1]`
+        // index from different sizes. Measured for #412's audit on an `IList<int>` whose `Length` is
+        // its capacity: `20` before the fix and `0` after it, and `ArgumentOutOfRangeException` on
+        // another. A `Count` subtraction is admitted only where no `Length` can be found.
+        if (member == "Count"
+            && model.LookupSymbols(access.SpanStart, type, "Length")
+                .Any(static symbol => symbol is IPropertySymbol { IsStatic: false })) {
+            return;
+        }
+
+        // ⚠ #425: `x[x.Count - 1]` evaluates the receiver twice and `x[^1]` once, so a getter on the
+        // path is #423's evaluation-count question and is asked the same way.
+        if (!RewriteGuards.IsStorageNamePath(receiver, model, cancellation)) {
             return;
         }
 

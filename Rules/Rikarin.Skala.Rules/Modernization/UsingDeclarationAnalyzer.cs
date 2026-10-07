@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Rikarin.Skala.Rules.Modernization;
 
@@ -90,6 +91,16 @@ public sealed class UsingDeclarationAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ #425: a `goto` may not jump back over a `using` declaration to a label before it in the
+        // same block (CS8649), and the block's own labels move out to the enclosing one, where a
+        // label of the same name in a sibling block now shadows (CS0158). #412's audit measured the
+        // first: a retry loop written as `again: … using (…) { if (…) goto again; }` stops compiling.
+        // Any label anywhere in the enclosing block withdraws the finding — labels are rare enough
+        // that telling the harmless ones apart is not worth a rule that has to be right about it.
+        if (parent.DescendantNodes().Any(static node => node is LabeledStatementSyntax)) {
+            return;
+        }
+
         if (Collides(statement, block, declaration)) {
             return;
         }
@@ -140,6 +151,21 @@ public sealed class UsingDeclarationAnalyzer : DiagnosticAnalyzer {
 
         if (moving.Count == 0) {
             return false;
+        }
+
+        // ⚠ #425: a name that moves out shadows what the same name meant everywhere else in the
+        // enclosing block, its own `using` declaration included. `using (var r = new Res { Size =
+        // size }) { var size = …; }` read the field `size` and, once the block's `size` is a local
+        // of the enclosing block, reads that local before its declaration (CS0844). The runtime
+        // sweep found it on SK3511's fixture the moment this rule was marked safe. Any mention of a
+        // moving name outside the block withdraws the finding.
+        if (statement.Parent is BlockSyntax enclosing
+            && enclosing.DescendantNodes()
+                .Any(node => node is IdentifierNameSyntax name
+                    && !block.Span.Contains(name.Span)
+                    && moving.Contains(name.Identifier.ValueText)
+                )) {
+            return true;
         }
 
         foreach (var name in moving) {

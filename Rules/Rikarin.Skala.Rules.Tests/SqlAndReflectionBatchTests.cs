@@ -183,7 +183,8 @@ public sealed class SqlAndReflectionBatchTests {
     ///     <c>SK1035</c> offers <c>Enum.GetValues&lt;T&gt;()</c> and so requires the operand to
     ///     <em>be</em> an enum, because the generic overload is constrained <c>struct, Enum</c>. This
     ///     rule requires it not to be. The two calls below differ only in that, and the assertion is
-    ///     that neither diagnostic appears on the other's line.
+    ///     that neither diagnostic appears on the other's line. ⚠ #425: <c>SK1035</c> declines a
+    ///     <c>var</c> loop variable, whose type the rewrite changes, so the enum's loop names its type.
     /// </remarks>
     [Fact]
     public void EnumGetValues_GoesToOneRuleOrTheOther() {
@@ -196,7 +197,7 @@ public sealed class SqlAndReflectionBatchTests {
 
                               public sealed class Registry {
                                   public void Good() {
-                                      foreach (var value in Enum.GetValues(typeof(Kind))) {
+                                      foreach (Kind value in Enum.GetValues(typeof(Kind))) {
                                           _ = value;
                                       }
                                   }
