@@ -889,8 +889,22 @@ public sealed class LayoutWriter {
             // The arrow's own points are still points — the group breaks by its own rule when the
             // head has nothing left to give — but a construct before it reads the body as part of
             // its line, the way it reads a last-resort point. See GroupFlags.ArrowBodyRunsToTheEnd.
+            // ⚠ Except that a body with no break point can still hold a hard one: a multi-line raw
+            // string has no flat width, and reading it as Unbounded chopped `double { P14: "k" }`
+            // before `when _cache => """`. The line ends at the literal's first newline, so the head
+            // counts only what precedes it — the oracle writes `{ P14: "k" } when _cache => """`
+            // whole. And because the chop then moved the `when` down, pass two found the pattern
+            // short and re-joined it: fourteen consecutive Nightly runs, one defect.
             if (document.ArrowBodyRunsToTheEnd(sibling)) {
                 var flat = document.FlatWidthOf(sibling);
+                if (flat >= Document.Unbounded) {
+                    var head = document.HeadWidthOf(sibling);
+                    total = total >= Document.Unbounded || head >= Document.Unbounded
+                        ? Document.Unbounded
+                        : total + head;
+                    return true;
+                }
+
                 total = total >= Document.Unbounded || flat >= Document.Unbounded
                     ? Document.Unbounded
                     : total + flat;
