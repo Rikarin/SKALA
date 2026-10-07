@@ -426,6 +426,18 @@ public sealed partial class CSharpDocumentBuilder {
         var above = previous.Kind == PieceKind.Token ? MemberEndingAt(tokens[previous.TokenIndex]) : null;
         var below = MemberStartingAt(nextPieceIndex, nextToken);
 
+        // ⚠ Above a plain comment glued to the member below, that member is multi-line — the comment's line
+        // and its own — and only for this gap: the gap under it still sees one line. Measured for #414
+        // (SK-DIV-0172): `int _a;` / `// c` / `void B() { }` takes `blank_lines_around_invocable` above the
+        // comment at `blank_lines_around_field = 0`, and no blank between `B` and a one-line `D` under it.
+        //
+        // ⚠ And a member with such a comment glued under it is multi-line for the gap above it, and only that
+        // one: under `int _a;` / `// a note` / `}` the oracle writes nothing between `_a` and the comment.
+        var belowMultiLine = below is not null
+            && (nextToken.IsKind(SyntaxKind.None)
+                && GluedCommentRunEnd(nextPieceIndex) >= 0
+                || GluedToTheCommentBelow(below));
+
         if (above is null && below is null) {
             return required;
         }
@@ -447,7 +459,7 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         if (below is not null) {
-            required = Math.Max(required, RequirementFor(below));
+            required = Math.Max(required, RequirementFor(below, belowMultiLine));
         }
 
         return required;
@@ -494,10 +506,168 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    ///     Whether a statement will occupy more than one line of the <b>output</b>.
+    ///     Whether a statement or a switch section occupies more than one line of the <b>output</b>.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Not <see cref="IsSingleLine" /> negated, and the difference is the whole of why this
+    ///     The same output fact <see cref="IsSingleLine" /> reads, through <see cref="OccupiesOneLine" />;
+    ///     <see cref="GuessesSpansLines" /> is the first pass's guess at it.
+    /// </remarks>
+    bool SpansLines(SyntaxNode node) => !OccupiesOneLine(node, !GuessesSpansLines(node));
+
+    /// <summary>
+    ///     Whether a member occupies one line of the output, its documentation comment included.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A member with a documentation comment above it is never single-line, which is a fact about the
+    ///     source that the output keeps — a <c>///</c> line always ends in a line break — so it is answered
+    ///     here and never asked of the layout.
+    /// </remarks>
+    bool IsSingleLine(SyntaxNode member) =>
+        StickyStart(member) >= member.SpanStart
+        && OccupiesOneLine(member, GuessesSingleLine(member));
+
+    /// <summary>
+    ///     Whether a plain comment run starts on the line right under the member and is itself glued to
+    ///     the member or the <c>}</c> below it — in which case the oracle counts the member as multi-line
+    ///     for the gap above it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured for #414 (SK-DIV-0172), and not what <see cref="StickyStart" /> would suggest: a
+    ///     plain comment is not part of the member it sits <em>above</em> for the gap below that member,
+    ///     but the member it sits <em>under</em> is not single-line for the gap above it. <c>int _x;</c> / <c>int _a;</c> /
+    ///     <c>// c</c> / <c>int _b;</c> / <c>int _d;</c> comes back with a blank between <c>_x</c> and
+    ///     <c>_a</c> and above the comment, and none between <c>_b</c> and <c>_d</c> — for fields, methods,
+    ///     local functions, accessors and types, for <c>//</c> and <c>/* */</c>, for one comment line or
+    ///     two, and before a type's <c>}</c> as before a member. Not when a blank line separates the
+    ///     member from the comment or the comment from what follows, not before a <c>#region</c>, not for
+    ///     a comment on the member's own line and not for a <c>///</c> run, which belongs to the member
+    ///     below.
+    /// </remarks>
+    bool GluedToTheCommentBelow(SyntaxNode member) {
+        var first = FirstPieceAtOrAfter(member.Span.End);
+        return first >= 0
+            && first < pieces.Length
+            && pieces[first].StartsLine
+            && BlankLinesBetween(member.Span.End, pieces[first].Span.Start) == 0
+            && GluedCommentRunEnd(first) >= 0;
+    }
+
+    /// <summary>
+    ///     The piece after the plain comment run starting at <paramref name="first" />, when the run starts
+    ///     a line, holds no blank line, and nothing the output keeps separates it from the member or the
+    ///     <c>}</c> after it; −1 otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ "Nothing the output keeps", not "nothing in the source": a blank line the cap or the near-brace
+    ///     removal deletes is not there on the second pass, so reading the source would decide this once
+    ///     on pass one and the other way on pass two. The oracle reads the source here and is not
+    ///     idempotent for it — at <c>keep_blank_lines_in_declarations = 0</c>, <c>int _b;</c> / <c>// c</c>
+    ///     / blank / <c>}</c> takes the blank above <c>_b</c> on its own second pass — and the fixed point is
+    ///     the one taken.
+    /// </remarks>
+    int GluedCommentRunEnd(int first) {
+        if (first < 0
+            || first >= pieces.Length
+            || pieces[first].Kind is not (PieceKind.LineComment or PieceKind.BlockComment)
+            || !pieces[first].StartsLine) {
+            return -1;
+        }
+
+        var last = first;
+        while (last + 1 < pieces.Length && pieces[last + 1].Kind is PieceKind.LineComment or PieceKind.BlockComment) {
+            if (BlankLinesBetween(pieces[last].Span.End, pieces[last + 1].Span.Start) > 0) {
+                return -1;
+            }
+
+            last++;
+        }
+
+        var next = last + 1;
+        if (next >= pieces.Length || pieces[next].Kind != PieceKind.Token) {
+            return -1;
+        }
+
+        var token = tokens[pieces[next].TokenIndex];
+        var close = token.IsKind(SyntaxKind.CloseBraceToken);
+        if (!close && MemberStartingAt(next, token) is null) {
+            return -1;
+        }
+
+        var declaration = InDeclarationContext(token);
+        var cap = Math.Max(0, declaration ? options.KeepBlankLinesInDeclarations : options.KeepBlankLinesInCode);
+        var kept = Math.Min(BlankLinesBetween(pieces[last].Span.End, pieces[next].Span.Start), cap);
+        if (close && RemovesNearBrace(pieces[last], token, declaration)) {
+            kept = 0;
+        }
+
+        return kept == 0 ? next : -1;
+    }
+
+    /// <summary>The blank lines in the source between two positions on different lines.</summary>
+    int BlankLinesBetween(int from, int to) {
+        var newLines = 0;
+        for (var i = from; i < to; i++) {
+            if (source[i] == '\n') {
+                newLines++;
+            }
+        }
+
+        return Math.Max(0, newLines - 1);
+    }
+
+    /// <summary>The index of the first piece starting at or after <paramref name="position" />.</summary>
+    int FirstPieceAtOrAfter(int position) {
+        int low = 0, high = pieces.Length;
+        while (low < high) {
+            var middle = (low + high) / 2;
+            if (pieces[middle].Span.Start < position) {
+                low = middle + 1;
+            } else {
+                high = middle;
+            }
+        }
+
+        return low;
+    }
+
+    /// <summary>
+    ///     Whether a node's tokens land on one output line that fits the margin — read off the layout of this
+    ///     same file when there is one, and guessed from the source and the plan when there is not.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ "One line" is a property of the <em>output</em>, and the guesses below read it off the source
+    ///     and the plan, which cannot see what the fitter and the writer decide: a one-statement block the
+    ///     writer keeps on its owner's line (#405), an argument list <c>keep_user_linebreaks = false</c>
+    ///     re-joins, an expression body <c>keep_existing_expr_member_arrangement = false</c> joins, a
+    ///     <c>class B {</c>↵<c>}</c> that comes back <c>class B { }</c>. Each of those is several source
+    ///     lines and one output line, the guess called it multi-line, and the member took
+    ///     <c>blank_lines_around_*</c> where the oracle gives it <c>blank_lines_around_single_line_*</c> —
+    ///     measured on accessors, fields, methods, local functions and types (issue #414). And pass two,
+    ///     reading its own output, answers the other way, so wherever the preserved blank is below the
+    ///     multi-line value it is a non-idempotency and not only a divergence.
+    ///     <para>
+    ///         ⚠ So the answer is the writer's. <see cref="CSharpFormatter" /> lays the document out, reads every
+    ///         node asked about here off the anchors of its first and last token, and when any answer differs
+    ///         from the guess builds the document again with the layout's answers in
+    ///         <see cref="outputLines" />. A blank line changes no column and no group's mode, so the second
+    ///         layout has the first one's lines and only its blank runs move. Asking the plan instead was
+    ///         tried in <see cref="GuessesSpansLines" /> and has to guess at every <see cref="GroupMode.Auto" />
+    ///         group, every fill and every block the fitter decides; only the writer knows.
+    ///     </para>
+    /// </remarks>
+    bool OccupiesOneLine(SyntaxNode node, bool guess) {
+        // ⚠ The answer the document is built on, not the guess: on a rebuild it is the layout's, and a
+        // layout that agrees with it is what ends CSharpFormatter's loop.
+        var answer = outputLines is not null && outputLines.TryGetValue(node.Span, out var fact) ? fact : guess;
+        lineQuestions.Add(new LineQuestion(node.Span, answer));
+        return answer;
+    }
+
+    /// <summary>
+    ///     The first guess at whether a statement will occupy more than one line of the <b>output</b>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not <see cref="GuessesSingleLine" /> negated, and the difference is the whole of why this
     ///     exists. That test opens by asking whether the member spans more than one source line,
     ///     which is a fair approximation for a member and a wrong answer for a statement:
     ///     <code>
@@ -523,7 +693,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///         own keys are another agent's — and it is recorded rather than hidden.
     ///     </para>
     /// </remarks>
-    bool SpansLines(SyntaxNode node) {
+    bool GuessesSpansLines(SyntaxNode node) {
         var previous = default(SyntaxToken);
         foreach (var token in node.DescendantTokens()) {
             if (token.Span.Length == 0) {
@@ -853,8 +1023,8 @@ public sealed partial class CSharpDocumentBuilder {
         token.IsKind(SyntaxKind.SemicolonToken) && token.Parent is FileScopedNamespaceDeclarationSyntax;
 
     /// <summary>The requirement one member states about the gaps on either side of it.</summary>
-    int RequirementFor(SyntaxNode member) {
-        var single = IsSingleLine(member);
+    int RequirementFor(SyntaxNode member, bool multiLine = false) {
+        var single = !multiLine && IsSingleLine(member);
         return member switch {
             NamespaceDeclarationSyntax or FileScopedNamespaceDeclarationSyntax => options.BlankLinesAroundNamespace,
             BaseTypeDeclarationSyntax or DelegateDeclarationSyntax =>
@@ -896,20 +1066,25 @@ public sealed partial class CSharpDocumentBuilder {
         && accessors.Accessors.All(static a => a.Body is null && a.ExpressionBody is null);
 
     /// <summary>
-    ///     One line including the comment stuck to it: a method with a doc comment is not single-line
-    ///     even when its body is, which is what docs/plan/05 § "Blank lines" means by "M() has a doc
-    ///     comment and is not single-line".
+    ///     The first guess at whether a member is one line including the comment stuck to it: a method
+    ///     with a doc comment is not single-line even when its body is, which is what docs/plan/05 §
+    ///     "Blank lines" means by "M() has a doc comment and is not single-line".
     /// </summary>
     /// <remarks>
-    ///     ⚠ "One line" is a property of the <em>output</em>, and reading it off the input is a
-    ///     non-idempotency as soon as the formatter can break a line. A 140-column field is single-line
-    ///     in the source, gets chopped into four, and then wants the blank line that
-    ///     <c>blank_lines_around_single_line_field = 0</c> had just declined to give it — so the first
-    ///     pass produces one shape and the second produces another. Milestone 1 never chopped anything,
-    ///     so the question never arose; it took a run over Skala's own source to find, because no corpus
-    ///     file has a member long enough.
+    ///     ⚠ A guess, and only the breaking direction of it is any good. The width test below catches a
+    ///     member the fitter will break; nothing here can see one the formatter <em>joins</em>, which is
+    ///     why <see cref="OccupiesOneLine" /> replaces this answer with the layout's (issue #414).
+    ///     <para>
+    ///         ⚠ "One line" is a property of the <em>output</em>, and reading it off the input is a
+    ///         non-idempotency as soon as the formatter can break a line. A 140-column field is single-line
+    ///         in the source, gets chopped into four, and then wants the blank line that
+    ///         <c>blank_lines_around_single_line_field = 0</c> had just declined to give it — so the first
+    ///         pass produces one shape and the second produces another. Milestone 1 never chopped anything,
+    ///         so the question never arose; it took a run over Skala's own source to find, because no corpus
+    ///         file has a member long enough.
+    ///     </para>
     /// </remarks>
-    bool IsSingleLine(SyntaxNode member) {
+    bool GuessesSingleLine(SyntaxNode member) {
         // ⚠ Always the sticky start, for the reason the gap rule above gives: the comment above a
         // member is part of it whatever `stick_comment` is set to.
         var start = StickyStart(member);
@@ -975,7 +1150,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///         answer, because a run and a single space collapse alike.
     ///     </para>
     ///     <para>
-    ///         ⚠ Only ever called for a member <see cref="IsSingleLine" /> has already found on one source
+    ///         ⚠ Only ever called for a member <see cref="GuessesSingleLine" /> has already found on one source
     ///         line, so no token here spans lines and <see cref="TextWidth.Measure" />'s newline reset cannot
     ///         be reached.
     ///     </para>
@@ -1017,7 +1192,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     rather than a rounding error, because the two disagree in exactly one direction:
     ///     <c>internal … M97(out decimal p98) => [(static x =&gt; 3_000_000L), items[1..]]; // fuzz</c>
     ///     measures 116 columns without the comment and 124 with it, so
-    ///     <see cref="IsSingleLine" /> called it single-line and declined the blank line that
+    ///     <see cref="GuessesSingleLine" /> called it single-line and declined the blank line that
     ///     <c>blank_lines_around_single_line_invocable = 0</c> governs — and then the fitter, which
     ///     does count the comment, chopped the member onto three lines. The second pass reads a
     ///     three-line member, asks <c>blank_lines_around_invocable = 1</c> instead, and inserts the
@@ -1110,7 +1285,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     Where a member starts once the comment block directly above it is counted as part of it.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Only for <see cref="IsSingleLine" />. <c>stick_comment = true</c> still moves a plain
+    ///     ⚠ Only for <see cref="IsSingleLine" /> and its guess. <c>stick_comment = true</c> still moves a plain
     ///     comment with its member for the purposes of the blank-line <em>gap</em>; what this answers is
     ///     the narrower question of whether the member counts as occupying one line.
     /// </remarks>
