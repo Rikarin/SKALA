@@ -3495,8 +3495,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **363** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **327** | **90.8 %** |
+| Rules this document names | **364** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **328** | **90.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, then withdrawn or never built | **3** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
@@ -9372,3 +9372,92 @@ and never reading `x` is `SK6040`'s finding; after `SK6040`'s fix the call reads
 becomes reachable. The two compose in that order on purpose — writing "declared but never read" a
 second time here would be one analysis in two rules, disagreeing eventually. **Local functions and
 `file`-scoped types are equally bounded and equally uncovered**, named here rather than implied.
+
+## `SK1131` — the anonymous method, and why rewriting two tokens is not a safe fix
+
+**One rule, from [#385](https://github.com/Rikarin/SKALA/issues/385).** `delegate(int a, int b) { … }`
+is `(int a, int b) => { … }`: the fix deletes `delegate` and inserts `=>` after the parameter list,
+and touches neither the parameters nor the block.
+
+| ID | Rule | Scope | Fix |
+|---|---|---|---|
+| `SK1131` | An anonymous method is written with the `delegate` keyword | Semantic | unsafe |
+
+`suggestion`, no language floor (a lambda with explicit parameter types is C# 3), 16 positive / 18
+negative fixtures, plus `AnonymousMethodWithParameterListTests` for the shapes a fixture cannot hold
+because they do not compile.
+
+### ⚠ The proposal's trap is real, and it has a second door the proposal did not name
+
+Compiled both ways rather than reasoned about, with a Roslyn harness that applies exactly the rule's
+two edits and then compiles and runs both programs:
+
+- **`Q(Func<int, bool>)` beside `Q(Expression<Func<int, bool>>)`**: the anonymous method binds to the
+  first, the lambda is **CS0121**. Confirmed as the issue stated it, generic overloads included.
+- ⚠ **Across two static classes.** On an `IQueryable<int>`, `q.Where(delegate(int a) { … })` binds to
+  `Enumerable.Where` and *runs*; the lambda picks `Queryable.Where` and is **CS0834**. No single
+  type's overload set shows this — the candidates are reduced extension methods from different
+  classes — so the guard reads `GetMemberGroup`, never the bound symbol and never the containing
+  type's members. `SK2153` fires on the same fixture, which is the point: an anonymous method cannot
+  become a tree, so this shape is *always* client-side evaluation.
+- ⚠ **Returned from a lambda that is itself an argument.** Against `R(Func<Func<int, bool>>)` and
+  `R(Func<Expression<Func<int, bool>>>)`, `R(() => delegate(int x) { … })` binds and the rewrite is
+  CS0121 — in an expression body and after `return` alike. The anonymous method decides the outer
+  lambda's return type, so the walk climbs through a lambda's body and its `return`s.
+- ⚠ **A tuple element of an overloaded argument**: `Q((1, delegate(int x) { … }))` against a tuple of
+  `Func` and a tuple of `Expression` is CS0121 as a lambda. The tuple is transparent to the walk.
+- **A `params Expression<…>[]`**, a constructor overload and a collection-initializer `Add` overload
+  are the same class with a different host; the type is searched through array elements and type
+  arguments, and an indexer — whose candidates the rule does not enumerate — declines.
+
+The walk **stops at the nearest call**, and that is measured rather than economised:
+`R(Wrap(delegate(int x) { … }))` with a generic `Wrap<T>(T)` binds `R(Func<…>)` both ways, because
+`Wrap` infers `T` from the natural type, which is a delegate type for both spellings.
+`fixIsSafe: false` stands regardless; `skala fix` re-binds the rewritten file in its own compilation
+and reverts on any new error, and that is the net under whatever this guard does not foresee.
+
+### ⚠ A lambda is not a primary expression
+
+`b ?? delegate(int x) { … }`, `(Func<int, int>)delegate(int x) { … }` and `a + delegate(int x) { … }`
+all compile and all **stop parsing** once rewritten. The rule therefore fires by an allow-list of
+parent positions — argument, initializer, assignment right side, `return`, `yield return`, expression
+body, lambda body, `switch` arm, conditional branch, parentheses, collection element — every one of
+them compiled and run both ways.
+
+### Measured to agree, so not declined
+
+`async` and `static` anonymous methods (and `async static`), `ref`/`out`/`in`/`scoped` parameters,
+discards, `unsafe` pointer parameters, `this`/`base` captures, a `goto` label and an `#if` region in
+the body, and the natural-type positions `var`, `Delegate` and `object` — an anonymous method with
+explicit parameters has the same natural type a lambda has (both `CS8773`/`CS1660` below C# 10, both
+a `Func<int, int>` from 10 up). Overloads differing only in return type (`Func<int, int>`/`Func<int, long>`,
+`Func<int, Task>`/`Action<int>`, `Func<int, object>`/`Action<int>` on a throwing body), a generic
+`Q<T>(T)`, `Delegate`/`object` overloads and `dynamic` arguments (CS1977 both ways) all agree.
+
+### ⚠ Refuted: the C# 12 floor for parameter attributes and default values
+
+The issue proposed declining a parameter with an attribute or a default value below C# 12, and marked
+it *read, not compiled*. Compiled, the floor has nothing to gate: on an **anonymous method** an
+attribute is **CS7014**, a default value **CS1065** and `params` **CS1670** at *every* language
+version. The shape never compiles. The rule declines it anyway — the rewrite would turn the error into
+a lambda that compiles from C# 10/12 and means something nobody wrote — and because a fixture must
+compile, that decline is pinned by a unit test that asserts the source's error, the lambda's absence
+of one, and the rule's silence. ⚠ **The memory note that the fixture harness "compiles only at
+Preview" is stale**: `// fixture-option: LangVersion` exists since #317, and `AllowUnsafe` is what
+the pointer-parameter positive uses. Nothing in this rule needed a floor, so neither was required.
+
+### Population: zero, and that is the frequency claim measured
+
+⚠ **The issue's frequency claim — that twenty years of training data carry the syntax — was the one
+criterion it did not measure, and measured it finds nothing to fix in any tree here.** A counter for
+`delegate\s*(` outside comments, excluding `*.expected.cs`: **0** in serilog (70 files), newtonsoft
+(110), vixen (200), and **0** in Skala's own production source; the counter's canary is this rule's
+own fixtures (39 hits) and the formatter's two synthetic `constructs/` files. So the zero-false-positive
+bar is met by an absent population rather than by declines, and the true-positive count on real code
+is **zero**. Whether the rule earns its place therefore rests on model output rather than on these
+corpora — the vendored trees are maintained human code, already modernised — which is a judgement
+for the coordinator, recorded here rather than assumed either way.
+
+Every guard was sabotaged alone and each turned at least one fixture or unit test red, including the
+tuple transparency, which needed a positive (`a-tuple-element.cs`) before it could: removing it made
+the rule decline rather than fire, which every negative accepts.

@@ -32,6 +32,7 @@ SK1062/negative/a-hex-escape-that-swallows-the-next-digit.cs	SK2171	`\x41B` take
 SK1091/negative/a-never-written-property.cs	SK2131	`Total` has no setter, no initializer and no constructor that assigns it, so it holds `default` for the life of every instance
 SK1093/negative/an-as-expression.cs	SK2121	`System.IO.StringWriter` always converts to `System.IO.TextWriter`, so this `as` returns its operand and can yield null only where the operand is null
 SK1120/negative/get_type_on_a_type_is_sk2181.cs	SK2181	`System.Type` is already a type, so this returns the runtime type of the `Type` object rather than the type it describes
+SK1131/negative/a-queryable-where.cs	SK2153	true positive, and the point of the fixture: an anonymous method cannot become an expression tree, so `IQueryable.Where(delegate(…) { … })` binds to `Enumerable.Where` and runs client-side — SK2153's shape exactly. That binding is why SK1131 must decline it: the lambda would pick `Queryable.Where` and be CS0834. Neither file means anything without the other's shape present.
 SK2002/negative/void-call.cs	SK2101	AUDITED (#285): SK2002's guard is `ReturnsVoid: false`, so pinning it needs a [Pure] void method, which is exactly the shape SK2101 owns. The overlap is unavoidable, not sloppy.
 SK2003/negative/nan-infinity.cs	SK2030	Comparing with NaN using `==` is always false, even for NaN; use `double.IsNaN(x + y)`
 SK2005/negative/init_accessor.cs	SK2031	The `init` accessor never reads `value`, so every assignment through it is discarded
