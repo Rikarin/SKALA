@@ -53,7 +53,7 @@ public static class CallerArgumentSafety {
     ///     <c>message</c> captures nothing — and only when the attribute names a parameter that exists and
     ///     is not itself: a misspelled name is <c>CS8963</c>, a warning, and captures nothing. The text
     ///     captured is the bound argument's expression, which for a reduced extension call is the
-    ///     receiver, for an expanded <c>params</c> call is every element, and for a C# 14 extension
+    ///     receiver, for a <c>params</c> parameter is the whole call (measured), and for a C# 14 extension
     ///     block is the instance. Any edit that overlaps that text <b>or abuts it</b> is reported,
     ///     including one that replaces the whole call: whether a rewrite re-emits the argument verbatim
     ///     is not something a span can say, and a declined safe fix is still offered for review.
@@ -137,7 +137,7 @@ public static class CallerArgumentSafety {
                 }
 
                 found = true;
-                if (Source(argument) is { } span) {
+                if (Source(argument, call) is { } span) {
                     yield return span;
                 }
             }
@@ -165,32 +165,20 @@ public static class CallerArgumentSafety {
     }
 
     /// <summary>The source text an argument contributes, or nothing when it contributes none.</summary>
-    static TextSpan? Source(IArgumentOperation argument) {
+    static TextSpan? Source(IArgumentOperation argument, SyntaxNode call) {
+        // ⚠ Measured, not assumed: for `Many(values: x => x + 5)` the compiler captures the whole
+        // call, `Captures.Many(values: x => x + 5)`, not the argument — so a `params` capture is
+        // answered with the call's span, which also covers every element of an expanded list.
+        if (argument.ArgumentKind is ArgumentKind.ParamArray or ArgumentKind.ParamCollection) {
+            return call.Span;
+        }
+
         if (argument.Syntax is ArgumentSyntax written) {
             return written.Expression.Span;
         }
 
         if (argument.Syntax is AttributeArgumentSyntax attributeArgument) {
             return attributeArgument.Expression.Span;
-        }
-
-        if (argument.ArgumentKind is ArgumentKind.ParamArray or ArgumentKind.ParamCollection) {
-            // Expanded `params`: the elements are the source, and the implicit array is not.
-            TextSpan? union = null;
-            foreach (var element in argument.Value.DescendantsAndSelf()) {
-                if (element.IsImplicit) {
-                    continue;
-                }
-
-                union = union is { } before
-                    ? TextSpan.FromBounds(
-                        System.Math.Min(before.Start, element.Syntax.Span.Start),
-                        System.Math.Max(before.End, element.Syntax.Span.End)
-                    )
-                    : element.Syntax.Span;
-            }
-
-            return union;
         }
 
         // A reduced extension method's receiver: implicit as an argument, explicit as text.

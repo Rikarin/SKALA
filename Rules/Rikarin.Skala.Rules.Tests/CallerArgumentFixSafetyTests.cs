@@ -78,6 +78,7 @@ public sealed class CallerArgumentFixSafetyTests {
     [InlineData("Apply(x => x + 1).Text()", "x => x + 1", true)]
     [InlineData("Apply(x => x + 1)", "x => x + 1", false)]
     [InlineData("Many(values: x => x + 1)", "x => x + 1", true)]
+    [InlineData("Many(values: x => x + 1)", "Many", true)]
     [InlineData("new Box(x => x + 1).Text", "x => x + 1", true)]
     [InlineData("Capture(Apply(x => x + 1))", "Capture(Apply(x => x + 1))", true)]
     [InlineData("Capture(Apply(x => x + 1))", "Capture", false)]
