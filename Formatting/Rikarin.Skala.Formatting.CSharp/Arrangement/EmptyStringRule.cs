@@ -106,9 +106,9 @@ public sealed class EmptyStringRule : ArrangementRule {
             // constant context to worry about in this direction: `""` is legal everywhere
             // `string.Empty` is. The rewrite is total once the symbol is confirmed.
             return SyntaxFactory.LiteralExpression(
-                SyntaxKind.StringLiteralExpression,
-                SyntaxFactory.Literal(string.Empty)
-            )
+                    SyntaxKind.StringLiteralExpression,
+                    SyntaxFactory.Literal(string.Empty)
+                )
                 .WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
         }
@@ -156,10 +156,10 @@ public sealed class EmptyStringRule : ArrangementRule {
             }
 
             return SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
-                SyntaxFactory.IdentifierName("Empty")
-            )
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
+                    SyntaxFactory.IdentifierName("Empty")
+                )
                 .WithLeadingTrivia(node.GetLeadingTrivia())
                 .WithTrailingTrivia(node.GetTrailingTrivia());
         }

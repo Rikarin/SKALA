@@ -251,9 +251,9 @@ public sealed class BlockDocCommentIssue415Tests {
 
     static SyntaxTrivia Trivia(string source, DocumentationMode mode) =>
         CSharpSyntaxTree.ParseText(
-            SourceText.From(source),
-            new CSharpParseOptions(LanguageVersion.Preview).WithDocumentationMode(mode)
-        )
+                SourceText.From(source),
+                new CSharpParseOptions(LanguageVersion.Preview).WithDocumentationMode(mode)
+            )
             .GetRoot()
             .DescendantTrivia()
             .Single(static t => t.ToFullString().StartsWith("/**", StringComparison.Ordinal));

@@ -309,7 +309,7 @@ public sealed class PatternAndCorrectnessBatchTests {
                             return exception.InnerException!.GetType().FullName!;
                         }
                     }
-            )
+                )
                 .ToArray();
         } finally {
             context.Unload();

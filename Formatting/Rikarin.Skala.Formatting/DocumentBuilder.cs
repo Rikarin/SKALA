@@ -332,17 +332,23 @@ public sealed class DocumentBuilder {
     ///     ⚠ <see cref="IndentKind.OutdentColumns" /> only: how many columns to the left every line but
     ///     the scope's opening one moves. Ignored by every other kind, which measure in levels.
     /// </param>
-    /// <param name="grouping">
-    ///     ⚠ The scope is a grouping parenthesis's, which a block opening on the same line nests
-    ///     through rather than from — unless something inside the parenthesis broke. See
-    ///     <see cref="IndentFlags.Grouping" />.
+    /// <param name="shape">
+    ///     ⚠ A delimited construct's scope: <see cref="IndentFlags.Grouping" /> for a grouping
+    ///     parenthesis, which a block opening on the same line nests through rather than from — unless
+    ///     something inside the parenthesis broke — and <see cref="IndentFlags.Delimiter" /> for every
+    ///     other delimited list. Any other flag is ignored.
     /// </param>
-    public void OpenIndent(IndentKind kind, bool unconditional = false, int columns = 0, bool grouping = false) =>
+    public void OpenIndent(
+        IndentKind kind,
+        bool unconditional = false,
+        int columns = 0,
+        IndentFlags shape = IndentFlags.None
+    ) =>
         Open(
             DocKind.Indent,
             (int)kind,
             (int)((unconditional ? IndentFlags.Unconditional : IndentFlags.None)
-                | (grouping ? IndentFlags.Grouping : IndentFlags.None)),
+                | (shape & (IndentFlags.Grouping | IndentFlags.Delimiter))),
             columns
         );
 

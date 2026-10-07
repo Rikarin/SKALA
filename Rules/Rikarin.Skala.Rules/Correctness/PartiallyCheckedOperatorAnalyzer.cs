@@ -83,10 +83,10 @@ public sealed class PartiallyCheckedOperatorAnalyzer : DiagnosticAnalyzer {
             .ToList();
 
         var declaredChecked = operators.Where(static method => method.Name.StartsWith(
-                "op_Checked",
-                System.StringComparison.Ordinal
+                    "op_Checked",
+                    System.StringComparison.Ordinal
+                )
             )
-        )
             .ToList();
 
         // The whole predicate: the type has to have opted in somewhere, or there is no defect here.

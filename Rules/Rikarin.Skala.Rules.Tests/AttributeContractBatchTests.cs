@@ -138,10 +138,10 @@ public sealed class AttributeContractBatchTests {
 
     static ImmutableArray<Diagnostic> Findings(string path) =>
         RuleFixtures.Analyze(
-            RuleFixtures.Compile(File.ReadAllText(path), path),
-            Batch,
-            TestContext.Current.CancellationToken
-        )
+                RuleFixtures.Compile(File.ReadAllText(path), path),
+                Batch,
+                TestContext.Current.CancellationToken
+            )
             .Where(static diagnostic => Array.IndexOf(Ids, diagnostic.Id) >= 0)
             .ToImmutableArray();
 }

@@ -284,9 +284,9 @@ public sealed class DiscardDeclarationRule : ArrangementRule {
                 return node.Expression is IdentifierNameSyntax { Identifier.ValueText: "_" }
                     ? visited.WithExpression(
                         SyntaxFactory.DeclarationExpression(
-                            SyntaxFactory.IdentifierName("var").WithTrailingTrivia(SyntaxFactory.Space),
-                            SyntaxFactory.DiscardDesignation()
-                        )
+                                SyntaxFactory.IdentifierName("var").WithTrailingTrivia(SyntaxFactory.Space),
+                                SyntaxFactory.DiscardDesignation()
+                            )
                             .WithTriviaFrom(visited.Expression)
                     )
                     : visited;

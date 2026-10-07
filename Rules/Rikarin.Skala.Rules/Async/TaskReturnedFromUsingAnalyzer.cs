@@ -231,7 +231,7 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
 
         foreach (var declarator in block.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
                          and not LocalFunctionStatementSyntax
-                 )
+                     )
                      .OfType<VariableDeclaratorSyntax>()) {
             if (context.SemanticModel.GetDeclaredSymbol(declarator, context.CancellationToken) is ILocalSymbol {
                     Type.IsRefLikeType: true
@@ -255,7 +255,7 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
     static IEnumerable<ReturnStatementSyntax> Returns(BlockSyntax body) =>
         body.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
                 and not LocalFunctionStatementSyntax
-        )
+            )
             .OfType<ReturnStatementSyntax>();
 
     /// <summary>

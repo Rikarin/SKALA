@@ -72,9 +72,9 @@ public sealed class FloatingPointEqualityAnalyzer : DiagnosticAnalyzer {
             float value => value == 0 || float.IsNaN(value) || float.IsInfinity(value),
             char value => value == 0,
             sbyte or byte or short or ushort or int or uint or long or ulong => System.Convert.ToDecimal(
-                constant.Value,
-                System.Globalization.CultureInfo.InvariantCulture
-            )
+                    constant.Value,
+                    System.Globalization.CultureInfo.InvariantCulture
+                )
                 == 0,
             _ => false
         };

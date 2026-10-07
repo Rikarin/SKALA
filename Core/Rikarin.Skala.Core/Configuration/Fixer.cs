@@ -64,7 +64,7 @@ public static class Fixer {
             foreach (var option in OptionRegistry.All) {
                 var byKey = document.Assignments.Where(a => OptionRegistry.TryResolve(a.Key, out var id)
                     && id == option.Id
-                )
+                    )
                     .ToArray();
                 if (byKey.Length < 2) {
                     continue;

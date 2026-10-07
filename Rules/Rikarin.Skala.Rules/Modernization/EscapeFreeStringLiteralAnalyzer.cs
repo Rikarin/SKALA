@@ -344,7 +344,7 @@ public sealed class EscapeFreeStringLiteralAnalyzer : DiagnosticAnalyzer {
         scope.DescendantNodes(static node => node is not (AnonymousFunctionExpressionSyntax
                 or LocalFunctionStatementSyntax
                 or InterpolatedStringExpressionSyntax)
-        )
+            )
             .OfType<LiteralExpressionSyntax>()
             .Where(static node => node.IsKind(SyntaxKind.StringLiteralExpression));
 

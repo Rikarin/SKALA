@@ -282,7 +282,7 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
     static bool IsIterator(SyntaxNode body) =>
         body.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
                 and not LocalFunctionStatementSyntax
-        )
+            )
             .Any(static node => node is YieldStatementSyntax);
 
     static bool Implements(ITypeSymbol type, INamedTypeSymbol disposable) {

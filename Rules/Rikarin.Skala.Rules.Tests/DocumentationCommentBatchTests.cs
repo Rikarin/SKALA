@@ -228,10 +228,10 @@ public sealed class DocumentationCommentBatchTests {
     static string Apply(string source, string id) {
         var diagnostic = Assert.Single(
             RuleFixtures.Analyze(
-                RuleFixtures.Compile(source, "probe.cs"),
-                Analyzers,
-                TestContext.Current.CancellationToken
-            )
+                    RuleFixtures.Compile(source, "probe.cs"),
+                    Analyzers,
+                    TestContext.Current.CancellationToken
+                )
                 .Where(d => d.Id == id)
         );
 

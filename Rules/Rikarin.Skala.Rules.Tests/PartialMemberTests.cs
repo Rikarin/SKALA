@@ -358,7 +358,7 @@ public sealed class PartialMemberTests {
                         Text: diagnostic.Properties[FixEdits.TextKey(index)] ?? string.Empty
                     )
                 )
-        )
+            )
             .OrderByDescending(static edit => edit.Start)
             .ToArray();
         Assert.NotEmpty(edits);

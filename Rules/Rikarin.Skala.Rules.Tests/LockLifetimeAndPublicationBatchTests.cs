@@ -267,10 +267,10 @@ public sealed class LockLifetimeAndPublicationBatchTests {
 
     static string[] Ids(Compilation compilation) =>
         RuleFixtures.Analyze(
-            (CSharpCompilation)compilation,
-            Analyzers,
-            TestContext.Current.CancellationToken
-        )
+                (CSharpCompilation)compilation,
+                Analyzers,
+                TestContext.Current.CancellationToken
+            )
             .Select(static diagnostic => diagnostic.Id)
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
