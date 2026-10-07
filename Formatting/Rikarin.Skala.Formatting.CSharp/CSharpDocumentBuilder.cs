@@ -729,7 +729,10 @@ public sealed partial class CSharpDocumentBuilder {
                 // puts the next constraint on the `where`'s own column, at every value of every key
                 // measured (SK-DIV-0105). The frame stays — it bounds what the clause's own breaks
                 // may spend — and pays for nothing, which is what an aligned frame already means.
-                Aligned: node is TypeParameterConstraintClauseSyntax
+                Aligned: node is TypeParameterConstraintClauseSyntax,
+                PaysNotBefore: node is VariableDeclaratorSyntax declarator && IsFirstDeclaratorBehindItsType(declarator)
+                    ? node.SpanStart
+                    : -1
             )
         );
 
@@ -1075,13 +1078,23 @@ public sealed partial class CSharpDocumentBuilder {
             // switch arm's `=>` and the body after it (issue #378). Opened before the gap that
             // precedes the child, so that the gap is the group's first point, and closed after the
             // last child; the same shape as the constraint run's. See BreakPlan.TryOpenedAt.
+            // ⚠ A group whose first point is not that gap opens after it (#420): a declarator list whose
+            // first name a comment has already broken onto its own line must not count that break as
+            // its own, or `int /* c */` / `a, b;` chops into `a,` / `b;`.
             if (plan.TryOpenedAt(node, child.SpanStart, out var plans)) {
                 opened ??= [];
                 foreach (var planned in plans) {
-                    opened.Add(OpenGroupAt(planned, node));
+                    if (planned.LeadingGapInside) {
+                        opened.Add(OpenGroupAt(planned, node));
+                    }
                 }
 
                 EmitLeadingGapAt(child.SpanStart);
+                foreach (var planned in plans) {
+                    if (!planned.LeadingGapInside) {
+                        opened.Add(OpenGroupAt(planned, node));
+                    }
+                }
             }
 
             if (child.IsToken) {
@@ -2942,6 +2955,15 @@ public sealed partial class CSharpDocumentBuilder {
                 continue;
             }
 
+            // ⚠ A first declarator's frame does not pay for the break before its own name (#420). A
+            // comment behind the type is written inside the declarator's leading gap, which starts
+            // the frame early; paying here left the statement's level unspent and the declarator's
+            // spent, so the `=` after the name could spend nothing: `string /* c */` / `    s =` /
+            // `    "…";` where the oracle writes the value two levels in.
+            if (frames[i].PaysNotBefore == nextToken.SpanStart) {
+                continue;
+            }
+
             if (frames[i].Activated) {
                 return -1;
             }
@@ -3027,7 +3049,8 @@ public sealed partial class CSharpDocumentBuilder {
         int SavedDepth = 0,
         bool Aligned = false,
         bool HoldsLevel = false,
-        int EntryDepth = 0);
+        int EntryDepth = 0,
+        int PaysNotBefore = -1);
 
     /// <summary>
     ///     Whether the break continues an expression rather than starting a new statement, member or
@@ -3225,7 +3248,9 @@ public sealed partial class CSharpDocumentBuilder {
             SelectOrGroupClauseSyntax => true,
             AnonymousObjectMemberDeclaratorSyntax => true,
             SubpatternSyntax => true,
-            VariableDeclaratorSyntax => true,
+            // ⚠ Except the first, behind its type: a break there is the declaration's continuation and
+            // takes its level, `int /* c */` / `    v = 1;` (#420). The later declarators keep theirs.
+            VariableDeclaratorSyntax declarator => !IsFirstDeclaratorBehindItsType(declarator),
             InitializerExpressionSyntax => true,
             CollectionElementSyntax => true,
             _ => false
@@ -3465,6 +3490,13 @@ public sealed partial class CSharpDocumentBuilder {
     ///     </para>
     /// </remarks>
     bool MustBreak(Piece previous, PieceKind nextKind, SyntaxToken nextToken) {
+        if (previous.Kind is PieceKind.BlockComment or PieceKind.BlockDocComment) {
+            return nextKind == PieceKind.Token
+                && FollowsItsDeclarationsType(nextToken)
+                && !FormatterTagGuard.IsOffTag(previous.Text, options.Tags)
+                && !FormatterTagGuard.IsOnTag(previous.Text, options.Tags);
+        }
+
         if (previous.Kind != PieceKind.Token) {
             return false;
         }
@@ -3511,6 +3543,42 @@ public sealed partial class CSharpDocumentBuilder {
             && nextToken.IsKind(SyntaxKind.IfKeyword)
             && !options.SpecialElseIfTreatment;
     }
+
+    /// <summary>
+    ///     The name of a declaration's first declarator, right behind its type: <c>v</c> in
+    ///     <c>int /* c */ v = 1;</c>, for a local, a field, an event field or a <c>using</c> statement's
+    ///     resource.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A block comment between the type and the name breaks the line after the comment, and the
+    ///     name goes one continuation level in (#420). Measured with <c>Testing ask</c> on about sixty
+    ///     shapes, each written closed and spaced: <c>var /* c */v = 1;</c>, <c>int? /* c */ v</c>,
+    ///     <c>(int, string) /* c */ v</c>, <c>ref int /* c */ v</c>, <c>const int /* c */ v</c>,
+    ///     <c>await using var /* c */ x</c>, two comments in a row, a field, an event field and a
+    ///     declaration with a second declarator all come back <c>… /* c */</c> / <c>    v = 1;</c>, and an
+    ///     author's break before the comment puts the comment on a continuation line of its own too. A
+    ///     <c>using</c> statement's resource breaks the same way. ⚠ The issue called it "a local
+    ///     declaration's shape only"; it is the declaration's, and a field breaks as a local does.
+    ///     <para>
+    ///         Measured not to break, and so not here: a comment between modifiers, before the type, after
+    ///         the name, before a second declarator, in a <c>for</c> or <c>fixed</c> statement's
+    ///         declaration, after <c>foreach (var</c>, in an <c>out var</c> or a declaration pattern, and
+    ///         in front of a property's, a method's, a local function's or a parameter's name.
+    ///     </para>
+    /// </remarks>
+    static bool FollowsItsDeclarationsType(SyntaxToken token) =>
+        token.IsKind(SyntaxKind.IdentifierToken)
+        && token.Parent is VariableDeclaratorSyntax declarator
+        && IsFirstDeclaratorBehindItsType(declarator);
+
+    internal static bool IsFirstDeclaratorBehindItsType(VariableDeclaratorSyntax declarator) =>
+        declarator.Parent is VariableDeclarationSyntax {
+            Parent: LocalDeclarationStatementSyntax
+                or FieldDeclarationSyntax
+                or EventFieldDeclarationSyntax
+                or UsingStatementSyntax
+        } declaration
+        && declaration.Variables[0] == declarator;
 
     static bool OpensAJoinableBody(SyntaxToken brace) =>
         brace.Parent is BlockSyntax

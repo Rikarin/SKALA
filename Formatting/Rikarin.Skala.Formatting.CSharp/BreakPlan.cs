@@ -2210,8 +2210,7 @@ public sealed class BreakPlan {
             broken |= BreaksBefore(next);
         }
 
-        Describe(
-            node,
+        var plan = new GroupPlan(
             group,
             options.WrapMultipleDeclarationStyle == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
@@ -2220,7 +2219,24 @@ public sealed class BreakPlan {
             ),
             true
         );
+
+        // ⚠ A block comment behind the type breaks the line before the first name (#420), and that
+        // break is the declaration's, not the list's: the oracle writes `int /* c */` / `a, b;` and
+        // keeps the names together. Around the whole declaration the group would hold the break and
+        // could never be flat, so it opens after the gap instead.
+        if (CSharpDocumentBuilder.IsFirstDeclaratorBehindItsType(node.Variables[0])
+            && HasBlockCommentBefore(node.Variables[0].Identifier)) {
+            OpenAt(node, node.Variables[0].SpanStart, plan);
+            return;
+        }
+
+        Describe(node, plan);
     }
+
+    static bool HasBlockCommentBefore(SyntaxToken token) =>
+        token.LeadingTrivia.Concat(token.GetPreviousToken().TrailingTrivia)
+            .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia));
 
     /// <summary>
     ///     <c>skala_wrap_chained_method_calls = chop_if_long</c>: every <c>.</c> of a chain that does not fit
@@ -3533,7 +3549,9 @@ public sealed class BreakPlan {
                     MinimumHead: yieldsToTheBracket ? MinimumEqualsHead : 0
                 ),
                 true,
-                SpendsUnderDelimiters: IsAListItemsEquals(node),
+                // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
+                // `string /* c */` / `    s =` / `        "…";` is two levels, not one (#420).
+                SpendsUnderDelimiters: IsAListItemsEquals(node) || FollowsABrokenDeclarationHead(node),
 
                 // ⚠ The level is held at zero when the value opens with a parenthesis the author
                 // broke after: `var t =\n(\n 1, 2)` puts the `(` at the statement's own indent. See
@@ -3877,6 +3895,11 @@ public sealed class BreakPlan {
     ///     column, with no level added, while <c>for (int i =\n 0; …)</c> adds one — two headers, two
     ///     answers, and no rule read off two samples. The list items are consistent across all three.
     /// </remarks>
+    static bool FollowsABrokenDeclarationHead(SyntaxNode node) =>
+        node is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }
+        && CSharpDocumentBuilder.IsFirstDeclaratorBehindItsType(declarator)
+        && HasBlockCommentBefore(declarator.Identifier);
+
     static bool IsAListItemsEquals(SyntaxNode node) =>
         node is EqualsValueClauseSyntax { Parent: ParameterSyntax }
             or AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax }
@@ -4165,6 +4188,7 @@ public sealed class BreakPlan {
                     BreaksOnlyIfHeadOverflows: true
                 ),
                 true,
+                LeadingGapInside: true,
 
                 // ⚠ The arm's level is this group's, not the body's: it is opened first and the body's
                 // group can spend nothing inside it. So it is this group that holds the level for a
@@ -4236,6 +4260,7 @@ public sealed class BreakPlan {
                 GroupMode.Preserve,
                 facts with { SourceBroken = options.KeepsUserBreaksBetweenItems && BreaksBefore(first) },
                 true,
+                LeadingGapInside: true,
                 HoldsLevel: HoldFor(group, body)
             )
         );
