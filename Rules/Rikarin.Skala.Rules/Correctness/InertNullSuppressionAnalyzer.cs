@@ -72,13 +72,16 @@ public sealed class InertNullSuppressionAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ Deleting the `!` can change how the code around it parses: `F(a < b!, c > (d))` is two
+        // comparisons and `F(a < b, c > (d))` is a generic call (#424, the #392 class). The `!` is
+        // still inert there, but the only repair the rule can offer is the one that breaks it.
+        var edit = (suppression.OperatorToken.Span, string.Empty);
+        if (!FixReparse.Preserves(suppression, suppression.Operand, context.CancellationToken, edit)) {
+            return;
+        }
+
         context.ReportDiagnostic(
-            Diagnostic.Create(
-                Descriptor,
-                suppression.OperatorToken.GetLocation(),
-                FixEdits.Pack((suppression.OperatorToken.Span, string.Empty)),
-                reason
-            )
+            Diagnostic.Create(Descriptor, suppression.OperatorToken.GetLocation(), FixEdits.Pack(edit), reason)
         );
     }
 

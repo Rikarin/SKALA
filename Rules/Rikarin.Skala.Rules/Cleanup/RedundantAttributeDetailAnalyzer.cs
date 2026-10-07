@@ -85,7 +85,20 @@ public sealed class RedundantAttributeDetailAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (context.SemanticModel.GetSymbolInfo(attribute.Name, context.CancellationToken).Symbol is null) {
+        if (context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol is not { } constructor) {
+            return;
+        }
+
+        // ⚠ The short name is looked up again, with `Attribute` appended, and that second lookup can
+        // miss (#424). `[MarkAttribute]` binds `MarkAttributeAttribute` through the suffix, and
+        // `[Mark]` looks for `Mark` and `MarkAttribute` — neither of which exists — and is CS0246
+        // (#412's audit). The lookup below asks whether anything *else* answers to the short name;
+        // only binding the shortened attribute in place asks whether the same one still does.
+        var rewritten = attribute.WithName(SyntaxFactory.IdentifierName(shortened).WithTriviaFrom(name));
+        if (!FixRebind.Same(
+                context.SemanticModel.GetSpeculativeSymbolInfo(attribute.SpanStart, rewritten).Symbol,
+                constructor
+            )) {
             return;
         }
 

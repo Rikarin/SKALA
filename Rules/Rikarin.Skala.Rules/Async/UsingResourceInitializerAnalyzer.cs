@@ -129,7 +129,8 @@ public sealed class UsingResourceInitializerAnalyzer : DiagnosticAnalyzer {
             // hoisting it produces text that parses and does not bind. Accessibility needs no check:
             // the hoisted assignment sits at the same site the initializer did, and the two obey the
             // same rules.
-            switch (context.SemanticModel.GetSymbolInfo(member, context.CancellationToken).Symbol) {
+            var assigned = context.SemanticModel.GetSymbolInfo(member, context.CancellationToken).Symbol;
+            switch (assigned) {
                 case IPropertySymbol { SetMethod: { IsInitOnly: false } }:
                 case IFieldSymbol { IsReadOnly: false, IsConst: false }:
                     break;
@@ -137,7 +138,17 @@ public sealed class UsingResourceInitializerAnalyzer : DiagnosticAnalyzer {
                     return;
             }
 
-            assignments.Add(local.Name + "." + member.Identifier.ValueText + " = " + assignment.Right.ToString() + ";");
+            var hoist = FixRebind.Identifier(local.Name)
+                + "."
+                + member.Identifier.Text
+                + " = "
+                + assignment.Right
+                + ";";
+            if (!HoistsAlike(context, insertion, hoist, local, assigned, assignment.Right)) {
+                return;
+            }
+
+            assignments.Add(hoist);
         }
 
         var hoisted = new StringBuilder();
@@ -168,6 +179,47 @@ public sealed class UsingResourceInitializerAnalyzer : DiagnosticAnalyzer {
                 + "` is constructed before the `using` owns it; an initializer that throws leaks it"
             )
         );
+    }
+
+    /// <summary>
+    ///     ⚠ Whether the hoisted assignment, bound where it is inserted, writes the same member of the
+    ///     same local from the same names (#424).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Inside the initializer the member is looked up on the <em>created</em> type and the value is
+    ///     read where the creation stands; hoisted, the member is looked up on the local's
+    ///     <em>declared</em> type and the value is read inside the block. Both moves re-bind (#412's
+    ///     audit): <c>using Base r = new Derived { Mode = "fast" }</c> set <c>Derived.Mode</c> and
+    ///     <c>r.Mode = "fast";</c> sets the <c>Base.Mode</c> it hides;
+    ///     <c>
+    /// using IDisposable r = new
+    ///     Res { … }
+    ///     </c> is <c>CS1061</c>; and a block local declared below the insertion point with the
+    ///     name of a field the value read takes the name, which is <c>CS0844</c>.
+    /// </remarks>
+    static bool HoistsAlike(
+        SyntaxNodeAnalysisContext context,
+        int insertion,
+        string hoist,
+        ILocalSymbol local,
+        ISymbol assigned,
+        ExpressionSyntax value
+    ) {
+        var cancellation = context.CancellationToken;
+        if (SyntaxFactory.ParseStatement(hoist) is not ExpressionStatementSyntax {
+                Expression: AssignmentExpressionSyntax { Left: MemberAccessExpressionSyntax }
+            } statement
+            || statement.ContainsDiagnostics
+            || !FixRebind.TrySpeculate(context.SemanticModel, insertion, statement, out var model, out var placed)
+            || placed is not ExpressionStatementSyntax {
+                Expression: AssignmentExpressionSyntax { Left: MemberAccessExpressionSyntax bound } hoisted
+            }) {
+            return false;
+        }
+
+        return FixRebind.BindsTo(model, bound.Expression, local, cancellation)
+            && FixRebind.BindsTo(model, bound, assigned, cancellation)
+            && FixRebind.BindsAlike(context.SemanticModel, value, model, hoisted.Right, cancellation);
     }
 
     static bool ContainsAComment(SyntaxNode node) {

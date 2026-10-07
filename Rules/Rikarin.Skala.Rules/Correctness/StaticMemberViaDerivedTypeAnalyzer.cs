@@ -92,11 +92,12 @@ public sealed class StaticMemberViaDerivedTypeAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        var replacement = TypeNameWriting.At(declaring, model, access.Expression.SpanStart);
+        var replacement = Qualifier(model, access, declaring, member, cancellation);
         var span = access.Expression.Span;
-        var properties = RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(access.SyntaxTree, span)
-            ? null
-            : FixEdits.Pack((span, replacement));
+        var properties = replacement is null
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(access.SyntaxTree, span)
+                ? null
+                : FixEdits.Pack((span, replacement));
 
         context.ReportDiagnostic(
             Diagnostic.Create(
@@ -112,6 +113,58 @@ public sealed class StaticMemberViaDerivedTypeAnalyzer : DiagnosticAnalyzer {
                 + "`, so the qualifier names a type that only inherits it"
             )
         );
+    }
+
+    /// <summary>
+    ///     ⚠ The spelling of <paramref name="declaring" /> that, written as the qualifier, still reaches
+    ///     <paramref name="member" /> — or <see langword="null" /> when none does (#424).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <see cref="TypeNameWriting.At" /> asks <c>LookupNamespacesAndTypes</c>, which is the right
+    ///     question in a <c>typeof</c> and the wrong one here: a qualifier is an <em>expression</em>, and
+    ///     a local, a parameter or a member called <c>Base</c> takes <c>Base.Hello()</c> before the type
+    ///     does. #412's audit measured <c>Base.Hello (static)</c> becoming <c>Other.Hello (instance)</c>
+    ///     through a property named like the base type. The minimal spelling is bound in place, then the
+    ///     <c>global::</c>-qualified one, and whichever reaches the same member is written.
+    /// </remarks>
+    static string? Qualifier(
+        SemanticModel model,
+        MemberAccessExpressionSyntax access,
+        INamedTypeSymbol declaring,
+        ISymbol member,
+        System.Threading.CancellationToken cancellation
+    ) {
+        foreach (var candidate in new[] {
+                     TypeNameWriting.At(declaring, model, access.Expression.SpanStart),
+                     declaring.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                 }) {
+            var written = SyntaxFactory.ParseExpression(candidate);
+            if (!written.ContainsDiagnostics
+                && FixRebind.TrySpeculate(model, access.Expression, written, out var speculative, out var placed)
+                && FixRebind.BindsTo(speculative, placed, declaring, cancellation)
+                && placed.Parent is MemberAccessExpressionSyntax rewritten
+                && Reaches(speculative, rewritten, member, cancellation)) {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Whether the access binds to <paramref name="member" />, or names a method group that holds it.
+    /// </summary>
+    static bool Reaches(
+        SemanticModel model,
+        MemberAccessExpressionSyntax access,
+        ISymbol member,
+        System.Threading.CancellationToken cancellation
+    ) {
+        var info = model.GetSymbolInfo(access, cancellation);
+        return FixRebind.Same(info.Symbol, member)
+            || info.Symbol is null
+            && info.CandidateSymbols.Length == 1
+            && FixRebind.Same(info.CandidateSymbols[0], member);
     }
 
     static bool IsBaseOf(INamedTypeSymbol candidate, INamedTypeSymbol derived) {

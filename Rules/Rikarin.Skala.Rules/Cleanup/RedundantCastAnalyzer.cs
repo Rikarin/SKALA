@@ -8,6 +8,7 @@ using Rikarin.Skala.Rules.Modernization;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Rikarin.Skala.Rules.Cleanup;
 
@@ -75,10 +76,19 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ An identity cast of a value is an rvalue — a copy — and its operand may be a variable, so
+        // deleting the cast can move a call from the copy onto the variable: `((Counter)c).Bump()`
+        // bumped a temporary and printed 0, and `(c).Bump()` bumps `c` and prints 1 (#412's audit,
+        // #425). Only where the result is used as a variable does the difference show.
+        if (!target.IsReferenceType && UsedAsAVariable(model, cast, context.CancellationToken)) {
+            return;
+        }
+
         Report(
             context,
+            cast,
+            cast.Expression,
             TextSpan.FromBounds(cast.OpenParenToken.SpanStart, cast.Expression.SpanStart),
-            string.Empty,
             "The cast's operand already has the cast's type"
         );
     }
@@ -101,6 +111,36 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
     ///         what a <c>var</c> declared from the cast would capture.
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     Whether the cast's result is a receiver or a by-reference argument, where an rvalue and a
+    ///     variable behave differently.
+    /// </summary>
+    static bool UsedAsAVariable(
+        SemanticModel model,
+        CastExpressionSyntax cast,
+        System.Threading.CancellationToken cancellation
+    ) {
+        SyntaxNode node = cast;
+        while (node.Parent is ParenthesizedExpressionSyntax parenthesized) {
+            node = parenthesized;
+        }
+
+        switch (node.Parent) {
+            case MemberAccessExpressionSyntax access when access.Expression == node:
+            case ElementAccessExpressionSyntax element when element.Expression == node:
+            case ConditionalAccessExpressionSyntax conditional when conditional.Expression == node:
+                return true;
+
+            case ArgumentSyntax argument:
+                return !argument.RefKindKeyword.IsKind(SyntaxKind.None)
+                    || model.GetOperation(argument, cancellation)
+                    is Microsoft.CodeAnalysis.Operations.IArgumentOperation { Parameter.RefKind: not RefKind.None };
+
+            default:
+                return false;
+        }
+    }
+
     static bool SameNullability(SemanticModel model, CastExpressionSyntax cast, ITypeSymbol source) =>
         cast.Type is NullableTypeSyntax == (source.NullableAnnotation == NullableAnnotation.Annotated)
         && model.GetTypeInfo(cast.Expression).Nullability.FlowState
@@ -168,8 +208,9 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
 
         Report(
             context,
+            generic,
+            SyntaxFactory.IdentifierName(generic.Identifier),
             generic.TypeArgumentList.Span,
-            string.Empty,
             "Type inference reaches the same method without the explicit type arguments"
         );
     }
@@ -190,7 +231,15 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        Report(context, size.Span, string.Empty, "The array size is the number of elements written");
+        Report(
+            context,
+            rank,
+            rank.WithSizes(
+                SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(SyntaxFactory.OmittedArraySizeExpression())
+            ),
+            size.Span,
+            "The array size is the number of elements written"
+        );
     }
 
     static void AnalyzeTupleNames(SyntaxNodeAnalysisContext context) {
@@ -229,6 +278,14 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        var unnamed = tuple.ReplaceNodes(
+            tuple.Arguments.Where(static argument => argument.NameColon is not null),
+            static (argument, _) => argument.WithNameColon(null)
+        );
+        if (!FixReparse.Preserves(tuple, unnamed, context.CancellationToken, edits.ToArray())) {
+            return;
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
@@ -239,8 +296,24 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
         );
     }
 
-    static void Report(SyntaxNodeAnalysisContext context, TextSpan span, string replacement, string message) {
-        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, span)) {
+    /// <summary>
+    ///     Reports a deletion of <paramref name="span" />, which turns <paramref name="original" /> into
+    ///     <paramref name="intended" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The deletion is re-parsed in place before it is offered (#424).</b> A cast is a token
+    ///     boundary as well as a conversion: <c>a-(int)-b</c> without its <c>(int)</c> is
+    ///     <c>a--b</c>, a post-decrement and a stray <c>b</c> (<c>CS1002</c>, #412's audit).
+    /// </remarks>
+    static void Report(
+        SyntaxNodeAnalysisContext context,
+        SyntaxNode original,
+        SyntaxNode intended,
+        TextSpan span,
+        string message
+    ) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, span)
+            || !FixReparse.Preserves(original, intended, context.CancellationToken, (span, string.Empty))) {
             return;
         }
 
@@ -248,7 +321,7 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
             Diagnostic.Create(
                 Descriptor,
                 Location.Create(context.Node.SyntaxTree, span),
-                FixEdits.Pack((span, replacement)),
+                FixEdits.Pack((span, string.Empty)),
                 message
             )
         );

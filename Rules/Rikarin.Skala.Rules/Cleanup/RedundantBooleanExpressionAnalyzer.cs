@@ -103,7 +103,7 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
 
         // `== true` and `!= false` keep the operand; `== false` and `!= true` negate it.
         var keep = binary.IsKind(SyntaxKind.EqualsExpression) == literal;
-        var replacement = keep ? operand.ToString() : Negated(context, operand);
+        var replacement = keep ? operand.WithoutTrivia() : Negated(context, operand);
         Report(
             context,
             binary,
@@ -131,7 +131,7 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
                 Report(
                     context,
                     negation,
-                    inner.Operand.ToString(),
+                    inner.Operand.WithoutTrivia(),
                     "the two `!` cancel, so the expression is its own operand"
                 );
             }
@@ -176,12 +176,12 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        var flipped = comparison.IsKind(SyntaxKind.EqualsExpression) ? "!=" : "==";
+        var flipped = Flipped(comparison);
         Report(
             context,
             negation,
-            comparison.Left + " " + flipped + " " + comparison.Right,
-            $"the `!` inverts a comparison the language spells `{flipped}`"
+            flipped,
+            $"the `!` inverts a comparison the language spells `{flipped.OperatorToken.ValueText}`"
         );
     }
 
@@ -204,7 +204,7 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
         Report(
             context,
             conditional,
-            whenTrue ? conditional.Condition.ToString() : Negated(context, conditional.Condition),
+            whenTrue ? conditional.Condition.WithoutTrivia() : Negated(context, conditional.Condition),
             "the branches are the two `bool` literals, so the conditional is its own condition"
         );
     }
@@ -237,20 +237,34 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
         Report(
             context,
             binary,
-            operand.ToString(),
+            operand.WithoutTrivia(),
             $"`{binary.OperatorToken.ValueText} {(neutral ? "true" : "false")}` cannot change the result"
         );
     }
 
-    static void Report(SyntaxNodeAnalysisContext context, ExpressionSyntax node, string replacement, string what) =>
-        context.ReportDiagnostic(
-            Diagnostic.Create(
-                Descriptor,
-                node.GetLocation(),
-                FixEdits.Pack((node.Span, replacement)),
-                what
-            )
-        );
+    /// <remarks>
+    ///     ⚠ <b>Every replacement is re-parsed in place before it is offered (#424).</b>
+    ///     <see cref="BindsTighterThanEquality" /> is a precedence table, and a table is exactly as
+    ///     complete as its author: it had no row for the <c>switch</c> expression, whose subject binds
+    ///     tighter than <c>!=</c>, so <c>!(a == b) switch { … }</c> became <c>a != b switch { … }</c> —
+    ///     a <c>switch</c> on <c>b</c> — and printed <c>False</c> where it had printed <c>True</c>
+    ///     (#412's audit). The table still withdraws the shapes it knows, so that <c>SK0209</c> is never
+    ///     handed parentheses to remove; the re-parse is what makes a missing row a missing finding
+    ///     rather than a changed program.
+    /// </remarks>
+    static void Report(
+        SyntaxNodeAnalysisContext context,
+        ExpressionSyntax node,
+        ExpressionSyntax replacement,
+        string what
+    ) {
+        var edit = (node.Span, replacement.ToFullString());
+        if (!FixReparse.Preserves(node, replacement, context.CancellationToken, edit)) {
+            return;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(Descriptor, node.GetLocation(), FixEdits.Pack(edit), what));
+    }
 
     /// <summary>The literal's value, or <c>null</c> when the expression is not a boolean literal.</summary>
     static bool? AsBooleanLiteral(ExpressionSyntax expression) =>
@@ -298,19 +312,29 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
     ///         <em>inner</em> ones, because <c>!a &amp;&amp; b</c> is not <c>!(a &amp;&amp; b)</c>.
     ///     </para>
     /// </remarks>
-    static string Negated(SyntaxNodeAnalysisContext context, ExpressionSyntax expression) {
+    static ExpressionSyntax Negated(SyntaxNodeAnalysisContext context, ExpressionSyntax expression) {
         if (Unwrap(expression) is BinaryExpressionSyntax comparison
             && (comparison.IsKind(SyntaxKind.EqualsExpression) || comparison.IsKind(SyntaxKind.NotEqualsExpression))
             && !comparison.Left.IsKind(SyntaxKind.NullLiteralExpression)
             && !comparison.Right.IsKind(SyntaxKind.NullLiteralExpression)
             && context.SemanticModel.GetSymbolInfo(comparison, context.CancellationToken).Symbol
             is IMethodSymbol { MethodKind: MethodKind.BuiltinOperator }) {
-            var flipped = comparison.IsKind(SyntaxKind.EqualsExpression) ? "!=" : "==";
-
-            return comparison.Left + " " + flipped + " " + comparison.Right;
+            return Flipped(comparison);
         }
 
         return Prefixed(expression);
+    }
+
+    /// <summary><c>a == b</c> as <c>a != b</c> and the reverse, with one space either side.</summary>
+    static BinaryExpressionSyntax Flipped(BinaryExpressionSyntax comparison) {
+        var equals = comparison.IsKind(SyntaxKind.EqualsExpression);
+        return SyntaxFactory.BinaryExpression(
+            equals ? SyntaxKind.NotEqualsExpression : SyntaxKind.EqualsExpression,
+            comparison.Left.WithoutTrivia().WithTrailingTrivia(SyntaxFactory.Space),
+            SyntaxFactory.Token(equals ? SyntaxKind.ExclamationEqualsToken : SyntaxKind.EqualsEqualsToken)
+                .WithTrailingTrivia(SyntaxFactory.Space),
+            comparison.Right.WithoutTrivia()
+        );
     }
 
     /// <summary>An expression with any number of enclosing parentheses removed.</summary>
@@ -322,7 +346,15 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
         return expression;
     }
 
-    static string Prefixed(ExpressionSyntax expression) =>
+    static ExpressionSyntax Prefixed(ExpressionSyntax expression) =>
+        SyntaxFactory.PrefixUnaryExpression(
+            SyntaxKind.LogicalNotExpression,
+            NeedsNoParentheses(expression)
+                ? expression.WithoutTrivia()
+                : SyntaxFactory.ParenthesizedExpression(expression.WithoutTrivia())
+        );
+
+    static bool NeedsNoParentheses(ExpressionSyntax expression) =>
         expression is IdentifierNameSyntax
             or MemberAccessExpressionSyntax
             or InvocationExpressionSyntax
@@ -332,9 +364,7 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
             or LiteralExpressionSyntax
             or PrefixUnaryExpressionSyntax
             or PostfixUnaryExpressionSyntax
-            or CastExpressionSyntax
-            ? "!" + expression
-            : "!(" + expression + ")";
+            or CastExpressionSyntax;
 
     /// <summary>Whether the parent would re-bind an unparenthesised equality placed under it.</summary>
     /// <remarks>

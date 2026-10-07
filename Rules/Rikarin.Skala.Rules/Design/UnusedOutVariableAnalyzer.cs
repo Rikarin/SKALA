@@ -56,7 +56,7 @@ public sealed class UnusedOutVariableAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static void Start(OperationBlockStartAnalysisContext context) {
         var gate = new object();
-        var declared = new List<(ILocalSymbol Symbol, DeclarationExpressionSyntax Syntax)>();
+        var declared = new List<(ILocalSymbol Symbol, DeclarationExpressionSyntax Syntax, SemanticModel? Model)>();
         var referenced = new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default);
 
         context.RegisterOperationAction(
@@ -105,7 +105,7 @@ public sealed class UnusedOutVariableAnalyzer : DiagnosticAnalyzer {
                 }
 
                 lock (gate) {
-                    declared.Add((local.Local, syntax));
+                    declared.Add((local.Local, syntax, operation.Operation.SemanticModel));
                 }
             },
             OperationKind.DeclarationExpression
@@ -125,8 +125,11 @@ public sealed class UnusedOutVariableAnalyzer : DiagnosticAnalyzer {
                     }
                 }
 
-                foreach (var (symbol, syntax) in declared) {
-                    if (referenced.Contains(symbol) || IsNamedAnywhere(end.OperationBlocks, symbol.Name, syntax)) {
+                foreach (var (symbol, syntax, model) in declared) {
+                    if (referenced.Contains(symbol)
+                        || IsNamedAnywhere(end.OperationBlocks, symbol.Name, syntax)
+                        || model is null
+                        || !DiscardBindsTheSameCall(model, syntax, end.CancellationToken)) {
                         continue;
                     }
 
@@ -156,6 +159,45 @@ public sealed class UnusedOutVariableAnalyzer : DiagnosticAnalyzer {
     ///     wrote the type arguments: if it did not, inference ran, and an explicitly typed <c>out</c>
     ///     declaration is one of the things inference is allowed to read.
     /// </remarks>
+    /// <summary>
+    ///     ⚠ Whether the call, with <c>_</c> written for the declaration, is still a call to the same
+    ///     method and the <c>_</c> is a discard (#424).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The written type is part of overload resolution, not decoration: with
+    ///     <c>Parse(int, out int)</c> and <c>Parse(long, out string)</c>, <c>Parse(1, out string text)</c>
+    ///     can only be the second and <c>Parse(1, out _)</c> is the first — it compiles and runs the
+    ///     other method (#412's audit). And <c>_</c> is a discard only where no variable called
+    ///     <c>_</c> is in scope. Both are settled by binding the rewritten call in place.
+    /// </remarks>
+    static readonly DeclarationExpressionSyntax Untyped = SyntaxFactory.DeclarationExpression(
+        SyntaxFactory.IdentifierName("var"),
+        SyntaxFactory.DiscardDesignation()
+    );
+
+    static bool DiscardBindsTheSameCall(
+        SemanticModel model,
+        DeclarationExpressionSyntax syntax,
+        System.Threading.CancellationToken cancellation
+    ) {
+        if (syntax.Parent?.Parent?.Parent is not { } call
+            || model.GetSymbolInfo(call, cancellation).Symbol is not { } intended
+            || !FixRebind.TrySpeculate(model, syntax, Untyped, out var speculative, out var placed)
+            || placed.Parent?.Parent?.Parent is not { } rewritten) {
+            return false;
+        }
+
+        // ⚠ `out _` is a discard where nothing called `_` is in scope, and is then the same argument to
+        // overload resolution as `out var _`. The speculation is made with `out var _` because a bare
+        // `_` bound speculatively does not resolve as a discard: measured, `DateTime.TryParse(text,
+        // out _)` came back `OverloadResolutionFailure` from the speculative model although it compiles.
+        return model.LookupSymbols(syntax.SpanStart, name: "_").IsEmpty
+            && SymbolEqualityComparer.Default.Equals(
+                speculative.GetSymbolInfo(rewritten, cancellation).Symbol,
+                intended
+            );
+    }
+
     static bool InfersItsTypeArguments(IOperation? argument) {
         if (argument?.Parent is not IInvocationOperation { TargetMethod.IsGenericMethod: true } invocation) {
             return false;

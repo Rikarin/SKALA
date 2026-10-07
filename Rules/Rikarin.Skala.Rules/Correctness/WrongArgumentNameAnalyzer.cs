@@ -89,14 +89,44 @@ public sealed class WrongArgumentNameAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        var replacement = "nameof(" + FixRebind.Identifier(intended) + ")";
+        if (!WritesTheName(context, literal, replacement, intended)) {
+            return;
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
                 literal.GetLocation(),
-                FixEdits.Pack((literal.Span, "nameof(" + intended + ")")),
+                FixEdits.Pack((literal.Span, replacement)),
                 "`\"" + written + "\"` names no parameter in scope; `nameof(" + intended + ")` does"
             )
         );
+    }
+
+    /// <summary>
+    ///     ⚠ Whether <paramref name="replacement" />, standing where the literal stands, is the
+    ///     <c>nameof</c> operator producing <paramref name="intended" /> (#424).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>nameof</c> is a contextual keyword: it is the operator only where no method called
+    ///     <c>nameof</c> is in scope, and where one is, <c>nameof(x)</c> calls it — which compiles and
+    ///     hands the exception whatever the method returns (#412's audit). And a parameter declared
+    ///     <c>@class</c> is named <c>class</c>, so the name has to be escaped to be written at all
+    ///     (<c>nameof(class)</c> is <c>CS1026</c>). Both are answered by binding the text the fix
+    ///     writes, in place, and requiring the constant the operator would produce.
+    /// </remarks>
+    static bool WritesTheName(
+        SyntaxNodeAnalysisContext context,
+        LiteralExpressionSyntax literal,
+        string replacement,
+        string intended
+    ) {
+        var written = SyntaxFactory.ParseExpression(replacement);
+        return !written.ContainsDiagnostics
+            && FixRebind.TrySpeculate(context.SemanticModel, literal, written, out var model, out var placed)
+            && model.GetConstantValue(placed, context.CancellationToken) is { HasValue: true, Value: string value }
+            && string.Equals(value, intended, StringComparison.Ordinal);
     }
 
     static bool IsArgumentException(INamedTypeSymbol? type, Compilation compilation) {
