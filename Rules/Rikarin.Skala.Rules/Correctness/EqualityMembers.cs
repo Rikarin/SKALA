@@ -196,7 +196,8 @@ static class EqualityMembers {
     static IFieldSymbol? BackingField(IPropertySymbol property, SemanticModel model, CancellationToken cancellation) {
         var implementation = property.PartialImplementationPart ?? property;
         if (implementation.DeclaringSyntaxReferences.Length != 1
-            || implementation.DeclaringSyntaxReferences[0].GetSyntax(cancellation) is not PropertyDeclarationSyntax syntax
+            || implementation.DeclaringSyntaxReferences[0]
+                .GetSyntax(cancellation) is not PropertyDeclarationSyntax syntax
             || syntax.SyntaxTree != model.SyntaxTree) {
             return null;
         }
@@ -215,7 +216,9 @@ static class EqualityMembers {
         // ⚠ `field` resolves to the compiler's backing field, which is the property's own storage and
         // not a second member: an implementation `get => field;` canonicalises to the property, exactly as
         // an auto-property does, or the finding names `<Name>k__BackingField`.
-        return model.GetSymbolInfo(body, cancellation).Symbol is IFieldSymbol { IsStatic: false, AssociatedSymbol: null } resolved
+        return model.GetSymbolInfo(body, cancellation).Symbol is IFieldSymbol {
+            IsStatic: false, AssociatedSymbol: null
+        } resolved
             && SymbolEqualityComparer.Default.Equals(resolved.ContainingType, property.ContainingType)
                 ? resolved
                 : null;

@@ -124,7 +124,9 @@ public sealed class LoggerForAnotherTypeAnalyzer : DiagnosticAnalyzer {
     ///     are visited, and each reports and fixes its own type.
     /// </remarks>
     static (TextSpan Span, string Text)[]? Edits(GenericNameSyntax name, TextSpan span, string replacement) {
-        if (name.Parent is not ParameterSyntax { Parent: ParameterListSyntax { Parent: ConstructorDeclarationSyntax constructor } list } parameter
+        if (name.Parent is not ParameterSyntax {
+                Parent: ParameterListSyntax { Parent: ConstructorDeclarationSyntax constructor } list
+            } parameter
             || !PartialMembers.IsPartialMember(constructor)) {
             return [(span, replacement)];
         }

@@ -30,7 +30,10 @@ public sealed class PartialMemberTests {
         var errors = compilation.GetDiagnostics(TestContext.Current.CancellationToken)
             .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
             .ToArray();
-        Assert.True(errors.Length == 0, "the probe does not compile: " + string.Join("; ", errors.Select(static e => e.ToString())));
+        Assert.True(
+            errors.Length == 0,
+            "the probe does not compile: " + string.Join("; ", errors.Select(static e => e.ToString()))
+        );
 
         var diagnostics = RuleFixtures.Analyze(compilation, SkalaAnalyzers.All, TestContext.Current.CancellationToken);
         Assert.DoesNotContain(diagnostics, static diagnostic => diagnostic.Id == "AD0001");
@@ -41,7 +44,9 @@ public sealed class PartialMemberTests {
         diagnostics.Where(diagnostic => diagnostic.Id == id).ToArray();
 
     static int EditCount(Diagnostic diagnostic) =>
-        diagnostic.Properties.TryGetValue(FixEdits.CountKey, out var count) ? int.Parse(count!, System.Globalization.CultureInfo.InvariantCulture) : 0;
+        diagnostic.Properties.TryGetValue(FixEdits.CountKey, out var count)
+            ? int.Parse(count!, System.Globalization.CultureInfo.InvariantCulture)
+            : 0;
 
     /// <summary>
     ///     The issue's own shape, with the halves in two files, beside the canary that must still fire.
@@ -98,8 +103,12 @@ public sealed class PartialMemberTests {
             """
         );
 
-        var open = Of(diagnostics, "SK7010").Where(static d => d.GetMessage().Contains("`Count`", StringComparison.Ordinal)).ToArray();
-        var closed = Of(diagnostics, "SK7101").Where(static d => d.GetMessage().Contains("`Count`", StringComparison.Ordinal)).ToArray();
+        var open = Of(diagnostics, "SK7010")
+            .Where(static d => d.GetMessage().Contains("`Count`", StringComparison.Ordinal))
+            .ToArray();
+        var closed = Of(diagnostics, "SK7101")
+            .Where(static d => d.GetMessage().Contains("`Count`", StringComparison.Ordinal))
+            .ToArray();
         Assert.Single(open);
         Assert.Single(closed);
         Assert.Equal(4, open[0].Location.GetLineSpan().StartLinePosition.Line);
@@ -126,7 +135,9 @@ public sealed class PartialMemberTests {
             """
         );
 
-        var found = Of(diagnostics, "SK7010").Where(static d => d.Location.GetLineSpan().StartLinePosition.Line > 3).ToArray();
+        var found = Of(diagnostics, "SK7010")
+            .Where(static d => d.Location.GetLineSpan().StartLinePosition.Line > 3)
+            .ToArray();
         Assert.Single(found);
         Assert.Equal(6, found[0].Location.GetLineSpan().StartLinePosition.Line);
     }
@@ -147,7 +158,9 @@ public sealed class PartialMemberTests {
             """
         );
 
-        var found = Of(diagnostics, "SK7010").Where(static d => d.GetMessage().Contains("`Changed`", StringComparison.Ordinal)).ToArray();
+        var found = Of(diagnostics, "SK7010")
+            .Where(static d => d.GetMessage().Contains("`Changed`", StringComparison.Ordinal))
+            .ToArray();
         Assert.Single(found);
         Assert.Equal(6, found[0].Location.GetLineSpan().StartLinePosition.Line);
     }
@@ -312,7 +325,12 @@ public sealed class PartialMemberTests {
     public void AnInheritdocOnAPartialEventImplementation_SaysItMasksTheDefinition() {
         var diagnostics = Analyze(
             File.ReadAllText(
-                Path.Combine(RuleFixtures.Root, "SK7103", "positive", "a-partial-event-implementation-masking-the-definition.cs")
+                Path.Combine(
+                    RuleFixtures.Root,
+                    "SK7103",
+                    "positive",
+                    "a-partial-event-implementation-masking-the-definition.cs"
+                )
             )
         );
 

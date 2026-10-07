@@ -222,12 +222,12 @@ public static class MemberMetrics {
     ///     <c>&lt;summary&gt;</c> for. Fields are excluded too — a public constant's name is its
     ///     documentation far more often than not, and including them is how the metric becomes noise.
     /// </remarks>
-    ///     <para>
-    ///         ⚠ A partial member's two halves are one member with one comment, not two declarations to
-    ///         document (#397). One half carries the finding and the density count —
-    ///         <see cref="PartialMembers.CarriesTheFinding" /> says which — and
-    ///         <see cref="HasDocumentation" /> reads the other half for it.
-    ///     </para>
+    /// <para>
+    ///     ⚠ A partial member's two halves are one member with one comment, not two declarations to
+    ///     document (#397). One half carries the finding and the density count —
+    ///     <see cref="PartialMembers.CarriesTheFinding" /> says which — and
+    ///     <see cref="HasDocumentation" /> reads the other half for it.
+    /// </para>
     public static bool IsDocumentable(SyntaxNode declaration) =>
         PartialMembers.CarriesTheFinding(declaration)
         && declaration switch {
@@ -251,7 +251,8 @@ public static class MemberMetrics {
     /// </remarks>
     public static bool HasDocumentation(SyntaxNode declaration) =>
         HasOwnDocumentation(declaration)
-        || PartialMembers.Sibling(declaration) is { } otherHalf && HasOwnDocumentation(otherHalf);
+        || PartialMembers.Sibling(declaration) is { } otherHalf
+        && HasOwnDocumentation(otherHalf);
 
     /// <summary>The declaration's own leading comment, without consulting a partial member's other half.</summary>
     /// <remarks>

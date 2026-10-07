@@ -25,8 +25,11 @@ namespace Rikarin.Skala.Rules;
 ///         implementation that is itself an auto-property, a field-like event or a bodiless constructor.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Measured on Roslyn 5.9: a syntax-node action never visits a partial constructor's
-///         defining declaration</b>, nor any node inside it. <c>SK6003</c> and <c>SK7110</c> each reported
+///         ⚠
+///         <b>
+///             Measured on Roslyn 5.9: a syntax-node action never visits a partial constructor's
+///             defining declaration
+///         </b>, nor any node inside it. <c>SK6003</c> and <c>SK7110</c> each reported
 ///         the implementation alone, which is why their fixes edited one half. A rule that must change
 ///         both halves therefore reports from the implementation and finds the definition here, rather
 ///         than trusting the driver to show it the other one.
@@ -43,14 +46,17 @@ static class PartialMembers {
         IsPartialMember(declaration)
         && declaration switch {
             BaseMethodDeclarationSyntax method => method.Body is not null || method.ExpressionBody is not null,
-            PropertyDeclarationSyntax property => property.ExpressionBody is not null || HasAccessorBody(property.AccessorList),
-            IndexerDeclarationSyntax indexer => indexer.ExpressionBody is not null || HasAccessorBody(indexer.AccessorList),
+            PropertyDeclarationSyntax property => property.ExpressionBody is not null
+                || HasAccessorBody(property.AccessorList),
+            IndexerDeclarationSyntax indexer => indexer.ExpressionBody is not null
+                || HasAccessorBody(indexer.AccessorList),
             EventDeclarationSyntax => true,
             _ => false
         };
 
     /// <summary>The half of a partial member that has no body: the contract a generator or a second file fulfils.</summary>
-    public static bool IsDefinition(SyntaxNode? declaration) => IsPartialMember(declaration) && !IsImplementation(declaration);
+    public static bool IsDefinition(SyntaxNode? declaration) =>
+        IsPartialMember(declaration) && !IsImplementation(declaration);
 
     /// <summary>
     ///     Whether this declaration is the half a once-per-member finding is reported on.
@@ -74,8 +80,8 @@ static class PartialMembers {
     public static bool CarriesTheFinding(SyntaxNode? declaration) =>
         !IsPartialMember(declaration)
         || (declaration is ConstructorDeclarationSyntax or EventDeclarationSyntax or EventFieldDeclarationSyntax
-            ? IsImplementation(declaration)
-            : IsDefinition(declaration));
+                ? IsImplementation(declaration)
+                : IsDefinition(declaration));
 
     /// <summary>
     ///     The other half of a partial member, when it is declared in the same type declaration.
@@ -138,8 +144,12 @@ static class PartialMembers {
     /// </summary>
     static bool SameSignature(MemberDeclarationSyntax left, MemberDeclarationSyntax right) =>
         (left, right) switch {
-            (PropertyDeclarationSyntax a, PropertyDeclarationSyntax b) => a.Identifier.ValueText == b.Identifier.ValueText,
-            (IndexerDeclarationSyntax a, IndexerDeclarationSyntax b) => SameParameters(a.ParameterList, b.ParameterList),
+            (PropertyDeclarationSyntax a, PropertyDeclarationSyntax b) => a.Identifier.ValueText
+                == b.Identifier.ValueText,
+            (IndexerDeclarationSyntax a, IndexerDeclarationSyntax b) => SameParameters(
+                a.ParameterList,
+                b.ParameterList
+            ),
             (EventFieldDeclarationSyntax a, EventDeclarationSyntax b) => SameEvent(a, b),
             (EventDeclarationSyntax a, EventFieldDeclarationSyntax b) => SameEvent(b, a),
             (ConstructorDeclarationSyntax a, ConstructorDeclarationSyntax b) =>

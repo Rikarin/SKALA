@@ -63,7 +63,9 @@ public sealed class UnusedValueParameterAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (HasObsolete(accessor.AttributeLists) || HasObsolete(Member(accessor)) || ObsoleteOnTheDefinition(accessor)) {
+        if (HasObsolete(accessor.AttributeLists)
+            || HasObsolete(Member(accessor))
+            || ObsoleteOnTheDefinition(accessor)) {
             return;
         }
 
