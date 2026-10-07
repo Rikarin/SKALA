@@ -313,10 +313,10 @@ public static class FixEdits {
     /// <summary>Packs one or more replacements into a diagnostic's property bag.</summary>
     public static ImmutableDictionary<string, string?> Pack(params (TextSpan Span, string Text)[] edits) {
         var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
-        builder[CountKey] = edits.Length.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        builder[CountKey] = edits.Length.ToString(CultureInfo.InvariantCulture);
         for (var i = 0; i < edits.Length; i++) {
-            builder[StartKey(i)] = edits[i].Span.Start.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            builder[LengthKey(i)] = edits[i].Span.Length.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            builder[StartKey(i)] = edits[i].Span.Start.ToString(CultureInfo.InvariantCulture);
+            builder[LengthKey(i)] = edits[i].Span.Length.ToString(CultureInfo.InvariantCulture);
             builder[TextKey(i)] = edits[i].Text;
         }
 

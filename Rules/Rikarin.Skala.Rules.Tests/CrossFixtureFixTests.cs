@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Globalization;
