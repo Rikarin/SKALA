@@ -55,11 +55,11 @@ public sealed class XmlDocOracleTests {
     public static TheoryData<string> Shapes {
         get {
             var data = new TheoryData<string>();
-            foreach (var file in Corpus.DocCommentBearing()) {
-                if (!file.RelativePath.StartsWith(Corpus.XmlDocPrefix, StringComparison.Ordinal)) {
-                    data.Add(file.RelativePath);
-                }
-            }
+            data.AddRange(
+                Corpus.DocCommentBearing()
+                    .Select(static file => file.RelativePath)
+                    .Where(static path => !path.StartsWith(Corpus.XmlDocPrefix, StringComparison.Ordinal))
+            );
 
             return data;
         }

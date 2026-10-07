@@ -667,7 +667,8 @@ public static class ConfigCommands {
         output.AppendLine(
             string.Create(
                 CultureInfo.InvariantCulture,
-                $"  {applied} applied · {partial.Count} at an unimplemented value · {ignored.Count} not implemented · {inert.Count} inert (honoured vacuously; no input can distinguish them)"
+                $"  {applied} applied · {partial.Count} at an unimplemented value · {ignored.Count} not implemented · "
+                + $"{inert.Count} inert (honoured vacuously; no input can distinguish them)"
             )
         );
 

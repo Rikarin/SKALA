@@ -365,7 +365,8 @@ public sealed class OptionRegistryTests {
             foreach (var (value, because) in info.UnimplementedValues) {
                 Assert.True(
                     domain.Contains(value, StringComparer.Ordinal),
-                    $"{info.Key} records '{value}' as unimplemented, which is not one of its values ({string.Join(", ", domain)})."
+                    $"{info.Key} records '{value}' as unimplemented, which is not one of its values "
+                    + $"({string.Join(", ", domain)})."
                 );
                 Assert.True(
                     because is { Length: > 20 },
