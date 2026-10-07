@@ -312,3 +312,4 @@ SK0290 | Skala.Cleanup | Warning | The explicit `Nullable<T>` construction conve
 SK2290 | Skala.Correctness | Info | Every call discards this `out` parameter's value.
 SK7102 | Skala.Maintainability | Warning | The `<returns>` element documents a member that returns nothing.
 SK7103 | Skala.Maintainability | Warning | The `<inheritdoc/>` has nothing to inherit.
+SK1131 | Skala.Modernization | Info | An anonymous method is written with the `delegate` keyword.

@@ -9023,6 +9023,30 @@
       "configuration": [
         "dotnet_diagnostic.SK7103.severity"
       ]
+    },
+    {
+      "id": "SK1131",
+      "concept": "anonymous-method-with-parameter-list",
+      "title": "An anonymous method is written with the `delegate` keyword",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`delegate(int a, int b) { … }` is `(int a, int b) => { … }`: the C# 2 anonymous method with an explicit parameter list is the same program as a statement-bodied lambda.",
+      "rationale": "The anonymous method is C# 2.0 syntax that C# 3.0 replaced with the lambda, and twenty years of event subscriptions, `List<T>.Sort` comparisons, `ThreadStart` bodies and timer callbacks still carry it — which is exactly the material a model writes from. Nothing about it is wrong, but it is a second spelling of one concept, and it is the spelling every other tool and every newer feature has moved away from: `static`, `async`, attributes on parameters, default values and natural types all arrived for lambdas first or only. Rewriting it keeps the parameter list and the block verbatim and changes two tokens, so the reader sees the dialect the rest of the file is written in.",
+      "examples": {
+        "bad": "items.Sort(delegate(Item a, Item b) {\n    return a.Rank.CompareTo(b.Rank);\n});",
+        "good": "items.Sort((Item a, Item b) => {\n    return a.Rank.CompareTo(b.Rank);\n});"
+      },
+      "falsePositives": "⚠ **The fix is not safe, and the reason is overload resolution, not the body.** A lambda is *applicable* to an `Expression<TDelegate>` parameter; an anonymous method is not. With `Q(Func<int, bool>)` beside `Q(Expression<Func<int, bool>>)`, `Q(delegate(int x) { return x > 0; })` binds to the first and `Q((int x) => { return x > 0; })` is **CS0121** — `CS0834`, the statement-body error, never gets the chance to run. ⚠ **The same trap reaches across static classes, which the proposal did not anticipate.** On an `IQueryable<int>`, `q.Where(delegate(int a) { … })` binds to `Enumerable.Where` and runs; the lambda picks `Queryable.Where` and is **CS0834**. Both were compiled, so the rule asks every call enclosing the anonymous method for its whole member group — reduced extension methods from every imported class, constructors for an object creation, `Add` for a collection-initializer element — and withdraws the finding if any parameter of any candidate mentions an expression-tree type anywhere in it, including `params Expression<…>[]`. A host whose candidates it cannot enumerate, such as an indexer, is declined. ⚠ **A lambda is not a primary expression and an anonymous method is.** `b ?? delegate(int x) { … }`, `(Func<int, int>)delegate(int x) { … }` and `a + delegate(int x) { … }` all compile and all become parse errors as lambdas, so the rule fires only by an allow-list of positions — an argument, an initializer, an assignment's right side, `return`, `yield return`, an expression body, a lambda's body, a `switch` arm, a conditional branch, parentheses and a collection element — each compiled and run both ways. ⚠ **`delegate { … }` with no parameter list is out of scope**, not declined: it converts to a delegate of any signature, so a lambda would have to invent the target's parameters. ⚠ **Measured to agree, and therefore not declined:** `async` and `static` anonymous methods (`async static delegate(…)` becomes `async static (…) =>`), `ref`/`out`/`in`/`scoped` parameters, discard parameters, `unsafe` pointer parameters, `this` and `base` captures, `goto` labels and `#if` regions in the body, and the natural-type positions `var d = delegate(int x) { … }`, `Delegate d = …` and `object o = …` — an anonymous method with explicit parameters has the same natural type a lambda has, and both are `CS8773`/`CS1660` below C# 10. Overloads of `Func<int, int>` against `Func<int, long>`, `Func<int, Task>` against `Action<int>`, `Func<int, object>` against `Action<int>` on a throwing body, and a generic `Q<T>(T)` all pick the same member both ways. ⚠ **The proposal's C# 12 floor for parameter attributes and default values is moot**: an attribute, a default value or `params` on an *anonymous method's* parameter is `CS7014`, `CS1065` or `CS1670` at every language version, so the shape never compiles; the rule declines it anyway so that it never turns a compile error into a program that means something nobody wrote. Inside an expression-tree lambda, or converted to `Expression<…>` itself, the anonymous method is already `CS1945`/`CS1946` and is declined. A comment or directive between `delegate` and the parameter list withdraws the finding; one between the list and the block is kept, because the arrow is inserted directly after `)`. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK1131.severity"
+      ]
     }
   ]
 }
