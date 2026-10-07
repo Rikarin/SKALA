@@ -640,4 +640,77 @@ public sealed class PartialMemberTests {
 
         Assert.Empty(Of(diagnostics, "SK3044"));
     }
+
+    const string DefinitionBase = """
+                                  using System;
+                                  using System.Diagnostics.CodeAnalysis;
+
+                                  /// <summary>A base.</summary>
+                                  public abstract class Shape {
+                                      /// <summary>Creates it.</summary>
+                                      protected Shape() { }
+                                  }
+
+                                  """;
+
+    const string Definition = """
+                              /// <summary>A circle.</summary>
+                              public sealed partial class Circle : Shape {
+                                  /// <inheritdoc />
+                                  /// <returns>A circle.</returns>
+                                  [Obsolete]
+                                  [SuppressMessage("Category", "Id")]
+                                  [ExcludeFromCodeCoverage]
+                                  [SetsRequiredMembers]
+                                  public partial Circle(Nullable<int> radius, System.String name);
+                              }
+
+                              """;
+
+    const string Implementation = """
+                                  public sealed partial class Circle {
+                                      public partial Circle(int? radius, string name) { }
+                                  }
+                                  """;
+
+    /// <summary>
+    ///     #401: everything the driver dropped on a partial constructor definition, by the rules the
+    ///     mini-driver measured — each reported exactly once, and on the definition.
+    /// </summary>
+    static readonly string[] DefinitionRules = [
+        "SK7102", "SK7103", "SK7070", "SK7051", "SK7071", "SK0281", "SK1040", "SK0243"
+    ];
+
+    [Fact]
+    public void APartialConstructorDefinition_IsReadByEveryRule_Once() {
+        var source = DefinitionBase + Definition + Implementation;
+        var diagnostics = Analyze(source);
+        var definitionLine = source.Split('\n').ToList().FindIndex(static line => line.Contains("Nullable<int>"));
+        foreach (var id in DefinitionRules) {
+            var found = Of(diagnostics, id);
+            Assert.True(found.Length == 1, id + " reported " + found.Length + " times");
+            var line = found[0].Location.GetLineSpan().StartLinePosition.Line;
+            Assert.InRange(line, definitionLine - 7, definitionLine);
+        }
+    }
+
+    /// <summary>The same with the definition in a file of its own, which a semantic-model action of its tree reaches.</summary>
+    [Fact]
+    public void APartialConstructorDefinition_InAFileOfItsOwn_IsReadByEveryRule_Once() {
+        var diagnostics = Analyze(DefinitionBase + Definition, Implementation);
+        foreach (var id in DefinitionRules) {
+            var found = Of(diagnostics, id);
+            Assert.True(found.Length == 1, id + " reported " + found.Length + " times");
+            Assert.Equal("First.cs", found[0].Location.SourceTree!.FilePath);
+        }
+    }
+
+    /// <summary>Every fix made on the definition alone leaves the pair compiling: none of them changes the signature.</summary>
+    [Fact]
+    public void APartialConstructorDefinition_FixesCompile() {
+        var source = DefinitionBase + Definition + Implementation;
+        foreach (var id in new[] { "SK7102", "SK0281", "SK1040", "SK0243" }) {
+            AssertTheFixCompiles(source, id);
+        }
+    }
 }

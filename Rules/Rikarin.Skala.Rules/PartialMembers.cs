@@ -32,7 +32,9 @@ namespace Rikarin.Skala.Rules;
 ///         </b>, nor any node inside it. <c>SK6003</c> and <c>SK7110</c> each reported
 ///         the implementation alone, which is why their fixes edited one half. A rule that must change
 ///         both halves therefore reports from the implementation and finds the definition here, rather
-///         than trusting the driver to show it the other one.
+///         than trusting the driver to show it the other one. Since #401 every node action registered
+///         through <see cref="PartialConstructorDefinitions.Visiting" /> is handed the definition anyway,
+///         from a semantic-model action; the carrier below stayed where it was, so that no finding moved.
 ///     </para>
 /// </remarks>
 static class PartialMembers {
@@ -70,9 +72,9 @@ static class PartialMembers {
     ///     the implementation carries it:
     ///     <list type="bullet">
     ///         <item>
-    ///             a constructor, whose definition no syntax-node action ever visits — decided here by kind
-    ///             rather than by which half the driver happened to show, so that a Roslyn that starts
-    ///             visiting the definition does not double every finding;
+    ///             a constructor, whose definition Roslyn's driver never visits (#401 dispatches it now) —
+    ///             decided here by kind rather than by which half happened to be shown, so that neither
+    ///             path to the definition can double a finding;
     ///         </item>
     ///         <item>
     ///             an event, whose definition is spelled as a field-like event, which is a declaration the
