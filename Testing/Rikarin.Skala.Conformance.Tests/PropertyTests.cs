@@ -223,13 +223,18 @@ public sealed class PropertyTests {
         // "where a moved space changes the value") and so does the oracle, so a space added inside
         // one is a space neither tool is allowed to absorb. C# 11 put newlines inside interpolation
         // holes, which is what made this reachable from real code at all.
-        foreach (var node in tree.GetRoot().DescendantNodes()) {
-            if (node is not InterpolatedStringExpressionSyntax) {
-                continue;
-            }
-
-            var first = text.Lines.GetLineFromPosition(node.SpanStart).LineNumber;
-            var last = text.Lines.GetLineFromPosition(node.Span.End).LineNumber;
+        //
+        // ⚠ And a captured argument is data for the same reason (#432, SK-DIV-0187): its continuation
+        // lines' indentation is part of the string a `[CallerArgumentExpression]` parameter receives,
+        // so Skala keeps it byte-for-byte and a mutation there is not Skala's to absorb.
+        var spans = tree.GetRoot()
+            .DescendantNodes()
+            .Where(static node => node is InterpolatedStringExpressionSyntax)
+            .Select(static node => node.Span)
+            .Concat(CapturedArguments.Find(tree.GetRoot()));
+        foreach (var span in spans) {
+            var first = text.Lines.GetLineFromPosition(span.Start).LineNumber;
+            var last = text.Lines.GetLineFromPosition(span.End).LineNumber;
             for (var line = first + 1; line <= last; line++) {
                 multiline.Add(line);
             }
