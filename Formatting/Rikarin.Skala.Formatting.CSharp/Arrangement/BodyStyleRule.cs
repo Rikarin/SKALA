@@ -21,6 +21,11 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 ///         <item>only when the body holds no <c>#if</c>;</item>
 ///         <item>never for <c>async void</c>;</item>
 ///         <item>
+///             never when the expression holds a <c>switch</c> expression, an anonymous function or an
+///             array initializer, nor for a <c>return</c> whose value is an assignment (#399, measured on
+///             <c>KeepsItsBlock</c>);
+///         </item>
+///         <item>
 ///             ⚠ <b>regardless of how long the result is.</b> A 200-column body converts and is then
 ///             wrapped after the <c>=&gt;</c> by the reformat that follows. Doc 06's condition (c), "the
 ///             converted form fits <c>max_line_length</c> at the member's indentation", is not a condition the
@@ -142,7 +147,7 @@ public sealed class BodyStyleRule : ArrangementRule {
         ///     ⚠ Runs before <see cref="VisitPropertyDeclaration" /> sees the property, because
         ///     <c>base.Visit…</c> descends first. The owner collapse above therefore reads an accessor
         ///     list that may already carry expression bodies, which is why it calls
-        ///     <see cref="Extract(BlockSyntax?)" /> on the block rather than on the accessor: an accessor
+        ///     <see cref="Extract" /> on the block rather than on the accessor: an accessor
         ///     this method has already converted is handled by <see cref="ExtractAccessor" />.
         /// </remarks>
         public override SyntaxNode? VisitAccessorDeclaration(AccessorDeclarationSyntax node) {
@@ -152,7 +157,7 @@ public sealed class BodyStyleRule : ArrangementRule {
             }
 
             if (visited.Body is not { } block
-                || Extract(block, true) is not { } expression) {
+                || Extract(block, options.UseHeuristicsForBodyStyle, true) is not { } expression) {
                 return visited;
             }
 
@@ -199,7 +204,7 @@ public sealed class BodyStyleRule : ArrangementRule {
                 && only.IsKind(SyntaxKind.GetAccessorDeclaration)
                 && only.AttributeLists.Count == 0
                 && only.Modifiers.Count == 0
-                && ExtractAccessor(only) is { } expression
+                && ExtractAccessor(only, options.UseHeuristicsForBodyStyle) is { } expression
                 && !HasTriviaThatBlocksConversion(accessors)) {
                 return toExpression(visited, Arrow(expression), Semicolon(accessors.CloseBraceToken));
             }
@@ -208,8 +213,14 @@ public sealed class BodyStyleRule : ArrangementRule {
         }
 
         /// <summary>The expression an already-converted accessor carries, for the owner collapse.</summary>
-        static ExpressionSyntax? ExtractAccessor(AccessorDeclarationSyntax accessor) =>
-            accessor.ExpressionBody?.Expression ?? Extract(accessor.Body);
+        /// <remarks>
+        ///     ⚠ An accessor that is <em>already</em> an arrow collapses onto its owner whatever it holds:
+        ///     measured (#399), <c>{ get =&gt; () =&gt; 1; }</c> and <c>{ get =&gt; _n switch { … }; }</c>
+        ///     both become <c>P =&gt; …;</c>. The heuristic is about turning a block into an arrow, and only
+        ///     the block branch here asks it.
+        /// </remarks>
+        static ExpressionSyntax? ExtractAccessor(AccessorDeclarationSyntax accessor, bool heuristics) =>
+            accessor.ExpressionBody?.Expression ?? Extract(accessor.Body, heuristics);
 
         /// <summary>
         ///     <see cref="Convert{TMember}" /> for the five members that keep their body on
@@ -262,7 +273,7 @@ public sealed class BodyStyleRule : ArrangementRule {
 
             if (style == BodyStyle.ExpressionBody) {
                 if (body is null
-                    || Extract(body, loose, !options.UseHeuristicsForBodyStyle)
+                    || Extract(body, options.UseHeuristicsForBodyStyle, loose, !options.UseHeuristicsForBodyStyle)
                     is not { } expression) {
                     return member;
                 }
@@ -286,6 +297,7 @@ public sealed class BodyStyleRule : ArrangementRule {
         /// </remarks>
         static ExpressionSyntax? Extract(
             BlockSyntax? body,
+            bool heuristics,
             bool allowExpressionStatement = false,
             bool allowThrow = false
         ) {
@@ -300,7 +312,7 @@ public sealed class BodyStyleRule : ArrangementRule {
                 );
             }
 
-            return body.Statements[0] switch {
+            var expression = body.Statements[0] switch {
                 // ⚠ Only in an accessor. Measured: the oracle converts `set { _n = value; }` to
                 // `set => _n = value;` and leaves `void Helper() { _shared = 1; }` a block — a
                 // *method* body converts only when its statement is a `return` with a value, so a
@@ -317,6 +329,52 @@ public sealed class BodyStyleRule : ArrangementRule {
                 // write. docs/plan/06 said so and the oracle agrees.
                 _ => null
             };
+
+            return expression is not null && heuristics && KeepsItsBlock(body.Statements[0], expression)
+                ? null
+                : expression;
+        }
+
+        /// <summary>
+        ///     The heuristic's refusals that read the expression rather than the statement around it.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ A list of kinds, and measured as one (#399): it is not a question of width or of lines.
+        ///     Against <c>jb cleanupcode</c> 2025.2.6 at <c>use_heuristics_for_body_style = true</c>, the
+        ///     block stays when the expression contains — anywhere, however deeply, in an argument or an
+        ///     anonymous object's member — a <c>switch</c> expression, a lambda of either shape or an
+        ///     anonymous method, or an <em>array</em> initializer (<c>new[] { … }</c>,
+        ///     <c>new int[] { … }</c>, <c>new int[,] { { … } }</c>, <c>stackalloc[] { … }</c>). A one-line
+        ///     <c>() =&gt; 1</c> keeps its block, while a five-line chopped sum, a multi-line query, a raw
+        ///     string, a multi-line object initializer and a 190-column chain all convert. An object or
+        ///     collection initializer, an anonymous object, a collection expression, a <c>with</c>, a
+        ///     <c>stackalloc</c> without an initializer and <c>new int[2]</c> all convert too. It holds for
+        ///     a method, an operator, a conversion operator, a local function, a getter collapsing onto its
+        ///     owner, an indexer, a setter, an <c>init</c>, an <c>add</c> and a constructor at
+        ///     <c>constructor_or_destructor_body = expression_body</c>; at <c>false</c> all of it lifts.
+        ///     <para>
+        ///         ⚠ One refusal is about the statement: a <c>return</c> whose value <em>is</em> an
+        ///         assignment of any kind (<c>return _n = a;</c>, <c>return _n += a;</c>,
+        ///         <c>return _m ??= 1;</c>) keeps its block, while an assignment that is only inside the
+        ///         value (<c>Math.Abs(_n = a)</c>, <c>(_n = a) + 1</c>, <c>b ? _n = a : 0</c>) converts,
+        ///         and so does an expression <em>statement</em> that is an assignment — a setter's
+        ///         <c>_n = value;</c> is the commonest conversion there is. The test is on the value as written:
+        ///         <c>return (_n = a);</c> converts, and the parentheses go afterwards.
+        ///     </para>
+        /// </remarks>
+        static bool KeepsItsBlock(StatementSyntax statement, ExpressionSyntax expression) {
+            if (statement is ReturnStatementSyntax && expression is AssignmentExpressionSyntax) {
+                return true;
+            }
+
+            foreach (var node in expression.DescendantNodesAndSelf()) {
+                if (node is SwitchExpressionSyntax or AnonymousFunctionExpressionSyntax
+                    || node.IsKind(SyntaxKind.ArrayInitializerExpression)) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
