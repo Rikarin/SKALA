@@ -7805,3 +7805,30 @@ of its own, a shape that is about comment placement and not about the closer.
 
 - options: none.
 - ⚠ status: **resolved**. Pinned by `EmptyContainerCommentIssue444Tests`.
+
+## SK-DIV-0208 — an array initializer's element that spans lines: measured, not wired
+
+#444's third shape. Measured with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`; Skala is as it was:
+
+| written | oracle | Skala |
+|---|---|---|
+| `new[] { 1, Compute(2, /* a` / `b */ 3), 4 }` | `1, Compute(` / … / `),` / `4` | `1,` / `Compute(` / … / `), 4` |
+| a nested `new[] { … }` element that spans lines, then `new[] { 4 }` | `},` / `new[] { 4 }` | `}, new[] { 4 }` |
+| `first is string,` / `second` / `is string` | `first is string, second` / `is string` | `first is string,` / `second` |
+| `[.. Source],` / `new int(` / arguments chopped / `), [` / a long collection | kept exactly so, the oracle's own fixed point | identical but `),` / `[` |
+| `"a", """` / raw / `""", "b"` | `"a", """` / … / `""",` / `"b"` | `"a",` / `"""` / … / `""", "b"` |
+
+⚠ A first implementation was written and reverted, and why is the finding. It kept an element's head on
+the line whenever the element had no flat form and its first line fitted (the tuple's
+`KeepsHeadWhenCertain`), and broke before the element after one that spanned lines. The first half was
+not idempotent on `pathological/nested-collection-in-generated-switch.cs`: on pass one `new int(…)` does
+not fit and moves down, its arguments chop; on pass two those chopped arguments make it certain, its head
+fits after `[.. Source],`, and it moved back. The oracle keeps it down on its own output. So the oracle's
+fill does not ask "has the element a flat form" but measures the element flat, as if its kept breaks were
+not there, with a comment counted to its first line — which `Compute(2, /* a`, `second` and `new int(`
+all agree with, and which Skala has no measure for: a segment holding a kept break is unbounded. The
+second half failed the same file the other way (`), [`, the next element spanning lines too, is kept).
+Both need that measure first.
+
+- options: `skala_wrap_array_initializer_style = wrap_if_long`, the exported value.
+- ⚠ status: **open**, measured.
