@@ -21,7 +21,7 @@
 <tr><th>Needs a compilation</th><td>yes</td></tr>
 <tr><th>Runs under <code>--load=loose</code></th><td>no</td></tr>
 <tr><th>Cached per file</th><td>yes</td></tr>
-<tr><th>Fix</th><td>yes, safe</td></tr>
+<tr><th>Fix</th><td>yes, review it</td></tr>
 <tr><th>Language version floor</th><td>C# 9.0</td></tr>
 <tr><th>Since</th><td>0.6</td></tr>
 </tbody>
@@ -38,7 +38,7 @@
     Use(source);
 }</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>The rule is silent unless the semantic model resolves the non-null operand's type and that type declares no <code>operator ==</code>/<code>operator !=</code>, directly or on any base type. It is silent on unconstrained type parameters (where <code>== null</code> has its own lifted meaning), on <code>dynamic</code>, on pointer types, on any operand whose type could not be resolved, and inside an expression tree, where the pattern form does not compile.</p>
+<p>The rule is silent unless the semantic model resolves the non-null operand's type and that type declares no <code>operator ==</code>/<code>operator !=</code>, directly or on any base type. It is silent on unconstrained type parameters (where <code>== null</code> has its own lifted meaning), on <code>dynamic</code>, on pointer types, on any operand whose type could not be resolved, and inside an expression tree, where the pattern form does not compile. ⚠ <strong>The fix is not safe (#412's audit, measured by running both versions):</strong> On <code>Nullable&lt;T&gt;</code> where <code>T</code> declares a user-defined <code>operator ==(T?, T?)</code>, <code>x == null</code> calls the operator and <code>x is null</code> does not, so the result can differ (NullComparison.cs:64-66).</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK1010.severity</code></li>

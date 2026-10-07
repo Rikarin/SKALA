@@ -267,6 +267,83 @@ public sealed class DeclarationPerformanceBatchTests {
         );
     }
 
+    /// <summary>
+    ///     ⚠ #412. These negatives are negatives because <c>readonly</c> on them
+    ///     <b>
+    ///         compiles and changes
+    ///         what the program does
+    ///     </b>: each calls a member on a struct-typed capture that would run on a
+    ///     defensive copy after the fix. Both versions are run, so a rule that was merely blind to the
+    ///     shape could not pass, and neither could a fixture whose shape stopped differing.
+    /// </summary>
+    [Theory]
+    [InlineData("primary_parameter_mutating_method_called")]
+    [InlineData("primary_parameter_member_chain_method_called")]
+    [InlineData("primary_parameter_mutating_getter")]
+    [InlineData("primary_parameter_mutating_indexer_getter")]
+    [InlineData("primary_parameter_event_accessor")]
+    [InlineData("primary_parameter_constrained_interface_call")]
+    [InlineData("primary_parameter_type_parameter_interface_call")]
+    [InlineData("primary_parameter_unconstrained_type_parameter")]
+    [InlineData("primary_parameter_enumerated")]
+    [InlineData("primary_parameter_overridden_object_member")]
+    public void ACallTheFixWouldMoveOntoACopy_IsNotReadonly(string name) {
+        var path = Path.Combine(RuleFixtures.Root, "SK4022", "negative", name + ".cs");
+        var source = File.ReadAllText(path);
+        var before = RuleFixtures.Compile(source, path);
+        Assert.DoesNotContain(Analyze(before), static diagnostic => diagnostic.Id == "SK4022");
+
+        var forced = RuleFixtures.Compile(ForceReadonly(source), path);
+        Assert.DoesNotContain(
+            forced.GetDiagnostics(TestContext.Current.CancellationToken),
+            static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error
+        );
+        Assert.Equal(1, Run(before));
+        Assert.Equal(0, Run(forced));
+    }
+
+    /// <summary>
+    ///     ⚠ A <c>this ref</c> extension's receiver is a writable reference with no <c>ref</c> at the
+    ///     call site, so neither the capture nor <c>this</c> can be its receiver in a
+    ///     <c>readonly struct</c> (#412).
+    /// </summary>
+    [Theory]
+    [InlineData("primary_parameter_ref_extension_receiver")]
+    [InlineData("this_ref_extension_receiver")]
+    public void ARefExtensionReceiver_IsNotReadonly(string name) {
+        var path = Path.Combine(RuleFixtures.Root, "SK4022", "negative", name + ".cs");
+        var source = File.ReadAllText(path);
+        Assert.DoesNotContain(
+            Analyze(RuleFixtures.Compile(source, path)),
+            static diagnostic => diagnostic.Id == "SK4022"
+        );
+
+        var forced = System.Text.RegularExpressions.Regex.Replace(
+            source,
+            @"(?m)^struct ",
+            "readonly struct ",
+            System.Text.RegularExpressions.RegexOptions.None,
+            TimeSpan.FromSeconds(1)
+        );
+        Assert.Contains(
+            RuleFixtures.Compile(forced, path).GetDiagnostics(TestContext.Current.CancellationToken),
+            static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error
+        );
+    }
+
+    /// <summary>Only the struct with a parameter list: the helper structs alongside it are not the subject.</summary>
+    static string ForceReadonly(string source) {
+        var forced = System.Text.RegularExpressions.Regex.Replace(
+            source,
+            @"(?m)^struct (?=\w+(<[^>]*>)?\()",
+            "readonly struct ",
+            System.Text.RegularExpressions.RegexOptions.None,
+            TimeSpan.FromSeconds(1)
+        );
+        Assert.NotEqual(source, forced);
+        return forced;
+    }
+
     [Fact]
     public void TheCapacityFix_PreservesTheResult() =>
         AssertFixEquivalent(

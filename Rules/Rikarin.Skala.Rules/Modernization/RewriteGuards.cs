@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace Rikarin.Skala.Rules.Modernization;
@@ -54,6 +55,58 @@ internal static class RewriteGuards {
             }
         }
     }
+
+    /// <summary>
+    ///     Whether <paramref name="expression" /> is a plain name path every link of which is storage:
+    ///     a local, parameter, field, type or namespace, <c>this</c>/<c>base</c>, or a non-virtual
+    ///     auto-property declared in source — so reading it once and reading it twice are the same, and
+    ///     so are writing it once and writing it zero times.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ For the rewrites that change how many times a path is <em>evaluated</em> or
+    ///     <em>written</em>, where <see cref="IsPlainNamePath" />'s admission of every property is wrong
+    ///     (#412's audit, each measured by running both versions): <c>SK1030</c>'s <c>x = x ?? y</c> →
+    ///     <c>x ??= y</c> stops calling a setter when <c>x</c> is non-null — the
+    ///     <c>INotifyPropertyChanged</c> setter that raises on every assignment is the common case, not a
+    ///     contrived one — and <c>SK1015</c>, <c>SK1031</c> and <c>SK1033</c> read a getter once where
+    ///     the source read it twice. A property from metadata is declined because its body cannot be
+    ///     seen; an auto-property's accessors are the compiler's and touch only its backing field.
+    /// </remarks>
+    public static bool IsStorageNamePath(
+        ExpressionSyntax expression,
+        SemanticModel model,
+        CancellationToken cancellation
+    ) {
+        if (!IsPlainNamePath(expression)) {
+            return false;
+        }
+
+        foreach (var node in expression.DescendantNodesAndSelf()) {
+            if (node is not SimpleNameSyntax name) {
+                continue;
+            }
+
+            switch (model.GetSymbolInfo(name, cancellation).Symbol) {
+                case ILocalSymbol or IParameterSymbol or IFieldSymbol or INamespaceOrTypeSymbol:
+                    continue;
+                case IPropertySymbol property when IsSourceAutoProperty(property, cancellation):
+                    continue;
+                default:
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    static bool IsSourceAutoProperty(IPropertySymbol property, CancellationToken cancellation) =>
+        property is { IsVirtual: false, IsAbstract: false, IsOverride: false, IsExtern: false, IsIndexer: false }
+        && property.ContainingType.TypeKind != TypeKind.Interface
+        && property.DeclaringSyntaxReferences.Length == 1
+        && property.DeclaringSyntaxReferences[0].GetSyntax(cancellation) is PropertyDeclarationSyntax {
+            ExpressionBody: null, AccessorList.Accessors: { Count: > 0 } accessors
+        }
+        && accessors.All(static accessor => accessor is { Body: null, ExpressionBody: null });
 
     /// <summary>Whether two expressions are the same text, ignoring trivia.</summary>
     public static bool Same(ExpressionSyntax left, ExpressionSyntax right) =>

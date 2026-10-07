@@ -60,8 +60,12 @@ public sealed class ImmutableStructAnalyzer : DiagnosticAnalyzer {
                         context.SemanticModel,
                         cancellation
                     )
+                    || context.SemanticModel.GetOperation(expression, cancellation) is { } instance
+                    && PrimaryConstructorWrites.PassesAsRefReceiver(instance)
                 )
-            || PrimaryConstructorWrites.WrittenParameters(declaration, context.SemanticModel, cancellation).Count > 0) {
+            || PrimaryConstructorWrites.ReadonlySensitiveParameters(declaration, context.SemanticModel, cancellation)
+                .Count
+            > 0) {
             return;
         }
 

@@ -21,7 +21,7 @@
 <tr><th>Needs a compilation</th><td>yes</td></tr>
 <tr><th>Runs under <code>--load=loose</code></th><td>no</td></tr>
 <tr><th>Cached per file</th><td>yes</td></tr>
-<tr><th>Fix</th><td>yes, safe</td></tr>
+<tr><th>Fix</th><td>yes, review it</td></tr>
 <tr><th>Language version floor</th><td>C# 7.0</td></tr>
 <tr><th>Since</th><td>1.3</td></tr>
 </tbody>
@@ -43,7 +43,7 @@
 <p><strong>Never read *and* never written.</strong> Any reference to the local at all withdraws the finding, including one that only assigns it and one that passes it to a second <code>out</code>. That is stricter than &quot;never read&quot; and it is deliberate: <code>out _</code> deletes the name, so a finding that only proves the value is unread would produce an edit that does not compile wherever the name is used for anything else.</p>
 <p><strong>A second, redundant guard reads tokens rather than operations.</strong> Before reporting, the enclosing operation blocks are scanned for any identifier token spelling the same name. A match withdraws the finding even when the operation tree showed no reference — the case it is there for is <code>nameof(x)</code>, and the cost of being wrong in this direction is one missed finding rather than one broken build. A member or a type with the same name as the variable also silences it; that is the price and it is small.</p>
 <p>⚠ <strong>A member containing a preprocessor directive is skipped entirely.</strong> Disabled text is trivia, so a reference inside <code>#if DEBUG</code> is invisible to both the operation tree and the token scan, and under another configuration the variable is read. This is the same refusal <code>SK6003</code> and <code>SK6020</code> make for the same reason.</p>
-<p>⚠ <strong>A parameter whose type mentions one of the invoked method's own type parameters is skipped, conservatively.</strong> <code>out _</code> is an implicitly typed discard, and CS8183 is what a discard that cannot be typed produces. Whether inference actually fails depends on the rest of the call, and answering that properly means re-running overload resolution; declining is cheaper and only ever costs findings. The related shape the rule cannot see at all is an overload set whose members differ <em>only</em> in the <code>out</code> parameter's type, where <code>out _</code> becomes ambiguous — vanishingly rare, and a compiler error rather than a silent change if it happens.</p>
+<p>⚠ <strong>A parameter whose type mentions one of the invoked method's own type parameters is skipped, conservatively.</strong> <code>out _</code> is an implicitly typed discard, and CS8183 is what a discard that cannot be typed produces. Whether inference actually fails depends on the rest of the call, and answering that properly means re-running overload resolution; declining is cheaper and only ever costs findings. The related shape the rule cannot see at all is an overload set whose members differ <em>only</em> in the <code>out</code> parameter's type, where <code>out _</code> becomes ambiguous — vanishingly rare, and a compiler error rather than a silent change if it happens. ⚠ <strong>The fix is not safe (#412's audit, measured by running both versions):</strong> <code>out string text</code> → <code>out _</code> can re-bind to a different non-generic overload.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK6040.severity</code></li>

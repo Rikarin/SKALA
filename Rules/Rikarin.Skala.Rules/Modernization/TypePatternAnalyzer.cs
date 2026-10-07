@@ -60,7 +60,9 @@ public sealed class TypePatternAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (!RewriteGuards.IsPlainNamePath(test.Left)) {
+        // ⚠ Storage, not merely a name path: the cast re-read a getter the pattern reads once (#412's
+        // audit, measured — a getter answering differently the second time changed the output).
+        if (!RewriteGuards.IsStorageNamePath(test.Left, context.SemanticModel, context.CancellationToken)) {
             return;
         }
 
