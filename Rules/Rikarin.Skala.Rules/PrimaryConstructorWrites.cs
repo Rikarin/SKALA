@@ -175,7 +175,8 @@ static class PrimaryConstructorWrites {
 
         return target switch {
             ILocalSymbol local => local.RefKind != RefKind.RefReadOnly,
-            IParameterSymbol parameter => parameter.RefKind is not (RefKind.RefReadOnly or RefKind.In),
+            // ⚠ `In` and `RefReadOnly` are one value; a `ref readonly` parameter is the other one.
+            IParameterSymbol parameter => parameter.RefKind is not (RefKind.In or RefKind.RefReadOnlyParameter),
             IFieldSymbol field => field.RefKind != RefKind.RefReadOnly,
             _ => true
         };
