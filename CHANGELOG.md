@@ -13,6 +13,27 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Removed — `skala arrange --aggressive`, which had done nothing since its gate was lifted (#389)
+
+⚠ **Breaking, for anyone whose script passes `--aggressive`**: `skala arrange` now rejects it as an
+unrecognized option. It is removed rather than accepted-and-ignored for the reason the daemon flags
+were — a flag that is silently a no-op lies to the next person who reads a script containing it.
+
+The flag gated redundant-parenthesis removal (`SK0209`) for the first release. The gate was lifted
+(SK-DIV-0014), but the flag stayed, parsed and threaded through to a check that short-circuited on a
+`const true`. Measured on a copy of `Testing/corpus/real`: `arrange --check --diff` with and without
+it produced byte-identical output, 116 `SK0209` removals each. Meanwhile `--help` said removal was
+*"off by default"*, and `SK0209`'s `summary` and `falsePositives` — hence `skala explain SK0209` and
+its `docs/rules/` page — said the rule was off without the flag. All three now describe what the
+tool does: removal runs by default, `skala_parentheses_redundancy_style` and the
+`dotnet_style_parentheses_in_*` keys decide which redundant parentheses go, and
+`arrange --exclude SK0209` keeps them all. No output changes. The harness's `arrangement --aggressive`
+and `arrange-tree --aggressive`, which fed the same dead branch, are gone too.
+
+⚠ No release detector would have recorded this. `./build.sh ReleasePlan` measures rules, exit
+codes, SARIF, output and the option registry, and none of them is the command line, so a removed
+CLI flag is invisible to the version it ships in. This entry is the record.
+
 ### Fixed — five live diagnostic ids were in neither register (#352)
 
 `SK9015`, `SK9095`, `SK9096`, `SK9097` and `SK9098` are emitted by shipping code and were in neither

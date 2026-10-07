@@ -28,7 +28,7 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         and <c>ParenthesesRedundancy.MayRemove</c> refuses unconditionally when the parent is a shift
 ///         or a bitwise operator, because <c>resharper_parentheses_non_obvious_operations</c> names
 ///         exactly those. Every pair of parentheses this rule adds has such a parent, so the arranger
-///         will never take one back and <c>skala fix</c> and <c>skala arrange --aggressive</c> cannot
+///         will never take one back and <c>skala fix</c> and <c>skala arrange</c> cannot
 ///         fight.
 ///     </para>
 ///     <para>

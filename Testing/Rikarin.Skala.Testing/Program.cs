@@ -349,16 +349,17 @@ switch (args[0]) {
         return Fuzz(args[1..]);
     case "arrangement":
         // ⚠ M4's bar: the oracle's cleanup profile against Skala's arrange-and-format pipeline, per
-        // changed span rather than per line. `--aggressive` turns on parenthesis removal, which the
-        // oracle's profile does and Skala's default deliberately does not, so running both ways
-        // prices the gate rather than hiding it.
+        // changed span rather than per line. ⚠ There is no `--aggressive` any more: it priced the
+        // parenthesis gate (SK-DIV-0014), the gate was lifted, and both runs had been byte-identical
+        // since. #389 removed it here and from `skala arrange`; an old command line that still passes
+        // it is harmless, because every `--` argument is ignored as a set name.
         return Arrangement(args[1..]);
     case "arrange-tree":
         // ⚠ M4's second bar: arrangement over a whole tree introduces zero compiler diagnostics.
-        // `arrange-tree <dir> [--load=binlog|workspace|loose] [--aggressive] [--limit=N]`.
+        // `arrange-tree <dir> [--load=binlog|workspace|loose] [--limit=N]`.
         // Read-only — the caller supplies a `git archive` scratch copy and this never writes.
         if (args.Length < 2) {
-            Console.Error.WriteLine("usage: arrange-tree <directory> [--load=mode] [--aggressive] [--limit=N]");
+            Console.Error.WriteLine("usage: arrange-tree <directory> [--load=mode] [--limit=N]");
             return 2;
         }
 
@@ -383,7 +384,6 @@ switch (args[0]) {
             ArrangeTree.Run(
                 Path.GetFullPath(args[1]),
                 treeMode,
-                args.Contains("--aggressive"),
                 treeLimit,
                 Console.Error
             )
@@ -749,10 +749,8 @@ static int Fuzz(string[] args) {
     return report.Findings.IsEmpty ? 0 : 1;
 }
 
-// `arrangement [--aggressive] [--all-rules] [set…]`: the M4 differential.
+// `arrangement [--all-rules] [set…]`: the M4 differential.
 static int Arrangement(string[] args) {
-    var aggressive = args.Contains("--aggressive");
-
     // ⚠ The default excludes the three rewrites the oracle will not perform at all
     // (docs/oracle-cleanup-profile.md). `--all-rules` includes them, which is how the cost of that
     // exclusion is a number rather than an assertion.
@@ -773,7 +771,6 @@ static int Arrangement(string[] args) {
 
     Console.WriteLine(
         $"{withFixtures.Length.ToString(CultureInfo.InvariantCulture)} files with a cleanup fixture"
-        + (aggressive ? ", --aggressive" : "")
         + (args.Contains("--all-rules") ? ", all rules" : ", oracle-comparable rules only")
     );
 
@@ -788,7 +785,7 @@ static int Arrangement(string[] args) {
             var name = (file.Set + "_" + file.RelativePath).Replace('/', '_');
             File.WriteAllText(
                 Path.Combine(directory, name + ".skala"),
-                TextNormalisation.Normalise(ArrangementDifferential.Run(file, compilation, aggressive, filter).Text)
+                TextNormalisation.Normalise(ArrangementDifferential.Run(file, compilation, filter).Text)
             );
 
             File.WriteAllText(
@@ -801,7 +798,7 @@ static int Arrangement(string[] args) {
         return 0;
     }
 
-    var report = ArrangementDifferential.Measure(withFixtures, aggressive, filter, Console.Error);
+    var report = ArrangementDifferential.Measure(withFixtures, filter, Console.Error);
     Console.WriteLine(report.Render(10));
 
     foreach (var origin in withFixtures.GroupBy(
@@ -809,7 +806,7 @@ static int Arrangement(string[] args) {
                  StringComparer.Ordinal
              )
                  .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
-        var slice = ArrangementDifferential.Measure(origin.ToArray(), aggressive, filter);
+        var slice = ArrangementDifferential.Measure(origin.ToArray(), filter);
         Console.WriteLine(
             $"  {origin.Key,-28} {slice.Agreement * 100:F2} %  ({slice.Agreed.ToString(CultureInfo.InvariantCulture)}/{slice.Spans.ToString(CultureInfo.InvariantCulture)} spans, {slice.Files.ToString(CultureInfo.InvariantCulture)} files)"
         );

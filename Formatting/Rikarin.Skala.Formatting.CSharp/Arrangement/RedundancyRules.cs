@@ -372,8 +372,6 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
 
     public override bool NeedsSemantics => false;
 
-    public override bool IsAggressive => !ParenthesesRedundancy.RemovalIsDefault;
-
     /// <summary>
     ///     ⚠ Both values of <c>skala_parentheses_redundancy_style</c> remove; they differ in
     ///     how much.
@@ -385,12 +383,15 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
     ///     see it and the key's sweep row disagreed on sixteen lines of
     ///     <c>redundancy/parentheses.cs</c> with the sign of the whole rule inverted: the oracle removed
     ///     every parenthesis whose removal preserves the parse and Skala removed none.
+    ///     <para>
+    ///         ⚠ The key is the only switch. Removal was once gated behind <c>arrange --aggressive</c>
+    ///         (SK-DIV-0014); the gate was lifted, the flag stayed and changed nothing, and #389 removed it.
+    ///     </para>
     /// </remarks>
     public override bool IsEnabled(in ArrangementOptions options) =>
         options.ParenthesesRedundancy
         is ParenthesesRedundancyStyle.Remove
-            or ParenthesesRedundancyStyle.RemoveIfNotClarifiesPrecedence
-        && (ParenthesesRedundancy.RemovalIsDefault || options.Aggressive);
+            or ParenthesesRedundancyStyle.RemoveIfNotClarifiesPrecedence;
 
     public override SyntaxNode Apply(ArrangementContext context) =>
         new Rewriter(context.Guard, context.Options).Visit(context.Root);
@@ -416,20 +417,6 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
 ///     rewriter so that both can be unit-tested on their own.
 /// </summary>
 public static class ParenthesesRedundancy {
-    /// <summary>
-    ///     ⚠ Whether parenthesis removal runs without <c>arrange --aggressive</c>.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ docs/plan/06 gated this for the first release and named the condition for revisiting it:
-    ///     "revisits when the corpus differential shows zero divergences". The condition is now met and
-    ///     the gate is lifted — the M4-era gate cost 4.02 points of changed-span agreement (SK-DIV-0014)
-    ///     against an oracle that removes these parentheses by default, and the rule that replaced it
-    ///     proves each removal by re-parsing rather than asserting it from a precedence table. The
-    ///     constant stays as a named switch rather than being deleted so that the decision is one edit
-    ///     and one number, not a re-derivation.
-    /// </remarks>
-    public const bool RemovalIsDefault = true;
-
     /// <summary>
     ///     Whether the export is willing to lose these parentheses at all — the policy question.
     /// </summary>

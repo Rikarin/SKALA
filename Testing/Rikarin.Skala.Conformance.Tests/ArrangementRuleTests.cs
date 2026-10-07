@@ -43,12 +43,11 @@ public sealed class ArrangementRuleTests {
     /// </param>
     static string Arrange(
         string source,
-        bool aggressive = false,
         string? only = null,
         bool removeUnused = false,
         IReadOnlyList<KeyValuePair<string, string>>? overrides = null
     ) {
-        var result = Attempt(source, aggressive, only, removeUnused, overrides);
+        var result = Attempt(source, only, removeUnused, overrides);
         Assert.NotEqual(ArrangementOutcome.Reverted, result.Outcome);
         return result.Text;
     }
@@ -68,7 +67,6 @@ public sealed class ArrangementRuleTests {
     /// </remarks>
     static ArrangementResult Attempt(
         string source,
-        bool aggressive = false,
         string? only = null,
         bool removeUnused = false,
         IReadOnlyList<KeyValuePair<string, string>>? overrides = null
@@ -110,7 +108,7 @@ public sealed class ArrangementRuleTests {
         return Arranger.Arrange(
             path,
             text,
-            new ArrangementOptions(options, ArrangementScope.Full, aggressive),
+            new ArrangementOptions(options),
             compilation,
             removeUnused ? UsingsRule.Unused(compilation.GetSemanticModel(tree), tree) : null,
             null,
@@ -536,7 +534,8 @@ public sealed class ArrangementRuleTests {
         // ⚠ This test asserted the opposite until the gate was lifted. SK-DIV-0014 gated parenthesis
         // removal behind `--aggressive` for the first release and named the condition for revisiting
         // it; the condition is met and the gate cost 4.25 points of changed-span agreement against an
-        // oracle whose own profile removes these by default.
+        // oracle whose own profile removes these by default. The flag outlived the gate as a no-op
+        // and #389 removed it.
         const string source = """
                               namespace P;
                               public class C {

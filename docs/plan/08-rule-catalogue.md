@@ -129,7 +129,7 @@ overlapping arrangement rules may contribute to one document rewrite.
 | `SK0206` | Empty literal versus `string.Empty` | Semantic |
 | `SK0207` | Instance-member `this.` qualifier | Semantic |
 | `SK0208` | Redundant control-statement braces | Syntax |
-| `SK0209` | Redundant parentheses (`arrange --aggressive`) | Syntax |
+| `SK0209` | Redundant parentheses | Syntax |
 | `SK0210` | Using sorting, placement and removal | Syntax, with semantic removal when loaded |
 | `SK0211` | Predefined keyword versus framework type name | Semantic |
 | `SK0212` | Redundant accessibility modifier | Syntax |
@@ -7139,7 +7139,7 @@ construction rather than by agreement.** `skala arrange` removes redundant paren
 `ParenthesesRedundancy.MayRemove` refuses unconditionally when the parent is a shift or a bitwise
 operator, because `resharper_parentheses_non_obvious_operations` names exactly those. Every pair of
 parentheses `SK2174` adds has such a parent, so the arranger will never take one back and
-`skala fix` and `skala arrange --aggressive` cannot fight. ⚠ **The other direction was checked
+`skala fix` and `skala arrange` cannot fight. ⚠ **The other direction was checked
 too**: `CodeCleanupTask_AddMissingParentheses` exists in the oracle and **no committed profile
 enables it**, so the formatter is not already doing this.
 
