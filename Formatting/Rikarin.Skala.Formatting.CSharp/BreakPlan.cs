@@ -738,7 +738,8 @@ public sealed class BreakPlan {
                     true,
                     true,
                     placeOnSingleLine: options.PlaceSimpleListPatternOnSingleLine,
-                    keepOutranksChopAlways: true
+                    keepOutranksChopAlways: true,
+                    keepIsTheConstructsAlone: true
                 );
                 return;
 
@@ -754,7 +755,8 @@ public sealed class BreakPlan {
                     true,
                     true,
                     placeOnSingleLine: options.PlaceSimpleListPatternOnSingleLine,
-                    keepOutranksChopAlways: true
+                    keepOutranksChopAlways: true,
+                    keepIsTheConstructsAlone: true
                 );
                 return;
 
@@ -1164,9 +1166,18 @@ public sealed class BreakPlan {
         bool? placeOnSingleLine = null,
         bool wrapBeforeOpen = false,
         bool keepOutranksChopAlways = false,
-        bool keepsBreakOnEitherSideOfComma = false
+        bool keepsBreakOnEitherSideOfComma = false,
+        bool keepIsTheConstructsAlone = false
     )
         where T : SyntaxNode {
+        // ⚠ For a collection expression and a list pattern the construct's own keep_existing_* key is
+        // the whole answer, and keep_user_linebreaks does not gate it (#443). Measured: at
+        // keep_user_linebreaks = false (and keep_existing_linebreaks = false) the oracle still chops
+        // `[1,` / `2]`, `[` / `..a]` and `a is [1,` / `2]` and keeps `[` / `1, 2` / `]` exactly as at the
+        // defaults, and only skala_keep_existing_list_patterns_arrangement = false joins them — at either
+        // value of the global key. The table below holds for the constructs it was measured on.
+        var keepsUserBreaks = options.KeepsUserBreaksBetweenItems || keepIsTheConstructsAlone;
+
         if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None) || items.Count == 0) {
             return -1;
         }
@@ -1270,9 +1281,14 @@ public sealed class BreakPlan {
             }
         }
 
+        // ⚠ `!keepsUserBreaks` too: a construct whose keep_existing_* key is true, or which has none and
+        // keeps by measurement (PlanFilledList), still re-joins its delimiters at
+        // keep_user_linebreaks = false, as the table below says. Measured for #443 on a positional
+        // pattern and a tuple: `P(` / `1, 2)`, `(` / `1, 2)` and `P(1, 2` / `)` all come back whole,
+        // where the unplanned gap had kept the author's break at both values.
         if (wrapAfterOpen && !soleLambda) {
             Point(first, group);
-        } else if (soleLambda || !keepExisting) {
+        } else if (soleLambda || !keepExisting || !keepsUserBreaks) {
             Flat(first);
         }
 
@@ -1291,7 +1307,7 @@ public sealed class BreakPlan {
         // the list pattern has one and the oracle does not. A per-group flag cannot say this — the
         // preserved gaps and the filled ones are siblings — so the preserved ones become ordinary
         // required breaks and the rest stay fill points.
-        var pinsItemBreaks = fill && keepExisting && options.KeepsUserBreaksBetweenItems;
+        var pinsItemBreaks = fill && keepExisting && keepsUserBreaks;
 
         var interBroken = false;
         foreach (var comma in separators) {
@@ -1310,13 +1326,13 @@ public sealed class BreakPlan {
             // where the construct is only filled — see keepsBreakOnEitherSideOfComma.
             interBroken |= PlanOtherSideOfComma(
                 other,
-                keepsBreakOnEitherSideOfComma && options.KeepsUserBreaksBetweenItems
+                keepsBreakOnEitherSideOfComma && keepsUserBreaks
             );
         }
 
         if (wrapBeforeClose) {
             Point(close, group);
-        } else if (!keepExisting) {
+        } else if (!keepExisting || !keepsUserBreaks) {
             Flat(close);
         }
 
@@ -1355,9 +1371,9 @@ public sealed class BreakPlan {
         var broken = chopsAlways
             || overCap
             || forced
-            || options.KeepsUserBreaksBetweenItems
+            || keepsUserBreaks
             && interBroken
-            || options.KeepsUserBreaksBetweenItems
+            || keepsUserBreaks
             && keepExisting
             && delimiterBroken;
 
@@ -2824,9 +2840,24 @@ public sealed class BreakPlan {
         var fill = chainFills.Contains(Key(ChainRootOf(node)));
         var group0 = group;
         bool broken;
+        // ⚠ An author's break after `is` or `as` is kept (#443): the oracle writes `o is` / `P` and
+        // `o as` / `P` at the defaults, with the point before the operator left whole, and joins both
+        // only at keep_user_linebreaks = false — where the gap is planned as below and the builder's
+        // JoinsWithoutKeptBreaks joins it. Flat joined them at both values.
+        if (wrapBefore
+            && operatorToken.Kind() is SyntaxKind.IsKeyword or SyntaxKind.AsKeyword
+            && options.KeepsUserBreaksBetweenItems
+            && BreaksBefore(FirstToken(right))) {
+            Flat(operatorToken);
+            Mandatory(FirstToken(right));
+            return;
+        }
+
         if (wrapBefore) {
             broken = Link(operatorToken);
-            Flat(FirstToken(right));
+            if (!operatorToken.IsKind(SyntaxKind.IsKeyword) && !operatorToken.IsKind(SyntaxKind.AsKeyword)) {
+                Flat(FirstToken(right));
+            }
         } else {
             Flat(operatorToken);
             broken = Link(FirstToken(right));
