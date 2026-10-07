@@ -86,7 +86,7 @@ static class PrimaryConstructorWrites {
     ///     capture's own storage, and <c>CS9117</c> says so for each.
     /// </remarks>
     static bool IsWritten(ExpressionSyntax reference, SemanticModel model, CancellationToken cancellation) {
-        ExpressionSyntax node = reference;
+        var node = reference;
         while (true) {
             switch (node.Parent) {
                 case ParenthesizedExpressionSyntax parenthesized:
