@@ -7217,3 +7217,59 @@ wrong in ten of the thirteen block shapes sampled and right in three.
 - options: `skala_wrap_chained_method_calls`, `skala_wrap_chained_binary_expressions` at `wrap_if_long`.
 - ⚠ status: **open**, pinned in its current reading by
   `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`.
+
+## SK-DIV-0187 — a `[CallerArgumentExpression]` argument is left as written; the oracle formats it
+
+A `[CallerArgumentExpression]` parameter receives its argument's source text, whitespace and line
+breaks included, so formatting can change what a program prints without changing a token (#432).
+Measured on the issue's probe with the Release CLI: `Check(a   <   b)` printed `[a   <   b]` before
+`skala format` and `[a < b]` after. `SK9099` cannot see it and `SK9010` cannot either. ⚠ It was worse
+than the issue said: `csharp_prefer_braces` added a block to an `if` inside a lambda in a captured
+argument — two new tokens in the captured string, added after the token comparison has run.
+
+**The oracle formats every one of them** (`jb cleanupcode` 2025.2.6, `Testing ask` on the probe):
+spacing, a broken argument joined, a lambda's interior re-indented. Skala leaves the captured
+expression byte-identical, the way it already leaves an interpolated string: `CSharpDocumentBuilder`
+emits it verbatim, `BreakPlan` plans nothing inside it, `RequiredBraces` adds no block inside it and
+`IntAlign` pads no row inside it. The gaps around it are not captured and are still formatted, and so
+is every argument nothing captures. `skala fix` formats through the same pass. The decision: a
+formatter does not change what a program prints, and this is the AI-generated case Skala exists for.
+
+**Which arguments are captured is decided from the file alone** (`CapturedArguments.Find`), in every
+load mode, because `format --check` must agree in CI and on a laptop that passed `--load`: a span kept
+under one load mode and formatted under the other is a check that fails in one place only.
+
+- Library members, enumerated from the assemblies on 2026-10-07 rather than remembered (.NET 10 ref
+  pack, NUnit 4.2.2, xunit 2.9.3, xunit.v3 4.0.0, Shouldly 4.3.0): `Debug.Assert`, `Trace.Assert`,
+  `ArgumentNullException.ThrowIfNull`, `ArgumentException.ThrowIfNullOrEmpty`/`OrWhiteSpace`, the nine
+  `ArgumentOutOfRangeException.ThrowIf*`, and NUnit's `Assert.That`/`ThatAsync`/`ByVal`,
+  `Assume.That`, `Warn.If`/`Unless` (both of the first two arguments). ⚠ Refuted while building the
+  list: `ObjectDisposedException.ThrowIf` captures nothing, and **neither xunit captures anything**, nor
+  Shouldly — "every `Assert.*`" would have frozen 3 402 `Assert.Equal` calls in the corpus for no reason.
+  ⚠ MSTest was not in the package cache and is **not measured**; it is absent rather than guessed.
+- Methods, local functions, constructors (including `new(…)`, `this(…)`, `base(…)` and a primary
+  constructor's base call), indexers, attribute constructors and delegate types declared **in the same
+  file** with a capturing parameter, matched by name (a delegate through the names declared with its
+  type). Not when the caller supplied the capturing parameter itself. A `params` capture is the whole
+  call (#422's measurement); an extension receiver, reduced or in a C# 14 extension block, is the receiver.
+- ⚠ Measured on SDK 10.0: the compiler captures an argument or a receiver **without its parentheses**,
+  at any depth — `Check(( a   <   b ))` captures `a   <   b` — so the gaps inside them are formatted.
+  `CallerArgumentSafety` (#422) answers with the parentheses included, which is wider than the capture
+  and harmless in the direction it errs.
+- ⚠ A formatter tag inside a captured argument still opens its region; the argument is then formatted
+  up to the tag, a narrower hole than swallowing the tag would be.
+- What it misses: a capturing method declared in **another file**. What it over-preserves: a call that
+  shares a name with a capturing method and binds elsewhere.
+
+Measured against the compiler (`dotnet run --project Testing/Rikarin.Skala.Testing -c Release --
+captured`, over `corpus/real/` with the shared framework and implicit usings): newtonsoft and serilog
+hold none; vixen holds **222** syntactic, **121** semantic, all 121 among the 222, **0** missed. The other
+**101** are `ThrowIfNull` calls whose argument's type does not resolve in the harness compilation (the
+corpus does not compile), so the semantic answer has no operation to ask — a false negative of the
+instrument, not an over-approximation. The oracle rewrites none of the 222: all are single identifiers.
+So `fidelity` and `unformat` are byte-identical before and after on `real/`, `pathological/`, and both
+degraded sets, and the cost is visible only on `constructs/syntax/caller-argument-expression.cs`,
+written for it: **9 of its 36 oracle lines** diverge, and every one is a captured argument.
+
+- options: none.
+- ⚠ status: **deliberate**.

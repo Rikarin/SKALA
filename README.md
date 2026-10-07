@@ -149,6 +149,14 @@ with no byte-order mark, read as UTF-8 — is refused by every verb that writes 
 byte-identical. Before #387 its undecodable bytes became U+FFFD on both sides of the token
 comparison, the comparison agreed, and the file was written back with the original bytes gone.
 
+The token stream is not the whole story either. A `[CallerArgumentExpression]` parameter hands the
+program its argument's source text, whitespace and line breaks included, so `Check(a   <   b)` prints
+`a   <   b` and would print `a < b` once formatted — with every token unchanged. `skala format` (and the
+formatting pass of `skala fix`) leaves such an argument byte-identical wherever it can see that a call
+captures (#432, SK-DIV-0187). It sees that from the file alone: the capturing members of the .NET
+library and NUnit, and capturing methods declared in the same file. A capturing method declared in
+another file is not seen.
+
 ## Contributing
 
 ```bash
