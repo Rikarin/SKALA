@@ -25,6 +25,17 @@ namespace Rikarin.Skala.Analysis.Loading;
 ///         the exit code non-zero. Skipping it quietly is the #345 defect, a file dropping out of the
 ///         report with nothing said.
 ///     </para>
+///     <para>
+///         ⚠ <b>A file that opens and does not decode is not decided here, deliberately</b> (#387). The
+///         loaders keep the lenient decode, and that is the compiler's own: <c>csc</c> on SDK 10.0.401
+///         builds a Latin-1 file with zero warnings and its <c>é</c> as U+FFFD, measured, so analysing
+///         the same text is analysing what the build sees. Nothing a loader decodes is ever written
+///         back — <c>fix</c> re-reads strictly before it writes — so the lenient text cannot reach a
+///         file. The report comes from the formatting stage: <c>check</c> and <c>verify</c> carry one
+///         <c>SK9018</c> per file and exit <c>InternalError</c>. Emitting it here too would print the
+///         file twice per run (the #356 count-versus-iteration trap); <c>check --no-formatting</c>
+///         says nothing about it, which is that flag's meaning — the bytes are a formatting question.
+///     </para>
 /// </remarks>
 internal static class SourceFiles {
     /// <summary>

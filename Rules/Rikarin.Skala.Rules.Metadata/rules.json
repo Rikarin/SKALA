@@ -2178,6 +2178,28 @@
       "configuration": []
     },
     {
+      "id": "SK9018",
+      "concept": "file-not-decodable",
+      "title": "The file is not valid in the encoding it declares",
+      "category": "Tool",
+      "defaultSeverity": "error",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The file holds bytes its encoding cannot decode — a Latin-1 `é` in a file with no BOM, which is read as UTF-8 — so it is reported and left byte-identical. No verb writes it: not `format`, `arrange`, `fix` or `verify`.",
+      "rationale": "#387. The file used to be decoded with U+FFFD for every undecodable byte, formatted, and written back with the original bytes gone. Neither unconditional promise saw it: the token comparison (`SK9099`) runs after the decode, where both sides hold the same U+FFFD, and U+FFFD inside a literal or a comment parses (`SK9010`). The token stream is only as trustworthy as the decode that produced it. It is an error where `SK9010` is a warning because nothing else will flag it: a file that does not parse fails the build, while a Latin-1 file compiles with zero warnings — `csc` decodes the bad byte as U+FFFD too, measured on SDK 10.0.401 — so a warning would let `format --check` and `verify` pass over a file Skala has never checked. Re-save the file as UTF-8 and it is formatted like any other.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "None; the bytes either decode strictly in the encoding the file's byte-order mark declares (UTF-8 without one) or they do not. UTF-8 with or without a BOM and UTF-16 or UTF-32 with a BOM are read as before. UTF-16 without a BOM is read as UTF-8: an ASCII-only one decodes and is `SK9010` on its NULs, as it always was; one holding any character above U+007F is not valid UTF-8 and is this.",
+      "configuration": []
+    },
+    {
       "id": "SK9020",
       "concept": "binlog-stale-for-file",
       "title": "The binlog is stale for this file",

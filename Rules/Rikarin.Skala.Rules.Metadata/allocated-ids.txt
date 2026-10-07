@@ -412,3 +412,9 @@ SK9027 partial-analysis
 SK9028 gate-input-unavailable
 SK9029 analyzer-assembly-missing
 SK9032 documentation-diagnostics-off
+
+# #387: the formatter's refusal of a file whose bytes are not valid in the encoding it declares —
+# SK9010's contract (reported, left byte-identical) for a cause SK9010 cannot see, because the old
+# decode turned every undecodable byte into U+FFFD and U+FFFD parses. Takes one of the two ids the
+# note above records as never allocated.
+SK9018 file-not-decodable

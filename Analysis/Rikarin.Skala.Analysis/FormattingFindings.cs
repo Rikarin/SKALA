@@ -74,6 +74,13 @@ public static class FormattingFindings {
                     // the loop below skips silently: the file vanished from the report with nothing
                     // said, so `verify` could return a CLEAN verdict for a tree it had not finished
                     // reading. Reporting it is the whole point; a dropped file must be a loud one.
+                } catch (UndecodableSourceException exception) {
+                    // ⚠ #387. A failure, so `check` and `verify` exit `InternalError` on it as they do
+                    // on SK9015: a file the formatting stage could not decode was never checked.
+                    results[index] = null;
+                    lock (failures) {
+                        failures.Add(exception.ToDiagnostic());
+                    }
                 } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
                     results[index] = null;
                     lock (failures) {

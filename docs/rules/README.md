@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 364 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 365 ids are allocated.
 
 ## Async
 
@@ -409,6 +409,7 @@
 | [SK9015](SK9015.md) | The file could not be read or written | error | — | yes |
 | [SK9016](SK9016.md) | Applying the canonical changes a `dotnet_diagnostic` severity | warning | — | no |
 | [SK9017](SK9017.md) | An option was set to a value outside its domain | warning | — | no |
+| [SK9018](SK9018.md) | The file is not valid in the encoding it declares | error | — | yes |
 | [SK9020](SK9020.md) | The binlog is stale for this file | suggestion | — | no |
 | [SK9021](SK9021.md) | The binlog does not name a file that exists | warning | — | no |
 | [SK9022](SK9022.md) | No binary log could be read | warning | — | no |

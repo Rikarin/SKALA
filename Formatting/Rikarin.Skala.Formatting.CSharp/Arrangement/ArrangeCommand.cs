@@ -163,6 +163,10 @@ public static class ArrangeCommand {
                 // `SecurityException` is deliberately absent. It is a CAS-era type; .NET's file APIs
                 // have thrown `UnauthorizedAccessException` for a denied path since .NET Core, so a
                 // catch for it would be unreachable code asserting a mechanism that no longer exists.
+            } catch (UndecodableSourceException exception) {
+                // ⚠ #387: refused before anything is arranged, at error severity so that the exit
+                // below reads it as it reads SK9015 — reported, left alone, the run failed.
+                diagnostics.Add(exception.ToDiagnostic());
             } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
                 diagnostics.Add(
                     new SkalaDiagnostic(FormatDiagnosticIds.FileIoFailed, SkalaSeverity.Error, exception.Message, file)

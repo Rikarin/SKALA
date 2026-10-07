@@ -70,7 +70,17 @@ public sealed class FormatService {
         string? crashRoot,
         IReadOnlyList<string>? preprocessorSymbols = null
     ) {
-        var source = text is null ? CSharpFormatter.Read(path) : SourceText.From(text, Encoding.UTF8);
+        SourceText source;
+        try {
+            source = text is null ? CSharpFormatter.Read(path) : SourceText.From(text, Encoding.UTF8);
+        } catch (UndecodableSourceException exception) {
+            // ⚠ #387. Answered, not thrown: the language server's formatting and diagnostics requests
+            // both come through here, and a throw is a dead request where SK9018 is an answer the
+            // editor can show. Not cached — there is no text to key it on, and the next request
+            // should read the file again in case it was re-saved.
+            return CSharpFormatter.Refused(exception);
+        }
+
         var chain = EditorConfigChain.For(path);
         var options = ConfigurationCache.Options(chain, overrides);
         var key = KeyOf(source, chain, overrides, preprocessorSymbols);

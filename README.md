@@ -79,7 +79,7 @@ skala explain skala_wrap_arguments_style   # what an option governs
 | 2 | Formatting or arrangement is needed (`--check`) |
 | 3 | The configuration is wrong |
 | 4 | The project or compilation could not be loaded |
-| 5 | The run did not complete: the formatter's own safety net tripped (`SK9099`), or a file could not be read (`SK9015`) |
+| 5 | The run did not complete: the formatter's own safety net tripped (`SK9099`), a file could not be read (`SK9015`), or a file is not valid in its encoding (`SK9018`) |
 | 130 | Cancelled |
 
 ## Configuration
@@ -142,6 +142,12 @@ Two things Skala will not do, with no flag to turn them off:
 - It never writes a file whose token stream differs from the input's. If a rewrite would change the
   program, the file is left alone and the run reports it.
 - It never formats a file it could not parse.
+
+Both promises stand on the decode, and the token stream is only as trustworthy as the decode that
+produced it. A file whose bytes are not valid in the encoding it declares — a Latin-1 `é` in a file
+with no byte-order mark, read as UTF-8 — is refused by every verb that writes (`SK9018`) and left
+byte-identical. Before #387 its undecodable bytes became U+FFFD on both sides of the token
+comparison, the comparison agreed, and the file was written back with the original bytes gone.
 
 ## Contributing
 

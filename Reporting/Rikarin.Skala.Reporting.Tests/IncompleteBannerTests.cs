@@ -777,7 +777,8 @@ public sealed class IncompleteBannerTests {
     /// </remarks>
     [Fact]
     public void EveryBlockingToolId_IsEitherACountedSourceFileOrOutsideTheFraction() {
-        string[] locatedAtACountedSourceFile = ["SK9010", "SK9015", "SK9095", "SK9096", "SK9097", "SK9098", "SK9099"];
+        string[] locatedAtACountedSourceFile =
+            ["SK9010", "SK9015", "SK9018", "SK9095", "SK9096", "SK9097", "SK9098", "SK9099"];
         // ⚠ #362: `SK9030` is here and not on the third list. It blocks at *warning* — the one id
         // whose gate threshold is below error — and sits at the project or the unit's name, never at
         // a source file, so it has a sentence outside the fraction and no count inside it.
