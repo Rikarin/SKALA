@@ -1229,6 +1229,11 @@ operator and the pattern form is a reference comparison the language performs it
 changes which code runs while leaving code that still compiles. Layer 2 cannot see it (no diagnostic)
 and layer 3 cannot either (no identifier changed meaning); only the precondition stops it.
 
+⚠ #383: `skala_empty_string`'s other value, `string_empty` (`""` ⇒ `string.Empty`), was not performed
+by Skala either until then, so "Skala performs all three" was true of one value of that key only.
+Both are performed now; the second direction's constant-context declines are SK-DIV-0137. The
+frozen sweep records both values' rows against this entry, because it is the first to list the key.
+
 - options: `skala_null_checking_pattern_style`, `skala_empty_string`, `skala_braces_redundant`
 
 ## SK-DIV-0014 — ⚠ RETIRED. Parenthesis removal was gated behind `--aggressive`; the gate is lifted

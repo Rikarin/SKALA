@@ -2,8 +2,8 @@
   "Provenance": {
     "ReSharperVersion": "2025.2.6",
     "ConfigDigest": "9bf4b7e7193c5da3",
-    "Commit": "479de29cf45041a3c833e5421630202dcfe0e7dc",
-    "Frozen": "2026-09-04",
+    "Commit": "2741900f050566cd3859fc15a15b36ddfe4a1616",
+    "Frozen": "2026-10-07",
     "Sweep": "conformance-sweep.json"
   },
   "Outputs": [
@@ -381,7 +381,7 @@
       "Profile": "SkalaCleanup",
       "OracleHash": "0bcdfae3",
       "Bytes": 917,
-      "Origin": "skala-reproduced"
+      "Origin": "oracle-measured"
     },
     {
       "Path": "constructs/arrangement/redundancy/instance-qualifier/2ccd2a23.expected.cs",
@@ -8979,10 +8979,10 @@
       "Fixture": "constructs/arrangement/redundancy/empty-string.cs",
       "Output": "constructs/arrangement/redundancy/empty-string/0bcdfae3.expected.cs",
       "OracleHash": "0bcdfae3",
-      "SkalaHash": "0bcdfae3",
+      "SkalaHash": "6eee954a",
       "Outcome": "Spurious",
-      "Expectation": "reproduces",
-      "Divergence": null,
+      "Expectation": "divergent",
+      "Divergence": "SK-DIV-0013",
       "Source": "conformance-sweep.json"
     },
     {
@@ -11587,7 +11587,7 @@
       "Fixture": "constructs/wrapping/initializers.cs",
       "Output": "constructs/wrapping/initializers/b4ba25e0.expected.cs",
       "OracleHash": "b4ba25e0",
-      "SkalaHash": "f0d2c19d",
+      "SkalaHash": "da69bf72",
       "Outcome": "Divergent",
       "Expectation": "divergent",
       "Divergence": "SK-DIV-0082",
