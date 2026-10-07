@@ -158,7 +158,7 @@ public static class IncrementalAnalysis {
             : AnalyzerHost.RunCompilationScoped(unit, options, hosted, mode, cancellation, profile);
 
         return new IncrementalOutcome(
-            [.. hits, .. warm.Findings, .. whole.Findings],
+            [.. AnalyzerHost.Reassessed(unit, hits), .. warm.Findings, .. whole.Findings],
             [.. warm.Diagnostics, .. whole.Diagnostics],
             cache.Hits,
             cache.Misses,

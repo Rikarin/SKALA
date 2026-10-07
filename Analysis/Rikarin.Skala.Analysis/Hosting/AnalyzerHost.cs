@@ -650,6 +650,7 @@ public static class AnalyzerHost {
 
         var span = diagnostic.Location.GetLineSpan();
         var textSpan = diagnostic.Location.SourceSpan;
+        var fix = ReadFix(diagnostic, path);
 
         return new() {
             RuleId = diagnostic.Id,
@@ -662,8 +663,8 @@ public static class AnalyzerHost {
             EndColumn = span.EndLinePosition.Character + 1,
             Start = textSpan.Start,
             Length = textSpan.Length,
-            Fix = ReadFix(diagnostic, path),
-            FixIsSafe = RuleCatalog.Find(diagnostic.Id) is { FixIsSafe: true },
+            Fix = fix,
+            FixIsSafe = FixIsSafe(diagnostic.Id, fix, unit, tree, models),
             TargetFrameworks = unit.TargetFramework.Length == 0 ? [] : [unit.TargetFramework],
             Suppression = diagnostic.IsSuppressed ? SuppressionKind.Pragma : SuppressionKind.None,
             EnclosingSymbol = EnclosingSymbol(unit, tree, textSpan.Start, models),
@@ -733,24 +734,74 @@ public static class AnalyzerHost {
     }
 
     /// <summary>Unpacks the text edits a Skala rule attached to its diagnostic.</summary>
-    static ImmutableArray<FixEdit> ReadFix(Diagnostic diagnostic, string path) {
-        if (!diagnostic.Properties.TryGetValue(FixEdits.CountKey, out var countText)
-            || !int.TryParse(countText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var count)
-            || count <= 0) {
-            return [];
+    static ImmutableArray<FixEdit> ReadFix(Diagnostic diagnostic, string path) =>
+        [.. FixEdits.Read(diagnostic).Select(edit => new FixEdit(path, edit.Span.Start, edit.Span.Length, edit.Text))];
+
+    /// <summary>
+    ///     Whether a finding's fix may be applied without review: the catalogue's answer for the rule,
+    ///     narrowed by <see cref="FixEdits.IsSafe(string, IEnumerable{TextSpan}, SemanticModel, CancellationToken)" />
+    ///     for this call site.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #422. Every finding the host produces passes through here, so no rule can ship a safe fix
+    ///     that rewrites a <c>[CallerArgumentExpression]</c> argument by forgetting to ask.
+    ///     <para>
+    ///         ⚠ <b>A cached finding is asked again, against the current compilation</b> — see
+    ///         <see cref="Reassessed" />. The cache key is the file's own text and the references, and the
+    ///         attribute that makes an argument captured can be declared in any other file.
+    ///     </para>
+    /// </remarks>
+    static bool FixIsSafe(
+        string ruleId,
+        ImmutableArray<FixEdit> fix,
+        CompilationUnit unit,
+        SyntaxTree tree,
+        Dictionary<SyntaxTree, SemanticModel> models
+    ) {
+        if (RuleCatalog.Find(ruleId) is not { FixIsSafe: true }) {
+            return false;
         }
 
-        var builder = ImmutableArray.CreateBuilder<FixEdit>(count);
-        for (var i = 0; i < count; i++) {
-            if (!diagnostic.Properties.TryGetValue(FixEdits.StartKey(i), out var startText)
-                || !diagnostic.Properties.TryGetValue(FixEdits.LengthKey(i), out var lengthText)
-                || !diagnostic.Properties.TryGetValue(FixEdits.TextKey(i), out var text)
-                || !int.TryParse(startText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var start)
-                || !int.TryParse(lengthText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var length)) {
-                return [];
-            }
+        if (fix.IsDefaultOrEmpty) {
+            return true;
+        }
 
-            builder.Add(new FixEdit(path, start, length, text ?? string.Empty));
+        if (!models.TryGetValue(tree, out var model)) {
+            model = unit.Compilation.GetSemanticModel(tree);
+            models[tree] = model;
+        }
+
+        return FixEdits.IsSafe(
+            ruleId,
+            fix.Select(static edit => new TextSpan(edit.Start, edit.Length)),
+            model,
+            CancellationToken.None
+        );
+    }
+
+    /// <summary>
+    ///     Findings served from the cache, with <see cref="Finding.FixIsSafe" /> asked again of the
+    ///     compilation this run built.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A cache hit says the file did not change; it does not say a method it calls did not gain a
+    ///     <c>[CallerArgumentExpression]</c> parameter in another file. Re-asking costs one bind per
+    ///     file holding a safe fix, which the warm path pays only for files with findings.
+    /// </remarks>
+    public static ImmutableArray<Finding> Reassessed(CompilationUnit unit, IEnumerable<Finding> findings) {
+        var trees = new Dictionary<string, SyntaxTree>(StringComparer.Ordinal);
+        foreach (var tree in unit.Compilation.SyntaxTrees) {
+            trees.TryAdd(Path.GetFullPath(tree.FilePath), tree);
+        }
+
+        var models = new Dictionary<SyntaxTree, SemanticModel>();
+        var builder = ImmutableArray.CreateBuilder<Finding>();
+        foreach (var finding in findings) {
+            builder.Add(
+                finding.HasFix && trees.TryGetValue(finding.Path, out var tree)
+                    ? finding with { FixIsSafe = FixIsSafe(finding.RuleId, finding.Fix, unit, tree, models) }
+                    : finding
+            );
         }
 
         return builder.ToImmutable();
@@ -787,7 +838,12 @@ public static class AnalyzerHost {
                     }
                 }
 
-                merged[key] = existing with { TargetFrameworks = frameworks };
+                // ⚠ #422: safe only where every target says so. `Debug.Assert` captures its condition
+                // on net9.0 and not on net8.0, so one fix is safe under one target and not the other.
+                merged[key] = existing with {
+                    TargetFrameworks = frameworks,
+                    FixIsSafe = existing.FixIsSafe && finding.FixIsSafe
+                };
                 continue;
             }
 
