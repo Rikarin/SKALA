@@ -58,10 +58,11 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
-        context.RegisterSyntaxNodeAction(AnalyzeDelegateCreation, SyntaxKind.ObjectCreationExpression);
-        context.RegisterSyntaxNodeAction(AnalyzeLambda, SyntaxKind.ParenthesizedLambdaExpression);
-        context.RegisterSyntaxNodeAction(AnalyzeAnonymousMethod, SyntaxKind.AnonymousMethodExpression);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzeDelegateCreation, SyntaxKind.ObjectCreationExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzeLambda, SyntaxKind.ParenthesizedLambdaExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzeAnonymousMethod, SyntaxKind.AnonymousMethodExpression);
     }
 
     static void AnalyzeInvocation(SyntaxNodeAnalysisContext context) {

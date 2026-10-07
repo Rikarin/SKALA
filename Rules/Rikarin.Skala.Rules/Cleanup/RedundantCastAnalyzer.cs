@@ -44,10 +44,11 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeCast, SyntaxKind.CastExpression);
-        context.RegisterSyntaxNodeAction(AnalyzeTypeArguments, SyntaxKind.InvocationExpression);
-        context.RegisterSyntaxNodeAction(AnalyzeArraySize, SyntaxKind.ArrayCreationExpression);
-        context.RegisterSyntaxNodeAction(AnalyzeTupleNames, SyntaxKind.TupleExpression);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(AnalyzeCast, SyntaxKind.CastExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzeTypeArguments, SyntaxKind.InvocationExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzeArraySize, SyntaxKind.ArrayCreationExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzeTupleNames, SyntaxKind.TupleExpression);
     }
 
     static void AnalyzeCast(SyntaxNodeAnalysisContext context) {

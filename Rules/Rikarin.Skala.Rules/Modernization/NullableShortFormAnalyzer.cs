@@ -32,7 +32,8 @@ public sealed class NullableShortFormAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.GenericName);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.GenericName);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

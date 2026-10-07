@@ -39,7 +39,8 @@ public sealed class InheritanceDepthAnalyzer : DiagnosticAnalyzer {
 
         // ⚠ Classes and record classes only. An interface has a graph of bases rather than a chain and
         // the number would not mean the same thing; a struct has no base chain a person can write.
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ClassDeclaration, SyntaxKind.RecordDeclaration);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ClassDeclaration, SyntaxKind.RecordDeclaration);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

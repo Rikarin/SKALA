@@ -46,7 +46,8 @@ public sealed class UnstructuredGotoAnalyzer : DiagnosticAnalyzer {
         // ⚠ `GotoStatement` alone. `goto case` and `goto default` are `GotoCaseStatement` and
         // `GotoDefaultStatement`, distinct kinds, so the exclusion is in the registration rather
         // than in a filter somebody could later "simplify" away.
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.GotoStatement);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.GotoStatement);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

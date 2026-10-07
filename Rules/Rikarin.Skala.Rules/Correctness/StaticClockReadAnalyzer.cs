@@ -42,7 +42,8 @@ public sealed class StaticClockReadAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 // ⚠ The repair is `TimeProvider`. Where the type does not exist there is nothing to
                 // advise, so the rule does not run at all rather than reporting advice that cannot be
                 // taken.

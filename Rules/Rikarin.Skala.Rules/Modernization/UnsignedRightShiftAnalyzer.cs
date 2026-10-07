@@ -38,7 +38,8 @@ public sealed class UnsignedRightShiftAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 // ⚠ The compilation-wide `checked` switch is a gate, not a per-node test: with
                 // `CheckForOverflowUnderflow` on, every one of these casts can throw where `>>>`
                 // cannot, so there is nothing in the tree for this rule to say.

@@ -67,7 +67,8 @@ public sealed class DuplicateInitializerKeyAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var lookups = CollectionShape.Resolve(start.Compilation, Lookups);
                 if (lookups.Count == 0) {
                     return;

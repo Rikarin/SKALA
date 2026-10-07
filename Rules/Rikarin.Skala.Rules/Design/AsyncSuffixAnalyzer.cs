@@ -49,7 +49,8 @@ public sealed class AsyncSuffixAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var vocabulary = Vocabulary.Resolve(start.Compilation);
                 start.RegisterSyntaxNodeAction(
                     context => Analyze(context, vocabulary),
@@ -64,6 +65,15 @@ public sealed class AsyncSuffixAnalyzer : DiagnosticAnalyzer {
         if (context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken) is not {
                 MethodKind: MethodKind.Ordinary
             } method) {
+            return;
+        }
+
+        // ⚠ A partial method is one name with two declarations (#400), and each half was reported: the
+        // definition carries the finding. Nothing else needed the other half. #400 also read the
+        // definition of an `async` implementation as "named asynchronous and nothing about it is",
+        // and that is refuted: all three such findings in the sweep were the second copy of a real one,
+        // and `partial void RefreshAsync();` beside its `async` implementation was never reported.
+        if (method.PartialDefinitionPart is not null) {
             return;
         }
 

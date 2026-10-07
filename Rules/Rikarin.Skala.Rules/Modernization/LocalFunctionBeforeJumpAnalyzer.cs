@@ -53,7 +53,8 @@ public sealed class LocalFunctionBeforeJumpAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.Block);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.Block);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

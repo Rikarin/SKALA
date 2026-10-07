@@ -50,7 +50,8 @@ public sealed class ForeachElementDowncastAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ForEachStatement);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ForEachStatement);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

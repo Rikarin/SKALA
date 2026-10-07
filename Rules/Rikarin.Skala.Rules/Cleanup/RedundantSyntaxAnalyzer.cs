@@ -47,10 +47,11 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeAttribute, SyntaxKind.Attribute);
-        context.RegisterSyntaxNodeAction(AnalyzeLambda, SyntaxKind.ParenthesizedLambdaExpression);
-        context.RegisterSyntaxNodeAction(AnalyzePatternParentheses, SyntaxKind.ParenthesizedPattern);
-        context.RegisterSyntaxNodeAction(
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(AnalyzeAttribute, SyntaxKind.Attribute);
+        registrar.RegisterSyntaxNodeAction(AnalyzeLambda, SyntaxKind.ParenthesizedLambdaExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzePatternParentheses, SyntaxKind.ParenthesizedPattern);
+        registrar.RegisterSyntaxNodeAction(
             AnalyzeDeclarationSemicolon,
             SyntaxKind.ClassDeclaration,
             SyntaxKind.StructDeclaration,
@@ -60,11 +61,11 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
             SyntaxKind.EnumDeclaration,
             SyntaxKind.NamespaceDeclaration
         );
-        context.RegisterSyntaxNodeAction(AnalyzeElementBraces, SyntaxKind.ComplexElementInitializerExpression);
-        context.RegisterSyntaxNodeAction(AnalyzeAnonymousMember, SyntaxKind.AnonymousObjectMemberDeclarator);
-        context.RegisterSyntaxNodeAction(AnalyzeOrdering, SyntaxKind.AscendingOrdering);
-        context.RegisterSyntaxNodeAction(AnalyzeRange, SyntaxKind.RangeExpression);
-        context.RegisterSyntaxNodeAction(AnalyzePropertyPattern, SyntaxKind.RecursivePattern);
+        registrar.RegisterSyntaxNodeAction(AnalyzeElementBraces, SyntaxKind.ComplexElementInitializerExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzeAnonymousMember, SyntaxKind.AnonymousObjectMemberDeclarator);
+        registrar.RegisterSyntaxNodeAction(AnalyzeOrdering, SyntaxKind.AscendingOrdering);
+        registrar.RegisterSyntaxNodeAction(AnalyzeRange, SyntaxKind.RangeExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzePropertyPattern, SyntaxKind.RecursivePattern);
     }
 
     static void AnalyzeAttribute(SyntaxNodeAnalysisContext context) {

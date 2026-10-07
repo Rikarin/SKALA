@@ -51,7 +51,8 @@ public sealed class AsyncOnlyToAwaitAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var tasks = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
                 foreach (var name in TaskTypes) {
                     if (start.Compilation.GetTypeByMetadataName(name) is { } type) {

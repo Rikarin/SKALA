@@ -171,7 +171,7 @@ public sealed class WorldWritableFileModeAnalyzer : DiagnosticAnalyzer {
         var operand = ConstantBytes.Unwrap(value);
         if (!operand.ConstantValue.HasValue
             || operand.ConstantValue.Value is not { } raw
-            || AsyncContext.IsTestMethod(value.Syntax)) {
+            || AsyncContext.IsTestMethod(value.Syntax, value.SemanticModel, context.CancellationToken)) {
             return;
         }
 

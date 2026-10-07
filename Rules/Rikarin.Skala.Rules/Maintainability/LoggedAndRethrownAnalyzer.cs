@@ -76,7 +76,8 @@ public sealed class LoggedAndRethrownAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var sinks = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
                 foreach (var name in new[] {
                              "System.Console", "System.Diagnostics.Trace", "System.Diagnostics.Debug",

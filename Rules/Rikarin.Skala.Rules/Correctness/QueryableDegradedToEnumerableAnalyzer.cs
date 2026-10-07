@@ -50,7 +50,8 @@ public sealed class QueryableDegradedToEnumerableAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var enumerable = start.Compilation.GetTypeByMetadataName("System.Linq.Enumerable");
                 var queryable = start.Compilation.GetTypeByMetadataName("System.Linq.IQueryable");
                 var sequence = start.Compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1");

@@ -18,7 +18,8 @@ public sealed class SkippedTestWithoutReasonAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var fact = start.Compilation.GetTypeByMetadataName("Xunit.FactAttribute");
                 var theory = start.Compilation.GetTypeByMetadataName("Xunit.TheoryAttribute");
                 if (fact is null && theory is null) {

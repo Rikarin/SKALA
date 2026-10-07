@@ -95,7 +95,8 @@ public sealed class SelfCollectionArgumentAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var entries = new List<Entry>();
                 foreach (var (type, method, index, consequence) in Table) {
                     if (start.Compilation.GetTypeByMetadataName(type) is { } symbol) {

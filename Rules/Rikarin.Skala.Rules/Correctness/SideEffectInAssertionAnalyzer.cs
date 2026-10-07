@@ -128,7 +128,8 @@ public sealed class SideEffectInAssertionAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 // ⚠ Without `ConditionalAttribute` nothing in the compilation can be compiled out, so
                 // the whole rule withdraws rather than resolving a symbol per invocation.
                 var conditional = start.Compilation.GetTypeByMetadataName("System.Diagnostics.ConditionalAttribute");

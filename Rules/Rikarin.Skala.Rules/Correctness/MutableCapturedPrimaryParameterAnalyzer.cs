@@ -54,7 +54,8 @@ public sealed class MutableCapturedPrimaryParameterAnalyzer : DiagnosticAnalyzer
 
         // ⚠ Class and struct declarations only. A record is `RecordDeclarationSyntax`, a different
         // node kind, so the exclusion is structural rather than a test somebody can forget.
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ClassDeclaration, SyntaxKind.StructDeclaration);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ClassDeclaration, SyntaxKind.StructDeclaration);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

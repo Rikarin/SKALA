@@ -30,7 +30,8 @@ public sealed class EnumConstraintAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.TypeParameterConstraintClause);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.TypeParameterConstraintClause);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

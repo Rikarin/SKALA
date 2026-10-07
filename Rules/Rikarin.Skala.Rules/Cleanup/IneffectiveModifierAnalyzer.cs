@@ -39,7 +39,8 @@ public sealed class IneffectiveModifierAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(
             AnalyzeMember,
             SyntaxKind.MethodDeclaration,
             SyntaxKind.PropertyDeclaration,
@@ -49,10 +50,10 @@ public sealed class IneffectiveModifierAnalyzer : DiagnosticAnalyzer {
             SyntaxKind.OperatorDeclaration
         );
 
-        context.RegisterSyntaxNodeAction(AnalyzeAccessor, SyntaxKind.GetAccessorDeclaration);
-        context.RegisterSyntaxNodeAction(AnalyzeRecord, SyntaxKind.RecordDeclaration);
-        context.RegisterSyntaxNodeAction(AnalyzeEnum, SyntaxKind.EnumDeclaration);
-        context.RegisterSyntaxNodeAction(AnalyzeParameter, SyntaxKind.Parameter);
+        registrar.RegisterSyntaxNodeAction(AnalyzeAccessor, SyntaxKind.GetAccessorDeclaration);
+        registrar.RegisterSyntaxNodeAction(AnalyzeRecord, SyntaxKind.RecordDeclaration);
+        registrar.RegisterSyntaxNodeAction(AnalyzeEnum, SyntaxKind.EnumDeclaration);
+        registrar.RegisterSyntaxNodeAction(AnalyzeParameter, SyntaxKind.Parameter);
     }
 
     /// <summary>

@@ -55,7 +55,8 @@ public sealed class InvariantTypeParameterAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.InterfaceDeclaration);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.InterfaceDeclaration);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

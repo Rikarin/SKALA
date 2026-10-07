@@ -39,7 +39,8 @@ public sealed class ThreadSleepInTestAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var thread = start.Compilation.GetTypeByMetadataName("System.Threading.Thread");
                 if (thread is null) {
                     return;
@@ -63,7 +64,7 @@ public sealed class ThreadSleepInTestAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (!AsyncContext.IsTestMethod(invocation)) {
+        if (!AsyncContext.IsTestMethod(invocation, context.SemanticModel, context.CancellationToken)) {
             return;
         }
 

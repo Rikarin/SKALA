@@ -54,7 +54,8 @@ public sealed class SortWithoutOrderingAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var comparable = start.Compilation.GetTypeByMetadataName("System.IComparable");
                 var generic = start.Compilation.GetTypeByMetadataName("System.IComparable`1");
                 if (comparable is null || generic is null) {

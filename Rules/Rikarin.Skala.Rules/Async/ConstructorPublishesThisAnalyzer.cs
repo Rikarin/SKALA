@@ -87,7 +87,8 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
         // ⚠ The four framework types are resolved once per compilation, never matched on the written
         // name: `Thread` and `Task` are both plausible names for somebody's own type, and a finding
         // on one of those sends a reader to threading code that does not exist.
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var starters = new Starters(start.Compilation);
                 start.RegisterSyntaxNodeAction(
                     context => Analyze(context, starters),

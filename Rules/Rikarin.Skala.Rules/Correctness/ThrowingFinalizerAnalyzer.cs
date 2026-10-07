@@ -49,7 +49,8 @@ public sealed class ThrowingFinalizerAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.DestructorDeclaration);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.DestructorDeclaration);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

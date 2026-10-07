@@ -53,7 +53,8 @@ public sealed class AnonymousMethodWithParameterListAnalyzer : DiagnosticAnalyze
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.AnonymousMethodExpression);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.AnonymousMethodExpression);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

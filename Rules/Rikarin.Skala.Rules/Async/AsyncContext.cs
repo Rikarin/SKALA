@@ -179,7 +179,7 @@ internal static class AsyncContext {
     ///     </para>
     /// </remarks>
     public static bool IsTestCode(SyntaxNode node, SemanticModel? model, CancellationToken cancellation) {
-        if (IsTestMethod(node)) {
+        if (IsTestMethod(node, model, cancellation)) {
             return true;
         }
 
@@ -208,42 +208,81 @@ internal static class AsyncContext {
     ///         the unit.
     ///     </para>
     /// </remarks>
-    public static bool IsTestMethod(SyntaxNode node) {
-        for (var current = node; current is not null; current = current.Parent) {
-            if (current is not MethodDeclarationSyntax method) {
-                continue;
-            }
-
-            foreach (var list in method.AttributeLists) {
-                foreach (var attribute in list.Attributes) {
-                    var name = attribute.Name switch {
-                        QualifiedNameSyntax qualified => qualified.Right.Identifier.ValueText,
-                        SimpleNameSyntax simple => simple.Identifier.ValueText,
-                        _ => string.Empty
-                    };
-
-                    switch (name) {
-                        case "Fact":
-                        case "FactAttribute":
-                        case "Theory":
-                        case "TheoryAttribute":
-                        case "Test":
-                        case "TestAttribute":
-                        case "TestCase":
-                        case "TestCaseAttribute":
-                        case "TestMethod":
-                        case "TestMethodAttribute":
-                        case "Benchmark":
-                        case "BenchmarkAttribute":
-                            return true;
-                    }
-                }
-            }
-
+    public static bool IsTestMethod(
+        SyntaxNode node,
+        SemanticModel? model = null,
+        CancellationToken cancellation = default
+    ) {
+        if (node.FirstAncestorOrSelf<MethodDeclarationSyntax>() is not { } method) {
             return false;
         }
 
+        if (CarriesATestAttribute(method)) {
+            return true;
+        }
+
+        // ⚠ A partial method's attributes belong to both halves (#400). `[Fact]` is written on the
+        // definition and the body is the implementation's, so reading only the half that encloses the
+        // node exempted nothing. The other half in this type declaration is read from syntax, which is
+        // all a Syntax-scoped caller may look at; one in another file only through the symbol, whose
+        // attributes the compiler has already merged across both declarations.
+        if (!PartialMembers.IsPartialMember(method)) {
+            return false;
+        }
+
+        if (PartialMembers.Sibling(method) is MethodDeclarationSyntax sibling && CarriesATestAttribute(sibling)) {
+            return true;
+        }
+
+        if (model?.GetDeclaredSymbol(method, cancellation) is not { } symbol) {
+            return false;
+        }
+
+        foreach (var attribute in symbol.GetAttributes()) {
+            if (attribute.AttributeClass is { } type && IsTestAttributeName(type.Name)) {
+                return true;
+            }
+        }
+
         return false;
+    }
+
+    static bool CarriesATestAttribute(MethodDeclarationSyntax method) {
+        foreach (var list in method.AttributeLists) {
+            foreach (var attribute in list.Attributes) {
+                var name = attribute.Name switch {
+                    QualifiedNameSyntax qualified => qualified.Right.Identifier.ValueText,
+                    SimpleNameSyntax simple => simple.Identifier.ValueText,
+                    _ => string.Empty
+                };
+
+                if (IsTestAttributeName(name)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    static bool IsTestAttributeName(string name) {
+        switch (name) {
+            case "Fact":
+            case "FactAttribute":
+            case "Theory":
+            case "TheoryAttribute":
+            case "Test":
+            case "TestAttribute":
+            case "TestCase":
+            case "TestCaseAttribute":
+            case "TestMethod":
+            case "TestMethodAttribute":
+            case "Benchmark":
+            case "BenchmarkAttribute":
+                return true;
+            default:
+                return false;
+        }
     }
 
     /// <summary>

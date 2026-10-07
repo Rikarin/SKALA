@@ -50,7 +50,8 @@ public sealed class ForgivenIsOperandAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.IsPatternExpression, SyntaxKind.IsExpression);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.IsPatternExpression, SyntaxKind.IsExpression);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

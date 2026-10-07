@@ -67,7 +67,8 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 // ⚠ The fix writes a deconstruction, so `KeyValuePair<K, V>.Deconstruct` has to be
                 // there. It arrived in .NET Core 2.0 and the analyzer targets netstandard2.0, so
                 // "the framework this project builds against has it" is a question, not a given.
