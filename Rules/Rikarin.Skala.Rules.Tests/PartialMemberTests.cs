@@ -699,7 +699,10 @@ public sealed class PartialMemberTests {
         }
     }
 
-    /// <summary>The same with the definition in a file of its own, which a semantic-model action of its tree reaches.</summary>
+    /// <summary>
+    ///     The same with the definition in a file of its own, which a semantic-model action of its tree
+    ///     reaches.
+    /// </summary>
     [Fact]
     public void APartialConstructorDefinition_InAFileOfItsOwn_IsReadByEveryRule_Once() {
         var diagnostics = Analyze(DefinitionBase + Definition, Implementation);
@@ -710,7 +713,10 @@ public sealed class PartialMemberTests {
         }
     }
 
-    /// <summary>Every fix made on the definition alone leaves the pair compiling: none of them changes the signature.</summary>
+    /// <summary>
+    ///     Every fix made on the definition alone leaves the pair compiling: none of them changes the
+    ///     signature.
+    /// </summary>
     [Fact]
     public void APartialConstructorDefinition_FixesCompile() {
         var source = DefinitionBase + Definition + Implementation;
