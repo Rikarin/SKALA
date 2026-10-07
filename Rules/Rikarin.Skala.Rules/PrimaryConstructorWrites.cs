@@ -153,7 +153,11 @@ static class PrimaryConstructorWrites {
     ///     <c>ref readonly</c> one of a parameter is <c>CS8166</c> in every type, so there is nothing to
     ///     tell apart.
     /// </remarks>
-    static bool BindsWritableReference(RefExpressionSyntax reference, SemanticModel model, CancellationToken cancellation) {
+    static bool BindsWritableReference(
+        RefExpressionSyntax reference,
+        SemanticModel model,
+        CancellationToken cancellation
+    ) {
         SyntaxNode node = reference;
         while (node.Parent is ConditionalExpressionSyntax conditional
                && conditional.Condition != node

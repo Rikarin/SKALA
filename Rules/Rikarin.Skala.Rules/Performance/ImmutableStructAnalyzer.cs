@@ -52,8 +52,14 @@ public sealed class ImmutableStructAnalyzer : DiagnosticAnalyzer {
             } symbol
             || !declaration.Members.All(Eligible)
             || Owned(declaration).Any(Unsafe)
-            || Owned(declaration).OfType<ThisExpressionSyntax>()
-                .Any(expression => PrimaryConstructorWrites.IsWriteTarget(expression, context.SemanticModel, cancellation))
+            || Owned(declaration)
+                .OfType<ThisExpressionSyntax>()
+                .Any(expression => PrimaryConstructorWrites.IsWriteTarget(
+                        expression,
+                        context.SemanticModel,
+                        cancellation
+                    )
+                )
             || PrimaryConstructorWrites.WrittenParameters(declaration, context.SemanticModel, cancellation).Count > 0) {
             return;
         }

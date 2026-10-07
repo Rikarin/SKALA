@@ -69,9 +69,8 @@ public sealed class MutableCapturedPrimaryParameterAnalyzer : DiagnosticAnalyzer
                      context.SemanticModel,
                      context.CancellationToken
                  )) {
-            if (passedToBase.Contains(symbol.Name)
-                || symbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(context.CancellationToken) is not
-                    ParameterSyntax parameter) {
+            var declared = symbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(context.CancellationToken);
+            if (passedToBase.Contains(symbol.Name) || declared is not ParameterSyntax parameter) {
                 continue;
             }
 
