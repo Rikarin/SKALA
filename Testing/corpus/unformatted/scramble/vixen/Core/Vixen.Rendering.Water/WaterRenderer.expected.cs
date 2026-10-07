@@ -1,5 +1,6 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
+
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.Core.Mathematics
@@ -69,6 +70,7 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
                 .UsedPermutationKeys,
             ConstantBinding = WaterKeys.ConstantBufferBinding
         };
+
         classify = new() {
             Name = WaterTilesKeys.ShaderName,
             ShaderName = WaterTilesKeys.ShaderName,
@@ -403,6 +405,7 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
     public
         bool LightFrom(SceneLighting lighting) {
         ArgumentNullException.ThrowIfNull(lighting);
+
         if (lighting.Sun?.Sun is
             not { } sun) {
             return false;
@@ -411,7 +414,6 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
         SunDirection = sun.Direction;
         SunColour =
             sun.Radiance;
-
         if (
             lighting.Environment is { } sky) {
             // Y₀ · 4π = 3.5449, so the mean radiance is the coefficient over that — which is the same
@@ -429,6 +431,7 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
         CompositorFrame frame
     ) {
         ArgumentNullException.ThrowIfNull(frame);
+
         if (string.Equals(Behind, Output, StringComparison.Ordinal)) {
             throw new CompositorBindingException(
                 ToString(),
@@ -452,7 +455,7 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
     /// </remarks>
     string? Declare(GraphicsCompositor compositor, CompositorFrame frame) {
         if (Samplers is null || pass.Device is null) {
-// Nothing to run against. A document naming !Water in a host that has not wired the
+            // Nothing to run against. A document naming !Water in a host that has not wired the
             // renderer up should cost a frame with no water, not an exception — the same terms
             // !ScreenProbeGather and !SurfaceCache are built on.
             return
@@ -470,11 +473,11 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
         pass.Descriptors.Bindings.Clear();
         bindings.Clear();
         pass.ColourTargets.Add(Output);
-
         var tiles = Tile(compositor, frame);
 
         if (View is { } view) {
             CameraPosition = view.Position;
+
             if (Matrix4x4.Invert(view.ViewProjection, out var inverse)) {
                 InverseViewProjection = inverse;
             }
@@ -492,10 +495,9 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
         pass.Parameters.Set(WaterKeys.PhaseG, PhaseG);
         pass.Parameters.Set(WaterKeys.BehindScale, BehindScale);
         // ⚠ The frame's own sun and sky where there are any, because all three are photometric
-// quantities of the scene rather than settings of the document. See Lighting.
+        // quantities of the scene rather than settings of the document. See Lighting.
         var (direction, sunlight,
             sky) = Lighting();
-
         pass.Parameters.Set(WaterKeys.SunColour, sunlight);
         pass.Parameters.Set(WaterKeys.SunDirection, direction);
         pass
@@ -503,7 +505,6 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
         pass.Parameters.Set(WaterKeys.SurfaceF0, SurfaceF0);
         pass.Parameters.Set(WaterKeys.FoamColour, FoamColour);
         Read(WaterKeys.SceneColourCopyBinding, Behind);
-
         Read(WaterKeys.SceneDepthBinding, SceneDepth);
         Read(WaterKeys.WaterSurfaceBinding, Surface);
 
@@ -511,10 +512,10 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
 
         // ⚠ Bound even when the permutation is off, because a set is written wholly or not at all —
         // the same rule !AmbientCombine's stand-in planes follow. What switches the term off is the
-// permutation; what would happen without a binding is a descriptor the driver refuses.
-        Read(WaterKeys.ReflectionPlaneBinding, Reflections.Length > 0 ? Reflections : Behind);
 
-// The tile flags, on exactly those terms: declared and bound whether or not anything filled
+        // permutation; what would happen without a binding is a descriptor the driver refuses.
+        Read(WaterKeys.ReflectionPlaneBinding, Reflections.Length > 0 ? Reflections : Behind);
+        // The tile flags, on exactly those terms: declared and bound whether or not anything filled
         // them, because the untiled variant's set has the slot in it too.
         pass.BufferReads.Add(tiles.Buffer);
 
@@ -526,12 +527,12 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
                     tiles.Buffer
             }
         );
+
         bindings.Add(
             new() {
                 Binding = WaterKeys.PointSamplerBinding, Kind = DescriptorKind.Sampler, Sampler = Samplers.PointClamp
             }
         );
-
         bindings.Add(
             new() {
                 Binding = WaterKeys.LinearSamplerBinding,
@@ -540,6 +541,7 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
                     = Samplers.LinearClamp
             }
         );
+
         foreach (
             var binding in bindings) {
             pass.Descriptors.Bindings.Add(binding);
@@ -558,6 +560,7 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
         // a producer that has not declared itself yet.
         string? reason
             = null;
+
         if (tiles.Tiled) {
             BuildChild(classify, compositor, frame);
             reason = classify
@@ -565,6 +568,7 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
         }
 
         BuildChild(pass, compositor, frame);
+
         return reason ?? pass.Degraded;
     }
 
@@ -626,22 +630,21 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
         var target = described is { } size ? new Int2(size.Width, size.Height) : compositor.FrameSize;
         var tiled = Tiled && Pipelines is not null && target is { X: > 0, Y: > 0 };
         var count = tiled ? WaterTiles.CountFor(target) : default;
-        var name = $"{this}.Tiles";
+        var name
+            = $"{this}.Tiles";
         TileCount = count;
-        if (!
-            frame.HasBuffer(name)) {
+        if (!frame.HasBuffer(name)) {
             var description = new BufferDescription(
                 WaterTiles.Bytes(count),
                 BufferUsage.Storage,
                 tiled ? MemoryAccess.DeviceLocal : MemoryAccess.HostUpload,
                 name
             );
-
             // ⚠ Created when something fills it and *imported* when nothing does, and the difference is
             // a graph rule rather than a preference: a pass that reads a transient no earlier pass
             // wrote is refused by name — "the contents it would read are whatever was in that memory
             // last frame" — and the untiled variant binds this slot without ever indexing it. An
-// imported buffer is one whose contents are the host's business, which is exactly the
+            // imported buffer is one whose contents are the host's business, which is exactly the
             // claim being made.
             frame.Add(
                 name,
@@ -661,43 +664,47 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
             return new(false, default, target, name);
         }
 
-        classify.Groups = new(count.X, count.Y, 1);
+        classify.Groups = new(
+            count.X,
+            count
+                .Y,
+            1
+        );
         classify.Samplers = Samplers;
         classify.Descriptors.Allocator = pass.Descriptors.Allocator;
         classify.Parameters.Set(WaterTilesKeys.TileCount, count);
         classify.Parameters.Set(WaterTilesKeys.TargetSize, target);
-        classify.Reads.Clear()
-            ;
-        classify.BufferWrites.Clear();
-        classify.Descriptors.Bindings.Clear();
 
         classify
-            .Reads.Add(Surface);
-        classify.BufferWrites
-            .Add(name);
-        classify.Descriptors
-            .Bindings.Add(
+            .Reads.Clear();
+        classify.BufferWrites.Clear();
+        classify.Descriptors.Bindings.Clear();
+        classify.Reads
+            .Add(Surface);
+        classify.BufferWrites.Add(name);
+        classify.Descriptors.Bindings
+            .Add(
                 new() {
                     Binding = WaterTilesKeys.WaterSurfaceBinding,
-                    Kind = DescriptorKind
-                        .SampledTexture,
-                    Resource = Surface
+                    Kind = DescriptorKind.SampledTexture,
+                    Resource
+                        = Surface
                 }
             );
 
         classify.Descriptors.Bindings.Add(
             new() {
-                Binding = WaterTilesKeys.PointSamplerBinding,
+                Binding
+                    = WaterTilesKeys.PointSamplerBinding,
                 Kind = DescriptorKind.Sampler,
-                Sampler = Samplers
-                    !.PointClamp
+                Sampler = Samplers!.PointClamp
             }
         );
         classify.Descriptors.Bindings.Add(
             new() { Binding = WaterTilesKeys.TilesBinding, Kind = DescriptorKind.StorageBuffer, Resource = name }
         );
-
-        return new(true, count, target, name);
+        return
+            new(true, count, target, name);
     }
 
     /// <summary>The one word the untiled variant binds and never reads, made once.</summary>
@@ -712,13 +719,10 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
             return placeholder;
         }
 
-        placeholder = pass.Device !.CreateBuffer(description)
-            ;
-        pass.Device.Write(
-            placeholder,
-            0,
-            new byte [description.Size]
-        );
+        placeholder = pass.Device!.CreateBuffer(description);
+        pass.Device.Write(placeholder, 0, new byte[description.Size]);
+
+
         return placeholder;
     }
 
@@ -726,8 +730,7 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
     readonly record struct Tiling(
         bool Tiled,
         Int2 Count,
-        Int2
-            Target,
+        Int2 Target,
         string Buffer);
 
     /// <summary>Adds a sampled texture to the pass, and records that it is read.</summary>
@@ -736,10 +739,7 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
     ///     and the read is what orders this pass after whatever wrote it and keeps that producer from
     ///     being culled. One without the other is either a validation error or a race.
     /// </remarks>
-    void Read(
-        uint binding,
-        string resource
-    ) {
+    void Read(uint binding, string resource) {
         if (string.IsNullOrEmpty(resource)) {
             return;
         }
@@ -750,8 +750,8 @@ public sealed class WaterRenderer : SceneRenderer, IDisposable {
 
     /// <inheritdoc />
     public void Dispose() {
-        if
-            (disposed) {
+        if (disposed
+           ) {
             return;
         }
 

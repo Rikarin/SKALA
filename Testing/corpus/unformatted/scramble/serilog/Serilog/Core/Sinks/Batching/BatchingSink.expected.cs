@@ -1,12 +1,12 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // Copyright © Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
+
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ using
     System.Threading.Channels;
 
 // ReSharper disable UnusedParameter.Global, ConvertIfStatementToConditionalTernaryExpression, MemberCanBePrivate.Global, UnusedMember.Global, VirtualMemberNeverOverridden.Global, ClassWithVirtualMembersNeverInherited.Global, SuspiciousTypeConversion.Global
+
 namespace Serilog.Core.Sinks.Batching;
 
 /// <summary>
@@ -29,8 +30,8 @@ sealed
         , IAsyncDisposable
 #endif
 { // Buffers events from the write- to the read side.
-
     readonly Channel<LogEvent> _queue;
+
 
     // These fields are used by the write side to signal shutdown.
     // A mutex is required because the queue writer `Complete()` call is not idempotent and will throw if
@@ -43,8 +44,8 @@ sealed
 
     // The write side can wait on this to ensure shutdown has completed.
     readonly Task _runLoop;
-    // Used only by the read side.
 
+    // Used only by the read side.
     readonly IBatchedLogEventSink _targetSink;
 
     readonly int
@@ -54,6 +55,7 @@ sealed
     readonly FailureAwareBatchScheduler _batchScheduler;
     readonly Queue<LogEvent> _currentBatch = new();
     readonly Task _waitForShutdownSignal;
+
     Task<bool>? _cachedWaitToRead;
     ILoggingFailureListener _failureListener = SelfLog.FailureListener;
 
@@ -83,7 +85,6 @@ sealed
                 "The retry time limit must not be negative."
             );
         _targetSink = batchedSink ?? throw new ArgumentNullException(nameof(batchedSink));
-
         _batchSizeLimit = options.BatchSizeLimit;
         _queue = options.QueueLimit is { } limit
             ? Channel.CreateBounded<LogEvent>(
@@ -95,7 +96,6 @@ sealed
         _eagerlyEmitFirstEvent = options.EagerlyEmitFirstEvent;
         _waitForShutdownSignal = Task.Delay(Timeout.InfiniteTimeSpan, _shutdownSignal.Token)
             .ContinueWith(e => e.Exception, TaskContinuationOptions.OnlyOnFaulted);
-
         // The conditional here is no longer required in .NET 8+ (dotnet/runtime#82912)
         using (ExecutionContext.IsFlowSuppressed()
                    ? (IDisposable?)null
@@ -123,7 +123,6 @@ sealed
                     logEvent)
             );
         if (_shutdownSignal.IsCancellationRequested)
-
             return;
 
         _queue.Writer.TryWrite(logEvent);
@@ -135,7 +134,6 @@ sealed
         do { // Code from here through to the `try` block is expected to be infallible. It's structured this way because
             // any failure modes within it haven't been accounted for in the rest of the sink design, and would need
             // consideration in order for the sink to function robustly (i.e. to avoid hot/infinite looping).
-
             var fillBatch = Task.Delay(_batchScheduler.NextInterval);
             do {
                 while (_currentBatch.Count < _batchSizeLimit
@@ -172,7 +170,6 @@ sealed
                     ex
                 );
                 _batchScheduler.MarkFailure(out var shouldDropBatch, out var shouldDropQueue);
-
                 if (shouldDropBatch
                    ) {
                     _failureListener.OnLoggingFailed(
@@ -189,7 +186,7 @@ sealed
                     DrainOnFailure(LoggingFailureKind.Permanent, "dropping all queued events", ex);
                 }
 
-// Wait out the remainder of the batch fill time so that we don't overwhelm the server. With each
+                // Wait out the remainder of the batch fill time so that we don't overwhelm the server. With each
                 // successive failure the interval will increase. Needs special handling so that we don't need to
                 // make `fillBatch` cancellable (and thus fallible).
                 await Task.WhenAny(fillBatch, _waitForShutdownSignal).ConfigureAwait(false);
@@ -239,6 +236,7 @@ sealed
     ) {
         const int bufferLimit = 1024;
         var buffer = new List<LogEvent>();
+
         // Not ideal, uses some CPU capacity unnecessarily and doesn't complete in bounded time. The goal is
         // to reduce memory pressure on the client if the server is offline for extended periods. May be
         // worth reviewing and possibly abandoning this.
@@ -262,8 +260,8 @@ sealed
     ) {
         var waitToRead = _cachedWaitToRead ?? reader.WaitToReadAsync(cancellationToken).AsTask();
         _cachedWaitToRead = null;
-        var completed = await Task.WhenAny(timeout, waitToRead).ConfigureAwait(false);
 
+        var completed = await Task.WhenAny(timeout, waitToRead).ConfigureAwait(false);
         // Avoid unobserved task exceptions in the cancellation and failure cases. Note that we may not end up observing
         // read task cancellation exceptions during shutdown, may be some room to improve.
         if (completed is { Exception: not null, IsCanceled: false }) {
@@ -285,6 +283,7 @@ sealed
         }
 
         if (waitToRead.Status is not TaskStatus.RanToCompletion) return false;
+
         return await waitToRead;
     }
 
@@ -295,22 +294,29 @@ sealed
     }
 
     /// <inheritdoc/>
-    public void
-        Dispose() {
+    public void Dispose(
+    ) {
         SignalShutdown();
 
         try {
-            _runLoop.Wait();
-        } catch
-            (Exception ex) {
+            _runLoop
+                .Wait();
+        } catch (Exception
+                 ex) {
             // E.g. the task was canceled before ever being run, or internally failed and threw
             // an unexpected exception.
-            _failureListener
-                .OnLoggingFailed(this, LoggingFailureKind.Final, "caught exception during disposal", events: null, ex);
+            _failureListener.OnLoggingFailed(
+                this,
+                LoggingFailureKind.Final,
+                "caught exception during disposal",
+                events: null,
+                ex
+            );
         }
 
         (_targetSink as IDisposable)?.Dispose();
     }
+
 #if FEATURE_ASYNCDISPOSABLE
         /// <inheritdoc/>
         public async ValueTask DisposeAsync()
@@ -337,8 +343,8 @@ sealed
 
     void SignalShutdown() {
         lock (_stateLock) {
-            if
-                (!_shutdownSignal.IsCancellationRequested) {
+            if (!
+                _shutdownSignal.IsCancellationRequested) {
                 // Relies on synchronization via `_stateLock`: once the writer is completed, subsequent attempts to
                 // complete it will throw.
                 _queue.Writer.Complete();

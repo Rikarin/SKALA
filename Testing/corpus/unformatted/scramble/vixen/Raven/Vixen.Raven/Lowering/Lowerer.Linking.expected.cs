@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -70,10 +70,9 @@ public sealed partial class Lowerer {
         // Names the compilation is going to use, reserved before a library gets to keep one. Source
         // wins by construction rather than by luck: a library's `Saturate` gives way to the
         // shader's, which is the same precedence a shadowed type name gets.
-        var link =
-            new ReferenceLink(this, loader, ReserveDeclaredNames(declaredTypes));
+        var link = new
+            ReferenceLink(this, loader, ReserveDeclaredNames(declaredTypes));
         link.LinkStructs();
-
         return link;
     }
 
@@ -86,40 +85,46 @@ public sealed partial class Lowerer {
     /// </remarks>
     HashSet<string> ReserveDeclaredNames(IReadOnlyList<NamedTypeSymbol> declaredTypes) {
         HashSet<string> names = new(StringComparer.Ordinal);
+
+
         foreach (var type in declaredTypes) {
-            if (
-                type.TypeKind is not (TypeKind.Shader or TypeKind.Struct)) {
+            if (type
+                    .TypeKind is not (TypeKind.Shader or TypeKind.Struct)) {
                 continue;
             }
 
-            if (type.TypeKind
-                == TypeKind
-                    .Struct) {
-                names.Add(type.Name);
+            if
+                (type.TypeKind == TypeKind.Struct) {
+                names.Add(
+                    type
+                        .Name
+                );
             } else {
                 names.Add($"{type.Name}.<init>");
             }
 
-            foreach (var
-                         (name, _, _) in MemberBodies(type, report: false)) {
+            foreach (var (
+                         name, _, _) in MemberBodies(type, report: false)) {
                 names.Add(name);
             }
         }
+
 
         return names;
     }
 
     /// <summary>One compilation's worth of linking, in the two stages the ordering requires.</summary>
     sealed class ReferenceLink {
-        readonly LibraryIrDecoder decoder;
+        readonly
+            LibraryIrDecoder decoder;
+
         readonly MetadataLoader loader;
         readonly Lowerer lowerer;
         readonly HashSet<string> taken;
 
         public ReferenceLink(Lowerer lowerer, MetadataLoader loader, HashSet<string> taken) {
             this.lowerer = lowerer;
-            this
-                .loader = loader;
+            this.loader = loader;
             this.taken = taken;
             decoder = new(Unique);
         }
@@ -128,15 +133,13 @@ public sealed partial class Lowerer {
         ///     Decodes every library's structs into the module and maps the metadata types onto
         ///     them, so a source signature may mention a library struct.
         /// </summary>
-        public void
-            LinkStructs() {
+        public void LinkStructs
+            () {
             foreach (var library in loader.Libraries) {
-                decoder.DecodeStructs(library.Ir)
-                    ;
+                decoder.DecodeStructs(library.Ir);
             }
 
-            Publish()
-                ;
+            Publish();
             foreach (var type in Types()) {
                 if (type.IrStructName is { } name && decoder.Structs.GetValueOrDefault(name) is { } structType) {
                     lowerer.structs[type] = structType;
@@ -149,12 +152,12 @@ public sealed partial class Lowerer {
         ///     them, so a call bound against a library resolves to a real callee.
         /// </summary>
         public void LinkFunctions() {
-            decoder.DecodeFunctions()
-                ;
+            decoder.DecodeFunctions();
 
             // Publish again: resolving a signature can name a struct no loaded library declares,
             // and the placeholder that stands in for it still has to reach the module.
             Publish();
+
             foreach (var type in Types()) {
                 foreach (var member in type.GetMembers()) {
                     Map(member);
@@ -166,12 +169,14 @@ public sealed partial class Lowerer {
         ///     Adds anything the decoder has produced but the module has not seen, remembering the
         ///     artefact key each entity was reached by so a library built here can re-record it.
         /// </summary>
-        void Publish
-            () {
-            foreach
-                (var (name, structType) in decoder.Structs) {
-                if (lowerer.importedStructs.Add(structType)) {
-                    lowerer.importedStructNames[structType] = name;
+        void Publish(
+        ) {
+            foreach (
+                var (name, structType) in decoder.Structs) {
+                if (lowerer.importedStructs
+                    .Add(structType)) {
+                    lowerer
+                        .importedStructNames[structType] = name;
                     lowerer.importedStructsByName[structType.Name] = structType;
                     lowerer.module.Add(structType);
                 }
@@ -185,33 +190,33 @@ public sealed partial class Lowerer {
             }
         }
 
-        void Map(Symbol member) {
+        void Map(
+            Symbol member
+        ) {
             switch (member) {
                 case MetadataMethodSymbol { IrFunctionName: { } name } method: {
-                    if (
-                        decoder.Functions.GetValueOrDefault(name) is { } function) {
+                    if (decoder.Functions.GetValueOrDefault(name) is { } function) {
                         var kind = method.IsConstructor ? BoundBodyKind.Constructor : BoundBodyKind.Method;
                         lowerer.functions[(method, kind)] = function;
                     }
 
                     break;
                 }
-
                 case MetadataPropertySymbol property: {
                     if (property.IrGetterName is { } getter
                         && decoder.Functions.GetValueOrDefault(getter) is { } getterFunction) {
-                        lowerer
-                            .functions[(property, BoundBodyKind.PropertyGetter)] = getterFunction;
+                        lowerer.functions
+                            [(property, BoundBodyKind.PropertyGetter)] = getterFunction;
                     }
 
-                    if (
-                        property.IrSetterName is { } setter
-                        && decoder.Functions.GetValueOrDefault(setter) is { } setterFunction) {
-                        lowerer.functions[(property, BoundBodyKind.PropertySetter)] =
-                            setterFunction;
+                    if (property.IrSetterName is { } setter
+                        && decoder
+                            .Functions.GetValueOrDefault(setter) is { } setterFunction) {
+                        lowerer.functions[(property, BoundBodyKind.PropertySetter)] = setterFunction;
                     }
 
-                    break;
+                    break
+                        ;
                 }
             }
         }
@@ -229,16 +234,16 @@ public sealed partial class Lowerer {
         ///     reached by its artefact key, and the name is only what it ends up called.
         /// </remarks>
         string Unique(string name) {
-            if
-                (taken.Add(name)) {
+            if (taken
+                .Add(name)) {
                 return name;
             }
 
             var candidate = $"{name}#1";
             var suffix = 2;
 
-            while
-                (!taken.Add(candidate)) {
+            while (!
+                   taken.Add(candidate)) {
                 candidate = $"{name}#{suffix++}";
             }
 

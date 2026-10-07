@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -37,6 +37,7 @@ public class CliTests : IDisposable {
 // Exactly what the README says: raven compile --target glsl <input> <output>
         var exitCode =
             Invoke("compile", "--target", "glsl", Fixture("lambert.rvn"), At(""));
+
         Assert.Equal(0, exitCode);
         Assert.True(File.Exists(At("Lambert.vert.glsl")));
         Assert.True(File.Exists(At("Lambert.frag.glsl")));
@@ -58,7 +59,6 @@ public class CliTests : IDisposable {
             .Parse(["compile", Fixture("lambert.rvn"), At("verbose"), "--verbose"])
             .Invoke()
             ;
-
         Assert.Contains("Lambert.vert.glsl", verbose.ToString());
         Assert.Contains("Lambert.frag.glsl", verbose.ToString());
     }
@@ -88,7 +88,7 @@ public class CliTests : IDisposable {
     [Fact]
     public void A_named_file_cannot_hold_more_than_one_stage() {
         // Two stages need two files, and guessing a second name would be worse
-        // than saying so.
+// than saying so.
         Assert.Equal(
             2,
             Invoke(
@@ -132,8 +132,9 @@ public class CliTests : IDisposable {
 
             """
         );
-
         Assert.Equal(1, Invoke("compile", input, At("")));
+
+
         var reported = error.ToString();
         Assert.Contains("bad.rvn(6,23): error RVN2010", reported)
             ;
@@ -167,7 +168,6 @@ public class CliTests : IDisposable {
         // one, so it stays host-side data and SPIR-V says so — once, however many stages
         // come out of the shader.
         Assert.Equal(0, Invoke("compile", "-t", "spirv", Fixture("lambert.rvn"), At("")));
-
         var reported = error
             .ToString();
         Assert.Contains("info RVN4003", reported);
@@ -184,7 +184,6 @@ public class CliTests : IDisposable {
         Assert.Equal(0x02, binary[1]);
         Assert.Equal(0x23, binary[2]);
         Assert.Equal(0x07, binary[3]);
-
         // The listing is a separate file, because the .spv itself is unreadable.
         Assert.StartsWith("; SPIR-V", File.ReadAllText(At("Lambert.frag.spvasm")));
     }
@@ -230,6 +229,7 @@ public class CliTests : IDisposable {
 
             """
         );
+
         Assert.Equal(1, Invoke("compile", input, At("")));
         Assert.Contains("no entry points", error.ToString());
     }
@@ -256,6 +256,7 @@ public class CliTests : IDisposable {
 
         Assert.Equal(0, Invoke("compile", library, At("Math.rvnlib"), "--emit-library"));
         Assert.True(File.Exists(At("Math.rvnlib")));
+
         var consumer = Write(
             "lit.rvn",
             """
@@ -275,7 +276,6 @@ public class CliTests : IDisposable {
 
             """
         );
-
         Assert.Equal(0, Invoke("compile", consumer, At("out"), "--reference", At("Math.rvnlib")));
 
         // The library's body, linked in and emitted as an ordinary function.
@@ -348,25 +348,20 @@ public class CliTests : IDisposable {
             : (int)ExitCode.UsageError;
 
     ParseResult Parse(
-        params string[
-        ] args
+        params string[]
+            args
     ) =>
         RavenCommand.Create(output, error).Parse(args);
 
     string At(string relative) => Path.Combine(directory, relative);
 
-    string Write(
-        string name,
-        string source
-    ) {
+    string Write(string name, string source) {
         var path = At(name);
         File.WriteAllText(path, source);
-
         return path;
     }
 
-    static int
-        Occurrences(string text, string value) {
+    static int Occurrences(string text, string value) {
         var count = 0;
         for (var i = text.IndexOf(value, StringComparison.Ordinal);
              i >= 0;
@@ -378,5 +373,13 @@ public class CliTests : IDisposable {
     }
 
     // bin/Debug/net10.0 -> Tests project root -> Fixtures
-    static string Fixture(string file) => Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Fixtures", file);
+    static string Fixture(string file) =>
+        Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "Fixtures",
+            file
+        );
 }

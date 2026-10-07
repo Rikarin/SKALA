@@ -288,6 +288,12 @@ public static class SpaceRules {
             return next.Parent is RangeExpressionSyntax { LeftOperand: not null };
         }
 
+        // A subpattern's colon (#419): `{ X: 1 }`, `{ X : 1 }`, `{ Q.X : 1 }` and `(A : 1, B : _)` all
+        // come back as written, a run collapses to one, and no colon key moves it.
+        if (next.IsKind(SyntaxKind.ColonToken)) {
+            return next.Parent is BaseExpressionColonSyntax { Parent: SubpatternSyntax };
+        }
+
         return next.IsKind(SyntaxKind.OpenParenToken) && FollowsItsPatternType(next);
     }
 
@@ -315,6 +321,18 @@ public static class SpaceRules {
 
         if (left == SyntaxKind.ColonToken && prev.Parent is AttributeTargetSpecifierSyntax) {
             return o.SpaceAfterAttributeColon;
+        }
+
+        // ── Expression braces ────────────────────────────────────────────────────────────────
+        // ⚠ Ahead of every other rule, because the gap inside one belongs to the brace whatever stands
+        // beside it: `{(1, 2)}`, `{[1] = 2}`, `{{1, 2}}` and `{() => { }}` were each answered by the
+        // parenthesis, bracket or nested brace and kept their space at the key's `false` (#419).
+        if (left == SyntaxKind.OpenBraceToken && IsExpressionBrace(prev.Parent)) {
+            return WithinBraces(prev.Parent, next, o);
+        }
+
+        if (right == SyntaxKind.CloseBraceToken && IsExpressionBrace(next.Parent)) {
+            return WithinBraces(next.Parent, prev, o);
         }
 
         // ── Parentheses ──────────────────────────────────────────────────────────────────────
@@ -452,18 +470,23 @@ public static class SpaceRules {
         // `case NamedTypeSymbol { TypeKind: TypeKind.Enum }:` reached the brace rule first, which
         // asks only what clings to the left, and put a space in front of the colon.
         // ── Colons ───────────────────────────────────────────────────────────────────────────
+        // ⚠ A constructor initializer's colon is the inheritance clause's, on both sides, and a named
+        // argument's — in a call, an attribute or a tuple — is the attribute colon's (#419). Measured
+        // with every colon key flipped one at a time over the export, each colon written closed and
+        // spaced on both sides: `space_before_colon_in_inheritance_clause = false` gives `C(): base()`
+        // and `C(string s): this()` beside `class C: B`, its `after` twin gives `C() :base()`, and
+        // `space_before_attribute_colon = true` gives `M(a : 1)`, `(a : 1, b : 2)` and
+        // `[Obsolete("x", error : false)]` beside `[return : Obsolete]`. The remark that used to stand
+        // here — "C# spends one space here whatever it says" — measured
+        // `space_before_colon_in_ctor_initializer`, which really is inert, and never asked this key. A
+        // primary constructor's or a record's base call needs no arm: its colon is the base list's.
+        // The colon in a property or positional subpattern is no key's: `Ungoverned` keeps the author's
+        // gap in front of it, and one space follows it at every value of every colon key.
         if (right == SyntaxKind.ColonToken) {
             return next.Parent switch {
-                BaseListSyntax => o.SpaceBeforeColonInInheritance,
+                BaseListSyntax or ConstructorInitializerSyntax => o.SpaceBeforeColonInInheritance,
                 TypeParameterConstraintClauseSyntax => o.SpaceBeforeTypeParameterConstraintColon,
-                // ⚠ Not `space_before_colon_in_ctor_initializer`, which the C# formatter does not
-                // read. Measured on `public C() : base(1)` beside `public C(int a): this()` — one
-                // written with the space and one without, so the probe could see an insertion and a
-                // removal — one key flipped at a time over the export: at `true` and at `false`
-                // alike the oracle returns both as ` : `. The key is in ReSharper's export beside
-                // `space_before_colon_in_bitfield_declarator` and the rest of the C++ colon family;
-                // C# spends one space here whatever it says.
-                ConstructorInitializerSyntax or PrimaryConstructorBaseTypeSyntax => true,
+                NameColonSyntax { Parent: ArgumentSyntax or AttributeArgumentSyntax } => o.SpaceBeforeAttributeColon,
                 SwitchLabelSyntax => o.SpaceBeforeColonInCase,
                 ConditionalExpressionSyntax => o.SpaceBeforeTernaryColon,
                 _ => false
@@ -472,9 +495,9 @@ public static class SpaceRules {
 
         if (left == SyntaxKind.ColonToken) {
             return prev.Parent switch {
-                BaseListSyntax => o.SpaceAfterColonInInheritance,
+                BaseListSyntax or ConstructorInitializerSyntax => o.SpaceAfterColonInInheritance,
                 TypeParameterConstraintClauseSyntax => o.SpaceAfterTypeParameterConstraintColon,
-                ConstructorInitializerSyntax or PrimaryConstructorBaseTypeSyntax => true,
+                NameColonSyntax { Parent: ArgumentSyntax or AttributeArgumentSyntax } => o.SpaceAfterAttributeColon,
                 SwitchLabelSyntax => o.SpaceAfterColonInCase,
                 ConditionalExpressionSyntax => o.SpaceAfterTernaryColon,
                 _ => true
@@ -916,8 +939,11 @@ public static class SpaceRules {
 
     /// <summary>The gap just inside a brace, on whichever side.</summary>
     static bool WithinBraces(SyntaxNode? owner, SyntaxToken other, in PhaseOneOptions o) {
-        // `{ }` — empty_block_style = together with space_within_empty_braces = true.
-        if (other.Kind() is SyntaxKind.CloseBraceToken or SyntaxKind.OpenBraceToken) {
+        // `{ }` — empty_block_style = together with space_within_empty_braces = true. ⚠ Only the brace's
+        // own partner makes the pair empty: in `{ 1 }}` and `{{1, 2}` the two braces belong to two
+        // pairs, and reading any brace beside a brace as empty wrote `new P { Q = { X = 1 }}` at
+        // `space_within_empty_braces = false`, where the oracle keeps both spaces (#419).
+        if (other.Kind() is SyntaxKind.CloseBraceToken or SyntaxKind.OpenBraceToken && other.Parent == owner) {
             return o.SpaceWithinEmptyBraces;
         }
 
@@ -938,14 +964,22 @@ public static class SpaceRules {
                 o.SpaceInSinglelineAnonymousMethod,
             BlockSyntax { Parent: BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax } =>
                 o.SpaceInSinglelineMethod,
-            InitializerExpressionSyntax initializer =>
-                initializer.IsKind(SyntaxKind.ArrayInitializerExpression)
-                || initializer.IsKind(SyntaxKind.CollectionInitializerExpression)
-                    ? o.SpaceWithinSingleLineArrayInitializerBraces
-                    : true,
+            // ⚠ Every expression brace, not only an array's or a collection's (#419). Measured with
+            // `space_within_single_line_array_initializer_braces = false`: an object initializer, a
+            // nested member initializer, a dictionary's `[1] = 2` and `{ 1, 2 }` elements, an anonymous
+            // object, a `with` and a property pattern all close up — `new P {X = 1}`, `new {X = 1}`,
+            // `r with {A = 2}`, `o is P {X: 1}` — and no other brace key moves them.
+            _ when IsExpressionBrace(owner) => o.SpaceWithinSingleLineArrayInitializerBraces,
             _ => true
         };
     }
+
+    /// <summary>
+    ///     A brace pair that delimits an expression's or a pattern's contents rather than a body, whose
+    ///     inside the array-initializer key governs whatever kind of initializer it is.
+    /// </summary>
+    static bool IsExpressionBrace(SyntaxNode? owner) =>
+        owner is InitializerExpressionSyntax or AnonymousObjectCreationExpressionSyntax or PropertyPatternClauseSyntax;
 
     static bool IsMemberAccessPunctuation(SyntaxToken token) =>
         token.Kind() is SyntaxKind.DotToken or SyntaxKind.MinusGreaterThanToken

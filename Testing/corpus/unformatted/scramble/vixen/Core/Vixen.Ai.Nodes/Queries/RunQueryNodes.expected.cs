@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -110,13 +110,11 @@ public sealed class RunQueryService(QueryBinding binding) : BehaviorService {
     public override void Tick(in BehaviorContext context, Span<byte> state, float delta) {
         var
             agent = context.Agent;
-
         if (QueryRunner.Run(in agent, in binding, results)) {
             return;
         }
 
-        if (binding.Result is { IsValid : true } result
-           ) {
+        if (binding.Result is { IsValid: true } result) {
             agent.Blackboard.Clear(result);
         }
 
@@ -127,23 +125,20 @@ public sealed class RunQueryService(QueryBinding binding) : BehaviorService {
 }
 
 /// <summary>The half a task and a service share: build the origin, run, write the keys.</summary>
-static
-    class QueryRunner {
-    public static bool Run(in AgentContext context, in QueryBinding binding, QueryResults results) {
+static class QueryRunner {
+    public static
+        bool Run(in AgentContext context, in QueryBinding binding, QueryResults results) {
         if (binding.Query is null || !context.World.Has<LocalTransform>(context.Entity)) {
             return false;
         }
 
-        var here = context.World.Read<LocalTransform>(context.Entity).Position;
-        var origin = new QueryOrigin(
-            here,
-            Vector3
-                .Zero
-        );
-        if (binding.Context is {
-                IsValid:
-                true
-            } about
+        var here = context.World.Read<
+                LocalTransform>(context.Entity)
+            .Position;
+        var
+            origin = new QueryOrigin(here, Vector3.Zero);
+
+        if (binding.Context is { IsValid: true } about
             && AgentTarget.TryResolve(in context, about, out var at, out var entity)) {
             origin = new(here, at, true, entity);
         }
@@ -152,21 +147,16 @@ static
             return false;
         }
 
-        if
-            (binding.Result is { IsValid: true } result) {
-            context.Blackboard.SetVector3(
-                result,
-                best
-                    .Position
-            );
+        if (binding.Result is { IsValid: true } result) {
+            context.Blackboard.SetVector3(result, best.Position);
         }
 
         if (binding.ResultEntity is not { IsValid: true } named) {
             return true;
         }
 
-        if
-            (best.Entity.IsNull) {
+        if (
+            best.Entity.IsNull) {
             context.Blackboard.Clear(named);
         } else {
             context.Blackboard.SetEntity(named, best.Entity);

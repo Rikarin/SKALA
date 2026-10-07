@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // Copyright 2013-2020 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,7 @@ public static class
     /// <returns>A predicate for matching events.</returns>
     public
         static Func<LogEvent, bool> FromSource<TSource>() {
-        return WithProperty(Constants.SourceContextPropertyName, typeof(TSource).FullName !);
+        return WithProperty(Constants.SourceContextPropertyName, typeof(TSource).FullName!);
     }
 
     /// <summary>
@@ -40,7 +40,6 @@ public static class
     /// <exception cref="ArgumentNullException">When <paramref name="source"/> is <code>null</code></exception>
     public static Func<LogEvent, bool> FromSource(string source) {
         Guard.AgainstNull(source);
-
         return WithProperty<string>(
             Constants.SourceContextPropertyName,
             s =>
@@ -80,7 +79,6 @@ public static class
         object scalarValue
     ) {
         Guard.AgainstNull(propertyName);
-
         var scalar = new
             ScalarValue(scalarValue);
         return e => e.Properties.TryGetValue(
@@ -102,7 +100,6 @@ public static class
     public static Func<LogEvent, bool> WithProperty<TScalar>(string propertyName, Func<TScalar, bool> predicate) {
         Guard.AgainstNull(propertyName);
         Guard.AgainstNull(predicate);
-
         return e => {
             if
                 (!e.Properties.TryGetValue(propertyName, out var propertyValue)) return false;

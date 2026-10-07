@@ -1,16 +1,16 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // Copyright 2013-2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-
 // You may obtain a copy of the License at
+
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
-
 // distributed under the License is distributed on an "AS IS" BASIS,
+
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -67,8 +67,10 @@ static class MessageTemplateRenderer {
     ) {
         if (!properties.TryGetValue(pt.PropertyName, out var propertyValue)) {
             output.Write(pt.RawText);
+
             return;
         }
+
 
         if (!pt.Alignment.HasValue) {
             RenderValue(propertyValue, isLiteral, isJson, output, pt.Format, formatProvider);
@@ -78,7 +80,6 @@ static class MessageTemplateRenderer {
         using var valueOutput = ReusableStringWriter.GetOrCreate();
         RenderValue(propertyValue, isLiteral, isJson, valueOutput, pt.Format, formatProvider);
         var sb = valueOutput.GetStringBuilder();
-
         if (sb.Length >= pt.Alignment.Value.Width) {
 #if FEATURE_WRITE_STRINGBUILDER
             output.Write(sb);

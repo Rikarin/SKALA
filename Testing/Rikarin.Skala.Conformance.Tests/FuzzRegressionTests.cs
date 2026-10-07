@@ -75,6 +75,9 @@ public sealed class FuzzRegressionTests {
     // block comment hid the list's point after the comma, so pass one chopped `nameof(` instead and
     // pass two re-joined it.
     [InlineData(7005158519080377895UL)]
+    // #419 (found by `fuzz --seed=4190420`): a subpattern's `{ P62` / `: null }` joined as `P62 : null`
+    // indented and `P62: null` not, because the preserved gap read the next line's indent as a space.
+    [InlineData(7764980540680690061UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

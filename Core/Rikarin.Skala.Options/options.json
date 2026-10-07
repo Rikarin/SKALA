@@ -6884,7 +6884,7 @@
       "oracle": null,
       "templateLine": 1001,
       "expands": [],
-      "inert": "Asked at both values on `public C() : base(1)` beside `public C(int a): this()` — one written with the space and one without, so an insertion and a removal were both visible — the oracle returns both as ` : `. It is an unprefixed export key sitting among the C++ colon family (`space_before_colon_in_bitfield_declarator`, `space_before_for_colon` and the rest); the C# formatter spends one space in front of a constructor initializer's colon and offers no way to ask for none."
+      "inert": "Asked at both values on `public C() : base(1)` beside `public C(int a): this()` — one written with the space and one without, so an insertion and a removal were both visible — the oracle returns both as ` : `. It is an unprefixed export key sitting among the C++ colon family (`space_before_colon_in_bitfield_declarator`, `space_before_for_colon` and the rest). ⚠ That colon is not ungoverned: it is `space_before_colon_in_inheritance_clause`'s, which gives `C(): base(1)` at `false` and moves it in both directions (#419). This key is the one that does nothing."
     },
     {
       "key": "skala_space_before_colon_in_inheritance_clause",
