@@ -78,7 +78,7 @@ public sealed class QueryableDegradedToEnumerableAnalyzer : DiagnosticAnalyzer {
         var invocation = (InvocationExpressionSyntax)context.Node;
         if (invocation.Expression is not MemberAccessExpressionSyntax access
             || context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol method) {
+                is not IMethodSymbol method) {
             return;
         }
 

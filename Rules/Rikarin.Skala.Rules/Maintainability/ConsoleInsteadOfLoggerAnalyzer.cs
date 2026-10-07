@@ -119,7 +119,7 @@ public sealed class ConsoleInsteadOfLoggerAnalyzer : DiagnosticAnalyzer {
         // the routing the rule is asking for rather than the finding.
         return invocation.Expression is MemberAccessExpressionSyntax { Expression: { } receiver }
             && context.SemanticModel.GetSymbolInfo(receiver, context.CancellationToken).Symbol
-            is IPropertySymbol property
+                is IPropertySymbol property
             && SymbolEqualityComparer.Default.Equals(property.ContainingType, console);
     }
 

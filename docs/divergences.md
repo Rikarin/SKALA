@@ -7511,7 +7511,7 @@ and joins and chops at `always` without the comment (#438).
 
 - options: the six `skala_place_*_attribute_on_same_line` keys and
   `skala_keep_existing_attribute_arrangement`, none of which moves the last gap when a comment is in it.
-- ⚠ status: **resolved** except the terminator corner, which is **open** (#438). Pinned by
+- ⚠ status: **resolved** except the terminator corner, which is **open** (#438, measured further in SK-DIV-0201). Pinned by
   `AttributeCommentIssue434Tests` and `constructs/breaks/comment-after-the-last-attribute.cs`.
 
 ## SK-DIV-0200 — after a block comment that spans lines, an `=` or an arrow keeps its value on the comment's line
@@ -7550,7 +7550,7 @@ string and a disabled block still advance it.
 Measured beside it and not this entry: `c /* a` / `b */ ? 1 : 2` is chopped at both `?` and `:` by the
 oracle, where Skala breaks before `?` only; `new[] { /* a` / `b */ 1, 2 }` keeps `1` after the comment and
 `new List<int> { /* a` / `b */ 1 }` breaks after it, where Skala breaks both; and `o is /* a` / `b */ string`
-in an expression body, which Skala breaks before `is` (all three #440).
+in an expression body, which Skala breaks before `is` (all three #440, resolved as SK-DIV-0205).
 
 - options: none.
 - ⚠ status: **resolved**. Pinned by `MultiLineCommentPointIssue435Tests` and
@@ -7630,4 +7630,205 @@ so the break pays the statement's continuation level. What stays open is SK-DIV-
   same column, and so does `arr[` / `1]`.
 
 - options: `skala_indent_pars`, `skala_align_tuple_components`
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0205 — the neighbours of a block comment that spans lines: a ternary, `is`/`as`, an array's opener, a fill
+
+#440 named three shapes SK-DIV-0200 measured beside it. Asked of `jb cleanupcode` 2025.2.6 under
+`SkalaFormatOnly`, each turned out to be a different defect, and the probes around them found two more:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `c /* a` / `b */ ? 1 : 2`, `c ? 1 /* a` / `b */ : 2`, a nested one, `Compute(c) /* a` / `b */ ? …` | chopped at both `?` and `:` | broken at one sign only |
+| `o is /* a` / `b */ string`, `o as /* a` / `b */ string`, `o /* a` / `b */ is string`, under `&&` and in an expression body | as written | broken before `is` |
+| `x.Long.Property is SomeType` past the margin, after an `=` that did not suffice, under `&&` | `… is` / `SomeType`, one level past the operand's line | `…` / `is SomeType` |
+| the same when breaking after the `=` alone fits | `=` / `… as SomeType` | broken before `as` |
+| `o` / `is string` written broken | kept | identical |
+| `x is not SomeType`, `is null`, `is string text` past the margin | after `is`, as above | not broken at all — an `is` pattern had no plan |
+| `if (x is` / `string)` and `while (…` as the whole condition | the type on the condition's aligned column | — |
+| `new[] { /* a` / `b */ 1, 2 }`, `new int[] {`, `int[] x = {`, `[/* a` / `b */ 1, 2]` | `1` kept after the comment | broken after it |
+| `new List<int> { /* a` / `b */ 1 }`, an object and a dictionary initializer | broken after the comment | identical |
+| `new[] { 1, 2, /* a` / `b */ 3 }` (a fill) | `1, 2, /* a` kept on one line | `1,` / `2, /* a` |
+| `new[] { 1, 2 /* a` / `b */, 3 }`, the same in a collection expression and a list pattern | `2 /* a` / `b */,` / `3` | `1,` / `2 /* a` / `b */, 3` |
+
+Five causes, one fix each:
+
+- ⚠ `BreakPlan.BreaksBeforeIn` read every `\n` in the gap as the author's break, and a block comment's own
+  line breaks are in the gap. The ternary keeps an author's break one sign at a time, so it pinned the one
+  sign the comment happened to precede and left the other flat. A newline inside a `/* */` or `/** */`
+  trivia no longer counts; the ternary's group then has no flat form and chops at both signs, as
+  everything else holding such a comment already did.
+- ⚠ `is` and `as` were planned as binary operators, so their break went *before* the keyword. They are
+  planned on their own now (`PlanTypeTest`): a last-resort point after the keyword, so an `=` in front
+  reads through it and breaks first when that alone fits, one level past the line it is on, and none of
+  its own as a statement's whole condition. An `is` pattern with no break point of its own is planned
+  the same way; one with `or`/`and`, a property, list or parenthesized pattern still wraps inside itself.
+  `StopsAtAMultiLineComment` gains the two keywords.
+- An array initializer's `{` and a collection expression's `[` head a fill rather than a chop, and the
+  oracle keeps the first element after a comment that spans lines there. They join
+  `StopsAtAMultiLineComment`; an object or collection initializer's `{` does not.
+- ⚠ A fill measured an item holding such a comment as infinitely wide, so the item before it moved to a
+  line of its own. `DocumentBuilder.MeasureSegments` now ends a segment at a moved comment's first
+  line, which is where the oracle's measure ends (`99999999, /* a comment that is long` moves down only
+  when that line does not fit). A raw string and a frozen comment keep their unbounded width.
+- An item ending in such a comment before its comma ends its line in a fill: the comment belongs to the
+  item, and the next point is a required break (`BreakPlan.EndsInAMultiLineComment`).
+
+⚠ The level also applies to an author's break kept *before* the keyword: `|| x` / `is null` and
+`… is not T` / `declaration` land one level past the operand's line. That reformatted 42 of Skala's own
+files; each was asked of the oracle, and 41 moved towards its output. The one that moved away is the
+last open row below.
+
+Measured beside it and left **open**: `return x.Long.Property as string` whose operand alone overflows,
+which the oracle breaks *before* `as`; `x is > 5 and < 10`, where the oracle breaks after the `=` and
+Skala at the `and`; an item that is itself multi-line in a fill (`new[] { 1, Compute(` … `), 4 }` puts
+`4` on a line of its own in the oracle; Skala keeps it and moves `Compute(` down); and an empty
+`new int[] { /* a` / `b */ }`, which the oracle closes on a line of its own. Each was the same before
+this entry. ⚠ One was new — a kept break before `is` in a lambda that is an argument, where this entry's
+level stacked on the argument list's — and is SK-DIV-0206, resolved.
+
+- options: `skala_wrap_ternary_expr_style`, `skala_wrap_array_initializer_style` and
+  `skala_align_multiline_statement_conditions` at their exported values.
+- ⚠ status: **resolved** except the four open rows. Pinned by `MultiLineCommentNeighboursIssue440Tests`
+  and `constructs/breaks/multi-line-comment-neighbours.cs`.
+
+## SK-DIV-0201 — when an attribute's join is declined past the margin
+
+#438 claimed, from four shapes, that the oracle declines to join an attribute exactly when the joined line
+overflows *only by its terminator* (`) { }` at 121 with the `)` at 117; a field whose value ends at 120
+before its `;`). Asked of `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly` on about a hundred generated
+shapes, each one column wider than the last from the 120-column margin, in two families: the placement
+key at `always` with no comment, and a block comment in the last gap (`[Obsolete] /* c */ public …`, which
+every placement key treats alike — SK-DIV-0199). "Declined" means the attribute alone on its line with the
+declaration whole below it.
+
+| joined line past the margin | `always`, no comment | comment in the gap |
+|---|---|---|
+| a method, `) { }`, the `)` at 117–120 | declined | declined |
+| the same, the `)` at 121 | joined, the parameters chopped | joined, the parameters chopped |
+| a method with a block body, `) {` past, the `)` at 119–120 | declined | declined |
+| an abstract method, the `)` past | joined, the parameters chopped | — |
+| a field `= a + b + …;` whose value ends at 120 | declined | declined |
+| a field whose value ends at 121–128 | joined, the `=` broken | **declined** (identifiers); declined at 121 and joined at 134 (literals) |
+| `{ get; set; }` 1–9 columns past | joined, the accessor list expanded | declined |
+| `{ get; set; } = …;` 1–7 past | joined, the `=` broken | joined, the `=` broken |
+| a property `=> …;`, 1 past / 3–7 past | joined, the arrow broken | declined / joined, the arrow broken |
+| a method `=> …;`, 1–2 past | joined, the arrow broken | joined, the arrow broken |
+| `= Compute(a, …);` whose `)` ends at 120 / past it | declined / joined, the call chopped | declined / joined, the call chopped |
+| an event field, 1–3 past | declined | — |
+
+**At `always` the claim holds**, and it is now Skala's rule: the join is declined exactly when the joined
+line overflows by its terminator alone — `;` after a field's value (and, by analogy and not measured at
+121, an abstract signature), ` { }` after
+an empty body, ` {` before a block body — and kept otherwise, the declaration wrapping inside itself. An
+expression body is no terminator (the arrow breaks), nor is an accessor list (it expands); an event field
+has nothing the oracle wraps inside it, so any overflow declines. `BreakPlan.TerminatorOf` gives each owner
+its terminator, and the join's point is a group whose `GroupFacts.Terminator` asks the fitter exactly that
+question. ⚠ A break the author wrote inside the signature — pass two of a joined line whose `=` wrapped —
+skips the group: the head measure reads through a kept point, so the second pass measured the line one
+column short and declined what the first had joined. Local functions are not covered: the oracle never
+joins their attribute at `always`, a divergence of its own.
+
+⚠ **With a comment in the gap the claim is refuted.** A field whose value runs past the margin is still
+declined, a property's arrow and a `Compute(…)` call are declined at one column past and joined at three,
+and the same field shape is joined or declined by what its value is made of. No reading tried survived the
+next probe, so none is wired: Skala leaves that gap to the author (SK-DIV-0199) and agrees wherever the
+joined line fits, which is every row SK-DIV-0199 pins and the common case.
+
+Measured beside it and not this entry: at `always`, `[Obsolete] public int S = Compute(a, …);` past the
+margin is joined and the call chopped by the oracle, where Skala breaks after the `=` and leaves the call
+whole; the same happens without any attribute, so it is the `=`'s ordering rule.
+
+- options: the six `skala_place_*_attribute_on_same_line` keys.
+- ⚠ status: **resolved** at `always`; **open** for a comment in the gap. Pinned by
+  `AttributeJoinTerminatorIssue438Tests`.
+
+## SK-DIV-0206 — a type test's break is one level past its operand's line, not past what that line opened
+
+#445, introduced by SK-DIV-0205. That entry gave `is` and `as` a level of their own, stacked on whatever
+was open, and an argument list opened on the operand's line was open:
+`nodes.Count(static collection => collection.Parent` / `is ArgumentSyntax` went eight columns in, where
+the oracle writes four. Measured with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`:
+
+| written | oracle | Skala with SK-DIV-0205 |
+|---|---|---|
+| a lambda that is an argument, `x => x` / `is T`, kept or added, at the statement or inside a chain | one level past the line the lambda is on | two |
+| `Compute(` / `collection.Parent` / `is T` (the operand on a line of its own inside the list) | one level past the operand's line | identical |
+| `\|\| x` / `is null` in a header, `= x` / `is T`, `=>` / `o` / `is string`, `return o` / `is string` | one level past the operand's line | identical |
+| `var a = Compute(` / arguments / `) is string`, and under `&&` | the arguments one level past the line, `)` back on it | two levels, `)` one |
+| `var a = Compute(` / arguments / `)` / `is string` (the author's break before `is`) | the arguments two levels in, `)` and `is` one | identical, by `GroupFacts.Continues` |
+| `if (x … as` / `string` / `== null)` | one level past the condition's aligned column | identical |
+
+A new scope kind, `IndentKind.FromLine`, is the rule: one level past the indentation of the line the
+operand starts on — or past an alignment column opened on that line, a condition's — and nothing on that
+line itself. A scope opened inside it on the same line takes the line's own indentation as its base, so
+the list on the operand's line keeps its one level. `GroupFacts.Continues` is set only when the author
+broke before the keyword: the group resolves broken whenever the expression is too long, which said
+nothing about whether `)` / `is` was written.
+
+Skala's own source, asked file by file: `SyntaxCoverage.cs` moves to the oracle's column.
+`Rules/…/Modernization/SearchValuesAnalyzer.cs` moves one line away from it, and not because of this
+rule: there the operand's line is a switch arm whose `when` clause the oracle lays out one level deeper
+(`)` at 16 and `is` at 20; Skala writes `)` at 12), which is the arm's own continuation and was a
+divergence before SK-DIV-0205. SK-DIV-0205's stacked level had happened to land on 20.
+
+- options: none.
+- ⚠ status: **resolved**. Pinned by `TypeTestLevelIssue445Tests` and `constructs/breaks/type-test-level.cs`.
+
+
+## SK-DIV-0207 — a local function's attributes are each on a line of their own under every key
+
+#444's fifth shape. Skala read `skala_place_method_attribute_on_same_line` for a local function, as for a
+method, so at `always` it joined `[Obsolete] void Local() { }`. Measured with `jb cleanupcode` 2025.2.6:
+with the method key at `always` and at `if_owner_is_single_line`, `skala_place_attribute_on_same_line =
+true`, both together, and `skala_keep_existing_attribute_arrangement = true`, every local function comes
+back `[Obsolete]` / `void Local() { }` — two sections on two lines — while a method in the same class moves
+with the keys. `BreakPlan.PlanAttributes` now breaks every section of a local function, and the method
+key no longer names it. A block comment after the last section still leaves that gap to the author
+(SK-DIV-0199): `[Obsolete] /* c */ void Local() { }` is kept on one line by the oracle too.
+
+- options: none reach it.
+- ⚠ status: **resolved**. Pinned by `LocalFunctionAttributeIssue444Tests`.
+
+## SK-DIV-0209 — an empty container holding only a comment that spans lines closes on a line of its own
+
+#444's fourth shape. `new int[] { /* a` / `b */ };` comes back from the oracle as `new int[] { /* a` /
+`b */` / `};`, and the same for a collection, an object and an anonymous initializer, a `/** */` comment, a
+comment the author put on its own line, and a collection expression's `]`. A one-line `{ /* a */ }` stays
+as written. Skala joined the closer onto the comment's last line: an empty container has no elements, so no
+plan reached its closer. `BreakPlan.CloseAfterAMultiLineComment` requires the break; and SK-DIV-0205's rule
+that an array initializer's `{` and a collection expression's `[` keep their first element after such a
+comment now applies only where there is an element, since otherwise it hid the closer's break.
+
+Measured beside it and left open: `Foo(/* a` / `b */)` — the oracle moves the comment to column 0 on a line
+of its own, a shape that is about comment placement and not about the closer.
+
+- options: none.
+- ⚠ status: **resolved**. Pinned by `EmptyContainerCommentIssue444Tests`.
+
+## SK-DIV-0208 — an array initializer's element that spans lines: measured, not wired
+
+#444's third shape. Measured with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`; Skala is as it was:
+
+| written | oracle | Skala |
+|---|---|---|
+| `new[] { 1, Compute(2, /* a` / `b */ 3), 4 }` | `1, Compute(` / … / `),` / `4` | `1,` / `Compute(` / … / `), 4` |
+| a nested `new[] { … }` element that spans lines, then `new[] { 4 }` | `},` / `new[] { 4 }` | `}, new[] { 4 }` |
+| `first is string,` / `second` / `is string` | `first is string, second` / `is string` | `first is string,` / `second` |
+| `[.. Source],` / `new int(` / arguments chopped / `), [` / a long collection | kept exactly so, the oracle's own fixed point | identical but `),` / `[` |
+| `"a", """` / raw / `""", "b"` | `"a", """` / … / `""",` / `"b"` | `"a",` / `"""` / … / `""", "b"` |
+
+⚠ A first implementation was written and reverted, and why is the finding. It kept an element's head on
+the line whenever the element had no flat form and its first line fitted (the tuple's
+`KeepsHeadWhenCertain`), and broke before the element after one that spanned lines. The first half was
+not idempotent on `pathological/nested-collection-in-generated-switch.cs`: on pass one `new int(…)` does
+not fit and moves down, its arguments chop; on pass two those chopped arguments make it certain, its head
+fits after `[.. Source],`, and it moved back. The oracle keeps it down on its own output. So the oracle's
+fill does not ask "has the element a flat form" but measures the element flat, as if its kept breaks were
+not there, with a comment counted to its first line — which `Compute(2, /* a`, `second` and `new int(`
+all agree with, and which Skala has no measure for: a segment holding a kept break is unbounded. The
+second half failed the same file the other way (`), [`, the next element spanning lines too, is kept).
+Both need that measure first.
+
+- options: `skala_wrap_array_initializer_style = wrap_if_long`, the exported value.
 - ⚠ status: **open**, measured.

@@ -104,7 +104,7 @@ public sealed class MismatchedBackingFieldAnalyzer : DiagnosticAnalyzer {
             // backs both `Name` and `_Name`), and without this test that produces a finding whose
             // fix replaces a name with itself — a `skala fix` loop rather than a repair.
             if (context.SemanticModel.GetSymbolInfo(reference, context.CancellationToken).Symbol
-                is not IFieldSymbol touched
+                    is not IFieldSymbol touched
                 || SymbolEqualityComparer.Default.Equals(touched, own)
                 || !SymbolEqualityComparer.Default.Equals(touched.ContainingType, symbol.ContainingType)) {
                 continue;

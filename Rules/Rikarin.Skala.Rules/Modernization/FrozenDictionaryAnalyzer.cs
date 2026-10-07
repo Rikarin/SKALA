@@ -130,7 +130,7 @@ public sealed class FrozenDictionaryAnalyzer : DiagnosticAnalyzer {
                 replacement,
                 SpeculativeBindingOption.BindAsExpression
             ).Symbol
-            is not IMethodSymbol method
+                is not IMethodSymbol method
             || !SymbolEqualityComparer.Default.Equals(method.ContainingType, factory)
             || !SymbolEqualityComparer.Default.Equals(method.ReturnType, frozenType)) {
             return;

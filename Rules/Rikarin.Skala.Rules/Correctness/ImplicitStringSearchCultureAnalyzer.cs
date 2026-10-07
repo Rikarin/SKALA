@@ -54,7 +54,7 @@ public sealed class ImplicitStringSearchCultureAnalyzer : DiagnosticAnalyzer {
         var invocation = (InvocationExpressionSyntax)context.Node;
         if (invocation.ArgumentList is not { } arguments
             || context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol method
+                is not IMethodSymbol method
             || method.IsStatic
             || method.ContainingType.SpecialType != SpecialType.System_String) {
             return;

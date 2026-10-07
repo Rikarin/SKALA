@@ -133,7 +133,8 @@ public readonly record struct GroupPlan(
     bool LeadingGapInside = false,
     bool OwnLevel = false,
     bool SpendsUnderDelimiters = false,
-    HeldLevel HoldsLevel = HeldLevel.None);
+    HeldLevel HoldsLevel = HeldLevel.None,
+    bool FromLine = false);
 
 /// <summary>
 ///     Whether a group spends its continuation level as zero columns. See <see cref="GroupPlan.HoldsLevel" />.
@@ -726,6 +727,10 @@ public sealed class BreakPlan {
                 PlanAnonymousObject(anonymous);
                 return;
 
+            case CollectionExpressionSyntax { Elements.Count: 0 } empty:
+                CloseAfterAMultiLineComment(empty.OpenBracketToken, empty.CloseBracketToken);
+                return;
+
             case CollectionExpressionSyntax collection:
                 PlanList(
                     node,
@@ -794,6 +799,14 @@ public sealed class BreakPlan {
 
             case VariableDeclarationSyntax { Variables.Count: > 1 } declaration:
                 PlanDeclarators(declaration);
+                return;
+
+            case BinaryExpressionSyntax binary when IsTypeTest(binary):
+                PlanTypeTest(binary, binary.OperatorToken, binary.Right);
+                return;
+
+            case IsPatternExpressionSyntax isPattern when IsUnbreakablePattern(isPattern.Pattern):
+                PlanTypeTest(isPattern, isPattern.IsKeyword, isPattern.Pattern);
                 return;
 
             case BinaryExpressionSyntax binary:
@@ -1476,7 +1489,12 @@ public sealed class BreakPlan {
         bool array
     )
         where T : SyntaxNode {
-        if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None) || items.Count == 0) {
+        if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        if (items.Count == 0) {
+            CloseAfterAMultiLineComment(open, close);
             return;
         }
 
@@ -1517,6 +1535,10 @@ public sealed class BreakPlan {
                 Point(comma, inner, fill);
                 Flat(next);
                 interBroken |= BreaksBefore(comma);
+            } else if (fill && EndsInAMultiLineComment(next)) {
+                Flat(comma);
+                Mandatory(next);
+                interBroken |= BreaksBefore(next);
             } else {
                 Flat(comma);
                 Point(next, inner, fill);
@@ -2911,6 +2933,84 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
+    ///     Whether <paramref name="node" /> is the whole condition of an <c>if</c>, <c>while</c>, <c>do</c> or
+    ///     <c>for</c>, whose aligned column is the level a type test's break lands on.
+    /// </summary>
+    static bool IsAHeaderCondition(SyntaxNode node) =>
+        node.Parent switch {
+            IfStatementSyntax header => header.Condition == node,
+            WhileStatementSyntax header => header.Condition == node,
+            DoStatementSyntax header => header.Condition == node,
+            ForStatementSyntax header => header.Condition == node,
+            _ => false
+        };
+
+    /// <summary>
+    ///     Whether a pattern has no break point of its own — a type, a constant, a declaration, a
+    ///     relational or a negated one — so the only place an <c>is</c> before it can wrap is the keyword.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A pattern with points of its own — <c>or</c>/<c>and</c>, a property or list pattern, a
+    ///     parenthesized one — wraps inside itself first: <c>is not (A</c> / <c>or B)</c>, never
+    ///     <c>is</c> / <c>not (A or B)</c>. Planning the keyword there broke the #418 chain fixture.
+    /// </remarks>
+    static bool IsUnbreakablePattern(PatternSyntax pattern) =>
+        !pattern.DescendantNodesAndSelf()
+            .Any(static node => node is BinaryPatternSyntax
+                    or RecursivePatternSyntax
+                    or ListPatternSyntax
+                    or ParenthesizedPatternSyntax
+            );
+
+    /// <summary>Whether a binary expression is <c>is</c> or <c>as</c> with a type on its right.</summary>
+    static bool IsTypeTest(BinaryExpressionSyntax binary) =>
+        binary.IsKind(SyntaxKind.IsExpression) || binary.IsKind(SyntaxKind.AsExpression);
+
+    /// <summary>
+    ///     <c>is</c> and <c>as</c>: the break point is <em>after</em> the keyword, whatever
+    ///     <c>skala_wrap_before_binary_opsign</c> says, and a break the author wrote before it is kept.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured (#440), and it is not the binary operators' rule although Roslyn calls both a
+    ///     binary expression. Past the margin the oracle writes <c>…PropertyName is</c> /
+    ///     <c>SomeTypeName;</c> one level past the operand's line, after an <c>=</c> break that did not
+    ///     suffice and under an <c>&amp;&amp;</c> alike; it breaks after the <c>=</c> instead when that
+    ///     alone fits; <c>o</c> / <c>is string</c> written broken is kept; and a comment that spans lines
+    ///     after the keyword keeps the type on its last line (<c>o is /* a</c> / <c>b */ string</c>).
+    ///     Planned as a binary operator before it, the break went before the keyword, and the comment's
+    ///     unbounded width took it on every line that held one.
+    /// </remarks>
+    void PlanTypeTest(SyntaxNode node, SyntaxToken keyword, SyntaxNode right) {
+        var group = NewGroup();
+        var after = FirstToken(right);
+        var broken = BreaksAfterTheLastCommentIn(source, after);
+        if (broken && options.KeepsUserBreaksBetweenItems) {
+            Mandatory(after);
+        } else {
+            Point(after, group, lastResort: true);
+        }
+
+        // ⚠ The level covers a kept break *before* the keyword too: `|| x` / `is null` and
+        // `… is not T` / `declaration` sit one level past the operand's line in the oracle (#440).
+        // ⚠ And it is one level past that *line*, not past everything open on it (#445): inside a lambda
+        // that is an argument, `nodes.Count(c => c.Parent` / `is ArgumentSyntax` is four columns in, not
+        // eight. IndentKind.FromLine.
+        Describe(
+            node,
+            new GroupPlan(
+                group,
+                GroupMode.Preserve,
+                // ⚠ A list on the operand's line nests from the keyword's line only when the author broke
+                // before the keyword: `Compute(` / … / `)` / `is string` keeps its arguments two levels in,
+                // `Compute(` / … / `) is string` one (#445). Resolving broken is not enough, because this
+                // group resolves broken whenever the expression is too long, whether or not it wraps.
+                new GroupFacts(BreaksIfTooLong: true, Continues: BreaksBefore(keyword)),
+                FromLine: !IsAHeaderCondition(node)
+            )
+        );
+    }
+
+    /// <summary>
     ///     A property-pattern subpattern's own break point: after its <c>:</c>, landing on the
     ///     subpattern's own column.
     /// </summary>
@@ -3090,7 +3190,9 @@ public sealed class BreakPlan {
     static bool SameChain(SyntaxNode? parent, SyntaxNode child) =>
         (parent, child) switch {
             (BinaryExpressionSyntax outer, BinaryExpressionSyntax inner) =>
-                Precedence(outer.OperatorToken.Kind()) == Precedence(inner.OperatorToken.Kind()),
+                !IsTypeTest(outer)
+                && !IsTypeTest(inner)
+                && Precedence(outer.OperatorToken.Kind()) == Precedence(inner.OperatorToken.Kind()),
             (BinaryPatternSyntax, BinaryPatternSyntax) => true,
             _ => false
         };
@@ -4030,8 +4132,34 @@ public sealed class BreakPlan {
         }
 
         for (var i = previous.Span.End; i < token.SpanStart && i < source.Length; i++) {
-            if (source[i] == '\n') {
+            if (source[i] == '\n' && !InsideABlockComment(previous, token, i)) {
                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     Whether <paramref name="position" />, in the gap between the two tokens, is inside a block
+    ///     comment — a <c>/* … */</c> or a <c>/** … */</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A comment's own line breaks are not the author's break between the tokens (#440). Read as
+    ///     one, <c>c ? 1 /* a</c> / <c>b */ : 2</c> was "broken before the <c>:</c>" and a ternary that
+    ///     keeps the author's breaks one sign at a time broke there and nowhere else; the oracle chops
+    ///     it at both signs, as it chops anything holding a comment that spans lines.
+    /// </remarks>
+    static bool InsideABlockComment(SyntaxToken previous, SyntaxToken token, int position) =>
+        IsInBlockComment(previous.TrailingTrivia, position) || IsInBlockComment(token.LeadingTrivia, position);
+
+    static bool IsInBlockComment(SyntaxTriviaList trivia, int position) {
+        foreach (var piece in trivia) {
+            if (piece.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                || piece.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {
+                if (piece.FullSpan.Contains(position)) {
+                    return true;
+                }
             }
         }
 
@@ -5116,6 +5244,19 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ A local function's attribute sections are each on a line of their own whatever any key says
+        // (#444, SK-DIV-0207). Measured with the method key at `always` and `if_owner_is_single_line`,
+        // `skala_place_attribute_on_same_line = true`, both together and
+        // `skala_keep_existing_attribute_arrangement = true`: `[Obsolete] void Local() { }` comes back
+        // `[Obsolete]` / `void Local() { }` every time, and a method beside it moves with the keys.
+        if (node is LocalFunctionStatementSyntax) {
+            foreach (var token in AttributeGaps(node, lists)) {
+                Mandatory(token);
+            }
+
+            return;
+        }
+
         var placement = AttributePlacement(node);
         if (placement == PlacementStyle.Never) {
             // skala_keep_existing_attribute_arrangement = true leaves whatever the author wrote.
@@ -5141,6 +5282,24 @@ public sealed class BreakPlan {
                 Flat(token);
             }
 
+            // ⚠ The join is declined when the joined line overflows by its terminator alone (#438). See
+            // GroupFacts.Terminator and TerminatorOf.
+            var terminator = TerminatorOf(node);
+            var last = lists[^1].CloseBracketToken.GetNextToken();
+            if (terminator > 0
+                && !last.IsKind(SyntaxKind.None)
+                && last.SpanStart <= node.Span.End
+                && !BreaksInsideTheSignature(node, last)) {
+                var joining = NewGroup();
+                Point(last, joining);
+                Describe(
+                    node,
+                    joining,
+                    GroupMode.Preserve,
+                    new GroupFacts(MeasuresHead: true, Terminator: terminator)
+                );
+            }
+
             return;
         }
 
@@ -5161,6 +5320,62 @@ public sealed class BreakPlan {
             new GroupFacts(broken, true, true)
         );
     }
+
+    /// <summary>
+    ///     The width of what ends a declaration's first line after its signature, for the owners
+    ///     <c>always</c>'s joining half was measured on; zero for every other owner.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 one column at a time at
+    ///     <c>place_*_attribute_on_same_line = always</c> (#438, SK-DIV-0201). A method with an empty body
+    ///     is joined at 120 columns, declined at 121–124 with its <c>)</c> at 117–120, and joined with its
+    ///     parameters chopped once the <c>)</c> is at 121; a block body's <c> {</c> and a field's <c>;</c>
+    ///     are the same. ⚠ An expression body is not a terminator: the arrow breaks instead
+    ///     (<c>[Obsolete] public int A(…) =&gt;</c> / the body), and neither is a property's accessor
+    ///     list, which expands. ⚠ Nor a local function, whose attribute the oracle never joins at all at
+    ///     <c>always</c> (a separate divergence). Every other owner keeps the plain join.
+    /// </remarks>
+    static int TerminatorOf(SyntaxNode node) =>
+        node switch {
+            BaseMethodDeclarationSyntax { ExpressionBody: not null } => 0,
+            BaseMethodDeclarationSyntax { Body: { } body } => body.Statements.Count == 0 ? 4 : 2,
+            BaseMethodDeclarationSyntax => 1,
+            FieldDeclarationSyntax => 1,
+
+            // ⚠ An event field has nothing the oracle wraps inside it, so any overflow declines the join:
+            // `[Obsolete] public event Action<int, …> E;` at 121, 122 and 123 columns alike.
+            EventFieldDeclarationSyntax => WholeLine,
+            _ => 0
+        };
+
+    /// <summary>
+    ///     Whether the author broke the line anywhere between the declaration's first token and its body
+    ///     or terminator — after an <c>=</c>, inside the parameters.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The idempotence of <see cref="TerminatorOf" />'s group. A joined line whose <c>=</c> or parameter
+    ///     list then wrapped comes back with that break in the source, and the kept break ends the joined
+    ///     line there; measured through it instead — the head measure does not stop at a kept point —
+    ///     the line read one column short of the first pass's and the join was declined on pass two.
+    /// </remarks>
+    bool BreaksInsideTheSignature(SyntaxNode node, SyntaxToken first) {
+        var end = node switch {
+            BaseMethodDeclarationSyntax { Body: { } body } => body.SpanStart,
+            BaseMethodDeclarationSyntax { ExpressionBody: { } arrow } => arrow.SpanStart,
+            _ => node.Span.End
+        };
+
+        foreach (var token in node.DescendantTokens()) {
+            if (token.SpanStart > first.SpanStart && token.SpanStart < end && BreaksBefore(token)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>A terminator as wide as any line: the join is declined whenever the line overflows.</summary>
+    const int WholeLine = 1 << 20;
 
     /// <summary>
     ///     <c>skala_max_attribute_length_for_same_line</c>: an attribute run wider than the cap does not join
@@ -5219,8 +5434,7 @@ public sealed class BreakPlan {
                 or ConstructorDeclarationSyntax
                 or DestructorDeclarationSyntax
                 or OperatorDeclarationSyntax
-                or ConversionOperatorDeclarationSyntax
-                or LocalFunctionStatementSyntax =>
+                or ConversionOperatorDeclarationSyntax =>
                 options.PlaceMethodAttributeOnSameLine,
             // ⚠ `event Action E;` is an accessor holder too, and it used to be read as a field here.
             // Measured, and it is the same finding `resharper_place_event_attribute_on_same_line`'s
@@ -5552,13 +5766,66 @@ public sealed class BreakPlan {
     /// </remarks>
     bool PlanItemGap(SyntaxToken gap, int group, bool fill, bool pins, bool yields = false) {
         var broke = BreaksBefore(gap);
-        if (pins && BreaksAfterTheLastCommentIn(source, gap)) {
+        if (pins && BreaksAfterTheLastCommentIn(source, gap) || fill && EndsInAMultiLineComment(gap)) {
             Mandatory(gap);
         } else {
             Point(gap, group, fill, yields: yields);
         }
 
         return broke;
+    }
+
+    /// <summary>
+    ///     An empty initializer or collection expression that holds nothing but a block comment spanning
+    ///     lines closes on a line of its own (#444, SK-DIV-0209).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on an array initializer, a collection and an object initializer and a collection
+    ///     expression, the comment written beside the opener and on its own line alike:
+    ///     <c>new int[] { /* a</c> / <c>b */</c> / <c>};</c>. A comment on one line, <c>new int[] { /* a */ }</c>,
+    ///     stays as it is. An argument list is not this: the oracle moves its comment, which is another
+    ///     question.
+    /// </remarks>
+    void CloseAfterAMultiLineComment(SyntaxToken open, SyntaxToken close) {
+        if (open.GetNextToken() != close) {
+            return;
+        }
+
+        foreach (var trivia in open.TrailingTrivia.Concat(close.LeadingTrivia)) {
+            if ((trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia))
+                && trivia.ToFullString().Contains('\n')) {
+                Mandatory(close);
+                return;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Whether the item before the comma in front of <paramref name="gap" /> ends in a block comment that
+    ///     spans lines: <c>2 /* a</c> / <c>b */, 3</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on a fill (#440): the oracle puts the next item on a line of its own,
+    ///     <c>2 /* a</c> / <c>b */,</c> / <c>3</c>, where the same comment after the comma keeps it —
+    ///     <c>2, /* a</c> / <c>b */ 3</c>. The comment belongs to the item it follows, and an item that
+    ///     spans lines ends its line.
+    /// </remarks>
+    static bool EndsInAMultiLineComment(SyntaxToken gap) {
+        var comma = gap.GetPreviousToken();
+        if (!comma.IsKind(SyntaxKind.CommaToken)) {
+            return false;
+        }
+
+        foreach (var trivia in comma.LeadingTrivia.Concat(comma.GetPreviousToken().TrailingTrivia)) {
+            if ((trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia))
+                && trivia.ToFullString().Contains('\n')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

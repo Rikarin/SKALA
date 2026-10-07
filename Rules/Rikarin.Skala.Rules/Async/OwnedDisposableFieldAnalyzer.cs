@@ -43,14 +43,14 @@ public sealed class OwnedDisposableFieldAnalyzer : DiagnosticAnalyzer {
         if (field.Modifiers.Any(static modifier => modifier.IsKind(SyntaxKind.StaticKeyword))
             || field.Parent is not TypeDeclarationSyntax declaration
             || context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken)
-            is not INamedTypeSymbol owner) {
+                is not INamedTypeSymbol owner) {
             return;
         }
 
         foreach (var variable in field.Declaration.Variables) {
             if (variable.Initializer?.Value is not BaseObjectCreationExpressionSyntax
                 || context.SemanticModel.GetDeclaredSymbol(variable, context.CancellationToken)
-                is not IFieldSymbol symbol
+                    is not IFieldSymbol symbol
                 || symbol.Type.TypeKind == TypeKind.Error) {
                 continue;
             }

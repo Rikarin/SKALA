@@ -432,7 +432,20 @@ public enum IndentKind {
     ///     needs it: a condition broken across lines is laid out from the column just after the
     ///     statement's <c>(</c>, which is not a multiple of the indent width.
     /// </remarks>
-    Align
+    Align,
+
+    /// <summary>
+    ///     One level past the indentation of the line the scope opens on, whatever else is open there.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ An <c>is</c> or <c>as</c> breaks one level past its operand's <em>line</em> (#445): under
+    ///     <c>|| x</c> it lands four past the <c>||</c> line, and inside a lambda that is an argument —
+    ///     <c>nodes.Count(c =&gt; c.Parent</c> / <c>is ArgumentSyntax</c> — four past the
+    ///     <c>nodes.Count(</c> line, not eight: the argument list opened on that line adds nothing. A
+    ///     continuation level stacked on whatever was open counted the argument list too. Absolute, as a
+    ///     block is: a scope opened inside it composes on top of it.
+    /// </remarks>
+    FromLine
 }
 
 /// <summary>
@@ -860,6 +873,14 @@ public sealed class Document {
 ///     broken whenever its construct does not fit whole, which says nothing about whether it breaks
 ///     after the block (SK-DIV-0185).
 /// </param>
+/// <param name="Terminator">
+///     ⚠ The width of what ends the construct's line — <c>;</c>, <c> { }</c>, <c> {</c> — for a group
+///     that breaks exactly when its line overflows <em>by no more than that</em>, and stays flat
+///     otherwise. It is <c>place_*_attribute_on_same_line = always</c>'s joining half (#438,
+///     SK-DIV-0201): the oracle joins <c>[Obsolete] public void M(…) { }</c> when it fits, joins it and
+///     chops the parameters when the <c>)</c> itself is past the margin, and declines the join — the
+///     attribute on its own line — when only the terminator is. Zero for any other group.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -876,4 +897,5 @@ public readonly record struct GroupFacts(
     int MinimumHead = 0,
     bool BreaksOnlyIfHeadOverflows = false,
     bool FlatIfOwnerBroke = false,
-    bool Continues = false);
+    bool Continues = false,
+    int Terminator = 0);

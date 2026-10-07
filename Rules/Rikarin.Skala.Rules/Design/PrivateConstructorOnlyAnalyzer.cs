@@ -85,7 +85,7 @@ public sealed class PrivateConstructorOnlyAnalyzer : DiagnosticAnalyzer {
                     Add(
                         reached,
                         context.SemanticModel.GetSymbolInfo(baseType.Type, context.CancellationToken).Symbol
-                        as ITypeSymbol
+                            as ITypeSymbol
                     );
                     break;
 

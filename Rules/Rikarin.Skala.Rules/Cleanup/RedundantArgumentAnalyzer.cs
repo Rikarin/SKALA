@@ -70,7 +70,7 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
         var arguments = invocation.ArgumentList.Arguments;
         if (arguments.Count == 0
             || context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol method) {
+                is not IMethodSymbol method) {
             return;
         }
 
@@ -297,7 +297,7 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
         // False to True. An instance method group binds its receiver and is never cached.
         if (argument.Expression is not (IdentifierNameSyntax or MemberAccessExpressionSyntax)
             || context.SemanticModel.GetSymbolInfo(argument.Expression, context.CancellationToken).Symbol
-            is not IMethodSymbol target
+                is not IMethodSymbol target
             || target.IsStatic
             || target.MethodKind == MethodKind.LocalFunction) {
             return;
@@ -334,9 +334,9 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
         }
 
         if (context.SemanticModel.GetSymbolInfo(lambda, context.CancellationToken).Symbol
-            is not IMethodSymbol written
+                is not IMethodSymbol written
             || context.SemanticModel.GetTypeInfo(lambda, context.CancellationToken).ConvertedType
-            is not INamedTypeSymbol converted
+                is not INamedTypeSymbol converted
             || Invoke(converted) is not { } invoke
             || invoke.Parameters.Length != parameters.Count
             || !TargetTypeIs(context, lambda, converted)) {
@@ -404,9 +404,9 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
         }
 
         if (context.SemanticModel.GetSymbolInfo(anonymous, context.CancellationToken).Symbol
-            is not IMethodSymbol written
+                is not IMethodSymbol written
             || context.SemanticModel.GetTypeInfo(anonymous, context.CancellationToken).ConvertedType
-            is not INamedTypeSymbol converted
+                is not INamedTypeSymbol converted
             || Invoke(converted) is not { } invoke
             || invoke.Parameters.Length != list.Parameters.Count
             || !TargetTypeIs(context, anonymous, converted)) {

@@ -31,7 +31,7 @@ internal static class AttributeBinding {
         INamedTypeSymbol? second
     ) =>
         context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol
-        is IMethodSymbol constructor
+            is IMethodSymbol constructor
         && (SymbolEqualityComparer.Default.Equals(constructor.ContainingType, first)
             || SymbolEqualityComparer.Default.Equals(constructor.ContainingType, second));
 

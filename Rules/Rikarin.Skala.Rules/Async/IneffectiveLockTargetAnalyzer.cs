@@ -276,7 +276,7 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
     ) {
         if (local.DeclaringSyntaxReferences.Length != 1
             || local.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
-            is not VariableDeclaratorSyntax declarator
+                is not VariableDeclaratorSyntax declarator
             || declarator.Initializer?.Value
             is not (ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax)) {
             return;

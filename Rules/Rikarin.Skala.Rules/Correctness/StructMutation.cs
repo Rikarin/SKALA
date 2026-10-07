@@ -57,7 +57,7 @@ static class StructMutation {
                     == "System.Diagnostics.ConditionalAttribute"
                 )
             || method.DeclaringSyntaxReferences[0].GetSyntax(cancellation) is not MethodDeclarationSyntax
-            declaration) {
+                declaration) {
             return false;
         }
 

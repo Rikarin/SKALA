@@ -37,7 +37,7 @@ public sealed class InterpolatedLoggerMessageAnalyzer : DiagnosticAnalyzer {
     static void Analyze(SyntaxNodeAnalysisContext context, INamedTypeSymbol extensions) {
         var invocation = (InvocationExpressionSyntax)context.Node;
         if (context.SemanticModel.GetOperation(invocation, context.CancellationToken)
-            is not IInvocationOperation operation
+                is not IInvocationOperation operation
             || !SymbolEqualityComparer.Default.Equals(
                 (operation.TargetMethod.ReducedFrom ?? operation.TargetMethod).ContainingType,
                 extensions

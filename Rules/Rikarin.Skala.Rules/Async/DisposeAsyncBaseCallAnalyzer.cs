@@ -93,7 +93,7 @@ public sealed class DisposeAsyncBaseCallAnalyzer : DiagnosticAnalyzer {
         }
 
         if (context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken)
-            is not IMethodSymbol method
+                is not IMethodSymbol method
             || method.OverriddenMethod is not { IsAbstract: false } overridden
             || method.ReturnType is not INamedTypeSymbol { IsGenericType: false } returned
             || !tasks.Contains(returned)
