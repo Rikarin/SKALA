@@ -31,7 +31,8 @@ public sealed class ColonAndExpressionBraceIssue419Tests {
         + "    public System.Collections.Generic.List<int> L = new();\n}\n\n";
 
     static string InMethod(string statement) =>
-        Declarations + "class D {\n    void M(int a, int b) { }\n\n"
+        Declarations
+        + "class D {\n    void M(int a, int b) { }\n\n"
         + $"    void T(object o, R r) {{\n        {statement}\n    }}\n}}\n";
 
     static void AssertFormats(string source, string expected, params (string Key, string Value)[] overrides) {
@@ -46,12 +47,42 @@ public sealed class ColonAndExpressionBraceIssue419Tests {
     ///     <c> : </c> measured the inert ctor-initializer key and never this one.
     /// </summary>
     [Theory]
-    [InlineData("public C() : base() { }", "    public C(): base() { }", "skala_space_before_colon_in_inheritance_clause", "false")]
-    [InlineData("public C(int a):base(a) { }", "    public C(int a): base(a) { }", "skala_space_before_colon_in_inheritance_clause", "false")]
-    [InlineData("public C(string s) : this() { }", "    public C(string s): this() { }", "skala_space_before_colon_in_inheritance_clause", "false")]
-    [InlineData("public C() : base() { }", "    public C() :base() { }", "skala_space_after_colon_in_inheritance_clause", "false")]
-    [InlineData("public C(long l):this() { }", "    public C(long l) :this() { }", "skala_space_after_colon_in_inheritance_clause", "false")]
-    [InlineData("public C(int a):base(a) { }", "    public C(int a) : base(a) { }", "skala_space_before_colon_in_ctor_initializer", "false")]
+    [InlineData(
+        "public C() : base() { }",
+        "    public C(): base() { }",
+        "skala_space_before_colon_in_inheritance_clause",
+        "false"
+    )]
+    [InlineData(
+        "public C(int a):base(a) { }",
+        "    public C(int a): base(a) { }",
+        "skala_space_before_colon_in_inheritance_clause",
+        "false"
+    )]
+    [InlineData(
+        "public C(string s) : this() { }",
+        "    public C(string s): this() { }",
+        "skala_space_before_colon_in_inheritance_clause",
+        "false"
+    )]
+    [InlineData(
+        "public C() : base() { }",
+        "    public C() :base() { }",
+        "skala_space_after_colon_in_inheritance_clause",
+        "false"
+    )]
+    [InlineData(
+        "public C(long l):this() { }",
+        "    public C(long l) :this() { }",
+        "skala_space_after_colon_in_inheritance_clause",
+        "false"
+    )]
+    [InlineData(
+        "public C(int a):base(a) { }",
+        "    public C(int a) : base(a) { }",
+        "skala_space_before_colon_in_ctor_initializer",
+        "false"
+    )]
     public void AConstructorInitializersColon_ReadsTheInheritanceKeys(
         string member,
         string expected,

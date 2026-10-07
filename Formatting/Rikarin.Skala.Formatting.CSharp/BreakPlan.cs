@@ -2236,7 +2236,8 @@ public sealed class BreakPlan {
     static bool HasBlockCommentBefore(SyntaxToken token) =>
         token.LeadingTrivia.Concat(token.GetPreviousToken().TrailingTrivia)
             .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia));
+                || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+            );
 
     /// <summary>
     ///     <c>skala_wrap_chained_method_calls = chop_if_long</c>: every <c>.</c> of a chain that does not fit

@@ -3573,7 +3573,8 @@ public sealed partial class CSharpDocumentBuilder {
 
     internal static bool IsFirstDeclaratorBehindItsType(VariableDeclaratorSyntax declarator) =>
         declarator.Parent is VariableDeclarationSyntax {
-            Parent: LocalDeclarationStatementSyntax
+            Parent:
+            LocalDeclarationStatementSyntax
                 or FieldDeclarationSyntax
                 or EventFieldDeclarationSyntax
                 or UsingStatementSyntax

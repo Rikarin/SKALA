@@ -34,7 +34,10 @@ public sealed class CommentBehindADeclarationsTypeIssue420Tests {
     [Theory]
     [InlineData("var /*k01*/v1 = 1;", "        var /*k01*/\n            v1 = 1;\n")]
     [InlineData("int /*k02*/ v2 = 1;", "        int /*k02*/\n            v2 = 1;\n")]
-    [InlineData("(int, string) /*k03*/ v3 = (1, \"\");", "        (int, string) /*k03*/\n            v3 = (1, \"\");\n")]
+    [InlineData(
+        "(int, string) /*k03*/ v3 = (1, \"\");",
+        "        (int, string) /*k03*/\n            v3 = (1, \"\");\n"
+    )]
     [InlineData("System.Func<int> /*k04*/ v4 = null;", "        System.Func<int> /*k04*/\n            v4 = null;\n")]
     [InlineData("int? /*k05*/v5 = 1;", "        int? /*k05*/\n            v5 = 1;\n")]
     [InlineData("const int /*k09*/ v9 = 1;", "        const int /*k09*/\n            v9 = 1;\n")]
@@ -78,7 +81,10 @@ public sealed class CommentBehindADeclarationsTypeIssue420Tests {
     [Theory]
     [InlineData("int /*f01*/f1 = 1;", "    int /*f01*/\n        f1 = 1;\n")]
     [InlineData("event System.Action /*f10*/ E1;", "    event System.Action /*f10*/\n        E1;\n")]
-    [InlineData("System.Collections.Generic.List<int> /*f11*/ f11;", "    System.Collections.Generic.List<int> /*f11*/\n        f11;\n")]
+    [InlineData(
+        "System.Collections.Generic.List<int> /*f11*/ f11;",
+        "    System.Collections.Generic.List<int> /*f11*/\n        f11;\n"
+    )]
     public void AFieldBreaks_AsALocalDoes(string member, string expected) =>
         AssertFormats($"class C {{\n    int a;\n    {member}\n    int b;\n}}\n", expected);
 
