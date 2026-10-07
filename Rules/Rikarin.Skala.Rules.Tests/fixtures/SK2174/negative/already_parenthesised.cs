@@ -1,5 +1,7 @@
-// The repair, and the shape `ParenthesesRedundancy.MayRemove` refuses to undo: an operand of a shift
-// or bitwise operator keeps its parentheses at every value of every configuration key.
+// The repair, and the shape `ParenthesesRedundancy.MayRemove` refuses to undo at the export's
+// `remove_if_not_clarifies_precedence`: a binary operand of a shift or bitwise operator keeps its
+// parentheses. ⚠ This said "at every value of every configuration key", and at `remove` the arranger
+// strips them (#394) — which is why the rule is silent there.
 class C {
     int Shift(int value, int offset) => value << (offset + 1);
 

@@ -403,11 +403,9 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
                 return visited;
             }
 
-            var stripped = visited.Expression
-                .WithLeadingTrivia(visited.GetLeadingTrivia())
-                .WithTrailingTrivia(visited.GetTrailingTrivia());
-
-            return ParenthesesRedundancy.RemovalPreservesParse(node) ? stripped : visited;
+            return ParenthesesRedundancy.RemovalPreservesParse(node)
+                ? ParenthesesRedundancy.Strip(visited)
+                : visited;
         }
     }
 }
@@ -425,9 +423,9 @@ public static class ParenthesesRedundancy {
     ///     unconditional. The three <c>dotnet_style_parentheses_in_*_binary_operators</c> keys decide the
     ///     rest, and they decide it on the <em>pair</em>: a parenthesised binary expression keeps its
     ///     parentheses only when its parent is also a binary expression of the same precedence kind and
-    ///     that kind's key says <c>always_for_clarity</c>. Assignment and the conditional operator are
-    ///     kept because <c>x = (y = 2)</c> and <c>(a ? b : c)</c> read as deliberate in every corpus
-    ///     instance.
+    ///     that kind's key says <c>always_for_clarity</c>. Every other expression — an assignment, a
+    ///     conditional, a lambda, a query, a <c>switch</c> — is left to the proof, because that is what
+    ///     the oracle does (#392); the guesses that kept them are recorded in the body.
     ///     <para>
     ///         ⚠ The pair test is measured rather than inferred, and the first version of this rule did not
     ///         have it: keying on the inner expression alone keeps <c>return (a &amp;&amp; b);</c> and
@@ -439,16 +437,33 @@ public static class ParenthesesRedundancy {
     ///     </para>
     /// </remarks>
     public static bool MayRemove(ParenthesizedExpressionSyntax node, in ArrangementOptions options) {
-        // ⚠ An interpolation's braces are not an expression context in the way the proof below
-        // assumes: `$"{(a, b)}"` and a `:` inside an interpolation are format specifiers, so
-        // re-parsing the expression alone answers a question that was not asked.
-        if (node.Parent is InterpolationSyntax) {
-            return false;
-        }
+        // ⚠ An interpolation hole used to be declined whole, because a `:` or a `,` there is a format
+        // or an alignment clause and re-parsing the expression alone answered a question that was not
+        // asked. The question is now asked properly — the proof re-parses the interpolated string the
+        // hole sits in (`Outermost`) — and the oracle removes the parentheses in every hole whose parse
+        // allows it (#392): `$"{(a + b):D2}"`, `$"{(x switch { … }),5}"`. `$"{(b ? 1 : 2)}"` keeps
+        // them because the `:` would become a format clause, and the re-parse is what says so.
 
         // ⚠ `(A)(b)` is a cast when `A` names a type and an invocation when it does not, and the
         // parser cannot tell without semantics. This rule has none, so it declines the whole shape.
         if (node.Parent is CastExpressionSyntax) {
+            return false;
+        }
+
+        // ⚠ A `(` and a `)` either side of an `#if` do not necessarily both survive into the same
+        // compilation, so a directive in the parentheses' own trivia declines them. A *comment* there
+        // is carried out by `Strip` instead — it used to be dropped with the parentheses, which made
+        // `return (/* why */ a + b);` lose its sentence.
+        if (HasDirective(InsideLeft(node)) || HasDirective(InsideRight(node))) {
+            return false;
+        }
+
+        // ⚠ The operand of a `throw` *expression* keeps its parentheses around a `switch` or a binary
+        // operator, which the parse alone would not say: measured under the cleanup profile, the oracle
+        // keeps `=> throw (v switch { … })` and `=> throw (e ?? new Exception())` and removes
+        // `=> throw (E())`, and a `throw` *statement* loses them around all three (#392, SK-DIV-0145).
+        if (node.Parent is ThrowExpressionSyntax
+            && node.Expression is BinaryExpressionSyntax or SwitchExpressionSyntax) {
             return false;
         }
 
@@ -471,9 +486,19 @@ public static class ParenthesesRedundancy {
         // first version of this rule keyed on the inner expression alone, agreed with the oracle on
         // every case in the fixture, and stripped these two anyway — found by reading what it did to
         // Vixen's `BitReader`, not by a test.
+        //
+        // ⚠ And it is about *operator* operands only, which this read as "every operand" until #392
+        // asked. Measured at the export's value: the oracle removes `a & (-b)`, `a << (-b)`,
+        // `a & (M(a))`, `b & (a.Length)`, `b & ((int)o)`, `b & (!c)`, `b << (v switch { … })`,
+        // `b & (o is string)`, `b & (o is string s)` and `(b & (o as bool?))`, and keeps
+        // `b & (x == 1)` beside `a & (b + 1)`. `is` and `as` are binary nodes in Roslyn's tree and
+        // relational in its precedence table, and the oracle does not count them as operations here.
         if (!always
             && node.Parent is BinaryExpressionSyntax { RawKind: var parentKind }
-            && IsNonObvious((SyntaxKind)parentKind)) {
+            && IsNonObvious((SyntaxKind)parentKind)
+            && node.Expression is BinaryExpressionSyntax inner
+            && !inner.IsKind(SyntaxKind.IsExpression)
+            && !inner.IsKind(SyntaxKind.AsExpression)) {
             return false;
         }
 
@@ -491,26 +516,49 @@ public static class ParenthesesRedundancy {
                 !IsCoalesceNesting(binary.Kind(), node.Parent)
                 && (always || !IsKept(binary.Kind(), node.Parent, options)),
 
-            // `(x = 1)` inside a larger expression is doing work that the reader is being shown.
-            AssignmentExpressionSyntax or ConditionalExpressionSyntax => false,
-
-            // A lambda, a query or a `switch` arm inside parentheses is a readability decision the
-            // oracle also leaves alone.
+            // ⚠ There used to be two more arms here, and both were guesses the oracle refutes (#392).
             //
-            // ⚠ Refuted for `switch` (#392): asked under the cleanup profile, the oracle removes the
-            // parentheses around a `switch` expression in a `return`, a `var` initializer, an arrow
-            // body and a binary operand, and keeps them only before `.Member`, where the parse needs
-            // them. Not yet changed here.
+            // "`(x = 1)` and `(a ? b : c)` inside a larger expression are doing work the reader is
+            // being shown" kept every assignment and conditional. The oracle removes them wherever the
+            // parse allows — `return (x = a);`, `x = (y = a);`, `return (b ? 1 : 2);`,
+            // `a ? (b ? 1 : 2) : 3`, `a[(b ? 0 : 1)]` — and keeps exactly the ones the parse needs,
+            // `(x = a) + 1` and `(a ? b : c) + 1`, which the proof keeps by itself.
             //
-            // ⚠ `IsPatternExpressionSyntax` was on this list and is not: `(o is string s) && …` looks
-            // like a case where the parentheses earn their keep, and the oracle removes them. Doc 00's
-            // non-negotiable 9 makes the reference tool a test subject rather than a specification,
-            // but a divergence has to be worth recording and this one was only a guess.
-            AnonymousFunctionExpressionSyntax or QueryExpressionSyntax or SwitchExpressionSyntax => false,
+            // "A lambda, a query or a `switch` expression inside parentheses is a readability decision
+            // the oracle also leaves alone" kept all three. Asked in some thirty positions under the
+            // cleanup profile, the oracle removes them in a `return`, a `var` initializer, an arrow
+            // body, an argument, a lambda body, a `?:` branch, an interpolation hole, a `when` clause,
+            // a `with` initializer, a collection element and a binary or `is`/`as` operand, and keeps
+            // them only where the parse does — before `.`, `?.`, `(`, `[`, `!` and `..`, after a unary
+            // operator, `await` or a cast, and as the right operand of `??` (`f ?? () => 1` and
+            // `b ?? from x in a select x` do not parse). The two places the parse does not explain are
+            // the `switch` arm below and the `throw` expression above.
+            //
+            // ⚠ `IsPatternExpressionSyntax` was once on that list for the same reason and is not:
+            // `(o is string s) && …` looks like a case where the parentheses earn their keep, and the
+            // oracle removes them.
+            //
+            // ⚠ A `switch` expression as the receiver of `with` or the subject of another `switch`
+            // keeps its parentheses although Roslyn parses `v switch { … } with { … }` and
+            // `v switch { … } switch { … }` to the same tree without them: the oracle keeps both
+            // (SK-DIV-0145).
+            // (An arm's body is the child of a `SwitchExpressionArmSyntax`, so a `switch` parent here
+            // is always the subject position.)
+            SwitchExpressionSyntax => node.Parent is not (WithExpressionSyntax or SwitchExpressionSyntax),
 
             _ => true
         };
     }
+
+    static bool HasDirective(SyntaxTriviaList trivia) =>
+        trivia.Any(static t => t.IsDirective || t.IsKind(SyntaxKind.DisabledTextTrivia));
+
+    static bool HasComment(SyntaxTriviaList trivia) =>
+        trivia.Any(static t => t.IsKind(SyntaxKind.SingleLineCommentTrivia)
+            || t.IsKind(SyntaxKind.MultiLineCommentTrivia)
+            || t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
+            || t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+        );
 
     /// <summary>
     ///     ⚠ The proof: printing the expression without its parentheses and parsing it back must give
@@ -547,18 +595,81 @@ public static class ParenthesesRedundancy {
 
     const int MaxProofLength = 8192;
 
-    static ExpressionSyntax Strip(ParenthesizedExpressionSyntax node) =>
-        node.Expression.WithLeadingTrivia(node.GetLeadingTrivia()).WithTrailingTrivia(node.GetTrailingTrivia());
+    /// <summary>
+    ///     The expression without its parentheses, keeping every comment that sat inside them.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The trivia inside the parentheses — after <c>(</c>, before <c>)</c> — used to be dropped
+    ///     with them, so <c>return (/* why */ a + b);</c> arranged to <c>return a + b;</c> and the
+    ///     sentence was gone. The oracle keeps it (<c>/* why */a + b</c>). Only a comment carries the
+    ///     inner trivia across; plain whitespace there is the parentheses' own and goes with them.
+    /// </remarks>
+    public static ExpressionSyntax Strip(ParenthesizedExpressionSyntax node) {
+        var left = InsideLeft(node);
+        var right = InsideRight(node);
+        return node.Expression
+            .WithLeadingTrivia(HasComment(left) ? node.GetLeadingTrivia().AddRange(left) : node.GetLeadingTrivia())
+            .WithTrailingTrivia(
+                HasComment(right) ? right.AddRange(node.GetTrailingTrivia()) : node.GetTrailingTrivia()
+            );
+    }
+
+    /// <summary>The trivia between <c>(</c> and the expression's first token.</summary>
+    static SyntaxTriviaList InsideLeft(ParenthesizedExpressionSyntax node) =>
+        node.OpenParenToken.TrailingTrivia.AddRange(node.Expression.GetLeadingTrivia());
+
+    /// <summary>The trivia between the expression's last token and <c>)</c>.</summary>
+    static SyntaxTriviaList InsideRight(ParenthesizedExpressionSyntax node) =>
+        node.Expression.GetTrailingTrivia().AddRange(node.CloseParenToken.LeadingTrivia);
 
     /// <summary>The largest enclosing expression, which is what the parser's precedence spans.</summary>
+    /// <remarks>
+    ///     ⚠ It climbs through the nodes that live <em>inside</em> an expression without being one —
+    ///     an argument, an interpolation hole, a <c>switch</c> arm, a query clause, a collection
+    ///     element — because a removal can change the parse beyond them, and stopping there measured the
+    ///     wrong thing (#392). <c>F((a &lt; b), c &gt; (x = 1))</c> is two comparisons; with the first
+    ///     pair gone it is <c>F(a &lt; b, c &gt; (x = 1))</c>, a generic invocation, and a proof that
+    ///     re-parsed <c>a &lt; b</c> alone said the removal was safe. The oracle keeps that pair.
+    /// </remarks>
     static ExpressionSyntax Outermost(ExpressionSyntax node) {
         var current = node;
-        while (current.Parent is ExpressionSyntax parent) {
-            current = parent;
+        for (var ancestor = node.Parent; ancestor is not null; ancestor = ancestor.Parent) {
+            // ⚠ `ref x` does not parse as a whole expression on its own, so climbing into one turns
+            // every proof beneath it into a parse error and a refusal. Found by the arrangement
+            // differential the first time the climb reached through `[…]`: Vixen's
+            // `ref field.Cells[x + (z * field.Width)]` kept parentheses the oracle removes.
+            if (ancestor is RefExpressionSyntax) {
+                break;
+            }
+
+            if (ancestor is ExpressionSyntax expression) {
+                current = expression;
+            } else if (!LivesInsideAnExpression(ancestor)) {
+                break;
+            }
         }
 
         return current;
     }
+
+    static bool LivesInsideAnExpression(SyntaxNode node) =>
+        node is ArgumentSyntax
+            or BaseArgumentListSyntax
+            or InterpolationSyntax
+            or InterpolationAlignmentClauseSyntax
+            or InterpolationFormatClauseSyntax
+            or SwitchExpressionArmSyntax
+            or WhenClauseSyntax
+            or QueryBodySyntax
+            or QueryClauseSyntax
+            or SelectOrGroupClauseSyntax
+            or OrderingSyntax
+            or JoinIntoClauseSyntax
+            or QueryContinuationSyntax
+            or CollectionElementSyntax
+            or AnonymousObjectMemberDeclaratorSyntax
+            or NameEqualsSyntax
+            or NameColonSyntax;
 
     /// <summary>
     ///     The operations <c>resharper_parentheses_non_obvious_operations</c> names: an operand of one

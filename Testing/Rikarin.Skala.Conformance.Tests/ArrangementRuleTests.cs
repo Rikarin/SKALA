@@ -1509,6 +1509,13 @@ public sealed class ArrangementRuleTests {
     ///         question about semantically invalid code and has no interesting answer; that the tool
     ///         answers at all is the property.
     ///     </para>
+    ///     <para>
+    ///         ⚠ The query is written without parentheses. The fuzzer's seed had them, and once
+    ///         <c>SK0209</c> stopped declining a parenthesised query (#392) it removed them — so the file
+    ///         had a rewrite, the safety re-bind ran, met the same binder throw and reverted the whole
+    ///         file as designed (<see cref="ArrangementSafety" />). That is a different property; this
+    ///         test is about the throw inside a rule, and the parentheses never reached the binder.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void ARuleThatThrows_CostsItsOwnRewriteAndNotTheProcess() {
@@ -1518,7 +1525,7 @@ public sealed class ArrangementRuleTests {
 
                               class C {
                                   void M() {
-                                      Func<int> v = new () { P = (from item in items select null) };
+                                      Func<int> v = new () { P = from item in items select null };
                                   }
                               }
                               """;

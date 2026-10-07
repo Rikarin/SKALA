@@ -247,18 +247,40 @@ public sealed class OptionRegistryTests {
     /// </remarks>
     [Fact]
     public void TheAnalyzerReadOptions_HaveExactlyOneSpelling() {
-        foreach (var key in new[] { "skala_configure_await_analysis_mode" }) {
+        foreach (var key in new[] { "skala_configure_await_analysis_mode", "skala_parentheses_redundancy_style" }) {
             Assert.True(OptionRegistry.TryResolve(key, out var id), key);
 
             var info = OptionRegistry.Get(id);
             Assert.Equal(key, info.Key);
             Assert.True(
                 info.Aliases.Count == 0,
-                $"{key} has picked up the alias(es) {string.Join(", ", info.Aliases)}. ConfigureAwaitAnalyzer "
+                $"{key} has picked up the alias(es) {string.Join(", ", info.Aliases)}. An analyzer "
                 + "reads this key by literal and cannot see them, so a configuration written that way "
                 + "would be silently ignored. Teach the analyzer the spelling, then relax this."
             );
         }
+    }
+
+    /// <summary>
+    ///     ⚠ <c>SK2174</c> is silent at exactly the value at which the arranger strips its parentheses,
+    ///     and it decides that by comparing the raw text with <c>remove</c>.
+    /// </summary>
+    /// <remarks>
+    ///     #394. The comparison is only the formatter's own parse if the formatter accepts exactly one
+    ///     spelling for that value. A value alias — the way <c>PlacementStyle</c> takes <c>true</c> for
+    ///     <c>always</c> — would make the arranger strip while the rule kept reporting, and
+    ///     <c>skala fix</c> and <c>skala arrange</c> would undo each other again.
+    /// </remarks>
+    [Fact]
+    public void TheParenthesesRedundancyValue_SK2174ReadsHasOneSpelling() {
+        Assert.True(OptionEnums.TryParse("ParenthesesRedundancyStyle", "remove", out var remove));
+        Assert.Equal((int)ParenthesesRedundancyStyle.Remove, remove);
+        Assert.False(OptionEnums.TryParse("ParenthesesRedundancyStyle", "Remove", out _));
+        Assert.Equal(
+            ["remove", "remove_if_not_clarifies_precedence"],
+            OptionEnums.ValuesOf("ParenthesesRedundancyStyle")
+        );
+        Assert.Empty(OptionEnums.AliasesOf("ParenthesesRedundancyStyle"));
     }
 
     /// <summary>

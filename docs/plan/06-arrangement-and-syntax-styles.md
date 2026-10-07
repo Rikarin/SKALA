@@ -237,9 +237,25 @@ measured against `jb cleanupcode` rather than read off the key names:
 | | |
 |---|---|
 | Removed | arithmetic and relational operands, casts, unary operators, invocations, nested parentheses, and a parenthesized initializer |
+| Removed | assignments, conditionals, lambdas, queries and `switch` expressions, wherever the re-parse allows (#392) |
 | Kept | an operand that is itself a shift, bitwise, `&&`, `\|\|` or `??` expression |
-| Kept | **any** operand of a shift or bitwise expression, whatever the operand is |
-| Declined | assignments and conditionals inside parentheses, the operand of a cast, and anything the re-parse does not prove |
+| Kept | a **binary** operand of a shift or bitwise expression, `is` and `as` excepted |
+| Kept | a `switch` receiver of `with` or subject of another `switch`, and a `switch` or binary operand of a `throw` expression |
+| Declined | the operand of a cast, parentheses with a directive inside them, and anything the re-parse does not prove |
+
+⚠ **Two rows of this table were guesses, and #392 measured them.** "Declined: assignments and
+conditionals" and the unwritten "lambdas, queries and `switch` expressions" kept every such pair on
+the belief that the oracle leaves them alone. Asked in some thirty positions under the cleanup
+profile, it removes them wherever the parse allows — `return (v switch { … });`,
+`x = (y = a);`, `a ? (b ? 1 : 2) : 3`, `$"{(v switch { … }):D2}"` — and keeps exactly what the parse
+needs: before `.`, `?.`, `(`, `[`, `!` or `..`, after a unary operator, `await` or a cast. The
+second "kept" row said **any** operand of a shift or bitwise operator, and the oracle removes
+`a & (-b)`, `b & (a.Length)`, `b << (v switch { … })` and `b & (o is string)`; it is binary operands
+only. Two places keep parentheses the parse does not need, and both are rows above because nothing
+else would predict them. ⚠ The proof itself had a hole the guesses hid: it re-parsed the outermost
+*expression*, which stopped at an argument, an interpolation hole or a `switch` arm, so
+`F((a < b), c > (x = 1))` — a generic invocation once the first pair goes — read as safe. It now
+climbs through those, and stops at `ref`, which does not parse on its own.
 
 ⚠ **The proof refuses one class the oracle removes, and that refusal is the better answer.** Equal
 precedence is not associativity: `a * (x * y)` re-parses as `(a * x) * y`, a different tree, so the

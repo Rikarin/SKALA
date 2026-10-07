@@ -13,6 +13,25 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Changed — `SK0209` removes parentheses around a `switch`, a lambda, a query, a `?:` and an assignment where the oracle does (#392)
+
+⚠ **An arrangement output change.** `skala arrange` used to keep those five kinds of parenthesised
+expression whole, decline every interpolation hole, and keep every operand of a shift or bitwise
+operator, on the belief that the oracle leaves them alone. It removes them wherever the parse allows
+and keeps exactly what the parse needs, plus two shapes it keeps by name (SK-DIV-0145), so Skala now
+does the same. Two defects went with it: the re-parse proof stopped at an argument list, so
+`F((a < b), c > (x = 1))` could become a generic invocation under `--load=none`, and a comment inside
+removed parentheses was deleted. Corpus effect: none on the 414 files the arrangement differential
+had (2 106 of 4 053 changed spans before and after); the new `parentheses-shapes.cs` construct agrees
+on 18 of 19.
+
+### Fixed — `skala fix` and `skala arrange` undid each other at `skala_parentheses_redundancy_style = remove` (#394)
+
+`SK2174` parenthesises a binary operand of a shift or bitwise operator; at `remove` — ReSharper's
+"Always" — the arranger strips exactly those, as the oracle does. `SK2174` now reads the key and is
+silent at `remove`. Three texts called the boundary "settled by construction"; they now say what holds
+at each value, and a CLI test runs fix, arrange and fix at every value and asserts a fixed point.
+
 ### Removed — `skala arrange --aggressive`, which had done nothing since its gate was lifted (#389)
 
 ⚠ **Breaking, for anyone whose script passes `--aggressive`**: `skala arrange` now rejects it as an

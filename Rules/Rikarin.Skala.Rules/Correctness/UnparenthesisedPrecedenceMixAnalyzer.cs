@@ -22,16 +22,18 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <para>
 ///         ⚠
 ///         <b>
-///             The boundary against <c>SK0209</c> is settled by construction, and settling it was the
-///             condition on shipping this at all.
-///         </b> <c>skala arrange</c> removes redundant parentheses,
-///         and at the default <c>remove_if_not_clarifies_precedence</c>
-///         <c>ParenthesesRedundancy.MayRemove</c> refuses when the parent is a shift or a bitwise
-///         operator, because <c>resharper_parentheses_non_obvious_operations</c> names exactly those.
-///         Every pair of parentheses this rule adds has such a parent, so the arranger will not take
-///         one back. ⚠ This said "unconditionally" and it is not: at <c>remove</c> the arranger
-///         strips them as the oracle does, and <c>skala fix</c> and <c>skala arrange</c> undo each
-///         other (#394).
+///             The boundary against <c>SK0209</c> is settled by two facts, one per value of
+///             <c>skala_parentheses_redundancy_style</c>, and settling it was the condition on shipping
+///             this at all.
+///         </b> At the default <c>remove_if_not_clarifies_precedence</c>,
+///         <c>ParenthesesRedundancy.MayRemove</c> refuses a binary operand of a shift or a bitwise
+///         operator, because <c>resharper_parentheses_non_obvious_operations</c> names exactly those,
+///         and every pair of parentheses this rule adds is around such an operand. At <c>remove</c> the
+///         arranger strips them as the oracle does, and this rule is silent (#394).
+///         ⚠ This said "settled by construction" and that the arranger refuses "unconditionally", and
+///         neither was true: at <c>remove</c>, <c>skala fix</c> and <c>skala arrange</c> undid each other
+///         on every run. <c>FixAndArrangeTests</c> runs fix, arrange and fix again at each value and
+///         asserts a fixed point, which is the claim this paragraph makes.
 ///     </para>
 ///     <para>
 ///         ⚠ <b>Disjoint from <c>SK2064</c> by construction.</b> A comparison operand under <c>&amp;</c>
@@ -70,7 +72,39 @@ public sealed class UnparenthesisedPrecedenceMixAnalyzer : DiagnosticAnalyzer {
         );
     }
 
+    /// <summary>
+    ///     The one value of <c>skala_parentheses_redundancy_style</c> at which <c>skala arrange</c> strips
+    ///     the parentheses this rule's fix adds.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #394. At <c>remove</c> — ReSharper's "Always" — <c>ParenthesesRedundancy.MayRemove</c> skips
+    ///     <c>resharper_parentheses_non_obvious_operations</c> on purpose, because the oracle does: it
+    ///     strips <c>a | (b &amp; c)</c> and <c>a &lt;&lt; (b + 1)</c> there. A repository that asked for
+    ///     that has said it does not want these parentheses, so the rule is silent, and <c>skala fix</c>
+    ///     and <c>skala arrange</c> cannot undo each other. ⚠ Silent rather than diverging from the
+    ///     oracle in the arranger, which was the other way to break the loop: the arranger is the half that
+    ///     matches the reference, and this rule is the half that had no notion of the setting.
+    ///     <para>
+    ///         ⚠ Read by literal, one spelling, exact value. <c>Rikarin.Skala.Rules</c> cannot see the
+    ///         option registry, and the formatter resolves this key under its own name only and parses
+    ///         the value case-sensitively — <c>Remove</c> is refused there and the default stays in force,
+    ///         so it must not silence the rule here either.
+    ///         <c>OptionRegistryTests.TheAnalyzerReadOptions_HaveExactlyOneSpelling</c> is what fails if
+    ///         an alias or a value alias is ever added.
+    ///     </para>
+    /// </remarks>
+    const string RedundancyStyleKey = "skala_parentheses_redundancy_style";
+
+    static bool ArrangerRemovesThem(SyntaxNodeAnalysisContext context) =>
+        context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree)
+            .TryGetValue(RedundancyStyleKey, out var style)
+        && style.Trim() == "remove";
+
     static void Analyze(SyntaxNodeAnalysisContext context) {
+        if (ArrangerRemovesThem(context)) {
+            return;
+        }
+
         var parent = (BinaryExpressionSyntax)context.Node;
         Consider(context, parent, parent.Left);
         Consider(context, parent, parent.Right);
