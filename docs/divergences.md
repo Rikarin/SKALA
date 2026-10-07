@@ -3401,7 +3401,12 @@ the construct out of `preservation/lambda-parens.cs` so three keys stop being un
 work that stands. The debt is one mechanism, not four keys.
 
 - options: `skala_place_single_method_argument_lambda_on_same_line`, `skala_keep_existing_lambda_and_anonymous_function_parens_arrangement`, `skala_wrap_after_declaration_lpar`, `skala_wrap_before_declaration_rpar`
-- ⚠ status: **open**; SK-DIV-0050's family, and it needs the same missing fact.
+- ⚠ status: **closed at #405**, and not by the containment fact. ⚠ Row 1's reading is refuted: the
+  single-lambda key does *not* apply to an anonymous method — row 1 stays whole because it fits, and
+  any anonymous method that breaks leaves the call's line (SK-DIV-0163). The block half is
+  SK-DIV-0162's rule: a one-statement block breaks open when its owner's head spans lines, read off
+  the writer through a head marker, and row 2's re-join is the same rule's joining half.
+  `constructs/wrapping/anonymous-method-parens.cs` is byte-identical to the oracle.
 
 ## SK-DIV-0078 — an expression body's `=>` breaks when its body breaks, and Skala's fitter decides the arrow first
 
@@ -6605,4 +6610,84 @@ second is SK-DIV-0148's territory: a chain that breaks inside a switch's governi
 the parenthesis's contents a level past its dots. Recorded, not fixed.
 
 - options: `skala_wrap_chained_method_calls`.
+- ⚠ status: **open**.
+
+## SK-DIV-0162 — a one-statement block stayed on its owner's line when its statement wrapped
+
+⚠ **Issue #405**, found working #399. `BreakPlan.PlanOnePerLine` never broke an accessor's, a
+lambda's or an anonymous method's block, read off `get { return _street; }` and
+`Register(() => { Body(); });`, which come back whole only because they fit. Measured 2026-10-07 with
+`Testing ask` over every accessor kind (`get`, `set`, `init`, `add`, `remove`), lambda and
+anonymous-method blocks, method, local-function, `if` and `while` blocks, at two class depths, under
+the export and with `skala_keep_existing_declaration_block_arrangement`,
+`skala_keep_existing_embedded_block_arrangement`, `skala_keep_user_linebreaks` and
+`csharp_preserve_single_line_blocks` flipped one at a time:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `get { return Math.Max(`↵`_n,`↵`1); }`, `_n`↵`+ 1`, `_n switch { _ => 0 }`, a sum past the margin | broken open, the statement on its own line and laid out there | kept on the `get` line, `); }` |
+| `set { _f = () => { _n = 1; return value; }; }` | broken open, the lambda block one statement per line | whole on one line |
+| `get {`↵`return _n;`↵`}`, `get {`↵`return _n; }`, `() => {`↵`A();`↵`}` | **joined**: `get { return _n; }` | as written |
+| `get { return new List<int> {`↵`1, 2 }; }`, `add { _e += Combine(`↵`value); }` | the statement re-joins and the block stays: `get { return new List<int> { 1, 2 }; }` | identical |
+| a 120-column `get { … }` / 121 | kept / broken open, the statement on one line below | kept / `get { return Math.Max(` chopped |
+| `set { _n = value; _n++; }`, `() => { A(); B(); }`, under both keep keys too | one statement per line | one line |
+| `delegate(`↵`int first) { return first; }`, `(`↵`int first) => { … }`, `(int first)`↵`=> { … }` | broken open | `) { return first; }` (SK-DIV-0077) |
+| under the declaration key: `void M() { A(); }` / `void M() { _n = Math.Max(`↵`…); }` / `void N(`↵`int x) { A(); }` | kept / broken open / broken open | kept / `); }` / `) { A(); }` |
+| under the declaration key: `void L() { A(); }` (a local function) | **kept** | expanded — routed to the embedded key |
+| under the embedded key: `if (c) { A(); }` / `if (a`↵`&& b) { A(); }` / `() => {`↵`A(); }` | kept / **kept** / broken at both gaps | kept / kept / as written |
+
+So the rule is one for every block, and none of it is in an option name. More than one statement is
+always one per line, at every key. One statement may share the owner's line — an accessor's, a
+lambda's or an anonymous method's always, a method's, a local function's or an `if`'s only under its
+`keep_existing_*` key and only as written on one line — and then does exactly when it fits, its
+statement ends up on that line, and its owner's head is on one line. ⚠ Two keys were routed backwards:
+a lambda's block answers to the *embedded* key and a local function's to the *declaration* key.
+
+The block is a group whose points are the gaps after `{` and before `}` (`MayShareItsOwnersLine`).
+Its owner's head is a marker the group reads like an expression body's arrow does
+(`GroupFacts.BreaksIfOwnerIsMultiLine`, #372), after the attributes and not for a statement. Whether
+the statement wrapped is read off the writer: the group, entered flat, is written ahead on a
+checkpoint and broken if that spanned lines (`GroupFacts.BreaksIfContentSpansLines`,
+`LayoutWriter.FlatContentSpansLines`). ⚠ Not the flat width alone, although no measured shape needed
+more: every wrap the probes reached is a break the document already counts as certain, and the
+look-ahead is there for the one that is not, where pass one would keep the block on its line and
+pass two, reading the wrap as the author's, would break it.
+
+Not fixed here, and measured:
+
+- `csharp_preserve_single_line_blocks = false` expands every one-statement accessor, lambda and
+  anonymous-method block, `get { return _n; }` included. The key is Tier D and not read.
+- The blank lines around a member the block rule joins are still decided from its source lines
+  (#414).
+
+- options: `skala_keep_existing_declaration_block_arrangement`, `skala_keep_existing_embedded_block_arrangement`, `csharp_preserve_single_line_blocks`.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/one-statement-block-on-its-owners-line.cs`,
+  `constructs/preservation/one-statement-blocks.cs` under all four preservation corners, and
+  `OneStatementBlockIssue405Tests`.
+
+## SK-DIV-0163 — an anonymous method was laid out as the single lambda argument
+
+⚠ **Measured beside SK-DIV-0162**, which made one-line blocks break and so reached it from flat
+input. `place_single_method_argument_lambda_on_same_line` keeps a lambda on the call's line —
+`Register(() => {` … `}` / `);` — and does not keep an anonymous method there:
+`Register(delegate { A(); B(); })`, `Register(1, delegate { … })` and `Register(delegate () { … })`
+all come back `Register(` / `delegate {` … `}` / `);`, an ordinary argument. SK-DIV-0077 read the
+opposite off `Use(delegate(int first) { return first; });`, which stays whole because it fits.
+`BreakPlan.IsLambdaArgument` and the builder's two sole-lambda tests named
+`AnonymousFunctionExpressionSyntax`; they name `LambdaExpressionSyntax`.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line`.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/one-statement-block-on-its-owners-line.cs` and
+  `constructs/wrapping/anonymous-method-parens.cs`.
+
+## SK-DIV-0164 — a block after a parameter list the author broke, under an `=`, nests one level deep
+
+⚠ **Found beside SK-DIV-0162**, filed as #413, and it predates it: on master the oracle's own output
+comes back moved. `_f = delegate(` / `int first` / `) {` / `return first;` / `};` — and the same for
+`_f = (` / `int first` / `) => {` and `_f = (int first)` / `=> {` — is the oracle's fixed point, with
+the statement at the block's level and `};` at the statement's. Skala writes the statement one level
+past and `};` one past the statement, nesting from the `=`'s continuation although the `)` brought the
+line back. Stable on a second pass. As an argument, `Use(` / `delegate(` … `) {`, both engines agree.
+
+- options: none.
 - ⚠ status: **open**.
