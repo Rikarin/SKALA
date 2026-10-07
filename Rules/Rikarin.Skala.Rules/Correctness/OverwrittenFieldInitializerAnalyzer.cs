@@ -6,9 +6,10 @@ using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.Modernization;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Threading;
+using System.Linq;
 
 namespace Rikarin.Skala.Rules.Correctness;
 
@@ -19,11 +20,33 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     docs/plan/08-rule-catalogue.md § "SK2200 — events, delegates and effects that do not happen".
 ///     Two values are written down for one field and only one of them is ever true.
 ///     <para>
-///         ⚠ The subtle guard is the <c>override</c> one. Field initializers run <em>before</em> the base
-///         constructor call, so a base constructor calling a virtual method this type overrides can
-///         observe the initialized value — and in that program the initializer is not dead. Everything
-///         else the rule checks is about the constructor's own statements; this one is about a call the
-///         constructor does not contain.
+///         ⚠
+///         <b>
+///             The initialized value is live from the field initializer until the overwrite, and
+///             anything that runs code in that window can read it (#431).
+///         </b> Field initializers run
+///         <em>before</em> the base constructor call, so the window spans every base constructor body
+///         up to <c>object</c>'s, then the constructor's own statements up to the write, then the value
+///         the write computes. #412's audit measured three readers a name scan cannot see — an override
+///         reaching the field through a helper, a base constructor calling an interface on
+///         <c>this</c>, a getter read before the write — and #431 found two more: the overwrite's own
+///         value calling a method that reads the field, and a static getter reading an instance a base
+///         constructor stored. So nothing in the window may run code at all —
+///         <see cref="RewriteGuards.RunsNoOtherCode(IOperation)" />, read off the operations — and a base
+///         constructor the rule cannot read, from metadata, closes it.
+///     </para>
+///     <para>
+///         ⚠ <b>A construction that fails inside the window is a reader too.</b> The initialized value
+///         outlives the exception, and a finalizer or a <c>this</c> stored during the window reads it —
+///         measured <c>5</c> before the fix and <c>0</c> after, both ways. So where either is possible,
+///         nothing in the window may throw.
+///     </para>
+///     <para>
+///         ⚠ That needs every constructor body in the compilation, base types' included, and an
+///         operation action can only bind its own tree (RS1030). So the rule summarizes each
+///         constructor body as it is visited and decides at the end of the compilation, which is why
+///         its scope is <c>Compilation</c> rather than <c>Semantic</c>: a base class edited in another
+///         file changes the verdict here.
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -35,25 +58,276 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterOperationAction(Analyze, OperationKind.FieldInitializer);
+        context.RegisterCompilationStartAction(static start => {
+                var facts = new Facts();
+                start.RegisterOperationAction(context => Summarize(context, facts), OperationKind.ConstructorBody);
+                start.RegisterOperationAction(
+                    context => Collect(context, facts),
+                    OperationKind.FieldInitializer,
+                    OperationKind.PropertyInitializer
+                );
+                start.RegisterCompilationEndAction(context => {
+                        foreach (var candidate in facts.Candidates) {
+                            if (IsDead(candidate.Field, facts)) {
+                                context.ReportDiagnostic(
+                                    Diagnostic.Create(
+                                        Descriptor,
+                                        candidate.Location,
+                                        FixEdits.Pack((candidate.Edit, string.Empty)),
+                                        "the value given to `"
+                                        + candidate.Field.Name
+                                        + "` here is overwritten by every constructor"
+                                    )
+                                );
+                            }
+                        }
+                    }
+                );
+            }
+        );
+    }
+
+    /// <summary>What the compilation's constructors and initializers do, gathered for the end action.</summary>
+    sealed class Facts {
+        public ConcurrentDictionary<IMethodSymbol, Summary> Constructors { get; } =
+            new(SymbolEqualityComparer.Default);
+
+        /// <summary>
+        ///     Per type, the members whose instance initializer runs code or may throw. Every instance
+        ///     initializer runs inside some candidate's window — partial declarations leave their order
+        ///     unspecified — so a candidate counts all but its own.
+        /// </summary>
+        public ConcurrentDictionary<INamedTypeSymbol, ConcurrentBag<ISymbol>> RiskyInitializers { get; } =
+            new(SymbolEqualityComparer.Default);
+
+        public ConcurrentBag<Candidate> Candidates { get; } = new();
+    }
+
+    /// <summary>What one constructor body does, as far as the window before an overwrite is concerned.</summary>
+    sealed class Summary {
+        public Summary(
+            bool runsNoCode,
+            bool mayThrow,
+            bool leaks,
+            IMethodSymbol? next,
+            Dictionary<IFieldSymbol, bool> overwritten
+        ) {
+            RunsNoCode = runsNoCode;
+            MayThrow = mayThrow;
+            Leaks = leaks;
+            Next = next;
+            Overwritten = overwritten;
+        }
+
+        /// <summary>Whether the body, apart from its constructor initializer, runs no code.</summary>
+        public bool RunsNoCode { get; }
+
+        /// <summary>Whether the body or the constructor initializer's arguments may throw.</summary>
+        public bool MayThrow { get; }
+
+        /// <summary>Whether the body hands <c>this</c> on as a value rather than using it as a receiver.</summary>
+        public bool Leaks { get; }
+
+        /// <summary>The constructor it calls first, or <c>null</c> when the rule could not tell.</summary>
+        public IMethodSymbol? Next { get; }
+
+        /// <summary>
+        ///     The fields the body overwrites at its top level before anything in it runs code or touches
+        ///     them, each with whether something before the write — or the written value — may throw.
+        /// </summary>
+        public Dictionary<IFieldSymbol, bool> Overwritten { get; }
+    }
+
+    sealed class Candidate {
+        public Candidate(IFieldSymbol field, Location location, TextSpan edit) {
+            Field = field;
+            Location = location;
+            Edit = edit;
+        }
+
+        public IFieldSymbol Field { get; }
+
+        public Location Location { get; }
+
+        public TextSpan Edit { get; }
+    }
+
+    static void Summarize(OperationAnalysisContext context, Facts facts) {
+        if (context.ContainingSymbol is not IMethodSymbol { MethodKind: MethodKind.Constructor } constructor) {
+            return;
+        }
+
+        var body = (IConstructorBodyOperation)context.Operation;
+        var initializer = body.Initializer is IExpressionStatementOperation statement
+            ? statement.Operation
+            : body.Initializer;
+        var mayThrow = false;
+        if (initializer is IInvocationOperation invocation) {
+            foreach (var argument in invocation.Arguments) {
+                mayThrow |= !RewriteGuards.IsFreeToSkip(argument.Value);
+            }
+        }
+
+        var runsNoCode = true;
+        var leaks = false;
+        foreach (var part in new IOperation?[] { body.BlockBody, body.ExpressionBody }) {
+            if (part is null) {
+                continue;
+            }
+
+            runsNoCode &= RewriteGuards.RunsNoOtherCode(part);
+            mayThrow |= !RewriteGuards.RunsNoOtherCode(part, false);
+            leaks |= Leaks(part);
+        }
+
+        facts.Constructors[constructor.OriginalDefinition] = new(
+            runsNoCode,
+            mayThrow,
+            leaks,
+            Next(constructor, initializer),
+            Overwritten(body.BlockBody ?? body.ExpressionBody)
+        );
     }
 
     /// <summary>
-    ///     One field initializer, against every constructor of its type that runs it.
+    ///     ⚠ Whether <c>this</c> is used as a value — stored, passed or converted — rather than as the
+    ///     receiver of a member. A stored <c>this</c> outlives a constructor that throws, and whoever
+    ///     holds it reads the initialized value.
     /// </summary>
-    /// <remarks>
-    ///     ⚠ An operation action rather than the symbol action it was until #423, because whether the
-    ///     initializer may be deleted is now a semantic question — <see cref="RewriteGuards.IsFreeToSkip(IOperation)" />
-    ///     on the value — and a symbol action has no model of its own (RS1030).
-    /// </remarks>
-    static void Analyze(OperationAnalysisContext context) {
-        var initializer = (IFieldInitializerOperation)context.Operation;
-        if (initializer.InitializedFields.Length != 1
-            || initializer.InitializedFields[0] is not {
-                IsStatic: false,
-                IsConst: false,
-                IsImplicitlyDeclared: false,
-                DeclaredAccessibility: Accessibility.Private
+    static bool Leaks(IOperation operation) {
+        foreach (var descendant in operation.DescendantsAndSelf()) {
+            if (descendant is IInstanceReferenceOperation
+                && descendant.Parent is not (IFieldReferenceOperation
+                    or IPropertyReferenceOperation
+                    or IInvocationOperation
+                    or IEventReferenceOperation
+                    or IMethodReferenceOperation)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     The constructor this one calls before its body: the one its initializer names, or the
+    ///     implicit <c>base()</c>.
+    /// </summary>
+    static IMethodSymbol? Next(IMethodSymbol constructor, IOperation? initializer) {
+        if (initializer is IInvocationOperation { TargetMethod: { MethodKind: MethodKind.Constructor } target }) {
+            return target.OriginalDefinition;
+        }
+
+        return initializer is null ? ImplicitBase(constructor.ContainingType) : null;
+    }
+
+    /// <summary>
+    ///     The base constructor an implicit <c>base()</c> binds to — the one that can be called with no
+    ///     arguments, when there is exactly one.
+    /// </summary>
+    static IMethodSymbol? ImplicitBase(INamedTypeSymbol type) {
+        if (type.BaseType is not { } baseType) {
+            return null;
+        }
+
+        IMethodSymbol? found = null;
+        foreach (var candidate in baseType.InstanceConstructors) {
+            if (candidate.Parameters.All(static parameter => parameter.IsOptional || parameter.IsParams)) {
+                if (found is not null) {
+                    return null;
+                }
+
+                found = candidate;
+            }
+        }
+
+        return found?.OriginalDefinition;
+    }
+
+    /// <summary>
+    ///     The fields the body's top-level statements overwrite while everything before the write — and
+    ///     the written value — runs no code and leaves the field alone.
+    /// </summary>
+    static Dictionary<IFieldSymbol, bool> Overwritten(IBlockOperation? block) {
+        var overwritten = new Dictionary<IFieldSymbol, bool>(SymbolEqualityComparer.Default);
+        if (block is null) {
+            return overwritten;
+        }
+
+        var touched = new HashSet<IFieldSymbol>(SymbolEqualityComparer.Default);
+        var mayThrow = false;
+        foreach (var statement in block.Operations) {
+            if (statement is IExpressionStatementOperation {
+                    Operation:
+                    ISimpleAssignmentOperation {
+                        Target:
+                        IFieldReferenceOperation {
+                            Instance:
+                            IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance }
+                        } target
+                    } assignment
+                }) {
+                // ⚠ The written value runs inside the window too: `value = Twice()` with
+                // `Twice() => value * 2` doubled the initialized value, measured `6` → `0`.
+                if (!RewriteGuards.RunsNoOtherCode(assignment.Value)) {
+                    return overwritten;
+                }
+
+                mayThrow |= !RewriteGuards.RunsNoOtherCode(assignment.Value, false);
+                var field = target.Field.OriginalDefinition;
+                Touch(assignment.Value, touched);
+                if (touched.Add(field)) {
+                    overwritten[field] = mayThrow;
+                }
+
+                continue;
+            }
+
+            if (!RewriteGuards.RunsNoOtherCode(statement)) {
+                return overwritten;
+            }
+
+            mayThrow |= !RewriteGuards.RunsNoOtherCode(statement, false);
+            Touch(statement, touched);
+        }
+
+        return overwritten;
+    }
+
+    static void Touch(IOperation operation, HashSet<IFieldSymbol> touched) {
+        foreach (var descendant in operation.DescendantsAndSelf()) {
+            if (descendant is IFieldReferenceOperation reference) {
+                touched.Add(reference.Field.OriginalDefinition);
+            }
+        }
+    }
+
+    static void Collect(OperationAnalysisContext context, Facts facts) {
+        var initializer = (ISymbolInitializerOperation)context.Operation;
+        var initialized = initializer switch {
+            IFieldInitializerOperation fields => fields.InitializedFields.CastArray<ISymbol>(),
+            IPropertyInitializerOperation properties => properties.InitializedProperties.CastArray<ISymbol>(),
+            _ => ImmutableArray<ISymbol>.Empty
+        };
+
+        if (initialized.IsEmpty || initialized[0].IsStatic) {
+            return;
+        }
+
+        var free = RewriteGuards.IsFreeToSkip(initializer.Value);
+        if (!free) {
+            foreach (var symbol in initialized) {
+                facts.RiskyInitializers.GetOrAdd(
+                        symbol.ContainingType.OriginalDefinition,
+                        static _ => new ConcurrentBag<ISymbol>()
+                    )
+                    .Add(symbol.OriginalDefinition);
+            }
+        }
+
+        if (initialized.Length != 1
+            || initialized[0] is not IFieldSymbol {
+                IsConst: false, IsImplicitlyDeclared: false, DeclaredAccessibility: Accessibility.Private
             } field) {
             return;
         }
@@ -67,17 +341,24 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
         // user-defined conversion or operator, and no throw (#423). `IsSideEffectFree`, the syntactic
         // test this replaced, admitted `Counter.Next` and `(W)4` as a name path and a cast, and the
         // audit measured both running before the fix and not after.
-        if (!RewriteGuards.IsFreeToSkip(initializer.Value)
-            || RunningConstructors(type, context.CancellationToken) is not { Count: > 0 } running) {
+        if (!free
+            || field.DeclaringSyntaxReferences.Length != 1
+            || field.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
+            is not VariableDeclaratorSyntax { Initializer: { } value } declarator) {
             return;
         }
 
-        Examine(context, type, field, running);
+        var span = TextSpan.FromBounds(declarator.Identifier.Span.End, value.Span.End);
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(declarator.SyntaxTree, span)) {
+            return;
+        }
+
+        facts.Candidates.Add(new Candidate(field, value.GetLocation(), span));
     }
 
     /// <summary>
-    ///     The declared constructors that <em>run</em> field initializers, or <c>null</c> for a type
-    ///     whose constructors the walk cannot read.
+    ///     Whether every constructor that runs the field's initializer overwrites it before anything
+    ///     could read the initialized value.
     /// </summary>
     /// <remarks>
     ///     ⚠ C# runs field initializers in every constructor that does not chain to <c>this(…)</c>, so a
@@ -85,121 +366,53 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
     ///     or as a counterexample. A primary constructor, a record's copy constructor and any other
     ///     implicitly declared one stop the walk for the whole type: their assignments are not
     ///     constructor statements, and guessing at them is how this rule would delete a live value.
+    ///     <para>
+    ///         ⚠ A construction that throws inside the window leaves the initialized value behind, and
+    ///         two things read it afterwards: a finalizer, and a <c>this</c> the window stored somewhere.
+    ///         So when either is possible — a destructor anywhere up the chain, a class that is not
+    ///         sealed and so may gain one, or a leak — nothing in the window may throw either: no other
+    ///         instance initializer, constructor-initializer argument, base body, statement before the
+    ///         write, or written value.
+    ///     </para>
     /// </remarks>
-    static List<ConstructorDeclarationSyntax>? RunningConstructors(
-        INamedTypeSymbol type,
-        CancellationToken cancellation
-    ) {
-        var running = new List<ConstructorDeclarationSyntax>();
+    static bool IsDead(IFieldSymbol field, Facts facts) {
+        var type = field.ContainingType;
+        var running = 0;
+        var mayThrow = OtherInitializersMayThrow(type, field, facts);
+        var observable = MayBeFinalized(type);
         foreach (var constructor in type.InstanceConstructors) {
-            if (constructor.IsImplicitlyDeclared || constructor.DeclaringSyntaxReferences.Length != 1) {
-                return null;
+            if (constructor.IsImplicitlyDeclared
+                || constructor.DeclaringSyntaxReferences.Length != 1
+                || constructor.DeclaringSyntaxReferences[0].GetSyntax()
+                is not ConstructorDeclarationSyntax declaration
+                || !facts.Constructors.TryGetValue(constructor.OriginalDefinition, out var summary)) {
+                return false;
             }
 
-            if (constructor.DeclaringSyntaxReferences[0].GetSyntax(cancellation)
-                is not ConstructorDeclarationSyntax declaration) {
-                return null;
+            if (declaration.Initializer.IsKind(SyntaxKind.ThisConstructorInitializer)) {
+                continue;
             }
 
-            if (!declaration.Initializer.IsKind(SyntaxKind.ThisConstructorInitializer)) {
-                running.Add(declaration);
-            }
-        }
-
-        return running;
-    }
-
-    /// <summary>One private instance field, against every constructor that runs its initializer.</summary>
-    static void Examine(
-        OperationAnalysisContext context,
-        INamedTypeSymbol type,
-        IFieldSymbol field,
-        List<ConstructorDeclarationSyntax> running
-    ) {
-        if (field.DeclaringSyntaxReferences.Length != 1
-            || field.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
-            is not VariableDeclaratorSyntax { Initializer: { } initializer } declarator) {
-            return;
-        }
-
-        if (ReferencedInAnOverride(type, field, context.CancellationToken)) {
-            return;
-        }
-
-        foreach (var constructor in running) {
-            if (!OverwritesBeforeAnyRead(constructor, field.Name)) {
-                return;
-            }
-        }
-
-        var span = TextSpan.FromBounds(declarator.Identifier.Span.End, initializer.Span.End);
-        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(declarator.SyntaxTree, span)) {
-            return;
-        }
-
-        context.ReportDiagnostic(
-            Diagnostic.Create(
-                Descriptor,
-                initializer.GetLocation(),
-                FixEdits.Pack((span, string.Empty)),
-                "the value given to `" + field.Name + "` here is overwritten by every constructor"
-            )
-        );
-    }
-
-    /// <summary>
-    ///     Whether the constructor's first contact with the field is an unconditional overwrite.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Every statement before the assignment has to be provably harmless, not merely free of the
-    ///     field's name. An invocation, an object creation, `this` or `base` can each reach the field
-    ///     without spelling it — and if anything reads the initialized value before it is replaced,
-    ///     that value is observable and the initializer is not dead.
-    /// </remarks>
-    static bool OverwritesBeforeAnyRead(ConstructorDeclarationSyntax constructor, string name) {
-        if (constructor.Initializer is { } initializer && Mentions(initializer, name)) {
-            return false;
-        }
-
-        foreach (var statement in Statements(constructor)) {
-            if (statement is ExpressionStatementSyntax {
-                    Expression:
-                    AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment
-                }
-                && IsFieldTarget(assignment.Left, name)) {
-                return !Mentions(assignment.Right, name);
+            running++;
+            if (!summary.Overwritten.TryGetValue(field.OriginalDefinition, out var throwsBefore)) {
+                return false;
             }
 
-            if (Mentions(statement, name) || Reaches(statement)) {
+            mayThrow |= throwsBefore || summary.MayThrow;
+            observable |= summary.Leaks;
+            if (type.TypeKind == TypeKind.Class
+                && !BaseChainRunsNoCode(summary.Next, facts, ref mayThrow, ref observable)) {
                 return false;
             }
         }
 
-        return false;
+        return running > 0 && !(mayThrow && observable);
     }
 
-    static IEnumerable<StatementSyntax> Statements(ConstructorDeclarationSyntax constructor) {
-        if (constructor.Body is { } body) {
-            return body.Statements;
-        }
-
-        return constructor.ExpressionBody is { } arrow
-            ? new StatementSyntax[] { SyntaxFactory.ExpressionStatement(arrow.Expression) }
-            : System.Array.Empty<StatementSyntax>();
-    }
-
-    static bool IsFieldTarget(ExpressionSyntax left, string name) =>
-        left switch {
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText == name,
-            MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Expression: ThisExpressionSyntax
-            } access => access.Name.Identifier.ValueText == name,
-            _ => false
-        };
-
-    static bool Mentions(SyntaxNode node, string name) {
-        foreach (var identifier in node.DescendantNodesAndSelf()) {
-            if (identifier is IdentifierNameSyntax candidate && candidate.Identifier.ValueText == name) {
+    static bool OtherInitializersMayThrow(INamedTypeSymbol type, IFieldSymbol self, Facts facts) {
+        for (var current = type; current is not null; current = current.BaseType) {
+            if (facts.RiskyInitializers.TryGetValue(current.OriginalDefinition, out var risky)
+                && risky.Any(symbol => !SymbolEqualityComparer.Default.Equals(symbol, self.OriginalDefinition))) {
                 return true;
             }
         }
@@ -207,15 +420,21 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
         return false;
     }
 
-    /// <summary>Whether a statement could reach the instance without naming the field.</summary>
-    static bool Reaches(SyntaxNode node) {
-        foreach (var descendant in node.DescendantNodesAndSelf()) {
-            if (descendant is InvocationExpressionSyntax
-                or BaseObjectCreationExpressionSyntax
-                or ThisExpressionSyntax
-                or BaseExpressionSyntax
-                or AnonymousFunctionExpressionSyntax
-                or LocalFunctionStatementSyntax) {
+    /// <summary>Whether a finalizer could run on an instance whose construction failed, and read the field.</summary>
+    static bool MayBeFinalized(INamedTypeSymbol type) {
+        if (type.TypeKind == TypeKind.Struct) {
+            return false;
+        }
+
+        if (!type.IsSealed) {
+            return true;
+        }
+
+        for (var current = type;
+             current is { SpecialType: not SpecialType.System_Object };
+             current = current.BaseType) {
+            if (current.GetMembers()
+                    .Any(static member => member is IMethodSymbol { MethodKind: MethodKind.Destructor })) {
                 return true;
             }
         }
@@ -224,26 +443,46 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    ///     ⚠ Whether the field is named inside a member this type overrides.
+    ///     Whether the constructor chain from <paramref name="constructor" /> up to <c>object</c>'s runs
+    ///     no code — so nothing between the field initializer and the derived constructor body can
+    ///     reach the instance — accumulating whether any of it may throw or leak <c>this</c>.
     /// </summary>
     /// <remarks>
-    ///     A base constructor may call a virtual member, and it does so <em>after</em> this type's field
-    ///     initializers have run and <em>before</em> this type's constructor body. An override reading
-    ///     the field therefore sees the initialized value, which makes the initializer observable and
-    ///     the finding wrong. The test is deliberately loose — any mention, read or write — because
-    ///     every shape it recognises produces silence and none of them can produce a finding.
+    ///     ⚠ Declines a constructor from metadata, which the rule cannot read. A framework base
+    ///     constructor is free to call a virtual member, and WinForms' do.
     /// </remarks>
-    static bool ReferencedInAnOverride(INamedTypeSymbol type, IFieldSymbol field, CancellationToken cancellation) {
-        foreach (var member in type.GetMembers()) {
-            if (!member.IsOverride) {
+    static bool BaseChainRunsNoCode(
+        IMethodSymbol? constructor,
+        Facts facts,
+        ref bool mayThrow,
+        ref bool observable
+    ) {
+        var seen = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        while (constructor is not null) {
+            if (!seen.Add(constructor)) {
+                return false;
+            }
+
+            if (constructor.ContainingType.SpecialType == SpecialType.System_Object) {
+                return true;
+            }
+
+            if (constructor.IsImplicitlyDeclared
+                && constructor.ContainingType.DeclaringSyntaxReferences.Length > 0
+                && !constructor.ContainingType.IsRecord) {
+                // A default constructor the compiler wrote over a source type: it runs that type's
+                // initializers, which cannot name `this`, and then the implicit `base()`.
+                constructor = ImplicitBase(constructor.ContainingType);
                 continue;
             }
 
-            foreach (var reference in member.DeclaringSyntaxReferences) {
-                if (Mentions(reference.GetSyntax(cancellation), field.Name)) {
-                    return true;
-                }
+            if (!facts.Constructors.TryGetValue(constructor, out var summary) || !summary.RunsNoCode) {
+                return false;
             }
+
+            mayThrow |= summary.MayThrow;
+            observable |= summary.Leaks;
+            constructor = summary.Next;
         }
 
         return false;

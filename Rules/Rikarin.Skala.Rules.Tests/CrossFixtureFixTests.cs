@@ -164,10 +164,11 @@ public sealed class CrossFixtureFixTests {
     ///     safe or not.
     /// </summary>
     /// <remarks>
-    ///     The sweep above executes safe fixes only, and three of these rules stay unsafe for a reason
-    ///     that is not evaluation count — a list's live size (#430), a read before the overwrite (#431),
-    ///     and <c>SK2064</c> by construction. Their evaluation-count shapes are pinned here all the same,
-    ///     so the guard is already proved on the day the other defect is fixed and the rule flips. An
+    ///     The sweep above executes safe fixes only, and two of these rules stay unsafe for a reason
+    ///     that is not evaluation count — <c>SK4030</c> for the exception a <c>null</c> receiver throws
+    ///     (#437), and <c>SK2064</c> by construction. Their shapes are pinned here all the same, so the
+    ///     guard is already proved on the day the other defect is fixed and the rule flips; #430's
+    ///     mutating predicates and #431's reads before the overwrite are executable negatives here. An
     ///     edit to <c>[CallerArgumentExpression]</c> text is still left out, as the host leaves it (#422).
     /// </remarks>
     public static TheoryData<string> EvaluationCountRules =>

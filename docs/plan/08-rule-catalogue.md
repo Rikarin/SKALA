@@ -2690,6 +2690,24 @@ at a measured cost: the rule's corpus findings went 2 → 1, and 3 of the corpus
 unsafe for a reason found on the way: on a `null` receiver `ArgumentNullException` becomes
 `NullReferenceException` for every pair and for `Contains` (#437).
 
+⚠ **#431: `SK2200` treats everything between the field initializer and the overwrite as a window in
+which nothing may run code, and it is safe again.** Field initializers run before the base constructor
+call, so the window is every base constructor body up to `object`'s, the constructor's statements before
+the write, and the written value — and each must pass `RewriteGuards.RunsNoOtherCode`, or the rule
+declines. That covers the issue's three measured readers (an override reaching the field through a
+helper, a base constructor calling an interface on `this`, a getter before the write) and two the fix
+found: `f = Twice()` with `Twice() => f * 2` (`6` → `0`), and a static getter reading an instance a base
+constructor stored. A base constructor from metadata declines. ⚠ **A construction that throws inside
+the window is a reader too**: the initialized value outlives the exception, and a finalizer or a stored
+`this` reads it — measured `5` → `0` both ways. So when a finalizer is possible (a destructor up the
+chain, or a class that is not sealed) or `this` is used as a value in the window, nothing in it may
+throw, including every other instance initializer and constructor-initializer argument. Reading other
+files' base constructors needs the whole compilation, so the rule now decides in a compilation-end
+action and its scope is `Compilation`, outside the per-file cache. The old name-based guards
+(`ReferencedInAnOverride`, `Reaches`, `Mentions`) are gone; each new guard was sabotaged alone and the
+pairs that mask each other together. Cost: the rule had no findings on the vendored corpus or on Skala
+before this change, so the corpus cannot measure what it gave up.
+
 ⚠ **`SK4020` and `SK4002` are asserted never to fire on the same declaration.** One reports a capture
 and the other the absence of every capture; they are complements, and a report carrying both would be
 one decision billed twice. The assertion lives in the batch tests rather than in a `supersedes`

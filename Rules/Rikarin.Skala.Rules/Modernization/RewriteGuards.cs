@@ -166,7 +166,21 @@ internal static class RewriteGuards {
     ///     rewrite asks when the code it moves into another method can only be proved to behave the
     ///     same if it cannot reach that method's state — #430's predicate that grows the list it scans.
     /// </remarks>
-    public static bool RunsNoOtherCode(IOperation? operation) {
+    public static bool RunsNoOtherCode(IOperation? operation) => RunsNoOtherCode(operation, true);
+
+    /// <summary>
+    ///     <see cref="RunsNoOtherCode(IOperation)" />, and with <paramref name="mayThrow" /> false it also
+    ///     cannot throw: the receiver of every member read is <c>this</c>, a value or an already-tested
+    ///     <c>?.</c> receiver, and no array element, framework call, checked or <c>decimal</c> arithmetic,
+    ///     division by a non-constant, or failing conversion — <see cref="IsFreeToSkip(IOperation)" />'s
+    ///     terms, over a body.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #431: a constructor that throws before it overwrites a field leaves the initialized value
+    ///     where a finalizer or a leaked <c>this</c> reads it — measured <c>5</c> before deleting the
+    ///     initializer and <c>0</c> after, both ways.
+    /// </remarks>
+    public static bool RunsNoOtherCode(IOperation? operation, bool mayThrow) {
         if (operation is null) {
             return false;
         }
@@ -175,7 +189,7 @@ internal static class RewriteGuards {
         pending.Push(operation);
         while (pending.Count > 0) {
             var current = pending.Pop();
-            if (!IsInertStep(current)) {
+            if (!IsInertStep(current, mayThrow)) {
                 return false;
             }
 
@@ -187,8 +201,8 @@ internal static class RewriteGuards {
         return true;
     }
 
-    /// <summary>One node of <see cref="RunsNoOtherCode" />, judged without its children.</summary>
-    static bool IsInertStep(IOperation operation) {
+    /// <summary>One node of <see cref="RunsNoOtherCode(IOperation, bool)" />, judged without its children.</summary>
+    static bool IsInertStep(IOperation operation, bool mayThrow) {
         if (operation.Type?.TypeKind is TypeKind.Dynamic or TypeKind.Pointer or TypeKind.FunctionPointer) {
             return false;
         }
@@ -215,8 +229,6 @@ internal static class RewriteGuards {
             case ITypeOfOperation:
             case ISizeOfOperation:
             case INameOfOperation:
-            case IFieldReferenceOperation:
-            case IArrayElementReferenceOperation:
             case ISimpleAssignmentOperation:
             case IDiscardOperation:
             case IIsTypeOperation:
@@ -235,23 +247,34 @@ internal static class RewriteGuards {
             case ICoalesceOperation coalesce:
                 return IsLanguageOwn(coalesce.ValueConversion.MethodSymbol);
 
+            case IFieldReferenceOperation field:
+                return mayThrow || CannotBeNull(field.Instance);
+
+            case IArrayElementReferenceOperation:
+                return mayThrow;
+
             case IRecursivePatternOperation recursive:
                 return recursive.DeconstructSymbol is null && recursive.DeconstructionSubpatterns.IsEmpty;
 
             case IPropertyReferenceOperation property:
-                return property.Arguments.IsEmpty && IsStorage(property.Property);
+                return property.Arguments.IsEmpty
+                    && IsStorage(property.Property)
+                    && (mayThrow || CannotBeNull(property.Instance));
 
             case IConversionOperation conversion:
-                return IsLanguageOwn(conversion.OperatorMethod);
+                return IsLanguageOwn(conversion.OperatorMethod) && (mayThrow || !CanThrow(conversion));
 
             case IBinaryOperation binary:
-                return IsLanguageOwn(binary.OperatorMethod) && !CallsToString(binary);
+                return IsLanguageOwn(binary.OperatorMethod)
+                    && !CallsToString(binary)
+                    && (mayThrow || !CanThrow(binary));
 
             case IUnaryOperation unary:
-                return IsLanguageOwn(unary.OperatorMethod);
+                return IsLanguageOwn(unary.OperatorMethod)
+                    && (mayThrow || !(unary.IsChecked && unary.OperatorKind == UnaryOperatorKind.Minus));
 
             case IIncrementOrDecrementOperation increment:
-                return increment.OperatorMethod is null;
+                return increment.OperatorMethod is null && (mayThrow || !increment.IsChecked);
 
             case ICompoundAssignmentOperation compound:
                 return IsLanguageOwn(compound.OperatorMethod)
@@ -259,10 +282,16 @@ internal static class RewriteGuards {
                     && IsLanguageOwn(compound.OutConversion.MethodSymbol)
                     && !(compound.OperatorKind == BinaryOperatorKind.Add
                         && compound.Type?.SpecialType == SpecialType.System_String
-                        && compound.Value.Type?.SpecialType is not (SpecialType.System_String or SpecialType.System_Char));
+                        && compound.Value.Type?.SpecialType is not (SpecialType.System_String
+                            or SpecialType.System_Char))
+                    && (mayThrow
+                        || (!compound.IsChecked
+                            && !IsDecimal(compound.Type)
+                            && compound.OperatorKind is not (BinaryOperatorKind.Divide
+                                or BinaryOperatorKind.Remainder)));
 
             case IInvocationOperation invocation:
-                return IsInertFrameworkMethod(invocation.TargetMethod);
+                return mayThrow && IsInertFrameworkMethod(invocation.TargetMethod);
 
             default:
                 return false;
@@ -270,17 +299,30 @@ internal static class RewriteGuards {
     }
 
     /// <summary>
+    ///     A receiver a member read through cannot find <c>null</c>: none, <c>this</c>, a tested <c>?.</c> receiver or a
+    ///     value.
+    /// </summary>
+    static bool CannotBeNull(IOperation? instance) =>
+        instance is null or IInstanceReferenceOperation or IConditionalAccessInstanceOperation
+        || instance.Type?.IsValueType == true;
+
+    /// <summary>
     ///     A non-generic framework method on text, a character, a flag or a number, whose every parameter
     ///     is one of those or an enum — so it is handed nothing with code of its own to run.
     /// </summary>
     static bool IsInertFrameworkMethod(IMethodSymbol method) {
-        if (method.IsGenericMethod || method.MethodKind != MethodKind.Ordinary || !method.Locations.All(static l => l.IsInMetadata)) {
+        if (method.IsGenericMethod
+            || method.MethodKind != MethodKind.Ordinary
+            || !method.Locations.All(static l => l.IsInMetadata)) {
             return false;
         }
 
         var owner = method.ContainingType;
         if (!IsPlainValue(owner)
-            && !(owner is { Name: "Math" or "MathF", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true } })) {
+            && !(owner is {
+                Name: "Math" or "MathF",
+                ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
+            })) {
             return false;
         }
 
