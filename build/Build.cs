@@ -208,6 +208,13 @@ class Build : NukeBuild {
                     // no reference to `Rules.Metadata` at all** — they were the `Options` half, and
                     // the original diagnosis could not account for them.
                     //
+                    // ⚠ **The binlog's 0 was itself partly vacuous until #388.** `SK0210 usings` reads
+                    // the compiler's `CS8019`, and the compiler reports no unnecessary using in a tree
+                    // parsed with `DocumentationMode.None` — which is what a binlog of a project
+                    // without `GenerateDocumentationFile` recorded, so every project here. The step
+                    // could not find an unused using at all; the first run after the binlog loader
+                    // began parsing documentation found three.
+                    //
                     // ⚠ **A working tree hides this**, which is how it reached master: a tree ever
                     // built in Debug has those generators on disk, so the command is green here and
                     // red on CI's clean checkout. Only a `git clone` reproduces it.

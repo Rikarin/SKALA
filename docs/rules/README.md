@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 363 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 364 ids are allocated.
 
 ## Async
 
@@ -421,6 +421,7 @@
 | [SK9029](SK9029.md) | The load names an analyzer or source generator assembly that is not on disk | error | — | no |
 | [SK9030](SK9030.md) | An analyzer threw | warning | — | no |
 | [SK9031](SK9031.md) | An analyzer package failed to load | warning | — | no |
+| [SK9032](SK9032.md) | A project does not ask the compiler for its XML-documentation diagnostics | suggestion | — | no |
 | [SK9095](SK9095.md) | An arrangement rule threw and was skipped | warning | — | yes |
 | [SK9096](SK9096.md) | An arrangement was reverted because an identifier now binds to something else | error | — | no |
 | [SK9097](SK9097.md) | Arrange-and-format did not reach a fixed point | error | — | yes |

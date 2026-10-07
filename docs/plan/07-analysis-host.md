@@ -234,6 +234,43 @@ continues to loose with `SK9025`". It does not: `auto` resolves to workspace whe
 and workspace is then the *first* rung, so `verify`, `arrange` and `fix` refuse at exit 4 (the third
 table row). It is the default `--load=binlog` ladder that continues, and the registry now says so.
 
+### Documentation is parsed whatever the build asked for (#388, #384)
+
+A project without `GenerateDocumentationFile` compiles with `DocumentationMode.None`, and under it a
+`///` comment is an ordinary `//` comment. The binlog loader took the recorded options as they came,
+so on CI's path and the self-gate's every rule that reads documentation answered a different question
+from the one its fixtures pin. Measured on a two-member probe with `SK7010`/`SK7101` raised to warning,
+`--load=binlog` with the property off reported both documented members as undocumented and `SK7100`
+found nothing; with the property on, under `--load=workspace` (`MSBuildWorkspace` already hands back
+`Parse`) and under `--load=loose`, the answer was right.
+
+**Decision: every project-backed load parses documentation (`DocumentationComments.ForAnalysis`).**
+Only `None` moves, and only to `Parse`: language version, preprocessor symbols and features stay the
+build's, the compilation is built from the re-parsed trees (generators included, through
+`GeneratorDriver.Run`'s parse options), and `Diagnose` — which would put `CS1591` and its family into a
+report the project never asked for — is kept only where the build chose it. The diagnostic cache key
+already carries `DocumentationMode`, so no result from the old mode can be served. Refusing the
+documentation rules with an `SK9xxx`, the issue's other suggestion, was rejected: the verdict changes
+for more rules than the three named ones and the list is not stable — `SK1110` declined every
+forwarding overload with a doc comment under `None`, because to it the comment was an ordinary one it
+would orphan — and a refusal list is one the next such rule is silently not on. `Parse` is also the
+mode the loose loader, the formatter and the rule fixture harness have always used, so this makes the
+binlog agree with the definition of the rules rather than diverge from the compiler.
+
+⚠ **The compiler's own `CS8019` needs parsed documentation too**, which the issue did not name. It
+reports no unnecessary using in a `None` tree, `UsingsRule.Unused` reads exactly that diagnostic, and
+so `arrange --check --load=binlog` — the Lint step — could never remove an unused using in this
+repository. The first run after this change found three.
+
+**#384, the other half: `SK9032`, info, one line per run naming every project** whose build did not
+pass `/doc`, so a report with no `CS1570`–`CS1592`/`CS1710`–`CS1739` says whether that is because the
+documentation is right or because nobody asked. Info and never a gate input, because leaving the
+property off is a legitimate choice; one line rather than one per project, because this repository has
+31 such projects and a wall of identical notes is the noise `SK9001` is info to avoid. `config check`
+was the other candidate home and cannot see the property: it reads configuration files and loads no
+project. ⚠ `plain` and `agent` print only blocking tool diagnostics, so the note reaches `terminal`,
+`github` and the SARIF's `toolExecutionNotifications` — the same surfaces as `SK9025` and `SK9021`.
+
 ### `loose` — no project at all
 
 Parse the files, add `MetadataReference`s for the running framework's reference assemblies, build one

@@ -2446,6 +2446,30 @@
       ]
     },
     {
+      "id": "SK9032",
+      "concept": "documentation-diagnostics-off",
+      "title": "A project does not ask the compiler for its XML-documentation diagnostics",
+      "category": "Tool",
+      "defaultSeverity": "suggestion",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "One or more loaded projects do not set `GenerateDocumentationFile`, so the compiler never computed its documentation diagnostics for them — `CS1572` for a `<param>` naming no parameter, `CS1573` for a parameter with none, `CS1570` for malformed XML and the rest of `CS1570`–`CS1592` and `CS1710`–`CS1739`. Info, once per run, naming every such project. Skala's own documentation rules are unaffected: they read documentation parsed whatever the property says. Set `<GenerateDocumentationFile>true</GenerateDocumentationFile>` (and `<NoWarn>CS1591</NoWarn>` if undocumented public members are not the question) to have the compiler check what is written.",
+      "rationale": "#384. With the property off the compiler parses no documentation and reports nothing about it, so `skala check` over a `<param name=\"old\">` on a method whose parameter is `current` returned exactly the clean report it returns over correct documentation. A zero from a check that did not run and a zero from clean code are the same zero, and the `SK9xxx` range exists to say which one a report holds. It is a note and not a warning because leaving the property off is a legitimate choice — a warning would fail the gate of every repository that has made it — and it is one line naming every project rather than one line per project, because Skala's own solution has dozens of them and a wall of identical notes is the noise `SK9001` is info to avoid. `config check` was the other candidate home and was not taken: it reads `.editorconfig` and `skala.jsonc` and loads no project, so it cannot see the property, and the statement belongs in the report whose zero it qualifies.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "Only the project-backed loads report it. `--load=loose` drops every compiler diagnostic by design, so it has nothing here to qualify. A project that sets `DocumentationFile` directly is treated as setting the property, because what is read is whether `csc` was given `/doc`. Suppressing the family with `NoWarn` while the property is on is a decision the report already reflects and is not reported.",
+      "configuration": [
+        "MSBuild: GenerateDocumentationFile"
+      ]
+    },
+    {
       "id": "SK9095",
       "concept": "arrangement-rule-threw",
       "title": "An arrangement rule threw and was skipped",

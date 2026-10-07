@@ -220,7 +220,12 @@ public static class BinlogLoader {
         var trees = ImmutableArray.CreateBuilder<SyntaxTree>();
         var reportable = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
         var unreadable = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
-        var parseOptions = parsed.ParseOptions;
+        // ⚠ #388: documentation is parsed whatever the build asked for, and only the documentation mode
+        // moves — language version, preprocessor symbols and features stay the build's. Without `/doc`
+        // the recorded options say `None`, and every rule reading a `///` comment reported documented
+        // members as undocumented. The compilation below is built from these trees, generators included,
+        // so no tree is ever mixed with a compilation parsed another way.
+        var parseOptions = DocumentationComments.ForAnalysis(parsed.ParseOptions);
 
         foreach (var source in parsed.SourceFiles) {
             var full = Path.GetFullPath(source.Path);
@@ -317,7 +322,8 @@ public static class BinlogLoader {
             UnreadablePaths = unreadable.ToImmutable(),
             AnalyzerReferences = analyzerReferences.ToImmutable(),
             AnalyzerConfigPaths = analyzerConfigPaths,
-            ProjectPath = projectPath
+            ProjectPath = projectPath,
+            DocumentationDiagnosticsOff = !DocumentationComments.CompilerReportsOn(parsed.ParseOptions)
         };
     }
 

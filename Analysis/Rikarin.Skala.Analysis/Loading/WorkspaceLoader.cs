@@ -152,10 +152,21 @@ public static class WorkspaceLoader {
         }
 
         var units = ImmutableArray.CreateBuilder<CompilationUnit>();
-        foreach (var project in workspace.CurrentSolution.Projects) {
-            if (project.Language != LanguageNames.CSharp) {
+        foreach (var loadedProject in workspace.CurrentSolution.Projects) {
+            if (loadedProject.Language != LanguageNames.CSharp) {
                 continue;
             }
+
+            // ⚠ #388: the binlog loader's normalisation, applied before the compilation exists so that
+            // every tree in it is parsed one way. `MSBuildWorkspace` was measured handing back `Parse`
+            // for a project without `GenerateDocumentationFile`, so today this changes nothing here —
+            // which is a fact about one Roslyn version's project loader, not a contract.
+            var buildOptions = loadedProject.ParseOptions as CSharpParseOptions;
+            var project = buildOptions is not null
+                && DocumentationComments.ForAnalysis(buildOptions) is var analysed
+                && !ReferenceEquals(analysed, buildOptions)
+                    ? loadedProject.WithParseOptions(analysed)
+                    : loadedProject;
 
             if (project.GetCompilationAsync(cancellation).GetAwaiter().GetResult()
                 is not CSharpCompilation compilation) {
@@ -200,7 +211,8 @@ public static class WorkspaceLoader {
                             .Select(static reference => reference.FullPath ?? string.Empty)
                             .Where(static path => path.Length > 0)
                     ],
-                    ProjectPath = project.FilePath ?? string.Empty
+                    ProjectPath = project.FilePath ?? string.Empty,
+                    DocumentationDiagnosticsOff = !DocumentationComments.CompilerReportsOn(buildOptions)
                 }
             );
         }

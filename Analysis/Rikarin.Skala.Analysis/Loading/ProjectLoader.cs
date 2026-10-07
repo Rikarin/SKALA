@@ -39,6 +39,13 @@ public static class ProjectLoader {
             // claim about the file.
             var loaded = raw with { Units = MultiTargetLink.Apply(raw.Units) };
 
+            // ⚠ #384: here for the same reason — once per run, whichever project-backed rung answered.
+            loaded = loaded with {
+                Diagnostics = loaded.Diagnostics.AddRange(
+                    DocumentationComments.Note(loaded.Units, request.RepositoryRoot)
+                )
+            };
+
             attempted.AddRange(loaded.Diagnostics);
 
             // ⚠ **The one thing the ladder may not fall through, and it is tested before `IsEmpty` on
