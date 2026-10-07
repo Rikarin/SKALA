@@ -19,6 +19,14 @@ namespace Rikarin.Skala.Analysis.Loading;
 ///     a third of the code, and nothing in that report says so unless this does.
 /// </remarks>
 public static class WorkspaceLoader {
+    /// <summary>The project with its documentation parsed, or the project itself when it already is (#388).</summary>
+    static Project ParsedForAnalysis(Project project, CSharpParseOptions? buildOptions) =>
+        buildOptions is not null
+        && DocumentationComments.ForAnalysis(buildOptions) is var analysed
+        && !ReferenceEquals(analysed, buildOptions)
+            ? project.WithParseOptions(analysed)
+            : project;
+
     public static LoadedProject Load(LoadRequest request, CancellationToken cancellation) {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
         var resolution = Resolve(request);
@@ -162,11 +170,7 @@ public static class WorkspaceLoader {
             // for a project without `GenerateDocumentationFile`, so today this changes nothing here —
             // which is a fact about one Roslyn version's project loader, not a contract.
             var buildOptions = loadedProject.ParseOptions as CSharpParseOptions;
-            var project = buildOptions is not null
-                && DocumentationComments.ForAnalysis(buildOptions) is var analysed
-                && !ReferenceEquals(analysed, buildOptions)
-                    ? loadedProject.WithParseOptions(analysed)
-                    : loadedProject;
+            var project = ParsedForAnalysis(loadedProject, buildOptions);
 
             if (project.GetCompilationAsync(cancellation).GetAwaiter().GetResult()
                 is not CSharpCompilation compilation) {
