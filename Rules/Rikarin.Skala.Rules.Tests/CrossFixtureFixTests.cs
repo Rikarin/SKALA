@@ -43,14 +43,22 @@ public sealed class CrossFixtureFixTests {
             fixtures,
             new ParallelOptions { CancellationToken = cancellation },
             fixture => {
-                foreach (var failure in Regressions(File.ReadAllText(fixture.Path), fixture.Path, ref applied, cancellation)) {
+                foreach (var failure in Regressions(
+                             File.ReadAllText(fixture.Path),
+                             fixture.Path,
+                             ref applied,
+                             cancellation
+                         )) {
                     failures.Add(CrossRuleBaseline.Key(fixture.Path) + ": " + failure);
                 }
             }
         );
 
         // Anti-vacuity: a sweep that applied nothing passes for the reason a disabled check passes.
-        Assert.True(applied > 1000, $"Only {applied} (fixture, rule) fix(es) were applied across {fixtures.Count} fixtures.");
+        Assert.True(
+            applied > 1000,
+            $"Only {applied} (fixture, rule) fix(es) were applied across {fixtures.Count} fixtures."
+        );
         Assert.True(
             failures.IsEmpty,
             $"{failures.Count} safe fix(es) out of {applied} applied break a fixture that compiled before:\n  "
@@ -68,8 +76,23 @@ public sealed class CrossFixtureFixTests {
         var cancellation = TestContext.Current.CancellationToken;
         var before = RuleFixtures.Compile(source, "planted.cs");
 
-        Assert.Equal(["CS8754 ×1"], NewErrors(before, source.Replace("var x = 1", "_ = new()", StringComparison.Ordinal), "planted.cs", cancellation));
-        Assert.Empty(NewErrors(before, source.Replace("var x = 1", "_ = 1", StringComparison.Ordinal), "planted.cs", cancellation));
+        Assert.Equal(
+            ["CS8754 ×1"],
+            NewErrors(
+                before,
+                source.Replace("var x = 1", "_ = new()", StringComparison.Ordinal),
+                "planted.cs",
+                cancellation
+            )
+        );
+        Assert.Empty(
+            NewErrors(
+                before,
+                source.Replace("var x = 1", "_ = 1", StringComparison.Ordinal),
+                "planted.cs",
+                cancellation
+            )
+        );
     }
 
     /// <summary>Each safe-fix rule's edits on one source, applied rule by rule, and what they broke.</summary>
@@ -82,7 +105,9 @@ public sealed class CrossFixtureFixTests {
                      .Where(static diagnostic => RuleCatalog.Find(diagnostic.Id) is { HasFix: true, FixIsSafe: true })
                      .GroupBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal)
                      .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
-            var edits = group.SelectMany(FixRoundTripTests.ReadEdits).OrderByDescending(static edit => edit.Start).ToList();
+            var edits = group.SelectMany(FixRoundTripTests.ReadEdits)
+                .OrderByDescending(static edit => edit.Start)
+                .ToList();
             if (edits.Count == 0) {
                 continue;
             }
@@ -115,7 +140,12 @@ public sealed class CrossFixtureFixTests {
     ///     removes a line moves every error below it, and a line-keyed comparison calls the move a
     ///     regression.
     /// </remarks>
-    static ImmutableArray<string> NewErrors(Compilation before, string text, string path, CancellationToken cancellation) {
+    static ImmutableArray<string> NewErrors(
+        Compilation before,
+        string text,
+        string path,
+        CancellationToken cancellation
+    ) {
         var was = FixRoundTripTests.ErrorsById(before, cancellation);
         var now = FixRoundTripTests.ErrorsById(RuleFixtures.Compile(text, path), cancellation);
         return [

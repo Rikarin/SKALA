@@ -274,7 +274,7 @@ public sealed class CleanupBatchTests {
     [InlineData("abstract_reabstracts_a_base_event")]
     public void SK0241_LeavesTheAbstractThatReabstractsABaseMember(string name) {
         var path = Path.Combine(RuleFixtures.Root, "SK0241", "negative", name + ".cs");
-        var stripped = File.ReadAllText(path).Replace("abstract ", "", StringComparison.Ordinal);
+        var stripped = File.ReadAllText(path).Replace("abstract ", string.Empty, StringComparison.Ordinal);
 
         Assert.Empty(Findings(path, "SK0241"));
         Assert.Contains(

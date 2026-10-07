@@ -159,7 +159,8 @@ public sealed class ImmutableStructAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static bool Written(IdentifierNameSyntax reference) {
         SyntaxNode node = reference;
-        while (node.Parent is MemberAccessExpressionSyntax access && access.Expression == node
+        while (node.Parent is MemberAccessExpressionSyntax access
+               && access.Expression == node
                || node.Parent is ParenthesizedExpressionSyntax or TupleExpressionSyntax
                || node.Parent is ArgumentSyntax { Parent: TupleExpressionSyntax }) {
             node = node.Parent;

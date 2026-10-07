@@ -247,7 +247,10 @@ public sealed class DeclarationPerformanceBatchTests {
         var path = Path.Combine(RuleFixtures.Root, "SK4022", "negative", name + ".cs");
         var source = File.ReadAllText(path);
 
-        Assert.DoesNotContain(Analyze(RuleFixtures.Compile(source, path)), static diagnostic => diagnostic.Id == "SK4022");
+        Assert.DoesNotContain(
+            Analyze(RuleFixtures.Compile(source, path)),
+            static diagnostic => diagnostic.Id == "SK4022"
+        );
 
         // Only the struct with a parameter list: a helper struct alongside it is not the subject.
         var forced = System.Text.RegularExpressions.Regex.Replace(
