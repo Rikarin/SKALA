@@ -7423,3 +7423,50 @@ paid against the body's own brace when the near-brace removal is off) and #442 (
   `skala_remove_blank_lines_near_braces_in_code`
 - ⚠ status: **resolved** (#426), with the rows above open. Pinned by
   `BlankLineInsideAConstructIssue426Tests` and `constructs/blank-lines/a-blank-line-inside-a-construct.cs`.
+
+## SK-DIV-0197 — a primary constructor's base type with arguments wrapped as a base type; the oracle wraps it as an initializer
+
+#427 reported `class L(int a, int b) : B(a, b // e` / `) {` coming back as `class L(int a, int b) :` /
+`    B(` with everything a level in, where the oracle keeps `: B(` on the line and chops only the
+arguments. Skala planned the single-base-type point *after* the `:` and took it whenever the list did not
+fit. Measured with `jb cleanupcode` 2025.2.6 on a class, a record, a `record struct` and a struct, one
+base type and interfaces after it, a constraint, an author's break in the arguments, at two and three
+indent depths, at each `skala_wrap_extends_list_style`:
+
+| shape | oracle | Skala before |
+|---|---|---|
+| arguments chopped by a comment or an author's break | `class L(int a, int b) : B(` / arguments one level in / `) { }` | `:` / `B(` a level in |
+| too long, fits whole on a continuation line | `class C(…)` / `    : B(…) { }` — the break before the `:` | after the `:` |
+| too long, does not fit there either | `: B(` kept, the arguments chopped | after the `:`, then chopped |
+| chopped, interfaces after it | `: B(` / arguments **two** levels in / `    ),` / `    I1,` | one level in, `),` at the declaration's column |
+| a head too long for `: B(` | before the `:` | after it |
+
+The point is now before the `:` under the `=`'s ordering rule (`PrefersOuterBreak`, `MeasuresHead`), and
+the base list's comma group carries `GroupFacts.Continues`, so #418's lift nests chopped arguments from the
+list's continuation line. An ordinary base type keeps its point after the `:`. A constructor initializer
+(`C(int a) : base(a, b // e`) was measured beside it and already agreed.
+
+- options: `skala_wrap_extends_list_style`, `skala_wrap_before_extends_colon`
+- ⚠ status: **resolved** (#427) for every row above. Pinned by `PrimaryConstructorBaseTypeIssue427Tests`
+  (all three styles) and `constructs/breaks/primary-constructor-base-type.cs`. What stays open is
+  SK-DIV-0198.
+
+## SK-DIV-0198 — what the oracle measures before breaking at a primary constructor's `:` when interfaces follow
+
+Measured beside SK-DIV-0197 and left open. With interfaces after a primary constructor's base type, the
+oracle's second question ends the line at the base list's own first comma and does not count the argument
+list as a place to break: `class M3(…) : B(a, b),` past the margin at a nested depth becomes `class M3(…)`
+/ `        : B(a, b),` / `            IFirst,` …, where Skala keeps `: B(` and chops the arguments. The same
+measure decides `chop_always` (`: B(a, b),` / `IFirst { }` after a break before the `:`) and
+`wrap_if_long`. ⚠ For a single base type it does count the argument list — `: B(` stays and the arguments
+chop when the list does not fit on the continuation line — so the measure is not "the whole first base
+type" either.
+
+Also open: at `skala_wrap_before_extends_colon = true` the oracle keeps `: B(` and chops the arguments of a
+list that would fit on the continuation line (where `false` breaks before the `:`), and Skala breaks before
+the colon; and at `skala_place_primary_constructor_initializer_on_same_line = false`, a chopped base type
+followed by interfaces puts its arguments two levels past the `:` line where Skala puts them one.
+
+- options: `skala_wrap_extends_list_style`, `skala_wrap_before_extends_colon`,
+  `skala_place_primary_constructor_initializer_on_same_line`
+- ⚠ status: **open**, measured.

@@ -1631,12 +1631,28 @@ public sealed class BreakPlan {
         var outer = NewGroup();
         var broken = false;
 
+        // ⚠ A primary constructor's base type with arguments is an initializer, not a base type, to the
+        // oracle (#427, SK-DIV-0197): its point is before the `:`, as a constructor initializer's is, and
+        // it is the `=`'s ordering rule. See the branch.
+        var initializer = !options.WrapBeforeExtendsColon && node.Types[0] is PrimaryConstructorBaseTypeSyntax;
+
         // ⚠ `skala_wrap_before_extends_colon = true` makes the `:` itself a break point, which is the only
         // way a base list with a single base type can wrap at all. At `false` — the export's value —
         // the gap is left unplanned rather than marked flat: a `false` placement key is permissive
         // and does not remove a break the author wrote, which is the correction docs/plan/05 records
         // for the whole `place_*_on_same_line` family.
         if (options.WrapBeforeExtendsColon) {
+            Point(node.ColonToken, outer);
+            broken |= BreaksBefore(node.ColonToken);
+        } else if (initializer) {
+            // ⚠ Measured with `jb cleanupcode` 2025.2.6, at `skala_wrap_before_extends_colon = false`, on a
+            // class, a record and a struct, with one base type and with interfaces after it, at two
+            // indent depths. The oracle breaks BEFORE the colon — `class C(int a, …)` /
+            // `    : Base(a, …) { }` — exactly when the list then fits on the continuation line, and
+            // otherwise keeps `: Base(` on the declaration's line and chops the arguments, which is
+            // what an argument list chopped by a comment or an author's break always gets:
+            // `class L(int a, int b) : B(` / `    a,` / `    b // e` / `) { }`. Skala broke after the
+            // colon, as for an ordinary single base type, and so moved a chopped `B(` a level in.
             Point(node.ColonToken, outer);
             broken |= BreaksBefore(node.ColonToken);
         } else if (node.Types.Count == 1) {
@@ -1662,10 +1678,12 @@ public sealed class BreakPlan {
             GroupMode.Preserve,
             new GroupFacts(
                 options.KeepsUserBreaksBetweenItems && broken,
-                BreaksIfTooLong: true
+                BreaksIfTooLong: true,
+                MeasuresHead: initializer,
+                PrefersOuterBreak: initializer
             ),
             true,
-            options.WrapBeforeExtendsColon
+            options.WrapBeforeExtendsColon || initializer
         );
 
         if (node.Types.SeparatorCount == 0) {
@@ -1709,7 +1727,13 @@ public sealed class BreakPlan {
             style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 options.KeepsUserBreaksBetweenItems && innerBroken,
-                BreaksIfTooLong: true
+                BreaksIfTooLong: true,
+
+                // ⚠ A base type whose arguments chop on the declaration's line nests them from the
+                // list's continuation line once the commas break: `class C(int a) : B(` / two levels
+                // in / `    ),` / `    I1,` (#427, SK-DIV-0197) — #418's lift, measured at two
+                // depths and under `chop_always`. Not for a fill, for #418's reason.
+                Continues: !fill
             ),
             true
         );
