@@ -622,7 +622,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 "    string? FreeFormBecause,"),
             ("""    /// <summary>Why this entry names no <c>Oracle</c> fixture, when <see cref="Inert"/> is not the answer. ⚠ The two are different claims and must not be merged: <c>Inert</c> says no input distinguishes the option's values, which is a fact about the world; this says the SWEEP cannot ask, which is usually a fact about Skala — the oracle separates the values and Skala is flat at every one of them, so a glob would file an <c>INERT</c> row the registry never declared, on a fixture Skala cannot reproduce. It also carries the measurement behind a Tier C refusal, where <c>Inert</c> is forbidden by construction.</summary>""",
                 "    string? UnsweptBecause,"),
-            ("    /// <summary>Values in this option's own domain that Skala does not perform, each with why — empty when every value does what it says. ⚠ A third state beside the tier and <see cref=\"Inert\"/>: the key is honoured at its other values and silently ignored at these, so a configuration set to one of them is told nothing by either bucket (#383). <c>skala config check</c> names it.</summary>",
+            ("""    /// <summary>Values in this option's own domain that Skala does not perform, each with why — empty when every value does what it says. ⚠ A third state beside the tier and <see cref="Inert"/>: the key is honoured at its other values and silently ignored at these, so a configuration set to one of them is told nothing by either bucket (#383). <c>skala config check</c> names it.</summary>""",
                 "    IReadOnlyDictionary<string, string> UnimplementedValues);")
         ];
 

@@ -393,18 +393,18 @@ public sealed class ArrangementRuleTests {
     ///     enclosing switch rather than on the pattern itself would wrongly decline them.
     /// </remarks>
     [Theory]
-    [InlineData("public string F = \"\";")]
-    [InlineData("public static readonly string R = \"\";")]
-    [InlineData("public string M() { return \"\"; }")]
-    [InlineData("public string M() => @\"\";")]
-    [InlineData("public void M() { Console.WriteLine(\"\"); }")]
-    [InlineData("public void M() { string s = \"\"; Console.WriteLine(s); }")]
-    [InlineData("public string M(string s) => s + \"\";")]
-    [InlineData("public string M() => $\"{\"\"}\";")]
-    [InlineData("public int M(string s) => s switch { var x when x == \"\" => 1, _ => 0 };")]
-    [InlineData("public int M(string s) { switch (s) { case var x when x == \"\": return 1; default: return 0; } }")]
-    [InlineData("public string M(int i) => i switch { 0 => \"\", _ => \"x\" };")]
-    [InlineData("public Func<string> M() => () => \"\";")]
+    [InlineData("""public string F = "";""")]
+    [InlineData("""public static readonly string R = "";""")]
+    [InlineData("""public string M() { return ""; }""")]
+    [InlineData("""public string M() => @"";""")]
+    [InlineData("""public void M() { Console.WriteLine(""); }""")]
+    [InlineData("""public void M() { string s = ""; Console.WriteLine(s); }""")]
+    [InlineData("""public string M(string s) => s + "";""")]
+    [InlineData("""public string M() => $"{""}";""")]
+    [InlineData("""public int M(string s) => s switch { var x when x == "" => 1, _ => 0 };""")]
+    [InlineData("""public int M(string s) { switch (s) { case var x when x == "": return 1; default: return 0; } }""")]
+    [InlineData("""public string M(int i) => i switch { 0 => "", _ => "x" };""")]
+    [InlineData("""public Func<string> M() => () => "";""")]
     public void EmptyString_BecomesTheField_UnderStringEmpty(string member) {
         var output = Declined(AttemptEmptyString(member, "string_empty"));
 
@@ -426,31 +426,33 @@ public sealed class ArrangementRuleTests {
     ///     compiles but changes what a query provider is handed.
     /// </remarks>
     [Theory]
-    [InlineData("public const string F = \"\";")]
-    [InlineData("public void M() { const string L = \"\"; Console.WriteLine(L); }")]
-    [InlineData("public const string B = \"b\"; public const string A = \"\" + B;")]
-    [InlineData("public const string T = true ? \"\" : \"x\";")]
-    [InlineData("[Obsolete(\"\")] public void M() { }")]
-    [InlineData("[DefaultValue(\"\" + \"x\")] public string P { get; set; } = \"x\";")]
-    [InlineData("public void M(string s = \"\") { }")]
-    [InlineData("public void M() { Func<string, string> f = (string s = \"\") => s; f(\"x\"); }")]
-    [InlineData("public void M() { void L(string s = \"\") { } L(); }")]
-    [InlineData("public string this[string key = \"\"] => key;")]
-    [InlineData("public int M(string s) { switch (s) { case \"\": return 1; default: return 0; } }")]
+    [InlineData("""public const string F = "";""")]
+    [InlineData("""public void M() { const string L = ""; Console.WriteLine(L); }""")]
+    [InlineData("""public const string B = "b"; public const string A = "" + B;""")]
+    [InlineData("""public const string T = true ? "" : "x";""")]
+    [InlineData("""[Obsolete("")] public void M() { }""")]
+    [InlineData("""[DefaultValue("" + "x")] public string P { get; set; } = "x";""")]
+    [InlineData("""public void M(string s = "") { }""")]
+    [InlineData("""public void M() { Func<string, string> f = (string s = "") => s; f("x"); }""")]
+    [InlineData("""public void M() { void L(string s = "") { } L(); }""")]
+    [InlineData("""public string this[string key = ""] => key;""")]
+    [InlineData("""public int M(string s) { switch (s) { case "": return 1; default: return 0; } }""")]
     [InlineData(
-        "public int M(string s) { switch (s) { case \"\": return 1; case \"x\": goto case \"\"; default: return 0; } }"
+        """public int M(string s) { switch (s) { case "": return 1; case "x": goto case ""; default: return 0; } }"""
     )]
-    [InlineData("public int M(string s) { switch (s) { case \"\" when s.Length == 0: return 1; default: return 0; } }")]
-    [InlineData("public bool M(string s) => s is \"\";")]
-    [InlineData("public bool M(string s) => s is not (\"\" or \"x\");")]
-    [InlineData("public int M(string s) => s switch { \"\" => 1, _ => 0 };")]
-    [InlineData("public bool M(Row r) => r is { Banner: \"\" };")]
-    [InlineData("public bool M(string[] a) => a is [\"\", ..];")]
-    [InlineData("public string M() => $\"\";")]
-    [InlineData("public string M() => $@\"\";")]
-    [InlineData("public ReadOnlySpan<byte> M() => \"\"u8;")]
-    [InlineData("public Expression<Func<string>> M() => () => \"\";")]
-    [InlineData("public Expression<Func<string, bool>> M() => s => s == \"\";")]
+    [InlineData(
+        """public int M(string s) { switch (s) { case "" when s.Length == 0: return 1; default: return 0; } }"""
+    )]
+    [InlineData("""public bool M(string s) => s is "";""")]
+    [InlineData("""public bool M(string s) => s is not ("" or "x");""")]
+    [InlineData("""public int M(string s) => s switch { "" => 1, _ => 0 };""")]
+    [InlineData("""public bool M(Row r) => r is { Banner: "" };""")]
+    [InlineData("""public bool M(string[] a) => a is ["", ..];""")]
+    [InlineData("""public string M() => $"";""")]
+    [InlineData("""public string M() => $@"";""")]
+    [InlineData("""public ReadOnlySpan<byte> M() => ""u8;""")]
+    [InlineData("""public Expression<Func<string>> M() => () => "";""")]
+    [InlineData("""public Expression<Func<string, bool>> M() => s => s == "";""")]
     public void EmptyString_IsDeclined_WhereTheFieldIsNotTheSameExpression(string member) {
         var result = AttemptEmptyString(member, "string_empty");
         var output = Declined(result);
@@ -471,13 +473,13 @@ public sealed class ArrangementRuleTests {
     public void EmptyString_KeepsTheLegalRewriteBesideAConstantContext() {
         var output = Declined(
             AttemptEmptyString(
-                "public const string K = \"\"; public string M(string s) => s switch { \"\" => K, _ => \"\" };",
+                """public const string K = ""; public string M(string s) => s switch { "" => K, _ => "" };""",
                 "string_empty"
             )
         );
 
-        Assert.Contains("public const string K = \"\";", output, StringComparison.Ordinal);
-        Assert.Contains("{ \"\" => K, _ => string.Empty }", output, StringComparison.Ordinal);
+        Assert.Contains("""public const string K = "";""", output, StringComparison.Ordinal);
+        Assert.Contains("""{ "" => K, _ => string.Empty }""", output, StringComparison.Ordinal);
     }
 
     [Fact]
