@@ -14,6 +14,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     The five rules whose whole decision is one declaration and what its body touches.
 /// </summary>
 public sealed class DeclarationPerformanceBatchTests {
+    const string ImmutableStructId = "SK4022";
+
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new NoncapturingLambdaAnalyzer(), new StatelessPrivateMethodAnalyzer(), new ImmutableStructAnalyzer(),
         new RedundantCapacityArgumentAnalyzer(), new ForcedGarbageCollectionAnalyzer(), new LoopClosureAnalyzer()
@@ -25,7 +27,7 @@ public sealed class DeclarationPerformanceBatchTests {
             foreach (var fixture in RuleFixtures.All()
                          .Where(static fixture => fixture.RuleId is "SK4020"
                                  or "SK4021"
-                                 or "SK4022"
+                                 or ImmutableStructId
                                  or "SK4023"
                                  or "SK4024"
                          )) {
@@ -53,7 +55,7 @@ public sealed class DeclarationPerformanceBatchTests {
 
     [Theory]
     [InlineData("SK4020", "lambda", LanguageVersion.CSharp8, LanguageVersion.CSharp9)]
-    [InlineData("SK4022", "fields", LanguageVersion.CSharp7_1, LanguageVersion.CSharp7_2)]
+    [InlineData(ImmutableStructId, "fields", LanguageVersion.CSharp7_1, LanguageVersion.CSharp7_2)]
     public void LanguageFloors_AreHonored(string id, string name, LanguageVersion before, LanguageVersion supported) {
         var source = File.ReadAllText(Path.Combine(RuleFixtures.Root, id, "positive", name + ".cs"));
         Assert.DoesNotContain(
@@ -66,7 +68,7 @@ public sealed class DeclarationPerformanceBatchTests {
     [Theory]
     [InlineData("SK4020", "lambda")]
     [InlineData("SK4021", "expression_body")]
-    [InlineData("SK4022", "fields")]
+    [InlineData(ImmutableStructId, "fields")]
     [InlineData("SK4023", "list")]
     [InlineData("SK4024", "statement")]
     public void GeneratedCode_IsIgnored(string id, string name) {
@@ -228,7 +230,7 @@ public sealed class DeclarationPerformanceBatchTests {
                 public static int Run() => new Point(21).Doubled;
             }
             """,
-            "SK4022",
+            ImmutableStructId,
             42
         );
 
@@ -244,12 +246,12 @@ public sealed class DeclarationPerformanceBatchTests {
     [InlineData("primary_parameter_assigned_by_deconstruction")]
     [InlineData("primary_parameter_member_written")]
     public void APrimaryParameterTheStructWrites_IsNotReadonly(string name) {
-        var path = Path.Combine(RuleFixtures.Root, "SK4022", "negative", name + ".cs");
+        var path = Path.Combine(RuleFixtures.Root, ImmutableStructId, "negative", name + ".cs");
         var source = File.ReadAllText(path);
 
         Assert.DoesNotContain(
             Analyze(RuleFixtures.Compile(source, path)),
-            static diagnostic => diagnostic.Id == "SK4022"
+            static diagnostic => diagnostic.Id == ImmutableStructId
         );
 
         // Only the struct with a parameter list: a helper struct alongside it is not the subject.
@@ -288,10 +290,10 @@ public sealed class DeclarationPerformanceBatchTests {
     [InlineData("primary_parameter_enumerated")]
     [InlineData("primary_parameter_overridden_object_member")]
     public void ACallTheFixWouldMoveOntoACopy_IsNotReadonly(string name) {
-        var path = Path.Combine(RuleFixtures.Root, "SK4022", "negative", name + ".cs");
+        var path = Path.Combine(RuleFixtures.Root, ImmutableStructId, "negative", name + ".cs");
         var source = File.ReadAllText(path);
         var before = RuleFixtures.Compile(source, path);
-        Assert.DoesNotContain(Analyze(before), static diagnostic => diagnostic.Id == "SK4022");
+        Assert.DoesNotContain(Analyze(before), static diagnostic => diagnostic.Id == ImmutableStructId);
 
         var forced = RuleFixtures.Compile(ForceReadonly(source), path);
         Assert.DoesNotContain(
@@ -311,16 +313,16 @@ public sealed class DeclarationPerformanceBatchTests {
     [InlineData("primary_parameter_ref_extension_receiver")]
     [InlineData("this_ref_extension_receiver")]
     public void ARefExtensionReceiver_IsNotReadonly(string name) {
-        var path = Path.Combine(RuleFixtures.Root, "SK4022", "negative", name + ".cs");
+        var path = Path.Combine(RuleFixtures.Root, ImmutableStructId, "negative", name + ".cs");
         var source = File.ReadAllText(path);
         Assert.DoesNotContain(
             Analyze(RuleFixtures.Compile(source, path)),
-            static diagnostic => diagnostic.Id == "SK4022"
+            static diagnostic => diagnostic.Id == ImmutableStructId
         );
 
         var forced = System.Text.RegularExpressions.Regex.Replace(
             source,
-            @"(?m)^struct ",
+            "(?m)^struct ",
             "readonly struct ",
             System.Text.RegularExpressions.RegexOptions.None,
             TimeSpan.FromSeconds(1)
