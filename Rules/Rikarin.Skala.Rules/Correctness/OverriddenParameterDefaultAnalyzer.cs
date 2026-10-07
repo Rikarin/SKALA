@@ -126,7 +126,7 @@ public sealed class OverriddenParameterDefaultAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        Compare(context, declaration.ParameterList, indexer, Overridden(indexer), partner: null);
+        Compare(context, declaration.ParameterList, indexer, Overridden(indexer), null);
     }
 
     /// <summary>
