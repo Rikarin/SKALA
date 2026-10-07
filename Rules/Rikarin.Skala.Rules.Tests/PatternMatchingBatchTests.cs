@@ -195,7 +195,8 @@ public sealed class PatternMatchingBatchTests {
     [InlineData("class L { } class C { void M() { L? l = new(); } }", null)]
     [InlineData("class C { void M() { (int A, int B) t = new(); } }", null)]
     [InlineData(
-        "struct T { } class W { public static implicit operator W(T t) => new(); } class C { T Open() => default; void M() { W w = Open(); } }",
+        "struct T { } class W { public static implicit operator W(T t) => new(); } "
+        + "class C { T Open() => default; void M() { W w = Open(); } }",
         null
     )]
     public void Discard_KeepsTheTypeATargetTypedNewNeeds(string source, string? replacement) {

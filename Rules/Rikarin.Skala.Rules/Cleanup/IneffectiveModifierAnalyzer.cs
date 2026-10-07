@@ -220,7 +220,7 @@ public sealed class IneffectiveModifierAnalyzer : DiagnosticAnalyzer {
         member switch {
             MethodDeclarationSyntax method => method.ExplicitInterfaceSpecifier,
             BasePropertyDeclarationSyntax property => property.ExplicitInterfaceSpecifier,
-            OperatorDeclarationSyntax @operator => @operator.ExplicitInterfaceSpecifier,
+            OperatorDeclarationSyntax declared => declared.ExplicitInterfaceSpecifier,
             _ => null
         };
 

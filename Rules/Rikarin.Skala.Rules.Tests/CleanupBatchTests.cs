@@ -24,7 +24,10 @@ public sealed class CleanupBatchTests {
         new RedundantDeclarationAnalyzer()
     ];
 
-    static readonly string[] Ids = ["SK0240", "SK0241", "SK0242", "SK0243", "SK0244"];
+    /// <summary>The rule most of this file's load-bearing tests are about, named once (SK7083).</summary>
+    const string Sk0241 = "SK0241";
+
+    static readonly string[] Ids = ["SK0240", Sk0241, "SK0242", "SK0243", "SK0244"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
@@ -253,7 +256,7 @@ public sealed class CleanupBatchTests {
     [InlineData("scoped_on_an_out_ref_struct_parameter", "an `out` parameter is implicitly `scoped`")]
     public void SK0241_ReportsTheKeywordItMatched(string name, string sentence) {
         var finding = Assert.Single(
-            Findings(Path.Combine(RuleFixtures.Root, "SK0241", "positive", name + ".cs"), "SK0241")
+            Findings(Path.Combine(RuleFixtures.Root, Sk0241, "positive", name + ".cs"), Sk0241)
         );
 
         Assert.Contains(sentence, finding.GetMessage(), StringComparison.Ordinal);
@@ -273,10 +276,10 @@ public sealed class CleanupBatchTests {
     [InlineData("abstract_reabstracts_a_base_indexer")]
     [InlineData("abstract_reabstracts_a_base_event")]
     public void SK0241_LeavesTheAbstractThatReabstractsABaseMember(string name) {
-        var path = Path.Combine(RuleFixtures.Root, "SK0241", "negative", name + ".cs");
+        var path = Path.Combine(RuleFixtures.Root, Sk0241, "negative", name + ".cs");
         var stripped = File.ReadAllText(path).Replace("abstract ", string.Empty, StringComparison.Ordinal);
 
-        Assert.Empty(Findings(path, "SK0241"));
+        Assert.Empty(Findings(path, Sk0241));
         Assert.Contains(
             RuleFixtures.Compile(stripped, path).GetDiagnostics(TestContext.Current.CancellationToken),
             static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error
@@ -308,7 +311,7 @@ public sealed class CleanupBatchTests {
         var compilation = RuleFixtures.Compile(source, "modifier.cs");
         var findings = RuleFixtures
             .Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)
-            .Where(static diagnostic => diagnostic.Id == "SK0241")
+            .Where(static diagnostic => diagnostic.Id == Sk0241)
             .ToArray();
 
         var after = Apply(source, findings);
