@@ -232,6 +232,41 @@ public sealed class DeclarationPerformanceBatchTests {
             42
         );
 
+    /// <summary>
+    ///     ⚠ A struct that writes a captured primary-constructor parameter is not eligible, and these
+    ///     negatives are negatives because <c>readonly</c> on them does not compile — asserted, so a rule
+    ///     that was merely blind to the shape could not pass them too.
+    /// </summary>
+    [Theory]
+    [InlineData("primary_parameter_compound_assigned")]
+    [InlineData("primary_parameter_incremented")]
+    [InlineData("primary_parameter_passed_by_ref")]
+    [InlineData("primary_parameter_assigned_by_deconstruction")]
+    [InlineData("primary_parameter_member_written")]
+    public void APrimaryParameterTheStructWrites_IsNotReadonly(string name) {
+        var path = Path.Combine(RuleFixtures.Root, "SK4022", "negative", name + ".cs");
+        var source = File.ReadAllText(path);
+
+        Assert.DoesNotContain(
+            Analyze(RuleFixtures.Compile(source, path)),
+            static diagnostic => diagnostic.Id == "SK4022"
+        );
+
+        // Only the struct with a parameter list: a helper struct alongside it is not the subject.
+        var forced = System.Text.RegularExpressions.Regex.Replace(
+            source,
+            @"(?m)^struct (\w+)\(",
+            "readonly struct $1(",
+            System.Text.RegularExpressions.RegexOptions.None,
+            TimeSpan.FromSeconds(1)
+        );
+        Assert.NotEqual(source, forced);
+        Assert.Contains(
+            RuleFixtures.Compile(forced, path).GetDiagnostics(TestContext.Current.CancellationToken),
+            static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error
+        );
+    }
+
     [Fact]
     public void TheCapacityFix_PreservesTheResult() =>
         AssertFixEquivalent(

@@ -104,8 +104,14 @@ public sealed class IneffectiveModifierAnalyzer : DiagnosticAnalyzer {
         // `static abstract T operator +(T, T)` is an abstract static member, and without the keyword the
         // same declaration is a static member that must have a body. Deleting `abstract` there does not
         // tidy anything; it changes the declaration into one that no longer compiles.
+        //
+        // ⚠ So does an explicit interface specifier (#403). `abstract int IBase.Read();` in a derived
+        // interface *re-abstracts* the base's default implementation, and without the keyword the same
+        // declaration is a default implementation that must have a body — CS0501. An explicit member
+        // in an interface is never implicitly abstract.
         if (containing.IsKind(SyntaxKind.InterfaceDeclaration)
             && !Has(member.Modifiers, SyntaxKind.StaticKeyword)
+            && ExplicitInterfaceSpecifier(member) is null
             && Find(member.Modifiers, SyntaxKind.AbstractKeyword) is { } abstractKeyword) {
             Report(
                 context,
@@ -208,6 +214,15 @@ public sealed class IneffectiveModifierAnalyzer : DiagnosticAnalyzer {
     }
 
     static bool Has(SyntaxTokenList modifiers, SyntaxKind kind) => Find(modifiers, kind) is not null;
+
+    /// <summary>The <c>IBase.</c> of an explicit member, on every member kind that can carry one.</summary>
+    static ExplicitInterfaceSpecifierSyntax? ExplicitInterfaceSpecifier(MemberDeclarationSyntax member) =>
+        member switch {
+            MethodDeclarationSyntax method => method.ExplicitInterfaceSpecifier,
+            BasePropertyDeclarationSyntax property => property.ExplicitInterfaceSpecifier,
+            OperatorDeclarationSyntax @operator => @operator.ExplicitInterfaceSpecifier,
+            _ => null
+        };
 
     /// <summary>
     ///     Deletes the keyword and the space after it, never the trivia in front of it.

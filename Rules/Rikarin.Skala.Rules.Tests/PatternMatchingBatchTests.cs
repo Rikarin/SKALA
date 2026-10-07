@@ -175,6 +175,40 @@ public sealed class PatternMatchingBatchTests {
     public void Discard_ReplacesOnlyAnUnreadName(string source, bool fires) =>
         Assert.Equal(fires, Analyze(source, LanguageVersion.CSharp12).Any(static d => d.Id == "SK1053"));
 
+    /// <summary>
+    ///     ⚠ #402: a discard has no type, so a target-typed <c>new()</c> takes the declared type with it
+    ///     — and where the type cannot be moved into the creation, or the declaration runs a
+    ///     user-defined conversion, there is no fix at all.
+    /// </summary>
+    [Theory]
+    [InlineData("class L { } class C { void M() { L l = new(); } }", "_ = new L()")]
+    [InlineData(
+        "class L { public L(int a) { } public int P { get; set; } } class C { void M() { L l = new(1) { P = 2 }; } }",
+        "_ = new L(1) { P = 2 }"
+    )]
+    [InlineData(
+        "class C { void M() { System.Collections.Generic.List<int> l = new(4); } }",
+        "_ = new System.Collections.Generic.List<int>(4)"
+    )]
+    [InlineData("class C { void M() { object o = new(); } }", "_ = new object()")]
+    [InlineData("class L { } class C { void M() { var l = new L(); } }", "_ = new L()")]
+    [InlineData("class L { } class C { void M() { L? l = new(); } }", null)]
+    [InlineData("class C { void M() { (int A, int B) t = new(); } }", null)]
+    [InlineData(
+        "struct T { } class W { public static implicit operator W(T t) => new(); } class C { T Open() => default; void M() { W w = Open(); } }",
+        null
+    )]
+    public void Discard_KeepsTheTypeATargetTypedNewNeeds(string source, string? replacement) {
+        var findings = Analyze(source, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1053").ToArray();
+        if (replacement is null) {
+            Assert.Empty(findings);
+            return;
+        }
+
+        var edit = Assert.Single(FixRoundTripTests.ReadEdits(Assert.Single(findings)));
+        Assert.Equal(replacement, edit.Text);
+    }
+
     [Fact]
     public void Discard_RequiresCSharp7() {
         const string source = "class C { bool R() => true; void M() { var x = R(); } }";

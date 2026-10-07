@@ -238,6 +238,8 @@ public sealed class CleanupBatchTests {
     [Theory]
     [InlineData("abstract_interface_method", "an interface member is abstract")]
     [InlineData("abstract_interface_property", "an interface member is abstract")]
+    [InlineData("abstract_interface_indexer", "an interface member is abstract")]
+    [InlineData("abstract_interface_event", "an interface member is abstract")]
     [InlineData("sealed_member_in_sealed_class", "the containing type is `sealed`")]
     [InlineData("sealed_member_in_sealed_record", "the containing type is `sealed`")]
     [InlineData("record_class_keyword", "`record` already means `record class`")]
@@ -255,6 +257,30 @@ public sealed class CleanupBatchTests {
         );
 
         Assert.Contains(sentence, finding.GetMessage(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #403: the re-abstraction negatives are negatives because the keyword is load-bearing, and
+    ///     this is what says so — deleting it, which is what the fix used to do, does not compile.
+    /// </summary>
+    /// <remarks>
+    ///     Without it a negative fixture would pass just as well if the shape were genuinely redundant
+    ///     and the rule merely blind to it.
+    /// </remarks>
+    [Theory]
+    [InlineData("abstract_reabstracts_a_base_method")]
+    [InlineData("abstract_reabstracts_a_base_property")]
+    [InlineData("abstract_reabstracts_a_base_indexer")]
+    [InlineData("abstract_reabstracts_a_base_event")]
+    public void SK0241_LeavesTheAbstractThatReabstractsABaseMember(string name) {
+        var path = Path.Combine(RuleFixtures.Root, "SK0241", "negative", name + ".cs");
+        var stripped = File.ReadAllText(path).Replace("abstract ", string.Empty, StringComparison.Ordinal);
+
+        Assert.Empty(Findings(path, "SK0241"));
+        Assert.Contains(
+            RuleFixtures.Compile(stripped, path).GetDiagnostics(TestContext.Current.CancellationToken),
+            static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error
+        );
     }
 
     /// <summary>
