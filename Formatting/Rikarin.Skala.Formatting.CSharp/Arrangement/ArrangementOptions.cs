@@ -52,11 +52,10 @@ public readonly struct ArrangementOptions {
         DefaultValueWhenTypeNotEvident = (DefaultValueStyle)options.GetRaw(Ids.DefaultValueWhenTypeNotEvident);
 
         NullCheckingPattern = (NullCheckingPatternStyle)options.GetRaw(Ids.NullCheckingPattern);
-        EmptyStringIsLiteral = string.Equals(
-            options.GetText(Ids.EmptyString),
-            "empty_literal",
-            StringComparison.OrdinalIgnoreCase
-        );
+        // ⚠ #383: this was a bool, `GetText(...) == "empty_literal"`, and the bool is how the key came
+        // to be implemented at one value: `string_empty` collapsed into "not the literal", which the
+        // rule read as "off". A two-value style is read as the enum so neither value can mean nothing.
+        EmptyString = (EmptyStringStyle)options.GetRaw(Ids.EmptyString);
 
         // ⚠ The export writes `omit_if_default:suggestion`: one value and one severity in one key.
         // Only the value half governs the rewrite; the severity half is `skala check`'s (doc 06 §
@@ -134,7 +133,7 @@ public readonly struct ArrangementOptions {
     public DefaultValueStyle DefaultValueWhenTypeNotEvident { get; }
 
     public NullCheckingPatternStyle NullCheckingPattern { get; }
-    public bool EmptyStringIsLiteral { get; }
+    public EmptyStringStyle EmptyString { get; }
 
     public bool OmitDefaultAccessibility { get; }
 
