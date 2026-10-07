@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 364 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 365 ids are allocated.
 
 ## Async
 
@@ -335,6 +335,7 @@
 | [SK1122](SK1122.md) | A nearby anonymous type has the same members in another order | hint | review | no |
 | [SK1123](SK1123.md) | Two `or` alternatives test the same property | hint | safe | yes |
 | [SK1130](SK1130.md) | A character span is compared to a constant by a call | suggestion | safe | no |
+| [SK1132](SK1132.md) | A named tuple element is reached by its position | suggestion | safe | no |
 
 ## Performance
 

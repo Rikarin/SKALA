@@ -189,6 +189,7 @@ public static class SkalaAnalyzers {
         new ReorderedAnonymousTypeAnalyzer(), new MergedPropertyPatternAnalyzer(),
         new SqlFragmentsRunTogetherAnalyzer(), new CommandParameterNotSuppliedAnalyzer(),
         new AssemblyLoadedOutsideItsContextAnalyzer(), new MistakenTypeArgumentAnalyzer(),
-        new RedundantNullableCreationAnalyzer(), new DiscardedOutParameterAnalyzer()
+        new RedundantNullableCreationAnalyzer(), new DiscardedOutParameterAnalyzer(),
+        new TupleElementByPositionAnalyzer()
     ];
 }
