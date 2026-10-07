@@ -168,6 +168,26 @@ public sealed class CrossFixtureFixTests {
     }
 
     /// <summary>
+    ///     ⚠ #412's audit: <c>SK1030</c>'s old rewrite on a property with a setter body compiles and
+    ///     changes <c>Probe.Run()</c>, which is why the negative fixture is a negative.
+    /// </summary>
+    [Fact]
+    public void TheNullCoalescingRewrite_OnASetterWithABody_ChangesTheResult() {
+        var cancellation = TestContext.Current.CancellationToken;
+        var path = Path.Combine(RuleFixtures.Root, "SK1030", "negative", "a-property-with-a-setter-body.cs");
+        var source = File.ReadAllText(path);
+        var rewritten = source.Replace(
+            "box.Name = box.Name ?? \"fallback\";",
+            "box.Name ??= \"fallback\";",
+            StringComparison.Ordinal
+        );
+
+        Assert.NotEqual(source, rewritten);
+        Assert.Equal("1", Probe(RuleFixtures.Compile(source, path), cancellation));
+        Assert.Equal("0", Probe(RuleFixtures.Compile(rewritten, path), cancellation));
+    }
+
+    /// <summary>
     ///     <c>Probe.Run()</c>'s result as invariant text, or <see langword="null" /> when the compilation
     ///     declares no such member; an exception is a result too, by type name.
     /// </summary>
