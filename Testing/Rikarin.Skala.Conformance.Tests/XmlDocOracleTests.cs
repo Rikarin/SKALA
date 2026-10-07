@@ -16,7 +16,7 @@ namespace Rikarin.Skala.Conformance.Tests;
 ///     <see cref="OracleProfile.FormatOnly" />, which is byte-for-byte ReSharper's
 ///     <c>Built-in: Reformat Code</c> — the one built-in profile with <c>CSharpFormatDocComments</c>
 ///     switched off. <see cref="OracleProfile.DocComments" /> switches it on, and
-///     <c>constructs/xmldoc/</c> carries one corpus file per key with the oracle's answer beside it.
+///     <c>constructs/xmldoc/</c> carries at least one corpus file per key with the oracle's answer beside it.
 ///     <para>
 ///         ⚠ The interesting assertion is the second one, and it runs in both directions. A key the
 ///         registry calls Tier A must reproduce its fixture byte for byte, which is the ordinary Tier A
@@ -236,19 +236,26 @@ public sealed class XmlDocOracleTests {
     ///     ⚠ The headline number, asserted so that it cannot drift without a diff.
     /// </summary>
     [Fact]
-    public void TheSplit_IsTwentyTwoAgainstNone() {
+    public void TheSplit_IsTwentyThreeFilesAgainstNone() {
         // ⚠ Raised from 13, and it is now the whole family. Seven of the nine were SK-DIV-0019's wrap
         // column — one arithmetic, measured wrong; the other two were SK-DIV-0022 and SK-DIV-0023's
         // surviving half. ⚠ A full house on the fixtures is *not* a full house on the tiers: nine of
         // the 22 are still Tier D because no sweep has reached them. See `Unswept`.
+        //
+        // ⚠ 22 keys, 23 files (#382). `xmldoc/marker/skala_space_after_triple_slash.cs` is a second file
+        // for one key, in a subdirectory so that the key's own file — the one the sweep and the frozen
+        // outputs are hashed against — did not have to move. It is attributed by its name like every
+        // other row, and it exists because the first file is rebuilt at either value of its key and so
+        // could not tell the oracle's per-comment rule from Skala's old per-line one.
         var rows = XmlDocOracle.Rows();
         var agreeing = rows.Count(static row => row.Agrees);
-        Assert.Equal(22, rows.Count);
+        Assert.Equal(23, rows.Count);
+        Assert.Equal(22, rows.Select(static row => row.Key).Distinct(StringComparer.Ordinal).Count());
         Assert.True(
-            agreeing >= 22,
+            agreeing >= 23,
             $"{agreeing.ToString(CultureInfo.InvariantCulture)} of "
             + $"{rows.Count.ToString(CultureInfo.InvariantCulture)} doc-comment fixtures agree; the committed "
-            + "measurement is 22. This is a ratchet and it is now at the ceiling: a fall is a regression, and "
+            + "measurement is 23. This is a ratchet and it is now at the ceiling: a fall is a regression, and "
             + "the key that fell is named by TheRecordedTier_IsWhatTheDocCommentFixtureSays."
         );
     }

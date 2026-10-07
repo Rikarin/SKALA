@@ -121,6 +121,11 @@ public readonly struct XmlDocOptions {
     ///         five-letter words a probe cannot tell a budget of 113 from one of 118, which is how it
     ///         survived.
     ///     </para>
+    ///     <para>
+    ///         ⚠ "marker" there is one column at <em>both</em> values of <c>space_after_triple_slash</c>
+    ///         (SK-DIV-0132): asked at <c>false</c>, the oracle breaks at the same content width as at
+    ///         <c>true</c>, so the column is reserved whether or not the space is written.
+    ///     </para>
     /// </remarks>
     public int MaxLineLength { get; }
 

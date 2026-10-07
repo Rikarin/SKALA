@@ -18,7 +18,22 @@ namespace Rikarin.Skala.Formatting.CSharp;
 ///         but taking it off on the way in — see <c>XmlDocModel.SourceLines</c>.
 ///     </para>
 /// </param>
-public readonly record struct XmlDocLine(string Text, bool Verbatim);
+public readonly record struct XmlDocLine(string Text, bool Verbatim) {
+    /// <summary>
+    ///     ⚠ The break before this line separates a word from a sibling element, inside an element.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured (#382, SK-DIV-0132): a comment written in the <em>other</em> marker convention is
+    ///     kept as written unless it holds such a break, and then the oracle rebuilds it at the configured
+    ///     value. <c>Text,</c> / <c>&lt;see cref="M" /&gt; and more.</c>, <c>Text &lt;c&gt;x&lt;/c&gt;</c> /
+    ///     <c>more text.</c>, <c>Text,</c> / <c>&lt;para&gt;A.&lt;/para&gt;</c> and <c>&lt;/para&gt;</c> /
+    ///     <c>Text.</c> are all rebuilt; word beside word, element beside element (<c>&lt;para&gt;</c> /
+    ///     <c>&lt;para&gt;</c>, <c>&lt;see/&gt;</c> / <c>&lt;see/&gt;</c>), a break beside the enclosing
+    ///     element's own start or end tag, a break between two things written directly under the marker,
+    ///     and an element whose line ends in glued punctuation (<c>&lt;see/&gt;,</c>) are all kept.
+    /// </remarks>
+    public bool BesideAnElement { get; init; }
+}
 
 /// <summary>
 ///     Lays out an <see cref="XmlDocNode" /> tree as lines.
@@ -134,7 +149,7 @@ public sealed class XmlDocRenderer {
         foreach (var node in nodes) {
             switch (node) {
                 case XmlDocWord word:
-                    Push(word.Text, word.Glued, false);
+                    Push(word.Text, word.Glued, false, Edge.Word, Edge.Word);
                     break;
 
                 case XmlDocBreak hard:
@@ -150,6 +165,7 @@ public sealed class XmlDocRenderer {
                     // instruction is the last thing in the comment, which is the right answer.
                     if (verbatim.ProcessingInstruction && options.BlankLineAfterPi) {
                         lines.Add(new XmlDocLine(string.Empty, false));
+                        previousTrail = null;
                     }
 
                     break;
@@ -186,7 +202,7 @@ public sealed class XmlDocRenderer {
         }
 
         if (!multiline) {
-            Push(flat!, element.Glued, true);
+            Push(flat!, element.Glued, true, Edge.Element, Edge.Element);
 
             // ⚠ A break *after* as well, and it is the same rule read once rather than twice.
             // Measured on `<remarks>` holding `Leading prose. <c>Code.</c> Trailing prose.` and a
@@ -366,7 +382,7 @@ public sealed class XmlDocRenderer {
     /// </remarks>
     void Open(XmlDocElement element) {
         var hug = !options.LinebreaksInsideTagsForMultilineElements && element.Verbatim is null;
-        Push(Tag(element, ">"), false, true);
+        Push(Tag(element, ">"), false, true, Edge.Element, Edge.Inner);
 
         // ⚠ The start tag's closing column, kept across the break it is about to take. See `_carry`.
         Flush();
@@ -405,7 +421,7 @@ public sealed class XmlDocRenderer {
         }
 
         level = outer;
-        Push("</" + element.Name + ">", hug, true);
+        Push("</" + element.Name + ">", hug, true, Edge.Inner, Edge.Element);
     }
 
     /// <summary>
@@ -526,7 +542,37 @@ public sealed class XmlDocRenderer {
         || !(options.WrapText || element.HasChildElements)
         || IndentWidth() + TextWidth.Measure(flat) - element.Name.Length - "</>".Length <= budget;
 
-    void Push(string text, bool glued, bool tag) {
+    /// <summary>What one side of a placed unit is, as the break beside it sees it.</summary>
+    /// <remarks>
+    ///     <see cref="Edge.Inner" /> is the inside of an opened element's own tag: the side of a start tag
+    ///     that faces its content and the side of an end tag that faces it. A break there is the
+    ///     element's, not a break between siblings.
+    /// </remarks>
+    enum Edge : byte {
+        Inner,
+        Word,
+        Element
+    }
+
+    readonly record struct Side(Edge Kind, int Depth);
+
+    Side tokenLead;
+    Side tokenTrail;
+    Side lineLead;
+    Side lineTrail;
+
+    /// <summary>The trailing side of the last content line emitted, or null after a blank or verbatim line.</summary>
+    Side? previousTrail;
+
+    /// <summary>See <see cref="XmlDocLine.BesideAnElement" />.</summary>
+    static bool BesideAnElement(Side before, Side after) =>
+        before.Kind != Edge.Inner
+        && after.Kind != Edge.Inner
+        && before.Kind != after.Kind
+        && before.Depth > 0
+        && after.Depth > 0;
+
+    void Push(string text, bool glued, bool tag, Edge lead, Edge trail) {
         if (glued) {
             // ⚠ Glue has to survive an empty token buffer. Whatever came before may already be on
             // the line, and forgetting that here is how `<c>x</c>s` becomes `<c>x</c> s`.
@@ -535,6 +581,11 @@ public sealed class XmlDocRenderer {
             Flush();
         }
 
+        if (token.Length == 0) {
+            tokenLead = new(lead, depth);
+        }
+
+        tokenTrail = new(trail, depth);
         tokenIsTag |= tag;
         token.Append(text);
     }
@@ -575,6 +626,10 @@ public sealed class XmlDocRenderer {
             EndLine();
         }
 
+        if (empty) {
+            lineLead = tokenLead;
+        }
+
         Start();
         if (!weld && placed) {
             current.Append(' ');
@@ -584,6 +639,7 @@ public sealed class XmlDocRenderer {
         current.Append(text);
         this.width += width;
         placed = true;
+        lineTrail = tokenTrail;
     }
 
     void Start() {
@@ -619,7 +675,12 @@ public sealed class XmlDocRenderer {
             return;
         }
 
-        lines.Add(new XmlDocLine(current.ToString(), false));
+        lines.Add(
+            new XmlDocLine(current.ToString(), false) {
+                BesideAnElement = previousTrail is { } before && BesideAnElement(before, lineLead)
+            }
+        );
+        previousTrail = lineTrail;
         current.Clear();
         width = 0;
         empty = true;
@@ -631,6 +692,7 @@ public sealed class XmlDocRenderer {
             Break();
             for (var i = 0; i < Math.Min(hard.BlankLines, options.MaxBlankLinesBetweenTags); i++) {
                 lines.Add(new XmlDocLine(string.Empty, false));
+                previousTrail = null;
             }
 
             return;
@@ -645,6 +707,7 @@ public sealed class XmlDocRenderer {
         Break();
         foreach (var line in lines) {
             this.lines.Add(new XmlDocLine(line, true));
+            previousTrail = null;
         }
     }
 }

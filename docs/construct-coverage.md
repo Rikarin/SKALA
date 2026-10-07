@@ -147,7 +147,7 @@ in `constructs/syntax/`, so the fixture beside it is the **format-only** answer.
 profile is the one that actually walks a cref, and it is only ever run over `constructs/xmldoc/` —
 which `XmlDocOracleTests` asserts is **one file per option key**, because the doc-comment verdict is
 attributed by file name. A fixture named after a construct cannot live there without attributing its
-measurement to nothing, and `TheSplit_IsTwentyTwoAgainstNone` pins the subtree's size besides.
+measurement to nothing, and `TheSplit_IsTwentyThreeFilesAgainstNone` pins the subtree's size besides.
 
 What the doc-comment profile does to these forms *was* measured by hand while the oracle was
 installed, on a deliberately mis-spaced probe:

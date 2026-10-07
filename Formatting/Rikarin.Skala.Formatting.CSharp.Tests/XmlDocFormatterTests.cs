@@ -3,6 +3,7 @@ using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Options;
 using System.Collections.Immutable;
+using System.Globalization;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
@@ -132,6 +133,227 @@ public sealed class XmlDocSubFormatterTests {
 
         var untouched = XmlDoc.InClass("///<summary>Docs.</summary>");
         Assert.Contains("///<summary>Docs.</summary>", XmlDoc.Text(untouched), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     #382: a comment is kept when it is, as a whole, the oracle's rendering at <em>either</em> value
+    ///     of the key, and rebuilt at the configured value otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Every row is the oracle's answer under <c>OracleProfile.DocComments</c>, asked with
+    ///     <c>Testing ask --profile=SkalaDocComments skala_space_after_triple_slash=&lt;value&gt;</c> on this
+    ///     repository's <c>.editorconfig</c>, and none is an argument. The corpus file
+    ///     <c>constructs/xmldoc/marker/skala_space_after_triple_slash.cs</c> pins the same shapes at the
+    ///     export's <c>true</c>; these are the only statement of <c>false</c>, and of the blank-line shapes,
+    ///     which need <c>skala_xmldoc_max_blank_lines_between_tags</c> above the export's 0 to survive at all.
+    ///     <para>
+    ///         ⚠ The rule used to be per line — "equal modulo one space after each <c>///</c>" — and it was
+    ///         wrong both ways: it kept the mixed comments (rows 1–2, 7–8) and it rebuilt the markerless
+    ///         comment with indented content (row 3), because the one space it stripped from a markerless
+    ///         line was the content's own indentation.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    [InlineData(
+        "true",
+        0,
+        "///<summary>A.</summary>\n/// <returns>B.</returns>",
+        "/// <summary>A.</summary>\n/// <returns>B.</returns>"
+    )]
+    [InlineData(
+        "true",
+        0,
+        "/// <summary>A.</summary>\n///<returns>B.</returns>",
+        "/// <summary>A.</summary>\n/// <returns>B.</returns>"
+    )]
+    [InlineData(
+        "true",
+        0,
+        "///<summary>\n///    <para>A.</para>\n///</summary>",
+        "///<summary>\n///    <para>A.</para>\n///</summary>"
+    )]
+    [InlineData(
+        "true",
+        0,
+        "///<summary>\n///     <para>A.</para>\n///</summary>",
+        "/// <summary>\n///     <para>A.</para>\n/// </summary>"
+    )]
+    [InlineData("true", 0, "///Plain text.", "///Plain text.")]
+    [InlineData("true", 0, "///", "///")]
+    [InlineData(
+        "false",
+        0,
+        "///<summary>A.</summary>\n/// <returns>B.</returns>",
+        "///<summary>A.</summary>\n///<returns>B.</returns>"
+    )]
+    [InlineData(
+        "false",
+        0,
+        "/// <summary>A.</summary>\n///<returns>B.</returns>",
+        "///<summary>A.</summary>\n///<returns>B.</returns>"
+    )]
+    [InlineData(
+        "false",
+        0,
+        "/// <summary>\n///     <para>A.</para>\n/// </summary>",
+        "/// <summary>\n///     <para>A.</para>\n/// </summary>"
+    )]
+    [InlineData(
+        "false",
+        0,
+        "/// <summary>\n///    <para>A.</para>\n/// </summary>",
+        "///<summary>\n///    <para>A.</para>\n///</summary>"
+    )]
+    [InlineData("false", 0, "/// <summary>One space.</summary>", "/// <summary>One space.</summary>")]
+    [InlineData("false", 0, "///\t<summary>A tab.</summary>", "///<summary>A tab.</summary>")]
+    [InlineData("false", 0, "///  <summary>Two.</summary>", "///<summary>Two.</summary>")]
+    [InlineData("true", 0, "///\t<summary>A tab.</summary>", "/// <summary>A tab.</summary>")]
+    [InlineData(
+        "true",
+        3,
+        "///<summary>A.</summary>\n///\n///<returns>B.</returns>",
+        "///<summary>A.</summary>\n///\n///<returns>B.</returns>"
+    )]
+    [InlineData(
+        "false",
+        3,
+        "/// <summary>A.</summary>\n///\n/// <returns>B.</returns>",
+        "/// <summary>A.</summary>\n///\n/// <returns>B.</returns>"
+    )]
+    [InlineData(
+        "false",
+        3,
+        "/// <summary>A.</summary>\n/// \n/// <returns>B.</returns>",
+        "/// <summary>A.</summary>\n/// \n/// <returns>B.</returns>"
+    )]
+    [InlineData(
+        "true",
+        3,
+        "///<summary>A.</summary>\n/// \n///<returns>B.</returns>",
+        "/// <summary>A.</summary>\n/// \n/// <returns>B.</returns>"
+    )]
+    [InlineData(
+        "false",
+        3,
+        "///<summary>A.</summary>\n/// \n///<returns>B.</returns>",
+        "///<summary>A.</summary>\n///\n///<returns>B.</returns>"
+    )]
+    public void SpaceAfterTripleSlash_KeepsACommentThatIsTheRenderingAtEitherValue(
+        string value,
+        int maxBlankLines,
+        string input,
+        string expected
+    ) {
+        var formatted = XmlDoc.Text(
+            XmlDoc.InClass(input.Split('\n')),
+            ("skala_space_after_triple_slash", value),
+            ("skala_xmldoc_max_blank_lines_between_tags", maxBlankLines.ToString(CultureInfo.InvariantCulture))
+        );
+
+        Assert.Equal(expected.Split('\n'), XmlDoc.DocLines(formatted));
+    }
+
+    /// <summary>
+    ///     #382: the other value's convention is kept only when no break separates a word from a sibling
+    ///     element.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Found after the per-comment rule above was in place, by asking the doc-comment profile about
+    ///     <c>constructs/syntax/cref-member-forms.cs</c> at <c>false</c>: three of its spaced comments came
+    ///     back markerless and the rest came back untouched. Every row is the oracle's answer; the spaced
+    ///     ones at <c>false</c> are each the configured value's mirror of a markerless one at <c>true</c>
+    ///     (rows 1 and 2 are the measured pair).
+    /// </remarks>
+    [Theory]
+    [InlineData(
+        "true",
+        "///<summary>\n///    Text,\n///    <see cref=\"M\" /> and more.\n///</summary>",
+        "/// <summary>\n///     Text,\n///     <see cref=\"M\" /> and more.\n/// </summary>"
+    )]
+    [InlineData(
+        "false",
+        "/// <summary>\n///     Text,\n///     <see cref=\"M\" /> and more.\n/// </summary>",
+        "///<summary>\n///    Text,\n///    <see cref=\"M\" /> and more.\n///</summary>"
+    )]
+    [InlineData(
+        "false",
+        "/// <summary>\n///     Text,\n///     <see cref=\"M\" />\n/// </summary>",
+        "///<summary>\n///    Text,\n///    <see cref=\"M\" />\n///</summary>"
+    )]
+    [InlineData(
+        "false",
+        "/// <summary>\n///     Text <c>x</c>\n///     more text.\n/// </summary>",
+        "///<summary>\n///    Text <c>x</c>\n///    more text.\n///</summary>"
+    )]
+    [InlineData(
+        "false",
+        "/// <remarks>\n///     Text,\n///     <para>A.</para>\n/// </remarks>",
+        "///<remarks>\n///    Text,\n///    <para>A.</para>\n///</remarks>"
+    )]
+    [InlineData(
+        "false",
+        "/// <summary>\n///     Text <see cref=\"M\" />,\n///     more.\n/// </summary>",
+        "/// <summary>\n///     Text <see cref=\"M\" />,\n///     more.\n/// </summary>"
+    )]
+    [InlineData(
+        "false",
+        "/// <remarks>\n///     <para>A.</para>\n///     <para>B.</para>\n/// </remarks>",
+        "/// <remarks>\n///     <para>A.</para>\n///     <para>B.</para>\n/// </remarks>"
+    )]
+    [InlineData(
+        "false",
+        "/// <summary>\n///     <see cref=\"M\" /> first,\n///     and more.\n/// </summary>",
+        "/// <summary>\n///     <see cref=\"M\" /> first,\n///     and more.\n/// </summary>"
+    )]
+    [InlineData("false", "/// Plain text.\n/// <summary>A.</summary>", "/// Plain text.\n/// <summary>A.</summary>")]
+    [InlineData(
+        "false",
+        "/// <summary>\n///     Plain text\n///     on two lines.\n/// </summary>",
+        "/// <summary>\n///     Plain text\n///     on two lines.\n/// </summary>"
+    )]
+    public void TheOtherConvention_IsKeptOnlyWithoutABreakBesideAnElement(string value, string input, string expected) {
+        var formatted = XmlDoc.Text(XmlDoc.InClass(input.Split('\n')), ("skala_space_after_triple_slash", value));
+        Assert.Equal(expected.Split('\n'), XmlDoc.DocLines(formatted));
+    }
+
+    /// <summary>
+    ///     #382: the wrap budget reserves the marker's column at both values of the key.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It used to be <c>max_line_length - marker.Length</c>, one column wider at <c>false</c>. Asked at
+    ///     both values, the oracle breaks a 116-character body under a 4-column content indent — 120 columns
+    ///     after the <c>///</c> with no marker — at <c>false</c> exactly as it does at <c>true</c>, and keeps a
+    ///     115-character one whole at both, as the markerless rendering at <c>true</c> too.
+    /// </remarks>
+    [Theory]
+    [InlineData("false")]
+    [InlineData("true")]
+    public void TheWrapBudget_ReservesTheMarkerColumnAtBothValues(string value) {
+        var words = string.Join(" ", Enumerable.Repeat("word", 23));
+        var marker = value == "true" ? " " : string.Empty;
+
+        var wrapped = XmlDoc.Text(
+            XmlDoc.InClass("///<summary>", "///    " + words + " x", "///</summary>"),
+            ("skala_space_after_triple_slash", value)
+        );
+
+        Assert.Equal(
+            [
+                "///" + marker + "<summary>",
+                "///" + marker + "    " + words,
+                "///" + marker + "    x",
+                "///" + marker + "</summary>"
+            ],
+            XmlDoc.DocLines(wrapped)
+        );
+
+        var fits = "///    " + string.Join(" ", Enumerable.Repeat("word", 22)) + " wordx";
+        var kept = XmlDoc.Text(
+            XmlDoc.InClass("///<summary>", fits, "///</summary>"),
+            ("skala_space_after_triple_slash", value)
+        );
+
+        Assert.Equal(["///<summary>", fits, "///</summary>"], XmlDoc.DocLines(kept));
     }
 
     [Fact]
