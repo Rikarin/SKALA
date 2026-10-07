@@ -1865,6 +1865,14 @@ public sealed partial class CSharpDocumentBuilder {
 
         EmitToken(node.Identifier);
         EmitToken(node.ColonToken);
+
+        // ⚠ The label's continuation ends at its colon: `d` / `    :` puts the statement on the label's
+        // own column, not one level in with the colon (#433). The order VisitFileScopedNamespace uses.
+        if (frames.Count > 0 && frames[^1].Activated) {
+            CloseIndent(IndentKind.Continuous);
+            frames[^1] = frames[^1] with { Activated = false };
+        }
+
         if (outdented) {
             CloseIndent(IndentKind.Outdent);
         }
@@ -2729,6 +2737,26 @@ public sealed partial class CSharpDocumentBuilder {
         // and breaking before a directive moves code across it.
         // ⚠ …except for the one comment that can stand between a point and its token: a block comment
         // after the token before the point. See PointSurvivesComments for what the oracle does there.
+        // ⚠ A labelled statement starts its own line whatever the plan or the brace rules say, and in
+        // both directions: `a: { M(); }` and `a: { }` are broken here before a block's plan could keep
+        // the `{` flat, and `a:` / `{ }` is never joined back by the brace placement (#433). See
+        // StartsALabelledStatement.
+        if (previous.Kind == PieceKind.Token
+            && nextKind == PieceKind.Token
+            && tokens[previous.TokenIndex] is { RawKind: (int)SyntaxKind.ColonToken, Parent: LabeledStatementSyntax }
+            && StartsALabelledStatement(nextToken)) {
+            Break(
+                nextPieceIndex,
+                nextToken,
+                ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
+                newLines == 0
+                    ? DefaultNewLine()
+                    : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+            );
+
+            return;
+        }
+
         var spec = default(GapSpec);
         var planned = (previous.Kind == PieceKind.Token || PointSurvivesComments(lastPiece))
             && nextKind == PieceKind.Token
@@ -3500,7 +3528,7 @@ public sealed partial class CSharpDocumentBuilder {
     bool MustBreak(Piece previous, PieceKind nextKind, SyntaxToken nextToken) {
         if (previous.Kind is PieceKind.BlockComment or PieceKind.BlockDocComment) {
             return nextKind == PieceKind.Token
-                && FollowsItsDeclarationsType(nextToken)
+                && (FollowsItsDeclarationsType(nextToken) || StartsALabelledStatement(nextToken))
                 && !FormatterTagGuard.IsOffTag(previous.Text, options.Tags)
                 && !FormatterTagGuard.IsOnTag(previous.Text, options.Tags);
         }
@@ -3574,6 +3602,26 @@ public sealed partial class CSharpDocumentBuilder {
     ///         in front of a property's, a method's, a local function's or a parameter's name.
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     The first token of the statement a label labels, unless that statement is empty.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A labelled statement starts a line of its own (#433). Measured with <c>Testing ask</c>: the
+    ///     oracle writes <c>a: M(1);</c> as <c>a:</c> / <c>M(1);</c>, at the label's own indent, for an
+    ///     expression statement, a declaration, an <c>if</c>, a <c>for</c>, a block (<c>a:</c> /
+    ///     <c>{ }</c>), a second label (<c>b6: b7: M();</c> takes three lines) and inside a switch section;
+    ///     with a block comment after the colon the break comes after the comment, <c>a: /* c */</c> /
+    ///     <c>M();</c>. Only an empty statement stays: <c>e:;</c> comes back <c>e: ;</c>. At
+    ///     <c>skala_outdent_statement_labels = true</c> the empty statement moves out with its label and
+    ///     every other statement stays in.
+    /// </remarks>
+    static bool StartsALabelledStatement(SyntaxToken token) =>
+        token.Parent is not null
+        && token.Parent.AncestorsAndSelf()
+            .TakeWhile(node => node.GetFirstToken() == token)
+            .Any(static node => node is StatementSyntax and not EmptyStatementSyntax
+                && node.Parent is LabeledStatementSyntax);
+
     static bool FollowsItsDeclarationsType(SyntaxToken token) =>
         token.IsKind(SyntaxKind.IdentifierToken)
         && token.Parent is VariableDeclaratorSyntax declarator
