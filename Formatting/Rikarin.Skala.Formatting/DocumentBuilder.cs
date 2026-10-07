@@ -360,7 +360,7 @@ public sealed class DocumentBuilder {
             DocKind.Indent,
             (int)kind,
             (int)((unconditional ? IndentFlags.Unconditional : IndentFlags.None)
-                | (shape & (IndentFlags.Grouping | IndentFlags.Delimiter))),
+                | (shape & (IndentFlags.Grouping | IndentFlags.Delimiter | IndentFlags.CloserAtOpener))),
             columns
         );
 

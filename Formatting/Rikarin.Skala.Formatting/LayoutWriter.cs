@@ -540,7 +540,15 @@ public sealed class LayoutWriter {
                 // `LevelColumn` alone: `alignment_tab_fill_style = use_spaces` spells the level part of
                 // an indent in tabs and the alignment part in spaces, so it has to know which part of
                 // this scope's column is which. `CloserLevel` — `outer` — is the level part.
-                IndentKind.Align => new Scope(true, CurrentColumn(), line, outer, unconditional, IsAlignment: true),
+                IndentKind.Align => new Scope(
+                    true,
+                    CurrentColumn(),
+                    line,
+                    outer,
+                    unconditional,
+                    IsAlignment: true,
+                    AlignedCloser: (flags & IndentFlags.CloserAtOpener) != 0 ? Math.Max(0, CurrentColumn() - 1) : -1
+                ),
 
                 // ⚠ Columns, not a level, and it carries them in a field of its own rather than in
                 // `Level` so that the collapse in `Level(bool)` never sees them. `Level` is 0 here:
@@ -569,7 +577,7 @@ public sealed class LayoutWriter {
     /// </remarks>
     void Pop(bool alignsCloser) {
         if (alignsCloser) {
-            pendingCloserLevel = scopes[^1].CloserLevel;
+            pendingCloserLevel = scopes[^1].AlignedCloser >= 0 ? scopes[^1].AlignedCloser : scopes[^1].CloserLevel;
         }
 
         scopes.RemoveAt(scopes.Count - 1);
@@ -993,6 +1001,12 @@ public sealed class LayoutWriter {
     ///     answers <c>Lifted</c> plus its own level when it counts and <c>Lifted</c> alone when it does
     ///     not, and nothing outside it is read. See <see cref="LiftedLevel" />.
     /// </param>
+    /// <param name="AlignedCloser">
+    ///     ⚠ <see cref="IndentFlags.CloserAtOpener" />: the column a closing delimiter on a line of its own
+    ///     takes — its opener's — or −1, when it takes <paramref name="CloserLevel" /> (#442,
+    ///     SK-DIV-0203). A field of its own because <paramref name="CloserLevel" /> is also the level an
+    ///     emptied alignment falls back to, which this must not move.
+    /// </param>
     /// <param name="IsAnchor">
     ///     ⚠ <see cref="IndentKind.Anchor" />: a marker that adds nothing and whose
     ///     <paramref name="CloserLevel" /> is the indentation of the line it was pushed on. Read by
@@ -1008,7 +1022,8 @@ public sealed class LayoutWriter {
         bool IsAlignment = false,
         bool IsAnchor = false,
         bool IsGrouping = false,
-        int Lifted = -1);
+        int Lifted = -1,
+        int AlignedCloser = -1);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     int CurrentLineIndent() {
@@ -1863,7 +1878,9 @@ public sealed class LayoutWriter {
             return;
         }
 
-        scopes[^1] = scope with { Level = scope.CloserLevel + continuousMultiplier * indentWidth, IsAlignment = false };
+        scopes[^1] = scope with {
+            Level = scope.CloserLevel + continuousMultiplier * indentWidth, IsAlignment = false, AlignedCloser = -1
+        };
     }
 
     /// <summary>

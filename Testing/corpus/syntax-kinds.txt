@@ -402,11 +402,11 @@ NullLiteralExpression	Transparent
 DefaultLiteralExpression	Transparent
 Utf8StringLiteralExpression	Transparent
 FieldExpression	Transparent
-TypeOfExpression	Transparent
-SizeOfExpression	Transparent
-CheckedExpression	Transparent
-UncheckedExpression	Transparent
-DefaultExpression	Transparent
+TypeOfExpression	Parens
+SizeOfExpression	Parens
+CheckedExpression	Parens
+UncheckedExpression	Parens
+DefaultExpression	Parens
 MakeRefExpression	Transparent
 RefValueExpression	Transparent
 RefTypeExpression	Transparent
