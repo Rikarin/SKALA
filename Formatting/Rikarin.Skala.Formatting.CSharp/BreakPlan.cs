@@ -121,6 +121,9 @@ public readonly record struct GapSpec(GapRule Rule, int Group);
 ///     or a chain's <c>.</c> after the <c>)</c> takes its own level from the owner's indent rather than
 ///     from an arrow level that was never written. Declining the level outright reproduced the first
 ///     line and not the rest — the frame was left unspent and the ternary's break took it.
+///     <see cref="HeldLevel.WhileFlat" /> is the same hold for a group whose own point lies <em>before</em>
+///     the body rather than at it, and <see cref="HeldLevel.WhileChainWhole" /> the same hold under a fill
+///     that may yet break the chain after the <c>)</c>; see there.
 /// </param>
 public readonly record struct GroupPlan(
     int Id,
@@ -130,7 +133,46 @@ public readonly record struct GroupPlan(
     bool LeadingGapInside = false,
     bool OwnLevel = false,
     bool SpendsUnderDelimiters = false,
-    bool HoldsLevel = false);
+    HeldLevel HoldsLevel = HeldLevel.None);
+
+/// <summary>Whether a group spends its continuation level as zero columns. See <see cref="GroupPlan.HoldsLevel" />.</summary>
+/// <remarks>
+///     <see cref="WhileFlat" /> and <see cref="WhileChainWhole" /> combine: the level is held while every
+///     condition named holds, and spent as columns once one fails.
+/// </remarks>
+[Flags]
+public enum HeldLevel {
+    /// <summary>The level is spent as columns, as every other group spends it.</summary>
+    None = 0,
+
+    /// <summary>The level is spent as zero columns whatever the group resolves to.</summary>
+    Always = 1,
+
+    /// <summary>
+    ///     ⚠ The level is spent as zero columns while the group stays flat, and as columns once it
+    ///     breaks. A switch arm's group before its <c>=&gt;</c> owns the arm's level, and the body's
+    ///     group inside it can spend nothing (issue #406, SK-DIV-0157). The oracle holds the level for a
+    ///     body that opens with a parenthesis the author broke after only while the arrow stays on
+    ///     the pattern's line — <c>1 =&gt;</c> / <c>(</c> at the arm's indent — and once the arrow moves
+    ///     down, <c>1</c> / <c>=&gt;</c> / <c>(</c> puts both one level in, by width or by the author's
+    ///     break alike. Whether the arrow broke is the fitter's answer, known when the group is entered
+    ///     and before any line inside it starts, so the writer reads it there
+    ///     (<see cref="IndentFlags.WhileOwnerBroken" />) rather than the plan guessing it from the
+    ///     source.
+    /// </summary>
+    WhileFlat = 2,
+
+    /// <summary>
+    ///     ⚠ The level is spent as zero columns while a fill chain on the body's spine takes none of its
+    ///     points, and as columns once it takes one (issue #407, SK-DIV-0158). Under
+    ///     <c>wrap_if_long</c> whether the chain breaks is a width question asked at the writer's
+    ///     columns, so the writer lays the body out held, watches the chain's group
+    ///     (<see cref="BreakPlan.ChainHeldAgainst" />), rolls back, and spends the level if the chain
+    ///     broke (<see cref="IndentFlags.WhileChainWhole" />). Pass two reads the fill's break back as
+    ///     an author's and disqualifies the hold from the source, which is the same answer.
+    /// </summary>
+    WhileChainWhole = 4
+}
 
 /// <summary>
 ///     The groups a run of sibling <c>where</c> clauses needs, and where the builder opens each.
@@ -215,6 +257,15 @@ public sealed class BreakPlan {
 
     /// <summary>The chain-wide group of a binary chain, keyed by its root node.</summary>
     readonly Dictionary<long, int> chainOwner = [];
+
+    /// <summary>The group <see cref="PlanChainedCalls" /> opened over each chain root.</summary>
+    readonly Dictionary<long, int> chainGroups = [];
+
+    /// <summary>
+    ///     A group holding its level while a fill chain stays whole, to that chain root's key. See
+    ///     <see cref="HeldLevel.WhileChainWhole" />.
+    /// </summary>
+    readonly Dictionary<int, long> heldAgainst = [];
 
     /// <summary>
     ///     The chain roots whose <c>wrap_chained_binary_*</c> style is <c>wrap_if_long</c>, so that
@@ -2194,6 +2245,7 @@ public sealed class BreakPlan {
 
         var (dots, _) = ChainLinks(root, options);
         var group = NewGroup();
+        chainGroups[Key(root)] = group;
         var broken = false;
 
         // ⚠ `wrap_if_long` is a fill and not "leave the chain alone". Measured, one key flipped, at
@@ -3417,7 +3469,7 @@ public sealed class BreakPlan {
                 // ⚠ The level is held at zero when the value opens with a parenthesis the author
                 // broke after: `var t =\n(\n 1, 2)` puts the `(` at the statement's own indent. See
                 // HeadsWithAChoppedParenthesis and GroupPlan.HoldsLevel (SK-DIV-0101).
-                HoldsLevel: HeadsWithAChoppedParenthesis(value)
+                HoldsLevel: HoldFor(group, value)
             )
         );
     }
@@ -3594,21 +3646,49 @@ public sealed class BreakPlan {
     ///         the level, broke the chain, and pass two read the break back and gave the level up. So a
     ///         chain root on the spine whose group breaks at a point disqualifies as an author's break
     ///         does, whether or not the source has one — under <c>chop_if_long</c> and
-    ///         <c>chop_always</c>. A fill (<c>wrap_if_long</c>) breaks by width, not by the head, and
-    ///         keeps the source's answer.
+    ///         <c>chop_always</c>.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ A fill (<c>wrap_if_long</c>) breaks by width at the writer's column, so neither the
+    ///         source nor the plan can answer it, and "keep the source's answer" was the same defect
+    ///         one style over (issue #407, SK-DIV-0158): pass one held the level, the fill broke before
+    ///         a dot, and pass two read that break back and gave the level up. The oracle holds the
+    ///         level exactly while the chain stays whole — breaks before a middle link and the
+    ///         level goes, keeps every link's head and chops the last one's arguments and it stays. So
+    ///         the predicate answers yes and names the chain in <paramref name="fillChain" />, and the
+    ///         writer decides: it lays the body out held, and spends the level if the chain's group
+    ///         took a point (<see cref="HeldLevel.WhileChainWhole" />).
     ///     </para>
     /// </remarks>
     internal static bool HeadsWithAChoppedParenthesis(
         ExpressionSyntax? body,
         string source,
         in PhaseOneOptions options
+    ) =>
+        HeadsWithAChoppedParenthesis(body, source, options, out _);
+
+    /// <param name="body">The body an arrow, an <c>=</c> or a statement's own break owns.</param>
+    /// <param name="source">The source text, for the author's breaks.</param>
+    /// <param name="options">The chain wrap style decides which chains disqualify.</param>
+    /// <param name="fillChain">
+    ///     The outermost chain root on the spine whose points are a fill's, whose break only the writer
+    ///     can know; <see langword="null" /> when there is none.
+    /// </param>
+    internal static bool HeadsWithAChoppedParenthesis(
+        ExpressionSyntax? body,
+        string source,
+        in PhaseOneOptions options,
+        out ExpressionSyntax? fillChain
     ) {
+        fillChain = null;
         var node = body;
         while (node is not null) {
-            if (IsChainRoot(node)
-                && options.WrapChainedMethodCalls != WrapStyle.WrapIfLong
-                && ChainPointCount(node, options) > 0) {
-                return false;
+            if (IsChainRoot(node) && ChainPointCount(node, options) > 0) {
+                if (options.WrapChainedMethodCalls != WrapStyle.WrapIfLong) {
+                    return false;
+                }
+
+                fillChain ??= node;
             }
 
             var operatorToken = default(SyntaxToken);
@@ -3733,7 +3813,33 @@ public sealed class BreakPlan {
             or AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax }
             or AttributeArgumentSyntax;
 
-    bool HeadsWithAChoppedParenthesis(ExpressionSyntax? body) => HeadsWithAChoppedParenthesis(body, source, options);
+    /// <summary>
+    ///     How a group whose body is <paramref name="body" /> holds its level: not at all, always, or —
+    ///     when a fill chain on the spine may yet break — only while that chain stays whole.
+    /// </summary>
+    HeldLevel HoldFor(int group, ExpressionSyntax? body) {
+        if (!HeadsWithAChoppedParenthesis(body, source, options, out var fillChain)) {
+            return HeldLevel.None;
+        }
+
+        if (fillChain is null) {
+            return HeldLevel.Always;
+        }
+
+        heldAgainst[group] = Key(fillChain);
+        return HeldLevel.WhileChainWhole;
+    }
+
+    /// <summary>
+    ///     The chain group a <see cref="HeldLevel.WhileChainWhole" /> hold is decided by, or -1.
+    /// </summary>
+    public int ChainHeldAgainst(int group) => heldAgainst.TryGetValue(group, out var root) ? ChainGroupOf(root) : -1;
+
+    /// <summary>The group <see cref="PlanChainedCalls" /> opened over the chain rooted at this key, or -1.</summary>
+    int ChainGroupOf(long root) => chainGroups.TryGetValue(root, out var group) ? group : -1;
+
+    /// <summary>The group <see cref="PlanChainedCalls" /> opened over the chain rooted at <paramref name="root" />, or -1.</summary>
+    public int ChainGroupOf(SyntaxNode root) => ChainGroupOf(Key(root));
 
     /// <summary>Whether <paramref name="source" /> holds a line break in the gap before this token.</summary>
     internal static bool BreaksBeforeIn(string source, SyntaxToken token) {
@@ -3902,7 +4008,7 @@ public sealed class BreakPlan {
                 // deeper; the paren's own scope supplies the contents' level, and the arrow's was the
                 // one too many. See HeadsWithAChoppedParenthesis for the boundary and
                 // GroupPlan.HoldsLevel for why the level is held rather than declined (SK-DIV-0101).
-                HoldsLevel: HeadsWithAChoppedParenthesis(node.Expression)
+                HoldsLevel: HoldFor(group, node.Expression)
             )
         );
     }
@@ -3941,9 +4047,12 @@ public sealed class BreakPlan {
     ///         owns, and the oracle takes exactly one of the two. The group before the arrow is opened
     ///         by the walk over the arm's children (<see cref="openedAt" />) because no node starts at
     ///         the <c>=&gt;</c>; the body's is opened the same way so that it owns the gap even when the
-    ///         body aligns. Both spend the arm's continuation level — the body lands one level in from
-    ///         the arm, as a kept break already put it — and hold it at zero when the body opens with
-    ///         a parenthesis the author broke after (SK-DIV-0101).
+    ///         body aligns. Both ask to spend the arm's continuation level — the body lands one level in
+    ///         from the arm, as a kept break already put it — and the group before the arrow, opened
+    ///         first, is the one that gets it. ⚠ So it is that group which holds the level at zero when
+    ///         the body opens with a parenthesis the author broke after (SK-DIV-0101), and only while
+    ///         the arrow stays on the pattern's line (issue #406, SK-DIV-0157); the body's own hold
+    ///         never has a level to hold.
     ///     </para>
     /// </remarks>
     void PlanArmArrow(SwitchExpressionArmSyntax arm) {
@@ -3965,7 +4074,17 @@ public sealed class BreakPlan {
                     BreaksIfTooLong: true,
                     BreaksOnlyIfHeadOverflows: true
                 ),
-                true
+                true,
+
+                // ⚠ The arm's level is this group's, not the body's: it is opened first and the body's
+                // group can spend nothing inside it. So it is this group that holds the level for a
+                // body that opens with a parenthesis the author broke after — and only while the arrow
+                // stays on the pattern's line (issue #406, SK-DIV-0157). See HeldLevel.WhileFlat.
+                HoldsLevel: HoldFor(before, arm.Expression) switch {
+                    HeldLevel.None => HeldLevel.None,
+                    HeldLevel.Always => HeldLevel.WhileFlat,
+                    var hold => hold | HeldLevel.WhileFlat
+                }
             )
         );
 
@@ -4027,7 +4146,7 @@ public sealed class BreakPlan {
                 GroupMode.Preserve,
                 facts with { SourceBroken = options.KeepsUserBreaksBetweenItems && BreaksBefore(first) },
                 true,
-                HoldsLevel: HeadsWithAChoppedParenthesis(body)
+                HoldsLevel: HoldFor(group, body)
             )
         );
     }

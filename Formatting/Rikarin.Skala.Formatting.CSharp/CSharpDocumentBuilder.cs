@@ -322,7 +322,7 @@ public sealed partial class CSharpDocumentBuilder {
             // for, counted as a continuation so that no frame further in spends the level the group
             // has taken. See GroupPlan.HoldsLevel. The fitter is told the level is not spent, because
             // the column a break lands on is the owner's.
-            var held = plan.HoldsLevel && indented[i] > 0;
+            var held = plan.HoldsLevel == HeldLevel.Always && indented[i] > 0;
             if (held) {
                 indented[i] = 0;
             }
@@ -332,7 +332,10 @@ public sealed partial class CSharpDocumentBuilder {
             // lands on, and that is one level deeper only when this group is the one paying for it.
             doc.DescribeGroup(
                 plan.Id,
-                plan.Facts with { SpendsIndent = indented[i] > 0, Continues = plan.Facts.Continues && !aligned }
+                plan.Facts with {
+                    SpendsIndent = indented[i] > 0 && plan.HoldsLevel != HeldLevel.WhileChainWhole,
+                    Continues = plan.Facts.Continues && !aligned
+                }
             );
 
             if (held) {
@@ -341,7 +344,7 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             for (var level = 0; level < indented[i]; level++) {
-                OpenIndent(IndentKind.Continuous);
+                OpenContinuation(plan, level);
             }
 
             if (i + 1 == gapAfter) {
@@ -1006,21 +1009,53 @@ public sealed partial class CSharpDocumentBuilder {
     (int Indented, bool Held) OpenGroupAt(GroupPlan planned, SyntaxNode node) {
         doc.OpenGroup(planned.Mode, planned.Id);
         var indented = planned.SpendsIndent && CanSpendAContinuationLevel(node, planned.SpendsUnderDelimiters) ? 1 : 0;
-        var held = planned.HoldsLevel && indented > 0;
+        var held = planned.HoldsLevel == HeldLevel.Always && indented > 0;
         if (held) {
             indented = 0;
         }
 
-        doc.DescribeGroup(planned.Id, planned.Facts with { SpendsIndent = indented > 0 });
+        doc.DescribeGroup(
+            planned.Id,
+            planned.Facts with { SpendsIndent = indented > 0 && planned.HoldsLevel != HeldLevel.WhileChainWhole }
+        );
         if (held) {
             HoldContinuationLevel();
         }
 
         for (var level = 0; level < indented; level++) {
-            OpenIndent(IndentKind.Continuous);
+            OpenContinuation(planned, level);
         }
 
         return (indented, held);
+    }
+
+    /// <summary>
+    ///     Opens one of the continuation levels a group spends — the first as a held level while the
+    ///     group stays flat when the plan asks for <see cref="HeldLevel.WhileFlat" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Spent, for the builder, either way: <c>continuousDepth</c> counts it, so nothing further
+    ///     in spends the level the group has taken, and the fitter is told the group spends it,
+    ///     because a break at the group's own point lands one level in. Only the writer, which knows
+    ///     whether the group broke, decides whether the level has columns (issue #406, SK-DIV-0157).
+    /// </remarks>
+    void OpenContinuation(in GroupPlan planned, int level) {
+        var conditions = (planned.HoldsLevel & HeldLevel.WhileFlat) != 0
+            ? IndentFlags.HeldWhileOwnerFlat
+            : IndentFlags.None;
+
+        var chain = (planned.HoldsLevel & HeldLevel.WhileChainWhole) != 0 ? plan.ChainHeldAgainst(planned.Id) : -1;
+        if (chain >= 0) {
+            conditions |= IndentFlags.HeldWhileChainWhole;
+        }
+
+        if (level == 0 && conditions != IndentFlags.None) {
+            doc.OpenHeldIndent(IndentKind.Continuous, conditions, chain);
+            continuousDepth++;
+            return;
+        }
+
+        OpenIndent(IndentKind.Continuous);
     }
 
     void CloseGroupAt((int Indented, bool Held) opened) {
@@ -2660,8 +2695,17 @@ public sealed partial class CSharpDocumentBuilder {
             // GroupPlan.HoldsLevel, for the breaks a frame pays for: a lambda's arrow and a
             // statement's own continuation, which never go through a group. The frame closes it
             // as it closes any level it spent (SK-DIV-0101).
-            if (nextToken.IsKind(SyntaxKind.OpenParenToken) && HeadsABodyWithAChoppedParenthesis(nextToken)) {
-                HoldContinuationLevel();
+            // ⚠ And under `wrap_if_long` held only while the chain after the `)` stays whole, which
+            // the writer decides (HeldLevel.WhileChainWhole, issue #407).
+            if (nextToken.IsKind(SyntaxKind.OpenParenToken)
+                && HeadsABodyWithAChoppedParenthesis(nextToken, out var fillChain)) {
+                var chain = fillChain is null ? -1 : plan.ChainGroupOf(fillChain);
+                if (chain >= 0) {
+                    doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileChainWhole, chain);
+                    continuousDepth++;
+                } else {
+                    HoldContinuationLevel();
+                }
             } else {
                 OpenIndent(IndentKind.Continuous);
             }
@@ -2816,7 +2860,8 @@ public sealed partial class CSharpDocumentBuilder {
     ///     which shapes qualify. An arrow clause's or an equals clause's body is excluded here because
     ///     those are the group's to decide and their break never reaches <see cref="Break" />.
     /// </remarks>
-    bool HeadsABodyWithAChoppedParenthesis(SyntaxToken open) {
+    bool HeadsABodyWithAChoppedParenthesis(SyntaxToken open, out ExpressionSyntax? fillChain) {
+        fillChain = null;
         if (open.Parent is not (ParenthesizedExpressionSyntax or TupleExpressionSyntax)) {
             return false;
         }
@@ -2834,7 +2879,7 @@ public sealed partial class CSharpDocumentBuilder {
             _ => false
         };
 
-        return owned && BreakPlan.HeadsWithAChoppedParenthesis(body, source, options);
+        return owned && BreakPlan.HeadsWithAChoppedParenthesis(body, source, options, out fillChain);
     }
 
     static bool IsLeftSpineOf(ExpressionSyntax child, ExpressionSyntax parent) =>

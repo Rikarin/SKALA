@@ -6562,6 +6562,8 @@ spine for which `PlanChainedCalls` plans a point (`ChainPointCount`, the same wa
 `chop_if_long` and `chop_always`. Under `wrap_if_long` the chain is a fill that breaks by width, not
 by its head, and the oracle holds the level for a whole chain there (asked with
 `resharper_csharp_wrap_chained_method_calls = wrap_if_long`), so the source's answer stands.
+⚠ Only for a chain the fill leaves whole: one the fill breaks was the same defect one style over,
+and the writer now answers it (SK-DIV-0158).
 
 - options: `skala_wrap_chained_method_calls`.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/chained-call-after-a-chopped-parenthesis.cs`,
@@ -6570,22 +6572,42 @@ by its head, and the oracle holds the level for a whole chain there (asked with
 ## SK-DIV-0157 — a switch arm's body does not hold SK-DIV-0101's level
 
 ⚠ **Found beside SK-DIV-0156**, on the same probe, and filed as #406. Stable, not an idempotency
-failure:
+failure. Measured 2026-10-07 with `Testing ask` on 179 shapes — thirteen bodies by five arrow
+layouts (joined, broken after, broken before, both, last arm), five bodies by six arm kinds (`when`,
+`when` broken before the arrow, property pattern whole and broken, discard, nested switch) by three
+owners (`return`, a lambda's switch, an argument), and a column sweep of the pattern's width — plus
+the oracle's answer to Skala's output for every one:
 
-| written | oracle | Skala |
+| written | oracle | Skala before |
 |---|---|---|
-| `1 =>` / `(` / `a).C(),` and with `a)[0]`, `a)[0][1]`, `a)?.B()`, `a).B.C()`, `a ?? b)!.C()` | `(` at the **arm's** indent, contents one level in | `(` one level past the arm |
+| `1 =>` / `(` / `a).C(),` and with `a)[0]`, `a)[0][1]`, `a)?.B()`, `a).B.C()`, `a ?? b)!.C()`, `a, b)`, `a, b) switch { … }` | `(` at the **arm's** indent, contents one level in | `(` one level past the arm |
+| `1 =>` / `(` / `a) ? b : c,` | `(` at the arm's indent, `? b` / `: c` one level past it | each one level deeper |
+| the same past a `when`, in a nested switch, under `return`, a lambda's switch and an argument | the same | the same |
+| `1` / `=> (` / `a).C(),` and `1` / `=>` / `(` — the author's break before the arrow | the arrow one level in, `(` with it | identical |
+| ` =>` ending at column 120 / `(` | held | one level past the arm |
+| ` =>` ending at 121 — the margin moves the arrow down | `=>` and `(` one level in | identical |
+| ` => (` ending at 121 | broken after the arrow, `(` **held** | one level past the arm |
 | `1 =>` / `(` / `a)[0].C(),` — a chain that breaks | `(` one level past the arm | identical |
 
-The arm is SK-DIV-0101's rule with a third owner. Traced, not fixed: `PlanArmArrow` opens two groups
-and both ask to spend the arm's level; the group before the arrow is opened first and takes it, so
-the body's group cannot spend, and a level that is never spent cannot be held
-(`OpenGroupAt`'s `held = HoldsLevel && indented > 0`). Adding the arm to
-`HeadsABodyWithAChoppedParenthesis`'s frame owners changed nothing, which is what showed the
-level is the group's and not a frame's.
+So the arm is SK-DIV-0101's rule with a third owner, and the owner is the arrow: the level is held
+while the arrow stays on the pattern's line and spent once it moves down, by the author's break or
+the margin's alike. `PlanArmArrow` opens two groups and both ask to spend the arm's level; the group
+before the arrow is opened first and takes it, so the body's group cannot spend, and a level that is
+never spent cannot be held (`OpenGroupAt`'s `held = HoldsLevel && indented > 0`). Adding the arm to
+`HeadsABodyWithAChoppedParenthesis`'s frame owners changed nothing, which is what showed the level
+is the group's and not a frame's.
+
+**Decision: fix.** The group before the arrow holds the level `HeldLevel.WhileFlat`: the builder
+spends it as before — nothing further in may spend it, and the fitter is told it is spent, because a
+break at the arrow lands one level in — and the scope carries `IndentFlags.HeldWhileOwnerFlat`, which
+the writer reads off the group's own resolution when it reaches the scope. The group is resolved when
+the walk enters it, before any line inside it starts, so this is the fitter's answer and not the
+source's; ⚠ a plan-time "the author did not break before the arrow" would have held the margin's
+row and been one level short there.
 
 - options: none.
-- ⚠ status: **open**.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/switch-arm-chopped-parenthesis.cs` and
+  `HeldLevelIssue406407Tests`. `dump constructs` moves that file and nothing else.
 
 ## SK-DIV-0158 — two residues of SK-DIV-0156: a fill that adds a dot break, and a chain governing a switch
 
@@ -6597,14 +6619,59 @@ level is the group's and not a frame's.
 | `=>` / `(` / `a).B().C() switch { _ => a };` | `(` at 8, `a).B()` at **16**, `.C() switch {` at 12, arms 16 | `(` 8, `a).B()` 12, `.C() switch {` 8, arms 12 (before SK-DIV-0156 this was also not idempotent) |
 
 The first is SK-DIV-0156's defect where the chain's break is the fill's to add: whether it breaks is
-a width question answered at the writer's column, after the arrow's level was already decided. It
-needs the decision moved to the writer (the `NextLineFitsBeside` lookahead, SK-DIV-0119) or the
-fill's last-link rule (SK-DIV-0129) fixed first, under which the oracle does not break the dot at
-all. The default export uses `chop_if_long`, so the repository's own sweep cannot reach it. The
-second is SK-DIV-0148's territory: a chain that breaks inside a switch's governing expression lifts
-the parenthesis's contents a level past its dots. Recorded, not fixed.
+a width question answered at the writer's column, after the arrow's level was already decided. The
+default export uses `chop_if_long`, so the repository's own sweep cannot reach it. The second is
+SK-DIV-0148's territory: a chain that breaks inside a switch's governing expression lifts the
+parenthesis's contents a level past its dots. Recorded, not fixed.
+
+**The first row, measured and fixed (#407).** Asked 2026-10-07 at `wrap_if_long` on 54 shapes — nine
+chains (two calls, three, a property run, an indexer head, one call, a short chain, one that fits, one
+broken at the dot by the author, and one whose last link the oracle's own fill moves down) by six
+owners (`=>`, a property's `=>`, `var x =`, `return`, a lambda's `=>`, a switch arm) — and then on
+Skala's output for each. Master's formatter was not idempotent on 23 of the 54. The oracle's rule is
+SK-DIV-0101's boundary read off its *own* output: the level is held exactly while the chain stays
+whole. It gives the level up wherever its fill breaks before a link — a middle link of the three-call
+chain, and the last link of `a).SomeMethodName(one, two).OtherMethodName(one, twoo)` — and keeps it
+where it keeps every link's head and chops the last one's arguments. ⚠ So "fix SK-DIV-0129 first",
+one of the two remedies the issue offered, would not have been enough: under the oracle's own fill a
+three-call chain still breaks a dot and still needs the level decided by the break.
+
+**Decision: fix**, in the writer. `HeadsWithAChoppedParenthesis` now answers yes for a fill chain on
+the spine and names it; the group, or the frame of a `return` or a lambda, holds `HeldLevel.WhileChainWhole`
+against that chain's group, and the scope carries `IndentFlags.HeldWhileChainWhole`. The writer, on
+reaching the scope, writes its contents ahead held, watches whether the chain's group takes a point,
+rolls everything back (`Checkpoint`/`Restore`, the `NextLineFitsBeside` machinery of SK-DIV-0119),
+and spends the level if it did. Held is the shallower layout, so a chain that breaks there breaks
+spent too and the decision is monotone; pass two reads the fill's break back as the author's, which
+disqualifies the hold from the source — the same layout. After the fix all 54 are idempotent and the
+oracle returns every one of Skala's outputs unchanged. Thirty of the 54 equal the oracle's answer to
+the input; the other 24 differ only by SK-DIV-0129, where Skala's fill breaks before a last link the
+oracle keeps the head of. A switch arm combines this with SK-DIV-0157: the level is held while the
+arrow stays and the chain stays whole.
 
 - options: `skala_wrap_chained_method_calls`.
+- ⚠ status: first row **fixed**, pinned by `HeldLevelIssue406407Tests` (the issue's input settles in
+  one pass; a chain the fill breaks gives the level up and one that fits keeps it, under `=`, a
+  lambda, `return` and an arm, both equal to the oracle). Second row **open**.
+
+## SK-DIV-0159 — a switch arm's `=> (` on the pattern's line, with a chain or a binary that breaks after the `)`
+
+⚠ **Found beside SK-DIV-0157**, on the same probe, and on master's formatter too; the #406 fix does
+not touch it, because the arrow did not break and the body does not head with a parenthesis the
+author broke after *as the boundary reads it* — the chain or the operator after the `)` breaks.
+
+| written | oracle | Skala |
+|---|---|---|
+| `1 => (` / `a).B().C(),` and `a)[0].C()` | `a).B()` at **two** levels past the arm, `.C()` at one | `a).B()` and `.C()` both one level past the arm |
+| `1 => (` / `a) + b,` | `a)` at two levels past the arm, `+ b` at one | both at one |
+
+The `(` stays on the arm's line in both. A ternary in the same place (`1 => (` / `a) ? b : c`) agrees
+since the #406 fix. Recorded, not fixed: the oracle counts the arrow's continuation and the
+parenthesis's own scope as two levels once something after the `)` breaks, which is the
+one-level-per-opening-line collapse in `LayoutWriter.Level` read the other way, and the boundary has
+not been measured beyond these three bodies.
+
+- options: none.
 - ⚠ status: **open**.
 
 ## SK-DIV-0165 — a break point whose gap holds a block comment breaks after the comment
