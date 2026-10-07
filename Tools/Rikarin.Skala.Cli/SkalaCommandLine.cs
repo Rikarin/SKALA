@@ -1,3 +1,4 @@
+using Rikarin.Skala.Analysis;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
@@ -531,7 +532,12 @@ public static partial class SkalaCommandLine {
             );
 
             diagnostics.AddRange(loaded.Diagnostics);
-            return [.. loaded.Units.Select(static unit => unit.Compilation)];
+
+            // ⚠ #395: `verify`'s arrange stage asks the same function, so the two verbs cannot take
+            // different decisions about a loose load again. Before, this handed the loose loader's
+            // compilation over and `verify` did not, and `arrange --check` exited 2 on a file
+            // `verify --load=loose` called clean.
+            return ArrangementCompilations.For(loaded);
 
             // ⚠ #353, and the site that made the `arrange` fixture fail after the per-file catch was
             // already fixed. The loose loader reads every source file to build a compilation, so an

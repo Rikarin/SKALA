@@ -498,7 +498,13 @@ public static class CheckCommand {
 
         var skippedRules = AnalyzerHost.SkippedFor(loaded.Mode);
         if (request.IncludeArrangement) {
-            skippedRules = skippedRules.AddRange(ArrangementFindings.SkippedFor(loaded.Mode));
+            // ⚠ By id: every semantic arrangement id is also a `requiresSemantics` analyzer id, and a
+            // loose `verify` printed all ten of them twice, counted in its "270 rule(s)".
+            var analyzerSkipped = skippedRules.Select(static rule => rule.RuleId).ToHashSet(StringComparer.Ordinal);
+            skippedRules = skippedRules.AddRange(
+                ArrangementCompilations.SkippedFor(loaded.Mode)
+                    .Where(rule => !analyzerSkipped.Contains(rule.RuleId))
+            );
         }
 
         var report = new RunReport {
