@@ -241,7 +241,7 @@ public sealed class LayoutWriter {
                         continue;
 
                     case DocKind.Indent:
-                        Push((IndentKind)slot.Arg0, slot.Arg1 != 0, slot.Arg2);
+                        Push((IndentKind)slot.Arg0, (IndentFlags)slot.Arg1, slot.Arg2, stack);
                         break;
 
                     case DocKind.Group:
@@ -307,7 +307,9 @@ public sealed class LayoutWriter {
     ///     come out the way ReSharper writes it. A block additionally <em>fixes</em> its level rather
     ///     than adding to whatever is open, because a brace resets the continuation context.
     /// </remarks>
-    void Push(IndentKind kind, bool unconditional, int columns = -1) {
+    void Push(IndentKind kind, IndentFlags flags, int columns, Stack<(int Node, int Child)> ancestors) {
+        var unconditional = (flags & IndentFlags.Unconditional) != 0;
+
         // ⚠ The closing delimiter goes back to the level the scope was opened AT, not to the level
         // of the physical line the opener happened to land on. The two differ whenever a condition
         // or an initializer pushed the opener rightwards:
@@ -317,7 +319,9 @@ public sealed class LayoutWriter {
         //     Body();
         // }               ← the `if`'s level, not the `&amp;&amp; second` line's
         // </code>
-        var outer = LevelForNested();
+        // ⚠ A block — and the anchor a switch expression's block nests from — reads the scopes opened
+        // on its own line differently from every other scope. See LevelForBlock.
+        var outer = kind is IndentKind.Block or IndentKind.Anchor ? LevelForBlock(ancestors) : LevelForNested();
 
         // ⚠ An anchored block nests from the line its anchor was pushed on, which is the governing
         // expression's line and not the brace's. See IndentKind.Anchor.
@@ -345,8 +349,23 @@ public sealed class LayoutWriter {
                 // (SK-DIV-0107, measured on all three).
                 IndentKind.Anchor => new Scope(false, 0, int.MaxValue, outer, IsAnchor: true),
                 IndentKind.Continuous =>
-                    new Scope(false, continuousMultiplier * indentWidth, line, outer, unconditional),
-                IndentKind.OneLevel => new Scope(false, indentWidth, line, outer, unconditional),
+                    new Scope(
+                        false,
+                        continuousMultiplier * indentWidth,
+                        line,
+                        outer,
+                        unconditional,
+                        IsGrouping: (flags & IndentFlags.Grouping) != 0
+                    ),
+                IndentKind.OneLevel =>
+                    new Scope(
+                        false,
+                        indentWidth,
+                        line,
+                        outer,
+                        unconditional,
+                        IsGrouping: (flags & IndentFlags.Grouping) != 0
+                    ),
                 IndentKind.Outdent =>
                     new Scope(true, Math.Max(0, outer - indentWidth), line, outer, unconditional),
 
@@ -410,6 +429,157 @@ public sealed class LayoutWriter {
     ///     </code>
     /// </remarks>
     int LevelForNested() => Level(true);
+
+    /// <summary>
+    ///     The level a block opening now nests from — and the level its <c>}</c> takes.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not <see cref="LevelForNested" />, and the difference is in the scopes opened on this line.
+    ///     Measured with the oracle on some fifty shapes at three indent depths (issue #393,
+    ///     SK-DIV-0148), and it is one rule with two consequences. A block nests from where a
+    ///     continuation line of the innermost broken construct around it would start, plus the
+    ///     delimiters opened between that construct and the block.
+    ///     <list type="bullet">
+    ///         <item>
+    ///             Nothing around the block broke: a grouping parenthesis opened on this line adds
+    ///             nothing. <c>var x = (y switch {</c> puts the arms one level past the statement and
+    ///             the <c>}</c> on it — as <c>(new T {</c>, <c>(r with {</c>, <c>((T)new T {</c>,
+    ///             <c>((y switch {</c>, <c>M((y switch {</c> and <c>(() =&gt; {</c> do — where the
+    ///             parenthesis's unconditional scope put them a level deeper. Unconditional is right for
+    ///             a continuation line <em>inside</em> it, <c>if ((a</c> / <c>== b))</c>, and that
+    ///             is untouched.
+    ///         </item>
+    ///         <item>
+    ///             A binary or a chain around it broke (<see cref="GroupFacts.Continues" />, resolved
+    ///             <see cref="ResolvedMode.Broken" />): the block takes the level that construct's own
+    ///             continuation line takes, scopes opened on this line included.
+    ///             <c>var x = y switch { … }</c> / <c>+ 1;</c> puts the arms two levels in, the
+    ///             <c>+ 1</c> at one;
+    ///             <c>(y switch { … }</c> / <c>+ 1)</c> the same, the parenthesis paying;
+    ///             <c>(…).ToString()</c> / <c>.Length</c> the same for a chain; and
+    ///             <c>var ok = items.Any(x =&gt; {</c> … <c>})</c> / <c>&amp;&amp; flag</c> puts the body
+    ///             three in — the argument list's level is not collapsed into the chain's. Where the
+    ///             continuation line spends nothing, neither does the block: under an arrow
+    ///             (<c>=&gt;</c> / <c>y switch { … }</c> / <c>+ 1</c>), in a ternary branch and inside
+    ///             <c>M(</c> / <c>y switch { … }</c> / <c>+ 1</c> the arms are one level past their line.
+    ///         </item>
+    ///     </list>
+    ///     The walk's stack is the document nodes the block is inside, innermost first. Each
+    ///     <see cref="DocKind.Indent" /> among them is one entry of <see cref="scopes" /> in the same
+    ///     order, and a group's continuation scope is its first child, so the ancestor after a scope is
+    ///     the group that opened it.
+    /// </remarks>
+    int LevelForBlock(Stack<(int Node, int Child)> ancestors) {
+        var path = ancestors.ToArray();
+
+        // ⚠ The pairing of ancestors with scopes is the whole method, so a stack that does not hold
+        // one Indent node per open scope is answered the ordinary way rather than misread.
+        var indents = 0;
+        foreach (var frame in path) {
+            if (document.Nodes[frame.Node].Kind == DocKind.Indent) {
+                indents++;
+            }
+        }
+
+        if (indents != scopes.Count) {
+            return LevelForNested();
+        }
+
+        // The innermost broken construct, looked for inside the innermost enclosing block only.
+        var broken = -1;
+        for (int a = 0, next = scopes.Count - 1; a < path.Length; a++) {
+            ref var slot = ref document.Nodes[path[a].Node];
+            if (slot.Kind == DocKind.Indent && scopes[next--].IsBlock) {
+                break;
+            }
+
+            if (slot.Kind == DocKind.Group
+                && fitter.ModeOf(slot.Arg1) == ResolvedMode.Broken
+                && document.FactsOf(slot.Arg1).Continues) {
+                broken = a;
+                break;
+            }
+        }
+
+        var level = 0;
+        var blocked = -1;
+        var outside = false;
+        for (int a = 0, next = scopes.Count - 1; a < path.Length; a++) {
+            // ⚠ A delimiter opened on this line inside the broken construct does not absorb the
+            // construct's own level, so its block on this line is lifted at the boundary; a block
+            // from an earlier line is the ordinary one-level-per-line rule and stays.
+            // ⚠ Once. When the construct pays its own level the boundary is crossed at its scope,
+            // one ancestor earlier, and lifting the block again at the group un-collapsed an `=`
+            // opened on the same line: `var commands = new[] {` … `}.Where(…)` / `.Select(…)` put the
+            // elements a level past the oracle's — Lint drift on CommandParameterNotSuppliedAnalyzer.
+            if (a == broken && !outside) {
+                outside = true;
+                if (blocked == line) {
+                    blocked = -1;
+                }
+            }
+
+            if (document.Nodes[path[a].Node].Kind != DocKind.Indent) {
+                continue;
+            }
+
+            var scope = scopes[next--];
+
+            // ⚠ The broken construct's own continuation scope is its first child, so it is met
+            // before the group is; it belongs outside, with the group.
+            if (!outside
+                && broken >= 0
+                && a + 1 == broken
+                && document.FactsOf(document.Nodes[path[broken].Node].Arg1).SpendsIndent) {
+                outside = true;
+                if (blocked == line) {
+                    blocked = -1;
+                }
+            }
+
+            if (scope.ColumnOutdent != 0) {
+                if (scope.OpenLine < line) {
+                    level -= scope.ColumnOutdent;
+                }
+
+                continue;
+            }
+
+            if (scope.IsBlock) {
+                return Math.Max(0, level + scope.Level);
+            }
+
+            // Outside the broken construct: the level a line starting after this one takes.
+            if (outside) {
+                if (scope.OpenLine <= line && (scope.Unconditional || scope.OpenLine != blocked)) {
+                    level += scope.Level;
+                    blocked = scope.OpenLine;
+                }
+
+                continue;
+            }
+
+            if (scope.OpenLine == line && scope.IsGrouping) {
+                continue;
+            }
+
+            if (scope.Unconditional) {
+                if (scope.OpenLine <= line) {
+                    level += scope.Level;
+                    blocked = scope.OpenLine;
+                }
+
+                continue;
+            }
+
+            if (scope.OpenLine < line && scope.OpenLine != blocked) {
+                level += scope.Level;
+                blocked = scope.OpenLine;
+            }
+        }
+
+        return Math.Max(0, level);
+    }
 
     /// <summary>
     ///     The indent level for a line starting now.
@@ -554,6 +724,10 @@ public sealed class LayoutWriter {
     ///     ⚠ <see cref="IndentKind.Align" />, whose <paramref name="Level" /> is an absolute column rather
     ///     than a level. Only <see cref="LevelColumn" /> reads it, for <c>alignment_tab_fill_style</c>.
     /// </param>
+    /// <param name="IsGrouping">
+    ///     ⚠ <see cref="IndentFlags.Grouping" />: a grouping parenthesis's scope, which
+    ///     <see cref="LevelForBlock" /> counts on its own line only when something inside it broke.
+    /// </param>
     /// <param name="IsAnchor">
     ///     ⚠ <see cref="IndentKind.Anchor" />: a marker that adds nothing and whose
     ///     <paramref name="CloserLevel" /> is the indentation of the line it was pushed on. Read by
@@ -567,7 +741,8 @@ public sealed class LayoutWriter {
         bool Unconditional = false,
         int ColumnOutdent = 0,
         bool IsAlignment = false,
-        bool IsAnchor = false);
+        bool IsAnchor = false,
+        bool IsGrouping = false);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     int CurrentLineIndent() {

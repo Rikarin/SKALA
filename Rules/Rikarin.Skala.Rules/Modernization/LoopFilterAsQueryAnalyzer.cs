@@ -567,8 +567,8 @@ public sealed class LoopFilterAsQueryAnalyzer : DiagnosticAnalyzer {
         }
 
         return identifier.Parent is not MemberAccessExpressionSyntax {
-            RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
-        } access
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
+            } access
             || access.Expression == identifier;
     }
 

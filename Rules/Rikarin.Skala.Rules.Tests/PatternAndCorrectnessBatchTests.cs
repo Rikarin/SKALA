@@ -303,12 +303,12 @@ public sealed class PatternAndCorrectnessBatchTests {
         try {
             var method = context.LoadFromStream(image).GetType("Probe")!.GetMethod("Run")!;
             return cases.Select(arguments => {
-                    try {
-                        return "result:" + method.Invoke(null, arguments);
-                    } catch (TargetInvocationException exception) {
-                        return exception.InnerException!.GetType().FullName!;
+                        try {
+                            return "result:" + method.Invoke(null, arguments);
+                        } catch (TargetInvocationException exception) {
+                            return exception.InnerException!.GetType().FullName!;
+                        }
                     }
-                }
             )
                 .ToArray();
         } finally {

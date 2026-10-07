@@ -6355,3 +6355,135 @@ Measured on this repository's own source with `skala arrange --include SK0206 --
 sites in 18 files rewritten, every constant-context `""` left alone, no file reverted.
 
 - options: `skala_empty_string`
+
+## SK-DIV-0148 — a block nested a level deep inside a grouping parenthesis, and a level short inside a construct that broke after it
+
+⚠ **Filed as issue #393, whose claim is confirmed and whose scope was too narrow.** The issue measured
+a parenthesised switch expression; the defect was every brace block — switch arms, an object,
+collection or array initializer, a `with`, a constructor call's initializer, a lambda's block body —
+opening on the same line as a grouping parenthesis. And it had a twin the issue did not see, with
+no parenthesis at all. Measured 2026-10-07 with `Testing ask`, about seventy shapes over nine probe
+files, each at a class member's indent and three classes deep:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `var x = (y switch {`, `(new T {`, `(new[] {`, `(r with {`, `(new T(1) {`, `((T)new T {`, `((y switch {`, `!(y switch {`, `(object)(y switch {`, `(() => {`, `z => (z switch {` | contents **+1** from the line, `}` on it | +2 / +1 |
+| `=> (value switch {` … `}).ToString()`, `return (new T {` … `}).M();`, `M((y switch {` … `}).ToString())`, `N(` / `(y switch {` … `})` / `)` | +1 / +0 | +2 / +1 |
+| `var x =` / `(y switch {` | +1 / +0 from the block's line | +2 / +1 |
+| `var x = (` / `y switch {`, `var x = (` / `(y switch {` | +1 / +0 from the block's line | identical |
+| `var x = y switch { … }` / `+ 1;`, `return y switch { … }` / `+ 1;`, `z = y switch { … }` / `+ 1;`, `f = y => y switch { … }` / `+ 1;`, `y switch { … }` / `== 1` / `? 1` / `: 2` | arms **+2**, `}` +1, the operator +1 | +1 / +0 |
+| `(y switch { … }` / `+ 1)`, `(new T { … }` / `== null)`, `(y switch { … })` / `+ (y switch { … })` | +2 / +1 | identical — the parenthesis's level, by coincidence |
+| `if ((y switch { … })` / `== 1)` | +2 / +1 past the `if` | +3 / +2 |
+| `(…).ToString().Length.ToString()…` chopped by width after the block | +2 / +1 | identical, the same coincidence |
+| `if (items.Any(x => {` … `})` / `&& flag)` | body **+3**, `}` +2 past the `if` | identical |
+| `var ok = items.Any(x => {` … `})` / `&& flag` | body **+3**, `}` +2 — the argument list's level is not collapsed into the chain's | +2 / +1 |
+| `=>` / `y switch { … }` / `+ 1`, `? y switch { … }` / `+ 1`, `M(` / `y switch { … }` / `+ 1`, `var x = (` / `y switch { … }` / `+ 1)` | +1 / +0 from the block's line — the operator spends nothing there either | identical |
+| `? new[] {` on a ternary's own branch line, `.FirstOrDefault(ci => {` on a chain's own link line (both from `corpus/real/`) | the block nests from its line as usual | identical |
+| `return y switch { … } is 1` / `? v`, `return (y switch { … })` / `? v`, `return node is X {` … `}` / `? v` | arms **+1**, `}` +0 — a ternary breaking after the block does not lift it | identical (the `?` line is SK-DIV-0150's) |
+
+So one rule: **a block nests from where a continuation line of the innermost broken construct around
+it would start, plus the delimiters opened between that construct and the block.** Nothing around the
+block broke, and a grouping parenthesis on the block's line adds nothing; a binary operator or a
+chain around it broke after it, and the block takes that construct's continuation level — which the grouping parenthesis pays for when there is one, because a binary under a delimiter
+spends nothing of its own. Where the construct's continuation line spends nothing (under an arrow, in
+a ternary branch, inside a delimiter broken before the operand), neither does the block.
+
+Skala nested every block from `LayoutWriter.LevelForNested`, which counts every *unconditional* scope
+opened on the current line and no conditional one. A grouping parenthesis is unconditional —
+`if ((a` / `== b))` is two levels, and that is right for a continuation line inside it — so the block
+took its level; and the operator's continuation is conditional, so a block before the operator's
+break took none. The two errors cancelled exactly in every parenthesised operand, which is
+why only the issue's two shapes looked wrong.
+
+**Decision: fix.** `LayoutWriter.LevelForBlock`, used for a `Block` and for the `Anchor` a switch
+expression's block nests from, walks the writer's own stack of open document nodes beside the scope
+stack. The innermost group around the block that resolved `Broken` and `GroupFacts.Continues` — a new
+fact, set by `PlanOperator` and `PlanChainedCalls` only, whether the group pays the level or a
+delimiter does — splits the walk: scopes outside it are counted as a line starting *after* this one counts them, scopes
+inside it as before, minus a grouping parenthesis opened on this line (`IndentFlags.Grouping`, set by
+`VisitDelimited` for a `ParenthesizedExpressionSyntax`). The one-level-per-line block a delimiter
+inside the construct set on this line is lifted at the boundary, which is the `items.Any(x => {` row.
+
+⚠ **Not reached, and recorded rather than fixed:** a member chain broken by a break the *author*
+wrote — `(y switch { … }).ToString()` / `.Length` — whose root is not an invocation, so no chain
+group is planned and the level is a lazily spent frame (`Break`) the writer cannot see when the block
+opens. The oracle puts the arms at +2 and Skala at +1. No `corpus/real/` file holds the shape.
+
+⚠ **The first version let every group that spends a continuation level carry the fact, the ternary
+included, and Lint refuted it on Skala's own source**: `ArgumentStyleRule.cs` returns
+`node.Expression is DeclarationExpressionSyntax {` … `}` / `? …` / `: visited;`, and the property
+pattern's subpatterns moved a level in. Asked, the oracle keeps them where they were (the table's
+ternary row), so the fact is set where it was measured — a binary operator and a chained call — and
+nowhere else; the `=`, an expression body, a query, a declarator list and a base list are unmeasured
+and keep the old reading. ⚠ A second Lint run then found the boundary crossed twice when the chain
+pays its own level — at its scope and again at its group — which un-collapsed an `=` opened on the
+same line (`var commands = new[] {` … `}.Where(…)` / `.Select(…)` in
+`CommandParameterNotSuppliedAnalyzer.cs`, elements a level past the oracle's). With that corrected,
+the eight files of Skala's own source that still drift — property patterns before `&&`, `||` and
+`or`, a lambda in a chain broken after it, that initializer — were asked of the oracle shape for shape
+and match it except for one `)` (SK-DIV-0149), and are reformatted with the fix.
+
+Measured with `Testing fidelity` against master's formatter on the same tree: `corpus/real/` 59 639
+/ 59 841 lines and 330 / 380 files before and after, identical dumps; `pathological/` 580 → **585** /
+627 lines, files 59 / 71 unchanged — three generated nested-switch files move, two of them closer to
+the oracle; the third keeps its count, its arms now right against a `?` line that is itself a level
+deep, and one of the first two is still a level deep where its block opens on a line a closing `})`
+began, a separate shape;
+`constructs/` 451 → 453 / 473 files, all of it the two new files, every other dump identical.
+
+- options: none behind the divergence.
+- ⚠ status: **fixed**, pinned by `constructs/syntax/block-in-a-grouping-parenthesis.cs`,
+  `constructs/syntax/block-in-a-broken-construct.cs` and `BlockIndentIssue393Tests`; the
+  author-broken chain row is open.
+
+## SK-DIV-0149 — a delimited list on the first line of a construct that broke after it is not lifted by the construct
+
+⚠ **Found beside SK-DIV-0148, and its list half.** The block half of the rule is fixed; a delimiter
+list opening on that line is not:
+
+| written | oracle | Skala |
+|---|---|---|
+| `var x = F(` / arguments / `)` / `+ 1;` | arguments **+2**, `)` +1, `+ 1` +1 | +1 / +0 / +1 |
+| `var ok = items.Any(x => {` … `}` / `)` / `&& flag;` | body +3, `}` +2, **`)` +1** | `)` at +0 |
+
+The oracle gives the broken construct's continuation to every line inside it, a list's lines and
+closer included; Skala's one-level-per-opening-line rule collapses the construct's level into the
+list's (`LayoutWriter.Level`), which is the collapse that keeps `using var d = Drawn(` / `argument`
+at one level and that `LayoutWriter`'s remarks record as worth points of line fidelity (not
+re-measured here). Lifting it for a construct that *broke* is the
+same split `LevelForBlock` makes, applied to every line, and needs its own measurement over
+`corpus/real/`. Recorded, not fixed.
+
+- options: none.
+- ⚠ status: **open**.
+
+## SK-DIV-0150 — grouping parentheses and a ternary each spend a level where the oracle spends one
+
+⚠ **Found beside SK-DIV-0148, asking about `(cond ? new T { … } : …)`.** The block in the ternary's
+branch is right relative to the `?` line; the `?` line is not:
+
+| written | oracle | Skala |
+|---|---|---|
+| `var x = (c` / `? a` / `: b);`, `return (c` / `? a`, `var x = (c` / `? a` / `: b).ToString();` | `?` **+1** | +2 |
+| `var x = ((c` / `? a` / `: b));` | +1 | +3 |
+| `var x = ((a` / `+ b));`, `var x = (((a` / `+ b)));` | `+ b` **+1** | +2, +3 |
+| `if (((a` / `\|\| b)))` | +2 past the `if` | +3 |
+| `var x = 1` / `+ (c` / `? a`, `var x = (a > 0` / `&& (c` / `? a > 1` | `?` +1 past its line | +2 |
+| `var x = (` / `c` / `? a` | `c` +1, `?` +2 | identical |
+| `if ((a` / `\|\| b))` | +2 past the `if` | identical |
+| `int[] x = ([` / elements / `]);`, `N(` / `([` … `])` / `)` | elements +1, `]` +0 — and written `( [`, with a space | +2 / +1, `([` |
+| `return y switch { … } is 1` / `? v`, `return (y switch { … })` / `? v`, `return node is X {` … `}` / `? v` | `?` +1 past the `return` | +2 — by the builder's code, not traced: the ternary's scope opens after its condition, on the `}`'s line, so the statement's level is not collapsed into it |
+
+So grouping parentheses opened on one line spend one level between them however many there are, and
+none when a ternary opened on that line spends its own; a statement condition's `(` is not a grouping
+and still adds one. That is SK-DIV-0118's transparency again, for a ternary and for a grouping inside
+a grouping rather than for a list, and it is the line half of the scope SK-DIV-0148 added
+(`IndentFlags.Grouping`) — the writer can now tell a grouping parenthesis apart, which it could not
+when SK-DIV-0118 was written. ⚠ But not uniformly: `var b = ((` / `1 + 2)` / `* 3);` puts `1 + 2)` at
+**+2** (SK-DIV-0118's own row), two groupings that both spend, so "collapse every grouping on a line"
+is refuted by a row already in this file and the rule is still to be found. The `( [` space is the
+oracle's and appears only when the collection expression is multi-line (`([1, 2])` stays closed); it
+is the same `IfBroken`-shaped gap as the `) [` cast in the residue list above. Recorded, not fixed.
+
+- options: none.
+- ⚠ status: **open**.
