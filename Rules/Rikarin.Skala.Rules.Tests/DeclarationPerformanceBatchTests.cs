@@ -43,7 +43,10 @@ public sealed class DeclarationPerformanceBatchTests {
     public void Fixtures_HaveExactCountsAndExpectedFixes(RuleFixture fixture) {
         var compilation = RuleFixtures.Compile(File.ReadAllText(fixture.Path), fixture.Path);
         var findings = Analyze(compilation).Where(diagnostic => diagnostic.Id == fixture.RuleId).ToArray();
-        Assert.Equal(fixture.ShouldFire ? 1 : 0, findings.Length);
+        // ⚠ #422's probe holds one lambda per caller-argument shape on purpose — seventeen findings in one
+        // executable file, so the runtime sweep sees every shape against one Probe.Run().
+        var expected = fixture.Name == "inside-caller-argument-expressions" ? 17 : 1;
+        Assert.Equal(fixture.ShouldFire ? expected : 0, findings.Length);
         Assert.All(
             findings,
             diagnostic => Assert.Equal(

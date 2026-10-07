@@ -21,7 +21,7 @@
 <tr><th>Needs a compilation</th><td>yes</td></tr>
 <tr><th>Runs under <code>--load=loose</code></th><td>no</td></tr>
 <tr><th>Cached per file</th><td>yes</td></tr>
-<tr><th>Fix</th><td>yes, review it</td></tr>
+<tr><th>Fix</th><td>yes, safe</td></tr>
 <tr><th>Language version floor</th><td>—</td></tr>
 <tr><th>Since</th><td>2.0</td></tr>
 </tbody>
@@ -34,7 +34,7 @@
 <p>Write:</p>
 <pre class="good"><code>int? total = null;</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>The name is bound before anything is reported, so a user-defined <code>Nullable&lt;T&gt;</code> is never touched. Positions where the short form is not legal syntax are excluded rather than rewritten: the unbound <code>typeof(Nullable&lt;&gt;)</code>, a <code>cref</code> or <code>nameof</code> argument, a <code>using</code> alias, a member-access receiver, a pointer element type, and any pattern or <code>is</code> type test, because C# rejects a nullable value type in a pattern. Comments and preprocessor directives inside the type name are excluded because the rewrite deletes the text they live in. ⚠ <strong>The fix is not safe (#412's audit, measured by running both versions):</strong> An argument bound to a <code>[CallerArgumentExpression]</code> parameter (<code>Debug.Assert</code> on .NET 9+, <code>ArgumentNullException.ThrowIfNull</code>, test asserts) captures its source text, and the rewrite changes the captured string. Only SK1025 consults <code>CallerArgumentSafety.CapturesText</code>.</p>
+<p>The name is bound before anything is reported, so a user-defined <code>Nullable&lt;T&gt;</code> is never touched. Positions where the short form is not legal syntax are excluded rather than rewritten: the unbound <code>typeof(Nullable&lt;&gt;)</code>, a <code>cref</code> or <code>nameof</code> argument, a <code>using</code> alias, a member-access receiver, a pointer element type, and any pattern or <code>is</code> type test, because C# rejects a nullable value type in a pattern. Comments and preprocessor directives inside the type name are excluded because the rewrite deletes the text they live in. ⚠ Inside an argument a <code>[CallerArgumentExpression]</code> parameter captures (<code>Debug.Assert</code> on .NET 9+, <code>ArgumentNullException.ThrowIfNull</code>, test asserts) the rewrite changes the captured string, so the finding's fix is not marked safe there — #412 measured it and flipped the rule unsafe; #422 moved the decision into the host, per call site and for every rule, and this rule's executable fixture pins it.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK1040.severity</code></li>

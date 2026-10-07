@@ -6,6 +6,9 @@ using Rikarin.Skala.Rules.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
+using System.Linq;
+using System.Threading;
 
 namespace Rikarin.Skala.Rules;
 
@@ -310,13 +313,87 @@ public static class FixEdits {
     /// <summary>Packs one or more replacements into a diagnostic's property bag.</summary>
     public static ImmutableDictionary<string, string?> Pack(params (TextSpan Span, string Text)[] edits) {
         var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
-        builder[CountKey] = edits.Length.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        builder[CountKey] = edits.Length.ToString(CultureInfo.InvariantCulture);
         for (var i = 0; i < edits.Length; i++) {
-            builder[StartKey(i)] = edits[i].Span.Start.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            builder[LengthKey(i)] = edits[i].Span.Length.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            builder[StartKey(i)] = edits[i].Span.Start.ToString(CultureInfo.InvariantCulture);
+            builder[LengthKey(i)] = edits[i].Span.Length.ToString(CultureInfo.InvariantCulture);
             builder[TextKey(i)] = edits[i].Text;
         }
 
         return builder.ToImmutable();
+    }
+
+    /// <summary>
+    ///     The replacements <see cref="Pack" /> put into a diagnostic, or none when the bag is absent or
+    ///     malformed.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The one production reader of the property bag. <c>CallerArgumentFixSafetyTests</c> fails when anything
+    ///     outside this file reads the keys, because a second reader is a second place a fix can leave
+    ///     the analyzer without passing
+    ///     <see cref="IsSafe(string, IEnumerable{TextSpan}, SemanticModel, CancellationToken)" />.
+    /// </remarks>
+    public static ImmutableArray<(TextSpan Span, string Text)> Read(Diagnostic diagnostic) {
+        var properties = diagnostic.Properties;
+        if (!properties.TryGetValue(CountKey, out var countText)
+            || !int.TryParse(countText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var count)
+            || count <= 0) {
+            return [];
+        }
+
+        var builder = ImmutableArray.CreateBuilder<(TextSpan, string)>(count);
+        for (var i = 0; i < count; i++) {
+            if (!properties.TryGetValue(StartKey(i), out var startText)
+                || !properties.TryGetValue(LengthKey(i), out var lengthText)
+                || !properties.TryGetValue(TextKey(i), out var text)
+                || !int.TryParse(startText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var start)
+                || !int.TryParse(lengthText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var length)
+                || start < 0
+                || length < 0) {
+                return [];
+            }
+
+            builder.Add((new TextSpan(start, length), text ?? string.Empty));
+        }
+
+        return builder.MoveToImmutable();
+    }
+
+    /// <summary>Whether this diagnostic's fix may be applied without review, here.</summary>
+    public static bool IsSafe(Diagnostic diagnostic, SemanticModel model, CancellationToken cancellation) =>
+        IsSafe(diagnostic.Id, Read(diagnostic).Select(static edit => edit.Span), model, cancellation);
+
+    /// <summary>
+    ///     Whether a fix of <paramref name="ruleId" /> made of <paramref name="edits" /> may be applied
+    ///     without review: the catalogue says the rule's fix is safe, <b>and</b> no edit changes text a
+    ///     <c>[CallerArgumentExpression]</c> parameter captures.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #422. <c>fixIsSafe</c> is a property of a rule; whether one edit changes a captured string is
+    ///     a property of the call site it lands in, and no rule can know every call site's parameters.
+    ///     #412's audit measured eleven rules whose rewrite changed the message of a
+    ///     <c>Debug.Assert</c> or <c>ArgumentNullException.ThrowIfNull</c>, and only one of them asked.
+    ///     So the question is asked here, of every edit of every rule, by the one consumer every fix
+    ///     passes through — <c>AnalyzerHost</c>, for cold findings and for cached ones alike. A declined
+    ///     edit is not dropped: the finding keeps its fix and loses only the safe mark, so
+    ///     <c>skala fix --include</c> still applies it on request.
+    /// </remarks>
+    public static bool IsSafe(
+        string ruleId,
+        IEnumerable<TextSpan> edits,
+        SemanticModel model,
+        CancellationToken cancellation
+    ) {
+        if (RuleCatalog.Find(ruleId) is not { FixIsSafe: true }) {
+            return false;
+        }
+
+        foreach (var edit in edits) {
+            if (CallerArgumentSafety.ChangesCapturedText(model, edit, cancellation)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

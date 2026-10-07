@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -211,7 +210,7 @@ public sealed class CrossFixtureFixTests {
     ///     <c>Probe.Run()</c>'s result as invariant text, or <see langword="null" /> when the compilation
     ///     declares no such member; an exception is a result too, by type name.
     /// </summary>
-    static string? Probe(Compilation compilation, CancellationToken cancellation) {
+    internal static string? Probe(Compilation compilation, CancellationToken cancellation) {
         using var image = new MemoryStream();
         if (!compilation.Emit(image, cancellationToken: cancellation).Success) {
             return null;
@@ -263,8 +262,14 @@ public sealed class CrossFixtureFixTests {
         CancellationToken cancellation
     ) {
         var findings = RuleFixtures.Analyze(before, SkalaAnalyzers.All, cancellation);
+
+        // ⚠ #422: safe as the host decides it, per finding, not as the catalogue says it per rule —
+        // the sweep measures what `skala fix --safe` would apply, and that is the narrower set.
+        var models = new Dictionary<SyntaxTree, SemanticModel>();
         foreach (var group in findings
-                     .Where(static diagnostic => RuleCatalog.Find(diagnostic.Id) is { HasFix: true, FixIsSafe: true })
+                     .Where(diagnostic => diagnostic.Location.SourceTree is { } tree
+                         && FixEdits.IsSafe(diagnostic, Model(models, before, tree), cancellation)
+                     )
                      .GroupBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal)
                      .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
             var edits = group.SelectMany(FixRoundTripTests.ReadEdits)
@@ -288,6 +293,15 @@ public sealed class CrossFixtureFixTests {
 
             yield return (group.Key, text);
         }
+    }
+
+    static SemanticModel Model(Dictionary<SyntaxTree, SemanticModel> models, Compilation compilation, SyntaxTree tree) {
+        if (!models.TryGetValue(tree, out var model)) {
+            model = compilation.GetSemanticModel(tree);
+            models[tree] = model;
+        }
+
+        return model;
     }
 
     /// <summary>The error ids the edited text has more of than the original, counted per id.</summary>

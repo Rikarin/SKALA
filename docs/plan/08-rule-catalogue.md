@@ -56,6 +56,27 @@ project pinned to C# 10 is a rule that produces uncompilable fixes. Every modern
 its floor and is silent below it — checked against the compilation's *effective* `LangVersion`, not
 the SDK's.
 
+⚠ **`fixIsSafe` is the rule's ceiling, not the finding's answer (#422).** One thing no rule can know is
+whether the call site its edit lands in captures source text: an argument bound to a
+`[CallerArgumentExpression]` parameter (`Debug.Assert` on .NET 9+, `ArgumentNullException.ThrowIfNull`,
+the `ArgumentException`/`ArgumentOutOfRangeException` `ThrowIf*` family, test asserts, any user method)
+becomes a string at run time, and every rewrite inside it changes that string. #412's audit measured
+eleven rules doing it and flipped them unsafe; one rule of the whole catalogue had asked. So the host
+asks, for every finding of every rule: `FixEdits.IsSafe` narrows the catalogue's `fixIsSafe` to `false`
+for a finding any of whose edits overlaps or abuts captured text, and `AnalyzerHost` is the only
+production reader of the fix bag (`CallerArgumentFixSafetyTests` fails on a second one). Cached
+findings are asked again against the current compilation, because the attribute can be declared in a
+file other than the one the cache key hashed, and a finding merged across target frameworks is safe
+only where every target says so. Capture is read precisely — only where the compiler supplies the
+argument, only when the attribute names an existing other parameter, including a reduced extension
+receiver, an expanded `params` and a C# 14 extension block's receiver — and an edit conservatively:
+an edit replacing the whole call is declined even when it re-emits the argument verbatim, because a
+span cannot say that. A declined fix keeps its edits; `skala fix --include` applies it on request.
+With the guard in place `SK1040`, `SK1051`, `SK1053` and `SK1062` went back to `fixIsSafe: true` — the
+capture was the only defect #412 measured for them, and each has an executable fixture inside a
+capturing argument. `SK1041`, `SK1044` and `SK1052` (#423), `SK1050` (#424), and `SK1054`, `SK1060`,
+`SK1061`, `SK1063` and `SK1064` (#425) stay unsafe for the other defects #412 measured in them.
+
 ⚠ `supersedes` is how the tool avoids double-reporting when a third-party analyzer is hosted. If
 `IDE0290` and `SK1002` both fire on the same span, one is dropped, and which one is a documented,
 deterministic choice (`supersedes` wins; the superseded one is recorded in the SARIF as suppressed
