@@ -64,7 +64,8 @@ public sealed class ImmutableStructAnalyzer : DiagnosticAnalyzer {
                     && PrimaryConstructorWrites.PassesAsRefReceiver(instance)
                 )
             || PrimaryConstructorWrites.ReadonlySensitiveParameters(declaration, context.SemanticModel, cancellation)
-                .Count > 0) {
+                .Count
+            > 0) {
             return;
         }
 

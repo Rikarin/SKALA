@@ -16,7 +16,8 @@ namespace Rikarin.Skala.Rules;
 /// <remarks>
 ///     ⚠ The definition is the compiler's, read off <c>readonly struct</c>: a reference is a write
 ///     exactly where the modifier would turn it into <c>CS9114</c> (assigned), <c>CS9115</c> (returned by
-///     writable reference), <c>CS9116</c> (used as a <c>ref</c>/<c>out</c> value, including as a <c>this ref</c> extension's
+///     writable reference), <c>CS9116</c> (used as a <c>ref</c>/<c>out</c> value, including as a <c>this ref</c>
+///     extension's
 ///     receiver), <c>CS9117</c> (a
 ///     member modified) or <c>CS9119</c> (a member used as a <c>ref</c>/<c>out</c> value) — and the
 ///     compiler's own two exceptions, a variable initializer and an <c>init</c> accessor, are construction
@@ -158,7 +159,7 @@ static class PrimaryConstructorWrites {
         if (node != reference
             && node is MemberAccessExpressionSyntax or ElementAccessExpressionSyntax
             && model.GetSymbolInfo(node, cancellation).Symbol is IPropertySymbol { SetMethod.IsReadOnly: true }
-                or IEventSymbol) {
+            or IEventSymbol) {
             return false;
         }
 
@@ -259,7 +260,8 @@ static class PrimaryConstructorWrites {
     /// </summary>
     public static bool PassesAsRefReceiver(IOperation operation) =>
         operation.Parent is IArgumentOperation {
-            Parameter: { Ordinal: 0, RefKind: RefKind.Ref, ContainingSymbol: IMethodSymbol { IsExtensionMethod: true } },
+            Parameter:
+            { Ordinal: 0, RefKind: RefKind.Ref, ContainingSymbol: IMethodSymbol { IsExtensionMethod: true } },
             Parent: IInvocationOperation
         };
 

@@ -118,7 +118,10 @@ public sealed class CrossFixtureFixTests {
         var compared = 0;
 
         Parallel.ForEach(
-            RuleFixtures.All().Where(static fixture => File.ReadAllText(fixture.Path).Contains("class Probe", StringComparison.Ordinal)),
+            RuleFixtures.All()
+                .Where(static fixture => File.ReadAllText(fixture.Path)
+                        .Contains("class Probe", StringComparison.Ordinal)
+                ),
             new ParallelOptions { CancellationToken = cancellation },
             fixture => {
                 var source = File.ReadAllText(fixture.Path);
@@ -136,7 +139,9 @@ public sealed class CrossFixtureFixTests {
                     Interlocked.Increment(ref compared);
                     var actual = Probe(after, cancellation);
                     if (actual != expected) {
-                        failures.Add($"{CrossRuleBaseline.Key(fixture.Path)}: {id} changes Probe.Run() from {expected} to {actual ?? "<no result>"}");
+                        failures.Add(
+                            $"{CrossRuleBaseline.Key(fixture.Path)}: {id} changes Probe.Run() from {expected} to {actual ?? "<no result>"}"
+                        );
                     }
                 }
             }
@@ -162,8 +167,20 @@ public sealed class CrossFixtureFixTests {
         var two = Probe(RuleFixtures.Compile(source, "planted.cs"), cancellation);
 
         Assert.Equal("2", two);
-        Assert.Equal(two, Probe(RuleFixtures.Compile(source.Replace("1 + 1", "2", StringComparison.Ordinal), "planted.cs"), cancellation));
-        Assert.NotEqual(two, Probe(RuleFixtures.Compile(source.Replace("1 + 1", "1 - 1", StringComparison.Ordinal), "planted.cs"), cancellation));
+        Assert.Equal(
+            two,
+            Probe(
+                RuleFixtures.Compile(source.Replace("1 + 1", "2", StringComparison.Ordinal), "planted.cs"),
+                cancellation
+            )
+        );
+        Assert.NotEqual(
+            two,
+            Probe(
+                RuleFixtures.Compile(source.Replace("1 + 1", "1 - 1", StringComparison.Ordinal), "planted.cs"),
+                cancellation
+            )
+        );
         Assert.Null(Probe(RuleFixtures.Compile("public static class Probe { }", "planted.cs"), cancellation));
     }
 

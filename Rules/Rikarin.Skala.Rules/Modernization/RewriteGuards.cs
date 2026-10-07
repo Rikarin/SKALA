@@ -104,8 +104,7 @@ internal static class RewriteGuards {
         && property.ContainingType.TypeKind != TypeKind.Interface
         && property.DeclaringSyntaxReferences.Length == 1
         && property.DeclaringSyntaxReferences[0].GetSyntax(cancellation) is PropertyDeclarationSyntax {
-            ExpressionBody: null,
-            AccessorList.Accessors: { Count: > 0 } accessors
+            ExpressionBody: null, AccessorList.Accessors: { Count: > 0 } accessors
         }
         && accessors.All(static accessor => accessor is { Body: null, ExpressionBody: null });
 
