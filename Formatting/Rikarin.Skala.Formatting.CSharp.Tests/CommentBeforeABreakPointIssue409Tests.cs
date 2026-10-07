@@ -10,13 +10,13 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </summary>
 public sealed class CommentBeforeABreakPointIssue409Tests {
     /// <summary>
-    ///     The fuzzer's case, minimised. Only the settling is asserted: the oracle also breaks after
-    ///     <c>name176:</c> and puts <c>Cast&lt;…&gt;(</c> on a line of its own, which Skala does not do
-    ///     with or without the comment — the named argument's colon is not a break point.
+    ///     The fuzzer's case, minimised, and the oracle's answer for it whole. Until #411 only the
+    ///     settling could be asserted: the oracle also breaks after <c>name176:</c> and puts
+    ///     <c>Cast&lt;…&gt;(</c> on a line of its own, and a named argument's colon was not a break point.
     /// </summary>
     [Fact]
-    public void TheFuzzersCase_SettlesInOnePass_WithTheBreakAfterTheComment() {
-        var once = Format.Text(
+    public void TheFuzzersCase_SettlesInOnePass_WithTheBreakAfterTheComment() =>
+        Oracle.Agrees(
             """
             class C {
                 void M() {
@@ -24,12 +24,22 @@ public sealed class CommentBeforeABreakPointIssue409Tests {
                     }
                 }
             }
+            """,
+            """
+            class C {
+                void M() {
+                    if (new D(
+                            name175: nameof(value), /* f */
+                            name176:
+                            Cast<ValueTask<Dictionary<string, Guid?>>, (ImmutableArray<decimal> First, Nullable<Guid?> Second)>(
+                                $"n={items[0]} and {source?.Value}",
+                                (from item in Source where "sss" orderby item.Length descending select false)
+                            )
+                        )) { }
+                }
+            }
             """
         );
-
-        Assert.Contains("                name175: nameof(value), /* f */\n                name176: Cast<", once);
-        Assert.Equal(once, Format.Text(once));
-    }
 
     /// <summary>
     ///     An argument after a comma and a block comment, the comment written beside the comma or on a

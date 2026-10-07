@@ -762,6 +762,14 @@ public sealed class BreakPlan {
                 PlanSubpattern(subpattern);
                 return;
 
+            case ArgumentSyntax { NameColon: { } argumentName, Expression: { } argumentValue } argument:
+                PlanArgumentName(argument, argumentName.ColonToken, argumentValue);
+                return;
+
+            case AttributeArgumentSyntax { NameColon: { } attributeName, Expression: { } attributeValue } named:
+                PlanArgumentName(named, attributeName.ColonToken, attributeValue);
+                return;
+
             case BaseListSyntax baseList:
                 PlanBaseList(baseList);
                 return;
@@ -2850,6 +2858,49 @@ public sealed class BreakPlan {
             new GroupFacts(
                 options.KeepsUserBreaksBetweenItems && BreaksBefore(value),
                 BreaksIfTooLong: true
+            )
+        );
+    }
+
+    /// <summary>
+    ///     A named argument's own break point: after its <c>name:</c>, landing on the argument's own
+    ///     column — an invocation's, an object creation's, an element access's and an attribute's
+    ///     alike.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ There was no point there at all (#411), so <c>name176: Cast&lt;…&gt;(</c> past the margin
+    ///     filled the type argument list where the oracle writes <c>name176:</c> / <c>Cast&lt;…&gt;(</c>,
+    ///     and a string or an identifier too wide for the argument's line stayed beside its name. The
+    ///     oracle breaks after the colon by the arrow's rule, the ordering rule's second question
+    ///     alone (<see cref="GroupFacts.BreaksOnlyIfHeadOverflows" />): the value moves down exactly
+    ///     when the line up to the value's first break point has no room — a string, an identifier, a
+    ///     binary operand that runs past the margin, a call whose <c>(</c> does — and stays when it
+    ///     has, however much of the value would have fitted below: <c>name: Compute(</c>,
+    ///     <c>name: source.Select(</c>, <c>name: new Widget(</c>, <c>name: x =&gt; Compute(</c>,
+    ///     <c>name: [</c> and <c>name: flag</c> / <c>? a</c> are never broken. The value lands on the
+    ///     argument's own column, without a continuation level, like a property pattern's subpattern
+    ///     (SK-DIV-0081). An author's break after the colon is kept even when the line fits joined.
+    ///     A trailing comma counts. Measured on eleven value shapes at two block depths; the boundary
+    ///     inside a type argument list is SK-DIV-0177.
+    /// </remarks>
+    void PlanArgumentName(SyntaxNode argument, SyntaxToken colon, ExpressionSyntax value) {
+        var first = FirstToken(value);
+        if (colon.IsKind(SyntaxKind.None) || first.IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        var group = NewGroup();
+        Flat(colon);
+        Point(first, group);
+
+        Describe(
+            argument,
+            group,
+            GroupMode.Preserve,
+            new GroupFacts(
+                options.KeepsUserBreaksBetweenItems && BreaksBefore(first),
+                BreaksIfTooLong: true,
+                BreaksOnlyIfHeadOverflows: true
             )
         );
     }

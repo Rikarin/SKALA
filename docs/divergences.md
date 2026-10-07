@@ -6710,7 +6710,7 @@ for one point of a chopped list; the chopped case is the common one. Pinned by
 Two neighbours found on the same probes are not this entry. The space between a block comment and
 the token after it (Skala writes `/* f */ ,` where the oracle writes `/* f */,`) is #410. The
 oracle's break after a named argument's colon (`name176:` / `Cast<…>(`) happens with or without the
-comment, and Skala has never taken it (#411).
+comment, and Skala has never taken it (#411, now SK-DIV-0177).
 
 - options: none.
 - ⚠ status: **resolved** except the last row, which is **open**.
@@ -6908,3 +6908,42 @@ it has no fixture yet, and the rebuild's rules for a starred multi-line block we
 
 - options: none.
 - ⚠ status: **open**.
+
+## SK-DIV-0177 — a named argument's colon is a break point by the arrow's rule
+
+⚠ **Found measuring #409** (#411): `name176: Cast<…>(` at 126 columns, with no comment anywhere, came
+back with its type argument list filled where the oracle writes `name176:` / `Cast<…>(`. Skala had
+no break point after a `NameColon` at all, so a string or an identifier too wide for the argument's
+line also stayed beside its name. Measured with `Testing ask`, about 450 shapes over twelve rounds:
+eleven value kinds (a call, a generic call with and without arguments, a lambda, an object creation,
+a collection expression, a string, a ternary, a chain, an identifier, a binary operand) one column at
+a time from 120, at item indents 12, 16 and 24, as the last argument, a middle one and the only one,
+under an invocation, an object creation and an attribute, written flat, chopped by the author, and
+with the author's break after the colon.
+
+| written | oracle | Skala before | Skala now |
+|---|---|---|---|
+| `name: "…"` or `name: identifier` past the margin, the trailing comma counted | `name:` / the value on the argument's own column, no continuation level, at 121 and not 120 — and when the value does not fit below either | left beside the name | identical |
+| `name: a + b` whose first operand runs past the margin; `name: Computeaaaa…(` whose `(` does | `name:` / the value, then its own break if it still needs one | left beside the name | identical |
+| `name: Compute(`, `name: source.Select(`, `name: new Widget(`, `name: x => Compute(`, `name: [`, `name: flag ? …` where the line up to that point fits | never broken, however much of the value would fit below: the arguments chop | identical | identical |
+| `[Attr(name: "…")]` past the margin | the same break | left beside the name | identical |
+| `name:` / `Compute(alpha, beta)` written by the author, the joined line fitting | kept | kept (`keep_user_linebreaks`) | identical |
+| `name: Cast<A, B>(x, y)` whose `(` is past the margin and whose arguments are 77 columns or wider (76 at indent 16, 75 at 24) | `name:` / `Cast<A, B>(`, the arguments chopped | the type argument list filled | identical |
+| the same with the type arguments' `>` itself past the margin and arguments narrower than that | the type argument list filled, the arguments joined if they fit | identical | **`name:` / `Cast<…>(` — open** |
+| `name: Make<A, B>()` whose `>` fits and `()` does not (two columns) | `name:` / `Make<…>()` | the type argument list filled | **unchanged, open** |
+
+It is the arrow's rule (#378, `GroupFacts.BreaksOnlyIfHeadOverflows`): the ordering rule's second
+question alone — the value moves down exactly when the line up to its first break point has no room
+— never the `=`'s first, and the value lands without a level, like a property pattern's subpattern
+(SK-DIV-0081). `BreakPlan.PlanArgumentName` plans it for an `ArgumentSyntax` and an
+`AttributeArgumentSyntax` with a `NameColon`; an attribute's `Name = value` was already the `=`'s.
+The two open rows are the oracle choosing between the colon and a type argument list's fill when the
+fill overflows: its boundary is the *argument list's* width, independent of the head's column and
+one column narrower every block level or two, which nothing the fitter measures reproduces. Both
+need a generic call whose type arguments alone run past the margin after a named argument's colon;
+`corpus/real/` and every construct were unmoved by the change (line and file fidelity identical on
+all three sets), so neither is chased. Pinned by `constructs/breaks/break-after-argument-name.cs`
+and `ArgumentNameBreakIssue411Tests`.
+
+- options: none.
+- ⚠ status: **resolved** except the last two rows, which are **open**.
