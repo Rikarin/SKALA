@@ -177,7 +177,8 @@ public sealed class CollectionCallShapeBatchTests {
                               using System;
                               using System.Collections.Generic;
                               public sealed class Report {
-                                  public static void Write(Dictionary<string, int> totals) {
+                                  public static void Write() {
+                                      var totals = new Dictionary<string, int>();
                                       foreach (var key in totals.Keys) {
                                           Console.WriteLine(totals[key] + totals[key] + key);
                                       }
@@ -200,12 +201,11 @@ public sealed class CollectionCallShapeBatchTests {
                               using System;
                               using System.Collections.Generic;
                               public sealed class Report {
-                                  readonly Dictionary<string, int> totals = new();
-
                                   public int Threshold {
                                       set {
-                                          foreach (var key in this.totals.Keys) {
-                                              Console.WriteLine(this.totals[key]);
+                                          var totals = new Dictionary<string, int>();
+                                          foreach (var key in totals.Keys) {
+                                              Console.WriteLine(totals[key]);
                                           }
                                       }
                                   }
@@ -222,7 +222,8 @@ public sealed class CollectionCallShapeBatchTests {
                               using System;
                               using System.Collections.Generic;
                               public sealed class Report {
-                                  public static void Write(Dictionary<string, int> totals, int value) {
+                                  public static void Write(int value) {
+                                      var totals = new Dictionary<string, int>();
                                       foreach (var key in totals.Keys) {
                                           Console.WriteLine(totals[key] + value);
                                       }

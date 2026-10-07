@@ -64,7 +64,8 @@ public sealed class StatelessPrivateMethodAnalyzer : DiagnosticAnalyzer {
                 cancellation,
                 symbol => SymbolEqualityComparer.Default.Equals(symbol.OriginalDefinition, method)
             )
-            || ReachedThroughAnInstance(model, declaration, method, cancellation)) {
+            || ReachedThroughAnInstance(model, declaration, method, cancellation)
+            || ConvertedToADelegate(model, declaration, method, cancellation)) {
             return;
         }
 
@@ -115,6 +116,63 @@ public sealed class StatelessPrivateMethodAnalyzer : DiagnosticAnalyzer {
 
         return false;
     }
+
+    /// <summary>
+    ///     ⚠ Whether the method is named anywhere other than as the callee of a call — a method group
+    ///     converted to a delegate.
+    /// </summary>
+    /// <remarks>
+    ///     A delegate over an instance method carries its receiver: <c>Target</c> is the instance, and
+    ///     two delegates over two instances are unequal. Made <c>static</c>, <c>Target</c> is null, the
+    ///     two are equal, and since C# 11 the conversion is cached. #412's audit measured
+    ///     <c>h1.Equals(h2)</c> go from False to True, which is what an <c>event -= M</c> asks to remove one
+    ///     subscriber among several (#425). The method is private and its type is declared once, so every
+    ///     such conversion is in this file. <c>nameof</c> makes no delegate and is admitted.
+    /// </remarks>
+    static bool ConvertedToADelegate(
+        SemanticModel model,
+        MethodDeclarationSyntax declaration,
+        IMethodSymbol method,
+        CancellationToken cancellation
+    ) {
+        foreach (var name in declaration.SyntaxTree.GetRoot(cancellation)
+                     .DescendantNodes()
+                     .OfType<SimpleNameSyntax>()) {
+            cancellation.ThrowIfCancellationRequested();
+            if (name.Identifier.ValueText != method.Name) {
+                continue;
+            }
+
+            ExpressionSyntax callee = name;
+            if (name.Parent is MemberAccessExpressionSyntax access && access.Name == name) {
+                callee = access;
+            } else if (name.Parent is MemberBindingExpressionSyntax binding && binding.Name == name) {
+                callee = binding;
+            }
+
+            if (callee.Parent is InvocationExpressionSyntax call
+                && call.Expression == callee
+                || name.Ancestors()
+                    .OfType<InvocationExpressionSyntax>()
+                    .Any(static invocation => invocation.Expression is IdentifierNameSyntax {
+                            Identifier.ValueText: "nameof"
+                        }
+                    )) {
+                continue;
+            }
+
+            var info = model.GetSymbolInfo(name, cancellation);
+            if (Refers(info.Symbol, method) || info.CandidateSymbols.Any(symbol => Refers(symbol, method))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static bool Refers(ISymbol? symbol, IMethodSymbol method) =>
+        symbol is IMethodSymbol reference
+        && SymbolEqualityComparer.Default.Equals(reference.OriginalDefinition, method);
 
     /// <summary>
     ///     After the accessibility and before everything else: <c>private static async Task</c>, which

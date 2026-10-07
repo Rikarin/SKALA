@@ -170,21 +170,65 @@ public sealed class RethrowAnalyzer : DiagnosticAnalyzer {
         return ReferenceEquals(last, statement);
     }
 
-    /// <summary>Whether the clause assigns the name anywhere, including through <c>ref</c>/<c>out</c>.</summary>
+    /// <summary>
+    ///     Whether the clause can write the name anywhere: an assignment, a deconstruction, a
+    ///     <c>ref</c>/<c>out</c> argument, or a <c>ref</c> alias that something else may write through.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #425: #412's audit measured two writes the first version missed, each rethrowing the
+    ///     original where <c>throw ex;</c> threw the replacement — <c>(ex, _) = (other, 0);</c>, whose left
+    ///     side is a tuple and not a name, and <c>ref Exception alias = ref ex; alias = other;</c>, which
+    ///     never names <c>ex</c> on the left at all. Each occurrence of the name is now asked where it
+    ///     stands, rather than each assignment what it names.
+    /// </remarks>
     static bool IsAssignedIn(CatchClauseSyntax clause, string name) {
         foreach (var node in clause.DescendantNodes()) {
-            switch (node) {
-                case AssignmentExpressionSyntax { Left: IdentifierNameSyntax left }
-                    when string.Equals(left.Identifier.ValueText, name, StringComparison.Ordinal):
-                    return true;
-
-                case ArgumentSyntax {
-                    Expression: IdentifierNameSyntax argument, RefOrOutKeyword.RawKind: not (int)SyntaxKind.None
-                } when string.Equals(argument.Identifier.ValueText, name, StringComparison.Ordinal):
-                    return true;
+            if (node is IdentifierNameSyntax identifier
+                && string.Equals(identifier.Identifier.ValueText, name, StringComparison.Ordinal)
+                && IsWrittenOrAliased(identifier)) {
+                return true;
             }
         }
 
         return false;
+    }
+
+    static bool IsWrittenOrAliased(IdentifierNameSyntax identifier) {
+        SyntaxNode current = identifier;
+        while (true) {
+            var parent = current.Parent;
+            switch (parent) {
+                // Through the shapes a deconstruction's target is built from: `(ex, _)`, `((ex), y)`.
+                case ParenthesizedExpressionSyntax:
+                case TupleExpressionSyntax:
+                    current = parent;
+                    continue;
+
+                case ArgumentSyntax { Parent: TupleExpressionSyntax }:
+                    current = parent;
+                    continue;
+
+                case AssignmentExpressionSyntax assignment:
+                    return assignment.Left == current;
+
+                case ArgumentSyntax argument:
+                    return !argument.RefKindKeyword.IsKind(SyntaxKind.None)
+                        && !argument.RefKindKeyword.IsKind(SyntaxKind.InKeyword);
+
+                case PrefixUnaryExpressionSyntax or PostfixUnaryExpressionSyntax:
+                    return parent.RawKind is (int)SyntaxKind.PreIncrementExpression
+                        or (int)SyntaxKind.PreDecrementExpression
+                        or (int)SyntaxKind.PostIncrementExpression
+                        or (int)SyntaxKind.PostDecrementExpression;
+
+                // `ref ex` hands out an alias — a ref local, a ref return, a ref conditional — and a
+                // write through it is a write to `ex` that never names it.
+                case RefExpressionSyntax:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
     }
 }

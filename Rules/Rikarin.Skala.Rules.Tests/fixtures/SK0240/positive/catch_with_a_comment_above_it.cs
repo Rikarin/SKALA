@@ -5,19 +5,21 @@ using System;
 // starts with the first token's leading trivia, and withdrew a correct finding to protect text the
 // fix was never going to touch.
 class C {
-    public static void Save() {
+    static readonly int[] Values = new int[4];
+    static int _closed;
+
+    public static int Read(int index) {
+        var value = 0;
         try {
-            Run();
+            value = Values[index];
         }
         // Reviewed 2026-02: nothing to add here yet.
-        catch (InvalidOperationException) {
+        catch (IndexOutOfRangeException) {
             throw;
         } finally {
-            Close();
+            _closed++;
         }
+
+        return value + _closed;
     }
-
-    static void Run() { }
-
-    static void Close() { }
 }

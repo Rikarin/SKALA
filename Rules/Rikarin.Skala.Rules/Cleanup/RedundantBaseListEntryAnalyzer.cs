@@ -99,7 +99,9 @@ public sealed class RedundantBaseListEntryAnalyzer : DiagnosticAnalyzer {
 
         for (var index = 0; index < written.Count; index++) {
             var (node, symbol) = written[index];
-            if (!ImpliedByAnother(written, index, symbol) || CarriesAnImplementation(symbol)) {
+            if (!ImpliedByAnother(written, index, symbol)
+                || CarriesAnImplementation(symbol)
+                || IsOrderedByVariance(declared, symbol)) {
                 continue;
             }
 
@@ -124,6 +126,44 @@ public sealed class RedundantBaseListEntryAnalyzer : DiagnosticAnalyzer {
             // leading comma. One at a time converges; the next pass sees the rest.
             return;
         }
+    }
+
+    /// <summary>
+    ///     ⚠ Whether the entry, or anything it inherits, is one of two constructions of the same variant
+    ///     generic interface in the type's interface set.
+    /// </summary>
+    /// <remarks>
+    ///     With <c>IOut&lt;out T&gt;</c>, a cast to <c>IOut&lt;object&gt;</c> of a type implementing both
+    ///     <c>IOut&lt;string&gt;</c> and <c>IOut&lt;Uri&gt;</c> is ambiguous, and the runtime settles it by
+    ///     the order the interfaces are declared in. Deleting a restated <c>IOut&lt;string&gt;</c> keeps
+    ///     the set and moves the entry behind <c>IOut&lt;Uri&gt;</c>: #412's audit measured
+    ///     <c>Who()</c> answer "uri" where it answered "string" (#425).
+    /// </remarks>
+    static bool IsOrderedByVariance(INamedTypeSymbol declared, INamedTypeSymbol symbol) {
+        foreach (var moved in symbol.AllInterfaces.Add(symbol)) {
+            if (!IsVariant(moved.OriginalDefinition)) {
+                continue;
+            }
+
+            foreach (var other in declared.AllInterfaces) {
+                if (!SymbolEqualityComparer.Default.Equals(other, moved)
+                    && SymbolEqualityComparer.Default.Equals(other.OriginalDefinition, moved.OriginalDefinition)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    static bool IsVariant(INamedTypeSymbol definition) {
+        foreach (var parameter in definition.TypeParameters) {
+            if (parameter.Variance != VarianceKind.None) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     static bool ImpliedByAnother(

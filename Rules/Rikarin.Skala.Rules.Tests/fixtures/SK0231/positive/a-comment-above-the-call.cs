@@ -3,5 +3,5 @@ public static class Labels {
     public static string Name(string text) =>
         // And an ordinary comment on the line above the finding. Neither is inside the span the
         // fix deletes, so neither may suppress it.
-        text.ToString();
+        $"[{text}]".ToString();
 }

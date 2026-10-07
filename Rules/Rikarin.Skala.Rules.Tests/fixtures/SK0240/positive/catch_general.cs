@@ -1,14 +1,15 @@
 class C {
-    public static void Save() {
+    static readonly int[] Values = new int[4];
+
+    public static int Sum(int first, int second) {
+        var total = 0;
         try {
-            Run();
-            Flush();
+            total = Values[first];
+            total += Values[second];
         } catch {
             throw;
         }
+
+        return total;
     }
-
-    static void Run() { }
-
-    static void Flush() { }
 }

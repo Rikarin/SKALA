@@ -1,13 +1,20 @@
-using System.IO;
+using System;
 
 class C {
-    static void Write(string path, string payload) { }
+    static readonly int[] Values = new int[4];
 
-    public static void Save(string path, string payload) {
+    public static int Read(int index) {
+        var value = 0;
         try {
-            Write(path, payload);
-        } catch (IOException) {
+            value = Values[index];
+        } catch (IndexOutOfRangeException) {
             throw;
         }
+
+        return value;
     }
+}
+
+public static class Probe {
+    public static string Run() => C.Read(2) + " " + C.Read(-1);
 }

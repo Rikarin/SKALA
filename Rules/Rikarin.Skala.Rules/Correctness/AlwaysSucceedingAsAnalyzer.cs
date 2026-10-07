@@ -86,9 +86,19 @@ public sealed class AlwaysSucceedingAsAnalyzer : DiagnosticAnalyzer {
         // rule documents for `var x = (long)1`. A widening therefore becomes the cast it always was,
         // written from the *syntax* on the right so the name stays the one that is in scope. Only an
         // identity conversion, where the type does not move, is replaced by the operand alone.
+        //
+        // ⚠ #425: an identity conversion still moves what the type *says* when the two differ in tuple
+        // element names — `l as List<(int x, int y)>` on a `List<(int a, int b)>` — and the operand alone
+        // turned `r[0].x` into CS1061 in #412's audit. Tuple names are compared, annotations are not (a `?`
+        // moves a warning, never a binding), and where names differ the identity is written as the cast.
         var replacement = conversion.IsIdentity
-            ? expression.Left.ToString()
-            : Cast(expression.Right.ToString(), expression.Left);
+            && string.Equals(
+                source.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                target.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                System.StringComparison.Ordinal
+            )
+                ? expression.Left.ToString()
+                : Cast(expression.Right.ToString(), expression.Left);
 
         context.ReportDiagnostic(
             Diagnostic.Create(

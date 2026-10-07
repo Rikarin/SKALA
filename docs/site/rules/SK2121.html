@@ -21,7 +21,7 @@
 <tr><th>Needs a compilation</th><td>yes</td></tr>
 <tr><th>Runs under <code>--load=loose</code></th><td>no</td></tr>
 <tr><th>Cached per file</th><td>yes</td></tr>
-<tr><th>Fix</th><td>yes, review it</td></tr>
+<tr><th>Fix</th><td>yes, safe</td></tr>
 <tr><th>Language version floor</th><td>—</td></tr>
 <tr><th>Since</th><td>2.0</td></tr>
 </tbody>
@@ -39,7 +39,7 @@
     var b = (Base)d;
 }</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>The conversion must be an identity, an implicit reference or a boxing conversion as <code>ClassifyConversion</code> reports it; anything else — an explicit conversion, a user-defined one, an unboxing — is a conversion that can genuinely fail and is not reported. ⚠ <strong>Type parameters are excluded outright.</strong> <code>t as Base</code> inside a generic method is classified against the constraint set and not against the type the method is instantiated with, so a conversion that looks certain there is not certain at run time. <code>dynamic</code> operands, error types and an operand with no type at all are declined for the same reason. The fix keeps the expression’s static type rather than removing the operator: a widening becomes the matching cast, <code>(Base)d</code>, so a surrounding <code>var</code> still declares a <code>Base</code>, and only an identity conversion — where the operand already has the tested type — is replaced by the operand itself. <code>fixIsSafe</code> is <code>true</code> because both edits are the conversion the operator was already performing. ⚠ <strong>The fix is not safe (#412's audit, measured by running both versions):</strong> Tuple element names are ignored, so the rewrite produces CS1061 on a named element access.</p>
+<p>The conversion must be an identity, an implicit reference or a boxing conversion as <code>ClassifyConversion</code> reports it; anything else — an explicit conversion, a user-defined one, an unboxing — is a conversion that can genuinely fail and is not reported. ⚠ <strong>Type parameters are excluded outright.</strong> <code>t as Base</code> inside a generic method is classified against the constraint set and not against the type the method is instantiated with, so a conversion that looks certain there is not certain at run time. <code>dynamic</code> operands, error types and an operand with no type at all are declined for the same reason. The fix keeps the expression’s static type rather than removing the operator: a widening becomes the matching cast, <code>(Base)d</code>, so a surrounding <code>var</code> still declares a <code>Base</code>, and only an identity conversion — where the operand already has the tested type — is replaced by the operand itself. <code>fixIsSafe</code> is <code>true</code> because both edits are the conversion the operator was already performing. ⚠ <strong>#425: tuple element names are compared.</strong> An identity conversion between two tuple types that name their elements differently still changes what the expression says, so <code>pairs as List&lt;(int x, int y)&gt;</code> on a <code>List&lt;(int a, int b)&gt;</code> is rewritten to the cast <code>(List&lt;(int x, int y)&gt;)pairs</code> rather than to the operand alone, which #412's audit measured as CS1061 on <code>renamed[0].x</code>. Nullable annotations are not compared: a <code>?</code> moves a warning, never a binding.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK2121.severity</code></li>

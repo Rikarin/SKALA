@@ -305,7 +305,12 @@ public static class FixRebind {
                     model.TryGetSpeculativeSemanticModel(position, (ArrowExpressionClauseSyntax)rewritten, out result);
                     break;
 
-                case EqualsValueClauseSyntax initializer:
+                // ⚠ #425: only a member's or a parameter's initializer. A local's initializer is
+                // speculated through its statement, further out: Roslyn's EqualsValueClause overload
+                // is for fields, properties and parameter defaults, and it refused every local, so a
+                // rewrite inside `var x = …;` was never proved and its rule declined it silently.
+                case EqualsValueClauseSyntax initializer
+                    when initializer.Parent is not VariableDeclaratorSyntax { Parent.Parent: StatementSyntax }:
                     rewritten = initializer.ReplaceNode(original, annotated);
                     model.TryGetSpeculativeSemanticModel(position, (EqualsValueClauseSyntax)rewritten, out result);
                     break;

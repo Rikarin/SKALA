@@ -216,8 +216,10 @@ public sealed class RedundantDeclarationAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        var isStatic = Has(field.Modifiers, SyntaxKind.StaticKeyword);
         foreach (var declarator in field.Declaration.Variables) {
-            if (!IsWrittenSomewhereElse(type, declarator.Identifier.ValueText)) {
+            if (!IsWrittenSomewhereElse(type, declarator.Identifier.ValueText)
+                || (isStatic && !NothingRunsBefore(type, declarator))) {
                 continue;
             }
 
@@ -254,6 +256,68 @@ public sealed class RedundantDeclarationAnalyzer : DiagnosticAnalyzer {
         return false;
     }
 
+    /// <summary>
+    ///     ⚠ Whether every static initializer textually above <paramref name="member" /> is a literal,
+    ///     so that no code can have written the field before its own initializer resets it.
+    /// </summary>
+    /// <remarks>
+    ///     Static initializers run in textual order, and an earlier one can call a method that writes a
+    ///     later field: #412's audit measured <c>static readonly bool Ready = Init();</c> above
+    ///     <c>static int Count = 0;</c>, where <c>Init</c> sets <c>Count = 5</c> and the <c>= 0</c> puts it
+    ///     back — deleted, <c>Count</c> stayed 5. An instance initializer cannot reach <c>this</c>, and a
+    ///     constructor body runs after every initializer, so only the static case asks. A <c>partial</c>
+    ///     type's other parts have no textual order relative to this one and decline.
+    /// </remarks>
+    static bool NothingRunsBefore(TypeDeclarationSyntax type, SyntaxNode member) {
+        if (Has(type.Modifiers, SyntaxKind.PartialKeyword)) {
+            return false;
+        }
+
+        foreach (var other in type.Members) {
+            if (other.SpanStart >= member.SpanStart) {
+                break;
+            }
+
+            if (!Has(other.Modifiers, SyntaxKind.StaticKeyword)) {
+                continue;
+            }
+
+            switch (other) {
+                case FieldDeclarationSyntax earlier:
+                    foreach (var variable in earlier.Declaration.Variables) {
+                        if (variable.Initializer is { } initializer && !IsLiteral(initializer.Value)) {
+                            return false;
+                        }
+                    }
+
+                    break;
+
+                case PropertyDeclarationSyntax { Initializer: { } initializer } when !IsLiteral(initializer.Value):
+                    return false;
+            }
+        }
+
+        // The member's own earlier declarators: `static int A = Init(), B = 0;`.
+        if (member is VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration }) {
+            foreach (var variable in declaration.Variables) {
+                if (variable == member) {
+                    break;
+                }
+
+                if (variable.Initializer is { } initializer && !IsLiteral(initializer.Value)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    static bool IsLiteral(ExpressionSyntax value) =>
+        value is LiteralExpressionSyntax
+            or DefaultExpressionSyntax
+            or PrefixUnaryExpressionSyntax { Operand: LiteralExpressionSyntax };
+
     static bool Names(ExpressionSyntax expression, string name) =>
         expression switch {
             IdentifierNameSyntax identifier => identifier.Identifier.ValueText == name,
@@ -279,6 +343,11 @@ public sealed class RedundantDeclarationAnalyzer : DiagnosticAnalyzer {
         }
 
         if (!IsWhitespaceOnly(property.SemicolonToken.LeadingTrivia)) {
+            return;
+        }
+
+        if (Has(property.Modifiers, SyntaxKind.StaticKeyword)
+            && (property.Parent is not TypeDeclarationSyntax owner || !NothingRunsBefore(owner, property))) {
             return;
         }
 
@@ -425,7 +494,8 @@ public sealed class RedundantDeclarationAnalyzer : DiagnosticAnalyzer {
                 MemberAccessExpressionSyntax { Expression: BaseExpressionSyntax, Name: SimpleNameSyntax name }
             } invocation
             || name.Identifier.ValueText != method.Identifier.ValueText
-            || !ForwardsEveryParameter(method, invocation)) {
+            || !ForwardsEveryParameter(method, invocation)
+            || !RestatesTheBaseSignature(context, method)) {
             return;
         }
 
@@ -464,6 +534,33 @@ public sealed class RedundantDeclarationAnalyzer : DiagnosticAnalyzer {
 
         foreach (var parameter in method.ParameterList.Parameters) {
             if (parameter.Default is not null || parameter.AttributeLists.Count > 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    ///     ⚠ Whether the override's parameters carry the overridden method's names and <c>params</c>.
+    /// </summary>
+    /// <remarks>
+    ///     A call through the derived type binds named arguments to the <em>override's</em> names, so
+    ///     <c>override void Move(int dy, int dx) =&gt; base.Move(dy, dx)</c> is what makes
+    ///     <c>s.Move(dx: 1, dy: 2)</c> pass 2 first; deleted, the same call passes 1 first. #412's audit
+    ///     measured <c>a=2 b=1</c> become <c>a=1 b=2</c>. The base symbol has to resolve: where it does
+    ///     not, nothing is known about its names and the finding is withheld.
+    /// </remarks>
+    static bool RestatesTheBaseSignature(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax method) {
+        if (context.SemanticModel.GetDeclaredSymbol(method, context.CancellationToken)
+            is not { OverriddenMethod: { } overridden } declared
+            || overridden.Parameters.Length != declared.Parameters.Length) {
+            return false;
+        }
+
+        for (var i = 0; i < declared.Parameters.Length; i++) {
+            if (declared.Parameters[i].Name != overridden.Parameters[i].Name
+                || declared.Parameters[i].IsParams != overridden.Parameters[i].IsParams) {
                 return false;
             }
         }

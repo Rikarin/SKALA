@@ -167,7 +167,7 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
     ///     </para>
     /// </remarks>
     static bool SameValue(object? argument, object? parameterDefault) {
-        if (Equals(argument, parameterDefault)) {
+        if (Identical(argument, parameterDefault)) {
             return true;
         }
 
@@ -176,7 +176,7 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
         }
 
         try {
-            return Equals(
+            return Identical(
                 System.Convert.ChangeType(
                     argument,
                     parameterDefault.GetType(),
@@ -192,6 +192,21 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
             return false;
         }
     }
+
+    /// <summary>
+    ///     ⚠ #425: equal <em>and</em> indistinguishable. <c>Equals</c> calls <c>0.00m</c> and <c>0m</c>
+    ///     the same and <c>-0.0</c> and <c>0.0</c> the same, and #412's audit measured both apart:
+    ///     a decimal keeps its scale (<c>"0.00"</c> → <c>"0"</c>) and a negative zero its sign
+    ///     (<c>1 / d</c> went from <c>-Infinity</c> to <c>Infinity</c>). The representation is compared.
+    /// </summary>
+    static bool Identical(object? left, object? right) =>
+        (left, right) switch {
+            (decimal a, decimal b) => decimal.GetBits(a).SequenceEqual(decimal.GetBits(b)),
+            (double a, double b) => System.BitConverter.DoubleToInt64Bits(a)
+                == System.BitConverter.DoubleToInt64Bits(b),
+            (float a, float b) => System.BitConverter.GetBytes(a).SequenceEqual(System.BitConverter.GetBytes(b)),
+            _ => Equals(left, right),
+        };
 
     static bool IsNumeric(object value) =>
         value is sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal;
@@ -276,9 +291,15 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
 
         // ⚠ A method group only. `new EventHandler(other)` where `other` is a delegate is a copy, and
         // a lambda inside a delegate creation is a different question about natural types.
+        // ⚠ #425: and never a static method or a local function. Since C# 11 the compiler caches the
+        // conversion of a static method group in a static field, so `M` hands out one delegate where
+        // `new Action(M)` made a new one each time — #412's audit measured `ReferenceEquals` go from
+        // False to True. An instance method group binds its receiver and is never cached.
         if (argument.Expression is not (IdentifierNameSyntax or MemberAccessExpressionSyntax)
             || context.SemanticModel.GetSymbolInfo(argument.Expression, context.CancellationToken).Symbol
-            is not IMethodSymbol) {
+            is not IMethodSymbol target
+            || target.IsStatic
+            || target.MethodKind == MethodKind.LocalFunction) {
             return;
         }
 
