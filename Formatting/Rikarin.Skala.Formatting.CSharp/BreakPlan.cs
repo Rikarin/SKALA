@@ -4453,9 +4453,14 @@ public sealed class BreakPlan {
     /// </remarks>
     void PlanOnePerLine(SyntaxNode node) {
         switch (node) {
-            case BlockSyntax { Statements.Count: > 0 } block
-                when block.Parent is not (AnonymousFunctionExpressionSyntax or AccessorDeclarationSyntax)
-                && !Keeps(block):
+            case BlockSyntax { Statements.Count: > 0 } block when MayShareItsOwnersLine(block):
+                var group = NewGroup();
+                Point(FirstToken(block.Statements[0]), group);
+                Point(block.CloseBraceToken, group);
+                Describe(block, group, GroupMode.Auto, new GroupFacts(BreaksIfContentSpansLines: true));
+                return;
+
+            case BlockSyntax { Statements.Count: > 0 } block:
                 foreach (var statement in block.Statements) {
                     Mandatory(FirstToken(statement));
                 }
@@ -4505,9 +4510,54 @@ public sealed class BreakPlan {
     ///     </para>
     /// </remarks>
     bool Keeps(BlockSyntax block) =>
-        block.Parent is StatementSyntax or SwitchSectionSyntax
+        block.Parent is (StatementSyntax and not LocalFunctionStatementSyntax)
+            or SwitchSectionSyntax
+            or AnonymousFunctionExpressionSyntax
             ? options.KeepExistingEmbeddedBlockArrangement
             : options.KeepExistingDeclarationBlockArrangement;
+
+    /// <summary>
+    ///     Whether a block may stay on its owner's line — and then it does exactly when everything in it
+    ///     ends up on that line (<see cref="GroupFacts.BreaksIfContentSpansLines" />).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ One rule for every block, measured on accessors, lambdas, anonymous methods, methods,
+    ///     local functions, <c>if</c> and <c>while</c> (issue #405, SK-DIV-0162). A block with more than
+    ///     one statement never does, at every key: <c>set { _n = value; _n++; }</c> comes back four
+    ///     lines under the export and under both <c>keep_existing_*_block_arrangement = true</c>, as
+    ///     <c>void M() { A(); B(); }</c> and <c>if (c) { A(); B(); }</c> do. A one-statement block does
+    ///     when its owner allows it:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             an accessor's, a lambda's and an anonymous method's always — and the author's break
+    ///             is not a reason to keep it broken: <c>get {</c>↵<c>return _n;</c>↵<c>}</c> and
+    ///             <c>() => {</c>↵<c>_n = 1;</c>↵<c>}</c> are joined; the one key that keeps them is the
+    ///             one <see cref="Keeps" /> names — the declaration key for the accessor, ⚠ the
+    ///             <em>embedded</em> key for the lambda — and under it a block broken at either of its
+    ///             own gaps is broken at both;
+    ///         </item>
+    ///         <item>
+    ///             a method's, a local function's or an <c>if</c>'s only under its key, and only as
+    ///             written on one line.
+    ///         </item>
+    ///     </list>
+    ///     <para>
+    ///         ⚠ A local function's block is the <em>declaration</em> key's although a local function is a
+    ///         statement: <c>void L() { A(); }</c> is kept under the declaration key and expanded under
+    ///         the embedded one. Routed by the parent's base type it went to the embedded key and was
+    ///         expanded where the oracle keeps it.
+    ///     </para>
+    /// </remarks>
+    bool MayShareItsOwnersLine(BlockSyntax block) {
+        if (block.Statements.Count != 1) {
+            return false;
+        }
+
+        var broken = BreaksBefore(FirstToken(block.Statements[0])) || BreaksBefore(block.CloseBraceToken);
+        return block.Parent is AccessorDeclarationSyntax or AnonymousFunctionExpressionSyntax
+            ? !(broken && Keeps(block))
+            : !broken && Keeps(block);
+    }
 
     void MembersOnOwnLines(SyntaxList<MemberDeclarationSyntax> members, SyntaxToken close) {
         foreach (var member in members) {
