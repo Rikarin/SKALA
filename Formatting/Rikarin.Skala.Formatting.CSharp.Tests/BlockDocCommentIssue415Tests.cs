@@ -73,7 +73,13 @@ public sealed class BlockDocCommentIssue415Tests {
 
         Assert.NotEqual(FormatOutcome.VerificationFailed, result.Outcome);
         Assert.Equal(FormatOutcome.Formatted, result.Outcome);
-        Assert.Null(TokenEquivalence.Compare(SourceText.From(source), SourceText.From(result.Formatted), CSharpFormatter.ParseOptions));
+        Assert.Null(
+            TokenEquivalence.Compare(
+                SourceText.From(source),
+                SourceText.From(result.Formatted),
+                CSharpFormatter.ParseOptions
+            )
+        );
 
         foreach (var comment in Comments(source)) {
             Assert.Contains(comment.Split('\n')[0], result.Formatted, StringComparison.Ordinal);
@@ -245,9 +251,9 @@ public sealed class BlockDocCommentIssue415Tests {
 
     static SyntaxTrivia Trivia(string source, DocumentationMode mode) =>
         CSharpSyntaxTree.ParseText(
-                SourceText.From(source),
-                new CSharpParseOptions(LanguageVersion.Preview).WithDocumentationMode(mode)
-            )
+            SourceText.From(source),
+            new CSharpParseOptions(LanguageVersion.Preview).WithDocumentationMode(mode)
+        )
             .GetRoot()
             .DescendantTrivia()
             .Single(static t => t.ToFullString().StartsWith("/**", StringComparison.Ordinal));
