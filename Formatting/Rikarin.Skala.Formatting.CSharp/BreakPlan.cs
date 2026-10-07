@@ -1599,7 +1599,12 @@ public sealed class BreakPlan {
                 // still chopped. `false` has already decided this construct's shape, so the
                 // author's arrangement inside it no longer governs; that is the same direction the
                 // outer group's own `SourceBroken: … || forced` already reads the key in.
-                JoinsIfFits = joins || forced
+                JoinsIfFits = joins || forced,
+
+                // ⚠ Read by the writer alone, and no fact of the inner group consults it otherwise: the
+                // braces' group is where the line the first element starts on is recorded, because the
+                // point in front of that element is the braces' and not the fill's (#444, SK-DIV-0208).
+                Owner = array ? outer : -1
             }
         );
     }

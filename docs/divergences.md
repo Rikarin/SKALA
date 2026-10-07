@@ -7806,29 +7806,46 @@ of its own, a shape that is about comment placement and not about the closer.
 - options: none.
 - ⚠ status: **resolved**. Pinned by `EmptyContainerCommentIssue444Tests`.
 
-## SK-DIV-0208 — an array initializer's element that spans lines: measured, not wired
+## SK-DIV-0208 — an array initializer's fill measures an element flat, its kept breaks ignored
 
-#444's third shape. Measured with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`; Skala is as it was:
+#444's third shape. Measured with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`:
 
-| written | oracle | Skala |
+| written | oracle | Skala before |
 |---|---|---|
+| `alphaValue, betaValue, Compute(` / `alpha,` / `beta` / `), tail` (kept breaks inside the call) | `alphaValue, betaValue, Compute(` / … / `),` / `tail` — and the same from `Compute(` on a line of its own | `Compute(` on a line of its own, `), tail` |
+| an element that does not fit flat — a call, an array, a collection, a lambda, a binary chain | on a line of its own, then wrapped inside | identical |
 | `new[] { 1, Compute(2, /* a` / `b */ 3), 4 }` | `1, Compute(` / … / `),` / `4` | `1,` / `Compute(` / … / `), 4` |
-| a nested `new[] { … }` element that spans lines, then `new[] { 4 }` | `},` / `new[] { 4 }` | `}, new[] { 4 }` |
+| any element after one that spanned lines (`tail`, a call, a collection, `[1, 2]`) | on a line of its own | beside the `)` |
 | `first is string,` / `second` / `is string` | `first is string, second` / `is string` | `first is string,` / `second` |
-| `[.. Source],` / `new int(` / arguments chopped / `), [` / a long collection | kept exactly so, the oracle's own fixed point | identical but `),` / `[` |
 | `"a", """` / raw / `""", "b"` | `"a", """` / … / `""",` / `"b"` | `"a",` / `"""` / … / `""", "b"` |
+| `), [` with a collection too long for any line, in `pathological/nested-collection-in-generated-*.cs` | the `[` kept beside the `)` | kept by `LineFlags.DelimitedItem` |
+| `1, // a` / `2, 3`, a run of tuples after `//` comments | as written | identical |
 
-⚠ A first implementation was written and reverted, and why is the finding. It kept an element's head on
-the line whenever the element had no flat form and its first line fitted (the tuple's
-`KeepsHeadWhenCertain`), and broke before the element after one that spanned lines. The first half was
-not idempotent on `pathological/nested-collection-in-generated-switch.cs`: on pass one `new int(…)` does
-not fit and moves down, its arguments chop; on pass two those chopped arguments make it certain, its head
-fits after `[.. Source],`, and it moved back. The oracle keeps it down on its own output. So the oracle's
-fill does not ask "has the element a flat form" but measures the element flat, as if its kept breaks were
-not there, with a comment counted to its first line — which `Compute(2, /* a`, `second` and `new int(`
-all agree with, and which Skala has no measure for: a segment holding a kept break is unbounded. The
-second half failed the same file the other way (`), [`, the next element spanning lines too, is kept).
-Both need that measure first.
+So the fill measures an element *flat, as if the author's kept breaks were not there*, and only up to the
+first line of a comment or literal that spans lines; fits, it stays; does not, it moves down. And the
+element after one that spanned lines starts a line of its own.
+
+⚠ The first implementation (reverted before #444's first merge) used "the element has no flat form and
+its head fits", which is not that measure, and was not idempotent on
+`pathological/nested-collection-in-generated-switch.cs`: pass one moved `new int(…)` down because it did
+not fit, its arguments chopped, and pass two found it certain with a head that fitted and moved it back.
+The measure here, `DocumentBuilder.draft`, is the same number on both passes: a kept point counts its flat
+rendering, a required line that keeps the author's break (`LineFlags.KeptBreak`, set where the builder
+writes a break nothing planned) counts as a space, a moved comment or a literal spanning lines counts its
+first line and ends the measure. An array element's fill point (`LineFlags.ArrayElement`) reads it through
+`Document.DraftSegmentOf`. "Spanned lines" is read off the tokens — the line the element's first token
+started on against the line of its last — so neither a comment on a line of its own before an element
+nor a `//` comment after one counts; the builder flags a required break in front of an element so that its
+start is recorded, and the braces' point, the fill's owner, records the first element's.
+
+⚠ The fuzzer refuted one piece on the way (seed 11833788308239883143): keeping a *parenthesised*
+element's head when it fits nowhere whole is not idempotent, because its head ends at a binary operator
+only once that operator's break is the author's. Only a collection expression's `[` keeps its head — the
+pathological row — and its head ends at its own `[` on every pass.
+
+Not a collection expression's own elements: `CollectionAfterEqIssue375Tests` pins a multi-line `((…`
+element of one on a line of its own, and that fill was not re-measured here.
 
 - options: `skala_wrap_array_initializer_style = wrap_if_long`, the exported value.
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved**. Pinned by `ArrayElementDraftIssue444Tests` and
+  `constructs/breaks/array-element-draft.cs`.

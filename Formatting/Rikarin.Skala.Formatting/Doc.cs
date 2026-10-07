@@ -244,7 +244,20 @@ public enum LineFlags {
     ///     so the writer writes it — speculatively, on a checkpoint it rolls back — rather than a
     ///     second copy of the fill's rules guessing at it.
     /// </remarks>
-    BreaksOnlyIfNextLineOverflows = 128
+    BreaksOnlyIfNextLineOverflows = 128,
+
+    /// <summary>
+    ///     ⚠ A point in front of an array initializer's element (#444, SK-DIV-0208). Its fill measures the
+    ///     element by <see cref="Document.DraftSegmentOf" />, and the element after one that spanned lines
+    ///     starts a line of its own.
+    /// </summary>
+    ArrayElement = 256,
+
+    /// <summary>
+    ///     A required line that keeps a break the author wrote, which the draft measure reads as a space;
+    ///     with <see cref="ArrayElement" />, one in front of an element.
+    /// </summary>
+    KeptBreak = 512
 }
 
 /// <summary>
@@ -497,6 +510,7 @@ public sealed class Document {
     readonly int[] afterPoint;
     readonly int[] segment;
     readonly int[] segmentHead;
+    readonly int[] draftSegment;
     readonly bool[] hasBreak;
     readonly GroupFacts[] facts;
 
@@ -513,6 +527,7 @@ public sealed class Document {
         int[] afterPoint,
         int[] segment,
         int[] segmentHead,
+        int[] draftSegment,
         bool[] hasBreak,
         GroupFacts[] facts
     ) {
@@ -528,6 +543,7 @@ public sealed class Document {
         this.afterPoint = afterPoint;
         this.segment = segment;
         this.segmentHead = segmentHead;
+        this.draftSegment = draftSegment;
         this.hasBreak = hasBreak;
         this.facts = facts;
     }
@@ -628,6 +644,13 @@ public sealed class Document {
     ///     by breaking here keeps this much on the line instead (SK-DIV-0110).
     /// </summary>
     public int SegmentHeadOf(int node) => segmentHead[node];
+
+    /// <summary>
+    ///     The draft width from a point to the next one of its group: flat with the author's kept breaks
+    ///     read as spaces, ending at a moved comment's first line. What an array initializer's fill
+    ///     measures an element by (#444, SK-DIV-0208).
+    /// </summary>
+    public int DraftSegmentOf(int node) => draftSegment[node];
 
     /// <summary>Whether the subtree holds a break of any kind — a hard line or a break point.</summary>
     public bool HasBreak(int node) => hasBreak[node];
