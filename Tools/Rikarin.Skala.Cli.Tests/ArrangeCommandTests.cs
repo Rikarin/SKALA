@@ -174,6 +174,66 @@ public sealed class ArrangeCommandTests {
         Assert.Equal(withBinlog.ExitCode, withFresh.ExitCode);
     }
 
+    /// <summary>
+    ///     ⚠ #381, end to end: an unresolvable using survives <c>arrange</c> under both loaders, and an
+    ///     unused resolvable one beside it still goes.
+    /// </summary>
+    /// <remarks>
+    ///     Measured before the fix, both loaders deleted all four broken directives along with
+    ///     <c>System.Text</c>, because Roslyn reports <c>CS8019</c> for a directive that does not resolve.
+    ///     The two loaders are asserted separately because they reach <c>UsingsRule.Unused</c> through
+    ///     different compilations — the loose loader's binds the requested files against the running
+    ///     shared framework, the workspace's against the project's own references — and #381 measured the
+    ///     defect in each. ⚠ <b>Loose mode removes</b>: the old remark on <c>UsingsRule.NeedsSemantics</c>
+    ///     said a loose file got sorting only, and the <c>System.Text</c> assertion under
+    ///     <c>loose</c> is what refutes it.
+    /// </remarks>
+    [Theory]
+    [InlineData("loose")]
+    [InlineData("workspace")]
+    public void Arrange_KeepsAnUnresolvableUsing_AndRemovesAnUnusedResolvableOne(string mode) {
+        using var scratch = new Scratch();
+        var file = scratch.Write(
+            "Probe.cs",
+            """
+            using System;
+            using System.Text;
+            using Xyz.Alpha;
+            using System.DoesNotExist;
+            using A = Missing.Type;
+            using static Missing.Statics;
+
+            namespace P;
+
+            public class Probe {
+                public void M() => Console.WriteLine();
+            }
+            """
+        );
+        scratch.Write(
+            "Scratch.csproj",
+            """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net10.0</TargetFramework>
+                <ImplicitUsings>disable</ImplicitUsings>
+              </PropertyGroup>
+            </Project>
+            """
+        );
+
+        var arranged = RunIn(scratch.Root, "arrange", "--load=" + mode, file);
+
+        Assert.Equal(0, arranged.ExitCode);
+        var rewritten = File.ReadAllText(file);
+        Assert.DoesNotContain("using System.Text;", rewritten, StringComparison.Ordinal);
+        Assert.Contains("using System;", rewritten, StringComparison.Ordinal);
+        Assert.Contains("using Xyz.Alpha;", rewritten, StringComparison.Ordinal);
+        Assert.Contains("using System.DoesNotExist;", rewritten, StringComparison.Ordinal);
+        Assert.Contains("using A = Missing.Type;", rewritten, StringComparison.Ordinal);
+        Assert.Contains("using static Missing.Statics;", rewritten, StringComparison.Ordinal);
+    }
+
     static CliRun RunIn(string workingDirectory, params string[] arguments) {
         var start = new ProcessStartInfo("dotnet") {
             WorkingDirectory = workingDirectory,

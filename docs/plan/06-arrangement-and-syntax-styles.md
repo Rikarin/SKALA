@@ -237,8 +237,19 @@ in one file may be required by a `#if` branch, or by an extension method resolve
 different target framework. Skala removes a using only when it is unused in **every** compilation the
 file participates in — multi-targeting is not an edge case in this ecosystem.
 
-Skala's answer to "is this using unused" is the compiler's own `CS8019`, not a hand-rolled reference
-walk. A using carrying a comment is never removed: the comment is the author saying something about
+Skala's answer to "is this using unused" is the compiler's, not a hand-rolled reference walk, and it
+is **two predicates**: the compiler reports the directive unnecessary (`CS8019`) **and** the directive
+is well-formed — no error-severity diagnostic on its own span. ⚠ `CS8019` alone is not enough, and
+believing it was is #381: Roslyn reports `CS8019` for a directive that does not resolve too, beside
+the `CS0246`/`CS0234` that says why, so the filter deleted `using Xyz.Alpha;`, an unresolvable alias
+and a `using static` of a missing type under both `--load=loose` and `--load=workspace`. The second
+predicate is scoped to the directive's span, not the file: an error three methods down says nothing
+about whether `using System.Text;` is needed. A file-level using made redundant by a `global using`
+(`CS8933`, #292) needs no clause of its own — `CS8019` accompanies it and it is a warning, so it stays
+removable. ⚠ A loose file is not exempt: `skala arrange` on a file with no project binds it against
+the running shared framework and removes what that compilation calls unnecessary and well-formed; only
+`--load=none`, `format --arrange=syntactic` and `verify`'s arrange stage under a loose load remove
+nothing. A using carrying a comment is never removed: the comment is the author saying something about
 that line, and a cleanup that deletes prose to save a using has made the file worse. Aliases and
 `global using` are never removed either — a `global using` is used by files this one cannot see, so a
 per-file answer is the wrong shape.
@@ -247,7 +258,8 @@ per-file answer is the wrong shape.
 than about Skala.** "Is this using needed" is a question about the references a project has, and the
 oracle's scratch project has none but the shared framework — so `cleanupcode` deletes
 `using NUnit.Framework;` from a file full of `[Test]` attributes, because `NUnit.Framework` does not
-resolve there. Skala keeps it, correctly: an unresolvable using is `CS0246`, not `CS8019`. Scoring
+resolve there. Skala keeps it, correctly: an unresolvable using carries `CS0246` on its own span, which fails the
+well-formedness predicate whatever `CS8019` says. Scoring
 Skala against that would reward deleting usings whose packages are missing. The rule is pinned by
 `constructs/arrangement/usings/`, where every namespace resolves inside the corpus itself.
 

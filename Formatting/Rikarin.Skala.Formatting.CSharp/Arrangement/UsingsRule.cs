@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Options;
 using System.Collections.Immutable;
 
@@ -43,9 +44,22 @@ public sealed class UsingsRule : ArrangementRule {
 
     /// <summary>
     ///     ⚠ False. Sorting needs no semantics at all, and removal takes its answer from
-    ///     <see cref="removable" /> rather than from a model — so the rule runs in the syntactic subset
-    ///     and simply removes nothing there. An agent on a loose file still gets its usings sorted.
+    ///     <see cref="removable" /> rather than from a model — so the rule runs in the syntactic subset,
+    ///     and removes exactly what its caller computed, which is nothing when the caller had no
+    ///     compilation.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>"A loose file gets sorting only" was false (#381).</b> <c>skala arrange</c> on a file with
+    ///     no project — <c>--load=loose</c>, or <c>auto</c> falling back to it — <em>does</em> have a
+    ///     compilation: the loose loader's, over the requested files and the running shared framework's
+    ///     trusted-platform assemblies. <c>ArrangeCommand</c> hands that to <see cref="Unused" /> like any
+    ///     other, so a loose file loses the usings the compiler calls unnecessary there. That is kept on
+    ///     purpose: with the well-formedness predicate an unresolvable directive is never in the set, so
+    ///     the loose compilation can only remove a directive that resolved and was not needed. Removal is
+    ///     empty only where no compilation reaches the caller: <c>arrange --load=none</c>,
+    ///     <c>format --arrange=syntactic</c>, and <c>verify</c>'s arrange stage under a loose load, which
+    ///     passes none on purpose (<c>ArrangementFindings</c>).
+    /// </remarks>
     public override bool NeedsSemantics => false;
 
     /// <remarks>
@@ -310,20 +324,49 @@ public sealed class UsingsRule : ArrangementRule {
     ///     the set below is the compiler's own opinion about its own binding rather than Skala's model
     ///     of it. A using needed only by a disabled <c>#if</c> branch is *not* reported, which is
     ///     correct for that compilation and is exactly why the caller intersects across all of them.
+    ///     <para>
+    ///         ⚠ <b>Removable is two predicates, and <c>CS8019</c> is only the first.</b> #381: Roslyn
+    ///         reports <c>CS8019</c> for a directive that does not <em>resolve</em> as well — beside the
+    ///         <c>CS0246</c> or <c>CS0234</c> that says why — so <c>CS8019</c> alone deleted
+    ///         <c>using NUnit.Framework;</c> from a project whose package was missing, destroying the one
+    ///         line that named the fix. The second predicate is "the directive is well-formed": no
+    ///         error-severity diagnostic on the directive's own span. Scoped to that span and not to the
+    ///         file, because an error three methods down says nothing about whether
+    ///         <c>using System.Text;</c> is needed.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <c>CS8933</c> (a file-level using that a <c>global using</c> already imports) needs no
+    ///         clause of its own: #292 measured <c>CS8019</c> beside it in every shape tried, and it is
+    ///         a warning, not an error, so the second predicate leaves it removable.
+    ///     </para>
     /// </remarks>
     public static ImmutableHashSet<string> Unused(
         SemanticModel model,
         SyntaxTree tree,
         CancellationToken cancellation = default
     ) {
-        var names = ImmutableHashSet.CreateBuilder(StringComparer.Ordinal);
+        var root = tree.GetRoot(cancellation);
+        var unnecessary = new List<UsingDirectiveSyntax>();
+        var errors = new List<TextSpan>();
         foreach (var diagnostic in model.GetDiagnostics(null, cancellation)) {
+            if (diagnostic.Severity == DiagnosticSeverity.Error && diagnostic.Location.SourceTree == tree) {
+                errors.Add(diagnostic.Location.SourceSpan);
+                continue;
+            }
+
             if (!string.Equals(diagnostic.Id, "CS8019", StringComparison.Ordinal)) {
                 continue;
             }
 
-            var node = tree.GetRoot(cancellation).FindNode(diagnostic.Location.SourceSpan);
+            var node = root.FindNode(diagnostic.Location.SourceSpan);
             if (node.FirstAncestorOrSelf<UsingDirectiveSyntax>() is { Name: not null } directive) {
+                unnecessary.Add(directive);
+            }
+        }
+
+        var names = ImmutableHashSet.CreateBuilder(StringComparer.Ordinal);
+        foreach (var directive in unnecessary) {
+            if (!errors.Exists(error => directive.Span.IntersectsWith(error))) {
                 names.Add(Key(directive));
             }
         }
