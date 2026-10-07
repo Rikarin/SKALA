@@ -3213,6 +3213,19 @@ documentation comment — `SK7010`'s predicates with the accessibility test nega
 `none` and enabled per path, because it is the highest-firing uncovered inspection in the parity
 measurement and that is an argument for caution rather than for volume.
 
+⚠ **`SK7102` is bounded by the `void` keyword as written, and that boundary is #390's measurement.**
+"Returns nothing" judged semantically takes in `async Task`, and documenting the task an `async Task`
+method returns is the .NET convention — the only hits a looser scan produced were that shape. So the
+rule reads a `void` return type on a method, local function, delegate or C# 14 compound-assignment
+operator, plus the two declarations with no return type to write (constructor, finalizer), and only
+a top-level `<returns>` — one nested in `<summary>` or written as a sample in `<code>` is prose about
+the tag. It reads Roslyn's parsed documentation trivia, so under a binlog whose tree was parsed with
+`DocumentationMode.None` it is silent rather than wrong (#388). The fix deletes the element, with its
+line when nothing else shares it, and is unsafe for `SK0003`'s reason. Measured: zero over the three
+vendored trees (398 `<returns>` blocks) and Skala's own source, with a planted probe firing in each.
+
+`SK7102` a `<returns>` element on a member declared `void`, or on a constructor or finalizer.
+
 ### Logging declarations — `SK7110`–`SK7119`
 
 **The band exists because the defect is in a declaration and not in a call.** `SK2070`–`SK2073`, the
@@ -3495,8 +3508,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **363** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **327** | **90.8 %** |
+| Rules this document names | **364** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **328** | **90.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, then withdrawn or never built | **3** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |

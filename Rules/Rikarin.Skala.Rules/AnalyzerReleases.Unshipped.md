@@ -310,3 +310,4 @@ SK0281 | Skala.Cleanup | Warning | The attribute promises to set members that do
 SK0282 | Skala.Cleanup | Warning | The record writes out the property its parameter generates.
 SK0290 | Skala.Cleanup | Warning | The explicit `Nullable<T>` construction converts nothing.
 SK2290 | Skala.Correctness | Info | Every call discards this `out` parameter's value.
+SK7102 | Skala.Maintainability | Warning | The `<returns>` element documents a member that returns nothing.

@@ -411,3 +411,4 @@ SK9026 unknown-rule-filter
 SK9027 partial-analysis
 SK9028 gate-input-unavailable
 SK9029 analyzer-assembly-missing
+SK7102 returns-documented-on-void-member

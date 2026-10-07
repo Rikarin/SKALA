@@ -8951,6 +8951,30 @@
       "configuration": [
         "dotnet_diagnostic.SK2290.severity"
       ]
+    },
+    {
+      "id": "SK7102",
+      "concept": "returns-documented-on-void-member",
+      "title": "The `<returns>` element documents a member that returns nothing",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A documentation comment carries a `<returns>` element on a member declared `void`, or on a constructor or finalizer, so it describes a value no caller will ever receive.",
+      "rationale": "Documentation is written by shape far more often than by reading the signature: `<summary>`, a `<param>` for each parameter, then `<returns>` — and the third slot gets filled because the template has a third slot, with a sentence invented to fit it. That is the plausible-but-wrong failure Skala exists for, in the one place where being wrong is invisible to everything else: the compiler checks `<param>` names against the parameter list (`CS1572`, `CS1573`) and checks nothing about `<returns>`, and a reader of the rendered page has no signature beside it to contradict the sentence. ⚠ **The element is not harmless filler.** A returns section is a claim about the member's contract, and a reader who believes it writes code that expects a value — or, worse, concludes the documentation is stale and stops trusting the rest of it.",
+      "examples": {
+        "bad": "/// <summary>Removes every entry.</summary>\n/// <returns>The number of entries removed.</returns>\npublic void Clear() { }",
+        "good": "/// <summary>Removes every entry.</summary>\npublic void Clear() { }"
+      },
+      "falsePositives": "⚠ **The boundary is the `void` keyword as written, and that is #390's measurement rather than a simplification.** \"Returns nothing\" judged semantically would take in `async Task` and `async ValueTask` methods, and documenting the task such a method returns is the established .NET convention: the only hits a looser scan of the reference trees produced were exactly that shape, and a rule that fired there would be wrong on the first real file it met. So `Task`, `ValueTask`, a generic `T` and every other written return type are out of scope, however little the value means. The two declarations that have no return type to write at all — a constructor and a finalizer — are in: the instance a constructor makes is not a returns section any documentation generator renders. C# 14's instance compound-assignment operator (`public void operator +=(…)`) is declared `void` and is reported like a method; a conversion operator always returns a value and is not. Properties, indexers and events are never declared `void` and are not reported — what a property documents with is a different question. ⚠ **Only a top-level element counts.** A `<returns>` nested inside `<summary>` or written as a sample inside `<code>` is not the returns section of anything, and an ordinary `//` comment that happens to contain the tag is not documentation. The comment is read from Roslyn's parsed documentation trivia, never as text. ⚠ **An empty `<returns />` on a member that does return is not this rule's**: that is the empty-element family, a different defect. On a `void` member the empty spelling is reported like any other. ⚠ **The fix deletes the element, with its line when nothing else shares it, and it is not safe** — for `SK0003`'s reason: a tool that repairs documentation changes what it says, and a person should read the deletion. When prose shares the element's line only the element goes. ⚠ **It reads documentation only where the tree was parsed with documentation enabled.** Under `--load=loose` and the formatter that is always; under `--load=binlog` a project built without `GenerateDocumentationFile` hands Roslyn a tree in which `///` is an ordinary comment, and this rule is then silent rather than wrong (#388). Measured over the three vendored reference trees (380 files, 398 `<returns>` blocks, 14 of them on a `Task`) and Skala's own source: **zero findings**, with a planted probe firing in both so the zero is a decline rather than a rule that never ran.",
+      "configuration": [
+        "dotnet_diagnostic.SK7102.severity"
+      ]
     }
   ]
 }
