@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 
@@ -40,11 +41,10 @@ public sealed class UnsignedRightShiftAnalyzer : DiagnosticAnalyzer {
         context.EnableConcurrentExecution();
         var registrar = PartialConstructorDefinitions.Visiting(context);
         registrar.RegisterCompilationStartAction(static start => {
-                // ⚠ The compilation-wide `checked` switch is a gate, not a per-node test: with
-                // `CheckForOverflowUnderflow` on, every one of these casts can throw where `>>>`
-                // cannot, so there is nothing in the tree for this rule to say.
-                if (!SkalaRule.MeetsLanguageVersion(start.Compilation, Rule.LanguageVersion)
-                    || start.Compilation.Options is CSharpCompilationOptions { CheckOverflow: true }) {
+                // ⚠ #425: the compilation-wide `checked` switch was a gate here. It is a per-node
+                // question now, answered by the bound conversion, so an `unchecked` region inside a
+                // `CheckForOverflowUnderflow` project is reported and everything else in it is not.
+                if (!SkalaRule.MeetsLanguageVersion(start.Compilation, Rule.LanguageVersion)) {
                     return;
                 }
 
@@ -83,7 +83,8 @@ public sealed class UnsignedRightShiftAnalyzer : DiagnosticAnalyzer {
         }
 
         if (model.GetTypeInfo(shift.Right, cancellation).Type?.SpecialType != SpecialType.System_Int32
-            || InsideChecked(outer)
+            || IsChecked(model, outer, cancellation)
+            || IsChecked(model, inner, cancellation)
             || !MayStandUnparenthesised(outer)
             || NullComparison.InsideExpressionTree(model, outer, cancellation)
             || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(outer.SyntaxTree, outer.Span)) {
@@ -101,27 +102,21 @@ public sealed class UnsignedRightShiftAnalyzer : DiagnosticAnalyzer {
         );
     }
 
-    /// <summary>Whether the nearest enclosing overflow context is <c>checked</c>.</summary>
+    /// <summary>Whether the compiler emits this cast as a checked conversion, which can throw.</summary>
     /// <remarks>
-    ///     ⚠ The nearest one wins, so an <c>unchecked</c> inside a <c>checked</c> restores the rule.
-    ///     Both spellings of each — the statement and the expression — count.
+    ///     ⚠ #425: this walked the syntax for the nearest <c>checked</c> and stopped at a lambda, but a
+    ///     lambda written inside <c>checked { }</c> is checked too, and a project built with
+    ///     <c>CheckForOverflowUnderflow</c> is checked everywhere no <c>unchecked</c> says otherwise. Measured for #412's
+    ///     audit:
+    ///     <c>OverflowException</c> before the fix and <c>2147483644</c> after it. The answer is read off
+    ///     the conversion the compiler bound, which knows all three.
     /// </remarks>
-    static bool InsideChecked(SyntaxNode node) {
-        for (var current = node.Parent; current is not null; current = current.Parent) {
-            switch (current) {
-                case CheckedStatementSyntax statement:
-                    return statement.IsKind(SyntaxKind.CheckedStatement);
-
-                case CheckedExpressionSyntax expression:
-                    return expression.IsKind(SyntaxKind.CheckedExpression);
-
-                case BaseMethodDeclarationSyntax or AccessorDeclarationSyntax or LambdaExpressionSyntax:
-                    return false;
-            }
-        }
-
-        return false;
-    }
+    static bool IsChecked(
+        SemanticModel model,
+        CastExpressionSyntax cast,
+        System.Threading.CancellationToken cancellation
+    ) =>
+        model.GetOperation(cast, cancellation) is not IConversionOperation { IsChecked: false };
 
     /// <summary>
     ///     ⚠ Whether a shift may be dropped into this position without parentheses.

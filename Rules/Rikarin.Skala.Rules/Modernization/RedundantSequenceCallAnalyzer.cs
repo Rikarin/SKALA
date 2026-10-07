@@ -194,16 +194,49 @@ public sealed class RedundantSequenceCallAnalyzer : DiagnosticAnalyzer {
         // ⚠ The element type must survive the deletion. `xs.ToList().ToArray()` on a `List<Derived>`
         // is `Derived[]` either way, but an inner call that widened the element type — through a
         // covariant assignment the outer call then reads — would change what the outer one produces.
+        // ⚠ #425: this compared `inner` with `access.Expression`, which is the same node, so it held
+        // for every call. The deletion takes away the *inner* call, and the element types that must
+        // agree are its result's and its receiver's: measured for #412's audit, `ToList<object>()` on
+        // a `List<string>` was deleted and `arr[0] = 1` went from storing to
+        // `ArrayTypeMismatchException`.
         if (!SymbolEqualityComparer.IncludeNullability.Equals(
                 ElementType(model.GetTypeInfo(inner, cancellation).Type),
-                ElementType(model.GetTypeInfo(access.Expression, cancellation).Type)
+                ElementType(model.GetTypeInfo(innerAccess.Expression, cancellation).Type)
             )) {
+            return;
+        }
+
+        // ⚠ #425: with the inner call gone the outer one is looked up on the receiver, and the
+        // receiver may declare its own: measured for #412's audit, a type with an instance
+        // `ToArray()` returning `{ 42 }` printed `1,2` before the fix and `42` after it. So the call
+        // is bound without the inner one and must still be the framework's copy, of the same type,
+        // and leave everything around it bound as it was.
+        var deleted = TextSpan.FromBounds(innerAccess.OperatorToken.SpanStart, inner.Span.End);
+        var text = invocation.ToString();
+        var shortened = text.Substring(0, deleted.Start - invocation.SpanStart)
+            + text.Substring(deleted.End - invocation.SpanStart);
+        if (!FixRebind.TrySpeculate(
+                model,
+                invocation,
+                SyntaxFactory.ParseExpression(shortened),
+                out var speculative,
+                out var placed
+            )
+            || speculative.GetSymbolInfo(placed, cancellation).Symbol is not IMethodSymbol rebound
+            || !(SymbolEqualityComparer.Default.Equals(Original(rebound).ContainingType, enumerable)
+                || Original(rebound).ContainingType?.OriginalDefinition.ToDisplayString()
+                == "System.Collections.Generic.List<T>")
+            || !SymbolEqualityComparer.Default.Equals(
+                model.GetTypeInfo(invocation, cancellation).Type,
+                speculative.GetTypeInfo(placed, cancellation).Type
+            )
+            || !FixRebind.BindsTheSurroundingsAlike(model, invocation, speculative, placed, cancellation)) {
             return;
         }
 
         Report(
             context,
-            TextSpan.FromBounds(innerAccess.OperatorToken.SpanStart, inner.Span.End),
+            deleted,
             string.Empty,
             "`"
             + innerAccess.Name.Identifier.ValueText

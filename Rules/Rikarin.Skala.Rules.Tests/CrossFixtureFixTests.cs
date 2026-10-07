@@ -205,6 +205,133 @@ public sealed class CrossFixtureFixTests {
     }
 
     /// <summary>
+    ///     ⚠ #425's modernization rules, each fix run on its own executable fixtures whether the
+    ///     catalogue calls it safe or not.
+    /// </summary>
+    /// <remarks>
+    ///     Each rule's negatives carry the shape #412's audit measured changing the program, with a
+    ///     <c>Probe</c>: while the guard holds they do not fire and are not compared here, and the
+    ///     rule's negative fixture test is what fails. Remove the guard and the same fixture fires,
+    ///     its fixed version runs, and this theory names the result that moved — so a sabotage shows
+    ///     the audit's own numbers. The positives pin what the guard still admits.
+    /// </remarks>
+    public static TheoryData<string> ModernizationRules =>
+        new(
+            "SK1001",
+            "SK1006",
+            "SK1010",
+            "SK1035",
+            "SK1042",
+            "SK1054",
+            "SK1060",
+            "SK1061",
+            "SK1063",
+            "SK1064",
+            "SK1071",
+            "SK1072",
+            "SK1073",
+            "SK1081",
+            "SK1091"
+        );
+
+    [Theory]
+    [MemberData(nameof(ModernizationRules))]
+    public void TheModernizationFix_OnItsOwnExecutableFixtures_PreservesTheResult(string id) =>
+        TheEvaluationCountFix_OnItsOwnExecutableFixtures_PreservesTheResult(id);
+
+    /// <summary>
+    ///     ⚠ #425: why <c>SK1073</c> stays unsafe with its expression-tree guard fixed. Replacing a fresh
+    ///     <c>EventArgs</c> with the cached one is the rule, and the cached one is one object: a set
+    ///     that held three fresh instances holds one.
+    /// </summary>
+    [Fact]
+    public void TheCachedInstanceRewrite_OnFreshEventArgs_ChangesTheResult() {
+        var cancellation = TestContext.Current.CancellationToken;
+        const string source = """
+                              using System;
+                              using System.Collections.Generic;
+
+                              public static class Probe {
+                                  public static int Run() {
+                                      var seen = new HashSet<object>();
+                                      for (var i = 0; i < 3; i++) {
+                                          seen.Add(new EventArgs());
+                                      }
+
+                                      return seen.Count;
+                                  }
+                              }
+                              """;
+        var before = RuleFixtures.Compile(source, PlantedPath);
+        var (id, text) = Assert.Single(FixedTexts(source, before, static rule => rule == "SK1073", cancellation));
+
+        Assert.Equal("SK1073", id);
+        Assert.Contains("seen.Add(EventArgs.Empty)", text, StringComparison.Ordinal);
+        Assert.Equal("3", Probe(before, cancellation));
+        Assert.Equal("1", Probe(RuleFixtures.Compile(text, PlantedPath), cancellation));
+    }
+
+    /// <summary>
+    ///     ⚠ #425: why <c>SK1082</c> stays unsafe. On a null receiver <c>ElementAt</c> throws
+    ///     <c>ArgumentNullException</c> and the indexer <c>NullReferenceException</c>, and the flow state
+    ///     cannot rule that out: <c>!</c> makes it say not-null.
+    /// </summary>
+    [Fact]
+    public void TheIndexerRewrite_OnANullReceiver_ChangesTheException() {
+        var cancellation = TestContext.Current.CancellationToken;
+        const string source = """
+                              using System.Collections.Generic;
+                              using System.Linq;
+
+                              public static class Probe {
+                                  static List<int>? Find(bool found) => found ? new List<int> { 1 } : null;
+
+                                  public static int Run() {
+                                      var list = Find(false)!;
+                                      return list.ElementAt(0);
+                                  }
+                              }
+                              """;
+        var before = RuleFixtures.Compile(source, PlantedPath);
+        var (id, text) = Assert.Single(FixedTexts(source, before, static rule => rule == "SK1082", cancellation));
+
+        Assert.Equal("SK1082", id);
+        Assert.Contains("return list[0];", text, StringComparison.Ordinal);
+        Assert.Equal("throws ArgumentNullException", Probe(before, cancellation));
+        Assert.Equal("throws NullReferenceException", Probe(RuleFixtures.Compile(text, PlantedPath), cancellation));
+    }
+
+    /// <summary>
+    ///     ⚠ #437: why <c>SK4030</c> stays unsafe, decided with <c>SK1082</c>. Each <c>Enumerable</c> call it
+    ///     rewrites checks its source and the list's own method is an instance call, so a null receiver
+    ///     throws <c>ArgumentNullException</c> before and <c>NullReferenceException</c> after.
+    /// </summary>
+    [Fact]
+    public void TheListMethodRewrite_OnANullReceiver_ChangesTheException() {
+        var cancellation = TestContext.Current.CancellationToken;
+        const string source = """
+                              using System.Collections.Generic;
+                              using System.Linq;
+
+                              public static class Probe {
+                                  static List<int>? Find(bool found) => found ? new List<int> { 1 } : null;
+
+                                  public static bool Run() {
+                                      var list = Find(false)!;
+                                      return list.Any(x => x > 0);
+                                  }
+                              }
+                              """;
+        var before = RuleFixtures.Compile(source, PlantedPath);
+        var (id, text) = Assert.Single(FixedTexts(source, before, static rule => rule == "SK4030", cancellation));
+
+        Assert.Equal("SK4030", id);
+        Assert.Contains("list.Exists(", text, StringComparison.Ordinal);
+        Assert.Equal("throws ArgumentNullException", Probe(before, cancellation));
+        Assert.Equal("throws NullReferenceException", Probe(RuleFixtures.Compile(text, PlantedPath), cancellation));
+    }
+
+    /// <summary>
     ///     ⚠ #423: why <c>SK2064</c> stays unsafe with its guard fixed. On the null guard the rule
     ///     exists for, <c>&amp;</c> throws and <c>&amp;&amp;</c> does not: the finding is the behaviour
     ///     change, as it is for <c>SK2181</c>, which ships unsafe for the same reason.

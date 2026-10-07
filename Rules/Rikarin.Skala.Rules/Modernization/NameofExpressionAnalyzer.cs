@@ -89,6 +89,13 @@ public sealed class NameofExpressionAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ #425: a `file` type's metadata name is mangled to keep it unique across files, and
+        // `Type.Name` reads the metadata name — measured for #412's audit as
+        // `<p>F…__Widget` before the fix and `Widget` after it. `nameof` reads the source name.
+        if (type.IsFileLocal) {
+            return;
+        }
+
         // ⚠ The alias guard. `using Text = System.String;` makes `nameof(Text)` produce "Text" and
         // `typeof(Text).Name` produce "String" — the same expression, two different answers.
         if (LastIdentifier(typeOf.Type) is not { } written

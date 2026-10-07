@@ -60,9 +60,14 @@ internal static class NullComparison {
         }
 
         // `int?` and friends: Nullable<T> declares no operator of its own and `is null` is exactly
-        // `HasValue == false`.
+        // `HasValue == false` — and so is `==` when it lifts `T`'s own `operator ==(T, T)`, because a
+        // lifted operator answers a null operand itself and never calls the user's.
+        // ⚠ #425: but `T` may declare `operator ==(T?, T?)`, which is not lifted: `x == null` calls
+        // it with a null argument and `x is null` does not. Measured for #412's audit with an operator
+        // that treats null as zero: `True` before the fix, `False` after it.
         if (type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T) {
-            return true;
+            return type is not INamedTypeSymbol { TypeArguments.Length: 1 } nullable
+                || !DeclaresEqualityOver(nullable.TypeArguments[0], type.OriginalDefinition);
         }
 
         if (!type.IsReferenceType) {
@@ -83,6 +88,25 @@ internal static class NullComparison {
         }
 
         return true;
+    }
+
+    /// <summary>
+    ///     Whether <paramref name="type" /> declares an <c>operator ==</c> or <c>!=</c> taking a
+    ///     <paramref name="parameterDefinition" /> — <c>Nullable&lt;T&gt;</c>, for a nullable operand.
+    /// </summary>
+    static bool DeclaresEqualityOver(ITypeSymbol type, ITypeSymbol parameterDefinition) {
+        foreach (var member in type.GetMembers()) {
+            if (member is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } method
+                && (method.Name == "op_Equality" || method.Name == "op_Inequality")) {
+                foreach (var parameter in method.Parameters) {
+                    if (SymbolEqualityComparer.Default.Equals(parameter.Type.OriginalDefinition, parameterDefinition)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

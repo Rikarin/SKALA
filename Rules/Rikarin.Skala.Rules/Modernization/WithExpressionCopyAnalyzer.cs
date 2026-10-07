@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using System.Threading;
 
@@ -100,6 +101,8 @@ public sealed class WithExpressionCopyAnalyzer : DiagnosticAnalyzer {
         IdentifierNameSyntax? receiver = null;
         ISymbol? receiverSymbol = null;
         var replaced = new List<(string Name, ExpressionSyntax Value)>();
+        var replacedBefore = new List<ExpressionSyntax>();
+        var pending = new List<ExpressionSyntax>();
 
         for (var i = 0; i < arguments.Arguments.Count; i++) {
             cancellation.ThrowIfCancellationRequested();
@@ -130,15 +133,33 @@ public sealed class WithExpressionCopyAnalyzer : DiagnosticAnalyzer {
                     return;
                 }
 
+                replacedBefore.AddRange(pending);
+                pending.Clear();
                 continue;
             }
 
             replaced.Add((parameter.Name, argument.Expression));
+            pending.Add(argument.Expression);
         }
 
         // ⚠ One carried member is what makes this a copy; one replaced member is what keeps the fix
         // off `SK0230`'s ground — a call carrying everything across rewrites to `x with { }`.
         if (receiver is null || replaced.Count == 0) {
+            return;
+        }
+
+        // ⚠ #425: the constructor call reads each carried member at its own argument's position,
+        // after every argument before it has run; `with` clones the receiver first. So an argument
+        // ahead of a carried member that changes the receiver's state is seen by the call and not by
+        // the copy — `new R(x.Bump(), x.B)`, `new R(x.B = 5, x.B)` and a lambda that writes `x.B`,
+        // each measured for #412's audit as `B = 100`/`5`/`7` before the fix and `B = 2` after it.
+        // The write-scan below sees `x = …` and `ref x` and nothing that writes *through* `x`, so where
+        // the receiver's state can change at all — a mutable record struct, or a by-reference
+        // parameter somebody else can write — every such argument must run no code.
+        if ((record.IsValueType
+                && !record.IsReadOnly
+                || receiverSymbol is IParameterSymbol { RefKind: not RefKind.None })
+            && replacedBefore.Any(value => !RewriteGuards.IsFreeToRepeat(value, model, cancellation))) {
             return;
         }
 

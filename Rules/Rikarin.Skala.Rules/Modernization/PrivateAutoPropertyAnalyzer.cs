@@ -191,6 +191,15 @@ public sealed class PrivateAutoPropertyAnalyzer : DiagnosticAnalyzer {
                 reference = access;
             }
 
+            // ⚠ #425: a value-typed property hands out a copy, and the field the fix writes is the
+            // storage itself. `Tally.Bump()` mutated a copy and was lost before the fix and mutates the
+            // field after it — measured `0` → `2`. Every shape that runs on a copy of a property and on
+            // the storage of a field is the one SK4022 asks about under `readonly` (#412), so it is
+            // asked here the same way, and any one of them withdraws the finding.
+            if (PrimaryConstructorWrites.RunsOnACopyUnderReadonly((ExpressionSyntax)reference, model, cancellation)) {
+                return false;
+            }
+
             if (reference.Parent is AssignmentExpressionSyntax assignment && assignment.Left == reference) {
                 written = true;
                 read |= !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression);
@@ -202,10 +211,6 @@ public sealed class PrivateAutoPropertyAnalyzer : DiagnosticAnalyzer {
                 read = true;
             } else {
                 read = true;
-            }
-
-            if (read && written) {
-                return true;
             }
         }
 

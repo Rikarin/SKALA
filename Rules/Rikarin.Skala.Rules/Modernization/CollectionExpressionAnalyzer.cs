@@ -96,6 +96,18 @@ public sealed class CollectionExpressionAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ #425: an empty collection expression of an array type is `Array.Empty<T>()`, one shared
+        // instance, where every `new T[] { }` was a fresh one. Measured for #412's audit:
+        // `ReferenceEquals` of two of them `False` before the fix and `True` after it — and a
+        // `readonly object[] gate = new object[] { };` taken as a lock becomes one lock shared by the
+        // whole process. So the identity is observable in exactly the code that relies on it.
+        // ⚠ A `List<T>`'s capacity is the other difference the audit measured — `{ 1, 2, 3 }` built by
+        // `Add` has capacity 4 and `[1, 2, 3]` has 3 — and it is not guarded: capacity is the growth
+        // policy's business, documented as such, and it differs between runtime versions already.
+        if (created is IArrayTypeSymbol && elements.Expressions.Count == 0) {
+            return;
+        }
+
         // ⚠ A collection expression is not an expression tree node.
         if (NullComparison.InsideExpressionTree(model, value, cancellation)) {
             return;
@@ -243,9 +255,11 @@ public sealed class CollectionExpressionAnalyzer : DiagnosticAnalyzer {
     ///     ⚠ Arrays and <c>List&lt;T&gt;</c> only, and only as the declared type itself.
     /// </summary>
     /// <remarks>
-    ///     These are the two targets whose collection-expression lowering is specified to produce the
-    ///     same object the constructor did: a <c>T[]</c> of the same length, or a <c>List&lt;T&gt;</c>
-    ///     built by the same <c>Add</c> calls. Every other target type — an interface, a builder-attributed
+    ///     These are the two targets whose collection-expression lowering produces the same contents
+    ///     the constructor did: a <c>T[]</c> of the same length, or a <c>List&lt;T&gt;</c> holding the
+    ///     same elements in the same order. ⚠ Not "built by the same <c>Add</c> calls", which this
+    ///     said: a list of known length is sized up front and filled in place, so its capacity is the
+    ///     count rather than the next power of two (#425). Every other target type — an interface, a builder-attributed
     ///     type, a span — is a different object with a different identity, and identity is observable.
     /// </remarks>
     static bool IsSupportedTarget(ITypeSymbol declared, INamedTypeSymbol? list) =>

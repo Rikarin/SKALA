@@ -83,6 +83,7 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
         }
 
         var arguments = new List<string>();
+        var values = new List<ExpressionSyntax>();
         foreach (var argument in invocation.ArgumentList.Arguments) {
             if (ReferenceEquals(argument, invocation.ArgumentList.Arguments[0])) {
                 continue;
@@ -96,6 +97,11 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
             }
 
             arguments.Add(argument.Expression.ToString());
+            values.Add(argument.Expression);
+        }
+
+        if (!FormatsInTheSameOrder(model, values, cancellation)) {
+            return;
         }
 
         // ⚠ An explicitly passed `object[]` is not two arguments, it is one — and `{0}` then means
@@ -124,6 +130,7 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
         if (!ParsesToTheSameHoles(replacement, arguments)
             || FeedsALoggerTemplate(model, invocation, logger, cancellation)
             || OffersAFormattableStringOverload(model, invocation, cancellation)
+            || !RendersThroughTheDefaultHandler(model, invocation, replacement, cancellation)
             || NullComparison.InsideExpressionTree(model, invocation, cancellation)
             || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(invocation.SyntaxTree, invocation.Span)) {
             return;
@@ -142,7 +149,8 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
         if (NullComparison.InsideExpressionTree(model, hole, cancellation)
-            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(hole.SyntaxTree, hole.Span)) {
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(hole.SyntaxTree, hole.Span)
+            || !IsAStringTarget(model.GetTypeInfo(whole, cancellation).ConvertedType)) {
             return;
         }
 
@@ -180,7 +188,8 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
             || model.GetTypeInfo(call.Expression, cancellation).Type is not {
                 TypeKind: not (TypeKind.Error or TypeKind.Dynamic or TypeKind.TypeParameter)
             } type
-            || !type.IsValueType) {
+            || !type.IsValueType
+            || !FormatsAsItsToString(type)) {
             return;
         }
 
@@ -190,6 +199,109 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
             call.Expression.ToString(),
             "The hole renders the value without the intermediate string"
         );
+    }
+
+    /// <summary>
+    ///     ⚠ #425: whether the default handler renders a value of <paramref name="type" /> exactly as its
+    ///     parameterless <c>ToString()</c> does.
+    /// </summary>
+    /// <remarks>
+    ///     The handler asks an <c>IFormattable</c> for <c>ToString(null, null)</c>, not for
+    ///     <c>ToString()</c>, and a type may answer the two differently: measured for #412's audit, a
+    ///     struct rendered "plain" before the fix and "formatted" after it. A type that is not
+    ///     <c>IFormattable</c> is asked for <c>ToString()</c> itself; an enum and the framework's own
+    ///     value types in <c>System</c> answer both with the current culture and the general format.
+    ///     <c>Nullable&lt;T&gt;</c> renders empty both ways and is asked about its <c>T</c>.
+    /// </remarks>
+    static bool FormatsAsItsToString(ITypeSymbol type) {
+        if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable) {
+            type = nullable.TypeArguments[0];
+        }
+
+        if (type.TypeKind == TypeKind.Enum || type.SpecialType != SpecialType.None) {
+            return true;
+        }
+
+        var formattable = false;
+        foreach (var implemented in type.AllInterfaces) {
+            formattable |= implemented.ToDisplayString() == "System.IFormattable";
+        }
+
+        return !formattable
+            || type.Locations.Length > 0
+            && !type.Locations[0].IsInSource
+            && type.ContainingNamespace?.ToDisplayString() == "System";
+    }
+
+    /// <summary>
+    ///     ⚠ #425: whether an interpolated string converted to <paramref name="target" /> is rendered by
+    ///     the default handler with no format provider — to <c>string</c>, or to <c>object</c> through it.
+    /// </summary>
+    /// <remarks>
+    ///     Every other target sees the text and the holes separately, and that is where both hole shapes
+    ///     stop being style: <c>FormattableString.Invariant</c> and <c>string.Create</c> with a provider
+    ///     render <c>{d}</c> invariantly where <c>{d.ToString()}</c> was rendered in the current culture
+    ///     (measured <c>1,5</c> → <c>1.5</c> under de-DE), and a literal moved out of a hole of a
+    ///     <c>FormattableString</c> moves out of its arguments into its <c>Format</c> — the difference
+    ///     between a parameterised query and a concatenated one (measured
+    ///     <c>select {0} from t args=1</c> → <c>select name from t args=0</c>).
+    /// </remarks>
+    static bool IsAStringTarget(ITypeSymbol? target) =>
+        target?.SpecialType is SpecialType.System_String or SpecialType.System_Object;
+
+    /// <summary>
+    ///     ⚠ #425: whether the <c>$""</c> that replaces a <c>string.Format</c> call, bound where the call
+    ///     stands, still renders to a string and leaves every enclosing call bound where it was.
+    /// </summary>
+    /// <remarks>
+    ///     <c>string.Format</c> returns a <c>string</c>, so the overload taking one was chosen; an
+    ///     interpolated string also converts to an interpolated-string handler, which overload
+    ///     resolution prefers. Measured for #412's audit: a logging overload whose handler is gated on
+    ///     an <c>enabled</c> argument stopped evaluating the holes, <c>reads=1</c> → <c>reads=0</c>.
+    ///     <see cref="OffersAFormattableStringOverload" /> reads the member group for the two interface
+    ///     targets; this binds the replacement and reads what it became.
+    /// </remarks>
+    static bool RendersThroughTheDefaultHandler(
+        SemanticModel model,
+        InvocationExpressionSyntax invocation,
+        string replacement,
+        CancellationToken cancellation
+    ) =>
+        FixRebind.TrySpeculate(
+            model,
+            invocation,
+            SyntaxFactory.ParseExpression(replacement),
+            out var speculative,
+            out var placed
+        )
+        && FixRebind.BindsTheSurroundingsAlike(model, invocation, speculative, placed, cancellation);
+
+    /// <summary>
+    ///     ⚠ #425: whether formatting each argument as soon as it is evaluated, as the handler does, is
+    ///     the same as evaluating them all first, as <c>string.Format</c> does.
+    /// </summary>
+    /// <remarks>
+    ///     A <c>string</c> or a value is captured by evaluating it, so later arguments cannot change
+    ///     what it renders. Any other object is rendered by its <c>ToString</c> after the arguments
+    ///     after it have run — or not at all, where one of them throws — so behind such an argument
+    ///     every later one must run no code (<see cref="RewriteGuards.IsFreeToRepeat(IOperation)" />).
+    /// </remarks>
+    static bool FormatsInTheSameOrder(
+        SemanticModel model,
+        IReadOnlyList<ExpressionSyntax> values,
+        CancellationToken cancellation
+    ) {
+        var rendersLate = false;
+        foreach (var value in values) {
+            if (rendersLate && !RewriteGuards.IsFreeToRepeat(value, model, cancellation)) {
+                return false;
+            }
+
+            var type = model.GetTypeInfo(value, cancellation).Type;
+            rendersLate |= type is null || !type.IsValueType && type.SpecialType != SpecialType.System_String;
+        }
+
+        return true;
     }
 
     /// <summary>Shape 3: <c>$"a{"b"}c"</c> is a hole holding something that was never a variable.</summary>

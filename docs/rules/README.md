@@ -276,12 +276,12 @@
 
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
-| [SK1001](SK1001.md) | Use a collection expression | suggestion | review | no |
+| [SK1001](SK1001.md) | Use a collection expression | suggestion | safe | no |
 | [SK1003](SK1003.md) | Use a field-backed property | suggestion | safe | no |
 | [SK1004](SK1004.md) | Use an `extension` block | suggestion | review | no |
 | [SK1005](SK1005.md) | Use a file-scoped namespace | suggestion | safe | yes |
-| [SK1006](SK1006.md) | Use a `using` declaration | suggestion | review | yes |
-| [SK1010](SK1010.md) | Use `is null` / `is not null` instead of `==` / `!=` | suggestion | review | no |
+| [SK1006](SK1006.md) | Use a `using` declaration | suggestion | safe | yes |
+| [SK1010](SK1010.md) | Use `is null` / `is not null` instead of `==` / `!=` | suggestion | safe | no |
 | [SK1011](SK1011.md) | Use a property pattern | suggestion | safe | no |
 | [SK1012](SK1012.md) | Use a switch expression for a returning equality chain | suggestion | safe | no |
 | [SK1013](SK1013.md) | Use a list pattern for guarded element checks | suggestion | safe | no |
@@ -297,33 +297,33 @@
 | [SK1031](SK1031.md) | Use a null-conditional assignment | suggestion | safe | no |
 | [SK1033](SK1033.md) | Use `TryGetValue` or `TryAdd` instead of `ContainsKey` and a second lookup | suggestion | safe | no |
 | [SK1034](SK1034.md) | Use the `Count` property, not `Count()` or `Any()` **(retired)** | — | safe | no |
-| [SK1035](SK1035.md) | Use `Enum.GetValues<T>()` | suggestion | review | no |
+| [SK1035](SK1035.md) | Use `Enum.GetValues<T>()` | suggestion | safe | no |
 | [SK1040](SK1040.md) | Use `T?` instead of `Nullable<T>` | suggestion | safe | no |
 | [SK1041](SK1041.md) | Use a compound assignment | suggestion | safe | no |
-| [SK1042](SK1042.md) | The nested `if` statements can be combined | suggestion | review | yes |
+| [SK1042](SK1042.md) | The nested `if` statements can be combined | suggestion | safe | no |
 | [SK1043](SK1043.md) | The `for` loop is a `while` | suggestion | safe | yes |
 | [SK1044](SK1044.md) | Use `string.IsNullOrEmpty` | suggestion | safe | no |
 | [SK1050](SK1050.md) | Use pattern matching instead of a test-and-cast | suggestion | safe | no |
 | [SK1051](SK1051.md) | Simplify the pattern | suggestion | safe | no |
 | [SK1052](SK1052.md) | Merge the `?:` into a conditional access | suggestion | safe | no |
 | [SK1053](SK1053.md) | Use a discard | suggestion | safe | no |
-| [SK1054](SK1054.md) | Inline the `out` variable declaration | suggestion | review | no |
-| [SK1060](SK1060.md) | Use an index-from-end expression | suggestion | review | no |
-| [SK1061](SK1061.md) | Use `nameof` | suggestion | review | no |
+| [SK1054](SK1054.md) | Inline the `out` variable declaration | suggestion | safe | no |
+| [SK1060](SK1060.md) | Use an index-from-end expression | suggestion | safe | no |
+| [SK1061](SK1061.md) | Use `nameof` | suggestion | safe | no |
 | [SK1062](SK1062.md) | Use the string literal form that needs no escapes | hint | safe | yes |
-| [SK1063](SK1063.md) | Use the interpolation form that says what it means | suggestion | review | no |
-| [SK1064](SK1064.md) | Use `>>>` | suggestion | review | no |
+| [SK1063](SK1063.md) | Use the interpolation form that says what it means | suggestion | safe | no |
+| [SK1064](SK1064.md) | Use `>>>` | suggestion | safe | no |
 | [SK1070](SK1070.md) | Deconstruct the tuple instead of reading it element by element | suggestion | safe | no |
-| [SK1071](SK1071.md) | Copy the record with a `with` expression | suggestion | review | no |
-| [SK1072](SK1072.md) | The spread of a freshly created array is its elements | suggestion | review | no |
+| [SK1071](SK1071.md) | Copy the record with a `with` expression | suggestion | safe | no |
+| [SK1072](SK1072.md) | The spread of a freshly created array is its elements | suggestion | safe | no |
 | [SK1073](SK1073.md) | Use the framework's cached instance | suggestion | review | no |
 | [SK1080](SK1080.md) | Use the LINQ operator that says what the chain means | suggestion | safe | no |
-| [SK1081](SK1081.md) | Remove the LINQ or collection call that does nothing | warning | review | no |
+| [SK1081](SK1081.md) | Remove the LINQ or collection call that does nothing | warning | safe | no |
 | [SK1082](SK1082.md) | Use the indexer | suggestion | review | no |
 | [SK1083](SK1083.md) | Use `foreach` over an indexed `for` | suggestion | review | no |
 | [SK1084](SK1084.md) | Use a LINQ operator for part of the loop | hint | review | no |
 | [SK1090](SK1090.md) | Use a computed property instead of an auto-property holding a constant | hint | review | no |
-| [SK1091](SK1091.md) | The private auto-property is a field | suggestion | review | no |
+| [SK1091](SK1091.md) | The private auto-property is a field | suggestion | safe | no |
 | [SK1092](SK1092.md) | Use a tuple literal instead of constructing a `Tuple` | suggestion | review | no |
 | [SK1093](SK1093.md) | Express the cast in the declaration instead | hint | safe | no |
 | [SK1094](SK1094.md) | Use nullable reference type syntax instead of an annotation attribute | warning | review | no |

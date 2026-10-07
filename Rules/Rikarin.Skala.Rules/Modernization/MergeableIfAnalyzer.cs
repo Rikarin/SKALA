@@ -65,6 +65,21 @@ public sealed class MergeableIfAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ #425: `if (a) if (b)` asks `a` and `b` each for a `bool`, and `a && b` asks the operands'
+        // type for its `operator &` and `operator false` first. On a type that declares them —
+        // `SqlBoolean`, any three-valued logic — the merged condition is a different computation:
+        // measured for #412's audit, `SqlBoolean.Null` then `True` printed "left, end" nested and
+        // "left, right, end" merged, a user `&` printed "both" and then nothing, and `bool && Flag`
+        // with only `operator true` is CS0019. Every condition must therefore already be a `bool`,
+        // with no conversion — the one type whose `&&` is the language's own.
+        foreach (var link in chain) {
+            var info = context.SemanticModel.GetTypeInfo(link.Condition, context.CancellationToken);
+            if (info.Type?.SpecialType != SpecialType.System_Boolean
+                || info.ConvertedType?.SpecialType != SpecialType.System_Boolean) {
+                return;
+            }
+        }
+
         var innermost = chain[chain.Count - 1];
         var tree = outer.SyntaxTree;
         var text = tree.GetText();

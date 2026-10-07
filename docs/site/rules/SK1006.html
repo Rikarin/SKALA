@@ -21,7 +21,7 @@
 <tr><th>Needs a compilation</th><td>no</td></tr>
 <tr><th>Runs under <code>--load=loose</code></th><td>yes</td></tr>
 <tr><th>Cached per file</th><td>yes</td></tr>
-<tr><th>Fix</th><td>yes, review it</td></tr>
+<tr><th>Fix</th><td>yes, safe</td></tr>
 <tr><th>Language version floor</th><td>C# 8.0</td></tr>
 <tr><th>Since</th><td>1.2</td></tr>
 <tr><th>Supersedes</th><td>IDE0063</td></tr>
@@ -42,7 +42,7 @@
     stream.WriteByte(0);
 }</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>None known. It is silent unless the <code>using</code> statement is the last statement of its enclosing block — anywhere else the object would be disposed later than it is now — and silent when the rewrite would lift a declaration into a scope where the name is already taken. That second guard scans the whole member rather than only what is in scope, because <code>foreach (var item in xs) { }</code> standing beside <code>using (…) { var item = 2; }</code> is legal today and CS0136 once the braces are gone, and a lookup at the statement cannot see it. It is also silent on <code>using (existingVariable)</code>, which has no declaration to convert, on a body that is not a block, and wherever the statement contains a preprocessor directive, since the fix deletes two braces. ⚠ <strong>The fix is not safe (#412's audit, measured by running both versions):</strong> A <code>goto</code> that jumps back to before the new <code>using</code> declaration is CS8649 after the fix.</p>
+<p>None known. It is silent unless the <code>using</code> statement is the last statement of its enclosing block — anywhere else the object would be disposed later than it is now — and silent when the rewrite would lift a declaration into a scope where the name is already taken. That second guard scans the whole member rather than only what is in scope, because <code>foreach (var item in xs) { }</code> standing beside <code>using (…) { var item = 2; }</code> is legal today and CS0136 once the braces are gone, and a lookup at the statement cannot see it. It is also silent on <code>using (existingVariable)</code>, which has no declaration to convert, on a body that is not a block, and wherever the statement contains a preprocessor directive, since the fix deletes two braces. ⚠ <strong>#425: no label anywhere in the enclosing block.</strong> A <code>goto</code> back to a label before the new declaration is CS8649, which #412's audit measured on a retry loop, and the block's own labels move out to where a sibling block's label of the same name shadows them (CS0158). Labels are rare enough that every one withdraws the finding. ⚠ <strong>And no name the block declares may be mentioned anywhere else in the enclosing block</strong>, its own <code>using</code> declaration included: <code>using (var r = new Res { Size = size }) { var size = …; }</code> read the field and would read the moved local before its declaration (CS0844) — the compile sweep found that on <code>SK3511</code>'s fixture the moment the fix was marked safe. With these, and every executable fixture's <code>Probe</code> unchanged, the fix is safe again.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK1006.severity</code></li>
