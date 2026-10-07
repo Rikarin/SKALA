@@ -73,11 +73,17 @@ public sealed class PartialConstructorDefinitionTests {
             .DescendantNodes()
             .OfType<ConstructorDeclarationSyntax>()
             .ToArray();
-        foreach (var constructor in constructors) {
-            var symbol = model.GetDeclaredSymbol(constructor, TestContext.Current.CancellationToken);
+        // ⚠ The definition is handed over twice: with its own symbol, and with the implementation's —
+        // a driver that canonicalises a partial member to one symbol would pass that one.
+        var implementation = model.GetDeclaredSymbol(constructors[1], TestContext.Current.CancellationToken);
+        var handed = new (SyntaxNode Node, ISymbol? Symbol)[] {
+            (constructors[0], model.GetDeclaredSymbol(constructors[0], TestContext.Current.CancellationToken)),
+            (constructors[0], implementation), (constructors[1], implementation)
+        };
+        foreach (var (node, symbol) in handed) {
             foreach (var (action, _) in recorder.Nodes) {
 #pragma warning disable CS0618
-                action(new(constructor, symbol, model, new([]), static _ => { }, static _ => true, default));
+                action(new(node, symbol, model, new([]), static _ => { }, static _ => true, default));
 #pragma warning restore CS0618
             }
         }

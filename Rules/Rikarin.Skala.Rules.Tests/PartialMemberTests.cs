@@ -412,7 +412,10 @@ public sealed class PartialMemberTests {
         Assert.Equal("First.cs", Assert.Single(apart).Location.SourceTree!.FilePath);
     }
 
-    /// <summary>#400: <c>async</c> on an implementation in another file still makes the method asynchronous.</summary>
+    /// <summary>
+    ///     ⚠ A pin for a refuted #400 claim: a definition beside an <c>async</c> implementation was never
+    ///     reported as falsely named, in one file or two. It stays green with the fix reverted, on purpose.
+    /// </summary>
     [Fact]
     public void SK6053_APartialMethodAsyncInAnotherFile_IsNotNamedFalsely() {
         var diagnostics = Analyze(
