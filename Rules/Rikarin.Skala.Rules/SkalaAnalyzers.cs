@@ -96,6 +96,7 @@ public static class SkalaAnalyzers {
         new MissingTestClassAttributeAnalyzer(), new EmptyTestClassAnalyzer(),
         new SwappedAssertionArgumentsAnalyzer(),
         new DuplicatedBaseDocumentationAnalyzer(), new UndocumentedNonPublicMemberAnalyzer(),
+        new ReturnsOnVoidMemberAnalyzer(), new OrphanInheritdocAnalyzer(),
         new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
         new RedundantNullableDirectiveAnalyzer(), new RedundantQualifierAnalyzer(),
         new RedundantDiscardDesignationAnalyzer(),

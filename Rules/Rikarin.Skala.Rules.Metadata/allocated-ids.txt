@@ -412,3 +412,5 @@ SK9027 partial-analysis
 SK9028 gate-input-unavailable
 SK9029 analyzer-assembly-missing
 SK9032 documentation-diagnostics-off
+SK7102 returns-documented-on-void-member
+SK7103 inheritdoc-with-nothing-to-inherit

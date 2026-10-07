@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 364 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 366 ids are allocated.
 
 ## Async
 
@@ -268,6 +268,8 @@
 | [SK7093](SK7093.md) | The console is written to where a logger was meant | warning | — | no |
 | [SK7100](SK7100.md) | The documentation duplicates the base member's | suggestion | safe | no |
 | [SK7101](SK7101.md) | A non-public member has no documentation comment | none | — | yes |
+| [SK7102](SK7102.md) | The `<returns>` element documents a member that returns nothing | warning | review | yes |
+| [SK7103](SK7103.md) | The `<inheritdoc/>` has nothing to inherit | warning | review | no |
 | [SK7110](SK7110.md) | The logger is declared for a different type than the one that declares it | suggestion | safe | no |
 
 ## Modernization
