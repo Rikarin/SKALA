@@ -115,6 +115,14 @@ public sealed class LayoutWriter {
     /// <summary>Whether <see cref="watchedChain" /> has taken a point since the watch began.</summary>
     bool watchedChainBroke;
 
+    /// <summary>
+    ///     The groups the walk is inside that resolved broken and carry <see cref="GroupFacts.Continues" />,
+    ///     innermost last, each with the depth of <see cref="scopes" /> and the line it was entered at.
+    ///     See <see cref="BrokenInsideOnItsLine" />.
+    /// </summary>
+    readonly List<(int Group, int Depth, int Line)> brokenConstructs = [];
+
+
     readonly int continuousMultiplier;
     readonly int indentWidth;
     readonly int width;
@@ -279,6 +287,10 @@ public sealed class LayoutWriter {
                             line,
                             atLineStart ? CurrentColumn() : CurrentLineIndent()
                         );
+                        if (fitter.ModeOf(slot.Arg1) == ResolvedMode.Broken && document.FactsOf(slot.Arg1).Continues) {
+                            brokenConstructs.Add((slot.Arg1, scopes.Count, line));
+                        }
+
                         break;
 
                     default:
@@ -308,6 +320,10 @@ public sealed class LayoutWriter {
 
             if (slot.Kind == DocKind.Indent) {
                 Pop(slot.Flags != 0);
+            } else if (slot.Kind == DocKind.Group
+                       && brokenConstructs.Count > 0
+                       && brokenConstructs[^1].Group == slot.Arg1) {
+                brokenConstructs.RemoveAt(brokenConstructs.Count - 1);
             }
         }
     }
@@ -432,6 +448,16 @@ public sealed class LayoutWriter {
         // on its own line differently from every other scope. See LevelForBlock.
         var outer = kind is IndentKind.Block or IndentKind.Anchor ? LevelForBlock(ancestors) : LevelForNested();
 
+        // ⚠ A delimited list on the first line of a construct that broke after it nests from that
+        // construct's continuation line, and its closer sits on it. See LiftedLevel.
+        var lifted = -1;
+        if (kind is IndentKind.Continuous or IndentKind.OneLevel && (flags & IndentFlags.Delimiter) != 0) {
+            lifted = LiftedLevel(ancestors, outer);
+            if (lifted >= 0) {
+                outer = lifted;
+            }
+        }
+
         // ⚠ An anchored block nests from the line its anchor was pushed on, which is the governing
         // expression's line and not the brace's. See IndentKind.Anchor.
         if (kind == IndentKind.AnchoredBlock) {
@@ -464,7 +490,8 @@ public sealed class LayoutWriter {
                         line,
                         outer,
                         unconditional,
-                        IsGrouping: (flags & IndentFlags.Grouping) != 0
+                        IsGrouping: (flags & IndentFlags.Grouping) != 0,
+                        Lifted: lifted
                     ),
                 IndentKind.OneLevel =>
                     new Scope(
@@ -473,7 +500,8 @@ public sealed class LayoutWriter {
                         line,
                         outer,
                         unconditional,
-                        IsGrouping: (flags & IndentFlags.Grouping) != 0
+                        IsGrouping: (flags & IndentFlags.Grouping) != 0,
+                        Lifted: lifted
                     ),
                 IndentKind.Outdent =>
                     new Scope(true, Math.Max(0, outer - indentWidth), line, outer, unconditional),
@@ -589,22 +617,7 @@ public sealed class LayoutWriter {
             return LevelForNested();
         }
 
-        // The innermost broken construct, looked for inside the innermost enclosing block only.
-        var broken = -1;
-        for (int a = 0, next = scopes.Count - 1; a < path.Length; a++) {
-            ref var slot = ref document.Nodes[path[a].Node];
-            if (slot.Kind == DocKind.Indent && scopes[next--].IsBlock) {
-                break;
-            }
-
-            if (slot.Kind == DocKind.Group
-                && fitter.ModeOf(slot.Arg1) == ResolvedMode.Broken
-                && document.FactsOf(slot.Arg1).Continues) {
-                broken = a;
-                break;
-            }
-        }
-
+        var broken = InnermostBrokenConstruct(path);
         var level = 0;
         var blocked = -1;
         var outside = false;
@@ -627,6 +640,7 @@ public sealed class LayoutWriter {
                 continue;
             }
 
+            var index = next;
             var scope = scopes[next--];
 
             // ⚠ The broken construct's own continuation scope is its first child, so it is met
@@ -651,6 +665,16 @@ public sealed class LayoutWriter {
 
             if (scope.IsBlock) {
                 return Math.Max(0, level + scope.Level);
+            }
+
+            if (scope.Lifted >= 0 && !BrokenInsideOnItsLine(index, scope)) {
+                var counts = outside
+                    ? scope.OpenLine <= line && (scope.Unconditional || scope.OpenLine != blocked)
+                    : scope.Unconditional
+                        ? scope.OpenLine <= line
+                        : scope.OpenLine < line && scope.OpenLine != blocked;
+
+                return Math.Max(0, level + scope.Lifted + (counts ? scope.Level : 0));
             }
 
             // Outside the broken construct: the level a line starting after this one takes.
@@ -683,6 +707,101 @@ public sealed class LayoutWriter {
         }
 
         return Math.Max(0, level);
+    }
+
+    /// <summary>
+    ///     The index in <paramref name="path" /> of the innermost group around the top of the stack that
+    ///     resolved <see cref="ResolvedMode.Broken" /> and <see cref="GroupFacts.Continues" />, looked for
+    ///     inside the innermost enclosing block only; −1 when there is none.
+    /// </summary>
+    int InnermostBrokenConstruct((int Node, int Child)[] path) {
+        for (int a = 0, next = scopes.Count - 1; a < path.Length; a++) {
+            ref var slot = ref document.Nodes[path[a].Node];
+            if (slot.Kind == DocKind.Indent && scopes[next--].IsBlock) {
+                break;
+            }
+
+            if (slot.Kind == DocKind.Group
+                && fitter.ModeOf(slot.Arg1) == ResolvedMode.Broken
+                && document.FactsOf(slot.Arg1).Continues) {
+                return a;
+            }
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    ///     Whether a broken construct was entered inside the lifted list at <paramref name="index" />, on
+    ///     the line the list opened on. A line inside that construct is the construct's continuation, and
+    ///     it continues the ordinary way: the list is read as an ordinary scope.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on Skala's own source, the Lint drift of #418:
+    ///     <c>found.SelectMany(static d =&gt; Enumerable.Range(0, n)</c> / <c>.Select(…)</c> / <c>)</c> /
+    ///     <c>.OrderByDescending(…)</c> keeps the inner <c>.Select</c> two levels past the statement, and
+    ///     <c>scope.DescendantNodes(static n =&gt; n is not (A</c> / <c>or B)</c> / <c>)</c> /
+    ///     <c>.OfType…</c> keeps the <c>or</c> where it was — while the outer <c>)</c> moves to the
+    ///     chain's line in both, and a call opened on that line, <c>source.Select(a =&gt; Foo(</c>, lifts.
+    ///     The innermost broken construct around a line decides, as SK-DIV-0148's rule says for a block;
+    ///     a grouping parenthesis or a pattern's own parenthesis pays for a construct that opens no
+    ///     scope of its own, so the construct is looked for among the groups, not the scopes.
+    /// </remarks>
+    bool BrokenInsideOnItsLine(int index, in Scope scope) {
+        foreach (var (_, depth, opened) in brokenConstructs) {
+            if (depth > index && opened == scope.OpenLine) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     The level a delimited list opening now nests from when it opens on the first line of a
+    ///     construct that broke after it — that construct's continuation line — or −1 when the list
+    ///     nests the ordinary way from <paramref name="nested" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <see cref="LevelForBlock" />'s rule (SK-DIV-0148) applied to a list, which SK-DIV-0149
+    ///     recorded and issue #418 measured: asked of the oracle on some three hundred shapes — chain
+    ///     roots that are a name, a member access, <c>this</c>, a call, a <c>new</c>, a parenthesis, a
+    ///     cast, an <c>await</c>, a <c>!</c> and a <c>?.</c>; under <c>var x =</c>, <c>return</c>, an
+    ///     assignment, an argument, an expression body and a statement; two indent depths —
+    ///     <code>
+    /// var x = source.Select(
+    ///         aaaa…           ← two levels past the statement, not one
+    ///     )                   ← on the chain's continuation line, with the dots
+    ///     .Where(beta);
+    ///     </code>
+    ///     and the same for a <c>new Foo(</c> heading the chain, a <c>Select&lt;int&gt;(</c>, a
+    ///     <c>Select(</c> followed by <c>[0]</c> or a property, and the first operand of a broken
+    ///     <c>??</c>. Under an argument list the chain's level is spent in the item's line and the
+    ///     list nests one past it; where the construct spends nothing — a binary inside a delimiter,
+    ///     a chain headed by a parenthesis under an owner that already spent — there is nothing to lift
+    ///     and the list's level is the ordinary one.
+    ///     <para>
+    ///         ⚠ Not for a fill, which carries no <see cref="GroupFacts.Continues" />. Under
+    ///         <c>wrap_if_long</c> the chain's group resolves broken whenever the whole chain does not
+    ///         fit, and the oracle lifts the list only when the chain then breaks after it:
+    ///         <c>source.Select(</c> / arguments / <c>).Where(beta);</c> keeps the arguments one level
+    ///         in. Whether a fill breaks is decided point by point after the list is written, and an
+    ///         author's break the fill pinned is a required break no group owns, so a fill keeps the
+    ///         ordinary level and the case where it breaks after the list is open (SK-DIV-0185).
+    ///     </para>
+    /// </remarks>
+    int LiftedLevel(Stack<(int Node, int Child)> ancestors, int nested) {
+        var path = ancestors.ToArray();
+        if (path.Count(frame => document.Nodes[frame.Node].Kind == DocKind.Indent) != scopes.Count) {
+            return -1;
+        }
+
+        if (InnermostBrokenConstruct(path) < 0) {
+            return -1;
+        }
+
+        var level = LevelForBlock(ancestors);
+        return level > nested ? level : -1;
     }
 
     /// <summary>
@@ -774,6 +893,17 @@ public sealed class LayoutWriter {
                 return Math.Max(0, level + (levelsOnly && scope.IsAlignment ? scope.CloserLevel : scope.Level));
             }
 
+            // ⚠ Absolute, as a block is: everything outside a lifted list is already in `Lifted`.
+            // Unless a broken construct inside the list opened on the list's own line, which is the
+            // innermost broken construct around this line and continues the ordinary way.
+            if (scope.Lifted >= 0 && !BrokenInsideOnItsLine(i, scope)) {
+                var counts = scope.Unconditional
+                    ? nested ? scope.OpenLine <= line : scope.OpenLine < line
+                    : scope.OpenLine < line && scope.OpenLine != blocked;
+
+                return Math.Max(0, level + scope.Lifted + (counts ? scope.Level : 0));
+            }
+
             if (scope.Unconditional) {
                 if (nested ? scope.OpenLine <= line : scope.OpenLine < line) {
                     level += scope.Level;
@@ -832,6 +962,13 @@ public sealed class LayoutWriter {
     ///     ⚠ <see cref="IndentFlags.Grouping" />: a grouping parenthesis's scope, which
     ///     <see cref="LevelForBlock" /> counts on its own line only when something inside it broke.
     /// </param>
+    /// <param name="Lifted">
+    ///     ⚠ <see cref="IndentFlags.Delimiter" />: the level a delimited list opened on the first line of
+    ///     a broken construct nests from — that construct's continuation line — or −1 for every other
+    ///     scope. Such a scope is absolute, as a block is: wherever a walk of the stack reaches it, it
+    ///     answers <c>Lifted</c> plus its own level when it counts and <c>Lifted</c> alone when it does
+    ///     not, and nothing outside it is read. See <see cref="LiftedLevel" />.
+    /// </param>
     /// <param name="IsAnchor">
     ///     ⚠ <see cref="IndentKind.Anchor" />: a marker that adds nothing and whose
     ///     <paramref name="CloserLevel" /> is the indentation of the line it was pushed on. Read by
@@ -846,7 +983,8 @@ public sealed class LayoutWriter {
         int ColumnOutdent = 0,
         bool IsAlignment = false,
         bool IsAnchor = false,
-        bool IsGrouping = false);
+        bool IsGrouping = false,
+        int Lifted = -1);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     int CurrentLineIndent() {
@@ -1261,6 +1399,15 @@ public sealed class LayoutWriter {
                 break;
             }
 
+            // ⚠ A construct being entered on the list's own line continues the ordinary way if it
+            // breaks, and its continuation column does not matter if it does not.
+            if (scope.Lifted >= 0
+                && !BrokenInsideOnItsLine(i, scope)
+                && !(scope.OpenLine == line && document.FactsOf(group).Continues)) {
+                level += scope.Lifted + (scope.OpenLine <= line && scope.OpenLine != counted ? scope.Level : 0);
+                break;
+            }
+
             if (scope.OpenLine <= line && scope.OpenLine != counted) {
                 level += scope.Level;
                 counted = scope.OpenLine;
@@ -1445,6 +1592,7 @@ public sealed class LayoutWriter {
         public int PendingAnchorToken;
         public bool HasPendingAnchor;
         public bool WatchedChainBroke;
+        public (int Group, int Depth, int Line)[] BrokenConstructs;
         public Fitter.Mark Fitter;
     }
 
@@ -1464,6 +1612,7 @@ public sealed class LayoutWriter {
             PendingAnchorToken = pendingAnchorToken,
             HasPendingAnchor = hasPendingAnchor,
             WatchedChainBroke = watchedChainBroke,
+            BrokenConstructs = brokenConstructs.ToArray(),
             Fitter = fitter.MarkForRollback()
         };
 
@@ -1483,6 +1632,8 @@ public sealed class LayoutWriter {
         pendingAnchorToken = state.PendingAnchorToken;
         hasPendingAnchor = state.HasPendingAnchor;
         watchedChainBroke = state.WatchedChainBroke;
+        brokenConstructs.Clear();
+        brokenConstructs.AddRange(state.BrokenConstructs);
         fitter.Rollback(state.Fitter);
     }
 

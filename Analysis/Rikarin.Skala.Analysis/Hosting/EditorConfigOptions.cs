@@ -53,8 +53,10 @@ public static class EditorConfigOptions {
                 configs.Add(AnalyzerConfig.Parse(text, Path.GetFullPath(path)));
                 fingerprint.Append(path).Append('@').Append(text.Length).Append(':');
                 fingerprint.Append(
-                    Convert.ToHexStringLower(System.IO.Hashing.XxHash128.Hash(System.Text.Encoding.UTF8.GetBytes(text)))
-                )
+                        Convert.ToHexStringLower(
+                            System.IO.Hashing.XxHash128.Hash(System.Text.Encoding.UTF8.GetBytes(text))
+                        )
+                    )
                     .Append(';');
                 // ⚠ #353: the filter now matches the sentence below it. A config that cannot be read
                 // is usually one this process is not permitted to read, and

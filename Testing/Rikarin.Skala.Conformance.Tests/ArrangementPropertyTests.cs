@@ -195,11 +195,11 @@ public sealed class ArrangementPropertyTests {
 
         var cancellation = TestContext.Current.CancellationToken;
         var before = CSharpSyntaxTree.ParseText(
-            result.Original,
-            CSharpFormatter.ParseOptions,
-            string.Empty,
-            cancellation
-        )
+                result.Original,
+                CSharpFormatter.ParseOptions,
+                string.Empty,
+                cancellation
+            )
             .GetDiagnostics(cancellation)
             .Select(static d => d.Id)
             .Order(StringComparer.Ordinal);

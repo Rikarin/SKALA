@@ -199,9 +199,9 @@ public static class DocsSite {
         var builder = Open("Rules — Skala", "../", "rules");
         builder.Append("<h1>Rules</h1>\n");
         builder.Append(
-            """<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed """
-            + "(ADR-012). "
-        )
+                """<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed """
+                + "(ADR-012). "
+            )
             .Append(Num(rules.Count))
             .Append(" ids are allocated.</p>\n");
 

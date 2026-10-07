@@ -34,16 +34,16 @@ public static class ReleaseNotes {
         notes.AppendLine();
 
         notes.Append(
-            verdict.Previous is null
-                ? "**The first release.** There is no predecessor to measure against, so every detector below "
-                + "reports *unmeasured* rather than *unchanged* — the two produce the same version number and "
-                + "must not produce the same sentence. What this release establishes is the baseline the next "
-                + "one is measured against."
-                : string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"Measured against **{verdict.Previous}**. The verdict is **{verdict.Bump.ToString().ToLowerInvariant()}**; the version is the highest of the five surfaces below, not a summary of the commits."
-                )
-        )
+                verdict.Previous is null
+                    ? "**The first release.** There is no predecessor to measure against, so every detector below "
+                    + "reports *unmeasured* rather than *unchanged* — the two produce the same version number and "
+                    + "must not produce the same sentence. What this release establishes is the baseline the next "
+                    + "one is measured against."
+                    : string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"Measured against **{verdict.Previous}**. The verdict is **{verdict.Bump.ToString().ToLowerInvariant()}**; the version is the highest of the five surfaces below, not a summary of the commits."
+                    )
+            )
             .AppendLine();
         notes.AppendLine();
 
@@ -112,11 +112,11 @@ public static class ReleaseNotes {
             notes.AppendLine("### What a repository will see");
             notes.AppendLine();
             notes.Append(
-                string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"Taking this release reformats **{output.ChangedFiles} of {output.Comparable}** comparable corpus files, {output.ChangedLines} lines in total. Downstream that is a commit in your repository ([02](docs/plan/02-repository-layout.md) § \"Repository policy\"), so take it in its own commit, and pin the version in a local tool manifest ([11](docs/plan/11-cli-and-integrations.md) § \"Distribution\") so that two developers do not format the same tree two ways."
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"Taking this release reformats **{output.ChangedFiles} of {output.Comparable}** comparable corpus files, {output.ChangedLines} lines in total. Downstream that is a commit in your repository ([02](docs/plan/02-repository-layout.md) § \"Repository policy\"), so take it in its own commit, and pin the version in a local tool manifest ([11](docs/plan/11-cli-and-integrations.md) § \"Distribution\") so that two developers do not format the same tree two ways."
+                    )
                 )
-            )
                 .AppendLine();
             notes.AppendLine();
         }
@@ -153,11 +153,11 @@ public static class ReleaseNotes {
             entry.AppendLine("### Changed — formatting output");
             entry.AppendLine();
             entry.Append(
-                string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"⚠ **{output.ChangedFiles} of {output.Comparable} corpus files format differently** than under `{verdict.Previous}` — {output.ChangedLines} lines. The classes, largest first:"
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"⚠ **{output.ChangedFiles} of {output.Comparable} corpus files format differently** than under `{verdict.Previous}` — {output.ChangedLines} lines. The classes, largest first:"
+                    )
                 )
-            )
                 .AppendLine();
             entry.AppendLine();
 

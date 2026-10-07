@@ -126,9 +126,9 @@ public sealed class LockAndValueBatchTests {
             static d => d.Id == DedicatedLock
         );
         var edits = Enumerable.Range(
-            0,
-            int.Parse(diagnostic.Properties[FixEdits.CountKey]!, CultureInfo.InvariantCulture)
-        )
+                0,
+                int.Parse(diagnostic.Properties[FixEdits.CountKey]!, CultureInfo.InvariantCulture)
+            )
             .Select(index => new TextChange(
                     new TextSpan(
                         int.Parse(diagnostic.Properties[FixEdits.StartKey(index)]!, CultureInfo.InvariantCulture),

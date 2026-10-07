@@ -50,9 +50,9 @@ public sealed class RuleCatalogTests {
         );
         var source = File.ReadAllText(path);
         var ids = System.Text.RegularExpressions.Regex.Matches(
-            source,
-            """public const string \w+ = \"(?<id>SK\d{4})\";"""
-        )
+                source,
+                """public const string \w+ = \"(?<id>SK\d{4})\";"""
+            )
             .Cast<System.Text.RegularExpressions.Match>()
             .Select(static match => match.Groups["id"].Value)
             .Where(static id => !id.StartsWith("SK9", StringComparison.Ordinal))

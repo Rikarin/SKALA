@@ -311,7 +311,16 @@ public enum IndentFlags {
     ///     the writer's columns — so the writer lays the scope's contents out held, watches the chain,
     ///     and rolls back before deciding (issue #407, SK-DIV-0158).
     /// </summary>
-    HeldWhileChainWhole = 8
+    HeldWhileChainWhole = 8,
+
+    /// <summary>
+    ///     ⚠ A delimited list's scope — an argument, parameter or bracketed list, not a grouping
+    ///     parenthesis. Opened on the first line of a chained call or a binary operator that broke after
+    ///     it, the list nests from that construct's continuation line rather than collapsing into it:
+    ///     <c>var x = source.Select(</c> / arguments / <c>)</c> / <c>.Where(beta);</c> puts the arguments
+    ///     two levels past the statement and the <c>)</c> one, with the dots (issue #418, SK-DIV-0184).
+    /// </summary>
+    Delimiter = 16
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
@@ -837,6 +846,10 @@ public sealed class Document {
 ///     refuses the scope and the delimiter pays, which <see cref="SpendsIndent" /> says (issue #393,
 ///     SK-DIV-0148). ⚠ Not by a ternary, measured: <c>return y switch { … } is 1</c> / <c>? a</c>
 ///     keeps the arms one level past the statement, as does a property pattern in the condition.
+///     A delimited list opening on that line nests from the same continuation line, and its closer
+///     sits on it (issue #418, SK-DIV-0184). ⚠ Not by a fill: a <c>wrap_if_long</c> group resolves
+///     broken whenever its construct does not fit whole, which says nothing about whether it breaks
+///     after the block (SK-DIV-0185).
 /// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,

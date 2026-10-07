@@ -241,19 +241,19 @@ public sealed class ModernizationBatchTests {
         var diagnostics = Analyze(before);
         Assert.Equal(expectedFixes, diagnostics.Length);
         var edits = diagnostics.Select(static diagnostic => new TextChange(
-                new TextSpan(
-                    int.Parse(
-                        diagnostic.Properties[FixEdits.StartKey(0)]!,
-                        System.Globalization.CultureInfo.InvariantCulture
+                    new TextSpan(
+                        int.Parse(
+                            diagnostic.Properties[FixEdits.StartKey(0)]!,
+                            System.Globalization.CultureInfo.InvariantCulture
+                        ),
+                        int.Parse(
+                            diagnostic.Properties[FixEdits.LengthKey(0)]!,
+                            System.Globalization.CultureInfo.InvariantCulture
+                        )
                     ),
-                    int.Parse(
-                        diagnostic.Properties[FixEdits.LengthKey(0)]!,
-                        System.Globalization.CultureInfo.InvariantCulture
-                    )
-                ),
-                diagnostic.Properties[FixEdits.TextKey(0)]!
+                    diagnostic.Properties[FixEdits.TextKey(0)]!
+                )
             )
-        )
             .ToArray();
         var after = RuleFixtures.Compile(SourceText.From(source).WithChanges(edits).ToString(), "probe.cs");
         Assert.Empty(Analyze(after));
@@ -277,7 +277,7 @@ public sealed class ModernizationBatchTests {
                                 + (exception.InnerException as ArgumentException)?.ParamName;
                         }
                     }
-            )
+                )
                 .ToArray();
         } finally {
             context.Unload();

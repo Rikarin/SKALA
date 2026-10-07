@@ -67,12 +67,12 @@ public static class UnifiedDiff {
             for (var i = start; i < end; i++) {
                 var (kind, line) = trace[i];
                 builder.Append(
-                    kind switch {
-                        EditKind.Added => '+',
-                        EditKind.Removed => '-',
-                        _ => ' '
-                    }
-                )
+                        kind switch {
+                            EditKind.Added => '+',
+                            EditKind.Removed => '-',
+                            _ => ' '
+                        }
+                    )
                     .AppendLine(line);
             }
 

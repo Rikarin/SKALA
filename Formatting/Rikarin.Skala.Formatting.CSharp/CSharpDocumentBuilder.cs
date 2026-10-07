@@ -1648,7 +1648,11 @@ public sealed partial class CSharpDocumentBuilder {
                         // Measured: the oracle's `outside_and_inside` puts a chopped call's
                         // arguments eight columns in and its `)` four, and Skala wrote four and four
                         // under both of the other spellings.
-                        OpenIndent(scopeKind, unconditional || inside > 1, node is ParenthesizedExpressionSyntax);
+                        OpenIndent(
+                            scopeKind,
+                            unconditional || inside > 1,
+                            node is ParenthesizedExpressionSyntax ? IndentFlags.Grouping : IndentFlags.Delimiter
+                        );
                     }
 
                     opened = levels;
@@ -2057,11 +2061,14 @@ public sealed partial class CSharpDocumentBuilder {
     // ── Indent scopes ────────────────────────────────────────────────────────────────────────
 
     void OpenIndent(IndentKind kind, bool unconditional = false, int columns = 0) =>
-        OpenIndent(kind, unconditional, false, columns);
+        OpenIndent(kind, unconditional, IndentFlags.None, columns);
 
-    /// <param name="grouping">A grouping parenthesis's scope. See <see cref="IndentFlags.Grouping" />.</param>
-    void OpenIndent(IndentKind kind, bool unconditional, bool grouping, int columns = 0) {
-        doc.OpenIndent(kind, unconditional, columns, grouping);
+    /// <param name="shape">
+    ///     A delimited construct's scope: <see cref="IndentFlags.Grouping" /> or
+    ///     <see cref="IndentFlags.Delimiter" />.
+    /// </param>
+    void OpenIndent(IndentKind kind, bool unconditional, IndentFlags shape, int columns = 0) {
+        doc.OpenIndent(kind, unconditional, columns, shape);
 
         // ⚠ Neither an outdent kind is a continuation and neither is a block, so neither touches the
         // frame machinery. `OutdentColumns` shifts a column and spends no level at all, which is the

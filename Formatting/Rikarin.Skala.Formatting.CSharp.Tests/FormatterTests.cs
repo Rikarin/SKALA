@@ -1434,10 +1434,10 @@ public sealed class SubpatternBreakTests {
     [InlineData("false", "60")]
     public void TheValueLandsOnTheSubpatternsOwnColumn(string aligned, string margin) {
         var lines = FormatWith(
-            Source,
-            ("skala_align_multiline_property_pattern", aligned),
-            ("skala_max_line_length", margin)
-        )
+                Source,
+                ("skala_align_multiline_property_pattern", aligned),
+                ("skala_max_line_length", margin)
+            )
             .Split('\n');
 
         var name = Array.FindIndex(

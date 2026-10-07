@@ -108,11 +108,11 @@ public sealed class CommentedCodeAnalyzer : DiagnosticAnalyzer {
 
         return !checkEnd
             || text.ToString(
-                TextSpan.FromBounds(
-                    trivia.Span.End,
-                    text.Lines.GetLineFromPosition(trivia.Span.End).End
+                    TextSpan.FromBounds(
+                        trivia.Span.End,
+                        text.Lines.GetLineFromPosition(trivia.Span.End).End
+                    )
                 )
-            )
                 .All(char.IsWhiteSpace);
     }
 

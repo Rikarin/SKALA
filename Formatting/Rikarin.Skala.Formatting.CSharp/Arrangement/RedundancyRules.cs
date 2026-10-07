@@ -145,10 +145,10 @@ public sealed class ThisQualifierRule : ArrangementRule {
             }
 
             return SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                SyntaxFactory.ThisExpression(),
-                visited.WithoutTrivia()
-            )
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.ThisExpression(),
+                    visited.WithoutTrivia()
+                )
                 .WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
         }

@@ -2314,8 +2314,13 @@ public sealed class BreakPlan {
                     BreaksIfTooLong: true,
                     HidesFlatWidthWhenBroken: true,
                     // ⚠ A block in the chain's receiver nests from the chain's continuation line once
-                    // the chain broke after it: `(y switch { … }).ToString()` / `.Length…` (SK-DIV-0148).
-                    Continues: true
+                    // the chain broke after it: `(y switch { … }).ToString()` / `.Length…` (SK-DIV-0148),
+                    // and so does an argument list on its first line (#418, SK-DIV-0184).
+                    // ⚠ Not a fill's. A `wrap_if_long` chain resolves broken whenever it does not fit
+                    // whole, and the oracle lifts only when the fill then breaks after the block or the
+                    // list — `source.Select(x => {` … `}).Where(beta);` keeps the body one level in.
+                    // That is an output fact the group does not have when the block opens; SK-DIV-0185.
+                    Continues: !fill
                 ),
                 // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
                 // `Break`, at the first break landing before a `.` — and a group's break point never
@@ -2807,10 +2812,13 @@ public sealed class BreakPlan {
                 Owner: ChainOwnerOf(node),
                 ChainLink: true,
                 // ⚠ A block on the chain's first line nests from the operator's continuation line
-                // once the operator broke (SK-DIV-0148). Measured for `+`, `==`, `&&` and with the
-                // operator's level paid by a grouping parenthesis; a ternary's break does not lift
-                // a block in its condition and does not carry the fact.
-                Continues: true
+                // once the operator broke (SK-DIV-0148), and so does an argument list (#418,
+                // SK-DIV-0184). Measured for `+`, `==`, `&&`, `??` and with the operator's level paid
+                // by a grouping parenthesis; a ternary's break does not lift a block in its condition
+                // and does not carry the fact. ⚠ Nor does a fill's, whose group resolving broken says
+                // nothing about this operator: `source.F(x => {` … `}) ?? other` at `wrap_if_long`
+                // keeps the body one level in (SK-DIV-0185).
+                Continues: !fill
             ),
             true
         );

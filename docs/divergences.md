@@ -6508,7 +6508,8 @@ same split `LevelForBlock` makes, applied to every line, and needs its own measu
 `corpus/real/`. Recorded, not fixed.
 
 - options: none.
-- ⚠ status: **open**.
+- ⚠ status: **fixed** by SK-DIV-0184 (#418), both rows — measured over `corpus/real/` there, which
+  moved three files, all toward the oracle.
 
 ## SK-DIV-0150 — grouping parentheses and a ternary each spend a level where the oracle spends one
 
@@ -7127,3 +7128,92 @@ Not fixed here, and measured:
 - ⚠ status: **fixed**, pinned by `constructs/breaks/accessor-lists.cs`,
   `constructs/preservation/accessor-lists.cs` under all four preservation corners, and
   `AccessorListIssue416And417Tests`.
+
+## SK-DIV-0184 — a chained call's first argument list, chopped, nests from the statement instead of the chain's continuation line
+
+⚠ **Filed as issue #418, whose claim is confirmed and whose scope was too narrow** — it is SK-DIV-0149,
+recorded open beside #393, reached from the chain's side. Measured 2026-10-07 with `Testing ask` on 303
+shapes over seven probe rounds, and the oracle asked about Skala's pass-one output too (it re-lays it to
+its own answer on every shape but the oracle's own quirk noted below):
+
+| written | oracle | Skala before |
+|---|---|---|
+| `var x = source.Select(` / arguments / `)` / `.Where(beta);`, under `var x =`, `return`, an assignment, a statement, an expression body, at two indent depths | arguments **+2**, `)` **+1** with the dots | +1 / +0 |
+| the same headed by `this.source`, `this`, `new Foo()`, a dot-less `Select(`, `source?.`, a cast, `await`, `!`, `Select<int>(`; followed by `)[0]`, `).Count`, `)?.Where`; a lambda argument whose body moved down | the same | the same |
+| `Outer(first: 1, source.Select(` / arguments / `)` / `.Where(beta)` | arguments two levels past the item, `)` one, with the dots | one / zero |
+| `new Foo(` / arguments / `).Select(b)` / `.Where(beta)` — the list of a `new` heading the chain | lifted | not |
+| `var x = source.F(` / arguments / `)` / `?? fallback;`, `var y = F(` / … / `)` / `+ 1;`, `items.Any(x => {` … `}` / `)` / `&& flag` | lifted (SK-DIV-0149's rows) | not |
+| `Outer(first: 1, source.F(` / … / `)` / `?? fallback)`, `Outer(first: 1, (left ?? right).Select(` / … | **not** lifted — the operator spends nothing under a delimiter, and a parenthesised head spends nothing once the item has | identical |
+| `source.Select(Inner(` / … and `source.Select(a => Foo(` / … — a list inside the lifted one | nests from the lifted list | from the statement |
+| `found.SelectMany(static d => Enumerable.Range(0, n)` / `.Select(…)` / `)` / `.OrderByDescending(…)`, `scope.DescendantNodes(static n => n is not (A` / `or B)` / `)` / `.OfType…` | the inner `.Select` and the `or` **where they were**, the outer `)` lifted | the `)` not lifted |
+| at `continuous_indent_multiplier = 2` | the same, eight columns a level | the same, eight columns |
+
+So **SK-DIV-0148's rule holds for a list as for a block: a delimited list nests from where a
+continuation line of the innermost broken construct around it starts.** The chain or the operator broke
+after the list; its continuation line is one level past the statement (or wherever its own level
+lands); the list's lines nest one past that and the closer sits on it. Where the construct spends
+nothing — a binary under a delimiter, a parenthesised head under an owner that already spent — the
+continuation line is the list's own line and nothing moves. And the *innermost* construct decides: a
+chain or a pattern that opens and breaks inside a single-lambda list on the list's own line is the
+construct around its own lines, and continues the ordinary way. ⚠ That last row was not in the
+probes: the first version lifted it too, and Lint on Skala's own source refuted it in two files
+(`PartialMemberTests.cs`, `EscapeFreeStringLiteralAnalyzer.cs`), each then asked of the oracle.
+
+**Decision: fix.** A delimited list's scope carries `IndentFlags.Delimiter` (set by `VisitDelimited`
+for every list but a grouping parenthesis). When it opens, `LayoutWriter.LiftedLevel` asks
+`LevelForBlock` — the walk SK-DIV-0148 built — for the level the innermost broken
+`GroupFacts.Continues` construct continues at, and lifts the scope when that is deeper than the
+ordinary one: the scope becomes absolute, as a block is (`Scope.Lifted`), and its closer takes the
+lifted level. `Level`, `LevelForBlock` and `ContinuationColumn` read a lifted scope as absolute unless
+the walk is inside a broken construct entered on the list's own line after the list opened
+(`BrokenInsideOnItsLine`, a record the writer keeps as it enters such groups and restores with every
+checkpoint), which is the inner-construct row.
+
+⚠ **Not for a fill** (SK-DIV-0185). `Continues` is now withheld from a `wrap_if_long` chain and from a
+`wrap_if_long` binary operator — for blocks as well as lists, which changes #393's behaviour under
+those two keys.
+
+Measured with `Testing fidelity` against master's formatter (an archive build of `c6adf5b5`), same
+corpus: `corpus/real/` **59 642 → 59 657** / 59 841 lines and **332 → 334** / 380 files; three files
+move in `dump real`, all three closer to the oracle and none further; `pathological/` unchanged;
+`constructs/` unchanged but for the new file, which is exact. Lint moved thirty-three files of Skala's
+own source; asked of the oracle with the export, master's formatter was 298 lines from its answer over
+them and this one is 116, with no file further away.
+
+Seen and not this entry's, all on master too: `if (source.Select(` / … / `.Any(b))` and
+`Use(x => source.Select(` … put the chain's dots a level past the oracle's, and the lifted list follows
+the dots; `)!` / `.Where` breaks after a `!` where the oracle keeps `)!.Where`;
+`source.Select(…).Where(beta).Count` plans no chain at all; `new Foo(a, b).Select(c)` / `.Where` that
+fits after a break before `.Select` is chopped instead; the oracle's own `var x = source` / `.Select(`
+for a three-link chain at a member's first indent, which it does not keep when asked again.
+
+- options: none behind the divergence; measured at `skala_continuous_indent_multiplier = 2` too.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/chain-first-call-arguments.cs` and
+  `ChainFirstCallArgumentsIssue418Tests`.
+
+## SK-DIV-0185 — under a fill, a block or a list on the construct's first line lifts only if the fill breaks after it
+
+⚠ **Found measuring #418** at `skala_wrap_chained_method_calls = wrap_if_long` and
+`skala_wrap_chained_binary_expressions = wrap_if_long`, 51 shapes:
+
+| written | oracle | Skala before #418 | Skala now |
+|---|---|---|---|
+| `source.Select(` / arguments / `).Where(beta);` — the fill keeps the chain whole after the list | not lifted | not lifted | not lifted |
+| `source.Select(x => {` … `}).Where(beta);`, `source.F(x => {` … `}) ?? other` — whole after the block | body **not** lifted | lifted | not lifted |
+| `source.Select(` / … / `).Where(c)` / `.ToList(d)`, `source.Select(x => {` … `}).Where(c)` / `.ToList(d)` — the fill breaks after | lifted, `)` on the continuation | not / lifted | not lifted |
+| `source.Select(` / … / `)` / `.Where(beta)` — the author's break, which the fill pins | lifted | not | not |
+
+The oracle's rule is the same as under `chop_if_long`: lift when the construct broke after the list or
+block. Under a fill the group resolving broken says only that the construct does not fit whole, and
+whether it breaks after the list is decided point by point once the list is written — and a pinned
+author's break is a required break no group owns, so a writer-side lookahead in the manner of
+`HeldLevel.WhileChainWhole` would see the fill's break on pass one and miss the pinned one on pass two.
+A first version that lifted whenever the group held no fill point did exactly that and was not
+idempotent (`Outer(first: 1, source.Select(` … under `wrap_if_long`). So a fill carries no
+`GroupFacts.Continues` and lifts nothing: right whenever the fill stays whole after the list or block,
+wrong when it breaks after it, idempotent either way. Before #418 a fill lifted every block, which was
+wrong in ten of the thirteen block shapes sampled and right in three.
+
+- options: `skala_wrap_chained_method_calls`, `skala_wrap_chained_binary_expressions` at `wrap_if_long`.
+- ⚠ status: **open**, pinned in its current reading by
+  `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`.

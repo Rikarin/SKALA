@@ -236,10 +236,10 @@ public sealed class ObjectCreationRule : ArrangementRule {
             }
 
             return SyntaxFactory.ImplicitObjectCreationExpression(
-                SyntaxFactory.Token(SyntaxKind.NewKeyword),
-                visited.ArgumentList ?? SyntaxFactory.ArgumentList(),
-                visited.Initializer
-            )
+                    SyntaxFactory.Token(SyntaxKind.NewKeyword),
+                    visited.ArgumentList ?? SyntaxFactory.ArgumentList(),
+                    visited.Initializer
+                )
                 .WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
         }

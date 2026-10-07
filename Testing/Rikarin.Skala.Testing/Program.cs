@@ -382,11 +382,11 @@ switch (args[0]) {
 
         Console.WriteLine(
             ArrangeTree.Run(
-                Path.GetFullPath(args[1]),
-                treeMode,
-                treeLimit,
-                Console.Error
-            )
+                    Path.GetFullPath(args[1]),
+                    treeMode,
+                    treeLimit,
+                    Console.Error
+                )
                 .Render()
         );
 
@@ -802,9 +802,9 @@ static int Arrangement(string[] args) {
     Console.WriteLine(report.Render(10));
 
     foreach (var origin in withFixtures.GroupBy(
-                 static file => file.Set + "/" + file.RelativePath.Split('/')[0],
-                 StringComparer.Ordinal
-             )
+                     static file => file.Set + "/" + file.RelativePath.Split('/')[0],
+                     StringComparer.Ordinal
+                 )
                  .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
         var slice = ArrangementDifferential.Measure(origin.ToArray(), filter);
         Console.WriteLine(
@@ -1038,13 +1038,13 @@ static int RegenerateDocComments(
     var header = new OracleHeader(version, hash, profile.Name, OracleFixture.Today);
     var wanted = new HashSet<string>(sets, StringComparer.Ordinal);
     var files = Only(
-        [
-            .. Corpus.DocCommentBearing()
-                .UnionBy(Corpus.DocCommented(), static file => file.Path)
-                .Where(file => wanted.Contains(file.Set))
-        ],
-        only
-    )
+            [
+                .. Corpus.DocCommentBearing()
+                    .UnionBy(Corpus.DocCommented(), static file => file.Path)
+                    .Where(file => wanted.Contains(file.Set))
+            ],
+            only
+        )
         .ToArray();
     if (files.Length == 0) {
         return 0;
