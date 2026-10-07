@@ -821,19 +821,6 @@ public sealed class Document {
 ///     SK-DIV-0148). ⚠ Not by a ternary, measured: <c>return y switch { … } is 1</c> / <c>? a</c>
 ///     keeps the arms one level past the statement, as does a property pattern in the condition.
 /// </param>
-/// <param name="BreaksIfContentSpansLines">
-///     ⚠ A group that stays flat only when everything inside it ends up on the line it opened on —
-///     read off the output, by writing the group flat on a checkpoint and rolling it back. It is a
-///     one-statement block that may share its owner's line: an accessor's, a lambda's or an anonymous
-///     method's, and a method's or an <c>if</c>'s under <c>keep_existing_*_block_arrangement</c>
-///     (issue #405). The oracle keeps <c>get { return _n; }</c> and breaks
-///     <c>get { return Math.Max(</c>↵<c>…); }</c> open — the call chopped by the author, a switch
-///     expression chopped always, a sum wrapped at the margin — and joins a block the author broke
-///     whose statement fits on one line, so neither the source nor the block's flat width answers
-///     it: a kept break inside the statement has a flat width like any other, and a broken
-///     initializer that re-joins is not a reason to break. Only the writer knows whether the content
-///     wrapped, as only it knows whether an owner did (<see cref="BreaksIfOwnerIsMultiLine" />).
-/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -850,5 +837,4 @@ public readonly record struct GroupFacts(
     int MinimumHead = 0,
     bool BreaksOnlyIfHeadOverflows = false,
     bool FlatIfOwnerBroke = false,
-    bool Continues = false,
-    bool BreaksIfContentSpansLines = false);
+    bool Continues = false);

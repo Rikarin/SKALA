@@ -6646,12 +6646,21 @@ a lambda's block answers to the *embedded* key and a local function's to the *de
 The block is a group whose points are the gaps after `{` and before `}` (`MayShareItsOwnersLine`).
 Its owner's head is a marker the group reads like an expression body's arrow does
 (`GroupFacts.BreaksIfOwnerIsMultiLine`, #372), after the attributes and not for a statement. Whether
-the statement wrapped is read off the writer: the group, entered flat, is written ahead on a
-checkpoint and broken if that spanned lines (`GroupFacts.BreaksIfContentSpansLines`,
-`LayoutWriter.FlatContentSpansLines`). ⚠ Not the flat width alone, although no measured shape needed
-more: every wrap the probes reached is a break the document already counts as certain, and the
-look-ahead is there for the one that is not, where pass one would keep the block on its line and
-pass two, reading the wrap as the author's, would break it.
+the statement wraps is the fitter's containment fact (SK-DIV-0109): a kept break, an always-chopped
+switch, a lambda block that must break or a line past the margin makes the block's flat width
+unbounded or too wide, and the group breaks.
+
+⚠ **A look-ahead was built and dropped.** It wrote the block flat on a writer checkpoint and broke
+it if that spanned lines (a `BreaksIfContentSpansLines` fact and a depth-bounded speculative `Run`),
+so that a wrap the document does not count as certain could not keep the block flat on pass one and
+open it on pass two. Disabling it reddened nothing — not the tests, not any probe — over every shape
+above and nine built to need it: `set { _n =`↵`value; }` (a kept `=`), `return _s.Trim()`↵`.Length`
+(a kept dot), `_l =`↵`[1, 2]` and `int[] x =`↵`[1, 2]` in a lambda block (the `=` before a
+collection), `return @"a`↵`b"` (a verbatim newline), `new Dictionary<int,`↵`int>()` (a fill), a
+broken ternary, a broken query, a nested lambda's broken arrow and a broken property pattern. Every
+one of them is already certain. A branch no test can redden is a branch nobody measured, so it is
+not in the tree; a future non-idempotency where a one-line block stays flat on pass one and opens
+on pass two is where it belongs.
 
 Not fixed here, and measured:
 

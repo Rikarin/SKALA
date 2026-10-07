@@ -4471,8 +4471,7 @@ public sealed class BreakPlan {
                     new GroupFacts(
                         BreaksIfTooLong: true,
                         Owner: head,
-                        BreaksIfOwnerIsMultiLine: head >= 0,
-                        BreaksIfContentSpansLines: true
+                        BreaksIfOwnerIsMultiLine: head >= 0
                     )
                 );
                 return;
@@ -4535,9 +4534,18 @@ public sealed class BreakPlan {
 
     /// <summary>
     ///     Whether a block may stay on its owner's line — and then it does exactly when everything in it
-    ///     ends up on that line (<see cref="GroupFacts.BreaksIfContentSpansLines" />).
+    ///     ends up on that line.
     /// </summary>
     /// <remarks>
+    ///     ⚠ "Ends up on that line" is the fitter's containment fact and nothing more: a statement that
+    ///     wraps by a kept break, an always-chopped switch, a lambda block of its own or the margin gives
+    ///     the block an unbounded flat width, and the group breaks. A look-ahead that wrote the block flat
+    ///     on a checkpoint and broke it if that spanned lines was built, and dropped because no probe could
+    ///     redden it: a kept <c>=</c>, a kept chain dot, <c>=</c>↵<c>[1, 2]</c>, a verbatim string's
+    ///     newline, a type-argument fill, a broken ternary, a broken query, a nested lambda arrow and a
+    ///     property pattern all answered identically without it (SK-DIV-0162). A non-idempotency here — a
+    ///     block kept flat on pass one whose statement wrapped for a reason the document does not count as
+    ///     certain — is where to put it back.
     ///     ⚠ One rule for every block, measured on accessors, lambdas, anonymous methods, methods,
     ///     local functions, <c>if</c> and <c>while</c> (issue #405, SK-DIV-0162). A block with more than
     ///     one statement never does, at every key: <c>set { _n = value; _n++; }</c> comes back four

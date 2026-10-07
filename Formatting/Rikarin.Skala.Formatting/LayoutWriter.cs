@@ -204,12 +204,8 @@ public sealed class LayoutWriter {
     ///     that is only sound because there is no second loop with its own reading of a frame: whatever
     ///     the real walk will do with the line, the speculative one did first, with the same code.
     /// </remarks>
-    /// <param name="untilDepth">
-    ///     Stop as well once the stack is back down to this many frames: a speculative walk over one
-    ///     group's content, which <see cref="FlatContentSpansLines" /> starts on top of the real frames.
-    /// </param>
-    void Run(Stack<(int Node, int Child)> stack, int untilLine, int untilDepth = 0) {
-        while (stack.Count > untilDepth && line <= untilLine) {
+    void Run(Stack<(int Node, int Child)> stack, int untilLine) {
+        while (stack.Count > 0 && line <= untilLine) {
             var (node, child) = stack.Pop();
             ref var slot = ref document.Nodes[node];
 
@@ -261,13 +257,6 @@ public sealed class LayoutWriter {
                             line,
                             atLineStart ? CurrentColumn() : CurrentLineIndent()
                         );
-
-                        if (fitter.ModeOf(slot.Arg1) == ResolvedMode.Flat
-                            && document.FactsOf(slot.Arg1).BreaksIfContentSpansLines
-                            && FlatContentSpansLines(node, stack)) {
-                            fitter.BreakEntered(slot.Arg1);
-                        }
-
                         break;
 
                     default:
@@ -1301,47 +1290,6 @@ public sealed class LayoutWriter {
         Restore(checkpoint);
 
         return Fits(column, width);
-    }
-
-    /// <summary>
-    ///     Whether the group just entered at <paramref name="node" />, written flat, ends on a later line
-    ///     than it began — written ahead, observed, and rolled back.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ <see cref="GroupFacts.BreaksIfContentSpansLines" />, a one-statement block that may share
-    ///     its owner's line (issue #405). The question is whether the statement, laid out on the
-    ///     block's line, wraps — by a kept break, an always-chopped switch, a list too long for that
-    ///     line, a lambda block of its own that broke — and every one of those is a decision the walk
-    ///     makes at the writer's own columns. So the walk makes them: the group's children are pushed
-    ///     on a copy of the frames, so that every group inside measures the same trailing text the
-    ///     real walk will, and the speculation stops at the first line it starts or when the group's
-    ///     last child is done, whichever is first. ⚠ Not the group's flat width: a kept break is not
-    ///     an unbounded one, and an initializer the author broke that re-joins must not break the
-    ///     block it is in.
-    ///     <para>
-    ///         Sound for the reason <see cref="NextLineFitsBeside" /> is: the real walk then writes the
-    ///         content flat with the same decisions, or broken, which is the only other answer. Nested
-    ///         blocks speculate in turn; each stops at its first line, so the work is bounded by the
-    ///         line times the nesting depth of such blocks on it.
-    ///     </para>
-    /// </remarks>
-    bool FlatContentSpansLines(int node, Stack<(int Node, int Child)> stack) {
-        var children = document.ChildrenOf(node);
-        if (children.Length == 0 || !document.HasBreak(node)) {
-            return false;
-        }
-
-        var checkpoint = Checkpoint();
-        var ahead = new Stack<(int Node, int Child)>(stack.Reverse());
-        var depth = ahead.Count;
-        ahead.Push((node, 1));
-        ahead.Push((children[0], 0));
-        var started = line;
-        Run(ahead, started, depth);
-        var spans = line != started;
-        Restore(checkpoint);
-
-        return spans;
     }
 
     /// <summary>The width of the output line beginning at <paramref name="start" />, less its indentation.</summary>

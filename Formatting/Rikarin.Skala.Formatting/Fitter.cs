@@ -144,17 +144,6 @@ public sealed class Fitter {
         return mode;
     }
 
-    /// <summary>
-    ///     Breaks a group the walk has just entered flat, because writing it flat spanned lines: see
-    ///     <see cref="GroupFacts.BreaksIfContentSpansLines" />.
-    /// </summary>
-    /// <remarks>
-    ///     Flat to Broken only, and before anything inside the group is written, so no decision read
-    ///     the flat answer. The group was journalled on entry when a mark is open, and a rollback
-    ///     forgets this as it forgets the entry.
-    /// </remarks>
-    public void BreakEntered(int group) => modes[group] = ResolvedMode.Broken;
-
     /// <summary>A point to roll the fitter back to: see <see cref="MarkForRollback" />.</summary>
     public readonly record struct Mark(int Journal, int OwnerUnresolved);
 
