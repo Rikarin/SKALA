@@ -415,3 +415,4 @@ SK9032 documentation-diagnostics-off
 SK7102 returns-documented-on-void-member
 SK7103 inheritdoc-with-nothing-to-inherit
 SK1131 anonymous-method-with-parameter-list
+SK1132 tuple-element-by-position

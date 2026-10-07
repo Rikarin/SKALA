@@ -7,6 +7,7 @@ using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
+using System.Threading;
 
 namespace Rikarin.Skala.Rules.Modernization;
 
@@ -65,11 +66,69 @@ public sealed class TupleDeconstructionAnalyzer : DiagnosticAnalyzer {
 
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var first = (LocalDeclarationStatementSyntax)context.Node;
+        if (Find(first, context.SemanticModel, context.CancellationToken) is not { } run) {
+            return;
+        }
 
+        context.ReportDiagnostic(
+            Diagnostic.Create(
+                Descriptor,
+                run.Location,
+                FixEdits.Pack(run.Edits),
+                "The tuple is read element by element: `" + RewriteGuards.Trim(run.Replacement) + "`"
+            )
+        );
+    }
+
+    /// <summary>
+    ///     Whether <paramref name="access" /> is one of the element reads in a run this rule reports.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>SK1132</c> asks this, because the two rules meet on exactly one shape: a complete run over
+    ///     a tuple whose elements have names. Both would fire and their fixes overlap — <c>SK1132</c>
+    ///     renames <c>Item1</c> inside the very line this rule replaces — and whichever <c>skala fix</c>
+    ///     applied first decides the outcome: renaming first turns every read into <c>t.Low</c>, which
+    ///     this rule no longer recognises, and the deconstruction is lost. The deconstruction is the
+    ///     larger improvement and removes the reads altogether, so the run belongs here.
+    /// </remarks>
+    internal static bool IsReportedRead(
+        MemberAccessExpressionSyntax access,
+        SemanticModel model,
+        CancellationToken cancellation
+    ) {
+        if (access.Parent is not EqualsValueClauseSyntax {
+                Parent:
+                VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax { Parent: LocalDeclarationStatementSyntax statement }
+                }
+            }
+            || Reads(statement) is not { } read
+            || Siblings(statement) is not { } siblings) {
+            return false;
+        }
+
+        var at = -1;
+        for (var i = 0; i < siblings.Count; i++) {
+            if (siblings[i] == statement) {
+                at = i;
+                break;
+            }
+        }
+
+        return at - read.Index >= 0
+            && siblings[at - read.Index] is LocalDeclarationStatementSyntax first
+            && Find(first, model, cancellation) is not null;
+    }
+
+    static (Location Location, (TextSpan Span, string Text)[] Edits, string Replacement)? Find(
+        LocalDeclarationStatementSyntax first,
+        SemanticModel model,
+        CancellationToken cancellation
+    ) {
         // ⚠ Reported at the *first* element read only. A three-element run reported three times
         // would carry three fixes that each delete the lines the others rewrite.
         if (Reads(first) is not { Index: 0 } opening || Siblings(first) is not { } siblings) {
-            return;
+            return null;
         }
 
         var start = -1;
@@ -80,26 +139,23 @@ public sealed class TupleDeconstructionAnalyzer : DiagnosticAnalyzer {
             }
         }
 
-        var model = context.SemanticModel;
-        var cancellation = context.CancellationToken;
-
         // ⚠ The receiver has to be a local or a parameter. That is what makes N reads and one read
         // the same program; every other receiver kind is a member access whose evaluation count the
         // rewrite would change.
         var receiver = model.GetSymbolInfo(opening.Receiver, cancellation).Symbol;
         if (receiver is not (ILocalSymbol or IParameterSymbol)) {
-            return;
+            return null;
         }
 
         if (model.GetTypeInfo(opening.Receiver, cancellation).Type is not INamedTypeSymbol {
                 IsTupleType: true
             } tuple) {
-            return;
+            return null;
         }
 
         var arity = tuple.TupleElements.Length;
         if (start < 0 || arity < 2 || start + arity > siblings.Count) {
-            return;
+            return null;
         }
 
         var names = new List<string>(arity);
@@ -113,7 +169,7 @@ public sealed class TupleDeconstructionAnalyzer : DiagnosticAnalyzer {
                     model.GetSymbolInfo(read.Receiver, cancellation).Symbol,
                     receiver
                 )) {
-                return;
+                return null;
             }
 
             names.Add(read.Name);
@@ -124,7 +180,7 @@ public sealed class TupleDeconstructionAnalyzer : DiagnosticAnalyzer {
                 first.SyntaxTree,
                 TextSpan.FromBounds(first.SpanStart, last.FullSpan.End)
             )) {
-            return;
+            return null;
         }
 
         var replacement = new StringBuilder("var (");
@@ -143,13 +199,10 @@ public sealed class TupleDeconstructionAnalyzer : DiagnosticAnalyzer {
             edits.Add((RewriteGuards.LineSpanOf(siblings[start + i]), string.Empty));
         }
 
-        context.ReportDiagnostic(
-            Diagnostic.Create(
-                Descriptor,
-                Location.Create(first.SyntaxTree, TextSpan.FromBounds(first.SpanStart, last.Span.End)),
-                FixEdits.Pack(edits.ToArray()),
-                "The tuple is read element by element: `" + RewriteGuards.Trim(replacement.ToString()) + "`"
-            )
+        return (
+            Location.Create(first.SyntaxTree, TextSpan.FromBounds(first.SpanStart, last.Span.End)),
+            edits.ToArray(),
+            replacement.ToString()
         );
     }
 

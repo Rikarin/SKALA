@@ -191,6 +191,7 @@ public static class SkalaAnalyzers {
         new SqlFragmentsRunTogetherAnalyzer(), new CommandParameterNotSuppliedAnalyzer(),
         new AssemblyLoadedOutsideItsContextAnalyzer(), new MistakenTypeArgumentAnalyzer(),
         new RedundantNullableCreationAnalyzer(), new DiscardedOutParameterAnalyzer(),
-        new AnonymousMethodWithParameterListAnalyzer()
+        new AnonymousMethodWithParameterListAnalyzer(),
+        new TupleElementByPositionAnalyzer()
     ];
 }

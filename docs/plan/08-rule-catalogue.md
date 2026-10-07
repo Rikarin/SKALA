@@ -3526,8 +3526,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **366** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **330** | **90.9 %** |
+| Rules this document names | **367** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **331** | **90.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, then withdrawn or never built | **3** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
@@ -9494,3 +9494,73 @@ for the coordinator, recorded here rather than assumed either way.
 Every guard was sabotaged alone and each turned at least one fixture or unit test red, including the
 tuple transparency, which needed a positive (`a-tuple-element.cs`) before it could: removing it made
 the rule decline rather than fire, which every negative accepts.
+## `SK1132` — a named tuple element reached by its position
+
+[#386](https://github.com/Rikarin/SKALA/issues/386). One rule, built as proposed, with two of the
+proposal's claims corrected by measurement.
+
+| ID | Rule | Scope | Fix |
+|---|---|---|---|
+| `SK1132` | `tuple-element-by-position` — `t.Item1` where the element has a name | Semantic | rename one token, safe |
+
+`suggestion`, `languageVersion: 7.0`, 14 positive / 15 negative fixtures. The fix replaces the `ItemN`
+identifier with the element's name, read off **the containing type of the field `ItemN` binds to** —
+the receiver's own type at that site, so `(int X, int Y) b = a;` reads `b.X` even though `a` calls the
+same slot `A`.
+
+### Decisions, each with the measurement behind it
+
+- ⚠ **Inferred names count, because the symbol API cannot tell them apart.** `var t = (low, high);`
+  gives `t` the type `(int low, int high)`, and `IsExplicitlyNamedTupleElement` answers `true` for
+  `low` on that type — probed, not assumed. `t.low` binds, so the rule treats it as any other name.
+  The corpus could not weigh in: it holds no positional element access at all (below).
+- ⚠ **`Item8` and beyond are safe and get the right name.** `t.Item8` on a nine-element tuple binds
+  to a field of the nine-element type itself, whose `TupleElements` list is flat; the eighth element's
+  `CorrespondingTupleField` is that `Item8`. `t.Rest.Item1` has an unnamed `ValueTuple<int, int>`
+  receiver and is silent. Both are fixtures.
+- **Writes are reported**, which is why the concept is not "read": `t.Item1 = 5`, `t.Item1++`,
+  `+=`, `ref t.Item1` and `out t.Item1` name one field, and the fix round-trips on all of them.
+- ⚠ **The proposal's "disjoint from `SK1070` by construction" is refuted.** `SK1070`'s own positive
+  fixture `three-elements-with-names` is a complete run over `(int Low, int High, int Step)`, and both
+  rules fired on it. Their fixes overlap — this rule renames inside the lines `SK1070` replaces — and
+  applying the rename first turns every read into `bounds.Low`, which `SK1070` no longer recognises,
+  losing the deconstruction. **`SK1070` owns the run**: `TupleDeconstructionAnalyzer.IsReportedRead`
+  asks `SK1070`'s own decision, and a read inside a reported run is declined here. Consequence, stated:
+  with `SK1070` switched off, such a run is reported by neither rule. A single read — `SK1070`'s
+  `only-one-element-is-read` shape — is this rule's positive.
+- `nameof(t.Item1)` is declined (the value is the string `"Item1"`); a `cref` contains no member
+  access and is never reached. Both are fixtures, and the `nameof` decline has a sabotage.
+- A reserved-keyword name (`@class`) is written with its `@`; without it the fix does not parse.
+- **Not reached:** a property pattern `{ Item1: 1 }` and a `with` initializer `{ Item1 = 1 }` name
+  the member with no receiver expression. A negative fixture records that they stay silent.
+
+### Sabotage
+
+Eight guards, each replaced with a constant: the name comparison (6 negatives red), `nameof` (1),
+`SK1070` ownership (1), the `@` spelling (2 — the round trip, and the positive itself, because an unescaped `style.class` no longer binds back speculatively and the rule declines), `IsTupleType` (red only as an
+`AD0001`: `TupleElements` is a default array on a non-tuple and the lookalike-struct fixture throws).
+⚠ **A "the field is its own `CorrespondingTupleField`" check turned nothing red and was deleted** —
+a tuple field spelled `ItemN` is always the positional field (CS8125). ⚠ **The two rebinding proofs —
+member lookup and speculative binding of the renamed access — also turned nothing red**, even on a
+`(int GetType, …)` element, which CS8126 does not forbid and whose field hides `object.GetType`. They
+are kept as the stated proof behind `fixIsSafe: true`, in the same way `SK2290` keeps its
+explicit-interface gate, and they say so rather than claiming to be load-bearing.
+
+### False positives: zero, and the true-positive count is also zero
+
+⚠ **The reference trees contain no positional tuple-element access at all.** A grep for
+`\.Item[1-9]` over the 380 non-`.expected` files of `Testing/corpus/real` finds one hit, in a Vixen
+doc comment; Skala's own source has none outside this rule's comments. So the binlog sweeps are
+classified as *shape absent*, not as declines:
+
+- Corpus: one synthetic `net10.0` project per tree (`ImplicitUsings` on, `*.expected.cs` excluded),
+  `dotnet build -bl`, `skala check --load=binlog --rules SK1132`. **0** in serilog, newtonsoft and
+  vixen. An anti-vacuity probe compiled into the serilog project fired on both of its positives and
+  not on its unnamed-tuple negative.
+- Self-tree: Release build of `Skala.slnx` with `--no-incremental`, `--require-fresh-binlog`
+  (`SK9021`: 728 of 731 files, 100 %): **0**. A planted file in `Rikarin.Skala.Core`, rebuilt and
+  checked through the same `AnalyzerHost` path, fired on its one positive and not on its negative.
+
+The proposal's frequency claim was marked inferred, and this measurement neither confirms nor refutes
+it: the human-written trees never use the shape, which is consistent with it being a model habit and
+is no evidence that it is one.
