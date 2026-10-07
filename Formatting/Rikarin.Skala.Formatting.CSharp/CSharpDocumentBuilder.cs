@@ -3187,6 +3187,13 @@ public sealed partial class CSharpDocumentBuilder {
             return true;
         }
 
+        // ⚠ A kept break before a subpattern's or a named argument's colon puts the colon on its name's
+        // own column, with no level of its own: `X` / `: 1` in a property pattern, `a` / `: 1` in a
+        // chopped argument list (#436).
+        if (token.IsKind(SyntaxKind.ColonToken) && token.Parent is BaseExpressionColonSyntax) {
+            return true;
+        }
+
         SyntaxNode? child = null;
         for (var node = token.Parent; node is not null; node = node.Parent) {
             if (node.GetFirstToken() != token) {
@@ -3379,17 +3386,29 @@ public sealed partial class CSharpDocumentBuilder {
         // is a one-bit question — did the author write any horizontal space — and the answer is
         // still Required or Forbidden by the time the document is built. Keeping the third state
         // alive all the way to the writer would mean carrying the source into it for one construct.
-        // ⚠ A gap being joined has no author's bit: what the author wrote there was a line ending, and
-        // neither the next line's indentation nor a trailing space before the ending is a space between
-        // the two tokens. Reading them made `{ X` / `    : 1 }` come back `X : 1` and the same input
-        // unindented `X: 1`, which the fuzzer's whitespace-absorption property found on #419's
-        // subpattern colon (seed 7764980540680690061). Joined, the gap takes no space.
+        // ⚠ A gap being joined reads its bit from the indentation of the line it ends on, and from
+        // nothing before the last line break (#436). Measured at `keep_user_linebreaks = false`, where
+        // the oracle joins all of them: `X` / `: 1` gives `X: 1` and `X` / `    : 1` gives `X : 1`, and a
+        // trailing space before the line ending counts for nothing (`X  ` / `: 1` gives `X: 1`); the
+        // range operator, the positional pattern's `(` and a label's colon answer the same way. #419's
+        // follow-up closed every joined gap, which the fuzzer had asked for on seed
+        // 7764980540680690061 only because Skala joined a break the oracle keeps; with that break kept
+        // at the defaults, the indentation no longer reaches the output there.
         return kind == SpaceKind.Preserve
-            ? HasSpace(previous.Span.End, nextToken.SpanStart)
-            && !HasLineBreak(previous.Span.End, nextToken.SpanStart)
+            ? HasSpace(AfterTheLastLineBreak(previous.Span.End, nextToken.SpanStart), nextToken.SpanStart)
                 ? SpaceKind.Required
                 : SpaceKind.Forbidden
             : kind;
+    }
+
+    int AfterTheLastLineBreak(int start, int end) {
+        for (var i = Math.Min(end, source.Length) - 1; i >= start; i--) {
+            if (source[i] is '\n' or '\r') {
+                return i + 1;
+            }
+        }
+
+        return start;
     }
 
     bool HasSpace(int start, int end) {
