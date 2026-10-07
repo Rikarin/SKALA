@@ -88,7 +88,7 @@ public sealed class NotImplementedMemberAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (HasIssueReference(creation)) {
+        if (HasIssueReference(creation) || ReferencedOnTheOtherHalf(context, creation)) {
             return;
         }
 
@@ -118,6 +118,29 @@ public sealed class NotImplementedMemberAnalyzer : DiagnosticAnalyzer {
 
         return creation.FirstAncestorOrSelf<MemberDeclarationSyntax>() is { } member
             && (Mentions(member.GetLeadingTrivia()) || Mentions(member.GetTrailingTrivia()));
+    }
+
+    /// <summary>
+    ///     ⚠ A partial member's note is conventionally written above its definition, and the throw is in
+    ///     the implementation (#397). Read through the symbol, because this rule is <c>Semantic</c> and the
+    ///     definition may be in another file.
+    /// </summary>
+    static bool ReferencedOnTheOtherHalf(SyntaxNodeAnalysisContext context, ObjectCreationExpressionSyntax creation) {
+        if (creation.FirstAncestorOrSelf<MemberDeclarationSyntax>() is not { } member
+            || !PartialMembers.IsPartialMember(member)
+            || PartialMembers.OtherPart(context.SemanticModel.GetDeclaredSymbol(member, context.CancellationToken))
+            is not { } other) {
+            return false;
+        }
+
+        foreach (var reference in other.DeclaringSyntaxReferences) {
+            var declaration = reference.GetSyntax(context.CancellationToken);
+            if (Mentions(declaration.GetLeadingTrivia()) || Mentions(declaration.GetTrailingTrivia())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     static bool Mentions(SyntaxTriviaList trivia) {

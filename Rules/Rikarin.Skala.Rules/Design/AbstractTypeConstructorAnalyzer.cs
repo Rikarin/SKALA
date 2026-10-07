@@ -55,10 +55,43 @@ public sealed class AbstractTypeConstructorAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        if (PublicKeyword(constructor) is not { } keyword) {
+            return;
+        }
+
+        // ⚠ A partial constructor's two halves must state the same accessibility (CS8799), so the fix
+        // edits both or neither (#397). The implementation reports, because no syntax-node action ever
+        // visits the definition; and a definition outside this type declaration is declined rather than
+        // edited by half.
+        var edits = new[] { (keyword.Span, "protected") };
+        if (PartialMembers.IsPartialMember(constructor)) {
+            if (!PartialMembers.IsImplementation(constructor)
+                || PartialMembers.Sibling(constructor) is not ConstructorDeclarationSyntax definition
+                || PublicKeyword(definition) is not { } definitionKeyword) {
+                return;
+            }
+
+            edits = [(keyword.Span, "protected"), (definitionKeyword.Span, "protected")];
+        }
+
+        context.ReportDiagnostic(
+            Diagnostic.Create(
+                Descriptor,
+                keyword.GetLocation(),
+                FixEdits.Pack(edits),
+                "`"
+                + declaration.Identifier.ValueText
+                + "` is abstract, so only a derived constructor can call this; make it `protected`"
+            )
+        );
+    }
+
+    /// <summary>The constructor's <c>public</c>, when it is the whole of its accessibility and the fix may replace it.</summary>
+    static SyntaxToken? PublicKeyword(ConstructorDeclarationSyntax constructor) {
         // ⚠ Exactly `public`, and nothing beside it. `protected internal` and `private protected`
         // are each a deliberate statement about a different audience, and `internal` on an abstract
         // type's constructor is the documented way to close a hierarchy to one assembly.
-        var keyword = default(SyntaxToken);
+        SyntaxToken? keyword = null;
         foreach (var modifier in constructor.Modifiers) {
             switch ((SyntaxKind)modifier.RawKind) {
                 case SyntaxKind.PublicKeyword:
@@ -68,31 +101,14 @@ public sealed class AbstractTypeConstructorAnalyzer : DiagnosticAnalyzer {
                 case SyntaxKind.ProtectedKeyword:
                 case SyntaxKind.InternalKeyword:
                 case SyntaxKind.PrivateKeyword:
-                    return;
+                    return null;
             }
-        }
-
-        if (keyword.RawKind != (int)SyntaxKind.PublicKeyword) {
-            return;
         }
 
         // ⚠ The fix replaces one token. If a preprocessor directive lives in its trivia, the token
         // the fix names may not be the token every branch compiles, which is the same reason
         // FileScopedNamespaceAnalyzer refuses a namespace that contains directives.
-        if (keyword.ContainsDirectives) {
-            return;
-        }
-
-        context.ReportDiagnostic(
-            Diagnostic.Create(
-                Descriptor,
-                keyword.GetLocation(),
-                FixEdits.Pack((keyword.Span, "protected")),
-                "`"
-                + declaration.Identifier.ValueText
-                + "` is abstract, so only a derived constructor can call this; make it `protected`"
-            )
-        );
+        return keyword is { ContainsDirectives: false } ? keyword : null;
     }
 
     static bool HasModifier(SyntaxTokenList modifiers, SyntaxKind kind) {

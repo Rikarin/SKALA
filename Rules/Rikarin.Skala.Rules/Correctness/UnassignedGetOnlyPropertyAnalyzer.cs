@@ -167,9 +167,18 @@ public sealed class UnassignedGetOnlyPropertyAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ A partial property's defining declaration is `{ get; }` too, and the value lives in the
+        // implementation this shape never reads (#397). With no implementation the definition is
+        // CS9248, so there is no case left for the rule to report: the definition is declined outright.
+        // Measured on the `field` implementation, `get => field;`, which is the one where "never
+        // assigned" can still be true: a constructor may assign it exactly as it assigns an
+        // auto-property, and when nothing does it is as permanently `default` as the non-partial
+        // `{ get => field; }` — which this rule has never read either, because that accessor has a body.
+        // Reporting the partial spelling alone would make the finding depend on how the member is split.
         if (context.SemanticModel.GetDeclaredSymbol(property, context.CancellationToken) is not IPropertySymbol symbol
             || symbol.IsAbstract
             || symbol.IsExtern
+            || symbol.IsPartialDefinition
             || symbol.ContainingType is null) {
             return;
         }
