@@ -77,7 +77,8 @@ public sealed class OrphanInheritdocAnalyzer : DiagnosticAnalyzer {
         // and leaves the question unchanged.
         if (elements.Count == 0
             || elements.Any(static element => DocumentationElements.AttributesOf(element)
-                .Any(static attribute => attribute.Name.LocalName.ValueText == "cref"))) {
+                    .Any(static attribute => attribute.Name.LocalName.ValueText == "cref")
+            )) {
             return;
         }
 
@@ -253,7 +254,8 @@ public sealed class OrphanInheritdocAnalyzer : DiagnosticAnalyzer {
                 return BaseConstructorWithSameParameters(constructor);
         }
 
-        if (symbol is not (IMethodSymbol or IPropertySymbol or IEventSymbol) || symbol.ContainingType is not { } container) {
+        if (symbol is not (IMethodSymbol or IPropertySymbol or IEventSymbol)
+            || symbol.ContainingType is not { } container) {
             return false;
         }
 
@@ -261,7 +263,10 @@ public sealed class OrphanInheritdocAnalyzer : DiagnosticAnalyzer {
             foreach (var member in implemented.GetMembers()) {
                 if (container.FindImplementationForInterfaceMember(member) is { } implementation
                     && (SymbolEqualityComparer.Default.Equals(implementation, symbol)
-                        || SymbolEqualityComparer.Default.Equals(implementation.OriginalDefinition, symbol.OriginalDefinition))) {
+                        || SymbolEqualityComparer.Default.Equals(
+                            implementation.OriginalDefinition,
+                            symbol.OriginalDefinition
+                        ))) {
                     return true;
                 }
             }
@@ -283,7 +288,8 @@ public sealed class OrphanInheritdocAnalyzer : DiagnosticAnalyzer {
             if (candidate.Parameters.Length == constructor.Parameters.Length
                 && candidate.Parameters.Zip(constructor.Parameters, static (a, b) => (a, b))
                     .All(static pair => pair.a.RefKind == pair.b.RefKind
-                        && SymbolEqualityComparer.Default.Equals(pair.a.Type, pair.b.Type))) {
+                        && SymbolEqualityComparer.Default.Equals(pair.a.Type, pair.b.Type)
+                    )) {
                 return true;
             }
         }
@@ -312,8 +318,10 @@ public sealed class OrphanInheritdocAnalyzer : DiagnosticAnalyzer {
     /// </summary>
     static bool HasUnboundSignature(ISymbol symbol) {
         var types = symbol switch {
-            IMethodSymbol method => method.Parameters.Select(static parameter => parameter.Type).Append(method.ReturnType),
-            IPropertySymbol property => property.Parameters.Select(static parameter => parameter.Type).Append(property.Type),
+            IMethodSymbol method => method.Parameters.Select(static parameter => parameter.Type)
+                .Append(method.ReturnType),
+            IPropertySymbol property => property.Parameters.Select(static parameter => parameter.Type)
+                .Append(property.Type),
             IEventSymbol declaredEvent => new[] { declaredEvent.Type },
             _ => Enumerable.Empty<ITypeSymbol>()
         };

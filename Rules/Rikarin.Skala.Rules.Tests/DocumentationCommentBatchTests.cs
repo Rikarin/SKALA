@@ -27,12 +27,12 @@ public sealed class DocumentationCommentBatchTests {
     [Fact]
     public void TheReturnsFix_TakesTheWholeLine() {
         const string Source = """
-            public sealed class Store {
-                /// <summary>Clears the store.</summary>
-                /// <returns>Nothing.</returns>
-                public void Clear() { }
-            }
-            """;
+                              public sealed class Store {
+                                  /// <summary>Clears the store.</summary>
+                                  /// <returns>Nothing.</returns>
+                                  public void Clear() { }
+                              }
+                              """;
 
         Assert.Equal(
             """
@@ -48,15 +48,15 @@ public sealed class DocumentationCommentBatchTests {
     [Fact]
     public void TheReturnsFix_TakesEveryLineOfAMultiLineElement() {
         const string Source = """
-            public sealed class Store {
-                /// <summary>Clears the store.</summary>
-                /// <returns>
-                ///     The number of entries removed.
-                /// </returns>
-                /// <remarks>Kept.</remarks>
-                public void Clear() { }
-            }
-            """;
+                              public sealed class Store {
+                                  /// <summary>Clears the store.</summary>
+                                  /// <returns>
+                                  ///     The number of entries removed.
+                                  /// </returns>
+                                  /// <remarks>Kept.</remarks>
+                                  public void Clear() { }
+                              }
+                              """;
 
         Assert.Equal(
             """
@@ -73,11 +73,11 @@ public sealed class DocumentationCommentBatchTests {
     [Fact]
     public void TheReturnsFix_LeavesASentenceSharingTheLine() {
         const string Source = """
-            public sealed class Store {
-                /// <summary>Clears the store.</summary> <returns>Nothing.</returns>
-                public void Clear() { }
-            }
-            """;
+                              public sealed class Store {
+                                  /// <summary>Clears the store.</summary> <returns>Nothing.</returns>
+                                  public void Clear() { }
+                              }
+                              """;
 
         // The space before the deleted element stays; that is the formatter's job, not the fix's.
         var lines = Apply(Source, RuleIds.ReturnsDocumentedOnVoidMember).Split('\n');
@@ -89,12 +89,12 @@ public sealed class DocumentationCommentBatchTests {
     [Fact]
     public void TheReturnsFix_TakesTheFirstLineOfTheComment() {
         const string Source = """
-            public sealed class Store {
-                /// <returns>Nothing.</returns>
-                /// <summary>Clears the store.</summary>
-                public void Clear() { }
-            }
-            """;
+                              public sealed class Store {
+                                  /// <returns>Nothing.</returns>
+                                  /// <summary>Clears the store.</summary>
+                                  public void Clear() { }
+                              }
+                              """;
 
         Assert.Equal(
             """
@@ -116,12 +116,12 @@ public sealed class DocumentationCommentBatchTests {
     [Fact]
     public void WithoutDocumentationParsing_TheRuleIsSilent() {
         const string Source = """
-            public sealed class Store {
-                /// <summary>Clears the store.</summary>
-                /// <returns>Nothing.</returns>
-                public void Clear() { }
-            }
-            """;
+                              public sealed class Store {
+                                  /// <summary>Clears the store.</summary>
+                                  /// <returns>Nothing.</returns>
+                                  public void Clear() { }
+                              }
+                              """;
 
         Assert.Single(Run(Source, DocumentationMode.Parse), static d => d.Id == RuleIds.ReturnsDocumentedOnVoidMember);
         Assert.DoesNotContain(
@@ -133,12 +133,12 @@ public sealed class DocumentationCommentBatchTests {
     [Fact]
     public void WithoutDocumentationParsing_TheInheritdocRuleIsSilent() {
         const string Source = """
-            /// <summary>A cache.</summary>
-            public sealed class Cache {
-                /// <inheritdoc />
-                public void Orphan() { }
-            }
-            """;
+                              /// <summary>A cache.</summary>
+                              public sealed class Cache {
+                                  /// <inheritdoc />
+                                  public void Orphan() { }
+                              }
+                              """;
 
         Assert.Single(Run(Source, DocumentationMode.Parse), static d => d.Id == RuleIds.InheritdocWithNothingToInherit);
         Assert.DoesNotContain(
@@ -183,15 +183,15 @@ public sealed class DocumentationCommentBatchTests {
     [Fact]
     public void TheInheritdocFix_RestoresThePartialDefinitionsProse() {
         const string Source = """
-            /// <summary>A loader.</summary>
-            public sealed partial class Loader {
-                /// <summary>Loads everything.</summary>
-                public partial void Load();
+                              /// <summary>A loader.</summary>
+                              public sealed partial class Loader {
+                                  /// <summary>Loads everything.</summary>
+                                  public partial void Load();
 
-                /// <inheritdoc />
-                public partial void Load() { }
-            }
-            """;
+                                  /// <inheritdoc />
+                                  public partial void Load() { }
+                              }
+                              """;
 
         Assert.Equal(
             """
@@ -228,10 +228,10 @@ public sealed class DocumentationCommentBatchTests {
     static string Apply(string source, string id) {
         var diagnostic = Assert.Single(
             RuleFixtures.Analyze(
-                    RuleFixtures.Compile(source, "probe.cs"),
-                    Analyzers,
-                    TestContext.Current.CancellationToken
-                )
+                RuleFixtures.Compile(source, "probe.cs"),
+                Analyzers,
+                TestContext.Current.CancellationToken
+            )
                 .Where(d => d.Id == id)
         );
 
