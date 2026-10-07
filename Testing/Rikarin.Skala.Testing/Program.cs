@@ -35,6 +35,10 @@ using System.Globalization;
 //                     the kinds it contains *never* are visible. A construct absent from the corpus
 //                     has no fidelity number, no fixture and no divergence entry, and once `jb` is
 //                     uninstalled no authoritative fixture for it can be authored. Needs no oracle.
+//   captured          #432's measurement: the arguments the formatter keeps verbatim because a
+//                     `[CallerArgumentExpression]` parameter may capture them, found from syntax,
+//                     against the ones the compiler captures, and how many of each the oracle
+//                     rewrites. Needs no oracle; reads the committed fixtures.
 //   ask <dir>         run the oracle over a scratch directory, in place. The tool the milestone-3
 //                     wrapping rules were established with: an option name does not say what
 //                     happens to a 121-column array initializer, and asking does.
@@ -175,6 +179,11 @@ switch (args[0]) {
         return Probe();
     case "ask":
         return Ask(args[1], args[2..]);
+    case "captured":
+        // #432: the formatter's syntactic captured-argument answer against the compiler's, over
+        // `corpus/real/`, with the spans the oracle rewrites counted beside each. SK-DIV-0187's numbers.
+        Console.Write(CapturedArgumentSurvey.Run());
+        return 0;
     case "defaults":
         return Defaults(args.Length > 1 ? args[1] : null);
     case "audit": {
