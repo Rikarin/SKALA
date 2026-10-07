@@ -164,6 +164,22 @@ public class CommentBeforeABreakPoint : IAlphaInterfaceNameValue, /* f */
             ]) { }
     }
 
+    void AnAuthorsBreakAfterACommentBeforeTheCloser() {
+        M(
+            1,
+            2 /* e */
+        );
+        M(1, 2);
+        var o = new D(
+            1,
+            2 /* e */
+        );
+        var a = x[1,
+            2 /* e */
+        ];
+        var e = new[] { 1, 2 /* e */ };
+    }
+
     void ListsThatFitOrFill() {
         var a = new D(name175: nameof(value), /* f */ name176: 1);
         Compute(alphaArgumentValue, /* f */ betaArgumentValue);

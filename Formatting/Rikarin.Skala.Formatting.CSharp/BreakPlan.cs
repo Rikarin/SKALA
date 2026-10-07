@@ -1296,6 +1296,14 @@ public sealed class BreakPlan {
             Flat(close);
         }
 
+        // ⚠ An author's break between a comment and the closer is an item break, whatever the
+        // construct's keep_existing_* key says about its delimiters (#421). The oracle joins
+        // `M(1, 2` / `);` and chops `M(1, 2 /* e */` / `);` — it keeps the line a comment ends, as it
+        // does after `// e`. Before #409 the gap was unplanned and its kept break forced the chop;
+        // since #409 the point before `)` is planned past the comment (PointSurvivesComments), so the
+        // break has to be read here or the group stays flat and joins it.
+        interBroken |= BreaksAfterACommentBefore(source, close);
+
         // ⚠ Two keys, two kinds of gap, and the second is gated by the first. Measured against the
         // oracle in all four corners of docs/plan/05's table (constructs/preservation/*):
         //   keep_user_linebreaks | keep_existing_X | delimiters | between items
@@ -3877,6 +3885,25 @@ public sealed class BreakPlan {
         }
 
         return false;
+    }
+
+    /// <summary>
+    ///     Whether the author broke the line straight after a comment that stands in front of this
+    ///     token: <c>2 /* e */</c> / <c>)</c>.
+    /// </summary>
+    internal static bool BreaksAfterACommentBefore(string source, SyntaxToken token) {
+        var previous = token.GetPreviousToken();
+        if (token.IsKind(SyntaxKind.None) || previous.IsKind(SyntaxKind.None)) {
+            return false;
+        }
+
+        var i = token.SpanStart - 1;
+        var broke = false;
+        for (; i >= previous.Span.End && i < source.Length && char.IsWhiteSpace(source[i]); i--) {
+            broke |= source[i] == '\n';
+        }
+
+        return broke && i >= previous.Span.End;
     }
 
     /// <summary>

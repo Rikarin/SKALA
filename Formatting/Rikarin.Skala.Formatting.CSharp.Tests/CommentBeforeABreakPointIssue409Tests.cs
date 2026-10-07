@@ -504,4 +504,131 @@ public sealed class CommentBeforeABreakPointIssue409Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     Issue #421: the author's break between a comment and the closer. The oracle keeps the line
+    ///     a comment ends and chops the list around it, block comment or line comment alike, while it
+    ///     joins the same break with no comment in front of it (<c>M(1, 2</c> / <c>);</c>). An
+    ///     initializer's braces still join it (<c>place_simple_initializer_on_single_line</c>), and a
+    ///     type argument list keeps it unmoved. Since #409 planned the point before <c>)</c> past the
+    ///     comment, the group read the list as one line and joined the break.
+    /// </summary>
+    [Fact]
+    public void AnAuthorsBreakAfterACommentBeforeTheCloser_ChopsTheList() =>
+        Oracle.Agrees(
+            """
+            [A(1, 2 /*e*/
+            )]
+            class T(int a, int b /*e*/
+            ) {
+                void A() {
+                    M(1, 2 /*e19*/
+                    );
+                    M(1, 2
+                    /*e19*/);
+                    M(1, 2 // e19
+                    );
+                    M(1, 2
+                    );
+                    var o = new D(1, 2 /*e*/
+                    );
+                    var p = M<int>(1 /*e*/
+                    );
+                    N(M(1, 2 /*e*/
+                    ), 3);
+                    M(1, 2 /*e*/ /*f*/
+                    );
+                    var q = x?.M(1 /*e*/
+                    );
+                }
+
+                void B() {
+                    var a = x[1, 2 /*e19*/
+                    ];
+                    var c = x[1, 2 // e19
+                    ];
+                    int[] d = [1, 2 /*e19*/
+                    ];
+                    var e = new[] { 1, 2 /*e19*/
+                    };
+                    var f = new K { P = 1 /*e19*/
+                    };
+                    G<int, string /*e19*/
+                    > g = null;
+                }
+
+                T() : this(1, 2 /*e*/
+                ) { }
+            }
+            """,
+            """
+            [A(
+                1,
+                2 /*e*/
+            )]
+            class T(
+                int a,
+                int b /*e*/
+            ) {
+                void A() {
+                    M(
+                        1,
+                        2 /*e19*/
+                    );
+                    M(
+                        1,
+                        2
+                        /*e19*/
+                    );
+                    M(
+                        1,
+                        2 // e19
+                    );
+                    M(1, 2);
+                    var o = new D(
+                        1,
+                        2 /*e*/
+                    );
+                    var p = M<int>(
+                        1 /*e*/
+                    );
+                    N(
+                        M(
+                            1,
+                            2 /*e*/
+                        ),
+                        3
+                    );
+                    M(
+                        1,
+                        2 /*e*/ /*f*/
+                    );
+                    var q = x?.M(
+                        1 /*e*/
+                    );
+                }
+
+                void B() {
+                    var a = x[1,
+                        2 /*e19*/
+                    ];
+                    var c = x[1,
+                        2 // e19
+                    ];
+                    int[] d = [
+                        1, 2 /*e19*/
+                    ];
+                    var e = new[] { 1, 2 /*e19*/ };
+                    var f = new K { P = 1 /*e19*/ };
+                    G<int, string /*e19*/
+                    > g = null;
+                }
+
+                T() : this(
+                    1,
+                    2 /*e*/
+                ) { }
+            }
+            """
+        );
 }
