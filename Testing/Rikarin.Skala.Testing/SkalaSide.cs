@@ -84,7 +84,8 @@ public static class SkalaSide {
             new PhaseOneOptions(resolved.Options),
             new ArrangementOptions(resolved.Options),
             ArrangementCompilation(),
-            ArrangementDifferential.Removable(ArrangementCompilation(), fixturePath)
+            ArrangementDifferential.Removable(ArrangementCompilation(), fixturePath),
+            filter: NeverPerformedUnlessAsked(overrides)
         );
 
         // ⚠ A file that did not reach a fixed point is not an answer, and scoring it as one is the
@@ -95,6 +96,45 @@ public static class SkalaSide {
         // recorded stays comparable across runs.
         return result.Converged ? result.Text : "did-not-converge: " + result.Passes + " passes";
     }
+
+    /// <summary>
+    ///     The rewrites the oracle performs under no configuration at all (SK-DIV-0013, SK-DIV-0137), each
+    ///     with the key that asks for it.
+    /// </summary>
+    static readonly (string Rule, string Key)[] NeverPerformed = [
+        (ArrangeIds.NullCheckingPattern, "skala_null_checking_pattern_style"),
+        (ArrangeIds.EmptyString, "skala_empty_string"),
+        (ArrangeIds.RedundantBraces, "skala_braces_redundant")
+    ];
+
+    /// <summary>
+    ///     Excludes each never-performed rewrite unless the configuration under measurement assigns
+    ///     its own key.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #383. While <c>skala_empty_string = string_empty</c> did nothing, a <c>""</c> sitting in an
+    ///     unrelated fixture cost nothing. Once it rewrote, <c>private string _text = "";</c> in
+    ///     <c>accessor-owner.cs</c> turned five <c>skala_accessor_owner_body</c> and
+    ///     <c>skala_local_function_body</c> rows from reproduces to wrong — a key that had not moved,
+    ///     reported as broken because of a rewrite the oracle never performs under any key. A key-flip
+    ///     row measures one key; a recorded divergence of another rule is not that key's answer.
+    ///     <para>
+    ///         Under its <em>own</em> key the rule still runs, so the row that measures it keeps
+    ///         recording the divergence (<c>skala_null_checking_pattern_style = not_null_pattern</c>,
+    ///         <c>skala_empty_string</c> at both values). This is the subset of
+    ///         <see cref="ArrangementFilter.OracleComparable" /> that is about the oracle never moving —
+    ///         not <c>Usings</c>, whose exclusion there is about the differential's references, and which
+    ///         the sweep has always measured.
+    ///     </para>
+    /// </remarks>
+    static ArrangementFilter NeverPerformedUnlessAsked(IReadOnlyList<KeyValuePair<string, string>> overrides) =>
+        new(
+            [],
+            [
+                .. NeverPerformed.Where(pair => !overrides.Any(o => string.Equals(o.Key, pair.Key, StringComparison.Ordinal)))
+                    .Select(static pair => pair.Rule)
+            ]
+        );
 
     /// <summary>
     ///     The compilation the arrangement half is resolved against, built once.
