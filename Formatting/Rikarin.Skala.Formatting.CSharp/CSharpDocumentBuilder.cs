@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Options;
+using System.Text;
 
 namespace Rikarin.Skala.Formatting.CSharp;
 
@@ -2267,17 +2268,8 @@ public sealed partial class CSharpDocumentBuilder {
                 break;
 
             case PieceKind.BlockComment:
-                // A multi-line comment's continuation lines carry their own indentation; the first
-                // line takes the code's — unless `skala_align_multiline_comments` claims them, below.
-                doc.Verbatim(piece.Text, span, CommentFlags(piece) | StarredFlag(piece));
-                break;
-
-            // ⚠ `/** … */` is deliberately not offered to `skala_align_multiline_comments`. It is a
-            // *documentation* comment, the key names ordinary multiline comments, and the oracle was
-            // never asked about the combination — so it keeps the behaviour it had rather than
-            // inheriting a rule measured on a different token kind.
             case PieceKind.BlockDocComment:
-                doc.Verbatim(piece.Text, span, CommentFlags(piece));
+                EmitBlockComment(piece, span);
                 break;
 
             case PieceKind.DocCommentLine:
@@ -2395,6 +2387,89 @@ public sealed partial class CSharpDocumentBuilder {
     ///     what makes a comment with an unstarred body — whose last line is still <c>*/</c> — come out
     ///     unqualified rather than half-moved.
     /// </remarks>
+    /// <summary>
+    ///     A <c>/* … */</c> or <c>/** … */</c> comment: its first line takes the code's indentation, and
+    ///     what its other lines do is one of three answers, all measured (issue #428).
+    /// </summary>
+    /// <remarks>
+    ///     Asked of <c>jb cleanupcode</c> 2025.2.6 under <c>SkalaFormatOnly</c>, at both values of
+    ///     <c>skala_align_multiline_comments</c>, with <c>indent_style</c> space and tab:
+    ///     <list type="number">
+    ///         <item>
+    ///             ⚠ <b>Frozen</b> — a comment whose every continuation line begins with <c>*</c>, at
+    ///             <c>false</c>, <c>/*</c> and <c>/**</c> alike. The oracle leaves it byte for byte, its
+    ///             opener's column and its trailing whitespace included. Skala still moves the opener
+    ///             (SK-DIV-0033, fact 1) and leaves the rest verbatim, which is the nearest it comes.
+    ///         </item>
+    ///         <item>
+    ///             <b>Aligned</b> — the same shape, <c>/*</c> only, at <c>true</c>: every continuation line
+    ///             on the opener's column plus one (<see cref="StarredFlag" />).
+    ///         </item>
+    ///         <item>
+    ///             <b>Shifted</b> — everything else, ⚠ a starred <c>/**</c> at <c>true</c> included: a
+    ///             ragged one keeps its raggedness and moves with its line
+    ///             (<see cref="VerbatimFlags.ShiftWithLine" />). SK-DIV-0094.
+    ///         </item>
+    ///     </list>
+    ///     ⚠ Outside the frozen class every line of the comment loses its trailing whitespace, and a
+    ///     whitespace-only line becomes empty — whether or not the comment moved (SK-DIV-0193). A <c>//</c>
+    ///     or <c>///</c> comment keeps its trailing whitespace, so this is a block-comment rule and not
+    ///     <c>trim_trailing_whitespace</c>.
+    /// </remarks>
+    void EmitBlockComment(Piece piece, SourceSpan span) {
+        var text = piece.Text;
+        var starred = IsStarredBlockComment(text);
+        if (text.IndexOf('\n', StringComparison.Ordinal) < 0 || starred && !options.AlignMultilineComments) {
+            doc.Verbatim(text, span, CommentFlags(piece));
+            return;
+        }
+
+        text = TrimLineEnds(text);
+        if (piece.Kind == PieceKind.BlockComment && starred) {
+            doc.Verbatim(text, span, CommentFlags(piece) | StarredFlag(piece));
+            return;
+        }
+
+        doc.Verbatim(text, span, CommentFlags(piece) | VerbatimFlags.ShiftWithLine, SourceLineIndent(piece.Span.Start));
+    }
+
+    /// <summary>The leading whitespace of the source line <paramref name="position" /> is on.</summary>
+    string SourceLineIndent(int position) {
+        var start = position;
+        while (start > 0 && source[start - 1] is not ('\n' or '\r')) {
+            start--;
+        }
+
+        var end = start;
+        while (end < position && source[end] is ' ' or '\t') {
+            end++;
+        }
+
+        return source[start..end];
+    }
+
+    /// <summary>Removes the spaces and tabs that end each line of a multi-line comment but its last.</summary>
+    static string TrimLineEnds(string text) {
+        var builder = new StringBuilder(text.Length);
+        var lineStart = 0;
+        for (var i = 0; i < text.Length; i++) {
+            if (text[i] != '\n') {
+                continue;
+            }
+
+            var end = i > lineStart && text[i - 1] == '\r' ? i - 1 : i;
+            var trimmed = end;
+            while (trimmed > lineStart && text[trimmed - 1] is ' ' or '\t') {
+                trimmed--;
+            }
+
+            builder.Append(text, lineStart, trimmed - lineStart).Append(text, end, i + 1 - end);
+            lineStart = i + 1;
+        }
+
+        return builder.Append(text, lineStart, text.Length - lineStart).ToString();
+    }
+
     VerbatimFlags StarredFlag(Piece piece) =>
         options.AlignMultilineComments && IsStarredBlockComment(piece.Text)
             ? VerbatimFlags.AlignStarred

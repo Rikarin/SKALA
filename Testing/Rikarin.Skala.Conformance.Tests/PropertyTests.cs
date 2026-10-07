@@ -235,14 +235,22 @@ public sealed class PropertyTests {
             }
         }
 
+        // ⚠ A `/** … */` is a block comment too, and its opener's line is excluded with the rest of it.
+        // Since #428 a block comment's continuation lines move by what its first line's indentation
+        // moved — the oracle's rule — so doubling the opener's line and not the lines below it is a
+        // mutation of the comment's shape, not of whitespace. `/* … */` was already excluded whole;
+        // `/** … */` lost its opener line only because a structured trivia's Span starts after the
+        // `/**` (SourcePieces.TextOf, #415).
         foreach (var trivia in tree.GetRoot().DescendantTrivia(descendIntoTrivia: true)) {
             if (!trivia.IsKind(SyntaxKind.DisabledTextTrivia)
-                && !trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
+                && !trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                && !trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {
                 continue;
             }
 
-            var start = text.Lines.GetLineFromPosition(trivia.SpanStart).LineNumber;
-            var end = text.Lines.GetLineFromPosition(trivia.Span.End).LineNumber;
+            var span = SourcePieces.TextOf(trivia);
+            var start = text.Lines.GetLineFromPosition(span.Start).LineNumber;
+            var end = text.Lines.GetLineFromPosition(span.End).LineNumber;
             for (var line = start; line <= end; line++) {
                 multiline.Add(line);
             }

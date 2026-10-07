@@ -2958,7 +2958,22 @@ at 26, not at the member's 5. Measured.
    and that is not this key.** Written at opener 8 / body 6 / `*/` 5 where the code indent is 4, the
    oracle returns 4 / 2 / 1 — every line moved by −4. Skala returns 4 / 6 / 5: it moves the opener and
    leaves the body at its written columns. Recorded as **SK-DIV-0094**, because it is reachable at the
-   export's values on a comment this key declines to touch.
+   export's values on a comment this key declines to touch. ⚠ Resolved there for #428.
+
+### ⚠ Re-measured for #428 (2026-10-07)
+
+- Fact 1 holds and is wider than written: at `false` a starred **`/** … */`** is frozen whole too, and
+  so is its trailing whitespace. ⚠ One shape does not fit: a starred `/**` *trailing* a statement whose
+  line moves is shifted with its line at `false`, where the `/*` beside it is frozen. Skala freezes both
+  bodies; that row is open with fact 1.
+- ⚠ At `true` a starred `/**` is **not** aligned — a ragged one comes back ragged, moved with its line
+  (SK-DIV-0094). At `true` the key aligns `/* … */` only, which is what the builder already assumed without
+  having asked.
+- Under `indent_style = tab` the aligned asterisks follow the line's own tabs (`»/*` / `» *`, and
+  `»»M(); /* trailing` / `»»` and six spaces). Skala wrote spaces throughout; fixed.
+- ⚠ The disqualified shape "every line starred, with a whitespace-only line among them" is not
+  "returned exactly as written", as the table above says: the oracle empties the whitespace-only line
+  (SK-DIV-0193). The asterisks do not move, so the disqualification stands.
 
 - options: `skala_align_multiline_comments`
 - ⚠ status: **narrowed**. Conformant at the export's `true`, pinned by
@@ -4557,6 +4572,43 @@ piece with `CommentFlags(piece)` and never with `Realign`.
   rather than left, when the body's own lines are ragged in the other direction, or when a line of the
   body would be pushed to a negative column. A uniform shift that clamps at zero is not the same rule
   as one that does not, and this probe cannot tell them apart.
+
+### ⚠ Fixed for #428, and the delta is not the opener's
+
+Re-found by #415's measurement and filed as #428, which did not know this entry existed. Every question
+the triage note above left open was asked of `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`, on
+about forty comments — own-line before a member and a statement, trailing a statement, inside an
+argument list, an initializer and a broken binary, moved right and left — at both values of
+`skala_align_multiline_comments` and under `indent_style` space and tab:
+
+| question | oracle |
+|---|---|
+| moved right (opener 2 → 4) | every line +2 |
+| a line left of the shift (opener 12 → 4, lines at 2 and 7) | ⚠ **clamps at column 0** line by line; both land at 0 |
+| an empty line inside | stays empty |
+| what the shift is measured from | ⚠ **the indentation of the line the comment starts on**, not the `/*`'s column. `int   y = /* gap` loses two columns before its `/*` and its body does not move; `1 + /* expr` broken before the `+` moves its body by the two the new line is indented further, not by the eight the `/*` moved left; `if (true)` / `{ /* brace` joined moves the `/*` ten right and its body not at all |
+| `/** … */` | moves the same way — ⚠ **even when every continuation line is starred**, where a `/* … */` would be aligned: a ragged starred `/**` stays ragged |
+| `indent_style = space` | the run is spaces, a tab the author wrote included |
+| `indent_style = tab` | ⚠ the new line's own indentation, then the tabs the author's run **led** with past the old line's indentation, then spaces, never past the target: `»»»x` under a `»»` line moved to `»` is `»»x`, `»»··»x` is `»····x`, and a space-indented continuation under a line now three tabs deep is three tabs and spaces. A line that kept its column but went from four spaces to one tab re-spells its continuation |
+| `skala_align_multiline_comments = false` | an unstarred comment moves exactly as at `true`; a starred one is frozen whole (SK-DIV-0033, fact 1) |
+
+`VerbatimFlags.ShiftWithLine` and `LayoutWriter.ShiftWithLine` implement the table; the builder passes the
+source line's indentation in the node's `Arg2`, and the writer applies the shift after it has written
+the new line's indentation, because that is the only point where the line's prefix exists.
+`CSharpDocumentBuilder.EmitBlockComment` sorts each comment into frozen, aligned or shifted. The same
+measurement found that SK-DIV-0033's aligned asterisks were spelled in spaces under `indent_style = tab`,
+where the oracle writes the line's tabs first (`»/*` / `» *`), and that is fixed beside it.
+
+⚠ **"SK9099 cannot see this" is only half true.** A comment's text is not a token, but
+`TokenEquivalence` compares every comment's text with each line's leading and trailing whitespace
+collapsed. So this change sits exactly inside what the net tolerates, and anything else it got wrong —
+a lost character, a joined line — would still abort the file.
+
+- ⚠ status: **resolved** (#428). Pinned by `BlockCommentShiftIssue428Tests` (the oracle's bytes, space,
+  tab and `false`, each with a second pass) and `constructs/trivia/block-comment-continuation-lines.cs`.
+  Left over, both outside this entry: a starred comment at `false` (SK-DIV-0033), and
+  `int y = /* gap` / `gap2 */ 1;`, where Skala breaks after the multi-line comment and the oracle does
+  not — a break-plan question, not a comment-layout one.
 
 ## SK-DIV-0095 — `__makeref`, `__reftype` and `__refvalue` take a space before their parenthesis
 
@@ -6888,7 +6940,7 @@ Once readable, the oracle treats `/** … */` as the block comment it looks like
 | `a, /** f */ b` past the margin; `x /** h */ + y` broken; `a,` / `/** f */ b` chopped | SK-DIV-0165's shapes, comment for comment | — | identical |
 | `/**/`, `/***/` | left alone (plain comments to Roslyn) | identical | identical |
 | `M(1 /** e09 */ , 2)`, `M(1, /** e10 */2)` | `/** e09 */,` and `/** e10 */2` | — | `/** e09 */ ,` and `/** e10 */ 2`: #410, the same for `/* */` |
-| a multi-line `/**` whose first line moves | continuation lines shift with it | — | continuation lines stay put: #428, the same for a non-starred `/* */` |
+| a multi-line `/**` whose first line moves | continuation lines shift with it | — | identical since #428 (SK-DIV-0094); before it, continuation lines stayed put |
 | `/** top */ public class D { }` at the top level | broken after the comment | — | kept: #429, the same for `/* */` |
 
 Pinned by `BlockDocCommentIssue415Tests` (byte-identity of the comment and of the token stream across
@@ -7217,3 +7269,32 @@ wrong in ten of the thirteen block shapes sampled and right in three.
 - options: `skala_wrap_chained_method_calls`, `skala_wrap_chained_binary_expressions` at `wrap_if_long`.
 - ⚠ status: **open**, pinned in its current reading by
   `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`.
+
+## SK-DIV-0193 — a block comment's lines lose their trailing whitespace; Skala kept it
+
+Found measuring #428. Asked of `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`, a multi-line `/* … */`
+or `/** … */` comes back with the trailing spaces and tabs removed from every line, the first line's
+included, and a whitespace-only line inside it empty — whether or not the comment moved:
+
+| written (`·` a trailing space) | oracle | Skala before |
+|---|---|---|
+| `/* first···` / `   second···` / `····` / `   */`, not moved | `/* first` / `   second` / (empty) / `   */` | as written |
+| the same, moved two left | trimmed and moved | moved (#428), trailing spaces kept |
+| `/**` / ` * doc···` / ` *···` / ` */` | trimmed | as written |
+| a starred comment at `skala_align_multiline_comments = false` | ⚠ **as written**, trailing spaces included | as written |
+
+It is not `trim_trailing_whitespace`, which the oracle answers with the same bytes at either value
+(SK-DIV-0006's note), and it is not a comment rule: a `//` or `///` comment keeps its trailing space, and
+`constructs/trivia/a-comment-keeps-its-trailing-space.cs` pins that. It is the block comment's own layout,
+and it follows the same three classes as SK-DIV-0094's shift: trimmed when the comment is aligned or
+shifted, left alone when it is frozen. `CSharpDocumentBuilder.TrimLineEnds` applies it in
+`EmitBlockComment`. Safe for the reason the shift is: `TokenEquivalence` compares comment text with each
+line's ends collapsed, so nothing else can change unnoticed.
+
+⚠ It is also what refutes `AlignMultilineCommentTests`' claim that a starred comment with a whitespace-only
+line among its lines is "returned exactly as written": the asterisks stay, the line is emptied.
+
+- options: none — `skala_align_multiline_comments = false` only decides which comments are frozen.
+- ⚠ status: **resolved**. Pinned by `BlockCommentShiftIssue428Tests.EveryLineLosesItsTrailingWhitespace_MovedOrNot`,
+  `AlignMultilineCommentTests.AWhitespaceOnlyLine_Disqualifies_AndIsEmptied` and the `Trim` class of
+  `constructs/trivia/block-comment-continuation-lines.cs`.

@@ -78,7 +78,26 @@ public enum VerbatimFlags {
     ///     stream, which is why the caller only sets it on a comment whose every continuation line already
     ///     begins with <c>*</c> — see <c>CSharpDocumentBuilder.IsStarredBlockComment</c>.
     /// </remarks>
-    AlignStarred = 16
+    AlignStarred = 16,
+
+    /// <summary>
+    ///     A multi-line block comment: every continuation line moves by as many columns as the
+    ///     <em>line the comment starts on</em> moved, clamped at column 0. The source line's indentation
+    ///     is the node's <see cref="DocNode.Arg2" /> string. SK-DIV-0094, issue #428.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The delta is the line's indentation and not the opener's column. Measured against
+    ///     <c>jb cleanupcode</c> 2025.2.6: <c>int   y = /* gap</c> loses two columns before its <c>/*</c>
+    ///     and its continuation does not move, while <c>var x = 1 + /* expr</c> broken before the
+    ///     <c>+</c> moves its continuation by the two columns the new line is indented further — not by
+    ///     the eight its <c>/*</c> moved left.
+    ///     <para>
+    ///         Safe for <see cref="AlignStarred" />'s reason: a comment has no value. Only a line's
+    ///         leading whitespace changes, which is exactly what <c>TokenEquivalence</c> collapses when it
+    ///         compares comment text, so anything else going wrong here is still an SK9099.
+    ///     </para>
+    /// </remarks>
+    ShiftWithLine = 32
 }
 
 /// <summary>
@@ -236,7 +255,12 @@ public sealed class LayoutWriter {
                         continue;
 
                     case DocKind.Verbatim:
-                        WritePiece(document.TextOf(node), slot.Source, (VerbatimFlags)slot.Flags);
+                        WritePiece(
+                            document.TextOf(node),
+                            slot.Source,
+                            (VerbatimFlags)slot.Flags,
+                            slot.Arg2 >= 0 ? document.Strings[slot.Arg2] : null
+                        );
                         continue;
 
                     case DocKind.Anchor:
@@ -1133,18 +1157,20 @@ public sealed class LayoutWriter {
     ///         caller's to recognise, because that is where the comment's text is available before layout.
     ///     </para>
     ///     <para>
-    ///         ⚠ Spaces, not indent units. The target is a column one past a delimiter, which is not a
-    ///         multiple of anything; <c>WriteIndentTo</c>'s three fill styles are about a line's
-    ///         *indentation* and this is the interior of a token.
+    ///         ⚠ Spaces past the line's own indentation, and under <c>indent_style = tab</c> that
+    ///         indentation's tabs first: <c>»/*</c> is followed by <c>» *</c>, and a comment trailing
+    ///         <c>»»M();</c> by <c>»»</c> and spaces. The target is a column one past a delimiter, which is
+    ///         not a multiple of anything, so <c>WriteIndentTo</c>'s fill styles do not apply. Measured for
+    ///         #428; until then it was spaces throughout, which the oracle never writes in a tab file.
     ///     </para>
     /// </remarks>
-    static string AlignStarred(string text, int column) {
+    static string AlignStarred(string text, int column, string prefix, bool tabs) {
         var lines = text.Split('\n');
         if (lines.Length < 2) {
             return text;
         }
 
-        var indent = new string(' ', Math.Max(0, column));
+        var indent = Fill(column, tabs ? LeadingTabs(prefix) : 0);
         var builder = new StringBuilder(text.Length + lines.Length * 2);
         builder.Append(lines[0]);
 
@@ -1169,6 +1195,110 @@ public sealed class LayoutWriter {
         }
 
         return builder.ToString();
+    }
+
+    /// <summary>The leading whitespace of the line being written.</summary>
+    string CurrentLinePrefix() {
+        var start = output.Length;
+        while (start > 0 && output[start - 1] is not ('\n' or '\r')) {
+            start--;
+        }
+
+        var end = start;
+        while (end < output.Length && output[end] is ' ' or '\t') {
+            end++;
+        }
+
+        return output.ToString(start, end - start);
+    }
+
+    /// <summary>
+    ///     Moves every continuation line of a multi-line block comment by the columns its first line's
+    ///     line moved: from <paramref name="sourceIndent" /> to <paramref name="prefix" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Issue #428, SK-DIV-0094. Measured against <c>jb cleanupcode</c> 2025.2.6 on about forty
+    ///     comments — own-line before a member and a statement, trailing a statement, inside an argument
+    ///     list, an initializer and a broken binary, moved right and left, plain, starred <c>/**</c> and
+    ///     ragged:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             the shift is uniform and <b>clamps at column 0</b> line by line: a line written two
+    ///             columns in under an opener that moves eight left lands at 0, and so does one written at
+    ///             7 — the comment's shape is lost on exactly those lines, as the oracle loses it;
+    ///         </item>
+    ///         <item>an empty line stays empty (the caller has already trimmed whitespace-only ones);</item>
+    ///         <item>
+    ///             under <c>indent_style = space</c> the whole run is spaces, a tab the author wrote
+    ///             included;
+    ///         </item>
+    ///         <item>
+    ///             ⚠ under <c>indent_style = tab</c> the run is the new line's own indentation, then as
+    ///             many tabs as the author's run had <em>leading</em> past the old line's indentation, then
+    ///             spaces — never past the target. So <c>»»»x</c> under a <c>»»</c> line moved to <c>»</c>
+    ///             is <c>»»x</c>, <c>»»··»x</c> is <c>»····x</c>, and a space-indented continuation under a
+    ///             line now at three tabs is three tabs and the rest in spaces, as <c>use_spaces</c> fills
+    ///             an aligned line. Six shapes, each one distinguishing this from a simpler reading.
+    ///         </item>
+    ///     </list>
+    ///     ⚠ A comment is left byte for byte only when its line kept its indentation <em>string</em>: a line
+    ///     that kept its column but went from four spaces to a tab re-spells the continuation too
+    ///     (measured, <c>{ /* c</c> / <c>··d */</c> becomes <c>»··d */</c>).
+    /// </remarks>
+    static string ShiftWithLine(string text, string sourceIndent, string prefix, bool tabs) {
+        if (prefix == sourceIndent || text.IndexOf('\n', StringComparison.Ordinal) < 0) {
+            return text;
+        }
+
+        var delta = TextWidth.Measure(prefix) - TextWidth.Measure(sourceIndent);
+        var prefixTabs = LeadingTabs(prefix);
+        var lines = text.Split('\n');
+        var builder = new StringBuilder(text.Length + lines.Length * Math.Max(0, delta));
+        builder.Append(lines[0]);
+
+        for (var i = 1; i < lines.Length; i++) {
+            builder.Append('\n');
+            var line = lines[i];
+            var start = 0;
+            while (start < line.Length && line[start] is ' ' or '\t') {
+                start++;
+            }
+
+            if (start == line.Length || line[start] == '\r') {
+                builder.Append(line);
+                continue;
+            }
+
+            var run = line[..start];
+            var tabCount = 0;
+            if (tabs) {
+                var rest = run.StartsWith(sourceIndent, StringComparison.Ordinal) ? run[sourceIndent.Length..] : run;
+                tabCount = prefixTabs + (prefixTabs == prefix.Length ? LeadingTabs(rest) : 0);
+            }
+
+            builder.Append(Fill(TextWidth.Measure(run) + delta, tabCount)).Append(line, start, line.Length - start);
+        }
+
+        return builder.ToString();
+    }
+
+    static int LeadingTabs(string run) {
+        var count = 0;
+        while (count < run.Length && run[count] == '\t') {
+            count++;
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    ///     The whitespace that reaches <paramref name="column" /> (never below 0): up to
+    ///     <paramref name="tabs" /> tabs, as many as fit, then spaces.
+    /// </summary>
+    static string Fill(int column, int tabs) {
+        column = Math.Max(0, column);
+        tabs = Math.Min(tabs, column / TextWidth.TabStop);
+        return new string('\t', tabs) + new string(' ', column - tabs * TextWidth.TabStop);
     }
 
     static string Realign(string text, int column) {
@@ -1820,7 +1950,7 @@ public sealed class LayoutWriter {
         pendingSpaceText = null;
     }
 
-    void WritePiece(string text, SourceSpan source, VerbatimFlags flags) {
+    void WritePiece(string text, SourceSpan source, VerbatimFlags flags, string? sourceLineIndent = null) {
         // ⚠ Not realigned while the indenter is off. A raw literal's interior lines move only to
         // follow its opening quotes, and under this key the opening quotes did not move.
         if ((flags & VerbatimFlags.Realign) != 0 && this.source is null) {
@@ -1836,13 +1966,6 @@ public sealed class LayoutWriter {
                 text,
                 (atLineStart ? pendingCloserLevel ?? Effective() : CurrentLineIndent()) + indentWidth
             );
-        } else if ((flags & VerbatimFlags.AlignStarred) != 0 && this.source is null) {
-            // ⚠ The opening delimiter's own column plus one — measured, and it is the *opener's*
-            // column rather than the code's indent, which is why a block comment that begins on a
-            // code line puts its asterisks 26 columns in rather than 5. Same expression as
-            // `Realign` above and for the same reason: at a line start the indentation has not been
-            // written yet, so the column has to come from the scope stack.
-            text = AlignStarred(text, (atLineStart ? pendingCloserLevel ?? Effective() : column + PendingWidth) + 1);
         }
 
         if (atLineStart) {
@@ -1867,6 +1990,19 @@ public sealed class LayoutWriter {
             FlushPendingSpace();
         } else {
             FlushPendingSpace();
+        }
+
+        // ⚠ After the indentation, because the target is the line this comment is now on — and that
+        // line's leading whitespace is only in the output once it has been written. Not while the
+        // indenter is off: the line did not move, so neither does the comment.
+        if ((flags & VerbatimFlags.ShiftWithLine) != 0 && sourceLineIndent is not null && this.source is null) {
+            text = ShiftWithLine(text, sourceLineIndent, CurrentLinePrefix(), indentUnit == "\t");
+        } else if ((flags & VerbatimFlags.AlignStarred) != 0 && this.source is null) {
+            // ⚠ The opening delimiter's own column plus one — measured, and it is the *opener's*
+            // column rather than the code's indent, which is why a block comment that begins on a
+            // code line puts its asterisks 26 columns in rather than 5. Read here, after the
+            // indentation and the gap are written, where `column` is the opener's.
+            text = AlignStarred(text, column + 1, CurrentLinePrefix(), indentUnit == "\t");
         }
 
         var start = output.Length;

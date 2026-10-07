@@ -166,10 +166,21 @@ public sealed class AlignMultilineCommentTests {
     [InlineData("class C {\n    /*\n      One.\n   * Two.\n     */\n    int F;\n}\n")]
     // Every line starred, but with an empty line among them.
     [InlineData("class C {\n    /*\n   * One.\n\n        * Two.\n     */\n    int F;\n}\n")]
-    // Every line starred, but with a whitespace-only line among them.
-    [InlineData("class C {\n    /*\n   * One.\n   \n        * Two.\n     */\n    int F;\n}\n")]
     public void ADisqualifiedComment_IsReturnedExactlyAsWritten(string source) =>
         Assert.Equal(source, Format(source, "true"));
+
+    /// <summary>
+    ///     Every line starred but one whitespace-only: disqualified like the empty line above, and
+    ///     ⚠ not "returned exactly as written", which this file used to claim. Re-asked for #428, the
+    ///     oracle empties the whitespace-only line — every line of a block comment loses its trailing
+    ///     whitespace outside the frozen class (SK-DIV-0193). The asterisks still do not move.
+    /// </summary>
+    [Fact]
+    public void AWhitespaceOnlyLine_Disqualifies_AndIsEmptied() =>
+        Assert.Equal(
+            "class C {\n    /*\n   * One.\n\n        * Two.\n     */\n    int F;\n}\n",
+            Format("class C {\n    /*\n   * One.\n   \n        * Two.\n     */\n    int F;\n}\n", "true")
+        );
 
     /// <summary>
     ///     A block comment that begins on a code line anchors on its own <c>/*</c>, wherever that lands.
