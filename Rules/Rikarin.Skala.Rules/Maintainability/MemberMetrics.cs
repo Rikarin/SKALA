@@ -161,7 +161,14 @@ public static class MemberMetrics {
             // ⚠ `int a, b, c;` is three fields. They are three things to initialise, to name and to
             // keep consistent, and a type that hides thirty of them behind ten declarations is not
             // smaller than one that does not.
-            if (member is BaseFieldDeclarationSyntax field) {
+            // ⚠ A partial member is one member written twice (#397). The definition is counted, as the
+            // half every reader sees, and a partial event's definition is counted as the member it is
+            // rather than as the field-like event it is spelled as.
+            if (PartialMembers.IsImplementation(member)) {
+                continue;
+            }
+
+            if (member is BaseFieldDeclarationSyntax field && !PartialMembers.IsPartialMember(member)) {
                 fields += field.Declaration.Variables.Count;
                 continue;
             }
@@ -215,8 +222,15 @@ public static class MemberMetrics {
     ///     <c>&lt;summary&gt;</c> for. Fields are excluded too — a public constant's name is its
     ///     documentation far more often than not, and including them is how the metric becomes noise.
     /// </remarks>
+    ///     <para>
+    ///         ⚠ A partial member's two halves are one member with one comment, not two declarations to
+    ///         document (#397). One half carries the finding and the density count —
+    ///         <see cref="PartialMembers.CarriesTheFinding" /> says which — and
+    ///         <see cref="HasDocumentation" /> reads the other half for it.
+    ///     </para>
     public static bool IsDocumentable(SyntaxNode declaration) =>
-        declaration switch {
+        PartialMembers.CarriesTheFinding(declaration)
+        && declaration switch {
             MethodDeclarationSyntax method => method.ExplicitInterfaceSpecifier is null,
             PropertyDeclarationSyntax property => property.ExplicitInterfaceSpecifier is null,
             IndexerDeclarationSyntax indexer => indexer.ExplicitInterfaceSpecifier is null,
@@ -235,7 +249,18 @@ public static class MemberMetrics {
     ///     statement that the base member's prose applies here, which is exactly what the metric is
     ///     asking for; requiring the author to repeat it would make the rule a copy-paste generator.
     /// </remarks>
-    public static bool HasDocumentation(SyntaxNode declaration) {
+    public static bool HasDocumentation(SyntaxNode declaration) =>
+        HasOwnDocumentation(declaration)
+        || PartialMembers.Sibling(declaration) is { } otherHalf && HasOwnDocumentation(otherHalf);
+
+    /// <summary>The declaration's own leading comment, without consulting a partial member's other half.</summary>
+    /// <remarks>
+    ///     ⚠ Only the half in the same type declaration is consulted. One in another file would make a
+    ///     <c>Syntax</c>-scoped rule's answer depend on a file its cache key does not cover, so a half
+    ///     documented only in another file is still reported — the direction a reader can see and fix by
+    ///     moving the comment.
+    /// </remarks>
+    static bool HasOwnDocumentation(SyntaxNode declaration) {
         foreach (var trivia in declaration.GetLeadingTrivia()) {
             if (!trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
                 && !trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {

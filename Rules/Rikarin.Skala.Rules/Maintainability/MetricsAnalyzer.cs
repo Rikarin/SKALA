@@ -141,7 +141,9 @@ public sealed class MetricsAnalyzer : DiagnosticAnalyzer {
             );
         }
 
-        if (metrics.Parameters > thresholds.Parameters) {
+        // ⚠ Both halves of a partial member declare the same parameter list, so one of them carries the
+        // finding (#397); the body metrics above come from the implementation alone in any case.
+        if (metrics.Parameters > thresholds.Parameters && PartialMembers.CarriesTheFinding(member)) {
             Report(
                 context,
                 Parameters,

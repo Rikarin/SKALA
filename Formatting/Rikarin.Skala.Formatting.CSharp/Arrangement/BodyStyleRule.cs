@@ -112,8 +112,20 @@ public sealed class BodyStyleRule : ArrangementRule {
         ///     (<c>get =&gt; _n; set =&gt; _n = value;</c>). One key, two shapes, and reading it as
         ///     "expression bodies on accessors" loses the first.
         /// </summary>
+        /// <remarks>
+        ///     ⚠ Never a property with an initializer. Before C# 14 a get-only property with a getter body
+        ///     could not have one; with the <c>field</c> keyword it can — <c>{ get =&gt; field; } = new();</c>
+        ///     — and an arrow has nowhere to keep it. The collapse wrote <c>=&gt; field = new();</c>, which
+        ///     re-parses as an <em>assignment</em> in the arrow: it compiles, so the safety re-bind passes
+        ///     it, and every read then replaces the value. Found by the #397 sweep, on a partial property's
+        ///     implementation, and it is not about partial at all.
+        /// </remarks>
         public override SyntaxNode? VisitPropertyDeclaration(PropertyDeclarationSyntax node) {
             var visited = (PropertyDeclarationSyntax)base.VisitPropertyDeclaration(node)!;
+            if (visited.Initializer is not null) {
+                return visited;
+            }
+
             return CollapseAccessorOwner(
                 visited,
                 visited.AccessorList,

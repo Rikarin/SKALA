@@ -63,7 +63,7 @@ public sealed class UnusedValueParameterAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (HasObsolete(accessor.AttributeLists) || HasObsolete(Member(accessor))) {
+        if (HasObsolete(accessor.AttributeLists) || HasObsolete(Member(accessor)) || ObsoleteOnTheDefinition(accessor)) {
             return;
         }
 
@@ -108,6 +108,29 @@ public sealed class UnusedValueParameterAnalyzer : DiagnosticAnalyzer {
     ///     is missed and that costs a finding; asking the semantic model would cost the rule its ability
     ///     to run without a project, which is worth more.
     /// </summary>
+    /// <summary>
+    ///     ⚠ A partial property's attributes may sit on either half and apply to the one member (#397), and
+    ///     <c>[Obsolete]</c> is conventionally written on the definition — the half this accessor, which has
+    ///     a body, is never in.
+    /// </summary>
+    static bool ObsoleteOnTheDefinition(AccessorDeclarationSyntax accessor) {
+        if (PartialMembers.Sibling(accessor.Parent?.Parent) is not BasePropertyDeclarationSyntax definition) {
+            return false;
+        }
+
+        if (HasObsolete(definition.AttributeLists)) {
+            return true;
+        }
+
+        foreach (var other in definition.AccessorList?.Accessors ?? default) {
+            if (other.IsKind(accessor.Kind()) && HasObsolete(other.AttributeLists)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     static bool HasObsolete(SyntaxList<AttributeListSyntax> lists) {
         foreach (var list in lists) {
             foreach (var attribute in list.Attributes) {

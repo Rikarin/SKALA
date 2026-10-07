@@ -187,9 +187,16 @@ static class EqualityMembers {
     }
 
     /// <summary>The single instance field a hand-written property's getter returns, if it is that simple.</summary>
+    /// <remarks>
+    ///     ⚠ A partial property is read through its implementation (#397). The member list holds the
+    ///     definition, whose <c>{ get; }</c> has no getter to read, so a hand-written property over a field
+    ///     looked like a member of its own and <c>SK2042</c> reported a hash code over that field as
+    ///     reading state equality ignored.
+    /// </remarks>
     static IFieldSymbol? BackingField(IPropertySymbol property, SemanticModel model, CancellationToken cancellation) {
-        if (property.DeclaringSyntaxReferences.Length != 1
-            || property.DeclaringSyntaxReferences[0].GetSyntax(cancellation) is not PropertyDeclarationSyntax syntax
+        var implementation = property.PartialImplementationPart ?? property;
+        if (implementation.DeclaringSyntaxReferences.Length != 1
+            || implementation.DeclaringSyntaxReferences[0].GetSyntax(cancellation) is not PropertyDeclarationSyntax syntax
             || syntax.SyntaxTree != model.SyntaxTree) {
             return null;
         }
@@ -205,7 +212,10 @@ static class EqualityMembers {
             return null;
         }
 
-        return model.GetSymbolInfo(body, cancellation).Symbol is IFieldSymbol { IsStatic: false } resolved
+        // ⚠ `field` resolves to the compiler's backing field, which is the property's own storage and
+        // not a second member: an implementation `get => field;` canonicalises to the property, exactly as
+        // an auto-property does, or the finding names `<Name>k__BackingField`.
+        return model.GetSymbolInfo(body, cancellation).Symbol is IFieldSymbol { IsStatic: false, AssociatedSymbol: null } resolved
             && SymbolEqualityComparer.Default.Equals(resolved.ContainingType, property.ContainingType)
                 ? resolved
                 : null;

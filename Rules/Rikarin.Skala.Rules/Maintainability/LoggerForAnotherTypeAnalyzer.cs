@@ -84,12 +84,15 @@ public sealed class LoggerForAnotherTypeAnalyzer : DiagnosticAnalyzer {
         var replacement = declaration.Identifier.ValueText
             + (declaration.TypeParameterList?.ToString() ?? string.Empty);
         var span = name.TypeArgumentList.Arguments[0].Span;
+        if (Edits(name, span, replacement) is not { } edits) {
+            return;
+        }
 
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
                 name.TypeArgumentList.Arguments[0].GetLocation(),
-                FixEdits.Pack((new TextSpan(span.Start, span.Length), replacement)),
+                FixEdits.Pack(edits),
                 "`"
                 + enclosing.Name
                 + "` declares an `ILogger<"
@@ -110,6 +113,32 @@ public sealed class LoggerForAnotherTypeAnalyzer : DiagnosticAnalyzer {
     ///     return type all name another class's logger on purpose, and reporting them would turn a rule
     ///     about one type's own category into a rule against dependency injection.
     /// </remarks>
+    /// <summary>
+    ///     The fix's edits, or null when the only safe edit is none.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A partial constructor's parameter is written on both halves and the two must agree, so the
+    ///     fix rewrites both (#397). No syntax-node action visits the definition, so the implementation
+    ///     reports for the pair; one whose definition is outside this type declaration is declined, since
+    ///     editing half of it is <c>CS9275</c>. A partial property needs none of this: both of its halves
+    ///     are visited, and each reports and fixes its own type.
+    /// </remarks>
+    static (TextSpan Span, string Text)[]? Edits(GenericNameSyntax name, TextSpan span, string replacement) {
+        if (name.Parent is not ParameterSyntax { Parent: ParameterListSyntax { Parent: ConstructorDeclarationSyntax constructor } list } parameter
+            || !PartialMembers.IsPartialMember(constructor)) {
+            return [(span, replacement)];
+        }
+
+        if (!PartialMembers.IsImplementation(constructor)
+            || PartialMembers.Sibling(constructor) is not ConstructorDeclarationSyntax definition
+            || definition.ParameterList.Parameters[list.Parameters.IndexOf(parameter)].Type
+            is not GenericNameSyntax { TypeArgumentList.Arguments.Count: 1 } other) {
+            return null;
+        }
+
+        return [(span, replacement), (other.TypeArgumentList.Arguments[0].Span, replacement)];
+    }
+
     static bool IsDeclaredMemberType(GenericNameSyntax name) =>
         name.Parent switch {
             VariableDeclarationSyntax variable => variable.Type == name && variable.Parent is FieldDeclarationSyntax,

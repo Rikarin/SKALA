@@ -1527,6 +1527,39 @@ public sealed class ArrangementRuleTests {
         Assert.NotNull(arranged);
     }
 
+    /// <summary>
+    ///     ⚠ Regression, found by #397's sweep: a C# 14 <c>field</c>-backed get-only property can carry an
+    ///     initializer, and an arrow has nowhere to keep one.
+    /// </summary>
+    /// <remarks>
+    ///     The collapse wrote <c>=&gt; field = new Bag();</c>, which re-parses as an assignment inside the
+    ///     arrow. It compiles, so neither safety layer saw it, and every read then replaced the value. The
+    ///     control below is the same collapse on a property with no initializer, which must still happen,
+    ///     so that this test cannot pass by the rule having stopped running.
+    /// </remarks>
+    [Fact]
+    public void BodyStyle_LeavesAFieldBackedPropertyWithAnInitializerItsAccessorList() {
+        var output = Declined(
+            Attempt(
+                """
+                namespace P;
+                public class Bag { }
+                public class C {
+                    public Bag Parameters { get => field; } = new Bag();
+
+                    public int Count { get { return 1; } }
+                }
+                """,
+                ArrangeIds.BodyStyle
+            )
+        );
+
+        Assert.Contains("public Bag Parameters { get => field; } = new Bag();", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("=> field =", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("return 1;", output, StringComparison.Ordinal);
+        Assert.Contains("=> 1;", output, StringComparison.Ordinal);
+    }
+
     static int CountBareBlocks(string text) {
         var count = 0;
         foreach (var line in text.Split('\n')) {

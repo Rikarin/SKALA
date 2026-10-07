@@ -156,10 +156,19 @@ public sealed class OrphanInheritdocAnalyzer : DiagnosticAnalyzer {
                 masksDefinition = HasOwnProse(propertyDefinition, cancellation);
                 break;
 
+            // ⚠ A partial event is the same shape (#397), and was missing: its implementation's
+            // `<inheritdoc/>` was reported as overriding nothing rather than as masking the definition.
+            case IEventSymbol { PartialDefinitionPart: { } eventDefinition }:
+                definition = eventDefinition;
+                masksDefinition = HasOwnProse(eventDefinition, cancellation);
+                break;
+
             case IMethodSymbol { PartialImplementationPart: { } methodImplementation }
                 when IsDocumented(methodImplementation, cancellation):
             case IPropertySymbol { PartialImplementationPart: { } propertyImplementation }
                 when IsDocumented(propertyImplementation, cancellation):
+            case IEventSymbol { PartialImplementationPart: { } eventImplementation }
+                when IsDocumented(eventImplementation, cancellation):
                 return null;
         }
 
@@ -362,15 +371,23 @@ public sealed class OrphanInheritdocAnalyzer : DiagnosticAnalyzer {
 
     static bool IsDocumented(ISymbol symbol, CancellationToken cancellation) =>
         symbol.DeclaringSyntaxReferences.Any(reference =>
-            DocumentationElements.CommentsOf(reference.GetSyntax(cancellation)).Any()
+            DocumentationElements.CommentsOf(Commented(reference.GetSyntax(cancellation))).Any()
         );
 
     /// <summary>Documented in prose of its own, not by another <c>&lt;inheritdoc/&gt;</c>.</summary>
     static bool HasOwnProse(ISymbol symbol, CancellationToken cancellation) =>
         symbol.DeclaringSyntaxReferences.Any(reference => {
-                var node = reference.GetSyntax(cancellation);
+                var node = Commented(reference.GetSyntax(cancellation));
                 return DocumentationElements.CommentsOf(node).Any()
                     && !DocumentationElements.Anywhere(node, "inheritdoc").Any();
             }
         );
+
+    /// <summary>
+    ///     ⚠ The node a declaration's comment is attached to. A field-like event's — and a partial event
+    ///     definition's — declaring syntax is its variable declarator, whose leading trivia is empty; the
+    ///     comment is on the declaration around it.
+    /// </summary>
+    static SyntaxNode Commented(SyntaxNode node) =>
+        node is VariableDeclaratorSyntax { Parent.Parent: BaseFieldDeclarationSyntax field } ? field : node;
 }
