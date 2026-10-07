@@ -335,6 +335,14 @@ public sealed partial class CSharpDocumentBuilder {
     ///         let the bracket out.
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     Three of the lists BreakPlan.PlanFilledList plans — filled, with no wrap style of their own —
+    ///     and the three whose kept closer was measured (#443). An array rank and a function pointer's
+    ///     parameter list are filled the same way and were not asked.
+    /// </summary>
+    static bool IsOnlyFilled(SyntaxNode node) =>
+        node is TupleExpressionSyntax or PositionalPatternClauseSyntax or ParenthesizedVariableDesignationSyntax;
+
     static bool IsAnAlignedAttributeSection(SyntaxNode node, string source) =>
         node is AttributeListSyntax { Attributes: [{ } first, ..] } attributes
         && attributes.Attributes.Count > 1
@@ -1694,8 +1702,14 @@ public sealed partial class CSharpDocumentBuilder {
                     // that is the whole of what `outside` means. `alignsCloser` is the `inside` and
                     // `none` shape — the closer takes the level of the line its opener was on — and
                     // it is exactly wrong for the other two, where the closer takes one more.
+                    // ⚠ Except a list the oracle only fills whose first item shares its opener's line
+                    // (#443): `(1, 2` / `    );`, `P(1, 2` / `    );` and `var (a, b` / `    ) = …` keep the
+                    // closer one level in, where the author's break left it. A tuple that broke after
+                    // its `(` still closes on its opener's level, `(` / `    a,` / `)`.
+                    var keepsCloserIn = IsOnlyFilled(node)
+                        && !HasLineBreak(open.Span.End, open.GetNextToken().SpanStart);
                     for (var i = opened; i > closer; i--) {
-                        CloseIndent(scopeKind, closer == 0 && i == closer + 1);
+                        CloseIndent(scopeKind, closer == 0 && i == closer + 1 && !keepsCloserIn);
                     }
 
                     pending = continues ? 0 : closer;
@@ -3637,10 +3651,18 @@ public sealed partial class CSharpDocumentBuilder {
             return false;
         }
 
+        // ⚠ And after a type test's or a pattern's keyword (#443): `o is` / `(1, 2)`, `o is` / `null`,
+        // `o is not` / `null`, `o as` / `P` and `case` / `(1, 2):` are all kept at the defaults and
+        // joined here.
         var previousToken = tokens[previous.TokenIndex];
         return SpaceRules.Preserves(previousToken, nextToken)
             || previousToken.IsKind(SyntaxKind.DotDotToken)
-            && previousToken.Parent is SlicePatternSyntax;
+            && previousToken.Parent is SlicePatternSyntax
+            || previousToken.Kind() is SyntaxKind.IsKeyword or SyntaxKind.AsKeyword
+            || previousToken.IsKind(SyntaxKind.NotKeyword)
+            && previousToken.Parent is UnaryPatternSyntax
+            || previousToken.IsKind(SyntaxKind.CaseKeyword)
+            && previousToken.Parent is SwitchLabelSyntax;
     }
 
     bool ShouldJoin(Piece previous, PieceKind nextKind, SyntaxToken nextToken) {
