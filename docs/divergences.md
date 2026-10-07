@@ -7874,3 +7874,63 @@ of its own, not this rule.
 
 - options: none.
 - ⚠ status: **resolved** for the band, **open** past it. Pinned by `TypeTestKeywordIssue444Tests`.
+
+## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
+
+#444's second and sixth shapes are one question — when the oracle breaks after an `=` rather than inside
+its value — and no rule tried here survived the next probe, so nothing is wired. The ordering rule Skala
+has (`GroupFacts.PrefersOuterBreak`, its margin `11 + continuation level`) is refuted on both sides by the
+probes below, with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`, a column at a time.
+
+**A call** (`<head> = Name(alphaValue, ddd…);`). The value ends at its continuation column + V.
+
+| `<head> =` | `(` lands at | joined line | oracle | Skala |
+|---|---|---|---|---|
+| `public int SSSSSSSSSSS121 =` (field) | 40 | 121–129 | `= Compute(` / arguments chopped | `=` / `Compute(…)` whole |
+| the same | 40 | 131–135 | chopped | chopped |
+| `var localValueName121 =` | 40 | 121–125 | chopped | `=` / call whole |
+| `var vNN =`, the name widened | 33–75 | 122 and 128 | chopped | chopped |
+| the same | 82 | 122 / 128 | `=` / call whole / chopped | chopped / chopped |
+| the same | 89–103 | 122 and 128 | `=` / call whole | chopped |
+
+So the margin depends on where the call's `(` would land: a short head is chopped however well the
+value would fit below, and a long one breaks the `=` up to a value ending at 118 at 89 columns but not at
+82. A fixed margin answers neither column of the table.
+
+**A binary pattern after `is`** (`bool c = <operand> is > 5 and < 10;`, the value at column 12 ending
+at E):
+
+| E | oracle | Skala |
+|---|---|---|
+| ≤ 114 (the joined line fits) | one line | identical |
+| 116–120 | `=` / the value whole | `= … is > 5` / `and < 10;` |
+| 122 | `=` / `… is > 5` / `and < 10;` | the same as 116–120 |
+| `is null or Empty`, the same widths | the same as `> 5 and < 10` | the same |
+| `&& alpha` and `+ alpha` in place of the pattern | the operator breaks, never the `=` | identical |
+| `x is SomeVeryLongTypeName or AnotherVeryLongTypeName` past the margin (SK-DIV-0205's probes) | the `or` breaks, never the `=` | identical |
+
+Breaking the `=` "when the value then fits" explains 116–120 and not 122, and nothing tried separates
+the two pattern shapes that break the `=` from the one that does not.
+
+- options: `skala_wrap_before_eq = false`, the exported value.
+- ⚠ status: **open**, measured. #444 shapes 2 and 6.
+
+## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
+
+Measured beside SK-DIV-0206 (`SearchValuesAnalyzer.cs`) and probed for #444, with `jb cleanupcode`
+2025.2.6 under `SkalaFormatOnly`:
+
+| written | oracle | Skala |
+|---|---|---|
+| `X x when Compute(alpha, beta, gamma1)` / `=> 1,` with the `when` line at 117 | `when Compute(` / arguments two levels past the arm / `)` one level / `=> 1,` one level | the arguments one level, `)` on the arm's column |
+| the same with the `when` line at 121 and longer | `when Compute(` / arguments one level / `) => 1,` | identical |
+| `when x.All(e => e` / `is T` / `)` / `=> …` (`SearchValuesAnalyzer.cs`) | `)` one level past the arm, `is` two | `)` on the arm's column, `is` one |
+
+So a list in the `when` clause nests from the arm's continuation line when the arrow moves down — #418's
+rule, applied to a construct that opens *before* the group that decides it. ⚠ That is the obstacle: the
+arrow's group opens at the arrow and is decided after the list has been written, and the decision is not
+monotone in width (117 moves the arrow, 121 keeps it), so the list cannot read it from a measure taken
+earlier. Opening the arrow's group at the arm's start would change what it measures. Not wired.
+
+- options: none.
+- ⚠ status: **open**, measured.
