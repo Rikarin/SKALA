@@ -54,7 +54,10 @@ static class PartialMembers {
             _ => false
         };
 
-    /// <summary>The half of a partial member that has no body: the contract a generator or a second file fulfils.</summary>
+    /// <summary>
+    ///     The half of a partial member that has no body: the contract a generator or a second file
+    ///     fulfils.
+    /// </summary>
     public static bool IsDefinition(SyntaxNode? declaration) =>
         IsPartialMember(declaration) && !IsImplementation(declaration);
 

@@ -474,12 +474,7 @@ public sealed class LayoutWriter {
 
         // ⚠ The pairing of ancestors with scopes is the whole method, so a stack that does not hold
         // one Indent node per open scope is answered the ordinary way rather than misread.
-        var indents = 0;
-        foreach (var frame in path) {
-            if (document.Nodes[frame.Node].Kind == DocKind.Indent) {
-                indents++;
-            }
-        }
+        var indents = path.Count(frame => document.Nodes[frame.Node].Kind == DocKind.Indent);
 
         if (indents != scopes.Count) {
             return LevelForNested();

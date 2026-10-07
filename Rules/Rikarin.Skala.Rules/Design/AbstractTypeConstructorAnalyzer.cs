@@ -86,7 +86,10 @@ public sealed class AbstractTypeConstructorAnalyzer : DiagnosticAnalyzer {
         );
     }
 
-    /// <summary>The constructor's <c>public</c>, when it is the whole of its accessibility and the fix may replace it.</summary>
+    /// <summary>
+    ///     The constructor's <c>public</c>, when it is the whole of its accessibility and the fix may
+    ///     replace it.
+    /// </summary>
     static SyntaxToken? PublicKeyword(ConstructorDeclarationSyntax constructor) {
         // ⚠ Exactly `public`, and nothing beside it. `protected internal` and `private protected`
         // are each a deliberate statement about a different audience, and `internal` on an abstract

@@ -142,7 +142,10 @@ public sealed class PartialMemberTests {
         Assert.Equal(6, found[0].Location.GetLineSpan().StartLinePosition.Line);
     }
 
-    /// <summary>An event's definition is spelled as a field-like event, which is not measured: the accessors carry it.</summary>
+    /// <summary>
+    ///     An event's definition is spelled as a field-like event, which is not measured: the accessors
+    ///     carry it.
+    /// </summary>
     [Fact]
     public void AnUndocumentedPartialEvent_IsReportedOnceOnItsImplementation() {
         var diagnostics = Analyze(
