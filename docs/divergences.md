@@ -6801,3 +6801,43 @@ line back. Stable on a second pass. As an argument, `Use(` / `delegate(` … `) 
 
 - options: none.
 - ⚠ status: **open**.
+
+## SK-DIV-0174 — the gap after a block comment was always one space, and the oracle answers it three ways
+
+⚠ **Found measuring #409's family** (#410). `CSharpDocumentBuilder.GapSpace` returned `Required`
+whenever either side of a gap was not a token, so `a /* f */ , b`, `b /* f */ )` and `1 /* f */ ;` came
+out of every file that held them. Measured with `Testing ask` on about 190 shapes, each written closed
+and spaced, at the export's defaults, with 37 space keys flipped in two sets, and with
+`skala_space_before_trailing_comment = false`:
+
+| class | written | oracle | Skala before | Skala now |
+|---|---|---|---|---|
+| the next token's rule, read across the comment | `a /*f*/ ,`, `b /*f*/ )`, `1 /*f*/ ;`, `f /*f*/ .B()`, `a[1 /*f*/ ]`, `G<int /*f*/ >`, `M /*f*/ (`, `a /*f*/ [1]`, `G /*f*/ <int>`, `a /*f*/ ?.L`, `f /*f*/ ++`, `x /*f*/ : 1` | the space removed | one space | identical |
+| | `f/*f*/+ 1`, `x/*f*/=> x`, `f > 0/*f*/? 1`, `if/*f*/(`, `{ 1/*f*/}`, `new P()/*f*/{` | the space added | one space | identical |
+| | every one of these with its key flipped (`space_before_comma = true` → `a /*f*/ ,`) | follows the key | one space | identical |
+| ⚠ an empty pair holding a comment | `base(/*f*/)`, `[/*f*/]`, `new int[] {/*f*/}` | the non-empty key: `base( /*f*/)`, `[ /*f*/]`, `{ /*f*/ }` | one space | identical |
+| the author's bit | after `(`, `[`, `,`, an initializer's `{`, a binary, assignment or prefix operator, `=>`, a ternary's `?` and `:`, `.`, a cast, `new`, a `for`'s `;`, a base list's or constraint's `:`, `return`, `throw`, `await`, `in`, `case`, `where`, `not`; before a parameter's name and a `foreach`'s `in`, `when` and `with` | kept as written, and kept with the governing key flipped | one space | identical |
+| one space | after `is`, `as`, `out`, `ref`, a modifier, a member's type, a named argument's or case label's colon, before an accessor and a collection expression's `[` | one space | one space | identical |
+| ⚠ the gap *before* the comment | `f =/*f*/2` at `space_around_assignment_op = false`, `x =>/*f*/x` at `space_around_lambda_arrow = false` | the operator's key, at either value of `skala_space_before_trailing_comment` | the comment key | identical |
+| | a comment that starts a line (`/*f*/M(1, 2);`) | what follows on a line of its own | identical | identical |
+| | `E( /*f*/)` at `space_between_method_declaration_parameter_list_parentheses = true` | `E(  /*f*/ )`, two spaces in front | one | **open** |
+| | `/** f */` inside an expression | `M(1 /** f */, 2)` | SK9099, the opener dropped (#415) | **open**, not in the run |
+| | `{f/*f*/}` in an interpolation | `{f /*f*/}` | verbatim | **open** |
+
+`SpaceRules.AfterBlockComment` takes the token in front of the run of block comments, which must share
+its line, and answers from it and the next token: `OwnsTheGapBeforeIt` lists the first class and reads
+`Required` on the true neighbours (`RequiredAcrossAComment` for the empty pairs), the second class is a
+`Preserve` resolved against the source like `SpaceRules.Ungoverned`'s, and everything else — every gap
+that was not measured included — keeps the one space it always had. A gap holding a line break is a
+break being joined and keeps the space. `SpaceRules.BeforeBlockComment` is the before-comment row. None
+of these gaps is an inter-token gap, so the fuzzer's absorbed mutations never reached them and
+`SpaceRules.Preserves` is unchanged. Pinned by `constructs/trivia/block-comment-gaps.cs` and
+`BlockCommentGapIssue410Tests`, every row checked on a second pass.
+
+Neighbours on the same probes that are not this entry: a comment between a local's type and its name,
+where the oracle breaks the line (#420); a constructor initializer's colon and an object initializer's
+braces reading the base-list and array-initializer keys, with or without a comment (#419); and #409's
+point before a closer joining an author's break after a comment (#421).
+
+- options: `skala_space_before_trailing_comment`, `skala_space_around_assignment_op`, `skala_space_around_lambda_arrow`, and every key the first class reads.
+- ⚠ status: **resolved** except the three rows marked open.

@@ -3091,7 +3091,26 @@ public sealed partial class CSharpDocumentBuilder {
             or PieceKind.BlockComment
             or PieceKind.DocCommentLine
             or PieceKind.BlockDocComment) {
-            return options.SpaceBeforeTrailingComment ? SpaceKind.Required : SpaceKind.Forbidden;
+            var governed = nextKind == PieceKind.BlockComment && previous.Kind == PieceKind.Token
+                ? SpaceRules.BeforeBlockComment(tokens[previous.TokenIndex], options)
+                : null;
+
+            return governed ?? options.SpaceBeforeTrailingComment ? SpaceKind.Required : SpaceKind.Forbidden;
+        }
+
+        if (previous.Kind == PieceKind.BlockComment
+            && nextKind == PieceKind.Token
+            && TokenBeforeTheComments(previous) is { } before) {
+            // ⚠ A gap holding a line break is a break being joined, and what the author wrote there
+            // was the line ending, not a space: it keeps the one space it always had rather than
+            // reading the next line's indentation as the author's bit.
+            var afterComment = SpaceRules.AfterBlockComment(before, nextToken, options);
+            return afterComment == SpaceKind.Preserve
+                ? HasSpace(previous.Span.End, nextToken.SpanStart)
+                || HasLineBreak(previous.Span.End, nextToken.SpanStart)
+                    ? SpaceKind.Required
+                    : SpaceKind.Forbidden
+                : afterComment;
         }
 
         if (previous.Kind != PieceKind.Token || nextKind != PieceKind.Token) {
@@ -3118,6 +3137,50 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         return false;
+    }
+
+    bool HasLineBreak(int start, int end) {
+        for (var i = start; i < end && i < source.Length; i++) {
+            if (source[i] is '\n' or '\r') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     The token in front of the run of block comments that ends with <paramref name="comment" />,
+    ///     when the run shares that token's line; null otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only the gaps <em>between</em> the pieces are asked about a line break, never a comment's
+    ///     own text: <c>1 /* f</c> / <c>f */, 2</c> comes back <c>f */,</c> from the oracle exactly as a
+    ///     one-line comment does. A run that starts a line is a different case — the oracle moves what
+    ///     follows it onto a line of its own — and it keeps the one space Skala always gave it. So does
+    ///     a formatter tag, and a run broken by anything that is not a block comment.
+    /// </remarks>
+    SyntaxToken? TokenBeforeTheComments(Piece comment) {
+        if (lastPiece < 0 || pieces[lastPiece].Span != comment.Span) {
+            return null;
+        }
+
+        for (var i = lastPiece; i >= 0; i--) {
+            var piece = pieces[i];
+            if (piece.Kind == PieceKind.Token) {
+                return i == lastPiece ? null : tokens[piece.TokenIndex];
+            }
+
+            if (piece.Kind != PieceKind.BlockComment
+                || FormatterTagGuard.IsOffTag(piece.Text, options.Tags)
+                || FormatterTagGuard.IsOnTag(piece.Text, options.Tags)
+                || i == 0
+                || HasLineBreak(pieces[i - 1].Span.End, piece.Span.Start)) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

@@ -51,6 +51,200 @@ public static class SpaceRules {
         !MustSeparate(prev, next) && Ungoverned(prev, next);
 
     /// <summary>
+    ///     The gap between a block comment and the token after it, where <paramref name="prev" /> is the
+    ///     token in front of the comment — on the same line — and <paramref name="next" /> the one behind.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not "always one space", which is what Skala answered until #410 (SK-DIV-0174). Asked directly — every gap
+    ///     written closed and spaced, and again with 37 keys flipped in two sets — the oracle answers this
+    ///     gap one of three ways, and which one is decided by who owns the gap when the comment is not
+    ///     there.
+    ///     <list type="number">
+    ///         <item>
+    ///             The next token's own rule, read as though the comment were absent, wherever that rule
+    ///             is the next token's: <c>a /* f */,</c>, <c>b /* f */)</c>, <c>1 /* f */;</c>,
+    ///             <c>a /* f */.B()</c>, <c>M /* f */(</c>, <c>G /* f */&lt;int&gt;</c>, a closing
+    ///             <c>]</c>, <c>&gt;</c> or <c>}</c>, any colon, a ternary or nullable <c>?</c>, a postfix
+    ///             <c>++</c>, a binary or assignment operator, <c>=&gt;</c> and an opening brace. Every one
+    ///             of them moved with its key (<c>space_before_comma = true</c> gives <c>a /* f */ ,</c>;
+    ///             <c>space_around_binary_operators = none</c> gives <c>f /* f */+ 1</c>). ⚠ An empty pair
+    ///             is not empty once it holds a comment: <c>base( /* f */)</c> reads
+    ///             <c>space_within_method_call_parentheses</c>, not its empty twin, and
+    ///             <c>new int[] { /* f */ }</c> the array-initializer key, not
+    ///             <c>space_within_empty_braces</c>.
+    ///         </item>
+    ///         <item>
+    ///             The author's bit where the rule belongs to the token <em>before</em> the comment:
+    ///             after <c>(</c>, <c>[</c>, <c>,</c>, an initializer's <c>{</c>, a binary, assignment or
+    ///             prefix operator, <c>=&gt;</c>, a ternary's <c>?</c> and <c>:</c>, <c>.</c>, a cast,
+    ///             <c>new</c>, a <c>for</c>'s <c>;</c>, a base list's or a constraint's <c>:</c>, and the
+    ///             keywords <c>return</c>, <c>throw</c>, <c>await</c>, <c>in</c>, <c>case</c>,
+    ///             <c>where</c>, <c>not</c>. <c>M( /* f */a)</c> and <c>M( /* f */ a)</c> both come back
+    ///             as written, and stay so with the key that governs the gap without the comment flipped
+    ///             (<c>space_after_comma = false</c> keeps <c>, /* f */ b</c>;
+    ///             <c>space_within_parentheses = true</c> keeps <c>( /* f */a</c>). A parameter's name is
+    ///             the same: <c>int /* f */x</c>.
+    ///         </item>
+    ///         <item>
+    ///             One space everywhere else that was measured, whatever the author wrote: after
+    ///             <c>is</c>, <c>as</c>, <c>out</c>, <c>ref</c> and a modifier, between a member's type
+    ///             and its name, after a named argument's colon and a case label's, before an accessor,
+    ///             and in front of a collection expression's <c>[</c> even after an <c>=</c>. It is also
+    ///             what an unmeasured gap gets, because it is what every gap got before.
+    ///         </item>
+    ///     </list>
+    ///     Every key in the first class is read on the true neighbours, so this answers a different
+    ///     question from <see cref="Decide" /> rather than overriding it — the comment always separates
+    ///     the two tokens, so <see cref="MustSeparate" /> has nothing to say.
+    /// </remarks>
+    public static SpaceKind AfterBlockComment(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) {
+        if (Ungoverned(prev, next)) {
+            return SpaceKind.Preserve;
+        }
+
+        if (OwnsTheGapBeforeIt(next)) {
+            return RequiredAcrossAComment(prev, next, o) ? SpaceKind.Required : SpaceKind.Forbidden;
+        }
+
+        if (next.IsKind(SyntaxKind.OpenBracketToken) && next.Parent is CollectionExpressionSyntax) {
+            return SpaceKind.Required;
+        }
+
+        return KeepsTheAuthorsGapAfterAComment(prev, next) ? SpaceKind.Preserve : SpaceKind.Required;
+    }
+
+    /// <summary>
+    ///     The gap between <paramref name="prev" /> and a block comment after it, when a key that governs
+    ///     the gap behind <paramref name="prev" /> decides it; null when
+    ///     <c>skala_space_before_trailing_comment</c> does, as it does for every other token.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two keys reach across the comment, and only two, and they reach in both directions. At
+    ///     <c>space_around_assignment_op = false</c> the oracle writes <c>f=/* f */ 2</c> and
+    ///     <c>f +=/* f */1</c>, and at <c>space_around_lambda_arrow = false</c> <c>x =&gt;/* f */x</c>, for a
+    ///     lambda and an expression body alike; at <c>skala_space_before_trailing_comment = false</c> it
+    ///     still writes <c>f = /* f */2</c> and <c>x =&gt; /* f */x</c>, where every other token loses the
+    ///     space. <c>space_around_binary_operators = none</c> leaves <c>f + /* f */1</c> alone, and a switch
+    ///     arm's arrow keeps its space, so neither is here (#410).
+    /// </remarks>
+    public static bool? BeforeBlockComment(SyntaxToken prev, in PhaseOneOptions o) {
+        if (IsAssignmentOperator(prev)) {
+            return o.SpaceAroundAssignmentOp;
+        }
+
+        return prev.IsKind(SyntaxKind.EqualsGreaterThanToken) && prev.Parent is not SwitchExpressionArmSyntax
+            ? o.SpaceAroundLambdaArrow
+            : null;
+    }
+
+    /// <summary>
+    ///     The tokens whose left gap is theirs: the first class in <see cref="AfterBlockComment" />.
+    /// </summary>
+    static bool OwnsTheGapBeforeIt(SyntaxToken next) =>
+        next.Kind() switch {
+            SyntaxKind.CommaToken
+                or SyntaxKind.SemicolonToken
+                or SyntaxKind.CloseParenToken
+                or SyntaxKind.CloseBracketToken
+                or SyntaxKind.CloseBraceToken
+                or SyntaxKind.OpenBraceToken
+                or SyntaxKind.ColonToken
+                or SyntaxKind.EqualsGreaterThanToken => true,
+            SyntaxKind.QuestionToken => true,
+            // ⚠ Only a parenthesis that hangs off what precedes it. `f + /* f */(f)`, a cast and a
+            // lambda's parameters start an operand, and the oracle keeps the author's gap in front of
+            // them as it does in front of any other operand.
+            SyntaxKind.OpenParenToken => next.Parent
+                is ArgumentListSyntax
+                    or AttributeArgumentListSyntax
+                    or ParameterListSyntax { Parent: not ParenthesizedLambdaExpressionSyntax }
+                    or IfStatementSyntax
+                    or WhileStatementSyntax
+                    or DoStatementSyntax
+                    or ForStatementSyntax
+                    or CommonForEachStatementSyntax
+                    or SwitchStatementSyntax
+                    or CatchDeclarationSyntax
+                    or CatchFilterClauseSyntax
+                    or LockStatementSyntax
+                    or UsingStatementSyntax
+                    or FixedStatementSyntax
+                    or CheckedExpressionSyntax
+                    or DefaultExpressionSyntax
+                    or SizeOfExpressionSyntax
+                    or TypeOfExpressionSyntax,
+            SyntaxKind.OpenBracketToken => next.Parent is BracketedArgumentListSyntax or ArrayRankSpecifierSyntax,
+            _ => IsMemberAccessPunctuation(next)
+                || IsTypeAngle(next)
+                || IsPostfixOperator(next)
+                || IsBinaryOperator(next)
+                || IsAssignmentOperator(next)
+                || next.IsKind(SyntaxKind.IsKeyword)
+                || next.IsKind(SyntaxKind.SwitchKeyword)
+                && next.Parent is SwitchExpressionSyntax
+        };
+
+    /// <summary>
+    ///     <see cref="Required" /> on the true neighbours, with a pair the comment sits inside read as the
+    ///     non-empty pair it now is.
+    /// </summary>
+    static bool RequiredAcrossAComment(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) =>
+        (prev.Kind(), next.Kind()) switch {
+            (SyntaxKind.OpenParenToken, SyntaxKind.CloseParenToken) => WithinParentheses(next.Parent, false, o),
+            (SyntaxKind.OpenBracketToken, SyntaxKind.CloseBracketToken) => WithinBrackets(next.Parent, false, o),
+            (SyntaxKind.OpenBraceToken, SyntaxKind.CloseBraceToken) => WithinBraces(next.Parent, default, o),
+            _ => Required(prev, next, o)
+        };
+
+    /// <summary>
+    ///     The second class in <see cref="AfterBlockComment" />: the token in front of the comment owns
+    ///     the gap, and the oracle has no rule for a comment standing in it.
+    /// </summary>
+    static bool KeepsTheAuthorsGapAfterAComment(SyntaxToken prev, SyntaxToken next) {
+        // A parameter's name, and three contextual keywords that follow an operand: `x /* f */in a`,
+        // `int i /* f */when …` and `r /* f */with { … }` all come back as written either way.
+        if (next.IsKind(SyntaxKind.IdentifierToken)
+            && next.Parent is ParameterSyntax
+            || next.IsKind(SyntaxKind.InKeyword)
+            && next.Parent is CommonForEachStatementSyntax
+            || next.IsKind(SyntaxKind.WhenKeyword)
+            && next.Parent is WhenClauseSyntax
+            || next.IsKind(SyntaxKind.WithKeyword)
+            && next.Parent is WithExpressionSyntax) {
+            return true;
+        }
+
+        return prev.Kind() switch {
+            SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.CommaToken => true,
+            SyntaxKind.OpenBraceToken => prev.Parent is InitializerExpressionSyntax,
+            SyntaxKind.LessThanToken => IsTypeAngle(prev) || IsBinaryOperator(prev),
+            SyntaxKind.EqualsGreaterThanToken => true,
+            SyntaxKind.QuestionToken => prev.Parent is ConditionalExpressionSyntax,
+            SyntaxKind.ColonToken => prev.Parent
+                is ConditionalExpressionSyntax
+                    or BaseListSyntax
+                    or TypeParameterConstraintClauseSyntax,
+            SyntaxKind.CloseParenToken => prev.Parent is CastExpressionSyntax,
+            SyntaxKind.SemicolonToken => prev.Parent is ForStatementSyntax,
+            SyntaxKind.NewKeyword => prev.Parent is BaseObjectCreationExpressionSyntax,
+            SyntaxKind.ReturnKeyword
+                or SyntaxKind.ThrowKeyword
+                or SyntaxKind.AwaitKeyword
+                or SyntaxKind.CaseKeyword
+                or SyntaxKind.WhereKeyword
+                or SyntaxKind.NotKeyword => true,
+            SyntaxKind.InKeyword => prev.Parent is CommonForEachStatementSyntax,
+            // ⚠ `is` and `as` are binary operators to Roslyn and not to this gap: `f is/* f */int`
+            // comes back `f is /* f */ int`, closed or spaced.
+            SyntaxKind.IsKeyword or SyntaxKind.AsKeyword => false,
+            _ => IsBinaryOperator(prev)
+                || IsAssignmentOperator(prev)
+                || IsPrefixOperator(prev)
+                || IsMemberAccessPunctuation(prev)
+        };
+    }
+
+    /// <summary>
     ///     The gaps no rule in the export governs, where the oracle leaves whatever the author wrote.
     /// </summary>
     /// <remarks>
