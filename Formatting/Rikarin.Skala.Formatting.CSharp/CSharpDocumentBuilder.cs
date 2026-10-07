@@ -2915,6 +2915,11 @@ public sealed partial class CSharpDocumentBuilder {
     ///         Leaving those two gaps unplanned keeps the common case.
     ///     </para>
     ///     <para>
+    ///         ⚠ A third: the gap after a declaration's last attribute section. The placement keys'
+    ///         break does not survive a comment there in either direction (#434,
+    ///         <see cref="EndsAnAttributeRun" />).
+    ///     </para>
+    ///     <para>
     ///         A line comment is never in the run: the gap after it holds a newline the point would be
     ///         free to join, and joining puts the token inside the comment. Neither is a directive, a
     ///         <c>///</c> documentation comment or a formatter tag.
@@ -2941,7 +2946,10 @@ public sealed partial class CSharpDocumentBuilder {
                     lineComment = true;
                     continue;
                 case PieceKind.Token:
-                    return !lineComment && i != lastPieceIndex && !StopsAtAComment(tokens[piece.TokenIndex]);
+                    return !lineComment
+                        && i != lastPieceIndex
+                        && !StopsAtAComment(tokens[piece.TokenIndex])
+                        && !EndsAnAttributeRun(tokens[piece.TokenIndex]);
                 default:
                     return false;
             }
@@ -2962,6 +2970,34 @@ public sealed partial class CSharpDocumentBuilder {
         token.IsKind(SyntaxKind.OpenParenToken)
         || token.IsKind(SyntaxKind.EqualsGreaterThanToken)
         && token.Parent is ArrowExpressionClauseSyntax;
+
+    /// <summary>
+    ///     Whether <paramref name="token" /> is the <c>]</c> of the last attribute section before what the
+    ///     sections decorate, so that a block comment after it leaves the gap to the author (#434).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on every owner the placement keys name — method, constructor, destructor, operator,
+    ///     indexer, property, event, field, accessor, type, delegate, local function, record parameter —
+    ///     and under every value: <c>[Obsolete] /* c */ public void M() { }</c> stays on one line at
+    ///     <c>never</c>, and <c>[Obsolete] /* c */</c> / <c>public void M() { }</c> stays on two at
+    ///     <c>always</c>, <c>if_owner_is_single_line</c> and with
+    ///     <c>skala_keep_existing_attribute_arrangement = true</c>. A comment the author put on the next
+    ///     line (<c>[Obsolete]</c> / <c>/* c */ public void M()</c>) keeps both its breaks the same way.
+    ///     The attribute's own point does not survive the comment, so nothing is added and nothing taken
+    ///     away; a declaration too long for the line chops its parameters with the attribute still on it.
+    ///     <para>
+    ///         ⚠ Only the <em>last</em> section's gap. Between two sections the point does survive:
+    ///         <c>[Obsolete] /* c */ [Serializable] public void M()</c> comes back as
+    ///         <c>[Obsolete] /* c */</c> / <c>[Serializable]</c> / <c>public void M()</c> at <c>never</c>
+    ///         and joined at <c>always</c>, so the token after the comment decides, not the comment.
+    ///         <c>[assembly: A] /* c */ [assembly: B]</c> is the same between-sections case at the top level.
+    ///     </para>
+    /// </remarks>
+    static bool EndsAnAttributeRun(SyntaxToken token) =>
+        token.IsKind(SyntaxKind.CloseBracketToken)
+        && token.Parent is AttributeListSyntax
+        && token.GetNextToken() is var next
+        && !(next.IsKind(SyntaxKind.OpenBracketToken) && next.Parent is AttributeListSyntax);
 
     /// <summary>
     ///     Emits a break, spending the statement's one continuous indent level if this is the break

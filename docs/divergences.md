@@ -7326,7 +7326,7 @@ blank-line rule that a comment above a declaration is part of it asks whether th
 the line, not only its last comment.
 
 Not this entry, measured beside it and left open: `[Obsolete] /* c */ public void M() { }` stays one line
-in the oracle while Skala breaks after the comment; a blank line before an own-line comment in an
+in the oracle while Skala breaks after the comment (#434, since SK-DIV-0199); a blank line before an own-line comment in an
 enum's chopped member list and before `/* s3 */ static void Local()` at the top level, which the oracle
 writes; and `namespace N2 { /* b3 */` followed by a blank line, which it does not.
 
@@ -7388,3 +7388,46 @@ written for it: **9 of its 36 oracle lines** diverge, and every one is a capture
 
 - options: none.
 - ⚠ status: **deliberate**.
+
+## SK-DIV-0199 — a block comment after the last attribute section leaves the gap to the author
+
+#434: `[Obsolete] /* c */ public void M() { }` comes back from the oracle on one line, and Skala broke
+after the comment. #409's `PointSurvivesComments` carried the placement keys' break past every block
+comment in the gap, and this is the one gap where the oracle does not. Measured with `jb cleanupcode`
+2025.2.6 under `SkalaFormatOnly`, on a method, a constructor, a destructor, an operator, an indexer, a
+property, a field, an event with and without accessors, an accessor, a type, a delegate, an interface
+member, a local function and a record's positional parameter, under the export (`never`), at `always`
+and `if_owner_is_single_line` for all six placement keys, and with
+`skala_keep_existing_attribute_arrangement = true`:
+
+| written | oracle, every key value | Skala before |
+|---|---|---|
+| `[Obsolete] /* c */ public void M() { }`, single-line, multi-line or `/** */`, one comment or two | one line | broken after the comment |
+| `[Obsolete] /* c */` / `public void M() { }` | kept on two lines, at `always` too | identical |
+| `[Obsolete]` / `/* c */ public void M() { }` | kept | broken after the comment as well: three lines |
+| `[Obsolete] /* c */` / `/* d */ public void M()` | kept | broken after `/* d */` |
+| `public int P { [Obsolete] /* c */ get; set; }` | one line | the accessor list expanded around the broken accessor |
+| `record R([Obsolete] /* c */ int A, …)` | one line | the parameter list chopped |
+| `[Obsolete] /* c */ [Serializable] public void M()` (the comment *between* sections) | `[Obsolete] /* c */` / `[Serializable]` / `public void M()` at `never`, one line at `always` | identical |
+| `[Obsolete] [Serializable] /* c */ public void M()` | `[Obsolete]` / `[Serializable] /* c */ public void M()` | the last gap broken too |
+| `[Obsolete] /* c */ public void M(…)` whose parameter list ends past the margin | the parameters chopped, the attribute on the line | identical |
+| `[assembly: A] /* c */ [assembly: B]` | broken after the comment | identical |
+
+So it is the token after the comment that decides, not the comment: the gap after a declaration's last
+section is the author's, in both directions, under every key. `CSharpDocumentBuilder.EndsAnAttributeRun`
+keeps `PointSurvivesComments` from planning it; the gap between two sections is still planned.
+
+⚠ One corner stays **open**, and it is not a rule Skala's fitter can state yet. A line that overflows only
+by its terminator is broken after the comment by the oracle: `[Obsolete] /* c */ public void M(…) { }` at
+121 columns whose `)` is at 117, and a field at 121 whose value ends at 120 before its `;`. One column
+further left, at 120, both stay whole; with the `)` past the margin the parameters chop instead; with
+the value past it the `=` breaks. The same shape *without* the comment at `always` is the same answer —
+the oracle declines to join `[Obsolete] public void M(…) { }` at 121 with the `)` at 117 and joins it at
+125 with the `)` at 121 — so it is the placement key's own joining half, whose measure excludes the
+terminator, and not a fact about comments. Skala chops the parameters at 121 and breaks after the `=`,
+and joins and chops at `always` without the comment (#438).
+
+- options: the six `skala_place_*_attribute_on_same_line` keys and
+  `skala_keep_existing_attribute_arrangement`, none of which moves the last gap when a comment is in it.
+- ⚠ status: **resolved** except the terminator corner, which is **open** (#438). Pinned by
+  `AttributeCommentIssue434Tests` and `constructs/breaks/comment-after-the-last-attribute.cs`.
