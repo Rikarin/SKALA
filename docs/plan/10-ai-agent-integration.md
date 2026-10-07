@@ -79,6 +79,25 @@ Design notes, each of which is a decision:
 
 `--format=json` gives the SARIF for agents that would rather parse than read.
 
+⚠ **Tool warnings that did not block the run are a `WARNING` block under the banner (#398).** A
+file in no compilation (`SK9021`), a baseline the gate names that does not exist yet (`SK9028` at
+warning) and every other `SK90xx` at warning severity that the gate does not fail on printed nothing
+here until #398 — a silently unanalysed file is exactly what an agent must be told. The block sits
+above `FORMAT`, does not touch the exit code, and replaces `OK  nothing to do.` when nothing else
+is printed. Info-level tool diagnostics (`SK9025`, `SK9032`) stay off this surface. The decision
+for both bounded formats is in [09](09-quality-gates-and-reporting.md) § "What the bounded surfaces
+carry of the run's own diagnostics".
+
+Measured on Skala's own self-gate (detail line abridged):
+
+```
+WARNING 3 warnings about this run, not about your code — the findings below may not cover what these name:
+  SK9021  artifacts/skala.binlog  the binary log covers 731 of 733 selected source file(s) (100 %); 2 were in no compilation and were not analysed
+        → ⚠ An incremental build's binlog holds only the projects MSBuild rebuilt, … Rebuild with `--no-incremental`, or re-run without `--load=binlog`.
+  SK9021  build/Build.cs  the binary log names no compilation containing this file, so it was not analysed; rebuild
+  SK9021  build/Configuration.cs  the binary log names no compilation containing this file, so it was not analysed; rebuild
+```
+
 ### The INCOMPLETE banner
 
 A run that could not check every file it was asked to check says so **above** the three buckets,

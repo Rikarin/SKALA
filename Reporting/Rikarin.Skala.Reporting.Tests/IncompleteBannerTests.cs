@@ -362,12 +362,18 @@ public sealed class IncompleteBannerTests {
     ///     ⚠ #358 left the absent baseline non-blocking on purpose, and
     ///     <c>MissingGateInput_DoesNotFailTheReliabilityGate</c> pins that at the gate. This pins it at
     ///     the banner: warning severity never reaches it.
+    ///     <para>
+    ///         ⚠ #398: it is printed, in the <c>WARNING</c> block under where the banner would be, and
+    ///         that block replaces <c>OK  nothing to do.</c> — this asserted the OK line until then,
+    ///         which was the warning being dropped rather than the banner being silent.
+    ///     </para>
     /// </summary>
     [Fact]
     public void AgentBanner_IsSilentForABaselineThatDoesNotExistYet() {
         var text = Renderer.Render(Report(AbsentBaseline()) with { FileCount = 1 }, ReportFormat.Agent);
 
-        Assert.StartsWith("OK  nothing to do.", text, StringComparison.Ordinal);
+        Assert.StartsWith("WARNING 1 warning about this run", text, StringComparison.Ordinal);
+        Assert.Contains("  SK9028  .skala/baseline.sarif  the gate names a baseline", text, StringComparison.Ordinal);
         Assert.DoesNotContain("INCOMPLETE", text, StringComparison.Ordinal);
         Assert.Empty(Renderer.GateInputs(Report(AbsentBaseline())));
     }
@@ -617,13 +623,14 @@ public sealed class IncompleteBannerTests {
     ///     ⚠ The same ids at warning never reach the banner: MSBuild's relayed <c>workspace:</c> lines,
     ///     the no-project-found case, and the binlog rung's per-assembly <c>SK9029</c>. Each is a state
     ///     the repository is in, not a rung that failed, and <c>ReliabilityGateTests</c> pins the same
-    ///     split at the gate.
+    ///     split at the gate. ⚠ #398: still a warning, so it is printed in the <c>WARNING</c> block.
     /// </summary>
     [Fact]
     public void AgentBanner_IsSilentForARelayedWorkspaceLine() {
         var text = Renderer.Render(Report(RelayedWorkspaceLine()) with { FileCount = 1 }, ReportFormat.Agent);
 
-        Assert.StartsWith("OK  nothing to do.", text, StringComparison.Ordinal);
+        Assert.StartsWith("WARNING 1 warning about this run", text, StringComparison.Ordinal);
+        Assert.Contains("  SK9024  Broken.csproj  workspace: Found project reference", text, StringComparison.Ordinal);
         Assert.DoesNotContain("INCOMPLETE", text, StringComparison.Ordinal);
         Assert.Empty(Renderer.OutsideTheFraction(Report(RelayedWorkspaceLine())));
     }

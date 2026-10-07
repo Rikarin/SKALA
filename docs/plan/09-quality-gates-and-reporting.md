@@ -32,16 +32,73 @@ Everything a human or a machine sees is rendered from this object, in `Rikarin.S
 | Renderer | Surface | Notes |
 |---|---|---|
 | `terminal` | default TTY output | ✅ grouped by file, fixable marked `⟳`. ⚠ Not Spectre: M5 writes plain text, because the only thing the dependency was buying at this size was colour |
-| `plain` | `--no-color`, non-TTY | ✅ one finding per line, `path:line:col: level SKxxxx: message` — greppable, and the format every editor's error parser already understands |
+| `plain` | `--no-color`, non-TTY | ✅ one finding per line, `path:line:col: level SKxxxx: message` — greppable, and the format every editor's error parser already understands. Tool diagnostics at warning or above come first in the same shape (#345, #398; § below) |
 | `json` | `--format=json` | ✅ the SARIF, verbatim |
 | `github` | CI | ✅ annotations, **and** the `$GITHUB_STEP_SUMMARY` table. ⚠ The summary is written by the renderer itself rather than by a separate step, because a step that can be forgotten is a run that looks clean |
 | `sarif-upload` | CI | ✅ the same file, uploaded by `github/codeql-action/upload-sarif`; no Skala-side integration needed, so nothing was built. `.github/workflows/skala.yml` is the wiring |
 | `junit` | CI | ✅ one test case per finding, suites per rule. ⚠ Not per file: CI systems dedupe on the case name, so a file with twelve findings would report one |
 | `markdown` | `skala report --format=markdown` | ✅ bounded at 50 rows, with the elision saying what was elided |
-| `agent` | agent, and the MCP server | ✅ the three-bucket report of [10](10-ai-agent-integration.md) |
+| `agent` | agent, and the MCP server | ✅ the three-bucket report of [10](10-ai-agent-integration.md), under the `INCOMPLETE` banner and the `WARNING` block (#398; § below) |
 
 ⚠ No renderer contains analysis logic. A renderer that decides what counts as a failure is a second
 implementation of the gate. Renderers read; the gate decides.
+
+### What the bounded surfaces carry of the run's own diagnostics (#398)
+
+A *tool diagnostic* is the run talking about itself (`SK90xx`), not a finding in the code.
+`terminal`, `github` and the SARIF carry every one at info or above. `plain` and `agent` are the
+bounded surfaces, and until #398 they carried only the **blocking** ones (`Renderer.Blocking`:
+error severity, or an id the reliability gate fails on) — so `SK9021`, a file in no compilation and
+therefore not analysed, whose own rationale calls it the worst failure the tool can have, printed
+nothing on the two formats every CI log, script, MCP call and agent reads (`plain` is the default
+whenever stdout is redirected). Measured on master `25a13f16` against Skala's own self-gate
+(`check --load=binlog --binlog artifacts/skala.binlog --require-fresh-binlog --gate=ci`): the SARIF
+holds three `SK9021` (`build/Build.cs`, `build/Configuration.cs` and the coverage summary) and one
+`SK9032`; `--format=plain` and `--format=agent` printed none of the four.
+
+The decision:
+
+| | `plain` | `agent` |
+|---|---|---|
+| blocking (any severity) | first, `path:line:1: level id: message` (#345) | the `INCOMPLETE` banner (#345) |
+| warning, not blocking | ✅ next, same shape, same stream | ✅ the `WARNING` block, under the banner and above `FORMAT` |
+| info / hint | ✗ | ✗ |
+| exit code | unchanged | unchanged |
+
+- **Stdout, in the existing shape — not stderr.** `plain` has printed blocking tool diagnostics as
+  `path:line:1: level SKxxxx: message` since #345, so a parser that accepts one accepts the other; a
+  root-located one prints `.` as its path, as the blocking ones always have. The MCP server's
+  `check` tool returns the rendered text and nothing else, so stderr would have hidden it from the
+  one consumer that is a model. A warning that shows up only when somebody remembered to keep
+  stderr is the defect #398 is about.
+- **Every consumer that reads `plain` was checked.** The nightly rule-count job and
+  `.github/scripts/rule-counts.py` read the `--output` SARIF, never stdout; the `Lint` target runs
+  `config check` and `format --check`, not `check`; `.github/workflows/skala.yml` uses `github`;
+  the `github`/`terminal` renderers are unchanged. In the test projects, nothing asserted that
+  `plain` stdout was finding-lines only over a run carrying a warning: `ReportingTests`'
+  exact-string assertions are over reports with no diagnostics, and `PartialVerdictTests` /
+  `ExitCodeContractTests` assert *contains*. Two `IncompleteBannerTests` asserted
+  `OK  nothing to do.` over a warning-severity `SK9028` (no baseline yet) and `SK9024` (a relayed
+  `workspace:` line) — they were pinning that the banner is silent, which it still is; the OK line
+  under them was the warning being dropped, and they now assert the `WARNING` block.
+- **`agent` gets its own block, not the banner.** The banner's set is what blocked the run or failed
+  the gate, and its invariants (`IncompleteBannerTests`) are untouched. The `WARNING` block goes
+  above `FORMAT` for the banner's reason: `SK9021` says a file was not analysed, so every bucket
+  under it covers less than the tree. Bounded at 25 lines with an elision naming
+  `skala verify --format=json` (the loader already caps `SK9021`'s per-file lines at 20).
+  ⚠ **A run with a warning does not print `OK  nothing to do.`** — the builder is non-empty, and
+  that sentence over a file that was never looked at is what an agent would act on.
+- **Info stays off both, deliberately.** An info tool diagnostic is a state the run handled:
+  `SK9025` (a fallback, whose consequence the `SKIPPED` line already states) and `SK9032` (the
+  compiler's doc diagnostics are off — true of 31 of 31 projects in this repository, and of most
+  repositories, on every run). On a surface an editor turns into a problem list, or an agent reads
+  as work, a line that is always there and never about the code is the line readers learn to skip,
+  and it would arrive in exactly the shape `SK9021` does. ⚠ The issue's "SK9025 (load fallback)"
+  sits beside the warnings, but `ProjectLoader` emits it at **info**; it is in the info row.
+- Pinned by `ToolWarningSurfaceTests` (renderer) and `ToolWarningOutputTests` (the real binary over
+  a built project with a file outside its glob, the self-gate's shape; the clean case selects `src/`
+  only and asserts plain prints nothing and agent prints exactly `OK  nothing to do.`, with the
+  info `SK9032` in the same run's SARIF as the control).
 
 ### Severities, and what they are in SARIF
 
