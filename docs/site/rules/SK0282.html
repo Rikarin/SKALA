@@ -21,7 +21,7 @@
 <tr><th>Needs a compilation</th><td>yes</td></tr>
 <tr><th>Runs under <code>--load=loose</code></th><td>no</td></tr>
 <tr><th>Cached per file</th><td>yes</td></tr>
-<tr><th>Fix</th><td>yes, safe</td></tr>
+<tr><th>Fix</th><td>yes, review it</td></tr>
 <tr><th>Language version floor</th><td>—</td></tr>
 <tr><th>Since</th><td>2.0</td></tr>
 </tbody>
@@ -37,7 +37,7 @@
 <p>Write:</p>
 <pre class="good"><code>record Point(int X, int Y);</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>⚠ <strong>Which accessor pair is generated depends on the record kind, and getting it wrong deletes a property that was doing something.</strong> A <code>record class</code> and a <code>readonly record struct</code> generate <code>{ get; init; }</code>; a mutable <code>record struct</code> generates <code>{ get; set; }</code>. So <code>{ get; init; }</code> written on a mutable record struct is <em>not</em> redundant — it makes the property init-only, which the generated one is not — and it is declined. ⚠ <strong>The initializer must be present and must be the parameter itself, asked of the symbol rather than of the spelling.</strong> A hand-written positional property with no <code>= X</code> is not assigned by the generated constructor at all, so deleting it changes what the record stores; and <code>= X</code> binding to anything other than the primary constructor's parameter is a different program. ⚠ <strong>An attribute, an accessor modifier, an accessor body, an expression body, a non-`public` or extra modifier, or a parameter carrying a default or an attribute all withdraw the finding</strong>: the generated property has none of those, so anything written there is the author's. ⚠ The whole declaration is deleted with its leading trivia, so a documentation comment on it is a reason to leave it alone rather than something to remove.</p>
+<p>⚠ <strong>Which accessor pair is generated depends on the record kind, and getting it wrong deletes a property that was doing something.</strong> A <code>record class</code> and a <code>readonly record struct</code> generate <code>{ get; init; }</code>; a mutable <code>record struct</code> generates <code>{ get; set; }</code>. So <code>{ get; init; }</code> written on a mutable record struct is <em>not</em> redundant — it makes the property init-only, which the generated one is not — and it is declined. ⚠ <strong>The initializer must be present and must be the parameter itself, asked of the symbol rather than of the spelling.</strong> A hand-written positional property with no <code>= X</code> is not assigned by the generated constructor at all, so deleting it changes what the record stores; and <code>= X</code> binding to anything other than the primary constructor's parameter is a different program. ⚠ <strong>An attribute, an accessor modifier, an accessor body, an expression body, a non-`public` or extra modifier, or a parameter carrying a default or an attribute all withdraw the finding</strong>: the generated property has none of those, so anything written there is the author's. ⚠ The whole declaration is deleted with its leading trivia, so a documentation comment on it is a reason to leave it alone rather than something to remove. ⚠ <strong>The fix is not safe (#412's audit, measured by running both versions):</strong> When a base type declares a member of the same name, deleting the explicit property makes the compiler bind the base's.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK0282.severity</code></li>

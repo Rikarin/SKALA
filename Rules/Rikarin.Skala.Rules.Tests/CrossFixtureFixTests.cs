@@ -58,8 +58,9 @@ public sealed class CrossFixtureFixTests {
         );
 
         // Anti-vacuity: a sweep that applied nothing passes for the reason a disabled check passes.
+        // ⚠ 864 once #412's audit flipped 59 fixes to unsafe; it was over 1000 before.
         Assert.True(
-            applied > 1000,
+            applied > 800,
             $"Only {applied} (fixture, rule) fix(es) were applied across {fixtures.Count} fixtures."
         );
         Assert.True(

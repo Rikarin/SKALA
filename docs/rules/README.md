@@ -36,21 +36,21 @@
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
 | [SK0230](SK0230.md) | The `with` expression or object initializer is empty | warning | review | yes |
-| [SK0231](SK0231.md) | The string call produces the string it was given | warning | safe | no |
-| [SK0232](SK0232.md) | The argument or signature element is redundant | warning | safe | no |
-| [SK0233](SK0233.md) | The syntax is redundant | suggestion | safe | yes |
-| [SK0234](SK0234.md) | The cast or type argument is redundant | warning | safe | no |
-| [SK0240](SK0240.md) | The control flow does nothing | warning | safe | yes |
+| [SK0231](SK0231.md) | The string call produces the string it was given | warning | review | no |
+| [SK0232](SK0232.md) | The argument or signature element is redundant | warning | review | no |
+| [SK0233](SK0233.md) | The syntax is redundant | suggestion | review | yes |
+| [SK0234](SK0234.md) | The cast or type argument is redundant | warning | review | no |
+| [SK0240](SK0240.md) | The control flow does nothing | warning | review | yes |
 | [SK0241](SK0241.md) | The modifier has no effect | warning | safe | yes |
 | [SK0242](SK0242.md) | The `#nullable` directive changes nothing | warning | safe | yes |
 | [SK0243](SK0243.md) | The qualifier is redundant | warning | safe | no |
-| [SK0244](SK0244.md) | The declaration adds nothing | warning | safe | yes |
-| [SK0250](SK0250.md) | The discard designation is redundant | suggestion | safe | yes |
-| [SK0260](SK0260.md) | The boolean expression says the same thing twice | warning | safe | no |
-| [SK0261](SK0261.md) | The attribute writes out what the language already supplies | warning | safe | no |
-| [SK0280](SK0280.md) | The base list names an interface it already has | warning | safe | no |
+| [SK0244](SK0244.md) | The declaration adds nothing | warning | review | yes |
+| [SK0250](SK0250.md) | The discard designation is redundant | suggestion | review | yes |
+| [SK0260](SK0260.md) | The boolean expression says the same thing twice | warning | review | no |
+| [SK0261](SK0261.md) | The attribute writes out what the language already supplies | warning | review | no |
+| [SK0280](SK0280.md) | The base list names an interface it already has | warning | review | no |
 | [SK0281](SK0281.md) | The attribute promises to set members that do not exist | warning | safe | no |
-| [SK0282](SK0282.md) | The record writes out the property its parameter generates | warning | safe | no |
+| [SK0282](SK0282.md) | The record writes out the property its parameter generates | warning | review | no |
 | [SK0290](SK0290.md) | The explicit `Nullable<T>` construction converts nothing | warning | safe | no |
 
 ## Correctness
@@ -70,9 +70,9 @@
 | [SK2012](SK2012.md) | Review a self-operation on an automatic property | warning | — | no |
 | [SK2013](SK2013.md) | An exception is constructed and then discarded | warning | safe | no |
 | [SK2014](SK2014.md) | An empty catch silently discards an exception | warning | — | yes |
-| [SK2015](SK2015.md) | `throw ex;` resets the stack trace | warning | safe | yes |
+| [SK2015](SK2015.md) | `throw ex;` resets the stack trace | warning | review | yes |
 | [SK2016](SK2016.md) | A logger message is interpolated before it is logged | suggestion | — | no |
-| [SK2017](SK2017.md) | The exception names a parameter that does not exist | warning | safe | no |
+| [SK2017](SK2017.md) | The exception names a parameter that does not exist | warning | review | no |
 | [SK2030](SK2030.md) | Detect NaN with IsNaN rather than equality | warning | safe | no |
 | [SK2031](SK2031.md) | Do not discard a setter's value parameter | warning | — | yes |
 | [SK2032](SK2032.md) | Remove GC.SuppressFinalize from a type with no finalizer | suggestion | safe | no |
@@ -84,7 +84,7 @@
 | [SK2043](SK2043.md) | The hash code depends on state that can change | warning | — | no |
 | [SK2044](SK2044.md) | The equality members are inconsistent with each other | warning | — | no |
 | [SK2050](SK2050.md) | Integer division feeds a fractional result | warning | review | no |
-| [SK2051](SK2051.md) | The arithmetic has a result its constant operand already fixes | warning | safe | no |
+| [SK2051](SK2051.md) | The arithmetic has a result its constant operand already fixes | warning | review | no |
 | [SK2052](SK2052.md) | The shift count is masked to a different count | warning | — | no |
 | [SK2053](SK2053.md) | The size comparison is decided by a count never being negative | warning | — | no |
 | [SK2054](SK2054.md) | A signed modulus result is compared for equality with a non-zero value | warning | — | no |
@@ -92,11 +92,11 @@
 | [SK2061](SK2061.md) | Both operands of the operator are the same expression | warning | — | no |
 | [SK2062](SK2062.md) | A later condition in the chain repeats an earlier one | warning | — | yes |
 | [SK2063](SK2063.md) | The operator sequence reads as a different operator | warning | — | yes |
-| [SK2064](SK2064.md) | Use && or \|\| rather than & or \| on booleans | warning | safe | no |
+| [SK2064](SK2064.md) | Use && or \|\| rather than & or \| on booleans | warning | review | no |
 | [SK2070](SK2070.md) | The Serilog message template has a different number of holes than the call supplies values | warning | — | no |
 | [SK2071](SK2071.md) | The structured log template names the same property twice | warning | — | no |
 | [SK2072](SK2072.md) | The literal contains an unescaped invisible character | warning | safe | yes |
-| [SK2073](SK2073.md) | The caught exception is not passed to the logger's exception parameter | warning | safe | no |
+| [SK2073](SK2073.md) | The caught exception is not passed to the logger's exception parameter | warning | review | no |
 | [SK2080](SK2080.md) | The set or dictionary initializer repeats a key | warning | — | no |
 | [SK2081](SK2081.md) | The collection is passed to its own method as the other collection | warning | — | no |
 | [SK2082](SK2082.md) | The collection element is written twice with nothing reading it in between | warning | — | no |
@@ -110,11 +110,11 @@
 | [SK2102](SK2102.md) | The `[DebuggerDisplay]` string names a member that does not exist | warning | — | no |
 | [SK2103](SK2103.md) | The attribute is applied twice with the same arguments | warning | review | no |
 | [SK2110](SK2110.md) | `ToString()` returns null | warning | review | no |
-| [SK2111](SK2111.md) | The null-forgiving operator suppresses nothing | warning | safe | no |
+| [SK2111](SK2111.md) | The null-forgiving operator suppresses nothing | warning | review | no |
 | [SK2112](SK2112.md) | The local is declared nullable and is never null | suggestion | safe | no |
-| [SK2113](SK2113.md) | The service resolution is null-forgiven instead of required | suggestion | safe | no |
+| [SK2113](SK2113.md) | The service resolution is null-forgiven instead of required | suggestion | review | no |
 | [SK2120](SK2120.md) | A bitwise operator combines members of a consecutively numbered enum | warning | — | no |
-| [SK2121](SK2121.md) | The `as` operator tests a conversion that always succeeds | suggestion | safe | no |
+| [SK2121](SK2121.md) | The `as` operator tests a conversion that always succeeds | suggestion | review | no |
 | [SK2130](SK2130.md) | A static field initializer reads a field declared below it | warning | — | no |
 | [SK2131](SK2131.md) | The get-only property is never assigned | warning | — | no |
 | [SK2132](SK2132.md) | The accessor uses another property's backing field | warning | review | no |
@@ -142,14 +142,14 @@
 | [SK2180](SK2180.md) | The `foreach` casts every element down to a narrower type | warning | — | no |
 | [SK2181](SK2181.md) | `GetType()` is called on something that is already a `Type` | warning | review | no |
 | [SK2182](SK2182.md) | A type is identified by comparing its name to a string | warning | review | no |
-| [SK2183](SK2183.md) | A static member is reached through a type that inherits it | suggestion | safe | no |
+| [SK2183](SK2183.md) | A static member is reached through a type that inherits it | suggestion | review | no |
 | [SK2184](SK2184.md) | The call skips a better overload the derived interface hides | warning | — | no |
 | [SK2190](SK2190.md) | The struct key has no equality of its own | warning | — | no |
 | [SK2191](SK2191.md) | The struct is copied before the mutation lands | warning | — | no |
 | [SK2192](SK2192.md) | `==` on spans compares memory locations | warning | review | no |
 | [SK2193](SK2193.md) | `ImmutableArray<T>` is built with a collection initializer | error | review | no |
 | [SK2194](SK2194.md) | The captured primary constructor parameter is assigned | warning | — | no |
-| [SK2200](SK2200.md) | The field initializer is overwritten by every constructor | warning | safe | no |
+| [SK2200](SK2200.md) | The field initializer is overwritten by every constructor | warning | review | no |
 | [SK2201](SK2201.md) | The unsubscription passes an anonymous function | warning | — | no |
 | [SK2202](SK2202.md) | The modification sits inside a conditional invocation | warning | — | yes |
 | [SK2210](SK2210.md) | The constant index or range cannot be valid | warning | — | no |
@@ -183,7 +183,7 @@
 | [SK6032](SK6032.md) | An abstract type declares nothing to implement | suggestion | — | yes |
 | [SK6033](SK6033.md) | A type has only private constructors and is not static | warning | — | no |
 | [SK6034](SK6034.md) | A public constant is baked into every caller | suggestion | review | no |
-| [SK6040](SK6040.md) | An `out` variable is declared and never read | warning | safe | no |
+| [SK6040](SK6040.md) | An `out` variable is declared and never read | warning | review | no |
 | [SK6041](SK6041.md) | A `foreach` variable is declared wider than the element it receives | suggestion | review | no |
 | [SK6050](SK6050.md) | The method ignores its inputs and returns a constant | suggestion | — | no |
 | [SK6051](SK6051.md) | The base type tests `this` against a derived type | suggestion | — | no |
@@ -223,11 +223,11 @@
 
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
-| [SK3501](SK3501.md) | A disposable is created in a local and never disposed | warning | safe | no |
+| [SK3501](SK3501.md) | A disposable is created in a local and never disposed | warning | review | no |
 | [SK3502](SK3502.md) | A type owns a disposable field but is not disposable | warning | — | no |
 | [SK3503](SK3503.md) | An `IAsyncDisposable` is disposed synchronously | warning | review | no |
-| [SK3510](SK3510.md) | A variable already owned by `using` is disposed again | warning | safe | no |
-| [SK3511](SK3511.md) | The `using` resource is built with an object initializer | warning | safe | no |
+| [SK3510](SK3510.md) | A variable already owned by `using` is disposed again | warning | review | no |
+| [SK3511](SK3511.md) | The `using` resource is built with an object initializer | warning | review | no |
 | [SK3512](SK3512.md) | A variable captured by `using` is returned | warning | — | no |
 | [SK3530](SK3530.md) | The disposable field is not disposed by `Dispose` | warning | review | no |
 | [SK3531](SK3531.md) | The `DisposeAsync` override never calls the base implementation | warning | — | no |
@@ -270,18 +270,18 @@
 | [SK7101](SK7101.md) | A non-public member has no documentation comment | none | — | yes |
 | [SK7102](SK7102.md) | The `<returns>` element documents a member that returns nothing | warning | review | yes |
 | [SK7103](SK7103.md) | The `<inheritdoc/>` has nothing to inherit | warning | review | no |
-| [SK7110](SK7110.md) | The logger is declared for a different type than the one that declares it | suggestion | safe | no |
+| [SK7110](SK7110.md) | The logger is declared for a different type than the one that declares it | suggestion | review | no |
 
 ## Modernization
 
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
-| [SK1001](SK1001.md) | Use a collection expression | suggestion | safe | no |
+| [SK1001](SK1001.md) | Use a collection expression | suggestion | review | no |
 | [SK1003](SK1003.md) | Use a field-backed property | suggestion | safe | no |
 | [SK1004](SK1004.md) | Use an `extension` block | suggestion | review | no |
 | [SK1005](SK1005.md) | Use a file-scoped namespace | suggestion | safe | yes |
-| [SK1006](SK1006.md) | Use a `using` declaration | suggestion | safe | yes |
-| [SK1010](SK1010.md) | Use `is null` / `is not null` instead of `==` / `!=` | suggestion | safe | no |
+| [SK1006](SK1006.md) | Use a `using` declaration | suggestion | review | yes |
+| [SK1010](SK1010.md) | Use `is null` / `is not null` instead of `==` / `!=` | suggestion | review | no |
 | [SK1011](SK1011.md) | Use a property pattern | suggestion | safe | no |
 | [SK1012](SK1012.md) | Use a switch expression for a returning equality chain | suggestion | safe | no |
 | [SK1013](SK1013.md) | Use a list pattern for guarded element checks | suggestion | safe | no |
@@ -297,33 +297,33 @@
 | [SK1031](SK1031.md) | Use a null-conditional assignment | suggestion | safe | no |
 | [SK1033](SK1033.md) | Use `TryGetValue` or `TryAdd` instead of `ContainsKey` and a second lookup | suggestion | safe | no |
 | [SK1034](SK1034.md) | Use the `Count` property, not `Count()` or `Any()` **(retired)** | — | safe | no |
-| [SK1035](SK1035.md) | Use `Enum.GetValues<T>()` | suggestion | safe | no |
-| [SK1040](SK1040.md) | Use `T?` instead of `Nullable<T>` | suggestion | safe | no |
-| [SK1041](SK1041.md) | Use a compound assignment | suggestion | safe | yes |
-| [SK1042](SK1042.md) | The nested `if` statements can be combined | suggestion | safe | yes |
+| [SK1035](SK1035.md) | Use `Enum.GetValues<T>()` | suggestion | review | no |
+| [SK1040](SK1040.md) | Use `T?` instead of `Nullable<T>` | suggestion | review | no |
+| [SK1041](SK1041.md) | Use a compound assignment | suggestion | review | yes |
+| [SK1042](SK1042.md) | The nested `if` statements can be combined | suggestion | review | yes |
 | [SK1043](SK1043.md) | The `for` loop is a `while` | suggestion | safe | yes |
-| [SK1044](SK1044.md) | Use `string.IsNullOrEmpty` | suggestion | safe | no |
-| [SK1050](SK1050.md) | Use pattern matching instead of a test-and-cast | suggestion | safe | no |
-| [SK1051](SK1051.md) | Simplify the pattern | suggestion | safe | no |
-| [SK1052](SK1052.md) | Merge the `?:` into a conditional access | suggestion | safe | no |
-| [SK1053](SK1053.md) | Use a discard | suggestion | safe | no |
-| [SK1054](SK1054.md) | Inline the `out` variable declaration | suggestion | safe | no |
-| [SK1060](SK1060.md) | Use an index-from-end expression | suggestion | safe | no |
-| [SK1061](SK1061.md) | Use `nameof` | suggestion | safe | no |
-| [SK1062](SK1062.md) | Use the string literal form that needs no escapes | hint | safe | yes |
-| [SK1063](SK1063.md) | Use the interpolation form that says what it means | suggestion | safe | no |
-| [SK1064](SK1064.md) | Use `>>>` | suggestion | safe | no |
+| [SK1044](SK1044.md) | Use `string.IsNullOrEmpty` | suggestion | review | no |
+| [SK1050](SK1050.md) | Use pattern matching instead of a test-and-cast | suggestion | review | no |
+| [SK1051](SK1051.md) | Simplify the pattern | suggestion | review | no |
+| [SK1052](SK1052.md) | Merge the `?:` into a conditional access | suggestion | review | no |
+| [SK1053](SK1053.md) | Use a discard | suggestion | review | no |
+| [SK1054](SK1054.md) | Inline the `out` variable declaration | suggestion | review | no |
+| [SK1060](SK1060.md) | Use an index-from-end expression | suggestion | review | no |
+| [SK1061](SK1061.md) | Use `nameof` | suggestion | review | no |
+| [SK1062](SK1062.md) | Use the string literal form that needs no escapes | hint | review | yes |
+| [SK1063](SK1063.md) | Use the interpolation form that says what it means | suggestion | review | no |
+| [SK1064](SK1064.md) | Use `>>>` | suggestion | review | no |
 | [SK1070](SK1070.md) | Deconstruct the tuple instead of reading it element by element | suggestion | safe | no |
-| [SK1071](SK1071.md) | Copy the record with a `with` expression | suggestion | safe | no |
-| [SK1072](SK1072.md) | The spread of a freshly created array is its elements | suggestion | safe | no |
-| [SK1073](SK1073.md) | Use the framework's cached instance | suggestion | safe | no |
-| [SK1080](SK1080.md) | Use the LINQ operator that says what the chain means | suggestion | safe | no |
-| [SK1081](SK1081.md) | Remove the LINQ or collection call that does nothing | warning | safe | no |
-| [SK1082](SK1082.md) | Use the indexer | suggestion | safe | no |
+| [SK1071](SK1071.md) | Copy the record with a `with` expression | suggestion | review | no |
+| [SK1072](SK1072.md) | The spread of a freshly created array is its elements | suggestion | review | no |
+| [SK1073](SK1073.md) | Use the framework's cached instance | suggestion | review | no |
+| [SK1080](SK1080.md) | Use the LINQ operator that says what the chain means | suggestion | review | no |
+| [SK1081](SK1081.md) | Remove the LINQ or collection call that does nothing | warning | review | no |
+| [SK1082](SK1082.md) | Use the indexer | suggestion | review | no |
 | [SK1083](SK1083.md) | Use `foreach` over an indexed `for` | suggestion | review | no |
 | [SK1084](SK1084.md) | Use a LINQ operator for part of the loop | hint | review | no |
 | [SK1090](SK1090.md) | Use a computed property instead of an auto-property holding a constant | hint | review | no |
-| [SK1091](SK1091.md) | The private auto-property is a field | suggestion | safe | no |
+| [SK1091](SK1091.md) | The private auto-property is a field | suggestion | review | no |
 | [SK1092](SK1092.md) | Use a tuple literal instead of constructing a `Tuple` | suggestion | review | no |
 | [SK1093](SK1093.md) | Express the cast in the declaration instead | hint | safe | no |
 | [SK1094](SK1094.md) | Use nullable reference type syntax instead of an annotation attribute | warning | review | no |
@@ -350,17 +350,17 @@
 | [SK4004](SK4004.md) | Review boxing despite an existing generic constraint | hint | — | no |
 | [SK4006](SK4006.md) | Review a materialization used only by foreach | hint | — | no |
 | [SK4007](SK4007.md) | Review large struct arguments in loops | hint | — | no |
-| [SK4010](SK4010.md) | A `Where` the next operator could have taken as its predicate | suggestion | safe | no |
+| [SK4010](SK4010.md) | A `Where` the next operator could have taken as its predicate | suggestion | review | no |
 | [SK4020](SK4020.md) | The lambda captures nothing and is not `static` | suggestion | safe | no |
-| [SK4021](SK4021.md) | The private method does not use instance state | hint | safe | no |
+| [SK4021](SK4021.md) | The private method does not use instance state | hint | review | no |
 | [SK4022](SK4022.md) | The struct is never mutated and is not `readonly` | suggestion | safe | no |
 | [SK4023](SK4023.md) | The capacity argument matches the default | warning | safe | no |
 | [SK4024](SK4024.md) | `GC.Collect` is called from application code | warning | — | no |
-| [SK4030](SK4030.md) | The collection's own method answers this faster than the LINQ extension | suggestion | safe | no |
-| [SK4031](SK4031.md) | The loop looks up a key it is already holding | warning | safe | no |
-| [SK4032](SK4032.md) | `Substring` is called to feed a search that takes a start index | suggestion | safe | no |
-| [SK4033](SK4033.md) | The `ConcurrentDictionary` member taken is the expensive one | warning | safe | no |
-| [SK4034](SK4034.md) | The collection is sorted before it is filtered | suggestion | safe | no |
+| [SK4030](SK4030.md) | The collection's own method answers this faster than the LINQ extension | suggestion | review | no |
+| [SK4031](SK4031.md) | The loop looks up a key it is already holding | warning | review | no |
+| [SK4032](SK4032.md) | `Substring` is called to feed a search that takes a start index | suggestion | review | no |
+| [SK4033](SK4033.md) | The `ConcurrentDictionary` member taken is the expensive one | warning | review | no |
+| [SK4034](SK4034.md) | The collection is sorted before it is filtered | suggestion | review | no |
 | [SK4040](SK4040.md) | The property copies a collection it could have returned unchanged | suggestion | review | no |
 | [SK4041](SK4041.md) | The `StringBuilder` is filled and never read | warning | — | no |
 
@@ -390,7 +390,7 @@
 | [SK8007](SK8007.md) | Use controlled assertion input | suggestion | — | no |
 | [SK8020](SK8020.md) | A class with `[TestMethod]` members carries no `[TestClass]` | warning | review | no |
 | [SK8021](SK8021.md) | The test class declares no test | warning | — | no |
-| [SK8022](SK8022.md) | The assertion's expected and actual arguments are swapped | warning | safe | no |
+| [SK8022](SK8022.md) | The assertion's expected and actual arguments are swapped | warning | review | no |
 
 ## Tool
 

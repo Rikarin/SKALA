@@ -21,7 +21,7 @@
 <tr><th>Needs a compilation</th><td>yes</td></tr>
 <tr><th>Runs under <code>--load=loose</code></th><td>no</td></tr>
 <tr><th>Cached per file</th><td>yes</td></tr>
-<tr><th>Fix</th><td>yes, safe</td></tr>
+<tr><th>Fix</th><td>yes, review it</td></tr>
 <tr><th>Language version floor</th><td>—</td></tr>
 <tr><th>Since</th><td>2.0</td></tr>
 <tr><th>Supersedes</th><td>S3256</td></tr>
@@ -39,7 +39,7 @@
     return &quot;anonymous&quot;;
 }</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p><code>x.Length == 0</code> and <code>x == &quot;&quot;</code> are both reported and are the same check: string <code>==</code> is ordinal value equality that compares lengths first. <code>string.Empty</code> counts as the literal. ⚠ The rule this one must not become is <code>IsNullOrWhiteSpace</code>: <code>x == null || x.Trim().Length == 0</code> is a different predicate — true for a single space, where <code>IsNullOrEmpty</code> is false — and nothing separates the two shapes except what stands between the receiver and <code>.Length</code>. Two guards therefore do two different jobs: the emptiness test must be on the same expression the null test named, which is what excludes <code>Trim()</code>, and that expression must be a chain of plain names, which is what excludes the double evaluation a call or an indexer would suffer. The receiver must also bind to <code>System.String</code>, so an array's <code>Length</code> is never matched, and the null test must come first. A longer <code>||</code> chain is only matched where the pair is a single subexpression, which left-associativity makes true for <code>x == null || x.Length == 0 || y</code> and false for <code>y || x == null || x.Length == 0</code>. Comments and preprocessor directives inside the expression exclude it.</p>
+<p><code>x.Length == 0</code> and <code>x == &quot;&quot;</code> are both reported and are the same check: string <code>==</code> is ordinal value equality that compares lengths first. <code>string.Empty</code> counts as the literal. ⚠ The rule this one must not become is <code>IsNullOrWhiteSpace</code>: <code>x == null || x.Trim().Length == 0</code> is a different predicate — true for a single space, where <code>IsNullOrEmpty</code> is false — and nothing separates the two shapes except what stands between the receiver and <code>.Length</code>. Two guards therefore do two different jobs: the emptiness test must be on the same expression the null test named, which is what excludes <code>Trim()</code>, and that expression must be a chain of plain names, which is what excludes the double evaluation a call or an indexer would suffer. The receiver must also bind to <code>System.String</code>, so an array's <code>Length</code> is never matched, and the null test must come first. A longer <code>||</code> chain is only matched where the pair is a single subexpression, which left-associativity makes true for <code>x == null || x.Length == 0 || y</code> and false for <code>y || x == null || x.Length == 0</code>. Comments and preprocessor directives inside the expression exclude it. ⚠ <strong>The fix is not safe (#412's audit, measured by running both versions):</strong> The rewrite changes the source text captured by an enclosing <code>[CallerArgumentExpression]</code> argument (<code>Debug.Assert</code>, <code>ThrowIfNull</code>, test asserts).</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK1044.severity</code></li>

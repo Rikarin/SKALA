@@ -21,7 +21,7 @@
 <tr><th>Needs a compilation</th><td>yes</td></tr>
 <tr><th>Runs under <code>--load=loose</code></th><td>no</td></tr>
 <tr><th>Cached per file</th><td>yes</td></tr>
-<tr><th>Fix</th><td>yes, safe</td></tr>
+<tr><th>Fix</th><td>yes, review it</td></tr>
 <tr><th>Language version floor</th><td>—</td></tr>
 <tr><th>Since</th><td>0.6</td></tr>
 </tbody>
@@ -36,7 +36,7 @@
 <pre class="good"><code>foreach (var kind in Enum.GetValues&lt;TokenKind&gt;()) {
 }</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>Requires the generic <code>System.Enum.GetValues&lt;T&gt;()</code> to exist in the compilation, and requires the argument to be a <code>typeof</code> naming a type the semantic model resolves to an enum. A <code>typeof</code> over a type parameter, over a non-enum, or over anything the model cannot resolve is silent, and so is a call to a user-declared type that happens to be named <code>Enum</code>.</p>
+<p>Requires the generic <code>System.Enum.GetValues&lt;T&gt;()</code> to exist in the compilation, and requires the argument to be a <code>typeof</code> naming a type the semantic model resolves to an enum. A <code>typeof</code> over a type parameter, over a non-enum, or over anything the model cannot resolve is silent, and so is a call to a user-declared type that happens to be named <code>Enum</code>. ⚠ <strong>The fix is not safe (#412's audit, measured by running both versions):</strong> <code>foreach (long n in Enum.GetValues(typeof(Color)))</code> changes from an unbox to a conversion when the call becomes the generic overload, and <code>var o = values; o = &quot;x&quot;;</code> stops compiling (CS0029) because the variable's type changes (EnumGetValuesAnalyzer.cs:98-105).</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK1035.severity</code></li>
