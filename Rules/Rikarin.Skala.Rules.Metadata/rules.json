@@ -236,12 +236,12 @@
       "since": "2.0",
       "languageVersion": null,
       "summary": "`skala arrange` would use the configured empty-string spelling.",
-      "rationale": "The configured cleanup style chooses between the empty literal and `string.Empty`. Binding prevents a same-named member on another type from being mistaken for the framework field.",
+      "rationale": "`skala_empty_string` chooses between the empty literal and `string.Empty`, and both values rewrite: `empty_literal` turns `string.Empty` into `\"\"`, `string_empty` turns `\"\"` (and `@\"\"`) into `string.Empty`. Binding prevents a same-named member on another type from being mistaken for the framework field.",
       "examples": {
         "bad": "var text = \"\";",
         "good": "var text = string.Empty;"
       },
-      "falsePositives": "None relative to the effective configuration. Only the framework string type is recognised.",
+      "falsePositives": "None relative to the effective configuration. Only the framework string type is recognised. Under `string_empty` every position that requires a constant is left alone, because `string.Empty` is not one: `const` declarations and their initializers, attribute arguments, default parameter values, `case` labels and `goto case`, and patterns. So are `$\"\"`, `\"\"u8` and any `\"\"` inside an expression tree.",
       "configuration": [
         "skala_empty_string"
       ]

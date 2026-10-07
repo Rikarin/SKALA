@@ -44,7 +44,8 @@ internal sealed record OptionEntry(
     string? BoundsBecause,
     string? TabMeans,
     string? FreeFormBecause,
-    string? UnsweptBecause) {
+    string? UnsweptBecause,
+    IReadOnlyList<KeyValuePair<string, string>> UnimplementedValues) {
     /// <summary>The <c>OptionId</c> member name and the group path from docs/plan/02 § "Naming".</summary>
     public string MemberName => Naming.Pascal(Key);
 
@@ -220,7 +221,12 @@ internal static class OptionRegistryReader {
                     item["boundsBecause"].IsNull ? null : item["boundsBecause"].AsString(),
                     item["tabMeans"].IsNull ? null : item["tabMeans"].AsString(),
                     item["freeFormBecause"].IsNull ? null : item["freeFormBecause"].AsString(),
-                    item["unsweptBecause"].IsNull ? null : item["unsweptBecause"].AsString()
+                    item["unsweptBecause"].IsNull ? null : item["unsweptBecause"].AsString(),
+                    item["unimplementedValues"]
+                        .Members
+                        .Select(static v => new KeyValuePair<string, string>(v.Key, v.Value.AsString() ?? string.Empty))
+                        .OrderBy(static v => v.Key, StringComparer.Ordinal)
+                        .ToList()
                 )
             );
         }

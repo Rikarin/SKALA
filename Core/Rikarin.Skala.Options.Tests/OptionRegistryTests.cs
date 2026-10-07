@@ -335,6 +335,52 @@ public sealed class OptionRegistryTests {
     }
 
     /// <summary>
+    ///     ⚠ #383: every value <c>unimplementedValues</c> names is one of the option's own values, carries
+    ///     a reason, and leaves at least one value that does work.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         A misspelt value would never match a configuration, so <c>skala config check</c> would stay
+    ///         silent about exactly the key the entry was written to expose — the defect, restored by a
+    ///         typo. A key unimplemented at every value is not partial at all: it is a Tier D gap, or it
+    ///         is inert, and either of those says so already.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Inert and partial are exclusive: an inert key is honoured vacuously at every value, so
+    ///         "this value does nothing" is not news about it.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void UnimplementedValues_AreInTheDomainAndLeaveSomethingImplemented() {
+        var partial = OptionRegistry.All.Where(static i => i.UnimplementedValues.Count > 0).ToList();
+
+        // Anti-vacuity, as a ratchet: the count when the field was introduced.
+        const int Measured = 10;
+        Assert.True(partial.Count >= Measured, $"Only {partial.Count} options record an unimplemented value.");
+
+        foreach (var info in partial) {
+            Assert.Null(info.Inert);
+            Assert.NotNull(info.EnumName);
+            var domain = OptionEnums.ValuesOf(info.EnumName);
+            foreach (var (value, because) in info.UnimplementedValues) {
+                Assert.True(
+                    domain.Contains(value, StringComparer.Ordinal),
+                    $"{info.Key} records '{value}' as unimplemented, which is not one of its values ({string.Join(", ", domain)})."
+                );
+                Assert.True(
+                    because is { Length: > 20 },
+                    $"{info.Key} = {value} is unimplemented with no usable reason."
+                );
+            }
+
+            Assert.True(
+                domain.Length > info.UnimplementedValues.Count,
+                $"{info.Key} is unimplemented at every value, which is a Tier D gap or inert, not partial."
+            );
+        }
+    }
+
+    /// <summary>
     ///     ⚠ <c>UnsweptBecause</c> is the other half of "why is there no fixture", and it must not be
     ///     allowed to become a second spelling of <c>Inert</c>.
     /// </summary>

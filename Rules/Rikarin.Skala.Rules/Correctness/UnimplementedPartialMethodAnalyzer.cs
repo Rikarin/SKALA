@@ -155,7 +155,7 @@ public sealed class UnimplementedPartialMethodAnalyzer : DiagnosticAnalyzer {
                             + " erased"
                             + (sideEffecting
                                     ? " — including the arguments, one of which does work that will therefore not happen"
-                                    : "")
+                                    : string.Empty)
                         )
                     );
                 }

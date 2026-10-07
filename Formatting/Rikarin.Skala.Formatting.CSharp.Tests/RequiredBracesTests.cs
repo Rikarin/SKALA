@@ -35,7 +35,7 @@ public sealed class RequiredBracesTests {
     public void CrLf_IsPreservedWhenBracesAreInserted() {
         var result = Format.Run("class C {\r\n    void M() {\r\n        if (true) return;\r\n    }\r\n}\r\n");
         Assert.Contains("if (true) {\r\n            return;\r\n        }", result.Formatted);
-        Assert.DoesNotContain("\n", result.Formatted.Replace("\r\n", "", StringComparison.Ordinal));
+        Assert.DoesNotContain("\n", result.Formatted.Replace("\r\n", string.Empty, StringComparison.Ordinal));
         AssertStable(result);
     }
 

@@ -168,7 +168,7 @@ public sealed class SwitchSectionIssue374Tests {
     [Fact]
     public void AStatementAfterTheSwitch_StartsAfterABlankLine() =>
         Assert.Equal(
-            [Open, "    case 1: M(); break;", "}", "", "M();"],
+            [Open, "    case 1: M(); break;", "}", string.Empty, "M();"],
             Body("void S(object o) { switch (o) { case 1: M(); break; } M(); }")
         );
 

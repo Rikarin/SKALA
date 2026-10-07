@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="skala_empty_string">
 <h2><code>skala_empty_string</code> <a class="self" href="#skala_empty_string">#</a></h2>
-<p>Undocumented export property; classified as C#-relevant by vocabulary.</p>
+<p>The empty string's spelling, applied by <code>skala arrange</code> (SK0206). <code>empty_literal</code> rewrites <code>string.Empty</code> to <code>&quot;&quot;</code>; <code>string_empty</code> rewrites <code>&quot;&quot;</code> to <code>string.Empty</code> everywhere a non-constant is legal and leaves constant contexts (const, attribute arguments, default parameter values, case labels, patterns) alone. The oracle performs neither direction (SK-DIV-0013, SK-DIV-0137), so both are pinned by ArrangementRuleTests and the key stays Tier D. Until #383 <code>string_empty</code> did nothing.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>empty_literal</code>, <code>string_empty</code></td></tr>

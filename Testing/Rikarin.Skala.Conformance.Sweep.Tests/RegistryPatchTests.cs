@@ -61,8 +61,8 @@ public sealed class RegistryPatchTests {
         var changes = RegistryPatch.Plan(
             path,
             [
-                new DerivedDefault("resharper_alpha", null, DefaultsVerdict.Insensitive, false, ""),
-                new DerivedDefault("resharper_beta", "true", DefaultsVerdict.Ambiguous, false, "")
+                new DerivedDefault("resharper_alpha", null, DefaultsVerdict.Insensitive, false, string.Empty),
+                new DerivedDefault("resharper_beta", "true", DefaultsVerdict.Ambiguous, false, string.Empty)
             ]
         );
 

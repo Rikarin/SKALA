@@ -635,10 +635,25 @@ public static class ConfigCommands {
         string Tier(OptionTier tier) =>
             registry.TryGetValue(tier, out var count) ? count.ToString(CultureInfo.InvariantCulture) : "0";
 
-        var applied = configured.Count(static o => o.Info.Tier is OptionTier.A or OptionTier.B);
+        // ⚠ #383: a key implemented at some of its values is a third state, and it was in neither
+        // bucket in the way that mattered. `skala_empty_string = string_empty` was counted under "not
+        // implemented" — as every Tier D key is — but never named, because only the six largest
+        // families are; and a Tier A key at a value nothing performs (`csharp_style_namespace_
+        // declarations = block_scoped`) was counted as *applied*. The registry records those values
+        // now, and a key set to one is taken out of both buckets and named.
+        var partial = configured.Where(static o => o.Info.Inert is null && UnimplementedBecause(o) is not null)
+            .ToList();
+
+        var applied = configured.Count(static o =>
+            o.Info.Tier is OptionTier.A or OptionTier.B && UnimplementedBecause(o) is null
+        );
+
         var inert = configured.Where(static o => o.Info.Inert is not null).ToList();
         var ignored = configured
-            .Where(static o => o.Info.Tier is OptionTier.C or OptionTier.D && o.Info.Inert is null)
+            .Where(static o => o.Info.Tier is OptionTier.C or OptionTier.D
+                && o.Info.Inert is null
+                && UnimplementedBecause(o) is null
+            )
             .ToList();
 
         var output = new StringBuilder();
@@ -652,9 +667,23 @@ public static class ConfigCommands {
         output.AppendLine(
             string.Create(
                 CultureInfo.InvariantCulture,
-                $"  {applied} applied · {ignored.Count} not implemented · {inert.Count} inert (honoured vacuously; no input can distinguish them)"
+                $"  {applied} applied · {partial.Count} at an unimplemented value · {ignored.Count} not implemented · {inert.Count} inert (honoured vacuously; no input can distinguish them)"
             )
         );
+
+        if (partial.Count > 0) {
+            // Named one by one, never grouped: there are few, and unlike a whole unimplemented key the
+            // fix is usually on the reader's side of the file — any other value of the key works.
+            output.AppendLine("  ⚠ set to a value Skala does not perform (the key's other values do work):");
+            foreach (var option in partial.OrderBy(static o => o.Info.Key, StringComparer.Ordinal)) {
+                output.Append("    ")
+                    .Append(option.Info.Key)
+                    .Append(" = ")
+                    .Append(option.Value)
+                    .Append(" — ")
+                    .AppendLine(UnimplementedBecause(option));
+            }
+        }
 
         if (ignored.Count > 0) {
             // ⚠ Grouped by prefix, because 244 individual keys is a wall nobody reads and the
@@ -721,6 +750,29 @@ public static class ConfigCommands {
     ///         cause worth stating once (SK-DIV-0006).
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     Why the option's configured value is one Skala does not perform, or null when it is performed.
+    /// </summary>
+    /// <remarks>
+    ///     The severity suffix (<c>omit_if_default:suggestion</c>) is stripped first, as the registry
+    ///     strips it when it reads the value; it is not part of the value's name.
+    /// </remarks>
+    public static string? UnimplementedBecause(ResolvedOption option) {
+        if (option.Info.UnimplementedValues.Count == 0) {
+            return null;
+        }
+
+        var value = option.Value;
+        var colon = value.IndexOf(':', StringComparison.Ordinal);
+        if (colon >= 0) {
+            value = value[..colon];
+        }
+
+        return option.Info.UnimplementedValues.TryGetValue(value.Trim().ToLowerInvariant(), out var because)
+            ? because
+            : null;
+    }
+
     internal static string Family(OptionInfo info) {
         if (string.Equals(info.Language, "xmldoc", StringComparison.Ordinal)) {
             return "xmldoc";

@@ -131,8 +131,10 @@ public static class RuleSurface {
             var id = rule.GetProperty("id").GetString()!;
             rules[id] = new(
                 id,
-                rule.TryGetProperty("concept", out var concept) ? concept.GetString() ?? "" : "",
-                rule.TryGetProperty("defaultSeverity", out var severity) ? severity.GetString() ?? "" : "",
+                rule.TryGetProperty("concept", out var concept) ? concept.GetString() ?? string.Empty : string.Empty,
+                rule.TryGetProperty("defaultSeverity", out var severity)
+                    ? severity.GetString() ?? string.Empty
+                    : string.Empty,
                 rule.TryGetProperty("retired", out var retired) && retired.GetBoolean(),
                 allocated.Contains(id)
             );

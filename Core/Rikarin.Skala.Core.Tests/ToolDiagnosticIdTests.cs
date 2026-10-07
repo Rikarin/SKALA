@@ -20,7 +20,7 @@ public sealed class ToolDiagnosticIdTests {
     /// <summary>A test may name an id freely — asserting on one is the point of a test.</summary>
     static bool IsTest(string path) =>
         path.Contains($"{Path.DirectorySeparatorChar}Testing{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-        || Path.GetFileName(Path.GetDirectoryName(path) ?? "").EndsWith(".Tests", StringComparison.Ordinal)
+        || Path.GetFileName(Path.GetDirectoryName(path) ?? string.Empty).EndsWith(".Tests", StringComparison.Ordinal)
         || path.EndsWith("Tests.cs", StringComparison.Ordinal);
 
     static readonly Regex Declaration =

@@ -25,9 +25,9 @@ public static class GitHooks {
         "#!/usr/bin/env bash",
         Marker,
         "set -euo pipefail",
-        "",
+        string.Empty,
         "skala format --staged --quiet || exit 1",
-        ""
+        string.Empty
     );
 
     /// <summary>What an install would do, or did.</summary>

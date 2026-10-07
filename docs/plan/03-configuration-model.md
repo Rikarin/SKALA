@@ -289,6 +289,32 @@ needs is *of the keys I set, how many are honoured*, and on this repository's ow
 **205 applied of 458 set**, with 243 not implemented and 10 inert. `skala config check` reports the
 per-configuration split first and the registry-wide totals after, for that reason.
 
+⚠ **A key can be implemented at some of its values and not others, and neither bucket said so
+(#383).** `skala_empty_string` had two values and one rewrite: `string_empty`, the value this
+repository sets, did nothing, and `config check` counted it among the Tier D "not implemented" keys
+— which it names only by their six largest families — so it was never named. A Tier A key at a dead
+value was worse: `csharp_style_namespace_declarations = block_scoped` counts as *applied*, and
+nothing converts a file-scoped namespace back. The registry now records such values per option, in
+`unimplementedValues` (value → why), and `config check` takes a key set to one out of both buckets,
+counts it as "at an unimplemented value", and names it with the reason. `OptionRegistryTests` asserts
+every recorded value is in the option's domain (a typo would silently restore the defect) and that at
+least one value still works (otherwise the key is a gap or inert, not partial). Honest no-op values —
+`never`, `none`, `disabled`, `do_not_change` — are not listed: doing nothing is what they promise.
+
+`skala_empty_string` itself left the list by being implemented (SK-DIV-0137). The survey that
+populated it, at the commit that introduced the field, read every enum-typed option's consumer and
+confirmed ten: `dotnet_style_require_accessibility_modifiers` (`always`, `for_non_interface_members`,
+`never` — the arranger folds the key to `omit_if_default`), `skala_null_checking_pattern_style`
+(`empty_recursive_pattern`), `csharp_style_namespace_declarations` (`block_scoped`),
+`skala_configure_await_analysis_mode` (`ui`), `skala_accessor_owner_body`
+(`accessors_with_block_body`), both `skala_object_creation_when_type_*` (`explicitly_typed`), both
+`skala_default_value_when_type_*` (`default_expression`), and `skala_empty_block_style`
+(`together_same_line`, partly — SK-DIV-0091). For the object-creation and default-value pairs whether
+the oracle expands at all is unmeasured; the entry says so. ⚠ The "not implemented" label on the
+remaining bucket is still the registry-wide C+D-minus-inert count and still over-counts: it includes
+Tier D keys that are read and performed (`skala_max_line_length`, and `skala_null_checking_pattern_style`
+at `not_null_pattern`). That is the Tier D labelling problem CLAUDE.md records, not this one.
+
 ⚠ **And option coverage is a precondition for replacing ReSharper, not polish.** Today an ignored
 key is still honoured by Rider in the editor, so its cost is invisible — which is why a 99.7 %
 fidelity number and 243 ignored keys coexist without contradiction. After replacement

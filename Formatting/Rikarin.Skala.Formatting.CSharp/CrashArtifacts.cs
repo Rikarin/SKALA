@@ -153,8 +153,8 @@ public static class CrashArtifacts {
     ///     </para>
     ///     <para>
     ///         The names are the struct's own, snake-cased; they are <b>not</b> .editorconfig keys and the
-    ///         header says so, because several are derived rather than read — <c>EmptyStringIsLiteral</c>
-    ///         and <c>OmitDefaultAccessibility</c> each collapse a key's value to a bool.
+    ///         header says so, because several are derived rather than read — <c>OmitDefaultAccessibility</c>
+    ///         collapses a key's value to a bool.
     ///     </para>
     ///     <para>
     ///         ⚠ Prefixed <c>arrange_</c> because two of them, <c>MaxLineLength</c> and

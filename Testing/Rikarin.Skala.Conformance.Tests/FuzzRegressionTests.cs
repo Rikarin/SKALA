@@ -85,7 +85,7 @@ public sealed class FuzzRegressionTests {
     [InlineData(true)]
     public void AbsorbedMutations_ProtectUnterminatedInterpolatedStringThroughEof(bool finalNewline) {
         var path = Path.Combine(Corpus.Root, "pathological", "interpolated-raw-string-with-nested-braces.cs");
-        var source = File.ReadAllText(path).TrimEnd('\r', '\n') + (finalNewline ? "\n" : "");
+        var source = File.ReadAllText(path).TrimEnd('\r', '\n') + (finalNewline ? "\n" : string.Empty);
         var applied = 0;
         foreach (var name in FuzzMutations.AbsorbedNames) {
             for (ulong seed = 0; seed < 100; seed++) {

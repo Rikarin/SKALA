@@ -56,7 +56,7 @@ public static class SweepReport {
                 + " of "
                 + Count(option.Values.Count)
                 + " values"
-                + (option.BaselineAgrees ? "" : " (the fixture already diverged at the base configuration)"),
+                + (option.BaselineAgrees ? string.Empty : " (the fixture already diverged at the base configuration)"),
             SweepOutcome.NoFixture => "no corpus fixture",
             _ => "conformant"
         };
@@ -218,7 +218,7 @@ public static class SweepReport {
                 .Append(" | ")
                 .Append(option.BaselineAgrees ? "=" : "≠")
                 .Append(" | ")
-                .Append(option.LineEndingOnly ? "raw" : "")
+                .Append(option.LineEndingOnly ? "raw" : string.Empty)
                 .Append(" | ")
                 .Append(option.Cost.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture))
                 .Append(" | `")

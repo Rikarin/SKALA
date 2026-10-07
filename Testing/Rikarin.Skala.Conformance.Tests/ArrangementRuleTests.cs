@@ -343,24 +343,141 @@ public sealed class ArrangementRuleTests {
     }
 
     /// <summary>
-    ///     The other direction of the same key, which is the setting in force in this repository.
+    ///     Under <c>string_empty</c> a <c>string.Empty</c> that is already there stays exactly as written.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <c>string_empty</c> is not the inverse rewrite — Skala has no <c>""</c> ⇒
-    ///     <c>string.Empty</c> arrangement — it is the rule declining to run. Asserting that here is
-    ///     what stops the pinned test above from being the only witness: with only the pinned case, a
-    ///     rule that fired regardless of the option would still be green.
+    ///     ⚠ The negative control for the pinned test above: with only that one, a rule that turned
+    ///     every <c>string.Empty</c> into <c>""</c> whatever the option said would still be green. Until
+    ///     #383 this test also claimed that <c>string_empty</c> was the rule declining to run — which was
+    ///     true, and was the defect: the value was in the key's domain with nothing behind it.
     /// </remarks>
     [Fact]
-    public void EmptyString_IsLeftAlone_UnderStringEmpty() {
-        var output = Arrange(
-            EmptyStringProbe,
-            ArrangeIds.EmptyString,
-            overrides: [new KeyValuePair<string, string>("skala_empty_string", "string_empty")]
+    public void EmptyString_FieldIsLeftAlone_UnderStringEmpty() {
+        var output = Declined(
+            Attempt(
+                EmptyStringProbe,
+                only: ArrangeIds.EmptyString,
+                overrides: [new KeyValuePair<string, string>("skala_empty_string", "string_empty")]
+            )
         );
 
         Assert.Contains("string.Empty", output, StringComparison.Ordinal);
         Assert.DoesNotContain("\"\"", output, StringComparison.Ordinal);
+    }
+
+    const string EmptyStringPreamble = """
+                                       namespace P;
+                                       using System;
+                                       using System.ComponentModel;
+                                       using System.Linq.Expressions;
+                                       public sealed class Row { public string? Banner; }
+                                       public class C {
+                                       """;
+
+    static ArrangementResult AttemptEmptyString(string member, string style) =>
+        Attempt(
+            EmptyStringPreamble + "\n    " + member + "\n}\n",
+            only: ArrangeIds.EmptyString,
+            overrides: [new KeyValuePair<string, string>("skala_empty_string", style)]
+        );
+
+    /// <summary>
+    ///     ⚠ #383: <c>""</c> ⇒ <c>string.Empty</c> under <c>string_empty</c>, in every position where a
+    ///     non-constant is legal.
+    /// </summary>
+    /// <remarks>
+    ///     The <c>when</c> clauses and the switch-expression arm body are here on purpose: they sit
+    ///     beside a pattern without being part of it, so a constant-context test that matched on the
+    ///     enclosing switch rather than on the pattern itself would wrongly decline them.
+    /// </remarks>
+    [Theory]
+    [InlineData("""public string F = "";""")]
+    [InlineData("""public static readonly string R = "";""")]
+    [InlineData("""public string M() { return ""; }""")]
+    [InlineData("""public string M() => @"";""")]
+    [InlineData("""public void M() { Console.WriteLine(""); }""")]
+    [InlineData("""public void M() { string s = ""; Console.WriteLine(s); }""")]
+    [InlineData("""public string M(string s) => s + "";""")]
+    [InlineData("""public string M() => $"{""}";""")]
+    [InlineData("""public int M(string s) => s switch { var x when x == "" => 1, _ => 0 };""")]
+    [InlineData("""public int M(string s) { switch (s) { case var x when x == "": return 1; default: return 0; } }""")]
+    [InlineData("""public string M(int i) => i switch { 0 => "", _ => "x" };""")]
+    [InlineData("""public Func<string> M() => () => "";""")]
+    public void EmptyString_BecomesTheField_UnderStringEmpty(string member) {
+        var output = Declined(AttemptEmptyString(member, "string_empty"));
+
+        Assert.Contains("string.Empty", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"\"", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #383: every position where the rewrite would not compile, or would change more than the
+    ///     spelling, is declined by the rule itself — and the file is not reverted.
+    /// </summary>
+    /// <remarks>
+    ///     <c>string.Empty</c> is a <c>static readonly</c> field, not a constant, so each constant
+    ///     context below would be <c>CS0133</c>, <c>CS0182</c>, <c>CS1736</c> or <c>CS0150</c> after the
+    ///     rewrite. Safety layer 2 would catch those, but by reverting the whole file — which is why
+    ///     <see cref="Declined" /> asserts that it never had to: the rule declining is the property under
+    ///     test, not the safety net catching it. The last five are not a <c>string</c> literal at all
+    ///     (<c>$""</c>, <c>$@""</c>, <c>""u8</c>) or sit in an expression tree, where the rewrite
+    ///     compiles but changes what a query provider is handed.
+    /// </remarks>
+    [Theory]
+    [InlineData("""public const string F = "";""")]
+    [InlineData("""public void M() { const string L = ""; Console.WriteLine(L); }""")]
+    [InlineData("""public const string B = "b"; public const string A = "" + B;""")]
+    [InlineData("""public const string T = true ? "" : "x";""")]
+    [InlineData("""[Obsolete("")] public void M() { }""")]
+    [InlineData("""[DefaultValue("" + "x")] public string P { get; set; } = "x";""")]
+    [InlineData("""public void M(string s = "") { }""")]
+    [InlineData("""public void M() { Func<string, string> f = (string s = "") => s; f("x"); }""")]
+    [InlineData("""public void M() { void L(string s = "") { } L(); }""")]
+    [InlineData("""public string this[string key = ""] => key;""")]
+    [InlineData("""public int M(string s) { switch (s) { case "": return 1; default: return 0; } }""")]
+    [InlineData(
+        """public int M(string s) { switch (s) { case "": return 1; case "x": goto case ""; default: return 0; } }"""
+    )]
+    [InlineData(
+        """public int M(string s) { switch (s) { case "" when s.Length == 0: return 1; default: return 0; } }"""
+    )]
+    [InlineData("""public bool M(string s) => s is "";""")]
+    [InlineData("""public bool M(string s) => s is not ("" or "x");""")]
+    [InlineData("""public int M(string s) => s switch { "" => 1, _ => 0 };""")]
+    [InlineData("""public bool M(Row r) => r is { Banner: "" };""")]
+    [InlineData("""public bool M(string[] a) => a is ["", ..];""")]
+    [InlineData("""public string M() => $"";""")]
+    [InlineData("""public string M() => $@"";""")]
+    [InlineData("""public ReadOnlySpan<byte> M() => ""u8;""")]
+    [InlineData("""public Expression<Func<string>> M() => () => "";""")]
+    [InlineData("""public Expression<Func<string, bool>> M() => s => s == "";""")]
+    public void EmptyString_IsDeclined_WhereTheFieldIsNotTheSameExpression(string member) {
+        var result = AttemptEmptyString(member, "string_empty");
+        var output = Declined(result);
+
+        Assert.Equal(ArrangementOutcome.Unchanged, result.Outcome);
+        Assert.DoesNotContain("string.Empty", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ One declined literal costs only itself: the legal rewrite beside it still happens.
+    /// </summary>
+    /// <remarks>
+    ///     The point of declining at the rule rather than leaving it to safety layer 2, whose unit is
+    ///     the file. With the decline removed and the guard relied on instead, this file comes back
+    ///     <c>Reverted</c> with neither rewrite.
+    /// </remarks>
+    [Fact]
+    public void EmptyString_KeepsTheLegalRewriteBesideAConstantContext() {
+        var output = Declined(
+            AttemptEmptyString(
+                """public const string K = ""; public string M(string s) => s switch { "" => K, _ => "" };""",
+                "string_empty"
+            )
+        );
+
+        Assert.Contains("""public const string K = "";""", output, StringComparison.Ordinal);
+        Assert.Contains("""{ "" => K, _ => string.Empty }""", output, StringComparison.Ordinal);
     }
 
     [Fact]
