@@ -489,7 +489,10 @@ public sealed class ArrangeCommandTests {
         return result;
     }
 
-    /// <summary><c>verify --format plain</c>'s arrangement findings: <c>path:l:c: … not arranged (names); run: …</c>.</summary>
+    /// <summary>
+    ///     <c>verify --format plain</c>'s arrangement findings:
+    ///     <c>path:l:c: … not arranged (names); run: …</c>.
+    /// </summary>
     static Dictionary<string, string[]> ReportedBy(string output) {
         const string marker = "the file is not arranged (";
         var result = new Dictionary<string, string[]>(StringComparer.Ordinal);

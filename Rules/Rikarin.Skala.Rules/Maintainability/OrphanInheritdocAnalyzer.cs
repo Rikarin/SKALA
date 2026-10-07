@@ -75,7 +75,7 @@ public sealed class OrphanInheritdocAnalyzer : DiagnosticAnalyzer {
         // and an unresolvable one is already CS1574. `path` alone selects within the default target
         // and leaves the question unchanged.
         if (elements.Count == 0
-            || elements.Any(static element => DocumentationElements.AttributesOf(element)
+            || elements.Exists(static element => DocumentationElements.AttributesOf(element)
                     .Any(static attribute => attribute.Name.LocalName.ValueText == "cref")
             )) {
             return;
@@ -176,7 +176,8 @@ public sealed class OrphanInheritdocAnalyzer : DiagnosticAnalyzer {
         if (symbol is IMethodSymbol { MethodKind: MethodKind.Constructor or MethodKind.StaticConstructor }) {
             return "No base constructor of "
                 + name
-                + " takes the same parameters, so `<inheritdoc/>` resolves to nothing — or to `object`'s, which documents `object`";
+                + " takes the same parameters, so `<inheritdoc/>` resolves to nothing"
+                + " — or to `object`'s, which documents `object`";
         }
 
         if (IsNew(declaration) && Hidden(symbol) is { } hidden) {
@@ -185,7 +186,8 @@ public sealed class OrphanInheritdocAnalyzer : DiagnosticAnalyzer {
                 + hidden.ContainingType.Name
                 + "."
                 + hidden.Name
-                + "` with `new`, and `<inheritdoc/>` follows only an override or an interface; name the member with `cref`";
+                + "` with `new`, and `<inheritdoc/>` follows only an override or an interface;"
+                + " name the member with `cref`";
         }
 
         return name + " overrides nothing and implements no interface member, so `<inheritdoc/>` resolves to nothing";
@@ -230,7 +232,8 @@ public sealed class OrphanInheritdocAnalyzer : DiagnosticAnalyzer {
         }
 
         return name
-            + " has no base type or interface to inherit documentation from, so `<inheritdoc/>` resolves to nothing — or to `object`'s, which documents `object`";
+            + " has no base type or interface to inherit documentation from, so `<inheritdoc/>` resolves to"
+            + " nothing — or to `object`'s, which documents `object`";
     }
 
     /// <summary>Whether Roslyn's expansion has any member to take documentation from.</summary>

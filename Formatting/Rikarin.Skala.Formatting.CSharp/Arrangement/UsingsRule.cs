@@ -365,11 +365,10 @@ public sealed class UsingsRule : ArrangementRule {
         }
 
         var names = ImmutableHashSet.CreateBuilder(StringComparer.Ordinal);
-        foreach (var directive in unnecessary) {
-            if (!errors.Exists(error => directive.Span.IntersectsWith(error))) {
-                names.Add(Key(directive));
-            }
-        }
+        names.UnionWith(
+            unnecessary.Where(directive => !errors.Exists(error => directive.Span.IntersectsWith(error)))
+                .Select(static directive => Key(directive))
+        );
 
         return names.ToImmutable()!;
     }

@@ -23,6 +23,9 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     </para>
 /// </remarks>
 public static class XmlDoc {
+    /// <summary>The closing tag nearly every case ends its summary with, named once (SK7083).</summary>
+    internal const string CloseSummary = "</summary>";
+
     static FormattingOptions Resolve(params (string Key, string Value)[] overrides) =>
         OptionResolver.Resolve(
             Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
@@ -342,7 +345,7 @@ public sealed class XmlDocSubFormatterTests {
                 "///" + marker + "<summary>",
                 "///" + marker + "    " + words,
                 "///" + marker + "    x",
-                "///" + marker + "</summary>"
+                "///" + marker + XmlDoc.CloseSummary
             ],
             XmlDoc.DocLines(wrapped)
         );
@@ -366,7 +369,7 @@ public sealed class XmlDocSubFormatterTests {
             " ",
             Enumerable.Repeat("word", 60)
         );
-        var formatted = XmlDoc.Text(XmlDoc.InClass("/// <summary>" + text + "</summary>"));
+        var formatted = XmlDoc.Text(XmlDoc.InClass("/// <summary>" + text + XmlDoc.CloseSummary));
 
         foreach (var line in XmlDoc.DocLines(formatted)) {
             Assert.True(Inner(line) <= 120, $"'{line}' measures {Inner(line)} columns inside the marker.");
@@ -380,14 +383,14 @@ public sealed class XmlDocSubFormatterTests {
     public void MaxLineLength_IsTheKeyThatDecidesTheWidth() {
         var text = string.Join(" ", Enumerable.Repeat("word", 40));
         var narrow = XmlDoc.Text(
-            XmlDoc.InClass("/// <summary>" + text + "</summary>"),
+            XmlDoc.InClass("/// <summary>" + text + XmlDoc.CloseSummary),
             ("skala_xmldoc_max_line_length", "60")
         );
 
         Assert.All(XmlDoc.DocLines(narrow), static line => Assert.True(Inner(line) <= 60, line));
         Assert.True(
             XmlDoc.DocLines(narrow).Length
-            > XmlDoc.DocLines(XmlDoc.Text(XmlDoc.InClass("/// <summary>" + text + "</summary>"))).Length
+            > XmlDoc.DocLines(XmlDoc.Text(XmlDoc.InClass("/// <summary>" + text + XmlDoc.CloseSummary))).Length
         );
     }
 
@@ -398,7 +401,7 @@ public sealed class XmlDocSubFormatterTests {
     public void WrapLinesFalse_LeavesTheLongLineLong() {
         var text = string.Join(" ", Enumerable.Repeat("word", 60));
         var formatted = XmlDoc.Text(
-            XmlDoc.InClass("/// <summary>" + text + "</summary>"),
+            XmlDoc.InClass("/// <summary>" + text + XmlDoc.CloseSummary),
             ("skala_xmldoc_wrap_lines", "false")
         );
 
@@ -665,7 +668,7 @@ public sealed class XmlDocColumnTests {
         // ⚠ `<summary>` closes at column 9 and the budget is `120 - 1`, so the content fits at 110
         // and not at 111. Measured: 109 comes back flat at 136 columns — sixteen past the margin,
         // because neither the code indent nor the slashes are counted — and 111 is opened up.
-        var formatted = XmlDoc.Text(XmlDoc.InClass("/// <summary>" + Words(columns) + "</summary>"));
+        var formatted = XmlDoc.Text(XmlDoc.InClass("/// <summary>" + Words(columns) + XmlDoc.CloseSummary));
         Assert.Equal(opened, XmlDoc.DocLines(formatted).Length > 1);
     }
 
@@ -674,7 +677,7 @@ public sealed class XmlDocColumnTests {
         // ⚠ The shape SK-DIV-0019 called unexplained. `<summary>` ends at column 9, so the first
         // content line carries 109 columns and every line after it carries 115 — the same text, one
         // word short on the first line only, because the fill never restarted at the indent.
-        var lines = XmlDoc.DocLines(XmlDoc.Text(XmlDoc.InClass("/// <summary>" + Words(400) + "</summary>")));
+        var lines = XmlDoc.DocLines(XmlDoc.Text(XmlDoc.InClass("/// <summary>" + Words(400) + XmlDoc.CloseSummary)));
 
         Assert.Equal("/// <summary>", lines[0]);
         Assert.Equal(109, lines[1].Length - "///     ".Length);
@@ -701,7 +704,7 @@ public sealed class XmlDocColumnTests {
         // remark rejected "a budget for the comment's own text" because it "would make the same
         // sentence wrap differently at two nesting depths"; the oracle wraps it identically at three,
         // and pays for it with lines that run past the margin by the code indent.
-        var comment = "/// <summary>" + Words(400) + "</summary>";
+        var comment = "/// <summary>" + Words(400) + XmlDoc.CloseSummary;
         var shallow = XmlDoc.DocLines(XmlDoc.Text(XmlDoc.InClass(comment)));
         var deep = XmlDoc.DocLines(
             XmlDoc.Text("class Outer {\n    class Inner {\n        " + comment + "\n        void M() { }\n    }\n}\n")
@@ -1072,7 +1075,7 @@ public sealed class XmlDocPropertyTests {
             var data = new TheoryData<string>();
             foreach (var comment in new[] {
                          "/// <summary>Docs.</summary>", "///<summary>No space.</summary>",
-                         "/// <summary>" + string.Join(" ", Enumerable.Repeat("word", 60)) + "</summary>",
+                         "/// <summary>" + string.Join(" ", Enumerable.Repeat("word", 60)) + XmlDoc.CloseSummary,
                          "/// <summary>One.</summary><remarks>Two.</remarks>", "/// <summary>A <c>b</c>c d.</summary>",
                          "/// <summary>Use &lt;T&gt;.</summary>",
                          "/// <remarks><para>One.</para><para>Two.</para></remarks>",
@@ -1231,11 +1234,14 @@ public sealed class XmlDocMeasuredTagHeaderTests {
         // Both halves are measured. The old refusal said "what ReSharper measures against it is not
         // stated anywhere", which was true of the documentation and never true of the tool.
         var formatted = XmlDoc.Text(
-            XmlDoc.InClass("/// <summary>" + content + "</summary>"),
+            XmlDoc.InClass("/// <summary>" + content + XmlDoc.CloseSummary),
             ("skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than", "12")
         );
 
-        Assert.Equal(opened, !formatted.Contains("<summary>" + content + "</summary>", StringComparison.Ordinal));
+        Assert.Equal(
+            opened,
+            !formatted.Contains("<summary>" + content + XmlDoc.CloseSummary, StringComparison.Ordinal)
+        );
     }
 
     [Fact]

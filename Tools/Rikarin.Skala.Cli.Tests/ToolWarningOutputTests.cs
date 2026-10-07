@@ -145,7 +145,8 @@ public sealed class ToolWarningOutputTests : IClassFixture<ToolWarningOutputTest
         }
 
         const string Clean =
-            "namespace Probe;\n\ninternal static class Lib {\n    internal static int Twice(int value) => value * 2;\n}\n";
+            "namespace Probe;\n\ninternal static class Lib {\n"
+            + "    internal static int Twice(int value) => value * 2;\n}\n";
 
         public string Root { get; }
 

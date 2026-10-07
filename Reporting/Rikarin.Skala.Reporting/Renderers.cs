@@ -797,7 +797,10 @@ public static class AgentRenderer {
     public const int MaxCharacters = 8000;
 
     /// <summary>The most tool-warning lines the <c>WARNING</c> block prints before it elides (#398).</summary>
-    /// <remarks>A property, not a <c>public const</c>, for SK6034's reason given on <see cref="FullReportCommand" />.</remarks>
+    /// <remarks>
+    ///     A property, not a <c>public const</c>, for SK6034's reason given on
+    ///     <see cref="FullReportCommand" />.
+    /// </remarks>
     public static int MaxWarnings => 25;
 
     /// <summary>

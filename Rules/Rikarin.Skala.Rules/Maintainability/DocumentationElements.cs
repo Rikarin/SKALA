@@ -34,12 +34,12 @@ internal static class DocumentationElements {
 
     /// <summary>The top-level elements named <paramref name="name" />, both spellings.</summary>
     public static IEnumerable<XmlNodeSyntax> TopLevel(SyntaxNode declaration, string name) =>
-        CommentsOf(declaration).SelectMany(comment => comment.Content).Where(node => NameOf(node) == name);
+        CommentsOf(declaration).SelectMany(static comment => comment.Content).Where(node => NameOf(node) == name);
 
     /// <summary>Every element named <paramref name="name" /> at any depth, both spellings.</summary>
     public static IEnumerable<XmlNodeSyntax> Anywhere(SyntaxNode declaration, string name) =>
         CommentsOf(declaration)
-            .SelectMany(comment => comment.DescendantNodes())
+            .SelectMany(static comment => comment.DescendantNodes())
             .OfType<XmlNodeSyntax>()
             .Where(node => NameOf(node) == name);
 

@@ -42,7 +42,8 @@ public sealed class ToolWarningSurfaceTests {
         new(
             NotAnalysed,
             SkalaSeverity.Warning,
-            "the binary log covers 2 of 3 selected source file(s) (67 %); 1 were in no compilation and were not analysed",
+            "the binary log covers 2 of 3 selected source file(s) (67 %); "
+            + "1 were in no compilation and were not analysed",
             Binlog,
             1,
             "⚠ An incremental build's binlog holds only the projects MSBuild rebuilt. Rebuild with `--no-incremental`."
@@ -126,7 +127,8 @@ public sealed class ToolWarningSurfaceTests {
         );
 
         Assert.StartsWith(
-            "WARNING 2 warnings about this run, not about your code — the findings below may not cover what these name:\n"
+            "WARNING 2 warnings about this run, not about your code — "
+            + "the findings below may not cover what these name:\n"
             + "  SK9021  artifacts/skala.binlog  the binary log covers 2 of 3 selected source file(s) (67 %); "
             + "1 were in no compilation and were not analysed\n"
             + "        → ⚠ An incremental build's binlog holds only the projects MSBuild rebuilt. Rebuild with "
