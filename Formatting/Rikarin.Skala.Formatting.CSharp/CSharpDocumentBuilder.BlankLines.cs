@@ -423,7 +423,12 @@ public sealed partial class CSharpDocumentBuilder {
                 // ⚠ And not before a `case`, which is a label rather than a statement: the gap
                 // between a switch section's last block and the next label belongs to
                 // `blank_lines_before_case`, which is 0 here, and the oracle leaves it empty.
-                if (HasChildBlock(statementAbove) && nextToken.Parent is not SwitchLabelSyntax) {
+                // ⚠ Nor before the body's own `}` (#441, SK-DIV-0202): at
+                // `remove_blank_lines_near_braces_in_code = false` the oracle writes `}` / `}` after an
+                // `if` block that ends a method, a getter or a lambda, and keeps only the author's blank.
+                if (HasChildBlock(statementAbove)
+                    && nextToken.Parent is not SwitchLabelSyntax
+                    && !nextToken.IsKind(SyntaxKind.CloseBraceToken)) {
                     required = Math.Max(required, options.BlankLinesAfterBlockStatements);
                 }
             }
@@ -491,16 +496,25 @@ public sealed partial class CSharpDocumentBuilder {
             required = Math.Max(required, options.BlankLinesAfterFileScopedNamespaceDirective);
         }
 
-        if (above is not null) {
+        // ⚠ A member's own requirement is never paid against the body's brace (#441, SK-DIV-0202). The
+        // near-brace removal used to hide that it was: at `remove_blank_lines_near_braces_in_declarations
+        // = false` Skala wrote a blank line between `class L {` and a multi-line first method, and between
+        // a multi-line last member and `}`, where the oracle writes none and keeps only the author's. The
+        // boundary requirements above — after a using list, around a region — are paid there, measured.
+        if (above is not null && !nextToken.IsKind(SyntaxKind.CloseBraceToken)) {
             required = Math.Max(required, RequirementFor(above));
         }
 
-        if (below is not null) {
+        if (below is not null && !AfterAnOpenBrace(previous)) {
             required = Math.Max(required, RequirementFor(below, belowMultiLine));
         }
 
         return required;
     }
+
+    /// <summary>Whether the gap opens straight after a <c>{</c>.</summary>
+    bool AfterAnOpenBrace(Piece previous) =>
+        previous.Kind == PieceKind.Token && tokens[previous.TokenIndex].IsKind(SyntaxKind.OpenBraceToken);
 
     /// <summary>
     ///     Whether either side of the gap is a conditional directive, a <c>#pragma</c> or disabled text.

@@ -7470,6 +7470,7 @@ followed by interfaces puts its arguments two levels past the `:` line where Ska
 - options: `skala_wrap_extends_list_style`, `skala_wrap_before_extends_colon`,
   `skala_place_primary_constructor_initializer_on_same_line`
 - ⚠ status: **open**, measured.
+
 ## SK-DIV-0199 — a block comment after the last attribute section leaves the gap to the author
 
 #434: `[Obsolete] /* c */ public void M() { }` comes back from the oracle on one line, and Skala broke
@@ -7554,3 +7555,36 @@ in an expression body, which Skala breaks before `is` (all three #440).
 - options: none.
 - ⚠ status: **resolved**. Pinned by `MultiLineCommentPointIssue435Tests` and
   `constructs/breaks/multi-line-comment-before-a-value.cs`.
+
+## SK-DIV-0202 — with the near-brace removal off, a member's and a block statement's requirement was paid against the body's brace
+
+#441, found while measuring #426. With `remove_blank_lines_near_braces_in_declarations = false` Skala wrote
+a blank line between `class L {` and a multi-line first method, and between a multi-line last member and
+the `}` — `blank_lines_around_invocable`, `_around_type`, `_around_field` for a member glued to a comment
+(SK-DIV-0172), `_around_local_method`. With `remove_blank_lines_near_braces_in_code = false` it wrote one
+between an `if`, `while` or `switch` block that ends a body and the body's `}` —
+`blank_lines_after_block_statements`, in a method, a getter and a lambda alike. The source had no blank
+line in any of those gaps. At the export the removal ran after the requirement and hid it.
+
+Measured with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`, with each removal off and both, at the
+export's keep caps and at 1. The oracle pays no member requirement against a body's brace and no
+`after_block_statements` before one; it does pay `blank_lines_after_using_list` before a namespace's `}`
+and `blank_lines_around_region` on both sides of a `#region` next to a brace, it keeps the author's own
+blank lines there under the keep cap, and it still pays `before_control_transfer_statements` and
+`before_single_line_comment` between two statements. `RequiredBlankLines` now asks a member's
+requirement only when the gap is not straight after a `{` or straight before a `}`, and the
+block-statement requirement only when the next token is not a `}`.
+
+⚠ Not settled: one oracle run with both removals off and seven statement keys at 1 together paid none of
+those seven anywhere in the file — not between two statements either — while the same keys two at a time
+were paid. Skala pays them. The run was not repeated or reduced, so it is recorded rather than read as
+a rule.
+
+- options: `skala_remove_blank_lines_near_braces_in_declarations`,
+  `skala_remove_blank_lines_near_braces_in_code`, `skala_blank_lines_around_invocable`,
+  `skala_blank_lines_after_block_statements`
+- ⚠ status: **resolved** (#441). Pinned by `NearBraceRequirementIssue441Tests`. ⚠ No construct: the
+  constructs are asked under the export, where the removal masks this. The key-flip sweep's
+  `constructs/blank-lines/skala_remove_blank_lines_near_braces_in_*.cs` fixtures are the place it would
+  belong, and extending them means re-running and re-freezing the sweep for those keys, which was not
+  done here.
