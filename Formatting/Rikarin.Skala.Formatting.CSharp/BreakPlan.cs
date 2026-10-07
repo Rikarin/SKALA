@@ -4189,7 +4189,7 @@ public sealed class BreakPlan {
                     BreaksOnlyIfHeadOverflows: true
                 ),
                 true,
-                LeadingGapInside: true,
+                true,
 
                 // ⚠ The arm's level is this group's, not the body's: it is opened first and the body's
                 // group can spend nothing inside it. So it is this group that holds the level for a
@@ -4261,7 +4261,7 @@ public sealed class BreakPlan {
                 GroupMode.Preserve,
                 facts with { SourceBroken = options.KeepsUserBreaksBetweenItems && BreaksBefore(first) },
                 true,
-                LeadingGapInside: true,
+                true,
                 HoldsLevel: HoldFor(group, body)
             )
         );
