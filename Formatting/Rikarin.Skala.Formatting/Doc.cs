@@ -320,7 +320,16 @@ public enum IndentFlags {
     ///     <c>var x = source.Select(</c> / arguments / <c>)</c> / <c>.Where(beta);</c> puts the arguments
     ///     two levels past the statement and the <c>)</c> one, with the dots (issue #418, SK-DIV-0184).
     /// </summary>
-    Delimiter = 16
+    Delimiter = 16,
+
+    /// <summary>
+    ///     ⚠ An <see cref="IndentKind.Align" /> scope opened just after a one-column opener whose closer,
+    ///     on a line of its own, sits under that opener: a statement's condition <c>(</c> under
+    ///     <c>align_multiline_statement_conditions = true</c>, where the oracle writes <c>if (a</c> /
+    ///     <c>   ) { }</c> with the <c>)</c> in the <c>(</c>'s column, not the statement's (#442,
+    ///     SK-DIV-0203).
+    /// </summary>
+    CloserAtOpener = 32
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>

@@ -7588,3 +7588,46 @@ a rule.
   `constructs/blank-lines/skala_remove_blank_lines_near_braces_in_*.cs` fixtures are the place it would
   belong, and extending them means re-running and re-freezing the sweep for those keys, which was not
   done here.
+
+## SK-DIV-0203 — a kept `)` on a line of its own landed at the wrong column in a header, a tuple and a `typeof`
+
+#442, found while measuring #426. A `)` the author put on a line of its own, which `keep_user_linebreaks`
+keeps, is placed by three different rules, and Skala had each of them wrong. Measured with
+`jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`, at the export, at
+`align_multiline_statement_conditions = false`, at each `indent_pars` value, in statements, argument
+lists, fields and chains, at two depths:
+
+| construct | oracle | Skala before |
+|---|---|---|
+| a statement header — `if`, `else if`, `while`, `do … while`, `for`, `foreach`, `using`, `lock`, `fixed`, `switch`, a `catch` filter | under its `(` at `align_multiline_statement_conditions = true`; at the statement's column at `false` | the statement's column at both |
+| `typeof`, `sizeof`, `default`, `checked`, `unchecked` | its opener's line, like an argument list's `)`; one level more at `indent_pars = outside` | one continuation level in |
+| a grouping parenthesis, a tuple | a continuation line of the statement — `p = (a + b` / `    );` — or the item's line inside an argument list | the opener's line |
+
+The header `)` now takes the column `IndentFlags.CloserAtOpener` records on the condition's aligned
+scope (`Scope.AlignedCloser`, kept apart from `CloserLevel`, which an emptied alignment still falls back
+to). The `typeof` family is `NodeLayout.Parens`, so `skala_indent_pars` governs it as it governs a
+bracket. A grouping parenthesis's and a tuple's scopes close before the gap at `indent_pars = inside`,
+so the break pays the statement's continuation level. What stays open is SK-DIV-0204.
+
+- options: `skala_align_multiline_statement_conditions`, `skala_indent_pars`
+- ⚠ status: **resolved** (#442) for the rows above. Pinned by `KeptClosingParenthesisIssue442Tests` and
+  `constructs/breaks/kept-closing-parenthesis.cs`.
+
+## SK-DIV-0204 — kept `)` placements measured beside SK-DIV-0203 and left open
+
+- `return (a` / `);` and `(a` / `).B();` as a statement: the oracle puts the `)` one level in, Skala at
+  the statement's column. The same rule as SK-DIV-0203's grouping row; the break reaches no frame that
+  pays for it (`p = (a + b` / `);` agrees).
+- A tuple's items after a kept break, `var t2 = (1,` / `2`: two levels in for the oracle, one for Skala.
+- `var t4 = (1, 2` / `) switch {`: the `)` agrees; the arms nest from it in the oracle and from the
+  statement in Skala.
+- `nameof(a` / `);`: the oracle keeps the break and treats the parentheses as a `typeof`'s; Skala reads
+  `nameof` as an invocation and joins it.
+- At `indent_pars = outside` a grouping parenthesis's `)` inside an argument list or a condition is one
+  level deeper than the oracle's, which ignores that key for it. At `none`, a break straight after a
+  `typeof(` or inside `checked(a` / `+ b)` puts the contents one level deeper than the oracle's. Not
+  from #442: with the `typeof` family laid out as before (no scope of its own), the contents land on the
+  same column, and so does `arr[` / `1]`.
+
+- options: `skala_indent_pars`, `skala_align_tuple_components`
+- ⚠ status: **open**, measured.

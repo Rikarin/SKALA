@@ -1665,6 +1665,21 @@ public sealed partial class CSharpDocumentBuilder {
             if (child.IsToken) {
                 var token = child.AsToken();
                 if (opened > 0 && token.SpanStart == close.SpanStart) {
+                    // ⚠ A grouping parenthesis's or a tuple's `)` on a line of its own is a continuation
+                    // line like any other (#442, SK-DIV-0203): measured, `p = (a + b` / `    );`,
+                    // `return (a` / `    );` and `(a` / `    ).B();` take the statement's continuation
+                    // level, and inside an argument list the item's line — while `typeof(int` / `);`
+                    // comes back to its opener's line as an argument list's `)` does. So its scopes
+                    // close before the gap, where the break can spend the statement's level.
+                    var continues = closer == 0 && node is ParenthesizedExpressionSyntax or TupleExpressionSyntax;
+                    if (continues) {
+                        for (var i = opened; i > 0; i--) {
+                            CloseIndent(scopeKind);
+                        }
+
+                        opened = 0;
+                    }
+
                     EmitUpTo(close.SpanStart);
                     if (element) {
                         if (frames[^1].Activated) {
@@ -1683,7 +1698,7 @@ public sealed partial class CSharpDocumentBuilder {
                         CloseIndent(scopeKind, closer == 0 && i == closer + 1);
                     }
 
-                    pending = closer;
+                    pending = continues ? 0 : closer;
                     opened = 0;
                 }
 
@@ -1996,7 +2011,12 @@ public sealed partial class CSharpDocumentBuilder {
     int OpenConditionScopes() {
         var (inside, _) = ConditionLevels;
         for (var i = 0; i < inside; i++) {
-            OpenIndent(ConditionIndent, true);
+            // ⚠ An aligned condition's `)` on a line of its own goes under its `(` (#442, SK-DIV-0203).
+            OpenIndent(
+                ConditionIndent,
+                true,
+                ConditionIndent == IndentKind.Align ? IndentFlags.CloserAtOpener : IndentFlags.None
+            );
         }
 
         // ⚠ Pushed only when a scope was actually opened, and popped by
