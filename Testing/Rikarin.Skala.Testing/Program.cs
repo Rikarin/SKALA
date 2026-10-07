@@ -773,7 +773,7 @@ static int Arrangement(string[] args) {
 
     Console.WriteLine(
         $"{withFixtures.Length.ToString(CultureInfo.InvariantCulture)} files with a cleanup fixture"
-        + (aggressive ? ", --aggressive" : "")
+        + (aggressive ? ", --aggressive" : string.Empty)
         + (args.Contains("--all-rules") ? ", all rules" : ", oracle-comparable rules only")
     );
 

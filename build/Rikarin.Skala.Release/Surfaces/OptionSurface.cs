@@ -114,7 +114,7 @@ public static class OptionSurface {
             bump = RuleSurface.Max(bump, BumpKind.Minor);
             details.Add(
                 $"{added.Count} option(s) added: {string.Join(", ", added.Take(10).Select(static key => $"`{key}`"))}"
-                + (added.Count > 10 ? ", …" : "")
+                + (added.Count > 10 ? ", …" : string.Empty)
             );
         }
 
@@ -145,9 +145,9 @@ public static class OptionSurface {
             var key = option.GetProperty("key").GetString()!;
             options[key] = new(
                 key,
-                option.TryGetProperty("tier", out var tier) ? tier.GetString() ?? "" : "",
-                option.TryGetProperty("default", out var value) ? Text(value) : "",
-                option.TryGetProperty("type", out var type) ? type.GetString() ?? "" : "",
+                option.TryGetProperty("tier", out var tier) ? tier.GetString() ?? string.Empty : string.Empty,
+                option.TryGetProperty("default", out var value) ? Text(value) : string.Empty,
+                option.TryGetProperty("type", out var type) ? type.GetString() ?? string.Empty : string.Empty,
                 option.TryGetProperty("inert", out var inert) && inert.ValueKind == JsonValueKind.True
             );
         }
@@ -160,5 +160,5 @@ public static class OptionSurface {
     }
 
     static string Text(JsonElement element) =>
-        element.ValueKind == JsonValueKind.String ? element.GetString() ?? "" : element.GetRawText();
+        element.ValueKind == JsonValueKind.String ? element.GetString() ?? string.Empty : element.GetRawText();
 }

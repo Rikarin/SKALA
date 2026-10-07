@@ -674,7 +674,7 @@ public static class FuzzProperties {
         var position = 0;
         foreach (var gap in flippable) {
             builder.Append(source, position, gap.Span.Start - position);
-            builder.Append(gap.Spaced is true ? "" : " ");
+            builder.Append(gap.Spaced is true ? string.Empty : " ");
             position = gap.Span.End;
         }
 

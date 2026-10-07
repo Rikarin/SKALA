@@ -204,7 +204,7 @@ public sealed class UndeclaredDisposeAnalyzer : DiagnosticAnalyzer {
     ///     </para>
     /// </remarks>
     static int? InsertionPoint(SyntaxNodeAnalysisContext context, TypeDeclarationSyntax declaration, out string text) {
-        text = "";
+        text = string.Empty;
 
         var name = context.SemanticModel
             .LookupNamespacesAndTypes(declaration.Identifier.SpanStart, name: "IDisposable")

@@ -19,13 +19,13 @@ public sealed record ReleaseRequest {
 
     public required string WorkRoot { get; init; }
 
-    public string CorpusRoot { get; init; } = "";
+    public string CorpusRoot { get; init; } = string.Empty;
 
     /// <summary>Commits on <c>master</c> since the baseline tag. Drives the pre-release counter.</summary>
     public int Height { get; init; }
 
     /// <summary>The commit this release would be cut from, for the record.</summary>
-    public string Commit { get; init; } = "";
+    public string Commit { get; init; } = string.Empty;
 
     /// <summary>
     ///     A <c>master</c> build between releases rather than a release. ⚠ Never tags and never
@@ -144,7 +144,7 @@ public static class ReleasePlan {
             surfaces.Exists(static surface => surface.State == DetectorState.Measured),
             surfaces,
             measurement,
-            request.BaselineTool?.Fingerprint ?? "",
+            request.BaselineTool?.Fingerprint ?? string.Empty,
             request.CandidateTool.Fingerprint
         );
     }

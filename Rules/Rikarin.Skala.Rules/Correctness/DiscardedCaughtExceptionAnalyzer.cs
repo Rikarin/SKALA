@@ -117,7 +117,7 @@ public sealed class DiscardedCaughtExceptionAnalyzer : DiagnosticAnalyzer {
 
             var insertion = new TextSpan(arguments.CloseParenToken.SpanStart, 0);
             var fix = FixEdits.Pack(
-                (insertion, (arguments.Arguments.Count == 0 ? "" : ", ") + declaration.Identifier.ValueText)
+                (insertion, (arguments.Arguments.Count == 0 ? string.Empty : ", ") + declaration.Identifier.ValueText)
             );
 
             context.ReportDiagnostic(

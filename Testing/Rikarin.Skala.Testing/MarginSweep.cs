@@ -66,8 +66,8 @@ public static class MarginSweep {
         Padded("generic-call", "JsonConvert.DeserializeObject<Thing>(", ")"),
         Padded("collection-expression", "[1, 2, 3, ", "]"),
         Padded("array-initializer", "new[] { 1, 2, 3, ", " }"),
-        Padded("binary-chain", "alpha + beta + ", ""),
-        Padded("ternary", "flag ? alpha : ", ""),
+        Padded("binary-chain", "alpha + beta + ", string.Empty),
+        Padded("ternary", "flag ? alpha : ", string.Empty),
         Padded("lambda-argument", "Assert.Throws<ParseException>(() => Read(", "))"),
         Padded("member-chain", "source.Where(Keep).Select(Project).OrderBy(", ").ToArray()")
     ];
@@ -108,7 +108,7 @@ public static class MarginSweep {
             var cells = Measure(runner, editorConfig, wrapBeforeEq, log);
             builder.Append("## `skala_wrap_before_eq = ")
                 .Append(wrapBeforeEq ? "true`" : "false`")
-                .AppendLine(wrapBeforeEq ? "" : " — the export's value");
+                .AppendLine(wrapBeforeEq ? string.Empty : " — the export's value");
             builder.AppendLine();
             builder.AppendLine("| shape | depth | column | total | longest `=`-break line | predicted | delta |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|");
@@ -117,7 +117,7 @@ public static class MarginSweep {
                 var predicted = Width - (8 + cell.Column / Indent);
                 builder.Append("| ")
                     .Append(cell.Shape)
-                    .Append(cell.Monotone ? "" : " ⚠")
+                    .Append(cell.Monotone ? string.Empty : " ⚠")
                     .Append(" | ")
                     .Append(cell.Depth.ToString(CultureInfo.InvariantCulture))
                     .Append(" | ")

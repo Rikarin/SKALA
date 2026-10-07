@@ -75,12 +75,12 @@ var request = new ReleaseRequest {
     BaselineRoot = baselineRoot,
     BaselineTool = baselineToolPath is { Length: > 0 } ? SkalaTool.At(baselineToolPath) : null,
     BaselineVersion = SemanticVersion.TryParse(Option("baseline-version"), out var previous) ? previous : null,
-    CorpusRoot = Option("corpus") ?? "",
+    CorpusRoot = Option("corpus") ?? string.Empty,
     WorkRoot = workRoot,
     Height = int.TryParse(Option("height"), NumberStyles.None, CultureInfo.InvariantCulture, out var height)
         ? height
         : 0,
-    Commit = Option("commit") ?? "",
+    Commit = Option("commit") ?? string.Empty,
     DryRun = !Flag("release")
 };
 
