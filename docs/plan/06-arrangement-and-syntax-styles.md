@@ -51,6 +51,44 @@ Brace insertion/removal, `default` literal, empty-string style, trailing commas,
 accessor order are pure syntax. They run in `format` when `--arrange=syntactic` (the default when no
 compilation is available) and are the subset an agent gets for free.
 
+### A loose load is the syntactic subset
+
+⚠ **Measured for #395, and the reason is the loader rather than any rule.** A `--load=loose`
+compilation is not a compilation the file belongs to: it has none of the project's preprocessor
+symbols, binds against the running runtime's implementation assemblies instead of the project's
+references, has no packages, no implicit or global usings, and — for the one file an agent just wrote
+— none of its siblings. Where a symbol fails to resolve the semantic rules decline; where it resolves
+to a *different* symbol they rewrite with full confidence, and no rule can tell those apart. So
+`ArrangementCompilations` hands no compilation to `arrange`, `format --arrange=full` or `verify`'s
+arrange stage under a loose load, and `verify` lists the semantic rules and `SK0210`'s removal half as
+skipped.
+
+Two instruments, each loose vs. a project compilation of the same files:
+
+- **Probes**, one project with `ImplicitUsings` off; each edit below was made by `arrange --load=loose`
+  on the single file and declined by `arrange --load=workspace`. `SK0210` deleted `using System.Text;`
+  used only under `#if NET8_0_OR_GREATER` (a build break, `CS0246`). `SK0202` turned `long t = Now();`
+  into `var t` where the project's `#if` branch returns `int` (a silent type change). `SK0205` turned
+  `h == null` into `h is null` past a user `operator ==` declared under `#if` (a silent behaviour
+  change). `SK0211` turned `String s` into `string s` where a sibling file declares
+  `App.Text.String` (a public signature change).
+- **The vendored corpus** (serilog 70, newtonsoft 110, vixen 200 files, `*.expected.cs` excluded),
+  one synthetic `net10.0` project per tree with `ImplicitUsings` and `Nullable` on, each semantic rule
+  run alone per file. Files whose loose output differed from the project's, loose-per-file /
+  loose-whole-tree: `SK0210` 147 / 66, `SK0202` 35 / 38, `SK0203` 23 / 22, `SK0205` 14 / 13, `SK0216`
+  7 / 6, `SK0215` 1 / 1. Re-bound against the project compilation, the loose edits introduced two
+  compiler errors, both `SK0215`: newtonsoft's `HolderClass` lost the `Newtonsoft.Json.` qualifier from
+  `TypeNameHandling.All` inside an attribute argument named `TypeNameHandling` — `CS0103` twice. No
+  project edit introduced an error. Disagreements run both ways: most are the loose run declining (an
+  error type) and the rest are it rewriting what the project run declined. `SK0204`, `SK0206`, `SK0207`,
+  `SK0211` and `SK0218` fired in neither run on the corpus, so their corpus zero is *shape absent*, and
+  only the probes speak for `SK0211`.
+
+The harness ran `ArrangeCommand` with `Include` set to one rule and `Observe` capturing the text,
+three times per file (project, loose over the whole tree, loose over the file alone). ⚠ The corpus
+"project" compilation is itself approximate — the trees do not compile without their packages — so it
+measures disagreement and introduced errors, not correctness of the project run.
+
 ## The catalogue
 
 ### Body styles
@@ -247,10 +285,12 @@ and a `using static` of a missing type under both `--load=loose` and `--load=wor
 predicate is scoped to the directive's span, not the file: an error three methods down says nothing
 about whether `using System.Text;` is needed. A file-level using made redundant by a `global using`
 (`CS8933`, #292) needs no clause of its own — `CS8019` accompanies it and it is a warning, so it stays
-removable. ⚠ A loose file is not exempt: `skala arrange` on a file with no project binds it against
-the running shared framework and removes what that compilation calls unnecessary and well-formed; only
-`--load=none`, `format --arrange=syntactic` and `verify`'s arrange stage under a loose load remove
-nothing. A using carrying a comment is never removed: the comment is the author saying something about
+removable. ⚠ **A loose load removes nothing, under every verb (#395).** Until #395 `skala arrange
+--load=loose` bound the file against the running shared framework and removed what that compilation
+called unnecessary, while `verify`'s arrange stage under the same load removed nothing — so `verify`
+was green on a file `arrange --check` exited 2 on. One function, `ArrangementCompilations`, now
+decides for `arrange`, `format --arrange=full` and `verify` alike, and its answer for a loose load is
+the syntactic subset; see § "A loose load is the syntactic subset" below for the measurement. A using carrying a comment is never removed: the comment is the author saying something about
 that line, and a cleanup that deletes prose to save a using has made the file worse. Aliases and
 `global using` are never removed either — a `global using` is used by files this one cannot see, so a
 per-file answer is the wrong shape.

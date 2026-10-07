@@ -30,11 +30,14 @@ public static class ArrangementFindings {
                 Overrides = request.Overrides,
                 Define = request.Define,
 
-                // A loose compilation exists only to host syntax analyzers. Passing it here would
-                // falsely claim that semantic arrangement had run against a real project.
-                Compilations = loaded.Mode == LoadMode.Loose
-                    ? null
-                    : _ => loaded.Units.Select(static unit => unit.Compilation).ToArray(),
+                // ⚠ #395: the same decision `skala arrange` takes, from the same function, or `verify`
+                // stops being `arrange --check` plus two other stages. Measured, not argued: a loose
+                // compilation binds a file against something other than its project — no project
+                // symbols, the runtime's assemblies, no siblings — and four semantic rules rewrote
+                // probes the project compilation declined, one into a build break (`SK0210` deleting a
+                // using needed under `#if`) and three into silent meaning changes (`SK0202`, `SK0205`,
+                // `SK0211`). See `ArrangementCompilations` for the probes.
+                Compilations = _ => ArrangementCompilations.For(loaded),
                 Observe = result => {
                     Add(result, repositoryRoot, findings, diagnostics);
                     incomplete |= !result.Converged
@@ -65,25 +68,6 @@ public static class ArrangementFindings {
         }
 
         return new(findings.ToImmutable(), failed);
-    }
-
-    /// <summary>Semantic arrangement rules omitted by the deliberately projectless loose load.</summary>
-    public static ImmutableArray<SkippedRule> SkippedFor(LoadMode mode) {
-        if (mode != LoadMode.Loose) {
-            return [];
-        }
-
-        return [
-            .. Arranger.Rules()
-                .Where(static rule => rule.NeedsSemantics)
-                .Select(static rule => rule.Id)
-                .Distinct(StringComparer.Ordinal)
-                .Select(static id => new SkippedRule(
-                        id,
-                        "arrangement requires a semantic model; --load=loose has no project"
-                    )
-                )
-        ];
     }
 
     static void Add(
