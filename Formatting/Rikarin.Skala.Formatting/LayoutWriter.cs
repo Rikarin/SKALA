@@ -2023,10 +2023,6 @@ public sealed class LayoutWriter {
 
         // A multi-line piece — a raw string, a disabled block — moves the line counter with it, so
         // that scopes opened before it still know which side of a break they are on.
-        foreach (var c in text) {
-            if (c == '\n') {
-                line++;
-            }
-        }
+        line += text.AsSpan().Count('\n');
     }
 }

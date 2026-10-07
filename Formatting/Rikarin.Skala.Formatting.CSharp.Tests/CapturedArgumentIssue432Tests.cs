@@ -78,6 +78,8 @@ public sealed class CapturedArgumentIssue432Tests {
                                    return
                            """;
 
+    const string CapturedSum = "[a   +   b]";
+
     const string Epilogue = """
                             ;
                                 }
@@ -126,19 +128,19 @@ public sealed class CapturedArgumentIssue432Tests {
             },
             { "Captures.Thrown(() => ArgumentOutOfRangeException.ThrowIfNegative(a   -   b))", "[a   -   b]" },
             { "Captures.Thrown(() => ArgumentOutOfRangeException.ThrowIfGreaterThan(b   +   b, a))", "[b   +   b]" },
-            { "Captures.Thrown(() => ArgumentException.ThrowIfNullOrEmpty(flag   ?   \"x\"   :   \"\"))", "?   \"x\"" },
+            { """Captures.Thrown(() => ArgumentException.ThrowIfNullOrEmpty(flag   ?   "x"   :   ""))""", "?   \"x\"" },
 
             // A reduced extension call's receiver, and a C# 14 extension block's. ⚠ Measured: the compiler
             // captures a parenthesised receiver without its parentheses.
-            { "(a   +   b).Text()", "[a   +   b]" },
-            { "(a   +   b).Describe()", "[a   +   b]" },
-            { "( a   +   b ).Text()", "[a   +   b]" },
+            { "(a   +   b).Text()", CapturedSum },
+            { "(a   +   b).Describe()", CapturedSum },
+            { "( a   +   b ).Text()", CapturedSum },
 
             // A constructor, an indexer and a delegate, each declared in the file.
             { "new Box(a   +   b).Text", "a   +   b" },
-            { "box[a   +   b]", "[a   +   b]" },
-            { "check(a   +   b)", "[a   +   b]" },
-            { "check.Invoke(a   +   b)", "[a   +   b]" },
+            { "box[a   +   b]", CapturedSum },
+            { "check(a   +   b)", CapturedSum },
+            { "check.Invoke(a   +   b)", CapturedSum },
 
             // ⚠ A `params` capture is the whole call, measured in #422 — so the call's own spacing is
             // captured too.
@@ -168,15 +170,18 @@ public sealed class CapturedArgumentIssue432Tests {
     ///     are not captured and are still formatted, and an argument nothing captures is formatted in full.
     /// </summary>
     [Theory]
-    [InlineData("Captures.Check(a   <   b, \"explicit\")", "Captures.Check(a < b, \"explicit\")")]
-    [InlineData("Captures.Check(ok: a   <   b, text: \"explicit\")", "Captures.Check(ok: a < b, text: \"explicit\")")]
+    [InlineData("""Captures.Check(a   <   b, "explicit")""", """Captures.Check(a < b, "explicit")""")]
     [InlineData(
-        "Captures.Thrown(() => ArgumentNullException.ThrowIfNull(Captures.Nothing(flag)   ??   b, \"p\"))",
-        "ThrowIfNull(Captures.Nothing(flag) ?? b, \"p\")"
+        """Captures.Check(ok: a   <   b, text: "explicit")""",
+        """Captures.Check(ok: a < b, text: "explicit")"""
     )]
     [InlineData(
-        "Captures.Thrown(() => ArgumentOutOfRangeException.ThrowIfGreaterThan(b   +   b, a, \"p\"))",
-        "ThrowIfGreaterThan(b + b, a, \"p\")"
+        """Captures.Thrown(() => ArgumentNullException.ThrowIfNull(Captures.Nothing(flag)   ??   b, "p"))""",
+        """ThrowIfNull(Captures.Nothing(flag) ?? b, "p")"""
+    )]
+    [InlineData(
+        """Captures.Thrown(() => ArgumentOutOfRangeException.ThrowIfGreaterThan(b   +   b, a, "p"))""",
+        """ThrowIfGreaterThan(b + b, a, "p")"""
     )]
     [InlineData("Captures.Value(  a   +   b  ).ToString(  )", "Captures.Value(a   +   b).ToString()")]
     [InlineData("Captures.Run(() =>   a   <   b).ToString()", "Captures.Run(() => a < b).ToString()")]
@@ -200,7 +205,7 @@ public sealed class CapturedArgumentIssue432Tests {
     [InlineData("Debug.Assert(a   <   b);", "Debug.Assert(a   <   b);")]
     [InlineData("System.Diagnostics.Debug.Assert(a   <   b);", "Debug.Assert(a   <   b);")]
     [InlineData("Trace.Assert(a   <   b);", "Trace.Assert(a   <   b);")]
-    [InlineData("Debug.Assert(a   <   b, \"message\");", "Debug.Assert(a < b, \"message\");")]
+    [InlineData("""Debug.Assert(a   <   b, "message");""", """Debug.Assert(a < b, "message");""")]
     [InlineData("Assert.That(a   <   b, Is.True);", "Assert.That(a   <   b, Is.True);")]
     [InlineData("Assert.That(a   ,   Is.EqualTo(  b  ));", "Assert.That(a, Is.EqualTo(  b  ));")]
     [InlineData("Assert.Equal(a   ,   b   +   1);", "Assert.Equal(a, b + 1);")]

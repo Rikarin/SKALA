@@ -104,11 +104,13 @@ public static class CapturedArgumentSurvey {
 
             report.AppendLine(
                 CultureInfo.InvariantCulture,
-                $"{tree,-12} {files,5}  {syntacticCount,9}  {semanticCount,8}  {both,4}  {syntacticOnly,14}  {semanticOnly,13}  {skipped,7}"
+                $"{tree,-12} {files,5}  {syntacticCount,9}  {semanticCount,8}  {both,4}  "
+                + $"{syntacticOnly,14}  {semanticOnly,13}  {skipped,7}"
             );
             report.AppendLine(
                 CultureInfo.InvariantCulture,
-                $"  oracle rewrites:   {syntacticRewritten,9}  {semanticRewritten,8}  {syntacticOnlyRewritten,14}  {semanticOnlyRewritten,13}"
+                $"  oracle rewrites:   {syntacticRewritten,9}  {semanticRewritten,8}  "
+                + $"{syntacticOnlyRewritten,14}  {semanticOnlyRewritten,13}"
             );
             report.AppendLine(
                 CultureInfo.InvariantCulture,

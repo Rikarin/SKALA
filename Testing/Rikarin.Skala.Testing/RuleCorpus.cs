@@ -276,7 +276,9 @@ public static class RuleCorpus {
     }
 
     /// <summary>One tree's compilation, implicit usings supplied, nothing planted.</summary>
-    /// <remarks>Exposed for <see cref="CapturedArgumentSurvey" />, which asks the semantic model rather than a rule.</remarks>
+    /// <remarks>
+    ///     Exposed for <see cref="CapturedArgumentSurvey" />, which asks the semantic model rather than a rule.
+    /// </remarks>
     public static CSharpCompilation Compile(string tree) => Build(tree, true, []).Compilation;
 
     /// <summary>Runs every Skala rule over one tree, with the planted shapes in the same compilation.</summary>

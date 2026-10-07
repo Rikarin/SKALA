@@ -5,6 +5,8 @@ namespace Rikarin.Skala.Cli.Tests;
 /// <summary>The fix command discovers the same workspace as arrange and verify.</summary>
 public sealed class FixCommandTests {
     const string IncludeOption = "--include";
+    const string ProjectFile = "Scratch.csproj";
+    const string RuleId = "SK4020";
 
     const string Project = """
                            <Project Sdk="Microsoft.NET.Sdk">
@@ -67,7 +69,7 @@ public sealed class FixCommandTests {
     public void Fix_AutoAppliesSemanticFixes(bool explicitAuto, bool safe) {
         using var scratch = new Scratch();
         var source = scratch.Write("Factory.cs", Source);
-        scratch.Write("Scratch.csproj", Project);
+        scratch.Write(ProjectFile, Project);
         var arguments = new List<string> { "fix", source };
         if (explicitAuto) {
             arguments.Add("--load=auto");
@@ -76,7 +78,7 @@ public sealed class FixCommandTests {
         if (safe) {
             arguments.Add("--safe");
         } else {
-            arguments.AddRange([IncludeOption, "SK4020"]);
+            arguments.AddRange([IncludeOption, RuleId]);
         }
 
         var run = CliRunner.Run([.. arguments]);
@@ -93,7 +95,7 @@ public sealed class FixCommandTests {
         scratch.Write("Second.csproj", Project);
         var before = File.ReadAllText(source);
 
-        var run = CliRunner.Run("fix", source, IncludeOption, "SK4020", "--project", project, "--dry-run");
+        var run = CliRunner.Run("fix", source, IncludeOption, RuleId, "--project", project, "--dry-run");
 
         Assert.True(run.ExitCode == 0, run.StandardOutput + run.StandardError);
         Assert.Contains("applied 1 fix (dry run, nothing written)", run.StandardOutput, StringComparison.Ordinal);
@@ -108,7 +110,7 @@ public sealed class FixCommandTests {
         scratch.Write("Second.csproj", Project);
         var before = File.ReadAllText(source);
 
-        var run = CliRunner.Run("fix", source, IncludeOption, "SK4020");
+        var run = CliRunner.Run("fix", source, IncludeOption, RuleId);
 
         Assert.NotEqual(0, run.ExitCode);
         Assert.Contains("multiple '*.csproj' workspace targets", run.StandardOutput, StringComparison.Ordinal);
@@ -120,10 +122,10 @@ public sealed class FixCommandTests {
     public void Fix_AutoRefusesAFailedWorkspaceLoad() {
         using var scratch = new Scratch();
         var source = scratch.Write("Factory.cs", Source);
-        scratch.Write("Scratch.csproj", "<Project>");
+        scratch.Write(ProjectFile, "<Project>");
         var before = File.ReadAllText(source);
 
-        var run = CliRunner.Run("fix", source, IncludeOption, "SK4020");
+        var run = CliRunner.Run("fix", source, IncludeOption, RuleId);
 
         Assert.NotEqual(0, run.ExitCode);
         Assert.Contains("no compilation could be built", run.StandardOutput, StringComparison.Ordinal);
@@ -134,10 +136,10 @@ public sealed class FixCommandTests {
     public void Fix_ExplicitLooseDoesNotLoadTheWorkspace() {
         using var scratch = new Scratch();
         var source = scratch.Write("Factory.cs", Source);
-        scratch.Write("Scratch.csproj", "<Project>");
+        scratch.Write(ProjectFile, "<Project>");
         var before = File.ReadAllText(source);
 
-        var run = CliRunner.Run("fix", source, IncludeOption, "SK4020", "--load=loose");
+        var run = CliRunner.Run("fix", source, IncludeOption, RuleId, "--load=loose");
 
         Assert.Equal(0, run.ExitCode);
         Assert.Contains("nothing to apply", run.StandardOutput, StringComparison.Ordinal);
@@ -165,7 +167,7 @@ public sealed class FixCommandTests {
     public void Fix_RevertsAFixThatStopsBinding() {
         using var scratch = new Scratch();
         var source = scratch.Write("Limits.cs", ConstantSource);
-        scratch.Write("Scratch.csproj", Project);
+        scratch.Write(ProjectFile, Project);
         var before = File.ReadAllText(source);
 
         var run = CliRunner.Run("fix", scratch.Root, IncludeOption, "SK6034");
@@ -182,7 +184,7 @@ public sealed class FixCommandTests {
     public void Fix_AppliesASafeFixThatStillBinds() {
         using var scratch = new Scratch();
         var source = scratch.Write("Factory.cs", Source);
-        scratch.Write("Scratch.csproj", Project);
+        scratch.Write(ProjectFile, Project);
 
         var run = CliRunner.Run("fix", scratch.Root, "--safe");
 
@@ -244,9 +246,9 @@ public sealed class FixCommandTests {
             }
             """
         );
-        scratch.Write("Scratch.csproj", Project);
+        scratch.Write(ProjectFile, Project);
 
-        var run = CliRunner.Run("fix", source, IncludeOption, "SK4020");
+        var run = CliRunner.Run("fix", source, IncludeOption, RuleId);
 
         Assert.True(run.ExitCode == 0, run.StandardOutput + run.StandardError);
         var fixedText = File.ReadAllText(source);
