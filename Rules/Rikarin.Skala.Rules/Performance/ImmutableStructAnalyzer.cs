@@ -4,9 +4,11 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 
 namespace Rikarin.Skala.Rules.Performance;
 
@@ -52,7 +54,8 @@ public sealed class ImmutableStructAnalyzer : DiagnosticAnalyzer {
             } symbol
             || !declaration.Members.All(Eligible)
             || Owned(declaration).Any(Unsafe)
-            || Owned(declaration).OfType<ThisExpressionSyntax>().Any(Written)) {
+            || Owned(declaration).OfType<ThisExpressionSyntax>().Any(Written)
+            || WritesAPrimaryConstructorParameter(context.SemanticModel, declaration, cancellation)) {
             return;
         }
 
@@ -107,12 +110,73 @@ public sealed class ImmutableStructAnalyzer : DiagnosticAnalyzer {
         || node.IsKind(SyntaxKind.AddressOfExpression);
 
     /// <summary>
+    ///     ⚠ A captured primary-constructor parameter is a field the predicate could not see.
+    /// </summary>
+    /// <remarks>
+    ///     <c>struct Budget(decimal total) { void Spend(decimal a) => total -= a; }</c> passed every
+    ///     check above — it declares no field at all — and <c>readonly struct Budget</c> is
+    ///     <c>CS9114</c>, because a <c>readonly</c> type's captured parameters are <c>readonly</c> too.
+    ///     Found by applying every safe fix to every fixture: the shape sat in an <c>SK2194</c> positive.
+    ///     A parameter that is only read stays eligible. ⚠ Writing through a member of the parameter —
+    ///     <c>total.Field = 1</c> — is counted as writing it, which is exact for a struct-typed parameter
+    ///     and needlessly cautious for a class-typed one; the rule declines rather than asks which.
+    /// </remarks>
+    static bool WritesAPrimaryConstructorParameter(
+        SemanticModel model,
+        StructDeclarationSyntax declaration,
+        CancellationToken cancellation
+    ) {
+        if (declaration.ParameterList is not { Parameters.Count: > 0 } parameters) {
+            return false;
+        }
+
+        var names = new HashSet<string>(
+            parameters.Parameters.Select(static parameter => parameter.Identifier.ValueText),
+            StringComparer.Ordinal
+        );
+
+        foreach (var identifier in Owned(declaration).OfType<IdentifierNameSyntax>()) {
+            if (names.Contains(identifier.Identifier.ValueText)
+                && Written(identifier)
+                && model.GetSymbolInfo(identifier, cancellation).Symbol is IParameterSymbol parameter
+                && parameter.DeclaringSyntaxReferences.Any(reference => parameters.Span.Contains(reference.Span))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    /// <summary>
+    ///     A parameter reference that is written, through any member access, parenthesis or tuple
+    ///     element between it and the write.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>this</c> is deliberately not climbed the same way: <c>this.total = value</c> in a
+    ///     constructor is legal in a <c>readonly struct</c>, and treating it as a write would decline
+    ///     every struct whose constructor spells <c>this.</c>.
+    /// </remarks>
+    static bool Written(IdentifierNameSyntax reference) {
+        SyntaxNode node = reference;
+        while (node.Parent is MemberAccessExpressionSyntax access && access.Expression == node
+               || node.Parent is ParenthesizedExpressionSyntax or TupleExpressionSyntax
+               || node.Parent is ArgumentSyntax { Parent: TupleExpressionSyntax }) {
+            node = node.Parent;
+        }
+
+        return IsWriteTarget(node);
+    }
+
+    /// <summary>
     ///     <c>this = default</c>, <c>this++</c> and <c>Swap(ref this)</c> all compile in a struct that is
     ///     not <c>readonly</c> and in none that is.
     /// </summary>
-    static bool Written(ThisExpressionSyntax expression) =>
-        expression.Parent switch {
-            AssignmentExpressionSyntax assignment => assignment.Left == expression,
+    static bool Written(ThisExpressionSyntax expression) => IsWriteTarget(expression);
+
+    static bool IsWriteTarget(SyntaxNode node) =>
+        node.Parent switch {
+            AssignmentExpressionSyntax assignment => assignment.Left == node,
             RefExpressionSyntax => true,
             PrefixUnaryExpressionSyntax prefix => prefix.IsKind(SyntaxKind.PreIncrementExpression)
                 || prefix.IsKind(SyntaxKind.PreDecrementExpression),
