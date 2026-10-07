@@ -232,17 +232,22 @@ public sealed class ConfigCommandTests {
         );
 
         var configured = resolution.Configured.ToList();
-        var applied = configured.Count(static o => o.Info.Tier is OptionTier.A or OptionTier.B);
+        var partial = configured.Count(static o => ConfigCommands.UnimplementedBecause(o) is not null);
+        var applied = configured.Count(static o =>
+            o.Info.Tier is OptionTier.A or OptionTier.B && ConfigCommands.UnimplementedBecause(o) is null
+        );
         var inert = configured.Count(static o => o.Info.Inert is not null);
         var ignored = configured.Count(static o =>
-            o.Info.Tier is OptionTier.C or OptionTier.D && o.Info.Inert is null
+            o.Info.Tier is OptionTier.C or OptionTier.D
+            && o.Info.Inert is null
+            && ConfigCommands.UnimplementedBecause(o) is null
         );
 
         // The export sets hundreds of keys, and a good few of them are not implemented. If either
         // of those stops being true this test is measuring nothing.
         Assert.True(configured.Count > 100, $"The export set only {configured.Count} options.");
         Assert.True(ignored > 0, "No unimplemented key is set, so the gap this report exists for is untested.");
-        Assert.Equal(configured.Count, applied + inert + ignored);
+        Assert.Equal(configured.Count, applied + partial + inert + ignored);
 
         Assert.Contains(
             $"This configuration sets {configured.Count} of {OptionRegistry.Count} known options.",
@@ -251,7 +256,7 @@ public sealed class ConfigCommandTests {
         );
 
         Assert.Contains(
-            $"{applied} applied · {ignored} not implemented · {inert} inert",
+            $"{applied} applied · {partial} at an unimplemented value · {ignored} not implemented · {inert} inert",
             run.StandardOutput,
             StringComparison.Ordinal
         );
@@ -261,6 +266,54 @@ public sealed class ConfigCommandTests {
         var mine = run.StandardOutput.IndexOf("This configuration sets", StringComparison.Ordinal);
         var registry = run.StandardOutput.IndexOf("Registry-wide", StringComparison.Ordinal);
         Assert.True(mine >= 0 && registry > mine, "The per-configuration split must precede the registry totals.");
+    }
+
+    /// <summary>
+    ///     ⚠ #383: a key set to a value Skala does not perform is named, with the reason — and a key set
+    ///     to one of its working values is not.
+    /// </summary>
+    /// <remarks>
+    ///     Before, <c>skala_empty_string = string_empty</c> did nothing and the report said nothing: it was
+    ///     counted among the "not implemented" Tier D keys, which are named only by their six largest
+    ///     families. A Tier A key at a dead value was worse — counted as <em>applied</em>. The negative
+    ///     half is the control: a check that named every key carrying an <c>unimplementedValues</c> entry,
+    ///     whatever it was set to, would pass the positive half alone.
+    /// </remarks>
+    [Fact]
+    public void Check_NamesAKeySetToAValueSkalaDoesNotPerform() {
+        var directory = Path.Combine(Path.GetTempPath(), $"skala-partial-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try {
+            File.WriteAllText(
+                Path.Combine(directory, ".editorconfig"),
+                """
+                root = true
+
+                [*.cs]
+                csharp_style_namespace_declarations = block_scoped:suggestion
+                skala_null_checking_pattern_style = empty_recursive_pattern
+                skala_object_creation_when_type_evident = target_typed
+                skala_empty_string = string_empty
+
+                """
+            );
+            File.WriteAllText(Path.Combine(directory, "a.cs"), "class C { }\n");
+
+            var output = CliRunner.Run("config", "check", directory).StandardOutput;
+
+            Assert.Contains("2 at an unimplemented value", output, StringComparison.Ordinal);
+            Assert.Contains("csharp_style_namespace_declarations = block_scoped", output, StringComparison.Ordinal);
+            Assert.Contains(
+                "skala_null_checking_pattern_style = empty_recursive_pattern — ",
+                output,
+                StringComparison.Ordinal
+            );
+
+            Assert.DoesNotContain("skala_object_creation_when_type_evident =", output, StringComparison.Ordinal);
+            Assert.DoesNotContain("skala_empty_string =", output, StringComparison.Ordinal);
+        } finally {
+            Directory.Delete(directory, true);
+        }
     }
 
     /// <summary>

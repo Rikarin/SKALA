@@ -1144,6 +1144,9 @@
       "tier": "A",
       "construct": "NamespaceDeclaration",
       "summary": "File-scoped or block-scoped namespaces.",
+      "unimplementedValues": {
+        "block_scoped": "NamespaceBodyRule converts block-scoped namespaces to file-scoped only; nothing converts `namespace N;` back into a block."
+      },
       "since": "0.1",
       "oracle": "constructs/arrangement/namespaces/file-scoped.cs",
       "templateLine": 43,
@@ -1416,6 +1419,11 @@
       "tier": "A",
       "construct": "ModifierList",
       "summary": "When an explicit accessibility modifier is required.",
+      "unimplementedValues": {
+        "always": "AccessibilityRule only removes a redundant modifier, and only at omit_if_default; nothing adds a missing one or removes every one (ArrangementOptions.OmitDefaultAccessibility folds the key to that single value).",
+        "for_non_interface_members": "AccessibilityRule only removes a redundant modifier, and only at omit_if_default; nothing adds a missing one or removes every one (ArrangementOptions.OmitDefaultAccessibility folds the key to that single value).",
+        "never": "AccessibilityRule only removes a redundant modifier, and only at omit_if_default; nothing adds a missing one or removes every one (ArrangementOptions.OmitDefaultAccessibility folds the key to that single value)."
+      },
       "since": "0.1",
       "oracle": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
       "templateLine": 529,
@@ -1568,6 +1576,9 @@
       "tier": "D",
       "construct": "AwaitExpression",
       "summary": "Selects ConfigureAwait inspection policy, not cleanup behavior. SK3003 reports bare framework Task/ValueTask awaits in library mode; disabled and ui do not require missing configuration. Explicit ConfigureAwait choices are respected. UI mode's separate redundant ConfigureAwait(true) inspection is not implemented. The prefixed key wins if both spellings are supplied. Measured 2026-08-29: the oracle at 2025.2.6 does not change bare awaits in any mode, so this remains outside the arrangement tiers.",
+      "unimplementedValues": {
+        "ui": "SK3003 reads only `library`; UI mode's redundant ConfigureAwait(true) report is a different concept and is not implemented, so `ui` behaves as `disabled`."
+      },
       "since": "0.1",
       "oracle": null,
       "templateLine": 652,
@@ -1583,6 +1594,9 @@
       "tier": "A",
       "construct": "CodeBody",
       "summary": "Code body — Properties, indexers, and events",
+      "unimplementedValues": {
+        "accessors_with_block_body": "BodyStyleRule only collapses towards expression bodies; at this value it does nothing, and nothing expands `get => x;` or `int P => x;` into block-bodied accessors."
+      },
       "since": "0.1",
       "oracle": "constructs/arrangement/body-style/accessor-owner.cs",
       "templateLine": 559,
@@ -2522,6 +2536,9 @@
       "tier": "A",
       "construct": "DefaultValue",
       "summary": "Default value — When type is evident from usage",
+      "unimplementedValues": {
+        "default_expression": "DefaultValueRule only ever converts towards the `default` literal; nothing expands `default` into `default(T)`, so this value means 'leave it as written'. Whether the oracle expands is unmeasured: no corpus input contains a bare `default`."
+      },
       "since": "0.1",
       "oracle": "constructs/arrangement/type-inference/default-literal.cs",
       "templateLine": 718,
@@ -2537,6 +2554,9 @@
       "tier": "A",
       "construct": "DefaultValue",
       "summary": "Default value — When type is not evident from usage",
+      "unimplementedValues": {
+        "default_expression": "DefaultValueRule only ever converts towards the `default` literal; nothing expands `default` into `default(T)`, so this value means 'leave it as written'. Whether the oracle expands is unmeasured: no corpus input contains a bare `default`."
+      },
       "since": "0.1",
       "oracle": "constructs/arrangement/type-inference/default-literal.cs",
       "templateLine": 719,
@@ -2552,6 +2572,9 @@
       "tier": "A",
       "construct": "BracesLayout",
       "summary": "How an empty block's braces are laid out. ⚠ Measured 2026-08-30: the three values are genuinely distinct, and the two `together`s differ only once the brace would be on its own line — under `csharp_new_line_before_open_brace = all`, `together` gives `void M()` / `{ }` and `together_same_line` gives `void M() { }`, pulling the pair back onto the declaration's line against the placement key. Under the export's `none` they are the same bytes. Skala read `together_same_line` as `multiline` and split the pair. ⚠ `together_same_line`'s second half — overriding the placement key — is not implemented, because it needs the brace-split direction Skala does not have. SK-DIV-0091.",
+      "unimplementedValues": {
+        "together_same_line": "Partly: the pair is joined as under `together`, but pulling it back onto the declaration's line against csharp_new_line_before_open_brace needs the brace-split direction Skala does not have (SK-DIV-0091)."
+      },
       "since": "0.1",
       "oracle": "constructs/braces/skala_empty_block_style.cs",
       "templateLine": 696,
@@ -3600,6 +3623,9 @@
       "tier": "D",
       "construct": "Patterns",
       "summary": "Patterns — Null checking pattern style",
+      "unimplementedValues": {
+        "empty_recursive_pattern": "NullCheckingPatternRule runs only at not_null_pattern; nothing writes `is { }` or rewrites a null check into it."
+      },
       "since": "0.1",
       "oracle": "constructs/arrangement/redundancy/null-checking-pattern.cs",
       "templateLine": 873,
@@ -3615,6 +3641,9 @@
       "tier": "A",
       "construct": "ObjectCreation",
       "summary": "Object creation — When created type is evident from usage",
+      "unimplementedValues": {
+        "explicitly_typed": "ObjectCreationRule only ever converts towards `new()`; nothing expands `new()` into `new T()`, so this value means 'leave it as written'. Whether the oracle expands is unmeasured: no corpus input contains `new()`."
+      },
       "since": "0.1",
       "oracle": "constructs/arrangement/type-inference/new-wins-when-lhs-names-the-type.cs",
       "templateLine": 874,
@@ -3630,6 +3659,9 @@
       "tier": "A",
       "construct": "ObjectCreation",
       "summary": "Object creation — When created type is not evident from usage",
+      "unimplementedValues": {
+        "explicitly_typed": "ObjectCreationRule only ever converts towards `new()`; nothing expands `new()` into `new T()`, so this value means 'leave it as written'. Whether the oracle expands is unmeasured: no corpus input contains `new()`."
+      },
       "since": "0.1",
       "oracle": "constructs/arrangement/type-inference/new-wins-when-lhs-names-the-type.cs",
       "templateLine": 875,
