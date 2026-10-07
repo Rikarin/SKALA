@@ -57,7 +57,8 @@ public sealed class ImmutableArrayCollectionInitializerAnalyzer : DiagnosticAnal
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ObjectCreationExpression);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ObjectCreationExpression);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

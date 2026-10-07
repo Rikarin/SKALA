@@ -42,13 +42,14 @@ public sealed class VariableLengthHexEscapeAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(
             AnalyzeLiteral,
             SyntaxKind.StringLiteralExpression,
             SyntaxKind.CharacterLiteralExpression,
             SyntaxKind.Utf8StringLiteralExpression
         );
-        context.RegisterSyntaxNodeAction(AnalyzeInterpolatedText, SyntaxKind.InterpolatedStringText);
+        registrar.RegisterSyntaxNodeAction(AnalyzeInterpolatedText, SyntaxKind.InterpolatedStringText);
     }
 
     static void AnalyzeInterpolatedText(SyntaxNodeAnalysisContext context) =>

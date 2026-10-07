@@ -57,7 +57,8 @@ public sealed class DangerousHandleAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var handle = start.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.SafeHandle");
                 if (handle is null) {
                     return;

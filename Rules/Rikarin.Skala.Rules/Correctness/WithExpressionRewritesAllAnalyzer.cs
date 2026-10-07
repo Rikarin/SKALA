@@ -55,7 +55,8 @@ public sealed class WithExpressionRewritesAllAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 if (SkalaRule.MeetsLanguageVersion(start.Compilation, Rule.LanguageVersion)) {
                     start.RegisterSyntaxNodeAction(Analyze, SyntaxKind.WithExpression);
                 }

@@ -61,7 +61,8 @@ public sealed class UnreadStringBuilderAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var builder = start.Compilation.GetTypeByMetadataName("System.Text.StringBuilder");
                 if (builder is null) {
                     return;

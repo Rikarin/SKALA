@@ -38,12 +38,13 @@ public sealed class EmptyInitializerAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(
             AnalyzeCreation,
             SyntaxKind.ObjectCreationExpression,
             SyntaxKind.ImplicitObjectCreationExpression
         );
-        context.RegisterSyntaxNodeAction(AnalyzeWith, SyntaxKind.WithExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzeWith, SyntaxKind.WithExpression);
     }
 
     static void AnalyzeCreation(SyntaxNodeAnalysisContext context) {

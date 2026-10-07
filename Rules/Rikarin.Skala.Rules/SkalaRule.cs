@@ -151,7 +151,7 @@ public static class SkalaRule {
         Action<SyntaxNodeAnalysisContext> analyze,
         SyntaxKind kind
     ) =>
-        context.RegisterCompilationStartAction(start => {
+        PartialConstructorDefinitions.Visiting(context).RegisterCompilationStartAction(start => {
                 if (!supported(start.Compilation)) {
                     return;
                 }
@@ -174,7 +174,7 @@ public static class SkalaRule {
         SyntaxKind kind,
         Action<SyntaxNodeAnalysisContext, INamedTypeSymbol> analyze
     ) =>
-        context.RegisterCompilationStartAction(start => {
+        PartialConstructorDefinitions.Visiting(context).RegisterCompilationStartAction(start => {
                 if (!MeetsLanguageVersion(start.Compilation, languageVersion)) {
                     return;
                 }

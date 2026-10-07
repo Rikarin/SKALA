@@ -64,7 +64,8 @@ public sealed class NullSequenceReturnAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 // ⚠ The fix is a collection expression, so the rule is silent below C# 12 rather than
                 // offering an edit that does not compile. `hasFix: true` is a promise for every finding.
                 if (!SkalaRule.MeetsLanguageVersion(start.Compilation, Rule.LanguageVersion)) {

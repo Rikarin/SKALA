@@ -48,7 +48,8 @@ public sealed class NegatedEmptyPatternAnalyzer : DiagnosticAnalyzer {
 
         // ⚠ Registered on the `not` pattern itself rather than on `is`, so the rule reaches a
         // `case not { }:` label, a `switch` arm and a nested subpattern as well as a bare `is`.
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.NotPattern);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.NotPattern);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

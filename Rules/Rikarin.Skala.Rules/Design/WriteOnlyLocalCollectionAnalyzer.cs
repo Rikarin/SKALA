@@ -94,7 +94,8 @@ public sealed class WriteOnlyLocalCollectionAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var creations = CollectionShape.Resolve(start.Compilation, Creations);
                 start.RegisterSyntaxNodeAction(
                     context => Analyze(context, creations),

@@ -63,7 +63,8 @@ public sealed class UndocumentedNonPublicMemberAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(Analyze, Kinds);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, Kinds);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

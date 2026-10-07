@@ -53,7 +53,8 @@ public sealed class PrivateConstructorOnlyAnalyzer : DiagnosticAnalyzer {
         // ⚠ One action per file, not per class. The question is "does anything in this tree reach the
         // type", so a per-declaration action would walk the whole file once per candidate and turn a
         // file of constants into quadratic work for an answer it computed the first time.
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.CompilationUnit);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.CompilationUnit);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

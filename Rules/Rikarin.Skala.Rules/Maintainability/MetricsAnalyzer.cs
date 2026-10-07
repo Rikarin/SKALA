@@ -72,7 +72,8 @@ public sealed class MetricsAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 // ⚠ The thresholds are per file, because a scoped `.editorconfig` section is how a
                 // repository loosens a metric for `Testing/**` and tightens it for `Core/**`
                 // (docs/plan/03 § "Severities" uses the same mechanism for severities). Resolving

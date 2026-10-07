@@ -39,7 +39,8 @@ public sealed class EmptyTypeAnalyzer : DiagnosticAnalyzer {
         // ⚠ No InterfaceDeclaration. An empty interface is a marker, which is the *correct* shape for
         // one — the only kind a type can adopt without changing what it inherits from — so the whole
         // kind is out of scope rather than filtered later. Enums and delegates likewise.
-        context.RegisterSyntaxNodeAction(
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(
             Analyze,
             SyntaxKind.ClassDeclaration,
             SyntaxKind.StructDeclaration,

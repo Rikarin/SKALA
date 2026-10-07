@@ -47,14 +47,15 @@ public sealed class UnspecifiedDateTimeKindAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
-        context.RegisterSyntaxNodeAction(AnalyzeCreation, SyntaxKind.ObjectCreationExpression);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzeCreation, SyntaxKind.ObjectCreationExpression);
 
         // ⚠ The implicit `DateTime`-to-`DateTimeOffset` conversion has no syntax of its own —
         // `DateTimeOffset when = built;` contains no `new` and no cast — so it is unreachable from a
         // syntax registration and needs the operation tree. It is the *commonest* spelling of this
         // defect, which is why it is worth a second registration rather than a stated gap.
-        context.RegisterOperationAction(AnalyzeConversion, OperationKind.Conversion);
+        registrar.RegisterOperationAction(AnalyzeConversion, OperationKind.Conversion);
     }
 
     /// <summary>

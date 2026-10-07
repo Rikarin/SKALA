@@ -36,7 +36,8 @@ public sealed class UsingResourceInitializerAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var disposable = start.Compilation.GetTypeByMetadataName("System.IDisposable");
                 var asyncDisposable = start.Compilation.GetTypeByMetadataName("System.IAsyncDisposable");
                 if (disposable is null && asyncDisposable is null) {

@@ -59,8 +59,9 @@ public sealed class RedundantQualifierAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeTypeName, SyntaxKind.QualifiedName);
-        context.RegisterSyntaxNodeAction(AnalyzeBaseAccess, SyntaxKind.SimpleMemberAccessExpression);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(AnalyzeTypeName, SyntaxKind.QualifiedName);
+        registrar.RegisterSyntaxNodeAction(AnalyzeBaseAccess, SyntaxKind.SimpleMemberAccessExpression);
     }
 
     static void AnalyzeTypeName(SyntaxNodeAnalysisContext context) {

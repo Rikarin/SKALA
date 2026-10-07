@@ -71,11 +71,12 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeJump, SyntaxKind.ReturnStatement, SyntaxKind.ContinueStatement);
-        context.RegisterSyntaxNodeAction(AnalyzeSwitch, SyntaxKind.SwitchStatement);
-        context.RegisterSyntaxNodeAction(AnalyzeTry, SyntaxKind.TryStatement);
-        context.RegisterSyntaxNodeAction(AnalyzeIf, SyntaxKind.IfStatement);
-        context.RegisterSyntaxNodeAction(AnalyzeSwitchExpression, SyntaxKind.SwitchExpression);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(AnalyzeJump, SyntaxKind.ReturnStatement, SyntaxKind.ContinueStatement);
+        registrar.RegisterSyntaxNodeAction(AnalyzeSwitch, SyntaxKind.SwitchStatement);
+        registrar.RegisterSyntaxNodeAction(AnalyzeTry, SyntaxKind.TryStatement);
+        registrar.RegisterSyntaxNodeAction(AnalyzeIf, SyntaxKind.IfStatement);
+        registrar.RegisterSyntaxNodeAction(AnalyzeSwitchExpression, SyntaxKind.SwitchExpression);
     }
 
     /// <summary>

@@ -67,7 +67,8 @@ public sealed class BlockingOnAsyncAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var tasks = Resolve(start.Compilation, TaskTypes);
                 if (tasks.Count == 0) {
                     return;

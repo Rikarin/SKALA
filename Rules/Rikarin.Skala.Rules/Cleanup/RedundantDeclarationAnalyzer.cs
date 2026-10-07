@@ -44,18 +44,19 @@ public sealed class RedundantDeclarationAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeDestructor, SyntaxKind.DestructorDeclaration);
-        context.RegisterSyntaxNodeAction(AnalyzeConstructor, SyntaxKind.ConstructorDeclaration);
-        context.RegisterSyntaxNodeAction(AnalyzeInitializer, SyntaxKind.BaseConstructorInitializer);
-        context.RegisterSyntaxNodeAction(
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(AnalyzeDestructor, SyntaxKind.DestructorDeclaration);
+        registrar.RegisterSyntaxNodeAction(AnalyzeConstructor, SyntaxKind.ConstructorDeclaration);
+        registrar.RegisterSyntaxNodeAction(AnalyzeInitializer, SyntaxKind.BaseConstructorInitializer);
+        registrar.RegisterSyntaxNodeAction(
             AnalyzeNamespace,
             SyntaxKind.NamespaceDeclaration,
             SyntaxKind.FileScopedNamespaceDeclaration
         );
 
-        context.RegisterSyntaxNodeAction(AnalyzeField, SyntaxKind.FieldDeclaration);
-        context.RegisterSyntaxNodeAction(AnalyzeProperty, SyntaxKind.PropertyDeclaration);
-        context.RegisterSyntaxNodeAction(AnalyzeOverride, SyntaxKind.MethodDeclaration);
+        registrar.RegisterSyntaxNodeAction(AnalyzeField, SyntaxKind.FieldDeclaration);
+        registrar.RegisterSyntaxNodeAction(AnalyzeProperty, SyntaxKind.PropertyDeclaration);
+        registrar.RegisterSyntaxNodeAction(AnalyzeOverride, SyntaxKind.MethodDeclaration);
     }
 
     static void AnalyzeDestructor(SyntaxNodeAnalysisContext context) {

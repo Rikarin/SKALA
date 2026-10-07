@@ -50,8 +50,9 @@ public sealed class WallClockElapsedAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeSubtraction, SyntaxKind.SubtractExpression);
-        context.RegisterSyntaxNodeAction(AnalyzeSubtractCall, SyntaxKind.InvocationExpression);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(AnalyzeSubtraction, SyntaxKind.SubtractExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzeSubtractCall, SyntaxKind.InvocationExpression);
     }
 
     /// <summary>The operator spelling: <c>DateTime.UtcNow - start</c>.</summary>

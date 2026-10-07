@@ -61,14 +61,15 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(
             AnalyzeComparison,
             SyntaxKind.EqualsExpression,
             SyntaxKind.NotEqualsExpression
         );
-        context.RegisterSyntaxNodeAction(AnalyzeNegation, SyntaxKind.LogicalNotExpression);
-        context.RegisterSyntaxNodeAction(AnalyzeConditional, SyntaxKind.ConditionalExpression);
-        context.RegisterSyntaxNodeAction(
+        registrar.RegisterSyntaxNodeAction(AnalyzeNegation, SyntaxKind.LogicalNotExpression);
+        registrar.RegisterSyntaxNodeAction(AnalyzeConditional, SyntaxKind.ConditionalExpression);
+        registrar.RegisterSyntaxNodeAction(
             AnalyzeLogical,
             SyntaxKind.LogicalAndExpression,
             SyntaxKind.LogicalOrExpression

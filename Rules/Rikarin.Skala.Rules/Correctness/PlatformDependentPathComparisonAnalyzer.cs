@@ -50,7 +50,8 @@ public sealed class PlatformDependentPathComparisonAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var comparison = start.Compilation.GetTypeByMetadataName("System.StringComparison");
                 var path = start.Compilation.GetTypeByMetadataName("System.IO.Path");
                 var info = start.Compilation.GetTypeByMetadataName("System.IO.FileSystemInfo");

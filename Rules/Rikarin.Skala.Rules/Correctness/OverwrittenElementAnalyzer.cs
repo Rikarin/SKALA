@@ -67,7 +67,8 @@ public sealed class OverwrittenElementAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var collections = CollectionShape.Resolve(start.Compilation, Collections);
                 start.RegisterSyntaxNodeAction(
                     context => Analyze(context, collections),

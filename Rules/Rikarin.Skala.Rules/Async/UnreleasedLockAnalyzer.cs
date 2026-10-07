@@ -80,7 +80,8 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
         // expression in every file, which is the densest node kind there is, so the only work allowed
         // before the name check is a dictionary probe. A compilation that references neither type
         // registers nothing at all.
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var builder = ImmutableDictionary.CreateBuilder<string, Protocol>(StringComparer.Ordinal);
                 foreach (var (owner, enter, release) in Protocols) {
                     if (start.Compilation.GetTypeByMetadataName(owner) is { } type) {

@@ -33,7 +33,8 @@ public sealed class GlobalNamespaceTypeAnalyzer : DiagnosticAnalyzer {
 
         // Every kind a compilation unit can hold directly. `enum` and `delegate` are in: they occupy
         // the same name table as a class and collide the same way.
-        context.RegisterSyntaxNodeAction(
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(
             Analyze,
             SyntaxKind.ClassDeclaration,
             SyntaxKind.StructDeclaration,

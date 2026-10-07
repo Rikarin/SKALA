@@ -57,7 +57,8 @@ public sealed class TypeComparedByNameAnalyzer : DiagnosticAnalyzer {
         // than per node. `Resolve` reaches referenced assemblies, so on a multi-targeted project the
         // literal `"System.Half"` names a type the net10.0 moniker can see and the netstandard2.1 one
         // cannot — and the fix writes `typeof(System.Half)` into the file both compile.
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var siblings = FrameworkAvailability.SiblingsByPath(start.Options);
                 start.RegisterSyntaxNodeAction(
                     node => AnalyzeComparison(node, siblings),

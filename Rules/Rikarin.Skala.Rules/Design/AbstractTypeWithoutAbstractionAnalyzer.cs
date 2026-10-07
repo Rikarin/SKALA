@@ -52,7 +52,8 @@ public sealed class AbstractTypeWithoutAbstractionAnalyzer : DiagnosticAnalyzer 
         // hierarchy, and its generated members — the copy constructor, `EqualsContract`, the printing
         // members — are the derivation surface a hand-written class has to declare. There is no
         // shape there that this rule could read as an omission.
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ClassDeclaration);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ClassDeclaration);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {

@@ -84,7 +84,8 @@ public sealed class ConstantPatternOverSequenceEqualAnalyzer : DiagnosticAnalyze
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 // ⚠ CS8936 below C# 11: "Feature 'pattern matching ReadOnly/Span<char> on constant
                 // string' is not available". Confirmed by compiling it, not read off a table.
                 if (!SkalaRule.MeetsLanguageVersion(start.Compilation, Rule.LanguageVersion)) {

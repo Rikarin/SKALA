@@ -48,7 +48,8 @@ public sealed class EscapeFreeStringLiteralAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var raw = SkalaRule.MeetsLanguageVersion(start.Compilation, "11.0");
                 start.RegisterSyntaxNodeAction(
                     context => Analyze(context, raw),

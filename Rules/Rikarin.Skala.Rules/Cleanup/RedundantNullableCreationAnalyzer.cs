@@ -55,7 +55,8 @@ public sealed class RedundantNullableCreationAnalyzer : DiagnosticAnalyzer {
         // ⚠ `ObjectCreationExpression` only. `new(5)` is an `ImplicitObjectCreationExpression`, a
         // different kind and not this shape at all: the type is not written there, it is the target
         // type, and there is nothing redundant about naming it implicitly.
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ObjectCreationExpression);
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ObjectCreationExpression);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context) {
