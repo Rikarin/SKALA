@@ -4423,16 +4423,22 @@ public sealed class BreakPlan {
     /// <remarks>
     ///     ⚠ Unconditional, which is not what the option names suggest and is what the oracle does.
     ///     <c>csharp_preserve_single_line_blocks = true</c> is in the export and reads like permission
-    ///     to leave <c>void M() { Call(); Call(); }</c> alone; ReSharper ignores it, and
+    ///     to leave <c>void M() { Call(); Call(); }</c> alone; ReSharper ignores it there, and
     ///     <c>class B { public int P => 1; public int Q => 2; }</c> comes back as five lines. There is
     ///     no width test and no <c>keep_user_linebreaks</c> in it: a body with anything in it is broken.
+    ///     ⚠ Not ignored everywhere, measured for #405: at <c>false</c> the oracle also expands every
+    ///     one-statement accessor, lambda and anonymous-method block, <c>get { return _n; }</c> included.
+    ///     Skala does not read the key (Tier D), so that corner is not honoured.
     ///     <para>
-    ///         ⚠ Three exclusions, each measured rather than assumed. An <em>empty</em> body stays together
-    ///         (<c>skala_empty_block_style = together</c>). An accessor's body does not break —
-    ///         <c>get { return _street; }</c> comes back from the oracle exactly as written, and
-    ///         <c>public int X { get; set; }</c> is one line and has its own spacing keys. And a lambda's or
-    ///         anonymous method's block does not, because the call it is an argument to keeps it on its line:
-    ///         <c>Register(() => { Body(); });</c> comes back whole.
+    ///         ⚠ Two exclusions, each measured rather than assumed. An <em>empty</em> body stays together
+    ///         (<c>skala_empty_block_style = together</c>). And a one-statement block that may share its
+    ///         owner's line — an accessor's, a lambda's, an anonymous method's always, a method's or an
+    ///         <c>if</c>'s under its <c>keep_existing_*_block_arrangement</c> key — does exactly when its
+    ///         statement ends up on that line (<see cref="MayShareItsOwnersLine" />, issue #405).
+    ///         ⚠ This used to read "an accessor's body does not break" and "a lambda's block does not",
+    ///         from <c>get { return _street; }</c> and <c>Register(() => { Body(); });</c>, which come back
+    ///         whole because they fit; <c>get { return Math.Max(</c>↵<c>…); }</c> and
+    ///         <c>() => { A(); B(); }</c> are broken open.
     ///     </para>
     ///     <para>
     ///         It is also what makes "single line" a stable property of the output. A member sharing a line
