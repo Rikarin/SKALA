@@ -841,8 +841,7 @@ public static class AnalyzerHost {
                 // ⚠ #422: safe only where every target says so. `Debug.Assert` captures its condition
                 // on net9.0 and not on net8.0, so one fix is safe under one target and not the other.
                 merged[key] = existing with {
-                    TargetFrameworks = frameworks,
-                    FixIsSafe = existing.FixIsSafe && finding.FixIsSafe
+                    TargetFrameworks = frameworks, FixIsSafe = existing.FixIsSafe && finding.FixIsSafe
                 };
                 continue;
             }

@@ -45,7 +45,9 @@ public sealed class FixTagTests {
         FixCommand.Run(
             // ⚠ Named, because #412 measured SK2015's fix changing behaviour and made it unsafe: the
             // default safe pass no longer applies it anywhere, and this test is about the tag.
-            new FixRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], SafeOnly = false, Include = ["SK2015"] },
+            new FixRequest {
+                RepositoryRoot = scratch.Root, Paths = [scratch.Root], SafeOnly = false, Include = ["SK2015"]
+            },
             TestContext.Current.CancellationToken
         );
 

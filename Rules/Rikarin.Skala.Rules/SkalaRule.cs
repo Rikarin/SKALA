@@ -328,9 +328,10 @@ public static class FixEdits {
     ///     malformed.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The one production reader of the property bag. <c>FixSafetyTests</c> fails when anything
+    ///     ⚠ The one production reader of the property bag. <c>CallerArgumentFixSafetyTests</c> fails when anything
     ///     outside this file reads the keys, because a second reader is a second place a fix can leave
-    ///     the analyzer without passing <see cref="IsSafe(string, IEnumerable{TextSpan}, SemanticModel, CancellationToken)" />.
+    ///     the analyzer without passing
+    ///     <see cref="IsSafe(string, IEnumerable{TextSpan}, SemanticModel, CancellationToken)" />.
     /// </remarks>
     public static ImmutableArray<(TextSpan Span, string Text)> Read(Diagnostic diagnostic) {
         var properties = diagnostic.Properties;

@@ -49,7 +49,8 @@ public sealed class CallerArgumentFixSafetyTests {
             declinedLines >= 13,
             $"Only {declinedLines} SK4020 finding line(s) were declined:\n  "
             + string.Join("\n  ", declined.Select(static d => d.Id + " " + d.Location.GetLineSpan()))
-            + "\nall:\n  " + string.Join("\n  ", findings.Select(static d => d.Id + " " + d.Location.GetLineSpan()))
+            + "\nall:\n  "
+            + string.Join("\n  ", findings.Select(static d => d.Id + " " + d.Location.GetLineSpan()))
         );
 
         // The three lambdas outside any capture keep their safe mark: the explicit message, the
@@ -61,10 +62,16 @@ public sealed class CallerArgumentFixSafetyTests {
             + string.Join("\n  ", admitted.Select(static d => d.Id + " " + d.Location.GetLineSpan()))
         );
 
-        var unguarded = CrossFixtureFixTests.Probe(RuleFixtures.Compile(Apply(source, findings), ProbePath), cancellation);
+        var unguarded = CrossFixtureFixTests.Probe(
+            RuleFixtures.Compile(Apply(source, findings), ProbePath),
+            cancellation
+        );
         Assert.NotEqual(expected, unguarded);
 
-        var guarded = CrossFixtureFixTests.Probe(RuleFixtures.Compile(Apply(source, admitted), ProbePath), cancellation);
+        var guarded = CrossFixtureFixTests.Probe(
+            RuleFixtures.Compile(Apply(source, admitted), ProbePath),
+            cancellation
+        );
         Assert.Equal(expected, guarded);
     }
 
@@ -144,7 +151,8 @@ public sealed class CallerArgumentFixSafetyTests {
     /// </summary>
     /// <remarks>
     ///     <c>AnalyzerHost</c> is the only consumer that turns a diagnostic into an applicable fix, and it
-    ///     does so through <see cref="FixEdits.Read" /> and <see cref="FixEdits.IsSafe(string, IEnumerable{TextSpan}, SemanticModel, CancellationToken)" />.
+    ///     does so through <see cref="FixEdits.Read" /> and
+    ///     <see cref="FixEdits.IsSafe(string, IEnumerable{TextSpan}, SemanticModel, CancellationToken)" />.
     ///     A second reader of the keys anywhere in production code is a second path a fix can take out of
     ///     the analyzer without being asked about captured text — the shape #422 was, one rule at a time.
     /// </remarks>
@@ -154,7 +162,9 @@ public sealed class CallerArgumentFixSafetyTests {
         var keyRead = new Regex(@"FixEdits\.(CountKey|StartKey|LengthKey|TextKey)\b", RegexOptions.CultureInvariant);
         var offenders = new List<string>();
 
-        foreach (var directory in new[] { "Analysis", "Core", "Distribution", "Formatting", "Reporting", "Rules", "Testing", "Tools" }) {
+        foreach (var directory in new[] {
+                     "Analysis", "Core", "Distribution", "Formatting", "Reporting", "Rules", "Testing", "Tools"
+                 }) {
             var path = Path.Combine(root, directory);
             if (!Directory.Exists(path)) {
                 continue;
@@ -183,7 +193,9 @@ public sealed class CallerArgumentFixSafetyTests {
             + string.Join("\n  ", offenders)
         );
 
-        var host = File.ReadAllText(Path.Combine(root, "Analysis", "Rikarin.Skala.Analysis", "Hosting", "AnalyzerHost.cs"));
+        var host = File.ReadAllText(
+            Path.Combine(root, "Analysis", "Rikarin.Skala.Analysis", "Hosting", "AnalyzerHost.cs")
+        );
         Assert.Contains("FixEdits.Read(", host, StringComparison.Ordinal);
         Assert.Contains("FixEdits.IsSafe(", host, StringComparison.Ordinal);
     }

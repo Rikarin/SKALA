@@ -96,7 +96,7 @@ public static class CallerArgumentSafety {
 
     static bool IsCallShaped(SyntaxNode node) =>
         node.Kind()
-            is SyntaxKind.InvocationExpression
+        is SyntaxKind.InvocationExpression
             or SyntaxKind.ObjectCreationExpression
             or SyntaxKind.ImplicitObjectCreationExpression
             or SyntaxKind.BaseConstructorInitializer
