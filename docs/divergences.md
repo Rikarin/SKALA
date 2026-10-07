@@ -4764,7 +4764,9 @@ is laid out like an opening brace: the `(` at the owner's own indent, the conten
 the `)` back at the owner's. The continuation the arrow, the `=`, the lambda's arrow or the
 `return` would otherwise spend on the body is not written. The boundary is measured rather than
 guessed: the operand of a binary expression keeps the continuation, and so does the receiver of a
-call chain the author broke at a dot. At `skala_continuous_indent_multiplier = 2` the `(` still
+call chain the author broke at a dot. ⚠ "The author broke" was too narrow: a chain the fitter
+breaks keeps the continuation too, and reading the break off the source made the rule
+non-idempotent (SK-DIV-0156). At `skala_continuous_indent_multiplier = 2` the `(` still
 sits at the owner's indent and the contents go two indents in — the parenthesis's own scope, as
 everywhere else.
 
@@ -6529,4 +6531,78 @@ oracle's and appears only when the collection expression is multi-line (`([1, 2]
 is the same `IfBroken`-shaped gap as the `) [` cast in the residue list above. Recorded, not fixed.
 
 - options: none.
+- ⚠ status: **open**.
+
+## SK-DIV-0156 — a chopped parenthesis heading a body held its level, and then the chain after it broke
+
+⚠ **Found by the fuzzer (`fuzz --seed=393150`, case `11718305405350914591` on
+`constructs/breaks/chain-after-parenthesised-head.cs`), issue #404 — and it reproduced on the
+formatter before #393.** Not idempotent: `object A() =>` / `(` / `a)[0] .C();` came back with the
+`(` at the member's indent and the chain broken before `.C()`, and pass two moved all three lines a
+level in. Measured 2026-10-07 with `Testing ask` on about three hundred shapes — six owners (method
+and property arrow, lambda arrow, switch arm, `var x =`, `return`) by seventeen bodies by the dot
+written joined, spaced and broken — plus the oracle's answer to each of Skala's two passes:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `=>` / `(` / `a)[0].C();`, `a).B().C();`, `a)[0]?.C();`, `a ?? b)!.B().C();`, `a, b).B().C().D();` | the chain chopped, `(` **on the continuation** (8), contents 12, dots 8 | `(` at 4, dots at 4; pass two as the oracle |
+| the same under `var x =`, `return`, a lambda's `=>` | `(` one level past the statement | `(` at the statement's indent; pass two as the oracle |
+| `(` / `a)[0].C() ? a : b;` | `(` on the continuation, `?` one past the dot | held; pass two as the oracle |
+| `(` / `a).B().C() + b;`, and a chain that breaks under a switch arm's `=>` | on the continuation | identical |
+| `(` / `a).C();`, `a)[0];`, `a).B.C();`, `a)?.B();`, `a)[0].C;` | **held** at 4 — nothing breaks | identical |
+| either pass's output, given back | pass two's | — |
+
+So SK-DIV-0101's boundary — "the receiver of a call chain the author broke at a dot" keeps the
+continuation — is a fact about the output, not the source. A chain with a group of its own, two calls
+or more with an indexer counting as one (SK-DIV-0128), breaks at its points whenever its head spans
+lines, and the kept break after the `(` makes the head span lines on every pass; the oracle then
+treats it exactly as the author's break. `BreakPlan.HeadsWithAChoppedParenthesis` read the break off
+the source, which pass one does not have and pass two does. It now also stops at a chain root on the
+spine for which `PlanChainedCalls` plans a point (`ChainPointCount`, the same walk), under
+`chop_if_long` and `chop_always`. Under `wrap_if_long` the chain is a fill that breaks by width, not
+by its head, and the oracle holds the level for a whole chain there (asked with
+`resharper_csharp_wrap_chained_method_calls = wrap_if_long`), so the source's answer stands.
+
+- options: `skala_wrap_chained_method_calls`.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/chained-call-after-a-chopped-parenthesis.cs`,
+  `ArrowBodyChainIssue404Tests` and `FuzzRegressionTests.ReportedMutateSeeds_HaveNoViolations`.
+
+## SK-DIV-0157 — a switch arm's body does not hold SK-DIV-0101's level
+
+⚠ **Found beside SK-DIV-0156**, on the same probe, and filed as #406. Stable, not an idempotency
+failure:
+
+| written | oracle | Skala |
+|---|---|---|
+| `1 =>` / `(` / `a).C(),` and with `a)[0]`, `a)[0][1]`, `a)?.B()`, `a).B.C()`, `a ?? b)!.C()` | `(` at the **arm's** indent, contents one level in | `(` one level past the arm |
+| `1 =>` / `(` / `a)[0].C(),` — a chain that breaks | `(` one level past the arm | identical |
+
+The arm is SK-DIV-0101's rule with a third owner. Traced, not fixed: `PlanArmArrow` opens two groups
+and both ask to spend the arm's level; the group before the arrow is opened first and takes it, so
+the body's group cannot spend, and a level that is never spent cannot be held
+(`OpenGroupAt`'s `held = HoldsLevel && indented > 0`). Adding the arm to
+`HeadsABodyWithAChoppedParenthesis`'s frame owners changed nothing, which is what showed the
+level is the group's and not a frame's.
+
+- options: none.
+- ⚠ status: **open**.
+
+## SK-DIV-0158 — two residues of SK-DIV-0156: a fill that adds a dot break, and a chain governing a switch
+
+⚠ **Measured beside SK-DIV-0156**; the first row is filed as #407.
+
+| written | oracle | Skala |
+|---|---|---|
+| at `skala_wrap_chained_method_calls = wrap_if_long`, `=>` / `(` / `a).SomeMethodName(…).OtherMethodName(…);` past the margin | held, `.OtherMethodName(` kept on the line and its arguments chopped (SK-DIV-0129) | held and broken before `.OtherMethodName` on pass one, the `(` moved to the continuation on pass two — **not idempotent** |
+| `=>` / `(` / `a).B().C() switch { _ => a };` | `(` at 8, `a).B()` at **16**, `.C() switch {` at 12, arms 16 | `(` 8, `a).B()` 12, `.C() switch {` 8, arms 12 (before SK-DIV-0156 this was also not idempotent) |
+
+The first is SK-DIV-0156's defect where the chain's break is the fill's to add: whether it breaks is
+a width question answered at the writer's column, after the arrow's level was already decided. It
+needs the decision moved to the writer (the `NextLineFitsBeside` lookahead, SK-DIV-0119) or the
+fill's last-link rule (SK-DIV-0129) fixed first, under which the oracle does not break the dot at
+all. The default export uses `chop_if_long`, so the repository's own sweep cannot reach it. The
+second is SK-DIV-0148's territory: a chain that breaks inside a switch's governing expression lifts
+the parenthesis's contents a level past its dots. Recorded, not fixed.
+
+- options: `skala_wrap_chained_method_calls`.
 - ⚠ status: **open**.

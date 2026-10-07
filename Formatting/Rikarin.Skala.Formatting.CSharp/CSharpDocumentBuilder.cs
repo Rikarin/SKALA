@@ -2773,7 +2773,7 @@ public sealed partial class CSharpDocumentBuilder {
             _ => false
         };
 
-        return owned && BreakPlan.HeadsWithAChoppedParenthesis(body, source);
+        return owned && BreakPlan.HeadsWithAChoppedParenthesis(body, source, options);
     }
 
     static bool IsLeftSpineOf(ExpressionSyntax child, ExpressionSyntax parent) =>

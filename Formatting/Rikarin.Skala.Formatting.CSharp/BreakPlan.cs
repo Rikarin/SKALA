@@ -2187,21 +2187,12 @@ public sealed class BreakPlan {
     ///     </para>
     /// </remarks>
     void PlanChainedCalls(SyntaxNode root) {
-        var dots = new List<SyntaxToken>();
-        var headIsACall = false;
-        Collect(root);
-
-        // A chain is two calls or more. The dots count the calls reached through one; a dot-less
-        // call at the head is the other.
-        if (dots.Count < 2 && !headIsACall) {
+        var first = ChainPointCount(root, options);
+        if (first == 0) {
             return;
         }
 
-        // skala_wrap_before_first_method_call = false: the first invoked dot stays with its receiver
-        // — unless the first call is the dot-less head, in which case there is no dot to keep.
-        // ⚠ The list is built outermost-first by the walk below, so the *last* entry is the first
-        // dot of the chain.
-        var first = options.WrapBeforeFirstMethodCall || headIsACall ? dots.Count : dots.Count - 1;
+        var (dots, _) = ChainLinks(root, options);
         var group = NewGroup();
         var broken = false;
 
@@ -2241,10 +2232,6 @@ public sealed class BreakPlan {
             } else {
                 broken |= Link(dots[i]);
             }
-        }
-
-        if (first == 0) {
-            return;
         }
 
         Describe(
@@ -2308,6 +2295,18 @@ public sealed class BreakPlan {
 
             return broke;
         }
+    }
+
+    /// <summary>
+    ///     The dots of a chain rooted at <paramref name="root" />, outermost first, and whether its first
+    ///     call is a dot-less head — the walk <see cref="PlanChainedCalls" /> registers its points from.
+    /// </summary>
+    static (List<SyntaxToken> Dots, bool HeadIsACall) ChainLinks(SyntaxNode root, in PhaseOneOptions options) {
+        var dots = new List<SyntaxToken>();
+        var headIsACall = false;
+        var wrapAfterProperty = options.WrapAfterPropertyInChainedMethodCalls;
+        Collect(root);
+        return (dots, headIsACall);
 
         void Collect(SyntaxNode node) {
             switch (node) {
@@ -2324,7 +2323,7 @@ public sealed class BreakPlan {
                         // two.
                         var dot = access.OperatorToken;
                         var receiver = access.Expression;
-                        while (!options.WrapAfterPropertyInChainedMethodCalls
+                        while (!wrapAfterProperty
                                && receiver is MemberAccessExpressionSyntax property) {
                             dot = property.OperatorToken;
                             receiver = property.Expression;
@@ -2338,7 +2337,7 @@ public sealed class BreakPlan {
                         // Without this the run stopped at the binding, `.Trim` became the point, and
                         // the two lines came out the other way round. Measured on Skala's own
                         // `VersionSources.Value`.
-                        if (!options.WrapAfterPropertyInChainedMethodCalls
+                        if (!wrapAfterProperty
                             && receiver is MemberBindingExpressionSyntax bound) {
                             dot = ChainDot(bound);
                         }
@@ -2390,7 +2389,7 @@ public sealed class BreakPlan {
                     // ⚠ A dot that reaches a property is not a point in this export
                     // (`skala_wrap_after_property_in_chained_method_calls = false`), but it is still part
                     // of the chain and its receiver still has to be walked.
-                    if (options.WrapAfterPropertyInChainedMethodCalls) {
+                    if (wrapAfterProperty) {
                         dots.Add(member.OperatorToken);
                     }
 
@@ -2414,6 +2413,26 @@ public sealed class BreakPlan {
                     return;
             }
         }
+    }
+
+    /// <summary>
+    ///     How many of a chain's dots <see cref="PlanChainedCalls" /> makes break points of — zero when it
+    ///     plans no group at all.
+    /// </summary>
+    static int ChainPointCount(SyntaxNode root, in PhaseOneOptions options) {
+        var (dots, headIsACall) = ChainLinks(root, options);
+
+        // A chain is two calls or more. The dots count the calls reached through one; a dot-less
+        // call at the head is the other.
+        if (dots.Count < 2 && !headIsACall) {
+            return 0;
+        }
+
+        // skala_wrap_before_first_method_call = false: the first invoked dot stays with its receiver
+        // — unless the first call is the dot-less head, in which case there is no dot to keep.
+        // ⚠ The list is built outermost-first by the walk, so the *last* entry is the first dot of
+        // the chain.
+        return options.WrapBeforeFirstMethodCall || headIsACall ? dots.Count : dots.Count - 1;
     }
 
     /// <summary>
@@ -3565,10 +3584,33 @@ public sealed class BreakPlan {
     ///         that break is kept by <c>keep_user_linebreaks</c> — neither construct plans the gap — so the
     ///         source is the answer.
     ///     </para>
+    ///     <para>
+    ///         ⚠ "A chain the author broke at a dot" was the source's answer to a question about the
+    ///         output, and the fitter breaks a chain the author did not (issue #404, SK-DIV-0156). A
+    ///         chain with a group of its own — <c>(\n a)[0].C()</c>, <c>(\n a).B().C()</c>, two calls
+    ///         or more — breaks at its points whenever its head spans lines, which the kept break after
+    ///         the <c>(</c> makes certain; the oracle then keeps the <c>(</c> on the continuation
+    ///         exactly as for the author's <c>(\n a)[0]\n.C()</c>. Read off the source, pass one held
+    ///         the level, broke the chain, and pass two read the break back and gave the level up. So a
+    ///         chain root on the spine whose group breaks at a point disqualifies as an author's break
+    ///         does, whether or not the source has one — under <c>chop_if_long</c> and
+    ///         <c>chop_always</c>. A fill (<c>wrap_if_long</c>) breaks by width, not by the head, and
+    ///         keeps the source's answer.
+    ///     </para>
     /// </remarks>
-    internal static bool HeadsWithAChoppedParenthesis(ExpressionSyntax? body, string source) {
+    internal static bool HeadsWithAChoppedParenthesis(
+        ExpressionSyntax? body,
+        string source,
+        in PhaseOneOptions options
+    ) {
         var node = body;
         while (node is not null) {
+            if (IsChainRoot(node)
+                && options.WrapChainedMethodCalls != WrapStyle.WrapIfLong
+                && ChainPointCount(node, options) > 0) {
+                return false;
+            }
+
             var operatorToken = default(SyntaxToken);
             ExpressionSyntax? receiver;
             switch (node) {
@@ -3691,7 +3733,7 @@ public sealed class BreakPlan {
             or AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax }
             or AttributeArgumentSyntax;
 
-    bool HeadsWithAChoppedParenthesis(ExpressionSyntax? body) => HeadsWithAChoppedParenthesis(body, source);
+    bool HeadsWithAChoppedParenthesis(ExpressionSyntax? body) => HeadsWithAChoppedParenthesis(body, source, options);
 
     /// <summary>Whether <paramref name="source" /> holds a line break in the gap before this token.</summary>
     internal static bool BreaksBeforeIn(string source, SyntaxToken token) {

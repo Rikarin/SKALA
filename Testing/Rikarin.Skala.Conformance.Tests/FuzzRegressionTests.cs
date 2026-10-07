@@ -80,6 +80,24 @@ public sealed class FuzzRegressionTests {
         Assert.Empty(violations);
     }
 
+    // ⚠ A mutate finding needs its origin as well as its seed: the seed draws the file by index into
+    // the corpus, so every corpus file added since re-targets it — 11718305405350914591 alone now
+    // mutates a blank-lines construct and passes whatever the formatter does. The pair is the exact
+    // reconstruction `fuzz --replay=<seed> --origin=<path>` prints.
+    // #404 (found by `fuzz --seed=393150`): an arrow body `(`↵`a)[0] .C()` held SK-DIV-0101's level
+    // on pass one, broke the chain, and gave the level up on pass two.
+    [Theory]
+    [InlineData(11718305405350914591UL, "constructs/breaks/chain-after-parenthesised-head.cs")]
+    public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
+        var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
+        var (violations, _) = Fuzzer.Execute(
+            test,
+            false,
+            cancellation: TestContext.Current.CancellationToken
+        );
+        Assert.Empty(violations);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
