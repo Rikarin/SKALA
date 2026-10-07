@@ -785,7 +785,7 @@ public sealed class IncompleteBannerTests {
         string[] neverBlockingInAReport = [
             "SK9001", "SK9002", "SK9003", "SK9004", "SK9005", "SK9006", "SK9007", "SK9008", "SK9009", "SK9011",
             "SK9012", "SK9013", "SK9014", "SK9016", "SK9017", "SK9020", "SK9021", "SK9022", "SK9023", "SK9025",
-            "SK9026", "SK9027", "SK9031"
+            "SK9026", "SK9027", "SK9031", "SK9032"
         ];
 
         var registered = RuleCatalog.All

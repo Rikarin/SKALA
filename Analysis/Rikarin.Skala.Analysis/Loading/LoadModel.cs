@@ -90,6 +90,18 @@ public sealed record CompilationUnit {
     public string ProjectPath { get; init; } = string.Empty;
 
     /// <summary>
+    ///     The build did not ask the compiler for XML documentation, so its documentation diagnostics
+    ///     were never computed for this compilation (#384). False for the loose load, which drops every
+    ///     compiler diagnostic anyway.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Read off the build's options, not the compilation's: the loaders parse documentation
+    ///     regardless (<see cref="DocumentationComments.ForAnalysis" />), so the trees no longer say
+    ///     what the build asked for.
+    /// </remarks>
+    public bool DocumentationDiagnosticsOff { get; init; }
+
+    /// <summary>
     ///     The same project's <em>other</em> target frameworks (#343). Empty for a single-target
     ///     project and for the loose load.
     /// </summary>

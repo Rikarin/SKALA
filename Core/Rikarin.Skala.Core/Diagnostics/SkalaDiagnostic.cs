@@ -192,6 +192,22 @@ public static class ConfigDiagnosticIds {
     public const string AnalyzerAssemblyMissing = "SK9029";
 
     /// <summary>
+    ///     A loaded project does not ask the compiler for XML documentation, so the compiler's own
+    ///     documentation diagnostics (<c>CS1570</c>–<c>CS1592</c>, <c>CS1710</c>–<c>CS1739</c>) were
+    ///     never computed for it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #384. Without <c>GenerateDocumentationFile</c> the compiler parses no documentation and
+    ///     reports nothing about it, so a <c>check</c> over a <c>&lt;param&gt;</c> naming a parameter
+    ///     that does not exist came back exactly as clean as one over correct documentation. A zero
+    ///     from a check that did not run and a zero from clean code are the same zero; this is the
+    ///     sentence that tells them apart. Info, once per run with every such project named, and
+    ///     never a gate input: the property is a legitimate choice, and a warning on it would fail
+    ///     every repository that has made it.
+    /// </remarks>
+    public const string DocumentationDiagnosticsOff = "SK9032";
+
+    /// <summary>
     ///     The managed canonical block does not hash to what its own marker says. Somebody edited it.
     ///     This is the gate condition: drift is a finding, not a surprise (docs/plan/03 § "Canonical
     ///     distribution").
