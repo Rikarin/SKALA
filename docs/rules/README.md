@@ -298,19 +298,19 @@
 | [SK1033](SK1033.md) | Use `TryGetValue` or `TryAdd` instead of `ContainsKey` and a second lookup | suggestion | safe | no |
 | [SK1034](SK1034.md) | Use the `Count` property, not `Count()` or `Any()` **(retired)** | — | safe | no |
 | [SK1035](SK1035.md) | Use `Enum.GetValues<T>()` | suggestion | review | no |
-| [SK1040](SK1040.md) | Use `T?` instead of `Nullable<T>` | suggestion | review | no |
+| [SK1040](SK1040.md) | Use `T?` instead of `Nullable<T>` | suggestion | safe | no |
 | [SK1041](SK1041.md) | Use a compound assignment | suggestion | review | yes |
 | [SK1042](SK1042.md) | The nested `if` statements can be combined | suggestion | review | yes |
 | [SK1043](SK1043.md) | The `for` loop is a `while` | suggestion | safe | yes |
 | [SK1044](SK1044.md) | Use `string.IsNullOrEmpty` | suggestion | review | no |
 | [SK1050](SK1050.md) | Use pattern matching instead of a test-and-cast | suggestion | review | no |
-| [SK1051](SK1051.md) | Simplify the pattern | suggestion | review | no |
+| [SK1051](SK1051.md) | Simplify the pattern | suggestion | safe | no |
 | [SK1052](SK1052.md) | Merge the `?:` into a conditional access | suggestion | review | no |
-| [SK1053](SK1053.md) | Use a discard | suggestion | review | no |
+| [SK1053](SK1053.md) | Use a discard | suggestion | safe | no |
 | [SK1054](SK1054.md) | Inline the `out` variable declaration | suggestion | review | no |
 | [SK1060](SK1060.md) | Use an index-from-end expression | suggestion | review | no |
 | [SK1061](SK1061.md) | Use `nameof` | suggestion | review | no |
-| [SK1062](SK1062.md) | Use the string literal form that needs no escapes | hint | review | yes |
+| [SK1062](SK1062.md) | Use the string literal form that needs no escapes | hint | safe | yes |
 | [SK1063](SK1063.md) | Use the interpolation form that says what it means | suggestion | review | no |
 | [SK1064](SK1064.md) | Use `>>>` | suggestion | review | no |
 | [SK1070](SK1070.md) | Deconstruct the tuple instead of reading it element by element | suggestion | safe | no |
