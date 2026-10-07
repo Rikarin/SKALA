@@ -138,7 +138,47 @@ public static class IntAlign {
             CollectComments(root, lines, runs);
         }
 
+        if (runs.Count > 0) {
+            runs = Uncaptured(runs, CapturedArguments.Find(root));
+        }
+
         return runs.Count == 0 ? text : Pad(text, runs);
+    }
+
+    /// <summary>
+    ///     The runs with every row that would pad inside a captured argument taken out (#432).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A removed row ends its run, the way a row that is not alignable at all does: the rows on
+    ///     either side of it are no longer adjacent, and aligning across the gap would decide a column
+    ///     with a row nobody is allowed to move. A padded trailing comment on an interior line of a
+    ///     multi-line captured argument is part of the string the program prints.
+    /// </remarks>
+    static List<List<Row>> Uncaptured(List<List<Row>> runs, ImmutableArray<TextSpan> captured) {
+        if (captured.IsEmpty) {
+            return runs;
+        }
+
+        var kept = new List<List<Row>>(runs.Count);
+        var current = new List<Row>();
+        foreach (var run in runs) {
+            foreach (var row in run) {
+                var inside = false;
+                foreach (var slot in row.Slots) {
+                    inside |= CapturedArguments.Interior(captured, slot);
+                }
+
+                if (inside) {
+                    Flush(kept, current);
+                } else {
+                    current.Add(row);
+                }
+            }
+
+            Flush(kept, current);
+        }
+
+        return kept;
     }
 
     enum Kind {

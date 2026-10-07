@@ -68,10 +68,24 @@ static class RequiredBraces {
     public static SyntaxNode Rewrite(SyntaxNode root, in PhaseOneOptions options, string newLine) =>
         options.PreferBraces == BracePreference.False
             ? root
-            : new Rewriter(options.PreferBraces, FormatterTagGuard.For(root, options.Tags), newLine).Visit(root);
+            : new Rewriter(
+                options.PreferBraces,
+                FormatterTagGuard.For(root, options.Tags),
+                CapturedArguments.Find(root),
+                newLine
+            ).Visit(root);
 
-    sealed class Rewriter(BracePreference preference, FormatterTagGuard guard, string newLine) :
-        GuardedRewriter(guard) {
+    /// <param name="captured">
+    ///     ⚠ #432. A brace added inside a lambda that is a captured argument is a token the program
+    ///     prints: <c>Check(Run(() =&gt; { if (a) return 1; … }))</c> captured <c>if (a) return 1;</c>
+    ///     and, braced, would capture <c>if (a) {\n return 1;\n }</c>. Measured on the issue's probe.
+    /// </param>
+    sealed class Rewriter(
+        BracePreference preference,
+        FormatterTagGuard guard,
+        System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.Text.TextSpan> captured,
+        string newLine
+    ) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitIfStatement(IfStatementSyntax node) =>
             RewriteBody(node, base.VisitIfStatement(node)!);
 
@@ -104,7 +118,9 @@ static class RequiredBraces {
 
         SyntaxNode RewriteBody(SyntaxNode original, SyntaxNode visited) {
             var statement = Body(original);
-            if (statement is null || !NeedsBlock(statement, original)) {
+            if (statement is null
+                || !NeedsBlock(statement, original)
+                || CapturedArguments.Within(captured, original.Span)) {
                 return visited;
             }
 

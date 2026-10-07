@@ -218,6 +218,43 @@ public sealed class FixCommandTests {
         Assert.Contains("a build is still owed", run.StandardOutput, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     #432: <c>skala fix</c> formats every file it changed, and that pass must keep a captured
+    ///     argument's text as <c>format</c> does — the fix lands, the rest of the file is formatted, and
+    ///     the string the program prints is not.
+    /// </summary>
+    [Fact]
+    public void Fix_FormatsAfterwards_AndLeavesACapturedArgumentAsWritten() {
+        using var scratch = new Scratch();
+        var source = scratch.Write(
+            "Checks.cs",
+            """
+            using System.Runtime.CompilerServices;
+
+            public static class Checks {
+                public static string Check(bool ok, [CallerArgumentExpression(nameof(ok))] string text = "") => text;
+
+                public static string Plain(bool ok) => ok.ToString();
+
+                public static System.Func<int, int> Create(int a, int b) {
+                    _ = Check(a   <   b);
+                    _ = Plain(a   <   b);
+                    return value => value + 1;
+                }
+            }
+            """
+        );
+        scratch.Write("Scratch.csproj", Project);
+
+        var run = CliRunner.Run("fix", source, IncludeOption, "SK4020");
+
+        Assert.True(run.ExitCode == 0, run.StandardOutput + run.StandardError);
+        var fixedText = File.ReadAllText(source);
+        Assert.Contains("static value => value + 1", fixedText, StringComparison.Ordinal);
+        Assert.Contains("Check(a   <   b)", fixedText, StringComparison.Ordinal);
+        Assert.Contains("Plain(a < b)", fixedText, StringComparison.Ordinal);
+    }
+
     sealed class Scratch : IDisposable {
         public Scratch() {
             Root = Path.Combine(Path.GetTempPath(), "skala-cli-fix", Guid.NewGuid().ToString("n"));
