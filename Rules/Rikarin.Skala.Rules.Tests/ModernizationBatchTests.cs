@@ -269,14 +269,14 @@ public sealed class ModernizationBatchTests {
         try {
             var method = context.LoadFromStream(image).GetType("Probe")!.GetMethod("Run")!;
             return cases.Select(arguments => {
-                    try {
-                        return "result:" + method.Invoke(null, arguments);
-                    } catch (TargetInvocationException exception) {
-                        return exception.InnerException!.GetType().FullName
-                            + ":"
-                            + (exception.InnerException as ArgumentException)?.ParamName;
+                        try {
+                            return "result:" + method.Invoke(null, arguments);
+                        } catch (TargetInvocationException exception) {
+                            return exception.InnerException!.GetType().FullName
+                                + ":"
+                                + (exception.InnerException as ArgumentException)?.ParamName;
+                        }
                     }
-                }
             )
                 .ToArray();
         } finally {

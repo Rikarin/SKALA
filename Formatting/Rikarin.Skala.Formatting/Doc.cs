@@ -278,6 +278,25 @@ public enum GroupMode {
     Owner
 }
 
+/// <summary>What a <see cref="DocKind.Indent" /> node carries in <see cref="DocNode.Arg1" />.</summary>
+[Flags]
+public enum IndentFlags {
+    None = 0,
+
+    /// <summary>The scope counts even when another scope opened on the same line.</summary>
+    Unconditional = 1,
+
+    /// <summary>
+    ///     ⚠ A grouping parenthesis's scope. It spends its level for a continuation line inside it —
+    ///     <c>if ((a</c> / <c>== b))</c> is two levels — but a block that opens on the parenthesis's own
+    ///     line nests through it: <c>var x = (y switch {</c> puts the arms one level past the statement
+    ///     and the <c>}</c> on it, exactly where they go without the parenthesis. Unless the construct
+    ///     inside the parenthesis broke (<see cref="GroupFacts.Continues" />): <c>(y switch { … }</c> /
+    ///     <c>+ 1)</c> puts the arms two levels in (issue #393, SK-DIV-0148).
+    /// </summary>
+    Grouping = 2
+}
+
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
 public enum IndentKind {
     /// <summary>One level per <c>{ }</c>, per <c>case</c>, per embedded statement.</summary>
@@ -793,6 +812,15 @@ public sealed class Document {
 ///     writes, never <c>=&gt;</c> alone on a line. A break the author wrote after the arrow is kept
 ///     regardless; the fact is read after <see cref="SourceBroken" />.
 /// </param>
+/// <param name="Continues">
+///     ⚠ A block opening on the construct's first line nests from the construct's continuation line
+///     once the group broke — the arms of a switch in a binary operator's first operand or in a
+///     chain's receiver. Read by <see cref="LayoutWriter" /> alone. Set by a binary operator and a
+///     chained call, whether or not the group pays for the level itself: under a delimiter the builder
+///     refuses the scope and the delimiter pays, which <see cref="SpendsIndent" /> says (issue #393,
+///     SK-DIV-0148). ⚠ Not by a ternary, measured: <c>return y switch { … } is 1</c> / <c>? a</c>
+///     keeps the arms one level past the statement, as does a property pattern in the condition.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -808,4 +836,5 @@ public readonly record struct GroupFacts(
     bool BreaksOnlyIfTailFits = false,
     int MinimumHead = 0,
     bool BreaksOnlyIfHeadOverflows = false,
-    bool FlatIfOwnerBroke = false);
+    bool FlatIfOwnerBroke = false,
+    bool Continues = false);

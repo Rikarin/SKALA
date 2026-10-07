@@ -2255,7 +2255,10 @@ public sealed class BreakPlan {
                 new GroupFacts(
                     options.KeepsUserBreaksBetweenItems && broken,
                     BreaksIfTooLong: true,
-                    HidesFlatWidthWhenBroken: true
+                    HidesFlatWidthWhenBroken: true,
+                    // ⚠ A block in the chain's receiver nests from the chain's continuation line once
+                    // the chain broke after it: `(y switch { … }).ToString()` / `.Length…` (SK-DIV-0148).
+                    Continues: true
                 ),
                 // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
                 // `Break`, at the first break landing before a `.` — and a group's break point never
@@ -2713,7 +2716,12 @@ public sealed class BreakPlan {
                 // the owner is irrelevant — Fitter.Decide answers Broken before it looks at any fact.
                 BreaksWithOwner: true,
                 Owner: ChainOwnerOf(node),
-                ChainLink: true
+                ChainLink: true,
+                // ⚠ A block on the chain's first line nests from the operator's continuation line
+                // once the operator broke (SK-DIV-0148). Measured for `+`, `==`, `&&` and with the
+                // operator's level paid by a grouping parenthesis; a ternary's break does not lift
+                // a block in its condition and does not carry the fact.
+                Continues: true
             ),
             true
         );

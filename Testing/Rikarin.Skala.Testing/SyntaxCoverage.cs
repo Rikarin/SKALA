@@ -272,8 +272,8 @@ public static class SyntaxCoverage {
         yield return ("checked operator",
             nodes.OfType<Microsoft.CodeAnalysis.CSharp.Syntax.BaseMethodDeclarationSyntax>()
                 .Count(static member => member is Microsoft.CodeAnalysis.CSharp.Syntax.OperatorDeclarationSyntax {
-                        CheckedKeyword.RawKind: not 0
-                    }
+                            CheckedKeyword.RawKind: not 0
+                        }
                         or Microsoft.CodeAnalysis.CSharp.Syntax.ConversionOperatorDeclarationSyntax {
                             CheckedKeyword.RawKind: not 0
                         }

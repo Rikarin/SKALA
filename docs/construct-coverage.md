@@ -140,6 +140,15 @@ Skala matches byte for byte, and `FuzzerTests.UngovernedGaps_EitherSpelling_Form
 flips every gap in both fixtures and asserts each flipped input formats to the fixture flipped the
 same way.
 
+⚠ `syntax/block-in-a-grouping-parenthesis.cs` and `syntax/block-in-a-broken-construct.cs` are the
+twenty-fourth and twenty-fifth, from #393, and pin an *indentation* shape no census can see: a brace
+block — switch arms, an initializer, a `with`, a lambda body — opening on the same line as a grouping
+parenthesis, or on the first line of a binary or chain that breaks after it. Both kinds are among the
+commonest in the corpus and not one of the 380 `corpus/real/` files moves under the fix, which is how
+the arms sat a level deep under every parenthesis with nothing measuring it. Skala matches both byte
+for byte; what the oracle does that it still does not is SK-DIV-0148's residue, SK-DIV-0149 and
+SK-DIV-0150.
+
 ### The cref forms are pinned under both profiles
 
 ⚠ **This was a gap this audit could not close, and #396 closed it.** `cref-member-forms.cs` sits in

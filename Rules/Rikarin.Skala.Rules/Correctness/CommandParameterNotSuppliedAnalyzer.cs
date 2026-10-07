@@ -55,9 +55,9 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start => {
                 var commands = new[] {
-                    start.Compilation.GetTypeByMetadataName("System.Data.IDbCommand"),
-                    start.Compilation.GetTypeByMetadataName("System.Data.Common.DbCommand")
-                }.Where(static type => type is not null)
+                        start.Compilation.GetTypeByMetadataName("System.Data.IDbCommand"),
+                        start.Compilation.GetTypeByMetadataName("System.Data.Common.DbCommand")
+                    }.Where(static type => type is not null)
                     .Select(static type => type!)
                     .ToImmutableArray();
 
@@ -282,8 +282,8 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
             case "Add" when arguments.Count == 1:
                 // `Add(new SqlParameter("@id", value))` — the name is the creation's first argument.
                 return arguments[0].Expression is BaseObjectCreationExpressionSyntax {
-                    ArgumentList.Arguments.Count: > 0
-                } creation
+                        ArgumentList.Arguments.Count: > 0
+                    } creation
                     && Name(creation.ArgumentList!.Arguments[0].Expression, model, cancellation, supplied);
 
             case "Add":

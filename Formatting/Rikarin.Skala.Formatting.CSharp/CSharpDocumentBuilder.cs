@@ -330,7 +330,10 @@ public sealed partial class CSharpDocumentBuilder {
             // ⚠ Whether the level is actually spent is decided here and not in the plan, and the
             // fitter needs the answer: the ordering rule asks what column a break inside this group
             // lands on, and that is one level deeper only when this group is the one paying for it.
-            doc.DescribeGroup(plan.Id, plan.Facts with { SpendsIndent = indented[i] > 0 });
+            doc.DescribeGroup(
+                plan.Id,
+                plan.Facts with { SpendsIndent = indented[i] > 0, Continues = plan.Facts.Continues && !aligned }
+            );
 
             if (held) {
                 HoldContinuationLevel();
@@ -1505,7 +1508,7 @@ public sealed partial class CSharpDocumentBuilder {
                         // Measured: the oracle's `outside_and_inside` puts a chopped call's
                         // arguments eight columns in and its `)` four, and Skala wrote four and four
                         // under both of the other spellings.
-                        OpenIndent(scopeKind, unconditional || inside > 1);
+                        OpenIndent(scopeKind, unconditional || inside > 1, node is ParenthesizedExpressionSyntax);
                     }
 
                     opened = levels;
@@ -1913,8 +1916,12 @@ public sealed partial class CSharpDocumentBuilder {
 
     // ── Indent scopes ────────────────────────────────────────────────────────────────────────
 
-    void OpenIndent(IndentKind kind, bool unconditional = false, int columns = 0) {
-        doc.OpenIndent(kind, unconditional, columns);
+    void OpenIndent(IndentKind kind, bool unconditional = false, int columns = 0) =>
+        OpenIndent(kind, unconditional, false, columns);
+
+    /// <param name="grouping">A grouping parenthesis's scope. See <see cref="IndentFlags.Grouping" />.</param>
+    void OpenIndent(IndentKind kind, bool unconditional, bool grouping, int columns = 0) {
+        doc.OpenIndent(kind, unconditional, columns, grouping);
 
         // ⚠ Neither an outdent kind is a continuation and neither is a block, so neither touches the
         // frame machinery. `OutdentColumns` shifts a column and spends no level at all, which is the

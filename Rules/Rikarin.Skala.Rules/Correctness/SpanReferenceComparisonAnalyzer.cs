@@ -93,8 +93,8 @@ public sealed class SpanReferenceComparisonAnalyzer : DiagnosticAnalyzer {
 
     static bool IsDefaultOrNull(ExpressionSyntax expression) =>
         expression is LiteralExpressionSyntax {
-            RawKind: (int)SyntaxKind.DefaultLiteralExpression or (int)SyntaxKind.NullLiteralExpression
-        }
+                RawKind: (int)SyntaxKind.DefaultLiteralExpression or (int)SyntaxKind.NullLiteralExpression
+            }
             or DefaultExpressionSyntax;
 
     /// <summary>
