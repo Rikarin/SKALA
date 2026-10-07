@@ -4721,9 +4721,85 @@ public sealed class BreakPlan {
                 MembersOnOwnLines(declaration.Members, declaration.CloseBraceToken);
                 return;
 
+            case AccessorListSyntax { Accessors.Count: > 0 } accessors:
+                PlanAccessorList(accessors);
+                return;
+
             default:
                 return;
         }
+    }
+
+    /// <summary>
+    ///     A property's, an indexer's or an event's accessor list: on the owner's line or one accessor
+    ///     per line, decided by what the accessors are and never by where the author broke it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ An accessor list is a declaration block by <c>skala_keep_existing_declaration_block_arrangement</c>'s
+    ///     own definition, and this had no arm: Skala kept whatever the author wrote, in both directions
+    ///     (issues #416 and #417, SK-DIV-0096 and SK-DIV-0183). Measured on seventeen shapes, each written
+    ///     four ways — on one line, one accessor per line, all accessors on one inner line, and the first
+    ///     accessor on the brace's line — at two indent depths:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             Under the export (the key <c>false</c>), the four spellings of every shape come back
+    ///             byte-identical. A list whose accessors are all bodiless — <c>{ get; set; }</c>,
+    ///             <c>{ get; private set; }</c>, <c>{ get; init; }</c>, <c>{ readonly get; set; }</c>, an
+    ///             abstract indexer's, with or without an initializer after it — is joined onto the owner's
+    ///             line; any accessor with a body or an expression body puts every accessor on its own
+    ///             line: <c>{ get =&gt; 1; }</c>, <c>{ get { return 1; } }</c>, <c>{ get; set { } }</c>,
+    ///             <c>{ get =&gt; 1; set; }</c>, an indexer's and an event's <c>add</c>/<c>remove</c>
+    ///             alike. These are ReSharper's <c>place_abstract_accessorholder_on_single_line</c>
+    ///             (<c>true</c>) and <c>place_simple_accessorholder_on_single_line</c> (<c>false</c>),
+    ///             which the export does not set; flipped, each moves exactly its own half. Neither is a
+    ///             registered option, so both are read at those values.
+    ///         </item>
+    ///         <item>
+    ///             Under the key at <c>true</c> neither matters: a list written on one line stays on it, and
+    ///             one written over lines gets one accessor per line, <c>{</c>↵<c>get; set;</c>↵<c>}</c>
+    ///             included.
+    ///         </item>
+    ///         <item>
+    ///             Either way the margin breaks a joined list one accessor per line —
+    ///             <c>… VeryLongName {</c>↵<c>get;</c>↵<c>private set;</c>↵<c>}</c> rather than a break
+    ///             inside the type — and an initializer is not part of the measure: the list stays joined
+    ///             and the <c>=</c> wraps. An accessor attribute on a line of its own (the export's
+    ///             <c>place_accessor_attribute_on_same_line</c>) breaks the list; at <c>always</c>
+    ///             <c>{ [A] get; set; }</c> is joined.
+    ///         </item>
+    ///     </list>
+    ///     ⚠ A comment is not a reason to leave a list alone, measured on eight placements after a first
+    ///     guess said it was: a block comment that ends a line joins with it — <c>get; /* c */</c>↵<c>set;</c>
+    ///     comes back <c>{ get; /* c */ set; }</c>, as do <c>{ /* c */</c>↵… and <c>set; /* c */</c>↵<c>}</c> —
+    ///     while a line comment, or a comment on a line of its own, keeps the list expanded. That is the
+    ///     builder's ordinary treatment of a comment in a gap (a block comment survives a point, #409; a
+    ///     line comment or an own-line comment leaves the gap unplanned and the group unbounded), so the
+    ///     group needs no exception for it.
+    /// </remarks>
+    void PlanAccessorList(AccessorListSyntax node) {
+        var bodiless = node.Accessors.All(static a => a.Body is null && a.ExpressionBody is null);
+        var broken = BreaksBefore(node.CloseBraceToken);
+        foreach (var accessor in node.Accessors) {
+            broken |= BreaksBefore(FirstToken(accessor));
+        }
+
+        var joins = options.KeepExistingDeclarationBlockArrangement ? !broken : bodiless;
+        if (!joins) {
+            foreach (var accessor in node.Accessors) {
+                Mandatory(FirstToken(accessor));
+            }
+
+            Mandatory(node.CloseBraceToken);
+            return;
+        }
+
+        var group = NewGroup();
+        foreach (var accessor in node.Accessors) {
+            Point(FirstToken(accessor), group);
+        }
+
+        Point(node.CloseBraceToken, group);
+        Describe(node, group, GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true));
     }
 
     /// <summary>

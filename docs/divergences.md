@@ -4626,12 +4626,15 @@ reformats none of them — `skala format` reports `0 files reformatted, 1 left a
 oracle expands `public int X { get => 1; }` onto three lines. True of the oracle; **not true of
 Skala**, which leaves the shape on one line and therefore does apply the key to it. The two engines
 diverge on the blank-line question there as a consequence of this entry, not independently of it.
+Since SK-DIV-0183 Skala expands it too, so SK-DIV-0092's reasoning holds of both engines again.
 
 - options: `skala_keep_existing_declaration_block_arrangement`
-- ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/field-keyword.cs`, whose last
-  property is the one-line accessor-list form. ⚠ `constructs/syntax/event-accessors.cs` does **not**
-  pin it — its accessor lists were written expanded and both engines agree on them, which is worth
-  saying because a reader would otherwise expect the event fixture to be the one that fails.
+- ⚠ status: **fixed** by SK-DIV-0183 (issue #416, which re-found it), which also covers the opposite
+  direction this table did not ask: a bodiless list written over lines is joined. Pinned by
+  `constructs/syntax/field-keyword.cs`, now exact, and by `constructs/breaks/accessor-lists.cs`.
+  ⚠ `constructs/syntax/event-accessors.cs` does **not** pin it — its accessor lists were written
+  expanded and both engines agree on them, which is worth saying because a reader would otherwise
+  expect the event fixture to be the one that fails.
 
 ## SK-DIV-0097 — a labelled statement's statement always starts a new line, and Skala writes `label: {`
 
@@ -7063,3 +7066,64 @@ both passes; under the export's cap of 2 the blank is preserved and both are sta
 - options: the same keys as SK-DIV-0171.
 - ⚠ status: **resolved**, except the `keep_blank_lines_in_declarations = 0` second pass, which follows
   the oracle's non-idempotency and is **open**.
+## SK-DIV-0183 — an accessor list is joined or expanded by what its accessors are, and Skala kept it as written
+
+⚠ **Issues #416 and #417**, found working #414. #416 is SK-DIV-0096 re-found; #417 is its other
+direction, which that table never asked because every row was written on one line. Measured
+2026-10-07 with `Testing ask` on seventeen shapes — `{ get; set; }`, `{ get; }`, `private set`,
+`init`, `required`, `readonly get`, an initializer after the list, an accessor attribute, an
+expression body, a block body, two of each, a body beside a bodiless accessor, an indexer, an abstract
+indexer, an event's `add`/`remove`, an interface's members — each written four ways (on one line, one
+accessor per line, all on one inner line, the first on the brace's line), at two indent depths:
+
+| | export (`skala_keep_existing_declaration_block_arrangement = false`) | the key at `true` |
+|---|---|---|
+| every accessor bodiless | **joined**, however it was written | as written on one line: kept; over lines: one per line |
+| any accessor with a body or an expression body | **one accessor per line**, however it was written | the same |
+| a joined list past the margin | one accessor per line — not a break inside the type | the same |
+| an initializer after the list | not part of the measure: the list stays joined, the `=` wraps | the same |
+| an accessor attribute on its own line (`place_accessor_attribute_on_same_line = false`) | one accessor per line; at `always` or `if_owner_is_single_line`, `{ [A] get; set; }` joins | the same |
+
+Under the export the four spellings of every shape came back byte-identical, which is what "decided
+by the accessors, not by the author" means. Skala had no plan for an `AccessorListSyntax` at all, so
+each gap fell to `keep_user_linebreaks` and every list came back as written. `BreakPlan.PlanAccessorList`
+now joins a bodiless list as a group that breaks when too long, and puts every accessor of any other
+list — or, under the key, of a list the author broke — on its own line.
+
+**The keys behind it are not registered options.** ReSharper decides the two halves with
+`place_abstract_accessorholder_on_single_line` (bodiless lists, `true`) and
+`place_simple_accessorholder_on_single_line` (the rest, `false`), and the export sets neither. Flipped
+through `Testing ask`: the first at `false` expands every bodiless list, the second at `true` joins
+`{ get => 1; }`, `{ get { return 1; } }`, `{ get; set { } }` and the event's, and under the
+declaration key at `true` neither moves anything. Neither is in `options.json`, so both are read at
+those values; registering them is an option-registry change of its own (an export-bridge spelling, a
+template line) and nothing in this export can observe the other values.
+
+⚠ **Two claims in the issues were refuted.** #416 said its measurement "contradicts the premise
+SK-DIV-0092 recorded"; it does not — SK-DIV-0092 measured `public int X { get => 1; }` as single-line
+with the declaration key lifted to `true`, and says so ("With the mask lifted"). And #417 named
+`place_simple_accessorholder_on_single_line` as the likely key; it is `false` already and governs the
+bodied half — the key that joins `{ get; set; }` is `place_abstract_accessorholder_on_single_line`.
+
+⚠ **A comment needs no exception, which a first guess said it did.** Three comments in a first probe
+came back as written — `get; // why`↵`set;`, `{ get; /* c */ set; }` and a comment above the first
+accessor — and the first version of the plan left any list holding a comment alone. Eight more
+placements refuted it: a block comment that ends a line *joins* with it (`get; /* c */`↵`set;`,
+`{ /* c */`↵…, `set; /* c */`↵`}` all come back on one line), a comment on a line of its own stays
+there, and a line comment expands a joined list (`{ get; set; // c`↵`}` is three lines). That is the
+builder's ordinary handling of a comment in a gap — a block comment survives a point (SK-DIV-0165), a
+line comment or an own-line comment leaves its gap unplanned and the group unbounded — and with the
+exception removed every shape agrees.
+
+Not fixed here, and measured:
+
+- A list joined from a broken source still takes the multi-line member's blank lines, because
+  `IsSingleLine` reads the source (#414): #417's own example, `int B {`↵…`}` directly above
+  `public int D {`↵…`}`, comes back with a blank line between the two joined properties that the
+  oracle does not write. Stable on a second pass.
+- `get /* c */;` is written `get /* c */ ;` — #410's space after a block comment.
+
+- options: `skala_keep_existing_declaration_block_arrangement`, `skala_place_accessor_attribute_on_same_line`.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/accessor-lists.cs`,
+  `constructs/preservation/accessor-lists.cs` under all four preservation corners, and
+  `AccessorListIssue416And417Tests`.
