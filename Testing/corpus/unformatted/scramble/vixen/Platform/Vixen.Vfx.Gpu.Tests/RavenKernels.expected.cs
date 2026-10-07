@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -34,22 +34,23 @@ static class RavenKernels {
         , byte[]> Compile(string source) {
         var
             tree = SyntaxTree.ParseText(source, path: "Effect.rvn");
-        Assert.True(tree.Diagnostics.Count == 0, Report("Parsing", tree.Diagnostics, source));
 
+        Assert.True(tree.Diagnostics.Count == 0, Report("Parsing", tree.Diagnostics, source));
         var compilation = Compilation.Create(
             "Vfx",
             tree
         );
         var semantic = compilation.GetDiagnostics();
-
         Assert.True(
             semantic
                 .Count
             == 0,
             Report("Binding", semantic, source)
         );
+
         var bag = new DiagnosticBag();
         var module = Lowerer.Lower(compilation, bag);
+
         IrVerifier.Verify(module, bag);
         Assert.True(
             bag.IsEmpty,
@@ -60,26 +61,29 @@ static class RavenKernels {
             )
         );
         var backend = TargetBackends.Create("spirv");
-        Assert.NotNull(backend);
 
+        Assert.NotNull(backend);
         var generated = backend.Generate(module, bag)
             ;
         Assert.True(bag.IsEmpty, Report("Generating", bag.ToArray(), source));
+
         Dictionary<string, byte[
         ]> kernels = [];
         foreach (var unit in generated) {
             if (unit is {
-                    Stage
-                    : ShaderStage.Compute,
+                    Stage:
+                    ShaderStage.Compute,
                     Binary: { } binary
                 }) {
-// The unit's name carries the declaration it came from and may carry more — a
-// permutation suffix, for a shader that has any. The declaration is the prefix.
-                kernels[unit.Name] = binary;
+                // The unit's name carries the declaration it came from and may carry more — a
+                // permutation suffix, for a shader that has any. The declaration is the prefix.
+                kernels[unit.Name]
+                    = binary;
             }
         }
 
-        return kernels;
+        return
+            kernels;
     }
 
     /// <summary>The module for one shader declaration.</summary>
@@ -87,22 +91,20 @@ static class RavenKernels {
     /// <param name="declaration">The shader declaration's name.</param>
     public static byte[] Of(Dictionary<string, byte[]> kernels, string declaration) {
         foreach (var (name, binary) in kernels) {
-            if (name.StartsWith(
-                    declaration,
-                    StringComparison
-                        .Ordinal
-                )) {
+            if
+                (name.StartsWith(declaration, StringComparison.Ordinal)) {
                 return binary;
             }
         }
 
-        Assert
-            .Fail($"No compute module was generated for '{declaration}'. Got: {string.Join(", ", kernels.Keys)}.");
-
+        Assert.Fail($"No compute module was generated for '{declaration}'. Got: {string.Join(", ", kernels.Keys)}.");
         return [];
     }
 
-    static string
-        Report(string phase, IReadOnlyList<Diagnostic> diagnostics, string source) =>
+    static string Report(
+        string phase,
+        IReadOnlyList<Diagnostic> diagnostics,
+        string source
+    ) =>
         $"{phase} the emitted shader failed:\n{string.Join("\n", diagnostics.Select(d => d.ToString()))}\n\n{source}";
 }

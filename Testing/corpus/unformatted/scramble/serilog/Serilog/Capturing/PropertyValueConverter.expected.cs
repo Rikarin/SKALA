@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // Copyright 2013-2021 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,6 @@ namespace Serilog.Capturing;
 // Values in Serilog are simplified down into a lowest-common-denominator internal
 // type system so that there is a better chance of code written with one sink in
 // mind working correctly with any other. This technique also makes the programmer
-
 // writing a log event (roughly) in control of the cost of recording that event.
 partial class PropertyValueConverter :
     ILogEventPropertyFactory,
@@ -75,8 +74,6 @@ partial class PropertyValueConverter :
             ;
         _maximumStringLength = maximumStringLength;
         _maximumCollectionCount = maximumCollectionCount;
-
-
         _scalarConversionPolicies = new IScalarConversionPolicy[] {
             new PrimitiveScalarConversionPolicy(),
             new SimpleScalarConversionPolicy(BuiltInScalarTypes.Concat(additionalScalarTypes)),
@@ -93,7 +90,6 @@ partial class PropertyValueConverter :
                 }
             )
             .ToArray();
-
         _dictionaryTypes = additionalDictionaryTypes.ToArray();
         _depthLimiter = new(maximumDestructuringDepth, this);
     }
@@ -114,11 +110,9 @@ partial class PropertyValueConverter :
             return CreatePropertyValue(value, destructuring, 1);
         } catch (Exception ex) {
             SelfLog.WriteLine("Exception caught while converting property value: {0}", ex);
-
             if (
                 _propagateExceptions)
                 throw;
-
             return new ScalarValue("Capturing the property value threw an exception: " + ex.GetType().Name);
         }
     }
@@ -152,7 +146,6 @@ partial class PropertyValueConverter :
         if (value is
             string)
             return new ScalarValue(value);
-
         foreach (var scalarConversionPolicy in _scalarConversionPolicies) {
             if (scalarConversionPolicy.TryConvertToScalar(value, out var converted))
                 return
@@ -160,7 +153,6 @@ partial class PropertyValueConverter :
         }
 
         DepthLimiter.SetCurrentDepth(depth);
-
         if (destructuring == Destructuring.Destructure) {
             foreach (var destructuringPolicy in
                      _destructuringPolicies) {
@@ -189,17 +181,16 @@ partial class PropertyValueConverter :
         [NotNullWhen(true)] out LogEventPropertyValue? result
     ) {
         if (value is IEnumerable enumerable) { // Only dictionaries with 'scalar' keys are permitted, as
-// more complex keys may not serialize to unique values for
+            // more complex keys may not serialize to unique values for
             // representation in sinks. This check strengthens the expectation
-// that resulting dictionary is representable in JSON as well
+            // that resulting dictionary is representable in JSON as well
             // as richer formats (e.g. XML, .NET type-aware...).
-            // Only actual dictionaries are supported, as arbitrary types
-// can implement multiple IDictionary interfaces and thus introduce
-            // multiple different interpretations.
+// Only actual dictionaries are supported, as arbitrary types
+            // can implement multiple IDictionary interfaces and thus introduce
+// multiple different interpretations.
             if
                 (TryGetDictionary(value, type, out var dictionary)) {
                 result = new DictionaryValue(MapToDictionaryElements(dictionary, destructuring));
-
                 return true;
 
                 IEnumerable<
@@ -220,6 +211,7 @@ partial class PropertyValueConverter :
                             (ScalarValue)_depthLimiter.CreatePropertyValue(entry.Key, destructure),
                             _depthLimiter.CreatePropertyValue(entry.Value, destructure)
                         );
+
                         if (pair.Key.Value != null)
                             yield return pair;
                     }
@@ -228,41 +220,41 @@ partial class PropertyValueConverter :
 
             // To handle multidimensional arrays.
             if (value is Array { Rank: > 1 } array) {
-                result = BuildArrayValue(array, new int[array.Rank], 0, destructuring);
+                result = BuildArrayValue(array, new int [array.Rank], 0, destructuring);
                 return true;
             }
 
             // Avoids allocation of two iterators - one from List and another one from MapToSequenceElements.
             // Allocation free for empty sequence.
-            if (
-                enumerable is IList list && list.Count <= _maximumCollectionCount) {
+            if (enumerable
+                    is IList list
+                && list.Count <= _maximumCollectionCount) {
                 if (list.Count == 0) {
                     result = SequenceValue.Empty;
                 } else {
                     var valueArray = new LogEventPropertyValue[list.Count];
                     for (int i = 0; i < list.Count; ++i)
-                        valueArray
-                            [i] = _depthLimiter.CreatePropertyValue(list[i], destructuring);
+                        valueArray[
+                            i] = _depthLimiter.CreatePropertyValue(list[i], destructuring);
                     result = new SequenceValue(valueArray);
                 }
             } else {
                 result = new SequenceValue(MapToSequenceElements(enumerable, destructuring));
             }
 
-            return true
-                ;
+            return true;
 
             IEnumerable
                 <LogEventPropertyValue> MapToSequenceElements(IEnumerable sequence, Destructuring destructure) {
-                var count = 0
-                    ;
-                foreach (var element in sequence) {
+                var count = 0;
+                foreach
+                    (var element in sequence) {
                     if (++count > _maximumCollectionCount) {
-                        yield break
-                            ;
+                        yield break;
                     }
 
-                    yield return _depthLimiter.CreatePropertyValue(element, destructure);
+                    yield
+                        return _depthLimiter.CreatePropertyValue(element, destructure);
                 }
             }
         }
@@ -279,7 +271,12 @@ partial class PropertyValueConverter :
     /// <param name="dimension">The current dimension being processed.</param>
     /// <param name="destructuring">The destructuring strategy.</param>
     /// <returns>A LogEventPropertyValue representing the array's structure and elements.</returns>
-    LogEventPropertyValue BuildArrayValue(Array array, int[] indices, int dimension, Destructuring destructuring) {
+    LogEventPropertyValue BuildArrayValue(
+        Array array,
+        int[] indices,
+        int dimension,
+        Destructuring destructuring
+    ) {
         if (dimension == array.Rank) {
             // Base case: get the value at the current indices
             object? value = array.GetValue(indices);
@@ -294,22 +291,14 @@ partial class PropertyValueConverter :
         var elements = new List<LogEventPropertyValue>(length);
         for (int i = 0; i < length; i++) {
             indices[dimension] = i;
-            elements.Add(
-                BuildArrayValue(
-                    array,
-                    indices,
-                    dimension + 1,
-                    destructuring
-                )
-            );
-            if (elements.Count
-                >= _maximumCollectionCount) {
+            elements.Add(BuildArrayValue(array, indices, dimension + 1, destructuring));
+            if (elements.Count >= _maximumCollectionCount) {
                 break;
             }
         }
 
-        return
-            new SequenceValue(elements);
+        return new
+            SequenceValue(elements);
     }
 
 #if FEATURE_ITUPLE
@@ -335,7 +324,8 @@ partial class PropertyValueConverter :
 
 #else
     bool TryConvertValueTuple(
-        object value,
+        object
+            value,
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type type,
         Destructuring destructuring,
         [NotNullWhen(true)] out LogEventPropertyValue? result
@@ -345,18 +335,18 @@ partial class PropertyValueConverter :
             return false;
         }
 
-        var definition =
-            type.GetGenericTypeDefinition();
+        var definition = type
+            .GetGenericTypeDefinition();
 
         // Ignore the 8+ value case for now.
-        if
-            (definition == typeof(ValueTuple<>)
-             || definition == typeof(ValueTuple<,>)
-             || definition == typeof(ValueTuple<,,>)
-             || definition == typeof(ValueTuple<,,,>)
-             || definition == typeof(ValueTuple<,,,,>)
-             || definition == typeof(ValueTuple<,,,,,>)
-             || definition == typeof(ValueTuple<,,,,,,>)) {
+        if (
+            definition == typeof(ValueTuple<>)
+            || definition == typeof(ValueTuple<,>)
+            || definition == typeof(ValueTuple<,,>)
+            || definition == typeof(ValueTuple<,,,>)
+            || definition == typeof(ValueTuple<,,,,>)
+            || definition == typeof(ValueTuple<,,,,,>)
+            || definition == typeof(ValueTuple<,,,,,,>)) {
             var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
             var elements = new LogEventPropertyValue [fields.Length];
             for (var index = 0; index < fields.Length; index++) {
@@ -366,7 +356,8 @@ partial class PropertyValueConverter :
                 elements[index] = propertyValue;
             }
 
-            result = new SequenceValue(elements);
+            result = new SequenceValue(elements)
+                ;
             return true;
         }
 
@@ -378,8 +369,8 @@ partial class PropertyValueConverter :
         object value,
         Type type,
         Destructuring destructuring,
-        [NotNullWhen(true)] out StructureValue
-            ? result
+        [NotNullWhen(true)] out StructureValue?
+            result
     ) {
         if (destructuring == Destructuring.Destructure) {
             if (TrimConfiguration.IsStructureValueSupported) {
@@ -402,20 +393,21 @@ partial class PropertyValueConverter :
 
 
         result = null;
-        return
-            false;
+        return false
+            ;
     }
 
     ScalarValue Stringify(object value) {
-        var
-            stringified = value.ToString();
+        var stringified
+            = value.ToString();
         var truncated = stringified == null ? "" : TruncateIfNecessary(stringified);
-        return
-            new ScalarValue(truncated);
+        return new
+            ScalarValue(truncated);
     }
 
     string TruncateIfNecessary(string text) {
-        if (text.Length > _maximumStringLength) {
+        if (text.Length > _maximumStringLength
+           ) {
             return text.Substring(0, _maximumStringLength - 1) + "…";
         }
 
@@ -423,25 +415,22 @@ partial class PropertyValueConverter :
     }
 
     bool TryGetDictionary(object value, Type valueType, [NotNullWhen(true)] out IDictionary? dictionary) {
-        if (value is IDictionary iDictionary) {
-            if (
-                _dictionaryTypes.Contains(valueType)) {
-                dictionary = iDictionary
-                    ;
+        if
+            (value is IDictionary iDictionary) {
+            if (_dictionaryTypes
+                .Contains(valueType)) {
+                dictionary = iDictionary;
                 return true;
             }
 
             if (valueType.IsConstructedGenericType) {
-                var
-                    definition = valueType.GetGenericTypeDefinition();
+                var definition
+                    = valueType.GetGenericTypeDefinition();
                 if ((definition
-                        == typeof(Dictionary<,
-                        >)
+                        == typeof(Dictionary<,>
+                        )
                         || definition == typeof(System.Collections.ObjectModel.ReadOnlyDictionary<,>))
-                    && IsValidDictionaryKeyType(
-                        valueType
-                            .GenericTypeArguments[0]
-                    )) {
+                    && IsValidDictionaryKeyType(valueType.GenericTypeArguments[0])) {
                     dictionary = iDictionary;
                     return true;
                 }
@@ -453,8 +442,12 @@ partial class PropertyValueConverter :
     }
 
     static bool IsValidDictionaryKeyType(Type valueType) {
-        return
-            valueType.IsPrimitive || BuiltInScalarTypes.Contains(valueType) || valueType.IsEnum;
+        return valueType
+                .IsPrimitive
+            || BuiltInScalarTypes
+                .Contains(valueType)
+            || valueType.IsEnum
+            ;
     }
 
     [ThreadStatic]
@@ -472,16 +465,13 @@ partial class PropertyValueConverter :
 
         var seenNames = _lastSeenNames ?? [];
         _lastSeenNames = null;
-        var properties = type.GetProperties(
-            BindingFlags.Public
-            | BindingFlags
-                .Instance
-            | BindingFlags.FlattenHierarchy
-        );
-        var
-            result = new LogEventProperty[properties.Length];
-        var nextResult =
-            0;
+
+        var properties =
+            type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+        var result
+            = new LogEventProperty [properties.Length];
+        var nextResult = 0
+            ;
         for (var i = 0; i < properties.Length; ++i) {
             var property = properties[i];
             if (property.GetMethod == null || !property.GetMethod.IsPublic) {
@@ -492,33 +482,34 @@ partial class PropertyValueConverter :
                 continue;
             }
 
-            if (property.Name == "Item" && property.GetIndexParameters().Length != 0) {
+            if (property.Name == "Item"
+                && property.GetIndexParameters().Length != 0) {
                 continue;
             }
 
-            seenNames
-                .Add(property.Name);
+            seenNames.Add(property.Name);
+
             object? propValue;
             try {
                 propValue = property.GetValue(value);
-            } catch
-                (TargetParameterCountException) {
+            } catch (
+                TargetParameterCountException) {
                 // These properties would ideally be ignored; since they never produce values they're not
-
                 // of concern to auditing and exceptions can be suppressed.
                 SelfLog.WriteLine("The property accessor {0} is a non-default indexer", property);
                 continue;
             } catch (TargetInvocationException ex) {
                 SelfLog.WriteLine("The property accessor {0} threw exception: {1}", property, ex);
-
                 if (_propagateExceptions)
                     throw;
 
                 propValue = "The property accessor threw an exception: " + ex.InnerException?.GetType().Name;
             } catch (NotSupportedException) {
                 SelfLog.WriteLine("The property accessor {0} is not supported via Reflection API", property);
+
                 if (_propagateExceptions)
                     throw;
+
                 propValue = "Accessing this property is not supported via Reflection API";
             }
 
@@ -536,8 +527,8 @@ partial class PropertyValueConverter :
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal
-        static bool IsCompilerGeneratedType(Type type) {
+    internal static
+        bool IsCompilerGeneratedType(Type type) {
         if (!type.IsGenericType || !type.IsSealed || type.Namespace != null) {
             return false;
         }

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -21,7 +21,6 @@ namespace Vixen.Net
 /// </remarks>
 public interface ISyncList {
     /// <summary>What it is called, for diagnostics and for the bandwidth report.</summary>
-
     string Name { get; }
 
     /// <summary>Gives it the name its declaration chose.</summary>
@@ -131,6 +130,7 @@ public sealed class SyncListReplicator<T> : IComponentReplicator
     ///     and cost more than sending it. An empty layout is the documented way to say "this record
     ///     goes whole", and the server's own lane check would refuse a mismatched one anyway.
     /// </remarks>
+
     public ReadOnlySpan<WireLane> Lanes => [];
 
     /// <summary>Creates a replicator for one behaviour type's lists.</summary>
@@ -139,26 +139,28 @@ public sealed class SyncListReplicator<T> : IComponentReplicator
     public SyncListReplicator(BehaviorStore store) {
         ArgumentNullException.ThrowIfNull(store);
         this.store = store;
-        TypeName = typeof(T).FullName ! + ".Lists";
+        TypeName = typeof(T).FullName! + ".Lists";
         TypeId = ReplicationRegistry.HashTypeName(TypeName);
     }
 
     /// <inheritdoc />
     public bool Has(World world, Entity entity) {
         ArgumentNullException.ThrowIfNull(world);
-        return world.Has<SyncListVersion>(entity) && store.Get<T>(entity) is { Lists.Count : > 0 };
+        return world.Has<SyncListVersion>(entity) && store.Get<T>(entity) is { Lists.Count: > 0 };
     }
 
     /// <inheritdoc />
     public void Write(World world, Entity entity, ref BitWriter writer) {
-        if (store.Get<T>(entity) is not { } behaviour) {
+        if
+            (store.Get<T>(entity) is not { } behaviour) {
             return;
         }
 
         // Every list, in declaration order, which both ends walk. No count and no names on the wire:
-        // the behaviour type is what the record's type index already names, and its lists are a
+// the behaviour type is what the record's type index already names, and its lists are a
         // property of the type rather than of the instance.
-        foreach (var list in behaviour.Lists) {
+        foreach (var list in behaviour.Lists
+                ) {
             list.WriteWhole(ref writer);
             list.ClearPending();
         }
@@ -167,23 +169,18 @@ public sealed class SyncListReplicator<T> : IComponentReplicator
     /// <inheritdoc />
     public bool Apply(World world, Entity entity, ref BitReader reader) {
         ArgumentNullException.ThrowIfNull(world);
+        var behaviour = store.Get<T>(entity);
 
-        var behaviour = store.Get<T
-        >(entity);
         if (behaviour is null) {
             if (!world.Has<SyncListVersion>(entity)) {
-                world.Add(
-                    entity,
-                    new
-                        SyncListVersion()
-                );
+                world.Add(entity, new SyncListVersion());
             }
 
             behaviour = store.Add<T>(entity);
         }
 
-        foreach
-            (var list in behaviour.Lists) {
+        foreach (
+            var list in behaviour.Lists) {
             if (!list.Apply(ref reader)) {
                 return false;
             }

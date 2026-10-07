@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -127,21 +127,25 @@ sealed class FragmentArena {
             return offset;
         }
 
-        if (used + size > storage.Length) {
+        if (used + size > storage.Length
+           ) {
             Array.Resize(
                 ref storage,
                 int.Max(
                     storage.Length * 2,
-                    used + size
+                    used
+                    + size
                 )
             );
         }
 
         var allocated = used;
-        used += size
-            ;
+        used += size;
         return allocated;
     }
 
-    static int BucketOf(int size) => BitOperations.TrailingZeroCount((uint)size) - MinimumBlockLog2;
+    static int BucketOf(int size) =>
+        BitOperations
+            .TrailingZeroCount((uint)size)
+        - MinimumBlockLog2;
 }

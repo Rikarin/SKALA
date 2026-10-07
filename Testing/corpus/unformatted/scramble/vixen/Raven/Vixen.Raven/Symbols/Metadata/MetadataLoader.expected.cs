@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-18
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -41,7 +41,6 @@ internal sealed class MetadataLoader {
     readonly List<MetadataNamedTypeSymbol> topLevel = [];
 
     /// <summary>Every top-level type loaded, in the order the libraries supplied them.</summary>
-
     public IReadOnlyList<MetadataNamedTypeSymbol> TopLevelTypes => topLevel;
 
     /// <summary>
@@ -69,14 +68,16 @@ internal sealed class MetadataLoader {
             .ThrowIfNull(globalNamespace);
 
         libraries.Add(library);
-        // Two passes over a flat list. Nested types name their declaring type, which may appear
+
+// Two passes over a flat list. Nested types name their declaring type, which may appear
         // in any order, so every symbol has to exist before any of them is attached.
-        List<( LibraryType Model,
-            MetadataNamedTypeSymbol Symbol)> loaded = [];
+        List<(LibraryType Model,
+            MetadataNamedTypeSymbol Symbol )> loaded = [];
 
         foreach (var model in library.Types) {
             var symbol = new MetadataNamedTypeSymbol(this, library.Name, model);
             loaded.Add((model, symbol));
+
             // A duplicate qualified name across two libraries: the first wins, which is what the
             // duplicate-reference warning has already told the caller about.
             byQualifiedName.TryAdd(model.QualifiedName, symbol);
@@ -96,8 +97,7 @@ internal sealed class MetadataLoader {
 
             var package = globalNamespace.GetOrAddNamespace(SplitNamespace(model.Namespace));
             symbol.Attach(package);
-            package
-                .AddType(symbol);
+            package.AddType(symbol);
             topLevel.Add(symbol);
             contributed.Add(symbol);
         }
@@ -109,8 +109,8 @@ internal sealed class MetadataLoader {
         name.Length == 0 ? [] : name.Split('.', StringSplitOptions.RemoveEmptyEntries);
 
     /// <summary>The loaded type with this qualified name, or null.</summary>
-    public MetadataNamedTypeSymbol
-        ? Find(string qualifiedName) =>
+    public MetadataNamedTypeSymbol?
+        Find(string qualifiedName) =>
         byQualifiedName.GetValueOrDefault(qualifiedName);
 
     /// <summary>
@@ -127,45 +127,41 @@ internal sealed class MetadataLoader {
             return ErrorTypeSymbol.Instance;
         }
 
-        switch (reference.Kind) {
+        switch
+            (reference.Kind) {
             case LibraryTypeKind.Primitive
                 : // A primitive travels as its SpecialType, which is the identity the binder keys
                 // numeric promotion, literal typing and swizzles off — so the loaded symbol is
-
-                // the very singleton a source declaration would have resolved to.
+// the very singleton a source declaration would have resolved to.
                 return reference.Special == SpecialType.None
                     ? ErrorTypeSymbol.Instance
                     : BuiltInTypes.FromSpecialType(reference.Special);
+
             case LibraryTypeKind.BuiltIn:
                 return BuiltInResource(reference.Special);
             case LibraryTypeKind.Named:
                 return ResolveNamed(reference, scope, libraryName);
-            case
-                LibraryTypeKind.Array: {
+            case LibraryTypeKind
+                .Array: {
                 var element = Resolve(reference.Element, scope, libraryName);
                 return element.IsErrorType
                     ? element
-                    : new
-                        ArrayTypeSymbol(element, Math.Max(1, reference.Rank), reference.Length);
+                    : new ArrayTypeSymbol(element, Math.Max(1, reference.Rank), reference.Length);
             }
             case LibraryTypeKind.Buffer: {
-                var element
-                    = Resolve(reference.Element, scope, libraryName);
-                return element.IsErrorType
-                    ? element
-                    : new
-                        BufferTypeSymbol(element, reference.Writable);
+                var element =
+                    Resolve(reference.Element, scope, libraryName);
+                return element.IsErrorType ? element : new BufferTypeSymbol(element, reference.Writable);
             }
-
             case LibraryTypeKind.Tuple: {
                 var elements = reference.Elements.Select(e => Resolve(e, scope, libraryName)).ToArray();
                 return new TupleTypeSymbol(elements, [.. reference.ElementNames]);
             }
+
             case LibraryTypeKind.TypeParameter:
                 return reference.Name is { } name
                     ? scope.Find(name) as TypeSymbol ?? ErrorTypeSymbol.Instance
                     : ErrorTypeSymbol.Instance;
-
             default:
                 return ErrorTypeSymbol.Instance;
         }
@@ -173,24 +169,25 @@ internal sealed class MetadataLoader {
 
     TypeSymbol ResolveNamed(LibraryTypeReference reference, MetadataScope scope, string libraryName) {
         if (reference.Name is not { Length: > 0 } qualified) {
-            return ErrorTypeSymbol.Instance;
+            return ErrorTypeSymbol
+                .Instance;
         }
 
-        if (byQualifiedName.GetValueOrDefault(qualified) is
-            not { } definition) {
+        if (byQualifiedName.GetValueOrDefault(qualified) is not { } definition) {
             // A missing reference is a command-line mistake, and without saying so its symptom is
             // a member that cannot be found on a type whose source nobody has.
             diagnostics.Add(LibraryDiagnostics.ReferenceTypeUnresolved, Location.None, libraryName, qualified);
             return ErrorTypeSymbol.Instance;
         }
 
-        if
-            (reference.TypeArguments.IsDefaultOrEmpty) {
-            return definition;
+        if (reference
+            .TypeArguments.IsDefaultOrEmpty) {
+            return
+                definition;
         }
 
-        var arguments = reference
-            .TypeArguments.Select(a => Resolve(a, scope, libraryName))
+        var arguments = reference.TypeArguments
+            .Select(a => Resolve(a, scope, libraryName))
             .ToArray();
         return arguments.Length == definition.Arity
             ? new ConstructedNamedTypeSymbol(definition, arguments)
@@ -212,8 +209,8 @@ internal sealed class MetadataLoader {
             SpecialType.Texture2D => BuiltInTypes.Texture2D,
             SpecialType.Texture3D => BuiltInTypes.Texture3D,
             SpecialType.TextureCube => BuiltInTypes.TextureCube,
-            SpecialType
-                .AccelerationStructure => BuiltInTypes.AccelerationStructure,
+            SpecialType.AccelerationStructure
+                => BuiltInTypes.AccelerationStructure,
             _ => ErrorTypeSymbol.Instance
         };
 }
@@ -236,16 +233,15 @@ internal readonly record struct MetadataScope(MetadataNamedTypeSymbol? Type, Met
             }
         }
 
-        if (Type is not
-            null) {
+        if (Type is not null) {
             foreach (var parameter in Type.TypeParameters) {
                 if (string.Equals(parameter.Name, name, StringComparison.Ordinal)) {
-                    return parameter
-                        ;
+                    return parameter;
                 }
             }
         }
 
-        return null;
+        return null
+            ;
     }
 }

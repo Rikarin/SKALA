@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
      // SPDX-License-Identifier: Apache-2.0
-
-        using System    .
-               Numerics;
+using System    .
+        Numerics;
+               
   namespace Vixen  .   Ui.
 Layout   ;
 /// <summary>Every fragmented node's extra boxes, in one array.</summary>
@@ -71,51 +71,51 @@ const int MinimumBlockLog2 =   1;
        fragments .CopyTo(  storage.AsSpan( offset, fragments  .Length));
  return (offset, capacity);
         }
-         Free(offset,  capacity)  ;
-        
-    var wanted = int.    Max  ( MinimumBlock, (int) BitOperations
-.RoundUpToPowerOf2  ((uint )   fragments.Length ));
-         var next = Allocate    (wanted);
-       fragments.CopyTo (storage .AsSpan(next  ,   fragments .Length  ));
-               return  (next    , wanted);
- }
-        
+         
+        Free(offset,  capacity)  ;
+    
+var wanted = int.    Max  ( MinimumBlock, (int) BitOperations
+         .RoundUpToPowerOf2  ((uint )   fragments.Length ));
+       var next = Allocate    (wanted);
+               fragments.CopyTo (storage .AsSpan(next  ,   fragments .Length  ));
+ return  (next    , wanted);
+        }
+   
     /// <summary>Hands a block back.</summary>
     /// <param name="offset">Where it starts, or -1.</param>
     /// <param name="capacity">How big it is.</param>
-   public
-          void Free( int offset,   int capacity) {
-              if (
-         offset < 0  || capacity < MinimumBlock) {
-              return;   }
-            
-        var  bucket =   BucketOf( capacity)
-              ;
-     if
-            (  bucket >= BucketCount) {
-                return    ; } 
-	(free [ bucket] ??= [   ]) .
-               Add (  offset);
-              }
-             int  Allocate(   int size) {
-   var    bucket    = BucketOf(size);   
-           if   (bucket
-     < BucketCount && free[    bucket] is { Count: > 0  }   available)   {
-  var offset  = available[ ^    1];    available.RemoveAt(   available  .Count   - 1 )    ;
-             return offset;
-  
-            }
-              if (used  + size  > storage.
-	Length  ) {
-        Array  .Resize(ref storage  , int. Max ( storage.Length   * 2,
-used + size    ));
-            } 
-             
-       var allocated = used;
- used +=  size
-;
+          public
+              void Free( int offset,   int capacity) {
+         if (
+              offset < 0  || capacity < MinimumBlock) {
+            return;   }
+        
+              var  bucket =   BucketOf( capacity)
+     ;
+            if
+                (  bucket >= BucketCount) {
+	return    ; } 
+               
+              (free [ bucket] ??= [   ]) .
+             Add (  offset);
+   }
+           
+     int  Allocate(   int size) {
+  var    bucket    = BucketOf(size);   
+             if   (bucket
+  < BucketCount && free[    bucket] is { Count: > 0 }  available   ) {
+            var   offset =  available[^ 1    ]; available    .RemoveAt(available   .  Count -   1 ) ;
+              return    offset;
+	}
+        if (used +  size >  storage.Length
+)  {
+            Array.  Resize(ref storage,  int.Max ( storage .Length *   2, used
+             + size)    );
+       } 
+ var allocated = used;
+used += size  ;
         return  allocated; }
-       static int BucketOf  (  int   size) => 
-BitOperations  . TrailingZeroCount  ((   uint   ) size  ) -   MinimumBlockLog2  ;
+       static int BucketOf  (  int   size) =>  BitOperations
+. TrailingZeroCount  ((   uint   ) size  ) -   MinimumBlockLog2  ; 
          }
          

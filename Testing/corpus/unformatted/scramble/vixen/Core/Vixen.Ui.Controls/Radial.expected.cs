@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -18,7 +18,6 @@ namespace Vixen
 public sealed partial class RadialItem :
     ButtonBase {
     /// <inheritdoc />
-
     protected override string TagName => "radial-item";
 
     /// <inheritdoc />
@@ -112,18 +111,19 @@ public sealed partial class RadialMenu
     protected override
         void OnCreated() {
         base.OnCreated();
+
         IsFocusScope = true;
         LightDismiss = true;
         CloseOnEscape = true;
+
+
         // ⚠ On the root and capturing, like the light dismiss above it. A pie menu is aimed by moving
         // the pointer *outside* it — the ring is 92 pixels out and the pointer starts in the middle —
         // so a handler on this element would hear nothing until the pointer had already crossed a
-
         // wedge. This is the one control in the set that has to watch the whole document.
         aimed =
             (_, args) => Aimed(args);
         Document.Root.AddHandler(aimed, RoutingStrategy.Capture, handledEventsToo: true);
-
         // ⚠ And the key going up, on the root for the same reason. The gesture this menu is for is
         // "hold a key, flick, let go" — so the commit is a key *release*, which arrives wherever the
         // focus happens to be and never at a menu that has only just opened. Watching it here is
@@ -134,6 +134,7 @@ public sealed partial class RadialMenu
             args
         ) => Lifted(args);
         Document.Root.AddHandler(lifted, RoutingStrategy.Capture, handledEventsToo: true);
+
         AddHandler<ClickEvent>(static (element, args) => ((RadialMenu)element).Chosen(args));
         AddHandler<KeyEvent>(static (element, args)
             => ((RadialMenu)element).Keyed(args)
@@ -176,6 +177,7 @@ public sealed partial class RadialMenu
     /// <returns>The wedge, for a caller that wants to put an icon on it.</returns>
     public RadialItem AddItem(string? label = null) {
         var item = Add<RadialItem>();
+
         item.Label = label;
         item.Focusable
             = false;
@@ -204,13 +206,13 @@ public sealed partial class RadialMenu
         Hold = hold;
         held = hold;
         highlighted = -1;
+
         Open();
         // The pass that gives the wedges a size, so that placing them has something to measure.
         Document.Update();
         centre
             = new Vector2(x, y);
         MoveTo(x - (Bounds.Width * 0.5f), y - (Bounds.Height * 0.5f));
-
         // ⚠ Placed, laid out, and placed again — which is one pass more than it looks like it needs.
         // Writing `left` on an absolutely positioned child changes how much room is left to its
         // right, so a wedge whose label is long is measured at one width before the offset and a
@@ -235,6 +237,8 @@ public sealed partial class RadialMenu
         // a dialog would otherwise be covered by the menu that started it.
         Close(CloseReason.Committed);
         Chose?.Invoke(this, item);
+
+
         return true;
     }
 
@@ -271,7 +275,6 @@ public sealed partial class RadialMenu
         }
 
         var step = MathF.Tau / items.Count;
-
         return
             (int)MathF.Round(angle / step) % items.Count;
     }
@@ -288,15 +291,14 @@ public sealed partial class RadialMenu
         var step = MathF.Tau / Math.Max(1, items.Count);
         var
             middle = new Vector2(Bounds.Width * 0.5f, Bounds.Height * 0.5f);
-
         for (var index = 0; index < items.Count; index++) {
             var angle = step * index;
             var item = items[index];
 
             item.Angle = angle
                 ;
-            var point = middle + new Vector2(MathF.Sin(angle) * Radius, -MathF.Cos(angle) * Radius);
 
+            var point = middle + new Vector2(MathF.Sin(angle) * Radius, -MathF.Cos(angle) * Radius);
             item.SetStyle("left", Px(point.X - (item.Bounds.Width * 0.5f)));
             item.SetStyle("top", Px(point.Y - (item.Bounds.Height * 0.5f)));
         }
@@ -305,7 +307,6 @@ public sealed partial class RadialMenu
     static
         string Px(float value) =>
         value.ToString("0.##", CultureInfo.InvariantCulture) + "px";
-
 
     void Restyle() {
         for (var index = 0;
@@ -317,7 +318,7 @@ public sealed partial class RadialMenu
                 items[index].State |= Styling.ElementState.Checked;
             } else {
                 items[index].State
-                    &= ~Styling.ElementState.Checked;
+                    &= ~ Styling.ElementState.Checked;
             }
         }
     }
@@ -337,8 +338,8 @@ public sealed partial class RadialMenu
         }
 
         // ⚠ Only a release that belongs to the gesture that opened it. A menu opened by a click is
-// opened *by* a press whose release arrives a few milliseconds later, over the middle of the
-        // menu — committing on that would make every click-opened pie close again instantly, having
+        // opened *by* a press whose release arrives a few milliseconds later, over the middle of the
+// menu — committing on that would make every click-opened pie close again instantly, having
         // chosen whatever the dead zone let through.
         if (args.Action == PointerAction.Released) {
             Commit();
@@ -368,7 +369,6 @@ public sealed partial class RadialMenu
         }
 
         held = false;
-
         if (!Accept()) {
             // A release with nothing aimed at is somebody who opened the menu to look at it. It stays
             // up and becomes the click-to-choose kind, which is the first of the two gestures.
@@ -386,10 +386,7 @@ public sealed partial class RadialMenu
                 continue;
             }
 
-            Aim(
-                item
-                    .Index
-            );
+            Aim(item.Index);
             Accept();
             args.Handled = true;
             return;
@@ -401,14 +398,9 @@ public sealed partial class RadialMenu
     ///     The four directions are the four wedges nearest them, which for a menu of five or seven is
     ///     approximate and is still the difference between "reachable from the keyboard" and not.
     /// </remarks>
-    void Keyed(
-        KeyEvent args
-    ) {
-        if (args.Action
-            != KeyAction.Pressed
-            || items.Count == 0) {
-            return
-                ;
+    void Keyed(KeyEvent args) {
+        if (args.Action != KeyAction.Pressed || items.Count == 0) {
+            return;
         }
 
         switch (args.Key) {
@@ -417,8 +409,7 @@ public sealed partial class RadialMenu
                 break;
             case InputKey.Down:
                 Aim(WedgeAt(new Vector2(0f, Radius)));
-                break
-                    ;
+                break;
 
             case InputKey.Left:
                 Aim(WedgeAt(new Vector2(-Radius, 0f)));
@@ -427,13 +418,13 @@ public sealed partial class RadialMenu
             case InputKey.Right:
                 Aim(WedgeAt(new Vector2(Radius, 0f)));
                 break;
+
             case InputKey.Tab:
                 Aim(highlighted < 0 ? 0 : (highlighted + 1) % items.Count);
                 break;
             case InputKey.Enter or InputKey.KeypadEnter or InputKey.Space:
                 Accept();
                 break;
-
             default:
                 return;
         }

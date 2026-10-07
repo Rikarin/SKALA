@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -23,8 +23,9 @@ internal static class ConstantEvaluator {
         switch (
             expression) {
             case BoundLiteralExpression literal: return literal.ConstantValue;
+
             // A const field's value may itself still be evaluating — a cycle — in
-            // which case it answers null and the caller reports.
+// which case it answers null and the caller reports.
             case BoundFieldExpression { Field.IsConst: true } field: return field.Field.ConstantValue;
             case BoundConversionExpression conversion: return Convert(Evaluate(conversion.Operand), conversion.Type);
 
@@ -32,14 +33,15 @@ internal static class ConstantEvaluator {
             case BoundBinaryExpression binary:
                 return EvaluateBinary(binary.OperatorKind, Evaluate(binary.Left), Evaluate(binary.Right));
             // `float4(1f, 1f, 1f, 1f)`, and the reason vectors are here at all: a scalar's default is
+
             // a *literal* and a vector's is a *construction*, so everything that reads a declared
             // default through this saw one and not the other. What that cost is written down at
-
             // `SourceFieldSymbol.DeclaredValue` — the short version is that a shader's declared vector
             // default reached no host, and the parameter arrived as zero.
             case BoundObjectCreationExpression {
                 Type: PrimitiveTypeSymbol { TypeKind: TypeKind.Vector } vector
             } creation:
+
                 return EvaluateVector(vector, creation.Arguments);
 
             default: return null;
@@ -68,35 +70,35 @@ internal static class ConstantEvaluator {
     ///     </para>
     /// </remarks>
     static object? EvaluateVector(
-        PrimitiveTypeSymbol
-            vector,
-        IReadOnlyList<BoundExpression> arguments
+        PrimitiveTypeSymbol vector,
+        IReadOnlyList
+            <BoundExpression> arguments
     ) {
         var lanes = vector.ComponentCount;
-        if
-            (arguments.Count != lanes && arguments.Count != 1) {
+
+        if (arguments.Count != lanes && arguments.Count != 1) {
             return null;
         }
 
         var values = new object?[lanes];
-
         for (var lane = 0; lane < lanes; lane++) {
-            var value = Evaluate(arguments[arguments.Count == 1 ? 0 : lane]);
+            var value = Evaluate(
+                arguments[
+                    arguments.Count == 1 ? 0 : lane]
+            );
+
             if (value is null) {
                 return null;
             }
 
-            values[
-                lane] = value;
+            values[lane] =
+                value;
         }
 
         return values;
     }
 
-    static object? Convert(
-        object? value,
-        TypeSymbol type
-    ) {
+    static object? Convert(object? value, TypeSymbol type) {
         if (value is null) {
             return null;
         }
@@ -105,16 +107,16 @@ internal static class ConstantEvaluator {
             return (type as PrimitiveTypeSymbol)?.SpecialType switch {
                 SpecialType.Bool => System.Convert.ToBoolean(value),
                 SpecialType.Int => System.Convert.ToInt32(value),
-                SpecialType.UInt => System
-                    .Convert.ToUInt32(value),
+                SpecialType.UInt => System.Convert.ToUInt32(value),
+
                 SpecialType.Float => System.Convert.ToSingle(value),
-                SpecialType.Double
-                    => System.Convert.ToDouble(value),
+                SpecialType.Double => System.Convert.ToDouble(value),
                 SpecialType.Int64 => System.Convert.ToInt64(value),
                 SpecialType.UInt64 => System.Convert.ToUInt64(value),
                 _ => null
             };
-        } catch (Exception e) when (e is OverflowException or InvalidCastException or FormatException) {
+        } catch
+            (Exception e) when (e is OverflowException or InvalidCastException or FormatException) {
             return null;
         }
     }
@@ -124,12 +126,13 @@ internal static class ConstantEvaluator {
             (UnaryOperatorKind.Plus, int or uint or float or double) => operand,
             (UnaryOperatorKind.Minus, int i) => -i,
             (UnaryOperatorKind.Minus, float f) => -f,
-            (UnaryOperatorKind.Minus, double d
-                ) => -d,
+            (
+                UnaryOperatorKind.Minus, double d) => -d,
             (UnaryOperatorKind.BitwiseNot, int i) => ~ i,
             (UnaryOperatorKind.BitwiseNot, uint u) => ~u,
             (UnaryOperatorKind.LogicalNot, bool b) => !b,
-            _ => null
+            _
+                => null
         };
 
     static object? EvaluateBinary(BinaryOperatorKind kind, object? left, object? right) {
@@ -141,91 +144,92 @@ internal static class ConstantEvaluator {
             return (left, right) switch {
                 (bool a, bool b) => EvaluateBool(kind, a, b),
                 (int a, int b) => EvaluateInt(kind, a, b),
-                (uint
-                    a, uint b) => EvaluateUInt(kind, a, b),
+                (uint a, uint
+                    b) => EvaluateUInt(kind, a, b),
                 // A shift's right operand is a count and stays int even for a uint left.
-                (uint a, int b) => EvaluateUIntShift(kind, a, b),
+                (uint a, int b) => EvaluateUIntShift(
+                    kind,
+                    a,
+                    b
+                ),
                 (float a, float b) => EvaluateDouble(kind, a, b) is double d
                     ? (float)d
                     : EvaluateComparison(kind, a, b),
                 (double a, double b) => EvaluateDouble(kind, a, b) ?? EvaluateComparison(kind, a, b),
                 _ => null
             };
-        } catch (Exception
-                 e) when (e is DivideByZeroException or OverflowException) {
+        } catch (Exception e) when
+            (e is DivideByZeroException or OverflowException) {
             return null;
         }
     }
 
-    static object
-        ? EvaluateBool(BinaryOperatorKind kind, bool a, bool b) =>
-        kind
-            switch {
-                BinaryOperatorKind.LogicalAnd or BinaryOperatorKind.BitwiseAnd => a && b,
-                BinaryOperatorKind.LogicalOr
-                    or BinaryOperatorKind
-                        .BitwiseOr => a || b,
-                BinaryOperatorKind.BitwiseXor => a ^ b,
-                BinaryOperatorKind.Equal => a == b,
-                BinaryOperatorKind.NotEqual => a != b,
-                _ => null
-            };
+    static
+        object? EvaluateBool(BinaryOperatorKind kind, bool a, bool b) =>
+        kind switch {
+            BinaryOperatorKind.LogicalAnd or BinaryOperatorKind.BitwiseAnd => a && b,
+            BinaryOperatorKind.LogicalOr or BinaryOperatorKind.BitwiseOr => a || b,
+            BinaryOperatorKind.BitwiseXor => a ^ b,
+            BinaryOperatorKind.Equal => a
+                == b,
+            BinaryOperatorKind.NotEqual => a != b,
+            _ => null
+        };
 
     static object? EvaluateInt(BinaryOperatorKind kind, int a, int b) =>
-        kind
-            switch {
-                BinaryOperatorKind.Add =>
-                    a + b,
-                BinaryOperatorKind.Subtract =>
-                    a - b,
-                BinaryOperatorKind.Multiply => a * b,
-                BinaryOperatorKind.Divide => a / b,
-                BinaryOperatorKind.Modulo => a % b,
-                BinaryOperatorKind.LeftShift => a << b,
-                BinaryOperatorKind.RightShift => a >> b,
-                BinaryOperatorKind.UnsignedRightShift => a >>> b,
-                BinaryOperatorKind.BitwiseAnd => a & b,
-                BinaryOperatorKind.BitwiseOr => a | b,
-                BinaryOperatorKind.BitwiseXor => a ^ b,
-                BinaryOperatorKind.Equal =>
-                    a == b,
-                BinaryOperatorKind.NotEqual => a != b,
-                BinaryOperatorKind.LessThan => a < b,
-                BinaryOperatorKind.LessThanOrEqual => a <= b,
-                BinaryOperatorKind.GreaterThan => a > b,
-                BinaryOperatorKind.GreaterThanOrEqual => a >= b,
-                _ => null
-            };
+        kind switch {
+            BinaryOperatorKind.Add => a + b,
+            BinaryOperatorKind
+                .Subtract => a - b,
+            BinaryOperatorKind.Multiply => a * b,
+            BinaryOperatorKind.Divide => a / b,
+            BinaryOperatorKind.Modulo => a % b,
+            BinaryOperatorKind.LeftShift => a << b,
+            BinaryOperatorKind.RightShift => a >> b,
+            BinaryOperatorKind.UnsignedRightShift => a >>> b,
+            BinaryOperatorKind.BitwiseAnd => a & b,
+            BinaryOperatorKind.BitwiseOr => a | b,
+            BinaryOperatorKind.BitwiseXor => a ^ b,
+            BinaryOperatorKind.Equal => a == b,
+            BinaryOperatorKind.NotEqual => a != b,
+            BinaryOperatorKind.LessThan => a < b,
+            BinaryOperatorKind.LessThanOrEqual => a <= b,
+            BinaryOperatorKind.GreaterThan => a > b,
+            BinaryOperatorKind.GreaterThanOrEqual => a >= b,
+            _ => null
+        };
 
-    static object? EvaluateUInt(BinaryOperatorKind kind, uint a, uint b) =>
-        kind
-            switch {
-                BinaryOperatorKind.Add => a
-                    + b,
-                BinaryOperatorKind.Subtract => a - b,
-                BinaryOperatorKind.Multiply => a * b,
-                BinaryOperatorKind
-                    .Divide => a / b,
-                BinaryOperatorKind.Modulo => a % b,
-                BinaryOperatorKind.BitwiseAnd => a & b,
-                BinaryOperatorKind.BitwiseOr => a | b,
-                BinaryOperatorKind.BitwiseXor => a ^ b,
-                BinaryOperatorKind.Equal => a == b,
-                BinaryOperatorKind.NotEqual => a != b,
-                BinaryOperatorKind.LessThan => a < b,
-                BinaryOperatorKind.LessThanOrEqual => a <= b,
-                BinaryOperatorKind.GreaterThan => a > b,
-                BinaryOperatorKind.GreaterThanOrEqual => a >= b,
-                _ => EvaluateUIntShift(kind, a, (int)b)
-            };
+    static object?
+        EvaluateUInt(BinaryOperatorKind kind, uint a, uint b) =>
+        kind switch {
+            BinaryOperatorKind.Add => a + b,
+            BinaryOperatorKind.Subtract => a - b,
+            BinaryOperatorKind.Multiply => a * b,
+            BinaryOperatorKind.Divide =>
+                a / b,
+            BinaryOperatorKind.Modulo => a % b,
+            BinaryOperatorKind.BitwiseAnd => a & b,
+            BinaryOperatorKind.BitwiseOr => a | b,
+            BinaryOperatorKind.BitwiseXor => a ^ b,
+            BinaryOperatorKind.Equal => a == b,
+            BinaryOperatorKind.NotEqual => a != b,
+            BinaryOperatorKind.LessThan => a < b,
+            BinaryOperatorKind.LessThanOrEqual => a <= b,
+            BinaryOperatorKind.GreaterThan => a > b,
+            BinaryOperatorKind.GreaterThanOrEqual => a >= b,
+            _ => EvaluateUIntShift(
+                kind,
+                a,
+                (int)b
+            )
+        };
 
-    static object
-        ? EvaluateUIntShift(BinaryOperatorKind kind, uint a, int b) =>
+    static object?
+        EvaluateUIntShift(BinaryOperatorKind kind, uint a, int b) =>
         kind switch {
             BinaryOperatorKind.LeftShift => a << b,
             BinaryOperatorKind.RightShift => a >> b,
-            BinaryOperatorKind.UnsignedRightShift =>
-                a >>> b,
+            BinaryOperatorKind.UnsignedRightShift => a >>> b,
             _ => null
         };
 
@@ -238,8 +242,8 @@ internal static class ConstantEvaluator {
             BinaryOperatorKind.Add => a + b,
             BinaryOperatorKind.Subtract => a - b,
             BinaryOperatorKind.Multiply => a * b,
-            BinaryOperatorKind.Divide => a
-                / b,
+            BinaryOperatorKind.Divide
+                => a / b,
             BinaryOperatorKind.Modulo => a % b,
             _ => null
         };
@@ -247,8 +251,8 @@ internal static class ConstantEvaluator {
     static
         object? EvaluateComparison(BinaryOperatorKind kind, double a, double b) =>
         kind switch {
-            BinaryOperatorKind
-                .Equal => a == b,
+            BinaryOperatorKind.Equal =>
+                a == b,
             BinaryOperatorKind.NotEqual => a != b,
             BinaryOperatorKind.LessThan => a < b,
             BinaryOperatorKind.LessThanOrEqual => a <= b,

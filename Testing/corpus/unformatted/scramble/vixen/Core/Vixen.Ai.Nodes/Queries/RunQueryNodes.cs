@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
-// SPDX-License-Identifier: Apache-2.0
-using System. Runtime    .    CompilerServices;
-           using    System   .  Runtime
-.InteropServices ;
-		using Vixen
-.Core;
-      using Vixen.  Core .   Mathematics; using  Vixen.  Engine.Transforms;
-namespace Vixen.
- Ai.    Nodes;
-
+         // SPDX-License-Identifier: Apache-2.0
+             
+        using System.Runtime.CompilerServices;
+          using System    .    Runtime
+.InteropServices    ;
+using   Vixen
+.  Core;
+           using Vixen.Core.Mathematics;  using Vixen   .Engine .  Transforms;
+namespace  Vixen.
+		Ai.Nodes;
 /// <summary>Where a query run gets its origin, and where its answer goes.</summary>
 /// <param name="Query">The query to run.</param>
 /// <param name="Context">A key naming what the query is about, or invalid for none.</param>
@@ -31,14 +31,14 @@ namespace Vixen.
 ///         nullable for the same reason and it cost a failing test to find there too.
 ///     </para>
 /// </remarks>
-public    readonly  record struct QueryBinding(
-			EnvironmentQuery   Query,
-        BlackboardKey? Context =
-         null  ,
-               BlackboardKey    ?    Result = null,
-             BlackboardKey? ResultEntity = null
-);
-               
+public readonly record    struct QueryBinding    (
+      EnvironmentQuery  Query,
+    BlackboardKey? Context   =   
+ null,
+    BlackboardKey? Result =  null    ,
+BlackboardKey    ? ResultEntity = null
+			);
+        
 /// <summary>Runs an environment query now, and writes the best point to a key.</summary>
 /// <remarks>
 ///     <para>
@@ -55,30 +55,31 @@ public    readonly  record struct QueryBinding(
 ///     </para>
 /// </remarks>
 /// <param name="binding">What to run, and where the answer goes.</param>
-          public    sealed class RunQueryTask (
-QueryBinding binding) : IAgentAction {   
-readonly
-  QueryResults  results = new(    );
-  
+         public sealed class RunQueryTask(
+               QueryBinding    binding) : IAgentAction {
+             readonly
+QueryResults results = new(  );
+               
     /// <summary>How many bytes it needs: the run it has already done, so a retry is not a re-query.</summary>
-    public static int StateSize => Unsafe    .   SizeOf<int    >
-      ();
-
+          public static int    StateSize => Unsafe.SizeOf<int    >
+(   );
     /// <summary>What the last run produced. What the editor's preview and a test read.</summary>
-        public  QueryResults Results => results;
-  
+public QueryResults    Results => results  ;
     /// <inheritdoc />
-public
-void Start(in AgentContext context, Span  <byte> state    ) => MemoryMarshal   . AsRef<int  >    (state) = 0;
+  public
+  void Start(in AgentContext context, Span <byte> state  ) => MemoryMarshal.    AsRef< int   > (state)  =    0;
+    
     /// <inheritdoc />
-               public ActionStatus   Tick( in AgentContext context
-      , Span<   byte   > state, float delta) => 
-       QueryRunner .
-    Run(in   context, in binding, results) ? ActionStatus.    Succeeded : ActionStatus  .    Failed;
+      public ActionStatus Tick(in AgentContext   context
+, Span <byte> state,   float   delta) =>
+        QueryRunner.
+  Run(in context , in binding   , results) ? ActionStatus.Succeeded : ActionStatus.    Failed;
+
     /// <inheritdoc />
-               public void   Abort  ( in   AgentContext context,  Span<    byte> state   ) {
-     }
-   }
+    public void  Abort    (in AgentContext   context  , Span   < byte>  state)    {   
+               }
+      }
+       
 /// <summary>Runs an environment query on a schedule and keeps a key pointed at the best answer.</summary>
 /// <remarks>
 ///     <para>
@@ -94,56 +95,56 @@ void Start(in AgentContext context, Span  <byte> state    ) => MemoryMarshal   .
 ///     </para>
 /// </remarks>
 /// <param name="binding">What to run, and where the answer goes.</param>
-            public sealed    class    RunQueryService    ( QueryBinding   binding  )  : BehaviorService { readonly    QueryResults results    = new() ;
+    public sealed class   RunQueryService(QueryBinding    binding    )    : BehaviorService   {  readonly  QueryResults results = new    ()    ;
+               
     /// <summary>What the last run produced.</summary>
-    public QueryResults
-Results => results;
-
+     public QueryResults
+   Results => results ;
     /// <inheritdoc />
-    public  override    void Tick(in BehaviorContext  context    ,    Span<   byte> state  ,   float delta)
-         {
+            public override void Tick(  in    BehaviorContext context, Span<  byte    >    state,   float delta)
+{
         var
-      agent = context.Agent;
-	
-        if (QueryRunner.Run(in   agent, in binding   , results)    )  {  
-                return;
-  }
-       if (binding    .Result is  {   IsValid  : true } result
-			) {
-           agent.Blackboard.Clear(result); }
-                
-if (binding . ResultEntity is { IsValid: true }    named) {   agent. Blackboard. Clear(named);
-     }
-    }  }
+agent  =   context.Agent; 
+    if (QueryRunner.Run(in agent, in binding   , results))   {
+         return;
+        }
+      
+	if (    binding  .Result is {    IsValid: true }  result   )
+{
+                agent  . Blackboard .Clear(result); }
+  
+       if (binding.ResultEntity is { IsValid: true } named) { agent.Blackboard    .Clear(   named) ;
+			}
+           } }
 /// <summary>The half a task and a service share: build the origin, run, write the keys.</summary>
-static
-  class QueryRunner {
-    public static bool Run(    in  AgentContext  context    ,   in QueryBinding binding,    QueryResults results) {
-      if (   binding.Query is   null || !context.World. Has<LocalTransform>   (context  . Entity    )) { return false;
-         }
-        var  here   =   context   .World   .
- Read<LocalTransform  >   (   context.    Entity)  .Position;
-      var  origin = new    QueryOrigin(here, Vector3
-       . Zero)  ;
-                if (binding    .    Context  is { IsValid:   
-         true }   about 
-        && AgentTarget   .TryResolve    (in context  ,  about   ,  out var  at  , out    var entity))   { origin = new(  here   ,   at,   true,  entity  )   ;
-     }  
-          
-        if (    ! binding.    Query    . Run(in context , in origin, results) || !results.TryBest(  out var best  )    )    { return false;
-               }
-         if
-			(binding.Result is { IsValid: true  }    result) {
-               context. Blackboard  .  SetVector3(result, best
-            .Position    );
-         
-      }
-             
-    if (    binding.ResultEntity is not { IsValid: true } named) { return true;
+                static class QueryRunner
+{
+     public static
+bool Run(  in AgentContext context, in QueryBinding binding    ,  QueryResults  results    )   {  
+        if (binding.    Query is null || !   context.World.   Has<LocalTransform>(context. Entity)) {   return false  ;
+  }
+        var here    = context .World .Read  <
+      LocalTransform   >   (   context.   Entity).  Position   ;
+         var
+origin   = new    QueryOrigin(  here, Vector3  . Zero)    ;
+ 
+      if (binding.Context is {  IsValid: true }    about
+       &&    AgentTarget  .TryResolve(in context   , about   , out    var at ,  out  var   entity  ))  {  origin =    new(here,   at , true, entity  )   ;
                 }
-          if
-         (    best.Entity  .IsNull    ) {
- context    .Blackboard.Clear(named  ); } else {
-    context.  Blackboard.SetEntity(named, best.  Entity)  ;   }
- return true   ; 
-           }    }
+         
+        if   (!   binding.  Query  .   Run(    in context,    in    origin , results) || !results.TryBest(out var best)) { return  false;
+     }
+          if (  binding    .
+Result    is { IsValid: true } result) {
+               context.Blackboard.SetVector3  (    result, best. Position  )  ;
+         }
+			
+               if (binding.ResultEntity is    not { IsValid:    true } named) { return true;
+            }
+         if (   
+      best.Entity.IsNull) { 
+             context.    Blackboard.Clear  (named    ) ;    } else {
+    context.Blackboard.  SetEntity(named, best.  Entity); }  
+                return true;
+          } }
+         

@@ -1,6 +1,7 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
+
 
 using System.Runtime.InteropServices;
 
@@ -106,7 +107,6 @@ public sealed partial class LayoutTree {
 
         foreach (var index in queue) {
             // The slot may have been destroyed, or destroyed and handed to a new node, since it was
-
             // queued. Both are caught here: `CreateNode` clears the flag it would have inherited.
             if ((flags[index] & (LayoutNodeState.Live | LayoutNodeState.ChildOrderStale))
                 == (LayoutNodeState.Live | LayoutNodeState.ChildOrderStale)) {
@@ -119,13 +119,15 @@ public sealed partial class LayoutTree {
 
     /// <summary>Sorts one node's children into order-modified document order.</summary>
     void RebuildChildOrder(
-        int index
+        int
+            index
     ) {
         flags[index] &= ~LayoutNodeState.ChildOrderStale;
+
         var count = links[index].ChildCount;
         if (count <= 1 || !AnyChildIsOrdered(index, count)) {
-            // Every item defaulted, so order-modified document order *is* document order and the
-            // block would be a copy of one that already exists. Handing it back is what makes
+// Every item defaulted, so order-modified document order *is* document order and the
+// block would be a copy of one that already exists. Handing it back is what makes
             // `order-0` on the last styled child cost nothing afterwards.
             ReleaseOrderedBlock(index);
             return;
@@ -134,7 +136,8 @@ public sealed partial class LayoutTree {
         // Allocated before either span is taken: this is the call that can move the arena.
         EnsureOrderedCapacity(index, count);
 
-        if (orderKeys.Length < count) {
+        if (orderKeys.Length
+            < count) {
             Array.Resize(ref orderKeys, int.Max(count, orderKeys.Length * 2));
         }
 
@@ -145,22 +148,22 @@ public sealed partial class LayoutTree {
             // ⚠ <b>The document position is packed into the low half of the key, which is what makes
             // this stable.</b> `Span.Sort` is an introsort and introsort is not stable, so two items
             // with the same `order` would otherwise come out in whichever arrangement the
-// partitioning happened to leave them in — the classic bug in this property, and one
+            // partitioning happened to leave them in — the classic bug in this property, and one
             // that hides until a list has enough equal-order items to trip the quicksort path.
             // Distinct keys mean the comparison never has a tie to resolve, so stability stops
             // depending on the algorithm at all.
-            keys[i] = ((long)styles[target[i]].Order << 32)
-                | (uint)
-                i;
+            keys[i] = ((long)styles[target[i]].Order << 32) | (uint)i
+                ;
         }
 
-        keys.Sort(target);
+        keys.Sort(target)
+            ;
     }
 
     bool AnyChildIsOrdered(int index, int count) {
         foreach (var child in children.Slice(links[index].ChildOffset, count)) {
-            if
-                (styles[child].Order != 0) {
+            if (
+                styles[child].Order != 0) {
                 return true;
             }
         }
@@ -168,10 +171,13 @@ public sealed partial class LayoutTree {
         return false;
     }
 
-    void EnsureOrderedCapacity(int index, int count) {
+    void EnsureOrderedCapacity(
+        int index,
+        int count
+    ) {
         if (orderedChildren is null) {
-            orderedChildren
-                = new OrderedChildren[capacity];
+            orderedChildren =
+                new OrderedChildren[capacity];
             ClearOrderedRange(orderedChildren, 0);
         }
 
@@ -179,11 +185,12 @@ public sealed partial class LayoutTree {
         while (ordered.Capacity < count) {
             // A live count of zero: nothing in the old block is worth copying, because every id is
             // about to be written over from the document block.
-            var
-                grown = children.Grow(ordered.Offset, 0, ordered.Capacity);
+            var grown
+                = children.Grow(ordered.Offset, 0, ordered.Capacity);
+
             ordered.Offset = grown.Offset;
-            ordered.Capacity
-                = grown.Capacity;
+            ordered.Capacity =
+                grown.Capacity;
         }
     }
 
@@ -191,6 +198,7 @@ public sealed partial class LayoutTree {
         if (orderedChildren is null) {
             return;
         }
+
 
         ref var ordered = ref orderedChildren[index];
         children.Free(ordered.Offset, ordered.Capacity);
@@ -200,8 +208,8 @@ public sealed partial class LayoutTree {
     /// <summary>Marks slots from <paramref name="from" /> up as having no ordered block.</summary>
     /// <remarks>Zero is a valid arena offset, so "none" has to be -1 and cannot be <c>default</c>.</remarks>
     static void ClearOrderedRange(
-        OrderedChildren
-            [] array,
+        OrderedChildren[
+        ] array,
         int from
     ) {
         for (var i = from; i < array.Length; i++) {
