@@ -7333,6 +7333,7 @@ writes; and `namespace N2 { /* b3 */` followed by a blank line, which it does no
 - options: none.
 - ⚠ status: **resolved** (#429). Pinned by `TopLevelLinesIssue429Tests` and
   `constructs/breaks/top-level-lines.cs`.
+
 ## SK-DIV-0187 — a `[CallerArgumentExpression]` argument is left as written; the oracle formats it
 
 A `[CallerArgumentExpression]` parameter receives its argument's source text, whitespace and line
@@ -7388,3 +7389,37 @@ written for it: **9 of its 36 oracle lines** diverge, and every one is a capture
 
 - options: none.
 - ⚠ status: **deliberate**.
+
+## SK-DIV-0196 — a blank line inside a construct was kept; the oracle keeps one only before a line of its own
+
+#426 reported the blank line between a trailing comment and `)` kept (`M(1, 2 // e` / blank / `);`).
+⚠ **The comment was incidental.** Without it the break before `)` is joined and the question never
+arises; with it, or anywhere else a break inside a construct survives, Skala capped the author's run by
+`keep_blank_lines_in_code` and kept it. Measured with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`,
+at the export, at `remove_blank_lines_near_braces_in_code = false` and at both keep keys `= 0`:
+
+| gap | oracle |
+|---|---|
+| between the items of a chopped argument, parameter, attribute, type-argument, base or declarator list, after its `(`, before its `)` / `]` / `>` — with a `//`, a `/* */` or no comment | removed |
+| inside an object, collection, array, anonymous or `with` initializer, a property pattern, a tuple, a chain, a query, a conditional, a constraint list; after `=`, `=>`, `return`, `await`; between two attribute lists; before a statement's `;` | removed |
+| before a statement, a member, an accessor, a switch section or label, a switch expression arm, a collection-expression element, `else` | kept, capped |
+| before an own-line comment, and between two comments | kept |
+| after a `//` comment inside an initializer, an anonymous object or a property pattern (`1, // e` / blank / `2`, `{ // e` / blank / `1`) | kept; before its `}`, kept exactly when the near-brace removal is off |
+| after a `//` comment in an argument list, an element access, a type-argument or attribute list, a conditional | removed |
+| before a collection expression's `]`, after its `[` | removed at `remove_blank_lines_near_braces_in_code = true`, kept at `false` — as a `}` |
+
+`CSharpDocumentBuilder.BlankLineMayStandBefore` reads the next token: the cap is zero unless the token
+begins one of the kept constructs, opens or closes a body the near-brace keys own, or follows a `//`
+inside braces. `RemovesNearBrace` treats a collection expression's brackets as braces.
+
+Not this entry, measured beside it and left open: at `keep_blank_lines_in_code = 0` the oracle still keeps
+one blank line before an own-line comment — in an argument list, an initializer, a parameter list and
+between two statements alike — where Skala's cap removes it; and at the export it reduces three blank
+lines before such a comment in an argument list to one where Skala keeps two. Also #441 (a requirement
+paid against the body's own brace when the near-brace removal is off) and #442 (a kept `)` of a tuple, a
+`typeof` or a `lock` header at another column), both filed.
+
+- options: `skala_keep_blank_lines_in_code`, `skala_keep_blank_lines_in_declarations`,
+  `skala_remove_blank_lines_near_braces_in_code`
+- ⚠ status: **resolved** (#426), with the rows above open. Pinned by
+  `BlankLineInsideAConstructIssue426Tests` and `constructs/blank-lines/a-blank-line-inside-a-construct.cs`.
