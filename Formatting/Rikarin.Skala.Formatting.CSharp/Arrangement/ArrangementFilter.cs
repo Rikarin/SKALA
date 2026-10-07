@@ -39,8 +39,9 @@ public sealed record ArrangementFilter(ImmutableHashSet<string> Include, Immutab
     ///         <c>NUnit.Framework</c> does not resolve there. Skala keeps it, because
     ///         <see cref="UsingsRule.Unused" /> removes only what the compiler reports as <c>CS8019</c> with
     ///         no error on the directive's own span, and an unresolvable using carries <c>CS0246</c> there —
-    ///         beside a <c>CS8019</c>, which is why the second predicate exists (#381). Scoring Skala against that would reward deleting usings
-    ///         whose packages are missing, which is the opposite of the rule's contract. The rule is pinned
+    ///         beside a <c>CS8019</c>, which is why the second predicate exists (#381). Scoring Skala against
+    ///         that would reward deleting usings whose packages are missing, which is the opposite of the
+    ///         rule's contract. The rule is pinned
     ///         by <c>constructs/arrangement/usings/</c>, where every namespace resolves inside the corpus
     ///         itself and the oracle's answer is trustworthy.
     ///     </para>
