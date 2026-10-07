@@ -5,6 +5,8 @@ namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>The standalone arrangement command's project-loading contract.</summary>
 public sealed class ArrangeCommandTests {
+    const string Command = "arrange";
+
     [Fact]
     public void DefaultArrange_ClearsTheSemanticFindingReportedByDefaultVerify() {
         using var scratch = new Scratch();
@@ -45,7 +47,7 @@ public sealed class ArrangeCommandTests {
             """
         );
 
-        var arranged = CliRunner.Run("arrange", caller);
+        var arranged = CliRunner.Run(Command, caller);
 
         Assert.Equal(0, arranged.ExitCode);
         Assert.Contains("Callee.Sum(first: 1, second: 2)", File.ReadAllText(caller), StringComparison.Ordinal);
@@ -53,6 +55,45 @@ public sealed class ArrangeCommandTests {
         var verified = CliRunner.Run("verify", caller, "--no-cache");
 
         Assert.DoesNotContain("SK0216", verified.StandardOutput, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Redundant parentheses go with no flag, and <c>--aggressive</c> — the flag that once gated
+    ///     them — is rejected rather than silently accepted.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #389: the gate was lifted and the flag stayed, parsed and inert, while <c>--help</c> and
+    ///     <c>SK0209</c>'s catalogue text went on saying removal was off without it. Both halves are
+    ///     here because each catches a different way back: re-adding the option fails the exit-code
+    ///     assertion, and re-gating the rule fails the first one.
+    /// </remarks>
+    [Fact]
+    public void Arrange_RemovesRedundantParenthesesByDefault_AndHasNoAggressiveFlag() {
+        using var scratch = new Scratch();
+        var file = scratch.Write(
+            "Sum.cs",
+            """
+            namespace P;
+
+            public static class Sum {
+                public static int Of(int a, int b) => (a + b);
+            }
+            """
+        );
+
+        var arranged = CliRunner.Run(Command, "--load=none", "--include", "SK0209", file);
+
+        Assert.Equal(0, arranged.ExitCode);
+        Assert.Contains("=> a + b;", File.ReadAllText(file), StringComparison.Ordinal);
+
+        var rejected = CliRunner.Run(Command, "--check", "--load=none", "--aggressive", file);
+
+        Assert.Equal(3, rejected.ExitCode);
+        Assert.Contains(
+            "Unrecognized option '--aggressive'",
+            rejected.StandardOutput + rejected.StandardError,
+            StringComparison.Ordinal
+        );
     }
 
     /// <summary>
@@ -118,7 +159,7 @@ public sealed class ArrangeCommandTests {
             """
         );
 
-        var arranged = RunIn(Path.Combine(scratch.Root, "App"), "arrange");
+        var arranged = RunIn(Path.Combine(scratch.Root, "App"), Command);
 
         Assert.Equal(0, arranged.ExitCode);
         var rewritten = File.ReadAllText(caller);
@@ -148,13 +189,13 @@ public sealed class ArrangeCommandTests {
         // LoadRequest.BinlogPath, since nothing else in the run knows this file.
         var named = scratch.Write("named.binlog", "not a binary log");
 
-        var withBinlog = CliRunner.Run("arrange", "--check", "--load=binlog", "--binlog", named, file);
+        var withBinlog = CliRunner.Run(Command, "--check", "--load=binlog", "--binlog", named, file);
 
         Assert.DoesNotContain("Unrecognized command or argument", withBinlog.StandardError, StringComparison.Ordinal);
         Assert.Contains(named, withBinlog.StandardOutput + withBinlog.StandardError, StringComparison.Ordinal);
 
         var withFresh = CliRunner.Run(
-            "arrange",
+            Command,
             "--check",
             "--load=binlog",
             "--binlog",

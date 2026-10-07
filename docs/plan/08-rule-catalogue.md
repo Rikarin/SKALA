@@ -129,7 +129,7 @@ overlapping arrangement rules may contribute to one document rewrite.
 | `SK0206` | Empty literal versus `string.Empty` | Semantic |
 | `SK0207` | Instance-member `this.` qualifier | Semantic |
 | `SK0208` | Redundant control-statement braces | Syntax |
-| `SK0209` | Redundant parentheses (`arrange --aggressive`) | Syntax |
+| `SK0209` | Redundant parentheses | Syntax |
 | `SK0210` | Using sorting, placement and removal | Syntax, with semantic removal when loaded |
 | `SK0211` | Predefined keyword versus framework type name | Semantic |
 | `SK0212` | Redundant accessibility modifier | Syntax |
@@ -7136,10 +7136,12 @@ an unparenthesised binary expression of a different precedence family.
 
 ⚠ **`SK2174` could not ship until the `SK0209` boundary was settled, and it is settled by
 construction rather than by agreement.** `skala arrange` removes redundant parentheses;
-`ParenthesesRedundancy.MayRemove` refuses unconditionally when the parent is a shift or a bitwise
+`ParenthesesRedundancy.MayRemove` refuses when the parent is a shift or a bitwise
 operator, because `resharper_parentheses_non_obvious_operations` names exactly those. Every pair of
-parentheses `SK2174` adds has such a parent, so the arranger will never take one back and
-`skala fix` and `skala arrange --aggressive` cannot fight. ⚠ **The other direction was checked
+parentheses `SK2174` adds has such a parent, so the arranger will not take one back. ⚠ **Refuted as
+"unconditional", which this used to say**: it holds at the default
+`skala_parentheses_redundancy_style = remove_if_not_clarifies_precedence` only. At `remove` the
+arranger strips them as the oracle does, and `skala fix` and `skala arrange` undo each other (#394). ⚠ **The other direction was checked
 too**: `CodeCleanupTask_AddMissingParentheses` exists in the oracle and **no committed profile
 enables it**, so the formatter is not already doing this.
 

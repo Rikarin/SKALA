@@ -23,9 +23,6 @@ public sealed record ArrangeRequest {
     /// <summary><c>a:b</c> — character offsets, over a real edit-to-span map.</summary>
     public string? Range { get; init; }
 
-    /// <summary>⚠ Turns on parenthesis removal. docs/plan/06 gates it for the first release.</summary>
-    public bool Aggressive { get; init; }
-
     public IReadOnlyList<string> Include { get; init; } = [];
 
     public IReadOnlyList<string> Exclude { get; init; } = [];
@@ -95,8 +92,7 @@ public static class ArrangeCommand {
                 var options = ConfigurationCache.Options(EditorConfigChain.For(file), request.Overrides);
                 var arrangement = new ArrangementOptions(
                     options,
-                    compilations.Count > 0 ? ArrangementScope.Full : ArrangementScope.Syntactic,
-                    request.Aggressive
+                    compilations.Count > 0 ? ArrangementScope.Full : ArrangementScope.Syntactic
                 );
 
                 var owning = Owning(compilations, file);

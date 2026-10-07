@@ -188,13 +188,12 @@ public static class ArrangementDifferential {
     public static PipelineResult Run(
         CorpusFile file,
         CSharpCompilation compilation,
-        bool aggressive = false,
         ArrangementFilter? filter = null,
         IReadOnlyList<string>? symbols = null
     ) {
         var text = CSharpFormatter.Read(file.Path);
         var resolved = OptionResolver.Resolve(file.Path).Options;
-        var arrangement = new ArrangementOptions(resolved, ArrangementScope.Full, aggressive);
+        var arrangement = new ArrangementOptions(resolved);
         var removable = Removable(compilation, file.Path);
         return ArrangementPipeline.Run(
             file.Path,
@@ -234,7 +233,6 @@ public static class ArrangementDifferential {
 
     public static ArrangementReport Measure(
         IReadOnlyList<CorpusFile> files,
-        bool aggressive = false,
         ArrangementFilter? filter = null,
         TextWriter? log = null
     ) {
@@ -261,7 +259,7 @@ public static class ArrangementDifferential {
 
             var original = CSharpFormatter.Read(file.Path).ToString();
             var oracle = OracleFixture.Read(file, OracleProfile.Cleanup);
-            var result = Run(file, compilation, aggressive, filter);
+            var result = Run(file, compilation, filter);
             passes[result.Passes] = passes.GetValueOrDefault(result.Passes) + 1;
             if (!result.Converged) {
                 notConverged++;

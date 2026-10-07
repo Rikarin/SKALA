@@ -149,7 +149,7 @@ public static class ArrangeTree {
         return $"no reportable file matching '{needle}'";
     }
 
-    public static TreeReport Run(string root, string mode, bool aggressive, int limit, TextWriter log) {
+    public static TreeReport Run(string root, string mode, int limit, TextWriter log) {
         var loaded = ProjectLoader.Load(new LoadRequest { RepositoryRoot = root, Mode = LoadModes.Parse(mode) });
         log.WriteLine(loaded.Summary);
 
@@ -197,7 +197,7 @@ public static class ArrangeTree {
                 file,
                 text,
                 new PhaseOneOptions(options),
-                new ArrangementOptions(options, ArrangementScope.Full, aggressive),
+                new ArrangementOptions(options),
                 units[0].Compilation,
                 Removable(units, file),
                 (rewritten, _) => Removable(units, file, rewritten),

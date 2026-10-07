@@ -28,13 +28,8 @@ public enum ArrangementScope {
 ///     thing that implements it — is two structs and two coverage lists.
 /// </remarks>
 public readonly struct ArrangementOptions {
-    public ArrangementOptions(
-        in FormattingOptions options,
-        ArrangementScope scope = ArrangementScope.Full,
-        bool aggressive = false
-    ) {
+    public ArrangementOptions(in FormattingOptions options, ArrangementScope scope = ArrangementScope.Full) {
         Scope = scope;
-        Aggressive = aggressive;
 
         MethodOrOperatorBody = (BodyStyle)options.GetRaw(Ids.MethodOrOperatorBody);
         LocalFunctionBody = (BodyStyle)options.GetRaw(Ids.LocalFunctionBody);
@@ -110,13 +105,6 @@ public readonly struct ArrangementOptions {
     }
 
     public ArrangementScope Scope { get; }
-
-    /// <summary>
-    ///     ⚠ Parenthesis removal only. docs/plan/06 § "Qualification and redundancy": it is the
-    ///     highest-risk rewrite in the tool and it is gated for the first release regardless of what the
-    ///     export says, and revisited when the corpus differential shows zero divergences.
-    /// </summary>
-    public bool Aggressive { get; }
 
     public BodyStyle MethodOrOperatorBody { get; }
     public BodyStyle LocalFunctionBody { get; }

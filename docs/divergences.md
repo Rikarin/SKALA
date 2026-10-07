@@ -1273,6 +1273,15 @@ checked rather than asserted. The gate was protecting against a mechanism that i
 comparable with the pair above: the cleanup profile has since gained `ArrangeNamespaces` and
 `ArrangeArgumentsStyle`, so the oracle changes more and there are more spans to agree about.
 
+⚠ **The flag outlived the gate, and #389 removed it.** Lifting the gate left `skala arrange
+--aggressive` parsed and passed through to a check that short-circuited on a `const true`, so it
+changed nothing — measured on a copy of `Testing/corpus/real`, the run with it and the run without
+it were byte-identical, 116 `SK0209` removals each. Its `--help` text still said removal was off by
+default, `rules.json` still said the rule was off without it, and a brief written from that help text
+told an agent the opposite of what the tool does. The flag, `ArrangementOptions.Aggressive`,
+`ArrangementRule.IsAggressive` and the `RemovalIsDefault` switch are gone, as are the harness's
+`arrangement --aggressive` and `arrange-tree --aggressive`, which fed the same dead branch.
+
 - options: `dotnet_style_parentheses_in_arithmetic_binary_operators`, `dotnet_style_parentheses_in_other_binary_operators`, `skala_parentheses_redundancy_style`
 
 ## SK-DIV-0015 — the oracle inserts a blank line before the first type; Skala preserves the source

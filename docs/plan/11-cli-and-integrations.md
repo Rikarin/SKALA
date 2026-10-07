@@ -73,9 +73,11 @@ subset that works on a loose file an agent just wrote. `arrange` says out loud h
 no compilation for, because a syntactic run quietly doing a third of the catalogue looks exactly like
 a full run that found little to do.
 
-⚠ **`arrange --aggressive`** is parenthesis removal and nothing else. The oracle's own cleanup profile
-performs it and Skala's default does not; the gate costs a measured 4.02 points of changed-span
-agreement (SK-DIV-0014), which is the price of the caution rather than a hidden disagreement.
+⚠ **There is no `arrange --aggressive`.** It gated parenthesis removal (SK-DIV-0014); the gate was
+lifted because it cost 4.25 points of changed-span agreement against an oracle that removes these by
+default, and the flag then sat parsed and inert until #389 removed it. Parenthesis removal (`SK0209`)
+runs by default and is configured by `skala_parentheses_redundancy_style` and the
+`dotnet_style_parentheses_in_*` keys; `--exclude SK0209` keeps every parenthesis.
 
 ⚠ **`format --no-xmldoc`** switches the documentation-comment sub-formatter off, and it is the one
 flag on this page whose polarity is a correction rather than a design. It shipped as `--xmldoc`, on

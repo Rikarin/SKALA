@@ -181,7 +181,8 @@ was the wrong test, because a gated rule contributes divergences by being gated.
 the price, measured both ways over 401 corpus files against the cleanup profile: **59.43 % agreed
 with the gate on, 63.68 % with it off**, so the gate cost 4.25 points against an oracle whose own
 profile removes these by default. [17](17-inspection-parity.md) then made it the largest single item
-in the whole parity measurement. SK-DIV-0014 is retired.
+in the whole parity measurement. SK-DIV-0014 is retired, and the flag itself — inert since the gate
+was lifted — was removed by #389.
 
 ⚠ **What actually justified lifting it is not the number — it is that the rule no longer guesses.**
 The gated version carried a precedence table and was arithmetic-only, because a table is exactly as

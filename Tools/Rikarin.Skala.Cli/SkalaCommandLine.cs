@@ -343,15 +343,6 @@ public static partial class SkalaCommandLine {
         var quiet = new Option<bool>("--quiet") { Description = "Print nothing but diagnostics." };
         var range = new Option<string?>("--range") { Description = "a:b — character offsets." };
 
-        // ⚠ docs/plan/06 § "Qualification and redundancy": parenthesis removal is the highest-risk
-        // rewrite in the tool, the oracle's own cleanup profile performs it, and Skala gates it for
-        // the first release regardless. The cost of the gate is measured, not assumed — see the M4
-        // numbers in docs/plan/15.
-        var aggressive = new Option<bool>("--aggressive") {
-            Description =
-                "Also remove redundant parentheses. Off by default; the export asks for it and Skala does not."
-        };
-
         var include = new Option<string[]>("--include") {
             Description = "Only these rule ids (SK0201…). Repeatable.", Arity = ArgumentArity.ZeroOrMore
         };
@@ -403,8 +394,7 @@ public static partial class SkalaCommandLine {
         // until there are fourteen of them, at which point SK7020 calls the run a clone of
         // `format`'s — correctly, since the two differ only in the identifiers.
         foreach (var declared in new Option[] {
-                     check, diff, quiet, range, aggressive, include, exclude, option, define, load, project, binlog,
-                     requireFresh
+                     check, diff, quiet, range, include, exclude, option, define, load, project, binlog, requireFresh
                  }) {
             command.Options.Add(declared);
         }
@@ -434,7 +424,6 @@ public static partial class SkalaCommandLine {
                     Diff = parse.GetValue(diff),
                     Quiet = parse.GetValue(quiet),
                     Range = parse.GetValue(range),
-                    Aggressive = parse.GetValue(aggressive),
                     Include = parse.GetValue(include) ?? [],
                     Exclude = parse.GetValue(exclude) ?? [],
                     Overrides = ParseOverrides(parse.GetValue(option)),

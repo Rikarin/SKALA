@@ -43,12 +43,11 @@ public sealed class ArrangementRuleTests {
     /// </param>
     static string Arrange(
         string source,
-        bool aggressive = false,
         string? only = null,
         bool removeUnused = false,
         IReadOnlyList<KeyValuePair<string, string>>? overrides = null
     ) {
-        var result = Attempt(source, aggressive, only, removeUnused, overrides);
+        var result = Attempt(source, only, removeUnused, overrides);
         Assert.NotEqual(ArrangementOutcome.Reverted, result.Outcome);
         return result.Text;
     }
@@ -68,7 +67,6 @@ public sealed class ArrangementRuleTests {
     /// </remarks>
     static ArrangementResult Attempt(
         string source,
-        bool aggressive = false,
         string? only = null,
         bool removeUnused = false,
         IReadOnlyList<KeyValuePair<string, string>>? overrides = null
@@ -110,7 +108,7 @@ public sealed class ArrangementRuleTests {
         return Arranger.Arrange(
             path,
             text,
-            new ArrangementOptions(options, ArrangementScope.Full, aggressive),
+            new ArrangementOptions(options),
             compilation,
             removeUnused ? UsingsRule.Unused(compilation.GetSemanticModel(tree), tree) : null,
             null,
@@ -150,7 +148,7 @@ public sealed class ArrangementRuleTests {
                 public bool R(Plain? p) { return null != p; }
             }
             """,
-            only: ArrangeIds.NullCheckingPattern
+            ArrangeIds.NullCheckingPattern
         );
 
         Assert.Contains("p is not null", output, StringComparison.Ordinal);
@@ -174,7 +172,7 @@ public sealed class ArrangementRuleTests {
                               }
                               """;
 
-        Assert.Contains("b != null", Arrange(source, only: ArrangeIds.NullCheckingPattern), StringComparison.Ordinal);
+        Assert.Contains("b != null", Arrange(source, ArrangeIds.NullCheckingPattern), StringComparison.Ordinal);
     }
 
     /// <summary>⚠ An operator inherited from a base class applies to a derived operand.</summary>
@@ -194,7 +192,7 @@ public sealed class ArrangementRuleTests {
                               }
                               """;
 
-        Assert.Contains("d != null", Arrange(source, only: ArrangeIds.NullCheckingPattern), StringComparison.Ordinal);
+        Assert.Contains("d != null", Arrange(source, ArrangeIds.NullCheckingPattern), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -209,7 +207,7 @@ public sealed class ArrangementRuleTests {
             namespace P;
             public class C { public bool M(string? s) { return s != null; } }
             """,
-            only: ArrangeIds.NullCheckingPattern
+            ArrangeIds.NullCheckingPattern
         );
 
         Assert.Contains("s is not null", output, StringComparison.Ordinal);
@@ -240,7 +238,7 @@ public sealed class ArrangementRuleTests {
                   public Func<Row, bool> M() { return r => r.Banner == null; }
               }
               """,
-            only: ArrangeIds.NullCheckingPattern
+            ArrangeIds.NullCheckingPattern
         );
 
         Assert.Contains("r.Banner is null", output, StringComparison.Ordinal);
@@ -264,7 +262,7 @@ public sealed class ArrangementRuleTests {
                   {{member}}
               }
               """,
-            only: ArrangeIds.NullCheckingPattern
+            ArrangeIds.NullCheckingPattern
         );
 
         Assert.DoesNotContain("is null", Declined(result), StringComparison.Ordinal);
@@ -286,7 +284,7 @@ public sealed class ArrangementRuleTests {
                   public Expression<Func<Row, bool>> M() { return r => Apply(r, x => x.Banner == null); }
               }
               """,
-            only: ArrangeIds.NullCheckingPattern
+            ArrangeIds.NullCheckingPattern
         );
 
         Assert.DoesNotContain("is null", Declined(result), StringComparison.Ordinal);
@@ -308,7 +306,7 @@ public sealed class ArrangementRuleTests {
                   public bool Plain(Row? r) { return r != null; }
               }
               """,
-            only: ArrangeIds.NullCheckingPattern
+            ArrangeIds.NullCheckingPattern
         );
 
         var output = Declined(result);
@@ -336,7 +334,7 @@ public sealed class ArrangementRuleTests {
     public void EmptyString_BecomesTheLiteral_UnderEmptyLiteral() {
         var output = Arrange(
             EmptyStringProbe,
-            only: ArrangeIds.EmptyString,
+            ArrangeIds.EmptyString,
             overrides: [new KeyValuePair<string, string>("skala_empty_string", "empty_literal")]
         );
 
@@ -357,7 +355,7 @@ public sealed class ArrangementRuleTests {
     public void EmptyString_IsLeftAlone_UnderStringEmpty() {
         var output = Arrange(
             EmptyStringProbe,
-            only: ArrangeIds.EmptyString,
+            ArrangeIds.EmptyString,
             overrides: [new KeyValuePair<string, string>("skala_empty_string", "string_empty")]
         );
 
@@ -382,7 +380,7 @@ public sealed class ArrangementRuleTests {
                 }
             }
             """,
-            only: ArrangeIds.RedundantBraces
+            ArrangeIds.RedundantBraces
         );
 
         // The declaring block keeps its braces; the other loses them.
@@ -468,7 +466,7 @@ public sealed class ArrangementRuleTests {
                        }
                        """;
 
-        var arranged = Declined(Attempt(source, only: ArrangeIds.RedundantBraces));
+        var arranged = Declined(Attempt(source, ArrangeIds.RedundantBraces));
 
         // Both pairs survive: lifting either one collides with the other's names in the method body.
         Assert.Equal(2, CountBareBlocks(arranged));
@@ -521,7 +519,7 @@ public sealed class ArrangementRuleTests {
                     }
                 }
                 """,
-                only: ArrangeIds.RedundantBraces
+                ArrangeIds.RedundantBraces
             )
         );
 
@@ -536,7 +534,8 @@ public sealed class ArrangementRuleTests {
         // ⚠ This test asserted the opposite until the gate was lifted. SK-DIV-0014 gated parenthesis
         // removal behind `--aggressive` for the first release and named the condition for revisiting
         // it; the condition is met and the gate cost 4.25 points of changed-span agreement against an
-        // oracle whose own profile removes these by default.
+        // oracle whose own profile removes these by default. The flag outlived the gate as a no-op
+        // and #389 removed it.
         const string source = """
                               namespace P;
                               public class C {
@@ -547,7 +546,7 @@ public sealed class ArrangementRuleTests {
                               }
                               """;
 
-        var arranged = Arrange(source, only: ArrangeIds.RedundantParentheses);
+        var arranged = Arrange(source, ArrangeIds.RedundantParentheses);
         Assert.Contains("a + b * c", arranged, StringComparison.Ordinal);
 
         // ⚠ Never on the right of a non-associative operator: `a - (b - c)` is not `a - b - c`. The
@@ -575,7 +574,7 @@ public sealed class ArrangementRuleTests {
                 }
             }
             """,
-            only: ArrangeIds.Var
+            ArrangeIds.Var
         );
 
         Assert.Contains("IEnumerable<int> items", output, StringComparison.Ordinal);
@@ -630,7 +629,7 @@ public sealed class ArrangementRuleTests {
                 }
             }
             """,
-            only: ArrangeIds.ArgumentStyle
+            ArrangeIds.ArgumentStyle
         );
 
         // `second:` is out of position and must keep its name; everything after it must too, or the
@@ -652,7 +651,7 @@ public sealed class ArrangementRuleTests {
                 }
             }
             """,
-            only: ArrangeIds.ArgumentStyle
+            ArrangeIds.ArgumentStyle
         );
 
         Assert.Contains("Take(1, 2)", arranged, StringComparison.Ordinal);
@@ -700,7 +699,7 @@ public sealed class ArrangementRuleTests {
                     }
                 }
                 """,
-                only: ArrangeIds.ObjectCreation
+                ArrangeIds.ObjectCreation
             )
         );
 
@@ -735,7 +734,7 @@ public sealed class ArrangementRuleTests {
                     }
                 }
                 """,
-                only: ArrangeIds.ObjectCreation
+                ArrangeIds.ObjectCreation
             )
         );
 
@@ -755,7 +754,7 @@ public sealed class ArrangementRuleTests {
                 public class Y { }
             }
             """,
-            only: ArrangeIds.NamespaceBody
+            ArrangeIds.NamespaceBody
         );
 
         Assert.DoesNotContain("namespace A;", arranged, StringComparison.Ordinal);
@@ -805,7 +804,7 @@ public sealed class ArrangementRuleTests {
                     }
                 }
                 """,
-                only: ArrangeIds.NamespaceBody
+                ArrangeIds.NamespaceBody
             )
         );
 
@@ -826,7 +825,7 @@ public sealed class ArrangementRuleTests {
                 }
             }
             """,
-            only: ArrangeIds.NamespaceBody
+            ArrangeIds.NamespaceBody
         );
 
         Assert.Contains("namespace P;", arranged, StringComparison.Ordinal);
@@ -847,7 +846,7 @@ public sealed class ArrangementRuleTests {
                 public int Plain(int a, int b, int c) { return a + (b * c); }
             }
             """,
-            only: ArrangeIds.RedundantParentheses
+            ArrangeIds.RedundantParentheses
         );
 
         Assert.Contains("a & (b + 1)", arranged, StringComparison.Ordinal);
@@ -866,7 +865,7 @@ public sealed class ArrangementRuleTests {
                 public float M(float a, float x, float y) { return a * (x * y); }
             }
             """,
-            only: ArrangeIds.RedundantParentheses
+            ArrangeIds.RedundantParentheses
         );
 
         Assert.Contains("a * (x * y)", arranged, StringComparison.Ordinal);
@@ -887,7 +886,7 @@ public sealed class ArrangementRuleTests {
                 B,
             }
             """,
-            only: ArrangeIds.TrailingComma
+            ArrangeIds.TrailingComma
         );
 
         Assert.Contains("new[] { 1, 2, 3 }", arranged, StringComparison.Ordinal);
@@ -919,7 +918,7 @@ public sealed class ArrangementRuleTests {
                 public Hashtable H() => new();
             }
             """,
-            only: ArrangeIds.Usings
+            ArrangeIds.Usings
         );
 
         Assert.Contains("// keep me", arranged, StringComparison.Ordinal);
@@ -949,7 +948,7 @@ public sealed class ArrangementRuleTests {
                 public Hashtable H() => new();
             }
             """,
-            only: ArrangeIds.Usings
+            ArrangeIds.Usings
         );
 
         Assert.Contains("#if NEVER_DEFINED", arranged, StringComparison.Ordinal);
@@ -979,7 +978,7 @@ public sealed class ArrangementRuleTests {
                 public Hashtable H() => new();
             }
             """,
-            only: ArrangeIds.Usings
+            ArrangeIds.Usings
         );
 
         Assert.StartsWith("// Copyright the author.", arranged, StringComparison.Ordinal);

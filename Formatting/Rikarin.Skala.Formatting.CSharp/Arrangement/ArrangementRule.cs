@@ -136,9 +136,6 @@ public abstract class ArrangementRule {
     /// </summary>
     public abstract bool NeedsSemantics { get; }
 
-    /// <summary>Whether the rule only runs under <c>--aggressive</c>.</summary>
-    public virtual bool IsAggressive => false;
-
     /// <summary>Whether the configuration asks for this rule at all.</summary>
     public abstract bool IsEnabled(in ArrangementOptions options);
 

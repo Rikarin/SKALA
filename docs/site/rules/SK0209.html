@@ -12,7 +12,7 @@
 <main>
 <p class="crumb"><a href="index.html">Rules</a> / Formatting</p>
 <h1>SK0209 <span class="title">The expression parentheses are not arranged</span></h1>
-<p class="lede"><code>skala arrange --aggressive</code> would remove redundant parentheses.</p>
+<p class="lede"><code>skala arrange</code> would remove redundant parentheses.</p>
 <table class="facts">
 <tbody>
 <tr><th>Category</th><td>Formatting</td></tr>
@@ -27,14 +27,14 @@
 </tbody>
 </table>
 <h2 id="why">Why</h2>
-<p>Parenthesis removal is the arranger's highest-risk syntactic cleanup and is therefore gated by <code>--aggressive</code>. It uses Roslyn precedence and refuses directive or trivia shapes whose ownership would change.</p>
+<p>Parenthesis removal is the arranger's highest-risk syntactic cleanup, so each removal is proved rather than computed: the parentheses go only when the expression printed without them parses back to the same tree. Which redundant parentheses Skala is willing to lose is a separate, configured question — <code>skala_parentheses_redundancy_style</code> and the three <code>dotnet_style_parentheses_in_*_binary_operators</code> keys decide it. It runs by default; there is no opt-in flag.</p>
 <h2 id="example">Example</h2>
 <p>Instead of:</p>
 <pre class="bad"><code>return (value);</code></pre>
 <p>Write:</p>
 <pre class="good"><code>return value;</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>The rule is off unless <code>--aggressive</code> is selected. Parentheses required for precedence or configured readability remain.</p>
+<p>None relative to the effective configuration: a removal that would change the parse is refused by construction. At the default <code>remove_if_not_clarifies_precedence</code>, parentheses the configuration keeps for clarity remain — around the operands of shift and bitwise operators, and around a nested <code>&amp;&amp;</code>, <code>||</code> or <code>??</code> under <code>always_for_clarity</code>; <code>remove</code> takes those too, as the oracle does. At either value so do parentheses around an assignment, a conditional, a lambda, a query or a <code>switch</code> expression, inside an interpolation, or after a cast-shaped <code>(A)(b)</code>. Formatter-off regions are excluded. To keep every parenthesis, exclude the rule with <code>skala arrange --exclude SK0209</code>.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><a href="../options/parentheses.html#skala_parentheses_redundancy_style"><code>skala_parentheses_redundancy_style</code></a></li>
