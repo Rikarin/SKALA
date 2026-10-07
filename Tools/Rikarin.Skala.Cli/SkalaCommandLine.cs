@@ -394,8 +394,7 @@ public static partial class SkalaCommandLine {
         // until there are fourteen of them, at which point SK7020 calls the run a clone of
         // `format`'s — correctly, since the two differ only in the identifiers.
         foreach (var declared in new Option[] {
-                     check, diff, quiet, range, include, exclude, option, define, load, project, binlog,
-                     requireFresh
+                     check, diff, quiet, range, include, exclude, option, define, load, project, binlog, requireFresh
                  }) {
             command.Options.Add(declared);
         }
