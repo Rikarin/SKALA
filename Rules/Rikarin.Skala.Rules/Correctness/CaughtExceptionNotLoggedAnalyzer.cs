@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Rikarin.Skala.Rules.Correctness;
 
@@ -93,9 +94,14 @@ public sealed class CaughtExceptionNotLoggedAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (EnclosingCatch(invocation) is not { Declaration.Identifier: var identifier }
+        if (EnclosingCatch(invocation) is not { Declaration: { Identifier: var identifier } declaration }
             || identifier.IsKind(SyntaxKind.None)
             || identifier.ValueText.Length == 0) {
+            return;
+        }
+
+        var written = FixRebind.Identifier(identifier.ValueText);
+        if (!PassesTheCaughtException(context, invocation, declaration, written)) {
             return;
         }
 
@@ -104,13 +110,53 @@ public sealed class CaughtExceptionNotLoggedAnalyzer : DiagnosticAnalyzer {
             Diagnostic.Create(
                 Descriptor,
                 invocation.GetLocation(),
-                FixEdits.Pack((insertion, identifier.ValueText + ", ")),
+                FixEdits.Pack((insertion, written + ", ")),
                 "the caught exception `"
                 + identifier.ValueText
                 + "` is not passed to the logger's `exception` parameter, so the stack trace and the "
                 + "inner chain are not in the event"
             )
         );
+    }
+
+    /// <summary>
+    ///     ⚠ Whether the call with the caught exception's name prepended binds that name to the
+    ///     <c>catch</c> variable and passes it as the <c>exception</c> argument (#424).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The name is a lookup at the call, not a reference to the <c>catch</c>, and a lambda between
+    ///     the two can declare its own: in
+    ///     <c>
+    /// catch (Exception ex) { items.ForEach(ex =&gt;
+    ///     log.LogError("item {I} failed", ex)); }
+    ///     </c> the inserted <c>ex</c> is the item, and with an
+    ///     <c>int</c> item the call binds the <c>EventId</c> overload instead (#412's audit). The call is
+    ///     therefore bound as written, in place, and both the name and the overload are checked.
+    /// </remarks>
+    static bool PassesTheCaughtException(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        CatchDeclarationSyntax declaration,
+        string written
+    ) {
+        var caught = context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken);
+        var argument = SyntaxFactory.Argument(SyntaxFactory.IdentifierName(SyntaxFactory.ParseToken(written)));
+        var rewritten = invocation.WithArgumentList(
+            invocation.ArgumentList.WithArguments(invocation.ArgumentList.Arguments.Insert(0, argument))
+        );
+        if (caught is null
+            || !FixRebind.TrySpeculate(context.SemanticModel, invocation, rewritten, out var model, out var placed)
+            || placed is not InvocationExpressionSyntax call) {
+            return false;
+        }
+
+        var name = call.ArgumentList.Arguments[0].Expression;
+        return FixRebind.BindsTo(model, name, caught, context.CancellationToken)
+            && model.GetOperation(call, context.CancellationToken) is IInvocationOperation bound
+            && HasExceptionArgument(bound)
+            && bound.Arguments.Any(candidate => candidate.Parameter?.Name == "exception"
+                && candidate.Value.Syntax.Span == name.Span
+            );
     }
 
     static bool IsErrorLevel(string name) => name is "LogError" or "LogCritical" or "Error" or "Fatal";

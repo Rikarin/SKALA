@@ -73,7 +73,15 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        Report(context, list.Span, string.Empty, "The attribute's argument list is empty");
+        var attribute = (AttributeSyntax)context.Node;
+        Report(
+            context,
+            attribute,
+            attribute.WithArgumentList(null),
+            list.Span,
+            string.Empty,
+            "The attribute's argument list is empty"
+        );
     }
 
     static void AnalyzeLambda(SyntaxNodeAnalysisContext context) {
@@ -95,6 +103,15 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
 
         Report(
             context,
+            lambda,
+            SyntaxFactory.SimpleLambdaExpression(
+                lambda.AttributeLists,
+                lambda.Modifiers,
+                parameter,
+                lambda.ArrowToken,
+                lambda.Block,
+                lambda.ExpressionBody
+            ),
             lambda.ParameterList.Span,
             parameter.Identifier.Text,
             "A single untyped lambda parameter needs no parentheses"
@@ -116,6 +133,8 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
 
         Report(
             context,
+            parenthesized,
+            parenthesized.Pattern,
             parenthesized.Span,
             parenthesized.Pattern.ToString(),
             "The pattern's parentheses enclose the whole pattern"
@@ -139,7 +158,21 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        Report(context, semicolon.Span, string.Empty, "The declaration's trailing semicolon is redundant");
+        var member = (MemberDeclarationSyntax)context.Node;
+        var intended = member switch {
+            TypeDeclarationSyntax type => type.WithSemicolonToken(default),
+            EnumDeclarationSyntax type => type.WithSemicolonToken(default),
+            NamespaceDeclarationSyntax type => (MemberDeclarationSyntax)type.WithSemicolonToken(default),
+            _ => member
+        };
+        Report(
+            context,
+            member,
+            intended,
+            semicolon.Span,
+            string.Empty,
+            "The declaration's trailing semicolon is redundant"
+        );
     }
 
     static void AnalyzeElementBraces(SyntaxNodeAnalysisContext context) {
@@ -151,8 +184,22 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ An assignment is the one element the braces are load-bearing for (#412's audit, #424).
+        // `{ x = 2 }` is a call to `Add(x = 2)`; bare, `x = 2` in a collection initializer is CS0747,
+        // and as the *only* element the parser reads `{ Count = 7 }` as an object initializer that
+        // sets a member — `new Bag { { Count = 7 } }` printed `0 1 7` and `new Bag { Count = 7 }`
+        // prints `7 0 0`. ⚠ Both are declined by the re-parse below as well — measured by deleting this
+        // guard, under which neither fixture fired, so the second does not "parse the same and fail
+        // only in the binder" as this comment first guessed. The guard stays so the rule says why
+        // rather than relying on the proof to notice.
+        if (initializer.Expressions[0] is AssignmentExpressionSyntax) {
+            return;
+        }
+
         Report(
             context,
+            initializer,
+            initializer.Expressions[0],
             initializer.Span,
             initializer.Expressions[0].ToString(),
             "A one-argument collection element needs no braces"
@@ -181,6 +228,8 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
 
         Report(
             context,
+            member,
+            member.WithNameEquals(null),
             TextSpan.FromBounds(name.SpanStart, member.Expression.SpanStart),
             string.Empty,
             "The anonymous type's property name is the one the expression infers"
@@ -195,6 +244,8 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
 
         Report(
             context,
+            ordering,
+            ordering.WithAscendingOrDescendingKeyword(default),
             TextSpan.FromBounds(ordering.Expression.Span.End, ordering.Span.End),
             string.Empty,
             "`ascending` is the ordering a query already has"
@@ -224,6 +275,15 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        var intended = SyntaxFactory.RangeExpression(
+            edits.Exists(edit => edit.Span == range.LeftOperand?.Span) ? null : range.LeftOperand,
+            range.OperatorToken,
+            edits.Exists(edit => edit.Span == range.RightOperand?.Span) ? null : range.RightOperand
+        );
+        if (!FixReparse.Preserves(range, intended, context.CancellationToken, edits.ToArray())) {
+            return;
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
@@ -245,16 +305,52 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ What is left is a bare type, and a bare type in a pattern is bound as an *expression*
+        // first: `case Point { }:` is a type test and `case Point:` is the constant `Point` wherever
+        // one is in scope (#424, the SK0250 shape). Directly under `is` it is the `is` operator and
+        // binds the type; a predefined, array or nullable type cannot be captured by a constant. The
+        // rest needs a lookup this syntax-only rule does not do, so it declines.
+        if (pattern.Parent is not IsPatternExpressionSyntax && type is NameSyntax) {
+            return;
+        }
+
         Report(
             context,
+            pattern,
+            pattern,
             TextSpan.FromBounds(type.Span.End, clause.Span.End),
             string.Empty,
             "The property pattern under a type matches nothing the type test did not"
         );
     }
 
-    static void Report(SyntaxNodeAnalysisContext context, TextSpan span, string replacement, string message) {
+    /// <summary>
+    ///     Reports the edit that turns <paramref name="original" /> into <paramref name="intended" />,
+    ///     once a re-parse shows the text means that (#424).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Every branch here deletes punctuation, and punctuation is what the parser reads structure
+    ///     from. Where <paramref name="intended" /> is <paramref name="original" /> itself, the shape
+    ///     changes kind in a way only the parser decides — <c>x is T { }</c> becomes the <c>is</c>
+    ///     operator — and the check is that nothing <em>around</em> it re-parses differently and no
+    ///     token glued.
+    /// </remarks>
+    static void Report(
+        SyntaxNodeAnalysisContext context,
+        SyntaxNode original,
+        SyntaxNode intended,
+        TextSpan span,
+        string replacement,
+        string message
+    ) {
         if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, span)) {
+            return;
+        }
+
+        var proved = original == intended
+            ? FixReparse.Reparsed(original, [(span, replacement)], context.CancellationToken) is not null
+            : FixReparse.Preserves(original, intended, context.CancellationToken, (span, replacement));
+        if (!proved) {
             return;
         }
 

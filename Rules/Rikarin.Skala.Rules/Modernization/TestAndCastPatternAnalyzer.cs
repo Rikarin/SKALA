@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 using System.Threading;
@@ -182,6 +183,10 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
         }
 
         var replacement = conversion.Left + (negated ? " is not " : " is ") + tested;
+        if (!Proved(context, comparison, replacement, tested)) {
+            return;
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
@@ -213,6 +218,10 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
         }
 
         var replacement = test.Left + " is not " + tested;
+        if (!Proved(context, negation, replacement, tested)) {
+            return;
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
@@ -261,6 +270,10 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
         }
 
         var replacement = test.Left + " is not null";
+        if (!Proved(context, test, replacement, null)) {
+            return;
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
@@ -281,6 +294,51 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
     ///     check, so <c>x is T b &amp;&amp; b.Left is null</c> is the same program. Anything else —
     ///     <c>||</c>, a negation, the check appearing second — is not, and is refused.
     /// </remarks>
+    /// <summary>
+    ///     ⚠ Whether <paramref name="replacement" />, written over <paramref name="original" />, parses
+    ///     back as written and still tests for <paramref name="tested" /> (#424).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>o is Kind</c> is the <c>is</c> <em>operator</em> and binds <c>Kind</c> as a type;
+    ///     <c>o is not Kind</c> is a <em>pattern</em>, and a pattern binds a name as an expression first,
+    ///     so a constant called <c>Kind</c> in scope — the Color Color case — turns a type test into an
+    ///     equality test that compiles (#412's audit). And a nullable value type is not a pattern at all:
+    ///     <c>!(o is int?)</c> → <c>o is not int?</c> is <c>CS8116</c>. The rewrite is therefore
+    ///     re-parsed in place and bound in place, and must come back as a test for the same type.
+    /// </remarks>
+    static bool Proved(
+        SyntaxNodeAnalysisContext context,
+        ExpressionSyntax original,
+        string replacement,
+        TypeSyntax? tested
+    ) {
+        var cancellation = context.CancellationToken;
+        var written = SyntaxFactory.ParseExpression(replacement);
+        if (written.ContainsDiagnostics
+            || !FixReparse.Preserves(original, written, cancellation, (original.Span, replacement))) {
+            return false;
+        }
+
+        if (tested is null) {
+            return true;
+        }
+
+        var model = context.SemanticModel;
+        if (model.GetTypeInfo(tested, cancellation).Type is not { } type
+            || tested is NullableTypeSyntax
+            || type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+            || !FixRebind.TrySpeculate(model, original, written, out var speculative, out var placed)) {
+            return false;
+        }
+
+        return speculative.GetOperation(placed, cancellation) switch {
+            IIsTypeOperation test => FixRebind.Same(test.TypeOperand, type),
+            IIsPatternOperation { Pattern: INegatedPatternOperation { Pattern: ITypePatternOperation pattern } } =>
+                FixRebind.Same(pattern.MatchedType, type),
+            _ => false
+        };
+    }
+
     static ExpressionSyntax? LeadingNullCheck(ExpressionSyntax condition, string name) {
         var current = PatternSafety.Unwrap(condition);
         while (current is BinaryExpressionSyntax { RawKind: (int)SyntaxKind.LogicalAndExpression } conjunction) {

@@ -133,6 +133,10 @@ public sealed class OfTypeChainAnalyzer : DiagnosticAnalyzer {
         }
 
         var replacement = "OfType<" + written + ">()";
+        if (!BindsToEnumerable(context, outer, filterAccess, replacement, enumerable, target)) {
+            return;
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
@@ -151,6 +155,47 @@ public sealed class OfTypeChainAnalyzer : DiagnosticAnalyzer {
     ///     ⚠ <c>Cast&lt;T&gt;()</c> and <c>Select(x =&gt; (T)x)</c> only. <c>Select(x =&gt; x as T)</c>
     ///     is a different sequence and <c>OfType</c> is not it.
     /// </remarks>
+    /// <summary>
+    ///     ⚠ Whether the rewritten call is <c>Enumerable.OfType&lt;T&gt;</c> for the same <c>T</c>, bound
+    ///     where it will be written (#424).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Checking that <c>Where</c> and <c>Cast</c> are <c>Enumerable</c>'s says nothing about the
+    ///     name the fix <em>writes</em>: an instance method wins over an extension method, so a receiver
+    ///     with an <c>OfType&lt;T&gt;()</c> of its own takes the rewritten call (#412's audit). The
+    ///     replacement is re-parsed in place and bound in place, and must reach the definition the
+    ///     compilation start already proved exists.
+    /// </remarks>
+    static bool BindsToEnumerable(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax outer,
+        MemberAccessExpressionSyntax filterAccess,
+        string replacement,
+        INamedTypeSymbol enumerable,
+        ITypeSymbol target
+    ) {
+        var cancellation = context.CancellationToken;
+        if (SyntaxFactory.ParseExpression(replacement) is not InvocationExpressionSyntax {
+                Expression: GenericNameSyntax name
+            } call
+            || call.ContainsDiagnostics) {
+            return false;
+        }
+
+        var rewritten = call.WithExpression(filterAccess.WithName(name));
+        var span = TextSpan.FromBounds(filterAccess.Name.SpanStart, outer.Span.End);
+        if (!FixReparse.Preserves(outer, rewritten, cancellation, (span, replacement))
+            || !FixRebind.TrySpeculate(context.SemanticModel, outer, rewritten, out var model, out var placed)
+            || model.GetSymbolInfo(placed, cancellation).Symbol is not IMethodSymbol bound) {
+            return false;
+        }
+
+        return SymbolEqualityComparer.Default.Equals(Original(bound).ContainingType, enumerable)
+            && string.Equals(bound.Name, "OfType", StringComparison.Ordinal)
+            && bound.TypeArguments.Length == 1
+            && SymbolEqualityComparer.Default.Equals(bound.TypeArguments[0], target);
+    }
+
     static (ITypeSymbol? Target, string? Written) Consumed(
         MemberAccessExpressionSyntax consumerAccess,
         InvocationExpressionSyntax outer,

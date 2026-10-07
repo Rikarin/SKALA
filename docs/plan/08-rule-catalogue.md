@@ -74,8 +74,26 @@ an edit replacing the whole call is declined even when it re-emits the argument 
 span cannot say that. A declined fix keeps its edits; `skala fix --include` applies it on request.
 With the guard in place `SK1040`, `SK1051`, `SK1053` and `SK1062` went back to `fixIsSafe: true` — the
 capture was the only defect #412 measured for them, and each has an executable fixture inside a
-capturing argument. `SK1041`, `SK1044` and `SK1052` (#423), `SK1050` (#424), and `SK1054`, `SK1060`,
+capturing argument. `SK1041`, `SK1044` and `SK1052` (#423), and `SK1054`, `SK1060`,
 `SK1061`, `SK1063` and `SK1064` (#425) stay unsafe for the other defects #412 measured in them.
+
+⚠ **A fix is text, and the parser and the binder read it afresh (#424).** #412's audit found fifteen
+safe fixes broken the same two ways: a deleted token changed how the code *around* it parsed
+(`F(a < b!, c > (d))` without `!` is a generic call; `o is (1) _` without `_` is a constant pattern;
+`!(a == b) switch { … }` → `a != b switch { … }` switches on `b`; `a-(int)-b` → `a--b`), or a name the
+fix wrote bound to something else where it landed (a method called `nameof`, a lambda parameter called
+`ex`, a property named like a type, a constant named like a type in a pattern, an instance `OfType`, a
+project's own `Any`, an overload the written `out` type had picked, a member hidden with `new`). Every
+rule had checked what it replaced; none had checked what it wrote. Two shared proofs in
+`Rules/FixProof.cs` now do, and a rule that rewrites text routes its edit through them rather than
+growing its own table: `FixReparse` applies the diagnostic's own edits, re-parses incrementally and
+compares the smallest enclosing member with the intended tree — generalising #392's whole-expression
+re-parse to statements, labels and attributes — and `FixRebind` binds the written node speculatively
+in place. ⚠ `SyntaxNode.IsEquivalentTo` was measured unusable for the comparison (an incrementally
+re-parsed body compared unequal to the same body built by `ReplaceNode`), and a bare `_` bound
+speculatively fails overload resolution although it compiles; both are recorded in the code. With
+both in place all fifteen rules are `fixIsSafe: true` again, `SK1050` because #422 took its third
+defect, and `SK0250` became `Semantic`: whether `case Random:` means the type is a lookup.
 
 ⚠ `supersedes` is how the tool avoids double-reporting when a third-party analyzer is hosted. If
 `IDE0290` and `SK1002` both fire on the same span, one is dropped, and which one is a documented,

@@ -50,19 +50,19 @@
 <tr><td><a href="SK0230.html">SK0230</a></td><td>The <code>with</code> expression or object initializer is empty</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>yes</td></tr>
 <tr><td><a href="SK0231.html">SK0231</a></td><td>The string call produces the string it was given</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK0232.html">SK0232</a></td><td>The argument or signature element is redundant</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK0233.html">SK0233</a></td><td>The syntax is redundant</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>yes</td></tr>
-<tr><td><a href="SK0234.html">SK0234</a></td><td>The cast or type argument is redundant</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK0233.html">SK0233</a></td><td>The syntax is redundant</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK0234.html">SK0234</a></td><td>The cast or type argument is redundant</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK0240.html">SK0240</a></td><td>The control flow does nothing</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>yes</td></tr>
 <tr><td><a href="SK0241.html">SK0241</a></td><td>The modifier has no effect</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK0242.html">SK0242</a></td><td>The <code>#nullable</code> directive changes nothing</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK0243.html">SK0243</a></td><td>The qualifier is redundant</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK0244.html">SK0244</a></td><td>The declaration adds nothing</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>yes</td></tr>
-<tr><td><a href="SK0250.html">SK0250</a></td><td>The discard designation is redundant</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>yes</td></tr>
-<tr><td><a href="SK0260.html">SK0260</a></td><td>The boolean expression says the same thing twice</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK0261.html">SK0261</a></td><td>The attribute writes out what the language already supplies</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK0250.html">SK0250</a></td><td>The discard designation is redundant</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK0260.html">SK0260</a></td><td>The boolean expression says the same thing twice</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK0261.html">SK0261</a></td><td>The attribute writes out what the language already supplies</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK0280.html">SK0280</a></td><td>The base list names an interface it already has</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK0281.html">SK0281</a></td><td>The attribute promises to set members that do not exist</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
-<tr><td><a href="SK0282.html">SK0282</a></td><td>The record writes out the property its parameter generates</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK0282.html">SK0282</a></td><td>The record writes out the property its parameter generates</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK0290.html">SK0290</a></td><td>The explicit <code>Nullable&lt;T&gt;</code> construction converts nothing</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 </tbody>
 </table>
@@ -87,7 +87,7 @@
 <tr><td><a href="SK2014.html">SK2014</a></td><td>An empty catch silently discards an exception</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2015.html">SK2015</a></td><td><code>throw ex;</code> resets the stack trace</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>yes</td></tr>
 <tr><td><a href="SK2016.html">SK2016</a></td><td>A logger message is interpolated before it is logged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
-<tr><td><a href="SK2017.html">SK2017</a></td><td>The exception names a parameter that does not exist</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2017.html">SK2017</a></td><td>The exception names a parameter that does not exist</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2030.html">SK2030</a></td><td>Detect NaN with IsNaN rather than equality</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2031.html">SK2031</a></td><td>Do not discard a setter's value parameter</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2032.html">SK2032</a></td><td>Remove GC.SuppressFinalize from a type with no finalizer</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
@@ -111,7 +111,7 @@
 <tr><td><a href="SK2070.html">SK2070</a></td><td>The Serilog message template has a different number of holes than the call supplies values</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2071.html">SK2071</a></td><td>The structured log template names the same property twice</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2072.html">SK2072</a></td><td>The literal contains an unescaped invisible character</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
-<tr><td><a href="SK2073.html">SK2073</a></td><td>The caught exception is not passed to the logger's exception parameter</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2073.html">SK2073</a></td><td>The caught exception is not passed to the logger's exception parameter</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2080.html">SK2080</a></td><td>The set or dictionary initializer repeats a key</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2081.html">SK2081</a></td><td>The collection is passed to its own method as the other collection</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2082.html">SK2082</a></td><td>The collection element is written twice with nothing reading it in between</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
@@ -125,7 +125,7 @@
 <tr><td><a href="SK2102.html">SK2102</a></td><td>The <code>[DebuggerDisplay]</code> string names a member that does not exist</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2103.html">SK2103</a></td><td>The attribute is applied twice with the same arguments</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2110.html">SK2110</a></td><td><code>ToString()</code> returns null</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK2111.html">SK2111</a></td><td>The null-forgiving operator suppresses nothing</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2111.html">SK2111</a></td><td>The null-forgiving operator suppresses nothing</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2112.html">SK2112</a></td><td>The local is declared nullable and is never null</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2113.html">SK2113</a></td><td>The service resolution is null-forgiven instead of required</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2120.html">SK2120</a></td><td>A bitwise operator combines members of a consecutively numbered enum</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
@@ -157,7 +157,7 @@
 <tr><td><a href="SK2180.html">SK2180</a></td><td>The <code>foreach</code> casts every element down to a narrower type</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2181.html">SK2181</a></td><td><code>GetType()</code> is called on something that is already a <code>Type</code></td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2182.html">SK2182</a></td><td>A type is identified by comparing its name to a string</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK2183.html">SK2183</a></td><td>A static member is reached through a type that inherits it</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2183.html">SK2183</a></td><td>A static member is reached through a type that inherits it</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2184.html">SK2184</a></td><td>The call skips a better overload the derived interface hides</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2190.html">SK2190</a></td><td>The struct key has no equality of its own</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2191.html">SK2191</a></td><td>The struct is copied before the mutation lands</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
@@ -201,7 +201,7 @@
 <tr><td><a href="SK6032.html">SK6032</a></td><td>An abstract type declares nothing to implement</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK6033.html">SK6033</a></td><td>A type has only private constructors and is not static</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK6034.html">SK6034</a></td><td>A public constant is baked into every caller</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK6040.html">SK6040</a></td><td>An <code>out</code> variable is declared and never read</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK6040.html">SK6040</a></td><td>An <code>out</code> variable is declared and never read</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK6041.html">SK6041</a></td><td>A <code>foreach</code> variable is declared wider than the element it receives</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK6050.html">SK6050</a></td><td>The method ignores its inputs and returns a constant</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK6051.html">SK6051</a></td><td>The base type tests <code>this</code> against a derived type</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
@@ -251,7 +251,7 @@
 <tr><td><a href="SK3502.html">SK3502</a></td><td>A type owns a disposable field but is not disposable</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3503.html">SK3503</a></td><td>An <code>IAsyncDisposable</code> is disposed synchronously</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3510.html">SK3510</a></td><td>A variable already owned by <code>using</code> is disposed again</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK3511.html">SK3511</a></td><td>The <code>using</code> resource is built with an object initializer</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3511.html">SK3511</a></td><td>The <code>using</code> resource is built with an object initializer</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK3512.html">SK3512</a></td><td>A variable captured by <code>using</code> is returned</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3530.html">SK3530</a></td><td>The disposable field is not disposed by <code>Dispose</code></td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3531.html">SK3531</a></td><td>The <code>DisposeAsync</code> override never calls the base implementation</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
@@ -333,7 +333,7 @@
 <tr><td><a href="SK1042.html">SK1042</a></td><td>The nested <code>if</code> statements can be combined</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>yes</td></tr>
 <tr><td><a href="SK1043.html">SK1043</a></td><td>The <code>for</code> loop is a <code>while</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1044.html">SK1044</a></td><td>Use <code>string.IsNullOrEmpty</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK1050.html">SK1050</a></td><td>Use pattern matching instead of a test-and-cast</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK1050.html">SK1050</a></td><td>Use pattern matching instead of a test-and-cast</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1051.html">SK1051</a></td><td>Simplify the pattern</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1052.html">SK1052</a></td><td>Merge the <code>?:</code> into a conditional access</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK1053.html">SK1053</a></td><td>Use a discard</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
@@ -347,7 +347,7 @@
 <tr><td><a href="SK1071.html">SK1071</a></td><td>Copy the record with a <code>with</code> expression</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK1072.html">SK1072</a></td><td>The spread of a freshly created array is its elements</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK1073.html">SK1073</a></td><td>Use the framework's cached instance</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK1080.html">SK1080</a></td><td>Use the LINQ operator that says what the chain means</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK1080.html">SK1080</a></td><td>Use the LINQ operator that says what the chain means</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1081.html">SK1081</a></td><td>Remove the LINQ or collection call that does nothing</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK1082.html">SK1082</a></td><td>Use the indexer</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK1083.html">SK1083</a></td><td>Use <code>foreach</code> over an indexed <code>for</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
@@ -392,7 +392,7 @@
 <tr><td><a href="SK4030.html">SK4030</a></td><td>The collection's own method answers this faster than the LINQ extension</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK4031.html">SK4031</a></td><td>The loop looks up a key it is already holding</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK4032.html">SK4032</a></td><td><code>Substring</code> is called to feed a search that takes a start index</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
-<tr><td><a href="SK4033.html">SK4033</a></td><td>The <code>ConcurrentDictionary</code> member taken is the expensive one</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK4033.html">SK4033</a></td><td>The <code>ConcurrentDictionary</code> member taken is the expensive one</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK4034.html">SK4034</a></td><td>The collection is sorted before it is filtered</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK4040.html">SK4040</a></td><td>The property copies a collection it could have returned unchanged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK4041.html">SK4041</a></td><td>The <code>StringBuilder</code> is filled and never read</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>

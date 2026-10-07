@@ -87,6 +87,17 @@ public sealed class RedundantPositionalPropertyAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ The positional property is synthesized only where no member of that name is declared *or
+        // inherited* (#424). Under `record Base(int X)`, deleting `Derived`'s explicit `X` does not
+        // bring a generated one back: the compiler binds the parameter to `Base.X`, and `new
+        // Derived(1).X` printed 1 before the fix and 10 after it (#412's audit). The explicit property
+        // hides the base's from a lookup in the record itself, so the lookup is made in the base.
+        if (context.SemanticModel.GetDeclaredSymbol(property, context.CancellationToken) is not { } declared
+            || declared.ContainingType.BaseType is { } baseType
+            && FixRebind.FindsAnotherMember(context.SemanticModel, property.SpanStart, baseType, name, declared)) {
+            return;
+        }
+
         // The whole declaration goes, leading trivia included, so a documentation comment on it is a
         // reason to leave it alone rather than a thing to delete.
         if (RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(property)) {

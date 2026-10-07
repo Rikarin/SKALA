@@ -2,9 +2,9 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Rikarin.Skala.Rules.Performance;
 
@@ -137,7 +137,8 @@ public sealed class ConcurrentDictionaryMemberAnalyzer : DiagnosticAnalyzer {
         var replacement = (empty.Value ? string.Empty : "!") + receiver + ".IsEmpty";
         Report(
             context,
-            comparison.Span,
+            dictionary,
+            comparison,
             replacement,
             "`Count` locks the whole table; `IsEmpty` answers this without taking a lock"
         );
@@ -154,7 +155,7 @@ public sealed class ConcurrentDictionaryMemberAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        Report(context, access.Span, receiver + ".Count", Copied(access));
+        Report(context, dictionary, access, receiver + ".Count", Copied(access));
     }
 
     /// <summary><c>dict.Keys.Count()</c> and <c>dict.Values.Any()</c>.</summary>
@@ -173,12 +174,27 @@ public sealed class ConcurrentDictionaryMemberAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ Matched by name, and a name is not a method (#424): an `Any<T>(this ICollection<T>)` of
+        // the project's own beats `Enumerable.Any` for `Keys`, whose static type is `ICollection<T>`,
+        // and #412's audit measured `custom Any / none / 10` becoming `any / 1`. Only `Enumerable`'s
+        // pair is the whole-table copy the rewrite removes and the count it preserves.
+        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
+            is not IMethodSymbol called
+            || (called.ReducedFrom ?? called).OriginalDefinition.ContainingType
+            is not {
+                Name: "Enumerable",
+                ContainingNamespace:
+                { Name: "Linq", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true } }
+            }) {
+            return;
+        }
+
         if (name == "Count") {
             if (IsComparedWithAConstant(invocation)) {
                 return;
             }
 
-            Report(context, invocation.Span, receiver + ".Count", Copied(access));
+            Report(context, dictionary, invocation, receiver + ".Count", Copied(access));
             return;
         }
 
@@ -187,7 +203,7 @@ public sealed class ConcurrentDictionaryMemberAnalyzer : DiagnosticAnalyzer {
         if (invocation.Parent is PrefixUnaryExpressionSyntax {
                 RawKind: (int)SyntaxKind.LogicalNotExpression
             } negation) {
-            Report(context, negation.Span, receiver + ".IsEmpty", Copied(access));
+            Report(context, dictionary, negation, receiver + ".IsEmpty", Copied(access));
             return;
         }
 
@@ -195,7 +211,7 @@ public sealed class ConcurrentDictionaryMemberAnalyzer : DiagnosticAnalyzer {
         // replace it where the surrounding syntax cannot re-bind. `dict.Keys.Any().ToString()`
         // would become `!dict.IsEmpty.ToString()`, which parses, binds, and means something else.
         if (IsSafeBooleanPosition(invocation)) {
-            Report(context, invocation.Span, "!" + receiver + ".IsEmpty", Copied(access));
+            Report(context, dictionary, invocation, "!" + receiver + ".IsEmpty", Copied(access));
         }
     }
 
@@ -204,15 +220,43 @@ public sealed class ConcurrentDictionaryMemberAnalyzer : DiagnosticAnalyzer {
         + (access.Expression is MemberAccessExpressionSyntax inner ? inner.Name.Identifier.ValueText : "Keys")
         + "` takes every lock in the table and copies the whole collection before this is read";
 
-    static void Report(SyntaxNodeAnalysisContext context, TextSpan span, string replacement, string message) =>
+    /// <remarks>
+    ///     ⚠ The replacement is re-parsed and bound where it is written (#424), and the member it names
+    ///     must be <c>ConcurrentDictionary</c>'s own: the receiver's static type is exactly that type,
+    ///     so an instance member always wins today, and this is what keeps that true when a branch is
+    ///     added that admits anything else.
+    /// </remarks>
+    static void Report(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol dictionary,
+        ExpressionSyntax original,
+        string replacement,
+        string message
+    ) {
+        var cancellation = context.CancellationToken;
+        var written = SyntaxFactory.ParseExpression(replacement);
+        if (written.ContainsDiagnostics
+            || !FixReparse.Preserves(original, written, cancellation, (original.Span, replacement))
+            || !FixRebind.TrySpeculate(context.SemanticModel, original, written, out var model, out var placed)) {
+            return;
+        }
+
+        var access = placed.DescendantNodesAndSelf().OfType<MemberAccessExpressionSyntax>().FirstOrDefault();
+        if (access is null
+            || model.GetSymbolInfo(access, cancellation).Symbol is not IPropertySymbol property
+            || !SymbolEqualityComparer.Default.Equals(property.OriginalDefinition.ContainingType, dictionary)) {
+            return;
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
-                Location.Create(context.Node.SyntaxTree, span),
-                FixEdits.Pack((span, replacement)),
+                original.GetLocation(),
+                FixEdits.Pack((original.Span, replacement)),
                 message
             )
         );
+    }
 
     /// <summary>
     ///     The dictionary behind <c>dict.Keys</c> or <c>dict.Values</c>, when there is one.
