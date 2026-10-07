@@ -135,7 +135,9 @@ public readonly record struct GroupPlan(
     bool SpendsUnderDelimiters = false,
     HeldLevel HoldsLevel = HeldLevel.None);
 
-/// <summary>Whether a group spends its continuation level as zero columns. See <see cref="GroupPlan.HoldsLevel" />.</summary>
+/// <summary>
+///     Whether a group spends its continuation level as zero columns. See <see cref="GroupPlan.HoldsLevel" />.
+/// </summary>
 /// <remarks>
 ///     <see cref="WhileFlat" /> and <see cref="WhileChainWhole" /> combine: the level is held while every
 ///     condition named holds, and spent as columns once one fails.
@@ -3897,7 +3899,9 @@ public sealed class BreakPlan {
     /// <summary>The group <see cref="PlanChainedCalls" /> opened over the chain rooted at this key, or -1.</summary>
     int ChainGroupOf(long root) => chainGroups.TryGetValue(root, out var group) ? group : -1;
 
-    /// <summary>The group <see cref="PlanChainedCalls" /> opened over the chain rooted at <paramref name="root" />, or -1.</summary>
+    /// <summary>
+    ///     The group <see cref="PlanChainedCalls" /> opened over the chain rooted at <paramref name="root" />, or -1.
+    /// </summary>
     public int ChainGroupOf(SyntaxNode root) => ChainGroupOf(Key(root));
 
     /// <summary>Whether <paramref name="source" /> holds a line break in the gap before this token.</summary>

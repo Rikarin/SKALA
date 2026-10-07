@@ -214,9 +214,12 @@ static class PrimaryConstructorWrites {
                             : property.Property.GetMethod,
                         receiver
                     );
-                case IEventReferenceOperation @event when @event.Instance == current:
-                    return @event.Parent is IEventAssignmentOperation subscription
-                        && Mutable(subscription.Adds ? @event.Event.AddMethod : @event.Event.RemoveMethod, receiver);
+                case IEventReferenceOperation eventReference when eventReference.Instance == current:
+                    return eventReference.Parent is IEventAssignmentOperation subscription
+                        && Mutable(
+                            subscription.Adds ? eventReference.Event.AddMethod : eventReference.Event.RemoveMethod,
+                            receiver
+                        );
                 case IConversionOperation { Parent: IForEachLoopOperation converted } conversion
                     when converted.Collection == conversion:
                     return Enumerates(converted, receiver, model);

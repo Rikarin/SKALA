@@ -35,6 +35,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     </para>
 /// </remarks>
 public sealed class CrossFixtureFixTests {
+    const string PlantedPath = "planted.cs";
+
     [Fact]
     public void EverySafeFix_OnEveryFixture_IntroducesNoCompilerError() {
         var cancellation = TestContext.Current.CancellationToken;
@@ -78,14 +80,14 @@ public sealed class CrossFixtureFixTests {
     public void TheComparison_SeesABreakingEdit_AndNotASoundOne() {
         const string source = "class C { void M() { var x = 1; } }";
         var cancellation = TestContext.Current.CancellationToken;
-        var before = RuleFixtures.Compile(source, "planted.cs");
+        var before = RuleFixtures.Compile(source, PlantedPath);
 
         Assert.Equal(
             ["CS8754 ×1"],
             NewErrors(
                 before,
                 source.Replace("var x = 1", "_ = new()", StringComparison.Ordinal),
-                "planted.cs",
+                PlantedPath,
                 cancellation
             )
         );
@@ -93,7 +95,7 @@ public sealed class CrossFixtureFixTests {
             NewErrors(
                 before,
                 source.Replace("var x = 1", "_ = 1", StringComparison.Ordinal),
-                "planted.cs",
+                PlantedPath,
                 cancellation
             )
         );
@@ -140,7 +142,8 @@ public sealed class CrossFixtureFixTests {
                     var actual = Probe(after, cancellation);
                     if (actual != expected) {
                         failures.Add(
-                            $"{CrossRuleBaseline.Key(fixture.Path)}: {id} changes Probe.Run() from {expected} to {actual ?? "<no result>"}"
+                            $"{CrossRuleBaseline.Key(fixture.Path)}: {id} changes Probe.Run() "
+                            + $"from {expected} to {actual ?? "<no result>"}"
                         );
                     }
                 }
@@ -164,24 +167,24 @@ public sealed class CrossFixtureFixTests {
     public void TheProbe_SeesAChangedResult_AndNotAnUnchangedOne() {
         var cancellation = TestContext.Current.CancellationToken;
         const string source = "public static class Probe { public static int Run() => 1 + 1; }";
-        var two = Probe(RuleFixtures.Compile(source, "planted.cs"), cancellation);
+        var two = Probe(RuleFixtures.Compile(source, PlantedPath), cancellation);
 
         Assert.Equal("2", two);
         Assert.Equal(
             two,
             Probe(
-                RuleFixtures.Compile(source.Replace("1 + 1", "2", StringComparison.Ordinal), "planted.cs"),
+                RuleFixtures.Compile(source.Replace("1 + 1", "2", StringComparison.Ordinal), PlantedPath),
                 cancellation
             )
         );
         Assert.NotEqual(
             two,
             Probe(
-                RuleFixtures.Compile(source.Replace("1 + 1", "1 - 1", StringComparison.Ordinal), "planted.cs"),
+                RuleFixtures.Compile(source.Replace("1 + 1", "1 - 1", StringComparison.Ordinal), PlantedPath),
                 cancellation
             )
         );
-        Assert.Null(Probe(RuleFixtures.Compile("public static class Probe { }", "planted.cs"), cancellation));
+        Assert.Null(Probe(RuleFixtures.Compile("public static class Probe { }", PlantedPath), cancellation));
     }
 
     /// <summary>
@@ -194,8 +197,8 @@ public sealed class CrossFixtureFixTests {
         var path = Path.Combine(RuleFixtures.Root, "SK1030", "negative", "a-property-with-a-setter-body.cs");
         var source = File.ReadAllText(path);
         var rewritten = source.Replace(
-            "box.Name = box.Name ?? \"fallback\";",
-            "box.Name ??= \"fallback\";",
+            """box.Name = box.Name ?? "fallback";""",
+            """box.Name ??= "fallback";""",
             StringComparison.Ordinal
         );
 
