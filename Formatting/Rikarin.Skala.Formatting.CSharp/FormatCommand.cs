@@ -337,6 +337,12 @@ public static class FormatCommand {
             //
             // `SecurityException` is deliberately absent — a CAS-era type that .NET's file APIs no
             // longer throw for a denied path, so a catch for it would assert a dead mechanism.
+        } catch (UndecodableSourceException exception) {
+            // ⚠ #387. Before this the file was decoded with U+FFFD for every byte UTF-8 could not
+            // read, formatted, and written back — the original bytes gone and SK9099 satisfied,
+            // because both sides of its comparison held the same U+FFFD. Failed rather than skipped,
+            // unlike SK9010: `FormatDiagnosticIds.NotDecodable` says why this one must not exit 0.
+            return new FileOutcome(true, false, null, [exception.ToDiagnostic()]);
         } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
             return new FileOutcome(
                 true,

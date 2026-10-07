@@ -54,7 +54,13 @@ public enum FormatOutcome {
     Generated,
 
     /// <summary>⚠ The output's token stream differed from the input's. Nothing was written.</summary>
-    VerificationFailed
+    VerificationFailed,
+
+    /// <summary>
+    ///     The file is not valid in the encoding it declares (<c>SK9018</c>, #387). Never formatted,
+    ///     and the result carries no text of it: there is no faithful text to carry.
+    /// </summary>
+    NotDecodable
 }
 
 /// <summary>
@@ -404,10 +410,30 @@ public static class CSharpFormatter {
         return Format(path, text, options, crashRoot, preprocessorSymbols, xmlDoc);
     }
 
-    public static SourceText Read(string path) {
-        using var stream = File.OpenRead(path);
-        return SourceText.From(stream, canBeEmbedded: false);
-    }
+    /// <summary>
+    ///     Reads a source file strictly in the encoding it declares, or throws
+    ///     <see cref="UndecodableSourceException" /> (<c>SK9018</c>, #387).
+    /// </summary>
+    public static SourceText Read(string path) => SourceDecoding.Read(path);
+
+    /// <summary>
+    ///     The result for a file <see cref="Read" /> refused, for a caller that must answer with a
+    ///     <see cref="FormatResult" /> rather than let the exception go.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <see cref="FormatResult.Original" /> is empty, not the lossy decode. Every edit, diff and
+    ///     write in the tree is computed against <c>Original</c>; an empty one with no edits cannot be
+    ///     turned back into the file by anything downstream, which is the point.
+    /// </remarks>
+    public static FormatResult Refused(UndecodableSourceException exception) =>
+        new(
+            exception.Path,
+            SourceText.From(string.Empty),
+            [],
+            string.Empty,
+            [exception.ToDiagnostic()],
+            FormatOutcome.NotDecodable
+        );
 
     /// <summary>
     ///     Final newline and the trailing-whitespace sweep, applied last and as ordinary edits.

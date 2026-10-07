@@ -416,3 +416,9 @@ SK7102 returns-documented-on-void-member
 SK7103 inheritdoc-with-nothing-to-inherit
 SK1131 anonymous-method-with-parameter-list
 SK1132 tuple-element-by-position
+
+# #387: the formatter's refusal of a file whose bytes are not valid in the encoding it declares —
+# SK9010's contract (reported, left byte-identical) for a cause SK9010 cannot see, because the old
+# decode turned every undecodable byte into U+FFFD and U+FFFD parses. Takes one of the two ids the
+# note above records as never allocated.
+SK9018 file-not-decodable

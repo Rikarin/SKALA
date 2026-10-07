@@ -84,6 +84,12 @@ public enum IncompleteCause {
     Unparseable,
 
     /// <summary>
+    ///     The file is not valid in the encoding it declares (<c>SK9018</c>, #387). Left
+    ///     byte-identical; the repository's condition, not a defect, and not a permissions problem.
+    /// </summary>
+    Undecodable,
+
+    /// <summary>
     ///     An input the gate compares against could not be read (<c>SK9028</c> at error severity):
     ///     a baseline that exists and will not open, or a <c>--since</c> reference that will not
     ///     resolve. Not a source file, so never counted among the files that were not checked;
@@ -109,10 +115,11 @@ public enum IncompleteCause {
 }
 
 /// <summary>
-///     The two tool-diagnostic ids the renderers must recognise by name.
+///     The three tool-diagnostic ids the renderers must recognise by name.
 /// </summary>
 /// <remarks>
-///     ⚠ Mirrors of <c>FormatDiagnosticIds.FileIoFailed</c> and <c>FormatDiagnosticIds.NotParseable</c>,
+///     ⚠ Mirrors of <c>FormatDiagnosticIds.FileIoFailed</c>, <c>FormatDiagnosticIds.NotParseable</c> and
+///     <c>FormatDiagnosticIds.NotDecodable</c>,
 ///     not new allocations. This assembly sits below the formatter on purpose — a renderer that could
 ///     reach formatting code is a renderer that can be tempted to run some — so it cannot reference
 ///     the originals, and <c>ToolDiagnosticIdTests</c> forbids a bare literal. The constants keep the
@@ -129,6 +136,9 @@ static class IncompleteIds {
 
     /// <summary>The file does not parse.</summary>
     public const string NotParseable = "SK9010";
+
+    /// <summary>The file is not valid in the encoding it declares.</summary>
+    public const string NotDecodable = "SK9018";
 }
 
 /// <summary>
@@ -369,7 +379,7 @@ public static class Renderer {
     ///     Why a file dropped out of the run, from the diagnostic that dropped it.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>The default is <see cref="IncompleteCause.Defect" />, deliberately.</b> Only the six
+    ///     ⚠ <b>The default is <see cref="IncompleteCause.Defect" />, deliberately.</b> Only the seven
     ///     ids that are positively known to describe the environment or the repository are named;
     ///     anything else the tool can fail with is Skala's own until somebody says otherwise. Getting
     ///     that backwards would let a new blocking id ship quietly telling readers to go and check
@@ -379,6 +389,7 @@ public static class Renderer {
         diagnostic.Id switch {
             IncompleteIds.FileIoFailed => IncompleteCause.Unreadable,
             IncompleteIds.NotParseable => IncompleteCause.Unparseable,
+            IncompleteIds.NotDecodable => IncompleteCause.Undecodable,
             ConfigDiagnosticIds.GateInputUnavailable => IncompleteCause.GateInput,
             ConfigDiagnosticIds.NothingToLoad
                 or ConfigDiagnosticIds.AnalyzerAssemblyMissing => IncompleteCause.LoadRung,
@@ -982,6 +993,8 @@ public static class AgentRenderer {
                     "could not be read: check permissions and that the path is still mounted.",
                 IncompleteCause.Unparseable =>
                     "unparseable: fix the syntax error; the file was left byte-identical (ADR-003).",
+                IncompleteCause.Undecodable =>
+                    "not valid in its encoding: re-save it as UTF-8; the file was left byte-identical.",
                 _ => "this is a Skala bug, not a finding in your code."
             };
         }
@@ -992,6 +1005,7 @@ public static class AgentRenderer {
                 IncompleteCause.Unreadable =>
                     " could not be read (check permissions and that the path is still mounted)",
                 IncompleteCause.Unparseable => " unparseable (left byte-identical, ADR-003)",
+                IncompleteCause.Undecodable => " not valid in its encoding (left byte-identical; re-save as UTF-8)",
                 _ => " a Skala bug, not a finding in your code"
             }
         );

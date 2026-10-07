@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.MSBuild;
 using Rikarin.Skala.Analysis.Hosting;
 using Rikarin.Skala.Analysis.Loading;
+using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Reporting;
 using System.Collections.Immutable;
 using System.Text;
@@ -247,6 +248,29 @@ public static class NamingFixCommand {
         }
 
         var changedPaths = await ChangedPathsAsync(original, solution, cancellation).ConfigureAwait(false);
+
+        // ⚠ #387. The workspace decodes a file the compiler's way — strict UTF-8, then a fallback
+        // that on .NET is lenient UTF-8 again — and the write below used a fixed BOM-less UTF-8, so a
+        // rename rewrote every file it touched: a BOM stripped, UTF-16 turned into UTF-8, a Latin-1
+        // byte turned into U+FFFD (read, not driven through the binary; the same write in
+        // `FixCommand` was measured doing all three). Each
+        // file is read strictly before anything is written, and the rename is refused whole if one
+        // of them cannot be — a rename is cross-file, and writing all but one of its files leaves a
+        // tree that does not compile.
+        var encodings = new Dictionary<string, Encoding>(StringComparer.Ordinal);
+        foreach (var path in changedPaths) {
+            try {
+                encodings[path] = CSharpFormatter.Read(path).Encoding ?? new UTF8Encoding(false);
+            } catch (UndecodableSourceException exception) {
+                return new NamingFixOutcome(
+                    0,
+                    [],
+                    $"the IDE1006 rename was refused, nothing was written: '{path}': "
+                    + $"{FormatDiagnosticIds.NotDecodable}: {exception.Message}"
+                );
+            }
+        }
+
         foreach (var path in changedPaths) {
             var before = original.GetDocumentIdsWithFilePath(path)
                 .Select(original.GetDocument)
@@ -277,7 +301,7 @@ public static class NamingFixCommand {
                     .Select(solution.GetDocument)
                     .FirstOrDefault(static document => document is not null)!;
                 var text = await document.GetTextAsync(cancellation).ConfigureAwait(false);
-                File.WriteAllText(path, text.ToString(), new UTF8Encoding(false));
+                File.WriteAllText(path, text.ToString(), encodings[path]);
             }
         }
 

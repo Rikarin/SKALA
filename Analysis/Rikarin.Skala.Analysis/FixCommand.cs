@@ -321,8 +321,23 @@ public static class FixCommand {
         CancellationToken cancellation
     ) {
         string original;
+        Encoding encoding;
         try {
-            original = File.ReadAllText(path);
+            // ⚠ #387, and this verb had it worse than `format`. `File.ReadAllText` decodes with the
+            // replacement fallback, and the write below used a fixed BOM-less UTF-8 — so one applied
+            // fix turned a Latin-1 `é` into U+FFFD, stripped a UTF-8 BOM, and re-encoded a UTF-16
+            // file as UTF-8, all three measured through the binary. The strict read refuses the
+            // first and hands back the encoding that preserves the other two.
+            var source = CSharpFormatter.Read(path);
+            original = source.ToString();
+            encoding = source.Encoding ?? new UTF8Encoding(false);
+        } catch (UndecodableSourceException exception) {
+            return new(
+                0,
+                false,
+                FixCheck.Semantic,
+                $"skala fix: {Relative(root, path)}: error {FormatDiagnosticIds.NotDecodable}: {exception.Message}\n"
+            );
 
             // ⚠ #353. `skala fix` is the fourth verb with this bug: `UnauthorizedAccessException`
             // does not derive from `IOException`, so an unreadable file crashed the command instead
@@ -394,7 +409,7 @@ public static class FixCommand {
         }
 
         if (!request.DryRun) {
-            File.WriteAllText(path, text, new UTF8Encoding(false));
+            File.WriteAllText(path, text, encoding);
         }
 
         return new(applied, false, verdict.Check, string.Empty);

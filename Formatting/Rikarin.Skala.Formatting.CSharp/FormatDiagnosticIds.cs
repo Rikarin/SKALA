@@ -39,6 +39,29 @@ public static class FormatDiagnosticIds {
     public const string FileIoFailed = "SK9015";
 
     /// <summary>
+    ///     The file is not valid in the encoding it declares. Reported, left byte-identical, never
+    ///     written — by any verb (#387).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ SK9010's contract for a different cause: reported against the file, left exactly as it
+    ///     was, the run kept going. It is an <b>error</b> where SK9010 is a warning, and that is the
+    ///     one place the two differ, on purpose. A file that does not parse fails the build, so SK9010
+    ///     is never the only thing saying so; a Latin-1 file compiles. ⚠ Measured on SDK 10.0.401:
+    ///     <c>csc</c> builds one with zero warnings and its <c>é</c> runs as U+FFFD —
+    ///     the compiler's own fallback is the same lenient UTF-8, not the code page it is often assumed
+    ///     to be. So were this a warning, <c>format --check</c> and
+    ///     <c>verify</c> would pass over a file Skala has never once checked, every run, forever. It
+    ///     takes SK9015's route to <c>InternalError</c> and is a blocked file in the INCOMPLETE banner
+    ///     under a cause of its own, never a Skala bug.
+    ///     <para>
+    ///         ⚠ <b>The token stream is only as trustworthy as the decode that produced it.</b> Before
+    ///         this id the undecodable bytes became U+FFFD, both sides of the SK9099 comparison held
+    ///         the same U+FFFD, and the file was rewritten with its original bytes gone.
+    ///     </para>
+    /// </remarks>
+    public const string NotDecodable = "SK9018";
+
+    /// <summary>
     ///     ⚠ The token stream of the output differs from the input's. A Skala bug by definition: the
     ///     file is abandoned, nothing is written, and a reproduction is dropped under
     ///     <c>.skala/crash/</c>. There is no flag that turns the check off.

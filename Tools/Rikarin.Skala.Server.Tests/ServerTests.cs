@@ -182,6 +182,34 @@ public sealed class LanguageServerTests {
         Assert.Contains(items, static item => item!["code"]!.GetValue<string>() == FormatDiagnosticIds.NotParseable);
     }
 
+    /// <summary>
+    ///     #387: a document the client has not opened is read from disk, and a Latin-1 one used to come
+    ///     back with every undecodable byte as U+FFFD and formatting edits computed over that text. Now
+    ///     it is SK9018 on the diagnostic request and no edits on the formatting one — answered, not a
+    ///     dead request.
+    /// </summary>
+    [Fact]
+    public async Task AnUndecodableFileOnDisk_IsDiagnosed_AndGetsNoEdits() {
+        using var scratch = new Scratch();
+        var path = Path.Combine(scratch.Root, "L.cs");
+        var bytes = Encoding.Latin1.GetBytes("class C{\nstring S = \"café\";\n}\n");
+        File.WriteAllBytes(path, bytes);
+        var uri = new Uri(path).AbsoluteUri;
+        var document = new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri } };
+
+        var responses = await Converse(
+            Request(1, "textDocument/diagnostic", document),
+            Request(2, "textDocument/formatting", (JsonObject)document.DeepClone())
+        );
+
+        var items = (JsonArray)responses[0]["result"]!["items"]!;
+        var item = Assert.Single(items);
+        Assert.Equal(FormatDiagnosticIds.NotDecodable, item!["code"]!.GetValue<string>());
+        Assert.Equal(1, item["severity"]!.GetValue<int>());
+        Assert.Empty((JsonArray)responses[1]["result"]!);
+        Assert.Equal(bytes, File.ReadAllBytes(path));
+    }
+
     [Fact]
     public async Task CodeAction_OffersFormattingWhenThereIsSomethingToDo() {
         using var scratch = new Scratch();

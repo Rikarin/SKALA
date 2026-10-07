@@ -216,6 +216,14 @@ writes nothing, and dumps a reproduction file. This catches the entire class of 
 that swallow a token, drop a comment, or move code across a `#if` boundary. Cost is one extra
 parse per file, ~15 % of formatting time, and it is never disabled — not by a flag, not in CI.
 
+⚠ **The token stream is only as trustworthy as the decode that produced it** (#387). The comparison
+runs on text, after the bytes were decoded, so it cannot see a loss that happened in the decode
+itself. Until #387 every file was decoded with the replacement fallback: a Latin-1 `é` became U+FFFD
+on *both* sides of the comparison, the comparison agreed, U+FFFD in a literal parses, and the file
+was written back with its original bytes gone. Every read that may lead to a write is now strict in
+the encoding the file declares (its BOM, or UTF-8 without one), and a file that fails it is `SK9018`
+— reported, left byte-identical, never written by any verb.
+
 ### ADR-006 — Skala's own rules are ordinary Roslyn `DiagnosticAnalyzer`s
 
 **Status:** decided.
