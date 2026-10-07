@@ -109,7 +109,8 @@ public sealed class BodyStyleIssue399Tests {
     [Fact]
     public void ALocalFunction_KeepsItsBlock() {
         var arranged = Arrange(
-            "public int M() { return Inner(1) + Plain(1); int Inner(int v) { return v switch { _ => 0 }; } int Plain(int v) { return v; } }"
+            "public int M() { return Inner(1) + Plain(1); "
+            + "int Inner(int v) { return v switch { _ => 0 }; } int Plain(int v) { return v; } }"
         );
 
         Assert.Contains("int Inner(int v) { return v switch { _ => 0 }; }", arranged, StringComparison.Ordinal);
