@@ -73,12 +73,12 @@ public sealed class RedundantParenthesesIssue392Tests {
         "=> b && v switch { 1 => true, _ => false };"
     )]
     [InlineData(
-        "public string? M(int v, string? s) => s ?? (v switch { 1 => \"a\", _ => null });",
-        "=> s ?? v switch { 1 => \"a\", _ => null };"
+        """public string? M(int v, string? s) => s ?? (v switch { 1 => "a", _ => null });""",
+        """=> s ?? v switch { 1 => "a", _ => null };"""
     )]
     [InlineData(
-        "public string? M(int v, string s) => (v switch { 1 => \"a\", _ => null }) ?? s;",
-        "=> v switch { 1 => \"a\", _ => null } ?? s;"
+        """public string? M(int v, string s) => (v switch { 1 => "a", _ => null }) ?? s;""",
+        """=> v switch { 1 => "a", _ => null } ?? s;"""
     )]
     // ⚠ Under a non-obvious operation too: `resharper_parentheses_non_obvious_operations` keeps a
     // *binary* operand of `&` or `<<`, not every operand.
@@ -91,12 +91,12 @@ public sealed class RedundantParenthesesIssue392Tests {
         "=> b << v switch { 1 => 10, _ => 0 };"
     )]
     [InlineData(
-        "public bool M(int v) => (v switch { 1 => (object)\"a\", _ => 1 }) is string;",
-        "=> v switch { 1 => (object)\"a\", _ => 1 } is string;"
+        """public bool M(int v) => (v switch { 1 => (object)"a", _ => 1 }) is string;""",
+        """=> v switch { 1 => (object)"a", _ => 1 } is string;"""
     )]
     [InlineData(
-        "public string? M(int v) => (v switch { 1 => (object)\"a\", _ => 1 }) as string;",
-        "=> v switch { 1 => (object)\"a\", _ => 1 } as string;"
+        """public string? M(int v) => (v switch { 1 => (object)"a", _ => 1 }) as string;""",
+        """=> v switch { 1 => (object)"a", _ => 1 } as string;"""
     )]
     [InlineData(
         "public int M(int v, bool b) => b ? (v switch { 1 => 10, _ => 0 }) : 1;",
@@ -121,16 +121,16 @@ public sealed class RedundantParenthesesIssue392Tests {
     // ⚠ Interpolation holes, once declined whole: the `,` and the `:` after the expression are an
     // alignment and a format clause, and the arms' own `,` sit inside braces.
     [InlineData(
-        "public string M(int v) => $\"{(v switch { 1 => 10, _ => 0 })}\";",
-        "=> $\"{v switch { 1 => 10, _ => 0 }}\";"
+        """public string M(int v) => $"{(v switch { 1 => 10, _ => 0 })}";""",
+        """=> $"{v switch { 1 => 10, _ => 0 }}";"""
     )]
     [InlineData(
-        "public string M(int v) => $\"{(v switch { 1 => 10, _ => 0 }),5}\";",
-        "=> $\"{v switch { 1 => 10, _ => 0 },5}\";"
+        """public string M(int v) => $"{(v switch { 1 => 10, _ => 0 }),5}";""",
+        """=> $"{v switch { 1 => 10, _ => 0 },5}";"""
     )]
     [InlineData(
-        "public string M(int v) => $\"{(v switch { 1 => 10, _ => 0 }):D2}\";",
-        "=> $\"{v switch { 1 => 10, _ => 0 }:D2}\";"
+        """public string M(int v) => $"{(v switch { 1 => 10, _ => 0 }):D2}";""",
+        """=> $"{v switch { 1 => 10, _ => 0 }:D2}";"""
     )]
     [InlineData(
         "public R M(R r, int v) => r with { A = (v switch { 1 => 10, _ => 0 }) };",
@@ -145,7 +145,8 @@ public sealed class RedundantParenthesesIssue392Tests {
         "_ when w switch { 1 => true, _ => false } => 1"
     )]
     [InlineData(
-        "public int M(object o, int w) { switch (o) { case int when (w switch { 1 => true, _ => false }): return 1; default: return 0; } }",
+        "public int M(object o, int w) { switch (o) { case int when (w switch { 1 => true, _ => false }): "
+        + "return 1; default: return 0; } }",
         "case int when w switch { 1 => true, _ => false }:"
     )]
     [InlineData(
@@ -227,9 +228,9 @@ public sealed class RedundantParenthesesIssue392Tests {
         "=> (b & o as bool?) == true ? 1 : 0;"
     )]
     // Other interpolation holes.
-    [InlineData("public string M(int a, int b) => $\"{(a + b)}\";", "=> $\"{a + b}\";")]
-    [InlineData("public string M(int a, int b) => $\"{(a + b):D2}\";", "=> $\"{a + b:D2}\";")]
-    [InlineData("public string M(string? s) => $\"{(s ?? \"x\")}\";", "=> $\"{s ?? \"x\"}\";")]
+    [InlineData("""public string M(int a, int b) => $"{(a + b)}";""", """=> $"{a + b}";""")]
+    [InlineData("""public string M(int a, int b) => $"{(a + b):D2}";""", """=> $"{a + b:D2}";""")]
+    [InlineData("""public string M(string? s) => $"{(s ?? "x")}";""", """=> $"{s ?? "x"}";""")]
     // ⚠ A comment inside the parentheses comes out with the expression; it used to be deleted.
     [InlineData("public int M(int a, int b) { return (/* why */ a + b); }", "return /* why */ a + b;")]
     [InlineData("public int M(int a, int b) { return (a + b /* why */); }", "return a + b /* why */;")]
@@ -249,11 +250,11 @@ public sealed class RedundantParenthesesIssue392Tests {
     /// <summary>Kept: the oracle keeps these, and so must Skala.</summary>
     [Theory]
     // The parse needs them.
-    [InlineData("public string M(int v) => (v switch { 1 => \"a\", _ => \"b\" }).ToString();")]
-    [InlineData("public string M(int v) => (v switch { 1 => (Func<string>)(() => \"a\"), _ => () => \"b\" })();")]
-    [InlineData("public char M(int v) => (v switch { 1 => \"a\", _ => \"b\" })[0];")]
-    [InlineData("public string M(int v) => (v switch { 1 => \"a\", _ => null })!;")]
-    [InlineData("public int? M(int v) => (v switch { 1 => \"a\", _ => null })?.Length;")]
+    [InlineData("""public string M(int v) => (v switch { 1 => "a", _ => "b" }).ToString();""")]
+    [InlineData("""public string M(int v) => (v switch { 1 => (Func<string>)(() => "a"), _ => () => "b" })();""")]
+    [InlineData("""public char M(int v) => (v switch { 1 => "a", _ => "b" })[0];""")]
+    [InlineData("""public string M(int v) => (v switch { 1 => "a", _ => null })!;""")]
+    [InlineData("""public int? M(int v) => (v switch { 1 => "a", _ => null })?.Length;""")]
     [InlineData("public bool M(int v) => !(v switch { 1 => true, _ => false });")]
     [InlineData("public int M(int v) => -(v switch { 1 => 10, _ => 0 });")]
     [InlineData("public async Task<int> M(int v, Task<int> t) => await (v switch { 1 => t, _ => t });")]
@@ -266,9 +267,9 @@ public sealed class RedundantParenthesesIssue392Tests {
     [InlineData("public int M(bool a, bool b) => (a ? b : !b) ? 1 : 2;")]
     [InlineData("public bool M(bool a, bool b) => (a ? b : !b) && b;")]
     [InlineData("public bool M(bool a, object o) => (a ? o : null) is string;")]
-    [InlineData("public string M(bool a, string? s) => s ?? (a ? \"y\" : \"x\");")]
+    [InlineData("""public string M(bool a, string? s) => s ?? (a ? "y" : "x");""")]
     [InlineData("public int M(int a) { var x = 0; var y = (x = a) + 1; return y; }")]
-    [InlineData("public string M(bool b) => $\"{(b ? 1 : 2)}\";")]
+    [InlineData("""public string M(bool b) => $"{(b ? 1 : 2)}";""")]
     // ⚠ The parse does not need these, and the oracle keeps them anyway.
     [InlineData("public R M(R r, int v) => (v switch { 1 => r, _ => r }) with { A = 1 };")]
     [InlineData("public int M(int v) => (v switch { 1 => 10, _ => 0 }) switch { 10 => 1, _ => 0 };")]
