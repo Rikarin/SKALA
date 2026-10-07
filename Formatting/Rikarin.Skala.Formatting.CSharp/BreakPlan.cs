@@ -4457,7 +4457,18 @@ public sealed class BreakPlan {
                 var group = NewGroup();
                 Point(FirstToken(block.Statements[0]), group);
                 Point(block.CloseBraceToken, group);
-                Describe(block, group, GroupMode.Auto, new GroupFacts(BreaksIfContentSpansLines: true));
+                var head = HeadMarkerOf(block);
+                Describe(
+                    block,
+                    group,
+                    GroupMode.Preserve,
+                    new GroupFacts(
+                        BreaksIfTooLong: true,
+                        Owner: head,
+                        BreaksIfOwnerIsMultiLine: head >= 0,
+                        BreaksIfContentSpansLines: true
+                    )
+                );
                 return;
 
             case BlockSyntax { Statements.Count: > 0 } block:
@@ -4548,6 +4559,44 @@ public sealed class BreakPlan {
     ///         expanded where the oracle keeps it.
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     The head marker of the declaration or function a one-line block belongs to, or −1 for a
+    ///     statement's block, which has none.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A block stays on its owner's line only while the owner is on one line: measured for #405,
+    ///     <c>delegate(</c>↵<c>int first) { return first; }</c>, <c>(</c>↵<c>int first) =&gt; { … }</c>,
+    ///     <c>(int first)</c>↵<c>=&gt; { … }</c>, and under the declaration key <c>void N(</c>↵<c>int x)
+    ///     { M(); }</c> and the same local function all come back with the block broken open, while
+    ///     <c>[Obsolete]</c>↵<c>get { return _n; }</c> keeps it — the attribute's line is not the head's,
+    ///     as for an expression body (#372). ⚠ Not an <c>if</c>: <c>if (a</c>↵<c>&amp;&amp; b) { M(); }</c>
+    ///     stays whole under the embedded key, as an embedded statement stays on a broken header's last
+    ///     line (SK-DIV-0106). Read off the writer's lines, like
+    ///     <see cref="GroupFacts.BreaksIfOwnerIsMultiLine" /> everywhere else: a parameter list the fitter
+    ///     chops is not in the source on pass one.
+    ///     <para>
+    ///         This is SK-DIV-0077's block half: Skala used to write <c>) { return first; }</c> on the line
+    ///         that closes a parameter list broken across three.
+    ///     </para>
+    /// </remarks>
+    int HeadMarkerOf(BlockSyntax block) {
+        if (block.Parent is null or (StatementSyntax and not LocalFunctionStatementSyntax) or SwitchSectionSyntax) {
+            return -1;
+        }
+
+        var head = FirstTokenAfterAttributes(block.Parent);
+        if (head.IsKind(SyntaxKind.None) || head == block.OpenBraceToken) {
+            return -1;
+        }
+
+        if (!markers.TryGetValue(head.SpanStart, out var marker)) {
+            marker = NewGroup();
+            markers[head.SpanStart] = marker;
+        }
+
+        return marker;
+    }
+
     bool MayShareItsOwnersLine(BlockSyntax block) {
         if (block.Statements.Count != 1) {
             return false;
@@ -4789,9 +4838,16 @@ public sealed class BreakPlan {
     ///     argument on its own line, exactly as <c>(name48: (true ? 1 : 2))</c> does, while the same call
     ///     with <c>(x49 =&gt; …)</c> keeps the lambda on the <c>(</c> line and breaks its arrow. The
     ///     name makes it an ordinary argument.
+    ///     <para>
+    ///         ⚠ And not an anonymous method, which the key's name says and which was not measured until
+    ///         #405 made one-line blocks break (SK-DIV-0163): <c>Register(delegate { A(); B(); })</c> comes
+    ///         back <c>Register(</c> / <c>delegate {</c> … <c>}</c> / <c>);</c>, as an ordinary argument does,
+    ///         alone or after another argument, with or without <c>()</c>, while <c>Register(() =&gt; {</c>
+    ///         keeps its line.
+    ///     </para>
     /// </remarks>
     static bool IsLambdaArgument(SyntaxNode item) =>
-        item is ArgumentSyntax { NameColon: null, Expression: AnonymousFunctionExpressionSyntax };
+        item is ArgumentSyntax { NameColon: null, Expression: LambdaExpressionSyntax };
 
     /// <summary>
     ///     The outermost link of an <c>a.B().C()</c> chain — the node the whole chain's group hangs from.

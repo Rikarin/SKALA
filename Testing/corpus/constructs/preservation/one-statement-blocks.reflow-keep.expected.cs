@@ -22,6 +22,8 @@ class OneStatementBlocks {
         B();
     }
 
+    void HeadBroken(int x) { A(); }
+
     void Statements() {
         void Local() { A(); }
 
@@ -38,6 +40,8 @@ class OneStatementBlocks {
             A();
             B();
         }
+
+        if (_n > 3 && _n < 9) { A(); }
 
         while (_n > 3) { _n = Math.Max(_n, 1); }
 

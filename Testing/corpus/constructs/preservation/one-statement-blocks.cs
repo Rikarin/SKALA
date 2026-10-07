@@ -17,6 +17,9 @@ class OneStatementBlocks {
 
     void TwoStatements() { A(); B(); }
 
+    void HeadBroken(
+        int x) { A(); }
+
     void Statements() {
         void Local() { A(); }
         void LocalOfTwo() { A(); B(); }
@@ -25,6 +28,8 @@ class OneStatementBlocks {
             _n,
             1); }
         if (_n > 2) { A(); B(); }
+        if (_n > 3
+            && _n < 9) { A(); }
         while (_n > 3) { _n = Math.Max(
             _n,
             1); }

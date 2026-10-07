@@ -5,7 +5,9 @@
 // block on its line while the oracle breaks it open: an argument list the author chopped, a binary
 // the author broke, a switch expression that always chops, a sum past the margin, a lambda block of
 // its own that broke. A broken block whose statement fits is joined, an initializer that re-joins
-// leaves its block alone, and two statements are always one per line.
+// leaves its block alone, and two statements are always one per line. An anonymous method that
+// breaks is an ordinary argument, not the single lambda that keeps the call's line, and a block
+// whose owner's head spans lines — a parameter list the author broke — breaks open with it.
 
 using System;
 using System.Collections.Generic;
@@ -163,6 +165,10 @@ class Lambdas {
 
     void Register(Action a) { }
 
+    void Register(int x, Action a) { }
+
+    void Use(Func<int, int> f) { }
+
     void Blocks() {
         _a = () => { A(); };
         _a = () => { A(); };
@@ -174,6 +180,33 @@ class Lambdas {
         Register(() => {
                 A();
                 B();
+            }
+        );
+        Register(delegate { A(); });
+        Register(
+            delegate {
+                A();
+                B();
+            }
+        );
+        Register(
+            1,
+            delegate() {
+                A();
+                B();
+            }
+        );
+        Use(
+            delegate(
+                int first
+            ) {
+                return first;
+            }
+        );
+        Use((
+                int first
+            ) => {
+                return first;
             }
         );
         _a = () => {

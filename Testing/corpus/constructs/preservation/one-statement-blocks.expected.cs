@@ -29,6 +29,12 @@ class OneStatementBlocks {
         B();
     }
 
+    void HeadBroken(
+        int x
+    ) {
+        A();
+    }
+
     void Statements() {
         void Local() {
             A();
@@ -53,6 +59,11 @@ class OneStatementBlocks {
         if (_n > 2) {
             A();
             B();
+        }
+
+        if (_n > 3
+            && _n < 9) {
+            A();
         }
 
         while (_n > 3) {

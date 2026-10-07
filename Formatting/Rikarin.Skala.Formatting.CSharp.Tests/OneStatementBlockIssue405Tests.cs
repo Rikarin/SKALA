@@ -549,4 +549,161 @@ public sealed class OneStatementBlockIssue405Tests {
             """,
             ("skala_keep_existing_embedded_block_arrangement", "true")
         );
+
+    /// <summary>
+    ///     SK-DIV-0163: a delegate whose block breaks leaves the call's line, alone or after another
+    ///     argument, where a lambda keeps <c>Register(() =&gt; {</c>. And SK-DIV-0077's block half: a
+    ///     parameter list the author broke puts the block it heads on lines of its own, for an anonymous
+    ///     method and a lambda alike.
+    /// </summary>
+    [Fact]
+    public void AnAnonymousMethodThatBreaks_IsAnOrdinaryArgument_AndABrokenHeadOpensItsBlock() =>
+        Agrees(
+            """
+            using System;
+
+            class T {
+                void Register(Action a) { }
+
+                void Register(int x, Action a) { }
+
+                void Use(Func<int, int> f) { }
+
+                void M() {
+                    Register(delegate { A(); });
+                    Register(delegate { A(); B(); });
+                    Register(() => { A(); B(); });
+                    Register(1, delegate { A(); B(); });
+                    Use(delegate(
+                        int first) { return first; });
+                    Use((
+                        int first) => { return first; });
+                }
+
+                void A() { }
+
+                void B() { }
+            }
+            """,
+            """
+            using System;
+
+            class T {
+                void Register(Action a) { }
+
+                void Register(int x, Action a) { }
+
+                void Use(Func<int, int> f) { }
+
+                void M() {
+                    Register(delegate { A(); });
+                    Register(
+                        delegate {
+                            A();
+                            B();
+                        }
+                    );
+                    Register(() => {
+                            A();
+                            B();
+                        }
+                    );
+                    Register(
+                        1,
+                        delegate {
+                            A();
+                            B();
+                        }
+                    );
+                    Use(
+                        delegate(
+                            int first
+                        ) {
+                            return first;
+                        }
+                    );
+                    Use((
+                            int first
+                        ) => {
+                            return first;
+                        }
+                    );
+                }
+
+                void A() { }
+
+                void B() { }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     A method's or a local function's head broken across lines opens the one-line block the key
+    ///     would otherwise keep; an accessor's attribute on a line of its own is not its head.
+    /// </summary>
+    [Fact]
+    public void UnderTheDeclarationKey_ABrokenHeadOpensTheBlock_AndAnAttributeLineDoesNot() =>
+        Agrees(
+            """
+            using System;
+
+            class T {
+                int _n;
+
+                void N(
+                    int x) { A(); }
+
+                void M(bool a, bool b) {
+                    void L(
+                        int x) { A(); }
+                    if (a
+                        && b) { A(); }
+                }
+
+                public int P {
+                    [Obsolete]
+                    get { return _n; }
+                    [Obsolete] set { _n = value; }
+                }
+
+                void A() { }
+            }
+            """,
+            """
+            using System;
+
+            class T {
+                int _n;
+
+                void N(
+                    int x
+                ) {
+                    A();
+                }
+
+                void M(bool a, bool b) {
+                    void L(
+                        int x
+                    ) {
+                        A();
+                    }
+
+                    if (a
+                        && b) {
+                        A();
+                    }
+                }
+
+                public int P {
+                    [Obsolete]
+                    get { return _n; }
+                    [Obsolete]
+                    set { _n = value; }
+                }
+
+                void A() { }
+            }
+            """,
+            ("skala_keep_existing_declaration_block_arrangement", "true")
+        );
 }
