@@ -277,6 +277,40 @@ public static class Renderer {
             .Distinct();
 
     /// <summary>
+    ///     The run's own diagnostics at warning or above that are <em>not</em> <see cref="Blocking" />:
+    ///     what the bounded surfaces print beside the findings, below the banner.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #398. <c>plain</c> printed <see cref="Blocking" /> and the findings, <c>agent</c> the
+    ///     banner and the findings, and neither printed anything else the run said about itself — so
+    ///     <c>SK9021</c>, a file in no compilation and therefore not analysed, which its own rationale
+    ///     calls the worst failure this tool can have, had the visibility of an info on the two
+    ///     surfaces every CI log, script, MCP call and agent reads. Measured on Skala's own self-gate:
+    ///     three <c>SK9021</c> in the SARIF, zero lines under either format.
+    ///     <para>
+    ///         ⚠ <b>Warning is the floor, and info stays off both surfaces.</b> An info tool
+    ///         diagnostic is by the registry's own definition a state the run handled: <c>SK9025</c>
+    ///         (a fallback, whose consequence the <c>SKIPPED</c> line already states) and
+    ///         <c>SK9032</c> (the compiler's doc diagnostics are off, which is true of 31 of 31
+    ///         projects in this repository and of most repositories, on every run). On a surface an
+    ///         editor turns into a problem list, or that an agent reads as work, a line that is always
+    ///         there and never about the code is a line the reader learns to skip, and it would arrive
+    ///         in exactly the shape <c>SK9021</c> does. <see cref="Terminal" />, <see cref="Github" />
+    ///         and the SARIF still carry every info.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Not a second gate: nothing here moves the exit code or reaches the banner, whose set
+    ///         is <see cref="Blocking" /> and is excluded from this one by construction.
+    ///     </para>
+    /// </remarks>
+    public static IEnumerable<SkalaDiagnostic> Notices(RunReport report) {
+        var blocking = Blocking(report).ToHashSet();
+        return report.Diagnostics
+            .Where(diagnostic => diagnostic.Severity >= SkalaSeverity.Warning && !blocking.Contains(diagnostic))
+            .Distinct();
+    }
+
+    /// <summary>
     ///     Whether a diagnostic is about one file rather than about the stage that ran over them.
     /// </summary>
     /// <remarks>
@@ -499,8 +533,15 @@ public static class Renderer {
     ///     editor error parser this format exists for lands the reader on the file that was not
     ///     checked. Before this the whole method emitted <b>zero bytes</b> on an exit-5 run.
     /// </summary>
-    static void PlainBlocking(StringBuilder builder, RunReport report) {
-        foreach (var diagnostic in Blocking(report)) {
+    /// <remarks>
+    ///     ⚠ #398: then every <see cref="Notices" /> diagnostic, in the same shape and on the same
+    ///     stream. Not stderr: this shape is the one the format has carried for blocking diagnostics
+    ///     since #345, so a parser that accepts one accepts the other; the MCP server's <c>check</c>
+    ///     tool returns this text and nothing else; and a warning that appears only when somebody
+    ///     remembered to keep stderr is the warning #398 is about.
+    /// </remarks>
+    static void PlainDiagnostics(StringBuilder builder, RunReport report) {
+        foreach (var diagnostic in Blocking(report).Concat(Notices(report))) {
             builder.Append(Relative(report, diagnostic))
                 .Append(':')
                 .Append(Math.Max(1, diagnostic.Line).ToString(CultureInfo.InvariantCulture))
@@ -515,7 +556,7 @@ public static class Renderer {
 
     static string Plain(RunReport report, bool includeHints) {
         var builder = new StringBuilder();
-        PlainBlocking(builder, report);
+        PlainDiagnostics(builder, report);
 
         foreach (var finding in Ordered(report, includeHints)) {
             builder.Append(SarifWriter.Relative(report.RepositoryRoot, finding.Path))
@@ -755,6 +796,10 @@ public static class AgentRenderer {
     public const int MaxFindings = 50;
     public const int MaxCharacters = 8000;
 
+    /// <summary>The most tool-warning lines the <c>WARNING</c> block prints before it elides (#398).</summary>
+    /// <remarks>A property, not a <c>public const</c>, for SK6034's reason given on <see cref="FullReportCommand" />.</remarks>
+    public static int MaxWarnings => 25;
+
     /// <summary>
     ///     Where a reader of a truncated agent report is sent for the rest of it.
     /// </summary>
@@ -791,6 +836,7 @@ public static class AgentRenderer {
         var ordered = Renderer.Ordered(report, false).Where(report.IsNew).ToList();
 
         Incomplete(builder, report);
+        Warnings(builder, report);
 
         var formatting = ordered.Where(static f => f.RuleId == RuleIds.FileIsNotFormatted).ToList();
         var fixable = ordered
@@ -971,6 +1017,62 @@ public static class AgentRenderer {
             if (Renderer.BoundedDetail(report, diagnostic) is { } detail) {
                 builder.Append("        → ").Line(detail);
             }
+        }
+
+        builder.Line();
+    }
+
+    /// <summary>
+    ///     ⚠ #398. The block under the banner: what the run said about itself at warning or above that
+    ///     did not block it (<see cref="Renderer.Notices" />).
+    /// </summary>
+    /// <remarks>
+    ///     Above <c>FORMAT</c> for the reason the banner is: <c>SK9021</c> says a file was not
+    ///     analysed, so every bucket under it covers less than the tree, and an agent that drains the
+    ///     buckets and reports success has been told something false. It is not part of the banner —
+    ///     the banner's set is what blocked the run and what the gate failed on, and these did
+    ///     neither, so the exit code is unchanged and the line says so by not saying INCOMPLETE.
+    ///     <para>
+    ///         ⚠ A printed block makes the builder non-empty, so <c>OK  nothing to do.</c> is not
+    ///         printed above a warning. That sentence would be read as "the tree is clean" by the
+    ///         reader this format exists for, over a run that just said a file was never looked at.
+    ///     </para>
+    ///     <para>
+    ///         Bounded like the buckets: at most <see cref="MaxWarnings" /> lines, and the elision
+    ///         names the command that shows the rest. The loader already caps <c>SK9021</c>'s per-file
+    ///         lines at twenty with a summary line, so this bound is for an id that does not.
+    ///     </para>
+    /// </remarks>
+    static void Warnings(StringBuilder builder, RunReport report) {
+        var notices = Renderer.Notices(report).ToList();
+        if (notices.Count == 0) {
+            return;
+        }
+
+        builder.Append("WARNING ")
+            .Append(notices.Count.ToString(CultureInfo.InvariantCulture))
+            .Append(notices.Count == 1 ? " warning" : " warnings")
+            .Line(" about this run, not about your code — the findings below may not cover what these name:");
+
+        foreach (var diagnostic in notices.Take(MaxWarnings)) {
+            builder.Append("  ")
+                .Append(diagnostic.Id)
+                .Append("  ")
+                .Append(Renderer.Relative(report, diagnostic))
+                .Append("  ")
+                .Line(diagnostic.Message);
+
+            if (Renderer.BoundedDetail(report, diagnostic) is { } detail) {
+                builder.Append("        → ").Line(detail);
+            }
+        }
+
+        if (notices.Count > MaxWarnings) {
+            builder.Append("  … ")
+                .Append((notices.Count - MaxWarnings).ToString(CultureInfo.InvariantCulture))
+                .Append(" more elided. Run `")
+                .Append(FullReportCommand)
+                .Line("` for all of them.");
         }
 
         builder.Line();
