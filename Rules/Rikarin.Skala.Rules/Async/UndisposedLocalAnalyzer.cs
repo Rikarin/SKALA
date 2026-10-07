@@ -301,9 +301,9 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
             null => false,
             { SpecialType: SpecialType.System_Void or SpecialType.System_String } => true,
             { TypeKind: TypeKind.Enum } => true,
+            // System_Boolean..System_Double spans every primitive numeric, decimal included (CS9335).
             var type => type.SpecialType is >= SpecialType.System_Boolean
                 and <= SpecialType.System_Double
-                or SpecialType.System_Decimal
                 or SpecialType.System_DateTime,
         };
     }
