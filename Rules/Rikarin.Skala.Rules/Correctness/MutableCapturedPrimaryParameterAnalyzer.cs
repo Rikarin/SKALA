@@ -5,7 +5,6 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Threading;
 
 namespace Rikarin.Skala.Rules.Correctness;
 
@@ -59,16 +58,20 @@ public sealed class MutableCapturedPrimaryParameterAnalyzer : DiagnosticAnalyzer
 
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var declaration = (TypeDeclarationSyntax)context.Node;
-        if (declaration.ParameterList is not { Parameters.Count: > 0 } parameters
+        if (declaration.ParameterList is not { Parameters.Count: > 0 }
             || !SkalaRule.MeetsLanguageVersion(context.Compilation, "12.0")) {
             return;
         }
 
         var passedToBase = BaseArguments(declaration);
-        foreach (var parameter in parameters.Parameters) {
-            if (context.SemanticModel.GetDeclaredSymbol(parameter, context.CancellationToken) is not { } symbol
-                || passedToBase.Contains(parameter.Identifier.ValueText, System.StringComparer.Ordinal)
-                || !IsAssignedInAMemberBody(declaration, symbol, context.SemanticModel, context.CancellationToken)) {
+        foreach (var symbol in PrimaryConstructorWrites.WrittenParameters(
+                     declaration,
+                     context.SemanticModel,
+                     context.CancellationToken
+                 )) {
+            if (passedToBase.Contains(symbol.Name)
+                || symbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(context.CancellationToken) is not
+                    ParameterSyntax parameter) {
                 continue;
             }
 
@@ -97,58 +100,4 @@ public sealed class MutableCapturedPrimaryParameterAnalyzer : DiagnosticAnalyzer
             .Select(static name => name.Identifier.ValueText)
             .ToImmutableHashSet(System.StringComparer.Ordinal)
         ?? ImmutableHashSet<string>.Empty;
-
-    static bool IsAssignedInAMemberBody(
-        TypeDeclarationSyntax declaration,
-        IParameterSymbol parameter,
-        SemanticModel model,
-        CancellationToken cancellation
-    ) =>
-        declaration.Members
-            .SelectMany(static member => member.DescendantNodes())
-            .Any(node => IsAWrite(node, parameter, model, cancellation) && InAMemberBody(node));
-
-    static bool IsAWrite(SyntaxNode node, IParameterSymbol parameter, SemanticModel model, CancellationToken token) {
-        var written = node switch {
-            AssignmentExpressionSyntax assignment => assignment.Left,
-            PrefixUnaryExpressionSyntax {
-                RawKind: (int)SyntaxKind.PreIncrementExpression or (int)SyntaxKind.PreDecrementExpression
-            } prefix => prefix.Operand,
-            PostfixUnaryExpressionSyntax {
-                RawKind: (int)SyntaxKind.PostIncrementExpression or (int)SyntaxKind.PostDecrementExpression
-            } postfix => postfix.Operand,
-            ArgumentSyntax { RefKindKeyword.RawKind: (int)SyntaxKind.RefKeyword or (int)SyntaxKind.OutKeyword }
-                argument => argument.Expression,
-            _ => null
-        };
-
-        return written is IdentifierNameSyntax
-            && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(written, token).Symbol, parameter);
-    }
-
-    /// <summary>
-    ///     ⚠ A field or property <em>initializer</em> is not a member body and is excluded here.
-    ///     Initializers run while the constructor is running, where the parameter is an ordinary
-    ///     parameter and writing it captures nothing.
-    /// </summary>
-    static bool InAMemberBody(SyntaxNode node) {
-        for (var current = node; current is not null; current = current.Parent) {
-            switch (current) {
-                case EqualsValueClauseSyntax when current.Parent is VariableDeclaratorSyntax {
-                    Parent.Parent: FieldDeclarationSyntax or EventFieldDeclarationSyntax
-                }:
-                case EqualsValueClauseSyntax when current.Parent is PropertyDeclarationSyntax:
-                case ConstructorInitializerSyntax:
-                case BaseListSyntax:
-                    return false;
-                case BlockSyntax:
-                case ArrowExpressionClauseSyntax:
-                    return true;
-                case MemberDeclarationSyntax:
-                    return false;
-            }
-        }
-
-        return false;
-    }
 }
