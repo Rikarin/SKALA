@@ -2844,6 +2844,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     </para>
     /// </remarks>
     bool PointSurvivesComments(int lastPieceIndex) {
+        var lineComment = false;
         for (var i = lastPieceIndex; i >= 0; i--) {
             var piece = pieces[i];
             switch (piece.Kind) {
@@ -2851,14 +2852,22 @@ public sealed partial class CSharpDocumentBuilder {
                     when !FormatterTagGuard.IsOffTag(piece.Text, options.Tags)
                     && !FormatterTagGuard.IsOnTag(piece.Text, options.Tags):
                     continue;
+                case PieceKind.LineComment when i != lastPieceIndex:
+                    // Only on the way to the file's start, below: a `//` header above the run.
+                    lineComment = true;
+                    continue;
                 case PieceKind.Token:
-                    return i != lastPieceIndex && !StopsAtAComment(tokens[piece.TokenIndex]);
+                    return !lineComment && i != lastPieceIndex && !StopsAtAComment(tokens[piece.TokenIndex]);
                 default:
                     return false;
             }
         }
 
-        return false;
+        // ⚠ The run reached the file's start: `/* fs */ namespace FS;` on the first line, or under a
+        // `//` header. Nothing but comments precede the token, and the planned gap is after the last
+        // block comment, never after a `//` — so it is the same gap as after one (#429), and the oracle
+        // breaks after the comment there as anywhere.
+        return true;
     }
 
     /// <summary>

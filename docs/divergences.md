@@ -6941,7 +6941,7 @@ Once readable, the oracle treats `/** … */` as the block comment it looks like
 | `/**/`, `/***/` | left alone (plain comments to Roslyn) | identical | identical |
 | `M(1 /** e09 */ , 2)`, `M(1, /** e10 */2)` | `/** e09 */,` and `/** e10 */2` | — | `/** e09 */ ,` and `/** e10 */ 2`: #410, the same for `/* */` |
 | a multi-line `/**` whose first line moves | continuation lines shift with it | — | identical since #428 (SK-DIV-0094); before it, continuation lines stayed put |
-| `/** top */ public class D { }` at the top level | broken after the comment | — | kept: #429, the same for `/* */` |
+| `/** top */ public class D { }` at the top level | broken after the comment | — | identical since #429 (SK-DIV-0194); before it, kept |
 
 Pinned by `BlockDocCommentIssue415Tests` (byte-identity of the comment and of the token stream across
 fourteen positions, the Roslyn premise under both documentation modes, and a `/** @formatter:off */`
@@ -7298,3 +7298,38 @@ line among its lines is "returned exactly as written": the asterisks stay, the l
 - ⚠ status: **resolved**. Pinned by `BlockCommentShiftIssue428Tests.EveryLineLosesItsTrailingWhitespace_MovedOrNot`,
   `AlignMultilineCommentTests.AWhitespaceOnlyLine_Disqualifies_AndIsEmptied` and the `Trim` class of
   `constructs/trivia/block-comment-continuation-lines.cs`.
+
+## SK-DIV-0194 — the file's own level had no line plan, so top-level declarations shared a line
+
+#429 reported `/* top */ public class D { }` at the top level kept on one line, where the oracle breaks
+after the comment and the same shape inside a type already agreed. ⚠ **The comment was incidental.** A
+type's and a namespace's members were planned one per line (`BreakPlan.PlanOnePerLine`); the
+compilation unit and a file-scoped namespace had no arm at all, and #409's rule that a point survives a
+block comment only ever reaches a gap the plan has. Measured with `jb cleanupcode` 2025.2.6 under
+`SkalaFormatOnly`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `public class A1 { } public class A2 { }` | two lines, a blank between | one line |
+| `using System; using System.IO;`, `extern alias Ex; extern alias Ey;`, two `[assembly: …]` lists | one per line | one line |
+| `/* c */` before a `using`, an `[assembly: …]`, a type, a delegate, an enum, a namespace, a top-level statement | broken after the comment | kept |
+| `/* fs */ namespace FS; using System;` on the file's first line | `/* fs */` / `namespace FS;` / `using System;` | one line |
+| `namespace N { using System; }` | three lines | one line |
+| `/* x */ /* y */ public class L { }` | the two comments on one line, the class below, no blank between | one line; once broken, a blank line between the comments and the class |
+
+`skala_keep_existing_declaration_block_arrangement = true` moves none of the top-level rows — the oracle
+returns the same bytes — so the compilation unit's and a file-scoped namespace's arms are unconditional;
+a block namespace keeps its key, and its `using` and `extern alias` lines join its members under it.
+Three further changes follow from the rows: `PointSurvivesComments` treats a run of comments that
+reaches the file's start (under a `//` header too) as surviving, because no token precedes it; and the
+blank-line rule that a comment above a declaration is part of it asks whether the comment *run* starts
+the line, not only its last comment.
+
+Not this entry, measured beside it and left open: `[Obsolete] /* c */ public void M() { }` stays one line
+in the oracle while Skala breaks after the comment; a blank line before an own-line comment in an
+enum's chopped member list and before `/* s3 */ static void Local()` at the top level, which the oracle
+writes; and `namespace N2 { /* b3 */` followed by a blank line, which it does not.
+
+- options: none.
+- ⚠ status: **resolved** (#429). Pinned by `TopLevelLinesIssue429Tests` and
+  `constructs/breaks/top-level-lines.cs`.
