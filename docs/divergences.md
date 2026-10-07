@@ -6792,12 +6792,67 @@ opposite off `Use(delegate(int first) { return first; });`, which stays whole be
 
 ## SK-DIV-0164 — a block after a parameter list the author broke, under an `=`, nests one level deep
 
-⚠ **Found beside SK-DIV-0162**, filed as #413, and it predates it: on master the oracle's own output
-comes back moved. `_f = delegate(` / `int first` / `) {` / `return first;` / `};` — and the same for
+⚠ **Found beside SK-DIV-0162 (#405), filed as #413**, and it predates it: on master the oracle's own
+output came back moved, so it was a non-idempotency against the oracle's fixed point as well as a
+divergence. `_f = delegate(` / `int first` / `) {` / `return first;` / `};` — and the same for
 `_f = (` / `int first` / `) => {` and `_f = (int first)` / `=> {` — is the oracle's fixed point, with
-the statement at the block's level and `};` at the statement's. Skala writes the statement one level
-past and `};` one past the statement, nesting from the `=`'s continuation although the `)` brought the
-line back. Stable on a second pass. As an argument, `Use(` / `delegate(` … `) {`, both engines agree.
+the statement at the `=`'s level plus one and `};` on it. Skala wrote the statement one level past
+and `};` one past the statement: the block nested from the `) {` line by `LayoutWriter.LevelForBlock`
+(#393), which counted the `=`'s continuation opened on an earlier line although the `)` brought the
+line back. Stable on a second pass, so the oracle's answer was never reachable.
+
+Measured 2026-10-07 with `Testing ask` at two class depths, on flat input, on the oracle's own output
+and on Skala's pass-one output (all three come back as the same fixed point):
+
+| shape | oracle | Skala before |
+|---|---|---|
+| `_f = delegate(`↵`int first`↵`) {`, `_f = (`↵`…`↵`) => {`, `_f = (int first)`↵`=> {`, `_f = first`↵`=> {`, `async (`, `static (` | statement at the `=`'s level + 1, `};` on it | + 2 / + 1 |
+| the same as a local declaration (`var g = (`, `Func<…> f = delegate(`), a field initializer, `_f +=` | the same | + 2 / + 1 |
+| `_t = new T(`↵`a,`↵`b`↵`) {`↵`P = …`↵`};`, `T i = new(`, `new List<int>(`↵`…`↵`) {`, a field, `return new T(` | members at the statement's level + 1, `};` on it | + 2 / + 1 |
+| `return delegate(`, `return (`↵`…`↵`) => {`, `P() =>`↵`delegate(`, `_f =`↵`delegate(`, `_f = _f`↵`?? delegate(`, `? delegate(`, `Use(`↵`1,`↵`(`↵`…`↵`) => {`, `Use((`↵`int first`↵`) => {` | from the function's own line + 1 | identical |
+| a method's, a local function's and a constructor's block after a broken parameter list or `: base(`↵`…`↵`)` | absolute, the member's level + 1 | identical |
+
+So the rule is the switch expression's (SK-DIV-0107), and the oracle's model says why: a block nests
+from the indentation of the expression that owns it, and that expression's indentation is its own
+line's — an `=`'s continuation applies to it only when it starts on a line of its own. A
+`(int first)`↵`=> {` makes the point: the `=>` line is a continuation at + 2, and the block is still at
++ 1, because the function started on the statement's line.
+
+`CSharpDocumentBuilder.VisitInner` pushes an `IndentKind.Anchor` after the gap before an anonymous
+function with a block body and before an object creation with an initializer (`AnchoredBlockOf`),
+and `VisitBraced` opens that block as an `AnchoredBlock`. ⚠ Not an initializer under
+`skala_align_multiline_array_and_object_initializer` or with
+`skala_use_continuous_indent_inside_initializer_braces = false`, whose braces are another scope.
+⚠ The function's own continuation frame may activate inside the anchor and is then closed inside it,
+so the document's scopes stay nested.
+
+Measured with `Testing fidelity`, master's formatter against this one on the same tree:
+`constructs/` 457 → 458 / 478 files and 10 431 → 10 471 / 10 519 lines (the new construct);
+`corpus/real/` and `pathological/` identical (330 / 380, 59 / 71 files).
 
 - options: none.
+- ⚠ status: **fixed**, pinned by `constructs/syntax/block-after-a-broken-head.cs` and
+  `AnonymousFunctionBlockIndentIssue413Tests`.
+
+## SK-DIV-0168 — a `with` initializer after a broken argument list stays on the `)` line
+
+⚠ **Measured beside SK-DIV-0164.** `_r = Make(`↵`a,`↵`b,`↵`c`↵`) with { P = 2 };`, with the arguments
+too long for one line, comes back from the oracle with the initializer broken open — `) with {` /
+`P = 2` / `};`, the member at the statement's level + 1 — and Skala keeps `) with { P = 2 };`, also
+given the oracle's broken form. An object initializer in the same place stays whole in both
+engines. Recorded, not fixed: it is a break rule, not an indentation one, and SK-DIV-0164's anchor
+does not reach a `with`'s braces yet; add `WithExpressionSyntax` to `AnchoredBlockOf` with the break.
+
+- options: none.
+- ⚠ status: **open**.
+
+## SK-DIV-0169 — the arrow of a single lambda argument broken before `=>` takes one level, not two
+
+⚠ **Measured beside SK-DIV-0164.** `Use((int first)`↵`=> {` … `}`↵`);` is the oracle's fixed point with
+the `=>` line two levels past the statement — the argument list's unconditional level and the
+arrow's continuation — and the block one level past the `Use(` line's argument level. Skala writes
+the `=>` one level past the statement; the block and `}` agree. Without the call
+(`_f = (int first)`↵`=> {`) both engines put the arrow at + 1. Recorded, not fixed.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line`.
 - ⚠ status: **open**.

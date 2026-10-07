@@ -648,7 +648,21 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         if (!OwnsAContinuationFrame(node)) {
+            // ⚠ An object creation's initializer nests from the line the creation starts on, the
+            // anonymous function's rule below: `_t = new T(` / `a,` / `b` / `) {` puts the members at
+            // the `=`'s level plus one and `};` on it (SK-DIV-0164).
+            var anchors = AnchorsItsBlock(node);
+            if (anchors) {
+                EmitLeadingGap(node);
+                OpenIndent(IndentKind.Anchor);
+            }
+
             Dispatch(node);
+            if (anchors) {
+                EmitUpTo(node.Span.End);
+                CloseIndent(IndentKind.Anchor);
+            }
+
             return;
         }
 
@@ -681,7 +695,35 @@ public sealed partial class CSharpDocumentBuilder {
             )
         );
 
+        // ⚠ An anonymous function's block nests from the line the function starts on, not from the
+        // line its `{` lands on — the switch expression's rule (SK-DIV-0107), measured for #413
+        // (SK-DIV-0164). The two differ when the parameter list or the arrow broke under a
+        // continuation the statement opened on the function's own line: `_f = delegate(` /
+        // `int first` / `) {` puts the statement at the `=`'s level plus one and `};` on it, as
+        // `_f = (int first)` / `=> {` does, while a block nesting from the `) {` line counted the
+        // `=`'s continuation it was inside. The anchor is pushed after the gap before the function,
+        // so it records the function's own line.
+        var anchored = AnchorsItsBlock(node);
+        var activatedOutside = false;
+        if (anchored) {
+            EmitLeadingGap(node);
+            activatedOutside = frames[^1].Activated;
+            OpenIndent(IndentKind.Anchor);
+        }
+
         Dispatch(node);
+        if (anchored) {
+            // A continuation the frame spent inside the anchor closes inside it, so the document's
+            // scopes stay nested.
+            EmitUpTo(node.Span.End);
+            if (frames[^1].Activated && !activatedOutside) {
+                CloseIndent(IndentKind.Continuous);
+                frames[^1] = frames[^1] with { Activated = false };
+            }
+
+            CloseIndent(IndentKind.Anchor);
+        }
+
         if (frames[^1].Activated) {
             CloseIndent(IndentKind.Continuous);
         }
@@ -690,6 +732,27 @@ public sealed partial class CSharpDocumentBuilder {
         frames.RemoveAt(frames.Count - 1);
         continuousDepth = restored;
     }
+
+    /// <summary>
+    ///     An anonymous function or an object creation whose block nests from the line the construct
+    ///     starts on.
+    /// </summary>
+    /// <remarks>See VisitInner and SK-DIV-0164.</remarks>
+    bool AnchorsItsBlock(SyntaxNode node) => AnchoredBlockOf(node) is not null;
+
+    /// <summary>The block <see cref="AnchorsItsBlock" /> anchors, or null.</summary>
+    /// <remarks>
+    ///     ⚠ Not an initializer that aligns to its own column or takes one level rather than a block:
+    ///     an <see cref="IndentKind.AnchoredBlock" /> is a block, and either of those is another scope.
+    /// </remarks>
+    SyntaxNode? AnchoredBlockOf(SyntaxNode node) =>
+        node switch {
+            AnonymousFunctionExpressionSyntax { Block: { } block } => block,
+            BaseObjectCreationExpressionSyntax { Initializer: { } initializer }
+                when options.UseContinuousIndentInsideInitializerBraces && !AlignsFromOwnColumn(initializer) =>
+                initializer,
+            _ => null
+        };
 
     /// <summary>
     ///     The lambda that <c>place_single_method_argument_lambda_on_same_line = true</c> keeps on the
@@ -1268,6 +1331,10 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ Not under `skala_align_multiline_switch_expression`, whose Align scope is already an absolute
         // column the arms nest from.
         var anchored = node is SwitchExpressionSyntax && !AlignsFromOwnColumn(node);
+
+        // ⚠ And an anonymous function's block and an object creation's initializer nest from the
+        // anchor VisitInner pushed where the construct begins (SK-DIV-0164).
+        var nestsFromAnchor = anchored || node.Parent is { } owner && AnchoredBlockOf(owner) == node;
         if (anchored) {
             OpenIndent(IndentKind.Anchor);
         }
@@ -1305,7 +1372,7 @@ public sealed partial class CSharpDocumentBuilder {
                     }
 
                     var braceIndent = singleInsideInitializer ? IndentKind.OneLevel
-                        : anchored ? IndentKind.AnchoredBlock
+                        : nestsFromAnchor ? IndentKind.AnchoredBlock
                         : IndentKind.Block;
 
                     if (indentBraces) {

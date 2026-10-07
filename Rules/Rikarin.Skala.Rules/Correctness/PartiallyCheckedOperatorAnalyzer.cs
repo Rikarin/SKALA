@@ -50,15 +50,15 @@ public sealed class PartiallyCheckedOperatorAnalyzer : DiagnosticAnalyzer {
     static readonly Dictionary<string, (string Checked, string Spelling)> Checkable = new(
         System.StringComparer.Ordinal
     ) {
-            ["op_Addition"] = ("op_CheckedAddition", "+"),
-            ["op_Subtraction"] = ("op_CheckedSubtraction", "-"),
-            ["op_Multiply"] = ("op_CheckedMultiply", "*"),
-            ["op_Division"] = ("op_CheckedDivision", "/"),
-            ["op_UnaryNegation"] = ("op_CheckedUnaryNegation", "-"),
-            ["op_Increment"] = ("op_CheckedIncrement", "++"),
-            ["op_Decrement"] = ("op_CheckedDecrement", "--"),
-            ["op_Explicit"] = ("op_CheckedExplicit", "explicit conversion")
-        };
+        ["op_Addition"] = ("op_CheckedAddition", "+"),
+        ["op_Subtraction"] = ("op_CheckedSubtraction", "-"),
+        ["op_Multiply"] = ("op_CheckedMultiply", "*"),
+        ["op_Division"] = ("op_CheckedDivision", "/"),
+        ["op_UnaryNegation"] = ("op_CheckedUnaryNegation", "-"),
+        ["op_Increment"] = ("op_CheckedIncrement", "++"),
+        ["op_Decrement"] = ("op_CheckedDecrement", "--"),
+        ["op_Explicit"] = ("op_CheckedExplicit", "explicit conversion")
+    };
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptor);
 
