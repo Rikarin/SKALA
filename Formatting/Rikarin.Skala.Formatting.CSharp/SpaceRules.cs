@@ -290,8 +290,10 @@ public static class SpaceRules {
 
         // A subpattern's colon (#419): `{ X: 1 }`, `{ X : 1 }`, `{ Q.X : 1 }` and `(A : 1, B : _)` all
         // come back as written, a run collapses to one, and no colon key moves it.
+        // A label's colon (#433) likewise: `a :`, `a:` and `a /* c */ :` come back as written, `a  :`
+        // collapses, and none of the colon, semicolon or label keys moves it.
         if (next.IsKind(SyntaxKind.ColonToken)) {
-            return next.Parent is BaseExpressionColonSyntax { Parent: SubpatternSyntax };
+            return next.Parent is BaseExpressionColonSyntax { Parent: SubpatternSyntax } or LabeledStatementSyntax;
         }
 
         return next.IsKind(SyntaxKind.OpenParenToken) && FollowsItsPatternType(next);
@@ -370,6 +372,13 @@ public static class SpaceRules {
             // rank specifier's `]` is handled above; the angle brackets fall through to here.
             return prev.Parent is not TypeArgumentListSyntax { Arguments: [OmittedTypeArgumentSyntax, ..] }
                 && o.SpaceAfterComma;
+        }
+
+        // ⚠ A label's empty statement is not a semicolon's gap: `e:;`, `e: ;` and `e:   ;` all come back
+        // `e: ;`, and `space_before_semicolon` moves every other `;` and not this one (#433).
+        if (right == SyntaxKind.SemicolonToken
+            && next.Parent is EmptyStatementSyntax { Parent: LabeledStatementSyntax }) {
+            return true;
         }
 
         if (right == SyntaxKind.SemicolonToken) {

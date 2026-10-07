@@ -2887,9 +2887,13 @@ public sealed class BreakPlan {
             return;
         }
 
+        var value = FirstToken(subpattern.Pattern);
+        if (KeepsTheBreakBefore(colon, value)) {
+            return;
+        }
+
         var group = NewGroup();
         Flat(colon);
-        var value = FirstToken(subpattern.Pattern);
         Point(value, group);
 
         Describe(
@@ -2898,7 +2902,12 @@ public sealed class BreakPlan {
             GroupMode.Preserve,
             new GroupFacts(
                 options.KeepsUserBreaksBetweenItems && BreaksBefore(value),
-                BreaksIfTooLong: true
+                BreaksIfTooLong: true,
+
+                // ⚠ A kept break before a colon somewhere inside the value is a hard line, which would
+                // otherwise break this group too: `Q: {` / `X` / `: 1` came out `Q:` / `{` (#436). The
+                // oracle keeps the value on the name's line, so the group asks the arrow's question.
+                BreaksOnlyIfHeadOverflows: HoldsAKeptColonBreak(subpattern.Pattern)
             )
         );
     }
@@ -2927,6 +2936,10 @@ public sealed class BreakPlan {
     void PlanArgumentName(SyntaxNode argument, SyntaxToken colon, ExpressionSyntax value) {
         var first = FirstToken(value);
         if (colon.IsKind(SyntaxKind.None) || first.IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        if (KeepsTheBreakBefore(colon, first)) {
             return;
         }
 
@@ -5422,6 +5435,44 @@ public sealed class BreakPlan {
             gaps[token.SpanStart] = new(GapRule.Flat, -1);
         }
     }
+
+    /// <summary>
+    ///     The gap before a subpattern's or a named argument's colon: never a point, but an author's break
+    ///     there is kept under <c>keep_user_linebreaks</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It was always flat, and the oracle keeps the break (#436). Measured with <c>Testing ask</c>:
+    ///     <c>{ X</c> / <c>: 1 }</c> keeps the colon on its own line in a property pattern, an extended
+    ///     one, a nested one, a switch arm's and a case label's, and the pattern expands around it;
+    ///     <c>M(a</c> / <c>: 1, b: 2)</c> keeps it and chops the arguments; <c>(a</c> / <c>: 1, b: 2)</c>
+    ///     and a positional pattern keep it and leave the rest of the list on the line. At
+    ///     <c>keep_user_linebreaks = false</c> every one of them is joined.
+    /// </remarks>
+    /// <returns>
+    ///     Whether the break was kept, in which case the gap after the colon is the author's too and
+    ///     there is no point to plan: the oracle writes <c>X</c> / <c>: 1</c>, never <c>:</c> / <c>1</c>.
+    /// </returns>
+    bool KeepsTheBreakBefore(SyntaxToken colon, SyntaxToken value) {
+        if (!KeepsTheBreakBefore(colon)) {
+            return false;
+        }
+
+        Mandatory(colon);
+        if (BreaksBefore(value)) {
+            Mandatory(value);
+        } else {
+            Flat(value);
+        }
+
+        return true;
+    }
+
+    bool KeepsTheBreakBefore(SyntaxToken colon) => options.KeepsUserBreaksBetweenItems && BreaksBefore(colon);
+
+    bool HoldsAKeptColonBreak(SyntaxNode node) =>
+        node.DescendantNodes()
+            .OfType<BaseExpressionColonSyntax>()
+            .Any(colon => colon.Parent is SubpatternSyntax && KeepsTheBreakBefore(colon.ColonToken));
 
     void Mandatory(SyntaxToken token) {
         if (!token.IsKind(SyntaxKind.None)) {

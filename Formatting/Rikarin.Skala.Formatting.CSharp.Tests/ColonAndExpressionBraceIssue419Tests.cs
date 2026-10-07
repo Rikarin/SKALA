@@ -149,18 +149,18 @@ public sealed class ColonAndExpressionBraceIssue419Tests {
     }
 
     /// <summary>
-    ///     ⚠ A preserved gap that held a line break has no author's bit, so the next line's indentation
-    ///     cannot decide it: the fuzzer's whitespace-absorption property found <c>X</c> / <c>    : 1</c>
-    ///     joined as <c>X : 1</c> and the same input unindented as <c>X: 1</c> (seed
-    ///     7764980540680690061). Not the oracle's answer — it keeps the break and expands the pattern
-    ///     (#436) — but Skala's, and the same at every indentation.
+    ///     ⚠ A joined gap reads its bit from the indentation of the line it ends on, and from nothing
+    ///     before the last line break — measured at <c>keep_user_linebreaks = false</c>, where the oracle
+    ///     joins: <c>X</c> / <c>: 1</c> gives <c>X: 1</c>, <c>X</c> / <c>    : 1</c> gives <c>X : 1</c>, a
+    ///     trailing space before the ending counts for nothing (#436). At the defaults the break is kept;
+    ///     see <c>SubpatternColonBreakIssue436Tests</c>.
     /// </summary>
     [Theory]
-    [InlineData("var v = o is P { X\n: 1 };")]
-    [InlineData("var v = o is P { X\n            : 1 };")]
-    [InlineData("var v = o is P { X  \n    : 1 };")]
-    public void AJoinedSubpatternColon_TakesNoSpaceFromTheNextLinesIndent(string statement) =>
-        AssertFormats(InMethod(statement), "        var v = o is P { X: 1 };");
+    [InlineData("var v = o is P { X\n: 1 };", "var v = o is P { X: 1 };")]
+    [InlineData("var v = o is P { X\n            : 1 };", "var v = o is P { X : 1 };")]
+    [InlineData("var v = o is P { X  \n: 1 };", "var v = o is P { X: 1 };")]
+    public void AJoinedSubpatternColon_ReadsTheIndentOfTheLineItEndsOn(string statement, string expected) =>
+        AssertFormats(InMethod(statement), "        " + expected, ("skala_keep_user_linebreaks", "false"));
 
     /// <summary>
     ///     Every expression brace reads the array-initializer key, whatever stands just inside it.
