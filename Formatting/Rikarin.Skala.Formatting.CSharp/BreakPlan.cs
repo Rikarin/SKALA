@@ -5180,12 +5180,12 @@ public sealed class BreakPlan {
                 .Any(static node => node is PropertyPatternClauseSyntax or ListPatternSyntax)
             && !head.SelectMany(static part => part.DescendantNodesAndSelf())
                 .Any(static node => node is PositionalPatternClauseSyntax
-                    or BaseArgumentListSyntax
-                    or TypeArgumentListSyntax
-                    or AnonymousFunctionExpressionSyntax
-                    or InitializerExpressionSyntax
-                    or CollectionExpressionSyntax
-                    or SwitchExpressionSyntax
+                        or BaseArgumentListSyntax
+                        or TypeArgumentListSyntax
+                        or AnonymousFunctionExpressionSyntax
+                        or InitializerExpressionSyntax
+                        or CollectionExpressionSyntax
+                        or SwitchExpressionSyntax
                 );
         var keptAfter = !kept
             && liftsBraces
