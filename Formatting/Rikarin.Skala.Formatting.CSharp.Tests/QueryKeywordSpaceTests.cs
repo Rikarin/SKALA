@@ -15,14 +15,14 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </remarks>
 public sealed class QueryKeywordSpaceTests {
     const string Source = """
-        class Q {
-            object M(int[] items) {
-                var a = from item in items where "s" == null select item;
-                var b = from item in items where (item > 0) orderby item descending select (item);
-                return a;
-            }
-        }
-        """;
+                          class Q {
+                              object M(int[] items) {
+                                  var a = from item in items where "s" == null select item;
+                                  var b = from item in items where (item > 0) orderby item descending select (item);
+                                  return a;
+                              }
+                          }
+                          """;
 
     [Theory]
     [InlineData("skala_space_between_keyword_and_type")]
