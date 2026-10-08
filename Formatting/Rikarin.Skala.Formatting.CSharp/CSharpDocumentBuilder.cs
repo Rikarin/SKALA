@@ -3342,8 +3342,8 @@ public sealed partial class CSharpDocumentBuilder {
         if (!options.DisableLineBreakChanges
             && (nextPieceIndex >= 0
                 && LoneCommentAt(nextPieceIndex) is LoneComment.OwnLine
-                or LoneComment.ColumnZero
-                or LoneComment.BlankLineBefore
+                    or LoneComment.ColumnZero
+                    or LoneComment.BlankLineBefore
                 || LoneCommentAt(lastPiece) != LoneComment.None)) {
             var blankBefore = nextPieceIndex >= 0 && LoneCommentAt(nextPieceIndex) == LoneComment.BlankLineBefore;
             Break(nextPieceIndex, nextToken, blankBefore ? 1 : 0, DefaultNewLine());
