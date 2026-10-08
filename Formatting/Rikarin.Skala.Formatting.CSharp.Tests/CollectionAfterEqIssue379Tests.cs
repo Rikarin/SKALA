@@ -56,27 +56,27 @@ public sealed class CollectionAfterEqIssue379Tests {
     [Fact]
     public void TheEqualsAtOneHundredAndTwenty_GluesTheBracket_AtOneHundredAndTwentyTwo() {
         var source = $$"""
-                       namespace P;
+            namespace P;
 
-                       public class C {
-                           void M() {
-                               {{T(107)}} v9 = [{{Wide}}];
-                           }
-                       }
-                       """;
+            public class C {
+                void M() {
+                    {{T(107)}} v9 = [{{Wide}}];
+                }
+            }
+            """;
 
         var expected = $$"""
-                         namespace P;
+            namespace P;
 
-                         public class C {
-                             void M() {
-                                 {{T(107)}} v9 = [
-                                     {{Eleven}},
-                                     {{RestOfFour}}
-                                 ];
-                             }
-                         }
-                         """;
+            public class C {
+                void M() {
+                    {{T(107)}} v9 = [
+                        {{Eleven}},
+                        {{RestOfFour}}
+                    ];
+                }
+            }
+            """;
 
         Oracle.Agrees(source, expected);
         Assert.Equal(122, Format.Text(source).Split('\n')[4].Length);
@@ -86,81 +86,81 @@ public sealed class CollectionAfterEqIssue379Tests {
     public void TheEqualsAtOneHundredAndNineteen_GluesTheBracket_AtOneHundredAndTwentyOne() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(106)}} v9 = [{{Wide}}];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    {{T(106)}} v9 = [{{Wide}}];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(106)}} v9 = [
-                          {{Eleven}},
-                          {{RestOfFour}}
-                      ];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    {{T(106)}} v9 = [
+                        {{Eleven}},
+                        {{RestOfFour}}
+                    ];
+                }
+            }
+            """
         );
 
     [Fact]
     public void TheEqualsAtOneHundredAndTwenty_BreaksAfterItself_WhenTheBracketFitsBelow() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(107)}} v9 = [1, 2, 3];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    {{T(107)}} v9 = [1, 2, 3];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(107)}} v9 =
-                          [1, 2, 3];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    {{T(107)}} v9 =
+                        [1, 2, 3];
+                }
+            }
+            """
         );
 
     [Fact]
     public void TheEqualsAtOneHundredAndTwenty_GluesTheBracket_AroundAMultiLineElement() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(107)}} v9 = [1, () => {
-                          A();
-                          B();
-                      }];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    {{T(107)}} v9 = [1, () => {
+                        A();
+                        B();
+                    }];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(107)}} v9 = [
-                          1, () => {
-                              A();
-                              B();
-                          }
-                      ];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    {{T(107)}} v9 = [
+                        1, () => {
+                            A();
+                            B();
+                        }
+                    ];
+                }
+            }
+            """
         );
 
     /// <summary>
@@ -173,70 +173,70 @@ public sealed class CollectionAfterEqIssue379Tests {
     public void ATypeArgumentListBeforeTheEquals_StaysWhole_AndTheBracketIsGlued() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      Dictionary<{{T(90)}}, int> v9 = [{{Wide}}];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    Dictionary<{{T(90)}}, int> v9 = [{{Wide}}];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      Dictionary<{{T(90)}}, int> v9 = [
-                          {{Eleven}},
-                          {{RestOfFour}}
-                      ];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    Dictionary<{{T(90)}}, int> v9 = [
+                        {{Eleven}},
+                        {{RestOfFour}}
+                    ];
+                }
+            }
+            """
         );
 
     [Fact]
     public void AField_AtOneHundredAndTwenty_GluesTheBracket() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  static readonly {{T(92)}} Field = [{{Wide}}];
-              }
-              """,
+            public class C {
+                static readonly {{T(92)}} Field = [{{Wide}}];
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  static readonly {{T(92)}} Field = [
-                      {{Twelve}},
-                      {{RestOfThree}}
-                  ];
-              }
-              """
+            public class C {
+                static readonly {{T(92)}} Field = [
+                    {{Twelve}},
+                    {{RestOfThree}}
+                ];
+            }
+            """
         );
 
     [Fact]
     public void APropertyInitializer_AtOneHundredAndTwenty_GluesTheBracket() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  {{T(96)}} Property { get; } = [{{Wide}}];
-              }
-              """,
+            public class C {
+                {{T(96)}} Property { get; } = [{{Wide}}];
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  {{T(96)}} Property { get; } = [
-                      {{Twelve}},
-                      {{RestOfThree}}
-                  ];
-              }
-              """
+            public class C {
+                {{T(96)}} Property { get; } = [
+                    {{Twelve}},
+                    {{RestOfThree}}
+                ];
+            }
+            """
         );
 
     /// <summary>
@@ -248,27 +248,27 @@ public sealed class CollectionAfterEqIssue379Tests {
     [Fact]
     public void AnAssignmentWithNothingBeforeTheEquals_GluesTheBracket_PastTheMargin() {
         var source = $$"""
-                       namespace P;
+            namespace P;
 
-                       public class C {
-                           void M() {
-                               {{new string('a', 113)}} = [{{Wide}}];
-                           }
-                       }
-                       """;
+            public class C {
+                void M() {
+                    {{new string('a', 113)}} = [{{Wide}}];
+                }
+            }
+            """;
 
         var expected = $$"""
-                         namespace P;
+            namespace P;
 
-                         public class C {
-                             void M() {
-                                 {{new string('a', 113)}} = [
-                                     {{Eleven}},
-                                     {{RestOfFour}}
-                                 ];
-                             }
-                         }
-                         """;
+            public class C {
+                void M() {
+                    {{new string('a', 113)}} = [
+                        {{Eleven}},
+                        {{RestOfFour}}
+                    ];
+                }
+            }
+            """;
 
         Oracle.Agrees(source, expected);
         Assert.Equal(125, Format.Text(source).Split('\n')[4].Length);
@@ -283,31 +283,31 @@ public sealed class CollectionAfterEqIssue379Tests {
     [Fact]
     public void TheOldPassOne_PastTheMargin_SettlesGlued() {
         var passOne = $$"""
-                        namespace P;
+            namespace P;
 
-                        public class C {
-                            void M() {
-                                {{T(110)}} v9 =
-                                    [
-                                        {{Eleven}},
-                                        {{RestOfFour}}
-                                    ];
-                            }
-                        }
-                        """;
+            public class C {
+                void M() {
+                    {{T(110)}} v9 =
+                        [
+                            {{Eleven}},
+                            {{RestOfFour}}
+                        ];
+                }
+            }
+            """;
 
         var skala = $$"""
-                      namespace P;
+            namespace P;
 
-                      public class C {
-                          void M() {
-                              {{T(110)}} v9 = [
-                                  {{Eleven}},
-                                  {{RestOfFour}}
-                              ];
-                          }
-                      }
-                      """;
+            public class C {
+                void M() {
+                    {{T(110)}} v9 = [
+                        {{Eleven}},
+                        {{RestOfFour}}
+                    ];
+                }
+            }
+            """;
 
         var once = Format.Text(passOne);
         Assert.Equal(skala, once.TrimEnd('\n'));
@@ -320,49 +320,49 @@ public sealed class CollectionAfterEqIssue379Tests {
     public void AContinuationLineOfOneHundredAndTwenty_BreaksAfterTheEquals() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(47)}} v9 = [{{Tens(24, Nine)}}];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    {{T(47)}} v9 = [{{Tens(24, Nine)}}];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(47)}} v9 =
-                          [{{Tens(24, Nine)}}];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    {{T(47)}} v9 =
+                        [{{Tens(24, Nine)}}];
+                }
+            }
+            """
         );
 
     [Fact]
     public void AContinuationLineOfOneHundredAndTwentyOne_GluesTheBracket_AndFills() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(47)}} v9 = [{{Tens(25, Six)}}];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    {{T(47)}} v9 = [{{Tens(25, Six)}}];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(47)}} v9 = [
-                          {{Tens(25, Six)}}
-                      ];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    {{T(47)}} v9 = [
+                        {{Tens(25, Six)}}
+                    ];
+                }
+            }
+            """
         );
 
     /// <summary>The boundary is the continuation line's, wherever the <c>=</c> is: here at column 100.</summary>
@@ -370,47 +370,47 @@ public sealed class CollectionAfterEqIssue379Tests {
     public void TheBoundary_DoesNotMoveWithTheEquals() {
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(87)}} v9 = [{{Tens(24, Nine)}}];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    {{T(87)}} v9 = [{{Tens(24, Nine)}}];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(87)}} v9 =
-                          [{{Tens(24, Nine)}}];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    {{T(87)}} v9 =
+                        [{{Tens(24, Nine)}}];
+                }
+            }
+            """
         );
 
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(87)}} v9 = [{{Tens(25, Six)}}];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    {{T(87)}} v9 = [{{Tens(25, Six)}}];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(87)}} v9 = [
-                          {{Tens(25, Six)}}
-                      ];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    {{T(87)}} v9 = [
+                        {{Tens(25, Six)}}
+                    ];
+                }
+            }
+            """
         );
     }
 
@@ -420,35 +420,35 @@ public sealed class CollectionAfterEqIssue379Tests {
     public void AnElevenColumnHead_GluesTheBracket_ATwelveColumnHeadBreaks() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      var ddddd = [{{Tens(24, Six)}}];
-                      var dddddd = [{{Tens(24, Six)}}];
-                      int[] ddd = [{{Tens(24, Six)}}];
-                      object[] d = [{{Tens(24, Six)}}];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    var ddddd = [{{Tens(24, Six)}}];
+                    var dddddd = [{{Tens(24, Six)}}];
+                    int[] ddd = [{{Tens(24, Six)}}];
+                    object[] d = [{{Tens(24, Six)}}];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      var ddddd = [
-                          {{Tens(24, Six)}}
-                      ];
-                      var dddddd =
-                          [{{Tens(24, Six)}}];
-                      int[] ddd = [
-                          {{Tens(24, Six)}}
-                      ];
-                      object[] d =
-                          [{{Tens(24, Six)}}];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    var ddddd = [
+                        {{Tens(24, Six)}}
+                    ];
+                    var dddddd =
+                        [{{Tens(24, Six)}}];
+                    int[] ddd = [
+                        {{Tens(24, Six)}}
+                    ];
+                    object[] d =
+                        [{{Tens(24, Six)}}];
+                }
+            }
+            """
         );
 
     /// <summary>The floor is a width, not a column: the same heads at a nested block's indent.</summary>
@@ -456,32 +456,32 @@ public sealed class CollectionAfterEqIssue379Tests {
     public void TheHeadFloor_IsTheSameAtADeeperIndent() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {
-                          var ddddd = [{{Tens(23, Six)}}];
-                          var dddddd = [{{Tens(23, Six)}}];
-                      }
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    {
+                        var ddddd = [{{Tens(23, Six)}}];
+                        var dddddd = [{{Tens(23, Six)}}];
+                    }
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {
-                          var ddddd = [
-                              {{Tens(23, Six)}}
-                          ];
-                          var dddddd =
-                              [{{Tens(23, Six)}}];
-                      }
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    {
+                        var ddddd = [
+                            {{Tens(23, Six)}}
+                        ];
+                        var dddddd =
+                            [{{Tens(23, Six)}}];
+                    }
+                }
+            }
+            """
         );
 
     /// <summary>
@@ -494,55 +494,55 @@ public sealed class CollectionAfterEqIssue379Tests {
     public void UnderAUsingHeader_TheHeadIsCountedFromTheParenthesis() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      using (var dddd = [{{Tens(22, Six)}}]) { }
-                      using (var ddddd = [{{Tens(22, Six)}}]) { }
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    using (var dddd = [{{Tens(22, Six)}}]) { }
+                    using (var ddddd = [{{Tens(22, Six)}}]) { }
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      using (var dddd = [
-                                 {{Tens(22, Six)}}
-                             ]) { }
+            public class C {
+                void M() {
+                    using (var dddd = [
+                               {{Tens(22, Six)}}
+                           ]) { }
 
-                      using (var ddddd =
-                             [{{Tens(22, Six)}}]) { }
-                  }
-              }
-              """
+                    using (var ddddd =
+                           [{{Tens(22, Six)}}]) { }
+                }
+            }
+            """
         );
 
     [Fact]
     public void AFieldsHead_HasTheSameFloor() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  int[] G = [{{Tens(25, Six)}}];
+            public class C {
+                int[] G = [{{Tens(25, Six)}}];
 
-                  int[] Gggggg = [{{Tens(25, Six)}}];
-              }
-              """,
+                int[] Gggggg = [{{Tens(25, Six)}}];
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  int[] G = [
-                      {{Tens(25, Six)}}
-                  ];
+            public class C {
+                int[] G = [
+                    {{Tens(25, Six)}}
+                ];
 
-                  int[] Gggggg =
-                      [{{Tens(25, Six)}}];
-              }
-              """
+                int[] Gggggg =
+                    [{{Tens(25, Six)}}];
+            }
+            """
         );
 
     /// <summary>
@@ -554,27 +554,27 @@ public sealed class CollectionAfterEqIssue379Tests {
     public void AnAssignmentsHead_IsItsLeftSide() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      object[] ddddddddd;
-                      ddddddddd = [{{Tens(24, Six)}}];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    object[] ddddddddd;
+                    ddddddddd = [{{Tens(24, Six)}}];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      object[] ddddddddd;
-                      ddddddddd = [
-                          {{Tens(24, Six)}}
-                      ];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    object[] ddddddddd;
+                    ddddddddd = [
+                        {{Tens(24, Six)}}
+                    ];
+                }
+            }
+            """
         );
 
     /// <summary>
@@ -585,24 +585,24 @@ public sealed class CollectionAfterEqIssue379Tests {
     [Fact]
     public void WidenedGaps_DoNotWidenTheHead() {
         var widened = $$"""
-                        namespace P;
+            namespace P;
 
-                        public class C {
-                            void M() {
-                                var   ddddd   =   [{{Tens(24, Six)}}];
-                            }
-                        }
-                        """;
+            public class C {
+                void M() {
+                    var   ddddd   =   [{{Tens(24, Six)}}];
+                }
+            }
+            """;
 
         var normal = $$"""
-                       namespace P;
+            namespace P;
 
-                       public class C {
-                           void M() {
-                               var ddddd = [{{Tens(24, Six)}}];
-                           }
-                       }
-                       """;
+            public class C {
+                void M() {
+                    var ddddd = [{{Tens(24, Six)}}];
+                }
+            }
+            """;
 
         var once = Format.Text(widened);
         Assert.Equal(Format.Text(normal), once);
@@ -620,30 +620,30 @@ public sealed class CollectionAfterEqIssue379Tests {
     public void AHeadThatSpansLines_IsMeasuredFromItsOwnLine() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      Dictionary<{{T(100)}}, int> d = [{{Tens(24, Six)}}];
-                      Dictionary<{{T(100)}}, int> dddddd = [{{Tens(24, Six)}}];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    Dictionary<{{T(100)}}, int> d = [{{Tens(24, Six)}}];
+                    Dictionary<{{T(100)}}, int> dddddd = [{{Tens(24, Six)}}];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      Dictionary<{{T(100)}},
-                          int> d = [
-                          {{Tens(24, Six)}}
-                      ];
-                      Dictionary<{{T(100)}},
-                          int> dddddd =
-                          [{{Tens(24, Six)}}];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    Dictionary<{{T(100)}},
+                        int> d = [
+                        {{Tens(24, Six)}}
+                    ];
+                    Dictionary<{{T(100)}},
+                        int> dddddd =
+                        [{{Tens(24, Six)}}];
+                }
+            }
+            """
         );
 
     /// <summary>The kept form of the eight-column second line stays: a kept break has no floor there either.</summary>
@@ -651,27 +651,27 @@ public sealed class CollectionAfterEqIssue379Tests {
     public void AKeptBreak_OnAHeadThatSpansLines_HasNoFloor() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      Dictionary<{{T(100)}},
-                          int> d =
-                          [{{Tens(24, Six)}}];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    Dictionary<{{T(100)}},
+                        int> d =
+                        [{{Tens(24, Six)}}];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      Dictionary<{{T(100)}},
-                          int> d =
-                          [{{Tens(24, Six)}}];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    Dictionary<{{T(100)}},
+                        int> d =
+                        [{{Tens(24, Six)}}];
+                }
+            }
+            """
         );
 
     /// <summary>A kept break has no floor: #375's <c>int[] x =</c> is nine columns and stays.</summary>
@@ -706,76 +706,76 @@ public sealed class CollectionAfterEqIssue379Tests {
     public void TheArrow_GluesTheBracket_AtOneHundredAndTwenty() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  object[] {{new string('P', 102)}} => [{{Wide}}];
-              }
-              """,
+            public class C {
+                object[] {{new string('P', 102)}} => [{{Wide}}];
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  object[] {{new string('P', 102)}} => [
-                      {{Twelve}},
-                      {{RestOfThree}}
-                  ];
-              }
-              """
+            public class C {
+                object[] {{new string('P', 102)}} => [
+                    {{Twelve}},
+                    {{RestOfThree}}
+                ];
+            }
+            """
         );
 
     [Fact]
     public void TheArrow_BreaksForAContinuationLineOfOneHundredAndTwenty_AndGluesAtOneHundredAndTwentyOne() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  object[] {{new string('P', 45)}} => [{{Tens(25, Nine)}}];
+            public class C {
+                object[] {{new string('P', 45)}} => [{{Tens(25, Nine)}}];
 
-                  object[] {{new string('Q', 45)}} => [{{Tens(26, Six)}}];
-              }
-              """,
+                object[] {{new string('Q', 45)}} => [{{Tens(26, Six)}}];
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  object[] {{new string('P', 45)}} =>
-                      [{{Tens(25, Nine)}}];
+            public class C {
+                object[] {{new string('P', 45)}} =>
+                    [{{Tens(25, Nine)}}];
 
-                  object[] {{new string('Q', 45)}} => [
-                      {{Tens(26, Six)}}
-                  ];
-              }
-              """
+                object[] {{new string('Q', 45)}} => [
+                    {{Tens(26, Six)}}
+                ];
+            }
+            """
         );
 
     [Fact]
     public void AKeptArrowBreak_IsKeptAtOneHundredAndTwenty_AndGivenToTheBracketAtOneHundredAndTwentyOne() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  object[] Q1 =>
-              [{{Tens(25, Nine)}}];
+            public class C {
+                object[] Q1 =>
+            [{{Tens(25, Nine)}}];
 
-                  object[] Q2 =>
-              [{{Tens(26, Six)}}];
-              }
-              """,
+                object[] Q2 =>
+            [{{Tens(26, Six)}}];
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  object[] Q1 =>
-                      [{{Tens(25, Nine)}}];
+            public class C {
+                object[] Q1 =>
+                    [{{Tens(25, Nine)}}];
 
-                  object[] Q2 => [
-                      {{Tens(26, Six)}}
-                  ];
-              }
-              """
+                object[] Q2 => [
+                    {{Tens(26, Six)}}
+                ];
+            }
+            """
         );
 
     /// <summary>
@@ -786,27 +786,27 @@ public sealed class CollectionAfterEqIssue379Tests {
     [Fact]
     public void TheOldArrowBreak_PastTheMargin_IsReJoined() {
         var source = $$"""
-                       namespace P;
+            namespace P;
 
-                       public class C {
-                           object[] {{new string('V', 104)}} =>
-                               [
-                                   {{Eleven}},
-                                   {{RestOfFour}}
-                               ];
-                       }
-                       """;
+            public class C {
+                object[] {{new string('V', 104)}} =>
+                    [
+                        {{Eleven}},
+                        {{RestOfFour}}
+                    ];
+            }
+            """;
 
         var expected = $$"""
-                         namespace P;
+            namespace P;
 
-                         public class C {
-                             object[] {{new string('V', 104)}} => [
-                                 {{Eleven}},
-                                 {{RestOfFour}}
-                             ];
-                         }
-                         """;
+            public class C {
+                object[] {{new string('V', 104)}} => [
+                    {{Eleven}},
+                    {{RestOfFour}}
+                ];
+            }
+            """;
 
         Oracle.Agrees(source, expected);
         Assert.Equal(122, Format.Text(source).Split('\n')[3].Length);
@@ -819,26 +819,26 @@ public sealed class CollectionAfterEqIssue379Tests {
     public void AnArrayInitializer_AtOneHundredAndTwenty_BreaksAfterTheEquals() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(107)}} v9 = new[] { {{Wide}} };
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    {{T(107)}} v9 = new[] { {{Wide}} };
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      {{T(107)}} v9 =
-                          new[] {
-                              {{Eleven}},
-                              {{RestOfFour}}
-                          };
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    {{T(107)}} v9 =
+                        new[] {
+                            {{Eleven}},
+                            {{RestOfFour}}
+                        };
+                }
+            }
+            """
         );
 }

@@ -28,10 +28,7 @@ public static class RawLiteralShift {
         var parts = plan.Split('|');
         var literals = parts[0]
             .Split(';')
-            .Select(static literal => literal.Split(',')
-                    .Select(static n => int.Parse(n, CultureInfo.InvariantCulture))
-                    .ToArray()
-            )
+            .Select(static literal => literal.Split(',').Select(static n => int.Parse(n, CultureInfo.InvariantCulture)).ToArray())
             .ToArray();
         // Each line after the first: a literal it belongs to, or (`H<n>`) the earlier line whose shift a
         // hole line takes, or -1.

@@ -2549,12 +2549,7 @@ public sealed partial class CSharpDocumentBuilder {
             // that trails code keeps its body frozen while its opener rides the code; a starred `/**`
             // that trails code moves its body with its line instead, as an unstarred comment does.
             if (piece.StartsLine) {
-                doc.Verbatim(
-                    text,
-                    span,
-                    VerbatimFlags.OwnIndent,
-                    source[LineStart(piece.Span.Start)..piece.Span.Start]
-                );
+                doc.Verbatim(text, span, VerbatimFlags.OwnIndent, source[LineStart(piece.Span.Start)..piece.Span.Start]);
                 return;
             }
 

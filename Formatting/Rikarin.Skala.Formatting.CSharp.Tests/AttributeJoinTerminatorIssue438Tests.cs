@@ -92,111 +92,111 @@ public sealed class AttributeJoinTerminatorIssue438Tests {
     public void MethodsAndFields_DeclineTheJoinOnlyForTheTerminator() =>
         Agrees(
             $$"""
-              public class In {
-                  [Obsolete] public void Me116_(int alphaParameterValue, int betaParameterValue, int {{Long1}}) { }
-                  [Obsolete] public void Me117_(int alphaParameterValue, int betaParameterValue, int {{Long2}}) { }
-                  [Obsolete] public void Me118_(int alphaParameterValue, int betaParameterValue, int {{Long3}}) { }
-                  [Obsolete] public void Me119_(int alphaParameterValue, int betaParameterValue, int {{Long4}}) { }
-                  [Obsolete] public void Me120_(int alphaParameterValue, int betaParameterValue, int {{Long5}}) { }
-                  [Obsolete] public void Me121_(int alphaParameterValue, int betaParameterValue, int {{Long6}}) { }
-                  [Obsolete] public void Mb116_(int alphaParameterValue, int betaParameterValue, int {{Long1}}) {
-                      Foo();
-                  }
-                  [Obsolete] public void Mb117_(int alphaParameterValue, int betaParameterValue, int {{Long2}}) {
-                      Foo();
-                  }
-                  [Obsolete] public void Mb118_(int alphaParameterValue, int betaParameterValue, int {{Long3}}) {
-                      Foo();
-                  }
-                  [Obsolete] public void Mb119_(int alphaParameterValue, int betaParameterValue, int {{Long4}}) {
-                      Foo();
-                  }
-                  [Obsolete] public void Mb120_(int alphaParameterValue, int betaParameterValue, int {{Long5}}) {
-                      Foo();
-                  }
-                  [Obsolete] public int F119 = 1234567 + 2345678 + 3456789 + 4567890 + {{Long7}};
-                  [Obsolete] public int A119(int alphaParameterValue) => alphaParameterValue + {{Long8}};
-                  [Obsolete] public int F120 = 1234567 + 2345678 + 3456789 + 4567890 + {{Long9}};
-                  [Obsolete] public int A120(int alphaParameterValue) => alphaParameterValue + {{Long10}};
-                  [Obsolete] public int F121 = 1234567 + 2345678 + 3456789 + 4567890 + {{Long11}};
-                  [Obsolete] public int A121(int alphaParameterValue) => alphaParameterValue + {{Long12}};
-                  [Obsolete] public int {{Long13}} { get; set; }
-                  [Obsolete] public int {{Long14}} { get; set; }
-                  [Obsolete] public int {{Long15}} { get; set; }
-              }
-              """,
+            public class In {
+                [Obsolete] public void Me116_(int alphaParameterValue, int betaParameterValue, int {{Long1}}) { }
+                [Obsolete] public void Me117_(int alphaParameterValue, int betaParameterValue, int {{Long2}}) { }
+                [Obsolete] public void Me118_(int alphaParameterValue, int betaParameterValue, int {{Long3}}) { }
+                [Obsolete] public void Me119_(int alphaParameterValue, int betaParameterValue, int {{Long4}}) { }
+                [Obsolete] public void Me120_(int alphaParameterValue, int betaParameterValue, int {{Long5}}) { }
+                [Obsolete] public void Me121_(int alphaParameterValue, int betaParameterValue, int {{Long6}}) { }
+                [Obsolete] public void Mb116_(int alphaParameterValue, int betaParameterValue, int {{Long1}}) {
+                    Foo();
+                }
+                [Obsolete] public void Mb117_(int alphaParameterValue, int betaParameterValue, int {{Long2}}) {
+                    Foo();
+                }
+                [Obsolete] public void Mb118_(int alphaParameterValue, int betaParameterValue, int {{Long3}}) {
+                    Foo();
+                }
+                [Obsolete] public void Mb119_(int alphaParameterValue, int betaParameterValue, int {{Long4}}) {
+                    Foo();
+                }
+                [Obsolete] public void Mb120_(int alphaParameterValue, int betaParameterValue, int {{Long5}}) {
+                    Foo();
+                }
+                [Obsolete] public int F119 = 1234567 + 2345678 + 3456789 + 4567890 + {{Long7}};
+                [Obsolete] public int A119(int alphaParameterValue) => alphaParameterValue + {{Long8}};
+                [Obsolete] public int F120 = 1234567 + 2345678 + 3456789 + 4567890 + {{Long9}};
+                [Obsolete] public int A120(int alphaParameterValue) => alphaParameterValue + {{Long10}};
+                [Obsolete] public int F121 = 1234567 + 2345678 + 3456789 + 4567890 + {{Long11}};
+                [Obsolete] public int A121(int alphaParameterValue) => alphaParameterValue + {{Long12}};
+                [Obsolete] public int {{Long13}} { get; set; }
+                [Obsolete] public int {{Long14}} { get; set; }
+                [Obsolete] public int {{Long15}} { get; set; }
+            }
+            """,
             $$"""
-              public class In {
-                  [Obsolete] public void Me116_(int alphaParameterValue, int betaParameterValue, int {{Long1}}) { }
+            public class In {
+                [Obsolete] public void Me116_(int alphaParameterValue, int betaParameterValue, int {{Long1}}) { }
 
-                  [Obsolete]
-                  public void Me117_(int alphaParameterValue, int betaParameterValue, int {{Long2}}) { }
+                [Obsolete]
+                public void Me117_(int alphaParameterValue, int betaParameterValue, int {{Long2}}) { }
 
-                  [Obsolete]
-                  public void Me118_(int alphaParameterValue, int betaParameterValue, int {{Long3}}) { }
+                [Obsolete]
+                public void Me118_(int alphaParameterValue, int betaParameterValue, int {{Long3}}) { }
 
-                  [Obsolete]
-                  public void Me119_(int alphaParameterValue, int betaParameterValue, int {{Long4}}) { }
+                [Obsolete]
+                public void Me119_(int alphaParameterValue, int betaParameterValue, int {{Long4}}) { }
 
-                  [Obsolete]
-                  public void Me120_(int alphaParameterValue, int betaParameterValue, int {{Long5}}) { }
+                [Obsolete]
+                public void Me120_(int alphaParameterValue, int betaParameterValue, int {{Long5}}) { }
 
-                  [Obsolete] public void Me121_(
-                      int alphaParameterValue,
-                      int betaParameterValue,
-                      int {{Long6}}
-                  ) { }
+                [Obsolete] public void Me121_(
+                    int alphaParameterValue,
+                    int betaParameterValue,
+                    int {{Long6}}
+                ) { }
 
-                  [Obsolete] public void Mb116_(int alphaParameterValue, int betaParameterValue, int {{Long1}}) {
-                      Foo();
-                  }
+                [Obsolete] public void Mb116_(int alphaParameterValue, int betaParameterValue, int {{Long1}}) {
+                    Foo();
+                }
 
-                  [Obsolete] public void Mb117_(int alphaParameterValue, int betaParameterValue, int {{Long2}}) {
-                      Foo();
-                  }
+                [Obsolete] public void Mb117_(int alphaParameterValue, int betaParameterValue, int {{Long2}}) {
+                    Foo();
+                }
 
-                  [Obsolete] public void Mb118_(int alphaParameterValue, int betaParameterValue, int {{Long3}}) {
-                      Foo();
-                  }
+                [Obsolete] public void Mb118_(int alphaParameterValue, int betaParameterValue, int {{Long3}}) {
+                    Foo();
+                }
 
-                  [Obsolete]
-                  public void Mb119_(int alphaParameterValue, int betaParameterValue, int {{Long4}}) {
-                      Foo();
-                  }
+                [Obsolete]
+                public void Mb119_(int alphaParameterValue, int betaParameterValue, int {{Long4}}) {
+                    Foo();
+                }
 
-                  [Obsolete]
-                  public void Mb120_(int alphaParameterValue, int betaParameterValue, int {{Long5}}) {
-                      Foo();
-                  }
+                [Obsolete]
+                public void Mb120_(int alphaParameterValue, int betaParameterValue, int {{Long5}}) {
+                    Foo();
+                }
 
-                  [Obsolete] public int F119 = 1234567 + 2345678 + 3456789 + 4567890 + {{Long7}};
-                  [Obsolete] public int A119(int alphaParameterValue) => alphaParameterValue + {{Long8}};
+                [Obsolete] public int F119 = 1234567 + 2345678 + 3456789 + 4567890 + {{Long7}};
+                [Obsolete] public int A119(int alphaParameterValue) => alphaParameterValue + {{Long8}};
 
-                  [Obsolete]
-                  public int F120 = 1234567 + 2345678 + 3456789 + 4567890 + {{Long9}};
+                [Obsolete]
+                public int F120 = 1234567 + 2345678 + 3456789 + 4567890 + {{Long9}};
 
-                  [Obsolete] public int A120(int alphaParameterValue) =>
-                      alphaParameterValue + {{Long10}};
+                [Obsolete] public int A120(int alphaParameterValue) =>
+                    alphaParameterValue + {{Long10}};
 
-                  [Obsolete] public int F121 =
-                      1234567 + 2345678 + 3456789 + 4567890 + {{Long11}};
+                [Obsolete] public int F121 =
+                    1234567 + 2345678 + 3456789 + 4567890 + {{Long11}};
 
-                  [Obsolete] public int A121(int alphaParameterValue) =>
-                      alphaParameterValue + {{Long12}};
+                [Obsolete] public int A121(int alphaParameterValue) =>
+                    alphaParameterValue + {{Long12}};
 
-                  [Obsolete] public int {{Long13}} { get; set; }
+                [Obsolete] public int {{Long13}} { get; set; }
 
-                  [Obsolete] public int {{Long14}} {
-                      get;
-                      set;
-                  }
+                [Obsolete] public int {{Long14}} {
+                    get;
+                    set;
+                }
 
-                  [Obsolete] public int {{Long15}} {
-                      get;
-                      set;
-                  }
-              }
-              """
+                [Obsolete] public int {{Long15}} {
+                    get;
+                    set;
+                }
+            }
+            """
         );
 
     /// <summary>
@@ -207,134 +207,134 @@ public sealed class AttributeJoinTerminatorIssue438Tests {
     public void FieldsAndProperties_JoinWhenSomethingInsideWraps() =>
         Agrees(
             $$"""
-              public class In {
-                  [Obsolete] public int F121 = alphaValue + betaValue + gammaValue + {{Long16}};
-                  [Obsolete] public int F122 = alphaValue + betaValue + gammaValue + {{Long17}};
-                  [Obsolete] public int F123 = alphaValue + betaValue + gammaValue + {{Long18}};
-                  [Obsolete] public int F124 = alphaValue + betaValue + gammaValue + {{Long19}};
-                  [Obsolete] public int F125 = alphaValue + betaValue + gammaValue + {{Long20}};
-                  [Obsolete] public int F126 = alphaValue + betaValue + gammaValue + {{Long21}};
-                  [Obsolete] public int F127 = alphaValue + betaValue + gammaValue + {{Long22}};
-                  [Obsolete] public int F128 = alphaValue + betaValue + gammaValue + {{Long23}};
-                  [Obsolete] public int F129 = alphaValue + betaValue + gammaValue + {{Long24}};
-                  [Obsolete] public int {{Long14}} { get; set; }
-                  [Obsolete] public int {{Long15}} { get; set; }
-                  [Obsolete] public int {{Long25}} { get; set; }
-                  [Obsolete] public int {{Long26}} { get; set; }
-                  [Obsolete] public int {{Long27}} { get; set; }
-                  [Obsolete] public int {{Long28}} { get; set; }
-                  [Obsolete] public int {{Long29}} { get; set; }
-                  [Obsolete] public int {{Long30}} { get; set; }
-                  [Obsolete] public int {{Long31}} { get; set; }
-                  [Obsolete] public int Q121 { get; set; } = alphaValue + {{Long32}};
-                  [Obsolete] public int R121 => alphaValue + {{Long33}};
-                  [Obsolete] public int Q123 { get; set; } = alphaValue + {{Long34}};
-                  [Obsolete] public int R123 => alphaValue + {{Long35}};
-                  [Obsolete] public int Q125 { get; set; } = alphaValue + {{Long36}};
-                  [Obsolete] public int R125 => alphaValue + {{Long37}};
-                  [Obsolete] public int Q127 { get; set; } = alphaValue + {{Long38}};
-                  [Obsolete] public int R127 => alphaValue + {{Long39}};
-              }
-              """,
+            public class In {
+                [Obsolete] public int F121 = alphaValue + betaValue + gammaValue + {{Long16}};
+                [Obsolete] public int F122 = alphaValue + betaValue + gammaValue + {{Long17}};
+                [Obsolete] public int F123 = alphaValue + betaValue + gammaValue + {{Long18}};
+                [Obsolete] public int F124 = alphaValue + betaValue + gammaValue + {{Long19}};
+                [Obsolete] public int F125 = alphaValue + betaValue + gammaValue + {{Long20}};
+                [Obsolete] public int F126 = alphaValue + betaValue + gammaValue + {{Long21}};
+                [Obsolete] public int F127 = alphaValue + betaValue + gammaValue + {{Long22}};
+                [Obsolete] public int F128 = alphaValue + betaValue + gammaValue + {{Long23}};
+                [Obsolete] public int F129 = alphaValue + betaValue + gammaValue + {{Long24}};
+                [Obsolete] public int {{Long14}} { get; set; }
+                [Obsolete] public int {{Long15}} { get; set; }
+                [Obsolete] public int {{Long25}} { get; set; }
+                [Obsolete] public int {{Long26}} { get; set; }
+                [Obsolete] public int {{Long27}} { get; set; }
+                [Obsolete] public int {{Long28}} { get; set; }
+                [Obsolete] public int {{Long29}} { get; set; }
+                [Obsolete] public int {{Long30}} { get; set; }
+                [Obsolete] public int {{Long31}} { get; set; }
+                [Obsolete] public int Q121 { get; set; } = alphaValue + {{Long32}};
+                [Obsolete] public int R121 => alphaValue + {{Long33}};
+                [Obsolete] public int Q123 { get; set; } = alphaValue + {{Long34}};
+                [Obsolete] public int R123 => alphaValue + {{Long35}};
+                [Obsolete] public int Q125 { get; set; } = alphaValue + {{Long36}};
+                [Obsolete] public int R125 => alphaValue + {{Long37}};
+                [Obsolete] public int Q127 { get; set; } = alphaValue + {{Long38}};
+                [Obsolete] public int R127 => alphaValue + {{Long39}};
+            }
+            """,
             $$"""
-              public class In {
-                  [Obsolete]
-                  public int F121 = alphaValue + betaValue + gammaValue + {{Long16}};
+            public class In {
+                [Obsolete]
+                public int F121 = alphaValue + betaValue + gammaValue + {{Long16}};
 
-                  [Obsolete] public int F122 =
-                      alphaValue + betaValue + gammaValue + {{Long17}};
+                [Obsolete] public int F122 =
+                    alphaValue + betaValue + gammaValue + {{Long17}};
 
-                  [Obsolete] public int F123 =
-                      alphaValue + betaValue + gammaValue + {{Long18}};
+                [Obsolete] public int F123 =
+                    alphaValue + betaValue + gammaValue + {{Long18}};
 
-                  [Obsolete] public int F124 =
-                      alphaValue + betaValue + gammaValue + {{Long19}};
+                [Obsolete] public int F124 =
+                    alphaValue + betaValue + gammaValue + {{Long19}};
 
-                  [Obsolete] public int F125 =
-                      alphaValue + betaValue + gammaValue + {{Long20}};
+                [Obsolete] public int F125 =
+                    alphaValue + betaValue + gammaValue + {{Long20}};
 
-                  [Obsolete] public int F126 =
-                      alphaValue + betaValue + gammaValue + {{Long21}};
+                [Obsolete] public int F126 =
+                    alphaValue + betaValue + gammaValue + {{Long21}};
 
-                  [Obsolete] public int F127 =
-                      alphaValue + betaValue + gammaValue + {{Long22}};
+                [Obsolete] public int F127 =
+                    alphaValue + betaValue + gammaValue + {{Long22}};
 
-                  [Obsolete] public int F128 =
-                      alphaValue + betaValue + gammaValue + {{Long23}};
+                [Obsolete] public int F128 =
+                    alphaValue + betaValue + gammaValue + {{Long23}};
 
-                  [Obsolete] public int F129 =
-                      alphaValue + betaValue + gammaValue + {{Long24}};
+                [Obsolete] public int F129 =
+                    alphaValue + betaValue + gammaValue + {{Long24}};
 
-                  [Obsolete] public int {{Long14}} {
-                      get;
-                      set;
-                  }
+                [Obsolete] public int {{Long14}} {
+                    get;
+                    set;
+                }
 
-                  [Obsolete] public int {{Long15}} {
-                      get;
-                      set;
-                  }
+                [Obsolete] public int {{Long15}} {
+                    get;
+                    set;
+                }
 
-                  [Obsolete] public int {{Long25}} {
-                      get;
-                      set;
-                  }
+                [Obsolete] public int {{Long25}} {
+                    get;
+                    set;
+                }
 
-                  [Obsolete] public int {{Long26}} {
-                      get;
-                      set;
-                  }
+                [Obsolete] public int {{Long26}} {
+                    get;
+                    set;
+                }
 
-                  [Obsolete] public int {{Long27}} {
-                      get;
-                      set;
-                  }
+                [Obsolete] public int {{Long27}} {
+                    get;
+                    set;
+                }
 
-                  [Obsolete] public int {{Long28}} {
-                      get;
-                      set;
-                  }
+                [Obsolete] public int {{Long28}} {
+                    get;
+                    set;
+                }
 
-                  [Obsolete] public int {{Long29}} {
-                      get;
-                      set;
-                  }
+                [Obsolete] public int {{Long29}} {
+                    get;
+                    set;
+                }
 
-                  [Obsolete] public int {{Long30}} {
-                      get;
-                      set;
-                  }
+                [Obsolete] public int {{Long30}} {
+                    get;
+                    set;
+                }
 
-                  [Obsolete] public int {{Long31}} {
-                      get;
-                      set;
-                  }
+                [Obsolete] public int {{Long31}} {
+                    get;
+                    set;
+                }
 
-                  [Obsolete] public int Q121 { get; set; } =
-                      alphaValue + {{Long32}};
+                [Obsolete] public int Q121 { get; set; } =
+                    alphaValue + {{Long32}};
 
-                  [Obsolete] public int R121 =>
-                      alphaValue + {{Long33}};
+                [Obsolete] public int R121 =>
+                    alphaValue + {{Long33}};
 
-                  [Obsolete] public int Q123 { get; set; } =
-                      alphaValue + {{Long34}};
+                [Obsolete] public int Q123 { get; set; } =
+                    alphaValue + {{Long34}};
 
-                  [Obsolete] public int R123 =>
-                      alphaValue + {{Long35}};
+                [Obsolete] public int R123 =>
+                    alphaValue + {{Long35}};
 
-                  [Obsolete] public int Q125 { get; set; } =
-                      alphaValue + {{Long36}};
+                [Obsolete] public int Q125 { get; set; } =
+                    alphaValue + {{Long36}};
 
-                  [Obsolete] public int R125 =>
-                      alphaValue + {{Long37}};
+                [Obsolete] public int R125 =>
+                    alphaValue + {{Long37}};
 
-                  [Obsolete] public int Q127 { get; set; } =
-                      alphaValue + {{Long38}};
+                [Obsolete] public int Q127 { get; set; } =
+                    alphaValue + {{Long38}};
 
-                  [Obsolete] public int R127 =>
-                      alphaValue + {{Long39}};
-              }
-              """
+                [Obsolete] public int R127 =>
+                    alphaValue + {{Long39}};
+            }
+            """
         );
 
     /// <summary>
@@ -345,37 +345,37 @@ public sealed class AttributeJoinTerminatorIssue438Tests {
     public void AbstractMethodsAndEvents() =>
         Agrees(
             $$"""
-              public abstract class In {
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVa);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVal);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaValu);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaValueXYZ);
-                  [Obsolete] public event System.Action<{{Long40}}> EventNameXYZWVUTSR;
-                  [Obsolete] public event System.Action<{{Long40}}> EventNameXYZWVUTSRQ;
-                  [Obsolete] public event System.Action<{{Long40}}> EventNameXYZWVUTSRQP;
-              }
-              """,
+            public abstract class In {
+                [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVa);
+                [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVal);
+                [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaValu);
+                [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaValueXYZ);
+                [Obsolete] public event System.Action<{{Long40}}> EventNameXYZWVUTSR;
+                [Obsolete] public event System.Action<{{Long40}}> EventNameXYZWVUTSRQ;
+                [Obsolete] public event System.Action<{{Long40}}> EventNameXYZWVUTSRQP;
+            }
+            """,
             $$"""
-              public abstract class In {
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVa);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVal);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaValu);
+            public abstract class In {
+                [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVa);
+                [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVal);
+                [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaValu);
 
-                  [Obsolete] public abstract void AbstractMethodName(
-                      int alphaParameterValue,
-                      int betaParameterValue,
-                      int gammaValueXYZ
-                  );
+                [Obsolete] public abstract void AbstractMethodName(
+                    int alphaParameterValue,
+                    int betaParameterValue,
+                    int gammaValueXYZ
+                );
 
-                  [Obsolete]
-                  public event System.Action<{{Long40}}> EventNameXYZWVUTSR;
+                [Obsolete]
+                public event System.Action<{{Long40}}> EventNameXYZWVUTSR;
 
-                  [Obsolete]
-                  public event System.Action<{{Long40}}> EventNameXYZWVUTSRQ;
+                [Obsolete]
+                public event System.Action<{{Long40}}> EventNameXYZWVUTSRQ;
 
-                  [Obsolete]
-                  public event System.Action<{{Long40}}> EventNameXYZWVUTSRQP;
-              }
-              """
+                [Obsolete]
+                public event System.Action<{{Long40}}> EventNameXYZWVUTSRQP;
+            }
+            """
         );
 }

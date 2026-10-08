@@ -83,13 +83,13 @@ public sealed class PatternAndCorrectnessBatchTests {
     [InlineData("char")]
     public void AllFixedWidthRanges_AreExactAtBothEndpoints(string type) {
         var source = $$"""
-                       class C {
-                           bool Minimum({{type}} value) => value >= {{type}}.MinValue;
-                           bool Maximum({{type}} value) => value <= {{type}}.MaxValue;
-                           bool Underflow({{type}} value) => value < {{type}}.MinValue;
-                           bool Overflow({{type}} value) => value > {{type}}.MaxValue;
-                       }
-                       """;
+                     class C {
+                         bool Minimum({{type}} value) => value >= {{type}}.MinValue;
+                         bool Maximum({{type}} value) => value <= {{type}}.MaxValue;
+                         bool Underflow({{type}} value) => value < {{type}}.MinValue;
+                         bool Overflow({{type}} value) => value > {{type}}.MaxValue;
+                     }
+                     """;
         var diagnostics = Analyze(RuleFixtures.Compile(source, "test.cs"))
             .Where(static d => d.Id == "SK2001")
             .ToArray();

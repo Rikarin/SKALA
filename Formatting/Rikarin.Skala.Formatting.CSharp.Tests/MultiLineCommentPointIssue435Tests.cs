@@ -178,115 +178,115 @@ public sealed class MultiLineCommentPointIssue435Tests {
     public void AValueTooLongForTheLine_WrapsInsideItself() =>
         Oracle.Agrees(
             $$"""
-              class C {
-                  void M() {
-                      int {{Y31}}2 = /* gap
-                        gap2 */ {{A39}} + {{B76}};
-                      int {{Y31}}3 = /* gap
-                        gap2 */ Compute({{A39}}, {{B76}});
-                      Func<int> f = () => /* gap
-                        gap2 */ Compute({{A39}}, {{B76}});
-                      int y9 = M2(1, /* a
-                        b */ 2);
-                      int y10 = /* a */ M2(1, /* a
-                        b */ 2);
-                      var s = x switch {
-                          1 => /* a
-                            b */ 2,
-                          _ => 3
-                      };
-                      M2(a: /* a
-                        b */ 1);
-                      throw /* a
-                        b */ new Exception();
-                  }
-                  IEnumerable<int> Y() {
-                      yield return /* a
-                        b */ 1;
-                  }
-                  int R() {
-                      return /* gap
-                        gap2 */ Compute({{A39}}, {{B76}});
-                  }
-                  int P { get; } = /* a
-                    b */ 1;
-                  [A(X = /* a
-                    b */ 1)]
-                  int Q = /* a
-                    b */ 1, Q2 = /* c
-                    d */ 2;
-                  int Z = /** a
-                    b */ 1;
-              }
-              """,
+            class C {
+                void M() {
+                    int {{Y31}}2 = /* gap
+                      gap2 */ {{A39}} + {{B76}};
+                    int {{Y31}}3 = /* gap
+                      gap2 */ Compute({{A39}}, {{B76}});
+                    Func<int> f = () => /* gap
+                      gap2 */ Compute({{A39}}, {{B76}});
+                    int y9 = M2(1, /* a
+                      b */ 2);
+                    int y10 = /* a */ M2(1, /* a
+                      b */ 2);
+                    var s = x switch {
+                        1 => /* a
+                          b */ 2,
+                        _ => 3
+                    };
+                    M2(a: /* a
+                      b */ 1);
+                    throw /* a
+                      b */ new Exception();
+                }
+                IEnumerable<int> Y() {
+                    yield return /* a
+                      b */ 1;
+                }
+                int R() {
+                    return /* gap
+                      gap2 */ Compute({{A39}}, {{B76}});
+                }
+                int P { get; } = /* a
+                  b */ 1;
+                [A(X = /* a
+                  b */ 1)]
+                int Q = /* a
+                  b */ 1, Q2 = /* c
+                  d */ 2;
+                int Z = /** a
+                  b */ 1;
+            }
+            """,
             $$"""
-              class C {
-                  void M() {
-                      int {{Y31}}2 = /* gap
-                        gap2 */ {{A39}}
-                          + {{B76}};
-                      int {{Y31}}3 = /* gap
-                        gap2 */ Compute(
-                          {{A39}},
-                          {{B76}}
-                      );
-                      Func<int> f = () => /* gap
-                        gap2 */ Compute(
-                          {{A39}},
-                          {{B76}}
-                      );
-                      int y9 = M2(
-                          1, /* a
-                            b */
-                          2
-                      );
-                      int y10 = /* a */ M2(
-                          1, /* a
-                            b */
-                          2
-                      );
-                      var s = x switch {
-                          1 => /* a
-                            b */ 2,
-                          _ => 3
-                      };
-                      M2(
-                          a: /* a
-                            b */ 1
-                      );
-                      throw /* a
-                        b */ new Exception();
-                  }
+            class C {
+                void M() {
+                    int {{Y31}}2 = /* gap
+                      gap2 */ {{A39}}
+                        + {{B76}};
+                    int {{Y31}}3 = /* gap
+                      gap2 */ Compute(
+                        {{A39}},
+                        {{B76}}
+                    );
+                    Func<int> f = () => /* gap
+                      gap2 */ Compute(
+                        {{A39}},
+                        {{B76}}
+                    );
+                    int y9 = M2(
+                        1, /* a
+                          b */
+                        2
+                    );
+                    int y10 = /* a */ M2(
+                        1, /* a
+                          b */
+                        2
+                    );
+                    var s = x switch {
+                        1 => /* a
+                          b */ 2,
+                        _ => 3
+                    };
+                    M2(
+                        a: /* a
+                          b */ 1
+                    );
+                    throw /* a
+                      b */ new Exception();
+                }
 
-                  IEnumerable<int> Y() {
-                      yield return /* a
-                        b */ 1;
-                  }
+                IEnumerable<int> Y() {
+                    yield return /* a
+                      b */ 1;
+                }
 
-                  int R() {
-                      return /* gap
-                        gap2 */ Compute(
-                          {{A39}},
-                          {{B76}}
-                      );
-                  }
+                int R() {
+                    return /* gap
+                      gap2 */ Compute(
+                        {{A39}},
+                        {{B76}}
+                    );
+                }
 
-                  int P { get; } = /* a
-                    b */ 1;
+                int P { get; } = /* a
+                  b */ 1;
 
-                  [A(
-                      X = /* a
-                        b */ 1
-                  )]
-                  int Q = /* a
-                    b */ 1,
-                      Q2 = /* c
-                      d */ 2;
+                [A(
+                    X = /* a
+                      b */ 1
+                )]
+                int Q = /* a
+                  b */ 1,
+                    Q2 = /* c
+                    d */ 2;
 
-                  int Z = /** a
-                    b */ 1;
-              }
-              """
+                int Z = /** a
+                  b */ 1;
+            }
+            """
         );
 
     /// <summary>
@@ -297,39 +297,39 @@ public sealed class MultiLineCommentPointIssue435Tests {
     public void OnlyACommentThatSpansLines_KeepsTheValue() =>
         Oracle.Agrees(
             $$"""
-              class C {
-                  void M() {
-                      int {{Y31}} = /* gap */ {{A39}} + {{B43}};
-                      int {{Y31}}2 = /* gap
-                        gap2 */ {{A39}} + {{B43}};
-                      int {{Y31}}3 = {{A39}} + /* gap
-                        gap2 */ {{B43}} + {{C32}};
-                      M2(1, /* gap
-                        gap2 */ 2, {{A51}}, {{B50}});
-                  }
-              }
-              """,
+            class C {
+                void M() {
+                    int {{Y31}} = /* gap */ {{A39}} + {{B43}};
+                    int {{Y31}}2 = /* gap
+                      gap2 */ {{A39}} + {{B43}};
+                    int {{Y31}}3 = {{A39}} + /* gap
+                      gap2 */ {{B43}} + {{C32}};
+                    M2(1, /* gap
+                      gap2 */ 2, {{A51}}, {{B50}});
+                }
+            }
+            """,
             $$"""
-              class C {
-                  void M() {
-                      int {{Y31}} = /* gap */
-                          {{A39}} + {{B43}};
-                      int {{Y31}}2 = /* gap
-                        gap2 */ {{A39}} + {{B43}};
-                      int {{Y31}}3 = {{A39}}
-                          + /* gap
-                            gap2 */ {{B43}}
-                          + {{C32}};
-                      M2(
-                          1, /* gap
-                            gap2 */
-                          2,
-                          {{A51}},
-                          {{B50}}
-                      );
-                  }
-              }
-              """
+            class C {
+                void M() {
+                    int {{Y31}} = /* gap */
+                        {{A39}} + {{B43}};
+                    int {{Y31}}2 = /* gap
+                      gap2 */ {{A39}} + {{B43}};
+                    int {{Y31}}3 = {{A39}}
+                        + /* gap
+                          gap2 */ {{B43}}
+                        + {{C32}};
+                    M2(
+                        1, /* gap
+                          gap2 */
+                        2,
+                        {{A51}},
+                        {{B50}}
+                    );
+                }
+            }
+            """
         );
 
     /// <summary>
@@ -460,110 +460,110 @@ public sealed class MultiLineCommentPointIssue435Tests {
     public void WhatFollowsTheComment_NestsFromTheStatementsLine() =>
         Oracle.Agrees(
             $$"""
-              class C {
-                  void M() {
-                      if (a) /* x
-                        y */ {
-                          Foo();
-                      }
-                      Run(/* a
-                        b */ () => {
-                          Foo();
-                      });
-                      Run(1, /* a
-                        b */ () => {
-                          Foo();
-                      });
-                      var q = /* a
-                        b */ new List<int> {
-                          1, 2
-                      };
-                      var s = /* a
-                        b */ x switch {
-                          1 => 2,
-                          _ => 3
-                      };
-                      var t = /* a
-                        b */ Compute({{A31}}).Then({{B45}}).Then({{C21}});
-                      Foo({{A16}}, /* a
-                        b */ Bar({{C32}}, {{D54}}, {{E15}}));
-                      int u = 1 /* a
-                        b */ + Compute({{A48}}, {{B57}});
-                      /* a
-                         b */ Foo({{A50}}, {{B69}});
-                      var v = new {
-                          A = /* a
-                            b */ Compute({{A56}}, {{B57}})
-                      };
-                  }
-                  /* a
-                     b */ void N(int {{A34}}, int {{B68}}) { }
-              }
-              """,
+            class C {
+                void M() {
+                    if (a) /* x
+                      y */ {
+                        Foo();
+                    }
+                    Run(/* a
+                      b */ () => {
+                        Foo();
+                    });
+                    Run(1, /* a
+                      b */ () => {
+                        Foo();
+                    });
+                    var q = /* a
+                      b */ new List<int> {
+                        1, 2
+                    };
+                    var s = /* a
+                      b */ x switch {
+                        1 => 2,
+                        _ => 3
+                    };
+                    var t = /* a
+                      b */ Compute({{A31}}).Then({{B45}}).Then({{C21}});
+                    Foo({{A16}}, /* a
+                      b */ Bar({{C32}}, {{D54}}, {{E15}}));
+                    int u = 1 /* a
+                      b */ + Compute({{A48}}, {{B57}});
+                    /* a
+                       b */ Foo({{A50}}, {{B69}});
+                    var v = new {
+                        A = /* a
+                          b */ Compute({{A56}}, {{B57}})
+                    };
+                }
+                /* a
+                   b */ void N(int {{A34}}, int {{B68}}) { }
+            }
+            """,
             $$"""
-              class C {
-                  void M() {
-                      if (a) /* x
-                        y */ {
-                          Foo();
-                      }
+            class C {
+                void M() {
+                    if (a) /* x
+                      y */ {
+                        Foo();
+                    }
 
-                      Run( /* a
-                        b */ () => { Foo(); }
-                      );
-                      Run(
-                          1, /* a
-                            b */
-                          () => { Foo(); }
-                      );
-                      var q = /* a
-                        b */ new List<int> { 1, 2 };
-                      var s = /* a
-                        b */ x switch {
-                          1 => 2,
-                          _ => 3
-                      };
-                      var t = /* a
-                        b */ Compute({{A31}})
-                          .Then({{B45}})
-                          .Then({{C21}});
-                      Foo(
-                          {{A16}}, /* a
-                            b */
-                          Bar(
-                              {{C32}},
-                              {{D54}},
-                              {{E15}}
-                          )
-                      );
-                      int u = 1 /* a
-                        b */
-                          + Compute(
-                              {{A48}},
-                              {{B57}}
-                          );
-                      /* a
-                         b */
-                      Foo(
-                          {{A50}},
-                          {{B69}}
-                      );
-                      var v = new {
-                          A = /* a
-                            b */ Compute(
-                              {{A56}},
-                              {{B57}}
-                          )
-                      };
-                  }
+                    Run( /* a
+                      b */ () => { Foo(); }
+                    );
+                    Run(
+                        1, /* a
+                          b */
+                        () => { Foo(); }
+                    );
+                    var q = /* a
+                      b */ new List<int> { 1, 2 };
+                    var s = /* a
+                      b */ x switch {
+                        1 => 2,
+                        _ => 3
+                    };
+                    var t = /* a
+                      b */ Compute({{A31}})
+                        .Then({{B45}})
+                        .Then({{C21}});
+                    Foo(
+                        {{A16}}, /* a
+                          b */
+                        Bar(
+                            {{C32}},
+                            {{D54}},
+                            {{E15}}
+                        )
+                    );
+                    int u = 1 /* a
+                      b */
+                        + Compute(
+                            {{A48}},
+                            {{B57}}
+                        );
+                    /* a
+                       b */
+                    Foo(
+                        {{A50}},
+                        {{B69}}
+                    );
+                    var v = new {
+                        A = /* a
+                          b */ Compute(
+                            {{A56}},
+                            {{B57}}
+                        )
+                    };
+                }
 
-                  /* a
-                     b */
-                  void N(
-                      int {{A34}},
-                      int {{B68}}
-                  ) { }
-              }
-              """
+                /* a
+                   b */
+                void N(
+                    int {{A34}},
+                    int {{B68}}
+                ) { }
+            }
+            """
         );
 }

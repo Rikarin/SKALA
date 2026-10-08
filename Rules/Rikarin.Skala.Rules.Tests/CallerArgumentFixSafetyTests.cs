@@ -96,32 +96,32 @@ public sealed class CallerArgumentFixSafetyTests {
     [InlineData("Apply(x => x + 1).Said(\"m\")", "x => x + 1", false)]
     public void TheGuard_DeclinesExactlyTheCapturedText(string call, string edited, bool declines) {
         var source = $$"""
-                       using System;
-                       using System.Runtime.CompilerServices;
+            using System;
+            using System.Runtime.CompilerServices;
 
-                       public sealed class Box {
-                           public Box(Func<int, int> f, [CallerArgumentExpression("f")] string text = "") => Text = text;
-                           public string Text { get; }
-                       }
+            public sealed class Box {
+                public Box(Func<int, int> f, [CallerArgumentExpression("f")] string text = "") => Text = text;
+                public string Text { get; }
+            }
 
-                       public static class Captures {
-                           public static int Apply(Func<int, int> f) => f(1);
-                           public static string Capture(object? value, [CallerArgumentExpression("value")] string text = "") => text;
-                           public static string Many([CallerArgumentExpression("values")] string text = "", params Func<int, int>[] values) => text;
-                           public static string Text<T>(this T value, [CallerArgumentExpression("value")] string text = "") => text;
-                       #pragma warning disable CS8963, CS8965
-                           public static string Misnamed(Func<int, int> f, [CallerArgumentExpression("nothing")] string text = "") => text;
-                           public static string Self(int value, [CallerArgumentExpression("text")] string text = "") => text;
-                       #pragma warning restore CS8963, CS8965
-                           public static object Use() => {{call}};
-                       }
+            public static class Captures {
+                public static int Apply(Func<int, int> f) => f(1);
+                public static string Capture(object? value, [CallerArgumentExpression("value")] string text = "") => text;
+                public static string Many([CallerArgumentExpression("values")] string text = "", params Func<int, int>[] values) => text;
+                public static string Text<T>(this T value, [CallerArgumentExpression("value")] string text = "") => text;
+            #pragma warning disable CS8963, CS8965
+                public static string Misnamed(Func<int, int> f, [CallerArgumentExpression("nothing")] string text = "") => text;
+                public static string Self(int value, [CallerArgumentExpression("text")] string text = "") => text;
+            #pragma warning restore CS8963, CS8965
+                public static object Use() => {{call}};
+            }
 
-                       public static class Blocks {
-                           extension<T>(T value) {
-                               public string Said([CallerArgumentExpression("value")] string text = "") => text;
-                           }
-                       }
-                       """;
+            public static class Blocks {
+                extension<T>(T value) {
+                    public string Said([CallerArgumentExpression("value")] string text = "") => text;
+                }
+            }
+            """;
         var compilation = RuleFixtures.Compile(source, "planted.cs");
         Assert.Empty(
             compilation.GetDiagnostics(TestContext.Current.CancellationToken)

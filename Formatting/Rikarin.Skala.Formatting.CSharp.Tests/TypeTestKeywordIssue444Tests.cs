@@ -72,90 +72,90 @@ public sealed class TypeTestKeywordIssue444Tests {
     public void TheBreakGoesBeforeTheKeyword_WhenOnlyTheKeywordOverflows() =>
         Oracle.Agrees(
             $$"""
-              class C {
-                  object M() {
-                      _ = 0;
-                      return {{Long1}} as string;
-                      _ = 0;
-                      return {{Long2}} as string;
-                      _ = 0;
-                      return {{Long3}} as string;
-                      _ = 0;
-                      return {{Long4}} as string;
-                      _ = 0;
-                      return {{Long5}} as string;
-                      _ = 0;
-                      return {{Long6}} as string;
-                      _ = 0;
-                      return {{Long7}} as string;
-                  }
-                  bool N() {
-                      var value = {{Long8}} is SomeTypeName;
-                      var value = {{Long9}} is SomeTypeName;
-                      var value = {{Long10}} is SomeTypeName;
-                      var value = {{Long11}} is SomeTypeName;
-                      var value = {{Long12}} is SomeTypeName;
-                      var value = {{Long13}} is SomeTypeName;
-                      var value = {{Long14}} is SomeTypeName;
-                      bool kept = receiver
-                          is SomeTypeName;
-                      return true;
-                  }
-              }
-              """,
+            class C {
+                object M() {
+                    _ = 0;
+                    return {{Long1}} as string;
+                    _ = 0;
+                    return {{Long2}} as string;
+                    _ = 0;
+                    return {{Long3}} as string;
+                    _ = 0;
+                    return {{Long4}} as string;
+                    _ = 0;
+                    return {{Long5}} as string;
+                    _ = 0;
+                    return {{Long6}} as string;
+                    _ = 0;
+                    return {{Long7}} as string;
+                }
+                bool N() {
+                    var value = {{Long8}} is SomeTypeName;
+                    var value = {{Long9}} is SomeTypeName;
+                    var value = {{Long10}} is SomeTypeName;
+                    var value = {{Long11}} is SomeTypeName;
+                    var value = {{Long12}} is SomeTypeName;
+                    var value = {{Long13}} is SomeTypeName;
+                    var value = {{Long14}} is SomeTypeName;
+                    bool kept = receiver
+                        is SomeTypeName;
+                    return true;
+                }
+            }
+            """,
             $$"""
-              class C {
-                  object M() {
-                      _ = 0;
-                      return {{Long1}} as
-                          string;
-                      _ = 0;
-                      return {{Long2}} as
-                          string;
-                      _ = 0;
-                      return {{Long3}} as
-                          string;
-                      _ = 0;
-                      return {{Long4}} as
-                          string;
-                      _ = 0;
-                      return {{Long5}}
-                          as string;
-                      _ = 0;
-                      return {{Long6}}
-                          as string;
-                      _ = 0;
-                      return {{Long7}}
-                          as string;
-                  }
+            class C {
+                object M() {
+                    _ = 0;
+                    return {{Long1}} as
+                        string;
+                    _ = 0;
+                    return {{Long2}} as
+                        string;
+                    _ = 0;
+                    return {{Long3}} as
+                        string;
+                    _ = 0;
+                    return {{Long4}} as
+                        string;
+                    _ = 0;
+                    return {{Long5}}
+                        as string;
+                    _ = 0;
+                    return {{Long6}}
+                        as string;
+                    _ = 0;
+                    return {{Long7}}
+                        as string;
+                }
 
-                  bool N() {
-                      var value =
-                          {{Long8}} is
-                              SomeTypeName;
-                      var value =
-                          {{Long9}} is
-                              SomeTypeName;
-                      var value =
-                          {{Long10}} is
-                              SomeTypeName;
-                      var value =
-                          {{Long11}} is
-                              SomeTypeName;
-                      var value =
-                          {{Long12}} is
-                              SomeTypeName;
-                      var value =
-                          {{Long13}} is
-                              SomeTypeName;
-                      var value =
-                          {{Long14}} is
-                              SomeTypeName;
-                      bool kept = receiver
-                          is SomeTypeName;
-                      return true;
-                  }
-              }
-              """
+                bool N() {
+                    var value =
+                        {{Long8}} is
+                            SomeTypeName;
+                    var value =
+                        {{Long9}} is
+                            SomeTypeName;
+                    var value =
+                        {{Long10}} is
+                            SomeTypeName;
+                    var value =
+                        {{Long11}} is
+                            SomeTypeName;
+                    var value =
+                        {{Long12}} is
+                            SomeTypeName;
+                    var value =
+                        {{Long13}} is
+                            SomeTypeName;
+                    var value =
+                        {{Long14}} is
+                            SomeTypeName;
+                    bool kept = receiver
+                        is SomeTypeName;
+                    return true;
+                }
+            }
+            """
         );
 }

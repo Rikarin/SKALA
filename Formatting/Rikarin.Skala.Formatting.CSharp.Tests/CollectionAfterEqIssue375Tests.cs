@@ -461,103 +461,103 @@ public sealed class CollectionAfterEqIssue375Tests {
     public void ACollectionTooWideForTheLineBelow_GivesTheBreakToTheBracket() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      int[] x =
-              [{{Numbers}}, 12000000, 13];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    int[] x =
+            [{{Numbers}}, 12000000, 13];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      int[] x = [
-                          {{Numbers}},
-                          12000000, 13
-                      ];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    int[] x = [
+                        {{Numbers}},
+                        12000000, 13
+                    ];
+                }
+            }
+            """
         );
 
     [Fact]
     public void ACollectionThatFitsTheLineBelow_KeepsTheBreak() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      int[] x =
-              [{{Numbers}}, 123];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    int[] x =
+            [{{Numbers}}, 123];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      int[] x =
-                          [{{Numbers}}, 123];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    int[] x =
+                        [{{Numbers}}, 123];
+                }
+            }
+            """
         );
 
     [Fact]
     public void AContinuationLineOfExactlyOneHundredAndTwenty_KeepsTheBreak() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      int[] x =
-              [{{Numbers}}, 1234];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    int[] x =
+            [{{Numbers}}, 1234];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      int[] x =
-                          [{{Numbers}}, 1234];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    int[] x =
+                        [{{Numbers}}, 1234];
+                }
+            }
+            """
         );
 
     [Fact]
     public void AContinuationLineOfOneHundredAndTwentyOne_GivesTheBreakToTheBracket() =>
         Oracle.Agrees(
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      int[] x =
-              [{{Numbers}}, 12345];
-                  }
-              }
-              """,
+            public class C {
+                void M() {
+                    int[] x =
+            [{{Numbers}}, 12345];
+                }
+            }
+            """,
             $$"""
-              namespace P;
+            namespace P;
 
-              public class C {
-                  void M() {
-                      int[] x = [
-                          {{Numbers}}, 12345
-                      ];
-                  }
-              }
-              """
+            public class C {
+                void M() {
+                    int[] x = [
+                        {{Numbers}}, 12345
+                    ];
+                }
+            }
+            """
         );
 
     [Fact]

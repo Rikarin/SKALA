@@ -597,8 +597,7 @@ public sealed class XmlDocRenderer {
     bool FitsOpen(XmlDocElement element, string flat) =>
         !options.WrapLines
         || !(options.WrapText || element.HasChildElements)
-        || OneWord(element)
-        && !HeaderWraps(element)
+        || OneWord(element) && !HeaderWraps(element)
         || IndentWidth() + TextWidth.Measure(flat) - element.Name.Length - "</>".Length <= budget;
 
     /// <summary>Whether the element's content is one unbreakable word.</summary>

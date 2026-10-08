@@ -114,11 +114,8 @@ public enum VerbatimFlags {
 
     /// <summary>
     ///     With <see cref="ShiftWithLine" />: the comment's lines lose their trailing whitespace only when
-    ///     its line actually moved. A starred <c>/**</c> trailing code at
-    ///     <c>
-    /// align_multiline_comments =
-    ///     false
-    ///     </c> — measured, issue #459: moved four left, its <c>/**   </c> and body lines came back
+    ///     its line actually moved. A starred <c>/**</c> trailing code at <c>align_multiline_comments =
+    ///     false</c> — measured, issue #459: moved four left, its <c>/**   </c> and body lines came back
     ///     trimmed; on a line that did not move, its trailing spaces came back untouched.
     /// </summary>
     TrimIfShifted = 128,

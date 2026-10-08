@@ -159,18 +159,18 @@ public sealed class DocumentationCommentBatchTests {
     [InlineData("System.IEquatable<Missing>", "public bool Equals(Missing? other) => false;")]
     public void AnUnboundHierarchy_IsNotJudged(string baseList, string member) {
         var source = $$"""
-                       /// <summary>A sink.</summary>
-                       public sealed class Sink : {{baseList}} {
-                           /// <inheritdoc />
-                           {{member}}
-                       }
+            /// <summary>A sink.</summary>
+            public sealed class Sink : {{baseList}} {
+                /// <inheritdoc />
+                {{member}}
+            }
 
-                       /// <summary>A canary in the same compilation.</summary>
-                       public sealed class Canary {
-                           /// <inheritdoc />
-                           public void Orphan() { }
-                       }
-                       """;
+            /// <summary>A canary in the same compilation.</summary>
+            public sealed class Canary {
+                /// <inheritdoc />
+                public void Orphan() { }
+            }
+            """;
 
         var findings = Run(source, DocumentationMode.Parse)
             .Where(static d => d.Id == RuleIds.InheritdocWithNothingToInherit)

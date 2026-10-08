@@ -41,8 +41,7 @@ static class RawLiteralPlan {
     ///     <c>-1</c>.
     /// </remarks>
     public static string? For(SyntaxNode node, string source) {
-        var literals =
-            new List<(TextSpanLike Span, int Quote, int Closer, InterpolatedStringExpressionSyntax? Holes)>();
+        var literals = new List<(TextSpanLike Span, int Quote, int Closer, InterpolatedStringExpressionSyntax? Holes)>();
         foreach (var candidate in node.DescendantNodesAndSelf(descendIntoTrivia: false)) {
             if (candidate is InterpolatedStringExpressionSyntax interpolated
                 && interpolated.StringStartToken.IsKind(SyntaxKind.InterpolatedMultiLineRawStringStartToken)) {
@@ -102,10 +101,7 @@ static class RawLiteralPlan {
                 .Append(',')
                 .Append(closerIndent.ToString(CultureInfo.InvariantCulture))
                 .Append(',')
-                .Append(
-                    Width(source, lineStarts[quoteLine], literals[index].Span.Start)
-                        .ToString(CultureInfo.InvariantCulture)
-                );
+                .Append(Width(source, lineStarts[quoteLine], literals[index].Span.Start).ToString(CultureInfo.InvariantCulture));
         }
 
         plan.Append('|');
@@ -156,8 +152,7 @@ static class RawLiteralPlan {
         var owner = -1;
         for (var i = 0; i < literals.Count; i++) {
             var span = literals[i].Span;
-            if (position > span.Start
-                && position < span.End
+            if (position > span.Start && position < span.End
                 && (owner < 0 || span.End - span.Start < literals[owner].Span.End - literals[owner].Span.Start)) {
                 owner = i;
             }

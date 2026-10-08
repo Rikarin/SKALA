@@ -82,16 +82,16 @@ public sealed class ModernizationBatchTests {
     [InlineData("invalid", 0)]
     public void ConfigureAwait_RecognizesAllFourFrameworkTaskTypes(string mode, int expected) {
         var source = $$"""
-                       // analyzer-option: skala_configure_await_analysis_mode = {{mode}}
-                       using System.Threading.Tasks;
-                       class C {
-                           async Task M(Task a, Task<int> b, ValueTask c, ValueTask<int> d) {
-                               await a; await b; await c; await d;
-                               await a.ConfigureAwait(false); await b.ConfigureAwait(true);
-                               await c.ConfigureAwait(false); await d.ConfigureAwait(true);
-                           }
-                       }
-                       """;
+                     // analyzer-option: skala_configure_await_analysis_mode = {{mode}}
+                     using System.Threading.Tasks;
+                     class C {
+                         async Task M(Task a, Task<int> b, ValueTask c, ValueTask<int> d) {
+                             await a; await b; await c; await d;
+                             await a.ConfigureAwait(false); await b.ConfigureAwait(true);
+                             await c.ConfigureAwait(false); await d.ConfigureAwait(true);
+                         }
+                     }
+                     """;
         var diagnostics = Analyze(RuleFixtures.Compile(source, "test.cs"))
             .Where(static d => d.Id == "SK3003")
             .ToArray();

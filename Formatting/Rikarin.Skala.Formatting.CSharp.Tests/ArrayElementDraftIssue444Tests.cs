@@ -434,53 +434,53 @@ public sealed class ArrayElementDraftIssue444Tests {
     public void ALineCommentBetweenElements_IsNotAnElementSpanningLines() =>
         Oracle.Agrees(
             $$"""
-              class C {
-                  void M() {
-                      foreach (var (id, site) in new[] {
-                                   ("SK9098", "ArrangementRule"), // ArrangeIds.Reverted
-                                   ("SK9015", "FormatDiagnosticIds"), // {{Long1}}
-                                   ("SK9099", "FormatDiagnosticIds"), ("SK9001", "SkalaDiagnostic"), // ConfigDiagnosticIds.UnknownKey
-                                   ("SK0201", "ArrangementRule")
-                               }) {
-                      }
-                      var x = new[] {
-                          1, // a
-                          2, 3
-                      };
-                      foreach (var (name, description) in new[] {
-                                   ("create",
-                                       "Accept everything that fires now, replacing any existing baseline."),
-                                   ("update",
-                                       "Accept what fires now in addition to what is already accepted. Never removes."),
-                                   ("show", "What the baseline holds.")
-                               }) {
-                      }
-                  }
-              }
-              """,
+            class C {
+                void M() {
+                    foreach (var (id, site) in new[] {
+                                 ("SK9098", "ArrangementRule"), // ArrangeIds.Reverted
+                                 ("SK9015", "FormatDiagnosticIds"), // {{Long1}}
+                                 ("SK9099", "FormatDiagnosticIds"), ("SK9001", "SkalaDiagnostic"), // ConfigDiagnosticIds.UnknownKey
+                                 ("SK0201", "ArrangementRule")
+                             }) {
+                    }
+                    var x = new[] {
+                        1, // a
+                        2, 3
+                    };
+                    foreach (var (name, description) in new[] {
+                                 ("create",
+                                     "Accept everything that fires now, replacing any existing baseline."),
+                                 ("update",
+                                     "Accept what fires now in addition to what is already accepted. Never removes."),
+                                 ("show", "What the baseline holds.")
+                             }) {
+                    }
+                }
+            }
+            """,
             $$"""
-              class C {
-                  void M() {
-                      foreach (var (id, site) in new[] {
-                                   ("SK9098", "ArrangementRule"), // ArrangeIds.Reverted
-                                   ("SK9015", "FormatDiagnosticIds"), // {{Long1}}
-                                   ("SK9099", "FormatDiagnosticIds"), ("SK9001", "SkalaDiagnostic"), // ConfigDiagnosticIds.UnknownKey
-                                   ("SK0201", "ArrangementRule")
-                               }) { }
+            class C {
+                void M() {
+                    foreach (var (id, site) in new[] {
+                                 ("SK9098", "ArrangementRule"), // ArrangeIds.Reverted
+                                 ("SK9015", "FormatDiagnosticIds"), // {{Long1}}
+                                 ("SK9099", "FormatDiagnosticIds"), ("SK9001", "SkalaDiagnostic"), // ConfigDiagnosticIds.UnknownKey
+                                 ("SK0201", "ArrangementRule")
+                             }) { }
 
-                      var x = new[] {
-                          1, // a
-                          2, 3
-                      };
-                      foreach (var (name, description) in new[] {
-                                   ("create",
-                                       "Accept everything that fires now, replacing any existing baseline."),
-                                   ("update",
-                                       "Accept what fires now in addition to what is already accepted. Never removes."),
-                                   ("show", "What the baseline holds.")
-                               }) { }
-                  }
-              }
-              """
+                    var x = new[] {
+                        1, // a
+                        2, 3
+                    };
+                    foreach (var (name, description) in new[] {
+                                 ("create",
+                                     "Accept everything that fires now, replacing any existing baseline."),
+                                 ("update",
+                                     "Accept what fires now in addition to what is already accepted. Never removes."),
+                                 ("show", "What the baseline holds.")
+                             }) { }
+                }
+            }
+            """
         );
 }
