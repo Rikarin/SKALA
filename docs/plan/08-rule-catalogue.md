@@ -9881,7 +9881,7 @@ says nothing about the compiler that will build the file.
    **C# 12** (4.14: C# 13). They instantiate none of the targeting pack's Interop and Regex generators
    (4.14 and 5.0 load all of them), which `csc` reports as a warning on every build. No compiler trace
    reaches an analyzer: the generated `build_property.*` set (17 keys on `net10.0`) names none; the
-   binlog's `csc` path does, but the loader discards it. **Decision: `fixIsSafe` stays `true`.** The
+   binlog's `csc` path does, but the loader discards it — filed as [#517](https://github.com/Rikarin/SKALA/issues/517). **Decision: `fixIsSafe` stays `true`.** The
    exposed configuration is an explicitly pinned compiler package more than a year older than the SDK,
    on a `net10.0` target, with `LangVersion` not written as a number, and what changes is a null
    receiver's exception type and an empty copy's identity. A written `14` remains airtight.
