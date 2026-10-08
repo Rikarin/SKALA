@@ -335,7 +335,7 @@ public sealed class LanguageServer {
     }
 
     async Task WriteMessageAsync(JsonObject message) {
-        var body = message.ToJsonString(new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var body = message.ToJsonString(new(JsonSerializerDefaults.Web));
         var bytes = Encoding.UTF8.GetByteCount(body);
         await output.WriteAsync(string.Create(CultureInfo.InvariantCulture, $"Content-Length: {bytes}\r\n\r\n{body}"))
             .ConfigureAwait(false);

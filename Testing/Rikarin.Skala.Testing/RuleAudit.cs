@@ -63,11 +63,11 @@ public static class RuleAudit {
             Directory.CreateDirectory(directory);
             var file = Path.Combine(directory, "ImplicitGlobalUsings.cs");
             File.WriteAllText(file, ImplicitUsings);
-            requested = [.. paths, file];
+            requested = [..paths, file];
         }
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = Path.GetFullPath(requested.Count > 0 ? requested[0] : "."),
                 Mode = LoadMode.Loose,
                 Paths = requested

@@ -37,7 +37,7 @@ public sealed class CodeScanningSarifTests : IDisposable {
     static string[] Fingerprints(string path) {
         using var document = JsonDocument.Parse(File.ReadAllText(path));
         return [
-            .. document.RootElement
+            ..document.RootElement
                 .GetProperty("runs")[0]
                 .GetProperty("results")
                 .EnumerateArray()

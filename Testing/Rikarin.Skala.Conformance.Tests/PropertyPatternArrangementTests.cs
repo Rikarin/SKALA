@@ -3,7 +3,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
-using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Testing;
@@ -38,8 +37,8 @@ public sealed class PropertyPatternArrangementTests {
         var result = ArrangementPipeline.Run(
             Path,
             text,
-            new PhaseOneOptions(options),
-            new ArrangementOptions(options),
+            new(options),
+            new(options),
             compilation,
             cancellation: TestContext.Current.CancellationToken
         );
@@ -137,7 +136,7 @@ public sealed class PropertyPatternArrangementTests {
         var result = Arranger.Arrange(
             Path,
             SourceText.From(source),
-            new ArrangementOptions(Options()),
+            new(Options()),
             filter: new([ArrangeIds.PropertyPattern], []),
             cancellation: TestContext.Current.CancellationToken
         );
@@ -177,15 +176,15 @@ public sealed class PropertyPatternArrangementTests {
         var text = SourceText.From(source);
         var tree = CSharpSyntaxTree.ParseText(
             text,
-            new CSharpParseOptions(language),
+            new(language),
             Path,
             TestContext.Current.CancellationToken
         );
         var compilation = CSharpCompilation.Create(
             "probe",
             [tree],
-            [.. SharedFrameworkReferences.Value, MetadataReference.CreateFromFile(typeof(RuleInfo).Assembly.Location)],
-            new CSharpCompilationOptions(
+            [..SharedFrameworkReferences.Value, MetadataReference.CreateFromFile(typeof(RuleInfo).Assembly.Location)],
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 nullableContextOptions: language >= LanguageVersion.CSharp8
                     ? NullableContextOptions.Enable
@@ -200,7 +199,7 @@ public sealed class PropertyPatternArrangementTests {
         return Arranger.Arrange(
             Path,
             text,
-            new ArrangementOptions(Options()),
+            new(Options()),
             compilation,
             filter: new([ArrangeIds.PropertyPattern], []),
             cancellation: TestContext.Current.CancellationToken

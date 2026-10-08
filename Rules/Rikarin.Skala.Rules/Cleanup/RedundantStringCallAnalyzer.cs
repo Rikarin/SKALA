@@ -204,7 +204,7 @@ public sealed class RedundantStringCallAnalyzer : DiagnosticAnalyzer {
 
         Report(
             context,
-            new TextSpan(node.StringStartToken.SpanStart + dollar, 1),
+            new(node.StringStartToken.SpanStart + dollar, 1),
             string.Empty,
             "The interpolated string has no interpolations"
         );
@@ -230,7 +230,7 @@ public sealed class RedundantStringCallAnalyzer : DiagnosticAnalyzer {
 
         Report(
             context,
-            new TextSpan(context.Node.SpanStart, 1),
+            new(context.Node.SpanStart, 1),
             string.Empty,
             "The verbatim prefix escapes nothing"
         );

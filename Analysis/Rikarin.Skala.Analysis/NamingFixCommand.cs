@@ -76,7 +76,7 @@ public static class NamingFixCommand {
         }
 
         var resolution = WorkspaceLoader.Resolve(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = repositoryRoot,
                 Mode = LoadMode.Workspace,
                 ProjectPath = request.ProjectPath,
@@ -447,6 +447,6 @@ public static class NamingFixCommand {
             }
         }
 
-        return [.. paths.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+        return [..paths.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
     }
 }

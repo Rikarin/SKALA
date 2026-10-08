@@ -56,9 +56,8 @@ static class UsingResource {
     public static VariableDeclaratorSyntax? DeclaredVariable(StatementSyntax owner) {
         var declaration = owner switch {
             UsingStatementSyntax use => use.Declaration,
-            LocalDeclarationStatementSyntax {
-                UsingKeyword.RawKind: not (int)SyntaxKind.None
-            } local => local.Declaration,
+            LocalDeclarationStatementSyntax { UsingKeyword.RawKind: not (int)SyntaxKind.None } local => local
+                .Declaration,
             _ => null
         };
 

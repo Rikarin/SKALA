@@ -125,7 +125,7 @@ public static class Unformat {
                 break;
 
             case UnformatMode.Scramble:
-                degraded = Scramble(normalised, new FuzzRandom(seed));
+                degraded = Scramble(normalised, new(seed));
                 break;
 
             default:

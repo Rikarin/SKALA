@@ -73,11 +73,11 @@ public static class DocsSite {
         };
 
         foreach (var rule in rules) {
-            pages.Add(new DocsPage("rules/" + rule.Id + ".html", RulePage(rule, links)));
+            pages.Add(new("rules/" + rule.Id + ".html", RulePage(rule, links)));
         }
 
         foreach (var (construct, members) in constructs) {
-            pages.Add(new DocsPage("options/" + slugOf[construct] + ".html", ConstructPage(construct, members, links)));
+            pages.Add(new("options/" + slugOf[construct] + ".html", ConstructPage(construct, members, links)));
         }
 
         pages.Sort(static (a, b) => string.CompareOrdinal(a.Path, b.Path));

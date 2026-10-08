@@ -28,11 +28,17 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         receiver's own type says which names <c>b.</c> can be followed by.
 ///     </para>
 ///     <para>
-///         ⚠ <b>An inferred name is a name, and could not be told apart if it were not.</b> Since C# 7.1
-///         <c>var t = (a, b);</c> gives <c>t</c> the type <c>(int a, int b)</c>, and on that type
-///         <see cref="IFieldSymbol.IsExplicitlyNamedTupleElement" /> answers <c>true</c> for <c>a</c> —
-///         measured, not assumed — so the local's type carries no trace of where its names came from.
-///         <c>t.a</c> binds, and it is the better spelling for the same reason any other name is.
+///         ⚠ <b>Declared names only; an inferred name is declined.</b> Since C# 7.1 <c>var t = (a, b);</c>
+///         gives <c>t</c> the type <c>(int a, int b)</c>, and an inferred name is the spelling of an
+///         argument, not a declaration. Vixen's <c>var value = ((int)x, flipped, (int)width, (int)height);</c>
+///         is what it produces: <c>value.Item2</c> would become <c>value.flipped</c> for a slot the field it
+///         is stored into declares as <c>Y</c>, beside elements with no name at all.
+///         ⚠ <b>This used to say the two could not be told apart, and they can.</b>
+///         <see cref="IFieldSymbol.IsExplicitlyNamedTupleElement" /> cannot — it answers <c>true</c> for an
+///         inferred name once it is in a local's type — but the location can: a declared name sits on a
+///         <c>TupleElementSyntax</c> or a <c>NameColonSyntax</c>, an inferred one on the literal's bare
+///         argument, and a name read from <c>TupleElementNamesAttribute</c> has no source location at all,
+///         which is always a declared one because a metadata signature is a written type.
 ///     </para>
 ///     <para>
 ///         ⚠
@@ -102,7 +108,7 @@ public sealed class TupleElementByPositionAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (Element(tuple, field) is not { } element) {
+        if (Element(tuple, field) is not { } element || IsInferred(element, cancellation)) {
             return;
         }
 
@@ -162,6 +168,21 @@ public sealed class TupleElementByPositionAnalyzer : DiagnosticAnalyzer {
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     Whether the element's name was inferred from the expression that filled the slot rather than
+    ///     written by anybody.
+    /// </summary>
+    static bool IsInferred(IFieldSymbol element, CancellationToken cancellation) {
+        foreach (var location in element.Locations) {
+            if (location is { IsInSource: true, SourceTree: { } tree }
+                && tree.GetRoot(cancellation).FindNode(location.SourceSpan) is ArgumentSyntax { NameColon: null }) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>The element's name as it may be written after a <c>.</c>.</summary>
@@ -235,7 +256,7 @@ public sealed class TupleElementByPositionAnalyzer : DiagnosticAnalyzer {
 
         var renamed = access.WithName(SyntaxFactory.IdentifierName(SyntaxFactory.ParseToken(replacement)));
         return model.GetSpeculativeSymbolInfo(access.SpanStart, renamed, SpeculativeBindingOption.BindAsExpression)
-            .Symbol is IFieldSymbol bound
+                .Symbol is IFieldSymbol bound
             && SymbolEqualityComparer.Default.Equals(bound.CorrespondingTupleField, element.CorrespondingTupleField);
     }
 }

@@ -71,9 +71,9 @@ class Build : NukeBuild {
         definition => definition
             .DependsOn(Restore)
             .Executes(() => DotNetBuild(settings => Stamp(settings)
-                        .SetProjectFile(Solution)
-                        .SetConfiguration(Configuration)
-                        .EnableNoRestore()
+                    .SetProjectFile(Solution)
+                    .SetConfiguration(Configuration)
+                    .EnableNoRestore()
                 )
             );
 
@@ -559,13 +559,13 @@ class Build : NukeBuild {
                     // Both are set here rather than in the .csproj because Rules/ is a rules concern and
                     // this is a packaging one.
                     DotNetPack(settings => Stamp(settings)
-                            .SetProject(RootDirectory / "Rules" / "Rikarin.Skala.Rules" / "Rikarin.Skala.Rules.csproj")
-                            .SetConfiguration(Configuration)
-                            .SetOutputDirectory(packages)
-                            .SetProperty("NoWarn", "NU5128")
-                            .SetProperty("SuppressDependenciesWhenPacking", "true")
-                            .EnableNoBuild()
-                            .EnableNoRestore()
+                        .SetProject(RootDirectory / "Rules" / "Rikarin.Skala.Rules" / "Rikarin.Skala.Rules.csproj")
+                        .SetConfiguration(Configuration)
+                        .SetOutputDirectory(packages)
+                        .SetProperty("NoWarn", "NU5128")
+                        .SetProperty("SuppressDependenciesWhenPacking", "true")
+                        .EnableNoBuild()
+                        .EnableNoRestore()
                     );
 
                     foreach (var project in new[] {
@@ -575,11 +575,11 @@ class Build : NukeBuild {
                                  RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj"
                              }) {
                         DotNetPack(settings => Stamp(settings)
-                                .SetProject(project)
-                                .SetConfiguration(Configuration)
-                                .SetOutputDirectory(packages)
-                                .EnableNoBuild()
-                                .EnableNoRestore()
+                            .SetProject(project)
+                            .SetConfiguration(Configuration)
+                            .SetOutputDirectory(packages)
+                            .EnableNoBuild()
+                            .EnableNoRestore()
                         );
                     }
 
@@ -840,7 +840,7 @@ class Build : NukeBuild {
                             .SetConfiguration(Configuration)
                             .EnableNoBuild()
                             .EnableNoRestore()
-                            .SetApplicationArguments([.. arguments])
+                            .SetApplicationArguments([..arguments])
                     );
                 }
             );

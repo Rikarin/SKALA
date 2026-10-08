@@ -76,7 +76,7 @@ public static class LooseLoader {
             "loose",
             trees.ToImmutable(),
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable,
@@ -90,7 +90,7 @@ public static class LooseLoader {
                 new CompilationUnit {
                     Name = "loose",
                     Compilation = compilation,
-                    PreprocessorSymbols = [.. request.Define],
+                    PreprocessorSymbols = [..request.Define],
                     ReportablePaths = reportable.ToImmutable(),
                     UnreadablePaths = unreadable.ToImmutable()
                 }

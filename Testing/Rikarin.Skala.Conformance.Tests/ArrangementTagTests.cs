@@ -34,7 +34,7 @@ public sealed class ArrangementTagTests {
             "tagged",
             [tree],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -43,24 +43,24 @@ public sealed class ArrangementTagTests {
 
         var overrides = new List<KeyValuePair<string, string>>();
         if (!tagsEnabled) {
-            overrides.Add(new KeyValuePair<string, string>("skala_formatter_tags_enabled", "false"));
+            overrides.Add(new("skala_formatter_tags_enabled", "false"));
         }
 
         if (offTag is not null) {
-            overrides.Add(new KeyValuePair<string, string>("skala_formatter_off_tag", offTag));
+            overrides.Add(new("skala_formatter_off_tag", offTag));
         }
 
         if (onTag is not null) {
-            overrides.Add(new KeyValuePair<string, string>("skala_formatter_on_tag", onTag));
+            overrides.Add(new("skala_formatter_on_tag", onTag));
         }
 
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"),
-            overrides.Count == 0 ? null : overrides
-        )
-                .Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"),
+                overrides.Count == 0 ? null : overrides
+            )
+            .Options;
 
-        var result = Arranger.Arrange(path, text, new ArrangementOptions(options), compilation);
+        var result = Arranger.Arrange(path, text, new(options), compilation);
         Assert.NotEqual(ArrangementOutcome.Reverted, result.Outcome);
         return result.Text;
     }

@@ -15,11 +15,11 @@
 <p class="lede">1 key.</p>
 <section class="option" id="skala_space_within_spread_pattern">
 <h2><code>skala_space_within_spread_pattern</code> <a class="self" href="#skala_space_within_spread_pattern">#</a></h2>
-<p>Inert: the oracle returns a collection expression's spread exactly as written at both values (SK-DIV-0009).</p>
+<p>The gap after a collection expression's spread <code>..</code>: <code>[..xs]</code> at <code>false</code>, <code>[.. xs]</code> at <code>true</code>. ⚠ Governed by Skala on purpose: the oracle returns the spread exactly as written at both values (SK-DIV-0009), so a codebase formatted by it spells its spreads both ways. Registered <code>OfUnoracled</code> — honoured, observable, and a deliberate divergence rather than the oracle's rule. A slice pattern's gap is <code>skala_space_within_slice_pattern</code>'s and a range's stays as written. SK-DIV-0310, #513.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>true</code></td></tr>
+<tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>

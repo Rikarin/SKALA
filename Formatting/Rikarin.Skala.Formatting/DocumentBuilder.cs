@@ -177,7 +177,7 @@ public sealed class DocumentBuilder {
 
     /// <summary>Allocates a group id, so that <see cref="OpenIfBroken" /> can reference the group.</summary>
     public int NextGroupId() {
-        facts.Add(new GroupFacts());
+        facts.Add(new());
         return groupCount++;
     }
 
@@ -401,12 +401,14 @@ public sealed class DocumentBuilder {
             DocKind.Indent,
             (int)kind,
             (int)((unconditional ? IndentFlags.Unconditional : IndentFlags.None)
-                | (shape & (IndentFlags.Grouping
-                    | IndentFlags.Delimiter
-                    | IndentFlags.CloserAtOpener
-                    | IndentFlags.BrokenAfter
-                    | IndentFlags.AnchorAtLine
-                    | IndentFlags.Multiplied))),
+                | (shape
+                    & (IndentFlags.Grouping
+                        | IndentFlags.Delimiter
+                        | IndentFlags.CloserAtOpener
+                        | IndentFlags.ChainLevel
+                        | IndentFlags.BrokenAfter
+                        | IndentFlags.AnchorAtLine
+                        | IndentFlags.Multiplied))),
             columns
         );
 
@@ -645,8 +647,8 @@ public sealed class DocumentBuilder {
         return new Document(
             nodes,
             nodeCount,
-            [.. children],
-            [.. strings],
+            [..children],
+            [..strings],
             root,
             groupCount,
             flatWidth,
@@ -657,7 +659,7 @@ public sealed class DocumentBuilder {
             segmentHead,
             draftSegment,
             breaks,
-            [.. facts]
+            [..facts]
         );
     }
 
@@ -940,8 +942,7 @@ public sealed class DocumentBuilder {
         return node.Kind == DocKind.Line && (LineKind)node.Arg0 == LineKind.Soft && node.Arg2 == group;
     }
 
-    void Open(DocKind kind, int arg0, int arg1, int arg2 = -1) =>
-        stack.Add(new Frame(kind, arg0, arg1, pending.Count, arg2));
+    void Open(DocKind kind, int arg0, int arg1, int arg2 = -1) => stack.Add(new(kind, arg0, arg1, pending.Count, arg2));
 
     void Leaf(DocKind kind, int arg0, int arg1, SourceSpan source, int payload, int width, int head) =>
         pending.Add(Allocate(kind, arg0, arg1, source, payload, width, head));

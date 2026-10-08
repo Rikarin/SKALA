@@ -114,6 +114,21 @@ public sealed record CompilationUnit {
     ///     mode at once, and <c>Hosting.EditorConfigOptions</c> publishes it to the driver.
     /// </remarks>
     public ImmutableArray<CSharpCompilation> Siblings { get; init; } = [];
+
+    /// <summary>
+    ///     The compiler the build ran, as the binlog recorded it: the path of its <c>csc.dll</c> (or
+    ///     <c>csc.exe</c>). Empty when the load mode does not know — workspace and loose.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #517. A rule whose rewrite is only the same program under a compiler new enough
+    ///     (<c>SK1133</c>: Roslyn ≥ 4.14) can prove that from the SDK a reference set implies — unless
+    ///     <c>Microsoft.Net.Compilers.Toolset</c> replaced the compiler, which no
+    ///     <c>build_property</c> and no reference says. The path does:
+    ///     <c>…/microsoft.net.compilers.toolset/&lt;version&gt;/…/csc.dll</c> against the SDK's
+    ///     <c>…/sdk/&lt;version&gt;/Roslyn/bincore/csc.dll</c>. Published to analyzers through
+    ///     <c>Rules.ICompilerIdentity</c>, and part of the diagnostic-cache key.
+    /// </remarks>
+    public string CompilerPath { get; init; } = string.Empty;
 }
 
 /// <summary>The result of loading: compilations, and everything that went wrong on the way.</summary>

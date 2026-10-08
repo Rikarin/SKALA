@@ -348,6 +348,16 @@ public enum IndentFlags {
     CloserAtOpener = 32,
 
     /// <summary>
+    ///     ⚠ A chained call's own continuation scope. Opened on the first line of a binary operator that
+    ///     broke after it — the chain is the operator's left operand — it nests from the operator's
+    ///     continuation line, as a <see cref="Delimiter" /> list does: <c>var w = a.SelfLink()</c> /
+    ///     <c>.SelfLink()</c> two levels in / <c>+ other;</c> one (#457, SK-DIV-0068). The chain's own
+    ///     group is the scope's owner and is skipped: it is the construct the scope belongs to, not one
+    ///     around it.
+    /// </summary>
+    ChainLevel = 64,
+
+    /// <summary>
     ///     ⚠ A grouping parenthesis heading a chain that the author broke before a dot after its
     ///     <c>)</c>, where no group of the chain's own carries the break (#470, SK-DIV-0112). Its
     ///     contents nest from the line after the <c>(</c>'s — the chain's continuation line — when
@@ -355,7 +365,7 @@ public enum IndentFlags {
     ///     past the statement and <c>.C</c> one. The writer cannot see a frame's break coming, so the
     ///     document builder reads it from the source and says so.
     /// </summary>
-    BrokenAfter = 64,
+    BrokenAfter = 128,
 
     /// <summary>
     ///     ⚠ An <see cref="IndentKind.Anchor" /> that records the indentation of the line it is pushed
@@ -363,7 +373,7 @@ public enum IndentFlags {
     ///     expression whose governing <c>)</c> was kept on a line of its own nests its arms from that
     ///     line, whatever paid for its indentation (#506).
     /// </summary>
-    AnchorAtLine = 128,
+    AnchorAtLine = 256,
 
     /// <summary>
     ///     ⚠ A <see cref="IndentKind.Block" /> or <see cref="IndentKind.AnchoredBlock" /> whose contents
@@ -373,7 +383,7 @@ public enum IndentFlags {
     ///     the closing brace still returns to the opener's level (#464). At the export's multiplier of 1
     ///     the two are the same number.
     /// </summary>
-    Multiplied = 256
+    Multiplied = 512
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
@@ -430,6 +440,19 @@ public enum IndentKind {
     ///     indentation rather than the level the brace's own line nests from.
     /// </summary>
     AnchoredBlock,
+
+    /// <summary>
+    ///     The innermost <see cref="Anchor" />'s recorded indentation itself — the column an
+    ///     <see cref="AnchoredBlock" />'s <c>}</c> takes — for the <c>{</c> that opens it when the brace
+    ///     is on a line of its own.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured under <c>csharp_new_line_before_open_brace = all</c> (#465): <c>Action b = () =&gt;</c>
+    ///     / <c>{</c>, <c>var m = new List&lt;int&gt;</c> / <c>{</c> and <c>var r = 1 switch</c> / <c>{</c>
+    ///     put the brace on the statement's column, where the <c>=</c>'s continuation had put it one
+    ///     level in; under an argument list's level the brace is one level in, on its <c>}</c>'s column.
+    /// </remarks>
+    AnchoredBrace,
 
     /// <summary>One level less — the nested-statement outdent family.</summary>
     Outdent,

@@ -57,7 +57,7 @@ public static class SweepPlan {
 
         foreach (var info in OptionRegistry.All) {
             if (!Languages.Contains(info.Language, StringComparer.Ordinal)) {
-                excluded.Add(new SweepExclusion(info, "language is '" + info.Language + "'"));
+                excluded.Add(new(info, "language is '" + info.Language + "'"));
                 continue;
             }
 
@@ -66,14 +66,14 @@ public static class SweepPlan {
             }
 
             if (info.Oracle is not { Length: > 0 } glob) {
-                excluded.Add(new SweepExclusion(info, "no `oracle` fixture in the registry"));
+                excluded.Add(new(info, "no `oracle` fixture in the registry"));
                 continue;
             }
 
             var matches = CorpusGlob.Resolve(glob);
             var fixture = matches.Count == 0 ? null : matches[0];
             if (fixture is null) {
-                excluded.Add(new SweepExclusion(info, "`oracle` is '" + glob + "' and no corpus file matches it"));
+                excluded.Add(new(info, "`oracle` is '" + glob + "' and no corpus file matches it"));
                 continue;
             }
 
@@ -88,7 +88,7 @@ public static class SweepPlan {
             // format-only on both sides, and the old reasoning would apply to it exactly.
             if (arrangement.Contains(info.Id) && !OracleProfile.For(fixture).IsSemantic) {
                 excluded.Add(
-                    new SweepExclusion(
+                    new(
                         info,
                         "arrangement option whose `oracle` fixture is outside constructs/arrangement/, "
                         + "so the oracle would run CSReformatCode and could not answer"
@@ -99,11 +99,11 @@ public static class SweepPlan {
 
             var values = LegalValues(info).Distinct(StringComparer.Ordinal).ToArray();
             if (values.Length < 2) {
-                excluded.Add(new SweepExclusion(info, "fewer than two values to compare"));
+                excluded.Add(new(info, "fewer than two values to compare"));
                 continue;
             }
 
-            candidates.Add(new SweepCandidate(info, values, fixture));
+            candidates.Add(new(info, values, fixture));
         }
 
         return new(candidates, excluded);

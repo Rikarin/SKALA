@@ -20,17 +20,97 @@ public sealed class PredefinedTypeRule : ArrangementRule {
     public override bool NeedsSemantics => true;
 
     /// <summary>
-    ///     ⚠ Enabled when *either* key asks for it, because the two govern different positions and the
-    ///     rewriter checks them one node at a time.
+    ///     ⚠ Always enabled: each key runs in both directions, so there is no value of the pair that asks
+    ///     for nothing. <c>true</c> contracts <c>Int32</c> to <c>int</c>; <c>false</c> expands <c>int</c>
+    ///     to <c>Int32</c> (#462). Enabled only when either key was <c>true</c>, as it used to be, the
+    ///     rule could not run at all at the one value that asks for the expansion.
     /// </summary>
-    public override bool IsEnabled(in ArrangementOptions options) =>
-        options.PredefinedTypeForLocals || options.PredefinedTypeForMemberAccess;
+    public override bool IsEnabled(in ArrangementOptions options) => true;
 
     public override SyntaxNode Apply(ArrangementContext context) =>
         new Rewriter(context.Guard, context.Semantics, context.Options).Visit(context.Root);
 
     sealed class Rewriter(FormatterTagGuard guard, SemanticModel model, ArrangementOptions options)
         : GuardedRewriter(guard) {
+        /// <summary>
+        ///     <c>int</c> ⇒ <c>Int32</c>, at the <c>false</c> value of whichever key owns the position.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ Measured against <c>jb cleanupcode</c> 2025.2.6 under <c>SkalaCleanup</c>, one key at a time
+        ///     (#462, SK-DIV-0084). At <c>predefined_type_for_locals_parameters_members = false</c> the
+        ///     oracle expands every predefined keyword but <c>void</c> in a field, property, indexer,
+        ///     return, parameter (<c>ref</c>, <c>out</c>, <c>params</c> included), delegate, event and
+        ///     operator signature, type argument, constraint, array, nullable, tuple element, cast,
+        ///     <c>checked</c> cast, <c>typeof</c>, <c>sizeof</c>, <c>default(…)</c>, <c>is</c>,
+        ///     <c>as</c>, type pattern, <c>stackalloc</c>, lambda parameter, local function and
+        ///     <c>const</c> — and leaves a member access receiver to the sibling key, which at
+        ///     <c>false</c> expands <c>int.MaxValue</c>, <c>int.TryParse</c> and <c>string.Empty</c> the
+        ///     same way. ⚠ An enum's underlying type stays a keyword at <c>false</c>: the probe's
+        ///     <c>byte</c> base came back untouched.
+        ///     <para>
+        ///         ⚠ The name is looked up at the position, never assumed. The oracle writes <c>Int32</c>
+        ///         where that binds to <c>System.Int32</c> — the implicit <c>using System;</c> is what makes it
+        ///         bind in the probe — and <c>System.Int32</c> where something else answers to
+        ///         <c>Int32</c>: with a class of that name beside it, the field came back qualified,
+        ///         <c>System.Int32</c>. Where neither binds the keyword is kept rather than guessed at:
+        ///         being wrong is <c>CS0246</c>, and safety layer 2 would revert the whole document for it.
+        ///     </para>
+        /// </remarks>
+        public override SyntaxNode? VisitPredefinedType(PredefinedTypeSyntax node) {
+            var visited = (PredefinedTypeSyntax)base.VisitPredefinedType(node)!;
+            var isReceiverOfMemberAccess =
+                node.Parent is MemberAccessExpressionSyntax access && access.Expression == node;
+
+            if (isReceiverOfMemberAccess ? options.PredefinedTypeForMemberAccess : options.PredefinedTypeForLocals) {
+                return visited;
+            }
+
+            // ⚠ The positions the oracle leaves a keyword at `false`, and the ones nobody measured:
+            // an enum's underlying type (measured, kept), a using alias and a documentation `cref`.
+            if (node.Parent is BaseTypeSyntax { Parent.Parent: EnumDeclarationSyntax }
+                || node.Ancestors().Any(static ancestor => ancestor is UsingDirectiveSyntax or CrefSyntax)) {
+                return visited;
+            }
+
+            if (model.GetTypeInfo(node).Type is not { SpecialType: not SpecialType.None } type
+                || Keyword(type) is null
+                || FrameworkName(node, type, isReceiverOfMemberAccess) is not { } name) {
+                return visited;
+            }
+
+            return name.WithLeadingTrivia(visited.GetLeadingTrivia()).WithTrailingTrivia(visited.GetTrailingTrivia());
+        }
+
+        /// <summary>
+        ///     <c>Int32</c> when that binds to <paramref name="type" /> here, else <c>System.Int32</c> when that
+        ///     does, else null.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ A receiver is bound as an expression, because a local, a parameter or a property named
+        ///     <c>Int32</c> captures <c>Int32.MaxValue</c> and none of them is a type. And a receiver gets
+        ///     the simple name or nothing: <c>System.Int32</c> there is a member access, not a qualified
+        ///     name, and the shadowed case was measured only in a declaration.
+        /// </remarks>
+        NameSyntax? FrameworkName(SyntaxNode node, ITypeSymbol type, bool asExpression) {
+            var option = asExpression
+                ? SpeculativeBindingOption.BindAsExpression
+                : SpeculativeBindingOption.BindAsTypeOrNamespace;
+
+            var simple = SyntaxFactory.IdentifierName(type.MetadataName);
+            NameSyntax[] candidates = asExpression
+                ? [simple]
+                : [simple, SyntaxFactory.QualifiedName(SyntaxFactory.IdentifierName("System"), simple)];
+
+            foreach (var candidate in candidates) {
+                var bound = model.GetSpeculativeSymbolInfo(node.SpanStart, candidate, option);
+                if (bound.CandidateSymbols.IsEmpty && SymbolEqualityComparer.Default.Equals(bound.Symbol, type)) {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) {
             var visited = (IdentifierNameSyntax)base.VisitIdentifierName(node)!;
             return Replace(node, visited);

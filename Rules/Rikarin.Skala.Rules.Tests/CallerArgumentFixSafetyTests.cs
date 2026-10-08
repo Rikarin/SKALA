@@ -139,7 +139,7 @@ public sealed class CallerArgumentFixSafetyTests {
             declines,
             CallerArgumentSafety.ChangesCapturedText(
                 model,
-                new TextSpan(start, insertion ? 0 : text.Length),
+                new(start, insertion ? 0 : text.Length),
                 TestContext.Current.CancellationToken
             )
         );

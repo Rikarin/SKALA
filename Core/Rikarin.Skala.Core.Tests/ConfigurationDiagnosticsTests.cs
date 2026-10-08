@@ -172,9 +172,10 @@ public sealed class ConfigurationDiagnosticsTests {
         Assert.Equal(
             KeyNamespace.Option,
             Assert.Single(
-                resolution.Unknown,
-                static key => key.Assignment.Key.EndsWith("_highlighting", StringComparison.Ordinal)
-            ).Namespace
+                    resolution.Unknown,
+                    static key => key.Assignment.Key.EndsWith("_highlighting", StringComparison.Ordinal)
+                )
+                .Namespace
         );
 
         Assert.Single(diagnostics, static d => d.Id == ConfigDiagnosticIds.UnknownKey);

@@ -1,6 +1,5 @@
 using Rikarin.Skala.Cli;
 using Rikarin.Skala.Core.Diagnostics;
-using System.CommandLine;
 
 // ⚠ A parse error is exit 3, not System.CommandLine's default 1. docs/plan/09 § "Exit codes" gives
 // 1 to "gate failed" and 3 to "configuration error", and an unrecognized option is a configuration
@@ -19,7 +18,7 @@ try {
     // 1 — so a `try` around `Invoke()` alone never sees one, and SK-FUZZ-0001's crash reported "the
     // gate failed" from inside a handler that looked like it was doing the right thing. Turning the
     // library's handler off is what lets the catch below decide the code.
-    code = parse.Invoke(new InvocationConfiguration { EnableDefaultExceptionHandler = false });
+    code = parse.Invoke(new() { EnableDefaultExceptionHandler = false });
 } catch (OperationCanceledException) {
     return ExitCodes.Cancelled;
 } catch (Exception exception) {

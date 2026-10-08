@@ -45,7 +45,7 @@ public sealed class ArrangementOptionTests {
             "option",
             [tree],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -54,7 +54,7 @@ public sealed class ArrangementOptionTests {
 
         var resolved = OptionResolver.Resolve(
             Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Option.cs"),
-            [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+            [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
         );
 
         Assert.True(resolved.ValueErrors.IsEmpty, string.Join("; ", resolved.ValueErrors));
@@ -62,7 +62,7 @@ public sealed class ArrangementOptionTests {
         var result = Arranger.Arrange(
             path,
             text,
-            new ArrangementOptions(resolved.Options),
+            new(resolved.Options),
             compilation,
             UsingsRule.Unused(compilation.GetSemanticModel(tree), tree)
         );

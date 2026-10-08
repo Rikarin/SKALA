@@ -84,7 +84,7 @@ public static class AnalyzerHost {
 
         var builder = ImmutableArray.CreateBuilder<SkippedRule>();
         builder.Add(
-            new SkippedRule(
+            new(
                 RoslynCodeStyle.NamingDiagnosticId,
                 "requires a semantic model; --load=loose has no project (docs/plan/07 § loose)"
             )
@@ -92,7 +92,7 @@ public static class AnalyzerHost {
         foreach (var rule in RuleCatalog.All) {
             if (rule is { Retired: false, RequiresSemantics: true }) {
                 builder.Add(
-                    new SkippedRule(
+                    new(
                         rule.Id,
                         "requires a semantic model; --load=loose has no project (docs/plan/07 § loose)"
                     )
@@ -130,6 +130,12 @@ public static class AnalyzerHost {
     ///         <see cref="RunCompilationScoped" />.
     ///     </para>
     /// </remarks>
+    /// <param name="semanticHalfOnly">
+    ///     #516: run only the analyzers that can report into a file's semantic half — every per-file
+    ///     analyzer but those whose rules are all <see cref="RuleScope.Syntax" />. For the unchanged files
+    ///     of a compilation something else in changed: their Syntax half is still served, their semantic
+    ///     half is not.
+    /// </param>
     public static AnalysisOutcome RunForTrees(
         CompilationUnit unit,
         AnalyzerOptions options,
@@ -137,18 +143,50 @@ public static class AnalyzerHost {
         LoadMode mode,
         IReadOnlyList<SyntaxTree> trees,
         CancellationToken cancellation,
-        bool profile = false
+        bool profile = false,
+        bool semanticHalfOnly = false
     ) =>
         Execute(
             unit,
             options,
-            [.. Select(mode, hosted).Where(IsPerFileCacheable)],
+            [
+                ..Select(mode, hosted)
+                    .Where(analyzer => IsPerFileCacheable(analyzer) && (!semanticHalfOnly || !IsSyntaxOnly(analyzer)))
+            ],
             mode,
             trees,
             false,
             profile,
             cancellation
         );
+
+    /// <summary>
+    ///     Whether a finding of <paramref name="ruleId" /> belongs to a file's Syntax half: the file's own
+    ///     text answers it, so it is cached on the per-file key alone (#516).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only a catalogue rule that <em>declares</em> <see cref="RuleScope.Syntax" />. Everything else —
+    ///     <c>Semantic</c> rules, the compiler's own <c>CS</c> diagnostics (a <c>CS0246</c> in <c>A.cs</c> is
+    ///     about a type <c>B.cs</c> removed), Roslyn's naming analyzer, any id the catalogue does not
+    ///     know — is the semantic half, which is the side that is never stale. Measured on the catalogue
+    ///     when this was written: no <c>Syntax</c> rule declares <c>requiresSemantics</c>.
+    /// </remarks>
+    public static bool IsSyntaxHalf(string ruleId) => RuleCatalog.Find(ruleId) is { Scope: RuleScope.Syntax };
+
+    /// <summary>Whether every rule the analyzer carries is a Syntax-half rule.</summary>
+    static bool IsSyntaxOnly(DiagnosticAnalyzer analyzer) {
+        if (analyzer is ForcedCrash) {
+            return false;
+        }
+
+        foreach (var descriptor in analyzer.SupportedDiagnostics) {
+            if (!IsSyntaxHalf(descriptor.Id)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /// <summary>
     ///     The other bucket of a warm run: the analyzers that cannot be served per file, over the whole
@@ -187,7 +225,7 @@ public static class AnalyzerHost {
         Execute(
             unit,
             options,
-            [.. Select(mode, hosted).Where(static analyzer => !IsPerFileCacheable(analyzer))],
+            [..Select(mode, hosted).Where(static analyzer => !IsPerFileCacheable(analyzer))],
             mode,
             null,
             true,
@@ -310,7 +348,7 @@ public static class AnalyzerHost {
                 // the compilation-scoped bucket, whose compiler diagnostics are in the per-file entries.
                 produced = analyzerDiagnosticsOnly
                     ? result.GetAllDiagnostics()
-                    : [.. result.GetAllDiagnostics(), .. unit.Compilation.GetDiagnostics(cancellation)];
+                    : [..result.GetAllDiagnostics(), ..unit.Compilation.GetDiagnostics(cancellation)];
             } else if (analyzerDiagnosticsOnly) {
                 produced = withAnalyzers.GetAnalyzerDiagnosticsAsync(cancellation).GetAwaiter().GetResult();
             } else {
@@ -391,7 +429,7 @@ public static class AnalyzerHost {
                     .ToArray();
 
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         RuleIds.AnalyzerThrew,
                         SkalaSeverity.Warning,
                         $"analyzer '{name}' threw {Times(crash.Count)}, so the rules it carries ({Rules(rules)}) "
@@ -439,7 +477,7 @@ public static class AnalyzerHost {
             builder.Add(
                 new AnalyzerCost(
                     analyzer.GetType().Name,
-                    [.. analyzer.SupportedDiagnostics.Select(static descriptor => descriptor.Id)],
+                    [..analyzer.SupportedDiagnostics.Select(static descriptor => descriptor.Id)],
                     telemetry.ExecutionTime
                 )
             );
@@ -483,7 +521,7 @@ public static class AnalyzerHost {
             builder.AddRange(model.GetDiagnostics(null, cancellation));
         }
 
-        costs = [.. measured];
+        costs = [..measured];
         return builder.ToImmutable();
     }
 
@@ -511,7 +549,7 @@ public static class AnalyzerHost {
 
     static ImmutableArray<DiagnosticAnalyzer> SelectFor(LoadMode mode, ImmutableArray<DiagnosticAnalyzer> hosted) {
         if (mode != LoadMode.Loose) {
-            return [.. Own, .. hosted];
+            return [..Own, ..hosted];
         }
 
         // ⚠ In loose mode only the rules that declare no need for semantics run. A third-party
@@ -735,7 +773,7 @@ public static class AnalyzerHost {
 
     /// <summary>Unpacks the text edits a Skala rule attached to its diagnostic.</summary>
     static ImmutableArray<FixEdit> ReadFix(Diagnostic diagnostic, string path) =>
-        [.. FixEdits.Read(diagnostic).Select(edit => new FixEdit(path, edit.Span.Start, edit.Span.Length, edit.Text))];
+        [..FixEdits.Read(diagnostic).Select(edit => new FixEdit(path, edit.Span.Start, edit.Span.Length, edit.Text))];
 
     /// <summary>
     ///     Whether a finding's fix may be applied without review: the catalogue's answer for the rule,
@@ -853,7 +891,7 @@ public static class AnalyzerHost {
         var builder = ImmutableArray.CreateBuilder<Finding>(order.Count);
         foreach (var key in order) {
             var finding = merged[key];
-            builder.Add(finding with { TargetFrameworks = [.. finding.TargetFrameworks.Sort(StringComparer.Ordinal)] });
+            builder.Add(finding with { TargetFrameworks = [..finding.TargetFrameworks.Sort(StringComparer.Ordinal)] });
         }
 
         return builder.ToImmutable();

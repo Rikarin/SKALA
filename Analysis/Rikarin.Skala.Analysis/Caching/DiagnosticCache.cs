@@ -47,7 +47,13 @@ public static class CacheKey {
         // which the effective one follows), the parse options' symbols, kind and features, the
         // compilation options and each reference's MVID. Every v3 entry was written under a key
         // that could not see those, so none of them is trusted again.
-        hash.Append(Encoding.UTF8.GetBytes("cache/v4"));
+        //
+        // ⚠ v5 (#516): a file has two entries, a Syntax half under the per-file key and the rest
+        // under a key that also names every tree's text (`SourceIdentity`). A v4 entry held both
+        // halves under the per-file key, and served as the Syntax half it would bring every stale
+        // semantic finding back with it. (#517's compiler path joined the compilation term in the same
+        // version.)
+        hash.Append(Encoding.UTF8.GetBytes("cache/v5"));
         return Convert.ToHexStringLower(hash.GetCurrentHash());
     }
 
@@ -124,6 +130,11 @@ public static class CacheKey {
         builder.Append('|');
         AppendCompilation(builder, unit.Compilation);
 
+        // ⚠ #517: the compiler the binlog says built this, because `SK1133` reads it — a finding
+        // computed under the SDK's compiler must not be served after a `Microsoft.Net.Compilers.Toolset`
+        // pin replaces it, and nothing else in the key moves when one does. Empty outside a binlog.
+        builder.Append("|csc=").Append(NormalisePath(unit.CompilerPath));
+
         // ⚠ #343: the *other* target frameworks belong in the key, because since #343 a finding is a
         // function of them too. `SK1023` is withheld when any moniker of the project lacks
         // `System.Threading.Lock`, so adding `netstandard2.1` to a `net10.0` project changes what
@@ -149,6 +160,60 @@ public static class CacheKey {
         }
 
         return Convert.ToHexStringLower(XxHash128.Hash(Encoding.UTF8.GetBytes(builder.ToString())));
+    }
+
+    /// <summary>
+    ///     The compilation fingerprint for a file's <em>semantic</em> half: <paramref name="compilationFingerprint" />
+    ///     and the text of every tree the binder can see.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #516. A semantic model of <c>A.cs</c> is a function of every declaration in the compilation,
+    ///     so a <c>Semantic</c> rule's answer about <c>A.cs</c> — and the compiler's own diagnostics for it
+    ///     — moves when <c>B.cs</c> changes a type <c>A.cs</c> binds to. Measured before this term existed:
+    ///     <c>B.cs</c>'s <c>Holder.L</c> turned from <c>List&lt;int&gt;</c> into a user type with its own
+    ///     <c>ToArray()</c>, and the warm run served <c>A.cs</c>'s stale <c>SK1133</c> while
+    ///     <c>--no-cache</c> reported none.
+    ///     <para>
+    ///         ⚠ <b>Every tree, generated ones included, and every sibling's.</b> A generator's output is
+    ///         as much a declaration as a hand-written file and is in <see cref="Compilation.SyntaxTrees" />
+    ///         once the loader has run it; the generator assemblies themselves need no term, because a
+    ///         change to them is a change to that output. The siblings are here because a
+    ///         per-site multi-target guard (<c>FrameworkAvailability.TryCounterpart</c>, #511) binds the
+    ///         same node in a sibling compilation, whose trees are a different set.
+    ///     </para>
+    ///     <para>
+    ///         Not a "declaration surface" hash. Hashing only what binding can observe would keep more of
+    ///         the warm path, but it is a claim about the binder, and every miss in it is a stale finding;
+    ///         the text of the trees is a claim about nothing.
+    ///     </para>
+    /// </remarks>
+    public static string SemanticFingerprint(CompilationUnit unit, string compilationFingerprint) {
+        var siblings = new List<string>();
+        foreach (var sibling in unit.Siblings) {
+            siblings.Add(SourceIdentity(sibling));
+        }
+
+        siblings.Sort(StringComparer.Ordinal);
+        var builder = new StringBuilder(compilationFingerprint).Append("|source=")
+            .Append(SourceIdentity(unit.Compilation));
+        foreach (var sibling in siblings) {
+            builder.Append('+').Append(sibling);
+        }
+
+        return Convert.ToHexStringLower(XxHash128.Hash(Encoding.UTF8.GetBytes(builder.ToString())));
+    }
+
+    /// <summary>Every tree's path and content hash, sorted, hashed.</summary>
+    internal static string SourceIdentity(Compilation compilation) {
+        var trees = new List<string>();
+        foreach (var tree in compilation.SyntaxTrees) {
+            trees.Add(
+                NormalisePath(tree.FilePath) + "@" + Convert.ToHexStringLower(tree.GetText().GetContentHash().AsSpan())
+            );
+        }
+
+        trees.Sort(StringComparer.Ordinal);
+        return Convert.ToHexStringLower(XxHash128.Hash(Encoding.UTF8.GetBytes(string.Join(";", trees))));
     }
 
     static void AppendCompilation(StringBuilder builder, Compilation compilation) {
@@ -370,6 +435,12 @@ public sealed record CacheEntry {
     public required string Path { get; init; }
 
     public required ImmutableArray<CachedFinding> Findings { get; init; }
+
+    /// <summary>
+    ///     <c>true</c> for a file's semantic half (#516), whose key moves with every tree in the
+    ///     compilation; absent for the Syntax half.
+    /// </summary>
+    public bool? Semantic { get; init; }
 }
 
 /// <summary>A finding as it survives a process boundary.</summary>
@@ -418,6 +489,12 @@ public sealed record CachedFinding(
 ///         findings are never stored and never served, and they re-run whenever any file changes.
 ///     </para>
 ///     <para>
+///         ⚠ <b>And false for <see cref="RuleScope.Semantic" /> rules on the per-file key (#516)</b>: a
+///         semantic model of <c>A.cs</c> binds against <c>B.cs</c>. So each file has two entries — the
+///         Syntax half on the per-file key, everything else on a key that also names every tree
+///         (<see cref="CacheKey.SemanticFingerprint" />).
+///     </para>
+///     <para>
 ///         ⚠ Getting this wrong produces stale findings, which is the failure mode that destroys trust in a
 ///         cache permanently — and it does it silently, because a stale finding looks exactly like a real
 ///         one and a missing finding looks exactly like a clean file.
@@ -433,6 +510,10 @@ public sealed class DiagnosticCache {
 
     readonly string path;
     readonly Dictionary<string, CacheEntry> entries = new(StringComparer.Ordinal);
+
+    /// <summary>Each path's one semantic entry, by key. See <see cref="Put" />.</summary>
+    readonly Dictionary<string, string> semanticByPath = new(StringComparer.Ordinal);
+
     bool dirty;
 
     public DiagnosticCache(string repositoryRoot, string compilationName) {
@@ -476,6 +557,9 @@ public sealed class DiagnosticCache {
 
             foreach (var entry in entries) {
                 this.entries[entry.Key] = entry;
+                if (entry.Semantic == true) {
+                    semanticByPath[entry.Path] = entry.Key;
+                }
             }
         } catch (Exception exception) when (exception is IOException
                                                 or JsonException
@@ -483,6 +567,7 @@ public sealed class DiagnosticCache {
                                                 or NotSupportedException) {
             // ⚠ Corruption is never a failure. Discard and re-run.
             entries.Clear();
+            semanticByPath.Clear();
         }
     }
 
@@ -502,7 +587,7 @@ public sealed class DiagnosticCache {
     public bool TryGet(string key, out ImmutableArray<Finding> findings, string path) {
         if (entries.TryGetValue(key, out var entry)) {
             Hits++;
-            findings = [.. entry.Findings.Select(finding => Rehydrate(finding, path))];
+            findings = [..entry.Findings.Select(finding => Rehydrate(finding, path))];
             return true;
         }
 
@@ -517,16 +602,31 @@ public sealed class DiagnosticCache {
     /// <remarks>
     ///     ⚠ Compilation-scoped rules are filtered out here rather than at read time, so that a cache
     ///     written by a build with the rule enabled cannot serve it back to one without.
+    ///     <para>
+    ///         ⚠ <b>One semantic entry per path.</b> A semantic key moves for every file whenever any file
+    ///         changes (#516), so keeping each superseded one would grow the cache by the whole
+    ///         compilation on every edit. A Syntax entry is kept as before — its key moves only with its
+    ///         own file, and an edit that is undone hits it again.
+    ///     </para>
     /// </remarks>
-    public void Put(string key, string path, ImmutableArray<Finding> findings) {
+    public void Put(string key, string path, ImmutableArray<Finding> findings, bool semantic = false) {
+        if (semantic) {
+            if (semanticByPath.TryGetValue(path, out var previous) && previous != key) {
+                entries.Remove(previous);
+            }
+
+            semanticByPath[path] = key;
+        }
+
         entries[key] = new() {
             Key = key,
             Path = path,
             Findings = [
-                .. findings
+                ..findings
                     .Where(static finding => !Uncacheable.Contains(finding.RuleId))
                     .Select(Dehydrate)
-            ]
+            ],
+            Semantic = semantic ? true : null
         };
 
         dirty = true;
@@ -563,10 +663,10 @@ public sealed class DiagnosticCache {
             finding.Start,
             finding.Length,
             finding.FixIsSafe,
-            [.. finding.Fix.Select(static edit => edit.Start.ToString(CultureInfo.InvariantCulture))],
-            [.. finding.Fix.Select(static edit => edit.Length.ToString(CultureInfo.InvariantCulture))],
-            [.. finding.Fix.Select(static edit => edit.Text)],
-            [.. finding.TargetFrameworks],
+            [..finding.Fix.Select(static edit => edit.Start.ToString(CultureInfo.InvariantCulture))],
+            [..finding.Fix.Select(static edit => edit.Length.ToString(CultureInfo.InvariantCulture))],
+            [..finding.Fix.Select(static edit => edit.Text)],
+            [..finding.TargetFrameworks],
             (int)finding.Suppression,
             finding.EnclosingSymbol,
             finding.Snippet
@@ -576,7 +676,7 @@ public sealed class DiagnosticCache {
         var fix = ImmutableArray.CreateBuilder<FixEdit>(cached.FixStarts.Length);
         for (var i = 0; i < cached.FixStarts.Length; i++) {
             fix.Add(
-                new FixEdit(
+                new(
                     path,
                     int.Parse(cached.FixStarts[i], CultureInfo.InvariantCulture),
                     int.Parse(cached.FixLengths[i], CultureInfo.InvariantCulture),
@@ -598,7 +698,7 @@ public sealed class DiagnosticCache {
             Length = cached.Length,
             Fix = fix.ToImmutable(),
             FixIsSafe = cached.FixIsSafe,
-            TargetFrameworks = [.. cached.TargetFrameworks],
+            TargetFrameworks = [..cached.TargetFrameworks],
             Suppression = (SuppressionKind)cached.Suppression,
             EnclosingSymbol = cached.EnclosingSymbol,
             Snippet = cached.Snippet

@@ -537,7 +537,7 @@ public sealed class MemberMetricsTests {
     public void Parameters_IncludeAPrimaryConstructors() {
         var tree = CSharpSyntaxTree.ParseText(
             "class C(int a, int b, int c) { }",
-            new CSharpParseOptions(LanguageVersion.Preview),
+            new(LanguageVersion.Preview),
             cancellationToken: TestContext.Current.CancellationToken
         );
 
@@ -571,7 +571,7 @@ public sealed class MemberMetricsTests {
                 class Nested { }
             }
             """,
-            new CSharpParseOptions(LanguageVersion.Preview),
+            new(LanguageVersion.Preview),
             cancellationToken: TestContext.Current.CancellationToken
         );
 
@@ -705,7 +705,7 @@ public sealed class MemberMetricsTests {
     public void IsPublicApi_FollowsTheWholeContainingChain(string source, bool expected) {
         var tree = CSharpSyntaxTree.ParseText(
             source,
-            new CSharpParseOptions(LanguageVersion.Preview),
+            new(LanguageVersion.Preview),
             cancellationToken: TestContext.Current.CancellationToken
         );
 
@@ -728,7 +728,7 @@ public sealed class MemberMetricsTests {
     public void HasDocumentation_ReadsTheDocCommentAndNotAnyComment(string member, bool expected) {
         var tree = CSharpSyntaxTree.ParseText(
             "public class C {\n" + member + "\n}",
-            new CSharpParseOptions(LanguageVersion.Preview, DocumentationMode.Parse),
+            new(LanguageVersion.Preview, DocumentationMode.Parse),
             cancellationToken: TestContext.Current.CancellationToken
         );
 
@@ -778,7 +778,7 @@ public sealed class MemberMetricsTests {
     static MemberMetricValues Parse(string source, string memberName) {
         var tree = CSharpSyntaxTree.ParseText(
             source,
-            new CSharpParseOptions(LanguageVersion.Preview),
+            new(LanguageVersion.Preview),
             cancellationToken: TestContext.Current.CancellationToken
         );
 

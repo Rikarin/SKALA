@@ -399,14 +399,14 @@ public static class Renderer {
     ///     </para>
     /// </remarks>
     public static IReadOnlyList<SkalaDiagnostic> OutsideTheFraction(RunReport report) => [
-        .. Blocking(report).Where(static diagnostic => !IsAboutAFile(CauseOf(diagnostic)))
+        ..Blocking(report).Where(static diagnostic => !IsAboutAFile(CauseOf(diagnostic)))
     ];
 
     /// <summary>
     ///     The subset of <see cref="OutsideTheFraction" /> that is <see cref="IncompleteCause.GateInput" />.
     /// </summary>
     public static IReadOnlyList<SkalaDiagnostic> GateInputs(RunReport report) => [
-        .. OutsideTheFraction(report).Where(static diagnostic => CauseOf(diagnostic) == IncompleteCause.GateInput)
+        ..OutsideTheFraction(report).Where(static diagnostic => CauseOf(diagnostic) == IncompleteCause.GateInput)
     ];
 
     /// <summary>
@@ -470,7 +470,7 @@ public static class Renderer {
         }
 
         return [
-            .. strongest.Values
+            ..strongest.Values
                 .GroupBy(static cause => cause)
                 .OrderBy(static group => group.Key)
                 .Select(static group => (group.Key, group.Count()))

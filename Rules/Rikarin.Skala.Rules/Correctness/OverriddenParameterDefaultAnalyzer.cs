@@ -377,7 +377,7 @@ public sealed class OverriddenParameterDefaultAnalyzer : DiagnosticAnalyzer {
 
             // ⚠ In front of the type, never in front of the first modifier: `params` follows `this`
             // and any attribute list, and `this params int[] xs` is the only legal order.
-            return syntax.Type is { } type && Add(edits, new TextSpan(type.SpanStart, 0), "params ");
+            return syntax.Type is { } type && Add(edits, new(type.SpanStart, 0), "params ");
         }
 
         if (written < 0) {

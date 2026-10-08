@@ -29,14 +29,11 @@ public sealed class CollectionAfterEqIssue375Tests {
 
     /// <summary>
     ///     The fuzzer's four lines. One pass equals two, and the <c>=</c> line and the closing bracket
-    ///     are the oracle's. ⚠ The lines between them are not, for a reason that is not this issue's and
-    ///     is recorded beside it: the oracle keeps <c>null!, ((</c> together, because a collection
-    ///     element with a certain break inside keeps its head on the comma's line (SK-DIV-0117). The
-    ///     second reason this used to name — the lambda's parameters one level past the element and the
-    ///     <c>)</c> on the element's column, a grouping parenthesis being transparent to the parameter
-    ///     list it wraps (SK-DIV-0118) — is fixed by #481, and the pinned lines below moved to the
-    ///     oracle's. Skala's fixed point is pinned here exactly, so that the remaining one moving is
-    ///     visible.
+    ///     are the oracle's, and since #471 so is the <c>null!, ((</c> head: a collection element with a
+    ///     certain break inside keeps its head on the comma's line (SK-DIV-0117). Since #481 so are the
+    ///     lines after it — the lambda's parameters one level past the element and the <c>)</c> on the
+    ///     element's column, a grouping parenthesis being transparent to the parameter list it wraps
+    ///     (SK-DIV-0118) — so Skala's fixed point is the oracle's answer, pinned here exactly.
     /// </summary>
     [Fact]
     public void TheFuzzersInput_SettlesInOnePass_OnTheOraclesBracket() {
@@ -74,8 +71,7 @@ public sealed class CollectionAfterEqIssue375Tests {
                              public class C {
                                  void M() {
                                      var (a58, b59) = [
-                                         null!,
-                                         ((
+                                         null!, ((
                                              x,
                                              y
                                          ) => { })
@@ -88,19 +84,22 @@ public sealed class CollectionAfterEqIssue375Tests {
         Assert.Equal(skala, once.TrimEnd('\n'));
         Assert.Equal(once, Format.Text(once));
 
-        // The `=` line and the closing bracket, counted from each end: the oracle's answer is one line
-        // shorter than Skala's, by the `null!, ((` head it keeps together.
+        // The `=` line, the head and the closing bracket, counted from each end.
         var oracleLines = oracle.Split('\n');
         var skalaLines = once.TrimEnd('\n').Split('\n');
         Assert.Equal("        var (a58, b59) = [", oracleLines[4]);
         Assert.Equal(oracleLines[4], skalaLines[4]);
+        Assert.Equal("            null!, ((", oracleLines[5]);
+        Assert.Equal(oracleLines[5], skalaLines[5]);
         Assert.Equal("        ];", oracleLines[^3]);
         Assert.Equal(oracleLines[^3], skalaLines[^3]);
     }
 
     /// <summary>
     ///     Pass one's output from before the fix, given as input, reaches the same fixed point: the
-    ///     kept <c>=</c> break is given back to the bracket because the list below it is chopped.
+    ///     kept <c>=</c> break is given back to the bracket because the list below it is chopped. ⚠ Since
+    ///     #471 the fuzzer's own input keeps <c>null!, ((</c> together; this input breaks between the two
+    ///     itself, and that break is an author's the fill keeps.
     /// </summary>
     [Fact]
     public void TheOldPassOne_ReachesTheSameFixedPoint() {
@@ -162,7 +161,7 @@ public sealed class CollectionAfterEqIssue375Tests {
             """
         );
 
-        Assert.Contains("        var x = [\n            null!,\n", once, StringComparison.Ordinal);
+        Assert.Contains("        var x = [\n            null!, ((\n", once, StringComparison.Ordinal);
         Assert.EndsWith("        ];\n    }\n}\n", once, StringComparison.Ordinal);
         Assert.Equal(once, Format.Text(once));
     }

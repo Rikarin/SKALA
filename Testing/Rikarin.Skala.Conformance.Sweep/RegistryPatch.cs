@@ -48,7 +48,7 @@ public static class RegistryPatch {
                 continue;
             }
 
-            changes.Add(new RegistryChange(entry.Key, currentDefault, entry.Value!, currentSource ?? "?"));
+            changes.Add(new(entry.Key, currentDefault, entry.Value!, currentSource ?? "?"));
         }
 
         return changes;

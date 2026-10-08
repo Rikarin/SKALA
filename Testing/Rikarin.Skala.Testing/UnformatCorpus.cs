@@ -64,7 +64,7 @@ public static class UnformatCorpus {
     ///     system happened to enumerate in.
     /// </remarks>
     public static IReadOnlyList<CorpusFile> Sources(int count) => [
-        .. Corpus.Files(Corpus.Real)
+        ..Corpus.Files(Corpus.Real)
             .OrderBy(static file => CorpusSample.KeyOf(Seed, file.RelativePath))
             .ThenBy(static file => file.RelativePath, StringComparer.Ordinal)
             .Take(count)
@@ -78,7 +78,7 @@ public static class UnformatCorpus {
         }
 
         return [
-            .. Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
+            ..Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
                 .Where(static path => !path.EndsWith(".expected.cs", StringComparison.Ordinal))
                 .Select(path => new CorpusFile(
                         Set,

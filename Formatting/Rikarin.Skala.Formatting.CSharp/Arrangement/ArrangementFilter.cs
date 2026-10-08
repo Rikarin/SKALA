@@ -62,7 +62,7 @@ public sealed record ArrangementFilter(ImmutableHashSet<string> Include, Immutab
 
     public static ArrangementFilter Parse(IEnumerable<string>? include, IEnumerable<string>? exclude) =>
         new(
-            [.. include ?? []],
-            [.. exclude ?? []]
+            [..include ?? []],
+            [..exclude ?? []]
         );
 }

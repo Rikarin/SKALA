@@ -100,7 +100,7 @@ public static class ArrangeTree {
     ///     makes the diagnostic appear, which is the question a person actually has.
     /// </remarks>
     public static string Explain(string root, string mode, string needle, TextWriter log) {
-        var loaded = ProjectLoader.Load(new LoadRequest { RepositoryRoot = root, Mode = LoadModes.Parse(mode) });
+        var loaded = ProjectLoader.Load(new() { RepositoryRoot = root, Mode = LoadModes.Parse(mode) });
         log.WriteLine(loaded.Summary);
 
         foreach (var unit in loaded.Units) {
@@ -118,7 +118,7 @@ public static class ArrangeTree {
                     var result = Arranger.Arrange(
                         path,
                         text,
-                        new ArrangementOptions(options),
+                        new(options),
                         unit.Compilation,
                         [],
                         null,
@@ -150,7 +150,7 @@ public static class ArrangeTree {
     }
 
     public static TreeReport Run(string root, string mode, int limit, TextWriter log) {
-        var loaded = ProjectLoader.Load(new LoadRequest { RepositoryRoot = root, Mode = LoadModes.Parse(mode) });
+        var loaded = ProjectLoader.Load(new() { RepositoryRoot = root, Mode = LoadModes.Parse(mode) });
         log.WriteLine(loaded.Summary);
 
         // Every compilation each file participates in, so using removal can intersect across them —
@@ -196,8 +196,8 @@ public static class ArrangeTree {
             var result = ArrangementPipeline.Run(
                 file,
                 text,
-                new PhaseOneOptions(options),
-                new ArrangementOptions(options),
+                new(options),
+                new(options),
                 units[0].Compilation,
                 Removable(units, file),
                 (rewritten, _) => Removable(units, file, rewritten),

@@ -47,7 +47,7 @@ public sealed class LifecycleTests {
         new() {
             RepositoryRoot = Root,
             Mode = LoadMode.Loose,
-            Findings = Fingerprints.Assign([.. findings]),
+            Findings = Fingerprints.Assign([..findings]),
             ConfigurationFingerprint = "abcdef0123456789",
             Duration = TimeSpan.FromSeconds(1)
         };
@@ -387,7 +387,7 @@ public sealed class LifecycleTests {
                 AsWrittenByM6(
                     File.ReadAllText(path),
                     [
-                        .. report.Findings.Select((finding, i) => (
+                        ..report.Findings.Select((finding, i) => (
                                 Fingerprints.V3(finding),
                                 i switch {
                                     0 => OrdinalZero,
@@ -549,7 +549,7 @@ public sealed class LifecycleTests {
     [Fact]
     public void Gate_NewIssuesWithoutABaselineOrSince_Fails() {
         var result = Gate.Evaluate(
-            new GateDefinition { Name = "ci", MaxNewIssues = 0 },
+            new() { Name = "ci", MaxNewIssues = 0 },
             Report(Finding()),
             true
         );
@@ -580,7 +580,7 @@ public sealed class LifecycleTests {
 
         var accepted = unscoped with {
             HasBaseline = true,
-            Findings = [.. unscoped.Findings.Select(static f => f with { Bucket = BaselineBucket.Existing })]
+            Findings = [..unscoped.Findings.Select(static f => f with { Bucket = BaselineBucket.Existing })]
         };
 
         Assert.True(Gate.Evaluate(definition, accepted, true).Passed);
@@ -637,22 +637,20 @@ public sealed class LifecycleTests {
 
         Assert.True(
             Gate.Evaluate(
-                new GateDefinition {
-                    Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("duplication", 3.0)
-                },
-                report,
-                true
-            ).Passed
+                    new() { Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("duplication", 3.0) },
+                    report,
+                    true
+                )
+                .Passed
         );
 
         Assert.False(
             Gate.Evaluate(
-                new GateDefinition {
-                    Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("commentDensity", 60)
-                },
-                report,
-                true
-            ).Passed
+                    new() { Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("commentDensity", 60) },
+                    report,
+                    true
+                )
+                .Passed
         );
     }
 
@@ -662,22 +660,20 @@ public sealed class LifecycleTests {
 
         Assert.False(
             Gate.Evaluate(
-                new GateDefinition {
-                    Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK5*", 0)
-                },
-                report,
-                true
-            ).Passed
+                    new() { Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK5*", 0) },
+                    report,
+                    true
+                )
+                .Passed
         );
 
         Assert.True(
             Gate.Evaluate(
-                new GateDefinition {
-                    Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK9001", 0)
-                },
-                report,
-                true
-            ).Passed
+                    new() { Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK9001", 0) },
+                    report,
+                    true
+                )
+                .Passed
         );
     }
 
@@ -685,7 +681,7 @@ public sealed class LifecycleTests {
     [Fact]
     public void Gate_AnUnsupportedCondition_FailsRatherThanBeingDropped() {
         var result = Gate.Evaluate(
-            new GateDefinition { Name = "ci", Unsupported = ["coverage"] },
+            new() { Name = "ci", Unsupported = ["coverage"] },
             Report(),
             true
         );

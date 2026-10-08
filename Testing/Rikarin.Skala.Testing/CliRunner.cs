@@ -128,6 +128,7 @@ public static class CliRunner {
     static string Metadata(string key) =>
         SystemAssembly.GetExecutingAssembly()
             .GetCustomAttributes<AssemblyMetadataAttribute>()
-            .FirstOrDefault(attribute => attribute.Key == key)?.Value
+            .FirstOrDefault(attribute => attribute.Key == key)
+            ?.Value
         ?? throw new InvalidOperationException($"{key} was not stamped into the test assembly.");
 }

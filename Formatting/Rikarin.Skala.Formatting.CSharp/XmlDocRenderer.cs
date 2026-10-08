@@ -142,7 +142,7 @@ public sealed class XmlDocRenderer {
             lines.RemoveAt(lines.Count - 1);
         }
 
-        return [.. lines];
+        return [..lines];
     }
 
     void Nodes(ImmutableArray<XmlDocNode> nodes) {
@@ -164,7 +164,7 @@ public sealed class XmlDocRenderer {
                     // it. The blank line is dropped again by `Render`'s trailing-blank trim when the
                     // instruction is the last thing in the comment, which is the right answer.
                     if (verbatim.ProcessingInstruction && options.BlankLineAfterPi) {
-                        lines.Add(new XmlDocLine(string.Empty, false));
+                        lines.Add(new(string.Empty, false));
                         previousTrail = null;
                     }
 
@@ -676,7 +676,7 @@ public sealed class XmlDocRenderer {
         }
 
         lines.Add(
-            new XmlDocLine(current.ToString(), false) {
+            new(current.ToString(), false) {
                 BesideAnElement = previousTrail is { } before && BesideAnElement(before, lineLead)
             }
         );
@@ -691,7 +691,7 @@ public sealed class XmlDocRenderer {
         if (hard.BlankLines > 0) {
             Break();
             for (var i = 0; i < Math.Min(hard.BlankLines, options.MaxBlankLinesBetweenTags); i++) {
-                lines.Add(new XmlDocLine(string.Empty, false));
+                lines.Add(new(string.Empty, false));
                 previousTrail = null;
             }
 
@@ -706,7 +706,7 @@ public sealed class XmlDocRenderer {
     void Lines(ImmutableArray<string> lines) {
         Break();
         foreach (var line in lines) {
-            this.lines.Add(new XmlDocLine(line, true));
+            this.lines.Add(new(line, true));
             previousTrail = null;
         }
     }

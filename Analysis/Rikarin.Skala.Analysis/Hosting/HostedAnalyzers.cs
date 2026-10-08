@@ -57,7 +57,7 @@ public static class HostedAnalyzers {
         try {
             using var document = JsonDocument.Parse(
                 File.ReadAllText(toolConfigPath),
-                new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }
+                new() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }
             );
 
             if (!document.RootElement.TryGetProperty("analysis", out var analysis)
@@ -70,7 +70,7 @@ public static class HostedAnalyzers {
             foreach (var entry in hosted.EnumerateArray()) {
                 if (entry.TryGetProperty("package", out var package) && package.GetString() is { Length: > 0 } name) {
                     builder.Add(
-                        new HostedPackage(
+                        new(
                             name,
                             entry.TryGetProperty("version", out var version) ? version.GetString() ?? "*" : "*"
                         )
@@ -112,7 +112,7 @@ public static class HostedAnalyzers {
             var directory = Locate(package);
             if (directory is null) {
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         RuleIds.AnalyzerFailedToLoad,
                         SkalaSeverity.Warning,
                         $"'{package.Package}' {package.Version} is not in {PackageRoot}; run `skala analyzers restore`",
@@ -143,7 +143,7 @@ public static class HostedAnalyzers {
                                                         or IOException) {
                     // ⚠ Never fatal. See the type's remarks.
                     diagnostics.Add(
-                        new SkalaDiagnostic(
+                        new(
                             RuleIds.AnalyzerFailedToLoad,
                             SkalaSeverity.Warning,
                             $"'{Path.GetFileName(assembly)}' from '{package.Package}' did not load: {exception.Message}",
@@ -153,7 +153,7 @@ public static class HostedAnalyzers {
                 }
             }
 
-            extensions.Add(new ToolExtension(package.Package, package.Version, loaded));
+            extensions.Add(new(package.Package, package.Version, loaded));
         }
 
         return new(analyzers.ToImmutable(), extensions.ToImmutable(), diagnostics.ToImmutable());
@@ -186,7 +186,7 @@ public static class HostedAnalyzers {
         try {
             types = assembly.GetTypes();
         } catch (ReflectionTypeLoadException exception) {
-            types = [.. exception.Types.Where(static type => type is not null)!];
+            types = [..exception.Types.Where(static type => type is not null)!];
         }
 
         foreach (var type in types) {

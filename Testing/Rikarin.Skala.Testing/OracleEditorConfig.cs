@@ -65,7 +65,7 @@ public static class OracleEditorConfig {
     public static string Path { get; } = Materialise();
 
     /// <summary>The bytes of that file, built from the export every time it is asked for.</summary>
-    public static byte[] Bytes() => [.. Encoding.UTF8.GetBytes(RootDeclaration), .. File.ReadAllBytes(TemplatePath)];
+    public static byte[] Bytes() => [..Encoding.UTF8.GetBytes(RootDeclaration), ..File.ReadAllBytes(TemplatePath)];
 
     /// <summary>The same content as text, for the callers that append overrides to it.</summary>
     public static string Text() => RootDeclaration + File.ReadAllText(TemplatePath);

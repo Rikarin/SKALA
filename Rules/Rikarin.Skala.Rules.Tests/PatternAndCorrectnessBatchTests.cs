@@ -270,7 +270,7 @@ public sealed class PatternAndCorrectnessBatchTests {
         SourceText.From(source)
             .WithChanges(
                 diagnostics.Select(static diagnostic => new TextChange(
-                        new TextSpan(
+                        new(
                             int.Parse(
                                 diagnostic.Properties[FixEdits.StartKey(0)]!,
                                 System.Globalization.CultureInfo.InvariantCulture

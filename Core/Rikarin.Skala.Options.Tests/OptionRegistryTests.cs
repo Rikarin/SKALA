@@ -341,7 +341,9 @@ public sealed class OptionRegistryTests {
         // the inert set could have vanished without this firing, which is not a canary, it is a
         // decoration. It is a ratchet now: the count at the commit that set it. Moving it down is a
         // deliberate edit that says which options stopped being inert and why.
-        const int Measured = 52;
+        // 52 -> 51 at #513: `skala_space_within_spread_pattern` stopped being inert because Skala governs the
+        // spread's gap on purpose now (SK-DIV-0310) — `OfUnoracled`, not a quiet drop.
+        const int Measured = 51;
         Assert.True(
             inert.Count >= Measured,
             $"Only {inert.Count} inert options, against {Measured} measured. An option stops being inert when something reads it, which is a promotion and needs a fixture — not a quiet drop."
@@ -376,8 +378,9 @@ public sealed class OptionRegistryTests {
     public void UnimplementedValues_AreInTheDomainAndLeaveSomethingImplemented() {
         var partial = OptionRegistry.All.Where(static i => i.UnimplementedValues.Count > 0).ToList();
 
-        // Anti-vacuity, as a ratchet: the count when the field was introduced.
-        const int Measured = 10;
+        // Anti-vacuity, as a ratchet: the count when the field was introduced (10), less each value
+        // since implemented — `skala_empty_block_style = together_same_line` (#465).
+        const int Measured = 9;
         Assert.True(partial.Count >= Measured, $"Only {partial.Count} options record an unimplemented value.");
 
         foreach (var info in partial) {

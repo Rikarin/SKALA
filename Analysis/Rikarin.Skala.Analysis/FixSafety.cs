@@ -111,7 +111,7 @@ public sealed class FixSafety {
                     map[full] = list;
                 }
 
-                list.Add(new Bound(unit.Compilation, tree));
+                list.Add(new(unit.Compilation, tree));
             }
         }
 
@@ -196,7 +196,7 @@ public sealed class FixSafety {
             appeared.UnionWith(now.Except(before, StringComparer.Ordinal));
         }
 
-        return [.. appeared.ToImmutable().Order(StringComparer.Ordinal)];
+        return [..appeared.ToImmutable().Order(StringComparer.Ordinal)];
     }
 
     /// <summary>
@@ -214,7 +214,7 @@ public sealed class FixSafety {
     ) {
         var before = Signature(Parse(path, original, cancellation).GetDiagnostics(cancellation));
         var after = Signature(Parse(path, rewritten, cancellation).GetDiagnostics(cancellation));
-        return [.. after.Except(before, StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+        return [..after.Except(before, StringComparer.Ordinal).Order(StringComparer.Ordinal)];
     }
 
     static SyntaxTree Parse(string path, string text, CancellationToken cancellation) =>

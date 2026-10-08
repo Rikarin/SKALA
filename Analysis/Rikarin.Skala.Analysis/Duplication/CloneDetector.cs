@@ -103,7 +103,7 @@ public static class CloneDetector {
         Parallel.For(
             0,
             measured.Count,
-            new ParallelOptions { CancellationToken = cancellation },
+            new() { CancellationToken = cancellation },
             i => {
                 var input = measured[i];
                 var hash = ContentHash.Of(input.Text);
@@ -161,7 +161,7 @@ public static class CloneDetector {
         foreach (var group in result.Groups) {
             var first = group.Occurrences[0];
             findings.Add(
-                new Finding {
+                new() {
                     RuleId = RuleIds.DuplicatedBlock,
                     Severity = severity,
                     Message = Message(group, repositoryRoot),
@@ -308,7 +308,7 @@ public static class CloneDetector {
             duplicated += file.DuplicatedLineCount;
         }
 
-        return ([.. groups], duplicated);
+        return ([..groups], duplicated);
     }
 
     /// <summary>
@@ -552,7 +552,7 @@ public static class CloneDetector {
             var startLine = file.Text.Lines.IndexOf(start);
             var endLine = file.Text.Lines.IndexOf(end - 1);
             file.MarkDuplicated(startLine, endLine);
-            occurrences.Add(new CloneOccurrence(file.Path, start, end - start, startLine + 1, endLine + 1));
+            occurrences.Add(new(file.Path, start, end - start, startLine + 1, endLine + 1));
         }
 
         // Positions ascend and files are in path order, so the occurrences are already sorted by path

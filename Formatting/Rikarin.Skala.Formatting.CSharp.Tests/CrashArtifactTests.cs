@@ -304,13 +304,14 @@ public sealed class CrashArtifactTests {
                 "probe",
                 [tree],
                 SharedFrameworkReferences.Value,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+                new(OutputKind.DynamicallyLinkedLibrary)
             );
 
             var resolved = OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, ProbePath),
-                [new("indent_size", "7"), new("skala_max_line_length", "43")]
-            ).Options;
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, ProbePath),
+                    [new("indent_size", "7"), new("skala_max_line_length", "43")]
+                )
+                .Options;
 
             var passed = detach
                 ? CSharpSyntaxTree.ParseText(original, CSharpFormatter.ParseOptions, ProbePath)
@@ -324,7 +325,7 @@ public sealed class CrashArtifactTests {
                 arranged,
                 compilation.GetSemanticModel(tree),
                 Root,
-                new ArrangementOptions(resolved),
+                new(resolved),
                 original
             );
 

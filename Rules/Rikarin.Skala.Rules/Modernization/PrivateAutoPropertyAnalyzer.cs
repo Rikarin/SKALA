@@ -176,11 +176,11 @@ public sealed class PrivateAutoPropertyAnalyzer : DiagnosticAnalyzer {
             }
 
             if (name.Ancestors()
-                    .OfType<InvocationExpressionSyntax>()
-                    .Any(static invocation => invocation.Expression is IdentifierNameSyntax {
-                            Identifier.ValueText: "nameof"
-                        }
-                    )) {
+                .OfType<InvocationExpressionSyntax>()
+                .Any(static invocation => invocation.Expression is IdentifierNameSyntax {
+                        Identifier.ValueText: "nameof"
+                    }
+                )) {
                 continue;
             }
 

@@ -150,7 +150,7 @@ public sealed class AdoptionTests {
         scratch.Write("Holder.cs", NeedsWork);
 
         var result = VerifyCommand.Run(
-            new VerifyRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
             TestContext.Current.CancellationToken
         );
 
@@ -238,7 +238,7 @@ public sealed class AdoptionTests {
         scratch.Write(Path.Combine(".skala", "crash", "abc123", "input.cs"), "public sealed class Crash{int    x;}");
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
             TestContext.Current.CancellationToken
         );
 

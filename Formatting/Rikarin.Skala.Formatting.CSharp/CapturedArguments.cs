@@ -198,7 +198,7 @@ public static class CapturedArguments {
 
         var sorted = spans.ToList();
         sorted.Sort(static (a, b) => a.Start != b.Start ? a.Start.CompareTo(b.Start) : b.Length.CompareTo(a.Length));
-        return [.. sorted];
+        return [..sorted];
     }
 
     /// <summary>Whether <paramref name="span" /> lies inside one of <paramref name="captured" />.</summary>
@@ -303,7 +303,7 @@ public static class CapturedArguments {
     static Dictionary<string, HashSet<string>> DelegateVariables(SyntaxNode root, List<Declared> declared) {
         var types = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         foreach (var declaration in declared.Where(static declaration => declaration.Kind == CallKind.Delegate)) {
-            types.TryAdd(declaration.Name, new HashSet<string>(StringComparer.Ordinal));
+            types.TryAdd(declaration.Name, new(StringComparer.Ordinal));
         }
 
         foreach (var node in root.DescendantNodes()) {

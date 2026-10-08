@@ -36,9 +36,10 @@ public sealed class HotPathLinqAnalyzer : DiagnosticAnalyzer {
 
             if (expression.Parent is not MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax consumer }
                 || context.SemanticModel.GetSymbolInfo(
-                    consumer,
-                    context.CancellationToken
-                ).Symbol is not IMethodSymbol method
+                        consumer,
+                        context.CancellationToken
+                    )
+                    .Symbol is not IMethodSymbol method
                 || !IsEnumerable(method, context.Compilation)) {
                 break;
             }

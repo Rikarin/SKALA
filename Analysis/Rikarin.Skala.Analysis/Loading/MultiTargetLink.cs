@@ -76,7 +76,7 @@ public static class MultiTargetLink {
         var multiTargeted = new Dictionary<string, ImmutableArray<CSharpCompilation>>(StringComparer.Ordinal);
         foreach (var (key, group) in byProject) {
             if (group.Count > 1) {
-                multiTargeted[key] = [.. group];
+                multiTargeted[key] = [..group];
             }
         }
 

@@ -1,3 +1,4 @@
+using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Testing;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -33,6 +34,8 @@ public sealed class ExitCodeContractTests : IDisposable {
     const string Loose = "loose";
 
     const string Check = "check";
+
+    const string Arrange = "arrange";
 
     const string FormatOption = "--format";
 
@@ -81,7 +84,7 @@ public sealed class ExitCodeContractTests : IDisposable {
     public void Two_WhenArrangeFindsChanges() {
         // `using` after a type is the one arrangement finding that needs no compilation.
         var path = Write("Arranged.cs", "class C {\n}\n\nusing System;\n");
-        var run = CliRunner.Run("arrange", "--check", path);
+        var run = CliRunner.Run(Arrange, "--check", path);
 
         Assert.True(
             run.ExitCode is 0 or 2,
@@ -149,7 +152,7 @@ public sealed class ExitCodeContractTests : IDisposable {
     /// </summary>
     [Theory]
     [InlineData("format")]
-    [InlineData("arrange")]
+    [InlineData(Arrange)]
     [InlineData(Check)]
     [InlineData("verify")]
     [InlineData("fix")]
@@ -158,6 +161,25 @@ public sealed class ExitCodeContractTests : IDisposable {
 
         Assert.Equal(0, run.ExitCode);
         Assert.Contains("--verbose", run.StandardOutput, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The help said "Exit 1" on both verbs from the day the code became 2 until #389 read it
+    ///     against the binary. <see cref="Two_WhenFormattingIsNeeded" /> pinned the code and nothing
+    ///     pinned the sentence describing it.
+    /// </summary>
+    [Theory]
+    [InlineData("format")]
+    [InlineData(Arrange)]
+    public void CheckHelp_NamesTheCodeCheckReturns(string verb) {
+        var run = CliRunner.Run(verb, "--help");
+
+        Assert.Equal(0, run.ExitCode);
+        Assert.Contains(
+            $"Exit {ExitCodes.FormattingNeeded.ToString(CultureInfo.InvariantCulture)} when there is anything",
+            run.StandardOutput,
+            StringComparison.Ordinal
+        );
     }
 
     /// <summary>
@@ -487,7 +509,7 @@ public sealed class ExitCodeContractTests : IDisposable {
     /// </remarks>
     [Theory]
     [InlineData("format")]
-    [InlineData("arrange")]
+    [InlineData(Arrange)]
     public void Five_WhenAFileCannotBeRead(string verb) {
         if (UnreadableFile("Unreadable.cs") is not { } path) {
             Assert.Skip("needs a POSIX mode bit this process is subject to; root and Windows are exempt.");
@@ -579,7 +601,7 @@ public sealed class ExitCodeContractTests : IDisposable {
         Write("Neighbour.cs", "class C {\n    void M() {\n        M();\n    }\n}\n");
 
         var codes = new Dictionary<string, int>(StringComparer.Ordinal) {
-            ["arrange --check"] = CliRunner.Run("arrange", "--check", directory).ExitCode,
+            ["arrange --check"] = CliRunner.Run(Arrange, "--check", directory).ExitCode,
             ["format --check"] = CliRunner.Run("format", "--check", directory).ExitCode,
             ["check --load loose"] = CliRunner.Run(Check, LoadOption, Loose, directory).ExitCode,
             ["verify --load loose"] = CliRunner.Run("verify", LoadOption, Loose, directory).ExitCode

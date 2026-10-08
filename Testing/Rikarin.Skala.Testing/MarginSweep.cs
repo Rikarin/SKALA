@@ -178,7 +178,7 @@ public static class MarginSweep {
                         );
 
                         File.WriteAllText(path, Source(shape, depth, total, lengths));
-                        files.Add(new CorpusFile("margin", Path.GetFileName(path), path));
+                        files.Add(new("margin", Path.GetFileName(path), path));
                         plans[path] = (shape, depth, total, lengths);
                     }
                 }
@@ -203,7 +203,7 @@ public static class MarginSweep {
                 var (shape, depth, total, lengths) = plans[file.Path];
                 var continuation = (depth + 1) * Indent;
                 if (!results.TryGetValue(file.Path, out var formatted)) {
-                    cells.Add(new Cell(shape.Name, depth, continuation, total, null, true));
+                    cells.Add(new(shape.Name, depth, continuation, total, null, true));
                     continue;
                 }
 
@@ -223,7 +223,7 @@ public static class MarginSweep {
                     }
                 }
 
-                cells.Add(new Cell(shape.Name, depth, continuation, total, longest, monotone));
+                cells.Add(new(shape.Name, depth, continuation, total, longest, monotone));
             }
 
             return cells;

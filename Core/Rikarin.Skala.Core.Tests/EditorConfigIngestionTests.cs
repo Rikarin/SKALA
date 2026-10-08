@@ -92,7 +92,14 @@ public sealed class EditorConfigIngestionTests {
         // directly, and the only way to reach zero was a broken read. Now it goes through
         // `Translate`, and a `Translate` that matched nothing would produce exactly this shape.
         Assert.NotEmpty(export);
-        Assert.Equal(export, own);
+
+        // ⚠ Exactly one deliberate departure, and it is listed rather than tolerated (#513, SK-DIV-0310).
+        // The export sets `space_within_spread_pattern = true`, a key ReSharper's formatter ignores at
+        // both values; Skala governs that gap and the repository spells its spreads `[..xs]`. The
+        // export is not edited — it is the oracle's input and stays what Rider wrote — so the two sides
+        // differ in this one key and in nothing else, which is what is asserted.
+        Assert.Equal([OptionId.SkalaSpaceWithinSpreadPattern + " = false"], own.Except(export));
+        Assert.Equal([OptionId.SkalaSpaceWithinSpreadPattern + " = true"], export.Except(own));
     }
 
     /// <summary>
@@ -128,7 +135,7 @@ public sealed class EditorConfigIngestionTests {
     ///     configuration <em>says</em>, and two files can say the same thing through two spellings.
     /// </remarks>
     static string[] ConfiguredOptions(EditorConfigChain chain) => [
-        .. OptionResolver.Resolve(chain)
+        ..OptionResolver.Resolve(chain)
             .Configured
             .Select(static option => option.Id + " = " + option.Value)
             .OrderBy(static entry => entry, StringComparer.Ordinal)
