@@ -96,7 +96,8 @@ public sealed class CastAndSpreadGapIssue450513Tests {
     [Fact]
     public void ASpreadsKeptBreak_IsNotJoined() {
         const string source =
-            "class C {\n    int[] xs = [1];\n\n    int[] T() =>\n        [\n            ..\n            xs\n        ];\n}\n";
+            "class C {\n    int[] xs = [1];\n\n    int[] T() =>\n   "
+            + "     [\n            ..\n            xs\n        ];\n}\n";
         var once = FormatWith(source);
         Assert.Contains("..\n", once, StringComparison.Ordinal);
         Assert.Equal(once, FormatWith(once));

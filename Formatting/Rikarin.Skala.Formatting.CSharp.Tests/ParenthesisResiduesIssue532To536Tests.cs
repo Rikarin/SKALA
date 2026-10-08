@@ -8,7 +8,9 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     the wider set.
 /// </summary>
 public sealed class ParenthesisResiduesIssue532To536Tests {
-    /// <summary>#532: a positional pattern in a property pattern keeps <c>X: (2</c> and its items on <c>X</c>'s column.</summary>
+    /// <summary>
+    ///     #532: a positional pattern in a property pattern keeps <c>X: (2</c> and its items on <c>X</c>'s column.
+    /// </summary>
     [Fact]
     public void APositionalPatternInAPropertyPattern_StaysBesideItsName() =>
         Oracle.Agrees(

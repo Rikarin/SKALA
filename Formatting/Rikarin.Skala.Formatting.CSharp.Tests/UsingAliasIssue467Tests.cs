@@ -44,7 +44,7 @@ public sealed class UsingAliasIssue467Tests {
     }
 
     /// <summary>
-    ///     #467: a using alias&apos;s = breaks when the line through the type&apos;s first break point does not fit, and
+    ///     #467: a using alias's = breaks when the line through the type's first break point does not fit, and
     ///     the type below it, kept or added, is one level in at the top of a file too.
     /// </summary>
     [Fact]

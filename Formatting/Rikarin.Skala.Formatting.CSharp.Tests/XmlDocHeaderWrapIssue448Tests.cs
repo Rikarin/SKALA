@@ -29,7 +29,9 @@ public sealed class XmlDocHeaderWrapIssue448Tests {
             Doc("/// <summary>Text.</summary>" + Five + " zetaAttribute=\"6\">Body.</customElement>")
         );
 
-    /// <summary>The <c>&gt;</c> after the last attribute is not counted: at 120 with it, the header stays whole.</summary>
+    /// <summary>
+    ///     The <c>&gt;</c> after the last attribute is not counted: at 120 with it, the header stays whole.
+    /// </summary>
     [Fact]
     public void TheClosingAngle_IsNotCounted() =>
         Assert.Equal(
@@ -105,7 +107,8 @@ public sealed class XmlDocHeaderWrapIssue448Tests {
         Assert.Equal(
             [
                 "/// <summary>",
-                "///     Some prose that runs on for long enough that the inline element which follows it cannot stay on the same line",
+                "///     Some prose that runs on for long enough that the "
+                + "inline element which follows it cannot stay on the same line",
                 "///     <see cref=\"System.String\" /> as written.",
                 "/// </summary>"
             ],

@@ -56,7 +56,7 @@ public sealed class ModifierTypeGapIssue540Tests {
     }
 
     /// <summary>
-    ///     #540: the gap between a field&apos;s modifiers and its type breaks when the type does not fit after them, from
+    ///     #540: the gap between a field's modifiers and its type breaks when the type does not fit after them, from
     ///     the type&apos;s 121st column; the name follows by its own gap.
     /// </summary>
     [Fact]

@@ -5,7 +5,7 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     SK-DIV-0198: the base name&apos;s and the interfaces&apos; margins. Every expected string is <c>jb cleanupcode</c>
+///     SK-DIV-0198: the base name's and the interfaces' margins. Every expected string is <c>jb cleanupcode</c>
 ///     2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>

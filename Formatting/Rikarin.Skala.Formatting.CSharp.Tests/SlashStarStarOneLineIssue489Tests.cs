@@ -10,7 +10,8 @@ public sealed class SlashStarStarOneLineIssue489Tests {
     [Fact]
     public void AOneLineBlockAboveAMember_IsRebuiltStarred() =>
         Agrees(
-            "class C {\n    /** <summary>Doc.</summary> */\n    public int F;\n\n    /** single */\n    public int G;\n}\n",
+            "class C {\n    /** <summary>Doc.</summary> */\n    "
+            + "public int F;\n\n    /** single */\n    public int G;\n}\n",
             "class C {\n"
             + "    /**\n     * <summary>Doc.</summary>\n     */\n    public int F;\n\n"
             + "    /**\n     * single\n     */\n    public int G;\n}\n"
@@ -19,7 +20,8 @@ public sealed class SlashStarStarOneLineIssue489Tests {
     [Fact]
     public void TheBodyIsLaidOutAsAnyDocComment() =>
         Agrees(
-            "class C {\n    /** <summary>Doc.</summary><param name=\"a\">A.</param> */\n    public void M(int a) { }\n}\n",
+            "class C {\n    /** <summary>Doc.</summary><param "
+            + "name=\"a\">A.</param> */\n    public void M(int a) { }\n}\n",
             "class C {\n    /**\n     * <summary>Doc.</summary>\n     * <param name=\"a\">A.</param>\n     */\n"
             + "    public void M(int a) { }\n}\n"
         );

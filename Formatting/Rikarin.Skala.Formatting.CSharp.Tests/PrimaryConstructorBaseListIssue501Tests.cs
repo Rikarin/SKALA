@@ -5,10 +5,9 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issues #501, #502 and #503, SK-DIV-0198: what the oracle measures before breaking at the <c>:</c> of a type with a
-///     parameter list, and where the base types land once it has. Every expected string is <c>jb cleanupcode</c>
-///     2025.2.6's own output for the input under
-///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
+///     Issues #501, #502 and #503, SK-DIV-0198: what the oracle measures before breaking at the <c>:</c> of a type with
+///     a parameter list, and where the base types land once it has. Every expected string is <c>jb cleanupcode</c>
+///     2025.2.6's own output for the input under <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class PrimaryConstructorBaseListIssue501Tests {
     const string Long25 = "class S116(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, bet"
@@ -116,8 +115,8 @@ public sealed class PrimaryConstructorBaseListIssue501Tests {
 
     /// <summary>
     ///     #501: interfaces after a primary constructor&apos;s base type. The questions end at the first comma, and the
-    ///     argument list is no place to break; the line through the comma stays when it fits, and moves below when it fits
-    ///     there.
+    ///     argument list is no place to break; the line through the comma stays when it fits, and moves below when it
+    ///     fits there.
     /// </summary>
     [Fact]
     public void InterfacesAfterTheBaseType_BreakBeforeTheColonWhenTheLineThroughTheCommaFitsBelow() =>
@@ -672,7 +671,7 @@ public sealed class PrimaryConstructorBaseListIssue501Tests {
         );
 
     /// <summary>
-    ///     #503 at the export: an author&apos;s break before the colon kept, and the fitter&apos;s, put the chopped types
+    ///     #503 at the export: an author's break before the colon kept, and the fitter's, put the chopped types
     ///     one level past the colon&apos;s line.
     /// </summary>
     [Fact]

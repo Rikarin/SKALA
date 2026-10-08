@@ -5,10 +5,9 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #475, SK-DIV-0350: a parameter&apos;s run of two or more attribute sections is one line, or every section and
-///     the parameter on lines of their own. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the
-///     input under
-///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
+///     Issue #475, SK-DIV-0350: a parameter's run of two or more attribute sections is one line, or every section and
+///     the parameter on lines of their own. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for
+///     the input under <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class AttributeRunIssue475Tests {
     /// <summary>The oracle's answer under the repository's export with <paramref name="overrides" /> on top.</summary>
@@ -32,7 +31,7 @@ public sealed class AttributeRunIssue475Tests {
     }
 
     /// <summary>
-    ///     #475: once one section spans lines, by an author&apos;s break or by width, first, last or in the middle, every
+    ///     #475: once one section spans lines, by an author's break or by width, first, last or in the middle, every
     ///     gap after a section breaks.
     /// </summary>
     [Fact]

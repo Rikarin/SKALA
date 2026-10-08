@@ -104,9 +104,9 @@ public sealed class ArrayElementDraftIssue444Tests {
     const string Long1 = "FormatDiagnosticIds.FileIoFailed";
 
     /// <summary>
-    ///     An element is measured flat with its kept breaks read as spaces: <c>Compute(</c> / arguments / <c>)</c> goes back
-    ///     beside the elements before it when <c>Compute(alpha, beta)</c> fits there, and an element that does not fit flat
-    ///     goes below.
+    ///     An element is measured flat with its kept breaks read as spaces: <c>Compute(</c> / arguments / <c>)</c> goes
+    ///     back beside the elements before it when <c>Compute(alpha, beta)</c> fits there, and an element that does not
+    ///     fit flat goes below.
     /// </summary>
     [Fact]
     public void AnElementIsMeasuredFlat_KeptBreaksIgnored() =>
@@ -353,8 +353,8 @@ public sealed class ArrayElementDraftIssue444Tests {
         );
 
     /// <summary>
-    ///     A comment that spans lines inside an element is measured to its first line; the element after it starts a line of
-    ///     its own.
+    ///     A comment that spans lines inside an element is measured to its first line; the element after it starts a
+    ///     line of its own.
     /// </summary>
     [Fact]
     public void ACommentInsideAnElement_IsMeasuredToItsFirstLine() =>
@@ -456,8 +456,8 @@ public sealed class ArrayElementDraftIssue444Tests {
         );
 
     /// <summary>
-    ///     Block lambdas, switch expressions, anonymous objects and a raw string as elements: a raw string's first line is its
-    ///     measure too.
+    ///     Block lambdas, switch expressions, anonymous objects and a raw string as elements: a raw string's first line
+    ///     is its measure too.
     /// </summary>
     [Fact]
     public void OtherElementsThatSpanLines() =>

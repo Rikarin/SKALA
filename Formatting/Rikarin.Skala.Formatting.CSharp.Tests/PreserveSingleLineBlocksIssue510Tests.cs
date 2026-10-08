@@ -8,10 +8,10 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     every one-statement accessor, lambda and anonymous-method body and every bodiless accessor list.
 /// </summary>
 /// <remarks>
-///     ⚠ Every expected string is the oracle's own answer, measured 2026-10-08 with <c>Testing ask</c>
-///     under the repository's configuration with the key flipped alone, and again with both
-///     <c>skala_keep_existing_*_block_arrangement</c> keys on — where the key is inert, because they
-///     outrank it. The committed fixture is <c>Testing/corpus/constructs/braces/csharp_preserve_single_line_blocks.cs</c>.
+///     ⚠ Every expected string is the oracle's own answer, measured 2026-10-08 with <c>Testing ask</c> under the
+///     repository's configuration with the key flipped alone, and again with both
+///     <c>skala_keep_existing_*_block_arrangement</c> keys on — where the key is inert, because they outrank it. The
+///     committed fixture is <c>Testing/corpus/constructs/braces/csharp_preserve_single_line_blocks.cs</c>.
 /// </remarks>
 public sealed class PreserveSingleLineBlocksIssue510Tests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {

@@ -5,7 +5,7 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #537: an attribute section of several attributes keeps a certain item&apos;s head on its line. Every expected
+///     Issue #537: an attribute section of several attributes keeps a certain item's head on its line. Every expected
 ///     string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>

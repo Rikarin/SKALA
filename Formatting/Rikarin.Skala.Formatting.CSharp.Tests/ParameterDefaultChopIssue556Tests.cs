@@ -31,8 +31,8 @@ public sealed class ParameterDefaultChopIssue556Tests {
     }
 
     /// <summary>
-    ///     #556: int a = 5 behind its one attribute section chops the arguments when the joined line overflows, as int a
-    ///     does.
+    ///     #556: int a = 5 behind its one attribute section chops the arguments when the joined line overflows, as int
+    ///     a does.
     /// </summary>
     [Fact]
     public void AShortParameterWithADefault_ChopsTheSectionToo() {

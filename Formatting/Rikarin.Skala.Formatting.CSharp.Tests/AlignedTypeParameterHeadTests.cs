@@ -41,7 +41,7 @@ public sealed class AlignedTypeParameterHeadTests {
     }
 
     /// <summary>
-    ///     SK-DIV-0351: under skala_align_multiline_type_parameter_list = true a list whose head on the angle&apos;s line
+    ///     SK-DIV-0351: under skala_align_multiline_type_parameter_list = true a list whose head on the angle's line
     ///     would be narrower than twelve columns breaks after the angle; twelve and wider keep it and align the rest.
     /// </summary>
     [Fact]

@@ -95,7 +95,8 @@ public sealed class InterpolationHoleIssue492Tests {
     [Fact]
     public void ABrokenHole_KeepsItsBreaks_AndRespacesTheRest() {
         const string source =
-            "class C {\n    int M(int a, int b) => a;\n\n    void T(int f) {\n        var s = $\"{M(\n            f,\n            f)}\";\n    }\n}\n";
+            "class C {\n    int M(int a, int b) => a;\n\n    void T(int f) {\n  "
+            + "      var s = $\"{M(\n            f,\n            f)}\";\n    }\n}\n";
         var once = FormatWith(
             source,
             ("skala_space_within_parentheses", "true"),

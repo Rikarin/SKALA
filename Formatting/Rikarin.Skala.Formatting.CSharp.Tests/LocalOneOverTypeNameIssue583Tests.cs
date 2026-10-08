@@ -32,8 +32,8 @@ public sealed class LocalOneOverTypeNameIssue583Tests {
 
     /// <summary>
     ///     #583: at a 121-column line a local breaks between its type and its name by the two widths: a 24-column
-    ///     <c>Func&lt;…&gt;</c>'s gap up to the head at 42 and its <c>=</c> from 43, a 32-column type's up to 93, a 22-column
-    ///     one's for a one-letter name only, and a 36-column type's always.
+    ///     <c>Func&lt;…&gt;</c>'s gap up to the head at 42 and its <c>=</c> from 43, a 32-column type's up to 93, a
+    ///     22-column one's for a one-letter name only, and a 36-column type's always.
     /// </summary>
     [Fact]
     public void APlainValueOneColumnOver() {
@@ -100,9 +100,9 @@ public sealed class LocalOneOverTypeNameIssue583Tests {
     }
 
     /// <summary>
-    ///     #583: a lambda keeps the arrow up to the head at 48 and chops its parameters at 49 (#558, #572), and gives the
-    ///     line to the type/name gap after that wherever the widths allow it; a 26-column type does not, and the <c>=</c>
-    ///     breaks.
+    ///     #583: a lambda keeps the arrow up to the head at 48 and chops its parameters at 49 (#558, #572), and gives
+    ///     the line to the type/name gap after that wherever the widths allow it; a 26-column type does not, and the
+    ///     <c>=</c> breaks.
     /// </summary>
     [Fact]
     public void ALambdaOneColumnOver() {

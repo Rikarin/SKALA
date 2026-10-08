@@ -31,7 +31,7 @@ public sealed class AttributeArgumentChopIssue476Tests {
     }
 
     /// <summary>
-    ///     #476: behind one attribute section a parameter of at most eleven columns puts the section&apos;s arguments in
+    ///     #476: behind one attribute section a parameter of at most eleven columns puts the section's arguments in
     ///     a chop exactly when the joined line overflows; the oracle never stands it alone below a whole section.
     /// </summary>
     [Fact]

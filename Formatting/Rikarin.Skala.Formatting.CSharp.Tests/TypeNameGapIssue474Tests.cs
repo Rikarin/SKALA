@@ -97,8 +97,8 @@ public sealed class TypeNameGapIssue474Tests {
     }
 
     /// <summary>
-    ///     #474: a field or a local whose line through its name and = does not fit breaks between the type and the name,
-    ///     the type whole, from 121 columns; at 120 it stays.
+    ///     #474: a field or a local whose line through its name and = does not fit breaks between the type and the
+    ///     name, the type whole, from 121 columns; at 120 it stays.
     /// </summary>
     [Fact]
     public void PastTheMargin_TheNameMovesBelowTheType() {

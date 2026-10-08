@@ -86,7 +86,9 @@ public sealed class BlankLinesAroundOwnLineCommentsTests {
             ("skala_blank_lines_around_single_line_field", "2")
         );
 
-    /// <summary>#497: at the export, a documented enum member takes <c>blank_lines_around_field</c> above its <c>///</c>.</summary>
+    /// <summary>
+    ///     #497: at the export, a documented enum member takes <c>blank_lines_around_field</c> above its <c>///</c>.
+    /// </summary>
     [Fact]
     public void ADocumentedEnumMember_TakesABlankLineAboveItsDocComment() =>
         Agrees(
@@ -265,7 +267,9 @@ public sealed class BlankLinesAroundOwnLineCommentsTests {
             ("skala_keep_blank_lines_in_declarations", "0")
         );
 
-    /// <summary>#500: between two accessors at <c>keep_blank_lines_in_declarations = 0</c>, a <c>//</c> keeps one.</summary>
+    /// <summary>
+    ///     #500: between two accessors at <c>keep_blank_lines_in_declarations = 0</c>, a <c>//</c> keeps one.
+    /// </summary>
     [Fact]
     public void BetweenAccessors_ALineCommentKeepsOne() =>
         Agrees(

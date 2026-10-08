@@ -82,8 +82,8 @@ public sealed class PropertyHeadIssue540Tests {
 
     /// <summary>
     ///     #540: a property breaks between its modifiers and its type when the type ends past 120, and before its name
-    ///     when the line through the accessor list&apos;s brace or the arrow does not fit; a const local keeps its type on the
-    ///     const line.
+    ///     when the line through the accessor list's brace or the arrow does not fit; a const local keeps its type on
+    ///     the const line.
     /// </summary>
     [Fact]
     public void APropertysHead_BreaksAsAFieldsDoes() {

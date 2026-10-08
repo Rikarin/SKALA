@@ -9,14 +9,18 @@ public sealed class PerformanceAndConcurrencyIntegrationTests {
     [Fact]
     public void Workspace_CheckVerifyCacheAndOptInPolicyHonorTheFiveRules() {
         using var scratch = new Scratch();
+        var fact = typeof(FactAttribute).Assembly;
+        var assert = typeof(Assert).Assembly;
+        var (factName, factPath) = (fact.GetName().Name, SecurityElement.Escape(fact.Location));
+        var (assertName, assertPath) = (assert.GetName().Name, SecurityElement.Escape(assert.Location));
         var project = scratch.Write(
             "Scratch.csproj",
             $$"""
               <Project Sdk="Microsoft.NET.Sdk">
                 <PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable></PropertyGroup>
                 <ItemGroup>
-                  <Reference Include="{{typeof(FactAttribute).Assembly.GetName().Name}}"><HintPath>{{SecurityElement.Escape(typeof(FactAttribute).Assembly.Location)}}</HintPath></Reference>
-                  <Reference Include="{{typeof(Assert).Assembly.GetName().Name}}"><HintPath>{{SecurityElement.Escape(typeof(Assert).Assembly.Location)}}</HintPath></Reference>
+                  <Reference Include="{{factName}}"><HintPath>{{factPath}}</HintPath></Reference>
+                  <Reference Include="{{assertName}}"><HintPath>{{assertPath}}</HintPath></Reference>
                 </ItemGroup>
               </Project>
               """
@@ -54,7 +58,8 @@ public sealed class PerformanceAndConcurrencyIntegrationTests {
         scratch.Write("Cold.cs", "using System.Linq; class Cold { int M(int[] values) => values.Count(); }");
         scratch.Write(
             "Assertions.cs",
-            "class Assertions { [Xunit.Fact] public void Check() { Xunit.Assert.NotEqual(System.Guid.Empty, System.Guid.NewGuid()); } }"
+            "class Assertions { [Xunit.Fact] public void Check() { "
+            + "Xunit.Assert.NotEqual(System.Guid.Empty, System.Guid.NewGuid()); } }"
         );
         scratch.Write(
             "Suppressed.cs",

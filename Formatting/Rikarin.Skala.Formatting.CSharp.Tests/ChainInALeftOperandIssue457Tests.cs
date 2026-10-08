@@ -14,7 +14,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </remarks>
 public sealed class ChainInALeftOperandIssue457Tests {
     const string Chain =
-        "someParticularThingWithALongName.SelfLink().SelfLink().SelectName(n => n.Name).WhereSomething(x => x.IsEnabledAndReady)";
+        "someParticularThingWithALongName.SelfLink().SelfLink().SelectName(n "
+        + "=> n.Name).WhereSomething(x => x.IsEnabledAndReady)";
 
     [Fact]
     public void TheChainsDots_NestFromTheOperatorsLine() =>
