@@ -364,6 +364,9 @@ public enum IndentFlags {
     ///     it, the list nests from that construct's continuation line rather than collapsing into it:
     ///     <c>var x = source.Select(</c> / arguments / <c>)</c> / <c>.Where(beta);</c> puts the arguments
     ///     two levels past the statement and the <c>)</c> one, with the dots (issue #418, SK-DIV-0184).
+    ///     ⚠ Read by the lift alone, so a grouping parenthesis's scope (<see cref="Grouping" />) and a
+    ///     chain frame's continuation lift the same way (#470, #481) without carrying this flag's name.
+    ///     The chain's carries it: the document builder sets it on the level a chain frame spends.
     /// </summary>
     Delimiter = 16,
 
@@ -384,7 +387,35 @@ public enum IndentFlags {
     ///     group is the scope's owner and is skipped: it is the construct the scope belongs to, not one
     ///     around it.
     /// </summary>
-    ChainLevel = 64
+    ChainLevel = 64,
+
+    /// <summary>
+    ///     ⚠ A grouping parenthesis heading a chain that the author broke before a dot after its
+    ///     <c>)</c>, where no group of the chain's own carries the break (#470, SK-DIV-0112). Its
+    ///     contents nest from the line after the <c>(</c>'s — the chain's continuation line — when
+    ///     that line is deeper: <c>var z = (</c> / <c>a).B</c> / <c>.C();</c> puts <c>a</c> two levels
+    ///     past the statement and <c>.C</c> one. The writer cannot see a frame's break coming, so the
+    ///     document builder reads it from the source and says so.
+    /// </summary>
+    BrokenAfter = 128,
+
+    /// <summary>
+    ///     ⚠ An <see cref="IndentKind.Anchor" /> that records the indentation of the line it is pushed
+    ///     on as written, rather than the level a block opening there would nest from: a switch
+    ///     expression whose governing <c>)</c> was kept on a line of its own nests its arms from that
+    ///     line, whatever paid for its indentation (#506).
+    /// </summary>
+    AnchorAtLine = 256,
+
+    /// <summary>
+    ///     ⚠ A <see cref="IndentKind.Block" /> or <see cref="IndentKind.AnchoredBlock" /> whose contents
+    ///     are a continuation rather than a body: a braced initializer's elements and a switch
+    ///     expression's arms under <c>skala_use_continuous_indent_inside_initializer_braces = true</c>.
+    ///     They take <c>skala_continuous_indent_multiplier</c> indent widths where a body takes one;
+    ///     the closing brace still returns to the opener's level (#464). At the export's multiplier of 1
+    ///     the two are the same number.
+    /// </summary>
+    Multiplied = 512
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>

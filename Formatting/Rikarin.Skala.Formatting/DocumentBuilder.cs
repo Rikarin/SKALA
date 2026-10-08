@@ -420,7 +420,10 @@ public sealed class DocumentBuilder {
                     & (IndentFlags.Grouping
                         | IndentFlags.Delimiter
                         | IndentFlags.CloserAtOpener
-                        | IndentFlags.ChainLevel))),
+                        | IndentFlags.ChainLevel
+                        | IndentFlags.BrokenAfter
+                        | IndentFlags.AnchorAtLine
+                        | IndentFlags.Multiplied))),
             columns
         );
 
