@@ -2553,16 +2553,16 @@ public sealed class BreakPlan {
             if (options.KeepsUserBreaksBetweenItems && BreaksBefore(dot)) {
                 Mandatory(dot);
             } else {
-                Point(dot, group, fill: true);
+                Point(dot, group, true);
             }
         }
 
         Describe(
             root,
-            new GroupPlan(
+            new(
                 group,
                 GroupMode.Preserve,
-                new GroupFacts(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: true),
+                new(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: true),
                 ChainHeadIsParenthesised(root),
                 OwnLevel: !ChainHeadIsParenthesised(root)
             )
@@ -2701,7 +2701,7 @@ public sealed class BreakPlan {
                         // conditional access the binding hangs from walks its own receiver.
                         dots.Add(
                             !wrapAfterProperty && ConditionalOf(binding) is { } owner
-                                ? PropertyRun(ChainDot(binding), owner.Expression, crossed: true).Dot
+                                ? PropertyRun(ChainDot(binding), owner.Expression, true).Dot
                                 : ChainDot(binding)
                         );
 
