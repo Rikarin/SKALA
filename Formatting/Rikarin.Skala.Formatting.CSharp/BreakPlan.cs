@@ -5718,6 +5718,15 @@ public sealed class BreakPlan {
                 if (!(breaks && glued)) {
                     width++;
                 }
+
+                // ⚠ A block comment in the gap is written, with a space beside it (Nightly `fuzz --seed=909`,
+                // case 6285859913225113725): `Review /* f */ >(x)` measured as `Review >(x)` let #528's
+                // held-call table keep an `=` whose line the comment pushed past the margin.
+                foreach (var trivia in token.GetPreviousToken().TrailingTrivia.Concat(token.LeadingTrivia)) {
+                    if (trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
+                        width += trivia.Span.Length + 1;
+                    }
+                }
             }
 
             width += token.Span.Length;

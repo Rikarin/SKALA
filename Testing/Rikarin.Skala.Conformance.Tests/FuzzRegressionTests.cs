@@ -104,6 +104,10 @@ public sealed class FuzzRegressionTests {
     // on pass one, broke the chain, and gave the level up on pass two.
     [Theory]
     [InlineData(11718305405350914591UL, "constructs/breaks/chain-after-parenthesised-head.cs")]
+    // Nightly `fuzz --seed=909`: `DeserializeObject<Review /* f */ >(x)` behind an `=`. FlatSourceWidth
+    // skipped the comment, so #528's held-call table kept an `=` the comment had pushed past the margin;
+    // pass two, with the arguments chopped, broke it.
+    [InlineData(6285859913225113725UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
