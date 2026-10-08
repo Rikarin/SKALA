@@ -6093,6 +6093,13 @@ public sealed class BreakPlan {
                     LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
                     LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
                 )
+                : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
+                    ? new GroupFacts(
+                        BreaksIfTooLong: true,
+                        LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
+                        LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
+                        LambdaChainHead: chainHead
+                    )
                 : ArrowMovesACallChainDown(body)
                     ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
                     : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
@@ -6109,6 +6116,58 @@ public sealed class BreakPlan {
     ///     arguments, as an <c>=</c>'s value — the arrow breaks when the body fits below, as over a
     ///     chain of calls.
     /// </remarks>
+    /// <summary>
+    ///     A sole lambda argument whose body is a chain of calls the author did not break: the width from
+    ///     the lambda's start to its first call's dot, which arms <see cref="GroupFacts.LambdaChainHead" />
+    ///     (#571); zero otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on <c>U(x =&gt; source.A….Select(y =&gt; y).Where(z =&gt; z.Bb));</c> and the same with
+    ///     <c>(x) =&gt;</c>, lambdas starting at columns 11 to 57 and line ends 112 to 174: the oracle breaks
+    ///     the arrow from column 21 (25 with parentheses) however long the chain, the way a property fill's
+    ///     sole lambda does (#557). Elsewhere it breaks it by that lambda's measured line rather than
+    ///     whenever the chain fits below (#529's rule, which held for `var r = items.Where(…` and broke the
+    ///     arrow over a plain call where the oracle fills the chain), and from line ends whose chain head no
+    ///     longer fits beside an arrow ending at column 21 or later.
+    /// </remarks>
+    int ChainHeadOfASoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) {
+        if (!options.PlaceSingleMethodArgumentLambdaOnSameLine
+            || !IsTheBodyOfASoleLambda(body)
+            || !ArrowMovesACallChainDown(body)
+            || ChainPointCount(body, options) == 0
+            || lambda.Modifiers.Count > 0) {
+            return 0;
+        }
+
+        // The innermost call on the spine whose callee is a member access: the chain's first link.
+        SyntaxToken dot = default;
+        var node = (SyntaxNode)body;
+        while (true) {
+            switch (node) {
+                case InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax member } invocation:
+                    dot = member.OperatorToken;
+                    node = member.Expression;
+                    continue;
+
+                case InvocationExpressionSyntax invocation:
+                    node = invocation.Expression;
+                    continue;
+
+                case MemberAccessExpressionSyntax member:
+                    node = member.Expression;
+                    continue;
+
+                case ElementAccessExpressionSyntax element:
+                    node = element.Expression;
+                    continue;
+            }
+
+            break;
+        }
+
+        return dot.IsKind(SyntaxKind.None) ? 0 : dot.SpanStart - lambda.SpanStart;
+    }
+
     bool IsAFilledSoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
         options.PlaceSingleMethodArgumentLambdaOnSameLine
         && IsTheBodyOfASoleLambda(body)

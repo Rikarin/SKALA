@@ -10538,3 +10538,44 @@ gap, not this rule's, and it is not wired. Odd type widths read the row below an
 - options: `skala_wrap_before_eq = false`, the exported value.
 - ⚠ status: **fixed** within the type/name residue above, pinned by
   `constructs/breaks/lambda-parameters-one-column-over.cs`.
+
+## SK-DIV-0375 — a sole lambda argument's arrow over a chain of calls
+
+⚠ **#571.** Group F's #529 rule broke a lambda's arrow whenever the chain in its body fitted on the line
+below. Measured with `Testing ask` on `U(x => source.A….Select(y => y).Where(z => z.Bb));` and the same
+with `(x) =>`: lambdas starting at columns 11 to 57, line ends 112 to 174, two apart, 1 536 cells.
+Against the oracle, that rule is both too eager and too timid:
+
+- **Too eager.** At small columns the oracle keeps the arrow and fills the chain although it fits below
+  (`UU(x => source.A….Select(y => y)` / `.Where(z => z.Bb)`).
+- **Too timid.** From column 21, or 25 with parentheses, the oracle breaks the arrow however long the chain
+  is, and chops the chain under it.
+
+The arrow's rule (`GroupFacts.LambdaChainHead`) is now #557's for a property fill. The arrow breaks in any
+of three cases:
+- from column 21, or 25 with parentheses;
+- by #557's measured line, `9·below + 2·params − 2·start ≤ 969`;
+- when the arrow ends at column 21 or later and the chain's head through its first call's dot no longer
+  fits beside it.
+
+4 cells differ, all at a parenthesised lambda's column 23. #529's own shape (`var r = items.Where(x =>`)
+still reproduces (`constructs/wrapping/lambda-arrow-over-a-chain.cs`).
+
+⚠ Not fixed here, and reported: once the arrow is decided, the chain itself is laid out wrongly in about
+280 of the cells. Where the oracle chops every link (`source.A…` / `.Select(y => y)` / `.Where(…)`),
+Skala keeps `.Select(y =>` on a line past the margin and breaks inside its argument. The same happens
+with no lambda at all, as in `var q = source.A….Select(y => y).Where(…);`. That is the chain fill's own
+defect (group F's), not the arrow's.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
+- ⚠ status: **fixed** for the arrow, pinned by `constructs/wrapping/lambda-arrow-over-a-sole-chain.cs`.
+
+⚠ **Round 5's other two issues, refuted rather than fixed:**
+- **#573**, a lambda parameter's type/name break. All 36 of round 4's cells where the oracle writes
+  `T…` / `p0` match on master. They still differ at 79f15491 (group F round 3) and match from 26321000
+  (group K, "parameter names"). That merge fixed them before this round started.
+- **#574**, `syntax/caller-argument-expression.cs`. It diverges by design and always has. The fixture pins
+  SK-DIV-0187: Skala leaves a `[CallerArgumentExpression]` argument's text as written, and its own header
+  says every divergent line is that decision. It produces the identical diff at f26e3f46, the commit that
+  added it. It is not a regression, so nothing was changed. If it should stop counting against construct
+  fidelity, that is a harness exemption, not a formatter fix.
