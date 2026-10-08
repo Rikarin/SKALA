@@ -211,7 +211,7 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
 
         // An iterator cannot return a task, and a `yield` in the body means it is one.
         foreach (var node in block.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
-                         and not LocalFunctionStatementSyntax
+                     and not LocalFunctionStatementSyntax
                  )) {
             if (node is YieldStatementSyntax) {
                 return false;
