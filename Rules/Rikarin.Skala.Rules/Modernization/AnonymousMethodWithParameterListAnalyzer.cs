@@ -230,9 +230,9 @@ public sealed class AnonymousMethodWithParameterListAnalyzer : DiagnosticAnalyze
     static SyntaxNode? EnclosingFunction(SyntaxNode node) =>
         node.Ancestors()
             .FirstOrDefault(static ancestor => ancestor is AnonymousFunctionExpressionSyntax
-                    or LocalFunctionStatementSyntax
-                    or MemberDeclarationSyntax
-                    or AccessorDeclarationSyntax
+                or LocalFunctionStatementSyntax
+                or MemberDeclarationSyntax
+                or AccessorDeclarationSyntax
             );
 
     /// <summary>The initializer whose elements are passed to <c>Add</c>, or null when there is none.</summary>
