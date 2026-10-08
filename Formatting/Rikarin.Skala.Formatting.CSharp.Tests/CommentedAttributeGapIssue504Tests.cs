@@ -10,6 +10,10 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class CommentedAttributeGapIssue504Tests {
+    const string FieldAttributeKey = "skala_place_field_attribute_on_same_line";
+    const string AccessorAttributeKey = "skala_place_accessorholder_attribute_on_same_line";
+    const string Always = "always";
+
     const string Long1 = "[Obsolete] /* c */ public int F = alphaValue + betaValue + gammaValue + deltaVal"
         + "ue + epsilonValue + zzzzzzzzzzzzzzz;";
 
@@ -232,8 +236,8 @@ public sealed class CommentedAttributeGapIssue504Tests {
                   {{Long1}}
               }
               """,
-            ("skala_place_field_attribute_on_same_line", "always"),
-            ("skala_place_accessorholder_attribute_on_same_line", "always")
+            (FieldAttributeKey, Always),
+            (AccessorAttributeKey, Always)
         );
         Agrees(
             $$"""
@@ -247,8 +251,8 @@ public sealed class CommentedAttributeGapIssue504Tests {
                 public int F = alphaValue + betaValue + gammaValue + deltaValue + epsilonValue + zzzzzzzzzzzzzzzz;
             }
             """,
-            ("skala_place_field_attribute_on_same_line", "always"),
-            ("skala_place_accessorholder_attribute_on_same_line", "always")
+            (FieldAttributeKey, Always),
+            (AccessorAttributeKey, Always)
         );
         Agrees(
             $$"""
@@ -262,8 +266,8 @@ public sealed class CommentedAttributeGapIssue504Tests {
                 public int F = alphaValue + betaValue + gammaValue + deltaValue + epsilonValue + zzzzzzzzzzzzzzzzzzzz;
             }
             """,
-            ("skala_place_field_attribute_on_same_line", "always"),
-            ("skala_place_accessorholder_attribute_on_same_line", "always")
+            (FieldAttributeKey, Always),
+            (AccessorAttributeKey, Always)
         );
         Agrees(
             $$"""
@@ -277,8 +281,8 @@ public sealed class CommentedAttributeGapIssue504Tests {
                 public int F = Compute(alphaValue, betaValue, gammaValue, deltaValue, eeeeeeeeeeeeeeeeeeeeeeeeee);
             }
             """,
-            ("skala_place_field_attribute_on_same_line", "always"),
-            ("skala_place_accessorholder_attribute_on_same_line", "always")
+            (FieldAttributeKey, Always),
+            (AccessorAttributeKey, Always)
         );
         Agrees(
             $$"""
@@ -292,8 +296,8 @@ public sealed class CommentedAttributeGapIssue504Tests {
                   private static readonly int F = alphaValue + betaValue + {{R('z', 47)}};
               }
               """,
-            ("skala_place_field_attribute_on_same_line", "always"),
-            ("skala_place_accessorholder_attribute_on_same_line", "always")
+            (FieldAttributeKey, Always),
+            (AccessorAttributeKey, Always)
         );
         Agrees(
             $$"""
@@ -307,8 +311,8 @@ public sealed class CommentedAttributeGapIssue504Tests {
                 public event System.EventHandler Ezzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz;
             }
             """,
-            ("skala_place_field_attribute_on_same_line", "always"),
-            ("skala_place_accessorholder_attribute_on_same_line", "always")
+            (FieldAttributeKey, Always),
+            (AccessorAttributeKey, Always)
         );
         Agrees(
             $$"""
@@ -322,8 +326,8 @@ public sealed class CommentedAttributeGapIssue504Tests {
                 public int F = alphaValue ? betaValue : gammaValue + zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz;
             }
             """,
-            ("skala_place_field_attribute_on_same_line", "always"),
-            ("skala_place_accessorholder_attribute_on_same_line", "always")
+            (FieldAttributeKey, Always),
+            (AccessorAttributeKey, Always)
         );
     }
 }

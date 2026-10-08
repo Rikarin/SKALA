@@ -130,7 +130,7 @@ public sealed class DifferentialTests {
     [Fact]
     public void TheEveryLineNumber_IsStillReported() {
         var outside = Measure(Corpus.Real, FidelityBasis.OutsideDocComments);
-        var everyLine = Measure(Corpus.Real, FidelityBasis.EveryLine);
+        var everyLine = Measure(Corpus.Real);
 
         Assert.True(
             everyLine.Lines - everyLine.IdenticalLines >= outside.Lines - outside.IdenticalLines,

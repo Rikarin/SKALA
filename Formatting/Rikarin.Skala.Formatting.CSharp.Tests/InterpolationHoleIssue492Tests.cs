@@ -36,47 +36,47 @@ public sealed class InterpolationHoleIssue492Tests {
     }
 
     [Theory]
-    [InlineData("var s = $\"{ f }\";", "var s = $\"{f}\";")]
-    [InlineData("var s = $\"{f+1}\";", "var s = $\"{f + 1}\";")]
-    [InlineData("var s = $\"{ f , 5}\";", "var s = $\"{f,5}\";")]
-    [InlineData("var s = $\"{f :N2}\";", "var s = $\"{f:N2}\";")]
-    [InlineData("var s = $\"{ f ,-5 :N2}\";", "var s = $\"{f,-5:N2}\";")]
-    [InlineData("var s = $\"{M(f,f)}\";", "var s = $\"{M(f, f)}\";")]
-    [InlineData("var s = $\"{(f>0?f:-f)}\";", "var s = $\"{(f > 0 ? f : -f)}\";")]
-    [InlineData("var s = $\"{name?.Length??0}\";", "var s = $\"{name?.Length ?? 0}\";")]
-    [InlineData("var s = $\"x{ f }y{ f }z\";", "var s = $\"x{f}y{f}z\";")]
-    [InlineData("var s = $@\"{ f }\";", "var s = $@\"{f}\";")]
-    [InlineData("var s = $\"\"\"{ f }\"\"\";", "var s = $\"\"\"{f}\"\"\";")]
-    [InlineData("var s = $\"{$\"{ f }\"}\";", "var s = $\"{$\"{f}\"}\";")]
-    [InlineData("var s = $\"{new[] {1,2}.Length}\";", "var s = $\"{new[] { 1, 2 }.Length}\";")]
-    [InlineData("var s = $\"{ - f }\";", "var s = $\"{-f}\";")]
-    [InlineData("var s = $\"{f: N2}\";", "var s = $\"{f: N2}\";")]
-    [InlineData("var s = $\"{  f  }  text  {f}\";", "var s = $\"{f}  text  {f}\";")]
+    [InlineData("""var s = $"{ f }";""", """var s = $"{f}";""")]
+    [InlineData("""var s = $"{f+1}";""", """var s = $"{f + 1}";""")]
+    [InlineData("""var s = $"{ f , 5}";""", """var s = $"{f,5}";""")]
+    [InlineData("""var s = $"{f :N2}";""", """var s = $"{f:N2}";""")]
+    [InlineData("""var s = $"{ f ,-5 :N2}";""", """var s = $"{f,-5:N2}";""")]
+    [InlineData("""var s = $"{M(f,f)}";""", """var s = $"{M(f, f)}";""")]
+    [InlineData("""var s = $"{(f>0?f:-f)}";""", """var s = $"{(f > 0 ? f : -f)}";""")]
+    [InlineData("""var s = $"{name?.Length??0}";""", """var s = $"{name?.Length ?? 0}";""")]
+    [InlineData("""var s = $"x{ f }y{ f }z";""", """var s = $"x{f}y{f}z";""")]
+    [InlineData("""var s = $@"{ f }";""", """var s = $@"{f}";""")]
+    [InlineData(""""var s = $"""{ f }""";"""", """"var s = $"""{f}""";"""")]
+    [InlineData("""var s = $"{$"{ f }"}";""", """var s = $"{$"{f}"}";""")]
+    [InlineData("""var s = $"{new[] {1,2}.Length}";""", """var s = $"{new[] { 1, 2 }.Length}";""")]
+    [InlineData("""var s = $"{ - f }";""", """var s = $"{-f}";""")]
+    [InlineData("""var s = $"{f: N2}";""", """var s = $"{f: N2}";""")]
+    [InlineData("""var s = $"{  f  }  text  {f}";""", """var s = $"{f}  text  {f}";""")]
     public void AHolesTokens_AreSpacedAsCode_AndTheTextIsNot(string statement, string expected) =>
         AssertFormats(statement, expected);
 
     [Theory]
-    [InlineData("var s = $\"{f/*f*/}\";", "var s = $\"{f /*f*/}\";")]
-    [InlineData("var s = $\"{/*f*/f}\";", "var s = $\"{ /*f*/f}\";")]
-    [InlineData("var s = $\"{ /*f*/ f}\";", "var s = $\"{ /*f*/f}\";")]
-    [InlineData("var s = $\"{f /*f*/ }\";", "var s = $\"{f /*f*/ }\";")]
-    [InlineData("var s = $\"{ f/*f*/,5}\";", "var s = $\"{f /*f*/,5}\";")]
-    [InlineData("var s = $\"{f/*a*//*b*/}\";", "var s = $\"{f /*a*/ /*b*/}\";")]
+    [InlineData("""var s = $"{f/*f*/}";""", """var s = $"{f /*f*/}";""")]
+    [InlineData("""var s = $"{/*f*/f}";""", """var s = $"{ /*f*/f}";""")]
+    [InlineData("""var s = $"{ /*f*/ f}";""", """var s = $"{ /*f*/f}";""")]
+    [InlineData("""var s = $"{f /*f*/ }";""", """var s = $"{f /*f*/ }";""")]
+    [InlineData("""var s = $"{ f/*f*/,5}";""", """var s = $"{f /*f*/,5}";""")]
+    [InlineData("""var s = $"{f/*a*//*b*/}";""", """var s = $"{f /*a*/ /*b*/}";""")]
     public void ACommentInAHole_IsACommentInAnExpression(string statement, string expected) =>
         AssertFormats(statement, expected);
 
     [Theory]
-    [InlineData("var s = $\"{f /*f*/}\";", "var s = $\"{f/*f*/}\";")]
-    [InlineData("var s = $\"{ /*f*/ f}\";", "var s = $\"{/*f*/f}\";")]
-    [InlineData("var s = $\"{f /*f*/ }\";", "var s = $\"{f/*f*/ }\";")]
+    [InlineData("""var s = $"{f /*f*/}";""", """var s = $"{f/*f*/}";""")]
+    [InlineData("""var s = $"{ /*f*/ f}";""", """var s = $"{/*f*/f}";""")]
+    [InlineData("""var s = $"{f /*f*/ }";""", """var s = $"{f/*f*/ }";""")]
     public void TheTrailingCommentKey_StillDecidesTheGapBeforeIt(string statement, string expected) =>
         AssertFormats(statement, expected, ("skala_space_before_trailing_comment", "false"));
 
     /// <summary>Every key that moves the same tokens outside a string moves them inside a hole.</summary>
     [Theory]
-    [InlineData("var s = $\"{M(f,f)}\";", "var s=$\"{M( f,f )}\";")]
-    [InlineData("var s = $\"{(f>0?f:-f)}\";", "var s=$\"{( f>0 ? f : -f )}\";")]
-    [InlineData("var s = $\"{ f , 5}\";", "var s=$\"{f,5}\";")]
+    [InlineData("""var s = $"{M(f,f)}";""", """var s=$"{M( f,f )}";""")]
+    [InlineData("""var s = $"{(f>0?f:-f)}";""", """var s=$"{( f>0 ? f : -f )}";""")]
+    [InlineData("""var s = $"{ f , 5}";""", """var s=$"{f,5}";""")]
     public void TheKeysReachIntoAHole(string statement, string expected) =>
         AssertFormats(
             statement,
@@ -112,7 +112,7 @@ public sealed class InterpolationHoleIssue492Tests {
     [Fact]
     public void ALongHole_IsNotBrokenInside() {
         var hole = string.Join(" + ", Enumerable.Repeat("f", 60));
-        var once = FormatWith(Body("var s = $\"{" + hole + "}\";"));
-        Assert.Contains("$\"{" + hole + "}\";", once, StringComparison.Ordinal);
+        var once = FormatWith(Body("""var s = $"{""" + hole + """}";"""));
+        Assert.Contains("""$"{""" + hole + """}";""", once, StringComparison.Ordinal);
     }
 }

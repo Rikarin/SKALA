@@ -8,10 +8,10 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </summary>
 public sealed class XmlDocHeaderKeysSkDiv0381Tests {
     const string Five =
-        "<customElementName alphaAttribute=\"1\" betaAttribute=\"2\" gammaAttribute=\"3\" deltaAttribute=\"4\" "
+        """<customElementName alphaAttribute="1" betaAttribute="2" gammaAttribute="3" deltaAttribute="4" """
         + "epsilonAttribute=\"5\"";
 
-    static readonly string[] PastTheMargin = ["/// <summary>Text.</summary>" + Five + " zetaAttribute=\"6\" />"];
+    static readonly string[] PastTheMargin = ["/// <summary>Text.</summary>" + Five + """ zetaAttribute="6" />"""];
 
     [Fact]
     public void AtWrapTagsAndPiFalse_NoBreakIsIntroduced_AndAnAuthorsIsKept() {
@@ -37,11 +37,11 @@ public sealed class XmlDocHeaderKeysSkDiv0381Tests {
     [Fact]
     public void AttributeIndent_SingleDoubleAndAligned() {
         Assert.Equal(
-            ["/// <summary>Text.</summary>", "/// " + Five, "///         zetaAttribute=\"6\" />"],
+            ["/// <summary>Text.</summary>", "/// " + Five, """///         zetaAttribute="6" />"""],
             Doc(PastTheMargin, ("skala_xmldoc_attribute_indent", "double_indent"))
         );
         Assert.Equal(
-            ["/// <summary>Text.</summary>", "/// " + Five, "///                    zetaAttribute=\"6\" />"],
+            ["/// <summary>Text.</summary>", "/// " + Five, """///                    zetaAttribute="6" />"""],
             Doc(PastTheMargin, ("skala_xmldoc_attribute_indent", "align_by_first_attribute"))
         );
     }
@@ -69,29 +69,29 @@ public sealed class XmlDocHeaderKeysSkDiv0381Tests {
     [Fact]
     public void AttributeStyle_EveryValue() {
         string[] broken = [
-            "/// <remarks>", "/// <see cref=\"System.String\"", "///     href=\"https://short.invalid/\" />",
+            "/// <remarks>", "/// <see cref=\"System.String\"", """///     href="https://short.invalid/" />""",
             "/// </remarks>"
         ];
         Assert.Equal(
             [
-                "/// <remarks>", "///     <see cref=\"System.String\" href=\"https://short.invalid/\" />",
+                "/// <remarks>", """///     <see cref="System.String" href="https://short.invalid/" />""",
                 "/// </remarks>"
             ],
             Doc(broken, ("skala_xmldoc_attribute_style", "on_single_line"))
         );
 
-        string[] param = ["/// <param name=\"a\">Single attribute.</param>"];
+        string[] param = ["""/// <param name="a">Single attribute.</param>"""];
         Assert.Equal(
-            ["/// <param", "///     name=\"a\">", "///     Single attribute.", "/// </param>"],
+            ["/// <param", """///     name="a">""", "///     Single attribute.", "/// </param>"],
             Doc(param, ("skala_xmldoc_attribute_style", "on_different_lines"))
         );
         Assert.Equal(
-            ["/// <param name=\"a\">Single attribute.</param>"],
+            ["""/// <param name="a">Single attribute.</param>"""],
             Doc(param, ("skala_xmldoc_attribute_style", "first_attribute_on_single_line"))
         );
 
         string[] two = [
-            "/// <summary>Text.</summary><customElement alphaAttribute=\"1\" betaAttribute=\"2\">Body.</customElement>"
+            """/// <summary>Text.</summary><customElement alphaAttribute="1" betaAttribute="2">Body.</customElement>"""
         ];
         Assert.Equal(
             [

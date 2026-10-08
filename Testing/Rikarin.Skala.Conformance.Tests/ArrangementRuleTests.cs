@@ -29,6 +29,8 @@ namespace Rikarin.Skala.Conformance.Tests;
 ///     </para>
 /// </remarks>
 public sealed class ArrangementRuleTests {
+    const string False = "false";
+
     const string Long1 = """return $"{a}{b}{c}{d}{e}{f}{g}{h}{i}{j}{k}{l}{m}{n}{o}{p}{q}{r}{s}{t}{u}{v}";""";
 
     const string Long2 = "Console.WriteLine(map.Count + cast + t.Name + d + s + max + empty + _count + _ma"
@@ -1140,7 +1142,7 @@ public sealed class ArrangementRuleTests {
             arranged,
             StringComparison.Ordinal
         );
-        Assert.Contains("list?.Add(new(\"a\", \"b\"));", arranged, StringComparison.Ordinal);
+        Assert.Contains("""list?.Add(new("a", "b"));""", arranged, StringComparison.Ordinal);
     }
 
     /// <summary>⚠ #524: a lambda's value is <c>when_type_not_evident</c>'s, its block <c>return</c> included.</summary>
@@ -1218,7 +1220,7 @@ public sealed class ArrangementRuleTests {
     [InlineData("var k = () => new Foo();")]
     [InlineData("var n = async () => await Task.Delay(1);")]
     [InlineData("var p = static () => 1;")]
-    [InlineData("var r = object () => \"x\";")]
+    [InlineData("""var r = object () => "x";""")]
     [InlineData("var s = Twice;")]
     [InlineData("var t = () => 1;")]
     [InlineData("var u = () => { return new Foo(); };")]
@@ -1229,7 +1231,7 @@ public sealed class ArrangementRuleTests {
 
     /// <summary>#547's refusals: the natural type is another type, or there is none.</summary>
     [Theory]
-    [InlineData("Func<object> c = () => \"x\";")]
+    [InlineData("""Func<object> c = () => "x";""")]
     [InlineData("Func<int, int> d = x => x;")]
     [InlineData("Expression<Func<int>> g = () => 1;")]
     [InlineData("Action<int> i = Over;")]
@@ -1274,7 +1276,7 @@ public sealed class ArrangementRuleTests {
         Assert.Contains("var a = () => 1;", ten, StringComparison.Ordinal);
 
         var elsewhere = Declined(
-            Attempt(NaturalTypeProbe, ArrangeIds.Var, overrides: [new("csharp_style_var_elsewhere", "false")])
+            Attempt(NaturalTypeProbe, ArrangeIds.Var, overrides: [new("csharp_style_var_elsewhere", False)])
         );
         Assert.Contains("Func<int> a = () => 1;", elsewhere, StringComparison.Ordinal);
     }
@@ -1289,7 +1291,7 @@ public sealed class ArrangementRuleTests {
         var arranged = Declined(Attempt(NaturalTypeProbe));
         Assert.Contains("var k = () => new Foo();", arranged, StringComparison.Ordinal);
 
-        var elsewhere = Declined(Attempt(NaturalTypeProbe, overrides: [new("csharp_style_var_elsewhere", "false")]));
+        var elsewhere = Declined(Attempt(NaturalTypeProbe, overrides: [new("csharp_style_var_elsewhere", False)]));
         Assert.Contains("Func<Foo> k = () => new();", elsewhere, StringComparison.Ordinal);
         Assert.Contains("Func<object> b = () => new();", elsewhere, StringComparison.Ordinal);
     }
@@ -1365,7 +1367,7 @@ public sealed class ArrangementRuleTests {
             Attempt(
                 KeywordProbe,
                 ArrangeIds.PredefinedType,
-                overrides: [new("dotnet_style_predefined_type_for_locals_parameters_members", "false")]
+                overrides: [new("dotnet_style_predefined_type_for_locals_parameters_members", False)]
             )
         );
         Assert.Contains(expected, arranged, StringComparison.Ordinal);
@@ -1385,7 +1387,7 @@ public sealed class ArrangementRuleTests {
             Attempt(
                 KeywordProbe,
                 ArrangeIds.PredefinedType,
-                overrides: [new("dotnet_style_predefined_type_for_member_access", "false")]
+                overrides: [new("dotnet_style_predefined_type_for_member_access", False)]
             )
         );
         Assert.Contains(expected, arranged, StringComparison.Ordinal);
@@ -1402,8 +1404,8 @@ public sealed class ArrangementRuleTests {
                 KeywordProbe,
                 ArrangeIds.PredefinedType,
                 overrides: [
-                    new("dotnet_style_predefined_type_for_locals_parameters_members", "false"),
-                    new("dotnet_style_predefined_type_for_member_access", "false")
+                    new("dotnet_style_predefined_type_for_locals_parameters_members", False),
+                    new("dotnet_style_predefined_type_for_member_access", False)
                 ]
             )
         );
@@ -1433,7 +1435,7 @@ public sealed class ArrangementRuleTests {
                 }
                 """,
                 ArrangeIds.PredefinedType,
-                overrides: [new("dotnet_style_predefined_type_for_locals_parameters_members", "false")]
+                overrides: [new("dotnet_style_predefined_type_for_locals_parameters_members", False)]
             )
         );
         Assert.Contains("System.Int32 _count;", arranged, StringComparison.Ordinal);

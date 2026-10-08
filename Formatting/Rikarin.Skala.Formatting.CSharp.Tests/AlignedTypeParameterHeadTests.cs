@@ -10,6 +10,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class AlignedTypeParameterHeadTests {
+    const string AlignKey = "skala_align_multiline_type_parameter_list";
+
     const string Long1 = "public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXX"
         + "XX, TThirdParameterNameXXXXXXXXXXXXX, TFourth> { }";
 
@@ -58,7 +60,7 @@ public sealed class AlignedTypeParameterHeadTests {
                     TFirstPara, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
             }
             """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
             $$"""
@@ -72,7 +74,7 @@ public sealed class AlignedTypeParameterHeadTests {
                                                              T{{R('y', 54)}}>() { }
               }
               """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
             $$"""
@@ -86,7 +88,7 @@ public sealed class AlignedTypeParameterHeadTests {
                     TA, TB, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
             }
             """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
             $$"""
@@ -100,7 +102,7 @@ public sealed class AlignedTypeParameterHeadTests {
                                                              T{{R('y', 55)}}>() { }
               }
               """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
             $$"""
@@ -114,7 +116,7 @@ public sealed class AlignedTypeParameterHeadTests {
                     TFirst, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
             }
             """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
             $$"""
@@ -128,7 +130,7 @@ public sealed class AlignedTypeParameterHeadTests {
                                                              T{{R('y', 56)}}>() { }
               }
               """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
             $$"""
@@ -142,7 +144,7 @@ public sealed class AlignedTypeParameterHeadTests {
                       TFirst, T{{R('y', 86)}}>() { }
               }
               """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
             $$"""
@@ -156,7 +158,7 @@ public sealed class AlignedTypeParameterHeadTests {
                     TFirst, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
             }
             """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
             $$"""
@@ -166,7 +168,7 @@ public sealed class AlignedTypeParameterHeadTests {
               {{Long2}}
                                   TFourth> { }
               """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
             $$"""
@@ -177,7 +179,7 @@ public sealed class AlignedTypeParameterHeadTests {
                                   TThirdParameterName{{R('X', 87)}},
                                   TFourth> { }
               """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
             $$"""
@@ -191,7 +193,7 @@ public sealed class AlignedTypeParameterHeadTests {
                     TFirst, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
             }
             """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
     }
 }
