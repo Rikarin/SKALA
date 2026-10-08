@@ -353,7 +353,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        facts.Candidates.Add(new Candidate(field, value.GetLocation(), span));
+        facts.Candidates.Add(new(field, value.GetLocation(), span));
     }
 
     /// <summary>

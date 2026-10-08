@@ -45,7 +45,7 @@ public sealed class ArrangementOptionTests {
             "option",
             [tree],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -62,7 +62,7 @@ public sealed class ArrangementOptionTests {
         var result = Arranger.Arrange(
             path,
             text,
-            new ArrangementOptions(resolved.Options),
+            new(resolved.Options),
             compilation,
             UsingsRule.Unused(compilation.GetSemanticModel(tree), tree)
         );

@@ -1,7 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -42,7 +41,7 @@ public sealed class FileLengthAnalyzer : DiagnosticAnalyzer {
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
-                Location.Create(tree, new TextSpan(0, 0)),
+                Location.Create(tree, new(0, 0)),
                 properties,
                 "The file has "
                 + count.ToString(CultureInfo.InvariantCulture)

@@ -104,7 +104,7 @@ public static class ArrangementSafety {
                 OriginalText,
                 arranged,
                 Options.PhaseOne,
-                new CrashRefusal(layer, diagnosticId, message) { Arrangement = Options }
+                new(layer, diagnosticId, message) { Arrangement = Options }
             );
     }
 
@@ -297,7 +297,7 @@ public static class ArrangementSafety {
             counters[counterKey] = ordinal + 1;
 
             var symbol = model.GetSymbolInfo(node, cancellation).Symbol;
-            result[new BindingKey(text, container, ordinal)] =
+            result[new(text, container, ordinal)] =
                 symbol?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "?";
         }
 

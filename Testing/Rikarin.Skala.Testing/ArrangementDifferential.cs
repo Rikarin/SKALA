@@ -176,7 +176,7 @@ public static class ArrangementDifferential {
             // ⚠ Nullable enabled and unsafe allowed, both to match OracleRunner.ProjectFile. The
             // nullable context changes which `!= null` checks the compiler considers meaningful and
             // therefore what the null-pattern rule sees, so a mismatch here is not cosmetic.
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -198,7 +198,7 @@ public static class ArrangementDifferential {
         return ArrangementPipeline.Run(
             file.Path,
             text,
-            new PhaseOneOptions(resolved),
+            new(resolved),
             arrangement,
             compilation,
             removable,

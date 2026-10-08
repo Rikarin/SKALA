@@ -158,7 +158,7 @@ public sealed class PairwiseSweep {
 
         if (KeyFlipSweep.IsBrokenMeasurement(baseline.Count, agreeing)) {
             broken.Add(
-                new BrokenRound(
+                new(
                     null,
                     baseline.Count,
                     baseline.Count,
@@ -231,7 +231,7 @@ public sealed class PairwiseSweep {
 
             if (KeyFlipSweep.IsBrokenMeasurement(work.Length, answered)) {
                 broken.Add(
-                    new BrokenRound(
+                    new(
                         round,
                         work.Length,
                         answered,
@@ -243,7 +243,7 @@ public sealed class PairwiseSweep {
                 log.WriteLine("  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` returned nothing this round.");
             } else if (KeyFlipSweep.IsUnvaryingRound(work.Length, moved)) {
                 broken.Add(
-                    new BrokenRound(
+                    new(
                         round,
                         work.Length,
                         answered,
@@ -329,7 +329,7 @@ public sealed class PairwiseSweep {
             }
 
             corners.Add(
-                new PairCorner(
+                new(
                     assignments[0].Value,
                     assignments[1].Value,
                     hasOracle ? SkalaSide.Digest(oracleText!) : "missing",

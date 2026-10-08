@@ -1148,7 +1148,7 @@ public sealed class XmlDocTests {
             static d => d.Id == FormatDiagnosticIds.LineTooLong && d.Severity == SkalaSeverity.Hidden
         );
 
-        Assert.Contains(new string('x', 200), result.Formatted, StringComparison.Ordinal);
+        Assert.Contains(new('x', 200), result.Formatted, StringComparison.Ordinal);
     }
 }
 

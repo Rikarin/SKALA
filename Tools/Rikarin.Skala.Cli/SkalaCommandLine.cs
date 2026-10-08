@@ -498,14 +498,14 @@ public static partial class SkalaCommandLine {
             var loadMode = LoadModes.Parse(mode);
             if (string.Equals(mode, "auto", StringComparison.OrdinalIgnoreCase)) {
                 loadMode = ProjectLoader.ResolveAutoMode(
-                    new LoadRequest {
+                    new() {
                         RepositoryRoot = root, Mode = LoadMode.Workspace, ProjectPath = projectPath, Paths = loadPaths
                     }
                 );
             }
 
             var loaded = ProjectLoader.Load(
-                new LoadRequest {
+                new() {
                     RepositoryRoot = root,
                     Mode = loadMode,
                     ProjectPath = projectPath,
@@ -612,7 +612,7 @@ public static partial class SkalaCommandLine {
     static List<string> SymbolsFromProject(string[] paths, string mode) {
         try {
             var root = FindRepositoryRoot(paths.Length > 0 ? paths[0] : ".") ?? Directory.GetCurrentDirectory();
-            var loaded = ProjectLoader.Load(new LoadRequest { RepositoryRoot = root, Mode = LoadModes.Parse(mode) });
+            var loaded = ProjectLoader.Load(new() { RepositoryRoot = root, Mode = LoadModes.Parse(mode) });
             var symbols = new List<string>();
             foreach (var unit in loaded.Units) {
                 foreach (var symbol in unit.PreprocessorSymbols) {
@@ -643,7 +643,7 @@ public static partial class SkalaCommandLine {
         foreach (var value in values) {
             var equals = value.IndexOf('=', StringComparison.Ordinal);
             if (equals > 0) {
-                result.Add(new KeyValuePair<string, string>(value[..equals].Trim(), value[(equals + 1)..].Trim()));
+                result.Add(new(value[..equals].Trim(), value[(equals + 1)..].Trim()));
             }
         }
 

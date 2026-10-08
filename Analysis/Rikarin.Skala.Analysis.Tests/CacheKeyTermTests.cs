@@ -233,7 +233,7 @@ public sealed class CacheKeyTermTests {
             "Lib",
             [CSharpSyntaxTree.ParseText(source, BaseParse.WithLanguageVersion(version), "/lib/L.cs")],
             [Corlib],
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, deterministic: true)
+            new(OutputKind.DynamicallyLinkedLibrary, deterministic: true)
         );
 
     static PortableExecutableReference Image(string source) {

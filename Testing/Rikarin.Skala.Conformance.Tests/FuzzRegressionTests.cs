@@ -115,7 +115,7 @@ public sealed class FuzzRegressionTests {
         var applied = 0;
         foreach (var name in FuzzMutations.AbsorbedNames) {
             for (ulong seed = 0; seed < 100; seed++) {
-                var mutated = FuzzMutations.Apply(name, source, new FuzzRandom(seed), Corpus.PropertySymbols);
+                var mutated = FuzzMutations.Apply(name, source, new(seed), Corpus.PropertySymbols);
                 if (mutated is null) {
                     continue;
                 }
@@ -137,7 +137,7 @@ public sealed class FuzzRegressionTests {
         Assert.True(applied > 0);
         Assert.NotEqual(
             source,
-            FuzzMutations.Apply(FuzzMutations.Indent, source, new FuzzRandom(0), Corpus.PropertySymbols)
+            FuzzMutations.Apply(FuzzMutations.Indent, source, new(0), Corpus.PropertySymbols)
         );
     }
 }

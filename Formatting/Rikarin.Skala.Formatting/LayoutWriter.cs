@@ -1806,7 +1806,7 @@ public sealed class LayoutWriter {
         var checkpoint = Checkpoint();
         TakeBreak(ref slot);
         var lineStart = output.Length;
-        Run(new Stack<(int Node, int Child)>(stack.Reverse()), line);
+        Run(new(stack.Reverse()), line);
         var width = LineContentWidth(lineStart);
         Restore(checkpoint);
 
@@ -2146,7 +2146,7 @@ public sealed class LayoutWriter {
         column = TextWidth.Advance(text, column);
 
         if (hasPendingAnchor) {
-            anchors.Add(new AnchorPoint(pendingAnchorSpan, start, output.Length, pendingAnchorToken));
+            anchors.Add(new(pendingAnchorSpan, start, output.Length, pendingAnchorToken));
             hasPendingAnchor = false;
         }
 

@@ -260,7 +260,7 @@ switch (args[0]) {
         }
 
         var sweep = MarginSweep.Run(
-            new OracleRunner(),
+            new(),
             Corpus.OracleEditorConfigPath,
             Console.Error
         );
@@ -323,7 +323,7 @@ switch (args[0]) {
             .ToHashSet(StringComparer.Ordinal);
 
         var artefact = PreferenceSweep.Run(
-            new OracleRunner(),
+            new(),
             Corpus.OracleEditorConfigPath,
             [.. Enumerable.Range(totalRange.From, totalRange.To - totalRange.From + 1)],
             innerRange.From,
@@ -515,7 +515,7 @@ static int Ask(string directory, string[] overrides) {
 
         var equals = entry.IndexOf('=', StringComparison.Ordinal);
         if (equals > 0) {
-            pairs.Add(new KeyValuePair<string, string>(entry[..equals].Trim(), entry[(equals + 1)..].Trim()));
+            pairs.Add(new(entry[..equals].Trim(), entry[(equals + 1)..].Trim()));
         }
     }
 
@@ -541,7 +541,7 @@ static int Defaults(string? outputPath) {
         return 2;
     }
 
-    var probed = DefaultsProbe.Run(new OracleRunner(), Console.Out);
+    var probed = DefaultsProbe.Run(new(), Console.Out);
     var report = DefaultsProbe.Render(probed);
     if (outputPath is { Length: > 0 }) {
         File.WriteAllText(outputPath, report);
@@ -860,7 +860,7 @@ static int UnformatCommand(string[] arguments) {
             }
 
             var total = UnformatDifferential.Regenerate(
-                new OracleRunner(),
+                new(),
                 Corpus.OracleEditorConfigPath,
                 Console.Out
             );

@@ -154,7 +154,7 @@ public static class CheckCommand {
         );
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = root,
                 Mode = request.Mode,
                 BinlogPath = request.BinlogPath,
@@ -242,7 +242,7 @@ public static class CheckCommand {
             }
 
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.UnknownRuleFilter,
                     SkalaSeverity.Warning,
                     "--rules names "
@@ -302,7 +302,7 @@ public static class CheckCommand {
         if (scope is { Count: 0 } && unreadableFiles == 0) {
             var names = string.Join(", ", request.Paths);
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.NoSourceFiles,
                     SkalaSeverity.Error,
                     $"no analysable file under '{names}' is part of {loaded.Summary}",
@@ -386,7 +386,7 @@ public static class CheckCommand {
             if (outcome.Partial) {
                 partial = true;
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         ConfigDiagnosticIds.PartialAnalysis,
                         SkalaSeverity.Warning,
                         $"'{unit.Name}' was cancelled before it finished and contributed no findings; "
@@ -676,7 +676,7 @@ public static class CheckCommand {
                 report = report with { Findings = changed.Apply(report.Findings), ChangedCodeReference = reference };
             } catch (Exception exception) when (exception is InvalidOperationException or IOException) {
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         ConfigDiagnosticIds.GateInputUnavailable,
                         SkalaSeverity.Error,
                         "--since=" + reference + " could not be resolved: " + exception.Message,
@@ -695,7 +695,7 @@ public static class CheckCommand {
             // `skala baseline create --apply`, so the diagnostic says so.
             if (!File.Exists(baselinePath)) {
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         ConfigDiagnosticIds.GateInputUnavailable,
                         SkalaSeverity.Warning,
                         "the gate names a baseline at "
@@ -736,7 +736,7 @@ public static class CheckCommand {
                 // an INCOMPLETE banner above exit 0. `Gate.EvaluateReliability` now fails the verdict
                 // on an error-severity SK9028, which is where a run states things about itself.
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         ConfigDiagnosticIds.GateInputUnavailable,
                         SkalaSeverity.Error,
                         "the baseline at " + baselinePath + " could not be read: " + exception.Message,
@@ -758,7 +758,7 @@ public static class CheckCommand {
                 };
             } catch (Exception exception) when (exception is InvalidOperationException or IOException) {
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         ConfigDiagnosticIds.GateInputUnavailable,
                         SkalaSeverity.Error,
                         "--no-new-suppressions could not compare against " + against + ": " + exception.Message,

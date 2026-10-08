@@ -152,7 +152,7 @@ public static class OptionResolver {
 
                 foreach (var assignment in section.Assignments) {
                     if (!OptionRegistry.TryResolve(assignment.Key, out var id)) {
-                        unknown.Add(new UnknownKey(assignment, Classify(assignment.Key)));
+                        unknown.Add(new(assignment, Classify(assignment.Key)));
                         continue;
                     }
 
@@ -189,7 +189,7 @@ public static class OptionResolver {
                 // appended to the value-error list, where — like every other value error before
                 // M9 — nothing read it.
                 if (!OptionRegistry.TryResolve(key, out var id)) {
-                    unknown.Add(new UnknownKey(assignment, Classify(key)));
+                    unknown.Add(new(assignment, Classify(key)));
                     continue;
                 }
 
@@ -232,7 +232,7 @@ public static class OptionResolver {
 
             var effective = options.GetText((OptionId)i);
             errors.Add(
-                new OptionValueError(
+                new(
                     (OptionId)i,
                     origin.Spelling,
                     origin.Value,

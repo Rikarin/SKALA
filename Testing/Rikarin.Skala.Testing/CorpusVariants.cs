@@ -104,7 +104,7 @@ public static class CorpusVariants {
         };
 
         foreach (var key in KeepExistingKeys) {
-            overrides.Add(new KeyValuePair<string, string>(key, keepExisting ? "true" : "false"));
+            overrides.Add(new(key, keepExisting ? "true" : "false"));
         }
 
         return new(name, overrides);

@@ -56,7 +56,7 @@ public static class XmlDocComments {
             }
 
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     FormatDiagnosticIds.MalformedXmlDoc,
                     SkalaSeverity.Hidden,
                     "the documentation comment is not well-formed XML; it was left exactly as written",

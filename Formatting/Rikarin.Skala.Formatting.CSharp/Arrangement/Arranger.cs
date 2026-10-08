@@ -100,7 +100,7 @@ public static class Arranger {
             // and left byte-identical. Arranging a broken tree is how a broken file becomes a
             // differently broken one.
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     FormatDiagnosticIds.NotParseable,
                     SkalaSeverity.Warning,
                     "not arranged, the file does not parse: "
@@ -196,10 +196,10 @@ public static class Arranger {
             // loop that can know in advance which node will do it. The finding was SK-FUZZ-0012.
             SyntaxNode rewritten;
             try {
-                rewritten = rule.Apply(new ArrangementContext(current, model, options, guard));
+                rewritten = rule.Apply(new(current, model, options, guard));
             } catch (Exception exception) when (exception is not OperationCanceledException) {
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         ArrangeIds.RuleThrew,
                         SkalaSeverity.Warning,
                         $"the {ArrangeIds.NameOf(rule.Id)} rule ({rule.Id}) threw and was skipped; "

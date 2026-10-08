@@ -265,7 +265,7 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
             if (parameter.RefKind == RefKind.Out
                 && parameter.Ordinal < declaration.ParameterList.Parameters.Count) {
                 parameters.Add(
-                    new OutParameter(
+                    new(
                         parameter.Ordinal,
                         parameter.Name,
                         declaration.ParameterList.Parameters[parameter.Ordinal].GetLocation()
@@ -277,7 +277,7 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
         if (parameters.Count > 0) {
             candidates.TryAdd(
                 method.OriginalDefinition,
-                new Candidate(method.Name, parameters.ToImmutable())
+                new(method.Name, parameters.ToImmutable())
             );
         }
     }
@@ -297,7 +297,7 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
         var target = invocation.TargetMethod.OriginalDefinition;
         foreach (var argument in invocation.Arguments) {
             if (argument.Parameter is { RefKind: RefKind.Out } parameter) {
-                calls.Add(new CallSite(target, parameter.Ordinal, IsDiscard(argument.Value)));
+                calls.Add(new(target, parameter.Ordinal, IsDiscard(argument.Value)));
             }
         }
     }

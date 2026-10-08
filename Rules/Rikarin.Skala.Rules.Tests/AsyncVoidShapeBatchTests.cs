@@ -491,7 +491,7 @@ public sealed class AsyncVoidShapeBatchTests {
 
         var second = CSharpSyntaxTree.ParseText(
             converting,
-            new CSharpParseOptions(LanguageVersion.Preview),
+            new(LanguageVersion.Preview),
             "Host.cs",
             cancellationToken: TestContext.Current.CancellationToken
         );

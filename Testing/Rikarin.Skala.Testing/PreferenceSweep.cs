@@ -458,7 +458,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point(head.Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     null,
                     open + 1
                 );
@@ -487,7 +487,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point(head.Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     null,
                     open + 1
                 );
@@ -515,7 +515,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point(head.Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     null,
                     open + 1
                 );
@@ -537,7 +537,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point(head.Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     null,
                     open + 1
                 );
@@ -565,7 +565,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point(head.Length),
-                    new Span(open + 1, open + 1 + inner.Length),
+                    new(open + 1, open + 1 + inner.Length),
                     null,
                     open
                 );
@@ -587,7 +587,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point("var alphaBetaGammaDelta = ".Length),
-                    new Span(open + 2, open + inner.Length - 1),
+                    new(open + 2, open + inner.Length - 1),
                     null,
                     open + 1
                 );
@@ -609,7 +609,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point("var alphaBetaGammaDeltaE = ".Length),
-                    new Span(open + 2, open + inner.Length - 1),
+                    new(open + 2, open + inner.Length - 1),
                     null,
                     open + 1
                 );
@@ -637,7 +637,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point("var value = ".Length),
-                    new Span(open + 2, open + inner.Length - 1),
+                    new(open + 2, open + inner.Length - 1),
                     null,
                     open + 1
                 );
@@ -662,7 +662,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Arrow(head.Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     Span.Point("Action value = ".Length),
                     open + 1
                 );
@@ -698,7 +698,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Arrow("Func<int[]> value = () => ".Length),
-                    new Span(open + 2, open + inner.Length - 1),
+                    new(open + 2, open + inner.Length - 1),
                     Span.Point("Func<int[]> value = ".Length),
                     open + 1
                 );
@@ -722,7 +722,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Arrow("Func<object> value = () => ".Length),
-                    new Span(open + 2, open + inner.Length - 1),
+                    new(open + 2, open + inner.Length - 1),
                     Span.Point("Func<object> value = ".Length),
                     open + 1
                 );
@@ -749,7 +749,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Arrow(head.Length),
-                    new Span(open + 1, open + 1 + inner.Length),
+                    new(open + 1, open + 1 + inner.Length),
                     Span.Point("Func<int> value = ".Length),
                     open
                 );
@@ -778,7 +778,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Arrow("Action value = () => ".Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     new Span("Action value = ".Length, open + 1),
                     open + 1
                 );
@@ -802,7 +802,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Arrow(head.Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     new Span("Action<int> value = ".Length, head.Length),
                     open + 1
                 );
@@ -830,7 +830,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Arrow(head.Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     new Span("Action<int, int> value = ".Length, head.Length),
                     open + 1
                 );
@@ -859,8 +859,8 @@ public static class PreferenceSweep {
                 // lists gives" has no answer because neither of them does.
                 return new Layout(
                     flat,
-                    new Span(langle + 1, langle + inner.Length),
-                    new Span(lparen + 1, lparen + tail.Length - 1),
+                    new(langle + 1, langle + inner.Length),
+                    new(lparen + 1, lparen + tail.Length - 1),
                     Span.Point(head.Length),
                     lparen + 1
                 );
@@ -889,7 +889,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point("var value = ".Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     Span.Point("var value = Utility".Length),
                     open + 1
                 );
@@ -917,7 +917,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point("var value = ".Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     new Span(close + 1, open + 1),
                     open + 1
                 );
@@ -940,7 +940,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point("var value = ".Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     new Span(head.Length, head.Length + name.Length),
                     open + 1
                 );
@@ -966,7 +966,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point("var value = ".Length),
-                    new Span(open + 2, open + inner.Length - 1),
+                    new(open + 2, open + inner.Length - 1),
                     null,
                     open + 1
                 );
@@ -990,7 +990,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point("var value = ".Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     new Span("var value = Assert".Length, head.Length + 1),
                     open + 1
                 );
@@ -1013,7 +1013,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point("var value = ".Length),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     new Span("var value = source".Length, open),
                     open + 1
                 );
@@ -1039,7 +1039,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point(head.Length),
-                    new Span(open + 1, open + 1 + inner.Length),
+                    new(open + 1, open + 1 + inner.Length),
                     null,
                     open
                 );
@@ -1061,7 +1061,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point(head.Length),
-                    new Span(open + 1, open + 1 + inner.Length),
+                    new(open + 1, open + 1 + inner.Length),
                     null,
                     open
                 );
@@ -1088,7 +1088,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point(open),
-                    new Span(open + 1, open + inner.Length),
+                    new(open + 1, open + inner.Length),
                     Span.Point("var ".Length),
                     open + 1
                 );
@@ -1111,7 +1111,7 @@ public static class PreferenceSweep {
                 return new Layout(
                     flat,
                     Span.Point(equals),
-                    new Span(open + 2, open + inner.Length - 1),
+                    new(open + 2, open + inner.Length - 1),
                     Span.Point("var ".Length),
                     open + 1
                 );
@@ -2290,7 +2290,7 @@ public static class PreferenceSweep {
                     }
 
                     var inner = row.InnerFrom + i;
-                    cells.Add(new Cell(inner, row.Sufficient is { } enough && inner >= enough, code == 'I'));
+                    cells.Add(new(inner, row.Sufficient is { } enough && inner >= enough, code == 'I'));
                 }
             }
 

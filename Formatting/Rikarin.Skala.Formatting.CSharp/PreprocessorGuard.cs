@@ -139,7 +139,7 @@ public static class PreprocessorGuard {
 
         var line = text.Lines.GetLineFromPosition(span.Start).LineNumber + 1;
         diagnostics.Add(
-            new SkalaDiagnostic(
+            new(
                 FormatDiagnosticIds.UnbalancedPreprocessor,
                 SkalaSeverity.Info,
                 member is null

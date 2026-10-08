@@ -576,7 +576,7 @@ public sealed class DiagnosticCache {
         var fix = ImmutableArray.CreateBuilder<FixEdit>(cached.FixStarts.Length);
         for (var i = 0; i < cached.FixStarts.Length; i++) {
             fix.Add(
-                new FixEdit(
+                new(
                     path,
                     int.Parse(cached.FixStarts[i], CultureInfo.InvariantCulture),
                     int.Parse(cached.FixLengths[i], CultureInfo.InvariantCulture),

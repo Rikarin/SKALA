@@ -100,7 +100,7 @@ public static class SarifWriter {
     /// </summary>
     public static string Serialize(SarifLog log) {
         var serializer = JsonSerializer.Create(
-            new JsonSerializerSettings {
+            new() {
                 Formatting = Formatting.Indented,
                 NullValueHandling = NullValueHandling.Ignore,
                 DateFormatHandling = DateFormatHandling.IsoDateFormat,

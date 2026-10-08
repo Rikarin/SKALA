@@ -77,7 +77,7 @@ public sealed class LockAndValueIntegrationTests {
         Assert.Equal(5, warm.Reportable.Count(finding => ids.Contains(finding.RuleId)));
 
         var verified = VerifyCommand.Run(
-            new VerifyRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -93,7 +93,7 @@ public sealed class LockAndValueIntegrationTests {
         }
 
         var fixedResult = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,

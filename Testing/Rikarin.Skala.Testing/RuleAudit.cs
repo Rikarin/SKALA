@@ -67,7 +67,7 @@ public static class RuleAudit {
         }
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = Path.GetFullPath(requested.Count > 0 ? requested[0] : "."),
                 Mode = LoadMode.Loose,
                 Paths = requested

@@ -124,7 +124,7 @@ public sealed class MultiTargetAvailabilityTests {
         Restore(project);
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,
@@ -169,7 +169,7 @@ public sealed class MultiTargetAvailabilityTests {
 
         // `fix --safe` has nothing to apply, so the file is untouched and every moniker still builds.
         var fixResult = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -216,7 +216,7 @@ public sealed class MultiTargetAvailabilityTests {
         Assert.True(finding.HasFix);
 
         var fixResult = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -239,7 +239,7 @@ public sealed class MultiTargetAvailabilityTests {
         // ⚠ With the compilations supplied, because `ObjectCreationRule.NeedsSemantics` is true and a
         // syntactic-only `arrange` never asks the question — it would pass over the long form too.
         var reloaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,
@@ -250,7 +250,7 @@ public sealed class MultiTargetAvailabilityTests {
         );
 
         var arranged = ArrangeCommand.Run(
-            new ArrangeRequest {
+            new() {
                 Paths = [scratch.Root],
                 RepositoryRoot = scratch.Root,
                 Check = true,
@@ -294,7 +294,7 @@ public sealed class MultiTargetAvailabilityTests {
         Restore(project);
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,
@@ -346,7 +346,7 @@ public sealed class MultiTargetAvailabilityTests {
         Assert.DoesNotContain(report.Reportable, static finding => finding.RuleId == FileScopedNamespace);
 
         var fixResult = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -378,7 +378,7 @@ public sealed class MultiTargetAvailabilityTests {
         var source = scratch.Write("Probe.cs", BlockNamespaceSource);
 
         var (_, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -394,7 +394,7 @@ public sealed class MultiTargetAvailabilityTests {
         Assert.True(finding.HasFix);
 
         var fixResult = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -446,7 +446,7 @@ public sealed class MultiTargetAvailabilityTests {
         Build(project, binlog);
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Mode = LoadMode.Binlog,
                 BinlogPath = binlog,
@@ -524,7 +524,7 @@ public sealed class MultiTargetAvailabilityTests {
     /// </remarks>
     internal static void AssertEveryTargetFrameworkCompiles(string root, string project, string source) {
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = root,
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,

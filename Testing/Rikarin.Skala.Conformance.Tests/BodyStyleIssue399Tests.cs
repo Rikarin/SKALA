@@ -268,7 +268,7 @@ public sealed class BodyStyleIssue399Tests {
             "probe399",
             [tree],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -289,7 +289,7 @@ public sealed class BodyStyleIssue399Tests {
         var result = Arranger.Arrange(
             path,
             text,
-            new ArrangementOptions(options),
+            new(options),
             compilation,
             null,
             null,

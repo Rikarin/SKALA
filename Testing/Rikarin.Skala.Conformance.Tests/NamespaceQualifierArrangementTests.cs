@@ -43,8 +43,8 @@ public sealed class NamespaceQualifierArrangementTests {
         var result = ArrangementPipeline.Run(
             Path,
             text,
-            new PhaseOneOptions(options),
-            new ArrangementOptions(options),
+            new(options),
+            new(options),
             compilation,
             cancellation: TestContext.Current.CancellationToken
         );
@@ -146,7 +146,7 @@ public sealed class NamespaceQualifierArrangementTests {
         var result = Arranger.Arrange(
             Path,
             SourceText.From(source),
-            new ArrangementOptions(Options()),
+            new(Options()),
             filter: new([ArrangeIds.StaticQualifier], []),
             cancellation: TestContext.Current.CancellationToken
         );
@@ -181,7 +181,7 @@ public sealed class NamespaceQualifierArrangementTests {
                 .. SharedFrameworkReferences.Value,
                 MetadataReference.CreateFromFile(typeof(Fingerprints).Assembly.Location)
             ],
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+            new(OutputKind.DynamicallyLinkedLibrary)
         );
         Assert.DoesNotContain(
             compilation.GetDiagnostics(TestContext.Current.CancellationToken),
@@ -195,7 +195,7 @@ public sealed class NamespaceQualifierArrangementTests {
         return Arranger.Arrange(
             Path,
             text,
-            new ArrangementOptions(Options(qualifier)),
+            new(Options(qualifier)),
             compilation,
             filter: new([ArrangeIds.StaticQualifier], []),
             cancellation: TestContext.Current.CancellationToken

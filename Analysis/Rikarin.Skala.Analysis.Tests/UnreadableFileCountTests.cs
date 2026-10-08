@@ -106,7 +106,7 @@ public sealed class UnreadableFileCountTests {
         }
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose, AllowFallback = false },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose, AllowFallback = false },
             TestContext.Current.CancellationToken
         );
 

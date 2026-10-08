@@ -93,7 +93,7 @@ public sealed class ArrangementRuleTests {
             "probe",
             [tree],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 topLevel ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -108,7 +108,7 @@ public sealed class ArrangementRuleTests {
         return Arranger.Arrange(
             path,
             text,
-            new ArrangementOptions(options),
+            new(options),
             compilation,
             removeUnused ? UsingsRule.Unused(compilation.GetSemanticModel(tree), tree) : null,
             null,
@@ -716,7 +716,7 @@ public sealed class ArrangementRuleTests {
         var result = Arranger.Arrange(
             path,
             SourceText.From(source),
-            new ArrangementOptions(options, ArrangementScope.Syntactic),
+            new(options, ArrangementScope.Syntactic),
             cancellation: TestContext.Current.CancellationToken
         );
 
@@ -1583,7 +1583,7 @@ public sealed class ArrangementRuleTests {
                 tree
             ],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
+            new(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
         );
 
         var model = compilation.GetSemanticModel(tree);
@@ -1607,8 +1607,8 @@ public sealed class ArrangementRuleTests {
         var arranged = ArrangementPipeline.Run(
             path,
             text,
-            new PhaseOneOptions(options),
-            new ArrangementOptions(options),
+            new(options),
+            new(options),
             compilation,
             unused,
             cancellation: TestContext.Current.CancellationToken
@@ -1728,7 +1728,7 @@ public sealed class ArrangementRuleTests {
             "probe",
             [tree],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -1765,7 +1765,7 @@ public sealed class ArrangementRuleTests {
             "probe",
             trees,
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -1779,8 +1779,8 @@ public sealed class ArrangementRuleTests {
         return ArrangementPipeline.Run(
             path,
             text,
-            new PhaseOneOptions(options),
-            new ArrangementOptions(options),
+            new(options),
+            new(options),
             compilation,
             UsingsRule.Unused(compilation.GetSemanticModel(tree), tree)
         );

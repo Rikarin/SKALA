@@ -113,7 +113,7 @@ public sealed class SarifSuppressionTests {
         );
 
         var gate = Gate.Evaluate(
-            new GateDefinition { Name = "ci", MaxNewIssues = 0, BaselinePath = Baseline.DefaultRelativePath },
+            new() { Name = "ci", MaxNewIssues = 0, BaselinePath = Baseline.DefaultRelativePath },
             report,
             true
         );

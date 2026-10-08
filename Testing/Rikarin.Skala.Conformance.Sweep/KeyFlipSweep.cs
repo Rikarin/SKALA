@@ -205,7 +205,7 @@ public sealed class KeyFlipSweep {
         // loud on belongs to whoever ran the sweep and the artefact is what everyone else reads.
         if (IsBrokenMeasurement(baseline.Count, agreeing)) {
             broken.Add(
-                new BrokenRound(
+                new(
                     null,
                     baseline.Count,
                     baseline.Count,
@@ -305,7 +305,7 @@ public sealed class KeyFlipSweep {
 
                 if (IsBrokenMeasurement(members.Length, answered)) {
                     broken.Add(
-                        new BrokenRound(
+                        new(
                             round,
                             members.Length,
                             answered,
@@ -322,7 +322,7 @@ public sealed class KeyFlipSweep {
                     );
                 } else if (IsUnvaryingRound(members.Length, movedHere)) {
                     broken.Add(
-                        new BrokenRound(
+                        new(
                             round,
                             members.Length,
                             answered,
@@ -451,7 +451,7 @@ public sealed class KeyFlipSweep {
             }
 
             values.Add(
-                new SweepValue(
+                new(
                     candidate.Values[round],
                     hasOracle ? Digest(oracleText!) : "missing",
                     hasSkala ? Digest(skalaText!) : "missing",

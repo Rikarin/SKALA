@@ -549,7 +549,7 @@ public sealed class LifecycleTests {
     [Fact]
     public void Gate_NewIssuesWithoutABaselineOrSince_Fails() {
         var result = Gate.Evaluate(
-            new GateDefinition { Name = "ci", MaxNewIssues = 0 },
+            new() { Name = "ci", MaxNewIssues = 0 },
             Report(Finding()),
             true
         );
@@ -637,9 +637,7 @@ public sealed class LifecycleTests {
 
         Assert.True(
             Gate.Evaluate(
-                new GateDefinition {
-                    Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("duplication", 3.0)
-                },
+                new() { Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("duplication", 3.0) },
                 report,
                 true
             ).Passed
@@ -647,9 +645,7 @@ public sealed class LifecycleTests {
 
         Assert.False(
             Gate.Evaluate(
-                new GateDefinition {
-                    Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("commentDensity", 60)
-                },
+                new() { Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("commentDensity", 60) },
                 report,
                 true
             ).Passed
@@ -662,9 +658,7 @@ public sealed class LifecycleTests {
 
         Assert.False(
             Gate.Evaluate(
-                new GateDefinition {
-                    Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK5*", 0)
-                },
+                new() { Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK5*", 0) },
                 report,
                 true
             ).Passed
@@ -672,9 +666,7 @@ public sealed class LifecycleTests {
 
         Assert.True(
             Gate.Evaluate(
-                new GateDefinition {
-                    Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK9001", 0)
-                },
+                new() { Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK9001", 0) },
                 report,
                 true
             ).Passed
@@ -685,7 +677,7 @@ public sealed class LifecycleTests {
     [Fact]
     public void Gate_AnUnsupportedCondition_FailsRatherThanBeingDropped() {
         var result = Gate.Evaluate(
-            new GateDefinition { Name = "ci", Unsupported = ["coverage"] },
+            new() { Name = "ci", Unsupported = ["coverage"] },
             Report(),
             true
         );

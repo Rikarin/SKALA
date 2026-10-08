@@ -280,9 +280,9 @@ public sealed class LockLifetimeAndPublicationBatchTests {
     static CSharpCompilation TopLevel(string source) =>
         CSharpCompilation.Create(
             "top-level",
-            [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Preview), "top.cs")],
+            [CSharpSyntaxTree.ParseText(source, new(LanguageVersion.Preview), "top.cs")],
             RuleFixtures.References,
-            new CSharpCompilationOptions(OutputKind.ConsoleApplication)
+            new(OutputKind.ConsoleApplication)
         );
 
     /// <summary>

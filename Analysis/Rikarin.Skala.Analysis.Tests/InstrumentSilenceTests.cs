@@ -136,7 +136,7 @@ public sealed class InstrumentSilenceTests {
         var expected = probe.Write("Probe.csproj", """<Project Sdk="Microsoft.NET.Sdk" />""");
 
         var resolution = WorkspaceLoader.Resolve(
-            new LoadRequest { RepositoryRoot = repository.Root, Mode = LoadMode.Workspace, Paths = [probe.Root] }
+            new() { RepositoryRoot = repository.Root, Mode = LoadMode.Workspace, Paths = [probe.Root] }
         );
 
         Assert.Null(resolution.Error);
@@ -161,7 +161,7 @@ public sealed class InstrumentSilenceTests {
         probe.Write("Probe.cs", "public sealed class Probe { }");
 
         var resolution = WorkspaceLoader.Resolve(
-            new LoadRequest { RepositoryRoot = repository.Root, Mode = LoadMode.Workspace, Paths = [probe.Root] }
+            new() { RepositoryRoot = repository.Root, Mode = LoadMode.Workspace, Paths = [probe.Root] }
         );
 
         Assert.Null(resolution.Target);
@@ -189,7 +189,7 @@ public sealed class InstrumentSilenceTests {
         repository.Write(Path.Combine("src", "Widget.cs"), "public sealed class Widget { }");
 
         var resolution = WorkspaceLoader.Resolve(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = repository.Root,
                 Mode = LoadMode.Workspace,
                 Paths = [Path.Combine(repository.Root, "src")]

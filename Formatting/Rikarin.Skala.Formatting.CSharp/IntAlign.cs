@@ -474,7 +474,7 @@ public static class IntAlign {
                     }
                 }
 
-                run.Add(new Row(line.Start, One(slot)));
+                run.Add(new(line.Start, One(slot)));
                 previousLine = line.LineNumber;
             }
 
@@ -515,7 +515,7 @@ public static class IntAlign {
                 Flush(runs, run);
             }
 
-            run.Add(new Row(line.Start, One(trivia.SpanStart)));
+            run.Add(new(line.Start, One(trivia.SpanStart)));
             previousLine = line.LineNumber;
         }
 

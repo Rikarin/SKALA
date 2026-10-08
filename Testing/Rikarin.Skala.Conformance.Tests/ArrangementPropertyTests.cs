@@ -56,8 +56,8 @@ public static class CorpusArranger {
         return ArrangementPipeline.Run(
             file.Path,
             text,
-            new PhaseOneOptions(resolved),
-            new ArrangementOptions(resolved),
+            new(resolved),
+            new(resolved),
             compilation,
             ArrangementDifferential.Removable(compilation, file.Path),
             // ⚠ One compilation here, so the pipeline's own recomputation is this call site's answer.
@@ -83,7 +83,7 @@ public static class CorpusArranger {
         return Arranger.Arrange(
             file.Path,
             CSharpFormatter.Read(file.Path),
-            new ArrangementOptions(options),
+            new(options),
             compilation,
             ArrangementDifferential.Removable(compilation, file.Path)
         ).Text;

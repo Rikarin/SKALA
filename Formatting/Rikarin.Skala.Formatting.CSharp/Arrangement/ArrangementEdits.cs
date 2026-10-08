@@ -83,12 +83,12 @@ public static class ArrangementEdits {
                 continue;
             }
 
-            lines.Add(new Line(start, i + 1));
+            lines.Add(new(start, i + 1));
             start = i + 1;
         }
 
         if (start <= text.Length) {
-            lines.Add(new Line(start, text.Length));
+            lines.Add(new(start, text.Length));
         }
 
         return lines;
@@ -208,7 +208,7 @@ public static class ArrangementEdits {
         }
 
         edits.Add(
-            new TextEdit(
+            new(
                 SourceSpan.FromBounds(hunk.BeforeStart + prefix, hunk.BeforeEnd - suffix),
                 after[(hunk.AfterStart + prefix)..(hunk.AfterEnd - suffix)]
             )

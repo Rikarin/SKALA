@@ -207,9 +207,7 @@ public static class Fidelity {
             for (var k = 0; k < count; k++) {
                 var left = k < removed.Count ? removed[k] : "(no line)";
                 var right = k < added.Count ? added[k] : "(no line)";
-                divergences.Add(
-                    new Divergence(file, start + k, left, right, ClassOf(left, right, removed.Count, added.Count))
-                );
+                divergences.Add(new(file, start + k, left, right, ClassOf(left, right, removed.Count, added.Count)));
             }
         }
     }
@@ -313,7 +311,7 @@ public static class LineDiff {
 
         var result = new List<Entry>(left.Length + right.Length);
         for (var i = 0; i < head; i++) {
-            result.Add(new Entry(Kind.Same, left[i]));
+            result.Add(new(Kind.Same, left[i]));
         }
 
         var innerLeft = left[head..(left.Length - tail)];
@@ -321,7 +319,7 @@ public static class LineDiff {
         Middle(innerLeft, innerRight, result);
 
         for (var i = right.Length - tail; i < right.Length; i++) {
-            result.Add(new Entry(Kind.Same, right[i]));
+            result.Add(new(Kind.Same, right[i]));
         }
 
         return result;
@@ -330,11 +328,11 @@ public static class LineDiff {
     static void Middle(string[] left, string[] right, List<Entry> result) {
         if (left.Length == 0 || right.Length == 0) {
             foreach (var line in left) {
-                result.Add(new Entry(Kind.Removed, line));
+                result.Add(new(Kind.Removed, line));
             }
 
             foreach (var line in right) {
-                result.Add(new Entry(Kind.Added, line));
+                result.Add(new(Kind.Added, line));
             }
 
             return;
@@ -353,24 +351,24 @@ public static class LineDiff {
         var y = 0;
         while (x < left.Length && y < right.Length) {
             if (string.Equals(left[x], right[y], StringComparison.Ordinal)) {
-                result.Add(new Entry(Kind.Same, left[x]));
+                result.Add(new(Kind.Same, left[x]));
                 x++;
                 y++;
             } else if (table[x + 1, y] >= table[x, y + 1]) {
-                result.Add(new Entry(Kind.Removed, left[x]));
+                result.Add(new(Kind.Removed, left[x]));
                 x++;
             } else {
-                result.Add(new Entry(Kind.Added, right[y]));
+                result.Add(new(Kind.Added, right[y]));
                 y++;
             }
         }
 
         while (x < left.Length) {
-            result.Add(new Entry(Kind.Removed, left[x++]));
+            result.Add(new(Kind.Removed, left[x++]));
         }
 
         while (y < right.Length) {
-            result.Add(new Entry(Kind.Added, right[y++]));
+            result.Add(new(Kind.Added, right[y++]));
         }
     }
 }
