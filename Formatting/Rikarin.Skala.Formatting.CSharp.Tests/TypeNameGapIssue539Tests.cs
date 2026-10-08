@@ -244,4 +244,244 @@ public sealed class TypeNameGapIssue539Tests {
             """
         );
     }
+
+    /// <summary>
+    ///     #539 round three: a record, a record struct or a class with a parameter list keeps its name on the keyword's line at every width measured; the parameters or the base list take the break.
+    /// </summary>
+    [Fact]
+    public void ATypeWithAPrimaryConstructor_NeverBreaksBeforeItsName() {
+        Agrees(
+            """
+            public sealed record Nnnnnnnnnn(int Alpha = 0, string Beta = "b", long Gammaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = 1) {
+            }
+            """,
+            """
+            public sealed record Nnnnnnnnnn(
+                int Alpha = 0,
+                string Beta = "b",
+                long Gammaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = 1) { }
+            """
+        );
+        Agrees(
+            """
+            public sealed partial record struct Nnnnnnnnnn<T>(Dictionary<string, int> p1, long p2, byte p3, object paaaaaaaaaaaaaaaaaaaaa) {
+            }
+            """,
+            """
+            public sealed partial record struct Nnnnnnnnnn<T>(
+                Dictionary<string, int> p1,
+                long p2,
+                byte p3,
+                object paaaaaaaaaaaaaaaaaaaaa) { }
+            """
+        );
+        Agrees(
+            """
+            public class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn(int alpha, string beta) : BaseType(alpha), IFoooooooooooooooooooooooooooooo {
+            }
+            """,
+            """
+            public class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn(int alpha, string beta)
+                : BaseType(alpha), IFoooooooooooooooooooooooooooooo { }
+            """
+        );
+    }
+
+    /// <summary>
+    ///     #539 round three: the window is the joined line's overflow, not what the continuation line saves: behind <c>internal sealed class</c> the oracle breaks the name at 124 and not at 125.
+    /// </summary>
+    [Fact]
+    public void TheNameBreaksOnlyUpTo124Columns_WhateverTheHead() {
+        Agrees(
+            """
+            internal sealed class Nnnnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """,
+            """
+            internal sealed class
+                Nnnnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """
+        );
+        Agrees(
+            """
+            internal sealed class Nnnnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """,
+            """
+            internal sealed class Nnnnnnnnnn : IAlphaInterfaceNameValue,
+                IGammagggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """
+        );
+    }
+
+    /// <summary>
+    ///     #539 round three: <c>9·column + 6·name − 3·first item + 807 ≥ 8·end</c>: an 18-letter name behind <c>public class</c> stays, a 20-letter one breaks at 122 and not at 123, an 8-letter one behind <c>public sealed class</c> breaks at 121, and three interfaces answer as two.
+    /// </summary>
+    [Fact]
+    public void AShortNameBehindAShortHead_StaysAndTheListWraps() {
+        Agrees(
+            """
+            public class Nnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """,
+            """
+            public class Nnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue,
+                IGammaggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """
+        );
+        Agrees(
+            """
+            public class Nnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """,
+            """
+            public class
+                Nnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """
+        );
+        Agrees(
+            """
+            public class Nnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """,
+            """
+            public class Nnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue,
+                IGammaggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """
+        );
+        Agrees(
+            """
+            public sealed class Nnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """,
+            """
+            public sealed class
+                Nnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """
+        );
+        Agrees(
+            """
+            public sealed class Nnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """,
+            """
+            public sealed class Nnnnnnnn : IAlphaInterfaceNameValue,
+                IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """
+        );
+        Agrees(
+            """
+            public class Nnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IBetaInterfaceNameValue, IGammagggggggggggggggggggggggggg { }
+            """,
+            """
+            public class Nnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue,
+                IBetaInterfaceNameValue,
+                IGammagggggggggggggggggggggggggg { }
+            """
+        );
+    }
+
+    /// <summary>
+    ///     #539 round three: a 10-letter name breaks at 121 before a 4-letter first base type, a 14-letter one does not before a 20-letter one, and a first base type past 22 letters stops counting.
+    /// </summary>
+    [Fact]
+    public void TheFirstBaseTypesWidth_MovesTheThreshold() {
+        Agrees(
+            """
+            public class Nnnnnnnnnn : Ifff, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """,
+            """
+            public class
+                Nnnnnnnnnn : Ifff, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """
+        );
+        Agrees(
+            """
+            public class Nnnnnnnnnnnnnn : Ifffffffffffffffffff, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """,
+            """
+            public class Nnnnnnnnnnnnnn : Ifffffffffffffffffff,
+                IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
+            """
+        );
+        Agrees(
+            """
+            public class Nnnnnnnnnnnnnnnnnnnnnn : Ifffffffffffffffffffffffffffffffffff, IGammaggggggggggggggggggggggggggggggggggggg { }
+            """,
+            """
+            public class
+                Nnnnnnnnnnnnnnnnnnnnnn : Ifffffffffffffffffffffffffffffffffff, IGammaggggggggggggggggggggggggggggggggggggg { }
+            """
+        );
+        Agrees(
+            """
+            public class Nnnnnnnnnnnnnnnnnn : Ifffffffffffffffffffffffffffffffffff, IGammaggggggggggggggggggggggggggggggggggggggg { }
+            """,
+            """
+            public class Nnnnnnnnnnnnnnnnnn : Ifffffffffffffffffffffffffffffffffff,
+                IGammaggggggggggggggggggggggggggggggggggggggg { }
+            """
+        );
+    }
+
+    /// <summary>
+    ///     #539 round three: with two type parameters and no base list the list's comma competes the same way, from its own constant: a 25-letter name stays at 121, a 30-letter one breaks to 123.
+    /// </summary>
+    [Fact]
+    public void TwoTypeParameters_TheListsCommaTakesAShortName() {
+        Agrees(
+            """
+            public class NNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
+            """,
+            """
+            public class NNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName,
+                TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
+            """
+        );
+        Agrees(
+            """
+            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
+            """,
+            """
+            public class
+                NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
+            """
+        );
+        Agrees(
+            """
+            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
+            """,
+            """
+            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName,
+                TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
+            """
+        );
+    }
+
+    /// <summary>
+    ///     #539 round three: behind <c>class</c> alone the name never moves down for the base list's sake, but it does when the name itself runs past the margin, and before a lone base type.
+    /// </summary>
+    [Fact]
+    public void ABareKeyword_KeepsTheNameForAList_ButNotForALoneBaseType() {
+        Agrees(
+            """
+            class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggg { }
+            """,
+            """
+            class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue,
+                IGammaggggggggggggggggggggggggggggggggggggg { }
+            """
+        );
+        Agrees(
+            """
+            class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN : IFoo { }
+            """,
+            """
+            class
+                NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN : IFoo { }
+            """
+        );
+        Agrees(
+            """
+            class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN { }
+            """,
+            """
+            class
+                NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN { }
+            """
+        );
+    }
 }

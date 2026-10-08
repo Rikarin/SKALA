@@ -2561,6 +2561,19 @@ public sealed class BreakPlan {
     ///     ⚠ Not modelled: two type parameters behind a name of 25 letters or fewer, which the list's comma
     ///     takes at 121 to 124, and a 10-letter name before two interfaces, broken at 121 only.
     /// </remarks>
+    /// <summary>
+    ///     The constant of <see cref="GroupFacts.NameWidth" />'s rule before a base list (SK-DIV-0353): fitted to
+    ///     728 headers — heads of 13 to 30 columns, names of 4 to 32 letters, a first base type of 4 to 36 —
+    ///     of which it reproduces 727.
+    /// </summary>
+    const int BaseListNameFloor = 807;
+
+    /// <summary>The same before a type parameter list of two or more, measured on one first parameter only.</summary>
+    const int TypeParameterNameFloor = 748;
+
+    /// <summary>Past 22 columns the first item's width stops counting: 28 and 36 give the same answers.</summary>
+    const int FirstItemCap = 22;
+
     void PlanTypeName(SyntaxNode node) {
         if (node is not (ClassDeclarationSyntax
                 or StructDeclarationSyntax
@@ -2569,13 +2582,29 @@ public sealed class BreakPlan {
             || node is not TypeDeclarationSyntax { Identifier: var name } type
             || name.IsKind(SyntaxKind.None)
             || type.Keyword.IsKind(SyntaxKind.None)
-            || HasBlockCommentBefore(name)) {
+            || HasBlockCommentBefore(name)
+
+            // ⚠ Never before a primary constructor's parameter list: on 34 records, record structs and classes
+            // with one, a name of 10 to 60 letters at 121 to 150 columns, the oracle chopped the parameters
+            // or broke before the base list every time and broke the name in none (SK-DIV-0353).
+            || type.ParameterList is not null) {
             return;
         }
 
         var group = NewGroup();
         Point(name, group);
         var loneBase = type is { ParameterList: null, TypeParameterList: null, BaseList.Types.Count: 1 };
+
+        // ⚠ What the name's break competes with decides whether a short name gives way (round three): the
+        // base list's first comma behind no type parameter list, or the type parameter list's own first comma
+        // when there is no base list. Each is weighed by the width of the item before that comma, capped.
+        var floor = type switch {
+            { TypeParameterList: null, BaseList.Types: { Count: >= 2 } bases } => BaseListNameFloor
+                - 3 * Math.Min(bases[0].Type.Span.Length, FirstItemCap),
+            { TypeParameterList.Parameters: { Count: >= 2 } parameters, BaseList: null } => TypeParameterNameFloor
+                - 3 * Math.Min(parameters[0].Span.Length, FirstItemCap),
+            _ => (int?)null
+        };
         typeNames[Key(node)] = new(
             group,
             GroupMode.Preserve,
@@ -2584,7 +2613,14 @@ public sealed class BreakPlan {
                 BreaksIfTooLong: true,
                 MeasuresHead: true,
                 PrefersOuterBreak: true,
-                OuterMargin: loneBase ? 0 : 4,
+                JoinedOverflow: loneBase ? 8 : 4,
+                NameWidth: floor is null ? -1 : name.Span.Length,
+                NameFloor: floor ?? 0,
+
+                // ⚠ Behind a bare keyword the oracle never moves the name down for a list's sake — not up to
+                // a 76-letter name before two interfaces — only when the name itself runs past the margin,
+                // which is the second question. A lone base type behind a bare keyword still moves down.
+                SkipsOuterTail: floor is not null && type.Modifiers.Count == 0,
                 StopsAtYieldingPoints: true
             ),
             true,

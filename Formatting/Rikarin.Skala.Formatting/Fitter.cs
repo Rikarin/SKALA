@@ -529,7 +529,14 @@ public sealed class Fitter {
             // What lands on the continuation line if this group breaks and nothing inside it does.
             var margin = facts.OuterMargin >= 0 ? facts.OuterMargin : OuterBreakMargin(m);
             var tail = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth + margin;
-            if (!facts.SkipsOuterTail && Fits(m.ContinuationColumn, tail, m.Trailing)) {
+            var finishes = facts.JoinedOverflow >= 0
+                ? m.FlatWidth < Unbounded
+                    && Fits(m.Column, m.FlatWidth - facts.JoinedOverflow, m.Trailing)
+                    && (facts.NameWidth < 0
+                        || 9 * (m.Column + 1) + 6 * facts.NameWidth + facts.NameFloor
+                        >= 8 * (m.Column + m.FlatWidth + m.Trailing))
+                : Fits(m.ContinuationColumn, tail, m.Trailing);
+            if (!facts.SkipsOuterTail && finishes) {
                 return ResolvedMode.Broken;
             }
 

@@ -1120,6 +1120,23 @@ public sealed class Document {
 ///     primary constructor (SK-DIV-0198): the oracle stops breaking before the <c>:</c> once the
 ///     continuation line reaches 88 or 89 columns at two depths, where the fitted margin went on to 105.
 /// </param>
+/// <param name="JoinedOverflow">
+///     ⚠ For a <see cref="PrefersOuterBreak" /> group: its first question asks whether the <em>joined</em> line
+///     overflows by at most this many columns, not whether the tail fits on the continuation line, or −1. A
+///     type's name (#539, SK-DIV-0353): the oracle breaks before it up to a 124-column line behind
+///     <c>class</c>, <c>public class</c> and <c>internal sealed class</c> alike, so how much the continuation
+///     line saves is not the variable.
+/// </param>
+/// <param name="NameWidth">
+///     ⚠ With <see cref="JoinedOverflow" />: the width of the name the group's point stands before, or −1. The
+///     first question then also asks <c>9·column + 6·width + <see cref="NameFloor" /> ≥ 8·end</c>, where
+///     <c>column</c> is where the name starts and <c>end</c> where the joined line ends — a short name behind a
+///     short head stays, and the list after it wraps instead (#539, SK-DIV-0353).
+/// </param>
+/// <param name="NameFloor">
+///     The constant of <see cref="NameWidth" />'s rule, which the planner lowers by three per column of the
+///     competing list's first item: a longer first item keeps more names on the keyword's line.
+/// </param>
 /// <param name="MeasuresThroughTail">
 ///     ⚠ The group is fitted against <see cref="Document.ThroughWidthOf" /> — from its start to the
 ///     first point of the group <see cref="TailEndsAt" /> names — with nothing trailing it: flat when
@@ -1169,6 +1186,9 @@ public readonly record struct GroupFacts(
     int TailEndsAt = -1,
     bool SkipsOuterTail = false,
     int OuterMargin = -1,
+    int JoinedOverflow = -1,
+    int NameWidth = -1,
+    int NameFloor = 0,
     int TailMargin = -1,
     bool StopsAtYieldingPoints = false,
     bool MeasuresThroughTail = false,
