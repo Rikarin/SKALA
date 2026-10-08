@@ -6200,8 +6200,33 @@ the keyword itself, which nothing in Skala or in the export's keys describes. Re
 type/name plan touches the SK-DIV-0024 position, which was taken with a measurement and is not this
 entry's to reopen.
 
+**Resolved for fields and locals (#474).** The gap before a field's or a local's first name is now a
+point of a group opened around the declarator, owning the gap before it, so it is entered once the type
+has been written; its one question is the ordering rule's second — does the line run past the margin
+before the next place it could end, the `=`'s point or the declaration's end. Re-measured with `jb
+cleanupcode` 2025.2.6, one column at a time from 118 to 124: a field `IReadOnlyDictionary<…> N…N;`, a
+local `T…T v9 = [six elements]` and `Dictionary<T…T, int> v9 = […]` by the column of their `=`, and a field
+`T…T Name = Compute(alpha, beta);` — flat or the `=`'s answer to 120, the name one level below the whole
+type from 121, every one byte-identical. A tuple-typed field (SK-DIV-0119's residue) moves its name the
+same way, and a type too long for any line fills first and keeps the name on its last line when it fits
+there (`Dictionary<(…),` / `    List<(…)>> local = null;`).
+
+⚠ **The SK-DIV-0024 position is not touched**: that entry is about a *method's* type parameter list
+against its parameter list, and this point exists only between a variable declaration's type and its
+name. A method's return type, a property's, `object[] P…P => [` and a property initializer stay open, as
+does the `using` header row.
+
+Still divergent, measured: the exactly-121 quirk (`T…T v9 = [1, 2, 3];` at 121 breaks the type/name gap
+in the oracle; Skala breaks the `=`, as the oracle does from 122); a type with a block comment inside it,
+which the oracle breaks past the comment (#409) and Skala leaves to that rule by planning no gap; a
+lambda-valued declarator, left unplanned because the group's level would show under the arrow's held one
+(SK-DIV-0101) and not measured with a type long enough to need the gap; and `public static readonly` /
+type / name, where the oracle also breaks between the modifiers and a type too long for their line —
+Skala fills the type there.
+
 - options: none — no key governs the type/name gap.
-- ⚠ status: **open**.
+- ⚠ status: **resolved** for fields and locals (#474), pinned by `TypeNameGapIssue474Tests`; **open** for
+  the rows above.
 
 ## SK-DIV-0128 — a chain was counted in dots, and a call at its head has none
 

@@ -818,8 +818,12 @@ public sealed class BreakPlan {
                 PlanBaseList(baseList);
                 return;
 
-            case VariableDeclarationSyntax { Variables.Count: > 1 } declaration:
-                PlanDeclarators(declaration);
+            case VariableDeclarationSyntax declaration:
+                PlanTypeNameGap(declaration);
+                if (declaration.Variables.Count > 1) {
+                    PlanDeclarators(declaration);
+                }
+
                 return;
 
             case BinaryExpressionSyntax binary when IsTypeTest(binary):
@@ -2377,6 +2381,76 @@ public sealed class BreakPlan {
             LocalFunctionStatementSyntax function => function.ConstraintClauses,
             _ => default
         };
+
+    /// <summary>
+    ///     The gap between a field's or a local's type and its first name, broken when the line through
+    ///     the name and its <c>=</c> does not fit.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 (#474, SK-DIV-0127): a field
+    ///     <c>IReadOnlyDictionary&lt;string, IReadOnlyList&lt;string&gt;&gt; Overflowing;</c> past the margin and a
+    ///     tuple-typed field come back with the name one level in on a line of its own, the type whole —
+    ///     where Skala filled the type's argument list, <c>Dictionary&lt;Guid,</c> / <c>List&lt;Guid&gt;&gt; First, …</c>;
+    ///     a local whose <c>=</c> lands past 120 the same, <c>T…T</c> / <c>    v9 = [</c>, and
+    ///     <c>Dictionary&lt;T…T, int&gt;</c> / <c>    v9 = [</c> rather than a break at the type argument
+    ///     list's comma. When the line through the <c>=</c> fits, the <c>=</c>'s own rule decides, as it did.
+    ///     So the gap is a group of its own whose one question is the ordering rule's second: does the line
+    ///     run past the margin before the next place it could end — the <c>=</c>'s point, or the end of
+    ///     the declaration. The type's own argument lists see their line end at this point and stay whole.
+    ///     ⚠ One shape stays divergent: at exactly 121 columns, with a bracket that fits below, the oracle
+    ///     breaks here where 122 and wider break the <c>=</c>, and Skala breaks the <c>=</c> at 121 too.
+    ///     Not a method's return type or a property's, which the oracle answers with the arrow or the
+    ///     accessor list, and not under a block comment behind the type, whose break #420 already takes.
+    ///     A break the author wrote here is kept, as it was.
+    /// </remarks>
+    void PlanTypeNameGap(VariableDeclarationSyntax node) {
+        if (node.Parent is not (LocalDeclarationStatementSyntax or FieldDeclarationSyntax)
+            || node.Variables.Count == 0
+            || node.Type.IsVar) {
+            return;
+        }
+
+        // ⚠ Not when a comment sits inside the type: the oracle breaks a type argument list past a block
+        // comment (#409) — `Dictionary<A, /* f */` / `B<C, int>> field = null;` — where the same type
+        // without it fits whole and gives the break to the name.
+        // ⚠ Nor before a lambda: its arrow and a parenthesised body hold the statement's level at zero
+        // (SK-DIV-0101, #406), and this group's level, spent on the declaration's line, would show
+        // under the hold — `f = () =>` / `    (`. Not measured with a type long enough to break here.
+        var name = node.Variables[0].Identifier;
+        if (HasBlockCommentBefore(name)
+            || node.Type.DescendantTrivia().Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
+            || node.Variables[0].Initializer?.Value is AnonymousFunctionExpressionSyntax) {
+            return;
+        }
+
+        // ⚠ Around the declarator and owning the gap before it, so that the group is entered once the
+        // type has been written: a type too long for any line fills its own argument list first, and
+        // the name then stays on the type's last line when it fits there —
+        // `Dictionary<(…),` / `    List<(…)>> local = null;` is the oracle's, and a group entered at
+        // the type's first token measured the whole type and moved `local` down.
+        var group = NewGroup();
+        Point(name, group);
+        Describe(
+            node.Variables[0],
+            new GroupPlan(
+                group,
+                GroupMode.Preserve,
+                // ⚠ The ordering rule's second question alone, asked through PrefersOuterBreak and
+                // SkipsOuterTail rather than BreaksOnlyIfHeadOverflows: that fact also makes the type's
+                // own argument list read through a name with nothing breakable after it, which filled
+                // `IReadOnlyDictionary<string,` / `…>> Overflowing;` where the oracle moves the name.
+                new GroupFacts(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(name),
+                    BreaksIfTooLong: true,
+                    PrefersOuterBreak: true,
+                    SkipsOuterTail: true
+                ),
+                SpendsIndent: true,
+                LeadingGapInside: true
+            )
+        );
+    }
 
     /// <summary>
     ///     <c>skala_wrap_multiple_declaration_style = chop_if_long</c>: <c>int a = 1, b = 2, c = 3;</c> puts
