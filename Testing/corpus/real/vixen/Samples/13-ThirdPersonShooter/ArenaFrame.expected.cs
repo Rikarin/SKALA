@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -18,8 +18,12 @@ namespace Vixen.Samples.ThirdPersonShooter;
 /// <remarks>
 ///     <para>
 ///         <b>The rule that makes this type necessary.</b> <c>ForwardPlus</c> declares thirteen
-///         bindings in its per-frame set and declares all of them <i>whatever the permutations
-///         say</i> — a variant with shadows, image-based lighting, reflection probes, the probe field
+///         bindings in its per-frame set and declares all of them
+///         <i>
+///             whatever the permutations
+///             say
+///         </i>
+///         — a variant with shadows, image-based lighting, reflection probes, the probe field
 ///         and clustered lights all switched off still has a <c>shadowMap</c>, an <c>environment</c>,
 ///         a <c>probes</c> array, a <c>clusters</c> buffer and five irradiance volumes in its plan.
 ///         <c>EffectSetWriter</c> writes every binding of a set or none, so one unfilled resource is
@@ -92,8 +96,12 @@ public sealed class ArenaFrame : IDisposable {
 
     /// <summary>How much light the sun delivers to a surface facing it, in lux.</summary>
     /// <remarks>
-    ///     ⚠ <b>Read off the atmosphere rather than typed into the scene, and that is the point of
-    ///     the model being here.</b> A scene file naming both a sun direction and a sun brightness is
+    ///     ⚠
+    ///     <b>
+    ///         Read off the atmosphere rather than typed into the scene, and that is the point of
+    ///         the model being here.
+    ///     </b>
+    ///     A scene file naming both a sun direction and a sun brightness is
     ///     a scene that can be a sunset sky over a noon sun, and nothing reports it — so the level
     ///     says where the sun <em>is</em> and this says what that means. At eight degrees of
     ///     elevation it is about a tenth of what it is overhead.

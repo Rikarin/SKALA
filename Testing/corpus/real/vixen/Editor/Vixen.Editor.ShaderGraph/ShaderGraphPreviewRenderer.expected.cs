@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -75,8 +75,12 @@ public interface IPreviewImages {
 ///         preview worth looking at.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The quad is in clip space and its texture coordinate follows the engine's
-///         convention.</b> Clip <c>y = +1</c> is the top — <c>Core/Vixen.Core.Mathematics/Conventions.md</c>,
+///         ⚠
+///         <b>
+///             The quad is in clip space and its texture coordinate follows the engine's
+///             convention.
+///         </b>
+///         Clip <c>y = +1</c> is the top — <c>Core/Vixen.Core.Mathematics/Conventions.md</c>,
 ///         and the Vulkan backend's negative-height viewport is what implements it — so the corner at
 ///         <c>y = +1</c> is given <c>texcoord.y = 0</c> and the target's first row is the top of the
 ///         picture. An interface image command therefore draws it unflipped, which is why
@@ -281,8 +285,12 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
     /// <returns>How many were rebuilt.</returns>
     /// <exception cref="ObjectDisposedException">The renderer has been disposed.</exception>
     /// <remarks>
-    ///     ⚠ <b>Called between <c>BeginFrame</c> and <c>EndFrame</c>, on the thread that owns the
-    ///     device</b>, like every other queue this editor drains. It records and submits a command
+    ///     ⚠
+    ///     <b>
+    ///         Called between <c>BeginFrame</c> and <c>EndFrame</c>, on the thread that owns the
+    ///         device
+    ///     </b>
+    ///     , like every other queue this editor drains. It records and submits a command
     ///     list of its own rather than taking one, so a caller does not have to find a point in the
     ///     frame where it is safe to be outside a render pass — and the submit is ordered before the
     ///     interface's own, which is what makes the target readable in the same frame it was drawn.

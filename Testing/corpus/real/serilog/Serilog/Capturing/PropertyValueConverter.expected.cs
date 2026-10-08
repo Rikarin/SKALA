@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // Copyright 2013-2021 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -234,7 +234,7 @@ partial class PropertyValueConverter : ILogEventPropertyFactory, ILogEventProper
     }
 
     /// <summary>
-    /// Recursively traverses a multidimensional array and constructs a nested SequenceValue representation.
+    ///     Recursively traverses a multidimensional array and constructs a nested SequenceValue representation.
     /// </summary>
     /// <param name="array">The multidimensional array to traverse.</param>
     /// <param name="indices">An array of indices representing the current position in each dimension.</param>

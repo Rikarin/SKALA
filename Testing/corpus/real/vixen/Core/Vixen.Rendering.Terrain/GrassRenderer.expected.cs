@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -48,8 +48,12 @@ public readonly record struct GrassBatch(
 ///         nothing else.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The scatter happens on entry and the cull happens every frame, and keeping those
-///         apart is the whole shape of the feature.</b> Scattering per frame would probe the surface
+///         ⚠
+///         <b>
+///             The scatter happens on entry and the cull happens every frame, and keeping those
+///             apart is the whole shape of the feature.
+///         </b>
+///         Scattering per frame would probe the surface
 ///         for every blade of every cell every frame — which is the cost the ring exists to pay once —
 ///         and culling on entry would draw the far half of every cell for as long as it stayed
 ///         resident.

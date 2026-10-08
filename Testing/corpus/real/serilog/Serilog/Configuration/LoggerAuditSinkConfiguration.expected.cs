@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // Copyright 2016-2020 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 namespace Serilog.Configuration;
 
 /// <summary>
-/// Controls audit sink configuration.
+///     Controls audit sink configuration.
 /// </summary>
 public class LoggerAuditSinkConfiguration {
     readonly LoggerSinkConfiguration _sinkConfiguration;
@@ -26,13 +26,17 @@ public class LoggerAuditSinkConfiguration {
     }
 
     /// <summary>
-    /// Audit log events to the specified <see cref="ILogEventSink"/>.
+    ///     Audit log events to the specified <see cref="ILogEventSink" />.
     /// </summary>
     /// <param name="logEventSink">The sink.</param>
-    /// <param name="restrictedToMinimumLevel">The minimum level for
-    /// events passed through the sink. Ignored when <paramref name="levelSwitch"/> is specified.</param>
-    /// <param name="levelSwitch">A switch allowing the pass-through minimum level
-    /// to be changed at runtime.</param>
+    /// <param name="restrictedToMinimumLevel">
+    ///     The minimum level for
+    ///     events passed through the sink. Ignored when <paramref name="levelSwitch" /> is specified.
+    /// </param>
+    /// <param name="levelSwitch">
+    ///     A switch allowing the pass-through minimum level
+    ///     to be changed at runtime.
+    /// </param>
     /// <returns>Configuration object allowing method chaining.</returns>
     public LoggerConfiguration Sink(
         ILogEventSink logEventSink,
@@ -44,13 +48,17 @@ public class LoggerAuditSinkConfiguration {
     }
 
     /// <summary>
-    /// Audit log events to the specified <see cref="ILogEventSink"/>.
+    ///     Audit log events to the specified <see cref="ILogEventSink" />.
     /// </summary>
     /// <typeparam name="TSink">The sink.</typeparam>
-    /// <param name="restrictedToMinimumLevel">The minimum level for
-    /// events passed through the sink. Ignored when <paramref name="levelSwitch"/> is specified.</param>
-    /// <param name="levelSwitch">A switch allowing the pass-through minimum level
-    /// to be changed at runtime.</param>
+    /// <param name="restrictedToMinimumLevel">
+    ///     The minimum level for
+    ///     events passed through the sink. Ignored when <paramref name="levelSwitch" /> is specified.
+    /// </param>
+    /// <param name="levelSwitch">
+    ///     A switch allowing the pass-through minimum level
+    ///     to be changed at runtime.
+    /// </param>
     /// <returns>Configuration object allowing method chaining.</returns>
     public LoggerConfiguration Sink<TSink>(
         LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
@@ -61,16 +69,20 @@ public class LoggerAuditSinkConfiguration {
     }
 
     /// <summary>
-    /// Audit log events to a sub-logger, where further processing may occur. Events through
-    /// the sub-logger will be constrained by filters and enriched by enrichers that are
-    /// active in the parent. A sub-logger cannot be used to log at a more verbose level, but
-    /// a less verbose level is possible.
+    ///     Audit log events to a sub-logger, where further processing may occur. Events through
+    ///     the sub-logger will be constrained by filters and enriched by enrichers that are
+    ///     active in the parent. A sub-logger cannot be used to log at a more verbose level, but
+    ///     a less verbose level is possible.
     /// </summary>
     /// <param name="configureLogger">An action that configures the sub-logger.</param>
-    /// <param name="restrictedToMinimumLevel">The minimum level for
-    /// events passed through the sink. Ignored when <paramref name="levelSwitch"/> is specified.</param>
-    /// <param name="levelSwitch">A switch allowing the pass-through minimum level
-    /// to be changed at runtime.</param>
+    /// <param name="restrictedToMinimumLevel">
+    ///     The minimum level for
+    ///     events passed through the sink. Ignored when <paramref name="levelSwitch" /> is specified.
+    /// </param>
+    /// <param name="levelSwitch">
+    ///     A switch allowing the pass-through minimum level
+    ///     to be changed at runtime.
+    /// </param>
     /// <returns>Configuration object allowing method chaining.</returns>
     public LoggerConfiguration Logger(
         Action<LoggerConfiguration> configureLogger,
@@ -81,15 +93,19 @@ public class LoggerAuditSinkConfiguration {
     }
 
     /// <summary>
-    /// Audit log events to a sub-logger, where further processing may occur. Events through
-    /// the sub-logger will be constrained by filters and enriched by enrichers that are
-    /// active in the parent. A sub-logger cannot be used to log at a more verbose level, but
-    /// a less verbose level is possible.
+    ///     Audit log events to a sub-logger, where further processing may occur. Events through
+    ///     the sub-logger will be constrained by filters and enriched by enrichers that are
+    ///     active in the parent. A sub-logger cannot be used to log at a more verbose level, but
+    ///     a less verbose level is possible.
     /// </summary>
-    /// <param name="logger">The sub-logger. This will <em>not</em> be shut down automatically when the
-    /// parent logger is disposed.</param>
-    /// <param name="restrictedToMinimumLevel">The minimum level for
-    /// events passed through the sink.</param>
+    /// <param name="logger">
+    ///     The sub-logger. This will <em>not</em> be shut down automatically when the
+    ///     parent logger is disposed.
+    /// </param>
+    /// <param name="restrictedToMinimumLevel">
+    ///     The minimum level for
+    ///     events passed through the sink.
+    /// </param>
     /// <returns>Configuration object allowing method chaining.</returns>
     public LoggerConfiguration Logger(
         ILogger logger,

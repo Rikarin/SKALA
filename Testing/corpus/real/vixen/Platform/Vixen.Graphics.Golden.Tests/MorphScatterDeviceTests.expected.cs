@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -19,8 +19,11 @@ namespace Vixen.Graphics.Golden.Tests;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <b>The claim is that a weight moves a vertex to a computed position, and it is checked
-///         against arithmetic rather than against a picture.</b> A morph applied in the wrong space,
+///         <b>
+///             The claim is that a weight moves a vertex to a computed position, and it is checked
+///             against arithmetic rather than against a picture.
+///         </b>
+///         A morph applied in the wrong space,
 ///         at the wrong stride, or with the weight folded in twice renders <em>plausibly</em> — the
 ///         face still has a face on it — so a golden image would pass on all three. What cannot pass
 ///         is a float that is not the float the host computed.
@@ -236,8 +239,11 @@ public class MorphScatterDeviceTests {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <b>The legs above prove the kernel; this proves the wiring, and they are different
-    ///         claims.</b> Everything above uploads the mesh into a buffer of the test's own, writes
+    ///         <b>
+    ///             The legs above prove the kernel; this proves the wiring, and they are different
+    ///             claims.
+    ///         </b>
+    ///         Everything above uploads the mesh into a buffer of the test's own, writes
     ///         the constants by reflected offset and dispatches by hand — so it would pass unchanged
     ///         against a feature that allocated nothing, copied nothing and pointed no draw anywhere.
     ///         Here the only things the test does are attach an object, set its weights and record

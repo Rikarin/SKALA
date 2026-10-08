@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -165,8 +165,10 @@ public interface INativeDialogs {
     /// <param name="options">What to show.</param>
     /// <param name="owner">The window to attach the sheet to, where the platform has sheets.</param>
     /// <param name="cancellationToken">Dismisses the dialog, where the platform allows it.</param>
-    /// <returns>Which button was pressed, or <see cref="MessageBoxResult.None" /> if the box could
-    /// not be shown.</returns>
+    /// <returns>
+    ///     Which button was pressed, or <see cref="MessageBoxResult.None" /> if the box could
+    ///     not be shown.
+    /// </returns>
     ValueTask<MessageBoxResult> ShowMessageAsync(
         MessageBoxOptions options,
         IWindow? owner = null,

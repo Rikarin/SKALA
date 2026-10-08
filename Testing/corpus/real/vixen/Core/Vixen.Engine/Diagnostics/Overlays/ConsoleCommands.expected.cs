@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -198,8 +198,12 @@ public sealed class ConsoleCommands {
     /// <exception cref="ArgumentNullException"><paramref name="register" /> is null.</exception>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>Because <c>[ConsoleCommand]</c> alone has never made a verb typable, and the
-    ///         count is what said so.</b> Water's six were the only ones in the tree — not because no
+    ///         ⚠
+    ///         <b>
+    ///             Because <c>[ConsoleCommand]</c> alone has never made a verb typable, and the
+    ///             count is what said so.
+    ///         </b>
+    ///         Water's six were the only ones in the tree — not because no
     ///         other subsystem wanted verbs, but because reaching an attributed method needs
     ///         <see cref="RegisterFrom(Assembly)" />, which is
     ///         <see cref="RequiresUnreferencedCodeAttribute" /> and had no callers, so anybody who
