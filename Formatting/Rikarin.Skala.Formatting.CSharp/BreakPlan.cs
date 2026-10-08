@@ -2565,7 +2565,9 @@ public sealed class BreakPlan {
     ///     takes at 121 to 124, and a 10-letter name before two interfaces, broken at 121 only.
     /// </remarks>
     void PlanTypeName(SyntaxNode node) {
-        if (node is not (ClassDeclarationSyntax or StructDeclarationSyntax or InterfaceDeclarationSyntax
+        if (node is not (ClassDeclarationSyntax
+                or StructDeclarationSyntax
+                or InterfaceDeclarationSyntax
                 or RecordDeclarationSyntax)
             || node is not TypeDeclarationSyntax { Identifier: var name } type
             || name.IsKind(SyntaxKind.None)
@@ -2607,8 +2609,10 @@ public sealed class BreakPlan {
     ///     filled the type's argument list instead.
     /// </remarks>
     void PlanPropertyHead(PropertyDeclarationSyntax node) {
-        if (node.Type.DescendantTrivia().Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
+        if (node.Type.DescendantTrivia()
+                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                )
             || HasBlockCommentBefore(node.Identifier)
             || node.ExplicitInterfaceSpecifier is not null) {
             return;
@@ -5066,9 +5070,7 @@ public sealed class BreakPlan {
             : 0;
 
     static int CalleeWidthOf(ExpressionSyntax value) =>
-        value is InvocationExpressionSyntax {
-                Expression: IdentifierNameSyntax, ArgumentList.Arguments.Count: >= 2
-            }
+        value is InvocationExpressionSyntax { Expression: IdentifierNameSyntax, ArgumentList.Arguments.Count: >= 2 }
             or ObjectCreationExpressionSyntax {
                 Type: IdentifierNameSyntax, ArgumentList.Arguments.Count: >= 2, Initializer: null
             }

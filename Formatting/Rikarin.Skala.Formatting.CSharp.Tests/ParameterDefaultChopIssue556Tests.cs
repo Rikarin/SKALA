@@ -4,7 +4,8 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #556, SK-DIV-0352: a short parameter&apos;s default behind its attribute section. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     Issue #556, SK-DIV-0352: a short parameter&apos;s default behind its attribute section. Every expected string is
+///     <c>jb cleanupcode</c> 2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class ParameterDefaultChopIssue556Tests {
@@ -12,9 +13,9 @@ public sealed class ParameterDefaultChopIssue556Tests {
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -28,7 +29,10 @@ public sealed class ParameterDefaultChopIssue556Tests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>#556: int a = 5 behind its one attribute section chops the arguments when the joined line overflows, as int a does.</summary>
+    /// <summary>
+    ///     #556: int a = 5 behind its one attribute section chops the arguments when the joined line overflows, as int a
+    ///     does.
+    /// </summary>
     [Fact]
     public void AShortParameterWithADefault_ChopsTheSectionToo() {
         Agrees(

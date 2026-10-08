@@ -1611,11 +1611,13 @@ public sealed partial class CSharpDocumentBuilder {
         (int Indented, bool Held) nameGroup = default;
         var nameOpen = false;
         var header = node is TypeDeclarationSyntax { OpenBraceToken: var brace, SemicolonToken: var semicolon }
-            ? (brace.IsKind(SyntaxKind.None) ? semicolon : brace)
+            ? brace.IsKind(SyntaxKind.None) ? semicolon : brace
             : default;
 
         foreach (var child in node.ChildNodesAndTokens()) {
-            if (hasName && child.IsToken && node is TypeDeclarationSyntax { Identifier: var name }
+            if (hasName
+                && child.IsToken
+                && node is TypeDeclarationSyntax { Identifier: var name }
                 && child.AsToken() == name) {
                 OpenIndent(IndentKind.Anchor, false, IndentFlags.AnchorAtLine);
                 nameGroup = OpenGroupAt(namePlan, node);

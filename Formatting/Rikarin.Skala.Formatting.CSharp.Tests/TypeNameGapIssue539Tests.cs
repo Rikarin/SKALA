@@ -4,7 +4,8 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #539, SK-DIV-0353: a type declaration&apos;s keyword/name gap. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     Issue #539, SK-DIV-0353: a type declaration&apos;s keyword/name gap. Every expected string is <c>jb cleanupcode</c>
+///     2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class TypeNameGapIssue539Tests {
@@ -12,9 +13,9 @@ public sealed class TypeNameGapIssue539Tests {
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -28,7 +29,11 @@ public sealed class TypeNameGapIssue539Tests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>#539: a type header breaks between its keyword and its name when the line runs past the margin before its next point, or when the rest fits below within four columns (a lone base type: none); the base list then sits at the declaration&apos;s own level.</summary>
+    /// <summary>
+    ///     #539: a type header breaks between its keyword and its name when the line runs past the margin before its next
+    ///     point, or when the rest fits below within four columns (a lone base type: none); the base list then sits at the
+    ///     declaration&apos;s own level.
+    /// </summary>
     [Fact]
     public void AHeaderPastTheMargin_BreaksBetweenTheKeywordAndTheName() {
         Agrees(

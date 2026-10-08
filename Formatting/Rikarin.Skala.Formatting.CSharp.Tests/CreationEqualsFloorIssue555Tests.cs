@@ -4,7 +4,8 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #555, SK-DIV-0211: an object creation after an = by the call&apos;s floor. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     Issue #555, SK-DIV-0211: an object creation after an = by the call&apos;s floor. Every expected string is
+///     <c>jb cleanupcode</c> 2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class CreationEqualsFloorIssue555Tests {
@@ -12,9 +13,9 @@ public sealed class CreationEqualsFloorIssue555Tests {
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -28,7 +29,10 @@ public sealed class CreationEqualsFloorIssue555Tests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>#555: new T(…) after an = is measured as a call whose callee is new T, so its arguments chop by EqualsFloor; and under an attribute and a comment it is joined and chopped.</summary>
+    /// <summary>
+    ///     #555: new T(…) after an = is measured as a call whose callee is new T, so its arguments chop by EqualsFloor;
+    ///     and under an attribute and a comment it is joined and chopped.
+    /// </summary>
     [Fact]
     public void ACreationWithArguments_ChopsByTheCallFloor() {
         Agrees(

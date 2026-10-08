@@ -4,7 +4,8 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #540, SK-DIV-0127: a property&apos;s modifiers/type and type/name gaps. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     Issue #540, SK-DIV-0127: a property&apos;s modifiers/type and type/name gaps. Every expected string is
+///     <c>jb cleanupcode</c> 2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class PropertyHeadIssue540Tests {
@@ -12,9 +13,9 @@ public sealed class PropertyHeadIssue540Tests {
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -28,7 +29,11 @@ public sealed class PropertyHeadIssue540Tests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>#540: a property breaks between its modifiers and its type when the type ends past 120, and before its name when the line through the accessor list&apos;s brace or the arrow does not fit; a const local keeps its type on the const line.</summary>
+    /// <summary>
+    ///     #540: a property breaks between its modifiers and its type when the type ends past 120, and before its name
+    ///     when the line through the accessor list&apos;s brace or the arrow does not fit; a const local keeps its type on the
+    ///     const line.
+    /// </summary>
     [Fact]
     public void APropertysHead_BreaksAsAFieldsDoes() {
         Agrees(
