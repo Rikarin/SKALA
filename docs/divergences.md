@@ -10487,3 +10487,20 @@ parameter wider than the line, where the oracle breaks between its type and its 
 - options: `skala_wrap_before_eq = false`, the exported value.
 - ⚠ status: **fixed within the residue above**. Pinned by `constructs/breaks/equals-before-a-lambda-floor.cs`
   and, for the narrow name, `constructs/wrapping/lambda-arrow-over-a-name.cs`.
+
+## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
+
+⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as
+`o is` / `var (a,` / `b)`. A `git bisect` between the fixture's own commit (cb6013fc, where it passes) and
+e75f5431 names 7f40d7df, #440's "`is`/`as` wrapped on the wrong side". That commit made the gap after `is`
+a last-resort point of `PlanTypeTest` for every pattern `IsUnbreakablePattern` accepts. A `var` pattern
+with a parenthesised designation was accepted as a single type. The break the author kept inside its list
+then made the group too long, and the point after `is` was taken. The fixture has failed since then, at
+every merge of this session included. `PlanBrokenTypeTest` (group L) never sees it, because nothing is
+broken around the `is`.
+
+`IsUnbreakablePattern` now counts a `ParenthesizedVariableDesignationSyntax` as breakable, so the type
+test plans no point and the designation's list keeps the author's break.
+
+- options: `skala_keep_user_linebreaks` (the exported `true`).
+- ⚠ status: **fixed**, pinned by `constructs/breaks/variable-designation.cs` (passing again).

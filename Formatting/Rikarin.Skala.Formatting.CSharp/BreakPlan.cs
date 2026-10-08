@@ -3877,6 +3877,11 @@ public sealed class BreakPlan {
                     or RecursivePatternSyntax
                     or ListPatternSyntax
                     or ParenthesizedPatternSyntax
+                    // ⚠ And a deconstructing `var (a, b)`, whose list is a break point of its own: read as a
+                    // single type, a break the author kept inside it made the type test's group too long
+                    // and took the gap after `is` — `o is` / `var (a,` / `b)` where the oracle keeps
+                    // `o is var (a,` / `b)` (#567; since #440's PlanTypeTest, 7f40d7df).
+                    or ParenthesizedVariableDesignationSyntax
             );
 
     /// <summary>
