@@ -140,4 +140,52 @@ public static class FrameworkAvailability {
 
         return result.ToImmutable();
     }
+
+    /// <summary>
+    ///     The node at <paramref name="node" />'s span in <paramref name="sibling" />'s copy of the same
+    ///     document, with the sibling's semantic model — for asking a per-site question of the
+    ///     framework the sibling compiles against (#511).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>false</c> is the conservative answer, and it is the one a caller must treat as "the
+    ///     sibling cannot take this rewrite". The sibling parses the file under its own preprocessor
+    ///     symbols, so the node can be inside a region that moniker compiles out; then there is no
+    ///     counterpart, and a fix written to that line would be one the sibling never even checked.
+    /// </remarks>
+    public static bool TryCounterpart<TNode>(
+        Compilation sibling,
+        TNode node,
+        System.Threading.CancellationToken cancellation,
+        out SemanticModel model,
+        out TNode counterpart
+    )
+        where TNode : SyntaxNode {
+        var path = node.SyntaxTree.FilePath;
+        foreach (var tree in sibling.SyntaxTrees) {
+            if (!string.Equals(tree.FilePath, path, StringComparison.Ordinal)) {
+                continue;
+            }
+
+            var root = tree.GetRoot(cancellation);
+            if (node.Span.End > root.FullSpan.End) {
+                break;
+            }
+
+            for (var current = root.FindNode(node.Span, getInnermostNodeForTie: true);
+                 current is not null && current.Span == node.Span;
+                 current = current.Parent) {
+                if (current is TNode match && match.RawKind == node.RawKind) {
+                    model = sibling.GetSemanticModel(tree);
+                    counterpart = match;
+                    return true;
+                }
+            }
+
+            break;
+        }
+
+        model = null!;
+        counterpart = null!;
+        return false;
+    }
 }

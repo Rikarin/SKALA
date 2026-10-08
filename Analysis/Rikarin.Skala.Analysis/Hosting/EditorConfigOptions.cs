@@ -72,10 +72,11 @@ public static class EditorConfigOptions {
             // ⚠ Still a provider when the project multi-targets: the sibling compilations are the
             // only thing on it then, and a repository with no .editorconfig anywhere is exactly as
             // able to break its `netstandard2.1` leg as one with a full export in it (#343).
+            // ⚠ #517: and when the binlog named the compiler, which reaches an analyzer only this way.
             return (
-                unit.Siblings.IsEmpty
+                unit.Siblings.IsEmpty && unit.CompilerPath.Length == 0
                     ? new AnalyzerOptions([])
-                    : new AnalyzerOptions([], new SetProvider(null, unit.Siblings)),
+                    : new AnalyzerOptions([], new SetProvider(null, unit.Siblings, unit.CompilerPath)),
                 fingerprint.ToString(),
                 null
             );
@@ -83,7 +84,7 @@ public static class EditorConfigOptions {
 
         var set = AnalyzerConfigSet.Create(configs.ToImmutable());
         return (
-            new AnalyzerOptions([], new SetProvider(set, unit.Siblings)),
+            new AnalyzerOptions([], new SetProvider(set, unit.Siblings, unit.CompilerPath)),
             fingerprint.ToString(),
             new SeverityProvider(set)
         );
@@ -150,7 +151,9 @@ public static class EditorConfigOptions {
 
         // No siblings: this provider is for the *generator* driver, which runs while a compilation is
         // still being built and therefore before any sibling of it exists.
-        return configs.Count == 0 ? null : new SetProvider(AnalyzerConfigSet.Create(configs.ToImmutable()), []);
+        return configs.Count == 0
+            ? null
+            : new SetProvider(AnalyzerConfigSet.Create(configs.ToImmutable()), [], string.Empty);
     }
 
     /// <summary>
@@ -189,7 +192,7 @@ public static class EditorConfigOptions {
 
     /// <summary>
     ///     ⚠ Also the channel by which the loader tells an analyzer about the project's other target
-    ///     frameworks (#343).
+    ///     frameworks (#343), and which compiler the binlog says built it (#517).
     /// </summary>
     /// <remarks>
     ///     <see cref="AnalyzerOptions" /> is <c>(AdditionalFiles, AnalyzerConfigOptionsProvider)</c>
@@ -205,9 +208,14 @@ public static class EditorConfigOptions {
     ///         single-target project has configuration and no siblings.
     ///     </para>
     /// </remarks>
-    sealed class SetProvider(AnalyzerConfigSet? set, ImmutableArray<CSharpCompilation> siblings)
-        : AnalyzerConfigOptionsProvider, ISiblingCompilations {
+    sealed class SetProvider(
+        AnalyzerConfigSet? set,
+        ImmutableArray<CSharpCompilation> siblings,
+        string compilerPath
+    ) : AnalyzerConfigOptionsProvider, ISiblingCompilations, ICompilerIdentity {
         public ImmutableArray<Compilation> Siblings { get; } = siblings.CastArray<Compilation>();
+
+        public string CompilerPath { get; } = compilerPath;
 
         public override AnalyzerConfigOptions GlobalOptions { get; } = set is null
             ? new Options(ImmutableDictionary<string, string>.Empty)

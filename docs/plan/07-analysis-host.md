@@ -367,6 +367,21 @@ Points of substance:
   (`WorldWritableFileMode`, `RefStructOwnedDisposable`) were refuted. ⚠ The trap is the lookup that
   looks like recognition and is not: `SK2182` resolves a **string literal** from the source, so the
   literal compiles under every moniker while the type it names may exist under one.
+- ⚠ **A member of a type every moniker has is the same question, and the ledger did not ask it
+  (#511).** `SK1035` asked `System.Enum.GetMembers("GetValues")` for the generic overload (.NET 5+);
+  on `netstandard2.1;net10.0` it reported from the `net10.0` leg and `skala fix` reverted the rewrite
+  with `CS0308`. It was in the ledger — for its `GetTypeByMetadataName("System.Enum")` — exempted as
+  *recognition*, which was wrong. The sweep the ledger now forces (its pattern matches a *named*
+  `GetMembers(…)` too) found three more real holes and seven named lookups that are sound, each
+  recorded with why. `SK1033`'s `Dictionary<K, V>.TryAdd` is netstandard2.1+, so it gates through
+  `PathsWithout` and withholds only that shape (`TryGetValue` is everywhere). `SK3004` and `SK3051`
+  forward a token to an *overload* — `Stream.CopyToAsync(Stream, CancellationToken)` is
+  netstandard2.1+ — and were exempted as "forwards a parameter already in scope", also wrong. That
+  question depends on the call, so it is asked per site: `FrameworkAvailability.TryCounterpart` finds
+  the same node in the sibling's copy of the file and the sibling's own binding must produce the same
+  edit. Still outside the ledger: a member check made by *speculative binding* rather than by lookup,
+  and lookups in helper files that name no `RuleIds` (`CancellationTokens.HasAppendedOverload` was
+  one, found only by reading).
 
 ### Loading third-party analyzers (ADR-008)
 
@@ -432,17 +447,42 @@ options); and the same for every sibling moniker. Left out on purpose: `Concurre
 version `cache/v4`. `CacheKeyTermTests` has one row per term, each sabotaged red alone, and
 `CacheProjectChangeTests` is the binlog repro end to end.
 
-⚠ **Still open (#516): a `Semantic` rule's answer depends on other files.** The per-file key carries
-the file's own text, and a declaration change in `B.cs` moves nothing for `A.cs` — measured: `SK1133`
-in an unchanged `A.cs` stays reported from the cache after `B.cs` retypes the field it calls
-`ToArray()` on, on master and with #514's key alike. This is a scope question, not a missing term.
-
 ⚠ **The correctness condition is that a rule's output for a file depends only on the key's inputs.**
 That is false for whole-compilation rules: a "this public member is never used" rule reads every
 file. Rule metadata therefore carries a `Scope` — `Syntax`, `Semantic`, or `Compilation` — and
 `Compilation`-scoped rules are excluded from per-file caching and re-run whenever *any* file in the
 compilation changes. Getting this wrong produces stale findings, which is the failure mode that
 destroys trust in a cache.
+
+⚠ **It was false for `Semantic` rules too, and the paragraph above used to say only "whole-compilation"
+(#516).** A semantic model of `A.cs` is a function of every declaration in the compilation, generator
+output included, and so is the compiler's own `CS` diagnostic about it. The per-file key named
+`A.cs`'s text and the compilation's options and references — never `B.cs`. Measured: `B.cs` retypes
+`Holder.L` from `List<int>` to a user type with its own `ToArray()`; the warm run served `A.cs`'s
+`SK1133` (whose fix would spread a type that is not that collection) and `--no-cache` reported none,
+on master and with #514's key alike. **The condition the code now meets:**
+
+- **Each file has two entries.** Its *Syntax half* — findings of catalogue rules declaring
+  `scope: Syntax` (none declares `requiresSemantics`) — is keyed per file as above. Everything else
+  — `Semantic` rules, `CS` diagnostics, the naming analyzer, any id the catalogue does not know — is
+  its *semantic half*, keyed on the same terms **plus `CacheKey.SemanticFingerprint`: every tree's
+  path and content hash, generated trees included, and every sibling moniker's trees** (#511's
+  per-site guard binds the sibling's copy). Not a "declaration surface" hash: that would keep more of
+  the warm path, but it is a claim about what binding can observe, and every miss in it is a stale
+  finding. Generator assemblies need no term — a change to one is a change to its output.
+- **A change anywhere moves every file's semantic key together.** The changed files re-run whole; the
+  unchanged ones re-run only the analyzers that can report into the semantic half
+  (`RunForTrees(…, semanticHalfOnly)`, every per-file analyzer whose rules are not all `Syntax`) and
+  still serve their Syntax half. Untouched compilations hit on both halves.
+- **One semantic entry per path is kept**, since every edit supersedes all of them; Syntax entries
+  accumulate as before. `CacheHits`/`CacheMisses` count halves, two per file. Key version `cache/v5`.
+
+So a warm run after an edit is now roughly *the changed files, plus every semantic analyzer over the
+rest of the compilation, plus the whole-compilation bucket* — the Syntax analyzers on unchanged files
+are all it saves. ⚠ [13](13-performance.md)'s warm figures were measured with the unsound per-file
+reuse and are no longer what a warm run costs; they have not been re-measured.
+`CrossFileSemanticCacheTests` is the reproduction (sabotaged: dropping the source term, or storing the
+semantic-only run as a Syntax half, turns it red), and `CacheKeyTermTests` pins the term.
 
 ⚠ **That sentence described the design and not the code until #364, and the difference was the whole
 cache.** From M5 the implementation had two paths and a guard: if any *enabled* rule was

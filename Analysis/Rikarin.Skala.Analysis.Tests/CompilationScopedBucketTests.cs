@@ -104,13 +104,13 @@ public sealed class CompilationScopedBucketTests {
 
         var first = Run(scratch, project);
         Assert.Equal(0, first.CacheHits);
-        Assert.Equal(2, first.CacheMisses);
+        Assert.Equal(4, first.CacheMisses);
         Assert.Single(first.Findings, static finding => finding.RuleId == AsyncWithoutToken);
         Assert.Single(first.Findings, static finding => finding.RuleId == EmptyCatch);
         Assert.Single(first.Findings, static finding => finding.RuleId == UnusedVariable);
 
         var second = Run(scratch, project);
-        Assert.Equal(2, second.CacheHits);
+        Assert.Equal(4, second.CacheHits);
         Assert.Equal(0, second.CacheMisses);
         Assert.Equal(Describe(first), Describe(second));
         Assert.Equal(Describe(Run(scratch, project, false)), Describe(second));
@@ -132,9 +132,10 @@ public sealed class CompilationScopedBucketTests {
 
         scratch.Write("Uses.cs", UsesWithMethodGroup);
 
+        // ⚠ #516: Worker.cs serves its Syntax half only; Uses.cs changed, so every semantic key moved.
         var warm = Run(scratch, project);
         Assert.Equal(1, warm.CacheHits);
-        Assert.Equal(1, warm.CacheMisses);
+        Assert.Equal(3, warm.CacheMisses);
         Assert.DoesNotContain(warm.Findings, static finding => finding.RuleId == AsyncWithoutToken);
         Assert.Single(warm.Findings, static finding => finding.RuleId == EmptyCatch);
         Assert.Single(warm.Findings, static finding => finding.RuleId == UnusedVariable);
@@ -143,9 +144,10 @@ public sealed class CompilationScopedBucketTests {
         // And back: the method-group use goes away, and the finding returns to the unchanged file.
         scratch.Write("Uses.cs", UsesWithoutMethodGroup);
 
+        // Both Syntax halves are still on disk; the semantic halves were superseded by the warm run.
         var restored = Run(scratch, project);
         Assert.Equal(2, restored.CacheHits);
-        Assert.Equal(0, restored.CacheMisses);
+        Assert.Equal(2, restored.CacheMisses);
         Assert.Single(restored.Findings, static finding => finding.RuleId == AsyncWithoutToken);
         Assert.Equal(Describe(cold), Describe(restored));
     }
@@ -167,7 +169,7 @@ public sealed class CompilationScopedBucketTests {
         scratch.Write("Worker.cs", WorkerSource.Replace("LoadAsync", "FetchAsync", StringComparison.Ordinal));
         var warm = Run(scratch, project);
         Assert.Equal(1, warm.CacheHits);
-        Assert.Equal(1, warm.CacheMisses);
+        Assert.Equal(3, warm.CacheMisses);
         Assert.Single(warm.Findings, static finding => finding.RuleId == AsyncWithoutToken);
         Assert.DoesNotContain(AsyncWithoutToken, PersistedRuleIds(scratch));
     }

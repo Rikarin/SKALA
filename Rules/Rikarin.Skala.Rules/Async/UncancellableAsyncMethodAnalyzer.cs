@@ -61,6 +61,9 @@ namespace Rikarin.Skala.Rules.Async;
 public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
     static readonly DiagnosticDescriptor Descriptor = SkalaRule.Descriptor(RuleIds.AsyncMethodWithoutCancellation);
 
+    /// <summary>The parameter the fix adds, and the name every forwarded call is handed.</summary>
+    const string Parameter = "cancellationToken";
+
     static readonly string[] TaskTypes = [
         "System.Threading.Tasks.Task", "System.Threading.Tasks.Task`1", "System.Threading.Tasks.ValueTask",
         "System.Threading.Tasks.ValueTask`1"
@@ -90,6 +93,7 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
                 }
 
                 var candidates = new ConcurrentBag<Candidate>();
+                var siblings = FrameworkAvailability.SiblingsByPath(start.Options);
 
                 // ⚠ Every identifier that is *not* the callee of an invocation — the same set, and the
                 // same reasoning, as SK3001's. See the type's remarks for what it is guarding.
@@ -101,7 +105,7 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
                 );
 
                 start.RegisterSyntaxNodeAction(
-                    context => Collect(context, candidates, tokenType, tasks),
+                    context => Collect(context, candidates, tokenType, tasks, siblings),
                     SyntaxKind.MethodDeclaration
                 );
 
@@ -159,7 +163,8 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
         SyntaxNodeAnalysisContext context,
         ConcurrentBag<Candidate> candidates,
         INamedTypeSymbol tokenType,
-        HashSet<INamedTypeSymbol> tasks
+        HashSet<INamedTypeSymbol> tasks,
+        ImmutableDictionary<string, ImmutableArray<Compilation>> siblings
     ) {
         var method = (MethodDeclarationSyntax)context.Node;
         if (!IsAsync(method) || method.Body is null && method.ExpressionBody is null) {
@@ -194,7 +199,7 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
         // ⚠ CS0231: an optional parameter cannot follow a `params` one, so there is no edit here.
         // A parameter already called `cancellationToken` would be CS0100 whatever its type is.
         foreach (var parameter in method.ParameterList.Parameters) {
-            if (string.Equals(parameter.Identifier.ValueText, "cancellationToken", StringComparison.Ordinal)) {
+            if (string.Equals(parameter.Identifier.ValueText, Parameter, StringComparison.Ordinal)) {
                 return;
             }
 
@@ -222,7 +227,7 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        var forwards = Forwards(model, method, tokenType, cancellation);
+        var forwards = Forwards(model, method, tokenType, siblings, cancellation);
         if (forwards.Count == 0) {
             return;
         }
@@ -293,6 +298,7 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
         SemanticModel model,
         MethodDeclarationSyntax method,
         INamedTypeSymbol tokenType,
+        ImmutableDictionary<string, ImmutableArray<Compilation>> siblings,
         System.Threading.CancellationToken cancellation
     ) {
         var forwards = new List<CancellationTokens.Forward>();
@@ -304,8 +310,11 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
                 continue;
             }
 
-            if (CancellationTokens.Forwarding(model, invocation, tokenType, "cancellationToken", cancellation)
-                is { } forward) {
+            // ⚠ #511: and only the calls every other target framework of this file would forward the
+            // same way, or the fix writes a token into an overload one leg does not have.
+            if (CancellationTokens.Forwarding(model, invocation, tokenType, Parameter, cancellation)
+                is { } forward
+                && CancellationTokens.EverySiblingForwards(invocation, forward, Parameter, siblings, cancellation)) {
                 forwards.Add(forward);
             }
         }

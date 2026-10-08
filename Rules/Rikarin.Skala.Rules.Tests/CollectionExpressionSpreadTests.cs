@@ -1,9 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Rikarin.Skala.Rules.Tests;
 
@@ -228,19 +226,73 @@ public sealed class CollectionExpressionSpreadTests {
             siblingVersion
         );
 
-        var found = await current
-            .WithAnalyzers(
-                SkalaAnalyzers.All,
-                new CompilationWithAnalyzersOptions(
-                    new AnalyzerOptions([], new SiblingProvider([other])),
-                    null,
-                    true,
-                    false,
-                    true
-                )
-            )
-            .GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken);
+        var found = await SiblingProvider.Analyze(current, other);
 
+        Assert.DoesNotContain(found, static d => d.Id == "AD0001");
+        Assert.Equal(fires, found.Any(static d => d.Id == RuleIds.CollectionExpressionSpread));
+    }
+
+    /// <summary>
+    ///     ⚠ #517: under a binlog the compiler is named, and a <c>Microsoft.Net.Compilers.Toolset</c> older
+    ///     than 4.14 voids the <c>net10.0</c> proof — Roslyn 4.8 and 4.11 compile a <c>net10.0</c> project at
+    ///     <c>latest</c> as C# 12, where the spread is not the call it replaces.
+    /// </summary>
+    /// <remarks>
+    ///     Synthetic paths, in the shapes a real build records them: the SDK's own compiler and the
+    ///     package's under the NuGet cache. The empty path is the workspace load, which knows nothing and
+    ///     so keeps the reference-set proof — the hole that mode leaves open. A written <c>14</c> is not
+    ///     affected by any of it: no compiler before 5.0 accepts one.
+    /// </remarks>
+    [Theory]
+    [InlineData("", LanguageVersion.Latest, true)]
+    [InlineData(@"C:\dotnet\sdk\10.0.400\Roslyn\bincore\csc.exe", LanguageVersion.Latest, true)]
+    [InlineData(
+        "/home/u/.nuget/packages/microsoft.net.compilers.toolset/4.11.0/tasks/netcore/bincore/csc.dll",
+        LanguageVersion.Latest,
+        false
+    )]
+    [InlineData(
+        @"C:\nuget\Microsoft.Net.Compilers.Toolset\4.8.0\tasks\netcore\bincore\csc.exe",
+        LanguageVersion.Latest,
+        false
+    )]
+    [InlineData(
+        @"C:\nuget\microsoft.net.compilers.toolset.framework\4.13.0-3.final\tasks\net472\csc.exe",
+        LanguageVersion.Latest,
+        false
+    )]
+    [InlineData(
+        @"C:\nuget\microsoft.net.compilers.toolset\not-a-version\tasks\netcore\bincore\csc.exe",
+        LanguageVersion.Latest,
+        false
+    )]
+    [InlineData(
+        @"C:\nuget\microsoft.net.compilers.toolset\4.14.0\tasks\netcore\bincore\csc.exe",
+        LanguageVersion.Latest,
+        true
+    )]
+    [InlineData(
+        @"C:\nuget\microsoft.net.compilers.toolset\5.0.0\tasks\netcore\bincore\csc.exe",
+        LanguageVersion.Latest,
+        true
+    )]
+    [InlineData(
+        @"C:\nuget\microsoft.net.compilers.toolset\4.11.0\tasks\netcore\bincore\csc.exe",
+        LanguageVersion.CSharp14,
+        true
+    )]
+    public async Task APinnedCompilerOlderThan414_VoidsTheNet10Proof(
+        string compiler,
+        LanguageVersion version,
+        bool fires
+    ) {
+        var current = RuleFixtures.Compile(
+            Directive("net10.0") + Header + "        int[] copied = list.ToArray();" + Footer,
+            "probe.cs",
+            version
+        );
+
+        var found = await SiblingProvider.AnalyzeBuiltBy(current, compiler);
         Assert.DoesNotContain(found, static d => d.Id == "AD0001");
         Assert.Equal(fires, found.Any(static d => d.Id == RuleIds.CollectionExpressionSpread));
     }
@@ -251,26 +303,6 @@ public sealed class CollectionExpressionSpreadTests {
     static string CoreLibrary(Compilation compilation) {
         var identity = compilation.ObjectType.ContainingAssembly.Identity;
         return identity.Name + " " + identity.Version.Major;
-    }
-
-    sealed class SiblingProvider(ImmutableArray<Compilation> siblings) : AnalyzerConfigOptionsProvider,
-        ISiblingCompilations {
-        public ImmutableArray<Compilation> Siblings { get; } = siblings;
-
-        public override AnalyzerConfigOptions GlobalOptions => Empty.Instance;
-
-        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => Empty.Instance;
-
-        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => Empty.Instance;
-    }
-
-    sealed class Empty : AnalyzerConfigOptions {
-        public static Empty Instance { get; } = new();
-
-        public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value) {
-            value = null;
-            return false;
-        }
     }
 
     static ImmutableArray<Diagnostic> Analyze(string source) =>
