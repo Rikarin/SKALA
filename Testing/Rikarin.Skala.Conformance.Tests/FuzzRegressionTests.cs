@@ -98,8 +98,18 @@ public sealed class FuzzRegressionTests {
     // reconstruction `fuzz --replay=<seed> --origin=<path>` prints.
     // #404 (found by `fuzz --seed=393150`): an arrow body `(`↵`a)[0] .C()` held SK-DIV-0101's level
     // on pass one, broke the chain, and gave the level up on pass two.
+    // ⚠ 2026-10-09, split-line inside a lambda in a member chain: a sole lambda's property-fill body the author
+    // broke before a dot kept its arrow and filled before an earlier dot, and pass two moved the kept break's
+    // level (3559808079077978877); a conditional broken after `n.` read as a broken condition on pass one
+    // and as a flat one on pass two, once the formatter had joined it (3423309597191150844). The two
+    // whitespace-absorption seeds of the same night, fixed by measuring with BreakPlan.FormattedWidth, are
+    // kept with them.
     [Theory]
     [InlineData(11718305405350914591UL, "constructs/breaks/chain-after-parenthesised-head.cs")]
+    [InlineData(3559808079077978877UL, "constructs/wrapping/lambda-arrow-over-a-property-fill.cs")]
+    [InlineData(3423309597191150844UL, "constructs/breaks/conditional-after-eq.cs")]
+    [InlineData(11806697963186320743UL, "real/newtonsoft/Newtonsoft.Json.Tests/Converters/KeyValuePairConverterTests.cs")]
+    [InlineData(1332581229878653148UL, "constructs/breaks/held-single-call.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
