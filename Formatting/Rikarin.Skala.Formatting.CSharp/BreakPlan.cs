@@ -2079,10 +2079,10 @@ public sealed class BreakPlan {
     ///     columns per eleven letters, rounded, measured between <c>BaseTypeName</c> and <c>B</c> (SK-DIV-0198).
     ///     Never negative: no longer name was measured.
     /// </summary>
-    static int BaseNameShift(BaseListSyntax node, int perEleven) =>
-        node.Types[0].Type.Span.Length >= 12
+    int BaseNameShift(BaseListSyntax node, int perEleven) =>
+        FormattedWidth(node.Types[0].Type) >= 12
             ? 0
-            : (int)Math.Round((12 - node.Types[0].Type.Span.Length) * perEleven / 11.0, MidpointRounding.AwayFromZero);
+            : (int)Math.Round((12 - FormattedWidth(node.Types[0].Type)) * perEleven / 11.0, MidpointRounding.AwayFromZero);
 
     /// <summary>
     ///     A tuple's components, <c>(A: 1, B: 2,\n C: 3)</c> — and every other delimited list the oracle
@@ -2679,9 +2679,9 @@ public sealed class BreakPlan {
         // when there is no base list. Each is weighed by the width of the item before that comma, capped.
         var floor = type switch {
             { TypeParameterList: null, BaseList.Types: { Count: >= 2 } bases } => BaseListNameFloor
-                - 3 * Math.Min(bases[0].Type.Span.Length, FirstItemCap),
+                - 3 * Math.Min(FormattedWidth(bases[0].Type), FirstItemCap),
             { TypeParameterList.Parameters: { Count: >= 2 } parameters, BaseList: null } => TypeParameterNameFloor
-                - 3 * Math.Min(parameters[0].Span.Length, FirstItemCap),
+                - 3 * Math.Min(FormattedWidth(parameters[0]), FirstItemCap),
             _ => (int?)null
         };
         typeNames[Key(node)] = new(
@@ -4588,7 +4588,7 @@ public sealed class BreakPlan {
     ///     or four fills the type arguments below a floor 32 columns apart — 40, 44 and 50 for three, 8,
     ///     12 and 18 for four.
     /// </remarks>
-    static int ColonEdgeFloorOf(SyntaxNode argument, ExpressionSyntax value) {
+    int ColonEdgeFloorOf(SyntaxNode argument, ExpressionSyntax value) {
         var (floor, _) = ColonFloorOf(argument, value);
         if (floor < 0) {
             return 0;
@@ -4612,12 +4612,12 @@ public sealed class BreakPlan {
             _ => null
         };
 
-        var f = Math.Clamp(generic!.TypeArgumentList.Arguments[0].Span.Length, 1, 25);
+        var f = Math.Clamp(FormattedWidth(generic!.TypeArgumentList.Arguments[0]), 1, 25);
         var four = f <= 8 ? 8 + (f - 1) * 4 / 7 : 12 + (f - 8) * 6 / 17;
         return (n == 4 ? four : four + 32) - 1;
     }
 
-    static (int Floor, int Slope) ColonFloorOf(SyntaxNode argument, ExpressionSyntax value) {
+    (int Floor, int Slope) ColonFloorOf(SyntaxNode argument, ExpressionSyntax value) {
         var generic = value switch {
             InvocationExpressionSyntax { Expression: GenericNameSyntax name } => name,
             InvocationExpressionSyntax {
@@ -4658,7 +4658,7 @@ public sealed class BreakPlan {
             50, 54, 56, 60, 60
         ];
 
-        var f = Math.Clamp(firstType.Span.Length, widths[0], widths[^1]);
+        var f = Math.Clamp(FormattedWidth(firstType), widths[0], widths[^1]);
         var column = 0;
         while (column < widths.Length - 2 && f > widths[column + 1]) {
             column++;
@@ -5454,7 +5454,7 @@ public sealed class BreakPlan {
                         + (value.GetLastToken().GetNextToken().IsKind(SyntaxKind.SemicolonToken) ? 1 : 0),
                     HeldValueReceiver: heldReceiver,
                     HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
-                        ? heldCall.ArgumentList.OpenParenToken.Span.End - heldDot.OperatorToken.SpanStart
+                        ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
                     CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner)
@@ -5934,7 +5934,7 @@ public sealed class BreakPlan {
             ? FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken)
             : 0;
 
-    static int CalleeWidthOf(ExpressionSyntax value) =>
+    int CalleeWidthOf(ExpressionSyntax value) =>
         value is InvocationExpressionSyntax { Expression: IdentifierNameSyntax, ArgumentList.Arguments.Count: >= 2 }
             or ObjectCreationExpressionSyntax {
                 Type: IdentifierNameSyntax, ArgumentList.Arguments.Count: >= 2, Initializer: null
@@ -5952,10 +5952,13 @@ public sealed class BreakPlan {
     ///     call whose callee is <c>new</c> and its type (#555): the oracle chops its arguments by the same
     ///     floor.
     /// </summary>
-    static int CalleeOf(ExpressionSyntax value) =>
+    int CalleeOf(ExpressionSyntax value) =>
         value switch {
             InvocationExpressionSyntax invocation => invocation.Expression.Span.Length,
-            ObjectCreationExpressionSyntax creation => creation.ArgumentList!.SpanStart - creation.SpanStart,
+            ObjectCreationExpressionSyntax creation => FormattedWidth(
+                creation.GetFirstToken(),
+                creation.ArgumentList!.OpenParenToken.GetPreviousToken()
+            ),
             _ => 0
         };
 

@@ -7,7 +7,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </summary>
 /// <remarks>
 ///     ⚠ The Nightly fuzzer's seed 37583856628 (replay 6225963390046177533, origin
-///     <c>constructs/breaks/lambda-parameters-one-column-over.cs</c>) found it. #572's one-column table and
+///     <c>constructs/breaks/lambda-parameters-one-column-over.cs</c>) found it, and group I's seed 2 (replay
+///     10561489840196222070, origin <c>constructs/breaks/equals-before-a-lambda-floor.cs</c>) the same shape. #572's one-column table and
 ///     #583's type/name break read the declaration's type off its source span, so `Func <TTTT >` measured four
 ///     columns wider than `Func&lt;TTTT&gt;` and the line broke before the name instead of chopping the
 ///     parameters. Every width behind #557, #558, #571, #572, #578 and #528's held call is now
@@ -115,5 +116,39 @@ public sealed class MeasuredWidthsAbsorbWhitespaceTests {
         var once = Format.Text(Source);
         Assert.Equal(once, Format.Text(once));
         Assert.Contains(" f23 =\n", once, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ Group I's fuzzer seed 2, replay 10561489840196222070: the mutated statements of
+    ///     <c>constructs/breaks/equals-before-a-lambda-floor.cs</c>, gaps inside <c>Func&lt;A , B&gt;</c> and the
+    ///     parameter lists, format as the clean ones (#558's gates and floors).
+    /// </summary>
+    [Fact]
+    public void TheSeedTwoCase_FormatsAsTheCleanOne() {
+        const string Clean = """
+            namespace P;
+
+            class C {
+                void M() {
+                    Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2, A a3, A a4, A a5, A a6, A a7, A a8, A a9, A a10x) => vvvvvvvvvvvvvvvvvvvv;
+                    Func<A, B> fffffffffffffffffffffffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
+                    Func<A, B> fffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
+                    Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2, A a3, A a4, A a5, A a6, A a7, A a8, A a9x) => Name;
+                }
+            }
+            """;
+        const string Mutated = """
+            namespace P;
+
+            class  C {
+                void M( ) {
+                    Func<A , B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1 , A  a2, A a3, A a4 , A  a5, A a6, A a7 , A a8,  A a9, A a10x) =>  vvvvvvvvvvvvvvvvvvvv;
+                    Func<A, B > fffffffffffffffffffffffffffffffffffffffffff = ( TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT  p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
+                    Func<A , B> fffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT  p0 ) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv ;
+                    Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2,  A a3,  A a4, A a5, A a6, A a7,  A a8, A a9x) => Name;
+                }
+            }
+            """;
+        Assert.Equal(Format.Text(Clean), Format.Text(Mutated));
     }
 }

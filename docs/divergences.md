@@ -11111,3 +11111,14 @@ are on master too, and all are now fixed:
   the `(` at columns 52 to 112.
 
 Pinned by four tests in `MeasuredWidthsAbsorbWhitespaceTests`, each of which fails on master.
+
+⚠ **Group I's seed 2 (replay 10561489840196222070, origin `constructs/breaks/equals-before-a-lambda-floor.cs`) has
+the same `Func<…> f = (…) => …` shape.** The fix above already covers it. A rerun of seed 1 then found two
+held-single-call cases that the first sweep had left on the source span:
+- #528's held-call receiver, `CalleeOf` for a `new`, and the base-list, parameter and colon-floor type
+  widths now read `FormattedWidth` too (whitespace absorption, replay 10196079555470681291).
+- **Idempotency (replay 7536332154113230584).** `Fitter.HeldValueBreaks` kept a held single call whose receiver
+  already ran past the margin. The second pass then broke it. A receiver that ends past the margin now
+  breaks the held value on the first pass.
+
+All five cases are pinned in `MeasuredWidthsAbsorbWhitespaceTests`, and each fails against master's sources.

@@ -972,6 +972,14 @@ public sealed class Fitter {
                     return false;
                 }
 
+                // ⚠ A receiver that runs past the margin beside the `=` breaks it, as the other two heads'
+                // rules do. Unmeasured — the sweeps' receivers ended by column 118 — and held, it left `= r…(`
+                // past the margin for the second pass to break once the arguments had chopped (Nightly fuzzer,
+                // seed 1, replay 7536332154113230584: idempotency).
+                if (valueColumn + facts.HeldValueReceiver > width) {
+                    return true;
+                }
+
                 return facts.HeldValueManyArgs
                     ? parenBeside > width && parenBelow <= width - 3
                     : below <= width + 1 || parenBelow <= width - 3;
