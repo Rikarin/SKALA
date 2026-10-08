@@ -7277,8 +7277,18 @@ the dots; `)!` / `.Where` breaks after a `!` where the oracle keeps `)!.Where`;
 `source.Select(…).Where(beta).Count` plans no chain at all; `new Foo(a, b).Select(c)` / `.Where` that
 fits after a break before `.Select` is chopped instead; the oracle's own `var x = source` / `.Select(`
 for a three-link chain at a member's first indent, which it does not keep when asked again.
-⚠ Of those, the `!` (#455) and the chain ending in `.Count` (#454) are **resolved** with SK-DIV-0066;
-the `if` header and lambda-argument level is #495.
+⚠ Of those, the `!` (#455) and the chain ending in `.Count` (#454) are **resolved** with SK-DIV-0066,
+and the `if` header and lambda-argument level is **resolved** (#495): such a chain takes its level by
+`spendsIndent`'s rule, as a parenthesised head does (`BreakPlan.SharesTheLevelAroundIt`). Measured on
+2026-10-08, the boundary is narrow on both sides. The *whole* condition of an `if`, `else if`, `while`
+or `do`'s `while` puts the dots on the aligned column; `if (!chain`, `if (flag` / `&& chain`, and a
+`switch (`, `foreach (… in` or `using (` header keep the chain's own level past it. The body of a
+call's *sole* lambda argument — `x =>` and `(x, y) =>`, a `!` before the chain included — shares the
+parenthesis's level; after another argument it does not, and nor does it where the call is the
+receiver of a further link (`found.SelectMany(static d => Enumerable.Range(…)` / `.Select(…)` two
+levels in, Skala's own source). Pinned by `ChainInAHeaderIssue495Tests` and
+`constructs/breaks/chain-in-a-header-or-a-sole-lambda.cs`. A break-choice divergence seen beside it is
+SK-DIV-0332.
 
 - options: none behind the divergence; measured at `skala_continuous_indent_multiplier = 2` too.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/chain-first-call-arguments.cs` and

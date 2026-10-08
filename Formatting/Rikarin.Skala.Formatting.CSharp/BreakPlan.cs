@@ -2455,8 +2455,8 @@ public sealed class BreakPlan {
                 // one level past the arrow's. Measured on seventeen shapes. The frame half of the
                 // same rule — an author's break before a dot that is not a point — is
                 // CSharpDocumentBuilder's Frame.HoldsLevel.
-                ChainHeadIsParenthesised(root),
-                OwnLevel: !ChainHeadIsParenthesised(root)
+                SharesTheLevelAroundIt(root),
+                OwnLevel: !SharesTheLevelAroundIt(root)
             )
         );
 
@@ -2866,6 +2866,53 @@ public sealed class BreakPlan {
                     return false;
             }
         }
+    }
+
+    /// <summary>
+    ///     Whether a chain takes its continuation level only when nothing around it is spending one —
+    ///     <c>spendsIndent</c>'s rule — rather than always, as a chain ordinarily does.
+    /// </summary>
+    /// <remarks>
+    ///     A parenthesised head (SK-DIV-0112, see <see cref="PlanChainedCalls" />), and two positions
+    ///     measured for #495 (SK-DIV-0184's residue). The whole condition of an <c>if</c>, an
+    ///     <c>else if</c>, a <c>while</c> or a <c>do</c>'s <c>while</c>, where
+    ///     <c>align_multiline_statement_conditions</c> puts the dots on the aligned column:
+    ///     <c>if (source.Select(…)</c> / <c>.Any(p)) {</c> with the <c>.</c> under the <c>s</c>. ⚠ Only
+    ///     the whole condition: <c>if (!source…</c>, <c>if (flag</c> / <c>&amp;&amp; source…</c>, and a
+    ///     <c>switch (</c>, <c>foreach (… in</c> or <c>using (</c> header all put the dots one level past
+    ///     the aligned column. And the body of a lambda that is the call's sole argument, kept on the
+    ///     call's line, whose parenthesis already paid: <c>Use(x =&gt; source.Select(…)</c> /
+    ///     <c>.Where(p)</c> one level past the statement, a parenthesised parameter list and a <c>!</c>
+    ///     before the chain alike. A lambda after another argument keeps the ordinary rule (<c>Use(</c> /
+    ///     <c>first,</c> / <c>x =&gt; source…</c> / <c>.Where(p)</c> one level past the lambda's line).
+    /// </remarks>
+    bool SharesTheLevelAroundIt(SyntaxNode root) =>
+        ChainHeadIsParenthesised(root)
+        || root.Parent is IfStatementSyntax or WhileStatementSyntax or DoStatementSyntax && IsAHeaderCondition(root)
+        || options.PlaceSingleMethodArgumentLambdaOnSameLine && IsTheBodyOfASoleLambda(root);
+
+    /// <summary>
+    ///     Whether a chain is the expression body of a lambda that is its call's sole argument — or the
+    ///     operand of a prefix operator that is: <c>Use(x =&gt; !source.Select(…)</c> / <c>.Any(p)</c> sits
+    ///     at the same column as without the <c>!</c>.
+    /// </summary>
+    static bool IsTheBodyOfASoleLambda(SyntaxNode root) {
+        var body = root.Parent is PrefixUnaryExpressionSyntax prefix ? prefix : root;
+
+        // ⚠ Not when the call is itself the receiver of a further link: there its argument list nests
+        // from the outer chain's continuation line (#418) and the inner chain takes its own level past
+        // it — `found.SelectMany(static d => Enumerable.Range(…)` / `.Select(…)` two levels in /
+        // `)` / `.OrderByDescending(…)`, Skala's own source.
+        return body.Parent is LambdaExpressionSyntax {
+                Parent: ArgumentSyntax {
+                    NameColon: null,
+                    Parent: ArgumentListSyntax {
+                        Arguments.Count: 1,
+                        Parent: InvocationExpressionSyntax { Parent: not MemberAccessExpressionSyntax }
+                    }
+                }
+            } lambda
+            && lambda.ExpressionBody == body;
     }
 
     /// <summary>
