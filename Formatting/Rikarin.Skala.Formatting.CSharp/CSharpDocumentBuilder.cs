@@ -4045,6 +4045,13 @@ public sealed partial class CSharpDocumentBuilder {
             if (nextToken.IsKind(SyntaxKind.OpenBracketToken) && nextToken.Parent is CollectionExpressionSyntax) {
                 flags |= LineFlags.DelimitedItem;
             }
+
+            // ⚠ And a collection expression's element keeps an identifier head when the break inside it
+            // is certain, the tuple's rule: `1, F(() => {` with a block that cannot join stays on the
+            // comma's line, while `F("…131 columns…", 2)` moves whole (#471, SK-DIV-0117).
+            if (StartsACollectionElement(nextToken)) {
+                flags |= LineFlags.KeepsHeadWhenCertain;
+            }
         }
 
         return flags;
@@ -4069,13 +4076,31 @@ public sealed partial class CSharpDocumentBuilder {
 
     /// <summary>
     ///     Whether the token is the first of an array initializer's element — the fill whose elements were
-    ///     measured (#444, SK-DIV-0208). ⚠ Not a collection expression's: the oracle puts a multi-line
-    ///     <c>((…</c> element of one on a line of its own (CollectionAfterEqIssue375Tests).
+    ///     measured (#444, SK-DIV-0208) — or of a collection expression's.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ The collection expression was excluded on a reading of CollectionAfterEqIssue375Tests that
+    ///     had it backwards: Skala put <c>((</c> on a line of its own and the oracle keeps
+    ///     <c>null!, ((</c>. Measured for #471 (SK-DIV-0117): a collection expression's fill keeps the
+    ///     head of a multi-line element — <c>1, () =&gt; {</c>, <c>1, o switch {</c>, <c>[1], [</c>,
+    ///     <c>1, 2, Call(</c> — and starts the element after one on a line of its own, exactly as an
+    ///     array initializer's does.
+    /// </remarks>
     static bool StartsAFilledElement(SyntaxToken token) {
         for (SyntaxNode? node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
             if (node.Parent is InitializerExpressionSyntax initializer
                 && initializer.IsKind(SyntaxKind.ArrayInitializerExpression)) {
+                return true;
+            }
+        }
+
+        return StartsACollectionElement(token);
+    }
+
+    /// <summary>Whether the token is the first of a collection expression's element.</summary>
+    static bool StartsACollectionElement(SyntaxToken token) {
+        for (SyntaxNode? node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
+            if (node is CollectionElementSyntax && node.Parent is CollectionExpressionSyntax) {
                 return true;
             }
         }

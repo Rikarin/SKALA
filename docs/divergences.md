@@ -5260,6 +5260,8 @@ levels inside a chopped list that is itself the operand of a broken chain (`F(` 
 / `|| c` puts `a` at 16 in the oracle, 12 under Skala) and a declarator's value past its `=`
 (`int x = a` / `+ 1,` — 16 against 12), both SK-DIV-0103's scoping and SK-DIV-0112's adjacent
 shape rather than this entry's.
+⚠ **The filled-list half closed at #471** (SK-DIV-0117): `new[] { 1` / `+ 2, 3 }` already agreed (the
+array initializer's after rule, #444), and `[1` / `+ 2, 3]` now does too — `+ 2,` / `3`.
 
 - options: `skala_wrap_arguments_style`, `skala_wrap_parameters_style` and the rest of the
   `chop_if_long` family; `skala_keep_user_linebreaks`.
@@ -5355,6 +5357,9 @@ the oracle breaks after the multi-line `]`, and keeps `], (null ? "ss" : 1.5d), 
 Skala fills on; a tuple's next item after a multi-line one stays (`, 3), 4)` above). The same
 wrap-style-versus-plain-fill line SK-DIV-0109 records for `[1` / `+ 2, 3]`. One line better and one
 line worse on that fixture; not in this entry's construct.
+⚠ **Closed at #471.** By the time #471 was filed the two lines had swapped (#444 fixed the line after
+`]` and lost `), [`); the head rule now outranks the after rule in the writer, and the fixture is
+byte-exact. See SK-DIV-0117.
 
 - options: `skala_keep_user_linebreaks`; the tuple has no wrap style of its own.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/nested-multiline-tuple-item.cs`,
@@ -5705,9 +5710,25 @@ point — a break the author pinned between two elements would otherwise read as
 spanning lines — which is a per-element marker in the #372 pattern, not a line count. Recorded, not
 fixed.
 
+⚠ **Fixed at #471, and the marker already existed.** #444 (SK-DIV-0208) gave the array initializer
+exactly that per-element marker — `LineFlags.ArrayElement`, read off the output by the writer — and
+`StartsAFilledElement` excluded a collection expression on a reading of `CollectionAfterEqIssue375Tests`
+that had the direction backwards (it pinned Skala's `null!,` / `((`, not the oracle's). A collection
+expression's element now carries `ArrayElement` (the draft measure and the after rule) and
+`KeepsHeadWhenCertain` (the tuple's second head rule); re-measured with `Testing ask`, every row of the
+table above agrees, plus `[1, [2, 3], [` / `4` / `],` / `5]` and `(1, () => {` … `}, 2, 3)` unchanged.
+⚠ **And the head rule outranks the after rule**, which no row above shows: in
+`pathological/nested-collection-in-generated-while.cs`, an *array initializer*, the oracle writes
+`), [` — a delimited element that fits nowhere whole keeps its head on the line the previous multi-line
+element ended on — and only then `],` / `(null ? …)`. The writer's after rule now yields when
+`FillPointStaysFlat` kept the point flat for the head (`headStays`) rather than for a fit. That file is
+byte-exact for the first time (pathological 59/71 → 60/71 files, 93.64 % → 94.26 % lines).
+The `null!, ((` row's nested levels are SK-DIV-0118's and stay open.
+
 - options: none — `skala_wrap_list_pattern = wrap_if_long` and `skala_keep_existing_list_patterns_arrangement`
   govern the fill and the pinned breaks, neither the head nor the after rule.
-- ⚠ status: **open**.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/collection-expression-multi-line-elements.cs`,
+  `pathological/nested-collection-in-generated-while.cs` and `CollectionAfterEqIssue375Tests`.
 
 ## SK-DIV-0118 — a grouping parenthesis spends a level of its own inside the list it wraps, and the oracle does not
 
