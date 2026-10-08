@@ -16,9 +16,9 @@ public sealed class InterpolationHoleIssue492Tests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -96,7 +96,11 @@ public sealed class InterpolationHoleIssue492Tests {
     public void ABrokenHole_KeepsItsBreaks_AndRespacesTheRest() {
         const string source =
             "class C {\n    int M(int a, int b) => a;\n\n    void T(int f) {\n        var s = $\"{M(\n            f,\n            f)}\";\n    }\n}\n";
-        var once = FormatWith(source, ("skala_space_within_parentheses", "true"), ("skala_space_between_method_call_parameter_list_parentheses", "true"));
+        var once = FormatWith(
+            source,
+            ("skala_space_within_parentheses", "true"),
+            ("skala_space_between_method_call_parameter_list_parentheses", "true")
+        );
         Assert.Contains("var s = $\"{M(\n            f,\n            f )}\";\n", once, StringComparison.Ordinal);
     }
 

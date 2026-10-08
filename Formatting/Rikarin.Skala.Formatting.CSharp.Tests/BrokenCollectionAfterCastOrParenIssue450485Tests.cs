@@ -16,9 +16,9 @@ public sealed class BrokenCollectionAfterCastOrParenIssue450485Tests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -59,7 +59,10 @@ public sealed class BrokenCollectionAfterCastOrParenIssue450485Tests {
 
     [Fact]
     public void AKeptBreakAfterACast_StaysWhenTheCollectionFits() =>
-        AssertFormats("var kept = (int[])\n            [1, 2, 3];", "        var kept = (int[])\n            [1, 2, 3];\n");
+        AssertFormats(
+            "var kept = (int[])\n            [1, 2, 3];",
+            "        var kept = (int[])\n            [1, 2, 3];\n"
+        );
 
     [Fact]
     public void AKeptBreakAfterACast_YieldsToABrokenCollection() =>
@@ -81,5 +84,9 @@ public sealed class BrokenCollectionAfterCastOrParenIssue450485Tests {
     [InlineData("false", "        var q = (( [\n")]
     [InlineData("true", "        var q = ( ( [\n")]
     public void OnlyTheInnermostParenthesis_TakesIt(string value, string expected) =>
-        AssertFormats("var q = (([\n            1,\n            2\n        ]));", expected, ("skala_space_within_parentheses", value));
+        AssertFormats(
+            "var q = (([\n            1,\n            2\n        ]));",
+            expected,
+            ("skala_space_within_parentheses", value)
+        );
 }

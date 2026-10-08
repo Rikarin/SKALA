@@ -528,8 +528,10 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         var before = collection.OpenBracketToken.GetPreviousToken();
-        if (!(before.IsKind(SyntaxKind.OpenParenToken) && before.Parent is ParenthesizedExpressionSyntax
-                || before.IsKind(SyntaxKind.CloseParenToken) && before.Parent is CastExpressionSyntax)) {
+        if (!(before.IsKind(SyntaxKind.OpenParenToken)
+                && before.Parent is ParenthesizedExpressionSyntax
+                || before.IsKind(SyntaxKind.CloseParenToken)
+                && before.Parent is CastExpressionSyntax)) {
             return;
         }
 

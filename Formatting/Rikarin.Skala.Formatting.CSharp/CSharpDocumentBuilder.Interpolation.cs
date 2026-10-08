@@ -86,7 +86,8 @@ public sealed partial class CSharpDocumentBuilder {
                 case SyntaxKind.MultiLineCommentTrivia:
                 case SyntaxKind.MultiLineDocumentationCommentTrivia:
                     var text = trivia.ToFullString();
-                    if (FormatterTagGuard.IsOffTag(text, options.Tags) || FormatterTagGuard.IsOnTag(text, options.Tags)) {
+                    if (FormatterTagGuard.IsOffTag(text, options.Tags)
+                        || FormatterTagGuard.IsOnTag(text, options.Tags)) {
                         return false;
                     }
 
@@ -149,20 +150,23 @@ public sealed partial class CSharpDocumentBuilder {
 
     /// <summary>True when the gap between the two tokens is inside an interpolation hole.</summary>
     static bool InsideAHole(SyntaxToken previous, SyntaxToken next) =>
-        !IsStringText(previous) && !IsStringText(next) && !IsHoleBrace(previous, SyntaxKind.CloseBraceToken)
+        !IsStringText(previous)
+        && !IsStringText(next)
+        && !IsHoleBrace(previous, SyntaxKind.CloseBraceToken)
         && !IsHoleBrace(next, SyntaxKind.OpenBraceToken);
 
     static bool IsStringText(SyntaxToken token) =>
         token.Kind()
-            is SyntaxKind.InterpolatedStringStartToken
-                or SyntaxKind.InterpolatedVerbatimStringStartToken
-                or SyntaxKind.InterpolatedSingleLineRawStringStartToken
-                or SyntaxKind.InterpolatedMultiLineRawStringStartToken
-                or SyntaxKind.InterpolatedStringEndToken
-                or SyntaxKind.InterpolatedRawStringEndToken
-                or SyntaxKind.InterpolatedStringTextToken;
+        is SyntaxKind.InterpolatedStringStartToken
+            or SyntaxKind.InterpolatedVerbatimStringStartToken
+            or SyntaxKind.InterpolatedSingleLineRawStringStartToken
+            or SyntaxKind.InterpolatedMultiLineRawStringStartToken
+            or SyntaxKind.InterpolatedStringEndToken
+            or SyntaxKind.InterpolatedRawStringEndToken
+            or SyntaxKind.InterpolatedStringTextToken;
 
-    static bool IsHoleBrace(SyntaxToken token, SyntaxKind kind) => token.IsKind(kind) && token.Parent is InterpolationSyntax;
+    static bool IsHoleBrace(SyntaxToken token, SyntaxKind kind) =>
+        token.IsKind(kind) && token.Parent is InterpolationSyntax;
 
     static bool IsAlignmentComma(SyntaxToken token) =>
         token.IsKind(SyntaxKind.CommaToken) && token.Parent is InterpolationAlignmentClauseSyntax;

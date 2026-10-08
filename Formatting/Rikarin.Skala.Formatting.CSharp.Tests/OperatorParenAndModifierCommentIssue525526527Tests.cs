@@ -12,9 +12,9 @@ public sealed class OperatorParenAndModifierCommentIssue525526527Tests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -55,7 +55,8 @@ public sealed class OperatorParenAndModifierCommentIssue525526527Tests {
     [InlineData("f = 1 + (2);")]
     [InlineData("var c = a < (b);")]
     [InlineData("f = -(a);")]
-    public void AtTheExport_NothingMoves(string statement) => AssertContains(Statement(statement), "        " + statement);
+    public void AtTheExport_NothingMoves(string statement) =>
+        AssertContains(Statement(statement), "        " + statement);
 
     static string Members(string member) => $"static class C {{\n    {member}\n}}\n";
 
@@ -82,8 +83,14 @@ public sealed class OperatorParenAndModifierCommentIssue525526527Tests {
         + "\n        }\n    }\n}\n";
 
     [Theory]
-    [InlineData("case 3: { M(); } break;", "            case 3: {\n                M();\n            }\n                break;")]
-    [InlineData("case 7: { M(); }\n            break;", "            case 7: {\n                M();\n            }\n                break;")]
+    [InlineData(
+        "case 3: { M(); } break;",
+        "            case 3: {\n                M();\n            }\n                break;"
+    )]
+    [InlineData(
+        "case 7: { M(); }\n            break;",
+        "            case 7: {\n                M();\n            }\n                break;"
+    )]
     public void ASectionsBlockAmongOtherStatements_IsExpanded_AtTheEmbeddedKeysTrue(string section, string expected) =>
         AssertContains(Switch(section), expected, ("skala_keep_existing_embedded_block_arrangement", "true"));
 
