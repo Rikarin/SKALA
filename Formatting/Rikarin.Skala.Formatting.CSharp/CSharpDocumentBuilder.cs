@@ -1735,6 +1735,9 @@ public sealed partial class CSharpDocumentBuilder {
 
                 if (opened == 0 && levels > 0 && token.SpanStart == open.SpanStart) {
                     EmitUpToTheAlignmentAnchor(node, scopeKind);
+                    var brokenAfter = node is ParenthesizedExpressionSyntax grouping
+                        && PrepayTheLevelOfAChainBrokenAfter(grouping);
+
                     for (var i = 0; i < levels; i++) {
                         // ⚠ Both scopes are unconditional when there are two, and it has to be both.
                         // `outside_and_inside` means "the contents take two levels" and both open on
@@ -1747,7 +1750,9 @@ public sealed partial class CSharpDocumentBuilder {
                         OpenIndent(
                             scopeKind,
                             unconditional || inside > 1,
-                            node is ParenthesizedExpressionSyntax ? IndentFlags.Grouping : IndentFlags.Delimiter
+                            node is ParenthesizedExpressionSyntax
+                                ? IndentFlags.Grouping | (brokenAfter ? IndentFlags.BrokenAfter : IndentFlags.None)
+                                : IndentFlags.Delimiter
                         );
                     }
 
@@ -1778,6 +1783,85 @@ public sealed partial class CSharpDocumentBuilder {
                 CloseIndent(scopeKind);
             }
         }
+    }
+
+    /// <summary>
+    ///     Whether a grouping parenthesis heads a chain the author broke before a dot after its
+    ///     <c>)</c>, with no group of the chain's own to carry the break — and if so, spends now the
+    ///     continuation level a frame would otherwise spend lazily at that dot.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on fourteen shapes (#470, SK-DIV-0112, SK-DIV-0148): the oracle writes
+    ///     <code>
+    /// var z = (
+    ///         a).B         ← two levels past the statement, not one
+    ///     .C();
+    /// var x = (y switch {
+    ///         1 => 2,      ← two
+    ///     }).Length        ← one, on the chain's continuation line
+    ///     .Length;
+    ///     </code>
+    ///     and the same after <c>return</c>, as a bare statement, after an assignment, for a binary
+    ///     inside the parenthesis, a property chain and a single <c>.B</c>. Where the break before the
+    ///     dot spends nothing — under an arrow that already broke, inside an argument list — the
+    ///     contents stay one level past the <c>(</c>'s line, on both sides. So the parenthesis's
+    ///     scope is flagged <see cref="IndentFlags.BrokenAfter" /> and the writer lifts it to the next
+    ///     line's level when that is deeper; and where that level is a frame's, paid lazily at the
+    ///     dot, it has to exist before the parenthesis opens for the writer to see it. The frame
+    ///     <see cref="FrameToSpend" /> names for the dot's break pays here instead, which leaves the
+    ///     break itself nothing more to spend.
+    ///     <para>
+    ///         ⚠ Frames only. A chain with break points of its own has a group, and a group resolved
+    ///         broken lifts the parenthesis through the writer's <c>LiftedLevel</c>, which reads the
+    ///         fitter's answer rather than the author's — `(` / `a).B()` / `.C()` was already right.
+    ///         An author's break before a dot that is not a point is kept by <c>keep_user_linebreaks</c>
+    ///         and nothing else, so the source decides here.
+    ///     </para>
+    /// </remarks>
+    bool PrepayTheLevelOfAChainBrokenAfter(ParenthesizedExpressionSyntax node) {
+        if (!options.KeepUserLinebreaks) {
+            return false;
+        }
+
+        SyntaxNode head = node;
+        SyntaxToken broken = default;
+        while (head.Parent is { } parent && IsReceiverOf(parent, head)) {
+            if (broken.IsKind(SyntaxKind.None)) {
+                var dot = parent switch {
+                    MemberAccessExpressionSyntax access => access.OperatorToken,
+                    ConditionalAccessExpressionSyntax conditional => conditional.OperatorToken,
+                    _ => default
+                };
+
+                if (!dot.IsKind(SyntaxKind.None) && HasLineBreak(dot.GetPreviousToken().Span.End, dot.SpanStart)) {
+                    broken = dot;
+                }
+            }
+
+            head = parent;
+        }
+
+        if (broken.IsKind(SyntaxKind.None) || head == node || plan.ChainGroupOf(head) >= 0) {
+            return false;
+        }
+
+        var frame = FrameToSpend(-1, broken);
+        if (frame >= 0) {
+            OpenIndent(IndentKind.Continuous);
+            frames[frame] = frames[frame] with { Activated = true };
+        }
+
+        return true;
+
+        static bool IsReceiverOf(SyntaxNode parent, SyntaxNode child) =>
+            parent switch {
+                MemberAccessExpressionSyntax access => access.Expression == child,
+                InvocationExpressionSyntax invocation => invocation.Expression == child,
+                ElementAccessExpressionSyntax element => element.Expression == child,
+                ConditionalAccessExpressionSyntax conditional => conditional.Expression == child,
+                PostfixUnaryExpressionSyntax postfix => postfix.Operand == child,
+                _ => false
+            };
     }
 
     /// <summary>

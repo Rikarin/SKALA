@@ -342,7 +342,17 @@ public enum IndentFlags {
     ///     <c>   ) { }</c> with the <c>)</c> in the <c>(</c>'s column, not the statement's (#442,
     ///     SK-DIV-0203).
     /// </summary>
-    CloserAtOpener = 32
+    CloserAtOpener = 32,
+
+    /// <summary>
+    ///     ⚠ A grouping parenthesis heading a chain that the author broke before a dot after its
+    ///     <c>)</c>, where no group of the chain's own carries the break (#470, SK-DIV-0112). Its
+    ///     contents nest from the line after the <c>(</c>'s — the chain's continuation line — when
+    ///     that line is deeper: <c>var z = (</c> / <c>a).B</c> / <c>.C();</c> puts <c>a</c> two levels
+    ///     past the statement and <c>.C</c> one. The writer cannot see a frame's break coming, so the
+    ///     document builder reads it from the source and says so.
+    /// </summary>
+    BrokenAfter = 64
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>

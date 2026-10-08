@@ -5199,6 +5199,21 @@ lambda body pushed by the chain's level and its `)` given a line of its own in t
 => {` / `var y = x;` at 20 / `}` at 16 / `)` at 12 / `.C()` at 12) where Skala writes 16 / 12 / 8 /
 12. Neither is in the fixture.
 
+**The adjacent row, fixed (#470, 2026-10-08).** Re-asked on fourteen shapes: `var z = (`, a bare
+`(`, `return (`, an assignment, `(a` / `+ b).C`, a `)` on a line of its own, a property chain
+(`.B` / `.C`) and a single `.B` all put the contents at 16 and the dots at 12; under `=>` and inside
+`Call(` the contents stay one level past the `(`'s line (12 and 16), because the break before the dot
+spends nothing there. One rule: the contents nest from the chain's continuation line — the line after
+the `(`'s — when that line is deeper. The chain's level was the one thing the writer could not see,
+because for an author's break before a dot that is not a point it is a *frame's*, spent lazily at the
+dot. So `CSharpDocumentBuilder.PrepayTheLevelOfAChainBrokenAfter` reads the break from the source,
+lets the frame `FrameToSpend` names for that dot pay at the `(` instead, and flags the parenthesis's
+scope `IndentFlags.BrokenAfter`; `LayoutWriter.Push` then lifts it to the next line's level when that
+is deeper. A chain with points of its own already had a group, and a grouping parenthesis now takes
+`LiftedLevel` from it as a delimited list does (SK-DIV-0159). Pinned by
+`constructs/syntax/grouping-parenthesis-chain-broken-after.cs` and
+`GroupingParenthesisChainBrokenAfterIssue470Tests`.
+
 - options: none; `skala_continuous_indent_multiplier` measured at 2 and the rule holds.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/chain-after-parenthesised-head.cs` and
   `ChainAfterParenthesisedHeadTests`.
@@ -6539,7 +6554,9 @@ began, a separate shape;
 - options: none behind the divergence.
 - ⚠ status: **fixed**, pinned by `constructs/syntax/block-in-a-grouping-parenthesis.cs`,
   `constructs/syntax/block-in-a-broken-construct.cs` and `BlockIndentIssue393Tests`; the
-  author-broken chain row is open.
+  author-broken chain row is **fixed** by #470 (see SK-DIV-0112's last paragraph): `var x = (y switch {`
+  / … / `}).ToString()` / `.Length` puts the arms at 16 and the `}` at 12, a lifted grouping
+  parenthesis staying transparent to a block on its own line.
 
 ## SK-DIV-0149 — a delimited list on the first line of a construct that broke after it is not lifted by the construct
 
@@ -6713,7 +6730,11 @@ arrow stays and the chain stays whole.
 - options: `skala_wrap_chained_method_calls`.
 - ⚠ status: first row **fixed**, pinned by `HeldLevelIssue406407Tests` (the issue's input settles in
   one pass; a chain the fill breaks gives the level up and one that fits keeps it, under `=`, a
-  lambda, `return` and an arm, both equal to the oracle). Second row **open**.
+  lambda, `return` and an arm, both equal to the oracle). Second row **open** — re-asked for #470
+  on 2026-10-08 and unchanged: under `=>` a parenthesised chain head with no switch after it puts its
+  dots on the `(`'s column (SK-DIV-0112), and with the chain governing a switch the oracle spends the
+  chain's level after all (`.C() switch {` at 12). Which construct makes the chain spend there was not
+  measured.
 
 ## SK-DIV-0159 — a switch arm's `=> (` on the pattern's line, with a chain or a binary that breaks after the `)`
 
@@ -6732,8 +6753,14 @@ parenthesis's own scope as two levels once something after the `)` breaks, which
 one-level-per-opening-line collapse in `LayoutWriter.Level` read the other way, and the boundary has
 not been measured beyond these three bodies.
 
+**Fixed (#470, 2026-10-08).** The chain and the binary after the `)` each have a group, resolved broken
+and `Continues`; a grouping parenthesis's scope now takes `LayoutWriter.LiftedLevel` from it exactly as
+a delimited list's does (SK-DIV-0184), where before only `IndentFlags.Delimiter` qualified. Re-asked:
+both rows match, and `corpus/` fidelity is unchanged by it.
+
 - options: none.
-- ⚠ status: **open**.
+- ⚠ status: **fixed**, pinned by `constructs/syntax/grouping-parenthesis-chain-broken-after.cs` and
+  `GroupingParenthesisChainBrokenAfterIssue470Tests`.
 
 ## SK-DIV-0165 — a break point whose gap holds a block comment breaks after the comment
 

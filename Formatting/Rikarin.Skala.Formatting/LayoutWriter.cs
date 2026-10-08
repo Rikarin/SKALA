@@ -478,10 +478,21 @@ public sealed class LayoutWriter {
         // ⚠ A delimited list on the first line of a construct that broke after it nests from that
         // construct's continuation line, and its closer sits on it. See LiftedLevel.
         var lifted = -1;
-        if (kind is IndentKind.Continuous or IndentKind.OneLevel && (flags & IndentFlags.Delimiter) != 0) {
+        if (kind is IndentKind.Continuous or IndentKind.OneLevel && (flags & (IndentFlags.Delimiter | IndentFlags.Grouping)) != 0) {
             lifted = LiftedLevel(ancestors, outer);
             if (lifted >= 0) {
                 outer = lifted;
+            }
+        }
+
+        // ⚠ A grouping parenthesis whose chain the author broke after it nests from that chain's
+        // continuation line — the line after this one — when it is deeper. See IndentFlags.BrokenAfter.
+        if (lifted < 0 && kind is IndentKind.Continuous or IndentKind.OneLevel && (flags & IndentFlags.BrokenAfter) != 0) {
+            line++;
+            var continuation = Level(false);
+            line--;
+            if (continuation > outer) {
+                lifted = outer = continuation;
             }
         }
 
@@ -518,7 +529,8 @@ public sealed class LayoutWriter {
                         outer,
                         unconditional,
                         IsGrouping: (flags & IndentFlags.Grouping) != 0,
-                        Lifted: lifted
+                        Lifted: lifted,
+                        IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0
                     ),
                 IndentKind.OneLevel =>
                     new Scope(
@@ -528,7 +540,8 @@ public sealed class LayoutWriter {
                         outer,
                         unconditional,
                         IsGrouping: (flags & IndentFlags.Grouping) != 0,
-                        Lifted: lifted
+                        Lifted: lifted,
+                        IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0
                     ),
                 IndentKind.Outdent =>
                     new Scope(true, Math.Max(0, outer - indentWidth), line, outer, unconditional),
@@ -715,6 +728,13 @@ public sealed class LayoutWriter {
             }
 
             if (scope.Lifted >= 0 && !BrokenInsideOnItsLine(index, scope)) {
+                // ⚠ A lifted grouping parenthesis is still transparent to a block opened on its own
+                // line: `var x = (y switch {` / … / `}).ToString()` / `.Length` puts the `}` on the
+                // chain's continuation line and the arms one past it (SK-DIV-0148).
+                if (scope.IsGrouping && scope.OpenLine == line) {
+                    return Math.Max(0, level + scope.Lifted);
+                }
+
                 var counts = outside
                     ? scope.OpenLine <= line && (scope.Unconditional || scope.OpenLine != blocked)
                     : scope.Unconditional
@@ -795,6 +815,12 @@ public sealed class LayoutWriter {
     ///     scope of its own, so the construct is looked for among the groups, not the scopes.
     /// </remarks>
     bool BrokenInsideOnItsLine(int index, in Scope scope) {
+        // ⚠ Not for a parenthesis the author's chain broke after: `var z = (a` / `+ b).C` / `.D();`
+        // lifts the `+ b` with the rest of the contents (#470).
+        if (scope.IsBrokenAfter) {
+            return false;
+        }
+
         foreach (var (_, depth, opened) in brokenConstructs) {
             if (depth > index && opened == scope.OpenLine) {
                 return true;
@@ -1052,7 +1078,8 @@ public sealed class LayoutWriter {
         bool IsGrouping = false,
         int Lifted = -1,
         int AlignedCloser = -1,
-        bool IsFromLine = false);
+        bool IsFromLine = false,
+        bool IsBrokenAfter = false);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     /// <summary>
