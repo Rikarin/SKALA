@@ -538,6 +538,14 @@ public sealed class BreakPlan {
                 PlanSwitchExpression(switchExpression);
                 return;
 
+            // ⚠ `nameof(…)` is laid out as the `typeof` family, not as a call (#507): the oracle never
+            // chops its parentheses, keeps every break the author wrote inside them — `nameof(a` /
+            // `);`, `nameof(` / `a);` — and puts a kept `)` back on the opener's line, as `typeof(int` /
+            // `);` does. Measured on five shapes. Syntactic, as the oracle's formatter is: a method of
+            // that name called with one argument reads the same.
+            case ArgumentListSyntax { Parent: InvocationExpressionSyntax invocation } when IsNameOf(invocation):
+                return;
+
             case ArgumentListSyntax arguments:
                 PlanList(
                     node,
@@ -2607,6 +2615,10 @@ public sealed class BreakPlan {
         // the chain.
         return options.WrapBeforeFirstMethodCall || headIsACall ? dots.Count : dots.Count - 1;
     }
+
+    /// <summary>Whether <paramref name="invocation" /> is <c>nameof(…)</c>, read from syntax.</summary>
+    internal static bool IsNameOf(InvocationExpressionSyntax invocation) =>
+        invocation is { Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" }, ArgumentList.Arguments.Count: 1 };
 
     /// <summary>
     ///     Whether the leftmost receiver of a chain — down the spine of invocations, member, element and

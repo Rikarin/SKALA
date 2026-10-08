@@ -7664,15 +7664,31 @@ so the break pays the statement's continuation level. What stays open is SK-DIV-
   switch's anchor is pushed at its keyword recording the line's own indentation
   (`IndentFlags.AnchorAtLine`).
 - `nameof(a` / `);`: the oracle keeps the break and treats the parentheses as a `typeof`'s; Skala reads
-  `nameof` as an invocation and joins it.
+  `nameof` as an invocation and joins it. ⚠ **Fixed by #507 (2026-10-08)**: `BreakPlan` plans no list for
+  `nameof(…)`'s one argument (read syntactically, `BreakPlan.IsNameOf`), so every author's break inside
+  it is kept and a kept `)` goes back to its opener's line — measured on `nameof(a` / `)`, `nameof(` /
+  `a)`, `nameof(` / `a` / `)` and inside a call, which then chops because it holds a line break — and
+  its parentheses follow `skala_indent_pars` as `typeof`'s do. ⚠ Left open beside it:
+  `nameof(a.Bbbb….Cccc.Dddd)` past the margin, where the oracle breaks before the property `.Cccc` one
+  level in and Skala, with no point inside, breaks after the `=` (before #507 it chopped the
+  parentheses, also not the oracle's answer).
 - At `indent_pars = outside` a grouping parenthesis's `)` inside an argument list or a condition is one
   level deeper than the oracle's, which ignores that key for it. At `none`, a break straight after a
   `typeof(` or inside `checked(a` / `+ b)` puts the contents one level deeper than the oracle's. Not
   from #442: with the `typeof` family laid out as before (no scope of its own), the contents land on the
-  same column, and so does `arr[` / `1]`.
+  same column, and so does `arr[` / `1]`. ⚠ **Fixed by #508 (2026-10-08)**, re-measured on fifteen
+  kinds at both values: a grouping parenthesis is `inside` at every value of the key, and a tuple and a
+  positional pattern are `inside` at `none` (`var u = (1,` / `2);` and `o is (1,` / `2)` keep their
+  level) — `ParenthesesStyleFor`. The `typeof` family, `nameof` and a bracket do follow `none`, and the
+  level they lost was the `=`'s: the `none` marker opened no line, so the statement's continuation
+  opened beside it paid for the contents. The marker now opens on its line at no level and blocks it, as
+  any delimiter does (`LayoutWriter.Push`).
 
 - options: `skala_indent_pars`, `skala_align_tuple_components`
-- ⚠ status: **open**, measured.
+- ⚠ status: rows 1 and 3–5 **fixed** (#505, #506, #507, #508), pinned by
+  `constructs/syntax/kept-closer-continuation.cs`, `KeptCloserIssue472505506Tests` and
+  `NameofAndIndentParsIssue507508Tests`; the tuple-items row and `nameof`'s long qualified name are
+  **open**.
 
 ## SK-DIV-0205 — the neighbours of a block comment that spans lines: a ternary, `is`/`as`, an array's opener, a fill
 

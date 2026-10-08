@@ -1831,7 +1831,7 @@ public sealed partial class CSharpDocumentBuilder {
             || node.Parent is not SwitchExpressionSyntax owner
             || owner.GoverningExpression != node
             || AlignsFromOwnColumn(owner)
-            || DelimiterLevels(options.IndentPars).Closer != 0) {
+            || DelimiterLevels(ParenthesesStyleFor(node)).Closer != 0) {
             return false;
         }
 
@@ -1967,10 +1967,23 @@ public sealed partial class CSharpDocumentBuilder {
     ///     own, so the test is the parent and not the node. `skala_indent_pars` is the default arm — every
     ///     bracket, every grouping and tuple parenthesis, every pattern and attribute list.
     /// </remarks>
+    /// <remarks>
+    ///     ⚠ Two exemptions from <c>skala_indent_pars</c>, measured at <c>outside</c> and <c>none</c> (#508):
+    ///     a grouping parenthesis is laid out as <c>inside</c> at every value — `Call(1, (a + b` / `)` keeps
+    ///     its `)` on the item's line and `var g = (a` / `+ b);` its contents one level in — and a positional
+    ///     pattern and a tuple ignore <c>none</c> (`o is (1,` / `2)` one level past the `is` line, `var u =
+    ///     (1,` / `2);` one level in). <c>nameof(…)</c> is
+    ///     the <c>typeof</c> family's, not an invocation's (#507): it follows <c>skala_indent_pars</c>.
+    /// </remarks>
     ParenthesesIndentStyle ParenthesesStyleFor(SyntaxNode node) =>
         node switch {
             TypeArgumentListSyntax => options.IndentTypeargAngles,
             TypeParameterListSyntax => options.IndentTypeparamAngles,
+            ParenthesizedExpressionSyntax => ParenthesesIndentStyle.Inside,
+            PositionalPatternClauseSyntax or TupleExpressionSyntax when options.IndentPars == ParenthesesIndentStyle.None =>
+                ParenthesesIndentStyle.Inside,
+            ArgumentListSyntax { Parent: InvocationExpressionSyntax invocation } when BreakPlan.IsNameOf(invocation) =>
+                options.IndentPars,
             ArgumentListSyntax => options.IndentInvocationPars,
             ParameterListSyntax { Parent: TypeDeclarationSyntax } => options.IndentPrimaryConstructorDeclPars,
             ParameterListSyntax => options.IndentMethodDeclPars,
@@ -3428,7 +3441,7 @@ public sealed partial class CSharpDocumentBuilder {
         // parenthesis's scopes before this break for the same reason.
         if (nextToken.IsKind(SyntaxKind.CloseParenToken)
             && nextToken.Parent is ParenthesizedExpressionSyntax or TupleExpressionSyntax
-            && DelimiterLevels(options.IndentPars).Closer == 0) {
+            && DelimiterLevels(ParenthesesStyleFor(nextToken.Parent)).Closer == 0) {
             return true;
         }
 

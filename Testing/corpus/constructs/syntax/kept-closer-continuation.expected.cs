@@ -6,7 +6,7 @@
 // list too — and nests its arms from that line. A list the oracle only fills — a positional pattern, a
 // designation, a tuple type, a function pointer's parameters — keeps its closer one level past the
 // opener's line wherever that line sits. An argument list's `)` is the control that goes back to its
-// opener.
+// opener, and so does `nameof`'s, which is laid out as `typeof`'s and keeps every break (#507).
 
 namespace P;
 
@@ -128,4 +128,21 @@ public unsafe class C {
             ) switch {
                 _ => 0
             };
+
+    void N() {
+        var n1 = nameof(a
+        );
+        var n2 = nameof(
+            a);
+        var n3 = nameof(
+            a
+        );
+        var t1 = typeof(int
+        );
+        Call(
+            nameof(a
+            ),
+            b
+        );
+    }
 }

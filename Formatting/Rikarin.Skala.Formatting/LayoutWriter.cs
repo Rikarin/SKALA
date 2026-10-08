@@ -587,6 +587,12 @@ public sealed class LayoutWriter {
                         unconditional,
                         IsFromLine: true
                     ),
+                // ⚠ A delimited construct's `none` marker opens on its line, at no level, so that it
+                // takes that line's one level the way any delimiter does and an `=` opened beside it
+                // spends nothing: `var t = typeof(` / `int);` at `skala_indent_pars = none` puts `int`
+                // on the statement's column, not one level in (#508). Every other marker never counts.
+                IndentKind.None when (flags & (IndentFlags.Delimiter | IndentFlags.Grouping)) != 0 =>
+                    new Scope(false, 0, line, outer, unconditional),
                 _ => new Scope(false, 0, int.MaxValue, outer, unconditional)
             }
         );
