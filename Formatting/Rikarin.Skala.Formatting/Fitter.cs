@@ -507,7 +507,7 @@ public sealed class Fitter {
     ResolvedMode Worth(in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd, int segment, int pointSpace) {
         if (facts.PrefersOuterBreak) {
             // What lands on the continuation line if this group breaks and nothing inside it does.
-            var margin = facts.OuterMargin > 0 ? facts.OuterMargin : OuterBreakMargin(m);
+            var margin = facts.OuterMargin >= 0 ? facts.OuterMargin : OuterBreakMargin(m);
             var tail = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth + margin;
             if (!facts.SkipsOuterTail && Fits(m.ContinuationColumn, tail, m.Trailing)) {
                 return ResolvedMode.Broken;
@@ -522,7 +522,8 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
-                if (Fits(m.ContinuationColumn, segment + OuterBreakMargin(m))) {
+                var tailMargin = facts.TailMargin >= 0 ? facts.TailMargin : OuterBreakMargin(m);
+                if (Fits(m.ContinuationColumn, segment + tailMargin)) {
                     return ResolvedMode.Broken;
                 }
             }

@@ -1255,6 +1255,7 @@ public sealed partial class CSharpDocumentBuilder {
         List<(int Indented, bool Held)>? opened = null;
 
         foreach (var child in node.ChildNodesAndTokens()) {
+            var closeAfter = 0;
             // ⚠ A group that begins at a child of this node rather than at a node of its own — a
             // switch arm's `=>` and the body after it (issue #378). Opened before the gap that
             // precedes the child, so that the gap is the group's first point, and closed after the
@@ -1276,10 +1277,17 @@ public sealed partial class CSharpDocumentBuilder {
                         opened.Add(OpenGroupAt(planned, node));
                     }
                 }
+
+                closeAfter = plans.Count(planned => plan.ClosesAfterItsChild(planned.Id));
             }
 
             if (child.IsToken) {
                 EmitToken(child.AsToken());
+                for (; closeAfter > 0; closeAfter--) {
+                    CloseGroupAt(opened![^1]);
+                    opened.RemoveAt(opened.Count - 1);
+                }
+
                 continue;
             }
 
@@ -1595,7 +1603,49 @@ public sealed partial class CSharpDocumentBuilder {
             OpenIndent(IndentKind.Anchor);
         }
 
+        // ⚠ A type's keyword/name gap (#539): its group opens before the gap, on the keyword's line, with
+        // an anchor recording that line, and closes before the body. The base list nests from the anchor
+        // and not from the name's line — see BreakPlan.PlanTypeName.
+        var hasName = plan.TryTypeNameGroup(node, out var namePlan);
+        (int Indented, bool Held) nameGroup = default;
+        var nameOpen = false;
+        var header = node is TypeDeclarationSyntax { OpenBraceToken: var brace, SemicolonToken: var semicolon }
+            ? (brace.IsKind(SyntaxKind.None) ? semicolon : brace)
+            : default;
+
         foreach (var child in node.ChildNodesAndTokens()) {
+            if (hasName && child.IsToken && node is TypeDeclarationSyntax { Identifier: var name }
+                && child.AsToken() == name) {
+                OpenIndent(IndentKind.Anchor, false, IndentFlags.AnchorAtLine);
+                nameGroup = OpenGroupAt(namePlan, node);
+                nameOpen = true;
+
+                // ⚠ The name's level is the name line's alone: the type parameter list, the base list and
+                // the `where` run spend their own as they did, so `skala_indent_type_constraints` still
+                // decides the run's level (OptionObservabilityTests).
+                continuousDepth -= nameGroup.Indented;
+                EmitLeadingGapAt(name.SpanStart);
+            }
+
+            if (nameOpen && child.IsToken && child.AsToken() == header) {
+                EmitUpTo(header.GetPreviousToken().Span.End);
+                continuousDepth += nameGroup.Indented;
+                CloseGroupAt(nameGroup);
+                CloseIndent(IndentKind.Anchor);
+                nameOpen = false;
+            }
+
+            if (nameOpen && child.AsNode() is BaseListSyntax baseList) {
+                var savedDepth = continuousDepth;
+                continuousDepth = 0;
+                OpenIndent(IndentKind.AnchoredBrace);
+                VisitConstrainedChild(node, baseList, ref run);
+                EmitUpTo(baseList.Span.End);
+                CloseIndent(IndentKind.AnchoredBrace);
+                continuousDepth = savedDepth;
+                continue;
+            }
+
             if (child.IsToken) {
                 var token = child.AsToken();
                 if (anchorAtKeyword && token.IsKind(SyntaxKind.SwitchKeyword)) {
@@ -1699,6 +1749,13 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             CloseIndent(singleInsideInitializer ? IndentKind.OneLevel : IndentKind.Block);
+        }
+
+        if (nameOpen) {
+            EmitUpTo(node.Span.End);
+            continuousDepth += nameGroup.Indented;
+            CloseGroupAt(nameGroup);
+            CloseIndent(IndentKind.Anchor);
         }
 
         if (anchored) {
@@ -4885,14 +4942,20 @@ public sealed partial class CSharpDocumentBuilder {
     ///     margin is what Skala writes with or without the flag, where the oracle chops (SK-DIV-0352).
     /// </remarks>
     static bool IsAShortParameterBehindItsSection(SyntaxToken token) =>
-        token.Parent?.AncestorsAndSelf().OfType<ParameterSyntax>().FirstOrDefault() is {
-            AttributeLists: [{ Attributes.Count: 1 } section]
-        } parameter
-        && token == section.CloseBracketToken.GetNextToken()
-        && parameter.Span.End - token.SpanStart <= 11
-        && !parameter.SyntaxTree.GetText()
-            .ToString(TextSpan.FromBounds(token.SpanStart, parameter.Span.End))
-            .Contains('\n');
+        token.Parent?.AncestorsAndSelf().OfType<ParameterSyntax>().FirstOrDefault() is { } parameter
+        && IsAShortParameterBehindItsSection(parameter)
+        && token == parameter.AttributeLists[0].CloseBracketToken.GetNextToken();
+
+    /// <summary>Whether this parameter is at most eleven columns behind its one single-attribute section.</summary>
+    internal static bool IsAShortParameterBehindItsSection(ParameterSyntax parameter) {
+        if (parameter is not { AttributeLists: [{ Attributes.Count: 1 } section] }) {
+            return false;
+        }
+
+        var start = section.CloseBracketToken.GetNextToken().SpanStart;
+        return parameter.Span.End - start <= 11
+            && !parameter.SyntaxTree.GetText().ToString(TextSpan.FromBounds(start, parameter.Span.End)).Contains('\n');
+    }
 
     /// <summary>
     ///     Whether the token opens a tuple's item with a delimiter — the one fill whose head the oracle

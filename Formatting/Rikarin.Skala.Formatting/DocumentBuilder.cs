@@ -741,6 +741,7 @@ public sealed class DocumentBuilder {
         // own after the type arguments, the first has `()`. Measured on four such bodies, in a case
         // label's `when`, in an arm and after a lambda's arrow (issue #378).
         var stopsAtYieldingPoints = facts[group].BreaksOnlyIfHeadOverflows;
+        var stopsAtEveryYield = facts[group].StopsAtYieldingPoints;
         var tailEndsAt = facts[group].TailEndsAt;
         firstRunsToTheEnd = false;
         firstSegment = 0;
@@ -816,7 +817,7 @@ public sealed class DocumentBuilder {
             if (current >= 0) {
                 segment[current] = flat;
                 draftSegment[current] = drafted;
-                afterPoint[current] = stopsAtYieldingPoints && !pointStopped && yieldPoint >= 0
+                afterPoint[current] = (stopsAtYieldingPoints && !pointStopped || stopsAtEveryYield) && yieldPoint >= 0
                     ? yieldPoint
                     : point;
                 segmentHead[current] = Math.Min(head, flat);

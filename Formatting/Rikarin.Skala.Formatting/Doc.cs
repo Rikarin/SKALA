@@ -1084,9 +1084,17 @@ public sealed class Document {
 ///     arguments of a list that would fit whole below, and breaks before the <c>:</c> only when the
 ///     head up to <c>B(</c> does not fit, or by <see cref="TailEndsAt" />'s question.
 /// </param>
+/// <param name="TailMargin">
+///     ⚠ <see cref="OuterMargin" /> for <see cref="TailEndsAt" />'s continuation question, or −1 for the fitted one.
+/// </param>
+/// <param name="StopsAtYieldingPoints">
+///     ⚠ The ordering rule's second question ends at the first point after this group's own, a type
+///     argument list's yielding points included: a type declaration's keyword/name gap (#539) is not
+///     taken for <c>class G : IDictionary&lt;A…, B…,</c> past the margin, where the list fills.
+/// </param>
 /// <param name="OuterMargin">
 ///     ⚠ For a <see cref="PrefersOuterBreak" /> group: the margin its first question leaves, in place of the
-///     fitted one (<c>Fitter.OuterBreakMargin</c>), or zero. A type's base list with one base type after a
+///     fitted one (<c>Fitter.OuterBreakMargin</c>), or −1. A type's base list with one base type after a
 ///     primary constructor (SK-DIV-0198): the oracle stops breaking before the <c>:</c> once the
 ///     continuation line reaches 88 or 89 columns at two depths, where the fitted margin went on to 105.
 /// </param>
@@ -1138,7 +1146,9 @@ public readonly record struct GroupFacts(
     int KeywordWidth = 0,
     int TailEndsAt = -1,
     bool SkipsOuterTail = false,
-    int OuterMargin = 0,
+    int OuterMargin = -1,
+    int TailMargin = -1,
+    bool StopsAtYieldingPoints = false,
     bool MeasuresThroughTail = false,
     bool YieldsToOverflowingTypeArguments = false,
     int ColonFloor = 0,

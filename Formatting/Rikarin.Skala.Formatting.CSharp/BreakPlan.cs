@@ -329,6 +329,15 @@ public sealed class BreakPlan {
     /// </summary>
     readonly Dictionary<long, (int Section, int Run)> attributeRuns = [];
 
+    /// <summary>The group over a type declaration's keyword/name gap, by declaration (#539).</summary>
+    readonly Dictionary<long, GroupPlan> typeNames = [];
+
+    /// <summary>The groups opened at a child that close right after it — a property's name (#540).</summary>
+    readonly HashSet<int> closesAfterChild = [];
+
+    /// <summary>Whether a group opened at a child closes right after that child. See <see cref="PlanPropertyHead" />.</summary>
+    public bool ClosesAfterItsChild(int group) => closesAfterChild.Contains(group);
+
     /// <summary>
     ///     The two groups a run of sibling <c>where</c> clauses needs, keyed by the declaration.
     /// </summary>
@@ -486,8 +495,15 @@ public sealed class BreakPlan {
                     yield return plan;
                 }
             }
+
+            foreach (var plan in typeNames.Values) {
+                yield return plan;
+            }
         }
     }
+
+    /// <summary>The group over this type declaration's keyword/name gap, if any. See <see cref="PlanTypeName" />.</summary>
+    public bool TryTypeNameGroup(SyntaxNode node, out GroupPlan plan) => typeNames.TryGetValue(Key(node), out plan);
 
     /// <summary>
     ///     Whether anything between <paramref name="start" /> and <paramref name="end" /> is certain to
@@ -554,6 +570,7 @@ public sealed class BreakPlan {
     }
 
     void Plan(SyntaxNode node) {
+        PlanTypeName(node);
         PlanAttributes(node);
         PlanEmbeddedStatement(node, EmbeddedStatementOf(node));
         PlanStackedUsing(node);
@@ -874,6 +891,10 @@ public sealed class BreakPlan {
                 PlanBaseList(baseList);
                 return;
 
+            case PropertyDeclarationSyntax property:
+                PlanPropertyHead(property);
+                return;
+
             case VariableDeclarationSyntax declaration:
                 PlanTypeNameGap(declaration);
                 if (declaration.Variables.Count > 1) {
@@ -921,6 +942,17 @@ public sealed class BreakPlan {
 
             case AssignmentExpressionSyntax assignment:
                 PlanAroundEquals(assignment, assignment.OperatorToken, assignment.Right);
+                return;
+
+            // ⚠ Not a short parameter's default behind its one attribute section (#556): the oracle chops the
+            // section's arguments when the joined line overflows, `int a = 5` included, and a point at the
+            // `=` ended the arguments' measure first — Skala joined the section and broke after the `=`. A
+            // parameter of eleven columns has nothing to gain from that break. See
+            // CSharpDocumentBuilder.IsAShortParameterBehindItsSection.
+            case EqualsValueClauseSyntax { Parent: ParameterSyntax parameter } initializer
+                when CSharpDocumentBuilder.IsAShortParameterBehindItsSection(parameter):
+                Flat(initializer.EqualsToken);
+                Flat(initializer.Value.GetFirstToken());
                 return;
 
             case EqualsValueClauseSyntax { Value: not null } initializer:
@@ -1856,7 +1888,14 @@ public sealed class BreakPlan {
                 // own space, where the fitted one is 14 and went on to 105. 31 is exact on two, and one,
                 // two and five columns lenient on the others. With interfaces after it the whole-list
                 // question keeps the fitted margin, which matched there.
-                OuterMargin: primaryBase && inner < 0 ? SingleBaseTypeMargin : 0
+                OuterMargin: primaryBase && inner < 0 ? SingleBaseTypeMargin + BaseNameShift(node, 2) : -1,
+
+                // ⚠ And both margins move with the base type's name (round three, SK-DIV-0198): two columns
+                // (lone) or six (interfaces) more for a one-letter base than for a twelve-letter one, and the
+                // interfaces' continuation margin is 12, not the fitted 14. ⚠ A head-column term that fitted
+                // the five swept shapes exactly was refuted by #427's own `L5` (a 70-column head breaking
+                // before the `:` at an 88-column continuation line), so it is not wired.
+                TailMargin: primaryBase && inner >= 0 ? InterfacesTailMargin + BaseNameShift(node, 6) : -1
             ),
             true,
 
@@ -1933,6 +1972,19 @@ public sealed class BreakPlan {
 
     /// <summary>The first question's margin for a primary constructor's lone base type (SK-DIV-0198).</summary>
     const int SingleBaseTypeMargin = 31;
+
+    /// <summary>The interfaces' continuation margin at a 49-column head and a twelve-letter base (SK-DIV-0198).</summary>
+    const int InterfacesTailMargin = 12;
+
+    /// <summary>
+    ///     How much a base type's name shorter than twelve letters widens the margin: <paramref name="perEleven" />
+    ///     columns per eleven letters, rounded, measured between <c>BaseTypeName</c> and <c>B</c> (SK-DIV-0198).
+    ///     Never negative: no longer name was measured.
+    /// </summary>
+    static int BaseNameShift(BaseListSyntax node, int perEleven) =>
+        node.Types[0].Type.Span.Length >= 12
+            ? 0
+            : (int)Math.Round((12 - node.Types[0].Type.Span.Length) * perEleven / 11.0, MidpointRounding.AwayFromZero);
 
     /// <summary>
     ///     A tuple's components, <c>(A: 1, B: 2,\n C: 3)</c> — and every other delimited list the oracle
@@ -2463,6 +2515,117 @@ public sealed class BreakPlan {
             LocalFunctionStatementSyntax function => function.ConstraintClauses,
             _ => default
         };
+
+    /// <summary>
+    ///     The gap between a class's, a struct's, a record's or an interface's keyword and its name (#539).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 on about 360 headers (SK-DIV-0353): one, two and four
+    ///     type parameters, one and two interfaces, a name of 10 to 100 letters, the line 121 to 135 columns.
+    ///     The oracle writes <c>public class</c> / <c>    Name…</c> in two cases, which are the ordering rule's
+    ///     two questions: when the line runs past the margin before the header's next point (a name that
+    ///     fills the line, <c>Name : IFoo,</c> at 123), and when the rest of the header fits on the
+    ///     continuation line within a margin — five columns, so the gap breaks up to a 124-column line and
+    ///     the type parameter list's or the base list's own break takes over from 125; one column for a lone
+    ///     base type, which the oracle moves below the name up to 128 at least. The base list then sits at
+    ///     the declaration's own level, not one past the name's line — <c>    Name : IFoo,</c> /
+    ///     <c>    IBar {</c> — which <see cref="CSharpDocumentBuilder" /> writes from an anchor the group
+    ///     pushes on the keyword's line; a type parameter list fills one level past the name's line.
+    ///     ⚠ Not modelled: two type parameters behind a name of 25 letters or fewer, which the list's comma
+    ///     takes at 121 to 124, and a 10-letter name before two interfaces, broken at 121 only.
+    /// </remarks>
+    void PlanTypeName(SyntaxNode node) {
+        if (node is not (ClassDeclarationSyntax or StructDeclarationSyntax or InterfaceDeclarationSyntax
+                or RecordDeclarationSyntax)
+            || node is not TypeDeclarationSyntax { Identifier: var name } type
+            || name.IsKind(SyntaxKind.None)
+            || type.Keyword.IsKind(SyntaxKind.None)
+            || HasBlockCommentBefore(name)) {
+            return;
+        }
+
+        var group = NewGroup();
+        Point(name, group);
+        var loneBase = type is { ParameterList: null, TypeParameterList: null, BaseList.Types.Count: 1 };
+        typeNames[Key(node)] = new(
+            group,
+            GroupMode.Preserve,
+            new(
+                options.KeepsUserBreaksBetweenItems && BreaksBefore(name),
+                BreaksIfTooLong: true,
+                MeasuresHead: true,
+                PrefersOuterBreak: true,
+                OuterMargin: loneBase ? 0 : 4,
+                StopsAtYieldingPoints: true
+            ),
+            true,
+            true,
+            HoldsLevel: HeldLevel.WhileFlat
+        );
+        byId[group] = typeNames[Key(node)];
+    }
+
+    /// <summary>
+    ///     A property's two head gaps — after its modifiers and before its name — by the field's rules (#540).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 on <c>public static IReadOnlyDictionary&lt;…&gt; Property</c>
+    ///     with an accessor list, a getter alone, an expression body and a one-letter name, the type ending at
+    ///     117 to 125: the modifiers' gap breaks exactly when the type ends past 120, as a field's does; the
+    ///     name moves below when the line through it and the accessor list's <c>{</c> or the arrow does not
+    ///     fit — <c>…&gt;&gt; P {</c> stays and its accessors expand, <c>…&gt;&gt; Property {</c> does not. Skala
+    ///     filled the type's argument list instead.
+    /// </remarks>
+    void PlanPropertyHead(PropertyDeclarationSyntax node) {
+        if (node.Type.DescendantTrivia().Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
+            || HasBlockCommentBefore(node.Identifier)
+            || node.ExplicitInterfaceSpecifier is not null) {
+            return;
+        }
+
+        if (node.Modifiers.Count > 0) {
+            var modifiers = NewGroup();
+            Point(node.Type.GetFirstToken(), modifiers);
+            Describe(
+                node.Type,
+                new(
+                    modifiers,
+                    GroupMode.Preserve,
+                    new(
+                        options.KeepsUserBreaksBetweenItems && BreaksBefore(node.Type.GetFirstToken()),
+                        BreaksIfTooLong: true,
+                        PrefersOuterBreak: true,
+                        SkipsOuterTail: true
+                    ),
+                    true,
+                    true
+                )
+            );
+        }
+
+        // ⚠ Around the name alone: the group's level is the name line's, and the arrow's or the accessor
+        // list's own groups after it spend theirs as they did.
+        var name = NewGroup();
+        Point(node.Identifier, name);
+        closesAfterChild.Add(name);
+        OpenAt(
+            node,
+            node.Identifier.SpanStart,
+            new(
+                name,
+                GroupMode.Preserve,
+                new(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(node.Identifier),
+                    BreaksIfTooLong: true,
+                    PrefersOuterBreak: true,
+                    SkipsOuterTail: true
+                ),
+                true,
+                true
+            )
+        );
+    }
 
     /// <summary>
     ///     The gap between a field's or a local's type and its first name, broken when the line through
@@ -4837,15 +5000,30 @@ public sealed class BreakPlan {
 
     static int CalleeWidthOf(ExpressionSyntax value) =>
         value is InvocationExpressionSyntax {
-            Expression: IdentifierNameSyntax callee, ArgumentList.Arguments.Count: >= 2
-        }
+                Expression: IdentifierNameSyntax, ArgumentList.Arguments.Count: >= 2
+            }
+            or ObjectCreationExpressionSyntax {
+                Type: IdentifierNameSyntax, ArgumentList.Arguments.Count: >= 2, Initializer: null
+            }
         && !value.DescendantTrivia()
             .Any(static trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia)
                 || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
                 || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
             )
-            ? callee.Span.Length
+            ? CalleeOf(value)
             : 0;
+
+    /// <summary>
+    ///     The callee's width: an identifier's, or <c>new T</c>'s — a creation with arguments is measured as a
+    ///     call whose callee is <c>new</c> and its type (#555): the oracle chops its arguments by the same
+    ///     floor.
+    /// </summary>
+    static int CalleeOf(ExpressionSyntax value) =>
+        value switch {
+            InvocationExpressionSyntax invocation => invocation.Expression.Span.Length,
+            ObjectCreationExpressionSyntax creation => creation.ArgumentList!.SpanStart - creation.SpanStart,
+            _ => 0
+        };
 
     /// <summary>
     ///     The token a collection-valued <c>=</c> measures its head from: the first token of the
