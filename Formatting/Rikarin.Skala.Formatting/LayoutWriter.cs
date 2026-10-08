@@ -511,15 +511,31 @@ public sealed class LayoutWriter {
         // ⚠ A block — and the anchor a switch expression's block nests from — reads the scopes opened
         // on its own line differently from every other scope. See LevelForBlock.
         var outer = kind is IndentKind.Block or IndentKind.Anchor ? LevelForBlock(ancestors) : LevelForNested();
+        if (kind == IndentKind.Anchor && (flags & IndentFlags.AnchorAtLine) != 0) {
+            outer = CurrentLineIndent();
+        }
 
         // ⚠ A delimited list on the first line of a construct that broke after it nests from that
         // construct's continuation line, and its closer sits on it. See LiftedLevel.
         var lifted = -1;
         if (kind is IndentKind.Continuous or IndentKind.OneLevel
-            && (flags & (IndentFlags.Delimiter | IndentFlags.ChainLevel)) != 0) {
+            && (flags & (IndentFlags.Delimiter | IndentFlags.Grouping | IndentFlags.ChainLevel)) != 0) {
             lifted = LiftedLevel(ancestors, outer, (flags & IndentFlags.ChainLevel) != 0, node, kind, columns);
             if (lifted >= 0) {
                 outer = lifted;
+            }
+        }
+
+        // ⚠ A grouping parenthesis whose chain the author broke after it nests from that chain's
+        // continuation line — the line after this one — when it is deeper. See IndentFlags.BrokenAfter.
+        if (lifted < 0
+            && kind is IndentKind.Continuous or IndentKind.OneLevel
+            && (flags & IndentFlags.BrokenAfter) != 0) {
+            line++;
+            var continuation = Level(false);
+            line--;
+            if (continuation > outer) {
+                lifted = outer = continuation;
             }
         }
 
@@ -542,9 +558,13 @@ public sealed class LayoutWriter {
             kind = IndentKind.Block;
         }
 
+        // ⚠ A braced continuation — an initializer's elements, a switch expression's arms — is a block
+        // that takes the continuation multiplier's width (#464). See IndentFlags.Multiplied.
+        var blockWidth = (flags & IndentFlags.Multiplied) != 0 ? continuousMultiplier * indentWidth : indentWidth;
+
         scopes.Add(
             kind switch {
-                IndentKind.Block => new Scope(true, outer + indentWidth, line, outer, unconditional),
+                IndentKind.Block => new Scope(true, outer + blockWidth, line, outer, unconditional),
 
                 // ⚠ The level a scope opening here would nest from — `outer` — and not the line's own
                 // indentation. The two differ by the delimited scopes opened earlier on this line, and
@@ -562,7 +582,8 @@ public sealed class LayoutWriter {
                         outer,
                         unconditional,
                         IsGrouping: (flags & IndentFlags.Grouping) != 0,
-                        Lifted: lifted
+                        Lifted: lifted,
+                        IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0
                     ),
                 IndentKind.OneLevel =>
                     new Scope(
@@ -572,7 +593,8 @@ public sealed class LayoutWriter {
                         outer,
                         unconditional,
                         IsGrouping: (flags & IndentFlags.Grouping) != 0,
-                        Lifted: lifted
+                        Lifted: lifted,
+                        IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0
                     ),
                 IndentKind.Outdent =>
                     new Scope(true, Math.Max(0, outer - indentWidth), line, outer, unconditional),
@@ -615,6 +637,12 @@ public sealed class LayoutWriter {
                         unconditional,
                         IsFromLine: true
                     ),
+                // ⚠ A delimited construct's `none` marker opens on its line, at no level, so that it
+                // takes that line's one level the way any delimiter does and an `=` opened beside it
+                // spends nothing: `var t = typeof(` / `int);` at `skala_indent_pars = none` puts `int`
+                // on the statement's column, not one level in (#508). Every other marker never counts.
+                IndentKind.None when (flags & (IndentFlags.Delimiter | IndentFlags.Grouping)) != 0 =>
+                    new Scope(false, 0, line, outer, unconditional),
                 _ => new Scope(false, 0, int.MaxValue, outer, unconditional)
             }
         );
@@ -763,6 +791,16 @@ public sealed class LayoutWriter {
             }
 
             if (scope.Lifted >= 0 && !BrokenInsideOnItsLine(index, scope)) {
+                // ⚠ A lifted grouping parenthesis is still transparent to a block opened on its own
+                // line: `var x = (y switch {` / … / `}).ToString()` / `.Length` puts the `}` on the
+                // chain's continuation line and the arms one past it (SK-DIV-0148). Not once the walk is
+                // outside the broken construct: there the grouping is around it, and its level is part of
+                // the construct's continuation line — `(((ax * ax)` / `+ (az` / `* az))` / `* (…))` puts
+                // `+ (az` three levels in, lifted by the inner `*` within the outer grouping's lift.
+                if (scope.IsGrouping && scope.OpenLine == line && !outside) {
+                    return Math.Max(0, level + scope.Lifted);
+                }
+
                 var counts = outside
                     ? scope.OpenLine <= line && (scope.Unconditional || scope.OpenLine != blocked)
                     : scope.Unconditional
@@ -904,6 +942,14 @@ public sealed class LayoutWriter {
     ///     scope of its own, so the construct is looked for among the groups, not the scopes.
     /// </remarks>
     bool BrokenInsideOnItsLine(int index, in Scope scope) {
+        // ⚠ Not for a parenthesis the author's chain broke after: `var z = (a` / `+ b).C` / `.D();`
+        // lifts the `+ b` with the rest of the contents (#470). Nor for any grouping parenthesis
+        // (#481): `- ((c.` / `X` / `- a.X)` / `* (b.Z - a.Z))` lifts the inner `- a.X` to the `*`'s
+        // continuation line though the `-` broke on the grouping's own line.
+        if (scope.IsBrokenAfter || scope.IsGrouping) {
+            return false;
+        }
+
         foreach (var (_, depth, opened) in brokenConstructs) {
             if (depth > index && opened == scope.OpenLine) {
                 return true;
@@ -1110,7 +1156,13 @@ public sealed class LayoutWriter {
             // ⚠ Absolute, as a block is: everything outside a lifted list is already in `Lifted`.
             // Unless a broken construct inside the list opened on the list's own line, which is the
             // innermost broken construct around this line and continues the ordinary way.
-            if (scope.Lifted >= 0 && !BrokenInsideOnItsLine(i, scope)) {
+            // ⚠ Not for the line the scope opened at the very start of, before anything was written on
+            // it: a construct's own first line is never moved by its lift. A property fill that is a
+            // switch arm's pattern, `SyntaxKind.A` / `or SyntaxKind.B => …`, opens its level as the arm's
+            // line begins, and lifting there pushed the arm a level in (merge of #481 with #482).
+            if (scope.Lifted >= 0
+                && !BrokenInsideOnItsLine(i, scope)
+                && !(!nested && atLineStart && scope.OpenLine == line)) {
                 var counts = scope.Unconditional
                     ? nested ? scope.OpenLine <= line : scope.OpenLine < line
                     : scope.OpenLine < line && scope.OpenLine != blocked;
@@ -1206,7 +1258,8 @@ public sealed class LayoutWriter {
         bool IsGrouping = false,
         int Lifted = -1,
         int AlignedCloser = -1,
-        bool IsFromLine = false);
+        bool IsFromLine = false,
+        bool IsBrokenAfter = false);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     /// <summary>

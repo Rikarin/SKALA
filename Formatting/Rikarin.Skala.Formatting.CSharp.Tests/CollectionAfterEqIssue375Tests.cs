@@ -30,11 +30,10 @@ public sealed class CollectionAfterEqIssue375Tests {
     /// <summary>
     ///     The fuzzer's four lines. One pass equals two, and the <c>=</c> line and the closing bracket
     ///     are the oracle's, and since #471 so is the <c>null!, ((</c> head: a collection element with a
-    ///     certain break inside keeps its head on the comma's line (SK-DIV-0117). ⚠ The lines after it
-    ///     are not, for a reason that is not this issue's and is recorded beside it: the oracle puts the
-    ///     lambda's parameters one level past the element and the <c>)</c> on the element's column,
-    ///     because a grouping parenthesis is transparent to the parameter list it wraps (SK-DIV-0118).
-    ///     Skala's fixed point is pinned here exactly, so that its moving is visible.
+    ///     certain break inside keeps its head on the comma's line (SK-DIV-0117). Since #481 so are the
+    ///     lines after it — the lambda's parameters one level past the element and the <c>)</c> on the
+    ///     element's column, a grouping parenthesis being transparent to the parameter list it wraps
+    ///     (SK-DIV-0118) — so Skala's fixed point is the oracle's answer, pinned here exactly.
     /// </summary>
     [Fact]
     public void TheFuzzersInput_SettlesInOnePass_OnTheOraclesBracket() {
@@ -73,9 +72,9 @@ public sealed class CollectionAfterEqIssue375Tests {
                                  void M() {
                                      var (a58, b59) = [
                                          null!, ((
-                                                 x,
-                                                 y
-                                             ) => { })
+                                             x,
+                                             y
+                                         ) => { })
                                      ];
                                  }
                              }
@@ -129,9 +128,9 @@ public sealed class CollectionAfterEqIssue375Tests {
                                      var (a58, b59) = [
                                          null!,
                                          ((
-                                                 x,
-                                                 y
-                                             ) => { })
+                                             x,
+                                             y
+                                         ) => { })
                                      ];
                                  }
                              }
