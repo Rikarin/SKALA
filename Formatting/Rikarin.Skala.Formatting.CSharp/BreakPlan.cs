@@ -1864,10 +1864,10 @@ public sealed class BreakPlan {
 
         Describe(
             node,
-            new GroupPlan(
+            new(
                 inner,
                 style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-                new GroupFacts(
+                new(
                     options.KeepsUserBreaksBetweenItems && innerBroken,
                     BreaksIfTooLong: true,
 
@@ -2040,7 +2040,7 @@ public sealed class BreakPlan {
             owner,
             run,
             GroupMode.Preserve,
-            new GroupFacts(JoinsIfFits: true, BreaksIfTooLong: true, TailEndsAt: section, MeasuresThroughTail: true)
+            new(JoinsIfFits: true, BreaksIfTooLong: true, TailEndsAt: section, MeasuresThroughTail: true)
         );
     }
 
@@ -2475,14 +2475,14 @@ public sealed class BreakPlan {
         Point(name, group);
         Describe(
             node.Variables[0],
-            new GroupPlan(
+            new(
                 group,
                 GroupMode.Preserve,
                 // ⚠ The ordering rule's second question alone, asked through PrefersOuterBreak and
                 // SkipsOuterTail rather than BreaksOnlyIfHeadOverflows: that fact also makes the type's
                 // own argument list read through a name with nothing breakable after it, which filled
                 // `IReadOnlyDictionary<string,` / `…>> Overflowing;` where the oracle moves the name.
-                new GroupFacts(
+                new(
                     options.KeepsUserBreaksBetweenItems && BreaksBefore(name),
                     BreaksIfTooLong: true,
                     PrefersOuterBreak: true,
@@ -2726,16 +2726,16 @@ public sealed class BreakPlan {
             if (options.KeepsUserBreaksBetweenItems && BreaksBefore(dot)) {
                 Mandatory(dot);
             } else {
-                Point(dot, group, fill: true);
+                Point(dot, group, true);
             }
         }
 
         Describe(
             root,
-            new GroupPlan(
+            new(
                 group,
                 GroupMode.Preserve,
-                new GroupFacts(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: true),
+                new(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: true),
                 ChainHeadIsParenthesised(root),
                 OwnLevel: !ChainHeadIsParenthesised(root)
             )
@@ -2874,7 +2874,7 @@ public sealed class BreakPlan {
                         // conditional access the binding hangs from walks its own receiver.
                         dots.Add(
                             !wrapAfterProperty && ConditionalOf(binding) is { } owner
-                                ? PropertyRun(ChainDot(binding), owner.Expression, crossed: true).Dot
+                                ? PropertyRun(ChainDot(binding), owner.Expression, true).Dot
                                 : ChainDot(binding)
                         );
 
