@@ -28,7 +28,7 @@ public sealed class CoalesceChainIssue580Tests {
         + " gammaaaaaaaaaaaaaaaaaaaa.Delta() ?? epsilon;";
 
     const string Long10 = "?? betaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ?? throw new System.InvalidOperationEx"
-        + "ception(\"x\");";
+        + """ception("x");""";
 
     const string Long1 = "var someLongerName = alphaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ?? betaaaaaaaaaaaaaaaaaaa"
         + "aaaaaaaaaaaaaaaa ?? gammaaaaaaaaaaaaaaaaaa ?? deltaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -42,7 +42,7 @@ public sealed class CoalesceChainIssue580Tests {
         + "?? gammaaaaaaaaaaaaaaaaaa ?? deltaaaaaaaaaaaaaaaaaaaa);";
 
     const string Long4 = "var b = alphaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ?? betaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        + "aaa ?? throw new System.InvalidOperationException(\"x\");";
+        + """aaa ?? throw new System.InvalidOperationException("x");""";
 
     static string FormatWith(string source) {
         var options = new PhaseOneOptions(

@@ -29,7 +29,7 @@ namespace Rikarin.Skala.Conformance.Tests;
 ///     </para>
 /// </remarks>
 public sealed class ArrangementRuleTests {
-    const string Long1 = "return $\"{a}{b}{c}{d}{e}{f}{g}{h}{i}{j}{k}{l}{m}{n}{o}{p}{q}{r}{s}{t}{u}{v}\";";
+    const string Long1 = """return $"{a}{b}{c}{d}{e}{f}{g}{h}{i}{j}{k}{l}{m}{n}{o}{p}{q}{r}{s}{t}{u}{v}";""";
 
     const string Long2 = "Console.WriteLine(map.Count + cast + t.Name + d + s + max + empty + _count + _ma"
         + "ybe + _native);";

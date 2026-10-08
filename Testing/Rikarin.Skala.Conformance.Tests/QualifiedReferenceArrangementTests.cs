@@ -12,7 +12,7 @@ namespace Rikarin.Skala.Conformance.Tests;
 ///     purpose — the rule's whole risk is a short name that binds to something else.
 /// </remarks>
 public sealed class QualifiedReferenceArrangementTests {
-    const string Long1 = "return \"\" + _framework + _pattern + _threading + _timers + _list + _info + _nest"
+    const string Long1 = """return "" + _framework + _pattern + _threading + _timers + _list + _info + _nest"""
         + "ed + _commented + new Abe();";
 
     const string Firing = """

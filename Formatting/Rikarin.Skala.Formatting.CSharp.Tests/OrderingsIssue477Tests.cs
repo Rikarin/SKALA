@@ -1,4 +1,3 @@
-using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 

@@ -11,17 +11,17 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>PrimaryConstructorWrites.cs</c> and <c>ReflectiveTypeTestAnalyzer.cs</c>.
 /// </remarks>
 public sealed class BrokenIsAndArmHeadIssue549550Tests {
-    const string Long1 = "is not { Name: \"Enumerable\", Namespace: { Name: \"Linq\", Parent: { Name: \"System\""
-        + ", IsGlobalNamespace: true } } };";
+    const string Long1 = """is not { Name: "Enumerable", Namespace: { Name: "Linq", Parent: { Name: "Syste"""
+        + """m", IsGlobalNamespace: true } } };""";
 
-    const string Long2 = "Name: \"Enumerable\", Namespace: { Name: \"Linq\", Parent: { Name: \"System\", IsGloba"
+    const string Long2 = """Name: "Enumerable", Namespace: { Name: "Linq", Parent: { Name: "System", IsGloba"""
         + "lNamespace: true } }";
 
-    const string Long3 = "is not { Name: \"Enumerable\", Namespace: { Name: \"Linq\", Parent: { Name: \"System\""
-        + ", IsGlobalNamespace: true } } }) {";
+    const string Long3 = """is not { Name: "Enumerable", Namespace: { Name: "Linq", Parent: { Name: "Syste"""
+        + """m", IsGlobalNamespace: true } } }) {""";
 
     const string Long4 = "Parent: InvocationExpressionSyntax { Expression: IdentifierNameSyntax { Identifi"
-        + "er.Text: \"nameof\" } }";
+        + """er.Text: "nameof" } }""";
 
     const string Long5 = "BlockSyntax { Parent: AnonymousMethodExpressionSyntax or SimpleLambdaExpressionS"
         + "yntax or ParenthesizedLambdaExpressionSyntax } =>";

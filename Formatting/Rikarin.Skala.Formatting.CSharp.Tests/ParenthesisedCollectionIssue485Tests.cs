@@ -12,41 +12,41 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     under the repository's configuration and at <c>skala_keep_user_linebreaks = false</c>.
 /// </remarks>
 public sealed class ParenthesisedCollectionIssue485Tests {
-    const string Long1 = "[\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma gamma\", \"delta d"
-        + "elta delta delta\", \"epsilon epsilon\"]);";
+    const string Long1 = """["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta d"""
+        + """elta delta delta", "epsilon epsilon"]);""";
 
-    const string Long2 = "string[] b = ([\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma ga"
-        + "mma\", \"delta delta delta delta\", \"epsilon\"]);";
+    const string Long2 = """string[] b = (["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma ga"""
+        + """mma", "delta delta delta delta", "epsilon"]);""";
 
-    const string Long3 = "[\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma gamma\", \"delta d"
-        + "elta delta delta delta\"]);";
+    const string Long3 = """["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta d"""
+        + """elta delta delta delta"]);""";
 
-    const string Long4 = "[\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma gamma\", \"delta d"
-        + "elta delta delta\", \"epsilon epsilon\"]));";
+    const string Long4 = """["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta d"""
+        + """elta delta delta", "epsilon epsilon"]));""";
 
     const string Long5 = "\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma gamma\", \"delta de"
-        + "lta delta delta\",";
+        + """lta delta delta",""";
 
     const string Long6 = "\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma gamma\", \"delta de"
         + "lta delta delta\", \"epsilon\"";
 
-    const string Long7 = "[\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma gamma\", \"delta d"
-        + "elta delta delta delt\"]);";
+    const string Long7 = """["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta d"""
+        + """elta delta delta delt"]);""";
 
-    const string Long8 = "[\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma gamma\", \"delta d"
-        + "elta delta delta deltaa\"]);";
+    const string Long8 = """["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta d"""
+        + """elta delta delta deltaa"]);""";
 
-    const string Long9 = "string[] d = ([\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma ga"
-        + "mma\", \"delta delta delta\"]);";
+    const string Long9 = """string[] d = (["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma ga"""
+        + """mma", "delta delta delta"]);""";
 
-    const string Long10 = "[\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma gamma\", \"delta d"
-        + "elta delta delta deltaaa\"]);";
+    const string Long10 = """["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta d"""
+        + """elta delta delta deltaaa"]);""";
 
-    const string Long11 = "[\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma gamma\", \"delta d"
-        + "elta delta delta deltaaaa\"]);";
+    const string Long11 = """["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta d"""
+        + """elta delta delta deltaaaa"]);""";
 
-    const string Long12 = "string[] f = ([\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma ga"
-        + "mma\", \"delta delta delta delta delta\"]);";
+    const string Long12 = """string[] f = (["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma ga"""
+        + """mma", "delta delta delta delta delta"]);""";
 
     const string Long13 = "\"alpha alpha alpha\", \"beta beta beta beta\", \"gamma gamma gamma gamma\", \"delta de"
         + "lta delta delta deltaaaa\"";

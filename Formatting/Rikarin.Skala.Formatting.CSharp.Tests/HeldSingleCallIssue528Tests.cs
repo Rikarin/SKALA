@@ -24,7 +24,7 @@ public sealed class HeldSingleCallIssue528Tests {
         + "ategy?>(enumType, namingStrategy));";
 
     const string Long3 = "var bottom = device.CreateAccelerationStructure(new(AccelerationStructureKind.Bo"
-        + "ttomLevel, bottomSizes.Structure, \"as-bottom\"));";
+        + """ttomLevel, bottomSizes.Structure, "as-bottom"));""";
 
     const string Long4 = "var methods = CallableConfigurationMethodFinder.FindConfigurationMethods(configu"
         + "rationAssemblies, receiverGroup.Key);";

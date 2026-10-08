@@ -60,12 +60,12 @@ public sealed class ArrayElementDraftIssue444Tests {
 
     const string Long15 = "var c4 = new object[] { alphaValue, Compute(alphaArgumentValue, betaArgumentValu"
         + "e, gammaArgumentValue, deltaArgumentValue, epsilonArgumentValue, zetaArgumentVal"
-        + "ue), [\"ss\", @\"verbatim\\path\", \"ssssssssssssss\", null, 3_000_000L, alphaArgumentV"
+        + """ue), ["ss", @"verbatim\path", "ssssssssssssss", null, 3_000_000L, alphaArgumentV"""
         + "alue, betaArgumentValue, rest] };";
 
     const string Long16 = "var c5 = new object[] { alphaValue, Compute(alphaArgumentValue, betaArgumentValu"
         + "e, gammaArgumentValue, deltaArgumentValue, epsilonArgumentValue, zetaArgumentVal"
-        + "ue), new[] { \"ss\", @\"verbatim\\path\", \"ssssssssssssss\", null, 3_000_000L, alphaAr"
+        + """ue), new[] { "ss", @"verbatim\path", "ssssssssssssss", null, 3_000_000L, alphaAr"""
         + "gumentValue, betaArgumentValue, rest } };";
 
     const string Long17 = "var c6 = new object[] { alphaValue, Compute(alphaArgumentValue, betaArgumentValu"
@@ -74,13 +74,13 @@ public sealed class ArrayElementDraftIssue444Tests {
 
     const string Long18 = "var c7 = new object[] { alphaValue, new[] { alphaArgumentValue, betaArgumentValu"
         + "e, gammaArgumentValue, deltaArgumentValue, epsilonArgumentValue, zetaArgumentVal"
-        + "ue, eta }, [\"ss\", @\"verbatim\\path\", \"ssssssssssssss\", null, 3_000_000L, alphaArg"
+        + """ue, eta }, ["ss", @"verbatim\path", "ssssssssssssss", null, 3_000_000L, alphaArg"""
         + "umentValue, betaArgumentValue, rest] };";
 
-    const string Long19 = "var c8 = new object[] { alphaValue, betaValue, [\"ss\", @\"verbatim\\path\", \"sssssss"
-        + "sssssss\", null, 3_000_000L, alphaArgumentValue, betaArgumentValue, rest] };";
+    const string Long19 = """var c8 = new object[] { alphaValue, betaValue, ["ss", @"verbatim\path", "sssssss"""
+        + """sssssss", null, 3_000_000L, alphaArgumentValue, betaArgumentValue, rest] };""";
 
-    const string Long20 = "[\"ss\", @\"verbatim\\path\", \"ssssssssssssss\", null, 3_000_000L, alphaArgumentValue,"
+    const string Long20 = """["ss", @"verbatim\path", "ssssssssssssss", null, 3_000_000L, alphaArgumentValue,"""
         + " betaArgumentValue, rest]";
 
     const string Long21 = "\"ss\", @\"verbatim\\path\", \"ssssssssssssss\", null, 3_000_000L, alphaArgumentValue, "
@@ -98,7 +98,7 @@ public sealed class ArrayElementDraftIssue444Tests {
     const string Long25 = "1, Compute(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumen"
         + "tValueNumberThree), 3";
 
-    const string Long26 = "(\"SK9099\", \"FormatDiagnosticIds\"), (\"SK9001\", \"SkalaDiagnostic\"), // ConfigDiagn"
+    const string Long26 = """("SK9099", "FormatDiagnosticIds"), ("SK9001", "SkalaDiagnostic"), // ConfigDiagn"""
         + "osticIds.UnknownKey";
 
     const string Long1 = "FormatDiagnosticIds.FileIoFailed";

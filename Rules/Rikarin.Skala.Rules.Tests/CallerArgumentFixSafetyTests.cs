@@ -9,23 +9,23 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     #422: no fix is safe where it changes text a <c>[CallerArgumentExpression]</c> parameter captures.
 /// </summary>
 public sealed class CallerArgumentFixSafetyTests {
-    const string Long1 = "public Box(Func<int, int> f, [CallerArgumentExpression(\"f\")] string text = \"\") ="
+    const string Long1 = """public Box(Func<int, int> f, [CallerArgumentExpression("f")] string text = "") ="""
         + "> Text = text;";
 
-    const string Long2 = "public static string Capture(object? value, [CallerArgumentExpression(\"value\")] "
-        + "string text = \"\") => text;";
+    const string Long2 = """public static string Capture(object? value, [CallerArgumentExpression("value")] """
+        + """string text = "") => text;""";
 
-    const string Long3 = "public static string Many([CallerArgumentExpression(\"values\")] string text = \"\","
+    const string Long3 = """public static string Many([CallerArgumentExpression("values")] string text = "","""
         + " params Func<int, int>[] values) => text;";
 
-    const string Long4 = "public static string Text<T>(this T value, [CallerArgumentExpression(\"value\")] s"
-        + "tring text = \"\") => text;";
+    const string Long4 = """public static string Text<T>(this T value, [CallerArgumentExpression("value")] s"""
+        + """tring text = "") => text;""";
 
-    const string Long5 = "public static string Misnamed(Func<int, int> f, [CallerArgumentExpression(\"nothi"
-        + "ng\")] string text = \"\") => text;";
+    const string Long5 = """public static string Misnamed(Func<int, int> f, [CallerArgumentExpression("nothi"""
+        + """ng")] string text = "") => text;""";
 
-    const string Long6 = "public static string Self(int value, [CallerArgumentExpression(\"text\")] string t"
-        + "ext = \"\") => text;";
+    const string Long6 = """public static string Self(int value, [CallerArgumentExpression("text")] string t"""
+        + """ext = "") => text;""";
 
     static readonly string ProbePath = Path.Combine(
         RuleFixtures.Root,
