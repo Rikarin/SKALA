@@ -858,6 +858,154 @@ public sealed class ArrangementRuleTests {
         Assert.Contains("_ = new(pattern, options);", arranged, StringComparison.Ordinal);
     }
 
+    /// <summary>The probe #461's rows are asked of, compiled as one file.</summary>
+    const string ArgumentProbe = """
+                                 using System;
+                                 using System.Collections.Generic;
+
+                                 namespace P;
+
+                                 public class Foo { public Foo() { } public Foo(Bar b) { } }
+                                 public class Two { public Two(Bar b) { } public Two(Baz z) { } }
+                                 public class Bar { }
+                                 public class Baz { }
+                                 public class Derived : Foo { }
+                                 public struct Val { public int X; }
+                                 public class Box<T> { public static void Put(T value) { } }
+                                 public static class Ext { public static void Use(this string s, Foo f) { } }
+                                 public class Base { public Base(Foo f) { } }
+                                 public class Primary() : Base(new Foo());
+
+                                 public class C : Base {
+                                     public C() : base(new Foo()) { }
+                                     public C(int unused) : this() { }
+
+                                     static void One(Foo f) { }
+                                     static void Over(Foo f) { }
+                                     static void Over(Bar b) { }
+                                     static void Arity(Foo f) { }
+                                     static void Arity(Foo f, int i) { }
+                                     static void Gen<T>(T value) { }
+                                     static void Params(params object[] values) { }
+                                     static void ParamsFoo(params Foo[] values) { }
+                                     static void Optional(Foo? f = null) { }
+                                     static void NullableVal(Val? v) { }
+                                     static void TakeVal(Val v) { }
+                                     static void TakeIn(in Foo f) { }
+                                     static void Pair(Foo a, Foo b) { }
+                                     static void Cross(Foo a, Bar b) { }
+                                     static void Cross(Bar a, Foo b) { }
+                                     static void TakeObj(object o) { }
+                                     static void TakeObj(string s) { }
+
+                                     event EventHandler? Changed;
+
+                                     void M(Action<Foo> action, Dictionary<Foo, int> map) {
+                                         Changed?.Invoke(this, new EventArgs());
+                                         One(new Foo());
+                                         Over(new Foo());
+                                         Arity(new Foo(), 1);
+                                         Gen(new Foo());
+                                         Gen<Foo>(new Foo());
+                                         Params(new object());
+                                         ParamsFoo(new Foo());
+                                         One(new Derived());
+                                         Optional(new Foo());
+                                         NullableVal(new Val());
+                                         TakeVal(new Val());
+                                         TakeIn(new Foo());
+                                         Pair(b: new Foo(), a: new Foo());
+                                         Cross(new Foo(), new Bar());
+                                         Cross(new Bar(), new Foo());
+                                         TakeObj(new object());
+                                         action(new Foo());
+                                         Console.WriteLine(map[new Foo()]);
+                                         Box<Foo>.Put(new Foo());
+                                         "x".Use(new Foo());
+                                         One(new Foo(new Bar()));
+                                         Console.WriteLine(new Two(new Bar()));
+                                         Console.WriteLine(new object());
+                                     }
+                                 }
+                                 """;
+
+    /// <summary>
+    ///     #461: an argument is a target-typed position, and the oracle's rows are reproduced — each
+    ///     line here is what <c>jb cleanupcode</c> 2025.2.6 wrote for it under <c>SkalaCleanup</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The two <c>Cross</c> rows are the order-dependence: the first argument alone keeps one
+    ///     overload applicable, both together would make the call ambiguous, and the oracle converts the
+    ///     first and stops — in either argument order. <c>One(new(new()))</c> is the oracle's too, and it
+    ///     compiles: the outer creation's constructor is chosen against <c>Foo</c> exactly as before.
+    /// </remarks>
+    [Theory]
+    [InlineData("public class Primary() : Base(new());")]
+    [InlineData("public C() : base(new()) { }")]
+    [InlineData("One(new());")]
+    [InlineData("Arity(new(), 1);")]
+    [InlineData("Gen<Foo>(new());")]
+    [InlineData("Optional(new());")]
+    [InlineData("TakeVal(new());")]
+    [InlineData("TakeIn(new());")]
+    [InlineData("Pair(b: new(), a: new());")]
+    [InlineData("Cross(new(), new Bar());")]
+    [InlineData("Cross(new(), new Foo());")]
+    [InlineData("action(new());")]
+    [InlineData("Console.WriteLine(map[new()]);")]
+    [InlineData("Box<Foo>.Put(new());")]
+    [InlineData("\"x\".Use(new());")]
+    [InlineData("One(new(new()));")]
+    [InlineData("Changed?.Invoke(this, new());")]
+    public void ObjectCreation_AnArgumentIsTargetTyped(string expected) {
+        var arranged = Declined(Attempt(ArgumentProbe, ArrangeIds.ObjectCreation));
+        Assert.Contains(expected, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     #461's refusals: each of these would bind another member, fail to infer, or name a type the
+    ///     parameter is not. The oracle leaves every one as written.
+    /// </summary>
+    [Theory]
+    [InlineData("Over(new Foo());")]
+    [InlineData("Gen(new Foo());")]
+    [InlineData("Params(new object());")]
+    [InlineData("ParamsFoo(new Foo());")]
+    [InlineData("One(new Derived());")]
+    [InlineData("NullableVal(new Val());")]
+    [InlineData("TakeObj(new object());")]
+    [InlineData("Console.WriteLine(new Two(new Bar()));")]
+    [InlineData("Console.WriteLine(new object());")]
+    public void ObjectCreation_AnArgumentThatWouldRebindTheCall_KeepsItsType(string kept) {
+        var arranged = Declined(Attempt(ArgumentProbe, ArrangeIds.ObjectCreation));
+        Assert.Contains(kept, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ Arguments are <c>object_creation_when_type_not_evident</c>'s: measured, flipping that key
+    ///     alone restored every argument row and flipping the evident key moved none.
+    /// </summary>
+    [Fact]
+    public void ObjectCreation_AnArgumentIsNotEvident() {
+        var arranged = Declined(
+            Attempt(
+                ArgumentProbe,
+                ArrangeIds.ObjectCreation,
+                overrides: [new("skala_object_creation_when_type_not_evident", "explicitly_typed")]
+            )
+        );
+        Assert.Contains("One(new Foo());", arranged, StringComparison.Ordinal);
+
+        arranged = Declined(
+            Attempt(
+                ArgumentProbe,
+                ArrangeIds.ObjectCreation,
+                overrides: [new("skala_object_creation_when_type_evident", "explicitly_typed")]
+            )
+        );
+        Assert.Contains("One(new());", arranged, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void NamespaceBody_IsLeftAloneWhenTheFileHasMoreThanOne() {
         // A file-scoped namespace must be the only one in its file, so this is not a style question.

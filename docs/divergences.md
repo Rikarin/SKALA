@@ -3343,6 +3343,49 @@ else. `TypeInferenceRules`'s `TargetTypeOf` still falls through `default: return
   `constructs/arrangement/type-inference/target-typed-new-argument.cs`. ⚠ Needs the oracle for the
   fixture; the overload-stability check is Skala's own and does not.
 
+### ⚠ Fixed 2026-10-08 (#461) — and the oracle's rule is greedy, left to right
+
+Measured under `SkalaCleanup` on two probes of 35 argument shapes, at the export and with each
+object-creation key flipped alone:
+
+- **converted** — a single overload; overloads of different arity (`Arity(new(), 1)`); a named argument
+  out of order (`Pair(b: new(), a: new())`); an `in` parameter; an optional one; a nullable-annotated
+  reference (`Foo?`); a struct; explicit type arguments (`Gen<Foo>(new())`); a static on a constructed
+  type (`Box<Foo>.Put(new())`); an extension method; a delegate invocation; an indexer
+  (`map[new()]`); a constructor's argument, nested (`One(new(new()))`); `base(…)`, `this(…)` and a
+  primary-constructor base; a `?.Invoke(this, new(…))`.
+- **declined** — two one-argument overloads (`Over(Foo)`/`Over(Bar)`, and `Foo`/`int`); an inferred
+  type argument (`Gen(new Foo())`); `params` in either form; a base-class, interface or
+  `Nullable<T>` parameter; `TakeObj(object)` beside `TakeObj(string)`, where `new()` would bind the
+  `string` overload and still compile; a constructor with two one-argument overloads
+  (`new Two(new Bar())`); a `dynamic` receiver; `Console.WriteLine(new object())`.
+- ⚠ **order-dependent** — with `Cross(Foo, Bar)` and `Cross(Bar, Foo)`, `Cross(new Foo(), new Bar())`
+  becomes `Cross(new(), new Bar())` and `Cross(new Bar(), new Foo())` becomes `Cross(new(), new Foo())`:
+  the first argument alone still selects one overload, both together would be ambiguous, and the
+  oracle converts left to right and stops. An all-or-nothing decision per call would refuse both.
+- ⚠ **governed by `object_creation_when_type_not_evident`**: flipping it alone restored every argument
+  row; flipping the evident key moved none.
+
+`ObjectCreationRule.TargetTypeOf` now has the argument case: the call is resolved, each argument mapped
+to its parameter (by name or position; never `params`, never `ref`/`out`), and each candidate accepted
+only if the call — re-bound speculatively with it and every earlier accepted candidate written `new()` —
+still reaches the same member. `?.` calls are re-bound through their statement, because a member
+binding means nothing out of place. Sabotage-checked: with the re-bind comparison disabled the probe is
+reverted whole by the safety layers, so every row of the test goes red.
+
+- ⚠ status: **fixed**. `constructs/arrangement/type-inference/target-typed-new-argument.cs` now carries
+  the overload rows and agrees with the oracle; `ArrangementRuleTests.ObjectCreation_AnArgument*` pins
+  every row above. M4 differential 2158/4097 → 2176/4109 (constructs 150/163 → 162/174; Serilog 718 →
+  720; Vixen 487/818 → 491/819; Newtonsoft unmoved), zero reverts.
+- ⚠ **One "Skala only" span is the corpus's, not the rule's.** `real/newtonsoft/…/JsonSchemaGenerator.cs`
+  passes `new JsonSchemaResolver()` and `new JsonSchema()` to single-overload members and Skala converts
+  them; the oracle does not, because those types are not in the corpus and its probe project cannot
+  resolve them, while Skala's differential compilation finds them in the Newtonsoft.Json assembly its
+  reference set happens to carry. A type the oracle cannot resolve is a type it will not drop.
+- Not this entry: the oracle also writes `TakeFunc(() => new())` for a lambda whose delegate return
+  type is the created type. That is a *lambda body* position, which `TargetTypeOf` stops at
+  deliberately (`EnclosingMember`), and it is reported separately rather than folded in here.
+
 ## SK-DIV-0077 — an anonymous method whose parentheses the author broke leaves the call's line, and its block body breaks with it
 
 Measured, unbatched, at the export's values, with the control beside each row:
