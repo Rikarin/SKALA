@@ -1125,7 +1125,11 @@ public sealed class ArrangementRuleTests {
 
         Assert.DoesNotContain(result.Diagnostics, static diagnostic => diagnostic.Id == ArrangeIds.RuleThrew);
         var arranged = Declined(result);
-        Assert.Contains(".Select(static pair => new KeyValuePair<string, string>(pair[0], pair[1]))", arranged, StringComparison.Ordinal);
+        Assert.Contains(
+            ".Select(static pair => new KeyValuePair<string, string>(pair[0], pair[1]))",
+            arranged,
+            StringComparison.Ordinal
+        );
         Assert.Contains("list?.Add(new(\"a\", \"b\"));", arranged, StringComparison.Ordinal);
     }
 

@@ -731,7 +731,7 @@ public sealed class BreakPlan {
                     node,
                     section,
                     GroupMode.Preserve,
-                    new GroupFacts(options.KeepsUserBreaksBetweenItems && BreaksBefore(after), true, true)
+                    new(options.KeepsUserBreaksBetweenItems && BreaksBefore(after), true, true)
                 );
 
                 return;
@@ -1027,7 +1027,7 @@ public sealed class BreakPlan {
             node,
             group,
             always ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepExistingEnumArrangement && broken,
                 BreaksIfTooLong: options.WrapEnumDeclaration == WrapStyle.ChopIfLong
             )
@@ -1115,7 +1115,7 @@ public sealed class BreakPlan {
             node,
             group,
             forced ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 broken,
                 options.PlaceSimpleSwitchExpressionOnSingleLine && !keep && !always,
                 true
@@ -1134,7 +1134,7 @@ public sealed class BreakPlan {
             // halves of "what the source did" belong to the two groups separately, the same split
             // `PlanBracedElements` makes.
             always ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 keep && armsBroken,
                 !keep,
                 true
@@ -1426,7 +1426,7 @@ public sealed class BreakPlan {
             node,
             group,
             chopsAlways || overCap || forced ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 broken,
                 joins && !overCap,
                 true,
@@ -1758,7 +1758,7 @@ public sealed class BreakPlan {
             node,
             outer,
             GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: true,
                 MeasuresHead: initializer,
@@ -1807,7 +1807,7 @@ public sealed class BreakPlan {
             node,
             inner,
             style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && innerBroken,
                 BreaksIfTooLong: true,
 
@@ -2042,7 +2042,7 @@ public sealed class BreakPlan {
             node,
             group,
             style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: true
             )
@@ -2154,7 +2154,7 @@ public sealed class BreakPlan {
             node,
             group,
             GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: true,
                 // ⚠ Armed by the list's own width for a type parameter list — the trade the remarks
@@ -2225,13 +2225,13 @@ public sealed class BreakPlan {
             new GroupPlan(
                 outer,
                 style == WrapStyle.ChopAlways && wrapsBeforeFirst ? GroupMode.Break : GroupMode.Preserve,
-                new GroupFacts(wrapsBeforeFirst && firstBroken, BreaksIfTooLong: true),
+                new(wrapsBeforeFirst && firstBroken, BreaksIfTooLong: true),
                 indents
             ),
             new GroupPlan(
                 inner,
                 style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-                new GroupFacts(
+                new(
                     options.KeepsUserBreaksBetweenItems && innerBroken,
                     BreaksIfTooLong: true
                 ),
@@ -2250,7 +2250,7 @@ public sealed class BreakPlan {
                 clauses[0],
                 head,
                 GroupMode.Preserve,
-                new GroupFacts(firstBroken, BreaksIfTooLong: true),
+                new(firstBroken, BreaksIfTooLong: true),
                 indents,
                 true
             );
@@ -2299,7 +2299,7 @@ public sealed class BreakPlan {
         // a group around the node makes VisitPlanned emit the gap before the `where` outside the
         // clause's own scope, and that gap is what `skala_indent_type_constraints` indents when there
         // is no constraint run to spend the level.
-        DescribeInner(node, group, GroupMode.Preserve, new GroupFacts(keeps && broken, BreaksIfTooLong: true));
+        DescribeInner(node, group, GroupMode.Preserve, new(keeps && broken, BreaksIfTooLong: true));
     }
 
     /// <summary>A declaration's <c>where</c> clauses, whichever of the four kinds it is.</summary>
@@ -2333,7 +2333,7 @@ public sealed class BreakPlan {
         var plan = new GroupPlan(
             group,
             options.WrapMultipleDeclarationStyle == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: options.WrapMultipleDeclarationStyle != WrapStyle.WrapIfLong
             ),
@@ -2444,10 +2444,10 @@ public sealed class BreakPlan {
 
         Describe(
             root,
-            new GroupPlan(
+            new(
                 group,
                 options.WrapChainedMethodCalls == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-                new GroupFacts(
+                new(
                     options.KeepsUserBreaksBetweenItems && broken,
                     BreaksIfTooLong: true,
                     HidesFlatWidthWhenBroken: true,
@@ -2775,7 +2775,7 @@ public sealed class BreakPlan {
             // every `or` on its own line — in a switch arm, after `is`, in a `case` label, in an `if`
             // condition, for `and` as well as `or`, and broken at the inner link as at the outer —
             // although the whole chain fits; `a && b` / `|| c` in the same arm stays as written.
-            new GroupFacts(
+            new(
                 pattern && options.KeepsUserBreaksBetweenItems && PatternChainIsBroken(root),
                 BreaksIfTooLong: true
             ),
@@ -2979,7 +2979,7 @@ public sealed class BreakPlan {
             // `force_chop_compound_*` keys. The facts stay as they are, so the group behaves exactly
             // as it did when the keys are off — which is the export's own configuration.
             forcedChop.Contains(operatorToken.SpanStart) ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && broken,
                 // ⚠ Deliberately *not* HidesFlatWidthWhenBroken. An argument list around a chain the
                 // author broke does chop — `Use(a > 0\n && b > 0)` comes back with the argument on a
@@ -3072,14 +3072,14 @@ public sealed class BreakPlan {
         // eight. IndentKind.FromLine.
         Describe(
             node,
-            new GroupPlan(
+            new(
                 group,
                 GroupMode.Preserve,
                 // ⚠ A list on the operand's line nests from the keyword's line only when the author broke
                 // before the keyword: `Compute(` / … / `)` / `is string` keeps its arguments two levels in,
                 // `Compute(` / … / `) is string` one (#445). Resolving broken is not enough, because this
                 // group resolves broken whenever the expression is too long, whether or not it wraps.
-                new GroupFacts(BreaksIfTooLong: true, Continues: BreaksBefore(keyword)),
+                new(BreaksIfTooLong: true, Continues: BreaksBefore(keyword)),
                 FromLine: !IsAHeaderCondition(node)
             )
         );
@@ -3092,7 +3092,7 @@ public sealed class BreakPlan {
         if (node is BinaryExpressionSyntax && !BreaksBefore(keyword)) {
             var before = NewGroup();
             Point(keyword, before, lastResort: true);
-            Describe(node, before, GroupMode.Preserve, new GroupFacts(KeywordWidth: keyword.Span.Length));
+            Describe(node, before, GroupMode.Preserve, new(KeywordWidth: keyword.Span.Length));
         }
     }
 
@@ -3141,7 +3141,7 @@ public sealed class BreakPlan {
             subpattern,
             group,
             GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && BreaksBefore(value),
                 BreaksIfTooLong: true,
 
@@ -3192,7 +3192,7 @@ public sealed class BreakPlan {
             argument,
             group,
             GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && BreaksBefore(first),
                 BreaksIfTooLong: true,
                 BreaksOnlyIfHeadOverflows: true
@@ -3444,7 +3444,7 @@ public sealed class BreakPlan {
             root,
             group,
             GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: true
             ),
@@ -3530,7 +3530,7 @@ public sealed class BreakPlan {
             node,
             group,
             options.WrapTernaryExprStyle == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: options.WrapTernaryExprStyle != WrapStyle.WrapIfLong
             ),
@@ -3617,7 +3617,7 @@ public sealed class BreakPlan {
             node,
             group,
             GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && BreaksBefore(token),
                 BreaksIfTooLong: true,
                 MeasuresHead: true
@@ -3692,7 +3692,7 @@ public sealed class BreakPlan {
             node,
             group,
             GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: true,
                 HidesFlatWidthWhenBroken: true
@@ -3786,10 +3786,10 @@ public sealed class BreakPlan {
 
         Describe(
             node,
-            new GroupPlan(
+            new(
                 group,
                 GroupMode.Preserve,
-                new GroupFacts(BreaksIfTooLong: true),
+                new(BreaksIfTooLong: true),
                 true,
                 SpendsUnderDelimiters: true
             )
@@ -3834,10 +3834,10 @@ public sealed class BreakPlan {
 
         Describe(
             node,
-            new GroupPlan(
+            new(
                 group,
                 GroupMode.Preserve,
-                new GroupFacts(
+                new(
                     options.KeepsUserBreaksBetweenItems && broken,
 
                     // ⚠ `prefer_wrap_around_eq`, and the reason milestone 2 stopped at presence. The
@@ -4438,10 +4438,10 @@ public sealed class BreakPlan {
 
         Describe(
             node,
-            new GroupPlan(
+            new(
                 group,
                 GroupMode.Preserve,
-                new GroupFacts(
+                new(
                     // ⚠ Same exception as the `=`'s, and measured the same way: a collection expression
                     // opens with a delimiter of its own, so the arrow's break and the bracket's are
                     // alternatives rather than a pair. `TheoryData<string> Corpus =>\n[…]` comes back
@@ -4562,10 +4562,10 @@ public sealed class BreakPlan {
         OpenAt(
             arm,
             kept && arm.WhenClause is not null ? arm.Pattern.SpanStart : arrow.SpanStart,
-            new GroupPlan(
+            new(
                 before,
                 GroupMode.Preserve,
-                new GroupFacts(
+                new(
                     kept,
                     BreaksIfTooLong: true,
                     BreaksOnlyIfHeadOverflows: true,
@@ -4589,7 +4589,7 @@ public sealed class BreakPlan {
         PlanArrowBody(
             arm,
             arm.Expression,
-            new GroupFacts(
+            new(
                 BreaksIfTooLong: true,
                 Owner: before,
                 BreaksOnlyIfHeadOverflows: true,
@@ -4674,7 +4674,7 @@ public sealed class BreakPlan {
         OpenAt(
             owner,
             body.SpanStart,
-            new GroupPlan(
+            new(
                 group,
                 GroupMode.Preserve,
                 facts with { SourceBroken = options.KeepsUserBreaksBetweenItems && BreaksBefore(first) },
@@ -4714,7 +4714,7 @@ public sealed class BreakPlan {
             node,
             group,
             GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 options.KeepsUserBreaksBetweenItems && BreaksBefore(keyword),
                 BreaksIfTooLong: true,
                 BreaksOnlyIfHeadOverflows: true
@@ -4804,14 +4804,14 @@ public sealed class BreakPlan {
             node,
             outer,
             chopsAlways || forced ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(broken, joins, true, HidesFlatWidthWhenBroken: true)
+            new(broken, joins, true, HidesFlatWidthWhenBroken: true)
         );
 
         DescribeInner(
             node,
             inner,
             chopsAlways ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 chopsAlways || keeps && interBroken,
                 joins || forced,
                 true,
@@ -4920,7 +4920,7 @@ public sealed class BreakPlan {
                 Point(first, group, true, true);
             }
 
-            Describe(owner, group, GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true));
+            Describe(owner, group, GroupMode.Preserve, new(BreaksIfTooLong: true));
             return;
         }
 
@@ -4929,7 +4929,7 @@ public sealed class BreakPlan {
             owner,
             group,
             GroupMode.Preserve,
-            new GroupFacts(
+            new(
                 BreaksBefore(first),
                 // Only `always` and `if_owner_is_single_line` join, only a simple statement joins,
                 // and keep outranks all of it.
@@ -5171,7 +5171,7 @@ public sealed class BreakPlan {
         }
 
         Point(tail, group, true);
-        DescribeInner(node, group, GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true));
+        DescribeInner(node, group, GroupMode.Preserve, new(BreaksIfTooLong: true));
     }
 
     /// <summary>
@@ -5246,7 +5246,7 @@ public sealed class BreakPlan {
                     block,
                     group,
                     GroupMode.Preserve,
-                    new GroupFacts(
+                    new(
                         BreaksIfTooLong: true,
                         Owner: head,
                         BreaksIfOwnerIsMultiLine: head >= 0
@@ -5389,7 +5389,7 @@ public sealed class BreakPlan {
         }
 
         Point(node.CloseBraceToken, group);
-        Describe(node, group, GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true));
+        Describe(node, group, GroupMode.Preserve, new(BreaksIfTooLong: true));
     }
 
     /// <summary>
@@ -5553,7 +5553,7 @@ public sealed class BreakPlan {
             var planned = new GroupPlan(
                 group,
                 GroupMode.Preserve,
-                new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true),
+                new(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true),
                 spendsIndent,
                 true
             );
@@ -5722,7 +5722,7 @@ public sealed class BreakPlan {
                     node,
                     joining,
                     GroupMode.Preserve,
-                    new GroupFacts(MeasuresHead: true, Terminator: terminator)
+                    new(MeasuresHead: true, Terminator: terminator)
                 );
             }
 
@@ -5743,7 +5743,7 @@ public sealed class BreakPlan {
             // ⚠ `JoinsIfFits` and `BreaksIfTooLong` both, which is what makes this
             // `if_owner_is_single_line` rather than `keep`: the author's break goes when the owner
             // fits on one line and comes back when it does not.
-            new GroupFacts(broken, true, true)
+            new(broken, true, true)
         );
     }
 
@@ -5979,7 +5979,7 @@ public sealed class BreakPlan {
         bool leadingGapInside = false,
         bool ownLevel = false
     ) =>
-        Describe(node, new GroupPlan(group, mode, facts, spendsIndent, leadingGapInside, ownLevel));
+        Describe(node, new(group, mode, facts, spendsIndent, leadingGapInside, ownLevel));
 
     void Describe(SyntaxNode node, GroupPlan plan) {
         var key = Key(node);

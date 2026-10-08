@@ -173,7 +173,7 @@ public static class FuzzMutations {
             CommentInline => InsertAtGap(map, random, "/* f */"),
             DocCommentInline => InsertAtGap(map, random, "/** d */"),
             TrailingComment => Trailing(map, random, " // fuzz"),
-            BlankLines => InsertLines(map, random, static (random, _) => new string('\n', random.Next(1, 4))),
+            BlankLines => InsertLines(map, random, static (random, _) => new('\n', random.Next(1, 4))),
             RemoveBlankLine => RemoveBlank(map, random),
             IfTrue => Wrap(map, random, "#if true", "#endif"),
             Region => Wrap(map, random, "#region fuzz", "#endregion"),

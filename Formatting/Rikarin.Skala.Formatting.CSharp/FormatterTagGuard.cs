@@ -277,7 +277,7 @@ public sealed class FormatterTagGuard {
             pattern,
             static p => {
                 try {
-                    return new Regex(
+                    return new(
                         "^(?:" + p + ")",
                         RegexOptions.CultureInvariant,
                         TimeSpan.FromMilliseconds(100)

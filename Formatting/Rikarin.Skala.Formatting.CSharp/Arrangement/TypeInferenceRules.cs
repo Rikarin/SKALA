@@ -412,8 +412,8 @@ public sealed class ObjectCreationRule : ArrangementRule {
             // threw a NullReferenceException (SK9095 on Testing/…/Program.cs, found by Lint's
             // self-arrange after #524).
             if (owner.Ancestors()
-                .OfType<ConditionalAccessExpressionSyntax>()
-                .Any(conditional => conditional.WhenNotNull.Span.Contains(owner.Span))) {
+                    .OfType<ConditionalAccessExpressionSyntax>()
+                    .Any(conditional => conditional.WhenNotNull.Span.Contains(owner.Span))) {
                 return RebindInStatement(owner, rewritten);
             }
 

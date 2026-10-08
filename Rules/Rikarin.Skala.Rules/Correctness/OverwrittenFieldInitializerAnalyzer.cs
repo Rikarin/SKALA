@@ -319,7 +319,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
             foreach (var symbol in initialized) {
                 facts.RiskyInitializers.GetOrAdd(
                         symbol.ContainingType.OriginalDefinition,
-                        static _ => new ConcurrentBag<ISymbol>()
+                        static _ => new()
                     )
                     .Add(symbol.OriginalDefinition);
             }
