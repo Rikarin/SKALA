@@ -100,8 +100,7 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
         // any implementation it likes, and `e is int[]` would stop holding.
         var info = model.GetTypeInfo(invocation, cancellation);
         if (info.Type is not { TypeKind: not TypeKind.Error } created
-            || !SymbolEqualityComparer.Default.Equals(created, info.ConvertedType)
-            || !model.GetConversion(invocation, cancellation).IsIdentity) {
+            || !SymbolEqualityComparer.Default.Equals(created, info.ConvertedType)) {
             return;
         }
 
@@ -200,16 +199,18 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
                 return false;
             }
 
-            // ⚠ A struct is copied through its span or enumerated into a fresh list (`ImmutableArray<T>`
-            // measured), and a type parameter is always enumerated into a list — neither is the call.
-            if (receiver.IsValueType
-                || receiver.TypeKind is TypeKind.TypeParameter or TypeKind.Dynamic or TypeKind.Pointer) {
+            // ⚠ A struct is enumerated into a fresh `List<T>` and copied out rather than boxed into
+            // `Enumerable.ToArray`, so an empty one's copy is a new array, not `Array.Empty<T>()`
+            // (decompiled; `ImmutableArray<T>` is copied through its span instead).
+            if (receiver.IsValueType) {
                 return false;
             }
 
             // ⚠ The element type is the call's own `T`, exactly. `strings.ToList<object>()` on a
             // `List<string>` lowers to a counted copy loop, not to `ToList`; and a widening is a
-            // different list either way.
+            // different list either way. It is also what declines a type parameter, which the compiler
+            // enumerates into a list unless it is constrained to a class: `ElementTypeOf` answers null
+            // for one.
             return SymbolEqualityComparer.Default.Equals(
                 RedundantSpreadElementAnalyzer.ElementTypeOf(receiver),
                 method.TypeArguments[0]
@@ -299,10 +300,10 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
             case EqualsValueClauseSyntax {
                 Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration }
             }:
-                return declaration.Type.IsVar
-                    || declaration.Parent is not (LocalDeclarationStatementSyntax or FieldDeclarationSyntax)
-                        ? null
-                        : "the declaration";
+                // `var` is not refused here: `var a = [..xs];` is CS9176 and the rebinding refuses it.
+                return declaration.Parent is LocalDeclarationStatementSyntax or FieldDeclarationSyntax
+                    ? "the declaration"
+                    : null;
 
             case EqualsValueClauseSyntax { Parent: PropertyDeclarationSyntax }:
                 return "the property";
@@ -310,13 +311,9 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
             case ReturnStatementSyntax statement:
                 return CollectionExpressionAnalyzer.HasWrittenReturnType(statement) ? "the return type" : null;
 
-            // ⚠ Not where the arrow is a statement: a `void` method's or a setter's body discards the
-            // value, and `[..xs]` is not a statement expression.
-            case ArrowExpressionClauseSyntax {
-                Parent: not (AccessorDeclarationSyntax { RawKind: not (int)SyntaxKind.GetAccessorDeclaration }
-                or MethodDeclarationSyntax { ReturnType: PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.VoidKeyword } }
-                or LocalFunctionStatementSyntax { ReturnType: PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.VoidKeyword } })
-            } arrow:
+            // A `void` member's arrow discards the value, and `[..xs]` is not a statement expression;
+            // the rebinding refuses it, as it refuses `var`.
+            case ArrowExpressionClauseSyntax arrow:
                 return CollectionExpressionAnalyzer.HasWrittenReturnType(arrow) ? "the return type" : null;
 
             case AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment
