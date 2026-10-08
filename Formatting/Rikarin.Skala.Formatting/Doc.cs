@@ -400,6 +400,19 @@ public enum IndentKind {
     /// </summary>
     AnchoredBlock,
 
+    /// <summary>
+    ///     The innermost <see cref="Anchor" />'s recorded indentation itself — the column an
+    ///     <see cref="AnchoredBlock" />'s <c>}</c> takes — for the <c>{</c> that opens it when the brace
+    ///     is on a line of its own.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured under <c>csharp_new_line_before_open_brace = all</c> (#465): <c>Action b = () =&gt;</c>
+    ///     / <c>{</c>, <c>var m = new List&lt;int&gt;</c> / <c>{</c> and <c>var r = 1 switch</c> / <c>{</c>
+    ///     put the brace on the statement's column, where the <c>=</c>'s continuation had put it one
+    ///     level in; under an argument list's level the brace is one level in, on its <c>}</c>'s column.
+    /// </remarks>
+    AnchoredBrace,
+
     /// <summary>One level less — the nested-statement outdent family.</summary>
     Outdent,
 

@@ -391,6 +391,7 @@ public sealed class BreakPlan {
         var plan = new BreakPlan(source, options) { captured = captured };
         plan.Walk(root);
         plan.SettleForHeaders();
+        plan.SettleOpenBraces(root);
         plan.CollectForcedBreaks();
         return plan;
     }
@@ -5585,6 +5586,143 @@ public sealed class BreakPlan {
         var plan = new GroupPlan(group, mode, facts);
         inner[Key(node)] = plan;
         byId[group] = plan;
+    }
+
+    /// <summary>
+    ///     <c>csharp_new_line_before_open_brace</c>'s split direction: a brace the key puts on a line of
+    ///     its own goes there exactly when the line after it breaks (#465, SK-DIV-0091).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The placement family used to be a join decision only — <c>ShouldJoin</c> removed the
+    ///     author's break before a brace and nothing ever added one — so a K&amp;R input under
+    ///     <c>all</c> came back K&amp;R where the oracle writes Allman. Measured 2026-10-08 with
+    ///     <c>Testing ask</c> on every construct the key's seven groups cover, written K&amp;R:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             A body that breaks open puts its brace on a line of its own — a type's, a method's,
+    ///             every control block's, an accessor list's and an accessor's, a lambda's and an
+    ///             anonymous method's, an initializer's, a switch expression's.
+    ///         </item>
+    ///         <item>
+    ///             A body that stays on its owner's line keeps its brace there: <c>get { return _n; }</c>,
+    ///             <c>() =&gt; { A(); }</c>, <c>delegate { A(); }</c>, <c>new List&lt;int&gt; { 1, 2 }</c>,
+    ///             <c>new { X = 1, Y = 2 }</c>, <c>int B { get; set; }</c>. So the brace's gap is a point
+    ///             of whatever decides the gap after it, and the group is entered before the brace,
+    ///             which is the column the owner's-line question is asked from.
+    ///         </item>
+    ///         <item>
+    ///             An empty body follows <c>skala_empty_block_style</c> for a type, a namespace, a method,
+    ///             a local function, a control block and a switch: <c>together</c> gives
+    ///             <c>void M()</c> / <c>{ }</c>, <c>multiline</c> <c>void M()</c> / <c>{</c> / <c>}</c>, and
+    ///             <c>together_same_line</c> <c>void M() { }</c>, which <c>ShouldJoin</c> also pulls back
+    ///             from an Allman input. An empty accessor, lambda, anonymous method or initializer stays
+    ///             <c>{ }</c> on its owner's line at all three values, and is joined back from Allman.
+    ///         </item>
+    ///     </list>
+    /// </remarks>
+    void SettleOpenBraces(SyntaxNode root) {
+        if (options.NewLineBeforeOpenBraceOwners == BraceOwners.None) {
+            return;
+        }
+
+        foreach (var open in root.DescendantTokens()) {
+            if (!open.IsKind(SyntaxKind.OpenBraceToken)
+                || !CSharpDocumentBuilder.OpensAJoinableBody(open)
+                || (options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(open)) == 0
+                || captured is { Count: > 0 } && open.Parent is { } parent && IsInsideCaptured(parent)) {
+                continue;
+            }
+
+            var next = open.GetNextToken();
+            if (next.IsKind(SyntaxKind.None)) {
+                continue;
+            }
+
+            if (CSharpDocumentBuilder.IsEmptyBody(open)) {
+                if (!CSharpDocumentBuilder.EmptyBodyStaysJoined(open)
+                    && options.EmptyBlockStyle != EmptyBlockStyle.TogetherSameLine) {
+                    SplitBefore(open);
+                }
+
+                continue;
+            }
+
+            if (!gaps.TryGetValue(next.SpanStart, out var after)) {
+                if (BreaksBefore(next)) {
+                    SplitBefore(open);
+                }
+
+                continue;
+            }
+
+            switch (after.Rule) {
+                case GapRule.Flat:
+                    continue;
+
+                case GapRule.Mandatory:
+                    SplitBefore(open);
+                    continue;
+
+                default:
+                    if (byId.TryGetValue(after.Group, out var owner) && owner.Mode == GroupMode.Break) {
+                        SplitBefore(open);
+                        continue;
+                    }
+
+                    PointBeforeBrace(open, after.Group);
+                    continue;
+            }
+        }
+    }
+
+    bool IsInsideCaptured(SyntaxNode node) {
+        for (var current = node; current is not null; current = current.Parent) {
+            if (current is ExpressionSyntax && captured!.Contains(current.Span)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void SplitBefore(SyntaxToken open) {
+        if (gaps.TryGetValue(open.SpanStart, out var existing) && existing.Rule != GapRule.Flat) {
+            return;
+        }
+
+        Mandatory(open);
+    }
+
+    /// <summary>
+    ///     The brace's gap as a point of <paramref name="group" />, which is entered before the brace
+    ///     when it is described on the node the brace starts.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A group opened around a node is entered after the gap before that node
+    ///     (<see cref="GroupPlan.LeadingGapInside" />), and a block, an accessor list, an initializer and a
+    ///     property pattern all start at their brace — so the point would land outside its group and be
+    ///     written flat whatever the group decided.
+    /// </remarks>
+    void PointBeforeBrace(SyntaxToken open, int group) {
+        if (gaps.TryGetValue(open.SpanStart, out var existing) && existing.Rule != GapRule.Flat) {
+            return;
+        }
+
+        if (open.Parent is { } node && node.SpanStart == open.SpanStart && groups.TryGetValue(Key(node), out var plans)) {
+            var index = plans.FindIndex(plan => plan.Id == group);
+            if (index < 0) {
+                // The group is not one this node opens: its points enclose the brace already.
+                Point(open, group);
+                return;
+            }
+
+            for (var i = 0; i <= index; i++) {
+                plans[i] = plans[i] with { LeadingGapInside = true };
+                byId[plans[i].Id] = plans[i];
+            }
+        }
+
+        Point(open, group);
     }
 
     /// <summary>

@@ -487,12 +487,18 @@ public sealed class LayoutWriter {
 
         // ⚠ An anchored block nests from the line its anchor was pushed on, which is the governing
         // expression's line and not the brace's. See IndentKind.Anchor.
-        if (kind == IndentKind.AnchoredBlock) {
+        if (kind is IndentKind.AnchoredBlock or IndentKind.AnchoredBrace) {
             for (var i = scopes.Count - 1; i >= 0; i--) {
                 if (scopes[i].IsAnchor) {
                     outer = scopes[i].CloserLevel;
                     break;
                 }
+            }
+
+            // The brace itself sits on the level its block nests from.
+            if (kind == IndentKind.AnchoredBrace) {
+                scopes.Add(new Scope(true, outer, line, outer, unconditional));
+                return;
             }
 
             kind = IndentKind.Block;

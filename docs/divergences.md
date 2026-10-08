@@ -4337,7 +4337,7 @@ not ask about it.
 - ⚠ Both `oracle` globs are kept, the way SK-DIV-0083's are, so the next sweep re-measures the claim
   and `UNEXERCISED` points here.
 
-## SK-DIV-0091 — `csharp_indent_braces`, and the brace-split direction the placement family does not have
+## SK-DIV-0091 — `csharp_indent_braces`, and the brace-split direction the placement family did not have
 
 Four brace rows were resolved together and three of them are **fixed**; this entry is the residue, and
 it is two separate things that share a mechanism.
@@ -4372,22 +4372,44 @@ lists; `anonymous_methods` moves nothing while `lambdas` moves the `delegate`.
 `skala_new_line_before_while`'s indentation and `skala_special_else_if_treatment`'s split direction were fixed in
 the same pass and all three now read `Conformant`.
 
-### The first thing that is not fixed: the split direction
+### The split direction — fixed (#465)
 
-Brace placement in this formatter is a **join** decision. `ShouldJoin` is "the one place phase 1
-removes a line break the author wrote", and nothing inserts one before a brace. So a K&R input under
-`csharp_new_line_before_open_brace = all` comes back K&R, where the oracle splits every brace onto its
+Brace placement in this formatter was a **join** decision. `ShouldJoin` is "the one place phase 1
+removes a line break the author wrote", and nothing inserted one before a brace. So a K&R input under
+`csharp_new_line_before_open_brace = all` came back K&R, where the oracle splits every brace onto its
 own line; and `skala_empty_block_style = together_same_line`'s second half — pulling `{ }` back onto the
-declaration's line *against* the placement key — cannot be honoured either.
+declaration's line *against* the placement key — could not be honoured either.
 
-⚠ **This is invisible to all four rows, and not by luck.** Every one of their fixtures is written with
+⚠ **This was invisible to all four rows, and not by luck.** Every one of their fixtures is written with
 the break already there, so all fifteen values of the placement key only ever ask the join question.
-`FormatterTests.BraceSplitIsNotImplemented` asserts the gap so that it is a recorded absence rather
-than a discovery. Closing it means a break point before a brace in every construct in the language,
-which is not a change to make from a row that is already `Conformant`.
 
-`skala_special_else_if_treatment` is the one member of the family that *did* get its split direction, in
-`MustBreak`, because its row needed it and its shape is a keyword rather than a brace.
+**Fixed 2026-10-08.** Measured with `Testing ask` on K&R inputs covering every construct the seven live
+groups reach — at `all`, at each of the seven and at `none` — and on empty bodies written K&R and Allman
+at all three `skala_empty_block_style` values under both `none` and `all`. The rule the oracle follows is
+one sentence: **a brace the key puts on a line of its own goes there exactly when the line after it
+breaks.** `get { return _n; }`, `() => { A(); }`, `delegate { A(); }`, `new List<int> { 1, 2 }`,
+`new { X = 1 }` and `int B { get; set; }` keep their brace on the owner's line because their body stays
+there. `BreakPlan.SettleOpenBraces` plans it after the walk, by mirroring the gap after the brace: a
+required break there is a required break before the brace, and a point there is a point of the same
+group before it — with the group entered before the brace (`LeadingGapInside`), since a block, an
+accessor list and an initializer all start at their brace.
+
+Three things came out of the measurement that a reading of the key would not give:
+
+- An **empty** body follows the empty-block key for a type, a namespace, a method, a local function, a
+  control block and a switch — `together` writes `void M()` / `{ }`, `multiline` `void M()` / `{` / `}`,
+  `together_same_line` `void M() { }` (and joins an Allman `{ }` back). An empty accessor, lambda,
+  anonymous method or initializer stays `{ }` on its owner's line **at every value** and is joined back
+  from Allman.
+- ⚠ `multiline` had no split direction either, **under the export's `none` too**: `void M() { }` came
+  back joined where the oracle writes `void M() {` / `}`. Same family, same fix (`MustBreak`).
+- ⚠ A brace on a line of its own after an `=` — `Action b = () =>` / `{`, `var m = new List<int>` / `{`,
+  `var r = 1 switch` / `{` — sits on the statement's column, the column its `}` takes. Skala put it one
+  continuation level in, **from an Allman input as well**, which no fixture could reach under `none`.
+  `IndentKind.AnchoredBrace` puts it on its anchored block's level.
+
+`skala_special_else_if_treatment` was the one member of the family that already had its split direction,
+in `MustBreak`, because its row needed it and its shape is a keyword rather than a brace.
 
 ### The second: `csharp_indent_braces`, and the probe that moved the question
 
@@ -4434,8 +4456,8 @@ that assigning one key in a section silently re-derives another from that sectio
 a rule whose only justification is that ReSharper does it, on a configuration nobody writes. Doc 00's
 non-negotiable 9 is exactly this case: the reference tool is a test subject, not a specification.
 
-- options: `csharp_indent_braces`, and the split-direction gap in `csharp_new_line_before_open_brace`
-  and `skala_empty_block_style`
+- options: `csharp_indent_braces`; the split direction in `csharp_new_line_before_open_brace` and
+  `skala_empty_block_style` is fixed (#465), pinned by `BraceSplitIssue465Tests`
 - ⚠ status: **accepted**. `csharp_indent_braces` agrees with the oracle at both values whenever the
   question is put to both engines the same way; the row's disagreement exists only under a
   single-key section that changes what the oracle was asked. Registered `OfInert` with the mask named,
