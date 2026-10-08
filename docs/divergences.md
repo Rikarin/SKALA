@@ -9084,6 +9084,45 @@ depends on the receiver, the line end, the type's width and the keyword (`is` ha
 receiver of 6, `as string` from 14). Only one type width per keyword was measured, so a table over it
 would be keyed on a dimension the grid has not varied.
 
+⚠ **Round 4: the type-width dimension, swept. The decision is now known except for two ties, and it is
+still not wired.**
+
+Measured on `return r….P… as T…;` and `… is T…;` at indent 12, 3 220 cells:
+- type widths 1, 3, 6, 10, 15, 20 and 30;
+- receivers of 1 to 30 columns;
+- line ends 118 to 140, one column at a time.
+
+`is` and `as` decide identically at equal widths. Five outcomes:
+
+| outcome | layout |
+|---|---|
+| `K` | `… as` / `T;` |
+| `W` | `…` / `as T;` |
+| `D` | the dot one level in, `return r` / `.P… as T;` |
+| `x` | `return r` / `.P…` two levels in / `as` / `T;`, each on its own line |
+| fits | the line fits whole |
+
+Three of them are settled exactly by which layouts fit:
+
+- **Feasibility decides most cells.** If none of `K`, `W` or `D` fits, it is `x` (458 of 458 cells). If
+  only one fits, that one is taken (934 of 934 cells).
+- **One column over the margin** (line end 121) is `D`, except `K` for a receiver of at most
+  `(type − 10) / 5` columns. That holds on every row.
+- **When `K` and `D` both fit** (1 088 cells past column 121), `K` holds up to a line end that falls as the
+  receiver widens and rises as the type widens. For example, it holds to a `K` line of 117 at receiver
+  14 and type 6, to 114 at receiver 20 and type 6, and to 117 at receiver 20 and type 10. The best linear
+  rule in end, receiver, type and the two layouts' line widths misses 22 cells.
+- **When `W` and `D` both fit** (180 cells), the best linear rule misses 6.
+
+**What still blocks it** comes in two parts:
+- *The ties.* The two tie boundaries are not linear at this grid's spacing. A table needs the type and
+  the receiver swept one column at a time where the ties sit: types 3 to 12, receivers 6 to 32.
+- *A formatter construct.* `D` and `x` need a dot point inside a type-test operand, and in `x` its
+  level depends on whether the keyword's own break is taken (two levels when it is). `PlansTheFill`
+  excludes a type-test operand for exactly that reason, and nothing in `BreakPlan` can express a level
+  that is conditional on a sibling group. Skala writes `K` or `W` in all 1 172 `D` and `x` cells, and is
+  right on every `K`, `W` and fits cell.
+
 - ⚠ status: **resolved** for the band and for a plain member access without a type test; **open, blocked**
   for `is`/`as` past the band, measured as above. Pinned by `TypeTestKeywordIssue444Tests` and
   `constructs/breaks/member-access-last-dot.cs`.
