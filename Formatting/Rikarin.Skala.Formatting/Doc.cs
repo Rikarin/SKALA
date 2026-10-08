@@ -332,6 +332,9 @@ public enum IndentFlags {
     ///     it, the list nests from that construct's continuation line rather than collapsing into it:
     ///     <c>var x = source.Select(</c> / arguments / <c>)</c> / <c>.Where(beta);</c> puts the arguments
     ///     two levels past the statement and the <c>)</c> one, with the dots (issue #418, SK-DIV-0184).
+    ///     ⚠ Read by the lift alone, so a grouping parenthesis's scope (<see cref="Grouping" />) and a
+    ///     chain frame's continuation lift the same way (#470, #481) without carrying this flag's name.
+    ///     The chain's carries it: the document builder sets it on the level a chain frame spends.
     /// </summary>
     Delimiter = 16,
 

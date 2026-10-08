@@ -29,13 +29,14 @@ public sealed class CollectionAfterEqIssue375Tests {
 
     /// <summary>
     ///     The fuzzer's four lines. One pass equals two, and the <c>=</c> line and the closing bracket
-    ///     are the oracle's. ⚠ The three lines between them are not, for two reasons that are not this
-    ///     issue's and are recorded beside it: the oracle keeps <c>null!, ((</c> together, because a
-    ///     collection element with a certain break inside keeps its head on the comma's line
-    ///     (SK-DIV-0117), and it puts the lambda's parameters one level past the element and the
-    ///     <c>)</c> on the element's column, because a grouping parenthesis is transparent to the
-    ///     parameter list it wraps (SK-DIV-0118). Skala's fixed point is pinned here exactly, so that
-    ///     either of those moving is visible.
+    ///     are the oracle's. ⚠ The lines between them are not, for a reason that is not this issue's and
+    ///     is recorded beside it: the oracle keeps <c>null!, ((</c> together, because a collection
+    ///     element with a certain break inside keeps its head on the comma's line (SK-DIV-0117). The
+    ///     second reason this used to name — the lambda's parameters one level past the element and the
+    ///     <c>)</c> on the element's column, a grouping parenthesis being transparent to the parameter
+    ///     list it wraps (SK-DIV-0118) — is fixed by #481, and the pinned lines below moved to the
+    ///     oracle's. Skala's fixed point is pinned here exactly, so that the remaining one moving is
+    ///     visible.
     /// </summary>
     [Fact]
     public void TheFuzzersInput_SettlesInOnePass_OnTheOraclesBracket() {
@@ -75,9 +76,9 @@ public sealed class CollectionAfterEqIssue375Tests {
                                      var (a58, b59) = [
                                          null!,
                                          ((
-                                                 x,
-                                                 y
-                                             ) => { })
+                                             x,
+                                             y
+                                         ) => { })
                                      ];
                                  }
                              }
@@ -128,9 +129,9 @@ public sealed class CollectionAfterEqIssue375Tests {
                                      var (a58, b59) = [
                                          null!,
                                          ((
-                                                 x,
-                                                 y
-                                             ) => { })
+                                             x,
+                                             y
+                                         ) => { })
                                      ];
                                  }
                              }

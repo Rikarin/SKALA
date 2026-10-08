@@ -5764,9 +5764,28 @@ it for the list's lines and for the list's closer alike. The fix is a third kind
 list's push — which touches the one-level-per-line rule that 1.7 points of fidelity sit on, and is
 left for its own measurement. Recorded, not fixed.
 
+**Fixed by #481 (2026-10-08)**, with SK-DIV-0150, and the rule is the one SK-DIV-0148 already wrote
+for a block. A grouping parenthesis's scope is no longer unconditional: it is one line's one level with
+the `=`, a list or a ternary opened beside it. Where it spends a second level, a construct that broke
+after it lifts it — `var b = ((` / `1 + 2)` / `* 3);` is the `*`'s, through `LayoutWriter.LiftedLevel`,
+which #470 opened to groupings — and a statement condition's parenthesis is unconditional on its own, so
+`if ((a` / `== b))` is untouched. Two things the unconditional scope had been standing in for had to
+become explicit, both found on `corpus/unformatted/scramble` where conditional groupings alone cost 7
+lines: a grouping is lifted even when a construct inside it broke on its own line (`- ((c.X` / `- a.X)`
+/ `* …)`, `BrokenInsideOnItsLine` no longer exempts it), and a chain frame's level lifts like a list's
+(`+ (meshlet` / `.TriangleCount` / `* 3)` puts the dot two levels past the `+`). And a grouping met
+*outside* the broken construct is part of the construct's continuation line, so nested groupings lift
+once each (`(((ax * ax)` / `+ (az` three levels in). Measured against master's formatter:
+`corpus/real/` 59 657 → 59 660 lines and 335 → 336 files with symbols; `pathological/` 589 → 594 lines,
+59 → 60 files; `unformatted/scramble` 64 437 → 64 482 lines, `collapse` 52 852 → 52 856; `constructs/`
+unchanged but for the new fixtures. Residue, recorded and not fixed: `((point` / `.X` / `- x)` /
+`* (point.X - x))` / `+ …` under an arrow (CurveEditor) puts `.X` at 20 for the oracle and 16 for Skala —
+a chain lifted by a binary lifted by a grouping lifted by a binary, one lift short.
+
 - options: `skala_indent_pars = inside` (the level a grouping spends when it does), no key for the
   transparency.
-- ⚠ status: **open**.
+- ⚠ status: **fixed**, pinned by `constructs/syntax/grouping-parenthesis-one-level.cs` and
+  `GroupingParenthesisOneLevelIssue481Tests`.
 
 ## SK-DIV-0119 — a parameter's attribute section joins its parameter by the parameter's first line, and the oracle answers that gap twice
 
@@ -6623,8 +6642,12 @@ is refuted by a row already in this file and the rule is still to be found. The 
 oracle's and appears only when the collection expression is multi-line (`([1, 2])` stays closed); it
 is the same `IfBroken`-shaped gap as the `) [` cast in the residue list above. Recorded, not fixed.
 
+**Fixed by #481 (2026-10-08)** — see SK-DIV-0118's last paragraph: the `var b = ((` row is a lift, not a
+grouping that spends, and every row of this entry now matches but the `( [` space, which is D20's.
+
 - options: none.
-- ⚠ status: **open**.
+- ⚠ status: **fixed** but for the `( [` space, pinned by `constructs/syntax/grouping-parenthesis-one-level.cs`
+  and `GroupingParenthesisOneLevelIssue481Tests`.
 
 ## SK-DIV-0156 — a chopped parenthesis heading a body held its level, and then the chain after it broke
 

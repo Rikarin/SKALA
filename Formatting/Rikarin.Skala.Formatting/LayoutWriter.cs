@@ -739,8 +739,11 @@ public sealed class LayoutWriter {
             if (scope.Lifted >= 0 && !BrokenInsideOnItsLine(index, scope)) {
                 // ⚠ A lifted grouping parenthesis is still transparent to a block opened on its own
                 // line: `var x = (y switch {` / … / `}).ToString()` / `.Length` puts the `}` on the
-                // chain's continuation line and the arms one past it (SK-DIV-0148).
-                if (scope.IsGrouping && scope.OpenLine == line) {
+                // chain's continuation line and the arms one past it (SK-DIV-0148). Not once the walk is
+                // outside the broken construct: there the grouping is around it, and its level is part of
+                // the construct's continuation line — `(((ax * ax)` / `+ (az` / `* az))` / `* (…))` puts
+                // `+ (az` three levels in, lifted by the inner `*` within the outer grouping's lift.
+                if (scope.IsGrouping && scope.OpenLine == line && !outside) {
                     return Math.Max(0, level + scope.Lifted);
                 }
 
@@ -825,8 +828,10 @@ public sealed class LayoutWriter {
     /// </remarks>
     bool BrokenInsideOnItsLine(int index, in Scope scope) {
         // ⚠ Not for a parenthesis the author's chain broke after: `var z = (a` / `+ b).C` / `.D();`
-        // lifts the `+ b` with the rest of the contents (#470).
-        if (scope.IsBrokenAfter) {
+        // lifts the `+ b` with the rest of the contents (#470). Nor for any grouping parenthesis
+        // (#481): `- ((c.` / `X` / `- a.X)` / `* (b.Z - a.Z))` lifts the inner `- a.X` to the `*`'s
+        // continuation line though the `-` broke on the grouping's own line.
+        if (scope.IsBrokenAfter || scope.IsGrouping) {
             return false;
         }
 

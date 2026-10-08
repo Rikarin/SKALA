@@ -1627,8 +1627,8 @@ public sealed partial class CSharpDocumentBuilder {
         // scope opened on the same line — and which are collapsed with it. Both answers come from
         // the oracle and neither is guessable:
         //
-        //   if ((expr           ← two levels. A *grouping* parenthesis is a level of its own, and
-        //           == value))    the condition's parenthesis is another.
+        //   if ((expr           ← two levels: the condition's parenthesis is unconditional, and a
+        //           == value))    grouping parenthesis inside it spends its own on top.
         //   [Attr(              ← one. The bracket and the argument list's parenthesis are one step.
         //       argument
         //   )]
@@ -1639,8 +1639,14 @@ public sealed partial class CSharpDocumentBuilder {
         // The sole-lambda case is the third: `place_single_method_argument_lambda_on_same_line`
         // keeps the lambda on the call's line, so that parenthesis never gets a line of its own and
         // would otherwise be collapsed into whatever the lambda's body opens.
-        var unconditional = node is ParenthesizedExpressionSyntax
-            || options.PlaceSingleMethodArgumentLambdaOnSameLine
+        // ⚠ A grouping parenthesis is NOT unconditional, and was until #481: `var x = (c` / `? a`,
+        // `var y = ((a` / `+ b))`, `var t = ((` / `1, 2))`, `var f = ((x,` / `y) => { })` and
+        // `int[] z = ([` / `1,` all put the contents one level past the statement — the grouping, the
+        // `=` and whatever opened beside it are one line's one level. Where a grouping does spend a
+        // second level it is lifted by a construct that broke after it (`var b = ((` / `1 + 2)` /
+        // `* 3);`, LayoutWriter.LiftedLevel), which is what the unconditional scope used to stand in
+        // for, and did wrongly everywhere else.
+        var unconditional = options.PlaceSingleMethodArgumentLambdaOnSameLine
             && node is ArgumentListSyntax { Arguments: [{ Expression: LambdaExpressionSyntax }] };
 
         // ⚠ A collection expression's elements are elements, like an initializer's: a chain broken
@@ -3322,7 +3328,16 @@ public sealed partial class CSharpDocumentBuilder {
                     HoldContinuationLevel();
                 }
             } else {
-                OpenIndent(IndentKind.Continuous);
+                // ⚠ A chain's level is lifted like a delimited list's when it opens on the first line
+                // of a construct that broke after it (#481): `((point` / `.X` / `- x)` / `* …)` puts
+                // `.X` a level past the `- x` line, as SK-DIV-0148's rule says for a block. Without it
+                // the chain collapsed into the grouping it opened beside, which the grouping's
+                // unconditional scope used to hide.
+                OpenIndent(
+                    IndentKind.Continuous,
+                    false,
+                    frames[frame].Kind == FrameKind.Chain ? IndentFlags.Delimiter : IndentFlags.None
+                );
             }
 
             frames[frame] = frames[frame] with { Activated = true };
