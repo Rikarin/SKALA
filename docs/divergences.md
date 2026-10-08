@@ -5522,7 +5522,8 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
   oracle breaks between the type and the name, or between an element's type and its name (SK-DIV-0024's
   family); Skala now fills the type argument list instead, where before it left the line whole.
 - Two attribute sections on one parameter, the first multi-line: the oracle puts each following section
-  and the type on its own line; Skala moves only the token after the multi-line one.
+  and the type on its own line; Skala moved only the token after the multi-line one. **Fixed** by #475,
+  SK-DIV-0350.
 - A type parameter's single attribute whose arguments chop: the oracle keeps `<[Obsolete(` on the `<`'s
   line with the arguments two levels in; Skala nests them one. And `<[Obsolete] T>` comes back
   `< [Obsolete] T>` — a pre-existing spacing defect, like `o is Point (2, 3)` for a recursive pattern's
@@ -7967,3 +7968,34 @@ earlier. Opening the arrow's group at the arm's start would change what it measu
 
 - options: none.
 - ⚠ status: **open**, measured.
+
+## SK-DIV-0350 — a parameter's attribute sections are one line together, or one line each
+
+#475. Measured with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`, on a method's parameter, a
+lambda's and a type parameter's, with two and three sections:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `[Description("…",` / `"…")] [Obsolete] int a` (the first section spans lines) | `)]` / `[Obsolete]` / `int a` | `)]` / `[Obsolete] int a` |
+| `[Obsolete] [Description("…",` / `"…")] int a` (the last one does) | `[Obsolete]` / `[Description(` / … / `)]` / `int a` | `[Obsolete] [Description(` |
+| three sections, the middle one multi-line | every section and `int a` on a line of its own | the first two joined, the last two joined |
+| a section too wide for the line, first or last | the same as an author's break | the same as before |
+| `[Obsolete("…50…")] [Description("…50…")] int a`, 136 columns joined, each section fits alone | `[Obsolete(…)]` / `[Description(…)]` / `int a` | `[Obsolete(…)] [Description(` and the arguments chopped |
+| `[Obsolete] [Serializable] Dictionary<…> p…` too long, the sections short | `[Obsolete] [Serializable]` / `Dictionary<…> p…` | identical |
+| `[Obsolete]` / `[Serializable] int a`, and `[Obsolete] [Serializable]` / `int a` | joined | identical |
+
+So the sections are one run: flat when they fit on one line together, and otherwise every gap after a
+section breaks, the gap before the parameter included, however short the parameter. When the run fits,
+the gap before the parameter keeps its own rule (SK-DIV-0114's "the parameter's first line fits"). The
+run is a group on the parameter whose points are the gaps between sections and whose measure ends at
+the last section's own gap (`GroupFacts.MeasuresThroughTail`); the last section's group breaks with it,
+and its next-line join is not asked then.
+
+Seen beside it and not fixed: a section holding two attributes that spans lines is written
+`[Obsolete, Description(` by the oracle, its first line kept, where Skala's fill breaks after
+`[Obsolete,`; and a type parameter's multi-line section nests its arguments two levels in with `)]` one
+level in (`class C<[Description(` / 8 / 4), where Skala puts them at 4 and 0. A run whose last section
+holds several attributes is left to the sections, as before, unmeasured.
+
+- options: none.
+- ⚠ status: **resolved** (#475), pinned by `AttributeRunIssue475Tests`.

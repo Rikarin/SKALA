@@ -309,6 +309,12 @@ public sealed class BreakPlan {
     readonly Dictionary<long, GroupPlan> inner = [];
 
     /// <summary>
+    ///     The last attribute section of a parameter's run, by node: the group its gap belongs to, allocated
+    ///     by <see cref="PlanAttributeRun" />, and the run's own group, which it breaks with (#475).
+    /// </summary>
+    readonly Dictionary<long, (int Section, int Run)> attributeRuns = [];
+
+    /// <summary>
     ///     The two groups a run of sibling <c>where</c> clauses needs, keyed by the declaration.
     /// </summary>
     /// <remarks>
@@ -703,17 +709,32 @@ public sealed class BreakPlan {
                     return;
                 }
 
-                var section = NewGroup();
+                var inRun = attributeRuns.TryGetValue(Key(single), out var run);
+                var section = inRun ? run.Section : NewGroup();
                 FollowingPoint(after, section);
                 Describe(
                     node,
                     section,
                     GroupMode.Preserve,
-                    new GroupFacts(options.KeepsUserBreaksBetweenItems && BreaksBefore(after), true, true)
+                    new GroupFacts(
+                        options.KeepsUserBreaksBetweenItems && BreaksBefore(after),
+                        true,
+                        true,
+                        BreaksWithOwner: inRun,
+                        Owner: inRun ? run.Run : -1
+                    )
                 );
 
                 return;
             }
+
+            case ParameterSyntax { AttributeLists: [_, _, ..] lists }:
+                PlanAttributeRun(node, lists);
+                return;
+
+            case TypeParameterSyntax { AttributeLists: [_, _, ..] lists }:
+                PlanAttributeRun(node, lists);
+                return;
 
             case ForStatementSyntax forStatement:
                 PlanForHeader(forStatement);
@@ -1926,6 +1947,45 @@ public sealed class BreakPlan {
         if (group >= 0) {
             FollowingPoint(OwnerTokenAfter(node), group);
         }
+    }
+
+    /// <summary>
+    ///     A parameter's two or more attribute sections: one line together, or every section and the
+    ///     parameter on lines of their own.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 (#475, SK-DIV-0350) on a method's, a lambda's and a
+    ///     type's parameter, with two and three sections, the multi-line one first, in the middle or last,
+    ///     by an author's break or by width, one of them holding two attributes: once a section spans lines,
+    ///     or the sections do not fit on one line together, every gap after a section breaks —
+    ///     <c>[Obsolete]</c> / <c>[Description(</c> / … / <c>)]</c> / <c>int a</c>, never
+    ///     <c>[Obsolete] [Description(</c> or <c>)]</c> / <c>[Obsolete] int a</c>, which is what Skala wrote,
+    ///     each section deciding its own gap. Two sections that fit together stay together and the gap
+    ///     before the parameter keeps its own rule (<c>[Obsolete] [Serializable]</c> / a long
+    ///     <c>Dictionary&lt;…&gt; p</c>), and an author's break between two sections that fit is joined.
+    ///     The gaps between sections are the run's points; the gap after the last is its section's, which
+    ///     breaks with the run. A run whose last section holds several attributes is left to the
+    ///     sections, as before: its gap is the fill's and was not measured here.
+    /// </remarks>
+    void PlanAttributeRun(SyntaxNode owner, SyntaxList<AttributeListSyntax> sections) {
+        var last = sections[^1];
+        if (last.Attributes.Count != 1 || OwnerTokenAfter(last).IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        var run = NewGroup();
+        for (var i = 1; i < sections.Count; i++) {
+            Point(sections[i].OpenBracketToken, run);
+        }
+
+        var section = NewGroup();
+        attributeRuns[Key(last)] = (section, run);
+        Describe(
+            owner,
+            run,
+            GroupMode.Preserve,
+            new GroupFacts(JoinsIfFits: true, BreaksIfTooLong: true, TailEndsAt: section, MeasuresThroughTail: true)
+        );
     }
 
     /// <summary>

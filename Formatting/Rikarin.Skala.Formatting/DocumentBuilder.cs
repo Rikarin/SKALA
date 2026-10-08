@@ -72,6 +72,12 @@ public sealed class DocumentBuilder {
     int[] segmentHead = new int[512];
 
     /// <summary>
+    ///     <see cref="Document.ThroughWidthOf" />, for the groups whose <see cref="GroupFacts.TailEndsAt" />
+    ///     names another, by node.
+    /// </summary>
+    readonly Dictionary<int, int> throughWidth = [];
+
+    /// <summary>
     ///     Each group's mode, by id, for <see cref="segmentHead" /> to know which nested points can break.
     /// </summary>
     readonly Dictionary<int, GroupMode> modes = [];
@@ -577,6 +583,12 @@ public sealed class DocumentBuilder {
         certain[index] = childCertain || selfOrigin > 0;
         certainOrigin[index] = Math.Max(childOrigin, selfOrigin);
         ownerWidth[index] = owned;
+        if (frame.Kind == DocKind.Group && facts[frame.Arg1].TailEndsAt >= 0) {
+            var through = 0;
+            WidthThrough(childStart, count, facts[frame.Arg1].TailEndsAt, ref through);
+            throughWidth[index] = through;
+        }
+
         var afterPointRuns = false;
         var firstFlatSpace = false;
         afterPoint[index] = frame.Kind == DocKind.Group
@@ -654,7 +666,8 @@ public sealed class DocumentBuilder {
             segmentHead,
             draftSegment,
             breaks,
-            [.. facts]
+            [.. facts],
+            throughWidth
         );
     }
 
@@ -951,6 +964,37 @@ public sealed class DocumentBuilder {
                 }
             }
         }
+    }
+
+    /// <summary>
+    ///     Adds the flat widths of the children in order until the first point of
+    ///     <paramref name="tailGroup" />, splicing containers; true once that point is reached. A child
+    ///     with no flat form makes the width <see cref="Document.Unbounded" />.
+    /// </summary>
+    bool WidthThrough(int start, int n, int tailGroup, ref int width) {
+        for (var i = 0; i < n; i++) {
+            var child = children[start + i];
+            ref var node = ref nodes[child];
+            if (node.Kind == DocKind.Line && (LineKind)node.Arg0 == LineKind.Soft && node.Arg2 == tailGroup) {
+                return true;
+            }
+
+            if (node.Count > 0
+                && flatWidth[child] < Document.Unbounded
+                && node.Kind is DocKind.Concat or DocKind.Group or DocKind.Indent or DocKind.Fill) {
+                if (WidthThrough(node.Payload, node.Count, tailGroup, ref width)) {
+                    return true;
+                }
+
+                continue;
+            }
+
+            width = width >= Document.Unbounded || flatWidth[child] >= Document.Unbounded
+                ? Document.Unbounded
+                : width + flatWidth[child];
+        }
+
+        return false;
     }
 
     /// <summary>Whether this child is a break point belonging to the group being closed.</summary>

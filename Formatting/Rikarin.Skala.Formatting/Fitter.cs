@@ -123,10 +123,12 @@ public sealed class Fitter {
                 column,
                 continuationColumn,
                 document.FlatWidthOf(node),
-                facts.MeasuresHead ? document.HeadWidthOf(node) : document.FlatWidthOf(node),
+                facts.MeasuresThroughTail ? document.ThroughWidthOf(node)
+                : facts.MeasuresHead ? document.HeadWidthOf(node)
+                : document.FlatWidthOf(node),
                 document.PointWidthOf(node),
                 document.AfterPointOf(node),
-                trailing,
+                facts.MeasuresThroughTail ? 0 : trailing,
                 line
             ),
             document.AfterPointRunsToTheEnd(node),

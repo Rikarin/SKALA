@@ -1690,9 +1690,12 @@ public sealed class LayoutWriter {
             // its attributes or by arguments that chopped, moves the parameter down whatever the
             // parameter's width (SK-DIV-0114), and that is read off the output like
             // GroupFacts.BreaksIfOwnerIsMultiLine is (#372), not off the source.
+            // ⚠ Nor when the group broke with its owner: a run of attribute sections that did not fit
+            // together puts the parameter on a line of its own however short it is (#475).
             if (!flat
                 && (flags & LineFlags.BreaksOnlyIfNextLineOverflows) != 0
-                && fitter.EnteredOn(slot.Arg2) == line) {
+                && fitter.EnteredOn(slot.Arg2) == line
+                && !BrokeWithOwner(slot.Arg2)) {
                 flat = NextLineFitsBeside(ref slot, flags, stack);
             }
 
@@ -1711,6 +1714,11 @@ public sealed class LayoutWriter {
 
         TakeBreak(ref slot);
     }
+
+    /// <summary>Whether the group broke because the group it breaks with did — see <see cref="GroupFacts.BreaksWithOwner" />.</summary>
+    bool BrokeWithOwner(int group) =>
+        document.FactsOf(group) is { BreaksWithOwner: true, Owner: >= 0 } facts
+        && fitter.ModeOf(facts.Owner) == ResolvedMode.Broken;
 
     /// <summary>Writes a break: the line ends here and the next one begins.</summary>
     void TakeBreak(ref DocNode slot) {

@@ -520,6 +520,7 @@ public sealed class Document {
     readonly int[] draftSegment;
     readonly bool[] hasBreak;
     readonly GroupFacts[] facts;
+    readonly Dictionary<int, int> throughWidth;
 
     internal Document(
         DocNode[] nodes,
@@ -536,7 +537,8 @@ public sealed class Document {
         int[] segmentHead,
         int[] draftSegment,
         bool[] hasBreak,
-        GroupFacts[] facts
+        GroupFacts[] facts,
+        Dictionary<int, int>? throughWidth = null
     ) {
         Nodes = nodes;
         NodeCount = nodeCount;
@@ -553,6 +555,7 @@ public sealed class Document {
         this.draftSegment = draftSegment;
         this.hasBreak = hasBreak;
         this.facts = facts;
+        this.throughWidth = throughWidth ?? [];
     }
 
     public DocNode[] Nodes { get; }
@@ -668,6 +671,14 @@ public sealed class Document {
     /// </summary>
     public bool AfterPointRunsToTheEnd(int node) =>
         Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.AfterPointRunsToTheEnd) != 0;
+
+    /// <summary>
+    ///     The flat width from a group's start to the first point of the group its
+    ///     <see cref="GroupFacts.TailEndsAt" /> names — its own points at their flat rendering — or
+    ///     <see cref="Unbounded" /> when anything before that point is certain to break. The flat width
+    ///     for any other node. See <see cref="GroupFacts.MeasuresThroughTail" />.
+    /// </summary>
+    public int ThroughWidthOf(int node) => throughWidth.TryGetValue(node, out var width) ? width : FlatWidthOf(node);
 
     /// <summary>
     ///     The width the group's first break point renders as when flat — see
@@ -941,6 +952,14 @@ public sealed class Document {
 ///     arguments of a list that would fit whole below, and breaks before the <c>:</c> only when the
 ///     head up to <c>B(</c> does not fit, or by <see cref="TailEndsAt" />'s question.
 /// </param>
+/// <param name="MeasuresThroughTail">
+///     ⚠ The group is fitted against <see cref="Document.ThroughWidthOf" /> — from its start to the
+///     first point of the group <see cref="TailEndsAt" /> names — with nothing trailing it: flat when
+///     that much fits, broken otherwise. A parameter's run of two or more attribute sections (#475,
+///     SK-DIV-0350): the oracle puts every section and the parameter on lines of their own as soon as
+///     the sections do not fit on one line together, or one of them spans lines, and leaves the gap
+///     before the parameter to its own rule when they do.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -961,4 +980,5 @@ public readonly record struct GroupFacts(
     int Terminator = 0,
     int KeywordWidth = 0,
     int TailEndsAt = -1,
-    bool SkipsOuterTail = false);
+    bool SkipsOuterTail = false,
+    bool MeasuresThroughTail = false);
