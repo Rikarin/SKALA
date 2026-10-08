@@ -45,7 +45,11 @@ public static class Arranger {
     ///         pair from the arrow exactly as it would have from the <c>return</c>.
     ///     </para>
     /// </remarks>
-    public static ImmutableArray<ArrangementRule> Rules(ImmutableHashSet<string>? removableUsings = null) => [
+    public static ImmutableArray<ArrangementRule> Rules(ImmutableHashSet<string>? removableUsings = null) {
+        // ⚠ One instance shared by two rules: the usings a shortening binds through must survive the
+        // removal that runs later in the same pass (#460).
+        var shortening = new QualifiedReferenceRule();
+        return [
         new AccessibilityRule(),
         new PredefinedTypeRule(),
         new ArgumentStyleRule(),
@@ -57,14 +61,16 @@ public static class Arranger {
         new EmptyStringRule(),
         new ThisQualifierRule(),
         new StaticQualifierRule(),
+        shortening,
         new DiscardDeclarationRule(),
         new RedundantBracesRule(),
         new BodyStyleRule(),
         new RedundantParenthesesRule(),
         new TrailingCommaRule(),
         new NamespaceBodyRule(),
-        new UsingsRule(removableUsings)
-    ];
+        new UsingsRule(removableUsings, shortening.Required)
+        ];
+    }
 
     /// <summary>Arranges text that has already been read, with options already resolved.</summary>
     /// <param name="compilation">

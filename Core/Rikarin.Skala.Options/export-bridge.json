@@ -1167,6 +1167,9 @@
       "csharp_place_type_constraints_on_same_line",
       "place_type_constraints_on_same_line"
     ],
+    "skala_prefer_qualified_reference": [
+      "resharper_csharp_prefer_qualified_reference"
+    ],
     "skala_prefer_explicit_discard_declaration": [
       "resharper_prefer_explicit_discard_declaration",
       "resharper_csharp_prefer_explicit_discard_declaration",

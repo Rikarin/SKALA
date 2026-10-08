@@ -243,6 +243,7 @@ skala_place_simple_switch_expression_on_single_line = false
 skala_place_single_method_argument_lambda_on_same_line = true
 skala_place_type_constraints_on_same_line = true
 skala_prefer_explicit_discard_declaration = false
+skala_prefer_qualified_reference = false
 skala_prefer_wrap_around_eq = default
 skala_remove_blank_lines_near_braces_in_code = true
 skala_remove_blank_lines_near_braces_in_declarations = true

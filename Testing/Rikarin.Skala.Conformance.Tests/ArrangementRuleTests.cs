@@ -65,7 +65,7 @@ public sealed class ArrangementRuleTests {
     ///     regression tests for #326 want to say "this rewrite was never attempted", which is a
     ///     statement about <see cref="ArrangementResult.Diagnostics" />.
     /// </remarks>
-    static ArrangementResult Attempt(
+    internal static ArrangementResult Attempt(
         string source,
         string? only = null,
         bool removeUnused = false,
@@ -126,7 +126,7 @@ public sealed class ArrangementRuleTests {
     ///     outcome. The two rewrites #326 found had exactly that shape: correct output, on disk, for the
     ///     wrong reason. So the assertion is that <c>SK9098</c> never appeared.
     /// </remarks>
-    static string Declined(ArrangementResult result) {
+    internal static string Declined(ArrangementResult result) {
         Assert.DoesNotContain(
             result.Diagnostics,
             static diagnostic => diagnostic.Id is ArrangeIds.Reverted or ArrangeIds.SymbolChanged

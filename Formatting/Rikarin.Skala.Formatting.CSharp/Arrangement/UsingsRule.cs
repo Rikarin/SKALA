@@ -36,8 +36,21 @@ public sealed class UsingsRule : ArrangementRule {
     /// </remarks>
     readonly ImmutableHashSet<string> removable;
 
-    public UsingsRule(ImmutableHashSet<string>? removable = null) {
+    /// <summary>
+    ///     ⚠ The directives a rule earlier in the same pass made necessary, which <see cref="removable" />
+    ///     — computed before the pass began — cannot know about (#460).
+    /// </summary>
+    /// <remarks>
+    ///     <see cref="QualifiedReferenceRule" /> shortens <c>System.Text.StringBuilder</c> to
+    ///     <c>StringBuilder</c>, and a <c>using System.Text;</c> that was unused until then is exactly
+    ///     what the short name now binds through. Removing it anyway is <c>CS0246</c> and a revert of the
+    ///     whole document; the oracle keeps it.
+    /// </remarks>
+    readonly IReadOnlySet<string> required;
+
+    public UsingsRule(ImmutableHashSet<string>? removable = null, IReadOnlySet<string>? required = null) {
         this.removable = removable ?? [];
+        this.required = required ?? ImmutableHashSet<string>.Empty;
     }
 
     public override string Id => ArrangeIds.Usings;
@@ -253,7 +266,8 @@ public sealed class UsingsRule : ArrangementRule {
         if (directive.GlobalKeyword.IsKind(SyntaxKind.GlobalKeyword)
             || directive.StaticKeyword != default
             || !HasNoComment(directive)
-            || !removable.Contains(Key(directive))) {
+            || !removable.Contains(Key(directive))
+            || required.Contains(Key(directive))) {
             return false;
         }
 
@@ -383,7 +397,7 @@ public sealed class UsingsRule : ArrangementRule {
     ///     The set is also intersected across compilations by the caller, so the key has to identify the
     ///     directive rather than the namespace it imports.
     /// </remarks>
-    static string Key(UsingDirectiveSyntax directive) =>
+    internal static string Key(UsingDirectiveSyntax directive) =>
         directive.Alias is { } alias
             ? alias.Name.Identifier.ValueText + "=" + Key(directive.Name)
             : Key(directive.Name);

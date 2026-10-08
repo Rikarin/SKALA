@@ -90,6 +90,7 @@ public readonly struct ArrangementOptions {
         SystemDirectivesFirst = options.GetBool(Ids.SystemDirectivesFirst);
         UsingDirectivePlacement = (UsingDirectivePlacement)options.GetRaw(Ids.UsingDirectivePlacement);
         KeepNontrivialAlias = options.GetBool(Ids.KeepNontrivialAlias);
+        PreferQualifiedReference = options.GetBool(PreferQualifiedReferenceId);
         RemoveOnlyUnusedAliases = options.GetBool(Ids.RemoveOnlyUnusedAliases);
 
         MaxLineLength = Math.Max(1, options.GetInt(Ids.MaxLineLength));
@@ -336,6 +337,27 @@ public readonly struct ArrangementOptions {
     ///     </para>
     /// </remarks>
     public PhaseOneOptions PhaseOne { get; }
+
+    /// <summary>
+    ///     <c>skala_prefer_qualified_reference</c>: at <c>false</c>, <see cref="QualifiedReferenceRule" />
+    ///     shortens a namespace-qualified reference (#460).
+    /// </summary>
+    public bool PreferQualifiedReference { get; }
+
+    /// <summary>
+    ///     ⚠ Resolved outside <see cref="Ids" /> on purpose, so that it is not in <see cref="Implemented" />.
+    ///     Only the <c>false</c> direction is performed — at <c>true</c> the oracle qualifies references and
+    ///     drops usings, and Skala does nothing — so the key is Tier D, and listing it with the implemented
+    ///     keys would make <c>OptionCoverageTests</c> demand a Tier A claim the <c>true</c> value cannot back.
+    ///     Not <c>OfInert</c> either: it is not inert, and inert keys leave `config check`'s
+    ///     declared-but-not-honoured list, where a user setting it to <c>true</c> belongs.
+    /// </summary>
+    static readonly OptionId PreferQualifiedReferenceId = OptionRegistry.TryResolve(
+        "skala_prefer_qualified_reference",
+        out var id
+    )
+        ? id
+        : throw new InvalidOperationException("'skala_prefer_qualified_reference' is not in the option registry.");
 
     /// <summary>Every option the arranger reads — the arrangement half of the Tier A claim.</summary>
     public static ImmutableArray<OptionId> Implemented => Ids.All;

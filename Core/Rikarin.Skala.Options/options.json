@@ -4061,6 +4061,21 @@
       "expands": []
     },
     {
+      "key": "skala_prefer_qualified_reference",
+      "aliases": [],
+      "language": "csharp",
+      "type": "bool",
+      "default": "false",
+      "defaultSource": "template",
+      "tier": "D",
+      "construct": "ReferenceQualification",
+      "summary": "Reference qualification — Prefer fully qualified references. At `false`, SK0219 shortens a namespace-qualified or `global::`-rooted reference to the name that binds to the same type at that position, never adding a using and never shortening part-way (#460, SK-DIV-0073). ⚠ Tier D because only `false` is performed: at `true` the oracle qualifies the references an explicit using made bind and drops those usings, and Skala does nothing. The pinned fixture is `constructs/arrangement/redundancy/qualified-reference.cs`, deliberately not globbed — a glob would put the key in the sweep, which flips it to `true`.",
+      "since": "0.1",
+      "oracle": null,
+      "templateLine": 277,
+      "expands": []
+    },
+    {
       "key": "skala_remove_blank_lines_near_braces_in_code",
       "aliases": [],
       "language": "csharp",
