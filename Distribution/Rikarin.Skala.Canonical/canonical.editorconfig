@@ -9,7 +9,9 @@
 #
 # This block is the Rider export (ADR-001) translated into Skala's key
 # namespace — every `resharper_*` property Skala implements, written as the
-# `skala_*` key Skala reads, at the value the export sets — with the two
+# `skala_*` key Skala reads, at the value the export sets, except
+# `skala_space_within_spread_pattern = false`, a key ReSharper's formatter
+# does not read and whose value is Skala's own (SK-DIV-0310) — with the two
 # additions `skala config fix` makes: `root = true`, so the chain stops at the
 # repository instead of picking up an .editorconfig above it, and
 # `max_line_length` beside `skala_max_line_length`, so that tools other than
@@ -344,7 +346,7 @@ skala_space_within_parentheses = false
 skala_space_within_single_line_array_initializer_braces = true
 skala_space_within_sizeof_parentheses = false
 skala_space_within_slice_pattern = true
-skala_space_within_spread_pattern = true
+skala_space_within_spread_pattern = false
 skala_space_within_typeof_parentheses = false
 skala_space_within_type_argument_angles = false
 skala_space_within_type_parameter_angles = false

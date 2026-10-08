@@ -58,7 +58,9 @@ public static class CanonicalEditorConfig {
                                    #
                                    # This block is the Rider export (ADR-001) translated into Skala's key
                                    # namespace — every `resharper_*` property Skala implements, written as the
-                                   # `skala_*` key Skala reads, at the value the export sets — with the two
+                                   # `skala_*` key Skala reads, at the value the export sets, except
+                                   # `skala_space_within_spread_pattern = false`, a key ReSharper's formatter
+                                   # does not read and whose value is Skala's own (SK-DIV-0310) — with the two
                                    # additions `skala config fix` makes: `root = true`, so the chain stops at the
                                    # repository instead of picking up an .editorconfig above it, and
                                    # `max_line_length` beside `skala_max_line_length`, so that tools other than
@@ -119,7 +121,25 @@ public static class CanonicalEditorConfig {
     ///         knows, at the value the export sets", which is a claim a reader can check.
     ///     </para>
     /// </remarks>
-    public static string Translate(string templateText) {
+    public static string Translate(string templateText) => TranslateExport(templateText);
+
+    /// <summary>
+    ///     The keys whose canonical value is Skala's decision rather than the export's, and the value.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ One key, and only a key the oracle does not read: overriding anything ReSharper honours would
+    ///     make the canonical configure Skala differently from the formatter it is the export of.
+    ///     <c>skala_space_within_spread_pattern</c> is that kind of key — the oracle returns a spread exactly
+    ///     as written at both values (SK-DIV-0009) — and Skala governs the gap on purpose, defaulting to
+    ///     <c>[..xs]</c> (#513, SK-DIV-0310). Carrying the export's <c>true</c> shipped <c>[.. xs]</c> to every
+    ///     consuming repository while Skala's own default and its own source say the opposite. The export
+    ///     itself is not edited: it is the oracle's input and stays what Rider wrote. Only an option the
+    ///     export already sets is overridden; nothing is added.
+    /// </remarks>
+    public static IReadOnlyDictionary<OptionId, string> Departures { get; } =
+        new Dictionary<OptionId, string> { [OptionId.SkalaSpaceWithinSpreadPattern] = "false" };
+
+    static string TranslateExport(string templateText) {
         var lines = templateText.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
         var output = new StringBuilder(templateText.Length);
 
@@ -150,7 +170,9 @@ public static class CanonicalEditorConfig {
                 // nothing for Skala, which resolves both spellings. Same reasoning as the
                 // `max_line_length` that `Fixer` adds beside `skala_max_line_length`.
                 var name = spellings.TryGetValue(id, out var kept) ? kept.Spelling : OptionRegistry.Get(id).Key;
-                section[index] = name + " = " + winners[id].Value;
+                section[index] = name
+                    + " = "
+                    + (Departures.TryGetValue(id, out var decided) ? decided : winners[id].Value);
             }
 
             foreach (var line in section) {
