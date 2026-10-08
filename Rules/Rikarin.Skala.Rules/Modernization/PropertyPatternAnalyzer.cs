@@ -36,12 +36,12 @@ public sealed class PropertyPatternAnalyzer : DiagnosticAnalyzer {
             BinaryExpressionSyntax comparison when comparison.IsKind(SyntaxKind.NotEqualsExpression)
                 => NullComparison.OperandOf(comparison),
             IsPatternExpressionSyntax {
-                Pattern:
-                UnaryPatternSyntax {
-                    RawKind: (int)SyntaxKind.NotPattern,
-                    Pattern: ConstantPatternSyntax { Expression.RawKind: (int)SyntaxKind.NullLiteralExpression }
-                }
-            } pattern
+                    Pattern:
+                    UnaryPatternSyntax {
+                        RawKind: (int)SyntaxKind.NotPattern,
+                        Pattern: ConstantPatternSyntax { Expression.RawKind: (int)SyntaxKind.NullLiteralExpression }
+                    }
+                } pattern
                 => pattern.Expression,
             _ => null
         };

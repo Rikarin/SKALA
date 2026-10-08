@@ -82,7 +82,7 @@ public sealed class ConsoleInsteadOfLoggerAnalyzer : DiagnosticAnalyzer {
     static void Analyze(SyntaxNodeAnalysisContext context, INamedTypeSymbol console) {
         var invocation = (InvocationExpressionSyntax)context.Node;
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol { Name: "Write" or "WriteLine" } method
+                is not IMethodSymbol { Name: "Write" or "WriteLine" } method
             || !WritesToTheConsole(context, invocation, method, console)) {
             return;
         }

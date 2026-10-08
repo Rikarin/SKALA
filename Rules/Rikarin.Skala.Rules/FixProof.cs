@@ -557,8 +557,8 @@ public static class FixRebind {
         || statement is BlockSyntax {
             Parent:
             BaseMethodDeclarationSyntax
-                or AccessorDeclarationSyntax
-                or LocalFunctionStatementSyntax
-                or AnonymousFunctionExpressionSyntax
+            or AccessorDeclarationSyntax
+            or LocalFunctionStatementSyntax
+            or AnonymousFunctionExpressionSyntax
         };
 }

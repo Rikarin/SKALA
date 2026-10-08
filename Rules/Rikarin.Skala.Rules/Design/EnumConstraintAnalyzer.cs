@@ -69,7 +69,7 @@ public sealed class EnumConstraintAnalyzer : DiagnosticAnalyzer {
 
                     if (type.Type is not NullableTypeSyntax
                         && context.SemanticModel.GetTypeInfo(type.Type, context.CancellationToken).Type
-                        is { SpecialType: SpecialType.System_Enum }) {
+                            is { SpecialType: SpecialType.System_Enum }) {
                         bound = type;
                     }
 

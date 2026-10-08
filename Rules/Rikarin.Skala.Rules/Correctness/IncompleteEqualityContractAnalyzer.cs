@@ -25,7 +25,7 @@ public sealed class IncompleteEqualityContractAnalyzer : DiagnosticAnalyzer {
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var declaration = (TypeDeclarationSyntax)context.Node;
         if (context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken)
-            is not INamedTypeSymbol { IsRecord: false } type
+                is not INamedTypeSymbol { IsRecord: false } type
             || type.DeclaringSyntaxReferences.FirstOrDefault() is not { } first
             || first.SyntaxTree != declaration.SyntaxTree
             || first.Span != declaration.Span) {

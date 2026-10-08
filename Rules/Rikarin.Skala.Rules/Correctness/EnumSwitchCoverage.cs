@@ -57,7 +57,7 @@ internal static class EnumSwitchCoverage {
         }
 
         if (model.GetTypeInfo(statement.Expression, cancellation).Type
-            is not INamedTypeSymbol { TypeKind: TypeKind.Enum } type
+                is not INamedTypeSymbol { TypeKind: TypeKind.Enum } type
             || flags is not null
             && type.GetAttributes()
                 .Any(attribute =>

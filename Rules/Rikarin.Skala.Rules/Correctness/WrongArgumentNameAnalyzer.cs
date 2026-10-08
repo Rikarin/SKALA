@@ -66,7 +66,7 @@ public sealed class WrongArgumentNameAnalyzer : DiagnosticAnalyzer {
         }
 
         if (context.SemanticModel.GetSymbolInfo(creation, context.CancellationToken).Symbol
-            is not IMethodSymbol { MethodKind: MethodKind.Constructor } constructor
+                is not IMethodSymbol { MethodKind: MethodKind.Constructor } constructor
             || !IsArgumentException(constructor.ContainingType, context.Compilation)) {
             return;
         }

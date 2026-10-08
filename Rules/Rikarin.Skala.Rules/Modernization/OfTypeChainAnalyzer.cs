@@ -269,8 +269,8 @@ public sealed class OfTypeChainAnalyzer : DiagnosticAnalyzer {
             SimpleLambdaExpressionSyntax { ExpressionBody: { } body } simple =>
                 new LambdaShape(simple.Parameter.Identifier.ValueText, body),
             ParenthesizedLambdaExpressionSyntax {
-                ExpressionBody: { } body, ParameterList.Parameters.Count: 1
-            } parenthesized =>
+                    ExpressionBody: { } body, ParameterList.Parameters.Count: 1
+                } parenthesized =>
                 new LambdaShape(parenthesized.ParameterList.Parameters[0].Identifier.ValueText, body),
             ParenthesizedExpressionSyntax inner => Lambda(inner.Expression),
             _ => null

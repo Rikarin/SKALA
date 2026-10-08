@@ -62,7 +62,7 @@ public sealed class RedundantRequiredMembersAttributeAnalyzer : DiagnosticAnalyz
         }
 
         if (context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol
-            is not IMethodSymbol { ContainingType: { Name: AttributeName } marker }
+                is not IMethodSymbol { ContainingType: { Name: AttributeName } marker }
             || !IsCodeAnalysisNamespace(marker.ContainingNamespace)) {
             return;
         }
@@ -103,8 +103,7 @@ public sealed class RedundantRequiredMembersAttributeAnalyzer : DiagnosticAnalyz
     static bool IsCodeAnalysisNamespace(INamespaceSymbol? symbol) =>
         symbol is {
             Name: "CodeAnalysis",
-            ContainingNamespace:
-            {
+            ContainingNamespace: {
                 Name: "Diagnostics",
                 ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
             }

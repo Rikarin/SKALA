@@ -287,7 +287,7 @@ public sealed class BodyStyleRule : ArrangementRule {
             if (style == BodyStyle.ExpressionBody) {
                 if (body is null
                     || Extract(body, options.UseHeuristicsForBodyStyle, loose, !options.UseHeuristicsForBodyStyle)
-                    is not { } expression) {
+                        is not { } expression) {
                     return member;
                 }
 

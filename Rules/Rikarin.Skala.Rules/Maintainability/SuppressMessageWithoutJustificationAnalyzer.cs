@@ -52,7 +52,7 @@ public sealed class SuppressMessageWithoutJustificationAnalyzer : DiagnosticAnal
         var justification = AttributeBinding.NamedArgument(attribute, "Justification");
         if (justification is not null
             && context.SemanticModel.GetConstantValue(justification.Expression, context.CancellationToken)
-            is { HasValue: true, Value: string value }
+                is { HasValue: true, Value: string value }
             && Meaningful(value)) {
             return;
         }

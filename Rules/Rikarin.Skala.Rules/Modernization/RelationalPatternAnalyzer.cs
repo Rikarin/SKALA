@@ -89,7 +89,7 @@ public sealed class RelationalPatternAnalyzer : DiagnosticAnalyzer {
 
     static bool IsRelational(BinaryExpressionSyntax expression) =>
         expression.Kind() is
-        SyntaxKind.LessThanExpression
+            SyntaxKind.LessThanExpression
             or SyntaxKind.LessThanOrEqualExpression
             or SyntaxKind.GreaterThanExpression
             or SyntaxKind.GreaterThanOrEqualExpression;

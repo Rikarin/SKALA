@@ -85,7 +85,9 @@ public sealed class DuplicatedBaseDocumentationAnalyzer : DiagnosticAnalyzer {
         var original = text.ToString(span);
         var ending = original.EndsWith("\r\n", StringComparison.Ordinal)
             ? "\r\n"
-            : original.EndsWith("\n", StringComparison.Ordinal) ? "\n" : string.Empty;
+            : original.EndsWith("\n", StringComparison.Ordinal)
+                ? "\n"
+                : string.Empty;
 
         context.ReportDiagnostic(
             Diagnostic.Create(

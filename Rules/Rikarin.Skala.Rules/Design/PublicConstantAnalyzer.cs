@@ -167,7 +167,7 @@ public sealed class PublicConstantAnalyzer : DiagnosticAnalyzer {
     static TextSpan? DefaultInitializer(SyntaxNodeAnalysisContext context, VariableDeclaratorSyntax variable) {
         if (variable.Initializer is not { } initializer
             || context.SemanticModel.GetDeclaredSymbol(variable, context.CancellationToken)
-            is not IFieldSymbol { HasConstantValue: true, Type.IsValueType: true } field
+                is not IFieldSymbol { HasConstantValue: true, Type.IsValueType: true } field
             || !IsTheTypesDefault(field.ConstantValue)) {
             return null;
         }

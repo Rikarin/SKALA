@@ -25,7 +25,7 @@ public sealed class DiscardedPureResultAnalyzer : DiagnosticAnalyzer {
     static void Analyze(SyntaxNodeAnalysisContext context) {
         if (context.Node is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation }
             || context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol { ReturnsVoid: false } method) {
+                is not IMethodSymbol { ReturnsVoid: false } method) {
             return;
         }
 

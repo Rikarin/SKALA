@@ -55,10 +55,10 @@ public sealed class FloatingPointEqualityAnalyzer : DiagnosticAnalyzer {
             IsLifted: false,
             OperatorKind:
             BinaryOperatorKind.Add
-                or BinaryOperatorKind.Subtract
-                or BinaryOperatorKind.Multiply
-                or BinaryOperatorKind.Divide
-                or BinaryOperatorKind.Remainder
+            or BinaryOperatorKind.Subtract
+            or BinaryOperatorKind.Multiply
+            or BinaryOperatorKind.Divide
+            or BinaryOperatorKind.Remainder
         }
         && IsFloating(operation.Type);
 
