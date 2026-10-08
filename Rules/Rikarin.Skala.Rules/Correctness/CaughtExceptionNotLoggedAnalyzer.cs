@@ -31,8 +31,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <c>LogError(eventId, template, …)</c>, and that is a correctness constraint rather than
 ///         caution: <c>Microsoft.Extensions.Logging</c> orders that overload
 ///         <c>
-/// (EventId, Exception,
-///         string)
+///             (EventId, Exception,
+///             string)
 ///         </c>
 ///         , so an exception prepended in front of the event id does not bind and
 ///         <c>skala fix</c> would have broken the build on the tool's own advice. The rule declines
@@ -128,8 +128,8 @@ public sealed class CaughtExceptionNotLoggedAnalyzer : DiagnosticAnalyzer {
     ///     ⚠ The name is a lookup at the call, not a reference to the <c>catch</c>, and a lambda between
     ///     the two can declare its own: in
     ///     <c>
-    /// catch (Exception ex) { items.ForEach(ex =&gt;
-    ///     log.LogError("item {I} failed", ex)); }
+    ///         catch (Exception ex) { items.ForEach(ex =&gt;
+    ///         log.LogError("item {I} failed", ex)); }
     ///     </c>
     ///     the inserted <c>ex</c> is the item, and with an
     ///     <c>int</c> item the call binds the <c>EventId</c> overload instead (#412's audit). The call is

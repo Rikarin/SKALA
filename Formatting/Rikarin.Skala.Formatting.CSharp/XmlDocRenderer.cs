@@ -150,7 +150,7 @@ public sealed class XmlDocRenderer {
         foreach (var node in nodes) {
             switch (node) {
                 case XmlDocWord word:
-                    Push(word.Text, word.Glued, false, Edge.Word, Edge.Word);
+                    Push(word.Text, word.Glued, false, Edge.Word, Edge.Word, word.Gap);
                     break;
 
                 case XmlDocBreak hard:
@@ -203,7 +203,7 @@ public sealed class XmlDocRenderer {
         }
 
         if (!multiline) {
-            Push(flat!, element.Glued, true, Edge.Element, Edge.Element);
+            Push(flat!, element.Glued, true, Edge.Element, Edge.Element, element.Gap);
 
             // ⚠ A break *after* as well, and it is the same rule read once rather than twice.
             // Measured on `<remarks>` holding `Leading prose. <c>Code.</c> Trailing prose.` and a
@@ -237,7 +237,11 @@ public sealed class XmlDocRenderer {
             return;
         }
 
-        Open(element);
+        if (element.Code is { } shape) {
+            CodeBlock(element, shape);
+        } else {
+            Open(element);
+        }
 
         // ⚠ A break after the end tag of every element opened across lines, and of every element that
         // owns its line — what follows starts a line of its own, glued or not (#541, #542). This used to
@@ -472,7 +476,11 @@ public sealed class XmlDocRenderer {
         var depth = this.depth;
         this.depth = depth + 1;
         if (element.Verbatim is { } verbatim) {
-            Lines(verbatim);
+            if (XmlDocModel.IsReflowedInlineCode(element.Name, verbatim)) {
+                InlineCodeLines(verbatim);
+            } else {
+                Lines(verbatim);
+            }
         } else {
             // ⚠ No carry in hug mode: the content really is on the start tag's line, so the width is
             // already counted and handing it to `Start` a second time would reserve it twice.
@@ -515,8 +523,10 @@ public sealed class XmlDocRenderer {
         var start = Tag(element, ">");
         var close = "</" + element.Name + ">";
         if (element.Verbatim is { } verbatim) {
-            // ⚠ No `spaces_inside_tags` here. A space inside `<c>` is part of the code.
-            return verbatim.Length == 1 ? start + verbatim[0] + close : null;
+            // ⚠ No `spaces_inside_tags` here. A space inside `<c>` is part of the code. ⚠ And never a `<code>`
+            // the author spread over lines, however short (#569): the oracle keeps `<code>` / `var a = 1;` /
+            // `</code>` on three lines.
+            return verbatim.Length == 1 && element.Code is null ? start + verbatim[0] + close : null;
         }
 
         if (FlatNodes(element.Children) is not { } inner) {
@@ -542,7 +552,7 @@ public sealed class XmlDocRenderer {
         foreach (var node in nodes) {
             switch (node) {
                 case XmlDocWord word:
-                    Join(builder, word.Text, word.Glued);
+                    Join(builder, word.Text, word.Glued, word.Gap);
                     break;
 
                 case XmlDocBreak hard:
@@ -569,7 +579,7 @@ public sealed class XmlDocRenderer {
                         return null;
                     }
 
-                    Join(builder, inline, element.Glued);
+                    Join(builder, inline, element.Glued, element.Gap);
                     break;
             }
         }
@@ -577,9 +587,9 @@ public sealed class XmlDocRenderer {
         return builder.ToString();
     }
 
-    static void Join(StringBuilder builder, string text, bool glued) {
+    static void Join(StringBuilder builder, string text, bool glued, int gap) {
         if (builder.Length > 0 && !glued) {
-            builder.Append(' ');
+            builder.Append(' ', Math.Max(1, gap));
         }
 
         builder.Append(text);
@@ -694,7 +704,10 @@ public sealed class XmlDocRenderer {
     /// </summary>
     bool headerBroke;
 
-    void Push(string text, bool glued, bool tag, Edge lead, Edge trail) {
+    /// <summary>The run of spaces in front of the unit being built. See <see cref="XmlDocWord.Gap" />.</summary>
+    int tokenGap = 1;
+
+    void Push(string text, bool glued, bool tag, Edge lead, Edge trail, int gap = 1) {
         if (breakAfterHeader) {
             breakAfterHeader = false;
             if (!glued) {
@@ -712,6 +725,7 @@ public sealed class XmlDocRenderer {
 
         if (token.Length == 0) {
             tokenLead = new(lead, depth);
+            tokenGap = Math.Max(1, gap);
         }
 
         tokenTrail = new(trail, depth);
@@ -747,15 +761,17 @@ public sealed class XmlDocRenderer {
         var text = token.ToString();
         var weld = this.weld;
         var mayWrap = !weld && options.WrapLines && (tokenIsTag || options.WrapText);
+        var gap = tokenGap;
         token.Clear();
         tokenIsTag = false;
         this.weld = false;
+        tokenGap = 1;
 
         // ⚠ A header carrying an author's break moves by its first line only: the rest is on lines of its
         // own whatever this one does.
         var hard = text.IndexOf(HardGap, StringComparison.Ordinal);
         var width = TextWidth.Measure(hard < 0 ? text : text[..hard]);
-        if (!empty && mayWrap && this.width + 1 + width > budget) {
+        if (!empty && mayWrap && this.width + gap + width > budget) {
             EndLine();
         }
 
@@ -764,9 +780,10 @@ public sealed class XmlDocRenderer {
         }
 
         Start();
+        // ⚠ The author's run of spaces, not one (#569): dropped only where the line breaks.
         if (!weld && placed) {
-            current.Append(' ');
-            this.width++;
+            current.Append(' ', gap);
+            this.width += gap;
         }
 
         if (text.IndexOfAny([SoftGap, HardGap]) < 0) {
@@ -801,16 +818,28 @@ public sealed class XmlDocRenderer {
         // the first attribute — and under it only while that column is short of two thirds of the margin
         // (80 of 120, 60 of 90); past it, two indents, which is the export's `allow_far_alignment = false`.
         var aligned = tagColumn + TextWidth.Measure(text[open..first]) + 1;
-        var continuation = options.AttributeIndent switch {
-            AttributeIndentStyle.DoubleIndent => tagColumn + 2 * options.IndentSize,
-            AttributeIndentStyle.AlignByFirstAttribute when aligned * 3 < options.MaxLineLength * 2 => aligned,
-            AttributeIndentStyle.AlignByFirstAttribute => tagColumn + 2 * options.IndentSize,
-            _ => tagColumn + options.IndentSize
-        };
         var broke = false;
 
         current.Append(text, 0, first);
         width += TextWidth.Measure(text[..first]);
+
+        // ⚠ #570, measured at 90 with the first attribute at 56 to 95: `allow_far_alignment = true` aligns under
+        // it wherever it sits, and at either value a first attribute that is not beside the tag name leaves
+        // nothing to align under, so every attribute goes one indent past the tag — not two, which is
+        // `double_indent`'s own answer there and stays so. Not beside it because it does not fit, because the
+        // author broke before it (the oracle's own output given back, a fixed point), or because
+        // `on_different_lines` puts it below (measured at 20 and at 56).
+        var second = text.IndexOfAny([SoftGap, HardGap], first + 1);
+        var lone = text[(first + 1)..(second < 0 ? text.Length : second)];
+        var firstMoves = text[first] == HardGap || width + 1 + TextWidth.Measure(lone[..AttributeEnd(lone)]) > budget;
+        var continuation = options.AttributeIndent switch {
+            AttributeIndentStyle.DoubleIndent => tagColumn + 2 * options.IndentSize,
+            AttributeIndentStyle.AlignByFirstAttribute when firstMoves => tagColumn + options.IndentSize,
+            AttributeIndentStyle.AlignByFirstAttribute
+                when options.AllowFarAlignment || aligned * 3 < options.MaxLineLength * 2 => aligned,
+            AttributeIndentStyle.AlignByFirstAttribute => tagColumn + 2 * options.IndentSize,
+            _ => tagColumn + options.IndentSize
+        };
 
         var at = first;
         while (at < text.Length) {
@@ -925,6 +954,67 @@ public sealed class XmlDocRenderer {
         foreach (var line in lines) {
             this.lines.Add(new(line, true));
             previousTrail = null;
+        }
+    }
+
+    /// <summary>
+    ///     A <c>&lt;code&gt;</c> whose content spans lines: the start tag placed like any other, and everything
+    ///     after it up to <c>&lt;/code&gt;</c> written back as the author wrote it. See <see cref="XmlDocCodeShape" />.
+    /// </summary>
+    void CodeBlock(XmlDocElement element, XmlDocCodeShape shape) {
+        var body = element.Verbatim!.Value;
+        Push(Tag(element, ">"), false, true, Edge.Element, Edge.Inner);
+        var first = 0;
+        if (shape.OnTagLine) {
+            // ⚠ Glued: the code's first line is on the tag's line and nothing may come between them.
+            Push(body[0], true, true, Edge.Inner, Edge.Inner);
+            first = 1;
+        }
+
+        Break();
+        for (var i = first; i < body.Length; i++) {
+            lines.Add(new(body[i], true));
+        }
+
+        // ⚠ A null tail means the last source line holds code, so it is in the body past the tag's line.
+        if (shape.Tail is { } tail) {
+            lines.Add(new(tail + "</" + element.Name + ">", true));
+        } else {
+            lines[^1] = new(lines[^1].Text + "</" + element.Name + ">", true);
+        }
+
+        previousTrail = null;
+    }
+
+    /// <summary>
+    ///     A multi-line <c>&lt;c&gt;</c>'s content: each line trimmed and placed at the content's indent, a blank one
+    ///     dropped, a long one wrapped at a space — and the author's line breaks kept. #569, measured on eight
+    ///     shapes; see <see cref="XmlDocModel.IsReflowedInlineCode" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The spaces inside a line are the author's: <c>alpha  beta</c> keeps both, as the word's gap, so a
+    ///     line that does not wrap comes back byte for byte.
+    /// </remarks>
+    void InlineCodeLines(ImmutableArray<string> lines) {
+        Break();
+        foreach (var line in lines) {
+            var text = line.Trim();
+            if (text.Length == 0) {
+                continue;
+            }
+
+            var gap = 1;
+            foreach (var piece in text.Split(' ')) {
+                if (piece.Length == 0) {
+                    gap++;
+                    continue;
+                }
+
+                Push(piece, false, false, Edge.Word, Edge.Word, gap);
+                gap = 1;
+            }
+
+            Break();
         }
     }
 }

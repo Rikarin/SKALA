@@ -83,8 +83,8 @@ public static class ScratchTree {
     ///     <c>redundancy/qualifiers-and-parentheses.cs</c> and a count-batched round would copy that one
     ///     file into four directories of one project — four declarations of
     ///     <c>
-    /// class
-    ///     QualifiersAndParentheses
+    ///         class
+    ///         QualifiersAndParentheses
     ///     </c>
     ///     in one namespace. Every semantic rewrite in the profile
     ///     (<c>var</c>, qualifiers, predefined types) then reads a compilation full of CS0101, and the

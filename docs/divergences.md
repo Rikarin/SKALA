@@ -8051,29 +8051,42 @@ reads them — equals the one-liner's; `TokenEquivalence` holds `/** … */` to 
 - options: none.
 - ⚠ status: **resolved** for the one-line class.
 
-## SK-DIV-0380 — the oracle rebuilds some multi-line `/** … */` blocks under `SkalaDocComments`; Skala leaves every multi-line one
+## SK-DIV-0380 — which multi-line `/** … */` blocks the oracle rebuilds — **RESOLVED (#568)**, but for one deliberate refusal
 
-Found while measuring #489, under `SkalaDocComments`; Skala leaves each of these as written:
+Found while measuring #489. Measured for #568 on forty shapes under `SkalaDocComments` (three probes, each
+shape alone above a method), and the rule that separates the rebuilt from the left is about the lines
+*after* the opener — the last too, when `*/` ends it:
 
-| input | the oracle |
+| shape | the oracle |
 |---|---|
-| `/** a` / ` * b` / ` */` | `/**` / ` * a` / ` * b` / ` */` |
-| `/**` / ` * text */` | `/**` / ` * text` / ` */` |
-| `/** <summary>Doc.</summary>` / `    <remarks>Unstarred second.</remarks> */` | starred, one element per line |
-| `/** <summary>Doc` / ` * continues.</summary> */` | starred, `<summary>` opened, `Doc` / `continues.` kept on two lines |
-| `/**` / ` *` / ` * <summary>blank first</summary>` / ` */` | the blank ` *` line dropped |
-| an already-starred block whose `<summary>` passes the margin | re-wrapped, the `<summary>` opened |
-| `/** <summary>A</summary> */` / `/** <summary>B</summary> */` | merged into one starred block |
+| content on the `/**` line and at least one more line, starred or not, aligned or not (`/** a` / ` * b`, ` *b`, `  * b`, `b`, deep `b`, ` * b */`, an empty line) | rebuilt: `/**` / ` * a` / ` * b` / ` */` |
+| content on the `/**` line and the closer alone below (`/** text` / ` */`, `/** <summary>a</summary>` / ` */`) | left |
+| `/**` alone and two or more lines, every one with the same whitespace and asterisk (` * a` / ` * b`, ` *no space` / ` *again`, two lines a column off) | rebuilt, that prefix stripped, each line trimmed and the content formatted (`<summary>` opened, `Doc.` indented, a blank first line dropped) |
+| `/**` alone and two or more lines with no asterisk (`   a` / `   b`, an unstarred `<summary>` at the opener's column) | rebuilt, each line trimmed |
+| `/**` alone and exactly one line: ` * text` with the closer aligned or ending it | rebuilt (already canonical, or the closer moved below) |
+| `/**` alone and exactly one line otherwise (` *no space`, `  * a`, `   a`, `<summary>` at the opener's column, ` * a` over a closer off the column) | left |
+| `/**` alone and lines that disagree on the asterisk (` * a` / `  * b`, ` * a` / ` b`, ` * a` / an empty line / ` * b`, a ragged block) | rebuilt **keeping the stars as text**: ` * * a` |
 
-And these the oracle also leaves: `/** text` / ` */`; `/**` / ` *no space after star` / ` */`; a block whose
-asterisks are misaligned; `/**` / unstarred `<summary>…</summary>` / `*/`; an already-starred block that
-fits. No rule separating the two lists was established — `/** text` / ` */` is left while `/** a` / ` * b` /
-` */` is rebuilt — so nothing is implemented. Leaving a block as written is the safe half: it never
-changes a comment the oracle would have left.
+`XmlDocFormatter.MultiLineBody` reads the first six rows back as `///` lines and the one renderer lays them out,
+as #489 does for a one-line block, under the same four conditions (starts its line, nothing after it, above a
+type or member, the only doc comment there). ⚠ **The last row is refused, deliberately.** The compiler takes a
+leading asterisk off *each* line of a `/** */` whatever the other lines do, so in ` * a` / ` b` the star was
+never documentation text; in the oracle's ` * * a` it is. That rewrite adds an asterisk to what the compiler
+reads, and Skala's round-trip property exists to refuse exactly that. Also left: a block that renders a blank
+line (the oracle writes ` * ` with its trailing space) and a block holding `<code>`, of which none was measured.
+Two adjacent one-line blocks, which the oracle merges, are still left (#489).
 
+⚠ Found on the way: the "nothing but code after it" check read the opener's line, which ends before a
+multi-line block does — an `ArgumentOutOfRangeException` that took the whole file down as an internal error the
+first time the path was opened up. ⚠ And three tests carried expectations measured before `SkalaFormatOnly`
+ran the doc-comment task (#449): `BlockCommentShiftIssue428Tests`' doc and trim inputs and
+`AlignMultilineCommentTests`' `/** doc-style own line`. Re-asked, the oracle rebuilds `/** doc plain` / `second`
+and drops a trailing ` *` line; the ragged block moved to a test of its own that records the refusal.
+
+- pinned by `constructs/trivia/doc-comment-multi-line-block.cs` (twenty-eight shapes, the stars-as-text ones
+  left out) and `MultiLineDocBlockIssue568Tests`; both branches sabotaged alone fail their rows.
 - options: none.
-- ⚠ status: **open**, partly measured (2026-10-08). Reproduction: the shapes above, one per member, asked
-  with `Testing ask <dir> --profile=SkalaDocComments`.
+- ⚠ status: **resolved** but for the stars-as-text row, which stays a divergence on purpose.
 
 ## SK-DIV-0381 — the tag-header keys are read at their export values only — **RESOLVED**
 
@@ -8109,10 +8122,29 @@ attribute, two, long names:
 the indent; all three keys are registered, `Honoured`, Tier A on key-named fixtures under
 `constructs/xmldoc/` (the `wrap_tags_and_pi` one gained a wide header and an author-broken one, so the
 key-flip sweep can separate its values at last). Pinned by `XmlDocHeaderKeysSkDiv0381Tests`; each branch
-was sabotaged alone. ⚠ `allow_far_alignment = true` is not read — the key stays inert-marked — so at
-`true` Skala still falls back where the oracle aligns past the margin.
+was sabotaged alone.
 
-- options: `skala_xmldoc_wrap_tags_and_pi`, `skala_xmldoc_attribute_style`, `skala_xmldoc_attribute_indent`
+**`allow_far_alignment` is read since #570.** Measured at `xmldoc_max_line_length = 90` under
+`align_by_first_attribute`, with the first attribute at 56 to 95 (counted after `/// `) and 29 attributes
+behind it:
+
+| first attribute | `true` | `false` (the export) |
+|---|---|---|
+| 56, 59 | under it | under it |
+| 60, 62, 70, 80, 83 | under it (one attribute per line once they no longer fit) | two indents |
+| 84 to 95 — it does not fit beside the name | one indent past the tag | one indent past the tag |
+
+⚠ The last row was a second divergence under the first: Skala took two indents there at `false` too. A
+first attribute that is not beside the name leaves nothing to align under, and the oracle then uses one
+indent, whether it moved for width, because the author broke before it (the oracle's own output given back
+is a fixed point), or because `attribute_style = on_different_lines` puts it below (measured at 20 and 56).
+`double_indent` and `single_indent` keep their own column in the same rows. ⚠ The key stays **Tier D**,
+`OfInert` and in `XmlDocIds.Refused`, because the export's `attribute_indent = single_indent` masks it: a
+fixture regenerated at the export cannot tell its values apart, and the key-flip sweep would call it
+Unexercised. Pinned by `XmlDocAllowFarAlignmentIssue570Tests`, each of three branches sabotaged alone.
+
+- options: `skala_xmldoc_wrap_tags_and_pi`, `skala_xmldoc_attribute_style`, `skala_xmldoc_attribute_indent`,
+  `skala_xmldoc_allow_far_alignment`
 - ⚠ status: **resolved**; the next key-flip sweep should confirm the three Tier A claims.
 
 ## SK-DIV-0382 — the oracle breaks a word glued to an element's end; Skala refuses the comment — **RESOLVED (#541, #542)**
@@ -8151,6 +8183,37 @@ separator are compared as before; `TokenEquivalence` uses the same comparison fo
 - options: none.
 - ⚠ status: **resolved**. Not measured: hug mode
   (`linebreaks_inside_tags_for_multiline_elements = false`), which keeps the old behaviour.
+
+## SK-DIV-0383 — `<code>` edges, a multi-line `<c>`, and the author's runs of spaces in prose — **RESOLVED (#569)**
+
+The last doc-comment hunks of `corpus/real` after #541 to #544, and three rules behind them, each asked of
+the oracle under `SkalaDocComments` over its own probe:
+
+| construct | the oracle | Skala before |
+|---|---|---|
+| a `<code>` whose content spans lines (nine shapes) | start tag placed; everything after it up to `</code>` byte for byte — code on the tag's line stays there, `a++;</code>` stays glued, `</code>` on its own line keeps its whitespace (0, 2, 4, 8) | `</code>` at the tag's indent, code moved off the tag's line, and one line of code joined into `<code>var a = 1;</code>` |
+| a `<c>` whose content spans lines (eight shapes) | each line trimmed and one indent past the tag, blank lines dropped, a long line wrapped at a space, the author's breaks and inner spaces kept | verbatim, its first line at column 0 |
+| a run of spaces in prose (nine shapes) | kept — `alpha  beta`, `End.  Next`, `alpha   beta`, around an element, through a re-flow — and counted toward the width; dropped only where the line breaks | collapsed to one, so Serilog's `object  is equal … <see langword="false" />.` fitted where the oracle's line is one column wider and wraps |
+
+⚠ Seven hazard tests in `XmlDocFormatterTests` asserted the old `<code>` and `<c>` shapes. They were written
+when no oracle could see doc comments; the oracle was asked about each exact input and agreed with the
+new rules on all nine, so they now assert its output. Their point, the marker space, still holds in every
+row. ⚠ A multi-line `<c>` is no longer compared byte for byte by `XmlDocSignature`: its lines are trimmed,
+blank ones dropped and the rest joined with one space, so a re-indent or a wrap at a space passes and any
+other change to its text is refused. A one-line `<c>` and every `<code>` keep the byte-for-byte signature.
+
+Measured: `corpus/real` doc-comment hunks 17 → 6; the six are Serilog's malformed `LoggerSinkConfiguration`
+comments (`<typeparam>` closed by `</param>`, deliberately refused) and `TimeProvider.cs`, whose summary sits
+inside `#if !NET8_0_OR_GREATER` and is left alone by the oracle without its symbols, code and all. Every
+line: `real` 99.66 % → 99.80 %, 86.32 % → 89.47 % of files.
+
+- pinned by `constructs/trivia/doc-comment-code-block-edges.cs`, `…-inline-code-spanning-lines.cs`,
+  `…-space-runs.cs` and `XmlDocCodeAndSpacesIssue569Tests`; each of the three rules sabotaged alone fails
+  its rows.
+- options: none.
+- ⚠ status: **resolved**. Not measured: a run of spaces exactly at a wrap point that the oracle keeps (it
+  dropped the one probed), tabs in a run (taken as one space, as before), and a one-line `<c>` past the
+  margin.
 
 ## SK-DIV-0177 — a named argument's colon is a break point by the arrow's rule
 

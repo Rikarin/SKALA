@@ -212,8 +212,8 @@ public sealed class ExitCodeContractTests : IDisposable {
     ///     <para>
     ///         Measured on <c>master</c> with this binary and this tree:
     ///         <c>
-    /// INCOMPLETE  1 of 1 file was
-    ///         not checked — this is a Skala bug, not a finding in your code.
+    ///             INCOMPLETE  1 of 1 file was
+    ///             not checked — this is a Skala bug, not a finding in your code.
     ///         </c>
     ///         above <b>exit 0</b>,
     ///         then <c>SKIPPED 260 rule(s) did not run (loose load)</c>. The "1 file" was

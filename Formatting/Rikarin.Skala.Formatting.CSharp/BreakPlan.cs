@@ -1286,8 +1286,8 @@ public sealed class BreakPlan {
     ///     <c>skala_max_initializer_elements_on_line = 4</c> although it is 41 columns wide, while
     ///     <c>new[] { 1, 2, 3, 4, 5 }</c> — governed by
     ///     <c>
-    /// skala_max_array_initializer_elements_on_line =
-    ///  10000
+    ///         skala_max_array_initializer_elements_on_line =
+    ///         10000
     ///     </c>
     ///     — does not move. The counter is not a width and does not consult one.
     /// </param>
@@ -1631,8 +1631,8 @@ public sealed class BreakPlan {
     ///         ⚠ The inner group is a <em>fill</em> for an array initializer and a chop for an object or
     ///         collection one, and that distinction is real:
     ///         <c>
-    /// new[] { six, long, string, literals, here,
-    ///  again }
+    ///             new[] { six, long, string, literals, here,
+    ///             again }
     ///         </c>
     ///         comes back with five on one line and one on the next, while
     ///         <c>new List&lt;string&gt; { four, long, string, literals }</c> comes back with one per line
@@ -6186,8 +6186,8 @@ public sealed class BreakPlan {
     ///     ⚠ Not the switch arm's rule, and the two were measured apart (issue #378). A lambda's body
     ///     moves down whenever that alone finishes the job —
     ///     <c>
-    /// Func&lt;int, int&gt; f = someParameterName
-    ///     =&gt;
+    ///         Func&lt;int, int&gt; f = someParameterName
+    ///         =&gt;
     ///     </c>
     ///     / <c>Convert&lt;CancellationToken, CancellationToken&gt;(…);</c> although
     ///     <c>Convert&lt;…&gt;(</c> still fitted at column 119, and <c>M(someParameterName =&gt;</c> /
@@ -6198,8 +6198,8 @@ public sealed class BreakPlan {
     ///     included: a four-line answer where the same body under a switch arm's arrow keeps
     ///     <c>=&gt; Body(</c> and chops. The point is also what keeps
     ///     <c>
-    /// case { … } when static x
-    ///     =&gt;
+    ///         case { … } when static x
+    ///         =&gt;
     ///     </c>
     ///     on its label's line — the <c>when</c> measures its head up to this point at column
     ///     105 and stops, where without it the whole type argument list was the head. Only the gap
@@ -6388,8 +6388,8 @@ public sealed class BreakPlan {
     ///     <c>case { … }</c> / <c>when Bind(first, …, tenth):</c> — and stays when it has, even when
     ///     the whole clause would have fitted on the line below:
     ///     <c>
-    /// case SomeVeryLongTypeName
-    ///     someVeryLongVariableName when Bind(
+    ///         case SomeVeryLongTypeName
+    ///         someVeryLongVariableName when Bind(
     ///     </c>
     ///     stays and the arguments chop, in a label with a
     ///     declaration pattern and in an arm with <c>{ … } when Bind(</c> / <c>) =&gt; Body(first),</c>

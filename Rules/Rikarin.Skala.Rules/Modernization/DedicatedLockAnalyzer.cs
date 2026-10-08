@@ -169,8 +169,8 @@ public sealed class DedicatedLockAnalyzer : DiagnosticAnalyzer {
     ///     <c>readonly global::System.Threading.Lock gate = new global::System.Threading.Lock();</c> —
     ///     correct, and immediately reported by <c>arrange --check</c> as
     ///     <c>
-    /// SK0203 target-typed
-    ///     new
+    ///         SK0203 target-typed
+    ///         new
     ///     </c>
     ///     , on a file <c>fix</c> had just written. So the fix is now written in the shape
     ///     arrangement would leave it in: <c>new()</c> unconditionally, because the field's declared

@@ -2889,11 +2889,16 @@ public static class Ids {
     // ⚠ The tag-header keys, registered and honoured at every value since SK-DIV-0381. #448 taught the
     // model to record a header's breaks and the renderer to write one across lines at the export's
     // values; these say where the breaks go at the others, each measured under `OracleProfile.DocComments`
-    // (SK-DIV-0079, SK-DIV-0381). `skala_xmldoc_allow_far_alignment` stays inert and unread: Skala aligns
-    // as its export value `false` says, falling back to a double indent past two thirds of the margin.
+    // (SK-DIV-0079, SK-DIV-0381). `skala_xmldoc_allow_far_alignment` is read since #570 — at `true` the
+    // alignment under the first attribute no longer falls back to two indents past two thirds of the margin
+    // — and stays Tier D, because the export's `attribute_indent` masks it from every fixture.
     public static readonly OptionId XmlDocWrapTagsAndPi = Of("skala_xmldoc_wrap_tags_and_pi");
     public static readonly OptionId XmlDocAttributeStyle = Of("skala_xmldoc_attribute_style");
+
     public static readonly OptionId XmlDocAttributeIndent = Of("skala_xmldoc_attribute_indent");
+
+    // ⚠ Inert at the export, not in Skala: masked by `attribute_indent = single_indent` (#570).
+    public static readonly OptionId XmlDocAllowFarAlignment = OfInert("skala_xmldoc_allow_far_alignment");
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsLongerThan =
         Of("skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than");

@@ -834,6 +834,15 @@ public sealed class XmlDocHazardTests {
         );
 
         var formatted = XmlDoc.Text(source);
+        // ⚠ #569: the oracle was asked about this exact input once doc comments could be measured, and the
+        // expectation below is its output. A `<code>` keeps code that starts on its tag's line there; a
+        // `<c>` that spans lines is re-indented one level past its tag, a line at a time.
+        if (tag == "c") {
+            Assert.Contains("///         Do( a ,  b );   // two   spaces", formatted, StringComparison.Ordinal);
+            Assert.Contains("///         if (x) {", formatted, StringComparison.Ordinal);
+            return;
+        }
+
         Assert.Contains("///         Do( a ,  b );   // two   spaces", formatted, StringComparison.Ordinal);
         Assert.Contains("///     if (x) {", formatted, StringComparison.Ordinal);
     }
@@ -860,11 +869,19 @@ public sealed class XmlDocHazardTests {
 
         var lines = XmlDoc.DocLines(XmlDoc.Text(source));
         Assert.DoesNotContain(lines, static line => line.StartsWith("///F", StringComparison.Ordinal));
-        Assert.Contains("/// Func&lt;int&gt; v = new () { P = (from", lines);
+        // ⚠ #569: the oracle was asked about this exact input once doc comments could be measured, and the
+        // expectation below is its output. A `<code>` keeps code that starts on its tag's line there; a
+        // `<c>` that spans lines is re-indented one level past its tag, a line at a time.
+        if (tag == "c") {
+            Assert.Contains("///         Func&lt;int&gt; v = new () { P = (from", lines);
+            Assert.Contains("///         item in items select null) };", lines);
+            return;
+        }
 
         // ⚠ And the body's own columns are untouched: the second line kept the four spaces it had
         // relative to the marker. That is the half a naive fix loses — see `XmlDocModel.SourceLines`.
-        Assert.Contains("///     item in items select null) };", lines);
+        Assert.Contains("///     <code>Func&lt;int&gt; v = new () { P = (from", lines);
+        Assert.Contains("///     item in items select null) };</code>", lines);
     }
 
     [Theory]
@@ -884,9 +901,19 @@ public sealed class XmlDocHazardTests {
         );
 
         var lines = XmlDoc.DocLines(XmlDoc.Text(source));
-        Assert.Contains("/// var q = from item in items", lines);
-        Assert.Contains("///     where item.Enabled", lines);
-        Assert.Contains("///     select item.Name;", lines);
+        // ⚠ #569: the oracle was asked about this exact input once doc comments could be measured, and the
+        // expectation below is its output. A `<code>` keeps code that starts on its tag's line there; a
+        // `<c>` that spans lines is re-indented one level past its tag, a line at a time.
+        if (tag == "c") {
+            Assert.Contains("///         var q = from item in items", lines);
+            Assert.Contains("///         where item.Enabled", lines);
+            Assert.Contains("///         select item.Name;", lines);
+        } else {
+            Assert.Contains("///     <code>var q = from item in items", lines);
+            Assert.Contains("///     where item.Enabled", lines);
+            Assert.Contains("///     select item.Name;</code>", lines);
+        }
+
         Assert.DoesNotContain(lines, static line => Marks(line));
     }
 
@@ -905,8 +932,11 @@ public sealed class XmlDocHazardTests {
         );
 
         var lines = XmlDoc.DocLines(XmlDoc.Text(source));
-        Assert.Contains("/// Func&lt;int&gt; v = new () { P = (from", lines);
-        Assert.Contains("///     item in items select null) };", lines);
+        // ⚠ #569: the oracle was asked about this exact input once doc comments could be measured, and the
+        // expectation below is its output. A `<code>` keeps code that starts on its tag's line there; a
+        // `<c>` that spans lines is re-indented one level past its tag, a line at a time.
+        Assert.Contains("///         Func&lt;int&gt; v = new () { P = (from", lines);
+        Assert.Contains("///         item in items select null) };", lines);
         Assert.DoesNotContain(lines, static line => Marks(line));
     }
 
@@ -957,9 +987,12 @@ public sealed class XmlDocHazardTests {
         );
 
         var lines = XmlDoc.DocLines(XmlDoc.Text(source));
-        Assert.Contains("/// if (x) {", lines);
+        // ⚠ #569: the oracle was asked about this exact input once doc comments could be measured, and the
+        // expectation below is its output. A `<code>` keeps code that starts on its tag's line there; a
+        // `<c>` that spans lines is re-indented one level past its tag, a line at a time.
+        Assert.Contains("///     <code>if (x) {", lines);
         Assert.Contains("///  y();", lines);
-        Assert.Contains("/// }", lines);
+        Assert.Contains("/// }</code>", lines);
         Assert.DoesNotContain(lines, static line => Marks(line));
     }
 

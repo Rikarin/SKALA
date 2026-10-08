@@ -108,8 +108,8 @@ public static class CanonicalEditorConfig {
     ///     ADR-001's workflow is unchanged — change a
     ///     setting in Rider, re-export over <c>editor_config_template</c>, run
     ///     <c>
-    /// ./build.sh
-    ///     Canonical
+    ///         ./build.sh
+    ///         Canonical
     ///     </c>
     ///     — but the payload is now a <em>translation</em> of the export rather than a
     ///     copy of it, because Skala no longer reads <c>resharper_*</c> and shipping a configuration
