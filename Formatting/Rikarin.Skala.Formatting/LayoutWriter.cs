@@ -497,7 +497,7 @@ public sealed class LayoutWriter {
 
             // The brace itself sits on the level its block nests from.
             if (kind == IndentKind.AnchoredBrace) {
-                scopes.Add(new Scope(true, outer, line, outer, unconditional));
+                scopes.Add(new(true, outer, line, outer, unconditional));
                 return;
             }
 
