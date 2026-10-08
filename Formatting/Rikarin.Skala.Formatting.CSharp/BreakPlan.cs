@@ -4927,10 +4927,10 @@ public sealed class BreakPlan {
     ///         <c>case 1:</c> / <c>case 2: break;</c> — and a braced section is the block's own
     ///         business: <see cref="PlanOnePerLine" /> expands it, and <see cref="Keeps" /> reads the
     ///         <em>embedded</em> key for it, which is the one that kept <c>case 1: { M(); }</c> whole.
-    ///         ⚠ A block that is one statement among several (<c>case 1: { M(); } break;</c>) is not
-    ///         planned here beyond its own line: the oracle writes <c>case 1: {</c> with the block at the
-    ///         label's column and <c>break;</c> one level in, a shape neither this plan nor
-    ///         <see cref="CSharpDocumentBuilder.VisitSwitchSection" /> produces yet.
+    ///         ⚠ A block that is one statement among several (<c>case 1: { M(); } break;</c>): the oracle
+    ///         writes <c>case 1: {</c> with the block at the label's column and <c>break;</c> one level in
+    ///         (#478). A leading block's gap is left to the brace placement here, and
+    ///         <see cref="CSharpDocumentBuilder.VisitSwitchSection" /> puts every block on the label's column.
     ///     </para>
     /// </remarks>
     void PlanCaseStatements(SwitchSectionSyntax node) {
@@ -4944,7 +4944,14 @@ public sealed class BreakPlan {
 
         var first = FirstToken(node.Statements[0]);
         if (!IsSimpleSection(node.Statements)) {
+            // ⚠ Except a block that comes first, which the brace placement joins to the label as it
+            // does a section that is only a block: `case 1: {` under the export, `case 1:` / `{` under
+            // `csharp_new_line_before_open_brace = all` (#478). See CSharpDocumentBuilder.VisitSwitchSection.
             foreach (var statement in node.Statements) {
+                if (statement is BlockSyntax && statement == node.Statements[0]) {
+                    continue;
+                }
+
                 Mandatory(FirstToken(statement));
             }
 

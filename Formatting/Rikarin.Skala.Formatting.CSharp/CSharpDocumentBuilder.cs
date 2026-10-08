@@ -2154,6 +2154,18 @@ public sealed partial class CSharpDocumentBuilder {
         // The statements of a case take one indent from the label.
         OpenIndent(IndentKind.Block);
         foreach (var statement in node.Statements) {
+            // ⚠ A block among several statements sits on the label's column, with its contents one level
+            // in and the statements after it back on the section's level (#478, SK-DIV-0115). Measured
+            // 2026-10-08: `case 1: { M(); } break;` comes back `case 1: {` / `M();` / `}` / `break;` and
+            // `case 2: M(); { M(); } break;` puts the `{` and `}` on `case`'s column — the same place a
+            // section that is only a block puts them.
+            if (statement is BlockSyntax) {
+                OpenIndent(IndentKind.Outdent);
+                Visit(statement);
+                CloseIndent(IndentKind.Outdent);
+                continue;
+            }
+
             // ⚠ skala_indent_break_from_case = false puts the control transfer back at the
             // label's own level, which is a different shape and not a rounding error.
             if (!options.IndentBreakFromCase

@@ -5629,6 +5629,13 @@ Not fixed, measured on the way:
   break;` — is written by the oracle with the block at the **label's** column (`case 1: {` when it is
   first) and its contents one level in, and the `break;` one level in after it. Skala puts the block one
   level in like any other statement, with its contents two. Pre-existing for broken input and rare.
+  **Fixed (#478)**: re-measured 2026-10-08 on seven sections — a block first, after a statement, two in
+  a row, alone with and without `break;`, written over lines — at the export and with
+  `csharp_new_line_before_open_brace = all`, `skala_indent_switch_labels = false` and
+  `skala_indent_break_from_case = false` flipped one at a time. Every block among several statements
+  sits on the label's column (`case 1: {`, or `case 1:` / `{` under `all`), exactly where a section that
+  is only a block puts it. `PlanCaseStatements` leaves a leading block's gap to the brace placement, and
+  `VisitSwitchSection` outdents a block statement to the label. Pinned by `SwitchSectionBlockIssue478Tests`.
 - `case 1: ; break;` — the oracle keeps the space between `:` and the empty statement's `;`; Skala writes
   `case 1:;`. A spacing gap, not a break.
 - `if (b) M(); else switch (o) { … }` — the oracle writes `if (b) M();` / `else` / `switch (o) {`; Skala
