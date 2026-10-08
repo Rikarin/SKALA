@@ -9079,3 +9079,104 @@ neither does its parenthesis (`BreakPlan.EnclosingTypeTest`, `CSharpDocumentBuil
 
 - options: `skala_align_multiline_statement_conditions` (the export's `true`; `false` not measured).
 - ⚠ status: **fixed**, pinned by `constructs/indentation/pattern-chain-level-in-a-condition.cs`.
+
+## SK-DIV-0390 — a conditional chain the author stepped kept its unbroken members whole
+
+⚠ **#548, found reformatting Skala's own `SpaceRules.cs`.** The issue placed it "in a switch arm"; the
+shape in `SpaceRules.cs` is a `return`, and the arm and the statement come back alike, so the arm was
+where it was noticed rather than what decides it. Measured 2026-10-08 with `Testing ask`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `a` / `? 1` / `: b ? 2 : 3` | `a` / `? 1` / `: b` / `? 2` / `: 3`, the inner signs a level deeper | `: b ? 2 : 3` kept whole |
+| `a` / `? 1 : b ? 2 : 3`, `a ? 1 : b` / `? 2 : 3` | the same full staircase | partly whole |
+| `a ? 1` / `: b ? 2 : 3`, `a ? 1 : b ? 2` / `: 3` | as written (no `?` starts a line, so the chain does not step) | identical |
+| `a` / `? b ? 2 : 3` / `: 1` | as written (a conditional on the true side is not a chain member) | identical |
+
+Once any `?` of the chain starts a line, every member is chopped at both signs however well it fits —
+#518's rule for a lone conditional, applied to every member of a stepping chain
+(`BreakPlan.PlanTernary`).
+
+- options: `keep_user_linebreaks` (the stepping is read from the author's breaks).
+- ⚠ status: **resolved** (#548). Pinned by `constructs/wrapping/ternary-chain-stepped-by-the-author.cs`
+  and `TernaryStaircaseIssue548Tests`.
+
+## SK-DIV-0391 — an arm's head under a kept arrow break nested from the arm's own line
+
+⚠ **#549, found reformatting Skala's own `SpaceRules.cs`, `PrimaryConstructorWrites.cs` and
+`ReflectiveTypeTestAnalyzer.cs`.** Three findings under one issue, all measured 2026-10-08:
+
+1. An arm the author broke after its `=>` — `X {` / … / `} =>` / `body` — puts the subpatterns two levels
+   past the arm and `} =>` one, where Skala nested the braces from the arm's line. The same for a `when`
+   clause's `prev is {`, a list pattern's `[` and a `when Compute(` list (`) =>` one level, the arguments
+   two), as an expression body and under `var x =`; and for an arrow the author put on a line of its own
+   (`}` / `=> 1`), which #446 had wired only for a `when` clause's list. With the body on the arrow's line
+   the braces nest from the arm's line as before; a break the oracle makes after the arrow for width never
+   comes with braces on the arm's line. ⚠ Not a positional pattern's parenthesis: `(` / `int a,` / `int b`
+   / `) =>` puts the elements *and* the `)` one level in, which Skala does not model (still open, below).
+2. A subpattern's value stays on its name's line while the line up to the value's first break point fits
+   — `Parameter: {` / … / `}`, `Parent: InvocationExpressionSyntax {` / … / `}`, `Parent: A` / `or B` —
+   which is the arrow's question; Skala moved the whole value below the name. A break before a bare `{`
+   is joined (`Parameter:` / `{ … }` comes back `Parameter: {`).
+3. A pattern chain that is a subpattern's value takes no level: `is {` / `Parent: A` / `or B` / `}` puts
+   the `or`s on `Parent:`'s column, as SK-DIV-0081 found for the subpattern's own break.
+
+`BreakPlan.PlanArmArrow`, `PlanSubpattern`, `PlanChainWide`, `PlanOperator`.
+
+- options: `keep_user_linebreaks`, `skala_keep_existing_property_patterns_arrangement` (the export's `false`).
+- ⚠ status: **resolved** (#549) except as listed under SK-DIV-0393 and SK-DIV-0395. Pinned by
+  `constructs/breaks/switch-arm-head-under-a-kept-arrow-break.cs`.
+
+## SK-DIV-0392 — a broken `is` over a breakable pattern had no level of its own
+
+⚠ **#550, found reformatting Skala's own `SpaceRules.cs`** (`keyword is` / `SyntaxKind.NewKeyword` / `or …`
+under an expression body: 8 where the oracle writes 12). Only an unbreakable pattern had
+`PlanTypeTest`'s group, so a break around an `is` over a combinator chain, a property or a list pattern
+was paid by whatever frame was still unspent — none under an arrow (first line flush with the operand),
+and the statement's after `return`, with the chain's own level stacked on top for the `or`s. Measured
+with `Testing ask`: `keyword is` / `A` / `or B` and `keyword` / `is A` / `or B` put `A` (or the `is`) and
+every `or` one level past the operand's line — under an arrow, after `return`, after `var b =`, in an
+argument, in an `if` condition (its aligned column) and under an `&&` (`&& prev.Parent` / `is A` at 12
+under `&&` at 8) alike; `is` / `not (A` / `or B)` keeps the `or` on the `not`'s column. The broken `is`
+now gets `PlanTypeTest`'s from-the-line level, and the chain under it none (#520's rule, extended to a
+break after the keyword). A break before a pattern's `[` or `{` is still joined.
+
+- options: `keep_user_linebreaks`.
+- ⚠ status: **resolved** (#550). Pinned by `constructs/indentation/a-broken-is-over-a-pattern-chain.cs`.
+
+## SK-DIV-0393 — a positional pattern's parenthesis in an arm under a kept arrow break
+
+Found beside #549. `(` / `int a,` / `int b` / `) =>` / `1,` and `Foo(` / … / `) =>`: the oracle puts the
+elements and the `)` one level past the arm; Skala puts the elements one level in and the `)` on the arm's
+column. And a filled one, `(int a, …, int` / `dddd) =>`, breaks between a designation's type and its
+name, which Skala does not. Not wired.
+
+- options: none measured.
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0394 — a pattern chain inside the first operand of an `&&` in a declarator
+
+Found beside #550. `var empty = next.Parent is A { … }` / `or B { … }` / `&& !C(next);` — the oracle puts
+the `or` at 16 and the `&&` at 12; Skala puts both at 12. The pattern chain inside a binary operand that
+starts on the statement's line takes a level past the `&&`'s continuation. Not wired.
+
+- options: none.
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0395 — a subpattern value the author broke after the colon breaks its braces as if joined
+
+Found beside #549 in `ReflectiveTypeTestAnalyzer.cs`: `Expression:` / `MemberAccessExpressionSyntax { … }
+access` (109 columns on its own line) keeps the author's break after the colon *and* breaks the braces
+open, as though measured with the value joined to `Expression:` (121). Not wired.
+
+- options: `keep_user_linebreaks`.
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0396 — a break after `is` before a list pattern is kept under a broken arrow
+
+Found beside #550: `M(object[] xs) =>` / `xs is` / `[1, 2];` comes back from the oracle as written (the
+`[` one level past `xs`), where `object A() => xs is` / `[1, 2];` is joined (the case
+`ABreakBeforeAnOpeningBracket_IsJoinedUnlessTheGapBelongsToAParenthesis` pins). Skala joins both. Not wired.
+
+- options: `keep_user_linebreaks`.
+- ⚠ status: **open**, measured.
