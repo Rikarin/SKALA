@@ -138,7 +138,8 @@ public sealed class KeyFlipSweep {
     ///         <b>
     ///             Suppressed below a population of two, and that is the correction rather than a
     ///             softening.
-    ///         </b> The sweep batches by value index, so a high-arity option runs alone in every
+    ///         </b>
+    ///         The sweep batches by value index, so a high-arity option runs alone in every
     ///         round past the arity of every other option — <c>csharp_new_line_before_open_brace</c> has
     ///         fifteen values and rounds 5-15 hold nothing else. In a round of one, "no option moved" and
     ///         "this option's value legitimately reproduces its own fixture" are the same observation, and

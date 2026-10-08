@@ -19,7 +19,8 @@ namespace Rikarin.Skala.Rules.Security;
 ///         <b>
 ///             The shape is hosted by <c>CA5401</c> and the host is not usable, which is why this rule
 ///             exists rather than an entry in the hosted map.
-///         </b> Measured on a plain <c>net10.0</c> project
+///         </b>
+///         Measured on a plain <c>net10.0</c> project
 ///         outside this repository, <c>CA5401</c> is <b>off by default</b> and, once enabled, reports
 ///         <c>aes.IV = RandomNumberGenerator.GetBytes(16)</c> and
 ///         <c>aes.CreateEncryptor(key, RandomNumberGenerator.GetBytes(16))</c> — both of which are the
@@ -31,7 +32,8 @@ namespace Rikarin.Skala.Rules.Security;
 ///         <b>
 ///             The reason a Skala rule is allowed here and was refused for <c>#140</c> is that the
 ///             narrowing needs no judgement.
-///         </b> <c>CA5394</c> is untargeted in the same way, and doc 08
+///         </b>
+///         <c>CA5394</c> is untargeted in the same way, and doc 08
 ///         declined to narrow it because separating a security-sensitive <c>Random</c> from a
 ///         statistical one means reading identifier names — the judgement that cut <c>SK5008</c>.
 ///         "Is this expression a compile-time constant" is not a judgement, it is a fact the compiler

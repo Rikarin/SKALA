@@ -18,12 +18,26 @@ namespace Rikarin.Skala.Testing;
 /// </remarks>
 public sealed record OracleProfile(string Name, string Suffix, string Tasks) {
     /// <summary>
-    ///     Formatting only: whitespace moves, the tree does not. Milestones 1–3.1's whole oracle.
+    ///     Formatting only: whitespace moves, the tree does not. Milestones 1–3.1's whole oracle — and,
+    ///     since #449, documentation comments with it.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>CSharpFormatDocComments</c> is in here since #449, which is SK-DIV-0006's stated expiry.
+    ///     Without it this profile was byte-for-byte <c>Built-in: Reformat Code</c>, which leaves every
+    ///     <c>///</c> comment as written, while Rider — the requirement where the two differ — formats them,
+    ///     and so does Skala by default. Every format-only fixture therefore answered a question Skala no
+    ///     longer asked on its doc-comment lines, and the differential had to drop them from both sides
+    ///     (the <c>outside doc comments</c> basis). With the task on, the format-only fixture is the whole
+    ///     answer and the basis is every line again. <see cref="DocComments" /> is now the same task list
+    ///     under another name; it is kept because the <c>constructs/</c> doc-comment rows key off its
+    ///     suffix.
+    /// </remarks>
     public static OracleProfile FormatOnly { get; } = new(
         "SkalaFormatOnly",
         ".expected.cs",
-        "<CSReformatCode>True</CSReformatCode><CSUpdateFileHeader>False</CSUpdateFileHeader>"
+        "<CSReformatCode>True</CSReformatCode>"
+        + "<CSUpdateFileHeader>False</CSUpdateFileHeader>"
+        + "<CSharpFormatDocComments>True</CSharpFormatDocComments>"
     );
 
     /// <summary>
@@ -98,8 +112,8 @@ public sealed record OracleProfile(string Name, string Suffix, string Tasks) {
     ///     format documentation comments", and 22 keys — 21 <c>resharper_xmldoc_*</c> plus
     ///     <c>skala_space_after_triple_slash</c> — were registered <c>OfUnoracled</c> on the strength
     ///     of it. <c>CSharpFormatDocComments</c> is a real <c>CodeCleanupTask_</c>, and
-    ///     <see cref="FormatOnly" /> is byte-for-byte <c>Built-in: Reformat Code</c>, which is the one
-    ///     built-in profile that switches it off.
+    ///     <see cref="FormatOnly" /> was byte-for-byte <c>Built-in: Reformat Code</c>, which is the one
+    ///     built-in profile that switches it off — until #449 switched it on there too.
     ///     <para>
     ///         ⚠ Re-measured before this profile was added, on a scratch solution carrying this
     ///         repository's <c>.editorconfig</c>, with the negative control the sweep's method demands:
@@ -124,9 +138,9 @@ public sealed record OracleProfile(string Name, string Suffix, string Tasks) {
     ///     </para>
     ///     <para>
     ///         ⚠ <c>CSUpdateFileHeader</c> is off for the same reason it is off in <see cref="FormatOnly" />,
-    ///         and the profile is otherwise <see cref="FormatOnly" /> exactly: one element apart, so a
-    ///         difference between the two fixtures is a difference the doc-comment task made and nothing
-    ///         else.
+    ///         and the profile was otherwise <see cref="FormatOnly" /> exactly: one element apart, so a
+    ///         difference between the two fixtures was a difference the doc-comment task made and nothing
+    ///         else. ⚠ Since #449 they are the same task list, and a construct's two fixtures agree.
     ///     </para>
     /// </remarks>
     public static OracleProfile DocComments { get; } = new(

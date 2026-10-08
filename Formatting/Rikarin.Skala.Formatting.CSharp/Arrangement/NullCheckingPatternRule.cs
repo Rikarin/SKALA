@@ -15,7 +15,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 ///         <c>
 /// skala_null_checking_pattern_style =
 ///  not_null_pattern
-///         </c> is set in the export and <c>jb cleanupcode</c> 2025.2.6 rewrites nothing —
+///         </c>
+///         is set in the export and <c>jb cleanupcode</c> 2025.2.6 rewrites nothing —
 ///         under any profile shape, with the inspection at its exported <c>hint</c> or raised to
 ///         <c>warning</c> (the sweep is in <c>docs/oracle-cleanup-profile.md</c>). The reading that fits is
 ///         that the key governs the pattern ReSharper *generates* in a quick-fix, not a cleanup of code that

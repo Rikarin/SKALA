@@ -34,6 +34,50 @@ public enum EqualsOwner {
 
 public static class EqualsFloor {
     /// <summary>
+    ///     The narrowest value — the lambda from its <c>(</c> through the statement's <c>;</c> — that keeps
+    ///     an <c>=</c> on its line when the <c>=</c> ends at column <paramref name="head" /> and the line
+    ///     through the lambda's <c>=&gt;</c> fits (#558). A narrower value moves below the <c>=</c> whole.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on 1 723 cells of <c>Func&lt;A, B&gt; f = (…) =&gt; body;</c>:
+    ///     <list type="bullet">
+    ///         <item>heads of 22 to 75;</item>
+    ///         <item>values of 74 to 93 columns, one column at a time;</item>
+    ///         <item>bodies of 4, 5, 12, 20 and 30 columns;</item>
+    ///         <item>one long parameter type, and runs of short parameters, which decide alike.</item>
+    ///     </list>
+    ///     The floor is 88 up to a head of 44 and falls about a column per two and a half of head after it.
+    ///     Two cells with a 30-column body, at heads 58 and 61, are a column off this row. Past 59 it is
+    ///     extrapolated from the bound the measured rows give.
+    /// </remarks>
+    public static int LambdaValue(int head) =>
+        head <= 44 ? 88
+        : head <= 59 ? LambdaValueRow[head - 45]
+        : 82 - (head - 59) / 3;
+
+    static readonly int[] LambdaValueRow = [87, 87, 87, 86, 86, 85, 85, 85, 84, 84, 84, 83, 83, 82, 82];
+
+    /// <summary>
+    ///     Whether an <c>=</c> breaks before a lambda with a bare-name body whose line through <c>=&gt;</c>
+    ///     overflows by <paramref name="over" /> columns, rather than the lambda's parameter list chopping
+    ///     (#558). The <c>=</c> ends at <paramref name="head" />; the value from <c>(</c> through <c>;</c>
+    ///     is <paramref name="value" /> wide and the body <paramref name="body" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on 2 916 cells: heads of 22 to 62, bodies of 5, 8, 12, 16, 20, 25, 30 and 40 columns,
+    ///     and the <c>=&gt;</c> ending 121 to 141. The <c>=</c> breaks while the
+    ///     <c>=&gt;</c> ends at most three columns past the margin — the <c>)</c> still on the line — and
+    ///     past that while the value is at most <see cref="LambdaValue" />'s floor plus
+    ///     <c>⌊(5·body − 41) / 3⌋</c>. Below it the value goes whole onto the next line, or breaks
+    ///     after its arrow there; above it the parameter list chops. 15 cells are a column off this
+    ///     boundary, all at heads of 44 or more: the measured boundary itself has a column of jitter there.
+    ///     ⚠ Past a name no wider than <see cref="LambdaLocal.ChopsPastTheParenthesis" />'s gate the
+    ///     parameter list always chops once the <c>)</c> is off the line (<paramref name="narrow" />).
+    /// </remarks>
+    public static bool BreaksBeforeAnOverflowingLambda(int head, int value, int over, int body, bool narrow) =>
+        over <= 3 || !narrow && value <= LambdaValue(head) + (int)Math.Floor((5 * body - 41) / 3.0);
+
+    /// <summary>
     ///     Whether a local's <c>=</c> breaks before <c>operand is A or B</c> on a line ending at
     ///     <paramref name="end" />, the head <paramref name="head" /> columns wide through the <c>=</c> and the
     ///     binary pattern <paramref name="pattern" /> wide (#446, SK-DIV-0211).

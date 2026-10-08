@@ -20,7 +20,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             The fix is safe because the compiler emits the very call it replaces, and that is a fact
 ///             about the compiler, not about the language.
-///         </b> Measured by decompiling and by running both forms: from Roslyn 4.14 on, a collection
+///         </b>
+///         Measured by decompiling and by running both forms: from Roslyn 4.14 on, a collection
 ///         expression holding one spread lowers to <c>Enumerable.ToArray</c>, <c>Enumerable.ToList</c>,
 ///         <c>List&lt;T&gt;.ToArray</c> or <c>Span&lt;T&gt;.ToArray</c> — the same method, so a null receiver
 ///         throws the same exception and an empty one returns the same instance. Roslyn 4.8, which

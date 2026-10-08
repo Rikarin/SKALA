@@ -27,7 +27,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Everything but a local or a parameter is declined, and that is the whole
 ///             false-positive story.
-///         </b> <c>while (!stopped)</c> on a field, <c>while (queue.Count > 0)</c>,
+///         </b>
+///         <c>while (!stopped)</c> on a field, <c>while (queue.Count > 0)</c>,
 ///         <c>while (reader.Read())</c> — each reads state another statement, another thread or another
 ///         object changes. Only locals and parameters have a writer set this analysis can enumerate.
 ///     </para>

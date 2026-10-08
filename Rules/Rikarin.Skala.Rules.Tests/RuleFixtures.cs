@@ -26,7 +26,8 @@ public sealed record RuleFixture(string RuleId, bool ShouldFire, string Path) {
 ///         zero false positives on the
 ///         reference corpus, a documented false-positive story, and a "should not fire" fixture set at
 ///         least as large as the positive one
-///     </b> — because the rules most likely to over-fire are exactly
+///     </b>
+///     — because the rules most likely to over-fire are exactly
 ///     the ones with the most value, and a rule that fires 400 times and is right 390 is not ready.
 ///     <see cref="RuleFixtureTests.EveryRule_HasMoreNegativeFixturesThanPositive" /> is that bar as a
 ///     test.

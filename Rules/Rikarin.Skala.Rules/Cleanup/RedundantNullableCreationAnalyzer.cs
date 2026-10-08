@@ -26,7 +26,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             Whether the wrapper converts nothing is a question about the position, not about the
 ///             expression
-///         </b>, and the semantic model cannot be asked it.
+///         </b>
+///         , and the semantic model cannot be asked it.
 ///         <c>GetSpeculativeTypeInfo</c> at a position binds the operand as a <em>standalone</em>
 ///         expression, so for <c>new int?(5)</c> the operand's <c>ConvertedType</c> comes back
 ///         <c>int</c> — in every context, including the ones where the rewrite is correct. A guard
@@ -236,7 +237,8 @@ public sealed class RedundantNullableCreationAnalyzer : DiagnosticAnalyzer {
     ///     <b>
     ///         The parameter's type is not enough on its own, and that is the point of the second
     ///         question.
-    ///     </b> With <c>void M(int x)</c> and <c>void M(int? x)</c> both in scope,
+    ///     </b>
+    ///     With <c>void M(int x)</c> and <c>void M(int? x)</c> both in scope,
     ///     <c>M(new int?(5))</c> calls the second and <c>M(5)</c> calls the first — a behaviour change
     ///     hiding inside a deletion. So the call is rebuilt without the wrapper and rebound, and only
     ///     an identical symbol counts.

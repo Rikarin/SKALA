@@ -289,7 +289,8 @@ public sealed class UsingsRule : ArrangementRule {
     ///     <c>
     /// using Regex =
     ///     System.Text.RegularExpressions.Regex;
-    ///     </c> is trivial and <c>using Trivial = System.String;</c>
+    ///     </c>
+    ///     is trivial and <c>using Trivial = System.String;</c>
     ///     is not, so it is the *identifier* comparison and not "the target is short" or "the target is a
     ///     predefined type". A generic target is never trivial — <c>Map = Dictionary&lt;string, int&gt;</c>
     ///     survives even when the names match, because the alias is carrying the type arguments.
@@ -441,7 +442,8 @@ public sealed class UsingsRule : ArrangementRule {
     ///     <c>
     /// skala_sort_usings_with_system_first =
     ///  false
-    ///     </c> is an unusual choice and it is the author's; sorting <c>System</c> first "because
+    ///     </c>
+    ///     is an unusual choice and it is the author's; sorting <c>System</c> first "because
     ///     everyone does" would move every using block in the repository on the first run.
     /// </summary>
     static List<UsingDirectiveSyntax> Sort(List<UsingDirectiveSyntax> directives, in ArrangementOptions options) {

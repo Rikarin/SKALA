@@ -23,7 +23,8 @@ namespace Rikarin.Skala.Rules.Design;
 ///         <b>
 ///             The <c>protected</c> exemption is the one carrying the rule, and a protected constructor
 ///             is the usual form of it.
-///         </b> A base class that shares state through a protected constructor,
+///         </b>
+///         A base class that shares state through a protected constructor,
 ///         a protected field or a protected helper is set up for derivation whether or not it declares
 ///         anything abstract, and reporting it would be reporting the most ordinary base class in C#.
 ///         What is left after that exemption is a class with public and private concrete members, no

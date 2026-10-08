@@ -129,7 +129,8 @@ public static class Corpus {
     ///             It is no longer <c>&lt;root&gt;/.editorconfig</c>, and the rename from
     ///             <c>BaseEditorConfigPath</c> was so that every call site had to say which of the two it
     ///             meant.
-    ///         </b> See <see cref="OracleEditorConfig" /> for why the oracle must read the export
+    ///         </b>
+    ///         See <see cref="OracleEditorConfig" /> for why the oracle must read the export
     ///         rather than the repository's own file. The bytes are unchanged, so the digest is too.
     ///     </para>
     /// </remarks>

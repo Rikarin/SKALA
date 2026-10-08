@@ -99,7 +99,8 @@ public static class FrameworkAvailability {
     ///     <em>
     ///         particular
     ///         string literal
-    ///     </em> at a particular site names a type the sibling can also see, so the
+    ///     </em>
+    ///     at a particular site names a type the sibling can also see, so the
     ///     predicate is not known until the finding is. Re-walking every sibling's trees per site to
     ///     use <see cref="PathsWithout" /> would be quadratic on a large tree; this pays for the walk
     ///     once and hands back the grouping.

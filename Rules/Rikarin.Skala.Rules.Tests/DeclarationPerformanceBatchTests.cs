@@ -277,7 +277,8 @@ public sealed class DeclarationPerformanceBatchTests {
     ///     <b>
     ///         compiles and changes
     ///         what the program does
-    ///     </b>: each calls a member on a struct-typed capture that would run on a
+    ///     </b>
+    ///     : each calls a member on a struct-typed capture that would run on a
     ///     defensive copy after the fix. Both versions are run, so a rule that was merely blind to the
     ///     shape could not pass, and neither could a fixture whose shape stopped differing.
     /// </summary>

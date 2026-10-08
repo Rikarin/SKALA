@@ -26,7 +26,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             The comment guards ask about the span the fix <em>deletes</em>, never about the node's
 ///             leading trivia, and getting that wrong cost this rule two of its own shapes.
-///         </b> The
+///         </b>
+///         The
 ///         first version asked <c>DescendantTrivia</c> of the <c>catch</c> clause and of the
 ///         <c>default:</c> section — and a node's descendant trivia begins with its first token's
 ///         <em>leading</em> trivia, which is the comment written on the line <em>above</em> it. The fix
@@ -35,7 +36,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         does not touch. Measured, not read: a <c>// deliberate</c> above the <c>catch</c> took the
 ///         count from 1 to 0, and the same above <c>default:</c> did too. This is the shape recorded as
 ///         [#302], and the two branches here now ask
-///         <see cref="RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan)" />
+///         <see
+///             cref="RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan)" />
 ///         over the deleted span instead. ⚠ The sibling rules were probed the same way and are clean:
 ///         <c>SK0241</c> deletes from a keyword to the next token and guards only that keyword's
 ///         <em>trailing</em> trivia, and <c>SK0244</c> deletes a declaration's <em>full</em> span, so
@@ -55,7 +57,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             Only the last <c>catch</c> of a <c>try</c> is ever reported, and that is a correctness
 ///             constraint rather than caution.
-///         </b> Deleting an earlier one changes which handler an
+///         </b>
+///         Deleting an earlier one changes which handler an
 ///         exception reaches: in
 ///         <c>try { … } catch (IOException) { throw; } catch (Exception e) { Log(e); }</c> the first
 ///         clause is what stops an <c>IOException</c> being logged, so removing it is a behaviour
@@ -232,7 +235,8 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///         <b>
     ///             Only the unbroken run of agreeing arms directly above the discard, and that is the
     ///             correctness argument rather than an economy.
-    ///         </b> Deleting arm <em>i</em> is safe only if
+    ///         </b>
+    ///         Deleting arm <em>i</em> is safe only if
     ///         everything matching its pattern lands on an arm producing the same value, which is
     ///         exactly "every arm below it, down to the discard, agrees". A scan that reported any arm
     ///         equal to the last one would be wrong on <c>{ 1 =&gt; "a", 2 =&gt; "b", _ =&gt; "a" }</c>,
@@ -244,7 +248,8 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///         <b>
     ///             The whole run is one finding carrying one edit per arm, and both halves of that
     ///             shape are forced by a test rather than chosen.
-    ///         </b> Reporting each arm separately fails
+    ///         </b>
+    ///         Reporting each arm separately fails
     ///         <c>CleanupBatchTests.EveryFixture_ProducesTheExactCount</c>, which exists because a rule
     ///         reporting one redundancy twice gives <c>skala fix</c> two edits for one finding.
     ///         Reporting only the lowest arm and leaving the rest to the next pass fails
@@ -407,7 +412,8 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///         <b>
     ///             There is no iterator guard, and the one that was written here has been removed as
     ///             unreachable.
-    ///         </b> The belief it encoded — that a bare <c>return;</c> in an iterator is legal
+    ///         </b>
+    ///         The belief it encoded — that a bare <c>return;</c> in an iterator is legal
     ///         and means <c>yield break</c> — is false: the compiler rejects it with CS1622, measured on
     ///         a fixture that was committed as a negative case and failed to compile. An iterator cannot
     ///         contain the shape this rule matches, so nothing has to exclude it.
@@ -446,7 +452,8 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///         <b>
     ///             The two shapes are exclusive, the whole-section one wins, and that ordering is what
     ///             makes the fix converge in one pass.
-    ///         </b> A section that only breaks is deleted entire —
+    ///         </b>
+    ///         A section that only breaks is deleted entire —
     ///         extra <c>case</c> labels and all — rather than having its labels reported one at a
     ///         time, because deleting the <c>case 2:</c> of <c>case 2: default: break;</c> leaves
     ///         <c>default: break;</c>, which is this rule's <em>other</em> switch shape: the fix's own
@@ -528,7 +535,8 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///         <b>
     ///             This rule and <c>SK2009</c> read the same construct in opposite directions, and
     ///             without this guard they are a fix loop.
-    ///         </b> <c>SK2009</c> counts a <c>default:</c>
+    ///         </b>
+    ///         <c>SK2009</c> counts a <c>default:</c>
     ///         section as the catch-all that legitimises a non-exhaustive enum switch; this rule counts
     ///         an <em>empty</em> one as dead control flow and offers to delete it. Deleting it cleared
     ///         the <c>SK0240</c> and immediately produced <c>SK2009: switch over `DocKind` omits …</c> at
@@ -790,7 +798,8 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///     <b>
     ///         An empty <c>finally</c> is the <c>catch</c>'s mirror image and it is the member of
     ///         [#131]'s thirteen that the shipped rule's own accounting had lost.
-    ///     </b> It reads as a
+    ///     </b>
+    ///     It reads as a
     ///     guarantee — this runs whatever happens — and there is nothing to run, so every question it
     ///     raises has the answer "nothing happens here".
     ///     <para>

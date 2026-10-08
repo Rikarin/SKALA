@@ -194,7 +194,8 @@ public sealed class FormatterTagGuard {
     ///         <c>
     /// // @formatter:off — the table below is
     ///         hand-aligned
-    ///         </c> are the tag; <c>// we support @formatter:off here</c> is prose.
+    ///         </c>
+    ///         are the tag; <c>// we support @formatter:off here</c> is prose.
     ///         Deliberately not an equality test: a reason written after the tag is the commonest way
     ///         anyone writes one, and refusing it would trade this footgun for a worse one.
     ///     </para>
@@ -264,7 +265,8 @@ public sealed class FormatterTagGuard {
     ///     <c>
     /// // we support @formatter:off
     ///     here
-    ///     </c> is prose under both readings, and a pattern that could match mid-comment would
+    ///     </c>
+    ///     is prose under both readings, and a pattern that could match mid-comment would
     ///     quietly re-open the footgun the literal reading was narrowed to close.
     ///     <para>
     ///         A pattern the runtime will not compile matches nothing. The alternative — falling back to a

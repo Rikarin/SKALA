@@ -33,7 +33,8 @@ internal static class RewriteGuards {
     ///         <b>
     ///             It does not answer "may this be evaluated a different number of times", and it used
     ///             to claim it did.
-    ///         </b> The remark that stood here admitted every property as an accepted trade-off —
+    ///         </b>
+    ///         The remark that stood here admitted every property as an accepted trade-off —
     ///         excluding getters would silence these rules on <c>this.Items</c>, and "a property whose
     ///         getter is not idempotent between two adjacent reads is already a bug the rule is
     ///         reporting rather than causing". #412's audit ran both versions and refuted it: the rules
@@ -610,7 +611,8 @@ internal static class RewriteGuards {
     ///         <b>
     ///             It walks trivia rather than scanning text, and that is a fix rather than a
     ///             refactor (#325).
-    ///         </b> This was <c>IndexOf("//") || IndexOf("/*") || IndexOf('#')</c> over
+    ///         </b>
+    ///         This was <c>IndexOf("//") || IndexOf("/*") || IndexOf('#')</c> over
     ///         the span's characters, which cannot tell a comment from a <em>string literal</em>
     ///         containing one. <c>SK4034</c> went silent on
     ///         <c>entries.OrderBy(…).Where(e =&gt; e != "https://example.com")</c> — the `//` of a URL

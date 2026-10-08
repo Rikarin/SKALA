@@ -131,7 +131,8 @@ public enum LineFlags {
     ///     <em>
     ///         whenever
     ///         the initializer wraps at all
-    ///     </em>, and fills only the gaps between elements:
+    ///     </em>
+    ///     , and fills only the gaps between elements:
     ///     <code>
     /// var e = new[] {
     ///     "aaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbb", "ccccccccccccccc", "ddddddddddddddd", "eeeeeeeeeeeeeee",
@@ -1092,6 +1093,18 @@ public sealed class Document {
 ///     ⚠ An <c>=</c> before a lambda with a bare name for a body: the width from the lambda's start through
 ///     its <c>=&gt;</c>. The <c>=</c> stays flat while that much fits after it on its line (#453).
 /// </param>
+/// <param name="LambdaParameters">
+///     ⚠ The arrow of a sole lambda argument whose body is a member-access fill: the width of the lambda's
+///     parameter text — <c>x</c>, <c>(x)</c>, <c>(A x, B y)</c> — or zero for any other group (#557). Past
+///     the margin the arrow breaks exactly when three times the column the body would end at on the
+///     continuation line, plus this width, is at most 336, and otherwise the body fills on the arrow's
+///     line. Measured over 1 234 cells; see <see cref="LambdaIsSimple" /> for the one exception.
+/// </param>
+/// <param name="LambdaHead">The width from the lambda's start through its <c>=&gt;</c>. See <see cref="LambdaParameters" />.</param>
+/// <param name="LambdaIsSimple">
+///     ⚠ A lambda without parentheses: its arrow breaks whenever the lambda starts at column 21 or past it,
+///     however wide the body — measured to a 175-column line. Not measured for a parenthesised lambda.
+/// </param>
 /// <param name="PatternWidth">The binary pattern's width. See <see cref="PatternHead" />.</param>
 /// <param name="KeywordWidth">
 ///     ⚠ The width of the keyword after this group's one point, for the point before an <c>is</c> or an
@@ -1236,4 +1249,41 @@ public readonly record struct GroupFacts(
     int PatternHead = 0,
     int PatternWidth = 0,
     int HeadSlack = 0,
-    int YieldsThroughArrow = 0);
+    int YieldsThroughArrow = 0,
+    int LambdaParameters = 0,
+    int LambdaHead = 0,
+    bool LambdaIsSimple = false,
+    LambdaLocal LambdaLocal = LambdaLocal.None);
+
+/// <summary>
+///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
+///     two gates on the declarator's name width, decided from the syntax, under which the measured floors
+///     do not apply. See <see cref="GroupFacts.YieldsThroughArrow" />.
+/// </summary>
+/// <remarks>
+///     ⚠ Measured on <c>Func&lt;T…&gt; name = (…) =&gt; body;</c> over type widths of 2 to 59 and name widths
+///     of 1 to 51, 12 805 cells. The name and the type act separately, which no head-width table can
+///     express: a narrow name keeps the arrow at any value, where the same head made of a wider name
+///     breaks the <c>=</c> below a floor.
+/// </remarks>
+[Flags]
+public enum LambdaLocal {
+    /// <summary>Not a local's <c>=</c>: the arrow while the line through it fits, as measured in round 3.</summary>
+    None = 0,
+
+    /// <summary>A measured local: the floors apply past the gates.</summary>
+    Measured = 1,
+
+    /// <summary>
+    ///     The name is at most <c>10 + ⌊(type + 4) / 12⌋</c> wide, the type measured whole: while the line through
+    ///     <c>=&gt;</c>
+    ///     fits, the arrow breaks whatever the value's width.
+    /// </summary>
+    ArrowWhileItFits = 2,
+
+    /// <summary>
+    ///     The name is at most <c>⌊(type − 6) / 5⌋ + 1</c> wide: once the <c>)</c> is off the line, the
+    ///     parameter list chops whatever the value's width.
+    /// </summary>
+    ChopsPastTheParenthesis = 4
+}

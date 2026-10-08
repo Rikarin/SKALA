@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -30,8 +30,11 @@ namespace Vixen.Rendering.Lighting;
 ///         one baked environment closes four of the set's thirteen bindings.
 ///     </para>
 ///     <para>
-///         <b>The same shape as <see cref="GlobalDistanceFieldTexture" /> and
-///         <see cref="IrradianceFieldTexture" />, deliberately.</b> Allocate on the first upload,
+///         <b>
+///             The same shape as <see cref="GlobalDistanceFieldTexture" /> and
+///             <see cref="IrradianceFieldTexture" />, deliberately.
+///         </b>
+///         Allocate on the first upload,
 ///         copy through one staging buffer, transition into <see cref="ResourceState.ShaderRead" />
 ///         and stay there. These are not graph resources — they are named into a descriptor set — so
 ///         nothing else in the frame transitions them and this has to.
@@ -65,8 +68,12 @@ public sealed class EnvironmentTexture : IDisposable {
     ///     The chain is empty, or a level is not half the one above it.
     /// </exception>
     /// <remarks>
-    ///     ⚠ <b>The cube, its view and its sampler are created here rather than on the first upload,
-    ///     and the difference is not tidiness.</b> <see cref="EnvironmentLight" /> holds a
+    ///     ⚠
+    ///     <b>
+    ///         The cube, its view and its sampler are created here rather than on the first upload,
+    ///         and the difference is not tidiness.
+    ///     </b>
+    ///     <see cref="EnvironmentLight" /> holds a
     ///     <see cref="TextureViewHandle" /> rather than a reference to this, so whatever
     ///     <see cref="Apply" /> hands it is what the frame's set is filled with for ever. Creating the
     ///     view lazily meant a light configured at load time held an invalid handle, the writer found

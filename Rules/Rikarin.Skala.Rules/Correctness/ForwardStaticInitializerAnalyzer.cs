@@ -22,7 +22,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Being exact about which construct this is matters more here than anywhere else in the
 ///             batch, because three neighbouring shapes look identical and are all correct.
-///         </b> A static
+///         </b>
+///         A static
 ///         <em>property</em> is a method that runs when it is called, so a getter naming a field below
 ///         it returns whatever the field holds at that moment. A static <em>method</em> is not ordered
 ///         against anything. And a <c>static</c> constructor runs <em>after</em> every field

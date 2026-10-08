@@ -14,7 +14,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     <b>
 ///         Three of the five issues this batch was opened for are refuted here rather than shipped,
 ///         and the refutations are tests rather than prose.
-///     </b> Issue #29 (an unreachable switch arm) and
+///     </b>
+///     Issue #29 (an unreachable switch arm) and
 ///     the always-false half of issue #1 (a constant type check) are compiler diagnostics — several
 ///     of them errors — and the switch-expression half of issue #28 is <c>CS8524</c>. A claim of the
 ///     form "the compiler already covers this" is worth nothing written down: the tests below make the
@@ -26,7 +27,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///         <em>
 ///             passes every
 ///             negative
-///         </em> — which reads in a report as a half-working rule rather than a dead one.
+///         </em>
+///         — which reads in a report as a half-working rule rather than a dead one.
 ///     </para>
 /// </remarks>
 public sealed class EnumAndTypeCheckBatchTests {
@@ -240,7 +242,8 @@ public sealed class EnumAndTypeCheckBatchTests {
     ///     <b>
     ///         <c>SK2009</c> reports a switch statement only where it already covers most of the
     ///         enum
-    ///     </b> (#280).
+    ///     </b>
+    ///     (#280).
     /// </summary>
     /// <remarks>
     ///     A <c>switch</c> statement is under no obligation to be exhaustive — falling out of it
@@ -284,7 +287,8 @@ public sealed class EnumAndTypeCheckBatchTests {
     ///     <b>
     ///         <c>SK2120</c> is provably disjoint from <c>CA1027</c>, by arithmetic and not by a
     ///         filter.
-    ///     </b> <c>CA1027</c> was probed against the SDK at <c>AnalysisMode=All</c>: it needs at
+    ///     </b>
+    ///     <c>CA1027</c> was probed against the SDK at <c>AnalysisMode=All</c>: it needs at
     ///     least three distinct non-zero values that are all powers of two, and it is silent on
     ///     <c>{ A, B, C }</c> and <c>{ A, B, C, D }</c>. Consecutive numbering from zero reaches a third
     ///     non-zero value only at <c>3</c>, which is not a power of two — so no declaration

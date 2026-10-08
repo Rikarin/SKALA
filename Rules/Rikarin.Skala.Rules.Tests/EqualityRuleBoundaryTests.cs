@@ -13,7 +13,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     <b>
 ///         Disjointness that is only a property of the implementation is disjointness nobody will
 ///         notice losing.
-///     </b> <c>SK2004</c>, <c>SK2011</c> and <c>SK2040</c>–<c>SK2044</c> all look at the
+///     </b>
+///     <c>SK2004</c>, <c>SK2011</c> and <c>SK2040</c>–<c>SK2044</c> all look at the
 ///     same handful of members, and every one of the shapes below is one a reasonable reading would
 ///     hand to two of them. Each is pinned to the single rule that owns it, so a later widening that
 ///     makes two rules argue over one span fails here rather than in somebody's report — where it

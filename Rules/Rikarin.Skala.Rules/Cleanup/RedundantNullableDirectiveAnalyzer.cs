@@ -21,7 +21,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             The file's opening state is <em>inherited</em>, not enabled, and that is what makes this
 ///             rule exact without a project.
-///         </b> The first <c>#nullable enable</c> in a file is never
+///         </b>
+///         The first <c>#nullable enable</c> in a file is never
 ///         reported, because whether the project already enables annotations is not written in the file
 ///         and this rule does not guess. What the opening state does settle is the other direction: a
 ///         <c>#nullable restore</c> before any other directive restores the project default the file

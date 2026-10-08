@@ -906,7 +906,8 @@ public static class Fuzzer {
     ///         <c>
     /// Compile(new FuzzRandom(Derive(seed,
     ///         i)))
-    ///         </c> hands the generator a <em>fresh</em> stream, while a case hands it one that the
+    ///         </c>
+    ///         hands the generator a <em>fresh</em> stream, while a case hands it one that the
     ///         mode draw has already consumed a value from; the two explore different generator states,
     ///         and a check that samples a distribution the run does not have is a check that can pass
     ///         while the thing it checks is broken. Mutate-mode draws are skipped rather than counted:

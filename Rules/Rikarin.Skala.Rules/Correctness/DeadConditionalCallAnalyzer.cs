@@ -27,7 +27,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The redundant shape is deliberately not this rule, and the reason is measured rather
 ///             than argued.
-///         </b> The sibling shape — <c>[Conditional("DEBUG")]</c> called inside
+///         </b>
+///         The sibling shape — <c>[Conditional("DEBUG")]</c> called inside
 ///         <c>#if DEBUG</c> — is belt and braces: the guard duplicates what the attribute already does
 ///         and nothing is broken. It is also <em>unobservable</em> from any compilation that does not
 ///         define the symbol, because the region is disabled text and holds no invocation node to

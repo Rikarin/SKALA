@@ -19,7 +19,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///         <b>
 ///             This lives here rather than in <c>Testing/corpus/</c>, and that is a limitation and not a
 ///             preference.
-///         </b> The corpus has no per-directory <c>.editorconfig</c>, so no committed fixture can
+///         </b>
+///         The corpus has no per-directory <c>.editorconfig</c>, so no committed fixture can
 ///         be tab-indented, so the key cannot carry an <c>oracle</c> glob and the key-flip sweep cannot
 ///         reach it — <c>verify skala_alignment_tab_fill_style</c> answers "no `oracle` fixture
 ///         in the registry" before and after this fix. Until that mechanism exists, this file is the whole

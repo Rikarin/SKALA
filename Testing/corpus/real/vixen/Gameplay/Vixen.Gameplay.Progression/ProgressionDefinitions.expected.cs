@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -102,8 +102,12 @@ public sealed record TalentTreeDefinition : Definition {
 
 /// <summary>A class specialisation: one of a set, chosen and changeable.</summary>
 /// <remarks>
-///     A definition rather than a talent node, because a specialisation is a <em>choice among
-///     alternatives</em> and a tree is a set of independent yeses. Modelling it as a node would need
+///     A definition rather than a talent node, because a specialisation is a
+///     <em>
+///         choice among
+///         alternatives
+///     </em>
+///     and a tree is a set of independent yeses. Modelling it as a node would need
 ///     an "and none of these others" rule the tree does not have.
 /// </remarks>
 [DataContract("SpecialisationDefinition")]

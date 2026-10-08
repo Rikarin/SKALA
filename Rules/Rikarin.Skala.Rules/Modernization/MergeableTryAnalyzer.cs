@@ -16,7 +16,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     <b>
 ///         Only one of the two nestings can be merged, and issue #109's own headline example is the
 ///         other one.
-///     </b> The issue proposes
+///     </b>
+///     The issue proposes
 ///     <c>try { try { … } finally { … } } catch { … }</c> → one statement. Compiled and run, that
 ///     rewrite reverses the order of two side effects:
 ///     <code>
@@ -29,7 +30,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     <b>
 ///         ReSharper's inspection describes the sound nesting and the
 ///         issue transcribed it backwards
-///     </b> — the export reads
+///     </b>
+///     — the export reads
 ///     <c>"try-catch and try-finally statements can be merged"</c>, which is <c>catch</c> on the
 ///     <em>inner</em> statement and <c>finally</c> on the outer.
 ///     <para>
@@ -43,7 +45,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             An outer <c>catch</c> is never merged, and that is the same finding from the other
 ///             side.
-///         </b> Sibling <c>catch</c> clauses do not chain: where the nested form lets an
+///         </b>
+///         Sibling <c>catch</c> clauses do not chain: where the nested form lets an
 ///         exception thrown <em>by</em> the inner handler reach the outer one, the merged form lets it
 ///         escape. Measured: <c>body → inner → outer</c> becomes <c>body → inner → escaped</c>.
 ///         <c>SK0240</c> owns the neighbouring question of a <c>catch</c> that only rethrows.

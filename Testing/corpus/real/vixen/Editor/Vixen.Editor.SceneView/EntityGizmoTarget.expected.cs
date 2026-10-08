@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -84,8 +84,12 @@ public sealed class EntityGizmoTarget : IGizmoTarget {
 
     /// <inheritdoc />
     /// <remarks>
-    ///     ⚠ <b>The entry goes on the viewport's document, because that is what an entity belongs
-    ///     to.</b> This is the ordinary case and it reads as one, which it did not when it was the
+    ///     ⚠
+    ///     <b>
+    ///         The entry goes on the viewport's document, because that is what an entity belongs
+    ///         to.
+    ///     </b>
+    ///     This is the ordinary case and it reads as one, which it did not when it was the
     ///     fall-through of two other branches.
     /// </remarks>
     public GizmoEdit? Record(in GizmoDrag drag) {

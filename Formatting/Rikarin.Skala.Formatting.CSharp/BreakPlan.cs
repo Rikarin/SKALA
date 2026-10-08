@@ -786,6 +786,10 @@ public sealed class BreakPlan {
                 PlanAttributeRun(node, lists);
                 return;
 
+            case ParameterSyntax parameter:
+                PlanParameterTypeNameGap(parameter);
+                return;
+
             case TypeParameterSyntax { AttributeLists: [_, _, ..] lists }:
                 PlanAttributeRun(node, lists);
                 return;
@@ -1257,7 +1261,8 @@ public sealed class BreakPlan {
     ///     <c>
     /// skala_max_array_initializer_elements_on_line =
     ///  10000
-    ///     </c> — does not move. The counter is not a width and does not consult one.
+    ///     </c>
+    ///     — does not move. The counter is not a width and does not consult one.
     /// </param>
     /// <param name="placeOnSingleLine">
     ///     A <c>place_simple_*_on_single_line</c> key, or null where the construct has none.
@@ -1601,7 +1606,8 @@ public sealed class BreakPlan {
     ///         <c>
     /// new[] { six, long, string, literals, here,
     ///  again }
-    ///         </c> comes back with five on one line and one on the next, while
+    ///         </c>
+    ///         comes back with five on one line and one on the next, while
     ///         <c>new List&lt;string&gt; { four, long, string, literals }</c> comes back with one per line
     ///         even though two of them would have shared. It matches the two counters —
     ///         <c>skala_max_array_initializer_elements_on_line = 10000</c> against
@@ -2601,6 +2607,58 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
+    ///     The gap between a parameter's type and its name, broken when the line through the name does not
+    ///     fit (#545) — <see cref="PlanTypeNameGap" />'s rule, on a parameter.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 one column at a time on a chopped parameter list:
+    ///     <c>int</c> / <c>    aaa…</c> from a 121-column parameter line up, unchanged to 120; the same for a
+    ///     <c>Dictionary&lt;string, List&lt;string&gt;&gt;</c>, a second parameter, a <c>ref</c> or a <c>params</c>
+    ///     one (the break after the whole type), a record's primary constructor and a lambda's parameter
+    ///     list. A parameter with a default value breaks at its <c>=</c> instead (<c>int bbb… =</c> /
+    ///     <c>    1</c>), which is that gap's own rule, so the group opens at the name and the line it asks
+    ///     about ends at the <c>=</c>. Not when a comment sits in the type or before the name.
+    /// </remarks>
+    void PlanParameterTypeNameGap(ParameterSyntax node) {
+        // ⚠ Not behind an attribute section: the attribute runs' own break (#475, #476, #537) is the one
+        // the oracle takes there, and a parameter with attributes and a name past the margin was not
+        // measured.
+        if (node.Type is null
+            || node.AttributeLists.Count > 0
+            || node.Identifier.IsMissing
+            || node.Parent is not (ParameterListSyntax or BracketedParameterListSyntax)
+            || HasBlockCommentBefore(node.Identifier)
+            || node.Type.DescendantTrivia()
+                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                )) {
+            return;
+        }
+
+        var group = NewGroup();
+        Point(node.Identifier, group);
+        OpenAt(
+            node,
+            node.Identifier.SpanStart,
+            new(
+                group,
+                GroupMode.Preserve,
+                new(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(node.Identifier),
+                    BreaksIfTooLong: true,
+                    PrefersOuterBreak: true,
+                    SkipsOuterTail: true
+                ),
+                true,
+                true,
+                // ⚠ One level past the parameter inside its list, as the `=` of a default value spends one
+                // (SK-DIV-0103): measured, `int` / `            aaa…` at a parameter on column 8.
+                SpendsUnderDelimiters: true
+            )
+        );
+    }
+
+    /// <summary>
     ///     <c>skala_wrap_multiple_declaration_style = chop_if_long</c>: <c>int a = 1, b = 2, c = 3;</c> puts
     ///     one declarator per line when it does not fit.
     /// </summary>
@@ -2955,6 +3013,15 @@ public sealed class BreakPlan {
             }
         }
 
+        // ⚠ As a sole lambda argument's body the fill is one level past the line it starts on (#557,
+        // measured): `Use(x => x.Alpha…Papa` / `.Quebec` one level in while the arrow stays, and
+        // `Use(x =>` / `x.Alpha…` / `.Quebec` one past the body once it breaks — a level of its own would
+        // be two on the arrow's line, and a shared one none below it. Among other arguments it keeps its
+        // own level: `x => x.Alpha…` / `.Quebec` two past the chopped list.
+        var fromLine = !HeadSharesTheLevelAroundIt(root)
+            && options.PlaceSingleMethodArgumentLambdaOnSameLine
+            && IsTheBodyOfASoleLambda(root);
+
         Describe(
             root,
             new(
@@ -2972,7 +3039,8 @@ public sealed class BreakPlan {
                         : 0
                 ),
                 HeadSharesTheLevelAroundIt(root),
-                OwnLevel: !HeadSharesTheLevelAroundIt(root)
+                OwnLevel: !HeadSharesTheLevelAroundIt(root) && !fromLine,
+                FromLine: fromLine
             )
         );
 
@@ -4894,7 +4962,8 @@ public sealed class BreakPlan {
                     // value =>` / `value.ToString() + "…";` at every width measured, where Skala broke the
                     // `=` because the whole lambda fitted on the line below (#453, SK-DIV-0050).
                     BreaksIfTooLong: !YieldsToTheLambdaArrow(value)
-                    && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member)),
+                    && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member))
+                    && !KeepsTheEqualsBeforeALambdaCall(node, value),
 
                     // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
                     // Every other right-hand side is measured by what is left of the line and breaks
@@ -4928,6 +4997,7 @@ public sealed class BreakPlan {
                     MinimumHead: yieldsToTheBracket || callee > 0 ? MinimumEqualsHead : 0,
                     CalleeWidth: callee,
                     YieldsThroughArrow: ArrowYieldWidthOf(value),
+                    LambdaLocal: ArrowYieldWidthOf(value) > 0 ? LambdaLocalOf(node) : LambdaLocal.None,
                     PatternHead: PatternHeadOf(node, equals, value),
                     PatternWidth: PatternHeadOf(node, equals, value) > 0
                         ? ((IsPatternExpressionSyntax)value).Pattern.Span.Length
@@ -5236,6 +5306,55 @@ public sealed class BreakPlan {
     ///     12 to 70 and parameter lists of 2 to 70: wherever the line through <c>=&gt;</c> fits, the arrow
     ///     breaks and the <c>=</c> never does, which Skala had the other way round from a head of 30.
     /// </remarks>
+    /// <summary>
+    ///     A local's <c>=</c> before a lambda whose body is a call, under a declarator name of at most nine
+    ///     columns: the oracle never breaks it (#453).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on <c>Func&lt;T…&gt; name = () =&gt; Callee(x, y);</c> over type widths of 2 to 58,
+    ///     name widths of 1 to 49, the body's <c>(</c> at the head's end and at columns 80 and 100, and
+    ///     line ends of 121 to 150: no name of nine columns or fewer breaks the <c>=</c> in any cell. The
+    ///     arrow or the arguments take the break by Skala's own rules. Wider names break it by a rule that
+    ///     moves with the name, the type and the <c>(</c> separately, and that is not wired.
+    /// </remarks>
+    static bool KeepsTheEqualsBeforeALambdaCall(SyntaxNode node, ExpressionSyntax value) =>
+        value is LambdaExpressionSyntax { ExpressionBody: InvocationExpressionSyntax }
+        && node is EqualsValueClauseSyntax {
+            Parent: VariableDeclaratorSyntax {
+                Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: LocalDeclarationStatementSyntax }
+            } declarator
+        }
+        && declarator.Identifier.Span.Length <= 9;
+
+    /// <summary>
+    ///     A local's <c>=</c> before a lambda with a bare-name body: the gates its declarator's name and
+    ///     type widths open (#558). See <see cref="LambdaLocal" />.
+    /// </summary>
+    static LambdaLocal LambdaLocalOf(SyntaxNode node) {
+        if (node is not EqualsValueClauseSyntax {
+                Parent: VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax {
+                        Variables.Count: 1, Parent: LocalDeclarationStatementSyntax
+                    } declaration
+                } declarator
+            }) {
+            return LambdaLocal.None;
+        }
+
+        var type = declaration.Type.Span.Length;
+        var name = declarator.Identifier.Span.Length;
+        var local = LambdaLocal.Measured;
+        if (name <= 10 + (type + 4) / 12) {
+            local |= LambdaLocal.ArrowWhileItFits;
+        }
+
+        if (name <= (type - 6) / 5 + 1) {
+            local |= LambdaLocal.ChopsPastTheParenthesis;
+        }
+
+        return local;
+    }
+
     static int ArrowYieldWidthOf(ExpressionSyntax value) =>
         value is LambdaExpressionSyntax { ExpressionBody: IdentifierNameSyntax } lambda
         && !lambda.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
@@ -5959,7 +6078,8 @@ public sealed class BreakPlan {
     ///     <c>
     /// Func&lt;int, int&gt; f = someParameterName
     ///     =&gt;
-    ///     </c> / <c>Convert&lt;CancellationToken, CancellationToken&gt;(…);</c> although
+    ///     </c>
+    ///     / <c>Convert&lt;CancellationToken, CancellationToken&gt;(…);</c> although
     ///     <c>Convert&lt;…&gt;(</c> still fitted at column 119, and <c>M(someParameterName =&gt;</c> /
     ///     <c>ConvertTheValue&lt;…&gt;(…)</c> / <c>);</c> for a sole argument — and otherwise stays and
     ///     lets the body's own construct wrap: <c>f = x =&gt; Convert(</c> with six arguments chopped
@@ -5970,7 +6090,8 @@ public sealed class BreakPlan {
     ///     <c>
     /// case { … } when static x
     ///     =&gt;
-    ///     </c> on its label's line — the <c>when</c> measures its head up to this point at column
+    ///     </c>
+    ///     on its label's line — the <c>when</c> measures its head up to this point at column
     ///     105 and stops, where without it the whole type argument list was the head. Only the gap
     ///     after the arrow is planned; the gap before a lambda's arrow stays <c>keep_user_linebreaks</c>'.
     /// </remarks>
@@ -5983,11 +6104,40 @@ public sealed class BreakPlan {
             // width breaks it in 3 664 — so the arrow breaks whenever the body does not fit beside it,
             // with no ordering question asked.
             ArrowWinsOverTheChain(lambda)
-                ? new GroupFacts(BreaksIfTooLong: true)
+            ? new GroupFacts(BreaksIfTooLong: true)
+            : IsAFilledSoleLambda(lambda, body)
+                ? new GroupFacts(
+                    BreaksIfTooLong: true,
+                    LambdaParameters: lambda switch {
+                        SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
+                        ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Span.Length,
+                        _ => 1
+                    },
+                    LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
+                    LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
+                )
                 : ArrowMovesACallChainDown(body)
                     ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
                     : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
+
+    /// <summary>
+    ///     A sole lambda argument whose body is a member access the property fill breaks: its arrow is
+    ///     decided by <see cref="GroupFacts.LambdaParameters" />'s measured line (#557).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on a statement's call, <c>U(x =&gt; x.A.B…Z)</c>, with parameter lists of one to
+    ///     ten columns, lambdas starting at columns 10 to 55 and line ends 112 to 175: 9 of 1 234 cells
+    ///     differ, all parenthesised lambdas one column from the boundary. Elsewhere — among other
+    ///     arguments, as an <c>=</c>'s value — the arrow breaks when the body fits below, as over a
+    ///     chain of calls.
+    /// </remarks>
+    bool IsAFilledSoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
+        options.PlaceSingleMethodArgumentLambdaOnSameLine
+        && IsTheBodyOfASoleLambda(body)
+        && ChainPointCount(body, options) == 0
+        && ArrowMovesACallChainDown(body)
+        && lambda.Modifiers.Count == 0;
 
     /// <summary>
     ///     A lambda whose body is a chain of calls the author did not break: its arrow breaks exactly when
@@ -6002,7 +6152,7 @@ public sealed class BreakPlan {
     /// </remarks>
     bool ArrowMovesACallChainDown(ExpressionSyntax body) =>
         IsChainRoot(body)
-        && ChainPointCount(body, options) > 0
+        && (ChainPointCount(body, options) > 0 || TrailingProperty(body) is not null)
         && source.AsSpan(body.SpanStart, body.Span.Length).IndexOfAny('\r', '\n') < 0;
 
     /// <summary>
@@ -6069,7 +6219,8 @@ public sealed class BreakPlan {
     ///     <c>
     /// case SomeVeryLongTypeName
     ///     someVeryLongVariableName when Bind(
-    ///     </c> stays and the arguments chop, in a label with a
+    ///     </c>
+    ///     stays and the arguments chop, in a label with a
     ///     declaration pattern and in an arm with <c>{ … } when Bind(</c> / <c>) =&gt; Body(first),</c>
     ///     alike. A kept break before the <c>when</c> is kept (<c>case 1</c> / <c>when x:</c>), and so
     ///     is one after it, which this plan leaves to <c>keep_user_linebreaks</c>.

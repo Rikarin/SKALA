@@ -37,7 +37,8 @@ namespace Rikarin.Skala.Rules.Security;
 ///         <b>
 ///             <c>HKDF</c> is deliberately not a receiver, and this is the false positive the rule exists
 ///             to avoid.
-///         </b> RFC 5869 says HKDF's salt is optional and <em>may be fixed and public</em>: HKDF
+///         </b>
+///         RFC 5869 says HKDF's salt is optional and <em>may be fixed and public</em>: HKDF
 ///         extracts from high-entropy input keying material, not from a password, and a protocol that
 ///         pins its salt so both ends derive the same key is using it exactly as specified. That is the
 ///         "protocol-fixed key derivation" shape, and it is excluded by receiver rather than by a
@@ -51,7 +52,8 @@ namespace Rikarin.Skala.Rules.Security;
 ///         <b>
 ///             RFC 6070's PBKDF2 test vectors specify the salt
 ///             as the literal string <c>"salt"</c>
-///         </b>. Without the exemption this rule would fail the build
+///         </b>
+///         . Without the exemption this rule would fail the build
 ///         of every crypto library that checks itself against the standard's own vectors, at <c>error</c>
 ///         severity — which is how a reviewer learns to skim past every security finding a tool makes.
 ///     </para>

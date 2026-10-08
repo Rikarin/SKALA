@@ -79,7 +79,8 @@ public sealed class OracleRunner {
     ///     <b>
     ///         The one place a key crosses into ReSharper's namespace, and it must stay the only
     ///         one.
-    ///     </b> Every caller — the key-flip sweep, the pairwise grid, <c>MarginSweep</c>,
+    ///     </b>
+    ///     Every caller — the key-flip sweep, the pairwise grid, <c>MarginSweep</c>,
     ///     <c>CorpusVariants</c> — names options by Skala's <c>skala_*</c> key, because that is what
     ///     <c>SkalaSide.Format</c> resolves and both halves of a comparison have to be asked the same
     ///     question. <c>cleanupcode</c> has never heard of <c>skala_*</c> and, given one,
@@ -239,7 +240,8 @@ public sealed class OracleRunner {
     ///     <b>
     ///         Both pipes are drained concurrently, and that is a deadlock fix rather than a style
     ///         preference.
-    ///     </b> The obvious spelling — <c>StandardOutput.ReadToEnd()</c> and then
+    ///     </b>
+    ///     The obvious spelling — <c>StandardOutput.ReadToEnd()</c> and then
     ///     <c>StandardError.ReadToEnd()</c> — reads the second pipe only once the first has reached end
     ///     of stream. A pipe holds 64 KB on macOS; a <c>cleanupcode</c> batch that writes more than that
     ///     to stderr blocks in <c>write(2)</c>, never closes stdout, and the parent waits on a stream the

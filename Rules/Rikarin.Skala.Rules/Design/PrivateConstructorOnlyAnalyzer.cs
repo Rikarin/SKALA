@@ -23,7 +23,8 @@ namespace Rikarin.Skala.Rules.Design;
 ///         <b>
 ///             The reachability test is a proof rather than a heuristic, and that is why it reads the
 ///             whole file.
-///         </b> A private constructor is accessible only inside the declaring type and the
+///         </b>
+///         A private constructor is accessible only inside the declaring type and the
 ///         types nested in it, so for a type that is not <c>partial</c> every legal <c>new</c> of it and
 ///         every legal derivation from it is in this one syntax tree.
 ///     </para>
@@ -32,7 +33,8 @@ namespace Rikarin.Skala.Rules.Design;
 ///         <b>
 ///             Nesting opens access inward, not outward, and the first draft of this rule had it
 ///             backwards.
-///         </b> A nested type reaches its container's private constructor — a nested builder
+///         </b>
+///         A nested type reaches its container's private constructor — a nested builder
 ///         calling <c>new Pipeline(…)</c>, a nested case deriving from its container — and that is what
 ///         makes scanning the file rather than the candidate's own body necessary. The reverse does not
 ///         hold: a container calling a nested type's private constructor is <b>CS0122</b>, measured by

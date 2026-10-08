@@ -15,7 +15,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <em>
 ///         I know better than the compiler
 ///         here
-///     </em> — and it costs every subsequent reader a stop to work out what was known. Where there
+///     </em>
+///     — and it costs every subsequent reader a stop to work out what was known. Where there
 ///     was no warning to suppress the operator is decoration: it survives every migration untouched and
 ///     it makes a file look as though its nullability was thought about when it was not.
 ///     <para>

@@ -75,7 +75,8 @@ public static class ScratchTree {
     ///     <b>
     ///         A size limit is not the only constraint, and under the cleanup profile it is not the
     ///         binding one.
-    ///     </b> Members are batched by count for a whitespace profile, because a
+    ///     </b>
+    ///     Members are batched by count for a whitespace profile, because a
     ///     <c>cleanupcode</c> run that only moves whitespace cannot be affected by what else is in the
     ///     project. A <em>semantic</em> profile resolves symbols, and the sweep's shape guarantees the
     ///     collision: 44 arrangement keys point at 22 fixtures, so four keys name
@@ -84,7 +85,8 @@ public static class ScratchTree {
     ///     <c>
     /// class
     ///     QualifiersAndParentheses
-    ///     </c> in one namespace. Every semantic rewrite in the profile
+    ///     </c>
+    ///     in one namespace. Every semantic rewrite in the profile
     ///     (<c>var</c>, qualifiers, predefined types) then reads a compilation full of CS0101, and the
     ///     verdicts would be a measurement of the scratch project.
     ///     <para>

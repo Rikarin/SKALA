@@ -24,7 +24,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The initialized value is live from the field initializer until the overwrite, and
 ///             anything that runs code in that window can read it (#431).
-///         </b> Field initializers run
+///         </b>
+///         Field initializers run
 ///         <em>before</em> the base constructor call, so the window spans every base constructor body
 ///         up to <c>object</c>'s, then the constructor's own statements up to the write, then the value
 ///         the write computes. #412's audit measured three readers a name scan cannot see — an override

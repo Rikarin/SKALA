@@ -25,7 +25,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The literal must name a type this compilation can already see, and that one condition
 ///             is the whole specification.
-///         </b> A name comparison is the <em>only</em> option for a type
+///         </b>
+///         A name comparison is the <em>only</em> option for a type
 ///         loaded reflectively, for a plugin whose assembly is deliberately not referenced, and across
 ///         a boundary this project does not compile against — and in every one of those the name does
 ///         not resolve here, so nothing is reported. Where it does resolve, the file could have named

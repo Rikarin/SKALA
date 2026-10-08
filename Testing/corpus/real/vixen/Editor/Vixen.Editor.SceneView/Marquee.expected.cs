@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -67,8 +67,12 @@ public readonly record struct Marquee(Vector2 Anchor, Vector2 Corner, bool Addit
     /// <returns>Whether the two overlap at all.</returns>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>Touching, not containing, and that is the choice both reference editors make by
-    ///         default.</b> A band that only took what it fully enclosed cannot select anything larger
+    ///         ⚠
+    ///         <b>
+    ///             Touching, not containing, and that is the choice both reference editors make by
+    ///             default.
+    ///         </b>
+    ///         A band that only took what it fully enclosed cannot select anything larger
     ///         than the pane — a floor, a wall, a building — so the gesture stops working precisely
     ///         where a scene gets big. Unreal offers the strict rule as a preference and Unity does
     ///         not offer it at all; the preference is worth having and is not what makes the gesture

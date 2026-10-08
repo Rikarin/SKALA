@@ -28,7 +28,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///         <b>
 ///             The <c>Task</c> shape belongs to <c>SK3007</c> and is excluded here rather than
 ///             deduplicated afterwards.
-///         </b> The two rules overlap on exactly one shape —
+///         </b>
+///         The two rules overlap on exactly one shape —
 ///         <c>return x;</c> where <c>x</c> is a <c>using</c> variable of a task type — and
 ///         <c>SK3007</c> carries a fix for it. <c>supersedes</c> would suppress the finding that has
 ///         the fix, or need an edit to <c>SK3007</c>'s own metadata; a type test here costs nothing

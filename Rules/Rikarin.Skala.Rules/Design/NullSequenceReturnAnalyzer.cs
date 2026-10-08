@@ -21,7 +21,8 @@ namespace Rikarin.Skala.Rules.Design;
 ///         <b>
 ///             Disjoint from <c>SK3020</c> by construction, and the overlap is where an
 ///             <c>async</c> method sits.
-///         </b> <c>SK3020</c> reports a non-<c>async</c> method whose declared
+///         </b>
+///         <c>SK3020</c> reports a non-<c>async</c> method whose declared
 ///         return type is <c>Task</c> returning null — a null <em>task</em>, which throws at the
 ///         <c>await</c>. This rule requires the effective return type to be a sequence: for a
 ///         non-<c>async</c> <c>Task&lt;IEnumerable&lt;T&gt;&gt;</c> the declared type is a task, so this

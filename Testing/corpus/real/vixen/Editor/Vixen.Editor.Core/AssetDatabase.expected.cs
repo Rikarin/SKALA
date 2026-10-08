@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -721,8 +721,11 @@ public sealed class AssetDatabase {
 /// <param name="WrittenUtc">When it was last written, UTC.</param>
 /// <remarks>
 ///     <para>
-///         <b>A size and a write time, because the honest answer costs a read and the read is the
-///         thing being avoided.</b> Hashing a sidecar's contents would never be wrong; it would also
+///         <b>
+///             A size and a write time, because the honest answer costs a read and the read is the
+///             thing being avoided.
+///         </b>
+///         Hashing a sidecar's contents would never be wrong; it would also
 ///         mean opening every file in the project on every cold start, which is precisely the work
 ///         the index exists to skip. A size alone is far too weak — a sidecar is mostly fixed-width
 ///         fields, so most edits leave it exactly as long. The pair is the cheapest thing that is
@@ -751,8 +754,12 @@ public sealed class AssetDatabase {
 ///         ⚠ <b>The write-time cutoff is a weaker second filter</b>, and what it adds is the one
 ///         thing the stamps cannot know: an edit by <em>somebody else</em> that raced the recording
 ///         scan. A stamp is only trusted when its write time is strictly earlier than the instant
-///         that scan began. <b>Where the clock is finer-grained than the filesystem's write times it
-///         under-fires</b> — a file written after that instant can carry a write time floored below
+///         that scan began.
+///         <b>
+///             Where the clock is finer-grained than the filesystem's write times it
+///             under-fires
+///         </b>
+///         — a file written after that instant can carry a write time floored below
 ///         it, which is exactly what NTFS and <c>DateTime.UtcNow</c> do to each other — and no cutoff
 ///         can fix that. Flooring it to the filesystem's own resolution would make it sound and would
 ///         also refuse every file written in the tick before a scan, turning an untouched project

@@ -26,7 +26,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             This is the sound core of `S3885`, and the broad reading of that rule is deliberately
 ///             not implemented.
-///         </b> "`Assembly.Load` should be used" reported everywhere would report
+///         </b>
+///         "`Assembly.Load` should be used" reported everywhere would report
 ///         every plugin host in existence — <c>LoadFrom</c> against a path is exactly right when the
 ///         default context is where the assembly belongs, and which context an assembly belongs in is
 ///         intent rather than a fact in the file. Inside a <c>Load</c> override the intent <em>is</em>

@@ -34,7 +34,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             <c>IsSymbolAccessibleWithin</c> throws for
 ///             anything that is not a type or an assembly
-///         </b>, so the <c>within</c> argument here is always
+///         </b>
+///         , so the <c>within</c> argument here is always
 ///         an <see cref="INamedTypeSymbol" /> and the check is skipped where there is none.
 ///     </para>
 /// </remarks>

@@ -45,7 +45,8 @@ public static class GeneratorDriver {
     ///     <b>
     ///         The two callers pass different severities, and the asymmetry is the point rather than
     ///         an inconsistency.
-    ///     </b> A binlog's analyzer paths come off a command line <c>csc</c> actually
+    ///     </b>
+    ///     A binlog's analyzer paths come off a command line <c>csc</c> actually
     ///     ran, so the assembly was there and did its work; a file missing now means the tree was
     ///     cleaned afterwards, which is the same class of fact as <c>SK9020</c> and <c>SK9021</c> and
     ///     carries their settled stance — say so, report the coverage, do not refuse. A workspace's

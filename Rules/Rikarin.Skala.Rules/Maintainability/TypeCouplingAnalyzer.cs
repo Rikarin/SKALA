@@ -168,7 +168,8 @@ public sealed class TypeCouplingAnalyzer : DiagnosticAnalyzer {
     ///         <b>
     ///             There is nothing to test in advance, which is why this is a <c>catch</c> and not a
     ///             guard.
-    ///         </b> The question "would asking about this name throw" is answerable only by
+    ///         </b>
+    ///         The question "would asking about this name throw" is answerable only by
     ///         asking, and every cheaper proxy — does the file have errors, is the name inside a query —
     ///         either costs a full <c>GetDiagnostics</c> per declaration or declines on ordinary code.
     ///         The exception type is narrow and the call it wraps is one, so nothing else can fall in

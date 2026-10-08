@@ -608,11 +608,13 @@ public sealed class WorkspaceLoadingTests {
     ///         <c>
     /// check --load=binlog --gate=local
     ///         --format=agent
-    ///         </c> printed
+    ///         </c>
+    ///         printed
     ///         <c>
     /// INCOMPLETE  1 of 1 file was not checked — this is a Skala
     ///         bug
-    ///         </c> above <b>exit 0</b>, then <c>SKIPPED 260 rule(s) did not run (loose load)</c>. The
+    ///         </c>
+    ///         above <b>exit 0</b>, then <c>SKIPPED 260 rule(s) did not run (loose load)</c>. The
     ///         "1 file" was the <c>.csproj</c>; the source file was checked; 260 rules were not; and the
     ///         gate passed. <c>verify</c> over the same tree — <c>auto</c> puts workspace first —
     ///         refused at exit 4, so the two verbs disagreed about one repository.

@@ -21,7 +21,9 @@ prints the pair.
 
 ⚠ **Those two figures, and every per-class count below them, are over `every line` and predate the
 documentation-comment default.** They are kept because the classes they rank are still the work
-queue and re-deriving each one is a separate measurement. The differential's basis is now
+queue and re-deriving each one is a separate measurement. ⚠ Since #449 the basis of `constructs/`,
+`real/` and `pathological/` is every line again, over fixtures regenerated with the doc-comment task on
+(SK-DIV-0006's last section carries the numbers). Before that it was
 `outside doc comments` (SK-DIV-0006), and on that basis the same corpus at the same commit is
 **99.61 % / 85.79 %** with symbols and **99.53 % / 85.26 %** without. The gap is `///` lines leaving
 the denominator, where they had been counted as agreeing because neither side touched them — not a
@@ -93,7 +95,7 @@ exact count, and saying so is better than repeating a figure nobody can reproduc
 |---|---|---|---|
 | 0001 | oracle rewrites disabled `#if` whitespace | open | 14 lines, 14 files |
 | 0002 | no preference among break points | **resolved at M3** | — nothing left to measure |
-| 0003 | interpolated raw literal emitted verbatim | open | 11 raw-literal files at 99.68 % / 90.91 %, 12 divergent lines |
+| 0003 | interpolated raw literal emitted verbatim | **resolved (#447)** | 11 raw-literal files at 99.68 % / 90.91 %, 12 divergent lines |
 | 0004 | no preprocessor symbols without a project | **closed at M5** | the six-cell table re-run and identical |
 | 0005 | the ordering rule's margin is a fitted constant | open | 63 lines, 38 files — the largest class. 21 hunks, 14 files by signature |
 | 0006 | ⚠ the pinned oracle *profile* does not format doc comments; Rider does, and Skala now does too | open | 21 keys honoured and observable, 11 refused, none Tier A until the fixtures are regenerated |
@@ -206,7 +208,7 @@ thing. The measurements are kept because the trajectory is the argument for the 
   exists and the whole corpus residue is 231 lines, an order of magnitude below the 747 this entry
   named at M2. There is nothing left to re-measure.
 
-## SK-DIV-0003 — an interpolated raw string literal is still emitted verbatim
+## SK-DIV-0003 — an interpolated raw string literal is still emitted verbatim — **RESOLVED (#447)**
 
 `skala_indent_raw_literal_string = align` asks the formatter to move the closing
 delimiter and the content of a `"""` literal, and milestones 1 and 2 declined on the grounds that
@@ -268,8 +270,49 @@ equivalence guard about all three.
 A verbatim string has no stripping rule, so its content is literal and neither engine can move it;
 both return it untouched. Only the raw-literal half is open.
 
+### ✅ Resolved for #447 (2026-10-08), and two of the four rows were the oracle's first pass
+
+Re-measured under `SkalaFormatOnly`, at `align` and at `indent`, and then **given the oracle's own
+output back** — which is the step that changed the specification:
+
+| shape | oracle, first pass | oracle, given its output back (and a third pass: unchanged) |
+|---|---|---|
+| `$"""` content and closer at 24, quotes at 22 | shifted to 22 — the column of the `"""`, not of the `$` | the same |
+| `$$"""` already on its quotes | unchanged | the same |
+| a multi-line hole: `Hello {` / `x` / `} there` | `Hello {` shifted −4, ⚠ the hole's lines left | ⚠ the hole's lines shifted −4 with `Hello {` |
+| a `$"""` nested in a hole | its own anchor, read after its line moved | the same at `align`; ⚠ at `indent` the first pass read the line where it was *written* (24 → 28) and the second where it lands (12 → 16) |
+| `$@"…"` | untouched | untouched |
+| ⚠ at `indent`, a literal whose quotes start their line (`Call(` / `"""`) | content under its own quotes, **no** level added — plain and interpolated, at 12 and at 16 | the same |
+
+So "the hole's own lines do not move" was a fact about one pass: the oracle re-indents a hole's lines
+from its opening line's indentation, read before the literal's shift on the first pass and after it on
+the second. Skala writes the fixed point in one pass, which is #372's rule for choosing between passes:
+a hole line moves by what the line its hole opens on moved.
+
+`RawLiteralPlan` (Formatting.CSharp) records, for an interpolated string that holds a multi-line raw
+literal, which of its lines each literal owns and which line a hole line follows; `RawLiteralShift`
+(Formatting) applies it at write time, where the quotes' output column is known
+(`VerbatimFlags.RealignRun`). `TokenEquivalence` compares an interpolated raw literal's end token
+without its leading whitespace — the stripping it implies is compared through the text tokens' values,
+which Roslyn reports already stripped, and `InterpolatedRawLiteralIssue447Tests` pins that a closer moved
+without its content is still caught. ⚠ The last row was **also wrong for plain raw literals**, which
+had nothing to do with interpolation: `indent` added a level to a literal chopped onto a line of its own.
+Fixed in the same place (`LayoutWriter.WritePiece`).
+
+⚠ `pathological/interpolated-raw-string-with-nested-braces.cs` is **not** this entry, and no fix here can
+move it: on that file the oracle writes `{{brace` for `{{ brace` inside a `$$"""` literal and puts the
+content six columns right of the closer — it changes the string's value. Skala must not agree with it.
+
 - options: `skala_indent_raw_literal_string` (Tier A, `default = align`, from the template)
-- ⚠ status: **open**, measured
+- ⚠ status: **resolved** at both `align` and `indent`, pinned by
+  `constructs/trivia/interpolated-raw-literal-alignment.cs` (the shapes whose first pass is already the
+  fixed point) and `InterpolatedRawLiteralIssue447Tests` (the oracle's fixed point for the rest, each
+  asserted idempotent).
+- ⚠ `corpus/real/` is **unmoved** by it — 59 657 / 59 840 lines and 335 / 380 files outside doc
+  comments, identical on master and on the fix (`Testing fidelity`, both trees, 2026-10-08) — so the
+  "12 divergent lines over 11 raw-literal files" quoted above were not this entry's by the time it was
+  paid. `pathological/` is unmoved too (589 / 629), for the reason given above.
+- ⚠ superseded status: **open**, measured
 - ⚠ **triage 2026-08-30: `debt`, size M.** Not defensible to a user: "Skala aligns your raw string
   literals, except the interpolated ones" is a bug report, not a policy, and the entry's own
   justification is refuted above. It costs 12 lines over 11 files of `corpus/real/` and owns the
@@ -839,8 +882,29 @@ existing and makes lifting it out the exercise that proves the `ISkalaLanguage` 
 — in `Formatting.CSharp`, as four files that share no state with the document builder — but
 `ISkalaLanguage` still does not, and doc 14 still has no correction note.
 
+### ⚠ #449 (2026-10-08): the profile element is in, the fixtures are regenerated, and the basis is every line
+
+`OracleProfile.FormatOnly` runs `CSharpFormatDocComments`, `constructs/`, `real/` and `pathological/`
+were regenerated with it (192 fixtures changed in body, every one of them only on `///` lines or on a
+rebuilt `/** */` block — checked), and their ratchet is over every line again. Measured on the
+regenerated fixtures, no symbols: `real/` **98.99 % / 65.53 %** every line against **99.61 % / 87.63 %**
+outside doc comments, unchanged from before; `constructs/` 99.75 % / 98.63 %; `pathological/`
+93.66 % / 83.10 %. ⚠ So the old basis was hiding 84 files of `real/` whose doc comments Skala writes
+differently from the oracle — the work queue, ranked by `Testing fidelity`: a break after an opened
+inline element's end tag (`</b>` / prose on the next line, 219 hunks, SK-DIV-0382's family), an element
+ending in `<code>…</code>` the oracle opens, comments Skala leaves as written that the oracle rebuilds,
+and the start-tag carry not applying when the content holds an author's break.
+
+⚠ **An oracle environment difference, found by this regeneration.** `xmldoc/marker/skala_space_after_triple_slash.cs`
+— SK-DIV-0132's shapes — comes back from this machine's `jb` (installed 2026-10-08) with its markerless
+comments rebuilt, where the doc-comment fixture generated 2026-10-07 keeps them; asked alone, the same.
+The doc-comment fixture was kept as the measurement of record and the format-only one carries today's
+answer, so the two now disagree about one profile. Whoever regenerates next should re-ask that file
+and settle which machine was right.
+
 - options: `skala_space_after_triple_slash`, `skala_xmldoc_wrap_lines`, `skala_xmldoc_max_line_length`, `skala_xmldoc_linebreak_before_elements`, `trim_trailing_whitespace`
-- ⚠ status: **open, and no longer deliberate.** The sub-formatter is the default and Skala follows
+- ⚠ status since #449: the harness debt is paid; the doc-comment divergences it exposes are open work.
+- ⚠ superseded status: **open, and no longer deliberate.** The sub-formatter is the default and Skala follows
   Rider. Seventeen keys honoured and asserted observable, ten refused with a reason, none Tier A —
   and, unlike before, all of them *able* to become Tier A. What is left is one element in
   `OracleProfile.FormatOnly` and a fixture regeneration; the `outside doc comments` fidelity basis
@@ -1578,6 +1642,17 @@ what is there now.
   `Conformance.Tests/XmlDocOracleTests` and by `XmlDocColumnTests`, which carries the probe
   arithmetic so the model cannot drift back without a diff.
 
+### ⚠ Two edges of rules 2 and 3, measured for #543 and #544 (2026-10-08)
+
+- **Rule 3's end tag is excluded only after a word (#543).** When the content ends with an element —
+  `… is <code>null</code></exception>`, `<c>`, `<b>`, `<see/>` — the end tag is counted: probed a column
+  at a time, such an `<exception>` stays flat at 119 columns *with* its end tag and opens at 120, where
+  the same element ending in a word stays flat at 119 columns *without* it. `XmlDocRenderer.FitsOpen`.
+- **Rule 2's carry is dropped when the content holds a break the author wrote (#544).** A `<remarks>`
+  written `… but should end up public` / `in future.` is filled from the plain indent (`… should end up`
+  / `public` / `in future.`); the same prose on one line is filled from the start tag's column (`… should
+  end` / `up public …`). The same in a `<param>`. `XmlDocRenderer.Open`.
+
 ## SK-DIV-0020 — the oracle opens an element that holds text *and* children; Skala opens one that holds only children
 
 `skala_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements = true` puts an element's
@@ -1624,11 +1699,37 @@ fixed: Skala breaks after `<remarks>` and the oracle does not. It has no key of 
 fixture reaches it — it is the same "content never left the start tag's line" mechanism as
 SK-DIV-0019's rule 2, applied to a break the width did not force.
 
+### ⚠ #451 (2026-10-08): the `<para>` shape is the oracle's first pass, and Skala already writes its fixed point
+
+Measured under `OracleProfile.DocComments` on 15 shapes, and the rule the oracle follows on a *first*
+pass is real and narrow: the lead stays on the start tag's line exactly when the element was written on
+one line, opens with a word, holds no structural child (a `<list>`), and every line it would then take
+fits — the child taking a line of its own being the only reason it opens. Measured with `<remarks>`,
+`<summary>`, `<param>` and an unknown `<foo>` as the parent; `<para>`, `<para />` and `<returns>` as the
+child; prose and a second `<para>` after it; a 101-column lead (kept) and 150-column lead or tail
+(hoisted); a `<b>` first (hoisted); and the same comment with its end tag on a line of its own
+(hoisted).
+
+⚠ **But the oracle does not keep its own answer.** Given its first-pass output back —
+`/// <remarks>Some leading prose.` / `///     <para>Short.</para>` / `/// </remarks>` — it hoists the lead
+onto a line of its own, on every one of the eight shapes it had kept, because the comment is now written
+across lines (the last control above). Its second pass is Skala's one-pass answer, byte for byte, and a
+third changes nothing. #372's rule for choosing between passes is the fixed point, so this is **refuted
+as a defect**: implementing the first-pass rule was tried and broke `format(format(x)) = format(x)` on the
+first test that asked.
+
+- pinned by `constructs/trivia/doc-comment-lead-prose-given-back-is-hoisted.cs` — the oracle's eight
+  first-pass answers as input, its fixed point as the doc-comment fixture, and Skala agreeing — and by
+  the existing `AnElementHoldingAMultilineChild_HoistsItsProseToo`.
+- ⚠ found beside it, not fixed: `<remarks>Lead. <para>Short.</para>Glued.</remarks>` — a word glued to
+  the end tag of a block child. The oracle breaks it onto its own line (`Glued.` under `<para>`); Skala
+  refuses the comment as `Glue` and leaves it as written.
+
 - options: `skala_xmldoc_linebreak_before_singleline_elements`
 - ⚠ status: **closed on the fixture**, pinned by
   `constructs/xmldoc/skala_xmldoc_linebreak_before_singleline_elements.xmldoc.expected.cs` and by
   `XmlDocColumnTests.AnElementHoldingAMultilineChild_HoistsItsProseToo`; the `<para>` shape above is
-  open and unpinned.
+  the oracle's first pass and Skala writes its fixed point (#451, the section above).
 
 ## SK-DIV-0021 — ~~the oracle leaves an unlisted element's content on one line however long~~ — **REFUTED, and it was SK-DIV-0019**
 
@@ -2246,6 +2347,47 @@ name-width sweep at a fixed `(` column.
   `constructs/wrapping/lambda-parameters-before-the-arrow.cs`; the call body **blocked**, measured as
   above. The rule that would arm them is known to one constant and a three-column wander,
   both in [sk-div-preference-sweep.md](sk-div-preference-sweep.md).
+⚠ **Round 4 of #453: the type × name sweep, run. The narrow-name half is wired and the rest stays blocked.**
+
+Measured with `Testing ask` on `Func<T…> name = () => Callee(x, y);`, 10 828 cells over these dimensions:
+- type widths 2 to 58;
+- name widths 1 to 49, four apart;
+- line ends 121 to 150;
+- three placements of the body's `(`: right after a four-column callee (moving with the head), and fixed
+  at columns 80 and 100.
+
+What it settles:
+
+- **A name of nine columns or fewer never breaks the `=`**, in any cell of any grid. Skala broke it on most
+  of them. Wired as `BreakPlan.KeepsTheEqualsBeforeALambdaCall`, a single-declarator local with a call for
+  its lambda's body. The `=` now stays and the arrow or the arguments break by Skala's own rules. In the
+  three grids, Skala's narrow-name errors:
+
+  | `(` placement | errors before | errors after |
+  |---|---|---|
+  | after a four-column callee | 924 | 6 |
+  | column 80 | 856 | 298 |
+  | column 100 | at least 1 326 | 1 263 |
+
+  Pinned by `constructs/breaks/equals-kept-before-a-lambda-call.cs`.
+- **The `=` breaks only past two gates.** The first is a name of about 13 (a name of 9 never does, 13
+  does). The second is a type gate that moves with the `(`: types up to 22 at a `(` of 100 and up to 18
+  at 80 break it, and no wider type does, at any name up to 49. With the `(` right after a short callee,
+  the name gate moves to 29–33.
+- **How far the `=` reaches** (round 3's `g`) grows with the head but is not a function of it. At a head of
+  56 it is 20 columns with a type of 2 and 23 with a type of 22. At a `(` of 80 it is capped, and the cap
+  grows a column per four of type (12 to 16).
+- **For narrow names, the arrow against the arguments** is round 3's floor `F`. At a `(` of 80 the arrow
+  breaks while the arguments are narrower than 54, 56, 57, 59, 61 and 62 for heads of 20 to 40, four
+  apart. At a head of 44 it never breaks. At a `(` of 100 the arrow holds to a head of 76 and drops at 80.
+  The drop's position does not fit `max(65, p − 20)` at both columns: 44 against 60 at a `(` of 80.
+
+**What still blocks it:** the `=`'s gates and reach are functions of the name, the type and the `(`
+column separately, measured here at three `(` placements only. Its floor `F` and the drop are known only
+at the two fixed columns. A table that reproduces every measured cell needs the `(` swept one column at a
+time across the type × name plane, and that has not been done. Skala's remaining errors in these grids
+are the arrow-versus-arguments cells (`A` where Skala chops) and the `=` past the gates.
+
 ## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
 
 ReSharper ships nine keys that **suppress a class of edit** rather than choosing between two
@@ -3041,7 +3183,7 @@ before it. Two clauses of the model this entry carried are **refuted by that run
   it was three cases in one method plus the value on `LayoutWriter`; the *fixture* was and remains the
   larger half.
 
-## SK-DIV-0033 — the oracle realigns a block comment's asterisks; Skala left the comment as written
+## SK-DIV-0033 — the oracle realigns a block comment's asterisks; Skala left the comment as written — **RESOLVED (#459)**
 
 ⚠ **Fixed at the export's value 2026-08-30, and narrowed. See the two sections at the end of this
 entry** — one corrects the shape of comment the key governs, the other records what is left. The text
@@ -3135,8 +3277,37 @@ at 26, not at the member's 5. Measured.
   "returned exactly as written", as the table above says: the oracle empties the whitespace-only line
   (SK-DIV-0193). The asterisks do not move, so the disqualification stands.
 
+### ✅ Fact 1 closed for #459 (2026-10-08)
+
+Re-asked under `SkalaFormatOnly` at `false` on one probe holding every row the issue and the #428 note
+name, plus three it did not:
+
+| shape at `false` | the oracle | Skala before | Skala now |
+|---|---|---|---|
+| starred `/*` starting its line, written at 8 in a type body (indent 4) | frozen whole, opener at 8 | opener 4, body frozen | frozen whole |
+| the same in a method body, written at 12 (indent 8) | frozen whole | opener 8 | frozen whole |
+| starred `/**` starting its line at 8 | frozen whole | opener 4 | frozen whole |
+| starred `/*` at column 0 | stays at 0 | stays (stick comment) | stays |
+| unstarred `/* … */` at 8 | moved to 4 with its line | the same | the same |
+| starred `/*` trailing a statement whose line moves −4 | opener rides the code, body frozen | the same | the same |
+| starred `/**` trailing a statement whose line moves −4 | ⚠ body shifted −4 with its line, and **trimmed** | body frozen | shifted and trimmed |
+| starred `/**` trailing a statement whose line stays | ⚠ byte for byte, trailing spaces kept | the same | the same |
+
+So the frozen class is "a starred comment that *starts its line*", and a trailing starred `/**` is the
+shifted class with one twist the #428 note did not have: its lines lose their trailing whitespace only
+when its line moved. `CSharpDocumentBuilder.EmitBlockComment` writes the first through
+`VerbatimFlags.OwnIndent` — the source's own indentation, written as the line's indent rather than as
+part of the piece, so that a comment already where it was written produces no edit — and the second
+through `ShiftWithLine | TrimIfShifted`. `AlignMultilineCommentTests` carries the probe byte for byte;
+the test that asserted the gap is deleted, as it said it would have to be.
+
 - options: `skala_align_multiline_comments`
-- ⚠ status: **narrowed**. Conformant at the export's `true`, pinned by
+- ⚠ status: **resolved for #459** at both values on every measured shape. Still registered
+  `OfUnoracled` and Tier D: promoting it needs an `oracle` glob and a key-flip sweep run, neither of
+  which this change makes — the glob may only land with the sweep's verdict
+  (`OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt`). Not measured: tab
+  indentation at `false`.
+- ⚠ superseded status (kept for the record): **narrowed**. Conformant at the export's `true`, pinned by
   `Formatting/Rikarin.Skala.Formatting.CSharp.Tests/AlignMultilineCommentTests.cs` against the
   oracle's own bytes plus a fixed-point round trip and four disqualified shapes. Open at `false`, for
   fact 1 above. ⚠ `verify skala_align_multiline_comments` still answers "not swept" — the
@@ -3798,7 +3969,7 @@ change of its own: the arrow's group now sees a body whose chain is certain to b
 form, so `if_owner_is_single_line` reads the declaration as multi-line. The fixture's header says so
 and its expected output was regenerated.
 
-## SK-DIV-0079 — `skala_xmldoc_wrap_tags_and_pi` wraps a tag's *attributes*, and Skala cannot re-read a header it broke
+## SK-DIV-0079 — `skala_xmldoc_wrap_tags_and_pi` wraps a tag's *attributes*, and Skala cannot re-read a header it broke — **RESOLVED at the export's values (#448)**
 
 ⚠ **The sweep called this one `SPURIOUS` and the verdict was about the fixture, not the key.**
 `constructs/xmldoc/skala_xmldoc_wrap_tags_and_pi.cs` is prose carrying a `<see cref="…" />` that
@@ -4011,6 +4182,40 @@ renderer. What the renderer would actually unlock is `skala_xmldoc_attribute_ind
   after which the emitter side is the easy half and all five keys become answerable at once. ⚠ Needs
   the oracle for the four dependent keys' behaviour, which has never been measured because nothing
   could ask.
+
+### ✅ Resolved at the export's values for #448 (2026-10-08)
+
+The model records an author's break before an attribute (`XmlDocNameValue.BreakBefore`) instead of
+refusing the comment, and the renderer writes a header across lines: the gap before each attribute is a
+marker that `XmlDocRenderer.Flush` resolves where it knows the column. Measured under
+`SkalaDocComments` on 30-odd headers, the rule is:
+
+- **greedy fill**: an attribute moves to a continuation line when its own end — its closing quote —
+  would pass the margin. ⚠ The `>` or `/>` after the last one is **not counted**: a header whose `>` is
+  the 121st column stays whole, one whose quote is stays not. The first attribute moves too when it does
+  not fit beside the tag name (`<param` / `name="…130 columns…">`).
+- **continuation at the tag's real column plus one indent** — real, not the carried column of
+  SK-DIV-0019's rule 2: a `<child …/>` on the first content line of an element whose own header wrapped
+  continues at 8, not 26.
+- **a tag that does not fit after prose moves to a line of its own first**, and is wrapped there; what
+  follows a wrapped tag starts a new line.
+- **an author's break between attributes is kept and re-indented** — before the first attribute too —
+  even in a header that fits; ⚠ a break before `/>` is **joined**. A header the author broke makes its
+  element multi-line (`Body.` goes below though it would fit).
+
+⚠ **And a rule this entry's probes found that is not about headers at all.** An element whose content
+is **one unbreakable word** is never opened, however far past the margin: a `<summary>` holding one
+115-column word stays on one line, and so does a 119-column header followed by `Body.` — while one
+more word opens either. It is SK-DIV-0019's rule 2 seen from the other side: the first content line is
+filled from the start tag's closing column, so opening cannot move the first word left. Skala used to
+open both. `XmlDocRenderer.FitsOpen` (`OneWord`), unless the header itself wraps.
+
+- pinned by `constructs/trivia/doc-comment-tag-header-wrap.cs` (18 shapes, the oracle's doc-comment
+  fixture beside it, Skala agreeing) and `XmlDocHeaderWrapIssue448Tests`.
+- ⚠ **not honoured: every non-export value of the header keys.** `skala_xmldoc_wrap_tags_and_pi`,
+  `skala_xmldoc_attribute_style` and `skala_xmldoc_attribute_indent` stay in `XmlDocIds.Refused` and
+  Skala writes the export's answer whatever they say — SK-DIV-0381.
+- ⚠ status: **resolved at the export's values**.
 
 ## SK-DIV-0080 — an aligned list pattern's continuation lines are not filled greedily, and no one rule fills both it and a collection expression
 
@@ -6813,6 +7018,17 @@ to 157 — Skala moves the type below for all of them. Nor for a `const` local, 
 `const` line from 121 to 123, nor for a property (`public static` / type / `Property { get; set; }` in the
 oracle), which has no type/name point here. Pinned by `ModifierTypeGapIssue540Tests`.
 
+**The parameter's gap is resolved (#545).** A parameter whose line passes the margin once its list is
+chopped puts its name one level below its type: `int` / `            aaa…` at a parameter on column 8.
+Measured with `jb cleanupcode` 2025.2.6 one column at a time: flat to a 120-column parameter line, broken
+from 121, the same for `Dictionary<string, List<string>>`, a second parameter, `ref`, `params`, a
+record's primary constructor and a lambda's parameter list. A parameter with a default value breaks at
+its `=` instead (`int bbb… =` / `    1`), which is that gap's own rule. `BreakPlan.PlanParameterTypeNameGap`
+opens the group at the name and spends a level under the list's delimiters. ⚠ **Not for a parameter
+with attributes**: there the attribute run's own break (#475, #476, #537) is the one measured, and a name
+past the margin behind attributes was not. Nor when a comment sits in the type or before the name.
+Pinned by `constructs/wrapping/parameter-type-and-name.cs` and `ParameterTypeNameIssue545Tests`.
+
 Still divergent, measured: the exactly-121 quirk (`T…T v9 = [1, 2, 3];` at 121 breaks the type/name gap
 in the oracle; Skala breaks the `=`, as the oracle does from 122); a type with a block comment inside it,
 which the oracle breaks past the comment (#409) and Skala leaves to that rule by planning no gap; a
@@ -6822,7 +7038,7 @@ type / name, where the oracle also breaks between the modifiers and a type too l
 Skala fills the type there — resolved for fields by #540, above.
 
 - options: none — no key governs the type/name gap.
-- ⚠ status: **resolved** for fields and locals (#474), pinned by `TypeNameGapIssue474Tests`; **open** for
+- ⚠ status: **resolved** for fields and locals (#474), pinned by `TypeNameGapIssue474Tests`, and for parameters (#545); **open** for
   the rows above.
 
 ## SK-DIV-0128 — a chain was counted in dots, and a call at its head has none
@@ -7780,7 +7996,7 @@ and in a gap (`doc-comment-line`, `doc-comment-inline`).
 - options: none.
 - ⚠ status: **resolved**; the last three rows belong to #410, #428 and #429.
 
-## SK-DIV-0181 — `SkalaDocComments` rebuilds a one-line `/** … */` above a member; Skala keeps it
+## SK-DIV-0181 — `SkalaDocComments` rebuilds a one-line `/** … */` above a member; Skala keeps it — **RESOLVED (#489)**
 
 Under `SkalaDocComments` (`CSharpFormatDocComments` on) the oracle rewrites
 `/** <summary>Doc.</summary> */` above a member as three lines — `/**`, ` * <summary>Doc.</summary>`,
@@ -7791,8 +8007,140 @@ profiles differ (SK-DIV-0006), so this is a real divergence and not a profile ar
 construct under `xmldoc/` asks about `/** */` (`Corpus.DocCommentBearing` is chosen by `///` lines), so
 it has no fixture yet, and the rebuild's rules for a starred multi-line block were not probed.
 
+### ✅ Resolved for #489 (2026-10-08) — the one-line class, measured to its edges
+
+Probed under `SkalaDocComments` on 40-odd shapes. The oracle rebuilds a `/** … */` as `/**` / one
+` * ` line per rendered line / ` */`, asterisks on the opener's column plus one, exactly when it:
+
+| condition | rebuilt | left as written |
+|---|---|---|
+| is on one line with whitespace before `*/` | `/** single */`, `/**single */`, `/** x   */` | ⚠ `/** single*/`, `/**single*/`, `/**<summary>X</summary>*/` |
+| starts its line | `/** … */ public int Q;` (Q moves below it) | `[Obsolete] /** … */` |
+| is leading trivia of a type, member, namespace or enum member | above a type at column 0, a nested type, a field, a method, above an `[Obsolete]` list | above a statement, a local function, a `using` |
+| is the only doc comment there | | ⚠ two in a row: the oracle **merges** them into one block |
+| has nothing but code after it on its line | | ⚠ `/** … */ // note`: the oracle moves the `//` below the block |
+
+Skala rebuilds the first column and leaves the second; the last two rows are left as written because
+Skala would otherwise do half of what the oracle does. ⚠ The body is laid out by **the same renderer at
+the same budget** as a `///` comment — probed with single-character words in a `<summary>` at code
+indents 0, 4, 8 and 12, a ` * ` line wraps exactly where a `/// ` line does, and the first content line
+of a `<summary>` carries the start tag's width as SK-DIV-0019 says. That also explains the issue's own
+long sample, which looked like a narrower margin and is the carry. ⚠ The oracle writes **CRLF** inside the
+block it rebuilds in an LF file; Skala writes the file's own ending and the harness compares modulo line
+endings.
+
+`XmlDocFormatter.BlockReplacement` reads the body back as a `///` comment, renders it with the one
+renderer, and writes the block only if its signature — asterisks read as exterior trivia, as the compiler
+reads them — equals the one-liner's; `TokenEquivalence` holds `/** … */` to the same signature.
+
+- pinned by `constructs/trivia/slash-star-star-one-line-above-a-member.cs` (it carries a `///` line so
+  `Corpus.DocCommentBearing` asks the doc-comment profile about it) and `SlashStarStarOneLineIssue489Tests`.
+  The #415 and #429 tests that held `SkalaFormatOnly`'s answer for these shapes now hold
+  `SkalaDocComments`', which is Skala's default.
+- ⚠ the multi-line half is **SK-DIV-0380**.
 - options: none.
-- ⚠ status: **open**.
+- ⚠ status: **resolved** for the one-line class.
+
+## SK-DIV-0380 — the oracle rebuilds some multi-line `/** … */` blocks under `SkalaDocComments`; Skala leaves every multi-line one
+
+Found while measuring #489, under `SkalaDocComments`; Skala leaves each of these as written:
+
+| input | the oracle |
+|---|---|
+| `/** a` / ` * b` / ` */` | `/**` / ` * a` / ` * b` / ` */` |
+| `/**` / ` * text */` | `/**` / ` * text` / ` */` |
+| `/** <summary>Doc.</summary>` / `    <remarks>Unstarred second.</remarks> */` | starred, one element per line |
+| `/** <summary>Doc` / ` * continues.</summary> */` | starred, `<summary>` opened, `Doc` / `continues.` kept on two lines |
+| `/**` / ` *` / ` * <summary>blank first</summary>` / ` */` | the blank ` *` line dropped |
+| an already-starred block whose `<summary>` passes the margin | re-wrapped, the `<summary>` opened |
+| `/** <summary>A</summary> */` / `/** <summary>B</summary> */` | merged into one starred block |
+
+And these the oracle also leaves: `/** text` / ` */`; `/**` / ` *no space after star` / ` */`; a block whose
+asterisks are misaligned; `/**` / unstarred `<summary>…</summary>` / `*/`; an already-starred block that
+fits. No rule separating the two lists was established — `/** text` / ` */` is left while `/** a` / ` * b` /
+` */` is rebuilt — so nothing is implemented. Leaving a block as written is the safe half: it never
+changes a comment the oracle would have left.
+
+- options: none.
+- ⚠ status: **open**, partly measured (2026-10-08). Reproduction: the shapes above, one per member, asked
+  with `Testing ask <dir> --profile=SkalaDocComments`.
+
+## SK-DIV-0381 — the tag-header keys are read at their export values only — **RESOLVED**
+
+Since #448 Skala wraps a tag header at the margin and keeps an author's break inside one — the export's
+`skala_xmldoc_wrap_tags_and_pi = true`, `skala_xmldoc_attribute_style = do_not_touch` and
+`skala_xmldoc_attribute_indent = single_indent` (SK-DIV-0079). It writes that answer at every value of
+the three, which stay in `XmlDocIds.Refused`. Measured, the oracle separates them: at
+`wrap_tags_and_pi = false` it introduces no break (it still keeps an author's), and the other values of
+the other two are tabled in SK-DIV-0079.
+
+⚠ Honouring `false` is one gate in `XmlDocRenderer.Tag` (the soft gap becomes a space). It is held back
+because registering the key moves it from `XmlDocIds.Refused` into the implemented set, where
+`XmlDocKeyCoverageTests` and `OptionCoverageTests` require Tier A on a committed sweep row, and the key's
+committed fixture never wraps a header, so a sweep over it could not separate the values (the
+`SPURIOUS` row SK-DIV-0079 opens with). Paying it: add a wrapping header to
+`constructs/xmldoc/skala_xmldoc_wrap_tags_and_pi.cs`, regenerate, register the key, sweep it.
+
+### ✅ Resolved (2026-10-08): every value of the three, measured and honoured
+
+Asked under `SkalaDocComments` one key at a time over nine headers — wide, short, author-broken, one
+attribute, two, long names:
+
+| key = value | the oracle |
+|---|---|
+| `wrap_tags_and_pi = false` | no break introduced; an author's break kept |
+| `attribute_indent = double_indent` | continuation two indents past the tag |
+| `attribute_indent = align_by_first_attribute` | under the first attribute — ⚠ until that column reaches two thirds of `xmldoc_max_line_length` (79 aligns and 80 does not at 120; 59 and 60 at 90), then two indents: the export's `allow_far_alignment = false` |
+| `attribute_style = on_single_line` | an author's break joined; still wrapped at the margin |
+| `attribute_style = on_different_lines` | name alone, every attribute on its own line — a lone `<param name="a">` included, so its element opens |
+| `attribute_style = first_attribute_on_single_line` | first beside the name, every other on its own line; a one-attribute header untouched |
+
+`XmlDocRenderer.Tag` picks each attribute's gap from the style and `Header` the continuation column from
+the indent; all three keys are registered, `Honoured`, Tier A on key-named fixtures under
+`constructs/xmldoc/` (the `wrap_tags_and_pi` one gained a wide header and an author-broken one, so the
+key-flip sweep can separate its values at last). Pinned by `XmlDocHeaderKeysSkDiv0381Tests`; each branch
+was sabotaged alone. ⚠ `allow_far_alignment = true` is not read — the key stays inert-marked — so at
+`true` Skala still falls back where the oracle aligns past the margin.
+
+- options: `skala_xmldoc_wrap_tags_and_pi`, `skala_xmldoc_attribute_style`, `skala_xmldoc_attribute_indent`
+- ⚠ status: **resolved**; the next key-flip sweep should confirm the three Tier A claims.
+
+## SK-DIV-0382 — the oracle breaks a word glued to an element's end; Skala refuses the comment — **RESOLVED (#541, #542)**
+
+`<remarks>Lead. <para>Short.</para>Glued.</remarks>` and a self-closing `<child …/>Body.` written with no
+space after the tag: under `SkalaDocComments` the oracle puts `Glued.` / `Body.` on a line of its own
+below the element. Skala treats the word as welded to the tag — a break there inserts whitespace the author
+did not write, which the round-trip signature compares — and refuses the comment as `Glue` (or, for the
+self-closing case, keeps them on one line). Found beside #451 and #448; not fixed: whether the oracle's
+break is safe depends on whether whitespace beside a block element is ever significant to a doc renderer,
+which is a decision, not a measurement.
+
+### ✅ Resolved with #541 and #542 (2026-10-08)
+
+The rule, measured on twelve shapes: **after an element that is opened across lines, or that owns its line
+(written directly under the marker, or named by `linebreak_before_elements`), what follows starts a line of
+its own — spaced or glued.** `</b>` / `Ten`, `</i>` / `. A plan says`, `</i>` / `, which`, `</para>` /
+`Glued.`, `<seealso … />` / `.`, `</returns>` / `.`, `</list>` / `trailing.`. A glued word after an inline
+element that ends no line stays glued (`<see … />, then`, `<c>x</c>s`), and so does one after a
+self-closing child that does not own its line (`<child … />Body.` inside a one-line element).
+
+`XmlDocRenderer.Element` breaks after every opened element (it used to break after line-owning ones
+only, and left `</i>.` welded on the argument that the full stop would move — it does). The decision the
+entry left open is taken the oracle's way, and narrowly: the round-trip signature now writes the separator
+between markup and the word after it as one of three — glued, space, line break — and
+`XmlDocSignature.Matches` accepts exactly one difference, a line break in the rewrite where the original
+had a space or glue. A join (a line break in the original, glue in the rewrite) and every other
+separator are compared as before; `TokenEquivalence` uses the same comparison for doc comments.
+
+⚠ Worth 0.6 points of every-line fidelity on `real/` with #543 and #544 beside it — most of the
+"break after an opened inline element" class #449's regeneration exposed (219 hunks) was this.
+
+- pinned by `constructs/trivia/doc-comment-what-follows-an-element.cs` and
+  `XmlDocElementEndIssues541To544Tests` (including the signature's one-directional allowance); each
+  change was sabotaged alone and turned its rows red.
+- options: none.
+- ⚠ status: **resolved**. Not measured: hug mode
+  (`linebreaks_inside_tags_for_multiline_elements = false`), which keeps the old behaviour.
 
 ## SK-DIV-0177 — a named argument's colon is a break point by the arrow's rule
 
@@ -9043,6 +9391,45 @@ depends on the receiver, the line end, the type's width and the keyword (`is` ha
 receiver of 6, `as string` from 14). Only one type width per keyword was measured, so a table over it
 would be keyed on a dimension the grid has not varied.
 
+⚠ **Round 4: the type-width dimension, swept. The decision is now known except for two ties, and it is
+still not wired.**
+
+Measured on `return r….P… as T…;` and `… is T…;` at indent 12, 3 220 cells:
+- type widths 1, 3, 6, 10, 15, 20 and 30;
+- receivers of 1 to 30 columns;
+- line ends 118 to 140, one column at a time.
+
+`is` and `as` decide identically at equal widths. Five outcomes:
+
+| outcome | layout |
+|---|---|
+| `K` | `… as` / `T;` |
+| `W` | `…` / `as T;` |
+| `D` | the dot one level in, `return r` / `.P… as T;` |
+| `x` | `return r` / `.P…` two levels in / `as` / `T;`, each on its own line |
+| fits | the line fits whole |
+
+Three of them are settled exactly by which layouts fit:
+
+- **Feasibility decides most cells.** If none of `K`, `W` or `D` fits, it is `x` (458 of 458 cells). If
+  only one fits, that one is taken (934 of 934 cells).
+- **One column over the margin** (line end 121) is `D`, except `K` for a receiver of at most
+  `(type − 10) / 5` columns. That holds on every row.
+- **When `K` and `D` both fit** (1 088 cells past column 121), `K` holds up to a line end that falls as the
+  receiver widens and rises as the type widens. For example, it holds to a `K` line of 117 at receiver
+  14 and type 6, to 114 at receiver 20 and type 6, and to 117 at receiver 20 and type 10. The best linear
+  rule in end, receiver, type and the two layouts' line widths misses 22 cells.
+- **When `W` and `D` both fit** (180 cells), the best linear rule misses 6.
+
+**What still blocks it** comes in two parts:
+- *The ties.* The two tie boundaries are not linear at this grid's spacing. A table needs the type and
+  the receiver swept one column at a time where the ties sit: types 3 to 12, receivers 6 to 32.
+- *A formatter construct.* `D` and `x` need a dot point inside a type-test operand, and in `x` its
+  level depends on whether the keyword's own break is taken (two levels when it is). `PlansTheFill`
+  excludes a type-test operand for exactly that reason, and nothing in `BreakPlan` can express a level
+  that is conditional on a sibling group. Skala writes `K` or `W` in all 1 172 `D` and `x` cells, and is
+  right on every `K`, `W` and fits cell.
+
 - ⚠ status: **resolved** for the band and for a plain member access without a type test; **open, blocked**
   for `is`/`as` past the band, measured as above. Pinned by `TypeTestKeywordIssue444Tests` and
   `constructs/breaks/member-access-last-dot.cs`.
@@ -10029,3 +10416,103 @@ a stepped chain now nests like a lone conditional. ⚠ The second half was **not
 call cut out beside flat chains, a colon-only chain and an expression-bodied chain comes back stepped and
 indented from the oracle, exactly as it does alone — nothing found that `autodetect` reads beyond the chain.
 - ⚠ status: **resolved** (#563) for the argument level, pinned by `constructs/wrapping/stepped-chain-as-an-argument.cs`; the in-file answer is unexplained and not reproduced.
+
+## SK-DIV-0371 — a lambda argument's arrow against the member-access fill in its body
+
+⚠ **#557, a regression from merging #482 with #453.** The round-2 merge replaced `PlanLastDot`, which
+covered only a `return`'s, a local's or an assignment's value, with group F's `PlanPropertyFill`, which is
+planned in every position `PlansTheFill` does not exclude. A lambda's expression body is not one of the
+exclusions. The arrow group's facts were `BreaksOnlyIfHeadOverflows`, and with the fill's dots as points
+the head `x.Alpha` always fits, so the arrow never broke. `C2((…) => firstParameterName.Length)` became
+`… => firstParameterName` / `.Length` at two levels. Bisected:
+- `bbf5dade`, the round-2 branch tip, passes `constructs/wrapping/lambda-parameters-before-the-arrow.cs`;
+- `397a9890`, the merge, fails it, and so does every master after it.
+
+Measured with `Testing ask` on `U(params => x.A.B…Z)` over these dimensions, 1 857 cells in all:
+- parameter lists `x`, `(x)`, `(Aaaa x)`, `(A x, B y)` and `(T… x)` of 5 to 74 columns;
+- lambdas starting at columns 10 to 55;
+- line ends 112 to 175, one column at a time near the boundary;
+- indents 8 and 12.
+
+Two rules come out of it:
+
+- **Which break.** The arrow breaks exactly when `9·below + 2·params − 2·start ≤ 969`. Otherwise the body
+  fills on the arrow's line. Here `below` is the column the body would end at on the continuation line,
+  `params` is the parameter text's width, and `start` is the lambda's column. A lambda without
+  parentheses also breaks its arrow whenever it starts at column 21 or later, however wide the body;
+  that was measured to a 175-column line. This is "the body fits below", which group F's #529 uses for a
+  call chain, with roughly ten columns of margin.
+- **Which level.** The fill is one level past the line it starts on. While the arrow stays,
+  `Use(x => x.Alpha…Papa` / `.Quebec` is one level in, where Skala wrote two. Once the arrow breaks,
+  `Use(x =>` / `x.Alpha…` / `.Quebec` is one level past the body. Among other arguments the list chops,
+  and the fill keeps its own level.
+
+Wired as `GroupFacts.LambdaParameters` / `LambdaHead` / `LambdaIsSimple`, decided in `Fitter.Decide`, and
+planned for a sole lambda argument by `BreakPlan.IsAFilledSoleLambda`. The fill's level is a from-line
+level in `PlanPropertyFill`. Any other lambda over a member-access body breaks its arrow when the body
+fits below (`ArrowMovesACallChainDown`).
+
+⚠ Not exact. 19 of the 1 857 grid cells differ, and so do 6 of 350 statements in the exploratory probes.
+All of them are parenthesised lambdas one column from the boundary, most with parameter lists of 60
+columns or more. At the same `below`, a body of `Alpha.Bravo…` names and a body of `Abcde` segments are
+decided differently, so the boundary also depends on where the body's dots fall. No linear rule over the
+body's end, the fill's first-line end, its remainder, the parameter width, the lambda's column or the
+line's end separates every cell; the best has 17 errors.
+
+- Not measured: an `=`'s lambda, a lambda with modifiers (left on the fits-below rule), and a call chain
+  in the same position. That last one breaks its arrow for a lambda from column 21 too, where Skala's
+  #529 rule keeps it and chops the inner call (`Use(x => x…Select(y =>` / `y` / `)`).
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
+- ⚠ status: **fixed** within the residue above. Pinned by
+  `constructs/wrapping/lambda-parameters-before-the-arrow.cs` and
+  `constructs/wrapping/lambda-arrow-over-a-property-fill.cs`.
+
+## SK-DIV-0372 — a local's `=` before a lambda with a bare-name body, past the margin
+
+⚠ **#558, and a refutation of round 3's own claim.** Round 3 (#453) wired the `=` to yield to the arrow
+"wherever the line through `=>` fits". That was measured with the declarator named `f` while the type was
+varied, and it holds only for narrow names. With `Func<A, B>` and names of 13 or more columns, the oracle
+breaks the `=` for a value narrower than a floor. Short parameter runs (`(A a1, A a2, …)`) and one long
+parameter type decide alike.
+
+Measured with `Testing ask` on `Func<T…> name = (…) => body;` over these dimensions, 12 805 cells in all:
+- type widths 2 to 59;
+- name widths 1 to 51, one column at a time from 8 to 18;
+- values (from `(` through `;`) of 12 to 135 columns;
+- bodies of 4 to 40 columns;
+- the `=>` ending 105 to 141.
+
+Four rules come out of it:
+
+- **While the line through `=>` fits**, the arrow breaks when the name is at most
+  `10 + ⌊(type + 4) / 12⌋` wide, the type measured whole, whatever the value. Past that gate the arrow
+  breaks only for a value at least `EqualsFloor.LambdaValue(head)` wide: 88 up to a head of 44, then
+  falling about a column per two and a half of head. A narrower value moves below the `=` whole.
+- **Once the `=>` is past the margin**, the `=` breaks while the `)` is still on the line (the `=>` ending
+  by column 123).
+- **Past that**, the `=` breaks only for a name wider than `⌊(type − 6) / 5⌋ + 1` and a value no wider than
+  the floor plus `⌊(5·body − 41) / 3⌋`. Otherwise the parameter list chops, `name = (` / parameters /
+  `) => body;`.
+- **The name and the type act separately.** The same head made of a wider name breaks the `=`, and made of
+  a wider type keeps the arrow. This is the same finding as #453's call body, so no table keyed on the
+  head alone can reproduce the grid.
+
+Wired as `LambdaLocal`, decided in the plan from the declaration's syntax, with
+`EqualsFloor.LambdaValue` and `EqualsFloor.BreaksBeforeAnOverflowingLambda` read in `Fitter.Decide`.
+Only for a single-declarator local, which is where it was measured. Fields and assignments keep round 3's
+rule.
+
+⚠ Not exact. 233 of the 12 805 cells differ:
+- ⚠ Along the gate's diagonal, at types of 18 to 50, a name exactly at the gate breaks the `=` only below
+  a much lower value. Those cells fit `56.5·name − 8·type − 458`, but that line does not hold at types
+  of 54 and 58.
+- ⚠ The floor is a column off at some types.
+- ⚠ 15 cells sit on the overflowing side's one-column jitter.
+
+Not counted: a line one column over the margin (end 121). There, a body of up to five columns chops the
+parameters at heads up to 37, and the rule does not reproduce it (45 cells). Also not counted: a
+parameter wider than the line, where the oracle breaks between its type and its name.
+
+- options: `skala_wrap_before_eq = false`, the exported value.
+- ⚠ status: **fixed within the residue above**. Pinned by `constructs/breaks/equals-before-a-lambda-floor.cs`
+  and, for the narrow name, `constructs/wrapping/lambda-arrow-over-a-name.cs`.

@@ -31,7 +31,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             diverges on
 ///             the seventh
-///         </b>: <c>x.GetType()</c> throws <c>NullReferenceException</c> where
+///         </b>
+///         : <c>x.GetType()</c> throws <c>NullReferenceException</c> where
 ///         <c>x is T</c> is <c>false</c>. A rule carries one safety answer, so the pair takes the
 ///         weaker one.
 ///     </para>
@@ -50,7 +51,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             The
 ///             <c>ref struct</c> arm is kept although it is currently masked
-///         </b>: removing it alone
+///         </b>
+///         : removing it alone
 ///         turns no fixture red, because a <c>ref struct</c> cannot be boxed and so
 ///         <c>ClassifyConversion</c> already reports no conversion from any reference-typed operand.
 ///         Removing <em>both</em> turns <c>ref_struct_target</c> red, which is what established that
@@ -61,7 +63,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             This rule does <em>not</em> need the expression-tree guard the other ten pattern rules
 ///             carry, and the claim that it did is refuted (#349).
-///         </b> <c>x is T</c> with no designation is the type-test <em>operator</em> —
+///         </b>
+///         <c>x is T</c> with no designation is the type-test <em>operator</em> —
 ///         <c>ExpressionType.TypeIs</c>, which expression trees have represented since LINQ shipped —
 ///         and CS8122 is about the pattern forms this rule never emits. Eleven emitted shapes were
 ///         compiled inside an <c>Expression&lt;Func&lt;object, bool&gt;&gt;</c> and every one compiles,
@@ -73,7 +76,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///             The real defect that measurement found is bigger than an expression tree, and the
 ///             rule had it in ordinary code: a <c>typeof</c> operand is a type, and the same text
 ///             after <c>is</c> is not necessarily one.
-///         </b> The grammar after <c>is</c> prefers a <em>pattern</em>. <c>typeof((int, int)?)</c>
+///         </b>
+///         The grammar after <c>is</c> prefers a <em>pattern</em>. <c>typeof((int, int)?)</c>
 ///         emits <c>x is (int, int)?</c> and that is <b>CS1003</b> — the parser takes
 ///         <c>(int, int)</c> as a pattern and reads <c>?</c> as a conditional — a fix that does not
 ///         parse anywhere, tree or no tree. <c>typeof((int, int))</c> emits text that does parse, as

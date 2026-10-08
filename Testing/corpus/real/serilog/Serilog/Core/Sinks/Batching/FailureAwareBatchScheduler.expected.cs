@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // Copyright © Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,15 +16,15 @@
 namespace Serilog.Core.Sinks.Batching;
 
 /// <summary>
-/// Manages reconnection period and transient fault response for <see cref="BatchingSink"/>.
-/// During normal operation an object of this type will simply echo the configured batch transmission
-/// period. When availability fluctuates, the class tracks the number of failed attempts, each time
-/// increasing the interval before reconnection is attempted (up to a set maximum) and at predefined
-/// points indicating that either the current batch, or entire waiting queue, should be dropped. This
-/// Serves two purposes - first, a loaded receiver may need a temporary reduction in traffic while coming
-/// back online. Second, the sender needs to account for both bad batches (the first fault response) and
-/// also overproduction (the second, queue-dropping response). In combination these should provide a
-/// reasonable delivery effort but ultimately protect the sender from memory exhaustion.
+///     Manages reconnection period and transient fault response for <see cref="BatchingSink" />.
+///     During normal operation an object of this type will simply echo the configured batch transmission
+///     period. When availability fluctuates, the class tracks the number of failed attempts, each time
+///     increasing the interval before reconnection is attempted (up to a set maximum) and at predefined
+///     points indicating that either the current batch, or entire waiting queue, should be dropped. This
+///     Serves two purposes - first, a loaded receiver may need a temporary reduction in traffic while coming
+///     back online. Second, the sender needs to account for both bad batches (the first fault response) and
+///     also overproduction (the second, queue-dropping response). In combination these should provide a
+///     reasonable delivery effort but ultimately protect the sender from memory exhaustion.
 /// </summary>
 class FailureAwareBatchScheduler {
     static readonly TimeSpan MinimumBackoffPeriod = TimeSpan.FromSeconds(5);

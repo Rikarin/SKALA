@@ -11,7 +11,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <b>
 ///         These assertions are <c>jb cleanupcode</c> 2025.2.6's own output under
 ///         <c>OracleProfile.FormatOnly</c>
-///     </b> — the format-only profile, which carries
+///     </b>
+///     — the format-only profile, which carries
 ///     <c>CSReformatCode</c> and no arrangement task whatsoever. That is the finding: the oracle
 ///     performs <em>both</em> of this key's directions with nothing but the reformat, so it is a
 ///     formatting key, and while only Skala's arranger read it <c>skala format</c> and

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -51,7 +51,6 @@ public sealed class MaterialImporterTests {
     ///     build that succeeds and a game that throws about content it just made. This importer wrote
     ///     <c>"Material"</c>, which is <c>MaterialDescriptor</c>'s alias, while writing
     ///     <c>MaterialContent</c>'s bytes.
-    ///
     ///     Asserting the constant against the registry rather than against a literal is deliberate:
     ///     a literal here would have been copied from the same mistaken place.
     /// </remarks>

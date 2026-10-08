@@ -14,7 +14,8 @@ namespace Rikarin.Skala.Formatting.CSharp;
 ///     <em>
 ///         who said
 ///         no
-///     </em>. Three arrangement layers produce a byte-identical artefact shape — the re-bind threw, a
+///     </em>
+///     . Three arrangement layers produce a byte-identical artefact shape — the re-bind threw, a
 ///     diagnostic appeared, an identifier changed meaning — and the first two even share a diagnostic id
 ///     (<c>SK9098</c>), so the folder alone cannot tell three different bugs apart. The message already
 ///     exists; before this it simply never reached the folder.
@@ -162,7 +163,8 @@ public static class CrashArtifacts {
     ///         <em>
     ///             not the same
     ///             option
-    ///         </em>. Measured on this repository: <see cref="PhaseOneOptions" /> reads
+    ///         </em>
+    ///         . Measured on this repository: <see cref="PhaseOneOptions" /> reads
     ///         <c>skala_max_line_length</c>, which the root .editorconfig sets to 120, while
     ///         <see cref="ArrangementOptions" /> reads the inert generic <c>max_line_length</c>, which
     ///         nothing sets — so the two lines legitimately carry 120 and 1. Unprefixed the snapshot

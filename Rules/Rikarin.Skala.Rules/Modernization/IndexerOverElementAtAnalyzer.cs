@@ -23,7 +23,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             The receiver set is <c>List&lt;T&gt;</c> and <c>ImmutableList&lt;T&gt;</c>, and the
 ///             reason is the exception type.
-///         </b> <c>Enumerable.ElementAt</c> bounds-checks itself and throws
+///         </b>
+///         <c>Enumerable.ElementAt</c> bounds-checks itself and throws
 ///         <c>ArgumentOutOfRangeException</c> on every path; those two throw
 ///         <c>ArgumentOutOfRangeException</c> from their indexers, so the type of the failure survives
 ///         the rewrite. <b>An array does not qualify and is the shape this exclusion exists for</b>:
@@ -36,7 +37,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             <c>ImmutableArray&lt;T&gt;</c> is refused a guard earlier than that, and the difference
 ///             was found by a sabotage that turned nothing red.
-///         </b> <c>System.Linq.ImmutableArrayExtensions</c> declares its own
+///         </b>
+///         <c>System.Linq.ImmutableArrayExtensions</c> declares its own
 ///         <c>ElementAt(this ImmutableArray&lt;T&gt;, int)</c>, so the call never binds to
 ///         <c>Enumerable.ElementAt</c> and the receiver set is never consulted for it. Adding it to that
 ///         set changes nothing, which is exactly what a guard nobody can see looks like. The fixture

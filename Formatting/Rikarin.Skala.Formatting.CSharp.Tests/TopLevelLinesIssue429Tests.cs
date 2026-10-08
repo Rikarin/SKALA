@@ -3,7 +3,10 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// <summary>
 ///     Issue #429: a block comment before a top-level declaration on the same line was kept there, and
 ///     the oracle breaks after it. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for
-///     the input, and <see cref="Oracle.Agrees" /> asserts the second pass too.
+///     the input, and <see cref="Oracle.Agrees" /> asserts the second pass too. ⚠ Since #489 a one-line
+///     <c>/** … */</c> above a type is also rebuilt as a starred block: those lines are
+///     <c>SkalaDocComments</c>' answer, which is Skala's default, and the rest are the same under both
+///     profiles.
 /// </summary>
 public sealed class TopLevelLinesIssue429Tests {
     /// <summary>
@@ -58,7 +61,9 @@ public sealed class TopLevelLinesIssue429Tests {
             /* top */
             public class D { }
 
-            /** top */
+            /**
+             * top
+             */
             public class E { }
 
             /* attr */
@@ -79,7 +84,9 @@ public sealed class TopLevelLinesIssue429Tests {
                 /* inner */
                 public class H { }
 
-                /** inner2 */
+                /**
+                 * inner2
+                 */
                 public struct I { }
 
                 public class J { } /* after */
@@ -177,7 +184,9 @@ public sealed class TopLevelLinesIssue429Tests {
             /* a */
             public class A { }
 
-            /** b */
+            /**
+             * b
+             */
             public interface B { }
 
             /* r */

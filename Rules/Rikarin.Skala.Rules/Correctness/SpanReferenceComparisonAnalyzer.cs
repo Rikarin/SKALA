@@ -19,7 +19,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <c>
 /// ReadOnlySpan&lt;byte&gt; ==
 ///     ReadOnlySpan&lt;byte&gt;
-///     </c> and <c>ReadOnlySpan&lt;char&gt; == string</c> all build clean at
+///     </c>
+///     and <c>ReadOnlySpan&lt;char&gt; == string</c> all build clean at
 ///     <c>net10.0</c> with no compiler warning and nothing from the analyzers at
 ///     <c>AnalysisMode=All</c> — the span types carry their own <c>operator ==</c>. What does *not*
 ///     compile is <c>span.Equals(span)</c>: <c>CS1503</c>, because the only <c>Equals</c> in scope

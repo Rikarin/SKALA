@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -253,8 +253,12 @@ public sealed class FoliageScatterTests {
 
     /// <summary>Two draws from one hash are not correlated.</summary>
     /// <remarks>
-    ///     ⚠ <b>Slicing the streams out of one hash's bits gives the yaw and the scale correlated low
-    ///     bits</b>, which shows up as every large tree facing the same way — a pattern an artist sees
+    ///     ⚠
+    ///     <b>
+    ///         Slicing the streams out of one hash's bits gives the yaw and the scale correlated low
+    ///         bits
+    ///     </b>
+    ///     , which shows up as every large tree facing the same way — a pattern an artist sees
     ///     immediately and cannot describe. Re-hashing per stream is what avoids it.
     /// </remarks>
     [Fact]

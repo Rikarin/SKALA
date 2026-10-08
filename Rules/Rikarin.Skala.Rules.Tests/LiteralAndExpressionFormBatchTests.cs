@@ -14,7 +14,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     <b>
 ///         Every rule in this batch is gated on a C# version, and two of them cover shapes whose
 ///         floors differ.
-///     </b> A single rule-level floor would either silence the older shape on an older
+///     </b>
+///     A single rule-level floor would either silence the older shape on an older
 ///     project or emit newer syntax into one, so the gate is asserted per shape wherever the shapes
 ///     disagree — not once per rule.
 ///     <para>

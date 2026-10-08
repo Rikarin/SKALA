@@ -293,7 +293,8 @@ public static class WorkspaceLoader {
     ///         <b>
     ///             353 files to rewrite, all of them
     ///             <c>SK0210 usings</c>
-    ///         </b>; the same clone through a binlog reported <b>0</b>. The
+    ///         </b>
+    ///         ; the same clone through a binlog reported <b>0</b>. The
     ///         proposed rewrite deletes <c>using Rikarin.Skala.Rules.Metadata;</c> from files calling
     ///         <c>RuleCatalog.All</c>, so taking the tool's advice does not compile. A confident wrong
     ///         finding carrying a build-breaking fix is worse than a silent zero, and both are worse

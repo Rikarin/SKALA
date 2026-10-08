@@ -16,7 +16,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     <b>
 ///         This rewrite evaluates the receiver once where the original evaluated it twice, and that
 ///         is the whole of its risk.
-///     </b> So every link of the receiver must be storage —
+///     </b>
+///     So every link of the receiver must be storage —
 ///     <see cref="RewriteGuards.IsStorageNamePath" />. ⚠ It used to admit every property, on the
 ///     argument that excluding them would silence the rule on <c>this.Items</c>; #412's audit ran a
 ///     getter that answers differently the second time and the fix turned a

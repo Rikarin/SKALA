@@ -21,7 +21,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///             <c>System.Tuple</c> is a class and <c>System.ValueTuple</c> is a struct, so the rewrite
 ///             changes nullability, equality and allocation at once — and <c>Item1</c>-style access
 ///             works on both, which means the shape alone proves nothing.
-///         </b> The rule therefore never
+///         </b>
+///         The rule therefore never
 ///         reports a construction that could escape. It reports a <em>local declaration</em>, and only
 ///         when every reference to that local in the enclosing member is a <c>t.ItemN</c> read: a
 ///         local that is returned, passed, assigned, reassigned, compared with <c>==</c> (identity on

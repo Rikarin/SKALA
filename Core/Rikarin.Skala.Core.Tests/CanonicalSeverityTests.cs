@@ -11,7 +11,8 @@ namespace Rikarin.Skala.Core.Tests;
 ///     <b>
 ///         This exists because adopting the canonical took a repository from 0 build errors to 17 and
 ///         nothing said so.
-///     </b> The canonical is the Rider export and the export carries 253
+///     </b>
+///     The canonical is the Rider export and the export carries 253
 ///     <c>dotnet_diagnostic.*.severity</c> lines, 213 of them <c>cs*</c>. Vixen carried 71 and not one
 ///     <c>cs*</c>. One of the 213 raises <c>CS9209</c> above the compiler's default; Vixen builds with
 ///     <c>TreatWarningsAsErrors</c>. The <c>.editorconfig</c> commit alone, touching no code, produced
@@ -192,7 +193,8 @@ public sealed class CanonicalSeverityTests {
     ///     <b>
     ///         This assertion was inverted deliberately, and the inversion is the record of a product
     ///         decision.
-    ///     </b> It read <c>csharp &gt; 200</c> — "the export carries 213" — and its summary called
+    ///     </b>
+    ///     It read <c>csharp &gt; 200</c> — "the export carries 213" — and its summary called
     ///     the shipped payload "the case that broke Vixen", because a repository taking the canonical
     ///     inherited 213 <c>cs*</c> compiler severities and its build changed underneath it.
     ///     <para>
