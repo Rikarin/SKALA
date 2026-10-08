@@ -78,6 +78,10 @@ public sealed class FuzzRegressionTests {
     // #419 (found by `fuzz --seed=4190420`): a subpattern's `{ P62` / `: null }` joined as `P62 : null`
     // indented and `P62: null` not, because the preserved gap read the next line's indent as a space.
     [InlineData(7764980540680690061UL)]
+    // Nightly `fuzz --seed=37583856628`: a typed local's `= Select(` with the `(` past the margin. Pass one
+    // kept the `=` by EqualsFloor's extrapolated table and chopped the arguments; pass two read the chop as
+    // the author's, lost the floor and broke the `=`. The `(` past the margin now breaks the `=` on both.
+    [InlineData(4304693669410283359UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

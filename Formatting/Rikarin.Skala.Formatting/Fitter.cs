@@ -572,10 +572,12 @@ public sealed class Fitter {
         var arguments = m.FlatWidth - m.PointWidth - 1 - facts.CalleeWidth;
         var indent = m.ContinuationColumn - indentWidth;
 
-        // ⚠ A `(` past the margin leaves the `=` nothing to keep: the line through it overflows whatever the
-        // arguments do, and the table was measured with the `(` at columns 52 to 112. Kept, the second pass —
-        // reading the chopped arguments as broken, which this rule declines — broke the `=` the first pass had
-        // kept (Nightly fuzzer, seeds 4304693669410283359 and 17091299203163347117: idempotency).
+        // ⚠ A `(` past the margin breaks the `=` whatever the arguments (Nightly seed 37583856628, case
+        // 4304693669410283359). The table was measured with the `(` at 53 to 112 and extrapolated past it,
+        // and the extrapolation kept `T v = Select(` on a 122-column line; pass two read the chopped
+        // arguments as the author's, lost the floor and broke the `=` — the oracle's answer for both
+        // passes. Measured 2026-10-09 with `Testing ask`: a typed and a `var` local, arguments of 20, 60
+        // and 140 columns, the `(` at 108 to 127 — every row with the `(` at 121 or further breaks.
         if (paren > width) {
             return ResolvedMode.Broken;
         }
