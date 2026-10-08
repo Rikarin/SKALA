@@ -463,6 +463,17 @@ public sealed class Fitter {
             if (arguments < floor) {
                 return ResolvedMode.Flat;
             }
+        } else if (facts.YieldsToOverflowingTypeArguments
+                   && facts.ColonEdgeFloor > 0
+                   && m.YieldEnd > 0
+                   && m.PointWidth < Unbounded
+                   && Fits(m.Column, m.PointWidth + m.YieldEnd)
+                   && !Fits(m.Column, m.PointWidth + m.YieldEnd + 1)) {
+            // ⚠ The `>` lands on the margin itself and only the call's `(` is past it.
+            var arguments = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth - m.YieldEnd;
+            if (arguments < facts.ColonEdgeFloor) {
+                return ResolvedMode.Flat;
+            }
         }
 
         // What lands on *this* line if the group stays flat and the construct inside wraps instead.

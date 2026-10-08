@@ -3198,7 +3198,8 @@ public sealed class BreakPlan {
                 BreaksOnlyIfHeadOverflows: true,
                 YieldsToOverflowingTypeArguments: ColonFloorOf(argument, value) is var (floor, _) && floor >= 0,
                 ColonFloor: ColonFloorOf(argument, value).Floor,
-                ColonFloorSlope: ColonFloorOf(argument, value).Slope
+                ColonFloorSlope: ColonFloorOf(argument, value).Slope,
+                ColonEdgeFloor: ColonEdgeFloorOf(argument, value)
             )
         );
     }
@@ -3219,6 +3220,43 @@ public sealed class BreakPlan {
     ///     where it rises 1.6 columns for every column of head past 118. Interpolated linearly between the
     ///     measured first-argument widths; the floor is the first width measured breaking, less one.
     /// </remarks>
+    /// <summary>
+    ///     <see cref="ColonFloorOf" />'s floor for the one column where the <c>&gt;</c> ends on the margin
+    ///     and only the call's <c>(</c> overflows (#490).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on its own grid (names of 3 to 11, first type arguments of 1, 8 and 25 columns,
+    ///     argument lists of 6 to 68): from a name of five the colon always breaks, and a name of three
+    ///     or four fills the type arguments below a floor 32 columns apart — 40, 44 and 50 for three, 8,
+    ///     12 and 18 for four.
+    /// </remarks>
+    static int ColonEdgeFloorOf(SyntaxNode argument, ExpressionSyntax value) {
+        var (floor, _) = ColonFloorOf(argument, value);
+        if (floor < 0) {
+            return 0;
+        }
+
+        var n = argument switch {
+            ArgumentSyntax { NameColon: { } colon } => colon.Name.Identifier.Span.Length,
+            AttributeArgumentSyntax { NameColon: { } colon } => colon.Name.Identifier.Span.Length,
+            _ => 0
+        };
+
+        if (n >= 5) {
+            return 0;
+        }
+
+        var generic = value switch {
+            InvocationExpressionSyntax { Expression: GenericNameSyntax name } => name,
+            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax name } } => name,
+            _ => null
+        };
+
+        var f = Math.Clamp(generic!.TypeArgumentList.Arguments[0].Span.Length, 1, 25);
+        var four = f <= 8 ? 8 + (f - 1) * 4 / 7 : 12 + (f - 8) * 6 / 17;
+        return (n == 4 ? four : four + 32) - 1;
+    }
+
     static (int Floor, int Slope) ColonFloorOf(SyntaxNode argument, ExpressionSyntax value) {
         var generic = value switch {
             InvocationExpressionSyntax { Expression: GenericNameSyntax name } => name,

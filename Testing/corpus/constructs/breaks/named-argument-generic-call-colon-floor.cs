@@ -2,7 +2,8 @@
 // the oracle fills the type arguments, and breaks after the colon instead only once the argument list
 // is at least a floor that depends on the name's length and the first type argument's width — never
 // for a name of three, always for one of eleven, and for a name of four rising with the head. Each
-// pair below sits two columns either side of its measured floor.
+// pair below sits two columns either side of its measured floor. With the `>` on the margin itself and
+// only the `(` past it, a second table: from a name of five the colon always breaks.
 class NamedArgumentGenericCallColonFloor {
     void M() {
         Outer(
@@ -100,6 +101,42 @@ class NamedArgumentGenericCallColonFloor {
         Outer(
             first: 1,
             name: Cast<SomeVeryLongTypeArgumentN, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy)
+        );
+        Outer(
+            first: 1,
+            nam: Cast<A, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>(xxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyy)
+        );
+        Outer(
+            first: 1,
+            nam: Cast<A, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>(xxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyy)
+        );
+        Outer(
+            first: 1,
+            name: Cast<A, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>(x, y)
+        );
+        Outer(
+            first: 1,
+            name: Cast<A, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>(xx, yy)
+        );
+        Outer(
+            first: 1,
+            nam: Cast<SomeVeryLongTypeArgumentN, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>(xxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyy)
+        );
+        Outer(
+            first: 1,
+            nam: Cast<SomeVeryLongTypeArgumentN, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>(xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyy)
+        );
+        Outer(
+            first: 1,
+            name: Cast<SomeVeryLongTypeArgumentN, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>(xxxxxx, yyyyyy)
+        );
+        Outer(
+            first: 1,
+            name: Cast<SomeVeryLongTypeArgumentN, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>(xxxxxxx, yyyyyyy)
+        );
+        Outer(
+            first: 1,
+            nameA: Cast<A, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>(x, y)
         );
     }
 }

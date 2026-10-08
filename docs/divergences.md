@@ -7400,12 +7400,16 @@ through `GroupFacts.ColonFloor`/`ColonFloorSlope` once `Document.YieldEndOf` say
 list's `>` is past the margin. Every grid cell is byte-identical to the oracle, `OwnersC` included, and
 `corpus/real/` is unmoved. ⚠ Interpolated, not measured: first type arguments between the measured
 widths, name length 9 at 8 and 14, and anything other than two type arguments and a two-argument list.
-The `g = 120` band, where only the `(` overflows, is untouched and still diverges for a narrow argument
-list (the first two rows of the earlier table).
+⚠ **And the `g = 120` band, on a grid of its own** (1 728 cells: `g` 118–120, names 3–11, first type
+arguments of 1, 8 and 25, argument lists 6–68). At `g` ≤ 119 the `(` fits and nobody breaks the colon.
+At exactly 120, from a name of five the colon always breaks; a name of four fills below 8 / 12 / 18
+(first type argument 1 / 8 / 25) and a name of three 32 columns higher, 40 / 44 / 50
+(`BreakPlan.ColonEdgeFloorOf`, `GroupFacts.ColonEdgeFloor`). With the colon flat, Skala's own type
+argument fill then writes the oracle's lines. Every cell matches.
 
 - options: none.
-- ⚠ status: **resolved** for a type argument list past the margin, pinned by
-  `constructs/breaks/named-argument-generic-call-colon-floor.cs`; the `g = 120` band **open**.
+- ⚠ status: **resolved**, pinned by `constructs/breaks/named-argument-generic-call-colon-floor.cs`.
+  Interpolated rather than measured: the widths named above.
 ## SK-DIV-0174 — the gap after a block comment was always one space, and the oracle answers it three ways
 
 ⚠ **Found measuring #409's family** (#410). `CSharpDocumentBuilder.GapSpace` returned `Required`

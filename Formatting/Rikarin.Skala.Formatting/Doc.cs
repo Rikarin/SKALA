@@ -945,6 +945,10 @@ public sealed class Document {
 ///     (the width from the argument's start through the <c>&gt;</c>) past 118.
 /// </param>
 /// <param name="ColonFloorSlope">See <see cref="ColonFloor" />.</param>
+/// <param name="ColonEdgeFloor">
+///     ⚠ The same floor for the one column where the type argument list's <c>&gt;</c> fits and only the
+///     call's <c>(</c> does not: a different table (#490). Zero breaks the colon whatever the width.
+/// </param>
 /// <param name="KeywordWidth">
 ///     ⚠ The width of the keyword after this group's one point, for the point before an <c>is</c> or an
 ///     <c>as</c> (#444, SK-DIV-0210): broken exactly when the operand before the point fits on its line
@@ -972,4 +976,5 @@ public readonly record struct GroupFacts(
     int KeywordWidth = 0,
     bool YieldsToOverflowingTypeArguments = false,
     int ColonFloor = 0,
-    int ColonFloorSlope = 0);
+    int ColonFloorSlope = 0,
+    int ColonEdgeFloor = 0);
