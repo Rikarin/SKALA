@@ -258,6 +258,9 @@ public sealed class BreakPlan {
     /// <summary>The positions <see cref="PlanPastLeadingComments" /> planned. See <see cref="PlansPastALeadingComment" />.</summary>
     readonly HashSet<int> pastLeadingComments = [];
 
+    /// <summary>The positions <see cref="PlanCommentedAttributeGap" /> planned past a block comment.</summary>
+    readonly HashSet<int> pastAttributeComments = [];
+
     /// <summary>
     ///     The groups opened around one node, outermost first.
     /// </summary>
@@ -423,6 +426,12 @@ public sealed class BreakPlan {
     ///     argument list's <c>(</c> or an expression body's <c>=&gt;</c>. See <see cref="PlanPastLeadingComments" />.
     /// </summary>
     public bool PlansPastALeadingComment(int position) => pastLeadingComments.Contains(position);
+
+    /// <summary>
+    ///     Whether the gap before <paramref name="position" /> — after a field's last attribute section and a
+    ///     block comment — is planned past that comment. See <see cref="PlanCommentedAttributeGap" />.
+    /// </summary>
+    public bool PlansPastAnAttributeComment(int position) => pastAttributeComments.Contains(position);
 
     /// <summary>The groups the builder opens around <paramref name="node" />, outermost first.</summary>
     public IReadOnlyList<GroupPlan> GroupsOf(SyntaxNode node) =>
@@ -6150,6 +6159,8 @@ public sealed class BreakPlan {
             return;
         }
 
+        PlanCommentedAttributeGap(node, lists);
+
         // ⚠ A local function's attribute sections are each on a line of their own whatever any key says
         // (#444, SK-DIV-0207). Measured with the method key at `always` and `if_owner_is_single_line`,
         // `skala_place_attribute_on_same_line = true`, both together and
@@ -6171,7 +6182,9 @@ public sealed class BreakPlan {
             }
 
             foreach (var token in AttributeGaps(node, lists)) {
-                Mandatory(token);
+                if (!pastAttributeComments.Contains(token.SpanStart)) {
+                    Mandatory(token);
+                }
             }
 
             return;
@@ -6225,6 +6238,49 @@ public sealed class BreakPlan {
             // fits on one line and comes back when it does not.
             new(broken, true, true)
         );
+    }
+
+    /// <summary>
+    ///     A field's gap after its last attribute section and a block comment: declined — the comment ends the
+    ///     line — when the joined line overflows, unless what overflows can wrap inside the value.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 one column at a time from 120 to 134 (#504, SK-DIV-0201):
+    ///     <c>[Obsolete] /* c */ public int F = …;</c> with a binary chain of identifiers, of literals, a single
+    ///     identifier, a string, a conditional, a member chain to 128 and <c>private static readonly</c> in front
+    ///     comes back with the attribute and the comment on their line and the declaration whole below at
+    ///     every overflowing width; an event field the same. A value that is a call or a creation with
+    ///     arguments is declined only while its <c>;</c> alone overflows — <c>)</c> at 120 — and from there is
+    ///     joined with its arguments chopped, the terminator rule of the joining half (#438). Skala left the
+    ///     gap to the author, joined, and broke the <c>=</c>. ⚠ Not a property's or a method's arrow, declined
+    ///     at one to three columns past and joined from there, nor an auto-property's initializer, always
+    ///     joined: no reading of the overflow alone covers them, so they stay the author's.
+    /// </remarks>
+    void PlanCommentedAttributeGap(SyntaxNode node, SyntaxList<AttributeListSyntax> lists) {
+        if (node is not (FieldDeclarationSyntax or EventFieldDeclarationSyntax)) {
+            return;
+        }
+
+        var close = lists[^1].CloseBracketToken;
+        var next = close.GetNextToken();
+        if (next.IsKind(SyntaxKind.None)
+            || BreaksBefore(next)
+            || !close.TrailingTrivia.Concat(next.LeadingTrivia)
+                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))
+            || BreaksInsideTheSignature(node, next)) {
+            return;
+        }
+
+        var value = node is FieldDeclarationSyntax { Declaration.Variables: [{ Initializer.Value: { } initial }] }
+            ? initial
+            : null;
+        var wrapsInside = value is InvocationExpressionSyntax { ArgumentList.Arguments.Count: > 0 }
+            or BaseObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: > 0 };
+
+        var group = NewGroup();
+        Point(next, group);
+        pastAttributeComments.Add(next.SpanStart);
+        Describe(node, group, GroupMode.Preserve, new(MeasuresHead: true, Terminator: wrapsInside ? 1 : WholeLine));
     }
 
     /// <summary>

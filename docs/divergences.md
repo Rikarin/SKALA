@@ -8461,8 +8461,22 @@ field the comment case declines exactly where the declaration's own wrap would b
 sweep and is not contradicted. It does not carry to the arrow rows above (joined, the arrow broken, from
 three past), so one reading still does not cover the owners, and nothing is wired.
 
+**Round two (#504): wired for fields and event fields.** A further 63 shapes, 120 to 134 columns: a
+conditional value, a member chain, `new Foo(…)`, `private static readonly` in front and an event field
+answer as the round-one fields did — declined at every overflowing width, a call or a creation declined
+only while its `;` or `);` alone overflows and joined with its arguments chopped from there, and a member
+chain declined to 128 (joined at 134, the one cell still divergent). Skala now plans that gap for a field
+and an event field: a point past the comment (`BreakPlan.PlanCommentedAttributeGap`, which the builder's
+comment rule lets through) in a group asked the joining half's terminator question — the `;` for a value
+that wraps inside its argument list, the whole line otherwise. The same answers at `always`. ⚠ Still the
+author's, measured: a property's arrow (declined one to three columns past, joined from there), a method's
+arrow (declined one to two past), and an auto-property's initializer (always joined) — no reading of the
+overflow alone covers the three. A call value joined past 122 still breaks its `=` in Skala where the oracle
+chops the call; that is the `=`'s ordering rule, the aside above.
+
 - options: the six `skala_place_*_attribute_on_same_line` keys.
-- ⚠ status: **resolved** at `always`; **open** for a comment in the gap (#504, re-measured above). Pinned by
+- ⚠ status: **resolved** at `always`; **resolved** for a comment in the gap on fields and event fields (#504),
+  pinned by `CommentedAttributeGapIssue504Tests`; **open** for properties and methods. Pinned by
   `AttributeJoinTerminatorIssue438Tests`.
 
 ## SK-DIV-0206 — a type test's break is one level past its operand's line, not past what that line opened

@@ -3184,7 +3184,7 @@ public sealed partial class CSharpDocumentBuilder {
                     return !lineComment
                         && i != lastPieceIndex
                         && (!StopsAtAComment(tokens[piece.TokenIndex]) || plan.PlansPastALeadingComment(nextStart))
-                        && !EndsAnAttributeRun(tokens[piece.TokenIndex])
+                        && (!EndsAnAttributeRun(tokens[piece.TokenIndex]) || plan.PlansPastAnAttributeComment(nextStart))
                         && !(spansLines && StopsAtAMultiLineComment(tokens[piece.TokenIndex]));
                 default:
                     return false;
