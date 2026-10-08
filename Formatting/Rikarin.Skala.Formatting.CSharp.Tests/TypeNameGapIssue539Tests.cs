@@ -1,14 +1,21 @@
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #539, SK-DIV-0353: a type declaration&apos;s keyword/name gap. Every expected string is <c>jb cleanupcode</c>
+///     Issue #539, SK-DIV-0353: a type declaration's keyword/name gap. Every expected string is <c>jb cleanupcode</c>
 ///     2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class TypeNameGapIssue539Tests {
+    const string Long1 = "public sealed partial record struct Nnnnnnnnnn<T>(Dictionary<string, int> p1, lo"
+        + "ng p2, byte p3, object paaaaaaaaaaaaaaaaaaaaa) {";
+
+    const string Long2 = "public abstract class LogEventPropertyValueRewriter<TState> : LogEventPropertyVa"
+        + "lueVisitor<TState, Lzzzzzzzzzzzzzzzzzzzzz> {";
+
     /// <summary>The oracle's answer under the repository's export with <paramref name="overrides" /> on top.</summary>
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
@@ -30,168 +37,168 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539: a type header breaks between its keyword and its name when the line runs past the margin before its next
-    ///     point, or when the rest fits below within four columns (a lone base type: none); the base list then sits at the
-    ///     declaration&apos;s own level.
+    ///     #539: a type header breaks between its keyword and its name when the line runs past the margin before its
+    ///     next point, or when the rest fits below within four columns (a lone base type: none); the base list then
+    ///     sits at the declaration&apos;s own level.
     /// </summary>
     [Fact]
     public void AHeaderPastTheMargin_BreaksBetweenTheKeywordAndTheName() {
         Agrees(
-            """
-            public class NNNNNNNNNN<Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
-            """,
-            """
-            public class
-                NNNNNNNNNN<Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
-            """
+            $$"""
+              public class NNNNNNNNNN<T{{R('x', 91)}}> { }
+              """,
+            $$"""
+              public class
+                  NNNNNNNNNN<T{{R('x', 91)}}> { }
+              """
         );
         Agrees(
-            """
-            public class NNNNNNNNNN<Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
-            """,
-            """
-            public class
-                NNNNNNNNNN<Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
-            """
+            $$"""
+              public class NNNNNNNNNN<T{{R('x', 94)}}> { }
+              """,
+            $$"""
+              public class
+                  NNNNNNNNNN<T{{R('x', 94)}}> { }
+              """
         );
         Agrees(
-            """
-            public class NNNNNNNNNN<Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
-            """,
+            $$"""
+              public class NNNNNNNNNN<T{{R('x', 95)}}> { }
+              """,
             """
             public class NNNNNNNNNN<
                 Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
             """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirst, TSecond> : IFoo, Iyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy { }
-            """,
-            """
-            public class
-                NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirst, TSecond> : IFoo, Iyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy { }
-            """
+            $$"""
+              public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirst, TSecond> : IFoo, I{{R('y', 50)}} { }
+              """,
+            $$"""
+              public class
+                  NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirst, TSecond> : IFoo, I{{R('y', 50)}} { }
+              """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirst, TSecond> : IFoo, Iyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy { }
-            """,
+            $$"""
+              public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirst, TSecond> : IFoo, I{{R('y', 51)}} { }
+              """,
             """
             public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirst, TSecond> : IFoo,
                 Iyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy { }
             """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNN : IFoo, Iyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy { }
-            """,
-            """
-            public class
-                NNNNNNNNNNNNNNN : IFoo, Iyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy { }
-            """
+            $$"""
+              public class NNNNNNNNNNNNNNN : IFoo, I{{R('y', 82)}} { }
+              """,
+            $$"""
+              public class
+                  NNNNNNNNNNNNNNN : IFoo, I{{R('y', 82)}} { }
+              """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNN : IFoo, Iyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy { }
-            """,
+            $$"""
+              public class NNNNNNNNNNNNNNN : IFoo, I{{R('y', 83)}} { }
+              """,
             """
             public class NNNNNNNNNNNNNNN : IFoo,
                 Iyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy { }
             """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNNNNNNN : Iyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy { }
-            """,
-            """
-            public class
-                NNNNNNNNNNNNNNNNNNNN : Iyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy { }
-            """
+            $$"""
+              public class NNNNNNNNNNNNNNNNNNNN : I{{R('y', 87)}} { }
+              """,
+            $$"""
+              public class
+                  NNNNNNNNNNNNNNNNNNNN : I{{R('y', 87)}} { }
+              """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
-            """,
-            """
-            public class
-                NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
-            """
+            $$"""
+              public class {{R('N', 40)}}<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
+              """,
+            $$"""
+              public class
+                  {{R('N', 40)}}<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
+              """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
-            """,
+            $$"""
+              public class {{R('N', 40)}}<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
+              """,
             """
             public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName,
                 TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
             """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNyyyy : IFoo, IBar {
-                int x;
-                void M() { }
-            }
-            """,
-            """
-            public class
-                NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNyyyy : IFoo,
-                IBar {
-                int x;
-                void M() { }
-            }
-            """
+            $$"""
+              public class {{R('N', 100)}}yyyy : IFoo, IBar {
+                  int x;
+                  void M() { }
+              }
+              """,
+            $$"""
+              public class
+                  {{R('N', 100)}}yyyy : IFoo,
+                  IBar {
+                  int x;
+                  void M() { }
+              }
+              """
         );
         Agrees(
-            """
-            namespace X {
-                public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN : IFoo, IBar {
-                    int x;
-                }
-            }
-            """,
-            """
-            namespace X {
-                public class
-                    NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN : IFoo,
-                    IBar {
-                    int x;
-                }
-            }
-            """
+            $$"""
+              namespace X {
+                  public class {{R('N', 100)}} : IFoo, IBar {
+                      int x;
+                  }
+              }
+              """,
+            $$"""
+              namespace X {
+                  public class
+                      {{R('N', 100)}} : IFoo,
+                      IBar {
+                      int x;
+                  }
+              }
+              """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNxx<T> where T : class {
-                int x;
-            }
-            """,
-            """
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNxx<T>
-                where T : class {
-                int x;
-            }
-            """
+            $$"""
+              public class {{R('N', 100)}}xx<T> where T : class {
+                  int x;
+              }
+              """,
+            $$"""
+              public class {{R('N', 100)}}xx<T>
+                  where T : class {
+                  int x;
+              }
+              """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNxxxxxxxxx {
-                int x;
-            }
-            """,
-            """
-            public class
-                NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNxxxxxxxxx {
-                int x;
-            }
-            """
+            $$"""
+              public class {{R('N', 100)}}xxxxxxxxx {
+                  int x;
+              }
+              """,
+            $$"""
+              public class
+                  {{R('N', 100)}}xxxxxxxxx {
+                  int x;
+              }
+              """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirst, TSecond> : IFoo, Ibbbbbbbbbbbbbbbbbbbbbbbbbbbbbb {
-                int x;
-            }
-            """,
+            $$"""
+              public class {{R('N', 60)}}<TFirst, TSecond> : IFoo, Ibbbbbbbbbbbbbbbbbbbbbbbbbbbbbb {
+                  int x;
+              }
+              """,
             """
             public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirst, TSecond> : IFoo,
                 Ibbbbbbbbbbbbbbbbbbbbbbbbbbbbbb {
@@ -200,62 +207,62 @@ public sealed class TypeNameGapIssue539Tests {
             """
         );
         Agrees(
-            """
-            [Serializable]
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondParameterNameXX> {
-                int x;
-            }
-            """,
-            """
-            [Serializable]
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondParameterNameXX> {
-                int x;
-            }
-            """
+            $$"""
+              [Serializable]
+              public class {{R('N', 60)}}<TFirstParameterName, TSecondParameterNameXX> {
+                  int x;
+              }
+              """,
+            $$"""
+              [Serializable]
+              public class {{R('N', 60)}}<TFirstParameterName, TSecondParameterNameXX> {
+                  int x;
+              }
+              """
         );
         Agrees(
-            """
-            public record NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNxxxxxxx(int A, int B);
-            """,
-            """
-            public record NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNxxxxxxx(
-                int A,
-                int B);
-            """
+            $$"""
+              public record {{R('N', 90)}}xxxxxxx(int A, int B);
+              """,
+            $$"""
+              public record {{R('N', 90)}}xxxxxxx(
+                  int A,
+                  int B);
+              """
         );
         Agrees(
-            """
-            public interface INNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNxxxxxxx {
-            }
-            """,
-            """
-            public interface
-                INNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNxxxxxxx { }
-            """
+            $$"""
+              public interface I{{R('N', 100)}}xxxxxxx {
+              }
+              """,
+            $$"""
+              public interface
+                  I{{R('N', 100)}}xxxxxxx { }
+              """
         );
         Agrees(
-            """
-            public struct NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNxxxxxxxxxxxx {
-            }
-            """,
-            """
-            public struct
-                NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNxxxxxxxxxxxx { }
-            """
+            $$"""
+              public struct {{R('N', 100)}}xxxxxxxxxxxx {
+              }
+              """,
+            $$"""
+              public struct
+                  {{R('N', 100)}}xxxxxxxxxxxx { }
+              """
         );
     }
 
     /// <summary>
-    ///     #539 round three: a record, a record struct or a class with a parameter list keeps its name on the keyword's line
-    ///     at every width measured; the parameters or the base list take the break.
+    ///     #539 round three: a record, a record struct or a class with a parameter list keeps its name on the keyword's
+    ///     line at every width measured; the parameters or the base list take the break.
     /// </summary>
     [Fact]
     public void ATypeWithAPrimaryConstructor_NeverBreaksBeforeItsName() {
         Agrees(
-            """
-            public sealed record Nnnnnnnnnn(int Alpha = 0, string Beta = "b", long Gammaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = 1) {
-            }
-            """,
+            $$"""
+              public sealed record Nnnnnnnnnn(int Alpha = 0, string Beta = "b", long Gamm{{R('a', 45)}} = 1) {
+              }
+              """,
             """
             public sealed record Nnnnnnnnnn(
                 int Alpha = 0,
@@ -264,10 +271,10 @@ public sealed class TypeNameGapIssue539Tests {
             """
         );
         Agrees(
-            """
-            public sealed partial record struct Nnnnnnnnnn<T>(Dictionary<string, int> p1, long p2, byte p3, object paaaaaaaaaaaaaaaaaaaaa) {
-            }
-            """,
+            $$"""
+              {{Long1}}
+              }
+              """,
             """
             public sealed partial record struct Nnnnnnnnnn<T>(
                 Dictionary<string, int> p1,
@@ -277,10 +284,10 @@ public sealed class TypeNameGapIssue539Tests {
             """
         );
         Agrees(
-            """
-            public class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn(int alpha, string beta) : BaseType(alpha), IFoooooooooooooooooooooooooooooo {
-            }
-            """,
+            $$"""
+              public class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn(int alpha, string beta) : BaseType(alpha), IF{{R('o', 30)}} {
+              }
+              """,
             """
             public class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn(int alpha, string beta)
                 : BaseType(alpha), IFoooooooooooooooooooooooooooooo { }
@@ -295,18 +302,18 @@ public sealed class TypeNameGapIssue539Tests {
     [Fact]
     public void TheNameBreaksOnlyUpTo124Columns_WhateverTheHead() {
         Agrees(
-            """
-            internal sealed class Nnnnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
-            """,
+            $$"""
+              internal sealed class Nnnnnnnnnn : IAlphaInterfaceNameValue, IGamma{{R('g', 53)}} { }
+              """,
             """
             internal sealed class
                 Nnnnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
             """
         );
         Agrees(
-            """
-            internal sealed class Nnnnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
-            """,
+            $$"""
+              internal sealed class Nnnnnnnnnn : IAlphaInterfaceNameValue, IGamma{{R('g', 54)}} { }
+              """,
             """
             internal sealed class Nnnnnnnnnn : IAlphaInterfaceNameValue,
                 IGammagggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
@@ -322,54 +329,54 @@ public sealed class TypeNameGapIssue539Tests {
     [Fact]
     public void AShortNameBehindAShortHead_StaysAndTheListWraps() {
         Agrees(
-            """
-            public class Nnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggg { }
-            """,
+            $$"""
+              public class Nnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGamma{{R('g', 51)}} { }
+              """,
             """
             public class Nnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue,
                 IGammaggggggggggggggggggggggggggggggggggggggggggggggggggg { }
             """
         );
         Agrees(
-            """
-            public class Nnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggggg { }
-            """,
-            """
-            public class
-                Nnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggggg { }
-            """
+            $$"""
+              public class Nnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGamma{{R('g', 50)}} { }
+              """,
+            $$"""
+              public class
+                  Nnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGamma{{R('g', 50)}} { }
+              """
         );
         Agrees(
-            """
-            public class Nnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggg { }
-            """,
+            $$"""
+              public class Nnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGamma{{R('g', 51)}} { }
+              """,
             """
             public class Nnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue,
                 IGammaggggggggggggggggggggggggggggggggggggggggggggggggggg { }
             """
         );
         Agrees(
-            """
-            public sealed class Nnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
-            """,
+            $$"""
+              public sealed class Nnnnnnnn : IAlphaInterfaceNameValue, IGamma{{R('g', 54)}} { }
+              """,
             """
             public sealed class
                 Nnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
             """
         );
         Agrees(
-            """
-            public sealed class Nnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
-            """,
+            $$"""
+              public sealed class Nnnnnnnn : IAlphaInterfaceNameValue, IGamma{{R('g', 55)}} { }
+              """,
             """
             public sealed class Nnnnnnnn : IAlphaInterfaceNameValue,
                 IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
             """
         );
         Agrees(
-            """
-            public class Nnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IBetaInterfaceNameValue, IGammagggggggggggggggggggggggggg { }
-            """,
+            $$"""
+              public class N{{R('n', 17)}} : IAlphaInterfaceNameValue, IBetaInterfaceNameValue, IGamma{{R('g', 26)}} { }
+              """,
             """
             public class Nnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue,
                 IBetaInterfaceNameValue,
@@ -379,42 +386,42 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: a 10-letter name breaks at 121 before a 4-letter first base type, a 14-letter one does not before
-    ///     a 20-letter one, and a first base type past 22 letters stops counting.
+    ///     #539 round three: a 10-letter name breaks at 121 before a 4-letter first base type, a 14-letter one does
+    ///     not before a 20-letter one, and a first base type past 22 letters stops counting.
     /// </summary>
     [Fact]
     public void TheFirstBaseTypesWidth_MovesTheThreshold() {
         Agrees(
-            """
-            public class Nnnnnnnnnn : Ifff, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
-            """,
-            """
-            public class
-                Nnnnnnnnnn : Ifff, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
-            """
+            $$"""
+              public class Nnnnnnnnnn : Ifff, IGamma{{R('g', 79)}} { }
+              """,
+            $$"""
+              public class
+                  Nnnnnnnnnn : Ifff, IGamma{{R('g', 79)}} { }
+              """
         );
         Agrees(
-            """
-            public class Nnnnnnnnnnnnnn : Ifffffffffffffffffff, IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
-            """,
+            $$"""
+              public class Nnnnnnnnnnnnnn : Ifffffffffffffffffff, IGamma{{R('g', 59)}} { }
+              """,
             """
             public class Nnnnnnnnnnnnnn : Ifffffffffffffffffff,
                 IGammaggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg { }
             """
         );
         Agrees(
-            """
-            public class Nnnnnnnnnnnnnnnnnnnnnn : Ifffffffffffffffffffffffffffffffffff, IGammaggggggggggggggggggggggggggggggggggggg { }
-            """,
-            """
-            public class
-                Nnnnnnnnnnnnnnnnnnnnnn : Ifffffffffffffffffffffffffffffffffff, IGammaggggggggggggggggggggggggggggggggggggg { }
-            """
+            $$"""
+              public class Nnnnnnnnnnnnnnnnnnnnnn : Ifffffffffffffffffffffffffffffffffff, IGamma{{R('g', 37)}} { }
+              """,
+            $$"""
+              public class
+                  Nnnnnnnnnnnnnnnnnnnnnn : Ifffffffffffffffffffffffffffffffffff, IGamma{{R('g', 37)}} { }
+              """
         );
         Agrees(
-            """
-            public class Nnnnnnnnnnnnnnnnnn : Ifffffffffffffffffffffffffffffffffff, IGammaggggggggggggggggggggggggggggggggggggggg { }
-            """,
+            $$"""
+              public class Nnnnnnnnnnnnnnnnnn : Ifffffffffffffffffffffffffffffffffff, IGamma{{R('g', 39)}} { }
+              """,
             """
             public class Nnnnnnnnnnnnnnnnnn : Ifffffffffffffffffffffffffffffffffff,
                 IGammaggggggggggggggggggggggggggggggggggggggg { }
@@ -423,33 +430,33 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: with two type parameters and no base list the list's comma competes the same way, from its own
-    ///     constant: a 25-letter name stays at 121, a 30-letter one breaks to 123.
+    ///     #539 round three: with two type parameters and no base list the list's comma competes the same way, from its
+    ///     own constant: a 25-letter name stays at 121, a 30-letter one breaks to 123.
     /// </summary>
     [Fact]
     public void TwoTypeParameters_TheListsCommaTakesAShortName() {
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
-            """,
+            $$"""
+              public class NNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecond{{R('x', 49)}}> { }
+              """,
             """
             public class NNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName,
                 TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
             """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
-            """,
-            """
-            public class
-                NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
-            """
+            $$"""
+              public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecond{{R('x', 46)}}> { }
+              """,
+            $$"""
+              public class
+                  NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecond{{R('x', 46)}}> { }
+              """
         );
         Agrees(
-            """
-            public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
-            """,
+            $$"""
+              public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName, TSecond{{R('x', 47)}}> { }
+              """,
             """
             public class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN<TFirstParameterName,
                 TSecondxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx> { }
@@ -458,65 +465,65 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: behind <c>class</c> alone the name never moves down for the base list's sake, but it does when
-    ///     the name itself runs past the margin, and before a lone base type.
+    ///     #539 round three: behind <c>class</c> alone the name never moves down for the base list's sake, but it does
+    ///     when the name itself runs past the margin, and before a lone base type.
     /// </summary>
     [Fact]
     public void ABareKeyword_KeepsTheNameForAList_ButNotForALoneBaseType() {
         Agrees(
-            """
-            class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggg { }
-            """,
+            $$"""
+              class N{{R('n', 39)}} : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggg { }
+              """,
             """
             class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue,
                 IGammaggggggggggggggggggggggggggggggggggggg { }
             """
         );
         Agrees(
-            """
-            class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN : IFoo { }
-            """,
-            """
-            class
-                NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN : IFoo { }
-            """
+            $$"""
+              class {{R('N', 104)}} : IFoo { }
+              """,
+            $$"""
+              class
+                  {{R('N', 104)}} : IFoo { }
+              """
         );
         Agrees(
-            """
-            class NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN { }
-            """,
-            """
-            class
-                NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN { }
-            """
+            $$"""
+              class {{R('N', 114)}} { }
+              """,
+            $$"""
+              class
+                  {{R('N', 114)}} { }
+              """
         );
     }
 
     /// <summary>
-    ///     #539 round three: the oracle measures the header as if <c>{ }</c> ended it: with a member inside, the name breaks
-    ///     while the line through the <c>{</c> is 122 columns and not at 123.
+    ///     #539 round three: the oracle measures the header as if <c>{ }</c> ended it: with a member inside, the name
+    ///     breaks while the line through the <c>{</c> is 122 columns and not at 123.
     /// </summary>
     [Fact]
     public void ABodyBelowTheBrace_CountsAsIfItsBraceFollowed() {
         Agrees(
-            """
-            public class Nnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggg {
-                int x;
-            }
-            """,
-            """
-            public class
-                Nnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggg {
-                int x;
-            }
-            """
+            $$"""
+              public class Nnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGamma{{R('g', 48)}} {
+                  int x;
+              }
+              """,
+            $$"""
+              public class
+                  Nnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGamma{{R('g', 48)}} {
+                  int x;
+              }
+              """
         );
         Agrees(
-            """
-            public class Nnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggggggggggggggg {
-                int x;
-            }
-            """,
+            $$"""
+              public class Nnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGamma{{R('g', 49)}} {
+                  int x;
+              }
+              """,
             """
             public class Nnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue,
                 IGammaggggggggggggggggggggggggggggggggggggggggggggggggg {
@@ -525,11 +532,11 @@ public sealed class TypeNameGapIssue539Tests {
             """
         );
         Agrees(
-            """
-            public abstract partial class Nnnnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggg {
-                int x;
-            }
-            """,
+            $$"""
+              public abstract partial class Nnnnnnnnnn : IAlphaInterfaceNameValue, IGamma{{R('g', 46)}} {
+                  int x;
+              }
+              """,
             """
             public abstract partial class Nnnnnnnnnn : IAlphaInterfaceNameValue,
                 IGammagggggggggggggggggggggggggggggggggggggggggggggg {
@@ -541,17 +548,17 @@ public sealed class TypeNameGapIssue539Tests {
 
     /// <summary>
     ///     #539 round three: before a lone base type the name moves down whenever the line is too long, behind a type
-    ///     parameter list too (Serilog's <c>LogEventPropertyValueRewriter</c>), and the <c>:</c> breaks as well when that is
-    ///     not enough.
+    ///     parameter list too (Serilog's <c>LogEventPropertyValueRewriter</c>), and the <c>:</c> breaks as well when
+    ///     that is not enough.
     /// </summary>
     [Fact]
     public void ALoneBaseType_TakesTheNameBreakAtAnyWidth() {
         Agrees(
-            """
-            public abstract class LogEventPropertyValueRewriter<TState> : LogEventPropertyValueVisitor<TState, Lzzzzzzzzzzzzzzzzzzzzz> {
-                int x;
-            }
-            """,
+            $$"""
+              {{Long2}}
+                  int x;
+              }
+              """,
             """
             public abstract class
                 LogEventPropertyValueRewriter<TState> : LogEventPropertyValueVisitor<TState, Lzzzzzzzzzzzzzzzzzzzzz> {
@@ -560,24 +567,24 @@ public sealed class TypeNameGapIssue539Tests {
             """
         );
         Agrees(
-            """
-            public abstract class LogEventPropertyValueRewriterXXXXXXX : LogEventPropertyValueVisitorBzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz {
-                int x;
-            }
-            """,
-            """
-            public abstract class
-                LogEventPropertyValueRewriterXXXXXXX : LogEventPropertyValueVisitorBzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz {
-                int x;
-            }
-            """
+            $$"""
+              public abstract class LogEventPropertyValueRewriterXXXXXXX : LogEventPropertyValueVisitorB{{R('z', 38)}} {
+                  int x;
+              }
+              """,
+            $$"""
+              public abstract class
+                  LogEventPropertyValueRewriterXXXXXXX : LogEventPropertyValueVisitorB{{R('z', 38)}} {
+                  int x;
+              }
+              """
         );
         Agrees(
-            """
-            public abstract class LogEventPropertyValueRewriterXXXXXXX : LogEventPropertyValueVisitorBzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz {
-                int x;
-            }
-            """,
+            $$"""
+              public abstract class LogEventPropertyValueRewriterXXXXXXX : LogEventPropertyValueVisitorB{{R('z', 47)}} {
+                  int x;
+              }
+              """,
             """
             public abstract class
                 LogEventPropertyValueRewriterXXXXXXX :
@@ -589,15 +596,15 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: behind <c>class</c> alone a lone base type does not widen the window: a 72-letter name breaks at
-    ///     124 and not at 126, where behind <c>public class</c> it still breaks at 150.
+    ///     #539 round three: behind <c>class</c> alone a lone base type does not widen the window: a 72-letter name
+    ///     breaks at 124 and not at 126, where behind <c>public class</c> it still breaks at 150.
     /// </summary>
     [Fact]
     public void ALoneBaseTypeBehindABareKeyword_KeepsTheOrdinaryWindow() {
         Agrees(
-            """
-            class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn : SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbb { }
-            """,
+            $$"""
+              class N{{R('n', 71)}} : SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbb { }
+              """,
             """
             class
                 Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn :
@@ -605,18 +612,18 @@ public sealed class TypeNameGapIssue539Tests {
             """
         );
         Agrees(
-            """
-            class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn : SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbbbb { }
-            """,
+            $$"""
+              class N{{R('n', 71)}} : SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbbbb { }
+              """,
             """
             class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn :
                 SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbbbb { }
             """
         );
         Agrees(
-            """
-            public class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn : SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb { }
-            """,
+            $$"""
+              public class N{{R('n', 71)}} : SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb { }
+              """,
             """
             public class
                 Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn :

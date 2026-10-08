@@ -1162,13 +1162,14 @@ static int Report(string[] sets) {
         Console.WriteLine("                    line      file      lines");
         Console.WriteLine($"  basis: {without.BasisName}");
         Row("no symbols", without);
-        Row("with symbols", with);
+        // ⚠ The ratchet's number since #588: the fixtures are the oracle's output under its own symbols.
+        Row("with symbols (the gate)", with);
 
         // ⚠ Both bases, always. The ratchet is over every line again since #449 put the doc-comment
         // task in the format-only profile (SK-DIV-0006); the number without `///` lines is printed
         // beside it so that what the doc comments cost stays a measurement rather than a memory.
         // docs/plan/12 § "A ratchet compares numbers over the same population".
-        var outside = Fidelity.Compare(bare, FidelityBasis.OutsideDocComments);
+        var outside = Fidelity.Compare(bare);
         Row("no symbols, " + outside.BasisName, outside);
         Console.WriteLine();
 

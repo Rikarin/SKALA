@@ -7,47 +7,77 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>constructs/breaks/chain-in-a-header-or-a-sole-lambda.cs</c> holds the wider set and its controls.
 /// </summary>
 public sealed class ChainInAHeaderIssue495Tests {
+    const string Long9 = "Use(x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, "
+        + "gamxaaaaaaaaaaaaaaaaaaaaaaaaaaa)";
+
+    const string Long10 = "x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamx"
+        + "aaaaaaaaaaaaaaaaaaaa)";
+
+    const string Long1 = "if (source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamma"
+        + "ArgumentValueNumberThreeeeee).Any(predicateValue)) {";
+
+    const string Long2 = "while (source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, ga"
+        + "mmaArgumentValueNumberThreeeee).Any(predicateValue)) {";
+
+    const string Long3 = "if (!source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamm"
+        + "aArgumentValueNumberThreeeeee).Any(predicateValue)) {";
+
+    const string Long4 = "if (source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamma"
+        + "ArgumentValueNumberThreeeeee)";
+
+    const string Long5 = "while (source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, ga"
+        + "mmaArgumentValueNumberThreeeee)";
+
+    const string Long6 = "if (!source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamm"
+        + "aArgumentValueNumberThreeeeee)";
+
+    const string Long7 = "Use(x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, "
+        + "gamxaaaaaaaaaaaaaaaaaaaaaaaaaaa).Where(predicateValue));";
+
+    const string Long8 = "Use(first, x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumb"
+        + "erTwo, gamxaaaaaaaaaaaaaaaaaaaa).Where(predicateValue));";
+
     /// <summary>Before the fix: <c>.Any(predicateValue)) {</c> at 16 and 19, a level past the aligned column.</summary>
     [Fact]
     public void AWholeCondition_PutsTheDotsOnTheAlignedColumn() =>
         Oracle.Agrees(
-            """
-            class T {
-                void M() {
-                    if (source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValueNumberThreeeeee).Any(predicateValue)) {
-                        A();
-                    }
+            $$"""
+              class T {
+                  void M() {
+                      {{Long1}}
+                          A();
+                      }
 
-                    while (source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValueNumberThreeeee).Any(predicateValue)) {
-                        A();
-                    }
+                      {{Long2}}
+                          A();
+                      }
 
-                    if (!source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValueNumberThreeeeee).Any(predicateValue)) {
-                        A();
-                    }
-                }
-            }
-            """,
-            """
-            class T {
-                void M() {
-                    if (source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValueNumberThreeeeee)
-                        .Any(predicateValue)) {
-                        A();
-                    }
+                      {{Long3}}
+                          A();
+                      }
+                  }
+              }
+              """,
+            $$"""
+              class T {
+                  void M() {
+                      {{Long4}}
+                          .Any(predicateValue)) {
+                          A();
+                      }
 
-                    while (source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValueNumberThreeeee)
-                           .Any(predicateValue)) {
-                        A();
-                    }
+                      {{Long5}}
+                             .Any(predicateValue)) {
+                          A();
+                      }
 
-                    if (!source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValueNumberThreeeeee)
-                            .Any(predicateValue)) {
-                        A();
-                    }
-                }
-            }
-            """
+                      {{Long6}}
+                              .Any(predicateValue)) {
+                          A();
+                      }
+                  }
+              }
+              """
         );
 
     /// <summary>
@@ -57,27 +87,27 @@ public sealed class ChainInAHeaderIssue495Tests {
     [Fact]
     public void ASoleLambdasBody_PutsTheDotsOneLevelPastTheStatement() =>
         Oracle.Agrees(
-            """
-            class T {
-                void M() {
-                    Use(x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaaaaaaaaaaaaaaaaaaaaaaaa).Where(predicateValue));
-                    Use(first, x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaaaaaaaaaaaaaaaaa).Where(predicateValue));
-                }
-            }
-            """,
-            """
-            class T {
-                void M() {
-                    Use(x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaaaaaaaaaaaaaaaaaaaaaaaa)
-                        .Where(predicateValue)
-                    );
-                    Use(
-                        first,
-                        x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaaaaaaaaaaaaaaaaa)
-                            .Where(predicateValue)
-                    );
-                }
-            }
-            """
+            $$"""
+              class T {
+                  void M() {
+                      {{Long7}}
+                      {{Long8}}
+                  }
+              }
+              """,
+            $$"""
+              class T {
+                  void M() {
+                      {{Long9}}
+                          .Where(predicateValue)
+                      );
+                      Use(
+                          first,
+                          {{Long10}}
+                              .Where(predicateValue)
+                      );
+                  }
+              }
+              """
         );
 }

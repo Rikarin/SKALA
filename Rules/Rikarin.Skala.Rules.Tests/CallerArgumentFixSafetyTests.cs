@@ -9,6 +9,24 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     #422: no fix is safe where it changes text a <c>[CallerArgumentExpression]</c> parameter captures.
 /// </summary>
 public sealed class CallerArgumentFixSafetyTests {
+    const string Long1 = """public Box(Func<int, int> f, [CallerArgumentExpression("f")] string text = "") ="""
+        + "> Text = text;";
+
+    const string Long2 = """public static string Capture(object? value, [CallerArgumentExpression("value")] """
+        + """string text = "") => text;""";
+
+    const string Long3 = """public static string Many([CallerArgumentExpression("values")] string text = "","""
+        + " params Func<int, int>[] values) => text;";
+
+    const string Long4 = """public static string Text<T>(this T value, [CallerArgumentExpression("value")] s"""
+        + """tring text = "") => text;""";
+
+    const string Long5 = """public static string Misnamed(Func<int, int> f, [CallerArgumentExpression("nothi"""
+        + """ng")] string text = "") => text;""";
+
+    const string Long6 = """public static string Self(int value, [CallerArgumentExpression("text")] string t"""
+        + """ext = "") => text;""";
+
     static readonly string ProbePath = Path.Combine(
         RuleFixtures.Root,
         "SK4020",
@@ -100,18 +118,18 @@ public sealed class CallerArgumentFixSafetyTests {
                        using System.Runtime.CompilerServices;
 
                        public sealed class Box {
-                           public Box(Func<int, int> f, [CallerArgumentExpression("f")] string text = "") => Text = text;
+                           {{Long1}}
                            public string Text { get; }
                        }
 
                        public static class Captures {
                            public static int Apply(Func<int, int> f) => f(1);
-                           public static string Capture(object? value, [CallerArgumentExpression("value")] string text = "") => text;
-                           public static string Many([CallerArgumentExpression("values")] string text = "", params Func<int, int>[] values) => text;
-                           public static string Text<T>(this T value, [CallerArgumentExpression("value")] string text = "") => text;
+                           {{Long2}}
+                           {{Long3}}
+                           {{Long4}}
                        #pragma warning disable CS8963, CS8965
-                           public static string Misnamed(Func<int, int> f, [CallerArgumentExpression("nothing")] string text = "") => text;
-                           public static string Self(int value, [CallerArgumentExpression("text")] string text = "") => text;
+                           {{Long5}}
+                           {{Long6}}
                        #pragma warning restore CS8963, CS8965
                            public static object Use() => {{call}};
                        }

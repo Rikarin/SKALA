@@ -37,10 +37,10 @@ public sealed partial class CSharpDocumentBuilder {
     ///             piece with no break points in it rather than a walk of the hole's nodes.
     ///         </item>
     ///     </list>
-    ///     ⚠ A gap holding a line break is copied as written — the oracle keeps a hole's breaks and the
-    ///     indentation after them — and a multi-line raw literal's text shifts afterwards, by <c>RawLiteralPlan</c> (#447).
-    ///     Declined, and left verbatim as before: a hole holding a line comment or a directive outside a
-    ///     broken gap, a formatter tag, and <c>disable_space_changes</c>.
+    ///     ⚠ A gap holding a line break is copied as written — the oracle keeps a hole's breaks and the indentation
+    ///     after them — and a multi-line raw literal's text shifts afterwards, by <c>RawLiteralPlan</c> (#447).
+    ///     Declined, and left verbatim as before: a hole holding a line comment or a directive outside a broken gap, a
+    ///     formatter tag, and <c>disable_space_changes</c>.
     /// </remarks>
     string? RespacedInterpolatedString(SyntaxNode node) {
         if (node is not InterpolatedStringExpressionSyntax || options.DisableSpaceChanges) {
@@ -51,10 +51,8 @@ public sealed partial class CSharpDocumentBuilder {
         var output = new StringBuilder(span.Length + 8);
         SyntaxToken previous = default;
         foreach (var token in node.DescendantTokens(descendIntoTrivia: false)) {
-            if (previous.RawKind != 0) {
-                if (!AppendGap(output, previous, token)) {
-                    return null;
-                }
+            if (previous.RawKind != 0 && !AppendGap(output, previous, token)) {
+                return null;
             }
 
             output.Append(source, token.SpanStart, token.Span.Length);

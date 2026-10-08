@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
@@ -30,32 +31,32 @@ public sealed class ParameterDefaultChopIssue556Tests {
     }
 
     /// <summary>
-    ///     #556: int a = 5 behind its one attribute section chops the arguments when the joined line overflows, as int a
-    ///     does.
+    ///     #556: int a = 5 behind its one attribute section chops the arguments when the joined line overflows, as int
+    ///     a does.
     /// </summary>
     [Fact]
     public void AShortParameterWithADefault_ChopsTheSectionToo() {
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] int a = 5) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] int a = 5
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [Obsolete("{{R('a', 81)}}", true)] int a = 5) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [Obsolete("{{R('a', 81)}}", true)] int a = 5
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] int a = 5) { }
-            }
-            """,
+            $$"""
+              class C {
+                  void M(int b, [Obsolete("{{R('a', 83)}}", true)] int a = 5) { }
+              }
+              """,
             """
             class C {
                 void M(
@@ -70,11 +71,11 @@ public sealed class ParameterDefaultChopIssue556Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] int a = 5) { }
-            }
-            """,
+            $$"""
+              class C {
+                  void M(int b, [Obsolete("{{R('a', 84)}}", true)] int a = 5) { }
+              }
+              """,
             """
             class C {
                 void M(
@@ -89,11 +90,11 @@ public sealed class ParameterDefaultChopIssue556Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] int a = 5) { }
-            }
-            """,
+            $$"""
+              class C {
+                  void M(int b, [Obsolete("{{R('a', 91)}}", true)] int a = 5) { }
+              }
+              """,
             """
             class C {
                 void M(

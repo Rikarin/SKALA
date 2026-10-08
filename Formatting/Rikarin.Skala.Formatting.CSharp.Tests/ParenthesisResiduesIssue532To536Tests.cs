@@ -1,3 +1,5 @@
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
+
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
@@ -6,7 +8,9 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     the wider set.
 /// </summary>
 public sealed class ParenthesisResiduesIssue532To536Tests {
-    /// <summary>#532: a positional pattern in a property pattern keeps <c>X: (2</c> and its items on <c>X</c>'s column.</summary>
+    /// <summary>
+    ///     #532: a positional pattern in a property pattern keeps <c>X: (2</c> and its items on <c>X</c>'s column.
+    /// </summary>
     [Fact]
     public void APositionalPatternInAPropertyPattern_StaysBesideItsName() =>
         Oracle.Agrees(
@@ -78,26 +82,26 @@ public sealed class ParenthesisResiduesIssue532To536Tests {
     [Fact]
     public void DotsAndLifts_AreTheOracles() =>
         Oracle.Agrees(
-            """
-            class C {
-                void M() {
-                    var n4 = nameof(a.Bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccccccccc.Dddddddddd);
-                    var e4 = c.
-            X.
-            Y().
-            Z;
-                    var e7 = c./* c */
-            X;
-                }
+            $$"""
+              class C {
+                  void M() {
+                      var n4 = nameof(a.B{{R('b', 70)}}.Cccccccccccccccccccccccccc.Dddddddddd);
+                      var e4 = c.
+              X.
+              Y().
+              Z;
+                      var e7 = c./* c */
+              X;
+                  }
 
-                static bool Near(Vector2 point, float x) =>
-                    ((point
-            .X
-            - x)
-            * (point.X - x))
-            + 1;
-            }
-            """,
+                  static bool Near(Vector2 point, float x) =>
+                      ((point
+              .X
+              - x)
+              * (point.X - x))
+              + 1;
+              }
+              """,
             """
             class C {
                 void M() {

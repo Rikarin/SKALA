@@ -270,7 +270,9 @@ public readonly record struct ConstraintRun(GroupPlan Outer, GroupPlan Inner, bo
 public sealed class BreakPlan {
     readonly Dictionary<int, GapSpec> gaps = [];
 
-    /// <summary>The positions <see cref="PlanPastLeadingComments" /> planned. See <see cref="PlansPastALeadingComment" />.</summary>
+    /// <summary>
+    ///     The positions <see cref="PlanPastLeadingComments" /> planned. See <see cref="PlansPastALeadingComment" />.
+    /// </summary>
     readonly HashSet<int> pastLeadingComments = [];
 
     /// <summary>The positions <see cref="PlanCommentedAttributeGap" /> planned past a block comment.</summary>
@@ -356,7 +358,9 @@ public sealed class BreakPlan {
     /// <summary>The groups opened at a child that close right after it — a property's name (#540).</summary>
     readonly HashSet<int> closesAfterChild = [];
 
-    /// <summary>Whether a group opened at a child closes right after that child. See <see cref="PlanPropertyHead" />.</summary>
+    /// <summary>
+    ///     Whether a group opened at a child closes right after that child. See <see cref="PlanPropertyHead" />.
+    /// </summary>
     public bool ClosesAfterItsChild(int group) => closesAfterChild.Contains(group);
 
     /// <summary>
@@ -415,7 +419,9 @@ public sealed class BreakPlan {
     /// </remarks>
     readonly List<ForStatementSyntax> forHeaders = [];
 
-    /// <summary>A lambda-valued local's declarator and its type/name group, linked to the `=`'s group after the walk.</summary>
+    /// <summary>
+    ///     A lambda-valued local's declarator and its type/name group, linked to the `=`'s group after the walk.
+    /// </summary>
     readonly List<(VariableDeclaratorSyntax Declarator, int Group)> oneOverLambdas = [];
 
     readonly string source;
@@ -528,7 +534,9 @@ public sealed class BreakPlan {
         }
     }
 
-    /// <summary>The group over this type declaration's keyword/name gap, if any. See <see cref="PlanTypeName" />.</summary>
+    /// <summary>
+    ///     The group over this type declaration's keyword/name gap, if any. See <see cref="PlanTypeName" />.
+    /// </summary>
     public bool TryTypeNameGroup(SyntaxNode node, out GroupPlan plan) => typeNames.TryGetValue(Key(node), out plan);
 
     /// <summary>
@@ -2079,10 +2087,13 @@ public sealed class BreakPlan {
     ///     columns per eleven letters, rounded, measured between <c>BaseTypeName</c> and <c>B</c> (SK-DIV-0198).
     ///     Never negative: no longer name was measured.
     /// </summary>
-    static int BaseNameShift(BaseListSyntax node, int perEleven) =>
-        node.Types[0].Type.Span.Length >= 12
+    int BaseNameShift(BaseListSyntax node, int perEleven) =>
+        FormattedWidth(node.Types[0].Type) >= 12
             ? 0
-            : (int)Math.Round((12 - node.Types[0].Type.Span.Length) * perEleven / 11.0, MidpointRounding.AwayFromZero);
+            : (int)Math.Round(
+                (12 - FormattedWidth(node.Types[0].Type)) * perEleven / 11.0,
+                MidpointRounding.AwayFromZero
+            );
 
     /// <summary>
     ///     A tuple's components, <c>(A: 1, B: 2,\n C: 3)</c> — and every other delimited list the oracle
@@ -2623,11 +2634,12 @@ public sealed class BreakPlan {
     ///     The oracle writes <c>public class</c> / <c>    Name…</c> in two cases, which are the ordering rule's
     ///     two questions: when the line runs past the margin before the header's next point (a name that
     ///     fills the line, <c>Name : IFoo,</c> at 123), and when the joined line overflows by at most four
-    ///     columns whatever the head (before a lone base type, at any width) and the name is not one that gives way to the
-    ///     competing list's first comma (<see cref="GroupFacts.NameWidth" />). The base list then sits at
-    ///     the declaration's own level, not one past the name's line — <c>    Name : IFoo,</c> /
-    ///     <c>    IBar {</c> — which <see cref="CSharpDocumentBuilder" /> writes from an anchor the group
-    ///     pushes on the keyword's line; a type parameter list fills one level past the name's line.
+    ///     columns whatever the head (before a lone base type, at any width) and the name is not one that
+    ///     gives way to the competing list's first comma (<see cref="GroupFacts.NameWidth" />). The base
+    ///     list then sits at the declaration's own level, not one past the name's line —
+    ///     <c>    Name : IFoo,</c> / <c>    IBar {</c> — which <see cref="CSharpDocumentBuilder" /> writes
+    ///     from an anchor the group pushes on the keyword's line; a type parameter list fills one level
+    ///     past the name's line.
     /// </remarks>
     /// <summary>
     ///     The constant of <see cref="GroupFacts.NameWidth" />'s rule before a base list (SK-DIV-0353): fitted to
@@ -2679,9 +2691,9 @@ public sealed class BreakPlan {
         // when there is no base list. Each is weighed by the width of the item before that comma, capped.
         var floor = type switch {
             { TypeParameterList: null, BaseList.Types: { Count: >= 2 } bases } => BaseListNameFloor
-                - 3 * Math.Min(bases[0].Type.Span.Length, FirstItemCap),
+                - 3 * Math.Min(FormattedWidth(bases[0].Type), FirstItemCap),
             { TypeParameterList.Parameters: { Count: >= 2 } parameters, BaseList: null } => TypeParameterNameFloor
-                - 3 * Math.Min(parameters[0].Span.Length, FirstItemCap),
+                - 3 * Math.Min(FormattedWidth(parameters[0]), FirstItemCap),
             _ => (int?)null
         };
         typeNames[Key(node)] = new(
@@ -2781,7 +2793,8 @@ public sealed class BreakPlan {
     ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 (#474, SK-DIV-0127): a field
     ///     <c>IReadOnlyDictionary&lt;string, IReadOnlyList&lt;string&gt;&gt; Overflowing;</c> past the margin and a
     ///     tuple-typed field come back with the name one level in on a line of its own, the type whole —
-    ///     where Skala filled the type's argument list, <c>Dictionary&lt;Guid,</c> / <c>List&lt;Guid&gt;&gt; First, …</c>;
+    ///     where Skala filled the type's argument list, <c>Dictionary&lt;Guid,</c> /
+    ///     <c>List&lt;Guid&gt;&gt; First, …</c>;
     ///     a local whose <c>=</c> lands past 120 the same, <c>T…T</c> / <c>    v9 = [</c>, and
     ///     <c>Dictionary&lt;T…T, int&gt;</c> / <c>    v9 = [</c> rather than a break at the type argument
     ///     list's comma. When the line through the <c>=</c> fits, the <c>=</c>'s own rule decides, as it did.
@@ -2821,7 +2834,7 @@ public sealed class BreakPlan {
         var oneOver = node is { Parent: LocalDeclarationStatementSyntax, Variables.Count: 1 }
             && value is IdentifierNameSyntax or AnonymousFunctionExpressionSyntax
             && (value is not AnonymousFunctionExpressionSyntax || ArrowYieldWidthOf(value) > 0)
-            && BreaksItsNameOneOver(node.Type.Span.Length, name.Span.Length)
+            && BreaksItsNameOneOver(FormattedWidth(node.Type), name.Span.Length)
                 ? FlatSourceWidth(value!) + 1
                 : 0;
 
@@ -3252,7 +3265,7 @@ public sealed class BreakPlan {
         // head — dot to `(` — places the column the held `(` would land on; see Fitter.HeldCallLimit and
         // SK-DIV-0331.
         var kind = call.ArgumentList.Arguments.Count <= 1 ? 1 : 2;
-        var callHead = call.ArgumentList.OpenParenToken.Span.End - dot.SpanStart;
+        var callHead = FormattedWidth(dot, call.ArgumentList.OpenParenToken);
 
         // ⚠ Under `wrap_if_long` the rest of the chain after the held call weighs in too (#552); see
         // GroupFacts.HeldCallRest.
@@ -3273,7 +3286,35 @@ public sealed class BreakPlan {
         );
     }
 
-    /// <summary>A plain path of names — <c>a</c>, <c>a.B.C</c> — with no call, index, <c>!</c> or <c>?.</c> in it.</summary>
+    /// <summary>
+    ///     The one column of the token after <paramref name="node" /> when it is a <paramref name="kind" />
+    ///     — a <c>,</c> or <c>;</c> that rides on the node's last line — and otherwise none.
+    /// </summary>
+    static int WidthOfNext(SyntaxNode node, SyntaxKind kind) => node.GetLastToken().GetNextToken().IsKind(kind) ? 1 : 0;
+
+    /// <summary>
+    ///     The width a line comment after <paramref name="token" /> adds to its line, with the space before it,
+    ///     or zero.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The comment rides on the value's line wherever the value goes (Nightly <c>fuzz --seed=3</c>, case
+    ///     7754551050098241345): `… = Call&lt;T&gt;(x); // fuzz` past the margin only with the comment. Measured
+    ///     without it, #528's held-call table kept the <c>=</c> and the argument list chopped; pass two, with
+    ///     the arguments chopped, broke the <c>=</c> — the oracle's answer for both inputs.
+    /// </remarks>
+    static int TrailingCommentWidth(SyntaxToken token) {
+        foreach (var trivia in token.TrailingTrivia) {
+            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
+                return 1 + trivia.Span.Length;
+            }
+        }
+
+        return 0;
+    }
+
+    /// <summary>
+    ///     A plain path of names — <c>a</c>, <c>a.B.C</c> — with no call, index, <c>!</c> or <c>?.</c> in it.
+    /// </summary>
     static bool IsAPathOfNames(ExpressionSyntax expression) =>
         expression switch {
             SimpleNameSyntax => true,
@@ -3333,7 +3374,7 @@ public sealed class BreakPlan {
             new(
                 BreaksIfTooLong: true,
                 HeldCall: call.ArgumentList.Arguments.Count > 1 ? 4 : 3,
-                HeldCallHead: call.ArgumentList.OpenParenToken.Span.End - dot.SpanStart
+                HeldCallHead: FormattedWidth(dot, call.ArgumentList.OpenParenToken)
             ),
             // ⚠ A level of its own, as a chain's: `var y =` / `R` / `.Call(…)` puts the dot one level past
             // the receiver, and LayoutWriter's one-level-per-line collapse keeps `var y = R` / `.Call(…)` at one.
@@ -3401,7 +3442,7 @@ public sealed class BreakPlan {
                         : 0,
                     ArmBody: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm }
                         ? FlatSourceWidth(arm.Expression)
-                        + (arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0)
+                        + WidthOfNext(arm, SyntaxKind.CommaToken)
                         : 0
                 ),
                 HeadSharesTheLevelAroundIt(root),
@@ -3451,7 +3492,7 @@ public sealed class BreakPlan {
     static bool IsAssignmentTarget(SyntaxNode root) =>
         root.Parent is AssignmentExpressionSyntax assignment && assignment.Left == root;
 
-    static bool PlansTheFill(SyntaxNode root) =>
+    bool PlansTheFill(SyntaxNode root) =>
         root.Parent switch {
             AssignmentExpressionSyntax assignment when assignment.Left == root => true,
             BinaryExpressionSyntax binary when IsTypeTest(binary) && binary.Left == root => false,
@@ -3461,7 +3502,7 @@ public sealed class BreakPlan {
             // dot, `=> yyyyyyyyyyy.Z,`, is a point the pattern's fill looked ahead to and stopped at, and
             // the arrow broke where the oracle breaks the pattern's dot.
             SwitchExpressionArmSyntax arm when arm.Expression == root =>
-                FlatSourceWidth(root) + (arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0) > 14,
+                FlatSourceWidth(root) + WidthOfNext(arm, SyntaxKind.CommaToken) > 14,
             _ => true
         };
 
@@ -4588,7 +4629,7 @@ public sealed class BreakPlan {
     ///     or four fills the type arguments below a floor 32 columns apart — 40, 44 and 50 for three, 8,
     ///     12 and 18 for four.
     /// </remarks>
-    static int ColonEdgeFloorOf(SyntaxNode argument, ExpressionSyntax value) {
+    int ColonEdgeFloorOf(SyntaxNode argument, ExpressionSyntax value) {
         var (floor, _) = ColonFloorOf(argument, value);
         if (floor < 0) {
             return 0;
@@ -4612,12 +4653,12 @@ public sealed class BreakPlan {
             _ => null
         };
 
-        var f = Math.Clamp(generic!.TypeArgumentList.Arguments[0].Span.Length, 1, 25);
+        var f = Math.Clamp(FormattedWidth(generic!.TypeArgumentList.Arguments[0]), 1, 25);
         var four = f <= 8 ? 8 + (f - 1) * 4 / 7 : 12 + (f - 8) * 6 / 17;
         return (n == 4 ? four : four + 32) - 1;
     }
 
-    static (int Floor, int Slope) ColonFloorOf(SyntaxNode argument, ExpressionSyntax value) {
+    (int Floor, int Slope) ColonFloorOf(SyntaxNode argument, ExpressionSyntax value) {
         var generic = value switch {
             InvocationExpressionSyntax { Expression: GenericNameSyntax name } => name,
             InvocationExpressionSyntax {
@@ -4658,7 +4699,7 @@ public sealed class BreakPlan {
             50, 54, 56, 60, 60
         ];
 
-        var f = Math.Clamp(firstType.Span.Length, widths[0], widths[^1]);
+        var f = Math.Clamp(FormattedWidth(firstType), widths[0], widths[^1]);
         var column = 0;
         while (column < widths.Length - 2 && f > widths[column + 1]) {
             column++;
@@ -5436,7 +5477,7 @@ public sealed class BreakPlan {
                     OneOverType: value is ParenthesizedLambdaExpressionSyntax oneOver ? OneOverOf(oneOver).Type : 0,
                     PatternHead: PatternHeadOf(node, equals, value),
                     PatternWidth: PatternHeadOf(node, equals, value) > 0
-                        ? ((IsPatternExpressionSyntax)value).Pattern.Span.Length
+                        ? FormattedWidth(((IsPatternExpressionSyntax)value).Pattern)
                         : 0,
                     CalleeOwner: owner,
                     FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
@@ -5454,11 +5495,11 @@ public sealed class BreakPlan {
                     HeldValueWidth: heldCall is null
                         ? 0
                         : FlatSourceWidth(value)
-                        + (value.GetLastToken().GetNextToken().IsKind(SyntaxKind.SemicolonToken) ? 1 : 0)
+                        + WidthOfNext(value, SyntaxKind.SemicolonToken)
                         + TrailingCommentWidth(value.GetLastToken().GetNextToken()),
                     HeldValueReceiver: heldReceiver,
                     HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
-                        ? heldCall.ArgumentList.OpenParenToken.Span.End - heldDot.OperatorToken.SpanStart
+                        ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
                     CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner)
@@ -5668,7 +5709,7 @@ public sealed class BreakPlan {
             }
         }
 
-        return width + (root.GetLastToken().GetNextToken().IsKind(SyntaxKind.SemicolonToken) ? 1 : 0);
+        return width + WidthOfNext(root, SyntaxKind.SemicolonToken);
     }
 
     /// <summary>
@@ -5704,54 +5745,83 @@ public sealed class BreakPlan {
     ///     a <c>)</c> or a <c>]</c> read as nothing — so the chain the first pass chopped measures on the
     ///     second pass what it measured flat. See <see cref="GroupFacts.ValueHeadWidth" /> (#553).
     /// </summary>
+    int FormattedWidth(SyntaxNode node) => FormattedWidth(node.GetFirstToken(), node.GetLastToken());
+
     /// <summary>
-    ///     The width a line comment after <paramref name="token" /> adds to its line, with the space before it,
-    ///     or zero.
+    ///     The width from <paramref name="first" /> through <paramref name="last" /> as the formatter writes it
+    ///     on one line: each token's text, and between two tokens the space <see cref="SpaceRules.Decide" />
+    ///     puts there — none where it forbids one, however many the source has.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The comment rides on the value's line wherever the value goes (Nightly <c>fuzz --seed=3</c>, case
-    ///     7754551050098241345): `… = Call&lt;T&gt;(x); // fuzz` past the margin only with the comment. Measured
-    ///     without it, #528's held-call table kept the <c>=</c> and the argument list chopped; pass two, with
-    ///     the arguments chopped, broke the <c>=</c> — the oracle's answer for both inputs.
+    ///     ⚠ Every measured table keyed on a width reads it here, never off the source's span: a span counts
+    ///     the author's spacing, so `Func <T >` and `( P p0)` moved a table to another row and the formatter's
+    ///     output with them — the fuzzer's whitespace-absorption property, broken by #572's one-column table
+    ///     (seed 37583856628, replay 6225963390046177533). A gap the rules leave to the author
+    ///     (<see cref="SpaceKind.Preserve" />) counts the one space the formatter writes back for it.
     /// </remarks>
-    static int TrailingCommentWidth(SyntaxToken token) {
-        foreach (var trivia in token.TrailingTrivia) {
-            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
-                return 1 + trivia.Span.Length;
+    int FormattedWidth(SyntaxToken first, SyntaxToken last) {
+        var width = 0;
+        for (var token = first; !token.IsKind(SyntaxKind.None); token = token.GetNextToken()) {
+            if (token != first) {
+                width += GapWidth(token.GetPreviousToken(), token);
+            }
+
+            width += token.Span.Length;
+            if (token == last) {
+                break;
             }
         }
 
-        return 0;
+        return width;
     }
 
-    static int FlatSourceWidth(SyntaxNode node) {
+    int FlatSourceWidth(SyntaxNode node) {
         var width = 0;
         var first = true;
         foreach (var token in node.DescendantTokens()) {
-            if (!first && token.HasLeadingTrivia || !first && token.GetPreviousToken().HasTrailingTrivia) {
+            if (!first) {
+                var previous = token.GetPreviousToken();
                 var breaks = token.LeadingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia))
-                    || token.GetPreviousToken().TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
+                    || previous.TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
                 var glued = token.Kind() is SyntaxKind.DotToken
                         or SyntaxKind.QuestionToken
                         or SyntaxKind.CloseParenToken
                         or SyntaxKind.CloseBracketToken
-                    || token.GetPreviousToken().Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
-                if (!(breaks && glued)) {
-                    width++;
-                }
+                    || previous.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
 
-                // ⚠ A block comment in the gap is written, with a space beside it (Nightly `fuzz --seed=909`,
-                // case 6285859913225113725): `Review /* f */ >(x)` measured as `Review >(x)` let #528's
-                // held-call table keep an `=` whose line the comment pushed past the margin.
-                foreach (var trivia in token.GetPreviousToken().TrailingTrivia.Concat(token.LeadingTrivia)) {
-                    if (trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
-                        width += trivia.Span.Length + 1;
-                    }
+                // ⚠ The space the formatter writes, not the author's (Nightly fuzzer, seed 1 replay
+                // 13096041111892358404): `DeserializeObject<T >(json)` counted a space before the `>` that the
+                // formatter removes, and the held value's table read another row.
+                if (!(breaks && glued)) {
+                    width += GapWidth(previous, token);
                 }
             }
 
             width += token.Span.Length;
             first = false;
+        }
+
+        return width;
+    }
+
+    /// <summary>The space the formatter writes between two adjacent tokens on one line, comments included.</summary>
+    /// <remarks>
+    ///     ⚠ A block comment in the gap is written, with a space beside it (Nightly <c>fuzz --seed=909</c>, case
+    ///     6285859913225113725): <c>Review /* f */ &gt;(x)</c> measured as <c>Review&gt;(x)</c> let #528's held-call
+    ///     table keep an <c>=</c> whose line the comment pushed past the margin. The formatter writes
+    ///     <c>Review /* f */&gt;</c>: the rules' space, and each comment with one space before it.
+    /// </remarks>
+    int GapWidth(SyntaxToken previous, SyntaxToken token) {
+        var width = SpaceRules.Decide(previous, token, options) switch {
+            SpaceKind.Required => 1,
+            SpaceKind.Forbidden => 0,
+            _ => previous.HasTrailingTrivia || token.HasLeadingTrivia ? 1 : 0
+        };
+
+        foreach (var trivia in previous.TrailingTrivia.Concat(token.LeadingTrivia)) {
+            if (trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
+                width += trivia.Span.Length + 1;
+            }
         }
 
         return width;
@@ -5781,7 +5851,7 @@ public sealed class BreakPlan {
     ///     creation, a creation with arguments or a target-typed <c>new()</c>, none of which was measured, and
     ///     not one the author broke inside, which keeps the brace's break (SK-DIV-0337).
     /// </remarks>
-    static int CreationLimitOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value, EqualsOwner owner) {
+    int CreationLimitOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value, EqualsOwner owner) {
         if (owner == EqualsOwner.None
             || value.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))) {
             return 0;
@@ -5819,42 +5889,16 @@ public sealed class BreakPlan {
             _ => 4420 + 24 * prefix - 16 * Math.Max(name, 23)
         };
 
-        static int WidthThrough(SyntaxToken start, SyntaxToken end) {
-            var width = 0;
-            for (var token = start; !token.IsKind(SyntaxKind.None); token = token.GetNextToken()) {
-                if (token != start && (token.HasLeadingTrivia || token.GetPreviousToken().HasTrailingTrivia)) {
-                    width++;
-                }
-
-                width += token.Span.Length;
-                if (token == end) {
-                    break;
-                }
-            }
-
-            return width;
-        }
+        int WidthThrough(SyntaxToken start, SyntaxToken end) => FormattedWidth(start, end);
     }
 
-    static int HeadWidthThroughEquals(SyntaxNode node, SyntaxToken equals) {
+    int HeadWidthThroughEquals(SyntaxNode node, SyntaxToken equals) {
         var start = EqualsHeadStartOf(node);
         if (start.IsKind(SyntaxKind.None)) {
             start = FirstToken(node);
         }
 
-        var width = 0;
-        for (var token = start; !token.IsKind(SyntaxKind.None); token = token.GetNextToken()) {
-            if (token != start && (token.HasLeadingTrivia || token.GetPreviousToken().HasTrailingTrivia)) {
-                width++;
-            }
-
-            width += token.Span.Length;
-            if (token == equals) {
-                break;
-            }
-        }
-
-        return width;
+        return FormattedWidth(start, equals);
     }
 
     /// <summary>
@@ -5862,7 +5906,7 @@ public sealed class BreakPlan {
     ///     through the <c>=</c>, which turns on <see cref="EqualsFloor.BreaksBeforeAPattern" /> (#446,
     ///     SK-DIV-0211); zero otherwise.
     /// </summary>
-    static int PatternHeadOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {
+    int PatternHeadOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {
         if (value is not IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } test
             || EqualsOwnerOf(node) is not (EqualsOwner.VarLocal or EqualsOwner.TypedLocal)
             || test.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
@@ -5870,7 +5914,7 @@ public sealed class BreakPlan {
             return 0;
         }
 
-        return equals.Span.End - head.SpanStart;
+        return FormattedWidth(head, equals);
     }
 
     /// <summary>
@@ -5907,7 +5951,7 @@ public sealed class BreakPlan {
     ///     A local's <c>=</c> before a lambda with a bare-name body: the gates its declarator's name and
     ///     type widths open (#558). See <see cref="LambdaLocal" />.
     /// </summary>
-    static LambdaLocal LambdaLocalOf(SyntaxNode node) {
+    LambdaLocal LambdaLocalOf(SyntaxNode node) {
         if (node is not EqualsValueClauseSyntax {
                 Parent: VariableDeclaratorSyntax {
                     Parent: VariableDeclarationSyntax {
@@ -5918,7 +5962,7 @@ public sealed class BreakPlan {
             return LambdaLocal.None;
         }
 
-        var type = declaration.Type.Span.Length;
+        var type = FormattedWidth(declaration.Type);
         var name = declarator.Identifier.Span.Length;
         var local = LambdaLocal.Measured;
         if (name <= 10 + (type + 4) / 12) {
@@ -5936,21 +5980,21 @@ public sealed class BreakPlan {
     ///     For a parenthesised lambda with a bare-name body that is a measured local's value: the declaration
     ///     type's width and the body's, for the one-column-over rule (#572); zeros otherwise.
     /// </summary>
-    static (int Type, int Body) OneOverOf(ParenthesizedLambdaExpressionSyntax lambda) =>
+    (int Type, int Body) OneOverOf(ParenthesizedLambdaExpressionSyntax lambda) =>
         lambda is { ExpressionBody: IdentifierNameSyntax body, Parent: EqualsValueClauseSyntax equals }
         && ArrowYieldWidthOf(lambda) > 0
         && LambdaLocalOf(equals) != LambdaLocal.None
         && equals.Parent?.Parent is VariableDeclarationSyntax declaration
-            ? (declaration.Type.Span.Length, body.Span.Length)
+            ? (FormattedWidth(declaration.Type), body.Span.Length)
             : (0, 0);
 
-    static int ArrowYieldWidthOf(ExpressionSyntax value) =>
+    int ArrowYieldWidthOf(ExpressionSyntax value) =>
         value is LambdaExpressionSyntax { ExpressionBody: IdentifierNameSyntax } lambda
         && !lambda.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
-            ? lambda.ArrowToken.Span.End - lambda.SpanStart
+            ? FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken)
             : 0;
 
-    static int CalleeWidthOf(ExpressionSyntax value) =>
+    int CalleeWidthOf(ExpressionSyntax value) =>
         value is InvocationExpressionSyntax { Expression: IdentifierNameSyntax, ArgumentList.Arguments.Count: >= 2 }
             or ObjectCreationExpressionSyntax {
                 Type: IdentifierNameSyntax, ArgumentList.Arguments.Count: >= 2, Initializer: null
@@ -5968,10 +6012,13 @@ public sealed class BreakPlan {
     ///     call whose callee is <c>new</c> and its type (#555): the oracle chops its arguments by the same
     ///     floor.
     /// </summary>
-    static int CalleeOf(ExpressionSyntax value) =>
+    int CalleeOf(ExpressionSyntax value) =>
         value switch {
             InvocationExpressionSyntax invocation => invocation.Expression.Span.Length,
-            ObjectCreationExpressionSyntax creation => creation.ArgumentList!.SpanStart - creation.SpanStart,
+            ObjectCreationExpressionSyntax creation => FormattedWidth(
+                creation.GetFirstToken(),
+                creation.ArgumentList!.OpenParenToken.GetPreviousToken()
+            ),
             _ => 0
         };
 
@@ -6604,13 +6651,13 @@ public sealed class BreakPlan {
                     or CollectionExpressionSyntax
                     or SwitchExpressionSyntax
                 );
-        // ⚠ And a `when` clause's argument list (#564), which the lift reaches only once it chops: `when Compute(` / the
-        // arguments two levels past the arm / `) =>` one level / the body one level. Measured 2026-10-08
-        // written chopped and written whole: whole, the oracle chops the list and keeps the body on the
-        // `) =>` line — `) => Body(…),` and `) => "a long string",` past the margin alike — so a break
-        // after the arrow beside a chopped list is never the width's, which is what makes the lift
-        // idempotent where reading any list in the head was not (generated seed 857717698562573229, a
-        // type argument list that fills, still excluded).
+        // ⚠ And a `when` clause's argument list (#564), which the lift reaches only once it chops:
+        // `when Compute(` / the arguments two levels past the arm / `) =>` one level / the body one
+        // level. Measured 2026-10-08 written chopped and written whole: whole, the oracle chops the list
+        // and keeps the body on the `) =>` line — `) => Body(…),` and `) => "a long string",` past the
+        // margin alike — so a break after the arrow beside a chopped list is never the width's, which is
+        // what makes the lift idempotent where reading any list in the head was not (generated seed
+        // 857717698562573229, a type argument list that fills, still excluded).
         var liftsList = arm.WhenClause is { } when
             && when.DescendantNodes().OfType<ArgumentListSyntax>().Any()
             && !head.SelectMany(static part => part.DescendantNodesAndSelf())
@@ -6715,24 +6762,28 @@ public sealed class BreakPlan {
                         BreaksIfTooLong: true,
                         LambdaParameters: lambda switch {
                             SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
-                            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Span
-                                .Length,
+                            ParenthesizedLambdaExpressionSyntax parenthesized => FormattedWidth(
+                                parenthesized.ParameterList
+                            ),
                             _ => 1
                         },
-                        LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
+                        LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
                         LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
                     )
                     : OperandSoleLambdaTail(lambda, body) is > 0 and var operandTail
                         ? new GroupFacts(
                             BreaksIfTooLong: true,
-                            LambdaOperandParameters: lambda.ArrowToken.SpanStart - 1 - lambda.SpanStart,
+                            LambdaOperandParameters: FormattedWidth(
+                                lambda.GetFirstToken(),
+                                lambda.ArrowToken.GetPreviousToken()
+                            ),
                             LambdaOperandTail: operandTail,
                             LambdaOperandFirst: FirstOperandWidth(body)
                         )
                         : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
                             ? new GroupFacts(
                                 BreaksIfTooLong: true,
-                                LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
+                                LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
                                 LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
                                 LambdaChainHead: chainHead
                             )
@@ -6777,7 +6828,7 @@ public sealed class BreakPlan {
 
         // The innermost call on the spine whose callee is a member access: the chain's first link.
         SyntaxToken dot = default;
-        var node = (SyntaxNode)body;
+        SyntaxNode node = body;
         while (true) {
             switch (node) {
                 case InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax member } invocation:
@@ -6801,7 +6852,7 @@ public sealed class BreakPlan {
             break;
         }
 
-        return dot.IsKind(SyntaxKind.None) ? 0 : dot.SpanStart - lambda.SpanStart;
+        return dot.IsKind(SyntaxKind.None) ? 0 : FormattedWidth(lambda.GetFirstToken(), dot.GetPreviousToken());
     }
 
     /// <summary>
@@ -6818,7 +6869,7 @@ public sealed class BreakPlan {
     ///     The width of an operand chain's first operand — the leftmost — or of <c>x is A</c> before a binary
     ///     pattern's first combinator (#578).
     /// </summary>
-    static int FirstOperandWidth(ExpressionSyntax body) {
+    int FirstOperandWidth(ExpressionSyntax body) {
         switch (body) {
             case IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax pattern } test:
                 PatternSyntax left = pattern;
@@ -6826,14 +6877,14 @@ public sealed class BreakPlan {
                     left = binary.Left;
                 }
 
-                return left.Span.End - test.SpanStart;
+                return FormattedWidth(test.GetFirstToken(), left.GetLastToken());
             default:
                 var node = body;
                 while (node is BinaryExpressionSyntax binary && !IsTypeTest(binary)) {
                     node = binary.Left;
                 }
 
-                return node.Span.Length;
+                return FormattedWidth(node);
         }
     }
 
@@ -6855,7 +6906,9 @@ public sealed class BreakPlan {
 
         var start = body.SpanStart;
         var length = statement.Span.End - start;
-        return source.AsSpan(start, length).IndexOfAny('\r', '\n') < 0 ? statement.Span.End - body.Span.End : 0;
+        return source.AsSpan(start, length).IndexOfAny('\r', '\n') < 0
+            ? FormattedWidth(body.GetLastToken(), statement.GetLastToken()) - body.GetLastToken().Span.Length
+            : 0;
     }
 
     bool IsAFilledSoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
@@ -8095,9 +8148,11 @@ public sealed class BreakPlan {
         // keys `true` the oracle's output at `false` is byte-identical to its output at `true`. A
         // method's, a local function's and an `if`'s block are only ever kept under their keep key,
         // which outranks this one, so they are unaffected either way.
-        return block.Parent is AccessorDeclarationSyntax or AnonymousFunctionExpressionSyntax
-            ? Keeps(block) ? !broken : options.PreserveSingleLineBlocks
-            : !broken && Keeps(block);
+        if (block.Parent is AccessorDeclarationSyntax or AnonymousFunctionExpressionSyntax) {
+            return Keeps(block) ? !broken : options.PreserveSingleLineBlocks;
+        }
+
+        return !broken && Keeps(block);
     }
 
     void OnOwnLines<T>(SyntaxList<T> nodes) where T : SyntaxNode {
@@ -8178,10 +8233,9 @@ public sealed class BreakPlan {
                 return;
             }
 
-            foreach (var token in AttributeGaps(node, lists)) {
-                if (!pastAttributeComments.Contains(token.SpanStart)) {
-                    Mandatory(token);
-                }
+            foreach (var token in AttributeGaps(node, lists)
+                         .Where(token => !pastAttributeComments.Contains(token.SpanStart))) {
+                Mandatory(token);
             }
 
             return;
@@ -8632,6 +8686,12 @@ public sealed class BreakPlan {
         }
     }
 
+    /// <summary>Whether a break past <paramref name="collection" />'s <c>[</c> survives.</summary>
+    bool ABreakSurvivesInside(CollectionExpressionSyntax collection) {
+        var open = collection.OpenBracketToken.SpanStart;
+        return collection.DescendantTokens().Any(token => token.SpanStart > open && SourceBreakSurvives(token));
+    }
+
     /// <summary>
     ///     A collection expression that is a grouping parenthesis's whole contents joins its <c>[</c> to the
     ///     <c>(</c> once it breaks (#485, SK-DIV-0150).
@@ -8653,9 +8713,7 @@ public sealed class BreakPlan {
             }
 
             var open = collection.OpenBracketToken;
-            if (options.KeepsUserBreaksBetweenItems
-                && collection.DescendantTokens()
-                    .Any(token => token.SpanStart > open.SpanStart && SourceBreakSurvives(token))) {
+            if (options.KeepsUserBreaksBetweenItems && ABreakSurvivesInside(collection)) {
                 gaps[open.SpanStart] = new(GapRule.Flat, -1);
                 continue;
             }

@@ -12,34 +12,59 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     second pass is asserted.
 /// </summary>
 public sealed class AttributeJoinTerminatorIssue438Tests {
+    const string Long41 = "[Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int "
+        + "betaParameterValue, int gammaVa);";
+
+    const string Long42 = "[Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int "
+        + "betaParameterValue, int gammaVal);";
+
+    const string Long43 = "[Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int "
+        + "betaParameterValue, int gammaValu);";
+
+    const string Long44 = "[Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int "
+        + "betaParameterValue, int gammaValueXYZ);";
+
     const string Long1 = "gxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     const string Long2 = "gxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     const string Long3 = "gxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     const string Long4 = "gxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     const string Long5 = "gxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     const string Long6 = "gxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-    const string Long7 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "d";
+    const string Long7 = "dddddddddddddddddddddddddddddddddddddddddddddd";
     const string Long8 = "dddddddddddddddddddddddddddddddddddddd";
-    const string Long9 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "dd";
+    const string Long9 = "ddddddddddddddddddddddddddddddddddddddddddddddd";
     const string Long10 = "ddddddddddddddddddddddddddddddddddddddd";
-    const string Long11 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "ddd";
+    const string Long11 = "dddddddddddddddddddddddddddddddddddddddddddddddd";
     const string Long12 = "dddddddddddddddddddddddddddddddddddddddd";
-    const string Long13 = "P120xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-    const string Long14 = "P121xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-    const string Long15 = "P122xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-    const string Long16 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "dddd";
-    const string Long17 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "ddddd";
-    const string Long18 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "dddddd";
-    const string Long19 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "ddddddd";
-    const string Long20 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "dddddddd";
-    const string Long21 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "ddddddddd";
-    const string Long22 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "dddddddddd";
-    const string Long23 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "ddddddddddd";
-    const string Long24 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "dddddddddddd";
-    const string Long25 = "P123xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-    const string Long26 = "P124xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-    const string Long27 = "P125xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-    const string Long28 = "P126xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    const string Long13 = "P120xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+
+    const string Long14 = "P121xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        + "x";
+
+    const string Long15 = "P122xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        + "xx";
+
+    const string Long16 = "ddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long17 = "dddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long18 = "ddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long19 = "dddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long20 = "ddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long21 = "dddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long22 = "ddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long23 = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long24 = "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+
+    const string Long25 = "P123xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        + "xxx";
+
+    const string Long26 = "P124xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        + "xxxx";
+
+    const string Long27 = "P125xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        + "xxxxx";
+
+    const string Long28 = "P126xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        + "xxxxxx";
 
     const string Long29 =
         "P127xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -50,15 +75,15 @@ public sealed class AttributeJoinTerminatorIssue438Tests {
     const string Long31 =
         "P129xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
-    const string Long32 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "ddddddddddddddd";
-    const string Long33 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "dddddddddddddddddddddddddddd";
-    const string Long34 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "ddddddddddddddddd";
-    const string Long35 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "dddddddddddddddddddddddddddddd";
-    const string Long36 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "ddddddddddddddddddd";
-    const string Long37 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "dddddddddddddddddddddddddddddddd";
-    const string Long38 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "ddddddddddddddddddddd";
-    const string Long39 = "ddddddddddddddddddddddddddddddddddddddddddddd" + "dddddddddddddddddddddddddddddddddd";
-    const string Long40 = "int, int, int, int, int, int, int, int, int, " + "int, int, int";
+    const string Long32 = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long33 = "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long34 = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long35 = "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long36 = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long37 = "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long38 = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long39 = "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const string Long40 = "int, int, int, int, int, int, int, int, int, int, int, int";
 
     static void Agrees(string source, string expected) {
         var options = new PhaseOneOptions(
@@ -346,10 +371,10 @@ public sealed class AttributeJoinTerminatorIssue438Tests {
         Agrees(
             $$"""
               public abstract class In {
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVa);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVal);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaValu);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaValueXYZ);
+                  {{Long41}}
+                  {{Long42}}
+                  {{Long43}}
+                  {{Long44}}
                   [Obsolete] public event System.Action<{{Long40}}> EventNameXYZWVUTSR;
                   [Obsolete] public event System.Action<{{Long40}}> EventNameXYZWVUTSRQ;
                   [Obsolete] public event System.Action<{{Long40}}> EventNameXYZWVUTSRQP;
@@ -357,9 +382,9 @@ public sealed class AttributeJoinTerminatorIssue438Tests {
               """,
             $$"""
               public abstract class In {
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVa);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVal);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaValu);
+                  {{Long41}}
+                  {{Long42}}
+                  {{Long43}}
 
                   [Obsolete] public abstract void AbstractMethodName(
                       int alphaParameterValue,

@@ -227,7 +227,9 @@ public sealed class Fitter {
     ///     to the bracket.
     /// </param>
     /// <param name="lineStart">The column the current line's first character landed on; see <see cref="Enter" />.</param>
-    /// <param name="pointSpace">What the group's first point renders as when flat; see <see cref="GroupFacts.TailEndsAt" />.</param>
+    /// <param name="pointSpace">
+    ///     What the group's first point renders as when flat; see <see cref="GroupFacts.TailEndsAt" />.
+    /// </param>
     ResolvedMode Decide(
         GroupMode mode,
         in GroupFacts facts,
@@ -489,7 +491,8 @@ public sealed class Fitter {
                 if (facts.LambdaChainHead > 0) {
                     var start = m.Column - facts.LambdaHead;
                     var parameters = facts.LambdaHead - 3;
-                    return start >= (facts.LambdaIsSimple ? 21 : 25)
+                    var startLimit = facts.LambdaIsSimple ? 21 : 25;
+                    return start >= startLimit
                         || 9 * (m.ContinuationColumn + tail) + 2 * parameters - 2 * start <= 969
                         || m.Column >= 21 && start + facts.LambdaChainHead > width
                             ? ResolvedMode.Broken
@@ -985,6 +988,14 @@ public sealed class Fitter {
                     return false;
                 }
 
+                // ⚠ A receiver that runs past the margin beside the `=` breaks it, as the other two heads'
+                // rules do. Unmeasured — the sweeps' receivers ended by column 118 — and held, it left `= r…(`
+                // past the margin for the second pass to break once the arguments had chopped (Nightly fuzzer,
+                // seed 1, replay 7536332154113230584: idempotency).
+                if (valueColumn + facts.HeldValueReceiver > width) {
+                    return true;
+                }
+
                 return facts.HeldValueManyArgs
                     ? parenBeside > width && parenBelow <= width - 3
                     : below <= width + 1 || parenBelow <= width - 3;
@@ -1050,7 +1061,9 @@ public sealed class Fitter {
     /// <summary>The widest arm body, comma included, that lets a switch arm's pattern fill (#531).</summary>
     const int ArmBodyLimit = 14;
 
-    /// <summary>The column a call condition's <c>=</c> breaks at or left of when the call fits nowhere (#553).</summary>
+    /// <summary>
+    ///     The column a call condition's <c>=</c> breaks at or left of when the call fits nowhere (#553).
+    /// </summary>
     const int CallConditionColumn = 40;
 
     bool Fits(int column, int flatWidth, int trailing = 0) =>

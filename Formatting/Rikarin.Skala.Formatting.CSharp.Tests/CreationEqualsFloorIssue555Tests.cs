@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
@@ -36,11 +37,11 @@ public sealed class CreationEqualsFloorIssue555Tests {
     [Fact]
     public void ACreationWithArguments_ChopsByTheCallFloor() {
         Agrees(
-            """
-            class C {
-                public Foo F = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
-            }
-            """,
+            $$"""
+              class C {
+                  public Foo F = new Foo(alphaValue, betaValue, {{R('z', 71)}});
+              }
+              """,
             """
             class C {
                 public Foo F = new Foo(
@@ -52,11 +53,11 @@ public sealed class CreationEqualsFloorIssue555Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                public Foo Ffffffffffffffff = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
-            }
-            """,
+            $$"""
+              class C {
+                  public Foo Ffffffffffffffff = new Foo(alphaValue, betaValue, {{R('z', 63)}});
+              }
+              """,
             """
             class C {
                 public Foo Ffffffffffffffff = new Foo(
@@ -68,11 +69,11 @@ public sealed class CreationEqualsFloorIssue555Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                public Foo Fffffffffffffffffffffffffffffff = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
-            }
-            """,
+            $$"""
+              class C {
+                  public Foo Fffffffffffffffffffffffffffffff = new Foo(alphaValue, betaValue, {{R('z', 39)}});
+              }
+              """,
             """
             class C {
                 public Foo Fffffffffffffffffffffffffffffff =
@@ -81,11 +82,11 @@ public sealed class CreationEqualsFloorIssue555Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                public Foo Fffffffffffffffffffffffffffffff = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
-            }
-            """,
+            $$"""
+              class C {
+                  public Foo Fffffffffffffffffffffffffffffff = new Foo(alphaValue, betaValue, {{R('z', 44)}});
+              }
+              """,
             """
             class C {
                 public Foo Fffffffffffffffffffffffffffffff = new Foo(
@@ -97,13 +98,13 @@ public sealed class CreationEqualsFloorIssue555Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M() {
-                    var v = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
-                }
-            }
-            """,
+            $$"""
+              class C {
+                  void M() {
+                      var v = new Foo(alphaValue, betaValue, {{R('z', 72)}});
+                  }
+              }
+              """,
             """
             class C {
                 void M() {
@@ -117,13 +118,13 @@ public sealed class CreationEqualsFloorIssue555Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M() {
-                    var vvvvvvvvvvvvvvvv = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
-                }
-            }
-            """,
+            $$"""
+              class C {
+                  void M() {
+                      var vvvvvvvvvvvvvvvv = new Foo(alphaValue, betaValue, {{R('z', 59)}});
+                  }
+              }
+              """,
             """
             class C {
                 void M() {
@@ -137,13 +138,13 @@ public sealed class CreationEqualsFloorIssue555Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M() {
-                    var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzz);
-                }
-            }
-            """,
+            $$"""
+              class C {
+                  void M() {
+                      var {{R('v', 46)}} = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzz);
+                  }
+              }
+              """,
             """
             class C {
                 void M() {
@@ -154,13 +155,13 @@ public sealed class CreationEqualsFloorIssue555Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M() {
-                    var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
-                }
-            }
-            """,
+            $$"""
+              class C {
+                  void M() {
+                      var {{R('v', 46)}} = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
+                  }
+              }
+              """,
             """
             class C {
                 void M() {
@@ -174,11 +175,11 @@ public sealed class CreationEqualsFloorIssue555Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                [Obsolete] /* c */ public Foo F = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
-            }
-            """,
+            $$"""
+              class C {
+                  [Obsolete] /* c */ public Foo F = new Foo(alphaValue, betaValue, {{R('z', 50)}});
+              }
+              """,
             """
             class C {
                 [Obsolete] /* c */
@@ -187,11 +188,11 @@ public sealed class CreationEqualsFloorIssue555Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                [Obsolete] /* c */ public Foo F = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
-            }
-            """,
+            $$"""
+              class C {
+                  [Obsolete] /* c */ public Foo F = new Foo(alphaValue, betaValue, {{R('z', 55)}});
+              }
+              """,
             """
             class C {
                 [Obsolete] /* c */ public Foo F = new Foo(
@@ -203,11 +204,11 @@ public sealed class CreationEqualsFloorIssue555Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                [Obsolete] /* c */ public Foo Ffffffffffffffff = new Foo(alphaValue, betaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
-            }
-            """,
+            $$"""
+              class C {
+                  [Obsolete] /* c */ public Foo Ffffffffffffffff = new Foo(alphaValue, betaValue, {{R('z', 50)}});
+              }
+              """,
             """
             class C {
                 [Obsolete] /* c */ public Foo Ffffffffffffffff = new Foo(
@@ -219,11 +220,11 @@ public sealed class CreationEqualsFloorIssue555Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                [Obsolete] /* c */ public Foo F = new Foo(alphaValue, betaValue, gammaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
-            }
-            """,
+            $$"""
+              class C {
+                  [Obsolete] /* c */ public Foo F = new Foo(alphaValue, betaValue, gammaValue, {{R('z', 39)}});
+              }
+              """,
             """
             class C {
                 [Obsolete] /* c */ public Foo F = new Foo(
@@ -236,11 +237,11 @@ public sealed class CreationEqualsFloorIssue555Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                [Obsolete] /* c */ public Foo F = new Foo(alphaValue, betaValue, gammaValue, zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz);
-            }
-            """,
+            $$"""
+              class C {
+                  [Obsolete] /* c */ public Foo F = new Foo(alphaValue, betaValue, gammaValue, {{R('z', 51)}});
+              }
+              """,
             """
             class C {
                 [Obsolete] /* c */ public Foo F = new Foo(

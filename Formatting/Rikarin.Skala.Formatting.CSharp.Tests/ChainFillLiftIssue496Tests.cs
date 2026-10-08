@@ -15,6 +15,9 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel</c>.
 /// </remarks>
 public sealed class ChainFillLiftIssue496Tests {
+    const string Long1 = "}).Where(alphaPredicateValueNumberOneLongerStill).ToList(betaValueArgumentNumber"
+        + "TwoLongerStillxxxxxxxxxxxxxxxxxx);";
+
     static string UnderAFill(string source) =>
         Overridden.Settled(
                 source,
@@ -50,21 +53,21 @@ public sealed class ChainFillLiftIssue496Tests {
             }
             """,
             UnderAFill(
-                """
-                class T {
-                    void M() {
-                        var r = source.Select(x => {
-                            A();
-                            return x;
-                        }).Where(alphaPredicateValueNumberOneLongerStill).ToList(betaValueArgumentNumberTwoLongerStillxxxxxxxxxxxxxxxxxx);
-                        var s = source.Select(
-                            alphaArgumentValueNumberOne,
-                            betaArgumentValueNumberTwo
-                        )
-                            .Where(beta);
-                    }
-                }
-                """
+                $$"""
+                  class T {
+                      void M() {
+                          var r = source.Select(x => {
+                              A();
+                              return x;
+                          {{Long1}}
+                          var s = source.Select(
+                              alphaArgumentValueNumberOne,
+                              betaArgumentValueNumberTwo
+                          )
+                              .Where(beta);
+                      }
+                  }
+                  """
             )
         );
 }

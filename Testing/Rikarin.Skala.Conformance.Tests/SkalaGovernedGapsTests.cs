@@ -21,7 +21,7 @@ public sealed class SkalaGovernedGapsTests {
     [InlineData("var e = new[] { .. a };")]
     [InlineData("int[] x = [0, ..\n    a];")]
     [InlineData("int[] x = [0, .. /* c */ a];")]
-    [InlineData("var s = \"[0, .. a]\";")]
+    [InlineData("""var s = "[0, .. a]";""")]
     public void EveryOtherGap_IsLeftAlone(string text) => Assert.Equal(text, SkalaGovernedGaps.Normalise(text));
 
     /// <summary>

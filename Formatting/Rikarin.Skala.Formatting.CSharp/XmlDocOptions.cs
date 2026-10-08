@@ -509,7 +509,14 @@ public static class XmlDocIds {
         ),
         new(
             "skala_xmldoc_allow_far_alignment",
-            "Read since #570, and Tier D for a reason that is a property of the export, not of Skala: the key only matters under `skala_xmldoc_attribute_indent = align_by_first_attribute`, and the export's `single_indent` masks it, so a fixture regenerated at the export cannot tell its values apart and the sweep would call it Unexercised. Measured with the prerequisite flipped, at `skala_xmldoc_max_line_length = 90`, a first attribute at 56 to 95: at `true` the continuation stays under the first attribute at every column it fits beside the tag name (to 83), where `false` takes two indents from 60; and at either value a first attribute that does not fit (84 on) puts every attribute one indent past the tag. Pinned by `XmlDocAllowFarAlignmentIssue570Tests`."
+            "Read since #570, and Tier D for a reason that is a property of the export, not of Skala: the key "
+            + "only matters under `skala_xmldoc_attribute_indent = align_by_first_attribute`, and the export's "
+            + "`single_indent` masks it, so a fixture regenerated at the export cannot tell its values apart and "
+            + "the sweep would call it Unexercised. Measured with the prerequisite flipped, at "
+            + "`skala_xmldoc_max_line_length = 90`, a first attribute at 56 to 95: at `true` the continuation stays "
+            + "under the first attribute at every column it fits beside the tag name (to 83), where `false` takes "
+            + "two indents from 60; and at either value a first attribute that does not fit (84 on) puts every "
+            + "attribute one indent past the tag. Pinned by `XmlDocAllowFarAlignmentIssue570Tests`."
         ),
 
         // ── Measured inert in the oracle: the indent is the C# file's ────────────────────────

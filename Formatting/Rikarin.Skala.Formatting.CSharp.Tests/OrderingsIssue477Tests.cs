@@ -13,6 +13,18 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>skala_wrap_before_comma = true</c> flipped one at a time.
 /// </remarks>
 public sealed class OrderingsIssue477Tests {
+    const string Long1 = "orderby aaaaaaaaaaaaaaaaaaaaaaaaaa.ToString().Length, aaaaaaaaaaaaaaaaaaaaaaaaaa"
+        + ".ToString().Length, aaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+    const string Long2 = "orderby aaaaaaaaaaaaaaaaaaaaaaaaaa.ToString().Length, aaaaaaaaaaaaaaaaaaaaaaaaaa"
+        + ".ToString().Length,";
+
+    const string Long3 = "return from a in xs orderby a.ToString().Length, a.ToString().Length, a.ToString"
+        + "().Length, a.ToString().Length, a select a;";
+
+    const string Long4 = "orderby a.ToString().Length, a.ToString().Length, a.ToString().Length, a.ToStrin"
+        + "g().Length, a";
+
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
@@ -25,223 +37,223 @@ public sealed class OrderingsIssue477Tests {
         return CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
     }
 
-    const string Statements = """
-                              using System.Linq;
-                              using System.Collections.Generic;
-                              class Q {
-                                  void M1(List<int> xs) {
-                                      var q = from a in xs
-                                      orderby a,
-                                      b
-                                      select a;
-                                  }
-                                  void M2(List<int> xs) {
-                                      var q = from a in xs
-                                      orderby a
-                                      , a
-                                      select a;
-                                  }
-                                  void M3(List<int> xs) {
-                                      var q = from a in xs
-                                      orderby a descending,
-                                      a ascending
-                                      select a;
-                                  }
-                                  void M4(List<int> xs) {
-                                      var q = from a in xs
-                                      orderby a,
-                                      a,
-                                      a
-                                      select a;
-                                  }
-                                  void M5(List<int> xs) {
-                                      var q = from a in xs orderby a, a select a;
-                                  }
-                                  void M6(List<int> xs) {
-                                      var q = from aaaaaaaaaaaaaaaaaaaaaaaaaa in xs
-                                          orderby aaaaaaaaaaaaaaaaaaaaaaaaaa.ToString().Length, aaaaaaaaaaaaaaaaaaaaaaaaaa.ToString().Length, aaaaaaaaaaaaaaaaaaaaaaaaaa
-                                          select aaaaaaaaaaaaaaaaaaaaaaaaaa;
-                                  }
-                              }
-                              """;
+    static readonly string Statements = $$"""
+                                          using System.Linq;
+                                          using System.Collections.Generic;
+                                          class Q {
+                                              void M1(List<int> xs) {
+                                                  var q = from a in xs
+                                                  orderby a,
+                                                  b
+                                                  select a;
+                                              }
+                                              void M2(List<int> xs) {
+                                                  var q = from a in xs
+                                                  orderby a
+                                                  , a
+                                                  select a;
+                                              }
+                                              void M3(List<int> xs) {
+                                                  var q = from a in xs
+                                                  orderby a descending,
+                                                  a ascending
+                                                  select a;
+                                              }
+                                              void M4(List<int> xs) {
+                                                  var q = from a in xs
+                                                  orderby a,
+                                                  a,
+                                                  a
+                                                  select a;
+                                              }
+                                              void M5(List<int> xs) {
+                                                  var q = from a in xs orderby a, a select a;
+                                              }
+                                              void M6(List<int> xs) {
+                                                  var q = from aaaaaaaaaaaaaaaaaaaaaaaaaa in xs
+                                                      {{Long1}}
+                                                      select aaaaaaaaaaaaaaaaaaaaaaaaaa;
+                                              }
+                                          }
+                                          """;
 
-    const string StatementsOracle = """
-                                    using System.Linq;
-                                    using System.Collections.Generic;
+    static readonly string StatementsOracle = $$"""
+                                                using System.Linq;
+                                                using System.Collections.Generic;
 
-                                    class Q {
-                                        void M1(List<int> xs) {
-                                            var q = from a in xs
-                                                orderby a,
-                                                    b
-                                                select a;
-                                        }
+                                                class Q {
+                                                    void M1(List<int> xs) {
+                                                        var q = from a in xs
+                                                            orderby a,
+                                                                b
+                                                            select a;
+                                                    }
 
-                                        void M2(List<int> xs) {
-                                            var q = from a in xs
-                                                orderby a
-                                                    , a
-                                                select a;
-                                        }
+                                                    void M2(List<int> xs) {
+                                                        var q = from a in xs
+                                                            orderby a
+                                                                , a
+                                                            select a;
+                                                    }
 
-                                        void M3(List<int> xs) {
-                                            var q = from a in xs
-                                                orderby a descending,
-                                                    a ascending
-                                                select a;
-                                        }
+                                                    void M3(List<int> xs) {
+                                                        var q = from a in xs
+                                                            orderby a descending,
+                                                                a ascending
+                                                            select a;
+                                                    }
 
-                                        void M4(List<int> xs) {
-                                            var q = from a in xs
-                                                orderby a,
-                                                    a,
-                                                    a
-                                                select a;
-                                        }
+                                                    void M4(List<int> xs) {
+                                                        var q = from a in xs
+                                                            orderby a,
+                                                                a,
+                                                                a
+                                                            select a;
+                                                    }
 
-                                        void M5(List<int> xs) {
-                                            var q = from a in xs orderby a, a select a;
-                                        }
+                                                    void M5(List<int> xs) {
+                                                        var q = from a in xs orderby a, a select a;
+                                                    }
 
-                                        void M6(List<int> xs) {
-                                            var q = from aaaaaaaaaaaaaaaaaaaaaaaaaa in xs
-                                                orderby aaaaaaaaaaaaaaaaaaaaaaaaaa.ToString().Length, aaaaaaaaaaaaaaaaaaaaaaaaaa.ToString().Length,
-                                                    aaaaaaaaaaaaaaaaaaaaaaaaaa
-                                                select aaaaaaaaaaaaaaaaaaaaaaaaaa;
-                                        }
-                                    }
-                                    """;
+                                                    void M6(List<int> xs) {
+                                                        var q = from aaaaaaaaaaaaaaaaaaaaaaaaaa in xs
+                                                            {{Long2}}
+                                                                aaaaaaaaaaaaaaaaaaaaaaaaaa
+                                                            select aaaaaaaaaaaaaaaaaaaaaaaaaa;
+                                                    }
+                                                }
+                                                """;
 
-    const string Owners = """
-                          using System.Linq;
-                          using System.Collections.Generic;
-                          class Q {
-                              IEnumerable<int> M1(List<int> xs) =>
-                                  from a in xs
-                                  orderby a,
-                                  a
-                                  select a;
-                              void M2(List<int> xs) {
-                                  Use(from a in xs
-                                      orderby a,
-                                      a
-                                      select a);
-                              }
-                              IEnumerable<int> M3(List<int> xs) {
-                                  return from a in xs orderby a.ToString().Length, a.ToString().Length, a.ToString().Length, a.ToString().Length, a select a;
-                              }
-                              void M4(List<int> xs) {
-                                  var q = from a in xs
-                                  orderby a
-                                  , a
-                                  , a
-                                  select a;
-                              }
-                              void Use(IEnumerable<int> q) {
-                              }
-                          }
-                          """;
-
-    const string OwnersOracle = """
-                                using System.Linq;
-                                using System.Collections.Generic;
-
-                                class Q {
-                                    IEnumerable<int> M1(List<int> xs) =>
-                                        from a in xs
+    const string Owners = $$"""
+                            using System.Linq;
+                            using System.Collections.Generic;
+                            class Q {
+                                IEnumerable<int> M1(List<int> xs) =>
+                                    from a in xs
+                                    orderby a,
+                                    a
+                                    select a;
+                                void M2(List<int> xs) {
+                                    Use(from a in xs
                                         orderby a,
-                                            a
-                                        select a;
-
-                                    void M2(List<int> xs) {
-                                        Use(
-                                            from a in xs
-                                            orderby a,
-                                                a
-                                            select a
-                                        );
-                                    }
-
-                                    IEnumerable<int> M3(List<int> xs) {
-                                        return from a in xs
-                                            orderby a.ToString().Length, a.ToString().Length, a.ToString().Length, a.ToString().Length, a
-                                            select a;
-                                    }
-
-                                    void M4(List<int> xs) {
-                                        var q = from a in xs
-                                            orderby a
-                                                , a
-                                                , a
-                                            select a;
-                                    }
-
-                                    void Use(IEnumerable<int> q) { }
+                                        a
+                                        select a);
                                 }
-                                """;
+                                IEnumerable<int> M3(List<int> xs) {
+                                    {{Long3}}
+                                }
+                                void M4(List<int> xs) {
+                                    var q = from a in xs
+                                    orderby a
+                                    , a
+                                    , a
+                                    select a;
+                                }
+                                void Use(IEnumerable<int> q) {
+                                }
+                            }
+                            """;
 
-    const string OwnersAtKeepFalse = """
-                                     using System.Linq;
-                                     using System.Collections.Generic;
+    const string OwnersOracle = $$"""
+                                  using System.Linq;
+                                  using System.Collections.Generic;
 
-                                     class Q {
-                                         IEnumerable<int> M1(List<int> xs) => from a in xs orderby a, a select a;
+                                  class Q {
+                                      IEnumerable<int> M1(List<int> xs) =>
+                                          from a in xs
+                                          orderby a,
+                                              a
+                                          select a;
 
-                                         void M2(List<int> xs) {
-                                             Use(from a in xs orderby a, a select a);
-                                         }
+                                      void M2(List<int> xs) {
+                                          Use(
+                                              from a in xs
+                                              orderby a,
+                                                  a
+                                              select a
+                                          );
+                                      }
 
-                                         IEnumerable<int> M3(List<int> xs) {
-                                             return from a in xs
-                                                 orderby a.ToString().Length, a.ToString().Length, a.ToString().Length, a.ToString().Length, a
-                                                 select a;
-                                         }
+                                      IEnumerable<int> M3(List<int> xs) {
+                                          return from a in xs
+                                              {{Long4}}
+                                              select a;
+                                      }
 
-                                         void M4(List<int> xs) {
-                                             var q = from a in xs orderby a, a, a select a;
-                                         }
+                                      void M4(List<int> xs) {
+                                          var q = from a in xs
+                                              orderby a
+                                                  , a
+                                                  , a
+                                              select a;
+                                      }
 
-                                         void Use(IEnumerable<int> q) { }
-                                     }
-                                     """;
+                                      void Use(IEnumerable<int> q) { }
+                                  }
+                                  """;
 
-    const string OwnersBeforeComma = """
-                                     using System.Linq;
-                                     using System.Collections.Generic;
+    const string OwnersAtKeepFalse = $$"""
+                                       using System.Linq;
+                                       using System.Collections.Generic;
 
-                                     class Q {
-                                         IEnumerable<int> M1(List<int> xs) =>
-                                             from a in xs
-                                             orderby a,
-                                                 a
-                                             select a;
+                                       class Q {
+                                           IEnumerable<int> M1(List<int> xs) => from a in xs orderby a, a select a;
 
-                                         void M2(List<int> xs) {
-                                             Use(
-                                                 from a in xs
-                                                 orderby a,
-                                                     a
-                                                 select a
-                                             );
-                                         }
+                                           void M2(List<int> xs) {
+                                               Use(from a in xs orderby a, a select a);
+                                           }
 
-                                         IEnumerable<int> M3(List<int> xs) {
-                                             return from a in xs
-                                                 orderby a.ToString().Length, a.ToString().Length, a.ToString().Length, a.ToString().Length, a
-                                                 select a;
-                                         }
+                                           IEnumerable<int> M3(List<int> xs) {
+                                               return from a in xs
+                                                   {{Long4}}
+                                                   select a;
+                                           }
 
-                                         void M4(List<int> xs) {
-                                             var q = from a in xs
-                                                 orderby a
-                                                     , a
-                                                     , a
-                                                 select a;
-                                         }
+                                           void M4(List<int> xs) {
+                                               var q = from a in xs orderby a, a, a select a;
+                                           }
 
-                                         void Use(IEnumerable<int> q) { }
-                                     }
-                                     """;
+                                           void Use(IEnumerable<int> q) { }
+                                       }
+                                       """;
+
+    const string OwnersBeforeComma = $$"""
+                                       using System.Linq;
+                                       using System.Collections.Generic;
+
+                                       class Q {
+                                           IEnumerable<int> M1(List<int> xs) =>
+                                               from a in xs
+                                               orderby a,
+                                                   a
+                                               select a;
+
+                                           void M2(List<int> xs) {
+                                               Use(
+                                                   from a in xs
+                                                   orderby a,
+                                                       a
+                                                   select a
+                                               );
+                                           }
+
+                                           IEnumerable<int> M3(List<int> xs) {
+                                               return from a in xs
+                                                   {{Long4}}
+                                                   select a;
+                                           }
+
+                                           void M4(List<int> xs) {
+                                               var q = from a in xs
+                                                   orderby a
+                                                       , a
+                                                       , a
+                                                   select a;
+                                           }
+
+                                           void Use(IEnumerable<int> q) { }
+                                       }
+                                       """;
 
     public static TheoryData<string, string, string, string> Cases =>
         new() {

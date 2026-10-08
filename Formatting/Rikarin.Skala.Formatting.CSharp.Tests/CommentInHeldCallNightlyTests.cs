@@ -22,12 +22,16 @@ public sealed class CommentInHeldCallNightlyTests {
         return CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
     }
 
+    // ⚠ Inside a namespace, as the case was found: at a statement indent of 8 the line is exactly 120 columns
+    // and stays whole.
     const string Minimised = """
+                             namespace N {
                              class C {
                                public void M()
                                {
                                 var jsonObjectWithLowercase = JsonConvert.DeserializeObject<GitHubPullRequestReview /* f */ >(jsonWithLowercase);
                                }
+                             }
                              }
                              """;
 
@@ -35,8 +39,8 @@ public sealed class CommentInHeldCallNightlyTests {
     public void TheMinimisedCase_BreaksTheEquals_AndIsIdempotent() {
         var first = FormatWith(Minimised);
         Assert.Contains(
-            "        var jsonObjectWithLowercase =\n"
-            + "            JsonConvert.DeserializeObject<GitHubPullRequestReview /* f */>(jsonWithLowercase);\n",
+            "            var jsonObjectWithLowercase =\n"
+            + "                JsonConvert.DeserializeObject<GitHubPullRequestReview /* f */>(jsonWithLowercase);\n",
             first,
             StringComparison.Ordinal
         );

@@ -11,6 +11,27 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>jb cleanupcode</c> 2025.2.6's own output, and each test asserts the second pass too.
 /// </summary>
 public sealed class CreationBelowTheEqualsIssue581Tests {
+    const string Long6 = "var vxxxxxxxxxxxxxxxxxxxxxxx = new Something { Alpha = alphaaaaaaaaaaaaaaaa, Bet"
+        + "a = beeeeeeeeeeeeeeeeeeeeeeeeeeeeeee };";
+
+    const string Long7 = "var vxxxxxxxxxxxxxxxxxxxxxxx = new Something { Alpha = alphaaaaaaaaaaaaaaaa, Bet"
+        + "a = beeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee };";
+
+    const string Long1 = "private Something vxxxxxxxxxxxxxxxxxxxxxxxxxxx = new Something { Alpha = alphaaa"
+        + "aaaaaaaaaaaaa, Beta = beeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee };";
+
+    const string Long2 = "private Something vxxxxxxxxxxxxxxxxxxxxxxxxxxx = new Something { Alpha = alphaaa"
+        + "aaaaaaaaaaaaa, Beta = beeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee };";
+
+    const string Long3 = "var vxxxx = new SomeTypeWithALongName { FirstPropertyName = 1, SecondPropertyNam"
+        + "e = 2, ThirdPropertyName = 333 };";
+
+    const string Long4 = "var vxxxxx = new SomeTypeWithALongName { FirstPropertyName = 1, SecondPropertyNa"
+        + "me = 2, ThirdPropertyName = 333 };";
+
+    const string Long5 = "new SomeTypeWithALongName { FirstPropertyName = 1, SecondPropertyName = 2, Third"
+        + "PropertyName = 333 };";
+
     static void Agrees(string source, string expected) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"), []).Options
@@ -30,17 +51,17 @@ public sealed class CreationBelowTheEqualsIssue581Tests {
     [Fact]
     public void TwoBlocksDeeper_TheLimitIsOneColumnLower() {
         Agrees(
-            """
-            class C {
-                void M() {
-                    {
-                        {
-                            var vxxxxxxxxxxxxxxxxxxxxxxx = new Something { Alpha = alphaaaaaaaaaaaaaaaa, Beta = beeeeeeeeeeeeeeeeeeeeeeeeeeeeeee };
-                        }
-                    }
-                }
-            }
-            """,
+            $$"""
+              class C {
+                  void M() {
+                      {
+                          {
+                              {{Long6}}
+                          }
+                      }
+                  }
+              }
+              """,
             """
             class C {
                 void M() {
@@ -55,17 +76,17 @@ public sealed class CreationBelowTheEqualsIssue581Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M() {
-                    {
-                        {
-                            var vxxxxxxxxxxxxxxxxxxxxxxx = new Something { Alpha = alphaaaaaaaaaaaaaaaa, Beta = beeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee };
-                        }
-                    }
-                }
-            }
-            """,
+            $$"""
+              class C {
+                  void M() {
+                      {
+                          {
+                              {{Long7}}
+                          }
+                      }
+                  }
+              }
+              """,
             """
             class C {
                 void M() {
@@ -86,11 +107,11 @@ public sealed class CreationBelowTheEqualsIssue581Tests {
     [Fact]
     public void AField_HasItsOwnLimit() {
         Agrees(
-            """
-            class C {
-                private Something vxxxxxxxxxxxxxxxxxxxxxxxxxxx = new Something { Alpha = alphaaaaaaaaaaaaaaaa, Beta = beeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee };
-            }
-            """,
+            $$"""
+              class C {
+                  {{Long1}}
+              }
+              """,
             """
             class C {
                 private Something vxxxxxxxxxxxxxxxxxxxxxxxxxxx =
@@ -99,11 +120,11 @@ public sealed class CreationBelowTheEqualsIssue581Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                private Something vxxxxxxxxxxxxxxxxxxxxxxxxxxx = new Something { Alpha = alphaaaaaaaaaaaaaaaa, Beta = beeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee };
-            }
-            """,
+            $$"""
+              class C {
+                  {{Long2}}
+              }
+              """,
             """
             class C {
                 private Something vxxxxxxxxxxxxxxxxxxxxxxxxxxx = new Something {
@@ -114,17 +135,19 @@ public sealed class CreationBelowTheEqualsIssue581Tests {
         );
     }
 
-    /// <summary>Under a twelve-column head the braces break whatever the width; at twelve the same value moves down.</summary>
+    /// <summary>
+    ///     Under a twelve-column head the braces break whatever the width; at twelve the same value moves down.
+    /// </summary>
     [Fact]
     public void UnderTwelveColumnsOfHead_TheBracesBreak() {
         Agrees(
-            """
-            class C {
-                void M() {
-                    var vxxxx = new SomeTypeWithALongName { FirstPropertyName = 1, SecondPropertyName = 2, ThirdPropertyName = 333 };
-                }
-            }
-            """,
+            $$"""
+              class C {
+                  void M() {
+                      {{Long3}}
+                  }
+              }
+              """,
             """
             class C {
                 void M() {
@@ -136,25 +159,27 @@ public sealed class CreationBelowTheEqualsIssue581Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M() {
-                    var vxxxxx = new SomeTypeWithALongName { FirstPropertyName = 1, SecondPropertyName = 2, ThirdPropertyName = 333 };
-                }
-            }
-            """,
-            """
-            class C {
-                void M() {
-                    var vxxxxx =
-                        new SomeTypeWithALongName { FirstPropertyName = 1, SecondPropertyName = 2, ThirdPropertyName = 333 };
-                }
-            }
-            """
+            $$"""
+              class C {
+                  void M() {
+                      {{Long4}}
+                  }
+              }
+              """,
+            $$"""
+              class C {
+                  void M() {
+                      var vxxxxx =
+                          {{Long5}}
+                  }
+              }
+              """
         );
     }
 
-    /// <summary>An anonymous object the author broke after its <c>{</c> keeps the break, as SK-DIV-0337's creations do.</summary>
+    /// <summary>
+    ///     An anonymous object the author broke after its <c>{</c> keeps the break, as SK-DIV-0337's creations do.
+    /// </summary>
     [Fact]
     public void AnAnonymousObjectBrokenAfterItsBrace_KeepsTheBreak() {
         Agrees(

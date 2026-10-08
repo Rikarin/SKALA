@@ -365,6 +365,13 @@ and 65 without**, also unchanged, and all 65 are in one file
 
 - options: none
 - commands: `skala format --define`, `skala format --load=`, `fidelity preprocessor`
+⚠ **#588: the fidelity gate did not use them.** `Fidelity_DoesNotDecrease` formatted the corpus with no
+symbols, against fixtures the oracle produced with these eighteen, so the gate read 77353/77560 on `real/` where
+`Testing fidelity` printed 77404/77556 — the same files, with `#if` bodies like Serilog's
+`#if !NET8_0_OR_GREATER` reformatted by Skala and left by the oracle. The gate now formats under
+`Corpus.OracleSymbols`, a committed list that `OracleSymbolsTests` holds to a real probe build, and both read
+77404/77556.
+
 - ⚠ status: **closed at M5**, re-verified
 
 ## SK-DIV-0005 — the ordering rule's margin is a fitted constant, and the sweep says it is not a rule
@@ -8241,6 +8248,37 @@ line: `real` 99.66 % → 99.80 %, 86.32 % → 89.47 % of files.
   dropped the one probed), tabs in a run (taken as one space, as before), and a one-line `<c>` past the
   margin.
 
+## SK-DIV-0384 — `///` lines past 120: two glued elements are a break point — **RESOLVED (#587)**
+
+#587 reported the doc-comment reflow writing `///` lines a few columns past 120 in Skala's own source.
+Measured on every such comment (22 runs holding a line wider than 120 after its marker, each asked of the
+oracle under `SkalaDocComments`), most of it is not a defect:
+
+| what the over-wide lines are | the oracle |
+|---|---|
+| 96 of 123 lines past column 120 that fit within 120 after the `///` | the same — the margin is measured from after the marker (SK-DIV-0019), so the file's column runs `indent + 3` past it |
+| 19 of the 22 runs wider than 120 after the marker: a flat element whose content fits and whose end tag rides past, an unbreakable word, `<code>` | the same lines, byte for byte |
+| two sibling elements glued together on a line that overflows — `</item><item>`, `</term><description>` | **breaks between them**; Skala kept the glue |
+| `Doc.cs`'s `GroupFacts` comment | reformats it; Skala refuses it as malformed |
+
+The glue rule, probed on seven shapes: two elements with nothing between them stay together when they fit
+(`<item>A.</item><item>B.</item>`, `<term>short</term><description>short</description>`) and break between
+them when the line overflows — `<c>a</c><c>b</c>` and `<see/><see/>` in prose too, with no space written
+when they do not break. An element glued to a *word* (`<c>x</c>tail`) stays unbreakable and rides past the
+margin in the oracle as well. `XmlDocRenderer.Push` lets the glued unit wrap when both sides are elements;
+the round-trip signature writes no separator between two markup items, so the break is safe.
+
+⚠ The malformed comments are Skala's own source, not the formatter. A bare `&&`, a `<remarks>` never closed, a
+`</b>` with no `<b>` and a `<param>` with no end make a comment malformed XML, which Skala never reflows by
+design; the oracle formats them anyway. Fixed at source in `Doc.cs` (two), `SarifWriter.cs` and
+`RuleFixtures.cs`. ⚠ One remains, in `LayoutWriter.cs` line 2348 — a bare `` `<` `` in prose — left for the
+group that owns that file this round.
+
+- pinned by `constructs/trivia/doc-comment-glued-elements.cs` and `GluedElementsIssue587Tests`; the sibling
+  check sabotaged fails two of its three tests (the third is the word-glue control).
+- options: none.
+- ⚠ status: **resolved**.
+
 ## SK-DIV-0177 — a named argument's colon is a break point by the arrow's rule
 
 ⚠ **Found measuring #409** (#411): `name176: Cast<…>(` at 126 columns, with no comment anywhere, came
@@ -11072,3 +11110,53 @@ writer's trailing measure stops short of.
 - options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
 - ⚠ status: **fixed** within the residue above, pinned by
   `constructs/wrapping/lambda-arrow-over-an-operand-chain.cs`.
+
+## SK-DIV-0378 — measured widths read off the source broke whitespace absorption
+
+⚠ **Nightly fuzzer, seed 37583856628.** Replay 6225963390046177533 of
+`constructs/breaks/lambda-parameters-one-column-over.cs` broke whitespace absorption
+(`format(mutate(x)) ≡ format(x)`). It widened `Func<T…> name = (P… p0) => v;` to `Func <T… > name = ( P… p0)    =>   v;`,
+and Skala then broke before the name where it chops the parameters for the clean line.
+
+The cause was a class of bug, not the one table. #572's `ChopsOneOver` row and #583's type/name break
+both read the declaration's type off its source span, which counts the author's spacing. So did every
+other width behind a measured rule:
+- #558's name gates and its arrow-yield width;
+- #557's and #571's lambda head;
+- #578's parameter text, first operand and tail;
+- round 3's binary-pattern head and width;
+- #528's held-call head.
+
+All of them now read `BreakPlan.FormattedWidth`: the tokens' text plus the space `SpaceRules.Decide`
+writes between each pair, and one space for a gap the rules leave to the author.
+
+⚠ The minimised case the fuzzer printed, which only changes the indentation, formats identically on master
+too. Absorption was broken by the gaps inside the type and the parameter list. The regression test keeps
+both, and the fuzzer's exact line fails without the fix.
+
+- ⚠ status: **fixed**, pinned by `MeasuredWidthsAbsorbWhitespaceTests`.
+
+⚠ **The same seeds, rerun after that fix, found three more cases of the same two classes.** All three
+are on master too, and all are now fixed:
+- **Seed 1, replay 13096041111892358404** (Newtonsoft's ConstructorHandlingTests.cs, whitespace
+  absorption). `BreakPlan.FlatSourceWidth`, behind #528's held value, counted a run of whitespace as one
+  space, so `DeserializeObject<T >(json)` measured a space the formatter removes. It now uses the
+  formatter's gap (`GapWidth`), as do the #581 and #446 head widths through the `=`.
+- **Seeds 4304693669410283359 and 17091299203163347117** (idempotency). The floor for an `=` before a
+  call (#446, round 2) kept `= Emit(` on a 123-column line, because the arguments cleared the floor.
+  The second pass read the chopped arguments as broken, which that rule declines, and broke the `=`.
+  When the call's `(` is past the margin the `=` now breaks on the first pass. The table was measured with
+  the `(` at columns 52 to 112.
+
+Pinned by four tests in `MeasuredWidthsAbsorbWhitespaceTests`, each of which fails on master.
+
+⚠ **Group I's seed 2 (replay 10561489840196222070, origin `constructs/breaks/equals-before-a-lambda-floor.cs`) has
+the same `Func<…> f = (…) => …` shape.** The fix above already covers it. A rerun of seed 1 then found two
+held-single-call cases that the first sweep had left on the source span:
+- #528's held-call receiver, `CalleeOf` for a `new`, and the base-list, parameter and colon-floor type
+  widths now read `FormattedWidth` too (whitespace absorption, replay 10196079555470681291).
+- **Idempotency (replay 7536332154113230584).** `Fitter.HeldValueBreaks` kept a held single call whose receiver
+  already ran past the margin. The second pass then broke it. A receiver that ends past the margin now
+  breaks the held value on the first pass.
+
+All five cases are pinned in `MeasuredWidthsAbsorbWhitespaceTests`, and each fails against master's sources.

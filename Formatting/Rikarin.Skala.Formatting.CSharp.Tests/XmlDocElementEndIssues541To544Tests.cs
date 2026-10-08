@@ -7,25 +7,28 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>constructs/trivia/doc-comment-what-follows-an-element.cs</c> carries these and more.
 /// </summary>
 public sealed class XmlDocElementEndIssues541To544Tests {
+    const string RemarksOpen = "/// <remarks>";
+    const string RemarksClose = "/// </remarks>";
+
     /// <summary>#541: prose after an element opened across lines starts a line of its own.</summary>
     [Fact]
     public void ProseAfterAnOpenedElement_StartsALine() =>
         Assert.Equal(
             [
-                "/// <remarks>",
+                RemarksOpen,
                 "///     Lead",
                 "///     <i>",
                 "///         an italic run",
                 "///         over two lines",
                 "///     </i>",
                 "///     and more prose.",
-                "/// </remarks>"
+                RemarksClose
             ],
             Doc(
-                "/// <remarks>",
+                RemarksOpen,
                 "///     Lead <i>an italic run",
                 "///     over two lines</i> and more prose.",
-                "/// </remarks>"
+                RemarksClose
             )
         );
 
@@ -37,26 +40,26 @@ public sealed class XmlDocElementEndIssues541To544Tests {
     public void AGluedFullStop_AfterAnElementThatEndsItsLine_StartsALine() {
         Assert.Equal(
             [
-                "/// <remarks>",
+                RemarksOpen,
                 "///     Lead",
                 "///     <i>",
                 "///         an italic run",
                 "///         over two lines",
                 "///     </i>",
                 "///     . A plan says what will happen.",
-                "/// </remarks>"
+                RemarksClose
             ],
             Doc(
-                "/// <remarks>",
+                RemarksOpen,
                 "///     Lead <i>an italic run",
                 "///     over two lines</i>. A plan says what will happen.",
-                "/// </remarks>"
+                RemarksClose
             )
         );
 
         Assert.Equal(
-            ["/// <summary>Doc.</summary>", "/// <seealso cref=\"System.String\" />", "/// ."],
-            Doc("/// <summary>Doc.</summary>", "/// <seealso cref=\"System.String\"/>.")
+            ["/// <summary>Doc.</summary>", """/// <seealso cref="System.String" />""", "/// ."],
+            Doc("/// <summary>Doc.</summary>", """/// <seealso cref="System.String"/>.""")
         );
     }
 
@@ -64,8 +67,8 @@ public sealed class XmlDocElementEndIssues541To544Tests {
     [Fact]
     public void AGluedComma_AfterAnInlineElement_Stays() =>
         Assert.Equal(
-            ["/// <remarks>Lead <see cref=\"System.String\" />, then words.</remarks>"],
-            Doc("/// <remarks>Lead <see cref=\"System.String\"/>, then words.</remarks>")
+            ["""/// <remarks>Lead <see cref="System.String" />, then words.</remarks>"""],
+            Doc("""/// <remarks>Lead <see cref="System.String"/>, then words.</remarks>""")
         );
 
     /// <summary>
@@ -92,16 +95,16 @@ public sealed class XmlDocElementEndIssues541To544Tests {
     public void ContentEndingInAnElement_CountsTheEndTag() {
         var x = string.Join(" ", Enumerable.Repeat("x", 26));
         Assert.Equal(
-            ["/// <exception cref=\"ArgumentException\">When " + x + " yy <c>null</c></exception>"],
-            Doc("/// <exception cref=\"ArgumentException\">When " + x + " yy <c>null</c></exception>")
+            ["""/// <exception cref="ArgumentException">When """ + x + " yy <c>null</c></exception>"],
+            Doc("""/// <exception cref="ArgumentException">When """ + x + " yy <c>null</c></exception>")
         );
         Assert.Equal(
             [
-                "/// <exception cref=\"ArgumentException\">",
+                """/// <exception cref="ArgumentException">""",
                 "///     When " + x + " yyy <c>null</c>",
                 "/// </exception>"
             ],
-            Doc("/// <exception cref=\"ArgumentException\">When " + x + " yyy <c>null</c></exception>")
+            Doc("""/// <exception cref="ArgumentException">When """ + x + " yyy <c>null</c></exception>")
         );
     }
 
@@ -112,17 +115,17 @@ public sealed class XmlDocElementEndIssues541To544Tests {
             "This type is currently internal, while we consider future directions for the logging pipeline, but "
             + "should end up";
         Assert.Equal(
-            ["/// <remarks>", "///     " + Lead, "///     public", "///     in future.", "/// </remarks>"],
-            Doc("/// <remarks>" + Lead + " public", "/// in future.</remarks>")
+            [RemarksOpen, "///     " + Lead, "///     public", "///     in future.", RemarksClose],
+            Doc(RemarksOpen + Lead + " public", "/// in future.</remarks>")
         );
         Assert.Equal(
             [
-                "/// <remarks>",
+                RemarksOpen,
                 "///     " + Lead[..^3],
                 "///     up public in future, and then some more words to wrap again.",
-                "/// </remarks>"
+                RemarksClose
             ],
-            Doc("/// <remarks>" + Lead + " public in future, and then some more words to wrap again.</remarks>")
+            Doc(RemarksOpen + Lead + " public in future, and then some more words to wrap again.</remarks>")
         );
     }
 

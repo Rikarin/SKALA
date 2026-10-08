@@ -1,10 +1,11 @@
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #537: an attribute section of several attributes keeps a certain item&apos;s head on its line. Every expected
+///     Issue #537: an attribute section of several attributes keeps a certain item's head on its line. Every expected
 ///     string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
@@ -55,39 +56,39 @@ public sealed class AttributeSectionHeadIssue537Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete, Description("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")] int a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [Obsolete,
-                     Description(
-                         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                     )]
-                    int a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [Obsolete, Description("{{R('a', 110)}}")] int a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [Obsolete,
+                       Description(
+                           "{{R('a', 110)}}"
+                       )]
+                      int a
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete, Description("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")] int a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [Obsolete, Description("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
-                    int a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [Obsolete, Description("{{R('a', 80)}}")] int a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [Obsolete, Description("{{R('a', 80)}}")]
+                      int a
+                  ) { }
+              }
+              """
         );
         Agrees(
             """
