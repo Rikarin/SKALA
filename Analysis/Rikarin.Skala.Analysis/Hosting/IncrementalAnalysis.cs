@@ -170,7 +170,7 @@ public static class IncrementalAnalysis {
             ? new AnalysisOutcome([], [], false)
             : AnalyzerHost.RunForTrees(unit, options, hosted, mode, changed, cancellation, profile);
         if (changed.Count > 0 && Covered(warm)) {
-            Store(cache, keys.Where(pair => changed.Contains(pair.Key)), unit, warm.Findings, compilationScopedIds, true);
+            Store(cache, changed.Select(tree => KeyValuePair.Create(tree, keys[tree])), unit, warm.Findings, compilationScopedIds, true);
         }
 
         // ⚠ The unchanged files of a compilation something else in changed. Their Syntax half came
@@ -180,7 +180,7 @@ public static class IncrementalAnalysis {
             ? new AnalysisOutcome([], [], false)
             : AnalyzerHost.RunForTrees(unit, options, hosted, mode, rebound, cancellation, profile, true);
         if (rebound.Count > 0 && Covered(again)) {
-            Store(cache, keys.Where(pair => rebound.Contains(pair.Key)), unit, again.Findings, compilationScopedIds, false);
+            Store(cache, rebound.Select(tree => KeyValuePair.Create(tree, keys[tree])), unit, again.Findings, compilationScopedIds, false);
         }
 
         cache.Save();

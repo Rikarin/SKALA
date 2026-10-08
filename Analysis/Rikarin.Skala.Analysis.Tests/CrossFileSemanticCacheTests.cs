@@ -22,7 +22,7 @@ namespace Rikarin.Skala.Analysis.Tests;
 /// </remarks>
 [Collection(SerialWorkspace.Name)]
 public sealed class CrossFileSemanticCacheTests {
-    const string Spread = "SK1133";
+    const string CollectionExpressionSpread = "SK1133";
 
     const string EmptyCatch = "SK2014";
 
@@ -82,24 +82,24 @@ public sealed class CrossFileSemanticCacheTests {
 
         var cold = Run(scratch, project, true);
         Assert.Equal(0, cold.CacheHits);
-        Assert.Single(cold.Findings, static finding => finding.RuleId == Spread);
+        Assert.Single(cold.Findings, static finding => finding.RuleId == CollectionExpressionSpread);
 
         scratch.Write("B.cs", BBox);
         var truth = Run(scratch, project, false);
-        Assert.DoesNotContain(truth.Findings, static finding => finding.RuleId == Spread);
+        Assert.DoesNotContain(truth.Findings, static finding => finding.RuleId == CollectionExpressionSpread);
 
         var warm = Run(scratch, project, true);
 
         // ⚠ The instrument: A.cs's per-file half was served, so this was a warm run.
         Assert.True(warm.CacheHits > 0, "nothing came from the cache, so this run proves nothing about it");
-        Assert.DoesNotContain(warm.Findings, static finding => finding.RuleId == Spread);
+        Assert.DoesNotContain(warm.Findings, static finding => finding.RuleId == CollectionExpressionSpread);
         Assert.Single(warm.Findings, static finding => finding.RuleId == EmptyCatch);
         Assert.Equal(Describe(truth), Describe(warm));
 
         // And back: the finding returns to the file that never changed.
         scratch.Write("B.cs", BList);
         var restored = Run(scratch, project, true);
-        Assert.Single(restored.Findings, static finding => finding.RuleId == Spread);
+        Assert.Single(restored.Findings, static finding => finding.RuleId == CollectionExpressionSpread);
         Assert.Equal(Describe(cold), Describe(restored));
     }
 
