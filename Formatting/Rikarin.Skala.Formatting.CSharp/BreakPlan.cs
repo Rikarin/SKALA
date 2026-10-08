@@ -621,6 +621,15 @@ public sealed class BreakPlan {
                     parameters.CloseParenToken,
                     parameters.Parameters
                 );
+
+                // ⚠ A lambda's parameter list with an expression body stays whole while the line through
+                // its `=>` fits, and the arrow takes the break instead (#453, SK-DIV-0050): the oracle
+                // writes `C2((SomeType first, OtherType second) =>` / `body` / `);` with the `=>` as far
+                // out as column 120, and chops the parameters only once `) =>` itself is past the margin.
+                if (parameters.Parent is ParenthesizedLambdaExpressionSyntax { ExpressionBody: not null } parenthesized) {
+                    ReviseFacts(node, facts => facts with { ThroughWidth = 1 + parenthesized.ArrowToken.Span.Length });
+                }
+
                 return;
 
             // ⚠ An indexer's parameter list had no plan at all (SK-DIV-0108): `int this[int a =\n 5]`
@@ -5741,6 +5750,18 @@ public sealed class BreakPlan {
             }
 
             return true;
+        }
+    }
+
+    /// <summary>Rewrites the facts of every group described on <paramref name="node" />.</summary>
+    void ReviseFacts(SyntaxNode node, Func<GroupFacts, GroupFacts> revise) {
+        if (!groups.TryGetValue(Key(node), out var plans)) {
+            return;
+        }
+
+        for (var i = 0; i < plans.Count; i++) {
+            plans[i] = plans[i] with { Facts = revise(plans[i].Facts) };
+            byId[plans[i].Id] = plans[i];
         }
     }
 

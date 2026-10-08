@@ -296,6 +296,12 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ A lambda's parameter list: broken only when the line through its `=>` overflows.
+                // See GroupFacts.ThroughWidth (#453).
+                if (facts.ThroughWidth > 0) {
+                    return Fits(m.Column, m.FlatWidth + facts.ThroughWidth) ? ResolvedMode.Flat : ResolvedMode.Broken;
+                }
+
                 // ⚠ An `=` before a call: a measured floor on the argument list, at the call's `(`. See
                 // GroupFacts.CalleeWidth and EqualsFloor (#446).
                 if (facts.CalleeWidth > 0

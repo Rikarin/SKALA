@@ -2130,9 +2130,41 @@ its own to add nine to — and the parenthesised parameter list (`C2((…, …) 
 chops instead.
 
 - options: `skala_wrap_before_arrow_with_expressions`, `skala_keep_user_linebreaks`, `skala_keep_existing_linebreaks`, `skala_place_single_method_argument_lambda_on_same_line`, `skala_wrap_parameters_style`
-- ⚠ status: the operand-chain half **fixed** (#453), pinned by
-  `constructs/wrapping/lambda-arrow-over-a-chain.cs`; the call-body and parameter-list halves
-  **open**, measured. The rule that would arm them is known to one constant and a three-column wander,
+⚠ **Round 2 of #453.**
+
+**The parameter list: fixed.** A lambda's parenthesised parameter list beside an expression body stays
+whole while the line through its `=>` fits, and the arrow takes the break instead. Measured with the
+`=>` as far out as column 120, as a sole argument, among other arguments (after the outer list chops),
+after `_f =`, with `static`, and under an expression-bodied member. Only once `) =>` itself runs past
+the margin do the parameters chop. Implemented as `GroupFacts.ThroughWidth` on the list (`BreakPlan`,
+`ParameterListSyntax` under a `ParenthesizedLambdaExpressionSyntax`). Pinned by
+`constructs/wrapping/lambda-parameters-before-the-arrow.cs`.
+
+**The call body: blocked, with the structure measured.** `Action a… = () => Cccc(x, y);` past the margin,
+swept over the body's `(` column `p`, the head width `hw` (statement start through `=`, 10–89) and the
+argument list width `a` (about 21 000 cells across six grids). Every `(p, hw)` row has the shape
+`E* A* B* C*`: the `=` breaks, then the arrow breaks (and the body chops below it when it does not
+fit), then the arguments chop.
+
+- The `E`→`A` boundary depends on the head width alone: the `=` breaks while the line's overflow is at
+  most `g(hw)` — 3, 7, 10, 12, 14, 17, 19, 22, 24, 27, 29, 32 for heads of 26 to 70, four apart, and
+  never for a head under 26.
+- The `C` boundary is a floor `F(p, hw)`. It rises with the head (about 0.4 a column) on one branch,
+  then drops sharply to the `=`'s floor (~51–59) at a head that moves with `p` (22 at a `(` of 64, 46 at
+  88, 70 at 100).
+- A table over that grid (`p` four apart, `hw` four apart, interpolated within each branch) reproduces
+  all 8 284 cells it was built from. It misses 15 of 2 080 one-column cells at `hw = 10`, 235 of 3 050
+  at heads past the grid, and 46 of 2 278 elsewhere. In particular the post-drop floor dips inside a
+  band of heads (40–59 at `p = 85`) and the drop's exact head is known only to four columns.
+
+It was therefore not wired: a model that misses measured cells is below this entry's bar. The attempt
+is saved as `J-453-lambda-floor-attempt.patch` in the session scratchpad. What it needs is a one-column
+grid in `hw` around the drop and across the dip.
+
+- ⚠ status: the operand-chain half and the parameter list **fixed** (#453), pinned by
+  `constructs/wrapping/lambda-arrow-over-a-chain.cs` and
+  `constructs/wrapping/lambda-parameters-before-the-arrow.cs`; the call body **blocked**, measured as
+  above. The rule that would arm them is known to one constant and a three-column wander,
   both in [sk-div-preference-sweep.md](sk-div-preference-sweep.md).
 ## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
 

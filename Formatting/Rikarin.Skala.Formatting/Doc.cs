@@ -957,6 +957,10 @@ public sealed class Document {
 ///     below when it does not fit there either — and with a narrower head never. Zero for any other value.
 /// </param>
 /// <param name="CalleeOwner">Which of <see cref="EqualsFloor" />'s measured owners the <c>=</c> belongs to.</param>
+/// <param name="ThroughWidth">
+///     ⚠ A group that breaks exactly when its flat form and this many columns after it — a lambda's
+///     <c> =&gt;</c> — do not fit on its line, whatever follows (#453). Zero for any other group.
+/// </param>
 /// <param name="KeywordWidth">
 ///     ⚠ The width of the keyword after this group's one point, for the point before an <c>is</c> or an
 ///     <c>as</c> (#444, SK-DIV-0210): broken exactly when the operand before the point fits on its line
@@ -987,4 +991,5 @@ public readonly record struct GroupFacts(
     int ColonFloorSlope = 0,
     int ColonEdgeFloor = 0,
     int CalleeWidth = 0,
-    EqualsOwner CalleeOwner = EqualsOwner.None);
+    EqualsOwner CalleeOwner = EqualsOwner.None,
+    int ThroughWidth = 0);
