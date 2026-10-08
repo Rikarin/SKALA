@@ -424,7 +424,8 @@ public sealed partial class CSharpDocumentBuilder {
 
             var under = MemberUnderGap(nextPieceIndex, nextToken);
             if (under is not null) {
-                var underMultiLine = nextToken.IsKind(SyntaxKind.None) && GluedCommentRunEnd(nextPieceIndex) >= 0
+                var underMultiLine = nextToken.IsKind(SyntaxKind.None)
+                    && GluedCommentRunEnd(nextPieceIndex) >= 0
                     || GluedToTheCommentBelow(under);
                 required = Math.Max(required, RequirementFor(under, underMultiLine));
             }
@@ -796,9 +797,9 @@ public sealed partial class CSharpDocumentBuilder {
 
         var first = last;
         while (first > 0
-            && pieces[first - 1].Kind is PieceKind.LineComment or PieceKind.BlockComment
-            && BlankLinesBetween(pieces[first - 1].Span.End, pieces[first].Span.Start) == 0
-            && (pieces[first - 1].StartsLine || !pieces[first].StartsLine)) {
+               && pieces[first - 1].Kind is PieceKind.LineComment or PieceKind.BlockComment
+               && BlankLinesBetween(pieces[first - 1].Span.End, pieces[first].Span.Start) == 0
+               && (pieces[first - 1].StartsLine || !pieces[first].StartsLine)) {
             first--;
         }
 
@@ -809,8 +810,8 @@ public sealed partial class CSharpDocumentBuilder {
     int RunEnd(int first) {
         var last = first;
         while (last + 1 < pieces.Length
-            && pieces[last + 1].Kind is PieceKind.LineComment or PieceKind.BlockComment
-            && BlankLinesBetween(pieces[last].Span.End, pieces[last + 1].Span.Start) == 0) {
+               && pieces[last + 1].Kind is PieceKind.LineComment or PieceKind.BlockComment
+               && BlankLinesBetween(pieces[last].Span.End, pieces[last + 1].Span.Start) == 0) {
             last++;
         }
 
@@ -1715,7 +1716,8 @@ public sealed partial class CSharpDocumentBuilder {
     ///     both keys at the top level exactly as in a body, at the export and with the two flipped.
     /// </remarks>
     static bool IsBlankLineSubject(SyntaxNode node) =>
-        node is MemberDeclarationSyntax and not GlobalStatementSyntax
+        node is MemberDeclarationSyntax
+            and not GlobalStatementSyntax
             or AccessorDeclarationSyntax
             or UsingDirectiveSyntax
             or ExternAliasDirectiveSyntax
