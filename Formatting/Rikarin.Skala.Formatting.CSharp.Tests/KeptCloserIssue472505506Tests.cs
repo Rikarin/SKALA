@@ -125,4 +125,39 @@ public sealed class KeptCloserIssue472505506Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     #505's boundary, from the Lint drift its first cut caused: a grouping or a tuple broken after its
+    ///     <c>(</c> closes on its opener's level (#443), after <c>return</c> as anywhere.
+    /// </summary>
+    [Fact]
+    public void ACloserAfterABreakAfterTheOpener_ComesBackToTheOpener() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M() {
+                    (
+                        first
+                    ).B();
+                    return (
+                        first,
+                        second
+                    );
+                }
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    (
+                        first
+                    ).B();
+                    return (
+                        first,
+                        second
+                    );
+                }
+            }
+            """
+        );
 }

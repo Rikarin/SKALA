@@ -1515,8 +1515,8 @@ public sealed partial class CSharpDocumentBuilder {
                         && node is InitializerExpressionSyntax
                             or AnonymousObjectCreationExpressionSyntax
                             or SwitchExpressionSyntax
-                        ? IndentFlags.Multiplied
-                        : IndentFlags.None;
+                            ? IndentFlags.Multiplied
+                            : IndentFlags.None;
 
                     if (indentBraces) {
                         OpenIndent(braceIndent, false, multiplied);
@@ -1617,7 +1617,8 @@ public sealed partial class CSharpDocumentBuilder {
         // `, (2` puts `, (2` on the condition's column, which already pays the statement's level.
         var suppress = aligned
             || IsNestedPositionalList(node)
-            || node is PositionalPatternClauseSyntax && DirectlyInAnAlignedHeader();
+            || node is PositionalPatternClauseSyntax
+            && DirectlyInAnAlignedHeader();
 
         // ⚠ `skala_align_tuple_components = true`: the column *after* the tuple's `(`, which is a
         // different anchor from every key AlignsFromOwnColumn answers and needs a different place
@@ -2033,7 +2034,8 @@ public sealed partial class CSharpDocumentBuilder {
             TypeArgumentListSyntax => options.IndentTypeargAngles,
             TypeParameterListSyntax => options.IndentTypeparamAngles,
             ParenthesizedExpressionSyntax => ParenthesesIndentStyle.Inside,
-            PositionalPatternClauseSyntax or TupleExpressionSyntax when options.IndentPars == ParenthesesIndentStyle.None =>
+            PositionalPatternClauseSyntax or TupleExpressionSyntax when options.IndentPars
+                == ParenthesesIndentStyle.None =>
                 ParenthesesIndentStyle.Inside,
             ArgumentListSyntax { Parent: InvocationExpressionSyntax invocation } when BreakPlan.IsNameOf(invocation) =>
                 options.IndentPars,
@@ -2795,7 +2797,8 @@ public sealed partial class CSharpDocumentBuilder {
         if (!open.IsKind(SyntaxKind.OpenParenToken)
             || !close.IsKind(SyntaxKind.CloseParenToken)
             || open.Parent != close.Parent
-            || open.Parent is not (ArgumentListSyntax { Arguments.Count: 0 } or ParameterListSyntax { Parameters.Count: 0 })) {
+            || open.Parent is not (ArgumentListSyntax { Arguments.Count: 0 }
+                or ParameterListSyntax { Parameters.Count: 0 })) {
             return LoneComment.None;
         }
 
@@ -3088,7 +3091,8 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ A lone comment spanning lines in an empty argument or parameter list takes a line of its
         // own, and so does the `)` after it (#509). See LoneCommentAt.
         if (!options.DisableLineBreakChanges
-            && (nextPieceIndex >= 0 && LoneCommentAt(nextPieceIndex) is LoneComment.OwnLine or LoneComment.ColumnZero
+            && (nextPieceIndex >= 0
+                && LoneCommentAt(nextPieceIndex) is LoneComment.OwnLine or LoneComment.ColumnZero
                 || LoneCommentAt(lastPiece) != LoneComment.None)) {
             Break(nextPieceIndex, nextToken, 0, DefaultNewLine());
             return;
@@ -3581,9 +3585,13 @@ public sealed partial class CSharpDocumentBuilder {
         // already did through the `=`. Under an arrow that already broke, the `)` stays on the `(`'s
         // line's level, because the frame has paid. VisitDelimited's `continues` closes the
         // parenthesis's scopes before this break for the same reason.
+        // ⚠ Only where the first item shares the `(`'s line: a list broken after its `(` closes on its
+        // opener's level, `return (` / `    a,` / `);` (#443) — Lint drift on Skala's own source.
         if (nextToken.IsKind(SyntaxKind.CloseParenToken)
             && nextToken.Parent is ParenthesizedExpressionSyntax or TupleExpressionSyntax
-            && DelimiterLevels(ParenthesesStyleFor(nextToken.Parent)).Closer == 0) {
+            && DelimiterLevels(ParenthesesStyleFor(nextToken.Parent)).Closer == 0
+            && nextToken.Parent.GetFirstToken() is var opener
+            && !HasLineBreak(opener.Span.End, opener.GetNextToken().SpanStart)) {
             return true;
         }
 
