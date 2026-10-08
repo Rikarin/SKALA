@@ -2255,9 +2255,41 @@ its own to add nine to — and the parenthesised parameter list (`C2((…, …) 
 chops instead.
 
 - options: `skala_wrap_before_arrow_with_expressions`, `skala_keep_user_linebreaks`, `skala_keep_existing_linebreaks`, `skala_place_single_method_argument_lambda_on_same_line`, `skala_wrap_parameters_style`
-- ⚠ status: the operand-chain half **fixed** (#453), pinned by
-  `constructs/wrapping/lambda-arrow-over-a-chain.cs`; the call-body and parameter-list halves
-  **open**, measured. The rule that would arm them is known to one constant and a three-column wander,
+⚠ **Round 2 of #453.**
+
+**The parameter list: fixed.** A lambda's parenthesised parameter list beside an expression body stays
+whole while the line through its `=>` fits, and the arrow takes the break instead. Measured with the
+`=>` as far out as column 120, as a sole argument, among other arguments (after the outer list chops),
+after `_f =`, with `static`, and under an expression-bodied member. Only once `) =>` itself runs past
+the margin do the parameters chop. Implemented as `GroupFacts.ThroughWidth` on the list (`BreakPlan`,
+`ParameterListSyntax` under a `ParenthesizedLambdaExpressionSyntax`). Pinned by
+`constructs/wrapping/lambda-parameters-before-the-arrow.cs`.
+
+**The call body: blocked, with the structure measured.** `Action a… = () => Cccc(x, y);` past the margin,
+swept over the body's `(` column `p`, the head width `hw` (statement start through `=`, 10–89) and the
+argument list width `a` (about 21 000 cells across six grids). Every `(p, hw)` row has the shape
+`E* A* B* C*`: the `=` breaks, then the arrow breaks (and the body chops below it when it does not
+fit), then the arguments chop.
+
+- The `E`→`A` boundary depends on the head width alone: the `=` breaks while the line's overflow is at
+  most `g(hw)` — 3, 7, 10, 12, 14, 17, 19, 22, 24, 27, 29, 32 for heads of 26 to 70, four apart, and
+  never for a head under 26.
+- The `C` boundary is a floor `F(p, hw)`. It rises with the head (about 0.4 a column) on one branch,
+  then drops sharply to the `=`'s floor (~51–59) at a head that moves with `p` (22 at a `(` of 64, 46 at
+  88, 70 at 100).
+- A table over that grid (`p` four apart, `hw` four apart, interpolated within each branch) reproduces
+  all 8 284 cells it was built from. It misses 15 of 2 080 one-column cells at `hw = 10`, 235 of 3 050
+  at heads past the grid, and 46 of 2 278 elsewhere. In particular the post-drop floor dips inside a
+  band of heads (40–59 at `p = 85`) and the drop's exact head is known only to four columns.
+
+It was therefore not wired: a model that misses measured cells is below this entry's bar. The attempt
+is saved as `J-453-lambda-floor-attempt.patch` in the session scratchpad. What it needs is a one-column
+grid in `hw` around the drop and across the dip.
+
+- ⚠ status: the operand-chain half and the parameter list **fixed** (#453), pinned by
+  `constructs/wrapping/lambda-arrow-over-a-chain.cs` and
+  `constructs/wrapping/lambda-parameters-before-the-arrow.cs`; the call body **blocked**, measured as
+  above. The rule that would arm them is known to one constant and a three-column wander,
   both in [sk-div-preference-sweep.md](sk-div-preference-sweep.md).
 ## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
 
@@ -7433,6 +7465,11 @@ comment the author wrote on the item's line. ⚠ One neighbour stays open: `var 
 Inner(` / `"…"` / `)` / `);` puts the inner argument two levels in, the opener's line counting both
 parentheses, where Skala collapses them to one — present before this fix, and an indentation rule.
 Pinned by `constructs/breaks/comment-after-an-opener.cs`.
+⚠ **That neighbour, fixed at #521**: the outer argument list's scope is now unconditional when its first
+argument is planned past a leading comment (`PlanDelimited`), so it counts on the line the inner
+construct opens on — measured on a call as the lone and as the first argument, a two-argument inner
+call, an array initializer, and with no `=`. Pinned by
+`constructs/indentation/nested-list-after-a-comment-behind-an-opener.cs`.
 
 - ⚠ status: **resolved**.
 ## SK-DIV-0162 — a one-statement block stayed on its owner's line when its statement wrapped
@@ -7823,8 +7860,39 @@ on every `g ≥ 121` row with `w ≤ 78` and moved `constructs/breaks/break-afte
 reverted. The `g = 120` band (only the `(` past the margin) is the entry's row and stays as recorded.
 
 - options: none.
-- ⚠ status: **resolved** except the last two rows, which are **open**: measured above, **blocked** on a
-  model of the name-length dependence (#490).
+⚠ **Round 2 of #490: wired as a measured table, every measured row reproduced.** 7 296 more cells,
+2 columns apart: name lengths 3–12, first type arguments of 2, 8, 14, 20, 25 and 40 columns, the `>` at
+121–140, item indents 12, 16 and 20. Every row is one clean threshold on the argument list's width `w`:
+
+| name length | floor on `w`, first type argument 2 / 8 / 14 / 20 / 40 columns |
+|---|---|
+| ≤ 3 | never — the oracle always fills |
+| 4 | 128 / 136 / 146 / 152 / 152 at a head of 118, rising 1.6 per column of head (the width from the argument's start to the `>`), any indent |
+| 5 | 96 / 100 / 102 / 106 / 108 |
+| 6 | 82 / 84 / 88 / 90 / 90 |
+| 7 | 70 / 74 / 78 / 80 / 80 |
+| 8 | 62 / 66 / 68 / 72 / 72 |
+| 9 | 56 / – / – / 64 / 64 |
+| 10 | 50 / 54 / 56 / 60 / 60 |
+| ≥ 11 | 0 — the oracle always breaks the colon |
+
+From name length 5 the floor does not move with the `>`'s column or the indent at all. No closed form
+fits it: `w·(n+1)` comes closest, and its intervals do not intersect. So it is a table
+(`BreakPlan.ColonFloorOf`, linear between the measured first-argument widths), read by the fitter
+through `GroupFacts.ColonFloor`/`ColonFloorSlope` once `Document.YieldEndOf` says the type argument
+list's `>` is past the margin. Every grid cell is byte-identical to the oracle, `OwnersC` included, and
+`corpus/real/` is unmoved. ⚠ Interpolated, not measured: first type arguments between the measured
+widths, name length 9 at 8 and 14, and anything other than two type arguments and a two-argument list.
+⚠ **And the `g = 120` band, on a grid of its own** (1 728 cells: `g` 118–120, names 3–11, first type
+arguments of 1, 8 and 25, argument lists 6–68). At `g` ≤ 119 the `(` fits and nobody breaks the colon.
+At exactly 120, from a name of five the colon always breaks; a name of four fills below 8 / 12 / 18
+(first type argument 1 / 8 / 25) and a name of three 32 columns higher, 40 / 44 / 50
+(`BreakPlan.ColonEdgeFloorOf`, `GroupFacts.ColonEdgeFloor`). With the colon flat, Skala's own type
+argument fill then writes the oracle's lines. Every cell matches.
+
+- options: none.
+- ⚠ status: **resolved**, pinned by `constructs/breaks/named-argument-generic-call-colon-floor.cs`.
+  Interpolated rather than measured: the widths named above.
 ## SK-DIV-0174 — the gap after a block comment was always one space, and the oracle answers it three ways
 
 ⚠ **Found measuring #409's family** (#410). `CSharpDocumentBuilder.GapSpace` returned `Required`
@@ -8820,9 +8888,28 @@ chain of calls, and after an `=` it declines the `=` break to do it. Wiring that
 of its own, not this rule.
 
 - options: none.
-- ⚠ status: **resolved** for the band, **open** past it — swept on the receiver's width for #446, see
-  SK-DIV-0211; blocked on a simple member access's `.` having no break point. Pinned by
-  `TypeTestKeywordIssue444Tests`.
+⚠ **Round 2 of #446: the dot has a break point now, and `is`/`as` still does not use it.** Swept with
+`Testing ask` over receivers of 1 to 50 columns, the line from 118 to 140 columns, for `return r.P…;`,
+`var x = r.P…;`, `_x = r.P…;`, `return r.P… as string;` and `return r.P… is T;` (1 380 cells).
+
+- **Without a type test the rule is one sentence.** Whenever the line overflows the oracle breaks before
+  the member access's last dot, one level in, and never after the `=` — every cell. Wired as
+  `BreakPlan.PlanLastDot` for a plain member access (names only, no call) that is a `return`'s value, a
+  local's or an assignment's, with the `=` yielding to it. Pinned by
+  `constructs/breaks/member-access-last-dot.cs`.
+- **Under `as`/`is` it is three rules competing, and the boundary is not modelled.** At 121 columns the
+  dot always wins. From 122 a short receiver takes the keyword band's breaks first: `… as` / `string;`
+  while that line fits (to 128), then `…` / `as string;` (to 131), then the dot two levels in with the
+  keyword band again below it. A longer receiver hands over to the dot earlier — at 126 for a receiver
+  of 14, 125 for 16, 123 for 20, at once for 30. `is` is the same with its shorter tail, and from a
+  receiver of 6 it is the dot from 121.
+
+No reading of the hand-over column (receiver plus line, the second line's width, the head's) fits all
+of it, so the type-test rows keep the #444 band and nothing else. The grid is the starting point.
+
+- ⚠ status: **resolved** for the band and for a plain member access without a type test; **open** for
+  `is`/`as` past the band, measured as above. Pinned by `TypeTestKeywordIssue444Tests` and
+  `constructs/breaks/member-access-last-dot.cs`.
 
 ## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
 
@@ -8892,9 +8979,39 @@ as well. Skala has no point before a simple member access's `.` and breaks befor
 member-access wrap is the missing construct SK-DIV-0124 also records (`A.B.C.D.MoreValue => 2u,`); it is
 a plan of its own and was not attempted here.
 
+⚠ **Round 2 of #446: the call half is wired as measured tables, and every measured cell agrees.** Done
+one column at a time this time: the `(` from 52 to 112, the argument list from the overflow up, callees
+of 1 to 40 columns, statement indents 8 to 24 in nested blocks, and four owners — a `var` local, a
+local with a written type, an assignment statement and a field at indent 4. That is about 17 000 cells,
+each row one clean threshold:
+
+- the `=` breaks exactly while the argument list is narrower than a floor `F`, and the arguments chop
+  otherwise. When the value then does not fit on the continuation line either, the oracle takes both
+  (`=` / `Call(` / the arguments chopped);
+- with a head under 12 columns (statement start through `=`) it never breaks the `=`, which is #379's
+  `MinimumHead` again;
+- `F` is the overflow itself up to a `(` near column 62, so every such row chops. It then falls about a
+  third of a column per column to 50 near column 86 and rises a fifth after. A longer callee moves it a
+  column left in places, each four columns of indent lower it by about three, an assignment sits a
+  column under a `var` local and a typed local a column over in places. A field at indent 4 is another
+  curve: every row chops up to a `(` at 78, then the floor is 60 to 65.
+
+No closed form survived, and the near-linear reading above misses a cell in two hundred, so
+`EqualsFloor` holds the tables: one-column rows for the four owners and for a callee of 20, and
+three-column offsets for the other callees and the indents, taken from the nearest measured column
+between points. `BreakPlan.CalleeWidthOf`/`EqualsOwnerOf` turn it on for a call on a plain name with
+two or more arguments, under those four owners. ⚠ The margin `11 + continuation level` is what these
+rows replace: it broke the `=` for values the oracle chops, and declined it for values ending at 119.
+`corpus/real/` gains nine lines and loses none.
+
+⚠ **Not covered, so the ordering rule still decides**: other value shapes (one argument, a member-access
+callee, a chain), other owners (a property initializer, a parameter default, a field at another indent,
+several declarators), and the binary-pattern half of this entry. Callee widths between those measured,
+and indents and callees crossed, are interpolated.
+
 - options: `skala_wrap_before_eq = false`, the exported value.
-- ⚠ status: **open**, measured; **blocked** on a model of the floor's dependence on the head (#446).
-  #444 shapes 2 and 6.
+- ⚠ status: the call half **resolved** for the measured owners, pinned by
+  `constructs/breaks/equals-before-a-call-floor.cs`; the binary-pattern half **open**. #444 shapes 2 and 6.
 
 ## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
 
@@ -9174,3 +9291,31 @@ introduces a chain link as that link's break.
 
 - options: none.
 - ⚠ status: **resolved** (#523). Pinned by `constructs/trivia/a-comment-above-a-chain-link.cs`.
+
+## SK-DIV-0370 — a binary pattern chain's level in a statement condition counted the wrong nesting
+
+⚠ **#520, found reformatting Skala's own source for #483.** `BreakPlan.IsStatementCondition` walked up
+through *every* expression, so a pattern chain that was the operand of an `&&` or `||` in an `if` lost
+its own level, and it stopped at a parenthesised pattern, so a chain inside `is not (…)` in an `if`
+kept its level and the parenthesis added another. Measured with `Testing ask` on fifteen shapes:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `if (o is Alpha` / `or Beta)` | `or` on the condition's column (12) | identical |
+| `if (x && o is Alpha` / `or Beta)`, `if (x` / `\|\| o is Alpha` / `or Beta)` | `or` one level past the operand's line (16) | 12 |
+| `if (o is not (Alpha` / `or Beta))`, `if (o is (Alpha` / `or Beta))` | 12 | 16 |
+| `while (o is not (Alpha` / `or Beta))` | 15, the condition's aligned column | 19 |
+| `if (x` / `\|\| o is not (Alpha` / `or Beta))`, `var b = o is not (…`, `return x` / `\|\| o is …`, an argument | one level past the line | identical |
+
+The walk now continues through a pattern, an `is`, a grouping parenthesis and a prefix operator, and
+never through a binary's operand; and under `skala_align_multiline_statement_conditions` a pattern's own
+parenthesis inside the condition spends no level (`CSharpDocumentBuilder.PlanDelimited`). This is what
+moved `ReflectiveTypeTestAnalyzer.cs` and `TaintedFlowAnalyzer.cs` away from the oracle.
+
+⚠ **And under an `is` the author broke before**, found reformatting Skala's own `SpaceRules.cs`:
+`next.Parent` / `is A` / `or B` and `… is not (A` / `or B)` put the `or`s on the `is`'s own column, since
+that break has already spent the level. So a chain under such an `is` has no level of its own, and
+neither does its parenthesis (`BreakPlan.EnclosingTypeTest`, `CSharpDocumentBuilder.FollowsABrokenIs`).
+
+- options: `skala_align_multiline_statement_conditions` (the export's `true`; `false` not measured).
+- ⚠ status: **fixed**, pinned by `constructs/indentation/pattern-chain-level-in-a-condition.cs`.

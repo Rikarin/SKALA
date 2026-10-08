@@ -159,7 +159,7 @@ static class PrimaryConstructorWrites {
         if (node != reference
             && node is MemberAccessExpressionSyntax or ElementAccessExpressionSyntax
             && model.GetSymbolInfo(node, cancellation).Symbol is IPropertySymbol { SetMethod.IsReadOnly: true }
-            or IEventSymbol) {
+                or IEventSymbol) {
             return false;
         }
 

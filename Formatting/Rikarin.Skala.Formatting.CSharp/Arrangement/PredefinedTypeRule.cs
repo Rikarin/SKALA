@@ -138,8 +138,8 @@ public sealed class PredefinedTypeRule : ArrangementRule {
             // `nameof(Int32)` reads an identifier whose spelling is the value — neither is a place
             // `int` may be written.
             if (original.Parent is UsingDirectiveSyntax
-                or NamespaceDeclarationSyntax
-                or FileScopedNamespaceDeclarationSyntax
+                    or NamespaceDeclarationSyntax
+                    or FileScopedNamespaceDeclarationSyntax
                 || IsInNameOf(original)) {
                 return visited;
             }

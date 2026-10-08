@@ -31,16 +31,16 @@ public sealed class NondeterministicAssertionAnalyzer : DiagnosticAnalyzer {
             _ => null
         };
         if (name is not ("Equal"
-                or "NotEqual"
-                or "StrictEqual"
-                or "NotStrictEqual"
-                or "Equivalent"
-                or "True"
-                or "False"
-                or "InRange"
-                or "NotInRange"
-                or "Contains"
-                or "DoesNotContain")) {
+            or "NotEqual"
+            or "StrictEqual"
+            or "NotStrictEqual"
+            or "Equivalent"
+            or "True"
+            or "False"
+            or "InRange"
+            or "NotInRange"
+            or "Contains"
+            or "DoesNotContain")) {
             return;
         }
 

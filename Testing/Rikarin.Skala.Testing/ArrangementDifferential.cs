@@ -267,8 +267,8 @@ public static class ArrangementDifferential {
 
             foreach (var diagnostic in result.Diagnostics) {
                 if (diagnostic.Id is not (ArrangeIds.Reverted
-                        or ArrangeIds.SymbolChanged
-                        or ArrangementPipeline.DidNotConverge)) {
+                    or ArrangeIds.SymbolChanged
+                    or ArrangementPipeline.DidNotConverge)) {
                     continue;
                 }
 
