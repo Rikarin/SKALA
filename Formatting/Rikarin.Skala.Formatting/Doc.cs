@@ -1048,6 +1048,13 @@ public sealed class Document {
 /// <param name="HeldValueWidth">With <see cref="HeldValue" />: the value's flat width with its <c>;</c>.</param>
 /// <param name="HeldValueReceiver">With <see cref="HeldValue" />: the receiver's flat width.</param>
 /// <param name="HeldValueHead">With <see cref="HeldValue" />: the width from the dot through the <c>(</c>.</param>
+/// <param name="ArmHead">
+///     ⚠ A switch arm's member-access pattern (#531, SK-DIV-0330): the pattern's flat width, with
+///     <see cref="ArmBody" />. The pattern's fill engages by a measured table on the column the arm's
+///     <c>=&gt;</c> ends at and the body's width rather than by its own width alone. See
+///     <c>Fitter.ArmFills</c>.
+/// </param>
+/// <param name="ArmBody">With <see cref="ArmHead" />: the arm's body with its comma, if it has one.</param>
 /// <param name="HeldValueManyArgs">With <see cref="HeldValue" />: the call has more than one argument.</param>
 /// <param name="FlatIfHeadOverflows">
 ///     ⚠ An assignment's <c>=</c> whose target is a member-access fill (#531, SK-DIV-0330): when the target
@@ -1107,4 +1114,6 @@ public readonly record struct GroupFacts(
     int HeldValueWidth = 0,
     int HeldValueReceiver = 0,
     int HeldValueHead = 0,
-    bool HeldValueManyArgs = false);
+    bool HeldValueManyArgs = false,
+    int ArmHead = 0,
+    int ArmBody = 0);

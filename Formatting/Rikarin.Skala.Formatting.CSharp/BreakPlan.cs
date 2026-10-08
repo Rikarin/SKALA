@@ -2691,7 +2691,14 @@ public sealed class BreakPlan {
             new(
                 group,
                 GroupMode.Preserve,
-                new(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: !IsAssignmentTarget(root)),
+                new(
+                    BreaksIfTooLong: true,
+                    HidesFlatWidthWhenBroken: !IsAssignmentTarget(root),
+                    ArmHead: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax } ? FlatSourceWidth(root) : 0,
+                    ArmBody: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm }
+                        ? FlatSourceWidth(arm.Expression) + (arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0)
+                        : 0
+                ),
                 HeadSharesTheLevelAroundIt(root),
                 OwnLevel: !HeadSharesTheLevelAroundIt(root)
             )
@@ -2731,12 +2738,9 @@ public sealed class BreakPlan {
     ///     #531): planned there as last-resort points, with the <c>=</c> told to stay
     ///     (<see cref="GroupFacts.FlatIfHeadOverflows" />). As the operand of <c>is</c>
     ///     or <c>as</c>, the type test's own break, an <c>=</c> or a lambda's arrow is taken instead
-    ///     (#440, #444, #445). As a switch arm's pattern, the fill outranks the arrow only for a short
-    ///     body: <c>…Dddd</c> / <c>.MoreValue =&gt; yyyyyyyyyyyyy,</c> up to thirteen columns of body,
-    ///     comma aside, and <c>… =&gt;</c> / <c>yyyyyyyyyyyyyy,</c> from fourteen, at heads of 106 to 116
-    ///     columns. The rows this does not reach — a target that overflows by itself, which the oracle
-    ///     does fill, and a fourteen-column body behind a 118-column head, which it fills too — are
-    ///     SK-DIV-0330.
+    ///     (#440, #444, #445). As a switch arm's pattern it is always planned, and whether it outranks the
+    ///     arrow is the Fitter's: it depends on the column the <c>=&gt;</c> ends at (GroupFacts.ArmHead,
+    ///     SK-DIV-0330).
     /// </remarks>
     static bool IsAssignmentTarget(SyntaxNode root) =>
         root.Parent is AssignmentExpressionSyntax assignment && assignment.Left == root;
@@ -2746,11 +2750,12 @@ public sealed class BreakPlan {
             AssignmentExpressionSyntax assignment when assignment.Left == root => true,
             BinaryExpressionSyntax binary when IsTypeTest(binary) && binary.Left == root => false,
             IsPatternExpressionSyntax test when test.Expression == root => false,
-            // ⚠ The body with its comma, if it has one: a last arm without one fills at fourteen columns
-            // of body, where a comma-led arm of fourteen breaks the arrow (#531).
-            ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm } =>
-                arm.Expression.Span.Length + (arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0)
-                <= 14,
+            // ⚠ A switch arm's pattern is always planned, and the Fitter answers by the arm's table
+            // (GroupFacts.ArmHead, #531). ⚠ A body short enough for the pattern to fill is not: its own
+            // dot, `=> yyyyyyyyyyy.Z,`, is a point the pattern's fill looked ahead to and stopped at, and
+            // the arrow broke where the oracle breaks the pattern's dot.
+            SwitchExpressionArmSyntax arm when arm.Expression == root =>
+                FlatSourceWidth(root) + (arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0) > 14,
             _ => true
         };
 

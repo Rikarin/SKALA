@@ -9145,9 +9145,29 @@ no longer fits on its line (the dot, where the rule breaks before the arrow), an
 its own, `yyyyyyyyyyy.Z,` (the dot, where Skala breaks the arrow because the body's own fill point
 answers the arrow's head question). Not measured further.
 
+⚠ **Round three (#531), 2026-10-09: the three arm rows.** The comma rule was the right width read in the
+wrong place: whether an arm's pattern fills depends on where its `=>` ends, which the plan cannot see.
+On 384 arms — heads through the `=>` ending at columns 102 to 127, bodies of 2 to 22 columns with and
+without a comma, patterns whose prefix before the last dot is 60, 77 and 87 columns — the oracle:
+
+| the arm | the pattern's dot breaks when the body with its comma is | otherwise |
+|---|---|---|
+| fits | never | whole |
+| the pattern alone overflows | any width | — |
+| the `=>` overflows | 14 or less | `head` / `=> body` |
+| only the body overflows, `=>` ending at 111 or right of it | 14 or less | `head =>` / `body` |
+| the same, `=>` ending at 110 | 12 or less | the same |
+| the same, `=>` ending at 109 or left of it | never | the same |
+
+`GroupFacts.ArmHead` / `ArmBody` carry the widths and `Fitter.ArmFills` answers; the arm's pattern is
+always planned. ⚠ A body short enough to fill no longer plans its own property fill: its dot,
+`=> yyyyyyyyyyy.Z,`, was the point the pattern's fill looked ahead to and stopped at. Six rows stay off:
+behind the 60-column prefix the oracle's limit is thirteen, not fourteen (five rows), and one 77-column
+row fills at 109 with an eleven-column body.
+
 - options: `skala_wrap_chained_method_calls`, `skala_wrap_after_property_in_chained_method_calls`.
-- ⚠ status: **narrowed** (#531): the target row and the comma row resolved, pinned by
-  `MemberAccessFillIssue531Tests`; the three arm rows above open.
+- ⚠ status: **resolved** (#531): the target row and the comma row in round two, the three arm rows in
+  round three; corpus/real unchanged. Pinned by `MemberAccessFillIssue531Tests`.
 
 ## SK-DIV-0331 — a chain's held first call breaks when it does not fit, and Skala chops its arguments
 

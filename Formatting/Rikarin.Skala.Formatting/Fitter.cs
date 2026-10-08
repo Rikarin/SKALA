@@ -373,6 +373,11 @@ public sealed class Fitter {
                         : ResolvedMode.Flat;
                 }
 
+                // ⚠ A switch arm's pattern fill: by the measured table. See GroupFacts.ArmHead.
+                if (facts.ArmHead > 0) {
+                    return ArmFills(facts, m) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                }
+
                 // ⚠ An `=` before a single call: by the measured table. See GroupFacts.HeldValue.
                 if (facts.HeldValue > 0) {
                     return HeldValueBreaks(facts, m) ? ResolvedMode.Broken : ResolvedMode.Flat;
@@ -742,6 +747,41 @@ public sealed class Fitter {
     ///     first column (#528, h12).
     /// </summary>
     const int HeldReceiverEnd = 87;
+
+    /// <summary>
+    ///     Whether a switch arm's member-access pattern breaks at a dot rather than leave the arm to its
+    ///     arrow (#531, SK-DIV-0330).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-09 on 384 arms (heads through the <c>=&gt;</c> of 102 to 127 columns, bodies of
+    ///     2 to 22 with and without a comma, three prefixes): a pattern that overflows by itself breaks its
+    ///     dot whatever the body; one whose <c>=&gt;</c> overflows breaks its dot for a body of fourteen
+    ///     columns or less and moves the <c>=&gt;</c> down otherwise; and an arm that overflows only by its
+    ///     body breaks its dot for a body of fourteen or less once the <c>=&gt;</c> ends at column 111 or
+    ///     right of it, twelve or less at 110, and never left of that — the arrow breaks there.
+    /// </remarks>
+    bool ArmFills(in GroupFacts facts, in Measures m) {
+        var headEnd = m.Column + facts.ArmHead;
+        var arrowEnd = headEnd + 3;
+        if (arrowEnd + 1 + facts.ArmBody <= width) {
+            return false;
+        }
+
+        if (headEnd > width) {
+            return true;
+        }
+
+        if (arrowEnd > width) {
+            return facts.ArmBody <= ArmBodyLimit;
+        }
+
+        return arrowEnd >= width - 9
+            ? facts.ArmBody <= ArmBodyLimit
+            : arrowEnd == width - 10 && facts.ArmBody <= ArmBodyLimit - 2;
+    }
+
+    /// <summary>The widest arm body, comma included, that lets a switch arm's pattern fill (#531).</summary>
+    const int ArmBodyLimit = 14;
 
     /// <summary>The column a call condition's <c>=</c> breaks at or left of when the call fits nowhere (#553).</summary>
     const int CallConditionColumn = 40;
