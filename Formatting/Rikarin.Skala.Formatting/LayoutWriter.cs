@@ -668,7 +668,7 @@ public sealed class LayoutWriter {
                 IndentKind.FromLine =>
                     new Scope(
                         false,
-                        FromLineBase() + indentWidth,
+                        FromLineBase() + indentWidth + NestedSoleLambdaLevels(flags),
                         line,
                         outer,
                         unconditional,
@@ -1338,7 +1338,34 @@ public sealed class LayoutWriter {
     ///     own, or an alignment column opened on this line — a statement condition's, whose content starts
     ///     past the <c>(</c> rather than at the line's indentation.
     /// </summary>
-    int FromLineBase() {
+    int FromLineBase() => FromLineBaseColumn();
+
+    /// <summary>
+    ///     ⚠ A chain that is the body of a sole lambda nested in another's (#585): one level more for each
+    ///     enclosing argument list opened on this line beyond the innermost —
+    ///     <c>A(() =&gt; B(s =&gt; s</c> / <c>.X(1)</c> two levels past the line, <c>A(() =&gt; B(() =&gt; C(s =&gt; s</c>
+    ///     three, measured; Skala's own <c>build/Build.cs</c> has the two.
+    /// </summary>
+    int NestedSoleLambdaLevels(IndentFlags flags) {
+        if ((flags & IndentFlags.NestedSoleLambda) == 0) {
+            return 0;
+        }
+
+        var delimiters = 0;
+        for (var i = scopes.Count - 1; i >= 0; i--) {
+            if (scopes[i].IsBlock) {
+                break;
+            }
+
+            if (scopes[i].Unconditional && scopes[i].OpenLine == line && scopes[i].Level > 0) {
+                delimiters++;
+            }
+        }
+
+        return Math.Max(0, delimiters - 1) * indentWidth;
+    }
+
+    int FromLineBaseColumn() {
         var indent = atLineStart ? pendingCloserLevel ?? Effective() : CurrentLineIndent();
         for (var i = scopes.Count - 1; i >= 0; i--) {
             if (scopes[i].IsAlignment && scopes[i].OpenLine == line) {

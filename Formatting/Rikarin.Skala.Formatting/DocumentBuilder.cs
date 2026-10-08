@@ -424,7 +424,8 @@ public sealed class DocumentBuilder {
                         | IndentFlags.BrokenAfter
                         | IndentFlags.AnchorAtLine
                         | IndentFlags.Multiplied
-                        | IndentFlags.Additive))),
+                        | IndentFlags.Additive
+                        | IndentFlags.NestedSoleLambda))),
             columns
         );
 

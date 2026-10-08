@@ -149,7 +149,8 @@ public readonly record struct GroupPlan(
     HeldLevel HoldsLevel = HeldLevel.None,
     bool FromLine = false,
     bool UnconditionalLevel = false,
-    bool AdditiveLevel = false);
+    bool AdditiveLevel = false,
+    bool FromLineNested = false);
 
 /// <summary>
 ///     Whether a group spends its continuation level as zero columns. See <see cref="GroupPlan.HoldsLevel" />.
@@ -3172,7 +3173,8 @@ public sealed class BreakPlan {
                 // ⚠ As a sole lambda argument's body the chain is one level past the line it starts on, as
                 // the property fill is (#557): the arrow's line while the arrow stays, the body's once it
                 // breaks — `U(x =>` / `source.A…` / `.Select(…)` one level past the body (#582).
-                FromLine: ChainFromItsLine(root)
+                FromLine: ChainFromItsLine(root),
+                FromLineNested: ChainFromItsLine(root) && IsInAnotherLambdasBody(root)
             )
         );
 
@@ -3855,17 +3857,20 @@ public sealed class BreakPlan {
     ///     <see cref="IsTheBodyOfASoleLambda" />.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Not where the lambda's call is itself another lambda's body: `.Executes(() => DotNetTest(settings =>
-    ///     settings` / `.SetProjectFile(…)` puts the links two levels past the line in the oracle (Skala's own
-    ///     build/Build.cs), which a level from the line would write at one. That shape was not measured and
-    ///     keeps the level around it.
+    ///     ⚠ Where the lambda's call is itself another lambda's body — `.Executes(() => DotNetTest(settings =>
+    ///     settings` / `.SetProjectFile(…)` (Skala's own build/Build.cs) — the oracle puts the links one level
+    ///     past the line for each argument list opened on it: two there, three behind a third lambda
+    ///     (#585, measured 2026-10-09). #582 had kept the level around it, which wrote one too many; see
+    ///     <see cref="IsInAnotherLambdasBody" /> and <c>IndentFlags.NestedSoleLambda</c>.
     /// </remarks>
     bool ChainFromItsLine(SyntaxNode root) =>
         !HeadSharesTheLevelAroundIt(root)
         && options.PlaceSingleMethodArgumentLambdaOnSameLine
-        && IsTheBodyOfASoleLambda(root)
-        && root.Parent?.Parent?.Parent?.Parent is InvocationExpressionSyntax call
-        && call.Parent is not LambdaExpressionSyntax;
+        && IsTheBodyOfASoleLambda(root);
+
+    /// <summary>Whether a sole lambda's chain body sits in a call that is another lambda's body (#585).</summary>
+    static bool IsInAnotherLambdasBody(SyntaxNode root) =>
+        root.Parent?.Parent?.Parent?.Parent is InvocationExpressionSyntax { Parent: LambdaExpressionSyntax };
 
     /// <summary>
     ///     Whether a chain is the expression body of a lambda that is its call's sole argument — or the
