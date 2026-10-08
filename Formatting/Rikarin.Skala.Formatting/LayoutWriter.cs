@@ -558,7 +558,8 @@ public sealed class LayoutWriter {
                         IsGrouping: (flags & IndentFlags.Grouping) != 0,
                         Lifted: lifted,
                         IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0,
-                        LiftsThrough: liftsThrough
+                        LiftsThrough: liftsThrough,
+                        Additive: (flags & IndentFlags.Additive) != 0
                     ),
                 IndentKind.OneLevel =>
                     new Scope(
@@ -815,7 +816,7 @@ public sealed class LayoutWriter {
             if (scope.Unconditional) {
                 if (scope.OpenLine <= line) {
                     level += scope.Level;
-                    blocked = scope.OpenLine;
+                    blocked = scope.Additive ? blocked : scope.OpenLine;
                 }
 
                 continue;
@@ -1180,7 +1181,7 @@ public sealed class LayoutWriter {
             if (scope.Unconditional) {
                 if (nested ? scope.OpenLine <= line : scope.OpenLine < line) {
                     level += scope.Level;
-                    blocked = scope.OpenLine;
+                    blocked = scope.Additive ? blocked : scope.OpenLine;
                 }
 
                 continue;
@@ -1267,7 +1268,8 @@ public sealed class LayoutWriter {
         int AlignedCloser = -1,
         bool LiftsThrough = false,
         bool IsFromLine = false,
-        bool IsBrokenAfter = false);
+        bool IsBrokenAfter = false,
+        bool Additive = false);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     /// <summary>

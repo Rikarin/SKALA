@@ -1110,7 +1110,11 @@ public sealed partial class CSharpDocumentBuilder {
                 // argument keeps its level: `F(a > 0` / `? a` is two levels past `F(`'s line.
                 var nested = ternary.Parent is ConditionalExpressionSyntax outer
                     && outer.WhenFalse == ternary
-                    || ternary.WhenFalse is ConditionalExpressionSyntax
+                    // ⚠ Not the root of a chain the author stepped (#563): its signs take a level of their
+                    // own like a lone conditional's, which only showed where nothing else paid one — as a
+                    // call's argument and an array element, `x == 0` / `? 1` / `: b` / `? 2` with `? 1` a
+                    // level past `x == 0` (measured 2026-10-08; after `return` the statement paid it).
+                    || ternary.WhenFalse is ConditionalExpressionSyntax && !plan.IsSteppedChainRoot(ternary)
                     || ternary.Parent is ParenthesizedExpressionSyntax;
                 // ⚠ Opened on the condition's *first* line unless the condition is a binary chain
                 // (#530, SK-DIV-0333). A condition that spans lines as a chain or an argument list —
@@ -1363,8 +1367,9 @@ public sealed partial class CSharpDocumentBuilder {
 
         OpenIndent(
             IndentKind.Continuous,
-            planned.UnconditionalLevel,
-            chainLevel ? IndentFlags.ChainLevel : IndentFlags.None
+            planned.UnconditionalLevel || planned.AdditiveLevel,
+            (chainLevel ? IndentFlags.ChainLevel : IndentFlags.None)
+            | (planned.AdditiveLevel ? IndentFlags.Additive : IndentFlags.None)
         );
     }
 

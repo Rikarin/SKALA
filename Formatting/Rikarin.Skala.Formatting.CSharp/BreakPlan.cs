@@ -143,7 +143,8 @@ public readonly record struct GroupPlan(
     bool SpendsUnderDelimiters = false,
     HeldLevel HoldsLevel = HeldLevel.None,
     bool FromLine = false,
-    bool UnconditionalLevel = false);
+    bool UnconditionalLevel = false,
+    bool AdditiveLevel = false);
 
 /// <summary>
 ///     Whether a group spends its continuation level as zero columns. See <see cref="GroupPlan.HoldsLevel" />.
@@ -3433,6 +3434,7 @@ public sealed class BreakPlan {
         var pattern = root is BinaryPatternSyntax;
         Describe(
             root,
+            new(
             group,
             style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
             // ⚠ A pattern chain the author broke at any one link is chopped at every link, and an
@@ -3454,6 +3456,7 @@ public sealed class BreakPlan {
             //     if (o is IDisposable
             //         or IAsyncDisposable) {     ← one, where an argument would take two
             pattern && root.Parent is not SubpatternSyntax,
+            false,
             // ⚠ And only the outermost combinator's chain: an `and` chain inside an `or` chain is a
             // chain of its own since #483, and the oracle writes its links on the `or`s' column —
             // `rune is >= 0x1100` / `and <= 0x115F` / `or >= 0x2E80` / `and <= 0x303E` all one level in
@@ -3461,7 +3464,7 @@ public sealed class BreakPlan {
             // ⚠ Nor a chain whose `is` the author broke before: `next.Parent` / `is A` / `or B` puts the
             // `or`s on the `is`'s own line's column (Skala's own SpaceRules.cs, measured) — that break
             // has already spent the level.
-            ownLevel: pattern
+            pattern
             && !IsStatementCondition(root)
             && root.Parent is not BinaryPatternSyntax
             // ⚠ Nor a subpattern's value (#549): `is {` / `Parent: A` / `or B` / `}` puts the `or`s on
@@ -3469,7 +3472,16 @@ public sealed class BreakPlan {
             && root.Parent is not SubpatternSyntax
             // ⚠ Before the `is` or after it (#550): `keyword is` / `A` / `or B` puts `A` and the `or`s
             // on one column too.
-            && !(EnclosingTypeTest(root) is { } test && (BreaksBefore(test.IsKeyword) || BreaksAroundTheIs(test)))
+            && !(EnclosingTypeTest(root) is { } test && (BreaksBefore(test.IsKeyword) || BreaksAroundTheIs(test))),
+            // ⚠ And that level counts although the `&&` or `||` the type test is the left operand of
+            // opened its own on the same line (#560, SK-DIV-0394): `var e = n.P is A` / `or B` /
+            // `&& c;` puts the `or` at 16 and the `&&` at 12, after `return` and `var e =`, and with
+            // `||`; one level per opening line had collapsed the two onto 12. Measured 2026-10-08.
+            AdditiveLevel: pattern
+            && EnclosingTypeTest(root) is { Parent: BinaryExpressionSyntax logical } leftTest
+            && logical.Left == leftTest
+            && logical.Kind() is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression
+            )
         );
     }
 
@@ -4476,6 +4488,13 @@ public sealed class BreakPlan {
     ///     the oracle steps every depth or none of them, and a chain broken before its first <c>?</c>
     ///     only still comes back fully stepped.
     /// </remarks>
+    /// <summary>
+    ///     The root of a conditional chain the author stepped — a <c>?</c> of it starts a line — which
+    ///     #548 chops at both signs of every member, so it nests like a lone conditional.
+    /// </summary>
+    public bool IsSteppedChainRoot(ConditionalExpressionSyntax node) =>
+        node.WhenFalse is ConditionalExpressionSyntax && !IsTernaryChainTail(node) && BreaksAtTernaryQuestion(node);
+
     bool BreaksAtTernaryQuestion(ConditionalExpressionSyntax node) {
         if (!options.KeepsUserBreaksBetweenItems || !options.WrapBeforeTernaryOpsigns) {
             return false;

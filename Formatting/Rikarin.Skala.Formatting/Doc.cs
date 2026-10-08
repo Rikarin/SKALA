@@ -415,7 +415,17 @@ public enum IndentFlags {
     ///     the closing brace still returns to the opener's level (#464). At the export's multiplier of 1
     ///     the two are the same number.
     /// </summary>
-    Multiplied = 512
+    Multiplied = 512,
+
+    /// <summary>
+    ///     ⚠ An unconditional continuation scope that leaves the scopes outside it on the same line
+    ///     counting too: a binary pattern chain that is the left operand of a broken <c>&amp;&amp;</c> or
+    ///     <c>||</c> takes its level past that operator's, although both opened on the statement's line —
+    ///     <c>var e = n.P is A</c> / <c>or B</c> / <c>&amp;&amp; c;</c> puts the <c>or</c> at 16 and the
+    ///     <c>&amp;&amp;</c> at 12 (#560, SK-DIV-0394). Where the operator's level opened on an earlier
+    ///     line — under a broken <c>=&gt;</c> — it counts as any scope does, and nothing is added.
+    /// </summary>
+    Additive = 1024
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
