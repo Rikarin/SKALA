@@ -157,7 +157,7 @@ public static class GeneratorDriver {
             var driver = CSharpGeneratorDriver.Create(
                 generators.ToImmutable(),
                 [
-                    .. additionalFiles
+                    ..additionalFiles
                         .Where(File.Exists)
                         .Select(static path => (AdditionalText)new FileText(path))
                 ],

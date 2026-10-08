@@ -128,7 +128,7 @@ public static class SweepArchive {
         return rows is null
             ? null
             : [
-                .. rows.Where(static row => row.OracleDistinct > 1).Select(static row => row.Key)
+                ..rows.Where(static row => row.OracleDistinct > 1).Select(static row => row.Key)
             ];
     }
 }

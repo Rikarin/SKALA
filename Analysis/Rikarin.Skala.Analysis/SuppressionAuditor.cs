@@ -98,9 +98,9 @@ public static class SuppressionAuditor {
             Enforced = true,
             Reference = reference,
             Current = now,
-            Added = [.. now.Where(entry => !previous.Contains(entry.Key)).OrderBy(Describe, StringComparer.Ordinal)],
+            Added = [..now.Where(entry => !previous.Contains(entry.Key)).OrderBy(Describe, StringComparer.Ordinal)],
             Removed = [
-                .. before.Where(entry => !current.Contains(entry.Key)).OrderBy(Describe, StringComparer.Ordinal)
+                ..before.Where(entry => !current.Contains(entry.Key)).OrderBy(Describe, StringComparer.Ordinal)
             ]
         };
     }

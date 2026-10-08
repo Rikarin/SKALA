@@ -587,7 +587,7 @@ public sealed class DiagnosticCache {
     public bool TryGet(string key, out ImmutableArray<Finding> findings, string path) {
         if (entries.TryGetValue(key, out var entry)) {
             Hits++;
-            findings = [.. entry.Findings.Select(finding => Rehydrate(finding, path))];
+            findings = [..entry.Findings.Select(finding => Rehydrate(finding, path))];
             return true;
         }
 
@@ -622,7 +622,7 @@ public sealed class DiagnosticCache {
             Key = key,
             Path = path,
             Findings = [
-                .. findings
+                ..findings
                     .Where(static finding => !Uncacheable.Contains(finding.RuleId))
                     .Select(Dehydrate)
             ],
@@ -663,10 +663,10 @@ public sealed class DiagnosticCache {
             finding.Start,
             finding.Length,
             finding.FixIsSafe,
-            [.. finding.Fix.Select(static edit => edit.Start.ToString(CultureInfo.InvariantCulture))],
-            [.. finding.Fix.Select(static edit => edit.Length.ToString(CultureInfo.InvariantCulture))],
-            [.. finding.Fix.Select(static edit => edit.Text)],
-            [.. finding.TargetFrameworks],
+            [..finding.Fix.Select(static edit => edit.Start.ToString(CultureInfo.InvariantCulture))],
+            [..finding.Fix.Select(static edit => edit.Length.ToString(CultureInfo.InvariantCulture))],
+            [..finding.Fix.Select(static edit => edit.Text)],
+            [..finding.TargetFrameworks],
             (int)finding.Suppression,
             finding.EnclosingSymbol,
             finding.Snippet
@@ -698,7 +698,7 @@ public sealed class DiagnosticCache {
             Length = cached.Length,
             Fix = fix.ToImmutable(),
             FixIsSafe = cached.FixIsSafe,
-            TargetFrameworks = [.. cached.TargetFrameworks],
+            TargetFrameworks = [..cached.TargetFrameworks],
             Suppression = (SuppressionKind)cached.Suppression,
             EnclosingSymbol = cached.EnclosingSymbol,
             Snippet = cached.Snippet

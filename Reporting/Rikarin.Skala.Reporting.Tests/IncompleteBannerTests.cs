@@ -43,7 +43,7 @@ public sealed class IncompleteBannerTests {
             LineCount = 80,
             LoadSummary = "loose (4 file(s), no project)",
             Duration = TimeSpan.FromMilliseconds(300),
-            Diagnostics = [.. diagnostics]
+            Diagnostics = [..diagnostics]
         };
 
     /// <summary>Exactly what <c>FormattingFindings</c> and the loose loader emit for a mode-000 file.</summary>

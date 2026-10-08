@@ -134,7 +134,7 @@ public sealed class DefaultsPass {
         }
 
         return [
-            .. candidates.Select(candidate => Verdict(candidate, matched[candidate.Key]))
+            ..candidates.Select(candidate => Verdict(candidate, matched[candidate.Key]))
         ];
     }
 
@@ -197,7 +197,7 @@ public sealed class DefaultsPass {
         IReadOnlyCollection<string> observable
     ) =>
         [
-            .. probed.Select(entry => entry.Verdict == DefaultsVerdict.Insensitive && observable.Contains(entry.Key)
+            ..probed.Select(entry => entry.Verdict == DefaultsVerdict.Insensitive && observable.Contains(entry.Key)
                     ? entry with {
                         Masked = true,
                         Detail = entry.Detail + "; the export-base sweep does distinguish it, so bare defaults mask it"
@@ -246,7 +246,7 @@ public sealed class DefaultsPass {
     ///     terminator part of every option's answer.
     /// </summary>
     string?[] Format(IReadOnlyList<SweepCandidate> batch, Func<SweepCandidate, string> config) => [
-        .. ScratchTree.Format(runner, batch, config)
+        ..ScratchTree.Format(runner, batch, config)
             .Select(static body => body is null ? null : TextNormalisation.Normalise(body))
     ];
 

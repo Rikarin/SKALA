@@ -29,7 +29,7 @@ public static class XmlDoc {
     static FormattingOptions Resolve(params (string Key, string Value)[] overrides) =>
         OptionResolver.Resolve(
             Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+            [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
         ).Options;
 
     public static FormatResult Run(string source, params (string Key, string Value)[] overrides) {
@@ -46,7 +46,7 @@ public static class XmlDoc {
 
     /// <summary>The <c>///</c> lines of the output, with the code indentation removed.</summary>
     public static ImmutableArray<string> DocLines(string formatted) => [
-        .. formatted.Split('\n')
+        ..formatted.Split('\n')
             .Select(static line => line.TrimStart())
             .Where(static line => line.StartsWith("///", StringComparison.Ordinal))
     ];

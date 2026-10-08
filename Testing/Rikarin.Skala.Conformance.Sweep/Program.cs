@@ -256,7 +256,7 @@ int Nightly() {
 
     Console.WriteLine();
     return Defaults(
-        [.. run.Options.Where(static option => option.OracleDistinct > 1).Select(static option => option.Key)]
+        [..run.Options.Where(static option => option.OracleDistinct > 1).Select(static option => option.Key)]
     );
 }
 

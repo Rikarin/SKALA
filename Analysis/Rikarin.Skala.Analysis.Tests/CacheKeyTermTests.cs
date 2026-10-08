@@ -41,7 +41,7 @@ public sealed class CacheKeyTermTests {
                 Image("public class L { public void A() { } }"), Image("public class L { public void B() { } }"))
         );
 
-    public static TheoryData<string> Terms => [.. Variants.Keys];
+    public static TheoryData<string> Terms => [..Variants.Keys];
 
     /// <summary>
     ///     Each variant is the base with exactly one term moved. The name is the term.

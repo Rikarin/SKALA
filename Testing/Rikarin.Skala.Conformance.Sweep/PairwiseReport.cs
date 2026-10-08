@@ -37,7 +37,7 @@ public static class PairwiseReport {
     ///     the repository can see, so it is the row a reader should reach first.
     /// </remarks>
     public static IReadOnlyList<PairSweep> Findings(PairwiseRun run) => [
-        .. run.Pairs
+        ..run.Pairs
             .Where(static pair => !pair.IsGreen)
             .OrderBy(static pair => pair.Outcome switch {
                     PairOutcome.InteractionOnly => 0,

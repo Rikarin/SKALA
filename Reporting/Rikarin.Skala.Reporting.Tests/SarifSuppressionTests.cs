@@ -18,7 +18,7 @@ public sealed class SarifSuppressionTests {
     static readonly string Root = Path.GetFullPath("/tmp/repo");
 
     static string[] Strings(JsonElement array, Func<JsonElement, JsonElement> select) =>
-        [.. array.EnumerateArray().Select(element => select(element).GetString() ?? string.Empty)];
+        [..array.EnumerateArray().Select(element => select(element).GetString() ?? string.Empty)];
 
     static Finding At(string ruleId, int line, SkalaSeverity severity = SkalaSeverity.Warning) =>
         new() {
@@ -38,7 +38,7 @@ public sealed class SarifSuppressionTests {
         new() {
             RepositoryRoot = Root,
             Mode = LoadMode.Loose,
-            Findings = [.. findings],
+            Findings = [..findings],
             HasBaseline = true,
             BaselineSummary = ".skala/baseline.sarif (2 accepted)"
         };
@@ -159,7 +159,7 @@ public sealed class SarifSuppressionTests {
         );
 
         static string[] RuleIds(JsonElement results) => [
-            .. results.EnumerateArray().Select(static r => r.GetProperty("ruleId").GetString() ?? string.Empty)
+            ..results.EnumerateArray().Select(static r => r.GetProperty("ruleId").GetString() ?? string.Empty)
         ];
 
         var full = RuleIds(Results(report));
@@ -323,10 +323,10 @@ public sealed class SarifSeverityTests {
         };
 
     static RunReport Report(params Finding[] findings) =>
-        new() { RepositoryRoot = Path.GetFullPath("/tmp/repo"), Mode = LoadMode.Loose, Findings = [.. findings] };
+        new() { RepositoryRoot = Path.GetFullPath("/tmp/repo"), Mode = LoadMode.Loose, Findings = [..findings] };
 
     static string[] Strings(JsonElement array, Func<JsonElement, JsonElement> select) =>
-        [.. array.EnumerateArray().Select(element => select(element).GetString() ?? string.Empty)];
+        [..array.EnumerateArray().Select(element => select(element).GetString() ?? string.Empty)];
 
     static JsonElement Log(RunReport report) =>
         JsonDocument.Parse(SarifWriter.Serialize(SarifWriter.Build(report))).RootElement
@@ -364,7 +364,7 @@ public sealed class SarifSeverityTests {
     /// </summary>
     [Fact]
     public void NoResult_IsEverLevelNone() {
-        var results = Log(Report([.. Enum.GetValues<SkalaSeverity>().Select(Finding)]))
+        var results = Log(Report([..Enum.GetValues<SkalaSeverity>().Select(Finding)]))
             .GetProperty("results");
 
         Assert.Equal(Enum.GetValues<SkalaSeverity>().Length, results.GetArrayLength());

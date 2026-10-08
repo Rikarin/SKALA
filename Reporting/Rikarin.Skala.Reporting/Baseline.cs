@@ -190,7 +190,7 @@ public sealed class Baseline {
         // The old message suffix made every paired location a separate identity and therefore gave
         // colliding stable prefixes ordinal zero. Reassign over all stored SK7020 entries so legacy
         // collisions receive the same deterministic ordinals as a current analysis run.
-        var assigned = Fingerprints.Assign([.. duplicatedBlocks.Select(static entry => entry.Finding)]);
+        var assigned = Fingerprints.Assign([..duplicatedBlocks.Select(static entry => entry.Finding)]);
         var migrated = new Dictionary<int, string>();
         for (var i = 0; i < duplicatedBlocks.Count; i++) {
             if (duplicatedBlocks[i].Legacy) {
@@ -317,10 +317,10 @@ public sealed class Baseline {
         var accepted = findings.Select(static finding => finding with { Bucket = BaselineBucket.Unknown })
             .ToArray();
 
-        var log = SarifWriter.Build(report with { Findings = [.. accepted], Gate = null });
+        var log = SarifWriter.Build(report with { Findings = [..accepted], Gate = null });
         var run = log.Runs[0];
         run.Invocations = null;
-        run.Results = [.. run.Results, .. carried.Select(static entry => entry.Result)];
+        run.Results = [..run.Results, ..carried.Select(static entry => entry.Result)];
 
         Core.SkalaDirectory.EnsureForFile(System.IO.Path.GetFullPath(path));
         File.WriteAllText(path, SarifWriter.Serialize(log));

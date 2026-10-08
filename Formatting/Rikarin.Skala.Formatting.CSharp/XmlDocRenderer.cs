@@ -142,7 +142,7 @@ public sealed class XmlDocRenderer {
             lines.RemoveAt(lines.Count - 1);
         }
 
-        return [.. lines];
+        return [..lines];
     }
 
     void Nodes(ImmutableArray<XmlDocNode> nodes) {

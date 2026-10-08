@@ -90,7 +90,7 @@ public static class LooseLoader {
                 new CompilationUnit {
                     Name = "loose",
                     Compilation = compilation,
-                    PreprocessorSymbols = [.. request.Define],
+                    PreprocessorSymbols = [..request.Define],
                     ReportablePaths = reportable.ToImmutable(),
                     UnreadablePaths = unreadable.ToImmutable()
                 }

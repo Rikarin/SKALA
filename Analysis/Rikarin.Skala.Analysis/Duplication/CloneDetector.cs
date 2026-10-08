@@ -308,7 +308,7 @@ public static class CloneDetector {
             duplicated += file.DuplicatedLineCount;
         }
 
-        return ([.. groups], duplicated);
+        return ([..groups], duplicated);
     }
 
     /// <summary>

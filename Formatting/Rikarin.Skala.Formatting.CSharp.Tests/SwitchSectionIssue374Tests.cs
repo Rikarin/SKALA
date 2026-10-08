@@ -33,7 +33,7 @@ public sealed class SwitchSectionIssue374Tests {
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
                 [
                     new KeyValuePair<string, string>("csharp_prefer_braces", "false"),
-                    .. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))
+                    ..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))
                 ]
             )
                 .Options
@@ -63,7 +63,7 @@ public sealed class SwitchSectionIssue374Tests {
     }
 
     /// <summary>The switch's contents between its braces, each line one level in.</summary>
-    static string[] Sections(IEnumerable<string> lines) => [Open, .. lines.Select(static line => "    " + line), "}"];
+    static string[] Sections(IEnumerable<string> lines) => [Open, ..lines.Select(static line => "    " + line), "}"];
 
     /// <summary>The issue's input, and the oracle's answer to it byte for byte.</summary>
     [Fact]

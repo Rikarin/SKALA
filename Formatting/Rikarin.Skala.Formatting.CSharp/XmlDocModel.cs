@@ -524,7 +524,7 @@ public sealed class XmlDocModel {
             end--;
         }
 
-        return [.. lines[start..end]];
+        return [..lines[start..end]];
     }
 
     static string StripMarker(string line) {

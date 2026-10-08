@@ -116,7 +116,7 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
             Diagnostic.Create(
                 Descriptor,
                 statement.GetLocation(),
-                FixEdits.Pack([.. edits]),
+                FixEdits.Pack([..edits]),
                 "`" + resource + "` is disposed when this returns, before the task it produced completes"
             )
         );

@@ -322,7 +322,7 @@ public static class CSharpFormatter {
         var result = new FormatResult(
             path,
             text,
-            [.. edits],
+            [..edits],
             formatted,
             diagnostics.ToImmutable(),
             FormatOutcome.Formatted,
@@ -355,7 +355,7 @@ public static class CSharpFormatter {
             return bracedResult with { Formatted = text.ToString(), Edits = [] };
         }
 
-        return bracedResult with { Edits = [.. RequiredBraces.Edits(root, bracedResult.Formatted)] };
+        return bracedResult with { Edits = [..RequiredBraces.Edits(root, bracedResult.Formatted)] };
     }
 
     /// <summary>

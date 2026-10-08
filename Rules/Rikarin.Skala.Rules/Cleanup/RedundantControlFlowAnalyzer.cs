@@ -324,7 +324,7 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
             Diagnostic.Create(
                 Descriptor,
                 topmost.GetLocation(),
-                FixEdits.Pack([.. edits]),
+                FixEdits.Pack([..edits]),
                 edits.Count == 1
                     ? "the arm below produces the same value for everything this pattern matches, so "
                     + "the arm changes no result"

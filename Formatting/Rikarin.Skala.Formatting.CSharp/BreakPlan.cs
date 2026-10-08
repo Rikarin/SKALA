@@ -517,7 +517,7 @@ public sealed class BreakPlan {
         }
 
         forced.Sort();
-        this.forced = [.. forced];
+        this.forced = [..forced];
     }
 
     // ── The walk ─────────────────────────────────────────────────────────────────────────────

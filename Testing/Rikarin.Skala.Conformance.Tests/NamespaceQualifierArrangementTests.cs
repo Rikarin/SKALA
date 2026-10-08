@@ -178,7 +178,7 @@ public sealed class NamespaceQualifierArrangementTests {
             "probe",
             [tree],
             [
-                .. SharedFrameworkReferences.Value,
+                ..SharedFrameworkReferences.Value,
                 MetadataReference.CreateFromFile(typeof(Fingerprints).Assembly.Location)
             ],
             new(OutputKind.DynamicallyLinkedLibrary)

@@ -179,7 +179,7 @@ public static class OutputSurface {
     static IReadOnlyCollection<string> Inputs(string corpusRoot) =>
         Directory.Exists(corpusRoot)
             ? [
-                .. Directory.EnumerateFiles(corpusRoot, "*.cs", SearchOption.AllDirectories)
+                ..Directory.EnumerateFiles(corpusRoot, "*.cs", SearchOption.AllDirectories)
                     .Where(static path => !path.EndsWith(".expected.cs", StringComparison.Ordinal))
                     .Select(path => Path.GetRelativePath(corpusRoot, path).Replace('\\', '/'))
             ]
@@ -244,7 +244,7 @@ public static class OutputSurface {
         var refused = new List<string>();
 
         foreach (var chunk in inputs.Chunk(ChunkSize)) {
-            if (Succeeded(tool.Run(tree, ["format", "--quiet", .. chunk.Select(relative => Staged(tree, relative))]))) {
+            if (Succeeded(tool.Run(tree, ["format", "--quiet", ..chunk.Select(relative => Staged(tree, relative))]))) {
                 continue;
             }
 

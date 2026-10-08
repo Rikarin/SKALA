@@ -23,7 +23,7 @@ namespace Rikarin.Skala.Conformance.Sweep.Tests;
 /// </remarks>
 public sealed class ArrangementRoutingTests {
     static IReadOnlyList<OptionInfo> Arrangement =>
-        [.. ArrangementOptions.Implemented.Select(static id => OptionRegistry.Get(id))];
+        [..ArrangementOptions.Implemented.Select(static id => OptionRegistry.Get(id))];
 
     /// <summary>
     ///     ⚠ One authority for "which profile does this fixture want", read by both halves.

@@ -131,7 +131,7 @@ public static class SkalaSide {
         new(
             [],
             [
-                .. NeverPerformed.Where(pair => !overrides.Any(o => string.Equals(
+                ..NeverPerformed.Where(pair => !overrides.Any(o => string.Equals(
                                 o.Key,
                                 pair.Key,
                                 StringComparison.Ordinal

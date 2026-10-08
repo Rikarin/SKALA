@@ -523,7 +523,7 @@ public static class Fuzzer {
         );
 
     static string[] ParseErrors(string text, Microsoft.CodeAnalysis.CSharp.CSharpParseOptions options) => [
-        .. Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree
+        ..Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree
             .ParseText(Microsoft.CodeAnalysis.Text.SourceText.From(text), options)
             .GetDiagnostics()
             .Where(static diagnostic =>
@@ -723,10 +723,10 @@ public static class Fuzzer {
             mutations.ToDictionary(static e => e.Key, static e => e.Value, StringComparer.Ordinal),
             refused.ToDictionary(static e => e.Key, static e => e.Value, StringComparer.Ordinal),
             violations.ToDictionary(static e => e.Key, static e => e.Value, StringComparer.Ordinal),
-            [.. touched.Keys.Order(StringComparer.Ordinal)],
+            [..touched.Keys.Order(StringComparer.Ordinal)],
             parseLost,
-            [.. parseLostSeeds.Order().Take(5)],
-            [.. findings.OrderBy(static f => f.Index).Select(static f => f.Finding)]
+            [..parseLostSeeds.Order().Take(5)],
+            [..findings.OrderBy(static f => f.Index).Select(static f => f.Finding)]
         );
     }
 
@@ -766,7 +766,7 @@ public static class Fuzzer {
             subject.Origin,
             subject.Kind.ToString().ToLowerInvariant(),
             violation,
-            [.. subject.Mutations.Select(static m => m.Name)],
+            [..subject.Mutations.Select(static m => m.Name)],
             artefact,
             minimised,
             minimisedDetail

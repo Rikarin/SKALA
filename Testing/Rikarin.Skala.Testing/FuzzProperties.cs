@@ -807,7 +807,7 @@ public static class FuzzProperties {
     }
 
     static string[] ParseDiagnostics(SourceText text, CancellationToken cancellation) => [
-        .. CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions, string.Empty, cancellation)
+        ..CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions, string.Empty, cancellation)
             .GetDiagnostics(cancellation)
             .Select(static diagnostic => diagnostic.Id)
             .Order(StringComparer.Ordinal)

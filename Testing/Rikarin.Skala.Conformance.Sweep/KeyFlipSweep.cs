@@ -344,7 +344,7 @@ public sealed class KeyFlipSweep {
 
         return new SweepRun(
             [
-                .. candidates.Select(candidate => Verdict(
+                ..candidates.Select(candidate => Verdict(
                         candidate,
                         oracle,
                         skala,

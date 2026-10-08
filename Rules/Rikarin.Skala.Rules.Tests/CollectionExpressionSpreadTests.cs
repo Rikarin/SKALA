@@ -27,9 +27,9 @@ public sealed class CollectionExpressionSpreadTests {
                           """;
 
     /// <summary>
-    ///     ⚠ No space after <c>..</c>. The formatter keeps a spread exactly as written (SK-DIV-0009), so
-    ///     the fix's spelling is the one that stays; and parentheses go only where the spread reads back
-    ///     as the same expression without them.
+    ///     ⚠ No space after <c>..</c>, which is <c>skala_space_within_spread_pattern</c>'s default and the
+    ///     spelling the formatter now writes (SK-DIV-0310); and parentheses go only where the spread reads
+    ///     back as the same expression without them.
     /// </summary>
     [Theory]
     [InlineData("int[] copied = list.ToArray();", "int[] copied = [..list];")]
@@ -59,6 +59,24 @@ public sealed class CollectionExpressionSpreadTests {
 
         Assert.Equal(
             Header + "        " + expected + Footer,
+            CollectionCallShapeBatchTests.Apply(source, RuleIds.CollectionExpressionSpread, SkalaAnalyzers.All)
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ The fix writes the configured spelling of the spread's gap, because the formatter governs it
+    ///     since #513 (SK-DIV-0310) and a fix that wrote the other would fail <c>format --check</c> on the
+    ///     line it fixed.
+    /// </summary>
+    [Theory]
+    [InlineData("true", "int[] copied = [.. list];")]
+    [InlineData("false", "int[] copied = [..list];")]
+    public void TheFix_WritesTheConfiguredSpreadGap(string value, string expected) {
+        var option = "// analyzer-option: skala_space_within_spread_pattern = " + value + "\n";
+        var source = option + Header + "        int[] copied = list.ToArray();" + Footer;
+
+        Assert.Equal(
+            option + Header + "        " + expected + Footer,
             CollectionCallShapeBatchTests.Apply(source, RuleIds.CollectionExpressionSpread, SkalaAnalyzers.All)
         );
     }

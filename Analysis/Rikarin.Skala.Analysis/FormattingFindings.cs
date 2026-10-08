@@ -138,7 +138,7 @@ public static class FormattingFindings {
                     Start = result.Edits[0].Span.Start,
                     Length = 0,
                     Fix = [
-                        .. result.Edits.Select(edit =>
+                        ..result.Edits.Select(edit =>
                             new FixEdit(files[i], edit.Span.Start, edit.Span.End - edit.Span.Start, edit.NewText)
                         )
                     ],

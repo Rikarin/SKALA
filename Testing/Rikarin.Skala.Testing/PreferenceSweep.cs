@@ -1141,7 +1141,7 @@ public static class PreferenceSweep {
     ) {
         var constructs = Constructs();
         if (only is { Count: > 0 }) {
-            constructs = [.. constructs.Where(construct => only.Contains(construct.Id))];
+            constructs = [..constructs.Where(construct => only.Contains(construct.Id))];
             if (constructs.Count != only.Count) {
                 throw new InvalidOperationException(
                     "--only named a construct this sweep does not have: "
@@ -1262,37 +1262,37 @@ public static class PreferenceSweep {
                     "T  the oracle took the construct's third break and declined both of the two",
                     "?  the oracle broke somewhere this probe does not name"
                 ],
-                Notes([.. constructs.Select(static construct => construct.Id)]),
+                Notes([..constructs.Select(static construct => construct.Id)]),
                 [
-                    .. fillers.Select(static filler =>
+                    ..fillers.Select(static filler =>
                         new FillerNote(filler.Id, filler.TokenLengths, filler.Description)
                     )
                 ],
                 [
-                    .. grid
+                    ..grid
                         .OrderBy(static row => row.Construct, StringComparer.Ordinal)
                         .ThenBy(static row => row.Filler, StringComparer.Ordinal)
                         .ThenBy(static row => row.Total)
                 ],
                 [
-                    .. flips
+                    ..flips
                         .OrderBy(static flip => flip.Construct, StringComparer.Ordinal)
                         .ThenBy(static flip => flip.Filler, StringComparer.Ordinal)
                         .ThenBy(static flip => flip.Total)
                         .ThenBy(static flip => flip.Before)
                 ],
                 [
-                    .. unnamed.Values
+                    ..unnamed.Values
                         .OrderByDescending(static entry => entry.Count)
                         .ThenBy(static entry => entry.Construct, StringComparer.Ordinal)
                 ],
                 [
-                    .. exemplars.Values
+                    ..exemplars.Values
                         .OrderBy(static entry => entry.Construct, StringComparer.Ordinal)
                         .ThenBy(static entry => entry.Outcome, StringComparer.Ordinal)
                 ],
                 overrides is { Count: > 0 }
-                    ? [.. overrides.Select(static key => key.Key + " = " + key.Value)]
+                    ? [..overrides.Select(static key => key.Key + " = " + key.Value)]
                     : null
             );
         } finally {
@@ -1352,7 +1352,7 @@ public static class PreferenceSweep {
                         + ".cs"
                     );
 
-                    File.WriteAllText(path, construct.File([.. probes.Select(static probe => probe.Flat)]));
+                    File.WriteAllText(path, construct.File([..probes.Select(static probe => probe.Flat)]));
                     plans[path] = (construct, probes);
                 }
             }
@@ -1386,7 +1386,7 @@ public static class PreferenceSweep {
         // drift from the probe is worse than no description, and after the oracle is uninstalled
         // `--render` is the only way either of them can be corrected at all.
         return artefact with {
-            Version = Version, Constructs = Notes([.. artefact.Constructs.Select(static note => note.Id)])
+            Version = Version, Constructs = Notes([..artefact.Constructs.Select(static note => note.Id)])
         };
     }
 
@@ -1394,7 +1394,7 @@ public static class PreferenceSweep {
     static IReadOnlyList<ConstructNote> Notes(IReadOnlyCollection<string> ids) {
         var known = Constructs().ToDictionary(static construct => construct.Id, StringComparer.Ordinal);
         return [
-            .. ids.Where(known.ContainsKey)
+            ..ids.Where(known.ContainsKey)
                 .Select(id => known[id])
                 .Select(static construct => new ConstructNote(
                         construct.Id,
@@ -2167,7 +2167,7 @@ public static class PreferenceSweep {
         foreach (var filler in rows.Select(static row => row.Filler)
                      .Distinct(StringComparer.Ordinal)
                      .OrderBy(static filler => filler, StringComparer.Ordinal)) {
-            var fit = Fit.Of([.. rows.Where(row => row.Filler == filler)]);
+            var fit = Fit.Of([..rows.Where(row => row.Filler == filler)]);
             if (fit.Chose == 0) {
                 continue;
             }
@@ -2533,7 +2533,7 @@ public static class PreferenceSweep {
                 builder,
                 artefact,
                 construct,
-                [.. readings.Where(r => r.Construct == construct.Id)],
+                [..readings.Where(r => r.Construct == construct.Id)],
                 sampled
             );
         }
@@ -2623,7 +2623,7 @@ public static class PreferenceSweep {
 
     /// <summary>The fitted floor for one shape under one filler, or `—` where that pair has no cells.</summary>
     static string Cell(Artefact artefact, string construct, string filler) {
-        var fit = Fit.Of([.. artefact.Grid.Where(row => row.Construct == construct && row.Filler == filler)]);
+        var fit = Fit.Of([..artefact.Grid.Where(row => row.Construct == construct && row.Filler == filler)]);
 
         return fit.Chose == 0 ? "—" : fit.Floor.ToString(CultureInfo.InvariantCulture);
     }
@@ -2663,11 +2663,11 @@ public static class PreferenceSweep {
         foreach (var construct in paired) {
             foreach (var filler in artefact.Fillers) {
                 var mine = Fit.Of(
-                    [.. artefact.Grid.Where(row => row.Construct == construct.Id && row.Filler == filler.Id)]
+                    [..artefact.Grid.Where(row => row.Construct == construct.Id && row.Filler == filler.Id)]
                 );
 
                 var theirs = Fit.Of(
-                    [.. artefact.Grid.Where(row => row.Construct == construct.Pair && row.Filler == filler.Id)]
+                    [..artefact.Grid.Where(row => row.Construct == construct.Pair && row.Filler == filler.Id)]
                 );
 
                 if (mine.Chose > 0 && theirs.Chose > 0) {
@@ -2689,7 +2689,7 @@ public static class PreferenceSweep {
         builder.AppendLine("|---|---|---:|---|---:|---:|---:|---:|---:|");
         foreach (var (construct, filler, mine, theirs) in rows) {
             var forced = Fit.Score(
-                [.. artefact.Grid.Where(row => row.Construct == construct.Id && row.Filler == filler.Id)],
+                [..artefact.Grid.Where(row => row.Construct == construct.Id && row.Filler == filler.Id)],
                 theirs.Floor + constant
             );
 
@@ -2720,7 +2720,7 @@ public static class PreferenceSweep {
             var loss = live.Max(row => row.Mine.FloorPercent
                 - 100.0
                 * Fit.Score(
-                    [.. artefact.Grid.Where(r => r.Construct == row.Construct.Id && r.Filler == row.Filler.Id)],
+                    [..artefact.Grid.Where(r => r.Construct == row.Construct.Id && r.Filler == row.Filler.Id)],
                     row.Theirs.Floor + constant
                 )
                 / row.Mine.Chose
@@ -2770,11 +2770,11 @@ public static class PreferenceSweep {
 
             foreach (var (construct, filler, mine, theirs) in off) {
                 var mineCells = Fit.Cells(
-                    [.. artefact.Grid.Where(row => row.Construct == construct.Id && row.Filler == filler.Id)]
+                    [..artefact.Grid.Where(row => row.Construct == construct.Id && row.Filler == filler.Id)]
                 );
 
                 var theirCells = Fit.Cells(
-                    [.. artefact.Grid.Where(row => row.Construct == construct.Pair && row.Filler == filler.Id)]
+                    [..artefact.Grid.Where(row => row.Construct == construct.Pair && row.Filler == filler.Id)]
                 );
 
                 builder.Append("- `")
@@ -2932,7 +2932,7 @@ public static class PreferenceSweep {
         builder.AppendLine("|---|---|---|---:|---:|---:|---:|---:|");
 
         foreach (var construct in artefact.Constructs) {
-            var fit = Fit.Of([.. artefact.Grid.Where(row => row.Construct == construct.Id)]);
+            var fit = Fit.Of([..artefact.Grid.Where(row => row.Construct == construct.Id)]);
             builder.Append("| `")
                 .Append(construct.Id)
                 .Append("` | ")
@@ -2956,7 +2956,7 @@ public static class PreferenceSweep {
 
         var fits = artefact.Constructs
             .Select(construct => (construct,
-                    Fit: Fit.Of([.. artefact.Grid.Where(row => row.Construct == construct.Id)]))
+                    Fit: Fit.Of([..artefact.Grid.Where(row => row.Construct == construct.Id)]))
             )
             .ToList();
 
@@ -3074,7 +3074,7 @@ public static class PreferenceSweep {
                 Findings(
                     construct,
                     mine,
-                    [.. artefact.Grid.Where(row => row.Construct == construct.Id)],
+                    [..artefact.Grid.Where(row => row.Construct == construct.Id)],
                     sampled
                 )
             );

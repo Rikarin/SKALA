@@ -454,7 +454,7 @@ internal sealed class TokenStream {
             reached = past;
         }
 
-        return [.. kept];
+        return [..kept];
     }
 
     /// <summary>The sibling elements of the lists a table is written as, or an empty list.</summary>

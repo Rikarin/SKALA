@@ -1004,7 +1004,7 @@ public sealed class BreakPositionTests {
     /// </summary>
     [Fact]
     public void ATupleArgumentLedByACollectionExpression_ConvergesInOnePass_OnTheShapeItsIdentifierTwinTakes() {
-        const string bracket = "[1.0m, .. rest]";
+        const string bracket = "[1.0m, ..rest]";
         const string twin = "first";
         const string member =
             "class T {\n  void M() {\n    var v113 = new int(name114: (\n<X>, source?.Value?.Count));\n  }\n}\n";
@@ -1166,7 +1166,7 @@ public sealed class BracePlacementTests {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
             )
                 .Options
         );
@@ -1378,7 +1378,7 @@ public sealed class SubpatternBreakTests {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
             )
                 .Options
         );
@@ -1461,7 +1461,7 @@ public sealed class ContinuousIndentInsideTests {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
             )
                 .Options
         );

@@ -83,7 +83,7 @@ public static class DefaultsProbe {
             $"defaults: {candidates.Count.ToString(CultureInfo.InvariantCulture)} options over {fixtures.Count.ToString(CultureInfo.InvariantCulture)} fixtures"
         );
 
-        var baseline = FormatAll(runner, [.. fixtures.Select(static file => (file, EmptyConfig))]);
+        var baseline = FormatAll(runner, [..fixtures.Select(static file => (file, EmptyConfig))]);
         log.WriteLine($"  baseline (root = true only): {baseline.Count.ToString(CultureInfo.InvariantCulture)} files");
 
         var rounds = candidates.Max(static option => option.Values.Count);
@@ -219,7 +219,7 @@ public static class DefaultsProbe {
     }
 
     static List<CorpusFile> FixturesOf(List<Candidate> candidates) => [
-        .. candidates.Select(static c => c.Fixture).DistinctBy(static f => f.Path, StringComparer.Ordinal)
+        ..candidates.Select(static c => c.Fixture).DistinctBy(static f => f.Path, StringComparer.Ordinal)
     ];
 
     /// <summary>

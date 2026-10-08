@@ -80,7 +80,7 @@ public static class ConstructReport {
         var kinds = new HashSet<string>(lines.Keys, StringComparer.Ordinal);
         kinds.UnionWith(divergent.Keys);
         return [
-            .. kinds
+            ..kinds
                 .Select(kind => new ConstructShare(
                         kind,
                         occurrences.GetValueOrDefault(kind),

@@ -161,7 +161,7 @@ public sealed class MetricsAnalyzerTests {
 
         return ruleId is null
             ? produced
-            : [.. produced.Where(diagnostic => diagnostic.Id == ruleId)];
+            : [..produced.Where(diagnostic => diagnostic.Id == ruleId)];
     }
 
     /// <summary>The `.editorconfig` chain, reduced to the one section a test cares about.</summary>

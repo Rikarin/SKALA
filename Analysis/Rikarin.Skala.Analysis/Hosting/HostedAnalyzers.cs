@@ -186,7 +186,7 @@ public static class HostedAnalyzers {
         try {
             types = assembly.GetTypes();
         } catch (ReflectionTypeLoadException exception) {
-            types = [.. exception.Types.Where(static type => type is not null)!];
+            types = [..exception.Types.Where(static type => type is not null)!];
         }
 
         foreach (var type in types) {

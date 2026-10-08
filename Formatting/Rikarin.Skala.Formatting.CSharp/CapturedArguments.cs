@@ -198,7 +198,7 @@ public static class CapturedArguments {
 
         var sorted = spans.ToList();
         sorted.Sort(static (a, b) => a.Start != b.Start ? a.Start.CompareTo(b.Start) : b.Length.CompareTo(a.Length));
-        return [.. sorted];
+        return [..sorted];
     }
 
     /// <summary>Whether <paramref name="span" /> lies inside one of <paramref name="captured" />.</summary>

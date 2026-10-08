@@ -884,7 +884,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 builder.AppendLine(
                     $"    public readonly struct {root.Key}{child.Key}Group(int[] scalars, string?[] strings) {{"
                 );
-                EmitAccessors(builder, [.. child], "        ");
+                EmitAccessors(builder, [..child], "        ");
                 builder.AppendLine("    }");
             }
         }

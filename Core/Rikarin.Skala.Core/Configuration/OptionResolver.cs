@@ -218,7 +218,7 @@ public static class OptionResolver {
             }
 
             var value = origin?.Value ?? info.Default ?? string.Empty;
-            resolved.Add(new ResolvedOption(id, value, origin, [.. candidates[i] ?? []], refused[i]?.Origin));
+            resolved.Add(new ResolvedOption(id, value, origin, [..candidates[i] ?? []], refused[i]?.Origin));
         }
 
         Expand(winners, winnerDocument, applied, builder);

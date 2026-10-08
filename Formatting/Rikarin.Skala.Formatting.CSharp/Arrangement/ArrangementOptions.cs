@@ -471,7 +471,7 @@ public readonly struct ArrangementOptions {
         public static readonly OptionId FormatterTagsAcceptRegexp =
             OfInert("skala_formatter_tags_accept_regexp");
 
-        public static ImmutableArray<OptionId> All { get; } = [.. Collected.Distinct().Except(Inert).Order()];
+        public static ImmutableArray<OptionId> All { get; } = [..Collected.Distinct().Except(Inert).Order()];
 
         static OptionId Of(string key) {
             if (!OptionRegistry.TryResolve(key, out var id)) {

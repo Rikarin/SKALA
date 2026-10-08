@@ -80,7 +80,7 @@ public sealed class FrozenSweepTests {
             var body = FrozenCorpus.ReadBody(frozen);
             var produced = SkalaSide.Format(
                 fixture!.Path,
-                [.. configuration.Overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                [..configuration.Overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
             );
             replayed++;
 

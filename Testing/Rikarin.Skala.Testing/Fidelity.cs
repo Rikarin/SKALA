@@ -132,7 +132,10 @@ public static class Fidelity {
         var identicalLines = 0;
         var divergences = new List<Divergence>();
 
-        foreach (var (file, rawExpected, rawActual) in results) {
+        foreach (var (file, unnormalisedExpected, unnormalisedActual) in results) {
+            // ⚠ The gaps Skala governs on purpose are taken out of both sides first (SK-DIV-0310).
+            var rawExpected = SkalaGovernedGaps.Normalise(unnormalisedExpected);
+            var rawActual = SkalaGovernedGaps.Normalise(unnormalisedActual);
             var expected = basis == FidelityBasis.OutsideDocComments ? OutsideDocComments(rawExpected) : rawExpected;
             var actual = basis == FidelityBasis.OutsideDocComments ? OutsideDocComments(rawActual) : rawActual;
             files++;

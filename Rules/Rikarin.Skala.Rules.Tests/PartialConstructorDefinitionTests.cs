@@ -124,7 +124,7 @@ public sealed class PartialConstructorDefinitionTests {
                 .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
         );
         RuleFixtures.Analyze(compilation, [counter], TestContext.Current.CancellationToken);
-        return [.. counter.Seen];
+        return [..counter.Seen];
     }
 
     // A probe analyzer: not registered, not shipped, with a descriptor of its own.
@@ -203,7 +203,7 @@ public sealed class PartialConstructorDefinitionTests {
             Action<SyntaxNodeAnalysisContext> action,
             ImmutableArray<TLanguageKindEnum> syntaxKinds
         ) =>
-            Nodes.Add((action, [.. syntaxKinds.Cast<SyntaxKind>()]));
+            Nodes.Add((action, [..syntaxKinds.Cast<SyntaxKind>()]));
     }
 
     /// <summary>

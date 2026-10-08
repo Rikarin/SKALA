@@ -54,7 +54,7 @@ public sealed class ArrangementOptionTests {
 
         var resolved = OptionResolver.Resolve(
             Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Option.cs"),
-            [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+            [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
         );
 
         Assert.True(resolved.ValueErrors.IsEmpty, string.Join("; ", resolved.ValueErrors));

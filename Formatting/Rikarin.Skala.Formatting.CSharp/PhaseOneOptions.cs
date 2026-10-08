@@ -1537,13 +1537,15 @@ public static class Ids {
 
     public static readonly OptionId SpaceWithinSlicePattern = Of("skala_space_within_slice_pattern");
 
-    // ⚠ Inert since milestone 3.1, and it was Tier A before it — on a fixture that cannot tell the
-    // two values apart. Asked directly at both values, the oracle returns `[1, .. xs, 2]` and
-    // `[1, ..xs, 2]` exactly as written: the gap after a collection expression's `..` is not
-    // governed by anything, and this key's name is the only reason anyone thought it was.
-    // `skala_space_within_slice_pattern` is the one that really does govern its own construct, and it
-    // stays Tier A. SK-DIV-0009.
-    public static readonly OptionId SpaceWithinSpreadPattern = OfInert("skala_space_within_spread_pattern");
+    // ⚠ Governed by Skala on purpose, and `OfUnoracled` in its documented sense — asked, and answered
+    // differently (#513, SK-DIV-0310). Asked directly at both values, the oracle returns `[1, .. xs, 2]`
+    // and `[1, ..xs, 2]` exactly as written (SK-DIV-0009), which leaves one repository spelling its
+    // spreads both ways and passing its own format check. Skala writes the configured spelling instead:
+    // `[..xs]` at `false`, the registry's default, and `[.. xs]` at `true`. It was `OfInert` from
+    // milestone 3.1 until then, and Tier A before that on a fixture that could not tell the two values
+    // apart. `skala_space_within_slice_pattern` is the oracle's own rule for a slice pattern and stays
+    // Tier A.
+    public static readonly OptionId SpaceWithinSpreadPattern = OfUnoracled("skala_space_within_spread_pattern");
 
     public static readonly OptionId SpaceBeforeTrailingComment = Of("skala_space_before_trailing_comment");
 
@@ -2992,7 +2994,7 @@ public static class Ids {
     ///     A promotion reads.
     /// </remarks>
     public static ImmutableArray<OptionId> All { get; } =
-        [.. Collected.Distinct().Except(Inert).Except(Unoracled).Order()];
+        [..Collected.Distinct().Except(Inert).Except(Unoracled).Order()];
 
     /// <summary>
     ///     The ids phase 1 reads and cannot be observed to honour, each with a reason at its
@@ -3005,7 +3007,7 @@ public static class Ids {
     ///     difference is measurable: an inert key produces one output across its whole domain, and a
     ///     key that has quietly become observable produces two.
     /// </remarks>
-    public static ImmutableArray<OptionId> ReadButInert { get; } = [.. Inert.Distinct().Order()];
+    public static ImmutableArray<OptionId> ReadButInert { get; } = [..Inert.Distinct().Order()];
 
     /// <summary>
     ///     The ids phase 1 reads and honours, and that no oracle fixture <em>agrees with</em>.
@@ -3032,7 +3034,7 @@ public static class Ids {
     ///         still there.
     ///     </para>
     /// </remarks>
-    public static ImmutableArray<OptionId> ReadButUnoracled { get; } = [.. Unoracled.Distinct().Order()];
+    public static ImmutableArray<OptionId> ReadButUnoracled { get; } = [..Unoracled.Distinct().Order()];
 
     /// <summary>
     ///     ⚠ An option phase 1 reads but whose value it cannot yet make a difference to. No fitting

@@ -575,8 +575,15 @@ public sealed class FuzzerTests {
         );
         Assert.Equal(gaps.Length, oracleGaps.Length);
 
-        // As written, first: the flipped claims below are read off this one.
-        Assert.Equal(oracle, TextNormalisation.Normalise(CorpusFormatter.Format(file, source, defined).Formatted));
+        // As written, first: the flipped claims below are read off this one. ⚠ With the spread's gap
+        // taken out of both sides: the construct writes it three ways, the oracle keeps all three, and
+        // Skala now governs it on purpose (#513, SK-DIV-0310), so it is no longer one of these gaps.
+        Assert.Equal(
+            SkalaGovernedGaps.Normalise(oracle),
+            SkalaGovernedGaps.Normalise(
+                TextNormalisation.Normalise(CorpusFormatter.Format(file, source, defined).Formatted)
+            )
+        );
         for (var i = 0; i < gaps.Length; i++) {
             if (gaps[i].Spaced is { } wrote) {
                 Assert.Equal(wrote, oracleGaps[i].Spaced);
@@ -590,13 +597,16 @@ public sealed class FuzzerTests {
             }
         }
 
-        flips.Add([.. flips.Select(static flip => flip[0])]);
+        flips.Add([..flips.Select(static flip => flip[0])]);
         foreach (var flip in flips) {
-            var input = FuzzProperties.FlipUngovernedGaps(source, [.. flip.Select(i => gaps[i])])!;
-            var expected = FuzzProperties.FlipUngovernedGaps(oracle, [.. flip.Select(i => oracleGaps[i])])!;
+            var input = FuzzProperties.FlipUngovernedGaps(source, [..flip.Select(i => gaps[i])])!;
+            var expected = FuzzProperties.FlipUngovernedGaps(oracle, [..flip.Select(i => oracleGaps[i])])!;
             var first = CorpusFormatter.Format(file, input, defined);
             Assert.Equal(FormatOutcome.Formatted, first.Outcome);
-            Assert.Equal(TextNormalisation.Normalise(expected), TextNormalisation.Normalise(first.Formatted));
+            Assert.Equal(
+                SkalaGovernedGaps.Normalise(TextNormalisation.Normalise(expected)),
+                SkalaGovernedGaps.Normalise(TextNormalisation.Normalise(first.Formatted))
+            );
 
             var second = CorpusFormatter.Format(file, first.Formatted, defined);
             Assert.Empty(second.Edits);
