@@ -5437,7 +5437,12 @@ carries an embedded statement of its own, or its owner is itself embedded** — 
 machinery owns: an `if` with an `else` keeps its statement (`if (b)` / `if (c) M();` / `else M();`) and
 an `else if` keeps its (`else if (c) M();`); neither carries over to what nests inside them
 (`else if (b)` / `if (c)` / `M();`). `BreakPlan.IsPushedOffByNesting`, `PlanStackedUsing`; pinned by
-`EmbeddedNestingIssue469And480Tests`. The `keep = false` paths are untouched.
+`EmbeddedNestingIssue469And480Tests`. ⚠ **And at `keep = false` too (#519)**: measured at `always`,
+`if_owner_is_single_line` and `never`, every nesting written on one line is pushed off the same way,
+with the same two exemptions at `always`; and `if_owner_is_single_line` reads an `else`'s owner as the
+whole `if`, so `else` / `M();` breaks whenever the `if` spans lines — which, `else` starting a line of
+its own (#480), it always does — and `} else` / `M();` after a block too. Pinned by
+`EmbeddedAtKeepFalseIssue519Tests`, including inputs the author wrote broken.
 
 - options: `skala_keep_existing_embedded_arrangement` (`true`; the `false` paths are untouched),
   `skala_place_simple_embedded_statement_on_same_line` (inert under keep, as before).
@@ -5556,9 +5561,12 @@ argument list (`F(` / arguments at 16 / `)` at 12), a chain's dot, the first dec
 field's alike — lands one level past the *list's* level, while `y = 2;` stays at 12 and a single
 declarator's `int z = a` / `+ 1;` stays one level in. The list and the `=` both open on the
 declaration's first line, so the writer's one-level-per-line rule counted one; the list's level now
-counts unconditionally (`GroupPlan.UnconditionalLevel`) and the `=` spends under it. ⚠ Not fixed and
-not this entry: `b ? a` / `: c` — a ternary broken before `:` only — is chopped by the oracle at the `?`
-too, in a single declarator and a `return` alike.
+counts unconditionally (`GroupPlan.UnconditionalLevel`) and the `=` spends under it. ⚠ Not this
+entry, and fixed since (#518): `b ? a` / `: c` — a single conditional broken at one sign — is chopped by
+the oracle at both, in a declarator, a `return`, an argument and after a comment line (`a` / `/* c */`
+/ `? 1` / `: 2`); a conditional *chain* keeps its per-sign pins. `PlanTernary`, pinned by
+`ConditionalChopIssue518Tests`. Still open: a conditional nested in a parenthesis inside another's
+branch (`? (a > 0` / `? a` / `: c)`) puts its signs at 20 where the oracle writes 16.
 ⚠ **The filled-list half closed at #471** (SK-DIV-0117): `new[] { 1` / `+ 2, 3 }` already agreed (the
 array initializer's after rule, #444), and `[1` / `+ 2, 3]` now does too — `+ 2,` / `3`.
 
