@@ -194,8 +194,8 @@ public sealed class SynchronousAsyncDisposalAnalyzer : DiagnosticAnalyzer {
         // `var` and the interface list lives on what `Open()` returned.
         return context.SemanticModel.GetDeclaredSymbol(declaration.Variables[0], context.CancellationToken)
             is ILocalSymbol local
-                ? local.Type
-                : null;
+            ? local.Type
+            : null;
     }
 
     static bool Implements(ITypeSymbol? type, INamedTypeSymbol asyncDisposable) {

@@ -434,26 +434,32 @@ public sealed class HeldLevelIssue406407Tests {
 
     /// <summary>
     ///     ⚠ The issue's input. Pass one used to hold the level and break before <c>.OtherMethodName</c>,
-    ///     and pass two to read that break back and give the level up. Now pass one writes pass two's
-    ///     form, which the oracle returns unchanged. It is not the oracle's answer to the input — that
-    ///     keeps <c>.OtherMethodName(</c> on the line and chops its arguments, which is SK-DIV-0129's
-    ///     last-link rule and not this one.
+    ///     and pass two to read that break back and give the level up. ⚠ Since #484 pass one writes the
+    ///     oracle's own answer to the input, measured 2026-10-08: <c>.OtherMethodName(</c> kept on the
+    ///     line, its arguments chopped, the level held — and the oracle returns that unchanged, as Skala
+    ///     does. Before #484 it wrote the dot-broken form, which the oracle also returns unchanged.
     /// </summary>
     [Fact]
     public void TheIssuesCase_SettlesInOnePass() =>
         Assert.Equal(
-            $$"""
+            """
             class T {
                 object M() =>
-                    (
-                        a).SomeMethodName({{Args}})
-                    .OtherMethodName({{Args}});
+                (
+                    a).SomeMethodName(argumentNumberOne, argumentNumberTwo, argumentNumberThree).OtherMethodName(
+                    argumentNumberOne,
+                    argumentNumberTwo,
+                    argumentNumberThree
+                );
 
                 void N() {
                     var x =
-                        (
-                            a).SomeMethodName({{Args}})
-                        .OtherMethodName({{Args}});
+                    (
+                        a).SomeMethodName(argumentNumberOne, argumentNumberTwo, argumentNumberThree).OtherMethodName(
+                        argumentNumberOne,
+                        argumentNumberTwo,
+                        argumentNumberThree
+                    );
                 }
 
                 object a;

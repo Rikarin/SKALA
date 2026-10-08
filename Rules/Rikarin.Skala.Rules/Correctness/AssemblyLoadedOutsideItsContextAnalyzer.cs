@@ -113,8 +113,8 @@ public sealed class AssemblyLoadedOutsideItsContextAnalyzer : DiagnosticAnalyzer
                 + access.Name.Identifier.ValueText
                 + "` loads into "
                 + (access.Name.Identifier.ValueText == "LoadFrom"
-                        ? "the default context"
-                        : "a new anonymous context")
+                    ? "the default context"
+                    : "a new anonymous context")
                 + ", not into this one — use `LoadFromAssemblyPath`"
             )
         );
