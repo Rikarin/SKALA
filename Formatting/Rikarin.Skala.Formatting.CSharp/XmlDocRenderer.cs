@@ -221,9 +221,9 @@ public sealed class XmlDocRenderer {
             // `Body.` (#448). Placed now so the break is known; not taken if the next thing is glued to the
             // tag, which a break would change.
             if (options.LinebreakBeforeMultilineElements && flat!.IndexOfAny([SoftGap, HardGap]) >= 0) {
-                var before = lines.Count;
+                headerBroke = false;
                 Flush();
-                breakAfterHeader = lines.Count > before;
+                breakAfterHeader = headerBroke;
             }
 
             return;
@@ -656,6 +656,13 @@ public sealed class XmlDocRenderer {
     /// <summary>⚠ A wrapped tag header was just placed; the next unit not glued to it starts a new line.</summary>
     bool breakAfterHeader;
 
+    /// <summary>
+    ///     ⚠ The last header <see cref="Header" /> placed broke inside itself. Not "a line was added": moving
+    ///     a whole tag off a line of prose adds one too, and is no reason to break after it — the committed
+    ///     <c>wrap_tags_and_pi</c> fixture keeps <c>as written.</c> beside the <c>&lt;see/&gt;</c> it moved.
+    /// </summary>
+    bool headerBroke;
+
     void Push(string text, bool glued, bool tag, Edge lead, Edge trail) {
         if (breakAfterHeader) {
             breakAfterHeader = false;
@@ -793,6 +800,8 @@ public sealed class XmlDocRenderer {
         if (!broke) {
             width += carried;
         }
+
+        headerBroke = broke;
     }
 
     /// <summary>Where the attribute a segment starts with ends: after its quoted value.</summary>

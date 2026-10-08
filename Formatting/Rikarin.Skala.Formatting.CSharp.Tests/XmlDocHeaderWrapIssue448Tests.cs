@@ -95,6 +95,26 @@ public sealed class XmlDocHeaderWrapIssue448Tests {
         );
     }
 
+    /// <summary>
+    ///     ⚠ A tag moved off a line of prose without being wrapped keeps what follows beside it — the
+    ///     committed <c>skala_xmldoc_wrap_tags_and_pi</c> fixture, which the first cut of #448 broke by
+    ///     reading "a line was added" as "the header broke".
+    /// </summary>
+    [Fact]
+    public void ATagMovedButNotWrapped_KeepsWhatFollowsBesideIt() =>
+        Assert.Equal(
+            [
+                "/// <summary>",
+                "///     Some prose that runs on for long enough that the inline element which follows it cannot stay on the same line",
+                "///     <see cref=\"System.String\" /> as written.",
+                "/// </summary>"
+            ],
+            Doc(
+                "/// <summary>Some prose that runs on for long enough that the inline element which follows it cannot "
+                + "stay on the same line <see cref=\"System.String\" /> as written.</summary>"
+            )
+        );
+
     static string[] Doc(params string[] lines) {
         var once = XmlDoc.Text(XmlDoc.InClass(lines));
         Assert.Equal(once, XmlDoc.Text(once));
