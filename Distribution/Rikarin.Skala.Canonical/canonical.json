@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "sha256": "1ea318428c1d1a3d2d928d209fcdb30c23fe7a5b2de843b560dc4bb53e3e9409",
-  "assignments": 377,
+  "sha256": "a8e5a8e360be6fbbd57db3fef403db48aa9552356874dcff304d189ad6be79df",
+  "assignments": 378,
   "sections": 3,
   "source": "editor_config_template — the Rider export (ADR-001)",
   "generated": "./build.sh Canonical"

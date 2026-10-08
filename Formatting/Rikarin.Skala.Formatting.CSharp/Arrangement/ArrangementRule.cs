@@ -28,6 +28,7 @@ public static class ArrangeIds {
     public const string ArgumentStyle = "SK0216";
     public const string DiscardDeclaration = "SK0217";
     public const string PropertyPattern = "SK0218";
+    public const string QualifiedReference = "SK0219";
 
     /// <summary>⚠ A rewrite was reverted because re-binding produced a diagnostic it had not.</summary>
     public const string Reverted = "SK9098";
@@ -78,6 +79,7 @@ public static class ArrangeIds {
             ArgumentStyle => "argument style",
             DiscardDeclaration => "discard declaration",
             PropertyPattern => "property pattern",
+            QualifiedReference => "qualified reference",
             _ => id
         };
 }

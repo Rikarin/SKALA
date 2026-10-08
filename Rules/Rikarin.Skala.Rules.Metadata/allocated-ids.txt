@@ -426,3 +426,7 @@ SK9018 file-not-decodable
 # #512: `xs.ToArray()` / `xs.ToList()` → `[..xs]` (IDE0305, fluent form). Floor C# 14, not 12: the
 # lowering that makes the rewrite safe arrived in Roslyn 4.14, and C# 14 is the first version only 5.0+ accepts.
 SK1133 collection-expression-spread
+
+# #460: `System.Text.StringBuilder` ⇒ `StringBuilder` under skala_prefer_qualified_reference = false, the
+# oracle's CSArrangeQualifiers, measured in SK-DIV-0073.
+SK0219 arrange-qualified-reference

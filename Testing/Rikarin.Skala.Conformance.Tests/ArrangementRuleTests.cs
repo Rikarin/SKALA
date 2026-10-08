@@ -65,15 +65,19 @@ public sealed class ArrangementRuleTests {
     ///     regression tests for #326 want to say "this rewrite was never attempted", which is a
     ///     statement about <see cref="ArrangementResult.Diagnostics" />.
     /// </remarks>
-    static ArrangementResult Attempt(
+    internal static ArrangementResult Attempt(
         string source,
         string? only = null,
         bool removeUnused = false,
-        IReadOnlyList<KeyValuePair<string, string>>? overrides = null
+        IReadOnlyList<KeyValuePair<string, string>>? overrides = null,
+        LanguageVersion? version = null
     ) {
         const string path = "/arrangement/Probe.cs";
         var text = SourceText.From(source);
-        var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions, path);
+        var parse = version is { } pinned
+            ? CSharpFormatter.ParseOptions.WithLanguageVersion(pinned)
+            : CSharpFormatter.ParseOptions;
+        var tree = CSharpSyntaxTree.ParseText(text, parse, path);
 
         // The kind is chosen from the file, as `RuleFixtures.Compile` chose it in #314: a probe
         // holding top-level statements is an executable, and compiled as a library it draws
@@ -127,7 +131,7 @@ public sealed class ArrangementRuleTests {
     ///     outcome. The two rewrites #326 found had exactly that shape: correct output, on disk, for the
     ///     wrong reason. So the assertion is that <c>SK9098</c> never appeared.
     /// </remarks>
-    static string Declined(ArrangementResult result) {
+    internal static string Declined(ArrangementResult result) {
         Assert.DoesNotContain(
             result.Diagnostics,
             static diagnostic => diagnostic.Id is ArrangeIds.Reverted or ArrangeIds.SymbolChanged
@@ -1006,6 +1010,284 @@ public sealed class ArrangementRuleTests {
         Assert.Contains("One(new());", arranged, StringComparison.Ordinal);
     }
 
+    /// <summary>The probe #524's rows are asked of: a <c>new</c> as the value of a lambda.</summary>
+    const string LambdaProbe = """
+                               using System;
+                               using System.Linq.Expressions;
+                               using System.Threading.Tasks;
+
+                               namespace P;
+
+                               public class Foo { public Foo() { } public Foo(int x) { } }
+                               public class Bar { }
+
+                               public class C {
+                                   static void TakeFunc(Func<Foo> f) { }
+                                   static void TakeArg(Func<int, Foo> f) { }
+                                   static void Over(Func<Foo> f) { }
+                                   static void Over(Func<Bar> f) { }
+                                   static void Gen<T>(Func<T> f) { }
+                                   static void TakeExpr(Expression<Func<Foo>> e) { }
+                                   static void TakeObj(Func<object> f) { }
+                                   static void TakeAsync(Func<Task<Foo>> f) { }
+
+                                   Func<Foo> _field = () => new Foo();
+                                   Func<Foo> Property => () => new Foo();
+
+                                   Foo Plain() {
+                                       Func<Foo> local = () => new Foo(1);
+                                       return local();
+                                   }
+
+                                   void M() {
+                                       TakeFunc(() => new Foo());
+                                       TakeArg(x => new Foo(x));
+                                       Over(() => new Foo());
+                                       Gen(() => new Foo());
+                                       Gen<Foo>(() => new Foo());
+                                       TakeExpr(() => new Foo());
+                                       TakeObj(() => new Foo());
+                                       TakeAsync(async () => new Foo());
+                                       TakeFunc(() => { return new Foo(); });
+                                       TakeFunc(delegate { return new Foo(); });
+                                       var inferred = () => new Foo();
+                                       Func<Foo> assigned;
+                                       assigned = () => new Foo();
+                                       Task.Run(() => new Foo());
+                                       Console.WriteLine(inferred() + "" + assigned());
+                                   }
+                               }
+                               """;
+
+    /// <summary>
+    ///     #524: a <c>new</c> that a lambda returns is target-typed when the delegate's return type is fixed
+    ///     from outside the lambda. Each row is the oracle's answer under <c>SkalaCleanup</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("Func<Foo> _field = () => new();")]
+    [InlineData("Func<Foo> Property => () => new();")]
+    [InlineData("TakeFunc(() => new());")]
+    [InlineData("TakeArg(x => new(x));")]
+    [InlineData("Gen<Foo>(() => new());")]
+    [InlineData("TakeExpr(() => new());")]
+    [InlineData("TakeAsync(async () => new());")]
+    [InlineData("TakeFunc(() => { return new(); });")]
+    [InlineData("TakeFunc(delegate { return new(); });")]
+    [InlineData("assigned = () => new();")]
+    public void ObjectCreation_ALambdaValueIsTargetTyped(string expected) {
+        var arranged = Declined(Attempt(LambdaProbe, ArrangeIds.ObjectCreation));
+        Assert.Contains(expected, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     #524's refusals: the lambda's return type is read off the very body being rewritten, or the
+    ///     call would bind something else. The oracle leaves every one as written.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>return local();</c>'s method is the control for the old behaviour that stopped at a lambda:
+    ///     the method's own <c>Foo</c> return type must not be read for a <c>return</c> inside a lambda.
+    /// </remarks>
+    [Theory]
+    [InlineData("Over(() => new Foo());")]
+    [InlineData("Gen(() => new Foo());")]
+    [InlineData("TakeObj(() => new Foo());")]
+    [InlineData("var inferred = () => new Foo();")]
+    [InlineData("Task.Run(() => new Foo());")]
+    public void ObjectCreation_ALambdaWhoseTypeComesFromItsBody_KeepsItsType(string kept) {
+        var arranged = Declined(Attempt(LambdaProbe, ArrangeIds.ObjectCreation));
+        Assert.Contains(kept, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ A call deep inside a <c>?.</c> chain is re-bound through its statement. Bound out of place its
+    ///     leftmost receiver is a member binding, and Roslyn threw — SK9095 on Skala's own
+    ///     <c>Testing/…/Program.cs</c>, found by Lint's self-arrange.
+    /// </summary>
+    [Fact]
+    public void ObjectCreation_ALambdaDeepInAConditionalChain_DoesNotThrow() {
+        var result = Attempt(
+            """
+            using System.Collections.Generic;
+            using System.Linq;
+
+            namespace P;
+
+            public class C {
+                public List<KeyValuePair<string, string>>? M(string[]? args) =>
+                    args?[0..]
+                        .Select(static pair => pair.Split('='))
+                        .Select(static pair => new KeyValuePair<string, string>(pair[0], pair[1]))
+                        .ToList();
+
+                public void N(List<KeyValuePair<string, string>>? list) {
+                    list?.Add(new KeyValuePair<string, string>("a", "b"));
+                }
+            }
+            """,
+            ArrangeIds.ObjectCreation
+        );
+
+        Assert.DoesNotContain(result.Diagnostics, static diagnostic => diagnostic.Id == ArrangeIds.RuleThrew);
+        var arranged = Declined(result);
+        Assert.Contains(
+            ".Select(static pair => new KeyValuePair<string, string>(pair[0], pair[1]))",
+            arranged,
+            StringComparison.Ordinal
+        );
+        Assert.Contains("list?.Add(new(\"a\", \"b\"));", arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>⚠ #524: a lambda's value is <c>when_type_not_evident</c>'s, its block <c>return</c> included.</summary>
+    [Fact]
+    public void ObjectCreation_ALambdaValueIsNotEvident() {
+        var arranged = Declined(
+            Attempt(
+                LambdaProbe,
+                ArrangeIds.ObjectCreation,
+                overrides: [new("skala_object_creation_when_type_not_evident", "explicitly_typed")]
+            )
+        );
+        Assert.Contains("TakeFunc(() => new Foo());", arranged, StringComparison.Ordinal);
+        Assert.Contains("TakeFunc(() => { return new Foo(); });", arranged, StringComparison.Ordinal);
+        Assert.Contains("Func<Foo> _field = () => new Foo();", arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>The probe #547's rows are asked of: a delegate-typed local initialised by a function.</summary>
+    const string NaturalTypeProbe = """
+                                    using System;
+                                    using System.Linq.Expressions;
+                                    using System.Threading.Tasks;
+
+                                    namespace P;
+
+                                    public class Foo { }
+
+                                    public delegate int MyDelegate();
+                                    public delegate int RefDelegate(ref int x);
+
+                                    public class C {
+                                        static void Run() { }
+                                        static void Over(int x) { }
+                                        static void Over(string x) { }
+                                        static int Twice(int x) => x * 2;
+
+                                        public string M() {
+                                            Func<int> a = () => 1;
+                                            Func<object> b = () => new object();
+                                            Func<object> c = () => "x";
+                                            Func<int, int> d = x => x;
+                                            Func<int, int> e = (int x) => x;
+                                            Action f = () => { };
+                                            Expression<Func<int>> g = () => 1;
+                                            Action h = Run;
+                                            Action<int> i = Over;
+                                            MyDelegate j = () => 1;
+                                            Func<Foo> k = () => new Foo();
+                                            Delegate l = () => 1;
+                                            Func<int?> m = () => 1;
+                                            Func<Task> n = async () => await Task.Delay(1);
+                                            Func<string?> o = () => null;
+                                            Func<int> p = static () => 1;
+                                            RefDelegate q = (ref int x) => x;
+                                            Func<object> r = object () => "x";
+                                            Func<int, int> s = Twice;
+                                            Func<int>? t = () => 1;
+                                            Func<Foo> u = () => { return new Foo(); };
+                                            Func<int> v = delegate { return 1; };
+                                            return $"{a}{b}{c}{d}{e}{f}{g}{h}{i}{j}{k}{l}{m}{n}{o}{p}{q}{r}{s}{t}{u}{v}";
+                                        }
+                                    }
+                                    """;
+
+    /// <summary>
+    ///     #547: a function initialiser takes <c>var</c> exactly when its natural type is the declared type.
+    ///     Every row is the oracle's, under <c>SkalaCleanup</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("var a = () => 1;")]
+    [InlineData("var b = () => new object();")]
+    [InlineData("var e = (int x) => x;")]
+    [InlineData("var f = () => { };")]
+    [InlineData("var h = Run;")]
+    [InlineData("var k = () => new Foo();")]
+    [InlineData("var n = async () => await Task.Delay(1);")]
+    [InlineData("var p = static () => 1;")]
+    [InlineData("var r = object () => \"x\";")]
+    [InlineData("var s = Twice;")]
+    [InlineData("var t = () => 1;")]
+    [InlineData("var u = () => { return new Foo(); };")]
+    public void Var_AFunctionWhoseNaturalTypeIsDeclared_TakesVar(string expected) {
+        var arranged = Declined(Attempt(NaturalTypeProbe, ArrangeIds.Var));
+        Assert.Contains(expected, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>#547's refusals: the natural type is another type, or there is none.</summary>
+    [Theory]
+    [InlineData("Func<object> c = () => \"x\";")]
+    [InlineData("Func<int, int> d = x => x;")]
+    [InlineData("Expression<Func<int>> g = () => 1;")]
+    [InlineData("Action<int> i = Over;")]
+    [InlineData("MyDelegate j = () => 1;")]
+    [InlineData("Delegate l = () => 1;")]
+    [InlineData("Func<int?> m = () => 1;")]
+    [InlineData("Func<string?> o = () => null;")]
+    [InlineData("RefDelegate q = (ref int x) => x;")]
+    [InlineData("Func<int> v = delegate { return 1; };")]
+    public void Var_AFunctionWhoseNaturalTypeIsNotDeclared_KeepsItsType(string kept) {
+        var arranged = Declined(Attempt(NaturalTypeProbe, ArrangeIds.Var));
+        Assert.Contains(kept, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     #547: below C# 10 a lambda has no natural type, so nothing converts — and at
+    ///     <c>csharp_style_var_elsewhere = false</c>, the key that governs these, nothing does either.
+    /// </summary>
+    [Fact]
+    public void Var_AFunction_NeedsCSharp10AndVarElsewhere() {
+        const string old = """
+                           using System;
+
+                           namespace P;
+
+                           public class C {
+                               static void Run() { }
+
+                               public string M() {
+                                   Func<int> a = () => 1;
+                                   Action h = Run;
+                                   return $"{a}{h}";
+                               }
+                           }
+                           """;
+
+        var nine = Declined(Attempt(old, ArrangeIds.Var, version: LanguageVersion.CSharp9));
+        Assert.Contains("Func<int> a = () => 1;", nine, StringComparison.Ordinal);
+        Assert.Contains("Action h = Run;", nine, StringComparison.Ordinal);
+
+        var ten = Declined(Attempt(old, ArrangeIds.Var, version: LanguageVersion.CSharp10));
+        Assert.Contains("var a = () => 1;", ten, StringComparison.Ordinal);
+
+        var elsewhere = Declined(
+            Attempt(NaturalTypeProbe, ArrangeIds.Var, overrides: [new("csharp_style_var_elsewhere", "false")])
+        );
+        Assert.Contains("Func<int> a = () => 1;", elsewhere, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #547 and #524 together, through every rule: where <c>var</c> takes the declarator the creation
+    ///     keeps its type — <c>var k = () =&gt; new Foo();</c>, the oracle's line — and where it does not,
+    ///     the creation is target-typed (<c>csharp_style_var_elsewhere = false</c>, measured).
+    /// </summary>
+    [Fact]
+    public void Var_WinsOverATargetTypedLambdaValue() {
+        var arranged = Declined(Attempt(NaturalTypeProbe));
+        Assert.Contains("var k = () => new Foo();", arranged, StringComparison.Ordinal);
+
+        var elsewhere = Declined(Attempt(NaturalTypeProbe, overrides: [new("csharp_style_var_elsewhere", "false")]));
+        Assert.Contains("Func<Foo> k = () => new();", elsewhere, StringComparison.Ordinal);
+        Assert.Contains("Func<object> b = () => new();", elsewhere, StringComparison.Ordinal);
+    }
+
     /// <summary>The probe #462's rows are asked of: every predefined keyword, written as one.</summary>
     const string KeywordProbe = """
                                 using System;
@@ -1751,7 +2033,7 @@ public sealed class ArrangementRuleTests {
         var text = SourceText.From(source);
         var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions, path);
         var trees = implicitUsings
-            ? (SyntaxTree[])[
+            ? (SyntaxTree[]) [
                 CSharpSyntaxTree.ParseText(
                     SourceText.From(Rikarin.Skala.Testing.ArrangementDifferential.ImplicitUsings),
                     CSharpFormatter.ParseOptions,

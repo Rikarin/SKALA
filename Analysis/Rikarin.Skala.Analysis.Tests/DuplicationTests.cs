@@ -213,7 +213,7 @@ public sealed class DuplicationTests {
     /// </remarks>
     [Fact]
     public void Detect_WhenEveryWindowCollidesInOneBucket_VerificationStillDecides() {
-        var unrelated = (DuplicationInput[])[
+        var unrelated = (DuplicationInput[]) [
             Production("/repo/Alpha.cs", Alpha(Block(400, seed: 1))),
             Production(
                 "/repo/Beta.cs",
@@ -227,7 +227,7 @@ public sealed class DuplicationTests {
         );
 
         var block = Block(250);
-        var cloned = (DuplicationInput[])[
+        var cloned = (DuplicationInput[]) [
             Production("/repo/Alpha.cs", Alpha(block)), Production("/repo/Beta.cs", Beta(block))
         ];
 
@@ -415,7 +415,7 @@ public sealed class DuplicationTests {
     public void Index_WhenAFileChanges_TheAnswerChangesWithIt() {
         using var scratch = new Scratch();
         var block = Block(250);
-        var cloned = (DuplicationInput[])[
+        var cloned = (DuplicationInput[]) [
             Production("/repo/Alpha.cs", Alpha(block)), Production("/repo/Beta.cs", Beta(block))
         ];
 
@@ -423,7 +423,7 @@ public sealed class DuplicationTests {
             CloneDetector.Detect(cloned, MinTokens, scratch.Root, TestContext.Current.CancellationToken).Groups
         );
 
-        var edited = (DuplicationInput[])[
+        var edited = (DuplicationInput[]) [
             cloned[0], Production("/repo/Beta.cs", Beta(Block(250, seed: 9)))
         ];
 
@@ -478,7 +478,7 @@ public sealed class DuplicationTests {
     [Fact]
     public void Detect_IsDeterministic_WhateverOrderTheFilesArriveIn() {
         var block = Block(250);
-        var files = (DuplicationInput[])[
+        var files = (DuplicationInput[]) [
             Production("/repo/Gamma.cs", Gamma(block)), Production("/repo/Alpha.cs", Alpha(block)),
             Production(
                 "/repo/Beta.cs",

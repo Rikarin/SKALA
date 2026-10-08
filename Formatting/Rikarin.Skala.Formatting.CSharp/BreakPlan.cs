@@ -550,6 +550,7 @@ public sealed class BreakPlan {
         // ⚠ Before the switch and before the condition's own operators are walked. The walk is
         // pre-order, so the statement is planned first and `PlanOperator` reads what this recorded.
         PlanForcedChopCondition(node);
+        PlanCastBeforeACollection(node);
 
         switch (node) {
             case EnumDeclarationSyntax enumeration:
@@ -2593,16 +2594,16 @@ public sealed class BreakPlan {
             if (options.KeepsUserBreaksBetweenItems && BreaksBefore(dot)) {
                 Mandatory(dot);
             } else {
-                Point(dot, group, fill: true, lastResort: IsAssignmentTarget(root));
+                Point(dot, group, true, IsAssignmentTarget(root));
             }
         }
 
         Describe(
             root,
-            new GroupPlan(
+            new(
                 group,
                 GroupMode.Preserve,
-                new GroupFacts(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: !IsAssignmentTarget(root)),
+                new(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: !IsAssignmentTarget(root)),
                 ChainHeadIsParenthesised(root),
                 OwnLevel: !ChainHeadIsParenthesised(root)
             )
@@ -2751,7 +2752,7 @@ public sealed class BreakPlan {
                         // conditional access the binding hangs from walks its own receiver.
                         dots.Add(
                             !wrapAfterProperty && ConditionalOf(binding) is { } owner
-                                ? PropertyRun(ChainDot(binding), owner.Expression, crossed: true).Dot
+                                ? PropertyRun(ChainDot(binding), owner.Expression, true).Dot
                                 : ChainDot(binding)
                         );
 
@@ -3802,7 +3803,15 @@ public sealed class BreakPlan {
         if (options.WrapBeforeTernaryOpsigns) {
             var atQuestion = BreaksBefore(node.QuestionToken);
             var atColon = BreaksBefore(node.ColonToken);
-            if (pins && (atQuestion || atColon)) {
+            if (pins && (atQuestion || atColon) && !IsTernaryChainMember(node)) {
+                // ⚠ A single conditional is chopped at both signs once the author broke at either
+                // (#518). Measured 2026-10-08: `b ? a` / `: c` in a declarator, a `return`, an
+                // argument and a parenthesised operand, `b` / `? a : c`, and `a` / `/* c */` / `? 1 : 2`
+                // all come back `b` / `? a` / `: c`. The per-sign pin below is a chain member's, whose
+                // `cond ? "win"` / `: cond ? "osx"` / `: "linux"` the oracle keeps as written.
+                Mandatory(node.QuestionToken);
+                Mandatory(node.ColonToken);
+            } else if (pins && (atQuestion || atColon)) {
                 Pin(node.QuestionToken, atQuestion);
                 Pin(node.ColonToken, atColon);
             } else if (IsTernaryChainMember(node) && !steps) {
@@ -4279,6 +4288,48 @@ public sealed class BreakPlan {
     ///     </para>
     /// </remarks>
     static bool BreakYieldsToTheBracket(ExpressionSyntax value) => value is CollectionExpressionSyntax;
+
+    /// <summary>
+    ///     The break between a cast and the collection expression it casts, which is one of two
+    ///     alternatives exactly as an <c>=</c>'s is.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #450, SK-DIV-0012. Measured 2026-10-08: a cast collection too long for its line comes back
+    ///     <c>(Kind[])</c> / <c>[a, b, c];</c> one level in when the collection fits flat on the line below,
+    ///     and <c>(Kind[]) [</c> / chopped elements / <c>];</c> when it does not — in a local, a
+    ///     <c>return</c>, an argument and an expression body. A break the author wrote after the cast is
+    ///     kept when the collection fits there (<c>(int[])</c> / <c>[1, 2, 3]</c>) and given to the bracket
+    ///     when the collection is itself broken. That is <see cref="GroupFacts.BreaksOnlyIfTailFits" />,
+    ///     the rule <see cref="BreakYieldsToTheBracket" /> already gives an <c>=</c> and an arrow; Skala had
+    ///     no point between the two tokens at all. The space in front of a broken bracket is the builder's
+    ///     (<c>CSharpDocumentBuilder.SpaceIfTheCollectionBreaks</c>).
+    /// </remarks>
+    void PlanCastBeforeACollection(SyntaxNode node) {
+        if (node is not CastExpressionSyntax {
+                Expression: CollectionExpressionSyntax { Elements.Count: > 0 } collection
+            } cast) {
+            return;
+        }
+
+        var open = collection.OpenBracketToken;
+        var group = NewGroup();
+        Point(open, group);
+        Describe(
+            cast,
+            new(
+                group,
+                GroupMode.Preserve,
+                new(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(open),
+                    BreaksIfTooLong: true,
+                    PrefersOuterBreak: true,
+                    HidesFlatWidthWhenBroken: true,
+                    BreaksOnlyIfTailFits: true
+                ),
+                true
+            )
+        );
+    }
 
     /// <summary>
     ///     The head a flat line needs before the oracle adds a break after a collection-valued
@@ -5190,7 +5241,9 @@ public sealed class BreakPlan {
     ///         <c>always</c> the oracle joins <c>if (c) M(c, d);</c> and <c>while (c) M(c, d);</c> and
     ///         leaves every one of <c>if (c) / if (d) / M()</c>, <c>if (c) / using (…) / M()</c> and the
     ///         nested <c>for</c> exactly where the author put them — so a statement that carries an
-    ///         embedded statement of its own is not simple.
+    ///         embedded statement of its own is not simple. ⚠ "Where the author put them" was measured on
+    ///         broken input only: written on one line, the oracle pushes every one of them off (#519,
+    ///         <see cref="IsPushedOffByNesting" />).
     ///     </para>
     ///     <para>
     ///         ⚠ That alone is not enough, and the probe that says so is the one that separates "nested"
@@ -5221,14 +5274,24 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ At every value of the keep key and of the placement key (#469, #519): measured at keep and
+        // at `false` under `always`, `if_owner_is_single_line` and `never`, every nesting written on one
+        // line comes back one statement per line.
         var keeps = options.KeepExistingEmbeddedArrangement;
-        if (keeps && IsPushedOffByNesting(owner, embedded)) {
+        if (IsPushedOffByNesting(owner, embedded)) {
             Mandatory(first);
             return;
         }
 
         var placement = options.PlaceSimpleEmbeddedStatementOnSameLine;
-        var simple = IsSimpleEmbeddedStatement(owner, embedded);
+
+        // ⚠ And an `if` with an `else` keeps its statement as a simple owner does, though it is itself
+        // embedded (#469, #519): its `else` starts a line of its own (#480), so a group over the whole
+        // `if` would read that break as the statement not fitting. Measured at keep and at `always`;
+        // at `if_owner_is_single_line` the owner is multi-line for the same reason, and it breaks.
+        var simple = IsSimpleEmbeddedStatement(owner, embedded)
+            || owner is IfStatementSyntax { Else: not null }
+            && EmbeddedStatementOf(embedded) is null;
 
         if (!keeps && placement == PlacementStyle.Never) {
             Mandatory(first);
@@ -5257,11 +5320,7 @@ public sealed class BreakPlan {
         // width unbounded.
         // ⚠ Simple owners only. An owner that carries an embedded statement of its own — `if (\n c) if
         // (d) n++;` — is pushed off by the oracle whenever it is multi-line, and keeps the group point.
-        // ⚠ And an `if` with an `else` keeps its statement as a simple owner does, though it is itself
-        // embedded (#469): its `else` now starts a line of its own (#480), so a group over the whole
-        // `if` would read that break as the statement not fitting.
-        if (keeps
-            && (simple || owner is IfStatementSyntax { Else: not null } && EmbeddedStatementOf(embedded) is null)) {
+        if (keeps && simple) {
             if (BreaksBefore(first)) {
                 Mandatory(first);
             } else {
@@ -5272,9 +5331,13 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ `if_owner_is_single_line` reads an `else`'s owner as the whole `if` (#519): at
+        // `keep = false` the oracle writes `else` / `M();` whenever the `if` spans lines, which with a
+        // statement that is not a block it always does, and `} else` / `M();` after a block. A group
+        // over the `else` clause alone saw `else M();` fit.
         Point(first, group);
         Describe(
-            owner,
+            owner is ElseClauseSyntax { Parent: IfStatementSyntax statement } ? statement : owner,
             group,
             GroupMode.Preserve,
             new(
@@ -5356,8 +5419,8 @@ public sealed class BreakPlan {
     ///     exemption carries over to the statement after them: <c>else if (b) if (c) M();</c> pushes
     ///     <c>if (c)</c> down and <c>M()</c> with it.
     ///     <para>
-    ///         Not at <c>keep = false</c>, where the placement key decides and the oracle leaves a nesting
-    ///         where the author put it (see <see cref="PlanEmbeddedStatement" />).
+    ///         ⚠ At <c>keep = false</c> as well, at every placement value (#519): measured on the same
+    ///         nestings, written on one line and written broken.
     ///     </para>
     /// </remarks>
     static bool IsPushedOffByNesting(SyntaxNode owner, StatementSyntax embedded) {
@@ -5758,12 +5821,19 @@ public sealed class BreakPlan {
     ///         declaration key at <c>true</c> expands it.
     ///     </para>
     /// </remarks>
+    /// <remarks>
+    ///     ⚠ Only a section whose block is its only statement (#527): `case 3: { M(); } break;` and
+    ///     `case 7: { M(); }` / `break;` are expanded by the oracle at the embedded key's <c>true</c> too,
+    ///     where `case 1: { M(); }` alone is kept.
+    /// </remarks>
     bool Keeps(BlockSyntax block) =>
-        block.Parent is (StatementSyntax and not LocalFunctionStatementSyntax)
-            or SwitchSectionSyntax
-            or AnonymousFunctionExpressionSyntax
-            ? options.KeepExistingEmbeddedBlockArrangement
-            : options.KeepExistingDeclarationBlockArrangement;
+        block.Parent switch {
+            SwitchSectionSyntax { Statements.Count: > 1 } => false,
+            (StatementSyntax and not LocalFunctionStatementSyntax)
+                or SwitchSectionSyntax
+                or AnonymousFunctionExpressionSyntax => options.KeepExistingEmbeddedBlockArrangement,
+            _ => options.KeepExistingDeclarationBlockArrangement
+        };
 
     /// <summary>
     ///     Whether a block may stay on its owner's line — and then it does exactly when everything in it
