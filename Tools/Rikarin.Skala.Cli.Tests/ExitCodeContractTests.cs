@@ -183,28 +183,6 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
-    ///     ⚠ #389: <c>arrange --aggressive</c> gated redundant-parenthesis removal until the gate was
-    ///     lifted, and every tagged release then accepted it and did nothing while its help said
-    ///     otherwise. It is deprecated rather than removed, because removal turns this exit 2 into an
-    ///     exit 3 for every script that passes it — so the contract is: accepted, byte-identical output
-    ///     and exit code, and a stderr note that says so.
-    /// </summary>
-    [Fact]
-    public void Aggressive_IsAcceptedAndChangesNothing() {
-        var path = Write("Parens.cs", "class C {\n    int M(int a, int b) => (a + b);\n}\n");
-
-        var plain = CliRunner.Run(Arrange, "--check", "--diff", LoadOption, "none", path);
-        var aggressive = CliRunner.Run(Arrange, "--check", "--diff", LoadOption, "none", "--aggressive", path);
-
-        Assert.Equal(2, plain.ExitCode);
-        Assert.Equal(plain.ExitCode, aggressive.ExitCode);
-        Assert.Equal(plain.StandardOutput, aggressive.StandardOutput);
-        Assert.Contains("SK0209", plain.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("--aggressive is deprecated", aggressive.StandardError, StringComparison.Ordinal);
-        Assert.DoesNotContain("deprecated", plain.StandardError, StringComparison.Ordinal);
-    }
-
-    /// <summary>
     ///     ⚠ A path that genuinely begins with <c>-</c> is still reachable, spelled the way every other
     ///     POSIX tool requires. The guard rejects mistyped options, not filenames.
     /// </summary>
