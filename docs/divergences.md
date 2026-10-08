@@ -6779,8 +6779,17 @@ arrow stays and the chain stays whole.
   lambda, `return` and an arm, both equal to the oracle). Second row **open** — re-asked for #470
   on 2026-10-08 and unchanged: under `=>` a parenthesised chain head with no switch after it puts its
   dots on the `(`'s column (SK-DIV-0112), and with the chain governing a switch the oracle spends the
-  chain's level after all (`.C() switch {` at 12). Which construct makes the chain spend there was not
-  measured.
+  chain's level after all (`.C() switch {` at 12). Measured further on nine shapes: it is the
+  parenthesised head that matters, not the arrow. `=>` / `(` / `a).B().C() switch`, `(` / `a).B` /
+  `.C() switch` and `(a` / `+ b).C()` / `.D() switch` all put the contents at 16, the dots at 12, the arms
+  at **16** and the `}` at **12**; `var x = (` / `a).B()` / `.C() switch` and `return (` / `a).B().C()
+  switch` the same (Skala now right on the contents and dots there, the arms and `}` a level short); and
+  `=>` / `a.B()` / `.C() switch`, `var x = a.B()` / `.C() switch` keep the arms at 12 and the `}` at 8,
+  where Skala agrees. So a switch governed by a chain whose parenthesised head was lifted nests its arms
+  from the chain's continuation line, and under an arrow such a chain spends its level as it does in a
+  statement. Two changes — a governing expression as a continuation context of its own, and an anchor at
+  the lifted level — and not attempted here; `GroupingParenthesisChainBrokenAfterIssue470Tests` pins the
+  neighbours that are right.
 
 ## SK-DIV-0159 — a switch arm's `=> (` on the pattern's line, with a chain or a binary that breaks after the `)`
 
