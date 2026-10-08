@@ -3510,6 +3510,17 @@ reverted whole by the safety layers, so every row of the test goes red.
   inferred type argument, `Task.Run`, `Func<object>`, `var f = () => new Foo()`. Governed by
   `when_type_not_evident`, a block lambda's `return` included. Pinned by
   `type-inference/target-typed-new-lambda.cs` and `ArrangementRuleTests.ObjectCreation_ALambda*`.
+- ⚠ **And #547, the line #524 moved rather than fixed.** `constructs/arrangement/type-inference/var-refused.cs`
+  carries `Func<int> lambda = () => 1;` and `Action method = Run;`, which the oracle writes as `var` —
+  the file's own header ("every declaration here is one `var` must NOT take") is wrong about those two,
+  and is left as written because the frozen sweep outputs hash its bytes. `VarRule` now takes a
+  function initialiser when re-binding the statement with `var` gives the local exactly the declared
+  delegate type, at C# 10 or later, under `csharp_style_var_elsewhere` (measured: flipping it alone
+  restored every row). Declined, as the oracle declines: `Func<object> = () => "x"`, `Func<int?>`, an
+  untyped parameter, `Expression<…>`, a custom delegate, `Delegate`, a `ref` parameter,
+  `() => null`, an overloaded method group, `delegate { … }`. `var-refused.cs` now agrees with the
+  oracle; the differential's constructs set goes 175 → 176 agreed spans, and `corpus/real/` holds no
+  delegate-typed local at all. Pinned by `ArrangementRuleTests.Var_*`.
 - The original note: the oracle also writes `TakeFunc(() => new())` for a lambda whose delegate return
   type is the created type. That is a *lambda body* position, which `TargetTypeOf` stops at
   deliberately (`EnclosingMember`), and it is reported separately rather than folded in here.
