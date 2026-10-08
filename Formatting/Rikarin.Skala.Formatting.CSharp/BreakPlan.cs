@@ -2872,8 +2872,12 @@ public sealed class BreakPlan {
                 // one level past the arrow's. Measured on seventeen shapes. The frame half of the
                 // same rule — an author's break before a dot that is not a point — is
                 // CSharpDocumentBuilder's Frame.HoldsLevel.
-                SharesTheLevelAroundIt(root),
-                OwnLevel: !SharesTheLevelAroundIt(root)
+                SharesTheLevelAroundIt(root) && !ChainFromItsLine(root),
+                OwnLevel: !SharesTheLevelAroundIt(root),
+                // ⚠ As a sole lambda argument's body the chain is one level past the line it starts on, as
+                // the property fill is (#557): the arrow's line while the arrow stays, the body's once it
+                // breaks — `U(x =>` / `source.A…` / `.Select(…)` one level past the body (#582).
+                FromLine: ChainFromItsLine(root)
             )
         );
 
@@ -2906,11 +2910,7 @@ public sealed class BreakPlan {
     ///     rule, and <see cref="GroupFacts.BreaksOnlyIfTailFits" />'s own question.
     /// </remarks>
     void PlanHeldFirstCall(List<SyntaxToken> dots, int points, SyntaxNode? fillRoot) {
-        if (points >= dots.Count || dots[^1] is not { Parent: MemberAccessExpressionSyntax access } dot) {
-            return;
-        }
-
-        if (BreaksBefore(dot)) {
+        if (points >= dots.Count || dots[^1] is not { Parent: MemberAccessExpressionSyntax access }) {
             return;
         }
 
@@ -2921,6 +2921,29 @@ public sealed class BreakPlan {
 
         if (link.Parent is not InvocationExpressionSyntax call || call.Expression != link) {
             return;
+        }
+
+        // ⚠ The held point is the first call's own dot, not the chain's first dot: behind a receiver that
+        // is itself a member access, `source.A….Select(…)`, the first dot is the property's, and the
+        // point planned there never broke before the call (#582). #528 was measured on single-name
+        // receivers, where the two are the same dot.
+        var dot = ((MemberAccessExpressionSyntax)link).OperatorToken;
+        if (BreaksBefore(dot)) {
+            return;
+        }
+
+        // ⚠ And the receiver's own dots break once the receiver alone overflows: `source` / `.A…` /
+        // `.Select(…)` / `.Where(…)`, every link chopped (#582).
+        if (((MemberAccessExpressionSyntax)link).Expression is MemberAccessExpressionSyntax receiver
+            && IsAPathOfNames(receiver)) {
+            var receiverGroup = NewGroup();
+            for (var inner = receiver; inner is not null; inner = inner.Expression as MemberAccessExpressionSyntax) {
+                if (!BreaksBefore(inner.OperatorToken)) {
+                    Point(inner.OperatorToken, receiverGroup);
+                }
+            }
+
+            Describe(receiver, receiverGroup, GroupMode.Preserve, new(BreaksIfTooLong: true, BreaksIfItOverflows: true));
         }
 
         // ⚠ The argument count picks the measured table (one argument or none, or more), and the call's
@@ -2938,9 +2961,23 @@ public sealed class BreakPlan {
             call,
             group,
             GroupMode.Preserve,
-            new(BreaksIfTooLong: true, HeldCall: kind, HeldCallHead: callHead, HeldCallRest: rest)
+            new(
+                BreaksIfTooLong: true,
+                HeldCall: kind,
+                HeldCallHead: callHead,
+                HeldCallRest: rest,
+                HeldCallOnAPath: IsAPathOfNames(((MemberAccessExpressionSyntax)link).Expression)
+            )
         );
     }
+
+    /// <summary>A plain path of names — <c>a</c>, <c>a.B.C</c> — with no call, index, <c>!</c> or <c>?.</c> in it.</summary>
+    static bool IsAPathOfNames(ExpressionSyntax expression) =>
+        expression switch {
+            SimpleNameSyntax => true,
+            MemberAccessExpressionSyntax member => IsAPathOfNames(member.Expression),
+            _ => false
+        };
 
     /// <summary>
     ///     A single call on a receiver that is the whole value of an <c>=</c> — no chain, one dot: its dot is
@@ -3510,6 +3547,16 @@ public sealed class BreakPlan {
         || root.Parent is IfStatementSyntax or WhileStatementSyntax or DoStatementSyntax
         && IsAHeaderCondition(root)
         || options.PlaceSingleMethodArgumentLambdaOnSameLine
+        && IsTheBodyOfASoleLambda(root);
+
+    /// <summary>
+    ///     Whether a chain that shares the level around it takes it from the line it starts on: as a sole
+    ///     lambda argument's body, but not behind a parenthesised head (#582). See
+    ///     <see cref="IsTheBodyOfASoleLambda" />.
+    /// </summary>
+    bool ChainFromItsLine(SyntaxNode root) =>
+        !HeadSharesTheLevelAroundIt(root)
+        && options.PlaceSingleMethodArgumentLambdaOnSameLine
         && IsTheBodyOfASoleLambda(root);
 
     /// <summary>

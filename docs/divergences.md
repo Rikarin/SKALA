@@ -10670,3 +10670,37 @@ defect (group F's), not the arrow's.
   says every divergent line is that decision. It produces the identical diff at f26e3f46, the commit that
   added it. It is not a regression, so nothing was changed. If it should stop counting against construct
   fidelity, that is a harness exemption, not a formatter fix.
+
+## SK-DIV-0376 — a chain whose receiver is a path of names, pushing its first call past the margin
+
+⚠ **#582, a held-call point planned on the wrong dot.** `PlanHeldFirstCall` (#528) put its point on the
+chain's first dot. Behind a receiver that is itself a member access, `source.A….Select(…)`, that dot is the
+property's, not the call's. So Skala never broke before `.Select`: it kept `.Select(y =>` on a line past the
+margin and broke inside the argument. #528 was measured on single-name receivers (`S….Select`), where the
+two dots coincide.
+
+Measured with `Testing ask` on `var q = source.A….Select(y => y).Where(z => z.Bb);`, the same as a statement,
+and the same with `.Select(alpha)`. The receiver ends at columns 96 to 135, one at a time: 160 cells, plus
+the 1 536 cells of #571's grid. The oracle's three bands are:
+- held, while `.Select(…)` fits;
+- the call broken before, the receiver whole, while the receiver fits;
+- every link chopped once the receiver alone runs past the margin, the receiver's own dot included
+  (`source` / `.A…` / `.Select(…)` / `.Where(…)`), and never the `=`.
+
+What changed:
+- The held point is now the first call's own dot.
+- When the receiver is a plain path of names (`GroupFacts.HeldCallOnAPath`), it also breaks once the
+  receiver alone overflows.
+- The receiver's own dots form a group that breaks exactly then (`GroupFacts.BreaksIfItOverflows`).
+- A chain that is a sole lambda argument's body takes its level from the line it starts on, as #557's
+  property fill does. That puts it one past the body's line once the arrow breaks, where it was at the
+  body's own column.
+
+⚠ The receiver rule is limited to a path of names. A receiver that is itself a call chain ending in `!`
+(`ChainLinksIssue454Tests.ABang_EndsTheReceiver`) stays held, as the oracle writes it.
+
+All 160 cells reproduce byte for byte. #571's grid is down from about 540 differing cells to the 4 arrow
+decisions recorded in SK-DIV-0375.
+
+- options: `skala_wrap_before_first_method_call = false` (the export's value).
+- ⚠ status: **fixed**, pinned by `constructs/wrapping/chain-head-past-the-margin.cs`.

@@ -399,6 +399,11 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ See GroupFacts.BreaksIfItOverflows: a receiver's own dots (#582).
+                if (facts.BreaksIfItOverflows) {
+                    return Fits(m.Column, m.FlatWidth) ? ResolvedMode.Flat : ResolvedMode.Broken;
+                }
+
                 // ⚠ Broken exactly when the receiver fits, the receiver with its call does not, and the
                 // call fits on the line below. See GroupFacts.HeldCall.
                 if (facts.HeldCall > 0) {
@@ -426,6 +431,12 @@ public sealed class Fitter {
 
                     // ⚠ Under `wrap_if_long` a long rest of the chain pushes the limit out: measured on a
                     // 2496-row grid, one and two arguments, heads 40 to 110 (#552, GroupFacts.HeldCallRest).
+                    // ⚠ A receiver that overflows by itself breaks inside, and the call breaks too: every
+                    // link chops (#582).
+                    if (facts.HeldCallOnAPath && !Fits(m.Column, receiver)) {
+                        return ResolvedMode.Broken;
+                    }
+
                     var line = m.ContinuationColumn + tail;
                     var limit = HeldCallLimit(paren, facts.HeldCall);
                     return Fits(m.Column, receiver)
