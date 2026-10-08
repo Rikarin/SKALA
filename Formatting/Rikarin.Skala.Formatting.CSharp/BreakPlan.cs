@@ -4218,8 +4218,8 @@ public sealed class BreakPlan {
                     Owner: head,
                     MinimumHead: yieldsToTheBracket ? MinimumEqualsHead : 0,
                     FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
-                        && TrailingProperty(target) is not null
-                        && ChainPointCount(target, options) == 0
+                    && TrailingProperty(target) is not null
+                    && ChainPointCount(target, options) == 0
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -5010,10 +5010,10 @@ public sealed class BreakPlan {
             // width breaks it in 3 664 — so the arrow breaks whenever the body does not fit beside it,
             // with no ordering question asked.
             ArrowWinsOverTheChain(lambda)
-                ? new GroupFacts(BreaksIfTooLong: true)
-                : ArrowMovesACallChainDown(body)
-                    ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
-                    : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+            ? new GroupFacts(BreaksIfTooLong: true)
+            : ArrowMovesACallChainDown(body)
+                ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
+                : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
 
     /// <summary>

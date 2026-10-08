@@ -11,7 +11,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     ⚠ The writer answers it by writing the rest of the chain ahead with the list unlifted and watching
 ///     the chain's group (<c>LayoutWriter.FillBreaksAfter</c>), and a chain whose author's break the fill
 ///     pinned lifts outright — so pass two, which reads pass one's fill break as the author's, agrees. The
-///     controls, where the fill takes no point, are <c>ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel</c>.
+///     controls, where the fill takes no point, are
+///     <c>ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel</c>.
 /// </remarks>
 public sealed class ChainFillLiftIssue496Tests {
     static string UnderAFill(string source) =>

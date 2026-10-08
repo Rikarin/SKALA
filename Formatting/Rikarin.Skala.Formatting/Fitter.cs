@@ -549,6 +549,7 @@ public sealed class Fitter {
     ///     </para>
     /// </remarks>
     int OuterBreakMargin(in Measures m) => 11 + m.ContinuationColumn / indentWidth;
+
     bool Fits(int column, int flatWidth, int trailing = 0) =>
         flatWidth < Unbounded && trailing < Unbounded && column + flatWidth + trailing <= width;
 }
