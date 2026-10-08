@@ -1593,7 +1593,17 @@ public sealed partial class CSharpDocumentBuilder {
         // is exactly why the sweep called this key `SPURIOUS`, with Skala moving where the oracle
         // could not — and separate at any other multiplier. See IndentKind.OneLevel.
         var singleInsideParens = layout == NodeLayout.Parens && !options.UseContinuousIndentInsideParens;
-        var suppress = aligned;
+
+        // ⚠ A positional pattern or a designation nested in another spends no level of its own (#473):
+        // the oracle puts `, 3` of `o is (1` / `, (2` / `, 3))` under `, (2`, three deep and through a
+        // property pattern alike, and a nested `)` on its own line with them — where a tuple
+        // *expression* spends one per parenthesis. So the nested list opens no scope at all, as an
+        // aligned one does.
+        // ⚠ And so does the outermost one directly in an aligned statement condition: `if (o is (1` /
+        // `, (2` puts `, (2` on the condition's column, which already pays the statement's level.
+        var suppress = aligned
+            || IsNestedPositionalList(node)
+            || node is PositionalPatternClauseSyntax && DirectlyInAnAlignedHeader();
 
         // ⚠ `skala_align_tuple_components = true`: the column *after* the tuple's `(`, which is a
         // different anchor from every key AlignsFromOwnColumn answers and needs a different place
@@ -1819,6 +1829,29 @@ public sealed partial class CSharpDocumentBuilder {
                 CloseIndent(scopeKind);
             }
         }
+    }
+
+    /// <summary>
+    ///     Whether <paramref name="node" /> is a positional pattern's or a designation's parentheses inside
+    ///     another such list of the same pattern or declaration (#473).
+    /// </summary>
+    static bool IsNestedPositionalList(SyntaxNode node) {
+        if (node is not (PositionalPatternClauseSyntax or ParenthesizedVariableDesignationSyntax)) {
+            return false;
+        }
+
+        for (var ancestor = node.Parent; ancestor is not null; ancestor = ancestor.Parent) {
+            switch (ancestor) {
+                case PositionalPatternClauseSyntax or ParenthesizedVariableDesignationSyntax:
+                    return true;
+                case PatternSyntax or SubpatternSyntax or PropertyPatternClauseSyntax or VariableDesignationSyntax:
+                    continue;
+                default:
+                    return false;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -2184,6 +2217,15 @@ public sealed partial class CSharpDocumentBuilder {
     /// <summary>Whether a group's <see cref="GroupPlan.OwnLevel" /> is the header's to pay.</summary>
     bool HeaderPaysForTheOwnLevel() => continuousHeaders.Count > 0 && continuousHeaders[^1] == continuousDepth;
 
+    /// <summary>
+    ///     <see cref="continuousHeaders" />' twin for an aligned header: the depth each open statement
+    ///     condition's <see cref="IndentKind.Align" /> scope sits at, or −1 for a continuous one.
+    /// </summary>
+    readonly List<int> alignedHeaders = [];
+
+    /// <summary>Whether nothing has opened a scope between the innermost aligned condition and here.</summary>
+    bool DirectlyInAnAlignedHeader() => alignedHeaders.Count > 0 && alignedHeaders[^1] == continuousDepth;
+
     int OpenConditionScopes() {
         var (inside, _) = ConditionLevels;
         for (var i = 0; i < inside; i++) {
@@ -2201,6 +2243,7 @@ public sealed partial class CSharpDocumentBuilder {
         // walk with nothing pending and cannot own the pop.
         if (inside > 0) {
             continuousHeaders.Add(ConditionIndent == IndentKind.Continuous ? continuousDepth : -1);
+            alignedHeaders.Add(ConditionIndent == IndentKind.Align ? continuousDepth : -1);
         }
 
         return inside;
@@ -2213,6 +2256,7 @@ public sealed partial class CSharpDocumentBuilder {
     int CloseConditionScopesBeforeRparen(int opened) {
         if (opened > 0 && continuousHeaders.Count > 0) {
             continuousHeaders.RemoveAt(continuousHeaders.Count - 1);
+            alignedHeaders.RemoveAt(alignedHeaders.Count - 1);
         }
 
         var (_, closer) = ConditionLevels;
