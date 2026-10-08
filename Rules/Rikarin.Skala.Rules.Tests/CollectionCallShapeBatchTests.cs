@@ -481,7 +481,11 @@ public sealed class CollectionCallShapeBatchTests {
     /// <summary>The same, with <paramref name="analyzers" /> running instead of this batch.</summary>
     internal static string Apply(string source, string id, ImmutableArray<DiagnosticAnalyzer> analyzers) {
         var diagnostic = Assert.Single(
-            RuleFixtures.Analyze(RuleFixtures.Compile(source, "probe.cs"), analyzers, TestContext.Current.CancellationToken)
+            RuleFixtures.Analyze(
+                    RuleFixtures.Compile(source, "probe.cs"),
+                    analyzers,
+                    TestContext.Current.CancellationToken
+                )
                 .Where(d => d.Id == id)
         );
 

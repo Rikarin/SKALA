@@ -123,7 +123,11 @@ public sealed class CollectionExpressionSpreadTests {
         Assert.DoesNotContain(first, static d => d.Id == RuleIds.CollectionExpression);
         Assert.DoesNotContain(first, static d => d.Id == RuleIds.RedundantSpreadElement);
 
-        var spread = CollectionCallShapeBatchTests.Apply(source, RuleIds.CollectionExpressionSpread, SkalaAnalyzers.All);
+        var spread = CollectionCallShapeBatchTests.Apply(
+            source,
+            RuleIds.CollectionExpressionSpread,
+            SkalaAnalyzers.All
+        );
         Assert.Contains("int[] copied = [..new[] { 1, 2 }];", spread, StringComparison.Ordinal);
 
         var second = Analyze(spread);
