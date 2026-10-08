@@ -130,8 +130,8 @@ public static class FixReparse {
     static SyntaxNode Unit(SyntaxNode node) =>
         node.AncestorsAndSelf()
             .FirstOrDefault(static ancestor => ancestor is MemberDeclarationSyntax
-                    and not BaseNamespaceDeclarationSyntax
-                    or CompilationUnitSyntax
+                and not BaseNamespaceDeclarationSyntax
+                or CompilationUnitSyntax
             )
         ?? node.SyntaxTree.GetRoot();
 

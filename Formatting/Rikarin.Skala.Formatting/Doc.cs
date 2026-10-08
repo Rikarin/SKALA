@@ -426,7 +426,13 @@ public enum IndentFlags {
     ///     <c>&amp;&amp;</c> at 12 (#560, SK-DIV-0394). Where the operator's level opened on an earlier
     ///     line — under a broken <c>=&gt;</c> — it counts as any scope does, and nothing is added.
     /// </summary>
-    Additive = 1024
+    Additive = 1024,
+
+    /// <summary>
+    ///     ⚠ A held level spent once the group named beside it resolves broken: a sole lambda's arrow, for
+    ///     the pattern chain in its body (#566). See <c>HeldLevel.WhileArrowFlat</c>.
+    /// </summary>
+    HeldWhileGroupFlat = 2048
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>

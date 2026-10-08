@@ -28,10 +28,10 @@ public sealed class ArithmeticAndRangeBatchTests {
             var data = new TheoryData<RuleFixture>();
             foreach (var fixture in RuleFixtures.All()
                          .Where(static fixture => fixture.RuleId is "SK2050"
-                                 or "SK2051"
-                                 or "SK2052"
-                                 or "SK2053"
-                                 or "SK2054"
+                             or "SK2051"
+                             or "SK2052"
+                             or "SK2053"
+                             or "SK2054"
                          )) {
                 data.Add(fixture);
             }

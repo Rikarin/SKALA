@@ -22,10 +22,10 @@ public sealed class StorageAndSpanBatchTests {
             var data = new TheoryData<RuleFixture>();
             foreach (var fixture in RuleFixtures.All()
                          .Where(static fixture => fixture.RuleId is "SK1003"
-                                 or "SK1022"
-                                 or "SK1025"
-                                 or "SK2005"
-                                 or "SK4003"
+                             or "SK1022"
+                             or "SK1025"
+                             or "SK2005"
+                             or "SK4003"
                          )) {
                 data.Add(fixture);
             }
