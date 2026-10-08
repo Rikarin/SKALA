@@ -5540,6 +5540,14 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
 - Inside a positional pattern's or a designation's nested item the oracle spends one level per
   statement (`o is (1\n, (2\n, 3))` puts `, 3` under `, (2`); a tuple expression spends one per
   parenthesis, and Skala does the tuple's for all three.
+  ⚠ **Fixed by #473 (2026-10-08)**, re-asked on twelve shapes: three deep, through a recursive
+  pattern's type (`, P(2`), with a nested `)` on its own line, inside a property pattern, and the
+  designation twins all keep one level for the whole pattern; and directly in an aligned `if (o is (1`
+  the outermost list spends none either (`, (2` on the condition's column). A nested list opens no
+  scope (`IsNestedPositionalList`), as an aligned one does; the aligned-condition case reads
+  `DirectlyInAnAlignedHeader`. Pinned by `constructs/syntax/nested-positional-pattern.cs` and
+  `NestedPositionalPatternIssue473Tests`. Met on the way and not this: `{ X: (2` / `, 3) }` — Skala
+  breaks after the subpattern's `X:`, the oracle keeps `X: (2`.
 - `Dictionary<A, B, int> Name() =>` and `List<(A a, B b, int c)> list = null;` past the margin: the
   oracle breaks between the type and the name, or between an element's type and its name (SK-DIV-0024's
   family); Skala now fills the type argument list instead, where before it left the line whole.
