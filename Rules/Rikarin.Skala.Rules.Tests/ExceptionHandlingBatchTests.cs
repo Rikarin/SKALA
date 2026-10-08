@@ -296,5 +296,5 @@ public sealed class ExceptionHandlingBatchTests {
         );
 
     static Diagnostic[] Findings(string source, string ruleId) =>
-        All(source, "test.cs").Where(diagnostic => diagnostic.Id == ruleId).ToArray();
+        [..All(source, "test.cs").Where(diagnostic => diagnostic.Id == ruleId)];
 }

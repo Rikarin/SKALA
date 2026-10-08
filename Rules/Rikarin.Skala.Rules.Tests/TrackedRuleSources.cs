@@ -40,9 +40,10 @@ static class TrackedRuleSources {
         process.WaitForExit();
         Assert.Equal(0, process.ExitCode);
 
-        return output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
-            .Select(static line => line.Trim())
-            .Where(static line => line.Length > 0)
-            .ToList();
+        return [
+            ..output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(static line => line.Trim())
+                .Where(static line => line.Length > 0)
+        ];
     }
 }

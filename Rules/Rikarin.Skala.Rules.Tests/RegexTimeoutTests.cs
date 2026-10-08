@@ -153,7 +153,7 @@ public sealed class RegexTimeoutTests {
     }
 
     static Diagnostic[] Findings(string pattern) =>
-        Analyze(pattern).Where(static d => d.Id == RuleIds.RegexWithoutTimeout).ToArray();
+        [..Analyze(pattern).Where(static d => d.Id == RuleIds.RegexWithoutTimeout)];
 
     /// <summary>
     ///     ⚠ The pattern goes in as a verbatim string literal, so a `"` inside it would end the literal

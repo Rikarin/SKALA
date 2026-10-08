@@ -53,12 +53,13 @@ public sealed class SwitchSectionIssue374Tests {
         );
 
         Assert.Equal(formatted, FormatWith(formatted));
-        return formatted.Split('\n')
-            .SkipWhile(static line => !line.Contains(" S(", StringComparison.Ordinal))
-            .Skip(1)
-            .TakeWhile(static line => line != "    }")
-            .Select(static line => line.Length > 8 ? line[8..] : line.TrimStart())
-            .ToArray();
+        return [
+            ..formatted.Split('\n')
+                .SkipWhile(static line => !line.Contains(" S(", StringComparison.Ordinal))
+                .Skip(1)
+                .TakeWhile(static line => line != "    }")
+                .Select(static line => line.Length > 8 ? line[8..] : line.TrimStart())
+        ];
     }
 
     /// <summary>The switch's contents between its braces, each line one level in.</summary>

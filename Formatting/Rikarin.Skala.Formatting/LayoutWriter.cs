@@ -1861,7 +1861,7 @@ public sealed class LayoutWriter {
         new() {
             Output = output.Length,
             Anchors = anchors.Count,
-            Scopes = scopes.ToArray(),
+            Scopes = [..scopes],
             Column = column,
             Line = line,
             PendingCloserLevel = pendingCloserLevel,
@@ -1873,7 +1873,7 @@ public sealed class LayoutWriter {
             PendingAnchorToken = pendingAnchorToken,
             HasPendingAnchor = hasPendingAnchor,
             WatchedChainBroke = watchedChainBroke,
-            BrokenConstructs = brokenConstructs.ToArray(),
+            BrokenConstructs = [..brokenConstructs],
             Fitter = fitter.MarkForRollback()
         };
 

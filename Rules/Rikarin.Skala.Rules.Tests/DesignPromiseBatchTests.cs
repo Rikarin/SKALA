@@ -138,10 +138,11 @@ public sealed class DesignPromiseBatchTests {
     static Diagnostic[] Analyze(RuleFixture fixture) {
         var compilation = RuleFixtures.Compile(File.ReadAllText(fixture.Path), fixture.Path);
 
-        return RuleFixtures
-            .Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)
-            .Where(diagnostic => diagnostic.Id == fixture.RuleId)
-            .ToArray();
+        return [
+            ..RuleFixtures
+                .Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Id == fixture.RuleId)
+        ];
     }
 
     /// <summary>
@@ -155,14 +156,15 @@ public sealed class DesignPromiseBatchTests {
             + Environment.NewLine
             + source;
 
-        return RuleFixtures
-            .Analyze(
-                RuleFixtures.Compile(configured, "Frozen.cs"),
-                Analyzers,
-                TestContext.Current.CancellationToken
-            )
-            .Where(static diagnostic => diagnostic.Id == RuleIds.PublicConstantField)
-            .ToArray();
+        return [
+            ..RuleFixtures
+                .Analyze(
+                    RuleFixtures.Compile(configured, "Frozen.cs"),
+                    Analyzers,
+                    TestContext.Current.CancellationToken
+                )
+                .Where(static diagnostic => diagnostic.Id == RuleIds.PublicConstantField)
+        ];
     }
 
     static string Apply(string source) {

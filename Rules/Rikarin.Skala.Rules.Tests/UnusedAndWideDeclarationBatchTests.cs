@@ -129,13 +129,13 @@ public sealed class UnusedAndWideDeclarationBatchTests {
         Assert.Equal(2, findings.Length);
     }
 
-    static Diagnostic[] Analyze(RuleFixture fixture) =>
-        RuleFixtures
+    static Diagnostic[] Analyze(RuleFixture fixture) => [
+        ..RuleFixtures
             .Analyze(
                 RuleFixtures.Compile(File.ReadAllText(fixture.Path), fixture.Path),
                 Analyzers,
                 TestContext.Current.CancellationToken
             )
             .Where(diagnostic => diagnostic.Id == fixture.RuleId)
-            .ToArray();
+    ];
 }

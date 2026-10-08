@@ -162,13 +162,13 @@ public sealed class SmallCorrectnessBatchTests {
         Assert.Equal(source.IndexOf("@class", StringComparison.Ordinal), finding.Location.SourceSpan.Start);
     }
 
-    static Diagnostic[] Findings(string source, string path, string ruleId) =>
-        RuleFixtures
+    static Diagnostic[] Findings(string source, string path, string ruleId) => [
+        ..RuleFixtures
             .Analyze(
                 RuleFixtures.Compile(source, path),
                 Analyzers,
                 TestContext.Current.CancellationToken
             )
             .Where(diagnostic => diagnostic.Id == ruleId)
-            .ToArray();
+    ];
 }

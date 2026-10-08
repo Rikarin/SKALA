@@ -501,15 +501,15 @@ public sealed class CleanupBatchTests {
     }
 
     /// <summary>Both sides of the [#321] interaction in one analyzer set, which is the only way to see it.</summary>
-    static Diagnostic[] Interacting(string source, string path, string id) =>
-        RuleFixtures
+    static Diagnostic[] Interacting(string source, string path, string id) => [
+        ..RuleFixtures
             .Analyze(
                 RuleFixtures.Compile(source, path),
                 [new RedundantControlFlowAnalyzer(), new EnumSwitchExhaustivenessAnalyzer()],
                 TestContext.Current.CancellationToken
             )
             .Where(diagnostic => diagnostic.Id == id)
-            .ToArray();
+    ];
 
     /// <summary>Every run of whitespace as one space, so an indentation difference is not a failure.</summary>
     static string Squashed(string text) =>
@@ -531,7 +531,7 @@ public sealed class CleanupBatchTests {
             + string.Join("\n", crashes.Select(static d => "  " + d.GetMessage()))
         );
 
-        return all.Where(diagnostic => diagnostic.Id == id).ToArray();
+        return [..all.Where(diagnostic => diagnostic.Id == id)];
     }
 
     /// <summary>

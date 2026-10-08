@@ -91,9 +91,10 @@ public sealed class DesignDeclarationBatchTests {
     static Diagnostic[] Analyze(RuleFixture fixture) {
         var compilation = RuleFixtures.Compile(File.ReadAllText(fixture.Path), fixture.Path);
 
-        return RuleFixtures
-            .Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)
-            .Where(diagnostic => diagnostic.Id == fixture.RuleId)
-            .ToArray();
+        return [
+            ..RuleFixtures
+                .Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Id == fixture.RuleId)
+        ];
     }
 }

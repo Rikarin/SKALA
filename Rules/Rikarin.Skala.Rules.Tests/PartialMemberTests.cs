@@ -41,7 +41,7 @@ public sealed class PartialMemberTests {
     }
 
     static Diagnostic[] Of(ImmutableArray<Diagnostic> diagnostics, string id) =>
-        diagnostics.Where(diagnostic => diagnostic.Id == id).ToArray();
+        [..diagnostics.Where(diagnostic => diagnostic.Id == id)];
 
     static int EditCount(Diagnostic diagnostic) =>
         diagnostic.Properties.TryGetValue(FixEdits.CountKey, out var count)
