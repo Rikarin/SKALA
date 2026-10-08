@@ -432,7 +432,14 @@ public enum IndentFlags {
     ///     ⚠ A held level spent once the group named beside it resolves broken: a sole lambda's arrow, for
     ///     the pattern chain in its body (#566). See <c>HeldLevel.WhileArrowFlat</c>.
     /// </summary>
-    HeldWhileGroupFlat = 2048
+    HeldWhileGroupFlat = 2048,
+
+    /// <summary>
+    ///     ⚠ An <see cref="IndentKind.FromLine" /> scope for a chain that is the body of a sole lambda nested
+    ///     in another's: one level more for each enclosing argument list opened on the line beyond the
+    ///     innermost (#585).
+    /// </summary>
+    NestedSoleLambda = 4096
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
@@ -1194,6 +1201,16 @@ public sealed class Document {
 ///     primary constructor (SK-DIV-0198): the oracle stops breaking before the <c>:</c> once the
 ///     continuation line reaches 88 or 89 columns at two depths, where the fitted margin went on to 105.
 /// </param>
+/// <param name="CreationLimit">
+///     ⚠ For a <see cref="PrefersOuterBreak" /> <c>=</c> whose value is a creation with an initializer written on
+///     one line (#581), in fortieths of a column, or zero: the widest continuation line the creation moves down
+///     whole to, before the column the indent and the margin move it by. The oracle's limit is not the fitted
+///     margin's: it grows with the width of <c>new X {</c> and shrinks with the head from the declarator's name
+///     through the <c>=</c>, by <c>110.5 + 0.6 · prefix − 0.4 · max(name head, 23) − (indent − 8) / 8</c>
+///     columns, two fewer for a field. Otherwise the braces break. Negative: the head through the <c>=</c> is
+///     under twelve columns, and the braces always break. ⚠ Only at the 120-column margin it was measured at;
+///     any other margin leaves the decision to the fitted one. See <c>Fitter.Worth</c>.
+/// </param>
 /// <param name="JoinedOverflow">
 ///     ⚠ For a <see cref="PrefersOuterBreak" /> group: its first question asks whether the <em>joined</em> line
 ///     overflows by at most this many columns, not whether the tail fits on the continuation line, or −1. A
@@ -1310,6 +1327,7 @@ public readonly record struct GroupFacts(
     int TailEndsAt = -1,
     bool SkipsOuterTail = false,
     int OuterMargin = -1,
+    int CreationLimit = 0,
     int JoinedOverflow = -1,
     int NameWidth = -1,
     int NameFloor = 0,

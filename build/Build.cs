@@ -83,10 +83,10 @@ class Build : NukeBuild {
         definition => definition
             .DependsOn(Compile)
             .Executes(() => DotNetTest(settings => settings
-                        .SetProjectFile(Solution)
-                        .SetConfiguration(Configuration)
-                        .EnableNoBuild()
-                        .EnableNoRestore()
+                    .SetProjectFile(Solution)
+                    .SetConfiguration(Configuration)
+                    .EnableNoBuild()
+                    .EnableNoRestore()
                 )
             );
 
@@ -284,10 +284,10 @@ class Build : NukeBuild {
         definition => definition
             .DependsOn(Compile)
             .Executes(() => DotNetTest(settings => settings
-                        .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Tests")
-                        .SetConfiguration(Configuration)
-                        .EnableNoBuild()
-                        .EnableNoRestore()
+                    .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Tests")
+                    .SetConfiguration(Configuration)
+                    .EnableNoBuild()
+                    .EnableNoRestore()
                 )
             );
 
@@ -330,11 +330,11 @@ class Build : NukeBuild {
         definition => definition
             .DependsOn(Compile)
             .Executes(() => DotNetRun(settings => settings
-                        .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Testing")
-                        .SetConfiguration(Configuration)
-                        .EnableNoBuild()
-                        .EnableNoRestore()
-                        .SetApplicationArguments(Only is null ? ["oracle"] : (string[])["oracle", "--only=" + Only])
+                    .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Testing")
+                    .SetConfiguration(Configuration)
+                    .EnableNoBuild()
+                    .EnableNoRestore()
+                    .SetApplicationArguments(Only is null ? ["oracle"] : (string[])["oracle", "--only=" + Only])
                 )
             );
 
@@ -352,11 +352,11 @@ class Build : NukeBuild {
         definition => definition
             .DependsOn(Compile)
             .Executes(() => DotNetRun(settings => settings
-                        .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Sweep")
-                        .SetConfiguration(Configuration)
-                        .EnableNoBuild()
-                        .EnableNoRestore()
-                        .SetApplicationArguments("sweep")
+                    .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Sweep")
+                    .SetConfiguration(Configuration)
+                    .EnableNoBuild()
+                    .EnableNoRestore()
+                    .SetApplicationArguments("sweep")
                 )
             );
 
@@ -389,11 +389,11 @@ class Build : NukeBuild {
         definition => definition
             .DependsOn(Compile)
             .Executes(() => DotNetRun(settings => settings
-                        .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Sweep")
-                        .SetConfiguration(Configuration)
-                        .EnableNoBuild()
-                        .EnableNoRestore()
-                        .SetApplicationArguments("freeze")
+                    .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Sweep")
+                    .SetConfiguration(Configuration)
+                    .EnableNoBuild()
+                    .EnableNoRestore()
+                    .SetApplicationArguments("freeze")
                 )
             );
 
@@ -410,11 +410,11 @@ class Build : NukeBuild {
         definition => definition
             .DependsOn(Compile)
             .Executes(() => DotNetRun(settings => settings
-                        .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Sweep")
-                        .SetConfiguration(Configuration)
-                        .EnableNoBuild()
-                        .EnableNoRestore()
-                        .SetApplicationArguments("pairwise")
+                    .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Sweep")
+                    .SetConfiguration(Configuration)
+                    .EnableNoBuild()
+                    .EnableNoRestore()
+                    .SetApplicationArguments("pairwise")
                 )
             );
 

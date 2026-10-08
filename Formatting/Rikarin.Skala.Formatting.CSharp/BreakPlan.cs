@@ -149,7 +149,8 @@ public readonly record struct GroupPlan(
     HeldLevel HoldsLevel = HeldLevel.None,
     bool FromLine = false,
     bool UnconditionalLevel = false,
-    bool AdditiveLevel = false);
+    bool AdditiveLevel = false,
+    bool FromLineNested = false);
 
 /// <summary>
 ///     Whether a group spends its continuation level as zero columns. See <see cref="GroupPlan.HoldsLevel" />.
@@ -3172,7 +3173,8 @@ public sealed class BreakPlan {
                 // ⚠ As a sole lambda argument's body the chain is one level past the line it starts on, as
                 // the property fill is (#557): the arrow's line while the arrow stays, the body's once it
                 // breaks — `U(x =>` / `source.A…` / `.Select(…)` one level past the body (#582).
-                FromLine: ChainFromItsLine(root)
+                FromLine: ChainFromItsLine(root),
+                FromLineNested: ChainFromItsLine(root) && IsInAnotherLambdasBody(root)
             )
         );
 
@@ -3855,17 +3857,20 @@ public sealed class BreakPlan {
     ///     <see cref="IsTheBodyOfASoleLambda" />.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Not where the lambda's call is itself another lambda's body: `.Executes(() => DotNetTest(settings =>
-    ///     settings` / `.SetProjectFile(…)` puts the links two levels past the line in the oracle (Skala's own
-    ///     build/Build.cs), which a level from the line would write at one. That shape was not measured and
-    ///     keeps the level around it.
+    ///     ⚠ Where the lambda's call is itself another lambda's body — `.Executes(() => DotNetTest(settings =>
+    ///     settings` / `.SetProjectFile(…)` (Skala's own build/Build.cs) — the oracle puts the links one level
+    ///     past the line for each argument list opened on it: two there, three behind a third lambda
+    ///     (#585, measured 2026-10-09). #582 had kept the level around it, which wrote one too many; see
+    ///     <see cref="IsInAnotherLambdasBody" /> and <c>IndentFlags.NestedSoleLambda</c>.
     /// </remarks>
     bool ChainFromItsLine(SyntaxNode root) =>
         !HeadSharesTheLevelAroundIt(root)
         && options.PlaceSingleMethodArgumentLambdaOnSameLine
-        && IsTheBodyOfASoleLambda(root)
-        && root.Parent?.Parent?.Parent?.Parent is InvocationExpressionSyntax call
-        && call.Parent is not LambdaExpressionSyntax;
+        && IsTheBodyOfASoleLambda(root);
+
+    /// <summary>Whether a sole lambda's chain body sits in a call that is another lambda's body (#585).</summary>
+    static bool IsInAnotherLambdasBody(SyntaxNode root) =>
+        root.Parent?.Parent?.Parent?.Parent is InvocationExpressionSyntax { Parent: LambdaExpressionSyntax };
 
     /// <summary>
     ///     Whether a chain is the expression body of a lambda that is its call's sole argument — or the
@@ -5451,7 +5456,8 @@ public sealed class BreakPlan {
                     HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
                         ? heldCall.ArgumentList.OpenParenToken.Span.End - heldDot.OperatorToken.SpanStart
                         : 0,
-                    HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1
+                    HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
+                    CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner)
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -5539,6 +5545,12 @@ public sealed class BreakPlan {
             BaseObjectCreationExpressionSyntax { Initializer: { } initializer } => BreaksAfter(initializer),
             ArrayCreationExpressionSyntax { Initializer: { } initializer } => BreaksAfter(initializer),
             ImplicitArrayCreationExpressionSyntax { Initializer: var initializer } => BreaksAfter(initializer),
+
+            // ⚠ And an anonymous object (#581): the oracle's second pass keeps `var x = new {` / members /
+            // `};` on every cell of a 171-cell grid where its first pass wrote it, and Skala moved it down whole
+            // on its second pass once the first wrote the brace's break.
+            AnonymousObjectCreationExpressionSyntax { Initializers.Count: > 0 } anonymous =>
+                !BreaksBefore(anonymous.OpenBraceToken) && BreaksBefore(anonymous.OpenBraceToken.GetNextToken()),
             _ => false
         };
 
@@ -5716,6 +5728,81 @@ public sealed class BreakPlan {
     ///     The flat width from the construct's head token (<see cref="EqualsHeadStartOf" />) through the
     ///     <c>=</c> — <c>var name =</c> — counted as written, whitespace runs as one space.
     /// </summary>
+    /// <summary>
+    ///     For an <c>=</c> whose value is a creation with a non-empty initializer, written on one line: the
+    ///     limit <see cref="GroupFacts.CreationLimit" /> moves it down by, in fortieths of a column; zero
+    ///     otherwise (#581).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> on 3 560 cells — heads of 8 to 60 columns, values of 66 to
+    ///     119, at three block depths, for <c>var</c> and typed locals, assignments and fields, for
+    ///     <c>new Something {</c>, <c>new P {</c>, <c>new List&lt;string&gt; {</c>,
+    ///     <c>new SomethingMuchLongerStill {</c> and <c>new {</c>, with identifiers, numbers and string literals
+    ///     as members. The fitted margin (<c>Fitter.OuterBreakMargin</c>) answered 2 380 of the first 2 857;
+    ///     this rule answers 3 533 of all 3 560 (SK-DIV-0322). ⚠ What moves the limit was not the value's
+    ///     width or its members but two widths nobody had measured: the creation's own head up to its
+    ///     <c>{</c> — the wider it is, the further down
+    ///     the oracle moves the creation rather than break its braces — and the head from the declarator's
+    ///     name, not the statement's start, through the <c>=</c>: a typed local and a <c>var</c> one agree once
+    ///     the type is left out. A field sits two columns lower, measured at one depth. ⚠ Not an array
+    ///     creation, a creation with arguments or a target-typed <c>new()</c>, none of which was measured, and
+    ///     not one the author broke inside, which keeps the brace's break (SK-DIV-0337).
+    /// </remarks>
+    static int CreationLimitOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value, EqualsOwner owner) {
+        if (owner == EqualsOwner.None
+            || value.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))) {
+            return 0;
+        }
+
+        var open = value switch {
+            ObjectCreationExpressionSyntax { ArgumentList: null, Initializer: { Expressions.Count: > 0 } initializer }
+                => initializer.OpenBraceToken,
+            AnonymousObjectCreationExpressionSyntax { Initializers.Count: > 0 } anonymous => anonymous.OpenBraceToken,
+            _ => default
+        };
+
+        if (open.IsKind(SyntaxKind.None)) {
+            return 0;
+        }
+
+        // ⚠ Under the collection's twelve-column floor the creation never moves down (#581): `var vvvvvv =`
+        // and `vvvvvvvvv =` break the braces at every width measured, and one column more of head moves the
+        // same values down whole. This is the issue's "the margin grows as the head shrinks".
+        if (HeadWidthThroughEquals(node, equals) < MinimumEqualsHead) {
+            return -1;
+        }
+
+        var prefix = WidthThrough(value.GetFirstToken(), open);
+        var name = node is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }
+            ? WidthThrough(declarator.Identifier, equals)
+            : WidthThrough(node.GetFirstToken(), equals);
+        // In fortieths of a column: 110.5 + 0.6 · prefix − 0.4 · max(name, 23) for a `var` local, half a
+        // column lower with the knee one column later for a typed one, two columns lower for a field, and
+        // 113 + 0.6 · prefix − 0.45 · max(name, 26) for an assignment, whose name is its whole target.
+        return owner switch {
+            EqualsOwner.TypedLocal => 4400 + 24 * prefix - 16 * Math.Max(name, 24),
+            EqualsOwner.Assignment => 4520 + 24 * prefix - 18 * Math.Max(name, 26),
+            EqualsOwner.Field => 4340 + 24 * prefix - 16 * Math.Max(name, 23),
+            _ => 4420 + 24 * prefix - 16 * Math.Max(name, 23)
+        };
+
+        static int WidthThrough(SyntaxToken start, SyntaxToken end) {
+            var width = 0;
+            for (var token = start; !token.IsKind(SyntaxKind.None); token = token.GetNextToken()) {
+                if (token != start && (token.HasLeadingTrivia || token.GetPreviousToken().HasTrailingTrivia)) {
+                    width++;
+                }
+
+                width += token.Span.Length;
+                if (token == end) {
+                    break;
+                }
+            }
+
+            return width;
+        }
+    }
+
     static int HeadWidthThroughEquals(SyntaxNode node, SyntaxToken equals) {
         var start = EqualsHeadStartOf(node);
         if (start.IsKind(SyntaxKind.None)) {
