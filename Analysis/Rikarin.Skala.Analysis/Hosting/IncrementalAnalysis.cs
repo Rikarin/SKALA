@@ -11,6 +11,11 @@ using System.Text;
 namespace Rikarin.Skala.Analysis.Hosting;
 
 /// <summary>What one incremental pass over a compilation produced, and how much of it was reused.</summary>
+/// <remarks>
+///     ⚠ <see cref="CacheHits" /> and <see cref="CacheMisses" /> count <em>halves</em>, two per file —
+///     its Syntax half and its semantic half (#516) — so an untouched two-file compilation is 4 hits, and
+///     one edit in it is 1 hit (the other file's Syntax half) and 3 misses.
+/// </remarks>
 public sealed record IncrementalOutcome(
     ImmutableArray<Finding> Findings,
     ImmutableArray<SkalaDiagnostic> Diagnostics,
@@ -36,6 +41,12 @@ public sealed record IncrementalOutcome(
 ///             <b>Warm</b> — every unchanged file's findings come from the cache; the changed ones are run
 ///             through <c>GetAnalysisResultAsync(tree)</c> and <c>GetAnalysisResultAsync(semanticModel)</c>
 ///             with the per-file analyzers only.
+///         </item>
+///         <item>
+///             ⚠ <b>The halves</b> (#516) — "unchanged" is per half. A file's Syntax-scoped findings are
+///             keyed on its own text; the rest on every tree's text too, because a semantic model of
+///             <c>A.cs</c> is a function of <c>B.cs</c>. After an edit the unchanged files serve their
+///             Syntax half and re-run the semantic one.
 ///         </item>
 ///         <item>
 ///             ⚠ <b>The partition</b> — a <c>Compilation</c>-scoped rule's answer for <c>A.cs</c> depends
@@ -82,12 +93,22 @@ public static class IncrementalAnalysis {
         cache.Load();
 
         var compilationFingerprint = CacheKey.CompilationFingerprint(unit);
+        var semanticFingerprint = CacheKey.SemanticFingerprint(unit, compilationFingerprint);
         var analyzers = AnalyzerHost.EnabledFor(mode, hosted);
         var ruleSetFingerprint = CacheKey.RuleSetFingerprint(analyzers);
 
-        var keys = new Dictionary<SyntaxTree, string>();
+        // ⚠ #516: two entries per file, because a file's findings have two different sets of inputs.
+        // The Syntax half (rules that declare `RuleScope.Syntax`) is a function of the file's own text
+        // and keeps the per-file key. Everything else — Semantic rules and the compiler's diagnostics —
+        // reads a semantic model, which is a function of every tree in the compilation, so its key
+        // also names every tree (`CacheKey.SemanticFingerprint`). A change anywhere moves every file's
+        // semantic key together: the changed files re-run whole, the unchanged ones re-run only the
+        // analyzers that can report into the semantic half, and their Syntax half is still served.
+        var keys = new Dictionary<SyntaxTree, (string Syntax, string Semantic)>();
         var hits = new List<Finding>();
-        var misses = new List<SyntaxTree>();
+        var changed = new List<SyntaxTree>();
+        var rebound = new List<SyntaxTree>();
+        var served = 0;
 
         foreach (var tree in unit.Compilation.SyntaxTrees) {
             var path = Path.GetFullPath(tree.FilePath);
@@ -95,19 +116,23 @@ public static class IncrementalAnalysis {
                 continue;
             }
 
-            var key = CacheKey.For(
-                path,
-                Encoding.UTF8.GetBytes(tree.GetText(cancellation).ToString()),
-                compilationFingerprint,
-                ruleSetFingerprint,
-                editorConfigFingerprint
-            );
+            var content = Encoding.UTF8.GetBytes(tree.GetText(cancellation).ToString());
+            var syntaxKey = CacheKey.For(path, content, compilationFingerprint, ruleSetFingerprint, editorConfigFingerprint);
+            var semanticKey = CacheKey.For(path, content, semanticFingerprint, ruleSetFingerprint, editorConfigFingerprint);
+            keys[tree] = (syntaxKey, semanticKey);
 
-            keys[tree] = key;
-            if (cache.TryGet(key, out var cached, path)) {
-                hits.AddRange(cached);
+            if (!cache.TryGet(syntaxKey, out var syntaxHalf, path)) {
+                changed.Add(tree);
+                continue;
+            }
+
+            served++;
+            hits.AddRange(syntaxHalf);
+            if (cache.TryGet(semanticKey, out var semanticHalf, path)) {
+                served++;
+                hits.AddRange(semanticHalf);
             } else {
-                misses.Add(tree);
+                rebound.Add(tree);
             }
         }
 
@@ -130,21 +155,32 @@ public static class IncrementalAnalysis {
             .Select(static descriptor => descriptor.Id)
             .ToImmutableHashSet(StringComparer.Ordinal);
 
-        if (misses.Count == keys.Count) {
+        var halves = 2 * keys.Count;
+        if (changed.Count == keys.Count) {
             var cold = AnalyzerHost.Run(unit, options, hosted, mode, cancellation, profile);
             if (Covered(cold)) {
-                Store(cache, keys, unit, cold.Findings, compilationScopedIds);
+                Store(cache, keys, unit, cold.Findings, compilationScopedIds, true);
                 cache.Save();
             }
 
-            return new(cold.Findings, cold.Diagnostics, 0, keys.Count, cold.Partial, cold.Costs);
+            return new(cold.Findings, cold.Diagnostics, 0, halves, cold.Partial, cold.Costs);
         }
 
-        var warm = misses.Count == 0
+        var warm = changed.Count == 0
             ? new AnalysisOutcome([], [], false)
-            : AnalyzerHost.RunForTrees(unit, options, hosted, mode, misses, cancellation, profile);
-        if (misses.Count > 0 && Covered(warm)) {
-            Store(cache, keys.Where(pair => misses.Contains(pair.Key)), unit, warm.Findings, compilationScopedIds);
+            : AnalyzerHost.RunForTrees(unit, options, hosted, mode, changed, cancellation, profile);
+        if (changed.Count > 0 && Covered(warm)) {
+            Store(cache, keys.Where(pair => changed.Contains(pair.Key)), unit, warm.Findings, compilationScopedIds, true);
+        }
+
+        // ⚠ The unchanged files of a compilation something else in changed. Their Syntax half came
+        // from the cache above, so a Syntax finding an analyzer with a mixed rule set reports here is
+        // dropped rather than reported twice.
+        var again = rebound.Count == 0
+            ? new AnalysisOutcome([], [], false)
+            : AnalyzerHost.RunForTrees(unit, options, hosted, mode, rebound, cancellation, profile, true);
+        if (rebound.Count > 0 && Covered(again)) {
+            Store(cache, keys.Where(pair => rebound.Contains(pair.Key)), unit, again.Findings, compilationScopedIds, false);
         }
 
         cache.Save();
@@ -158,12 +194,17 @@ public static class IncrementalAnalysis {
             : AnalyzerHost.RunCompilationScoped(unit, options, hosted, mode, cancellation, profile);
 
         return new IncrementalOutcome(
-            [.. AnalyzerHost.Reassessed(unit, hits), .. warm.Findings, .. whole.Findings],
-            [.. warm.Diagnostics, .. whole.Diagnostics],
-            cache.Hits,
-            cache.Misses,
-            warm.Partial || whole.Partial,
-            [.. warm.Costs, .. whole.Costs]
+            [
+                .. AnalyzerHost.Reassessed(unit, hits),
+                .. warm.Findings,
+                .. again.Findings.Where(static finding => !AnalyzerHost.IsSyntaxHalf(finding.RuleId)),
+                .. whole.Findings
+            ],
+            [.. warm.Diagnostics, .. again.Diagnostics, .. whole.Diagnostics],
+            served,
+            halves - served,
+            warm.Partial || again.Partial || whole.Partial,
+            [.. warm.Costs, .. again.Costs, .. whole.Costs]
         );
     }
 
@@ -211,19 +252,25 @@ public static class IncrementalAnalysis {
     ///     would be served beside the bucket's own answer on the next warm run — the same finding twice
     ///     — or, for a rule the bucket no longer runs, once from a run that can no longer be reproduced.
     /// </param>
+    /// <param name="bothHalves">
+    ///     Whether the run covered the files' Syntax half too. <c>false</c> for the unchanged files of a
+    ///     touched compilation, whose run carried only the analyzers that report into the semantic half
+    ///     (#516) — writing its findings as their Syntax half would store "clean" for every Syntax rule.
+    /// </param>
     static void Store(
         DiagnosticCache cache,
-        IEnumerable<KeyValuePair<SyntaxTree, string>> keys,
+        IEnumerable<KeyValuePair<SyntaxTree, (string Syntax, string Semantic)>> keys,
         CompilationUnit unit,
         ImmutableArray<Finding> findings,
-        ImmutableHashSet<string> compilationScopedIds
+        ImmutableHashSet<string> compilationScopedIds,
+        bool bothHalves
     ) {
         var byPath = findings
             .Where(finding => !compilationScopedIds.Contains(finding.RuleId))
             .GroupBy(static finding => finding.Path, StringComparer.Ordinal)
             .ToDictionary(static group => group.Key, static group => group.ToImmutableArray(), StringComparer.Ordinal);
 
-        foreach (var (tree, key) in keys) {
+        foreach (var (tree, (syntaxKey, semanticKey)) in keys) {
             var path = Path.GetFullPath(tree.FilePath);
             if (!unit.ReportablePaths.Contains(path)) {
                 continue;
@@ -232,7 +279,17 @@ public static class IncrementalAnalysis {
             // ⚠ A file with no findings gets an entry too. Without one, "clean" is
             // indistinguishable from "not in the cache" and every clean file is a miss forever —
             // which on a tree that is mostly clean is the whole cache.
-            cache.Put(key, path, byPath.TryGetValue(path, out var found) ? found : []);
+            var found = byPath.TryGetValue(path, out var all) ? all : [];
+            if (bothHalves) {
+                cache.Put(syntaxKey, path, [.. found.Where(static finding => AnalyzerHost.IsSyntaxHalf(finding.RuleId))]);
+            }
+
+            cache.Put(
+                semanticKey,
+                path,
+                [.. found.Where(static finding => !AnalyzerHost.IsSyntaxHalf(finding.RuleId))],
+                true
+            );
         }
     }
 }

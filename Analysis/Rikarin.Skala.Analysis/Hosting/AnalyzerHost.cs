@@ -130,6 +130,12 @@ public static class AnalyzerHost {
     ///         <see cref="RunCompilationScoped" />.
     ///     </para>
     /// </remarks>
+    /// <param name="semanticHalfOnly">
+    ///     #516: run only the analyzers that can report into a file's semantic half — every per-file
+    ///     analyzer but those whose rules are all <see cref="RuleScope.Syntax" />. For the unchanged files
+    ///     of a compilation something else in changed: their Syntax half is still served, their semantic
+    ///     half is not.
+    /// </param>
     public static AnalysisOutcome RunForTrees(
         CompilationUnit unit,
         AnalyzerOptions options,
@@ -137,18 +143,50 @@ public static class AnalyzerHost {
         LoadMode mode,
         IReadOnlyList<SyntaxTree> trees,
         CancellationToken cancellation,
-        bool profile = false
+        bool profile = false,
+        bool semanticHalfOnly = false
     ) =>
         Execute(
             unit,
             options,
-            [.. Select(mode, hosted).Where(IsPerFileCacheable)],
+            [
+                .. Select(mode, hosted)
+                    .Where(analyzer => IsPerFileCacheable(analyzer) && (!semanticHalfOnly || !IsSyntaxOnly(analyzer)))
+            ],
             mode,
             trees,
             false,
             profile,
             cancellation
         );
+
+    /// <summary>
+    ///     Whether a finding of <paramref name="ruleId" /> belongs to a file's Syntax half: the file's own
+    ///     text answers it, so it is cached on the per-file key alone (#516).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only a catalogue rule that <em>declares</em> <see cref="RuleScope.Syntax" />. Everything else —
+    ///     <c>Semantic</c> rules, the compiler's own <c>CS</c> diagnostics (a <c>CS0246</c> in <c>A.cs</c> is
+    ///     about a type <c>B.cs</c> removed), Roslyn's naming analyzer, any id the catalogue does not
+    ///     know — is the semantic half, which is the side that is never stale. Measured on the catalogue
+    ///     when this was written: no <c>Syntax</c> rule declares <c>requiresSemantics</c>.
+    /// </remarks>
+    public static bool IsSyntaxHalf(string ruleId) => RuleCatalog.Find(ruleId) is { Scope: RuleScope.Syntax };
+
+    /// <summary>Whether every rule the analyzer carries is a Syntax-half rule.</summary>
+    static bool IsSyntaxOnly(DiagnosticAnalyzer analyzer) {
+        if (analyzer is ForcedCrash) {
+            return false;
+        }
+
+        foreach (var descriptor in analyzer.SupportedDiagnostics) {
+            if (!IsSyntaxHalf(descriptor.Id)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /// <summary>
     ///     The other bucket of a warm run: the analyzers that cannot be served per file, over the whole

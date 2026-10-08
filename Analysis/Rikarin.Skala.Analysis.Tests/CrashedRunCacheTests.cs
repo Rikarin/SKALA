@@ -79,7 +79,7 @@ public sealed class CrashedRunCacheTests {
 
         // ⚠ Cold by construction, and that is the assertion: nothing was stored, so nothing could hit.
         Assert.Equal(0, second.CacheHits);
-        Assert.Equal(2, second.CacheMisses);
+        Assert.Equal(4, second.CacheMisses);
         Assert.Equal(0, Persisted(scratch));
     }
 
@@ -96,11 +96,11 @@ public sealed class CrashedRunCacheTests {
         var first = Run(scratch, Nowhere);
         Assert.Empty(first.Diagnostics);
         Assert.Equal(0, first.CacheHits);
-        Assert.Equal(2, Persisted(scratch));
+        Assert.Equal(4, Persisted(scratch));
 
         var second = Run(scratch, Nowhere);
         Assert.Empty(second.Diagnostics);
-        Assert.Equal(2, second.CacheHits);
+        Assert.Equal(4, second.CacheHits);
         Assert.Equal(0, second.CacheMisses);
         Assert.Single(second.Findings, static finding => finding.RuleId == EmptyCatch);
     }
@@ -119,22 +119,24 @@ public sealed class CrashedRunCacheTests {
         // under the same rule-set fingerprint the crashing runs below will have.
         var healthy = Run(scratch, OnCrashFile);
         Assert.Empty(healthy.Diagnostics);
-        Assert.Equal(2, Persisted(scratch));
+        Assert.Equal(4, Persisted(scratch));
 
         scratch.Write(CrashFile, SwallowSource.Replace("Swallow", "Crash", StringComparison.Ordinal));
 
+        // ⚠ #516: a new file moves every file's semantic key, so the two unchanged files serve only
+        // their Syntax half here and re-run their semantic half — which did not crash, and is stored.
         var crashed = Run(scratch, OnCrashFile);
         Assert.Contains(crashed.Diagnostics, Threw);
         Assert.Equal(2, crashed.CacheHits);
-        Assert.Equal(1, crashed.CacheMisses);
+        Assert.Equal(4, crashed.CacheMisses);
         Assert.Equal(2, crashed.Findings.Count(static finding => finding.RuleId == EmptyCatch));
 
         var again = Run(scratch, OnCrashFile);
         Assert.Contains(again.Diagnostics, Threw);
-        Assert.Equal(2, again.CacheHits);
-        Assert.Equal(1, again.CacheMisses);
+        Assert.Equal(4, again.CacheHits);
+        Assert.Equal(2, again.CacheMisses);
         Assert.Equal(2, again.Findings.Count(static finding => finding.RuleId == EmptyCatch));
-        Assert.Equal(2, Persisted(scratch));
+        Assert.Equal(4, Persisted(scratch));
     }
 
     /// <summary>
@@ -166,7 +168,7 @@ public sealed class CrashedRunCacheTests {
         Assert.False(after.Partial);
         Assert.Equal(0, after.CacheHits);
         Assert.Single(after.Findings, static finding => finding.RuleId == EmptyCatch);
-        Assert.Equal(2, Persisted(scratch));
+        Assert.Equal(4, Persisted(scratch));
     }
 
     static bool Threw(Core.Diagnostics.SkalaDiagnostic diagnostic) =>
@@ -202,7 +204,10 @@ public sealed class CrashedRunCacheTests {
         }
     }
 
-    /// <summary>How many files the on-disk cache holds an entry for, read the way the next run reads it.</summary>
+    /// <summary>
+    ///     How many entries the on-disk cache holds, read the way the next run reads it — two per file
+    ///     since #516, its Syntax half and its semantic half.
+    /// </summary>
     static int Persisted(Scratch scratch) {
         var cache = new DiagnosticCache(scratch.Root, "loose.");
         cache.Load();

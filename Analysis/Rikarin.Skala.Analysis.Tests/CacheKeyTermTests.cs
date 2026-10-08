@@ -195,6 +195,54 @@ public sealed class CacheKeyTermTests {
         Assert.NotEqual(Key(), Key(config: "e2"));
     }
 
+    /// <summary>
+    ///     #516: the semantic half's fingerprint moves with any tree's text — one the file being keyed is
+    ///     not, a tree no reportable path names (a generator's output is one), and a sibling's — and with
+    ///     nothing else that the compilation fingerprint does not already carry.
+    /// </summary>
+    [Fact]
+    public void TheSemanticFingerprint_MovesWithEveryTreesText() {
+        static string Of(CompilationUnit unit) =>
+            CacheKey.SemanticFingerprint(unit, CacheKey.CompilationFingerprint(unit));
+
+        var baseline = Base();
+        Assert.Equal(Of(baseline), Of(Base()));
+
+        // B.cs alone: the file A.cs's key would otherwise be blind to.
+        var otherFile = baseline with {
+            Compilation = baseline.Compilation.ReplaceSyntaxTree(
+                baseline.Compilation.SyntaxTrees.Last(),
+                CSharpSyntaxTree.ParseText("namespace N { class D { int x; } }\n", BaseParse, "/src/B.cs", cancellationToken: TestContext.Current.CancellationToken)
+            )
+        };
+        Assert.NotEqual(Of(baseline), Of(otherFile));
+
+        // A tree with a generator's kind of path, which no reportable path names.
+        var generated = baseline with {
+            Compilation = baseline.Compilation.AddSyntaxTrees(
+                CSharpSyntaxTree.ParseText("namespace N { partial class G { } }\n", BaseParse, "Gen/G.g.cs", cancellationToken: TestContext.Current.CancellationToken)
+            )
+        };
+        Assert.NotEqual(Of(baseline), Of(generated));
+
+        var withSibling = baseline with { Siblings = [Sibling(BaseParse, [Corlib, SameIdentityImages.Value.First])] };
+        var siblingMoved = baseline with {
+            Siblings = [
+                CSharpCompilation.Create(
+                    "Probe",
+                    [CSharpSyntaxTree.ParseText(Source + "// moved\n", BaseParse, "/src/A.cs", cancellationToken: TestContext.Current.CancellationToken)],
+                    [Corlib, SameIdentityImages.Value.First],
+                    BaseOptions
+                )
+            ]
+        };
+        Assert.NotEqual(Of(withSibling), Of(siblingMoved));
+
+        // ⚠ And it is not the compilation fingerprint: a semantic key equal to a Syntax key would let
+        // either half be served as the other.
+        Assert.NotEqual(CacheKey.CompilationFingerprint(baseline), Of(baseline));
+    }
+
     static CompilationUnit Base(
         CSharpParseOptions? parse = null,
         CSharpParseOptions? secondParse = null,
