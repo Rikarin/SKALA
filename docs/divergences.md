@@ -8765,10 +8765,21 @@ var t = someParticularThingWithALongName.SelfLink()
 ```
 
 The chain's dots and the branches share one level in the oracle — the opposite of a binary operator's
-left operand (#457), where the chain takes a level past the operator's. Not wired.
+left operand (#457), where the chain takes a level past the operator's.
 
 - options: none.
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved** (issue #530). The cause was in the builder, not the chain: the arms' scope
+  opened *after* the condition, on its last line, where the one-level-per-line collapse could not meet
+  the statement's own level. It now opens on the condition's first line. Measured on 2026-10-08 on
+  thirteen conditions: a chain, a call chopped with or without `!` or `await` before it, `new Foo(` …
+  `).Ok`, a call with a trailing property, a parenthesised `&&`, under `var x =`, an assignment,
+  `return`, an argument and an expression body — signs one level past the statement in every one. ⚠
+  Two exceptions keep the late scope, both measured: a broken *binary* condition (`&& c` at one level,
+  `? x` at two; `==` the same) and a chain headed by a parenthesis, which shares the level around it
+  (SK-DIV-0112; `ArrowBodyChainIssue404Tests` pinned it). A row beside it is a break choice, not this
+  entry's: `var a7aaaa… = chain ? x : y` where the oracle breaks the `=` and keeps the chain whole.
+  Pinned by `TernaryAfterAChoppedConditionIssue530Tests` and
+  `constructs/breaks/ternary-after-a-chopped-condition.cs`.
 
 ## SK-DIV-0320 — a block comment on its own line above an array initializer's first element stayed there
 

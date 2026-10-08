@@ -1043,8 +1043,28 @@ public sealed partial class CSharpDocumentBuilder {
                 var nested = ternary.Parent is ConditionalExpressionSyntax outer
                     && outer.WhenFalse == ternary
                     || ternary.WhenFalse is ConditionalExpressionSyntax;
+                // ⚠ Opened on the condition's *first* line unless the condition is a binary chain
+                // (#530, SK-DIV-0333). A condition that spans lines as a chain or an argument list —
+                // `var t = a.B()` / `.C()` / `? x` / `: y`, `Compute(` / … / `)` / `? x` — puts the
+                // signs one level past the statement, the same level as the dots; opened after the
+                // condition, the scope began on the condition's last line and the signs went a level
+                // deeper. A broken `&&` chain is the opposite and measured too: `&& c` at one level,
+                // `? x` at two, which is what opening the scope on that last line gives.
+                // ⚠ Nor a chain headed by a parenthesis, which shares the level around it (SK-DIV-0112):
+                // `=>` / `(` / `a)[0]` / `.C()` on the `(`'s column, `? a` one level in.
+                var early = !nested
+                    && ternary.Condition is not BinaryExpressionSyntax
+                    && (ternary.Condition is ParenthesizedExpressionSyntax
+                        || !BreakPlan.ChainHeadIsParenthesised(ternary.Condition));
+                if (early) {
+                    // After the gap before the condition, so that a break there — `=` / `cond` — puts
+                    // the scope on the condition's own line.
+                    EmitLeadingGap(ternary.Condition);
+                    OpenIndent(IndentKind.Continuous);
+                }
+
                 Visit(ternary.Condition);
-                if (!nested) {
+                if (!nested && !early) {
                     OpenIndent(IndentKind.Continuous);
                 }
 
