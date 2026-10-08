@@ -2357,6 +2357,7 @@ public sealed class BreakPlan {
     void PlanChainedCalls(SyntaxNode root) {
         var first = ChainPointCount(root, options);
         if (first == 0) {
+            PlanPropertyFill(root);
             return;
         }
 
@@ -2472,6 +2473,113 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
+    ///     A member-access expression that is no chain of calls — <c>A.B.C.D.Value</c> — breaks at the last
+    ///     of its dots that still fits, once.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured (#482, SK-DIV-0124): past the margin the oracle writes
+    ///     <c>Aaaa.Bbbb.Cccc.Dddd</c> / <c>.MoreValue =&gt; 2u,</c> in a switch arm, rather than breaking
+    ///     the arrow; <c>var v = Aaaa.Bbbb.Cccc.Dddd</c> / <c>.MoreValue;</c> rather than breaking the
+    ///     <c>=</c>; <c>….Dddd</c> / <c>.MoreValue.Rest;</c> — the <em>last dot that fits</em>, with what
+    ///     follows it kept on the continuation line, not the first of a property run as in a chain of
+    ///     calls; the same past an indexer (<c>a.B[0].C.D</c> / <c>.E</c>), after a <c>?.</c>, on an
+    ///     assignment's target, after <c>return</c>, and inside an argument the list has already chopped.
+    ///     So it is a fill over every dot. It is not taken while a cheaper break is on the line:
+    ///     <c>if (A.B.C.D.E</c> / <c>== x)</c>. And it is only the shape that ends in a property: property
+    ///     dots before a single call — <c>alpha.Beta.Gamma.Method(…)</c> — chop the call's arguments
+    ///     instead.
+    /// </remarks>
+    void PlanPropertyFill(SyntaxNode root) {
+        if (TrailingProperty(root) is null || !PlansTheFill(root)) {
+            return;
+        }
+
+        var dots = new List<SyntaxToken>();
+        Walk(root);
+        if (dots.Count == 0) {
+            return;
+        }
+
+        var group = NewGroup();
+        foreach (var dot in dots) {
+            if (options.KeepsUserBreaksBetweenItems && BreaksBefore(dot)) {
+                Mandatory(dot);
+            } else {
+                Point(dot, group, fill: true);
+            }
+        }
+
+        Describe(
+            root,
+            new GroupPlan(
+                group,
+                GroupMode.Preserve,
+                new GroupFacts(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: true),
+                ChainHeadIsParenthesised(root),
+                OwnLevel: !ChainHeadIsParenthesised(root)
+            )
+        );
+
+        void Walk(SyntaxNode node) {
+            switch (node) {
+                case MemberAccessExpressionSyntax member:
+                    dots.Add(member.OperatorToken);
+                    Walk(member.Expression);
+                    return;
+
+                case MemberBindingExpressionSyntax binding:
+                    dots.Add(ChainDot(binding));
+                    return;
+
+                case ConditionalAccessExpressionSyntax conditional:
+                    Walk(conditional.WhenNotNull);
+                    Walk(conditional.Expression);
+                    return;
+
+                case ElementAccessExpressionSyntax element:
+                    Walk(element.Expression);
+                    return;
+
+                default:
+                    return;
+            }
+        }
+    }
+
+    /// <summary>Whether the property fill is planned in the position <paramref name="root" /> stands in.</summary>
+    /// <remarks>
+    ///     ⚠ Measured, and the position decides, not the expression. As an assignment's target the
+    ///     <c>=</c> breaks first — <c>A.B.C.D.Value =</c> / <c>yyyyyyyy;</c>. As the operand of <c>is</c>
+    ///     or <c>as</c>, the type test's own break, an <c>=</c> or a lambda's arrow is taken instead
+    ///     (#440, #444, #445). As a switch arm's pattern, the fill outranks the arrow only for a short
+    ///     body: <c>…Dddd</c> / <c>.MoreValue =&gt; yyyyyyyyyyyyy,</c> up to thirteen columns of body,
+    ///     comma aside, and <c>… =&gt;</c> / <c>yyyyyyyyyyyyyy,</c> from fourteen, at heads of 106 to 116
+    ///     columns. The rows this does not reach — a target that overflows by itself, which the oracle
+    ///     does fill, and a fourteen-column body behind a 118-column head, which it fills too — are
+    ///     SK-DIV-0330.
+    /// </remarks>
+    static bool PlansTheFill(SyntaxNode root) =>
+        root.Parent switch {
+            AssignmentExpressionSyntax assignment when assignment.Left == root => false,
+            BinaryExpressionSyntax binary when IsTypeTest(binary) && binary.Left == root => false,
+            IsPatternExpressionSyntax test when test.Expression == root => false,
+            ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm } => arm.Expression.Span.Length <= 13,
+            _ => true
+        };
+
+    /// <summary>
+    ///     The outermost link of a chain when it is a property — a member access or a <c>?.</c> binding
+    ///     that nothing invokes or indexes — as its break token and the receiver left of it.
+    /// </summary>
+    static (SyntaxToken Dot, ExpressionSyntax Receiver)? TrailingProperty(SyntaxNode node) {
+        while (node is ConditionalAccessExpressionSyntax conditional) {
+            node = conditional.WhenNotNull;
+        }
+
+        return PropertyLink(node);
+    }
+
+    /// <summary>
     ///     The dots of a chain rooted at <paramref name="root" />, outermost first, and whether its first
     ///     call is a dot-less head — the walk <see cref="PlanChainedCalls" /> registers its points from.
     /// </summary>
@@ -2496,16 +2604,6 @@ public sealed class BreakPlan {
         // ⚠ An invocation at the head counts as a call even before a property; an indexer at the
         // head does only before a call (ChainPointCount).
         return (dots, headIsACall, (calls > 0 || headIsAnInvocation) && (dots.Count >= 2 || headIsACall));
-
-        // The outermost link of the chain when it is a property — a member access or a `?.` binding
-        // that nothing invokes or indexes — as its break token and the receiver left of it.
-        static (SyntaxToken Dot, ExpressionSyntax Receiver)? TrailingProperty(SyntaxNode node) {
-            while (node is ConditionalAccessExpressionSyntax conditional) {
-                node = conditional.WhenNotNull;
-            }
-
-            return PropertyLink(node);
-        }
 
         void Collect(SyntaxNode node) {
             switch (node) {
