@@ -1028,7 +1028,8 @@ public sealed partial class CSharpDocumentBuilder {
             or CollectionElementSyntax
             or SwitchLabelSyntax
             or BaseTypeSyntax
-            or TypeParameterConstraintClauseSyntax;
+            or TypeParameterConstraintClauseSyntax
+            or UsingDirectiveSyntax;
 
     void Dispatch(SyntaxNode node) {
         if (verbatimMembers.Contains(node.SpanStart) && node is MemberDeclarationSyntax) {

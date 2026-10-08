@@ -414,6 +414,7 @@ public sealed class BreakPlan {
         plan.PlanPastLeadingComments(root);
         plan.SettleForHeaders();
         plan.SettleOpenBraces(root);
+        plan.SettleParenthesisedCollections(root);
         plan.CollectForcedBreaks();
         return plan;
     }
@@ -890,8 +891,30 @@ public sealed class BreakPlan {
                 PlanTypeTest(isPattern, isPattern.IsKeyword, isPattern.Pattern);
                 return;
 
+            // ⚠ An `is` the author broke before or after, ahead of a pattern that can break: the `is` line
+            // (or the pattern's) takes a level past the operand's own line, as a type test's does
+            // (SK-DIV-0206, SK-DIV-0392). Two measurements meet here: group J's (`token.Kind()` / `is A` /
+            // `or B` under an expression body at 12, where Skala wrote 8) and group L's (#550: `keyword is`
+            // / `A` / `or B`, and property patterns, whose braces nest from the `is`'s line since
+            // LayoutWriter.LevelForBlock reads a from-the-line scope as absolute).
             case IsPatternExpressionSyntax isPattern when BreaksAroundTheIs(isPattern):
                 PlanBrokenTypeTest(isPattern);
+                return;
+
+            // ⚠ Only as a local's value, where it was measured: under a lambda or an argument the gap
+            // after `is` is not a point, and planning it there moved Skala's own `child is not A` /
+            // `and not B` chains off the oracle's column.
+            case IsPatternExpressionSyntax {
+                Pattern: BinaryPatternSyntax,
+                Parent:
+                EqualsValueClauseSyntax {
+                    Parent:
+                    VariableDeclaratorSyntax {
+                        Parent: VariableDeclarationSyntax { Parent: LocalDeclarationStatementSyntax }
+                    }
+                }
+            } chainTest:
+                PlanAfterIs(chainTest);
                 return;
 
             case BinaryExpressionSyntax binary:
@@ -3744,6 +3767,10 @@ public sealed class BreakPlan {
     /// </remarks>
     void PlanBrokenTypeTest(IsPatternExpressionSyntax node) {
         var group = NewGroup();
+        if (BreaksBefore(node.IsKeyword)) {
+            Mandatory(node.IsKeyword);
+        }
+
         var after = FirstToken(node.Pattern);
         if (BreaksBefore(after)) {
             Mandatory(after);
@@ -4759,6 +4786,11 @@ public sealed class BreakPlan {
                     Owner: head,
                     MinimumHead: yieldsToTheBracket || callee > 0 ? MinimumEqualsHead : 0,
                     CalleeWidth: callee,
+                    YieldsThroughArrow: ArrowYieldWidthOf(value),
+                    PatternHead: PatternHeadOf(node, equals, value),
+                    PatternWidth: PatternHeadOf(node, equals, value) > 0
+                        ? ((IsPatternExpressionSyntax)value).Pattern.Span.Length
+                        : 0,
                     CalleeOwner: owner,
                     FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
                     && TrailingProperty(target) is not null
@@ -4915,6 +4947,38 @@ public sealed class BreakPlan {
                 when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) => EqualsOwner.Assignment,
             _ => EqualsOwner.None
         };
+
+    /// <summary>
+    ///     For a local's <c>=</c> whose value is <c>operand is A or B</c> written on one line: the head's width
+    ///     through the <c>=</c>, which turns on <see cref="EqualsFloor.BreaksBeforeAPattern" /> (#446,
+    ///     SK-DIV-0211); zero otherwise.
+    /// </summary>
+    static int PatternHeadOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {
+        if (value is not IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } test
+            || EqualsOwnerOf(node) is not (EqualsOwner.VarLocal or EqualsOwner.TypedLocal)
+            || test.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+            || EqualsHeadStartOf(node) is not { RawKind: not 0 } head) {
+            return 0;
+        }
+
+        return equals.Span.End - head.SpanStart;
+    }
+
+    /// <summary>
+    ///     For an <c>=</c> whose value is a lambda with a bare name for a body, the width from the lambda's
+    ///     start through its <c>=&gt;</c>: the <c>=</c> yields to the arrow while that much fits beside it
+    ///     (#453); zero otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on <c>Func&lt;…&gt; f = (A a1, B b1) =&gt; Name;</c> and <c>… = () =&gt; Name;</c> over heads of
+    ///     12 to 70 and parameter lists of 2 to 70: wherever the line through <c>=&gt;</c> fits, the arrow
+    ///     breaks and the <c>=</c> never does, which Skala had the other way round from a head of 30.
+    /// </remarks>
+    static int ArrowYieldWidthOf(ExpressionSyntax value) =>
+        value is LambdaExpressionSyntax { ExpressionBody: IdentifierNameSyntax } lambda
+        && !lambda.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+            ? lambda.ArrowToken.Span.End - lambda.SpanStart
+            : 0;
 
     static int CalleeWidthOf(ExpressionSyntax value) =>
         value is InvocationExpressionSyntax {
@@ -5578,7 +5642,8 @@ public sealed class BreakPlan {
                     kept,
                     BreaksIfTooLong: true,
                     BreaksOnlyIfHeadOverflows: true,
-                    Continues: kept && (arm.WhenClause is not null || liftsBraces)
+                    Continues: kept && (arm.WhenClause is not null || liftsBraces),
+                    LiftsThroughInnerBreaks: kept && arm.WhenClause is not null
                 ),
                 true,
                 !(kept && (arm.WhenClause is not null || liftsBraces)),
@@ -6673,6 +6738,62 @@ public sealed class BreakPlan {
         }
     }
 
+    /// <summary>
+    ///     The gap after an <c>is</c> before a binary pattern: broken exactly when the line up to the
+    ///     pattern's first combinator has no room (#446, SK-DIV-0211).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured after an <c>=</c> that broke: <c>operand is &gt; 5</c> / <c>and &lt; 10;</c> while the
+    ///     first operand fits beside <c>is</c>, and <c>operand is</c> / <c>&gt; 5 and &lt; 10;</c> one level in
+    ///     once it does not — the arm arrow's head rule (<see cref="GroupFacts.BreaksOnlyIfHeadOverflows" />).
+    ///     A break the author wrote there is kept.
+    /// </remarks>
+    void PlanAfterIs(IsPatternExpressionSyntax test) {
+        var first = FirstToken(test.Pattern);
+
+        // An `is` the author broke before has spent the level, and the chain then continues on its column
+        // (#520): the gap after it is not this point's.
+        if (first.IsKind(SyntaxKind.None) || gaps.ContainsKey(first.SpanStart) || BreaksBefore(test.IsKeyword)) {
+            return;
+        }
+
+        var group = NewGroup();
+        Point(first, group);
+        Describe(
+            test.Pattern,
+            new(
+                group,
+                GroupMode.Preserve,
+                new(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(first),
+                    BreaksIfTooLong: true,
+                    BreaksOnlyIfHeadOverflows: true,
+                    HeadSlack: HeadSlackAfterIs(test.Pattern)
+                ),
+                LeadingGapInside: true,
+                FromLine: !IsAHeaderCondition(test)
+            )
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ Measured with <c>Testing ask</c> one column at a time on <c>operand is X or Bbb</c> after a broken
+    ///     <c>=</c>: a first operand of one or two columns always moves below the <c>is</c>, one of three
+    ///     ahead of <c>or</c> moves two columns early (the line through it at 119 and 120), and anything
+    ///     wider — or <c>&gt; 5</c> ahead of <c>and</c> — stays while the line through it fits.
+    /// </summary>
+    static int HeadSlackAfterIs(PatternSyntax pattern) {
+        var first = pattern;
+        while (first is BinaryPatternSyntax binary) {
+            first = binary.Left;
+        }
+
+        var width = first.Span.Length;
+        return width <= 2 ? 1000
+            : width == 3 && pattern is BinaryPatternSyntax { OperatorToken.RawKind: (int)SyntaxKind.OrKeyword } ? 2
+            : 0;
+    }
+
     /// <summary>Rewrites the facts of every group described on <paramref name="node" />.</summary>
     void ReviseFacts(SyntaxNode node, Func<GroupFacts, GroupFacts> revise) {
         if (!groups.TryGetValue(Key(node), out var plans)) {
@@ -7233,6 +7354,35 @@ public sealed class BreakPlan {
 
                     PointBeforeBrace(open, after.Group);
                     continue;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     A collection expression that is a grouping parenthesis's whole contents joins its <c>[</c> to the
+    ///     <c>(</c> once it breaks (#485, SK-DIV-0150).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-08 with <c>Testing ask</c>: <c>(</c> / <c>[</c> / elements / <c>]);</c> comes
+    ///     back <c>( [</c> / elements / <c>]);</c>, as <c>([</c> and <c>( [</c> do, under an <c>=</c> and as an
+    ///     argument; <c>(</c> / <c>[1, 2]);</c>, a collection that stays on one line, keeps the author's
+    ///     break. So the join answers whether the collection is multi-line, which is read off the finished
+    ///     plan — a break inside it that survives (<see cref="SourceBreakSurvives" />). ⚠ A collection
+    ///     written on one line that only the margin breaks is not seen here, and keeps a break the author
+    ///     wrote after the <c>(</c>.
+    /// </remarks>
+    void SettleParenthesisedCollections(SyntaxNode root) {
+        foreach (var paren in root.DescendantNodes().OfType<ParenthesizedExpressionSyntax>()) {
+            if (paren.Expression is not CollectionExpressionSyntax { Elements.Count: > 0 } collection
+                || captured is { Count: > 0 } && IsInsideCaptured(paren)) {
+                continue;
+            }
+
+            var open = collection.OpenBracketToken;
+            // ⚠ And at `keep_user_linebreaks = false` always: `(` / `[1, 2]);` is joined there too.
+            if (!options.KeepsUserBreaksBetweenItems
+                || collection.DescendantTokens().Any(token => token.SpanStart > open.SpanStart && SourceBreakSurvives(token))) {
+                gaps[open.SpanStart] = new(GapRule.Flat, -1);
             }
         }
     }
