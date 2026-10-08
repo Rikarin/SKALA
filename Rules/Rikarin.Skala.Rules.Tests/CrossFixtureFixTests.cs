@@ -482,15 +482,15 @@ public sealed class CrossFixtureFixTests {
         foreach (var group in findings
                      .Where(diagnostic => diagnostic.Location.SourceTree is { } tree
                          && (applies is null
-                             ? FixEdits.IsSafe(diagnostic, Model(models, before, tree), cancellation)
-                             : applies(diagnostic.Id)
-                             && !FixEdits.Read(diagnostic)
-                                 .Any(edit => CallerArgumentSafety.ChangesCapturedText(
-                                         Model(models, before, tree),
-                                         edit.Span,
-                                         cancellation
-                                     )
-                                 ))
+                                 ? FixEdits.IsSafe(diagnostic, Model(models, before, tree), cancellation)
+                                 : applies(diagnostic.Id)
+                                 && !FixEdits.Read(diagnostic)
+                                     .Any(edit => CallerArgumentSafety.ChangesCapturedText(
+                                             Model(models, before, tree),
+                                             edit.Span,
+                                             cancellation
+                                         )
+                                     ))
                      )
                      .GroupBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal)
                      .OrderBy(static group => group.Key, StringComparer.Ordinal)) {

@@ -139,8 +139,8 @@ public sealed record FuzzReport(
             $"- {ParseLost.ToString("N0", CultureInfo.InvariantCulture)} property checks lost the parse — "
             + "a fuzzer defect, not a formatter one; those cases asserted nothing"
             + (ParseLostSeeds.IsEmpty
-                ? string.Empty
-                : " (e.g. " + string.Join(", ", ParseLostSeeds.Select(FuzzRandom.Format)) + ")")
+                    ? string.Empty
+                    : " (e.g. " + string.Join(", ", ParseLostSeeds.Select(FuzzRandom.Format)) + ")")
         );
 
         // ⚠ The rejections are the *other* half of the parse-lost number and are what makes it
@@ -161,8 +161,8 @@ public sealed record FuzzReport(
             report.AppendLine(
                 $"| `{entry.Key}` | {entry.Value.ToString("N0", CultureInfo.InvariantCulture)} | "
                 + (MutationsRejected.TryGetValue(entry.Key, out var refused)
-                    ? refused.ToString("N0", CultureInfo.InvariantCulture)
-                    : "—")
+                        ? refused.ToString("N0", CultureInfo.InvariantCulture)
+                        : "—")
                 + " |"
             );
         }
@@ -232,8 +232,8 @@ public sealed record FuzzReport(
                     "- replay: `dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz "
                     + $"--replay={FuzzRandom.Format(finding.Seed)}"
                     + (string.Equals(finding.Origin, "generated", StringComparison.Ordinal)
-                        ? string.Empty
-                        : $" --origin={finding.Origin}")
+                            ? string.Empty
+                            : $" --origin={finding.Origin}")
                     + "`"
                 );
                 report.AppendLine();

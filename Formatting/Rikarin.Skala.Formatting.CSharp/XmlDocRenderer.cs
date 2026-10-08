@@ -194,8 +194,8 @@ public sealed class XmlDocRenderer {
         var breaksBefore = !element.GluedToWord
             && (owns
                 || (multiline
-                    ? options.LinebreakBeforeMultilineElements
-                    : options.LinebreakBeforeSinglelineElements));
+                        ? options.LinebreakBeforeMultilineElements
+                        : options.LinebreakBeforeSinglelineElements));
 
         if (breaksBefore) {
             Break();

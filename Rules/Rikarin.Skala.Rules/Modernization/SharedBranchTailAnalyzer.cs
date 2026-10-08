@@ -140,8 +140,8 @@ public sealed class SharedBranchTailAnalyzer : DiagnosticAnalyzer {
                 ),
                 "Both branches end with the same "
                 + (shared == 1
-                    ? "statement"
-                    : shared.ToString(System.Globalization.CultureInfo.InvariantCulture) + " statements")
+                        ? "statement"
+                        : shared.ToString(System.Globalization.CultureInfo.InvariantCulture) + " statements")
             )
         );
     }

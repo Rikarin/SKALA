@@ -102,8 +102,8 @@ internal static class EnumSwitchCoverage {
         + "` omits "
         + string.Join(", ", missing.Take(5).Select(static name => "`" + name + "`"))
         + (missing.Length > 5
-            ? " and " + (missing.Length - 5).ToString(CultureInfo.InvariantCulture) + " more"
-            : string.Empty);
+                ? " and " + (missing.Length - 5).ToString(CultureInfo.InvariantCulture) + " more"
+                : string.Empty);
 
     static string Key(object value) => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
 

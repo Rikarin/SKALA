@@ -481,8 +481,7 @@ public sealed class LayoutWriter {
         // ⚠ A delimited list on the first line of a construct that broke after it nests from that
         // construct's continuation line, and its closer sits on it. See LiftedLevel.
         var lifted = -1;
-        if (kind is IndentKind.Continuous or IndentKind.OneLevel
-            && (flags & (IndentFlags.Delimiter | IndentFlags.Grouping)) != 0) {
+        if (kind is IndentKind.Continuous or IndentKind.OneLevel && (flags & (IndentFlags.Delimiter | IndentFlags.Grouping)) != 0) {
             lifted = LiftedLevel(ancestors, outer);
             if (lifted >= 0) {
                 outer = lifted;
@@ -491,9 +490,7 @@ public sealed class LayoutWriter {
 
         // ⚠ A grouping parenthesis whose chain the author broke after it nests from that chain's
         // continuation line — the line after this one — when it is deeper. See IndentFlags.BrokenAfter.
-        if (lifted < 0
-            && kind is IndentKind.Continuous or IndentKind.OneLevel
-            && (flags & IndentFlags.BrokenAfter) != 0) {
+        if (lifted < 0 && kind is IndentKind.Continuous or IndentKind.OneLevel && (flags & IndentFlags.BrokenAfter) != 0) {
             line++;
             var continuation = Level(false);
             line--;

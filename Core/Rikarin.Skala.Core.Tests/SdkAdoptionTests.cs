@@ -171,15 +171,15 @@ public sealed class SdkAdoptionTests {
             missing.Length == 0 && extra.Length == 0,
             $"<SkalaRuleIds> in {RuleIdsPath} is out of step with rules.json."
             + (missing.Length > 0
-                ? Environment.NewLine
-                + $"  in rules.json and not declared ({missing.Length}): "
-                + string.Join(";", missing)
-                : string.Empty)
+                    ? Environment.NewLine
+                    + $"  in rules.json and not declared ({missing.Length}): "
+                    + string.Join(";", missing)
+                    : string.Empty)
             + (extra.Length > 0
-                ? Environment.NewLine
-                + $"  declared and not in rules.json ({extra.Length}): "
-                + string.Join(";", extra)
-                : string.Empty)
+                    ? Environment.NewLine
+                    + $"  declared and not in rules.json ({extra.Length}): "
+                    + string.Join(";", extra)
+                    : string.Empty)
             + Environment.NewLine
             + "That file is generated: run `dotnet build Distribution/Rikarin.Skala.Sdk` and commit "
             + "the result. Do not edit it — the next build overwrites it."

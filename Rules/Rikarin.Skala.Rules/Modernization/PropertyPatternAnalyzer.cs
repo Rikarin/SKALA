@@ -75,10 +75,10 @@ public sealed class PropertyPatternAnalyzer : DiagnosticAnalyzer {
             || type is null
             || !model.ClassifyConversion(comparisonRight.Right, type).IsImplicit
             || (constant.Value is null
-                ? !NullComparison.IsRewritable(model, member, cancellation)
-                : !(PatternSafety.IsIntegral(type)
-                    || type.SpecialType is SpecialType.System_Boolean or SpecialType.System_String
-                    || type.TypeKind == TypeKind.Enum))) {
+                    ? !NullComparison.IsRewritable(model, member, cancellation)
+                    : !(PatternSafety.IsIntegral(type)
+                        || type.SpecialType is SpecialType.System_Boolean or SpecialType.System_String
+                        || type.TypeKind == TypeKind.Enum))) {
             return;
         }
 

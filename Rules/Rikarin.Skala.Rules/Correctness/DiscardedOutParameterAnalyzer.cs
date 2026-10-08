@@ -379,10 +379,10 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
                         + parameter.Name
                         + "`, and "
                         + (counts.Total == 1
-                            ? "its one call site discards it"
-                            : "all "
-                            + counts.Total.ToString(CultureInfo.InvariantCulture)
-                            + " of its call sites discard it")
+                                ? "its one call site discards it"
+                                : "all "
+                                + counts.Total.ToString(CultureInfo.InvariantCulture)
+                                + " of its call sites discard it")
                     )
                 );
             }

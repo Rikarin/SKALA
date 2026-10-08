@@ -85,8 +85,8 @@ static class PartialMembers {
     public static bool CarriesTheFinding(SyntaxNode? declaration) =>
         !IsPartialMember(declaration)
         || (declaration is ConstructorDeclarationSyntax or EventDeclarationSyntax or EventFieldDeclarationSyntax
-            ? IsImplementation(declaration)
-            : IsDefinition(declaration));
+                ? IsImplementation(declaration)
+                : IsDefinition(declaration));
 
     /// <summary>
     ///     The other half of a partial member, when it is declared in the same type declaration.
