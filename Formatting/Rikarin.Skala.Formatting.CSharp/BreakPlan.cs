@@ -3889,7 +3889,7 @@ public sealed class BreakPlan {
                     // single type, a break the author kept inside it made the type test's group too long
                     // and took the gap after `is` — `o is` / `var (a,` / `b)` where the oracle keeps
                     // `o is var (a,` / `b)` (#567; since #440's PlanTypeTest, 7f40d7df).
-                    or ParenthesizedVariableDesignationSyntax
+                        or ParenthesizedVariableDesignationSyntax
             );
 
     /// <summary>
@@ -6100,9 +6100,9 @@ public sealed class BreakPlan {
                         LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
                         LambdaChainHead: chainHead
                     )
-                : ArrowMovesACallChainDown(body)
-                    ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
-                    : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+                    : ArrowMovesACallChainDown(body)
+                        ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
+                        : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
 
     /// <summary>
