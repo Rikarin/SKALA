@@ -3822,6 +3822,23 @@ public sealed partial class CSharpDocumentBuilder {
             return true;
         }
 
+        // ⚠ `skala_new_line_before_else`, `_catch`, `_finally` and `_while` at `true` split a `} else` the
+        // author wrote joined, and Skala only ever kept a break the author wrote — `ShouldJoin`'s arm
+        // below is the other direction. Measured 2026-10-08 (#480) with all four keys `true` on a K&R
+        // input: `}` / `else {`, `}` / `catch {`, `}` / `finally {`, `}` / `while (b);` and `}` /
+        // `else M();`.
+        if (nextKind == PieceKind.Token
+            && previousToken.IsKind(SyntaxKind.CloseBraceToken)
+            && nextToken.Kind() switch {
+                SyntaxKind.ElseKeyword => options.NewLineBeforeElse,
+                SyntaxKind.CatchKeyword => options.NewLineBeforeCatch,
+                SyntaxKind.FinallyKeyword => options.NewLineBeforeFinally,
+                SyntaxKind.WhileKeyword => nextToken.Parent is DoStatementSyntax && options.NewLineBeforeWhile,
+                _ => false
+            }) {
+            return true;
+        }
+
         // ⚠ `skala_empty_block_style = multiline` splits an empty body the author wrote `{ }`, and Skala
         // only ever kept a split one. Measured 2026-10-08 (#465) under `csharp_new_line_before_open_brace`
         // `none` and `all` alike: a type's, a namespace's, a method's, a local function's, a control

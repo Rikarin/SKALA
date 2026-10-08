@@ -5166,9 +5166,18 @@ ending it (`LineFlags.LastResort`, in the layout engine's `DocumentBuilder.Break
 one. An owner that carries an embedded statement of its own keeps the group point: the oracle
 pushes it off whenever it is multi-line.
 
-⚠ **Adjacent and still open**: the last row's inner `if (n > 0) n++;` — simple, single-line,
-written joined — is broken by the oracle when its owner is itself an embedded statement that was
-pushed off. One shape measured; not in the fixture.
+⚠ **Adjacent, and fixed since (#469)**: the last row's inner `if (n > 0) n++;` — simple, single-line,
+written joined — is broken by the oracle when its owner is itself an embedded statement. Measured
+2026-10-08 on twenty-eight nestings written on one line, and the rule is not "when its owner was
+pushed off": under keep the oracle puts an embedded statement on a line of its own **whenever it
+carries an embedded statement of its own, or its owner is itself embedded** — `if (b) if (c) M();`,
+`if (b) using (D()) M();`, `while (b) lock (this) M();`, `do if (b) M(); while (b);`,
+`using (D()) using (D()) M();` (stacked, per `skala_indent_nested_usings_stmt`), three deep, and
+`if (b) if (c) { M(); }`, every one fitting on its line. ⚠ Two exemptions, both an `if` the `else`
+machinery owns: an `if` with an `else` keeps its statement (`if (b)` / `if (c) M();` / `else M();`) and
+an `else if` keeps its (`else if (c) M();`); neither carries over to what nests inside them
+(`else if (b)` / `if (c)` / `M();`). `BreakPlan.IsPushedOffByNesting`, `PlanStackedUsing`; pinned by
+`EmbeddedNestingIssue469And480Tests`. The `keep = false` paths are untouched.
 
 - options: `skala_keep_existing_embedded_arrangement` (`true`; the `false` paths are untouched),
   `skala_place_simple_embedded_statement_on_same_line` (inert under keep, as before).
@@ -5625,9 +5634,21 @@ Not fixed, measured on the way:
 - `if (b) M(); else switch (o) { … }` — the oracle writes `if (b) M();` / `else` / `switch (o) {`; Skala
   now pushes the `switch` down but keeps `M(); else` on one line, and after an embedded switch's `}` the
   oracle puts `else` on its own line where Skala writes `} else M();`. The `else` after a non-block
-  statement has no plan at all, which is older than this entry.
+  statement has no plan at all, which is older than this entry. **Fixed (#480)**: measured 2026-10-08
+  at both values of `skala_new_line_before_else` and of `skala_keep_existing_embedded_arrangement`, an
+  `else` after a statement that is not a block always starts a line — `if (b) M();` / `else M();` too,
+  every link of an `else if` chain, and behind a block comment — and so does a `do`'s `while`
+  (`do M();` / `while (b);`). `BreakPlan.PlanClauseAfterAnEmbeddedStatement`. ⚠ The incidental blank
+  line the issue flagged is `skala_blank_lines_after_block_statements` and a second defect, not the
+  same one: `HasChildBlock` did not look through an embedded statement, so `if (b) switch (o) { … }`,
+  `if (b) if (c) { … }` and `… else while (c) { … }` took no blank after them — nor before them, measured
+  at `skala_blank_lines_before_block_statements = 1`. ⚠ And the four clause keys
+  (`skala_new_line_before_else`, `_catch`, `_finally`, `_while`) had no split direction at `true`: a
+  `} else` the author wrote joined stayed joined. Measured with all four on, fixed in `MustBreak`.
+  Pinned by `EmbeddedNestingIssue469And480Tests`.
 - `if (b) using (D()) M();` — the oracle pushes the `using` down (a nested embedded owner); Skala keeps
-  it on the `if`'s line. The "nested embedded statement" rule SK-DIV-0106 left unmeasured.
+  it on the `if`'s line. The "nested embedded statement" rule SK-DIV-0106 left unmeasured. **Fixed
+  (#469)**, see SK-DIV-0106.
 - Under `skala_keep_existing_declaration_block_arrangement = true` Skala keeps a method's `{` on its line
   around a body that is now multi-line (`void S(…) { switch (o) {`); the oracle expands such a body.
 

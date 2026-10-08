@@ -522,6 +522,8 @@ public sealed class BreakPlan {
     void Plan(SyntaxNode node) {
         PlanAttributes(node);
         PlanEmbeddedStatement(node, EmbeddedStatementOf(node));
+        PlanStackedUsing(node);
+        PlanClauseAfterAnEmbeddedStatement(node);
         PlanOnePerLine(node);
         PlanConstraints(node);
         PlanConstraintList(node);
@@ -4683,6 +4685,11 @@ public sealed class BreakPlan {
         }
 
         var keeps = options.KeepExistingEmbeddedArrangement;
+        if (keeps && IsPushedOffByNesting(owner, embedded)) {
+            Mandatory(first);
+            return;
+        }
+
         var placement = options.PlaceSimpleEmbeddedStatementOnSameLine;
         var simple = IsSimpleEmbeddedStatement(owner, embedded);
 
@@ -4713,7 +4720,10 @@ public sealed class BreakPlan {
         // width unbounded.
         // ⚠ Simple owners only. An owner that carries an embedded statement of its own — `if (\n c) if
         // (d) n++;` — is pushed off by the oracle whenever it is multi-line, and keeps the group point.
-        if (keeps && simple) {
+        // ⚠ And an `if` with an `else` keeps its statement as a simple owner does, though it is itself
+        // embedded (#469): its `else` now starts a line of its own (#480), so a group over the whole
+        // `if` would read that break as the statement not fitting.
+        if (keeps && (simple || owner is IfStatementSyntax { Else: not null } && EmbeddedStatementOf(embedded) is null)) {
             if (BreaksBefore(first)) {
                 Mandatory(first);
             } else {
@@ -4739,9 +4749,99 @@ public sealed class BreakPlan {
         );
     }
 
+    /// <summary>
+    ///     A <c>using</c> directly inside a <c>using</c>, which <see cref="EmbeddedStatementOf" /> leaves
+    ///     out so that a stacked pair the author wrote is never joined: written on one line, the oracle
+    ///     stacks it (#469).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>using (D()) using (D()) M();</c> comes back <c>using (D())</c> / <c>using (D())</c> /
+    ///     <c>M();</c> under the export's <c>keep_existing_embedded_arrangement = true</c> — the inner
+    ///     <c>using</c> carries a statement of its own, which pushes it off its owner's line like any
+    ///     other nesting. The column is <c>skala_indent_nested_usings_stmt</c>'s business, not this one's.
+    /// </remarks>
+    void PlanStackedUsing(SyntaxNode node) {
+        if (options.KeepExistingEmbeddedArrangement && node is UsingStatementSyntax { Statement: UsingStatementSyntax inner }) {
+            Mandatory(FirstToken(inner));
+        }
+    }
+
+    /// <summary>
+    ///     An <c>else</c>, or a <c>do</c>'s <c>while</c>, after a statement that is not a block starts a line
+    ///     of its own (#480, SK-DIV-0115).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-08 with <c>Testing ask</c>, at both values of <c>skala_new_line_before_else</c>
+    ///     and of <c>skala_keep_existing_embedded_arrangement</c>: <c>if (b) M(); else M();</c> comes back
+    ///     <c>if (b) M();</c> / <c>else M();</c>, and so does every <c>else if</c> of a chain, an
+    ///     <c>else</c> after an embedded <c>switch</c>'s or <c>try</c>'s <c>}</c> (<c>}</c> / <c>else M();</c>
+    ///     where a block's would be <c>} else M();</c>), and an <c>else</c> behind a block comment
+    ///     (<c>M(); /* c */</c> / <c>else M();</c>). <c>do M(); while (b);</c> comes back <c>do M();</c> /
+    ///     <c>while (b);</c> the same way. The placement keys only ever governed the gap after a
+    ///     <em>block</em>'s <c>}</c>, which is all <c>ShouldJoin</c> reads; this gap had no plan and kept
+    ///     whatever the author wrote.
+    /// </remarks>
+    void PlanClauseAfterAnEmbeddedStatement(SyntaxNode node) {
+        switch (node) {
+            case IfStatementSyntax { Else: { } clause, Statement: not BlockSyntax }:
+                Mandatory(clause.ElseKeyword);
+                return;
+
+            case DoStatementSyntax { Statement: not BlockSyntax } loop:
+                Mandatory(loop.WhileKeyword);
+                return;
+        }
+    }
+
     /// <summary>Whether this node is itself somebody else's embedded statement.</summary>
     static bool IsEmbeddedStatement(SyntaxNode node) =>
         node.Parent is { } parent && EmbeddedStatementOf(parent) == node;
+
+    /// <summary>
+    ///     Under <c>skala_keep_existing_embedded_arrangement</c>, an embedded statement the oracle puts on a
+    ///     line of its own however it was written and however short it is: one that carries an embedded
+    ///     statement of its own, and one whose owner is itself an embedded statement (#469, SK-DIV-0106,
+    ///     SK-DIV-0115).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-08 with <c>Testing ask</c> on twenty-eight nestings written on one line.
+    ///     <c>if (b) if (c) M();</c>, <c>if (b) using (D()) M();</c>, <c>if (b) while (c) M();</c>,
+    ///     <c>while (b) if (c) M();</c>, <c>foreach (…) if (c) M();</c>, <c>lock (this) if (c) M();</c>,
+    ///     <c>if (b) for (;;) M();</c>, <c>while (b) lock (this) M();</c>, <c>do if (b) M(); while (b);</c>,
+    ///     <c>using (D()) using (D()) M();</c>, three deep, and <c>if (b) if (c) { M(); }</c> all come back
+    ///     one statement per line — the fitting, single-line inner owner included, which is what the
+    ///     group point (a width test) could never write. Two shapes are exempt, and both are an
+    ///     <c>if</c> that the <c>else</c> machinery owns rather than a nesting: an <c>if</c> with an
+    ///     <c>else</c> keeps its own statement — <c>if (b)</c> / <c>if (c) M();</c> / <c>else M();</c>,
+    ///     under <c>while</c> too — and an <c>else if</c> keeps its — <c>else if (c) M();</c>. Neither
+    ///     exemption carries over to the statement after them: <c>else if (b) if (c) M();</c> pushes
+    ///     <c>if (c)</c> down and <c>M()</c> with it.
+    ///     <para>
+    ///         Not at <c>keep = false</c>, where the placement key decides and the oracle leaves a nesting
+    ///         where the author put it (see <see cref="PlanEmbeddedStatement" />).
+    ///     </para>
+    /// </remarks>
+    static bool IsPushedOffByNesting(SyntaxNode owner, StatementSyntax embedded) {
+        if (CarriesAnEmbeddedStatement(embedded)) {
+            return true;
+        }
+
+        if (owner is IfStatementSyntax { Else: not null } or IfStatementSyntax { Parent: ElseClauseSyntax }) {
+            return false;
+        }
+
+        return IsEmbeddedStatement(owner) || owner.Parent is UsingStatementSyntax outer && outer.Statement == owner;
+    }
+
+    static bool CarriesAnEmbeddedStatement(StatementSyntax statement) =>
+        statement is IfStatementSyntax
+            or WhileStatementSyntax
+            or DoStatementSyntax
+            or ForStatementSyntax
+            or CommonForEachStatementSyntax
+            or UsingStatementSyntax
+            or FixedStatementSyntax
+            or LockStatementSyntax;
 
     /// <summary>
     ///     ⚠ A <c>switch</c> or a <c>try</c> never shares its owner's line, at the export's
