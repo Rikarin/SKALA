@@ -895,7 +895,7 @@ public sealed class LayoutWriter {
     ///     <see cref="InnermostBrokenConstruct" /> for a fill chain: the innermost broken group carrying
     ///     <see cref="GroupFacts.ContinuesIfItBreaks" />, inside the innermost enclosing block; −1 for none.
     /// </summary>
-    int InnermostBrokenFill((int Node, int Child)[] path) => InnermostBroken(path, fill: true);
+    int InnermostBrokenFill((int Node, int Child)[] path) => InnermostBroken(path, true);
 
     /// <summary>
     ///     Whether the fill chain at <paramref name="pathIndex" /> takes one of its points once the scope at
@@ -942,7 +942,7 @@ public sealed class LayoutWriter {
     ///     resolved <see cref="ResolvedMode.Broken" /> and <see cref="GroupFacts.Continues" />, looked for
     ///     inside the innermost enclosing block only; −1 when there is none.
     /// </summary>
-    int InnermostBrokenConstruct((int Node, int Child)[] path) => InnermostBroken(path, fill: false);
+    int InnermostBrokenConstruct((int Node, int Child)[] path) => InnermostBroken(path, false);
 
     /// <summary>
     ///     The walk behind <see cref="InnermostBrokenConstruct" /> and <see cref="InnermostBrokenFill" />,
