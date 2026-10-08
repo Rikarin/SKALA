@@ -10047,6 +10047,58 @@ either is held, as before.
   110/116). corpus/real unchanged (its export is `chop_if_long`). Pinned by
   `HeldFirstCallUnderAFillIssue552Tests`.
 
+## SK-DIV-0336 — an `or` pattern chain's level inside a sole lambda and before an `||`
+
+Found on Skala's own `BreakPlan.cs` run through the oracle (round three), filed as #566. Two shapes:
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `.Any(static node => node is A or B or C)`, a call's only argument | `or B` one level past the `.Any(` line | two levels |
+| `return token.Kind() is A or B or C \|\| previous.Kind() is D;` | `or B` two levels in, `\|\| previous…` one | both one level in |
+
+The first is the pattern chain's own level (GroupPlan.OwnLevel) stacked on the argument list's, which a
+sole lambda kept on the call's line already spends — an `&&` body takes one level there too. The second
+is the same level collapsing into the `||` chain's continuation, both opened on the statement's line.
+
+- options: `skala_wrap_chained_binary_patterns`, `place_single_method_argument_lambda_on_same_line`.
+- ⚠ status: **resolved** (#566). A pattern chain under the `is` that is a sole lambda argument's body
+  holds its level while the lambda's arrow stays on the call's line (`HeldLevel.WhileArrowFlat`) — where
+  the arrow breaks the `or`s go one level past the body's line, and where more links follow the call
+  (`body.DescendantNodes(x => …)` / `.Any(…)`) the level is spent as before, both measured on Skala's own
+  source, which a first cut that dropped the level outright moved; one under the `is` that is an
+  `&&`/`||` chain's first operand takes its
+  level as `IndentFlags.Additive` — counted beside the line's other level without hiding it. ⚠ Group L
+  fixed that second half independently (#560, SK-DIV-0394) with the same flag; the two are merged into
+  L's mechanism and L's rule (the type test as the operator's left operand). Measured
+  on 2026-10-09 on eighteen shapes (a sole lambda in a call, after a broken chain, in an expression body,
+  among other arguments; an `||` operand under `var`, `return` and an `if`); the `if` keeps its
+  alignment. ⚠ A row beside it is not this entry's: `var glued = token.Kind() is … || …` breaks the `=`
+  in the oracle (`var g =` does not) — the `=`'s head floor, reported with round four's survey.
+  Pinned by `OrPatternLevelIssue566Tests`.
+
+## SK-DIV-0337 — an initializer the author broke after its `{` keeps the brace's break
+
+Found by round four's author-layout survey (2026-10-09): the same `=` shapes written on one line and
+written pre-broken, asked of the oracle side by side. Of eighteen shapes — `&&`, `+` and `??` chains, a
+call chain, a call, a creation with and without an initializer, a collection expression, a conditional,
+a lambda, an interpolated string, a member access — the conditional (#553, round three) and this one
+read the author's layout:
+
+| written | oracle | Skala |
+|---|---|---|
+| `var someLongName = new Something {` / members / `};`, too long for one line | kept as written, members filled | `var someLongName =` / `new Something { … };` |
+| the same written on one line | `=` / the creation whole, up to a line of about 104 to 110 columns | the same |
+| `new Something` / `{` / members / `};` (Newtonsoft's brace on its own line) | `=` / the creation whole | the same |
+
+Measured behind heads of 12, 30 and 40 columns, values of 80 to 116 columns below.
+
+- options: `skala_keep_user_linebreaks`, `prefer_wrap_around_eq`.
+- ⚠ status: **resolved** for the brace break (`BreakPlan.InitializerBrokenAfterItsBrace`): a creation whose
+  `{` sits on its own line and is followed by a break never takes the `=`'s break. ⚠ Open: two flat rows
+  at the boundary — the oracle still moves a 110-column value down behind a 12-column head and a
+  107-column one behind 30, where Skala breaks the brace — so the oracle's margin there grows as the
+  head shrinks. corpus/real unchanged. Pinned by `InitializerBrokenAfterBraceTests`.
+
 ## SK-DIV-0320 — a block comment on its own line above an array initializer's first element stayed there
 
 #522: `new[] {` / `/* c */` / `1` comes back `/* c */ 1` from the oracle; Skala kept the break after the

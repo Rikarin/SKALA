@@ -391,7 +391,8 @@ public sealed class LayoutWriter {
         }
     }
 
-    const IndentFlags HeldConditions = IndentFlags.HeldWhileOwnerFlat | IndentFlags.HeldWhileChainWhole;
+    const IndentFlags HeldConditions =
+        IndentFlags.HeldWhileOwnerFlat | IndentFlags.HeldWhileChainWhole | IndentFlags.HeldWhileGroupFlat;
 
     /// <summary>
     ///     The kind a conditionally held scope opens as: <see cref="IndentKind.None" /> — a held level —
@@ -411,6 +412,13 @@ public sealed class LayoutWriter {
         Stack<(int Node, int Child)> stack
     ) {
         if ((conditions & IndentFlags.HeldWhileOwnerFlat) != 0 && OwnerBroke(stack)) {
+            return kind;
+        }
+
+        // ⚠ A named group's: a sole lambda's arrow, resolved before the body it encloses (#566).
+        if ((conditions & IndentFlags.HeldWhileGroupFlat) != 0
+            && chainGroup >= 0
+            && fitter.ModeOf(chainGroup) == ResolvedMode.Broken) {
             return kind;
         }
 

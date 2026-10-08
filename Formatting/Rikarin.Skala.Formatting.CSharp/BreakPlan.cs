@@ -133,6 +133,11 @@ public readonly record struct GapSpec(GapRule Rule, int Group);
 ///     <c>+ 1,</c> at 16 and <c>y = 2;</c> at 12 — although the list and the <c>=</c> both opened on the
 ///     declaration's first line.
 /// </param>
+/// <param name="AdditiveLevel">
+///     ⚠ The group's continuation level counts beside one already counted on its line without standing
+///     in for that line (<c>IndentFlags.Additive</c>): a pattern chain that is an <c>&amp;&amp;</c> or
+///     <c>||</c> chain's first operand, whose <c>or</c>s go one level past the operators (#566).
+/// </param>
 public readonly record struct GroupPlan(
     int Id,
     GroupMode Mode,
@@ -184,7 +189,15 @@ public enum HeldLevel {
     ///     broke (<see cref="IndentFlags.WhileChainWhole" />). Pass two reads the fill's break back as
     ///     an author's and disqualifies the hold from the source, which is the same answer.
     /// </summary>
-    WhileChainWhole = 4
+    WhileChainWhole = 4,
+
+    /// <summary>
+    ///     ⚠ The level is spent as zero columns while the arrow of the lambda the group is the body of stays
+    ///     flat (#566): <c>Use(x =&gt; x is A</c> / <c>or B</c> puts the <c>or</c>s one level past the call's line,
+    ///     the parenthesis having spent it, and <c>All(x =&gt;</c> / <c>x is A</c> / <c>or B</c> one level past
+    ///     the body's line. See <see cref="BreakPlan.ArrowHeldAgainst" />.
+    /// </summary>
+    WhileArrowFlat = 8
 }
 
 /// <summary>
@@ -285,6 +298,12 @@ public sealed class BreakPlan {
     ///     <see cref="HeldLevel.WhileChainWhole" />.
     /// </summary>
     readonly Dictionary<int, long> heldAgainst = [];
+
+    /// <summary>The arrow group <see cref="PlanArrowBody" /> opened for each lambda, by the lambda's key.</summary>
+    readonly Dictionary<long, int> arrowGroups = [];
+
+    /// <summary>The arrow group each <see cref="HeldLevel.WhileArrowFlat" /> hold is decided by.</summary>
+    readonly Dictionary<int, int> arrowHeldAgainst = [];
 
     /// <summary>
     ///     The chain roots whose <c>wrap_chained_binary_*</c> style is <c>wrap_if_long</c>, so that
@@ -3213,11 +3232,11 @@ public sealed class BreakPlan {
             // an initializer — is #529's and #378's layout, not this table's.
             || call.ArgumentList.DescendantNodes()
                 .Any(static node => node is AnonymousFunctionExpressionSyntax
-                        or InitializerExpressionSyntax
-                        or AnonymousObjectCreationExpressionSyntax
-                        or SwitchExpressionSyntax
-                        or CollectionExpressionSyntax
-                        or WithExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or AnonymousObjectCreationExpressionSyntax
+                    or SwitchExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or WithExpressionSyntax
                 )
             // ⚠ And behind a `var` or an assignment, on arguments with no call or creation of their own:
             // `var bottom = device.CreateAccelerationStructure(new(…));` and `var listener =
@@ -3910,9 +3929,39 @@ public sealed class BreakPlan {
                 AdditiveLevel: pattern
                 && EnclosingTypeTest(root) is { Parent: BinaryExpressionSyntax logical } leftTest
                 && logical.Left == leftTest
-                && logical.Kind() is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression
+                && logical.Kind() is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression,
+                HoldsLevel: pattern ? HoldForASoleLambda(root, group) : HeldLevel.None
             )
         );
+    }
+
+    /// <summary>
+    ///     Whether a pattern chain is, through its <c>is</c>, the expression body of a lambda that is the
+    ///     only argument of a call (#566).
+    /// </summary>
+    static bool IsSoleLambdaArgumentBody(SyntaxNode pattern) =>
+        EnclosingTypeTest(pattern) is { } test
+        && test.Parent is LambdaExpressionSyntax lambda
+        && lambda.ExpressionBody == test
+        && lambda.Parent is ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } };
+
+    /// <summary>
+    ///     A sole lambda argument's pattern chain holds its level while the arrow stays on the call's line
+    ///     (<see cref="HeldLevel.WhileArrowFlat" />). ⚠ Not where more links follow the call:
+    ///     <c>body.DescendantNodes(x =&gt; x is not A</c> / <c>and not B</c> / <c>)</c> / <c>.Any(…)</c> takes
+    ///     two levels in the oracle, the chain's level standing beside the parenthesis's.
+    /// </summary>
+    HeldLevel HoldForASoleLambda(SyntaxNode pattern, int group) {
+        if (!IsSoleLambdaArgumentBody(pattern)
+            || EnclosingTypeTest(pattern)?.Parent is not LambdaExpressionSyntax lambda
+            || lambda.Parent?.Parent?.Parent is not InvocationExpressionSyntax call
+            || call.Parent is MemberAccessExpressionSyntax
+            || !arrowGroups.TryGetValue(Key(lambda), out var arrow)) {
+            return HeldLevel.None;
+        }
+
+        arrowHeldAgainst[group] = arrow;
+        return HeldLevel.WhileArrowFlat;
     }
 
     /// <summary>The <c>is</c> a pattern sits under, through parenthesised and negated patterns.</summary>
@@ -4169,14 +4218,14 @@ public sealed class BreakPlan {
     static bool IsUnbreakablePattern(PatternSyntax pattern) =>
         !pattern.DescendantNodesAndSelf()
             .Any(static node => node is BinaryPatternSyntax
-                    or RecursivePatternSyntax
-                    or ListPatternSyntax
-                    or ParenthesizedPatternSyntax
-                    // ⚠ And a deconstructing `var (a, b)`, whose list is a break point of its own: read as a
-                    // single type, a break the author kept inside it made the type test's group too long
-                    // and took the gap after `is` — `o is` / `var (a,` / `b)` where the oracle keeps
-                    // `o is var (a,` / `b)` (#567; since #440's PlanTypeTest, 7f40d7df).
-                        or ParenthesizedVariableDesignationSyntax
+                or RecursivePatternSyntax
+                or ListPatternSyntax
+                or ParenthesizedPatternSyntax
+                // ⚠ And a deconstructing `var (a, b)`, whose list is a break point of its own: read as a
+                // single type, a break the author kept inside it made the type test's group too long
+                // and took the gap after `is` — `o is` / `var (a,` / `b)` where the oracle keeps
+                // `o is var (a,` / `b)` (#567; since #440's PlanTypeTest, 7f40d7df).
+                    or ParenthesizedVariableDesignationSyntax
             );
 
     /// <summary>
@@ -5250,7 +5299,8 @@ public sealed class BreakPlan {
                     // `=` because the whole lambda fitted on the line below (#453, SK-DIV-0050).
                     BreaksIfTooLong: !YieldsToTheLambdaArrow(value)
                     && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member))
-                    && !KeepsTheEqualsBeforeALambdaCall(node, value),
+                    && !KeepsTheEqualsBeforeALambdaCall(node, value)
+                    && !InitializerBrokenAfterItsBrace(value),
 
                     // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
                     // Every other right-hand side is measured by what is left of the line and breaks
@@ -5377,6 +5427,32 @@ public sealed class BreakPlan {
     ///     </para>
     /// </remarks>
     static bool BreakYieldsToTheBracket(ExpressionSyntax value) => value is CollectionExpressionSyntax;
+
+    /// <summary>
+    ///     Whether an <c>=</c>'s value is a creation whose initializer the author broke after its <c>{</c>:
+    ///     the <c>=</c> then never breaks, the brace keeps the break (author-layout survey, round four).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-09 behind heads of 12, 30 and 40 columns, values of 80 to 116 columns: the
+    ///     oracle keeps <c>var x = new T {</c> / members / <c>};</c> wherever the statement does not fit on one
+    ///     line, including where the same initializer written on one line moves down whole after the
+    ///     <c>=</c>; where the statement fits it joins it. Skala broke the <c>=</c> and joined the braces.
+    ///     ⚠ Only a brace on the creation's line: Newtonsoft's <c>new T</c> / <c>{</c> / members / <c>};</c>
+    ///     moves down whole after the <c>=</c> in the oracle, and reading it as the author's brace break moved
+    ///     four of its files away.
+    /// </remarks>
+    bool InitializerBrokenAfterItsBrace(ExpressionSyntax value) =>
+        value switch {
+            BaseObjectCreationExpressionSyntax { Initializer: { } initializer } => BreaksAfter(initializer),
+            ArrayCreationExpressionSyntax { Initializer: { } initializer } => BreaksAfter(initializer),
+            ImplicitArrayCreationExpressionSyntax { Initializer: var initializer } => BreaksAfter(initializer),
+            _ => false
+        };
+
+    bool BreaksAfter(InitializerExpressionSyntax initializer) =>
+        initializer.Expressions.Count > 0
+        && !BreaksBefore(initializer.OpenBraceToken)
+        && BreaksBefore(initializer.OpenBraceToken.GetNextToken());
 
     /// <summary>
     ///     The break between a cast and the collection expression it casts, which is one of two
@@ -5999,6 +6075,9 @@ public sealed class BreakPlan {
     /// </summary>
     public int ChainHeldAgainst(int group) => heldAgainst.TryGetValue(group, out var root) ? ChainGroupOf(root) : -1;
 
+    /// <summary>The arrow group a <see cref="HeldLevel.WhileArrowFlat" /> hold is decided by, or -1.</summary>
+    public int ArrowHeldAgainst(int group) => arrowHeldAgainst.TryGetValue(group, out var arrow) ? arrow : -1;
+
     /// <summary>The group <see cref="PlanChainedCalls" /> opened over the chain rooted at this key, or -1.</summary>
     int ChainGroupOf(long root) => chainGroups.TryGetValue(root, out var group) ? group : -1;
 
@@ -6305,12 +6384,12 @@ public sealed class BreakPlan {
                 .Any(static node => node is PropertyPatternClauseSyntax or ListPatternSyntax)
             && !head.SelectMany(static part => part.DescendantNodesAndSelf())
                 .Any(static node => node is PositionalPatternClauseSyntax
-                        or BaseArgumentListSyntax
-                        or TypeArgumentListSyntax
-                        or AnonymousFunctionExpressionSyntax
-                        or InitializerExpressionSyntax
-                        or CollectionExpressionSyntax
-                        or SwitchExpressionSyntax
+                    or BaseArgumentListSyntax
+                    or TypeArgumentListSyntax
+                    or AnonymousFunctionExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or SwitchExpressionSyntax
                 );
         // ⚠ And a `when` clause's argument list (#564), which the lift reaches only once it chops: `when Compute(` / the
         // arguments two levels past the arm / `) =>` one level / the body one level. Measured 2026-10-08
@@ -6323,12 +6402,12 @@ public sealed class BreakPlan {
             && when.DescendantNodes().OfType<ArgumentListSyntax>().Any()
             && !head.SelectMany(static part => part.DescendantNodesAndSelf())
                 .Any(static node => node is PositionalPatternClauseSyntax
-                        or TypeArgumentListSyntax
-                        or AnonymousFunctionExpressionSyntax
-                        or InitializerExpressionSyntax
-                        or CollectionExpressionSyntax
-                        or SwitchExpressionSyntax
-                        or QueryExpressionSyntax
+                    or TypeArgumentListSyntax
+                    or AnonymousFunctionExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or SwitchExpressionSyntax
+                    or QueryExpressionSyntax
                 );
         var keptAfter = !kept
             && (liftsBraces || liftsList)
@@ -6565,6 +6644,7 @@ public sealed class BreakPlan {
         }
 
         var group = NewGroup();
+        arrowGroups[Key(owner)] = group;
         Point(first, group);
         OpenAt(
             owner,
@@ -8068,9 +8148,21 @@ public sealed class BreakPlan {
         in GroupFacts facts,
         bool spendsIndent = false,
         bool leadingGapInside = false,
-        bool ownLevel = false
+        bool ownLevel = false,
+        HeldLevel holdsLevel = HeldLevel.None
     ) =>
-        Describe(node, new(group, mode, facts, spendsIndent, leadingGapInside, ownLevel));
+        Describe(
+            node,
+            new(
+                group,
+                mode,
+                facts,
+                spendsIndent,
+                leadingGapInside,
+                ownLevel,
+                HoldsLevel: holdsLevel
+            )
+        );
 
     void Describe(SyntaxNode node, GroupPlan plan) {
         var key = Key(node);
