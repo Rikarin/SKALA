@@ -40,10 +40,17 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     The symbols defined while parsing — production's <c>--define</c>, per fixture.
 /// </param>
 /// <param name="AllowUnsafe">Whether an <c>unsafe</c> context is legal.</param>
+/// <param name="TargetFramework">
+///     ⚠ #515: the reference pack the fixture compiles against, or null for the test host's own runtime
+///     assemblies. Only a rule that reads the target framework off the reference set needs it — the
+///     host's core library is <c>System.Private.CoreLib</c>, which no real build references, so without
+///     this such a rule had no positive fixture at all.
+/// </param>
 public sealed record FixtureCompilation(
     LanguageVersion LanguageVersion,
     ImmutableArray<string> PreprocessorSymbols,
-    bool AllowUnsafe) {
+    bool AllowUnsafe,
+    string? TargetFramework = null) {
     /// <summary>What a fixture that says nothing is compiled as.</summary>
     public static FixtureCompilation Default { get; } = new(LanguageVersion.Preview, [], true);
 
@@ -62,8 +69,9 @@ public sealed record FixtureCompilation(
                 "LangVersion" => result with { LanguageVersion = ParseVersion(value) },
                 "DefineConstants" => result with { PreprocessorSymbols = ParseSymbols(value) },
                 "AllowUnsafe" => result with { AllowUnsafe = ParseBoolean(value) },
+                "TargetFramework" => result with { TargetFramework = ReferencePacks.Known(value) },
                 _ => throw new InvalidOperationException(
-                    $"'{Prefix} {key}' is not a fixture option; the keys are LangVersion, DefineConstants and AllowUnsafe."
+                    $"'{Prefix} {key}' is not a fixture option; the keys are LangVersion, DefineConstants, AllowUnsafe and TargetFramework."
                 )
             };
         }
@@ -118,6 +126,6 @@ public sealed record FixtureCompilation(
     public override string ToString() =>
         string.Create(
             CultureInfo.InvariantCulture,
-            $"C# {LanguageVersionFacts.ToDisplayString(LanguageVersion)}, define [{string.Join(";", PreprocessorSymbols)}], unsafe {AllowUnsafe}"
+            $"C# {LanguageVersionFacts.ToDisplayString(LanguageVersion)}, define [{string.Join(";", PreprocessorSymbols)}], unsafe {AllowUnsafe}, references {TargetFramework ?? "test host"}"
         );
 }

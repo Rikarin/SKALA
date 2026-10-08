@@ -126,7 +126,7 @@ public static class RuleFixtures {
         return CSharpCompilation.Create(
             "fixtures",
             [tree],
-            References,
+            options.TargetFramework is { } framework ? ReferencePacks.For(framework) : References,
             new CSharpCompilationOptions(
                 topLevel ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: options.AllowUnsafe,

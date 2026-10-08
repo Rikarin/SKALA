@@ -1,7 +1,9 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Rikarin.Skala.Rules.Tests;
 
@@ -136,24 +138,121 @@ public sealed class CollectionExpressionSpreadTests {
     }
 
     /// <summary>
-    ///     ⚠ The floor is a <em>written</em> C# 14: the same shape at <c>latest</c>, at <c>preview</c> and
-    ///     at 13 is silent, and at 14 it fires — the control that makes the three silences mean something.
+    ///     ⚠ Two proofs of the compiler and one floor: a written C# 14, or (#515) a .NET 10 reference set —
+    ///     and C# 14 as the effective version under either.
     /// </summary>
+    /// <remarks>
+    ///     The null rows are the test host's own runtime assemblies, whose core library is
+    ///     <c>System.Private.CoreLib</c> — <c>--load=loose</c>'s shape, where nothing was built — and there
+    ///     only a written number proves anything. The <c>net9.0</c> rows are why the version is read off
+    ///     the reference set rather than assumed: SDK 9.0.1xx builds them with Roslyn 4.12.
+    /// </remarks>
     [Theory]
-    [InlineData(LanguageVersion.CSharp14, true)]
-    [InlineData(LanguageVersion.Latest, false)]
-    [InlineData(LanguageVersion.LatestMajor, false)]
-    [InlineData(LanguageVersion.Preview, false)]
-    [InlineData(LanguageVersion.CSharp13, false)]
-    public void TheLanguageVersion_MustBeWrittenAndAtLeast14(LanguageVersion version, bool fires) {
-        var source = Header + "        int[] copied = list.ToArray();" + Footer;
-        var found = RuleFixtures.Analyze(
-            RuleFixtures.Compile(source, "probe.cs", version),
-            SkalaAnalyzers.All,
-            TestContext.Current.CancellationToken
+    [InlineData(null, LanguageVersion.CSharp14, true)]
+    [InlineData(null, LanguageVersion.Latest, false)]
+    [InlineData(null, LanguageVersion.LatestMajor, false)]
+    [InlineData(null, LanguageVersion.Preview, false)]
+    [InlineData(null, LanguageVersion.CSharp13, false)]
+    [InlineData("net10.0", LanguageVersion.CSharp14, true)]
+    [InlineData("net10.0", LanguageVersion.Latest, true)]
+    [InlineData("net10.0", LanguageVersion.LatestMajor, true)]
+    [InlineData("net10.0", LanguageVersion.Default, true)]
+    [InlineData("net10.0", LanguageVersion.Preview, true)]
+    [InlineData("net10.0", LanguageVersion.CSharp13, false)]
+    [InlineData("net9.0", LanguageVersion.CSharp14, true)]
+    [InlineData("net9.0", LanguageVersion.Latest, false)]
+    [InlineData("net9.0", LanguageVersion.Preview, false)]
+    [InlineData("net9.0", LanguageVersion.CSharp13, false)]
+    public void TheCompiler_IsProvedByAWrittenVersionOrANet10ReferenceSet(
+        string? framework,
+        LanguageVersion version,
+        bool fires
+    ) {
+        var source = (framework is null ? "" : "// fixture-option: TargetFramework = " + framework + "\n")
+            + Header
+            + "        int[] copied = list.ToArray();"
+            + Footer;
+        var compilation = RuleFixtures.Compile(source, "probe.cs", version);
+
+        // The instrument, before the claim: the reference set is the one the row names, or every row
+        // measures the test host.
+        Assert.Equal(
+            framework switch {
+                "net10.0" => "System.Runtime 10",
+                "net9.0" => "System.Runtime 9",
+                _ => "System.Private.CoreLib " + Environment.Version.Major
+            },
+            CoreLibrary(compilation)
         );
 
+        Assert.Empty(compilation.GetDiagnostics(TestContext.Current.CancellationToken).Where(static d => d.Severity == DiagnosticSeverity.Error));
+
+        var found = RuleFixtures.Analyze(compilation, SkalaAnalyzers.All, TestContext.Current.CancellationToken);
         Assert.Equal(fires, found.Any(static d => d.Id == RuleIds.CollectionExpressionSpread));
+    }
+
+    /// <summary>
+    ///     ⚠ #515: a <c>netstandard2.1;net10.0</c> project at <c>latest</c>. The <c>net10.0</c> leg proves its
+    ///     compiler and the <c>netstandard2.1</c> leg does not, so the shared file gets nothing from either.
+    /// </summary>
+    /// <remarks>
+    ///     <c>MultiTargetLanguageFloor</c> cannot see this: both legs are at C# 14 to Skala. The sibling is
+    ///     stood in for by a compilation whose core library is not .NET 10's — the test host's own, which
+    ///     is exactly as unproved as <c>netstandard 2.1.0.0</c> — and the control row is the same pair
+    ///     with the sibling on <c>net10.0</c> references too.
+    /// </remarks>
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("net10.0", true)]
+    [InlineData("net9.0", false)]
+    public async Task ASiblingThatDoesNotProveTheCompiler_WithholdsTheSharedFile(string? sibling, bool fires) {
+        var body = Header + "        int[] copied = list.ToArray();" + Footer;
+        var current = RuleFixtures.Compile("// fixture-option: TargetFramework = net10.0\n" + body, "shared.cs", LanguageVersion.Latest);
+        var other = RuleFixtures.Compile(
+            (sibling is null ? "" : "// fixture-option: TargetFramework = " + sibling + "\n") + body,
+            "shared.cs",
+            LanguageVersion.Latest
+        );
+
+        var found = await current
+            .WithAnalyzers(
+                SkalaAnalyzers.All,
+                new CompilationWithAnalyzersOptions(
+                    new AnalyzerOptions([], new SiblingProvider([other])),
+                    null,
+                    true,
+                    false,
+                    true
+                )
+            )
+            .GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain(found, static d => d.Id == "AD0001");
+        Assert.Equal(fires, found.Any(static d => d.Id == RuleIds.CollectionExpressionSpread));
+    }
+
+    static string CoreLibrary(Compilation compilation) {
+        var identity = compilation.ObjectType.ContainingAssembly.Identity;
+        return identity.Name + " " + identity.Version.Major;
+    }
+
+    sealed class SiblingProvider(ImmutableArray<Compilation> siblings) : AnalyzerConfigOptionsProvider, ISiblingCompilations {
+        public ImmutableArray<Compilation> Siblings { get; } = siblings;
+
+        public override AnalyzerConfigOptions GlobalOptions => Empty.Instance;
+
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => Empty.Instance;
+
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => Empty.Instance;
+    }
+
+    sealed class Empty : AnalyzerConfigOptions {
+        public static Empty Instance { get; } = new();
+
+        public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value) {
+            value = null;
+            return false;
+        }
     }
 
     static ImmutableArray<Diagnostic> Analyze(string source) =>
