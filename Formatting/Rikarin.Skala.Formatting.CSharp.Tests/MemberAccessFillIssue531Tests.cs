@@ -63,4 +63,40 @@ public sealed class MemberAccessFillIssue531Tests {
               }
               """
         );
+
+    /// <summary>
+    ///     The three arm rows round two left open (SK-DIV-0330), now answered by the arm's table: a
+    ///     fourteen-column body with its comma behind a 106-column head breaks the arrow; a body with a dot
+    ///     of its own fills the pattern; and a pattern that overflows by itself breaks its own dot whatever
+    ///     the body. Before the fix the three came out the other way.
+    /// </summary>
+    [Fact]
+    public void TheArmRows_FollowTheArmsTable() =>
+        Oracle.Agrees(
+            """
+            class T {
+                object N(object o) =>
+                    o switch {
+                        Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd.MorexxxxValue => yyyyyyyyyyyyy,
+                        Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd.MorexxxxxxxxxxxValue => yyyyyyyyyyy.Z,
+                        Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd.MorexxxxxxxxxxxxxxxxxxxxValueeeeee => yyyyyyyyyyyyyyyyyy,
+                        _ => 0
+                    };
+            }
+            """,
+            """
+            class T {
+                object N(object o) =>
+                    o switch {
+                        Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd.MorexxxxValue =>
+                            yyyyyyyyyyyyy,
+                        Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd
+                            .MorexxxxxxxxxxxValue => yyyyyyyyyyy.Z,
+                        Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd
+                            .MorexxxxxxxxxxxxxxxxxxxxValueeeeee => yyyyyyyyyyyyyyyyyy,
+                        _ => 0
+                    };
+            }
+            """
+        );
 }

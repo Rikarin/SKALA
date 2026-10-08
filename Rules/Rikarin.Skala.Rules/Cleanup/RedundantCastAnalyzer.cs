@@ -26,7 +26,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             A cast is not redundant merely because the types allow removing it, and this rule is
 ///             written around that sentence.
-///         </b> <c>var x = (long)1;</c> types <c>x</c> as <c>long</c> and
+///         </b>
+///         <c>var x = (long)1;</c> types <c>x</c> as <c>long</c> and
 ///         <c>var x = 1;</c> types it as <c>int</c>. <c>M((object)s)</c> and <c>M(s)</c> call different
 ///         overloads. <c>flag ? (long)a : b</c> infers a different type once the cast goes. Roslyn's own
 ///         <c>IDE0004</c> is the standing example of getting this wrong, so Skala covers the one subset
@@ -152,7 +153,8 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
     ///     <b>
     ///         The rewrite is bound away from its tree, and that was a crash here rather than a
     ///         theory.
-    ///     </b> <c>values?.Where(…).Cast&lt;string&gt;()</c> hands
+    ///     </b>
+    ///     <c>values?.Where(…).Cast&lt;string&gt;()</c> hands
     ///     <c>GetSpeculativeSymbolInfo</c> a detached node whose root is a member binding, and the
     ///     compiler throws a <c>NullReferenceException</c> looking for the conditional access that
     ///     is no longer above it — see <see cref="SpeculativeBinding" />. It reached a report as
@@ -250,7 +252,9 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
         // semantic query that separates those two cases, because the resulting type is identical.
         if (tuple.Parent is not EqualsValueClauseSyntax {
                 Parent:
-                VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Type: TupleTypeSyntax declared } }
+                VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax { Type: TupleTypeSyntax declared }
+                }
             }
             || declared.Elements.Count != tuple.Arguments.Count) {
             return;

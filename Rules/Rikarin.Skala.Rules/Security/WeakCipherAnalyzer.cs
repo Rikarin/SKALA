@@ -16,7 +16,8 @@ namespace Rikarin.Skala.Rules.Security;
 ///         <b>
 ///             The id was allocated narrower than doc 08's sentence, and the reason is that the hash half
 ///             cannot be decided correctly.
-///         </b> The catalogue's entry reads "weak hash/cipher (<c>MD5</c>,
+///         </b>
+///         The catalogue's entry reads "weak hash/cipher (<c>MD5</c>,
 ///         <c>SHA1</c>, <c>DES</c>, ECB)". The hash half was cut, and not because it would be noisy —
 ///         a rule that fires often is work for the repository, not a defect in the rule. It was cut because
 ///         <b>the finding would frequently be wrong</b>, which is a different thing. <c>MD5</c> and
@@ -156,7 +157,8 @@ public sealed class WeakCipherAnalyzer : DiagnosticAnalyzer {
     ///     <c>
     /// if (algorithm.Mode == CipherMode.ECB)
     ///  throw new …
-    ///     </c> is a guard against exactly this, and reporting it would mean the rule fires
+    ///     </c>
+    ///     is a guard against exactly this, and reporting it would mean the rule fires
     ///     on the code written to satisfy it.
     /// </remarks>
     static void Mode(OperationAnalysisContext context, INamedTypeSymbol symmetric, INamedTypeSymbol cipherMode) {

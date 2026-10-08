@@ -18,7 +18,8 @@ namespace Rikarin.Skala.Release;
 ///         <c>
 /// ## &lt;version&gt; —
 ///  &lt;date&gt;
-///         </c> with <c>### Added/Changed/Fixed</c> beneath — because that file was written by
+///         </c>
+///         with <c>### Added/Changed/Fixed</c> beneath — because that file was written by
 ///         hand from the merge history and a generator that reformatted it would make the whole record
 ///         unreadable in one commit.
 ///     </para>

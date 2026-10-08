@@ -234,7 +234,8 @@ public static class Renderer {
     ///     <b>
     ///         this run did not cover
     ///         what it was asked to cover
-    ///     </b>: every one at error severity, and every one the reliability gate fails on.
+    ///     </b>
+    ///     : every one at error severity, and every one the reliability gate fails on.
     /// </summary>
     /// <remarks>
     ///     ⚠ #345. A diagnostic is not a finding: a finding is something in the code, and one of these
@@ -348,7 +349,8 @@ public static class Renderer {
     ///         <b>
     ///             every path this yields is one the loader
     ///             put into <see cref="RunReport.FileCount" />
-    ///         </b> — the per-file ids are located at a
+    ///         </b>
+    ///         — the per-file ids are located at a
     ///         reportable or unreadable source path by construction — which is what lets
     ///         <c>Scale</c> print the fraction without a guard.
     ///     </para>
@@ -667,7 +669,8 @@ public static class Renderer {
     ///         <c>
     /// Process completed with exit code
     ///          1
-    ///         </c> and no statement of why. Read from the log alone, this repository's own master gate
+    ///         </c>
+    ///         and no statement of why. Read from the log alone, this repository's own master gate
     ///         looked like twenty-four errors in one rule family; it was in fact failing four conditions,
     ///         of which those errors were one, and the largest was that the baseline the `ci` gate names
     ///         did not exist.
@@ -762,13 +765,13 @@ public static class Renderer {
 
     internal static string FormatDuration(TimeSpan duration) =>
         duration.TotalSeconds < 1
-        ? duration.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture) + " ms"
-        : duration.TotalSeconds < 90
-            ? duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " s"
-            : ((int)duration.TotalMinutes).ToString(CultureInfo.InvariantCulture)
-            + " m "
-            + duration.Seconds.ToString(CultureInfo.InvariantCulture)
-            + " s";
+            ? duration.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture) + " ms"
+            : duration.TotalSeconds < 90
+                ? duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " s"
+                : ((int)duration.TotalMinutes).ToString(CultureInfo.InvariantCulture)
+                + " m "
+                + duration.Seconds.ToString(CultureInfo.InvariantCulture)
+                + " s";
 }
 
 /// <summary>
@@ -811,7 +814,8 @@ public static class AgentRenderer {
     ///     <b>
     ///         `skala check` does not run the
     ///         arrangement stage
-    ///     </b> — <c>VerifyCommand</c> is the only caller that sets
+    ///     </b>
+    ///     — <c>VerifyCommand</c> is the only caller that sets
     ///     <c>IncludeArrangement</c>. So the advice printed when the agent report elided something was
     ///     guaranteed not to surface an arrangement message, which is precisely the message #345 is
     ///     about. `verify` is a superset of `check` here, so this is the right pointer from either.

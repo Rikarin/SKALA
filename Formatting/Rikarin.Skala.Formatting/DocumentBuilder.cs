@@ -423,7 +423,8 @@ public sealed class DocumentBuilder {
                         | IndentFlags.ChainLevel
                         | IndentFlags.BrokenAfter
                         | IndentFlags.AnchorAtLine
-                        | IndentFlags.Multiplied))),
+                        | IndentFlags.Multiplied
+                        | IndentFlags.Additive))),
             columns
         );
 

@@ -378,7 +378,8 @@ public sealed class InstrumentSilenceTests {
     ///         <b>
     ///             It goes through <c>Run</c> rather than calling the helper, and the first draft did
     ///             not.
-    ///         </b> Calling <c>ReportMissingAssemblies</c> directly asserts that the helper works,
+    ///         </b>
+    ///         Calling <c>ReportMissingAssemblies</c> directly asserts that the helper works,
     ///         which was never in doubt; the defect was the *call site*, and that draft survived its own
     ///         sabotage untouched. Found by running the sabotage rather than by reading the test, which
     ///         is the whole argument for running it.
@@ -424,7 +425,8 @@ public sealed class InstrumentSilenceTests {
     ///     <b>
     ///         Absence is a different fact and this test is what stops the two from being
     ///         collapsed
-    ///     </b>: it passes an existing file that is certainly not a generator, and requires
+    ///     </b>
+    ///     : it passes an existing file that is certainly not a generator, and requires
     ///     silence. A guard that reported "this is not a generator" here would refuse every load in
     ///     which any analyzer contributes no source, which is most of them.
     /// </remarks>

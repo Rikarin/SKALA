@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -76,8 +76,12 @@ public class ViewportTests {
     ///     Maximise gives the Scene panel the whole window and gives the window back, splits and all.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>The panel, not the pane count, and the difference is why this command did nothing at
-    ///     all.</b> It used to set the arrangement to Single and remember what it had been — so in a
+    ///     ⚠
+    ///     <b>
+    ///         The panel, not the pane count, and the difference is why this command did nothing at
+    ///         all.
+    ///     </b>
+    ///     It used to set the arrangement to Single and remember what it had been — so in a
     ///     single-pane layout, which is the default and what nearly everyone is in, it asked the
     ///     arrangement to become what it already was and the setter returned. The button was inert in
     ///     exactly the case it is pressed.

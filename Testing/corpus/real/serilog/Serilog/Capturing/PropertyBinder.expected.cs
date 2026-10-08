@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,13 +26,17 @@ class PropertyBinder {
     }
 
     /// <summary>
-    /// Create properties based on an ordered list of provided values.
+    ///     Create properties based on an ordered list of provided values.
     /// </summary>
     /// <param name="messageTemplate">The template that the parameters apply to.</param>
-    /// <param name="messageTemplateParameters">Objects corresponding to the properties
-    /// represented in the message template.</param>
-    /// <returns>A list of properties; if the template is malformed then
-    /// this will be empty.</returns>
+    /// <param name="messageTemplateParameters">
+    ///     Objects corresponding to the properties
+    ///     represented in the message template.
+    /// </param>
+    /// <returns>
+    ///     A list of properties; if the template is malformed then
+    ///     this will be empty.
+    /// </returns>
 #if FEATURE_SPAN
     public EventProperty[] ConstructProperties(MessageTemplate messageTemplate, ReadOnlySpan<object?> messageTemplateParameters)
 #else

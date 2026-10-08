@@ -27,7 +27,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <c>
 /// IList&lt;T&gt; x = new
 ///  List&lt;T&gt;{…}
-///         </c>, where <c>[…]</c> is free to pick any implementation it likes.
+///         </c>
+///         , where <c>[…]</c> is free to pick any implementation it likes.
 ///     </para>
 ///     <para>
 ///         ⚠ Constructor arguments end it too. <c>new List&lt;T&gt;(capacity) { … }</c> carries a decision
@@ -145,7 +146,8 @@ public sealed class CollectionExpressionAnalyzer : DiagnosticAnalyzer {
     ///     <em>
     ///         spelled by
     ///         the author
-    ///     </em> somewhere the reader can see, and this is the list of places where it is.
+    ///     </em>
+    ///     somewhere the reader can see, and this is the list of places where it is.
     ///     <para>
     ///         ⚠ An argument is deliberately not on the list even though the parameter's type is written.
     ///         `M(new string[] { … })` and `M([…])` do not necessarily resolve to the same overload — a

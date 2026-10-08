@@ -26,7 +26,8 @@ namespace Rikarin.Skala.Rules.Maintainability;
 ///         <b>
 ///             A separate analyzer rather than a seventh branch of <see cref="MetricsAnalyzer" />, and the
 ///             reason is the severity.
-///         </b> That class exists so the per-member metrics are computed in one visit
+///         </b>
+///         That class exists so the per-member metrics are computed in one visit
 ///         instead of seven, which is the right shape for rules that always run. This one is disabled by
 ///         default, and Roslyn does not run an analyzer whose every diagnostic is suppressed — so as its own
 ///         analyzer it costs nothing in the repositories that have not asked for it, and inside

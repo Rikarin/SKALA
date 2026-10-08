@@ -32,10 +32,10 @@ public sealed record ResolvedOption(
 
     public string SourceText =>
         Origin is not null
-        ? Located(Origin)
-        : Refused is null
-            ? "(default)"
-            : $"(default) ⚠ {Diagnostics.ConfigDiagnosticIds.OptionValueOutOfDomain} {Located(Refused)}";
+            ? Located(Origin)
+            : Refused is null
+                ? "(default)"
+                : $"(default) ⚠ {Diagnostics.ConfigDiagnosticIds.OptionValueOutOfDomain} {Located(Refused)}";
 
     static string Located(OptionOrigin origin) =>
         $"{origin.File}:{origin.Line.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
@@ -280,7 +280,8 @@ public static class OptionResolver {
     ///         <em>
     ///             spellings of one
     ///             option
-    ///         </em> — has nothing to say about the pair, and the oracle answers by position: the
+    ///         </em>
+    ///         — has nothing to say about the pair, and the oracle answers by position: the
     ///         same assignment appended after the group's members overrides them and written before them
     ///         does not. Specificity still breaks a tie, which is what makes
     ///         <c>skala_space_after_keywords_in_control_flow_statements</c> beat its <c>csharp_</c>

@@ -29,7 +29,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             The <c>base.</c> half is not "the containing type does not override it", and believing
 ///             so is how this rule reports a behaviour change as a redundancy.
-///         </b> Given
+///         </b>
+///         Given
 ///         <c>class A { public virtual void M() { } }</c>, <c>class B : A</c> calling <c>base.M()</c>,
 ///         and <c>class C : B</c> overriding <c>M</c> — dropping the qualifier in <c>B</c> turns a
 ///         non-virtual call to <c>A.M</c> into a virtual one that reaches <c>C.M</c>. The member
@@ -41,7 +42,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             Both halves used to ask a <em>node</em> whether it carried a comment, and that is the
 ///             defect #302 describes rather than a guard.
-///         </b> <c>DescendantTrivia</c> on a node includes
+///         </b>
+///         <c>DescendantTrivia</c> on a node includes
 ///         the leading trivia of its first token, so a <c>//</c> or a <c>///</c> on the line
 ///         <em>above</em> — text no fix would touch — turned the rule off. Probed rather than read:
 ///         a positive fixture with a comment one line above the finding failed on both the qualified

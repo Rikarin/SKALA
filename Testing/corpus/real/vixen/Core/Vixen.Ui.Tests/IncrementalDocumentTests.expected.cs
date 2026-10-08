@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -12,8 +12,12 @@ namespace Vixen.Ui.Tests;
 /// <summary>The frame pass restyling incrementally, judged against a document built cold.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>Deliberately driven through <see cref="UiDocument" /> rather than through
-///         <see cref="StyleUpdater" />.</b> <c>Vixen.Ui.Styling.Tests.IncrementalRestyleOracleTests</c>
+///         ⚠
+///         <b>
+///             Deliberately driven through <see cref="UiDocument" /> rather than through
+///             <see cref="StyleUpdater" />.
+///         </b>
+///         <c>Vixen.Ui.Styling.Tests.IncrementalRestyleOracleTests</c>
 ///         already runs this property against the updater and has been green since Phase 4b — while
 ///         <see cref="UiDocument.Update" /> called <c>StyleEngine.ResolveAll</c> and never touched the
 ///         updater at all. Every claim about incremental restyling was true of an object nothing in

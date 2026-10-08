@@ -19,14 +19,16 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         The syntax was confirmed to compile on the pinned toolchain before this rule was
 ///         written, because a modernization rule that emits syntax the compiler rejects is worse than no
 ///         rule.
-///     </b> On SDK 10.0.400 with <c>LangVersion 14.0</c>, an <c>extension(string s) { … }</c>
+///     </b>
+///     On SDK 10.0.400 with <c>LangVersion 14.0</c>, an <c>extension(string s) { … }</c>
 ///     block builds with no diagnostic, and on the pinned Roslyn it parses to
 ///     <c>ExtensionBlockDeclarationSyntax</c> at <c>CSharp14</c> and at <c>Preview</c> alike. ⚠ At
 ///     <c>CSharp13</c> the same text does not report the feature — it
 ///     <em>
 ///         recovers as a constructor
 ///         named <c>extension</c>
-///     </em> and then fails with <c>CS1513</c>, so "the fixture did not
+///     </em>
+///     and then fails with <c>CS1513</c>, so "the fixture did not
 ///     compile" would have been the only symptom of a missing language floor. The floor is declared
 ///     in <c>rules.json</c> and <see cref="SkalaRule.MeetsLanguageVersion" /> enforces it.
 ///     <para>

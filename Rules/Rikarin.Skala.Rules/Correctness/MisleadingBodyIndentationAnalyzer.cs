@@ -35,7 +35,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Indentation is not structure anywhere in C#, so nothing but a formatter looks at
 ///             it.
-///         </b> This rule reads the leading whitespace of three lines and compares them as strings —
+///         </b>
+///         This rule reads the leading whitespace of three lines and compares them as strings —
 ///         a question no semantic model can be asked, and the second place in the catalogue where
 ///         trivia rather than structure decides a correctness finding. <c>SK2063</c> is the first.
 ///     </para>

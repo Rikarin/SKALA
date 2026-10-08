@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -33,8 +33,8 @@ using System.Text;
 
 namespace Newtonsoft.Json.Tests.TestObjects {
     /// <summary>
-    ///Represents a strongly typed in-memory cache of data.
-    ///</summary>
+    ///     Represents a strongly typed in-memory cache of data.
+    /// </summary>
     [global::System.Serializable()]
     [global::System.ComponentModel.DesignerCategoryAttribute("code")]
     [global::System.ComponentModel.ToolboxItem(true)]
@@ -306,8 +306,8 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         public delegate void CustomersRowChangeEventHandler(object sender, CustomersRowChangeEvent e);
 
         /// <summary>
-        ///Represents the strongly named DataTable class.
-        ///</summary>
+        ///     Represents the strongly named DataTable class.
+        /// </summary>
         [global::System.Serializable()]
         [global::System.Xml.Serialization.XmlSchemaProviderAttribute("GetTypedTableSchema")]
         public partial class
@@ -654,8 +654,8 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         }
 
         /// <summary>
-        ///Represents strongly named DataRow class.
-        ///</summary>
+        ///     Represents strongly named DataRow class.
+        /// </summary>
         public partial class CustomersRow : global::System.Data.DataRow {
             private CustomersDataTable tableCustomers;
 
@@ -708,8 +708,8 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         }
 
         /// <summary>
-        ///Row event argument class
-        ///</summary>
+        ///     Row event argument class
+        /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
         public class CustomersRowChangeEvent : global::System.EventArgs {
             private CustomersRow eventRow;

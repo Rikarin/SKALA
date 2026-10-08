@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // Copyright 2013-2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,8 @@ static class Padding {
     static readonly char[] PaddingChars = Enumerable.Repeat(' ', 80).ToArray();
 
     /// <summary>
-    /// Writes the provided value to the output, applying direction-based padding when <paramref name="alignment"/> is provided.
+    ///     Writes the provided value to the output, applying direction-based padding when <paramref name="alignment" /> is
+    ///     provided.
     /// </summary>
     public static void Apply(TextWriter output, string value, in Alignment? alignment) {
         if (alignment == null || value.Length >= alignment.Value.Width) {

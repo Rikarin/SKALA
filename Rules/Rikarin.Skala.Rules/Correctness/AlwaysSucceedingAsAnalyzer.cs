@@ -20,7 +20,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             This is the half of issue #1 the compiler does not own, and probing established it is
 ///             the only half.
-///         </b> Against the SDK at <c>AnalysisMode=All</c>, the always-<em>false</em>
+///         </b>
+///         Against the SDK at <c>AnalysisMode=All</c>, the always-<em>false</em>
 ///         cases are all compiler diagnostics: <c>s is int</c> and <c>d is Unrelated</c> are
 ///         <c>CS0184</c>, <c>d as Unrelated</c> is <c>CS0039</c>, an unreachable type pattern in a
 ///         <c>switch</c> is <c>CS8121</c>, and <c>v is int</c> on an <c>int</c> is <c>CS0183</c>. The

@@ -34,7 +34,8 @@ public enum CorpusVerdict {
     ///     <em>
     ///         its own positive fixture, compiled into the same
     ///         compilation, reported nothing either
-    ///     </em>. The zero says nothing about the tree; it says the
+    ///     </em>
+    ///     . The zero says nothing about the tree; it says the
     ///     instrument did not work here. Never report this as "clean".
     /// </summary>
     Silent,

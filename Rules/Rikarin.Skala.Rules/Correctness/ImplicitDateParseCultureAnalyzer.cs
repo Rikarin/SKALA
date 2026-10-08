@@ -17,7 +17,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <b>
 ///         This is the half of issue #244 that has no host, and the boundary was measured rather than
 ///         assumed.
-///     </b> <c>CA1305</c> ships in the SDK and covers the <c>Parse</c> and <c>ToString</c>
+///     </b>
+///     <c>CA1305</c> ships in the SDK and covers the <c>Parse</c> and <c>ToString</c>
 ///     directions completely — a probe on a pristine <c>net10.0</c> project reports
 ///     <c>DateTime.Parse</c>, <c>DateTimeOffset.Parse</c>, <c>DateOnly.Parse</c>, <c>TimeOnly.Parse</c>,
 ///     <c>TimeSpan.Parse</c>, <c>DateTime.ToString()</c>, <c>DateOnly.ToString()</c> and
@@ -28,7 +29,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The gap matters more than its size suggests, because <c>TryParse</c> is the form the
 ///             documentation recommends.
-///         </b> It is what gets written wherever input might be malformed, which
+///         </b>
+///         It is what gets written wherever input might be malformed, which
 ///         is wherever input comes from outside the process — and that is exactly where a date arrives in
 ///         somebody else's culture. The exception-throwing <c>Parse</c> that <c>CA1305</c> does cover is
 ///         the rarer of the two in the code this analyzer exists for.
@@ -38,7 +40,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Only an overload with no <c>IFormatProvider</c> parameter is reported, and an explicit
 ///             <c>null</c> provider deliberately is not.
-///         </b> Passing <c>null</c> does mean the current
+///         </b>
+///         Passing <c>null</c> does mean the current
 ///         culture, so it looks like the same defect — but the shapes it appears in are mostly
 ///         <c>TryParseExact</c> with a custom format string, and a custom format string decides for
 ///         itself whether any culture-sensitive token is present. <c>"yyyy-MM-dd"</c> has none and is

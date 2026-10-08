@@ -24,7 +24,8 @@ class Build : NukeBuild {
     ///     <b>
     ///         This parameter exists because the release workflow's measured version was being
     ///         silently discarded.
-    ///     </b> The workflow ran
+    ///     </b>
+    ///     The workflow ran
     ///     <c>./build.sh Pack --configuration Release -- -p:Version=2.0.0-alpha.2</c>; NUKE takes what
     ///     follows <c>--</c> as its own additional arguments and the <c>Pack</c> target never forwarded
     ///     them, so <c>DotNetPack</c> read <c>VersionPrefix</c>/<c>VersionSuffix</c> out of
@@ -60,7 +61,8 @@ class Build : NukeBuild {
     ///     <b>
     ///         <see cref="PackageVersion" /> is applied here as well as at pack time, and the release
     ///         that discovered why is 2.0.0.
-    ///     </b> `Pack` is `EnableNoBuild`, so stamping the version only on
+    ///     </b>
+    ///     `Pack` is `EnableNoBuild`, so stamping the version only on
     ///     the pack put `2.0.0` in the .nuspec and left the assembly carrying
     ///     `Directory.Build.props`' `2.0.0-alpha.1`. The published tool then answered
     ///     <c>skala --version</c> with `2.0.0-alpha.1+&lt;sha&gt;` — a package and a binary disagreeing
@@ -137,7 +139,8 @@ class Build : NukeBuild {
     ///         <b>
     ///             That exclusion used to live here, as a list of project directories named one at a
     ///             time
-    ///         </b>, and the cost was that a new project under <c>Testing/</c> or <c>Rules/</c> was
+    ///         </b>
+    ///         , and the cost was that a new project under <c>Testing/</c> or <c>Rules/</c> was
     ///         invisible to this target until somebody remembered to add it — which is exactly how
     ///         <c>Distribution</c>'s two projects went unchecked until M8 (7c56c8f) and <c>build/</c>
     ///         until M10. It is now declared once in <c>skala.jsonc</c>'s <c>"exclude"</c>, which the
@@ -296,7 +299,8 @@ class Build : NukeBuild {
     ///     <b>
     ///         Spelled with a space — <c>./build.sh Oracle --only &lt;name&gt;</c> — and never with an
     ///         <c>=</c>.
-    ///     </b> NUKE's own argument parser binds <c>--only value</c> and silently drops
+    ///     </b>
+    ///     NUKE's own argument parser binds <c>--only value</c> and silently drops
     ///     <c>--only=value</c>: no error, no warning, the parameter is simply null and the target
     ///     regenerates everything. The harness behind it wants the opposite spelling
     ///     (<c>--only=</c>), which is why this target translates rather than forwarding the string.

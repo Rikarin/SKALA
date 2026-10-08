@@ -156,12 +156,42 @@ public sealed class XmlDocPropertyTests {
             )
     ];
 
-    static string NonDocLines(string text) =>
-        string.Join(
+    /// <summary>The lines no documentation comment the sub-formatter may rewrite is on.</summary>
+    /// <remarks>
+    ///     ⚠ <c>///</c> lines, and since #489 the lines of a <c>/** … */</c> that starts its line — the pass
+    ///     rebuilds a one-line one above a declaration as a starred block, so its lines are the pass's
+    ///     exactly as a <c>///</c> run's are. One that does not start its line is never rewritten and stays
+    ///     in the comparison.
+    /// </remarks>
+    static string NonDocLines(string text) {
+        var source = SourceText.From(text);
+        var block = new HashSet<int>();
+        foreach (var trivia in CSharpSyntaxTree.ParseText(source, CSharpFormatter.ParseOptions)
+                     .GetRoot()
+                     .DescendantTrivia(descendIntoTrivia: false)) {
+            if (!trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {
+                continue;
+            }
+
+            var first = source.Lines.GetLineFromPosition(trivia.FullSpan.Start);
+            if (source.ToString(TextSpan.FromBounds(first.Start, trivia.FullSpan.Start)).Trim().Length != 0) {
+                continue;
+            }
+
+            var last = source.Lines.GetLineFromPosition(trivia.FullSpan.End).LineNumber;
+            for (var line = first.LineNumber; line <= last; line++) {
+                block.Add(line);
+            }
+        }
+
+        return string.Join(
             '\n',
-            TextNormalisation.Lines(text)
+            source.Lines
+                .Where(line => !block.Contains(line.LineNumber))
+                .Select(static line => line.ToString())
                 .Where(static line => !line.TrimStart().StartsWith("///", StringComparison.Ordinal))
         );
+    }
 
     /// <summary>Every non-whitespace character of every <c>///</c> line, in order.</summary>
     /// <remarks>

@@ -31,7 +31,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             The raw rewrite is all-or-nothing over a run, and that is not a refinement of the
 ///             per-literal decision — it overrules it
-///         </b> (issue #331). Every per-literal verdict this rule
+///         </b>
+///         (issue #331). Every per-literal verdict this rule
 ///         reaches is correct; applied to a run of sibling calls assembling one document it converted the
 ///         literals it could and left the ones it may not, so a block the author had written uniformly came
 ///         back in two spellings at once. The defect only exists <i>between</i> neighbours, which is why no

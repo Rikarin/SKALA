@@ -634,7 +634,8 @@ public sealed class XmlDocSubFormatterTests {
 ///             <b>
 ///                 excludes the code indentation and the
 ///                 three slashes
-///             </b> and includes the marker's space. A line is inside the margin when
+///             </b>
+///             and includes the marker's space. A line is inside the margin when
 ///             <c>1 + indent + content &lt;= max_line_length</c> — so the same sentence wraps
 ///             identically at every nesting depth, and the file's own columns run
 ///             <c>codeIndent + 3</c> past the margin.
@@ -1345,7 +1346,8 @@ public sealed class XmlDocKeyCoverageTests {
     ///     <b>
     ///         The prefix here was <c>resharper_xmldoc_</c> and the rename to <c>skala_xmldoc_</c>
     ///         would have been silent either way.
-    ///     </b> Both this filter and the one in
+    ///     </b>
+    ///     Both this filter and the one in
     ///     <see cref="HonouredAndRefused_PartitionTheFamilyExactly" /> select on the same literal, so a
     ///     prefix that matched nothing would empty <em>both</em> sides of the partition and every
     ///     <c>Assert.Empty</c> below would pass on two empty sets — the exact shape of vacuity this
@@ -1394,9 +1396,12 @@ public sealed class XmlDocKeyCoverageTests {
         // and `skala_xmldoc_wrap_tags_and_pi` joins the four tag-header keys it turned out to belong with. Each
         // of the three had been read off a fixture that agrees at the export's own value and cannot
         // separate the key from what else produces that value.
+        //
+        // ⚠ 21 / 11 again, and this time for the opposite reason (SK-DIV-0381): `wrap_tags_and_pi`,
+        // `attribute_style` and `attribute_indent` are honoured at every value, each measured.
         Assert.Equal(32, family.Count);
-        Assert.Equal(18, honoured.Count);
-        Assert.Equal(14, refused.Count);
+        Assert.Equal(21, honoured.Count);
+        Assert.Equal(11, refused.Count);
     }
 
     [Fact]
@@ -1476,7 +1481,7 @@ public sealed class XmlDocKeyCoverageTests {
         // tier the *sweep* justifies, so a key that agrees everywhere is still D while the last
         // committed table says otherwise. Promotion is a diff that carries a new measurement.
         Assert.Equal(
-            19,
+            22,
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash).Count(implemented.Contains)
         );
 

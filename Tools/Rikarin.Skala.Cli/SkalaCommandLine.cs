@@ -28,7 +28,8 @@ public static partial class SkalaCommandLine {
     ///     <c>
     /// skala check --load loose
     ///  --verbose
-    ///     </c> bound <c>--verbose</c> to the variadic <c>&lt;paths&gt;</c> argument, looked
+    ///     </c>
+    ///     bound <c>--verbose</c> to the variadic <c>&lt;paths&gt;</c> argument, looked
     ///     for C# files in a directory of that name, found none and exited 4. The flag being missing was
     ///     bad; the flag being silently eaten was the defect.
     ///     <para>

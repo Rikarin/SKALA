@@ -46,7 +46,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Two classes of character, one severity, and that is a decision rather than an
 ///             oversight.
-///         </b> A right-to-left override is the "Trojan Source" class — source that reads as
+///         </b>
+///         A right-to-left override is the "Trojan Source" class — source that reads as
 ///         one program and compiles as another — and a stray non-breaking space is a typo. The message
 ///         says which one it found; the severity does not, because splitting them would spend a second
 ///         permanent id (ADR-012) to encode a ranking, and a repository that wants the harder line

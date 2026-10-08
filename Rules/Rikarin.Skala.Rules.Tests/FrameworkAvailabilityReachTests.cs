@@ -12,7 +12,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     <b>
 ///         This is the half of #351 that stops the bug coming back, and without it the audit is a
 ///         sentence.
-///     </b> #343 fixed <c>SK1023</c> and built <c>FrameworkAvailability</c>; a full sweep a
+///     </b>
+///     #343 fixed <c>SK1023</c> and built <c>FrameworkAvailability</c>; a full sweep a
 ///     release later found <c>SK1023</c> was still the only rule consulting it, because nothing
 ///     forced or even detected the unguarded shape. The next framework-dependent rule would have
 ///     landed with the same hole and the same silence.

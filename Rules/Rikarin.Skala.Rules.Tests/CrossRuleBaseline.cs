@@ -16,7 +16,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     <b>
 ///         The point was never the two files.
 ///         It is that a cross-fixture sweep is a measurement nobody was taking
-///     </b>, over the corpus Skala
+///     </b>
+///     , over the corpus Skala
 ///     uses to prove its rules correct.
 ///     <para>
 ///         The sweep now runs on every fixture, inside the assertion that was already computing every

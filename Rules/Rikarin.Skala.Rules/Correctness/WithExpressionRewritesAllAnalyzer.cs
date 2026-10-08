@@ -37,7 +37,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Disjoint from <c>SK1071</c>, and the guard that makes it so is what stops the pair
 ///             fixing each other forever.
-///         </b> <c>SK1071</c> turns <c>new R(x.A, x.B, c)</c> into
+///         </b>
+///         <c>SK1071</c> turns <c>new R(x.A, x.B, c)</c> into
 ///         <c>x with { C = c }</c> — an initializer setting <em>fewer</em> than all the members, which
 ///         this rule declines. The other direction is the live hazard:
 ///         <c>x with { X = x.X, Y = b }</c> assigns every member and would fix to <c>new T(x.X, b)</c>,

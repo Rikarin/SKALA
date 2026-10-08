@@ -20,7 +20,8 @@ public sealed record ConstructShare(string Kind, int Occurrences, int Lines, int
 ///     <b>
 ///         any construct appearing in the corpus more
 ///         than 50 times must be at 100 %; the tail is only allowed in genuinely rare constructs
-///     </b>.
+///     </b>
+///     .
 /// </summary>
 /// <remarks>
 ///     ⚠ A single fidelity number cannot answer that question, and the divergence classes cannot

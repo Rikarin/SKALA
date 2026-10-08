@@ -17,12 +17,14 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <b>
 ///         A <c>partial</c> method with no implementation is legal, and erasing it is the feature —
 ///         so the declaration on its own is never the finding.
-///     </b> The call is. When no implementing
+///     </b>
+///     The call is. When no implementing
 ///     declaration exists the compiler removes the defining declaration
 ///     <em>
 ///         and every call to it,
 ///         arguments included
-///     </em>, so a statement that reads as a call to a hook runs nothing, and any
+///     </em>
+///     , so a statement that reads as a call to a hook runs nothing, and any
 ///     work written into its arguments is deleted with it.
 ///     <para>
 ///         ⚠ <b>The other half of issue #186 is a compile error and was verified as one.</b> A C# 9

@@ -137,8 +137,8 @@ public sealed class PreservationTests {
         }
 
         Assert.NotEmpty(results);
-        var report = Fidelity.Compare(results);
         var baseline = FidelityBaseline.Read()["preservation/" + variantName];
+        var report = Fidelity.Compare(results, baseline.Kind);
 
         Assert.True(
             report.LineFidelity >= baseline.LineFidelity - 0.0001,

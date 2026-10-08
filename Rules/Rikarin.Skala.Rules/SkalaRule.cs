@@ -112,7 +112,8 @@ public static class SkalaRule {
     ///         <b>
     ///             <c>ConfigureGeneratedCodeAnalysis</c> and <c>EnableConcurrentExecution</c> cannot
     ///             move in here
-    ///         </b>, and that is not a style preference: <c>RS1025</c> and <c>RS1026</c>
+    ///         </b>
+    ///         , and that is not a style preference: <c>RS1025</c> and <c>RS1026</c>
     ///         look for those two calls <em>syntactically inside</em> <c>Initialize</c>, so hoisting
     ///         them fails the build on every analyzer that delegates. Part of what <c>SK7020</c>
     ///         measured is duplication Roslyn's own analyzers require.
@@ -201,7 +202,8 @@ public static class SkalaRule {
     ///     <b>
     ///         Public, and the <c>Try</c> shape, so that a test can ask the question the switch
     ///         cannot ask about itself
-    ///     </b> — <c>RuleCatalogTests.EveryDeclaredLanguageVersion_IsRecognised</c>
+    ///     </b>
+    ///     — <c>RuleCatalogTests.EveryDeclaredLanguageVersion_IsRecognised</c>
     ///     walks every distinct non-null <c>languageVersion</c> in <c>rules.json</c> through here and
     ///     names the value it could not map. Nothing asserted that before, and the table shipped
     ///     without a <c>"6.0"</c> arm while <c>SK1061</c> declared <c>6.0</c> as its floor (#296).
@@ -258,7 +260,8 @@ public static class SkalaRule {
     ///     <b>
     ///         The old fallback was <see cref="LanguageVersion.Preview" />, so a floor the table did
     ///         not name silenced its rule on every real project rather than on none.
-    ///     </b> The rule was still
+    ///     </b>
+    ///     The rule was still
     ///     registered, still in the SARIF <c>rules[]</c>, still in <c>docs/rules/</c>, and reported
     ///     nothing anywhere — one typo in <c>rules.json</c> and a rule is dead with no error (#296).
     ///     <para>
@@ -266,7 +269,8 @@ public static class SkalaRule {
     ///         <b>
     ///             The fallback is <see cref="LanguageVersion.Default" /> rather than a throw, and the
     ///             reason is this batch's own lesson.
-    ///         </b> <c>Parse</c> runs inside an analyzer callback, so
+    ///         </b>
+    ///         <c>Parse</c> runs inside an analyzer callback, so
     ///         a throw here is not a loud failure — Roslyn catches it, reports <c>AD0001</c>, and drops
     ///         the analyzer for the rest of the compilation, which silences the rule *and* every other
     ///         rule that analyzer hosts while the run still reports success (#315, #298, #295).

@@ -20,7 +20,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             The empty finalizer is not merely redundant and it stays here at <c>warning</c> rather
 ///             than moving to the performance range.
-///         </b> An empty <c>~Foo() { }</c> opts the type into
+///         </b>
+///         An empty <c>~Foo() { }</c> opts the type into
 ///         finalization: every instance is put on the finalizer queue, survives the collection that
 ///         would otherwise have taken it, and is freed a generation later — for a body that does
 ///         nothing. The reason it is not a second id is that the finding and the edit are the same as
@@ -373,7 +374,8 @@ public sealed class RedundantDeclarationAnalyzer : DiagnosticAnalyzer {
     ///     <b>
     ///         <c>= null</c> is accepted only on a type written with a <c>?</c>, and that restriction
     ///         is what keeps the fix safe rather than merely tidy.
-    ///     </b> Under an enabled nullable context
+    ///     </b>
+    ///     Under an enabled nullable context
     ///     <c>string name = null;</c> warns at the initializer (CS8625) and deleting it moves the
     ///     warning to CS8618 at the constructor — a *different* warning, which a fix the catalogue marks
     ///     safe may not introduce. On <c>string? name</c> and <c>int? count</c> there is no such warning
@@ -491,7 +493,9 @@ public sealed class RedundantDeclarationAnalyzer : DiagnosticAnalyzer {
 
         if (call is not InvocationExpressionSyntax {
                 Expression:
-                MemberAccessExpressionSyntax { Expression: BaseExpressionSyntax, Name: SimpleNameSyntax name }
+                MemberAccessExpressionSyntax {
+                    Expression: BaseExpressionSyntax, Name: SimpleNameSyntax name
+                }
             } invocation
             || name.Identifier.ValueText != method.Identifier.ValueText
             || !ForwardsEveryParameter(method, invocation)

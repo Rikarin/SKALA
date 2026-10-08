@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -41,8 +41,11 @@ public readonly record struct AiBreakpointHit(AiBreakpoint Breakpoint, Entity En
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <b>Unreal has these and they are the difference between reading a tree and debugging
-///         one</b> — doc 37 § Part 5 says so in as many words. A tree that gets to the wrong branch
+///         <b>
+///             Unreal has these and they are the difference between reading a tree and debugging
+///             one
+///         </b>
+///         — doc 37 § Part 5 says so in as many words. A tree that gets to the wrong branch
 ///         once every few minutes cannot be caught by watching; stopping the agent <i>at</i> the node
 ///         leaves the blackboard, the active path and every decorator's last answer exactly as they
 ///         were when the decision was made.

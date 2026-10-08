@@ -131,7 +131,8 @@ public enum LineFlags {
     ///     <em>
     ///         whenever
     ///         the initializer wraps at all
-    ///     </em>, and fills only the gaps between elements:
+    ///     </em>
+    ///     , and fills only the gaps between elements:
     ///     <code>
     /// var e = new[] {
     ///     "aaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbb", "ccccccccccccccc", "ddddddddddddddd", "eeeeeeeeeeeeeee",
@@ -415,7 +416,17 @@ public enum IndentFlags {
     ///     the closing brace still returns to the opener's level (#464). At the export's multiplier of 1
     ///     the two are the same number.
     /// </summary>
-    Multiplied = 512
+    Multiplied = 512,
+
+    /// <summary>
+    ///     ⚠ An unconditional continuation scope that leaves the scopes outside it on the same line
+    ///     counting too: a binary pattern chain that is the left operand of a broken <c>&amp;&amp;</c> or
+    ///     <c>||</c> takes its level past that operator's, although both opened on the statement's line —
+    ///     <c>var e = n.P is A</c> / <c>or B</c> / <c>&amp;&amp; c;</c> puts the <c>or</c> at 16 and the
+    ///     <c>&amp;&amp;</c> at 12 (#560, SK-DIV-0394). Where the operator's level opened on an earlier
+    ///     line — under a broken <c>=&gt;</c> — it counts as any scope does, and nothing is added.
+    /// </summary>
+    Additive = 1024
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
@@ -1082,6 +1093,35 @@ public sealed class Document {
 ///     ⚠ An <c>=</c> before a lambda with a bare name for a body: the width from the lambda's start through
 ///     its <c>=&gt;</c>. The <c>=</c> stays flat while that much fits after it on its line (#453).
 /// </param>
+/// <param name="OneOverType">
+///     ⚠ A measured local's lambda with a bare-name body, on its <c>=</c> and on its parameter list: the
+///     declaration type's width, which with <see cref="OneOverBody" /> decides the one line the other rules
+///     do not — one column past the margin, where the parameter list chops up to a head that the type and
+///     the body set (#572). See <c>EqualsFloor.ChopsOneOver</c>. Zero for any other group.
+/// </param>
+/// <param name="LambdaChainHead">
+///     ⚠ The arrow of a sole lambda argument whose body is a chain of calls: the width from the lambda's start
+///     to its first call's dot, or zero for any other group (#571). Past the margin the arrow breaks for a
+///     lambda without parentheses from column 21 and one with them from column 25; otherwise by
+///     <see cref="LambdaParameters" />' measured line; otherwise when the arrow ends at column 21 or later
+///     and the chain's head through that dot no longer fits on the arrow's line. ⚠ Not #529's "the chain
+///     fits below", which broke the arrow where the oracle keeps it and fills the chain: 1 540 cells, 4
+///     of them, at a parenthesised lambda's column 23, differ. See <see cref="LambdaHead" /> and
+///     <see cref="LambdaIsSimple" />, which it shares.
+/// </param>
+/// <param name="OneOverBody">The lambda's body width. See <see cref="OneOverType" />.</param>
+/// <param name="LambdaParameters">
+///     ⚠ The arrow of a sole lambda argument whose body is a member-access fill: the width of the lambda's
+///     parameter text — <c>x</c>, <c>(x)</c>, <c>(A x, B y)</c> — or zero for any other group (#557). Past
+///     the margin the arrow breaks exactly when three times the column the body would end at on the
+///     continuation line, plus this width, is at most 336, and otherwise the body fills on the arrow's
+///     line. Measured over 1 234 cells; see <see cref="LambdaIsSimple" /> for the one exception.
+/// </param>
+/// <param name="LambdaHead">The width from the lambda's start through its <c>=&gt;</c>. See <see cref="LambdaParameters" />.</param>
+/// <param name="LambdaIsSimple">
+///     ⚠ A lambda without parentheses: its arrow breaks whenever the lambda starts at column 21 or past it,
+///     however wide the body — measured to a 175-column line. Not measured for a parenthesised lambda.
+/// </param>
 /// <param name="PatternWidth">The binary pattern's width. See <see cref="PatternHead" />.</param>
 /// <param name="KeywordWidth">
 ///     ⚠ The width of the keyword after this group's one point, for the point before an <c>is</c> or an
@@ -1152,6 +1192,36 @@ public sealed class Document {
 ///     (<see cref="Continues" />), so the second pass — which reads the fill's break as the author's —
 ///     gives the same answer as the first.
 /// </param>
+/// <param name="ValueHeadWidth">
+///     ⚠ An <c>=</c> whose value is a conditional (#553): the flat width of the condition. The oracle
+///     breaks the <c>=</c> exactly when the condition does not fit beside it and the head through the
+///     <c>=</c> reaches <see cref="MinimumHead" /> — whatever the condition's own points could do — or,
+///     with <see cref="ValueHeadFitsBelow" />, when the condition then fits below. Zero for any other value.
+/// </param>
+/// <param name="ValueHeadFitsBelow">
+///     With <see cref="ValueHeadWidth" />: the condition is a call, whose <c>=</c> breaks only when the
+///     condition fits on the line below.
+/// </param>
+/// <param name="HeldValue">
+///     ⚠ An <c>=</c> whose value is a single call on a receiver (#528, SK-DIV-0331), by its head, or zero:
+///     1 a typed local, 2 a <c>var</c> or assignment head under twelve columns, 3 one of twelve or more.
+///     When the value does not fit beside it, the <c>=</c> breaks by a measured table — the typed local
+///     when the value fits below with three columns to spare; the short head when it overflows below by at
+///     most one column or its <c>(</c> lands three short of the margin there; the long head unless the
+///     call would move down at its dot as a chain's held first call does — and otherwise the call's own
+///     dot takes the break: <c>T c = JsonConvert</c> / <c>.DeserializeObject&lt;…&gt;(json);</c>.
+/// </param>
+/// <param name="HeldValueWidth">With <see cref="HeldValue" />: the value's flat width with its <c>;</c>.</param>
+/// <param name="HeldValueReceiver">With <see cref="HeldValue" />: the receiver's flat width.</param>
+/// <param name="HeldValueHead">With <see cref="HeldValue" />: the width from the dot through the <c>(</c>.</param>
+/// <param name="ArmHead">
+///     ⚠ A switch arm's member-access pattern (#531, SK-DIV-0330): the pattern's flat width, with
+///     <see cref="ArmBody" />. The pattern's fill engages by a measured table on the column the arm's
+///     <c>=&gt;</c> ends at and the body's width rather than by its own width alone. See
+///     <c>Fitter.ArmFills</c>.
+/// </param>
+/// <param name="ArmBody">With <see cref="ArmHead" />: the arm's body with its comma, if it has one.</param>
+/// <param name="HeldValueManyArgs">With <see cref="HeldValue" />: the call has more than one argument.</param>
 /// <param name="FlatIfHeadOverflows">
 ///     ⚠ An assignment's <c>=</c> whose target is a member-access fill (#531, SK-DIV-0330): when the target
 ///     with its <c>=</c> does not fit on the line, the target's own dot breaks and the <c>=</c> stays —
@@ -1163,6 +1233,14 @@ public sealed class Document {
 ///     margin by, or zero: the point before it breaks exactly when the
 ///     receiver fits on its line, the receiver with the call does not, and the call fits whole on the
 ///     continuation line. A receiver that does not fit flat breaks inside itself and leaves the point alone.
+///     1 and 2 are a chain's first call with one argument and with more; 3 and 4 a single call that is a
+///     whole <c>=</c> value (<see cref="HeldValue" />) with one argument and with more.
+/// </param>
+/// <param name="HeldCallRest">
+///     ⚠ Under <c>wrap_if_long</c> (#552): the flat width of the chain after the held call, through its
+///     <c>;</c>, or zero. Past the measured table's limit the held call still breaks before itself when
+///     that rest is wider than <c>1.5 · (line − limit) + 9</c> — the longer the rest, the further past the
+///     limit the oracle moves the call down rather than chop it.
 /// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
@@ -1200,10 +1278,62 @@ public readonly record struct GroupFacts(
     EqualsOwner CalleeOwner = EqualsOwner.None,
     int ThroughWidth = 0,
     int HeldCall = 0,
+    int HeldCallHead = 0,
+    int HeldCallRest = 0,
     bool ContinuesIfItBreaks = false,
     bool FlatIfHeadOverflows = false,
+    int ValueHeadWidth = 0,
+    bool ValueHeadFitsBelow = false,
+    bool ValueHeadIsWide = false,
+    int HeldValue = 0,
+    int HeldValueWidth = 0,
+    int HeldValueReceiver = 0,
+    int HeldValueHead = 0,
+    bool HeldValueManyArgs = false,
+    int ArmHead = 0,
+    int ArmBody = 0,
     bool LiftsThroughInnerBreaks = false,
     int PatternHead = 0,
     int PatternWidth = 0,
     int HeadSlack = 0,
-    int YieldsThroughArrow = 0);
+    int YieldsThroughArrow = 0,
+    int LambdaParameters = 0,
+    int LambdaHead = 0,
+    bool LambdaIsSimple = false,
+    LambdaLocal LambdaLocal = LambdaLocal.None,
+    int OneOverType = 0,
+    int OneOverBody = 0,
+    int LambdaChainHead = 0);
+
+/// <summary>
+///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
+///     two gates on the declarator's name width, decided from the syntax, under which the measured floors
+///     do not apply. See <see cref="GroupFacts.YieldsThroughArrow" />.
+/// </summary>
+/// <remarks>
+///     ⚠ Measured on <c>Func&lt;T…&gt; name = (…) =&gt; body;</c> over type widths of 2 to 59 and name widths
+///     of 1 to 51, 12 805 cells. The name and the type act separately, which no head-width table can
+///     express: a narrow name keeps the arrow at any value, where the same head made of a wider name
+///     breaks the <c>=</c> below a floor.
+/// </remarks>
+[Flags]
+public enum LambdaLocal {
+    /// <summary>Not a local's <c>=</c>: the arrow while the line through it fits, as measured in round 3.</summary>
+    None = 0,
+
+    /// <summary>A measured local: the floors apply past the gates.</summary>
+    Measured = 1,
+
+    /// <summary>
+    ///     The name is at most <c>10 + ⌊(type + 4) / 12⌋</c> wide, the type measured whole: while the line through
+    ///     <c>=&gt;</c>
+    ///     fits, the arrow breaks whatever the value's width.
+    /// </summary>
+    ArrowWhileItFits = 2,
+
+    /// <summary>
+    ///     The name is at most <c>⌊(type − 6) / 5⌋ + 1</c> wide: once the <c>)</c> is off the line, the
+    ///     parameter list chops whatever the value's width.
+    /// </summary>
+    ChopsPastTheParenthesis = 4
+}

@@ -40,7 +40,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             The <c>[AttributeUsage]</c> half asks the attribute's identity rather than its
 ///             name.
-///         </b> Somebody else's <c>AttributeUsageAttribute</c> in another namespace has whatever
+///         </b>
+///         Somebody else's <c>AttributeUsageAttribute</c> in another namespace has whatever
 ///         defaults it declares, and they are not <c>Inherited = true</c> and
 ///         <c>AllowMultiple = false</c> because it says so.
 ///     </para>

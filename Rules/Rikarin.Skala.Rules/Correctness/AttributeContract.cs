@@ -96,7 +96,8 @@ static class AttributeContract {
     ///     <b>
     ///         The interface walk is what carries this, and a sabotage that failed to fail is how that
     ///         was established.
-    ///     </b> The first version also matched a mangled explicit-implementation name
+    ///     </b>
+    ///     The first version also matched a mangled explicit-implementation name
     ///     (<c>IFoo.Bar</c> ends with <c>.Bar</c>), on the reasoning that a plain
     ///     <c>GetMembers(name)</c> misses an explicit implementation and a type whose only
     ///     <c>Count</c> is <c>ICollection.Count</c> would be wrongly reported. That reasoning is true

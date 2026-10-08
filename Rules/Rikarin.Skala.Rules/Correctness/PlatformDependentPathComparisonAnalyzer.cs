@@ -22,7 +22,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Skala already holds a position on this and the rule is written from it rather than
 ///             from the upstream idea.
-///         </b> <c>SarifWriter.PathComparison</c> is
+///         </b>
+///         <c>SarifWriter.PathComparison</c> is
 ///         <c>OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase</c>,
 ///         and <c>CacheKeyPathTests</c> asserts the correct answer on all three platforms rather than
 ///         skipping on two of them. So the guidance is not "stop ignoring case" — it is "compare the

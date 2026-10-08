@@ -22,7 +22,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///         <b>
 ///             This rule is <see cref="RuleScope.Compilation" />-scoped, and that is the expensive
 ///             decision.
-///         </b> The one legitimate <c>async void</c> is an event handler, and whether a method is
+///         </b>
+///         The one legitimate <c>async void</c> is an event handler, and whether a method is
 ///         one is not visible in the file that declares it — the <c>+=</c> may be anywhere. So the rule
 ///         collects every name used as a method group across the whole compilation and reports only the
 ///         methods no such use names. That is what makes zero false positives reachable

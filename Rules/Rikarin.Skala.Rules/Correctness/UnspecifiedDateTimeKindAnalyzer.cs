@@ -18,7 +18,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <b>
 ///         Reporting every <c>DateTime</c> would be absurd, so the rule reports the escape rather than
 ///         the value.
-///     </b> A <c>DateTime</c> that is only ever compared with, formatted from or stored beside
+///     </b>
+///     A <c>DateTime</c> that is only ever compared with, formatted from or stored beside
 ///     other values of the same unstated zone is internally consistent and no worse than the domain it
 ///     models. The defect appears at the one point where the value is turned into a fixed moment on the
 ///     world's timeline, because that conversion has to supply an offset and it takes the offset from

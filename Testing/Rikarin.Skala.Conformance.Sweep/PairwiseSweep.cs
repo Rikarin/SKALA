@@ -30,7 +30,8 @@ public sealed record PairwiseRun(
 ///         <b>
 ///             four-way table across two
 ///             keys
-///         </b>, three of whose corners no one-at-a-time sweep can reach.
+///         </b>
+///         , three of whose corners no one-at-a-time sweep can reach.
 ///     </para>
 ///     <para>
 ///         ⚠ <b>The verdict that matters is <see cref="PairOutcome.InteractionOnly" />.</b> A disagreement
@@ -88,13 +89,15 @@ public sealed class PairwiseSweep {
     ///     <b>
     ///         It depends on the secondary alone, and the first version of this predicate got that
     ///         wrong.
-    ///     </b> The tempting reading is "reachable when either key is at the export's value",
+    ///     </b>
+    ///     The tempting reading is "reachable when either key is at the export's value",
     ///     because <c>KeyFlipSweep</c> flips one key and leaves the rest at the export's — so the grid's
     ///     whole cross looks covered. It is not, because that sweep measures each key on
     ///     <em>
     ///         that key's
     ///         own
-    ///     </em> <c>oracle</c> fixture. The column — primary at the export's value, secondary moved —
+    ///     </em>
+    ///     <c>oracle</c> fixture. The column — primary at the export's value, secondary moved —
     ///     is measured on the <em>secondary's</em> fixture and says nothing about this one.
     ///     <para>
     ///         ⚠ What that error cost, measured: the first run classified 58 disagreeing corners at

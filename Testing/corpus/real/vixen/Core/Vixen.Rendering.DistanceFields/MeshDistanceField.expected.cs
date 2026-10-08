@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -95,8 +95,11 @@ public sealed class MeshDistanceField : IDistanceField {
     /// <returns>The texture coordinate.</returns>
     /// <remarks>
     ///     <para>
-    ///         <b>The one convention the CPU and the shader have to share, so it is written down once
-    ///         here and read from both sides.</b> A sample lives at the <i>centre</i> of its texel and
+    ///         <b>
+    ///             The one convention the CPU and the shader have to share, so it is written down once
+    ///             here and read from both sides.
+    ///         </b>
+    ///         A sample lives at the <i>centre</i> of its texel and
     ///         sample <c>i</c> is grid point <c>i</c>, so grid point <c>i</c> is at
     ///         <c>(i + ½) / count</c>. Drop the half and the whole field shifts half a cell along
     ///         every axis — geometry subtly in the wrong place, invisible in a still frame, and

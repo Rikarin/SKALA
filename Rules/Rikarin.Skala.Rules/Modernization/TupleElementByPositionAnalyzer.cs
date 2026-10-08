@@ -23,7 +23,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             The name is read off the type of the receiver <em>at this site</em>, which is the
 ///             containing type of the field <c>Item1</c> binds to.
-///         </b> One value can be seen through two tuple types with different names —
+///         </b>
+///         One value can be seen through two tuple types with different names —
 ///         <c>(int X, int Y) b = a;</c> where <c>a</c> is <c>(int A, int B)</c> — and only the
 ///         receiver's own type says which names <c>b.</c> can be followed by.
 ///     </para>
@@ -45,7 +46,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             <c>Item8</c> and beyond are reached through <c>Rest</c> in metadata, and the semantic model
 ///             hides that completely.
-///         </b> On a nine-element tuple <c>t.Item8</c> binds to a field of the
+///         </b>
+///         On a nine-element tuple <c>t.Item8</c> binds to a field of the
 ///         nine-element tuple type itself, and <see cref="INamedTypeSymbol.TupleElements" /> is flat:
 ///         the eighth element's <see cref="IFieldSymbol.CorrespondingTupleField" /> is that
 ///         <c>Item8</c>. <c>t.Rest.Item1</c> is a different expression whose receiver has type

@@ -19,7 +19,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///         <b>
 ///             Naming them apart stops the mistake being invisible; it does not stop it being
 ///             made.
-///         </b> Both questions were once spelled <c>ContainsCommentOrDirective</c> and told apart
+///         </b>
+///         Both questions were once spelled <c>ContainsCommentOrDirective</c> and told apart
 ///         only by arity, so copying a guard line from a line-deleting rule into a span-rewriting one
 ///         compiled and was wrong — which is how the idiom reached four hand-written copies, one of
 ///         them carrying the doc comment verbatim. Copy-paste is how this spreads, so the wide

@@ -1474,7 +1474,8 @@ public sealed partial class CSharpDocumentBuilder {
     ///     <c>
     /// format(mutate_whitespace(x)) ≡
     ///  format(x)
-    ///     </c>.
+    ///     </c>
+    ///     .
     ///     <para>
     ///         The one place the source is still consulted is <see cref="SpaceKind.Preserve" />, and there it
     ///         is correct rather than tolerated: an ungoverned gap is one <c>extra_spaces = remove_all</c>

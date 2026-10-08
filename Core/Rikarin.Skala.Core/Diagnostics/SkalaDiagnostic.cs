@@ -28,10 +28,10 @@ public sealed record SkalaDiagnostic(
     string? Detail = null) {
     public string Location =>
         File is null
-        ? string.Empty
-        : Line > 0
-            ? $"{File}:{Line.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
-            : File;
+            ? string.Empty
+            : Line > 0
+                ? $"{File}:{Line.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
+                : File;
 
     public override string ToString() {
         var location = Location;
@@ -59,7 +59,8 @@ public static class ConfigDiagnosticIds {
     ///     <b>
     ///         Warning, where <see cref="UnknownKey" /> is info, and the difference is whose mistake it
     ///         is.
-    ///     </b> SK9001 is info because a Rider export carries some two thousand keys Skala will never
+    ///     </b>
+    ///     SK9001 is info because a Rider export carries some two thousand keys Skala will never
     ///     implement and a tool that warns about all of them on first run gets uninstalled on first run —
     ///     the user wrote nothing wrong. This is the opposite case: the key <em>is</em> in the registry,
     ///     Skala owns it, the user's intent was recorded and then thrown away, and the code is formatted
@@ -157,12 +158,14 @@ public static class ConfigDiagnosticIds {
     ///     <b>
     ///         #336, and it is the worst shape a silence can take: not a missing finding but a wrong
     ///         one, carrying a fix that breaks the build.
-    ///     </b> Measured on a fresh clone of this repository
+    ///     </b>
+    ///     Measured on a fresh clone of this repository
     ///     built only in <c>Release</c>, <c>arrange --check --load=workspace</c> reported
     ///     <b>
     ///         353 files
     ///         to rewrite, every finding <c>SK0210 usings</c>
-    ///     </b>, and the same clone read through a binlog
+    ///     </b>
+    ///     , and the same clone read through a binlog
     ///     reported <b>0</b>. <c>MSBuildWorkspace</c> loads the <c>Debug</c> configuration, so every
     ///     path it hands back points into a <c>bin/Debug</c> that was never built —
     ///     <c>Rikarin.Skala.Rules.Generator.dll</c> and <c>Rikarin.Skala.Options.Generator.dll</c>

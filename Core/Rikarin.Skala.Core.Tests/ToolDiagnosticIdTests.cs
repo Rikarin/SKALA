@@ -137,12 +137,14 @@ public sealed class ToolDiagnosticIdTests {
     ///         <c>SK9098</c> — were emitted by shipping code and were in neither <c>allocated-ids.txt</c>
     ///         nor <c>rules.json</c>, while their immediate siblings <c>SK9010</c>, <c>SK9011</c> and
     ///         <c>SK9099</c> were in both.
-    ///     </b> So <c>skala explain SK9098</c> answered nothing, and the
+    ///     </b>
+    ///     So <c>skala explain SK9098</c> answered nothing, and the
     ///     SARIF notification for the diagnostic whose whole job is to say
     ///     <i>
     ///         "This is a Skala bug; the
     ///         file was left untouched"
-    ///     </i> named a <c>rules[]</c> descriptor that was not there.
+    ///     </i>
+    ///     named a <c>rules[]</c> descriptor that was not there.
     ///     <para>
     ///         ⚠ <b>The guard that should have caught it could not see them.</b>
     ///         <c>RuleCatalogTests.ArrangementIds_AreUniqueRegisteredFormattingIds</c> reads exactly one
@@ -338,7 +340,8 @@ public sealed class ToolDiagnosticIdTests {
     ///         The exclusions are matched against the path <i>relative to the root</i>, and before M7
     ///         they were matched against the absolute path. In a git worktree that made this whole class
     ///         pass vacuously.
-    ///     </b> A worktree lives at
+    ///     </b>
+    ///     A worktree lives at
     ///     <c>&lt;repo&gt;/.claude/worktrees/&lt;name&gt;/</c>, so every absolute path inside one
     ///     contains <c>/worktrees/</c> — combine that with the root-finding bug below and the test
     ///     enumerated the <i>main checkout</i> and then excluded nothing, or enumerated the worktree

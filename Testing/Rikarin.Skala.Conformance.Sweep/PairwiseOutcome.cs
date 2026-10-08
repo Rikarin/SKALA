@@ -50,7 +50,8 @@ public enum PairOutcome {
     ///     <em>
     ///         measured alone, on
     ///         its own fixture
-    ///     </em>. Seventeen findings with one cause, none of it about a pair, and each
+    ///     </em>
+    ///     . Seventeen findings with one cause, none of it about a pair, and each
     ///     would have been sent to somebody to investigate as a subtle two-key defect.
     ///     <para>
     ///         The rule: a disagreeing corner is evidence about the <em>pair</em> only when both keys are

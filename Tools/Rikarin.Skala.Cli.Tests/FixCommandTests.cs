@@ -45,7 +45,8 @@ public sealed class FixCommandTests {
     ///     <b>
     ///         A regression test for the safety net must not be built on a
     ///         rule's false positive
-    ///     </b> — the net outlives the bug. SK6034 is a true positive whose
+    ///     </b>
+    ///     — the net outlives the bug. SK6034 is a true positive whose
     ///     rewrite is genuinely illegal here, so nothing about this fixture depends on a defect.
     /// </remarks>
     const string ConstantSource = """

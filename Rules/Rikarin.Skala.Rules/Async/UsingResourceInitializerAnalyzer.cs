@@ -194,7 +194,8 @@ public sealed class UsingResourceInitializerAnalyzer : DiagnosticAnalyzer {
     ///     <c>
     /// using IDisposable r = new
     ///     Res { … }
-    ///     </c> is <c>CS1061</c>; and a block local declared below the insertion point with the
+    ///     </c>
+    ///     is <c>CS1061</c>; and a block local declared below the insertion point with the
     ///     name of a field the value read takes the name, which is <c>CS0844</c>.
     /// </remarks>
     static bool HoistsAlike(

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -61,8 +61,10 @@ public class VulkanFormatTests {
         Assert.Equal(VkFormat.B10G11R11UfloatPack32, VulkanFormats.ToVulkan(PixelFormat.Rg11B10Float));
     }
 
-    /// <summary>An sRGB format must map to an sRGB Vulkan format and never to its linear twin —
-    /// the conversion is the hardware's, and losing it is invisible until the image is wrong.</summary>
+    /// <summary>
+    ///     An sRGB format must map to an sRGB Vulkan format and never to its linear twin —
+    ///     the conversion is the hardware's, and losing it is invisible until the image is wrong.
+    /// </summary>
     [Fact]
     public void SrgbStaysSrgbAcrossTheBoundary() {
         foreach (var format in Enum.GetValues<PixelFormat>()) {

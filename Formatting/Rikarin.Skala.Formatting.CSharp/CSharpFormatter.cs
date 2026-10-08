@@ -448,7 +448,8 @@ public static class CSharpFormatter {
     ///     <c>
     /// [*] skala_insert_final_newline
     ///  = false
-    ///     </c> by language specificity (docs/plan/03, hazard 3). The BOM is preserved exactly:
+    ///     </c>
+    ///     by language specificity (docs/plan/03, hazard 3). The BOM is preserved exactly:
     ///     it lives in <see cref="SourceText.Encoding" /> and never in the text, so nothing here can add
     ///     or remove one.
     /// </remarks>

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,11 @@
 namespace Serilog.Core;
 
 /// <summary>
-/// Event arguments for <see cref="LoggingLevelSwitch.MinimumLevelChanged"/> event.
+///     Event arguments for <see cref="LoggingLevelSwitch.MinimumLevelChanged" /> event.
 /// </summary>
 public class LoggingLevelSwitchChangedEventArgs : EventArgs {
     /// <summary>
-    /// Creates an instance of <see cref="LoggingLevelSwitchChangedEventArgs"/> specifying old and new levels.
+    ///     Creates an instance of <see cref="LoggingLevelSwitchChangedEventArgs" /> specifying old and new levels.
     /// </summary>
     /// <param name="oldLevel">Old level.</param>
     /// <param name="newLevel">New level.</param>
@@ -30,12 +30,12 @@ public class LoggingLevelSwitchChangedEventArgs : EventArgs {
     }
 
     /// <summary>
-    /// Old level.
+    ///     Old level.
     /// </summary>
     public LogEventLevel OldLevel { get; }
 
     /// <summary>
-    /// New level.
+    ///     New level.
     /// </summary>
     public LogEventLevel NewLevel { get; }
 }
