@@ -154,7 +154,7 @@ public sealed class RedundantSpreadElementAnalyzer : DiagnosticAnalyzer {
     ///     <c>IEnumerable&lt;T&gt;</c> twice has two element types and no reason to prefer either, and
     ///     the whole point of this question is a comparison that has to be exact.
     /// </remarks>
-    static ITypeSymbol? ElementTypeOf(ITypeSymbol? type) {
+    internal static ITypeSymbol? ElementTypeOf(ITypeSymbol? type) {
         switch (type) {
             case IArrayTypeSymbol { IsSZArray: true } array:
                 return array.ElementType;

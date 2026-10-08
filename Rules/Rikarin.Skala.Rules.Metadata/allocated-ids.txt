@@ -422,3 +422,7 @@ SK1132 tuple-element-by-position
 # decode turned every undecodable byte into U+FFFD and U+FFFD parses. Takes one of the two ids the
 # note above records as never allocated.
 SK9018 file-not-decodable
+
+# #512: `xs.ToArray()` / `xs.ToList()` → `[..xs]` (IDE0305, fluent form). Floor C# 14, not 12: the
+# lowering that makes the rewrite safe is Roslyn 5.0's, and C# 14 is the version only 5.0+ accepts.
+SK1133 collection-expression-spread

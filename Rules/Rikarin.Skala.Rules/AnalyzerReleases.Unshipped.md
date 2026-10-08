@@ -314,3 +314,4 @@ SK7102 | Skala.Maintainability | Warning | The `<returns>` element documents a m
 SK7103 | Skala.Maintainability | Warning | The `<inheritdoc/>` has nothing to inherit.
 SK1131 | Skala.Modernization | Info | An anonymous method is written with the `delegate` keyword.
 SK1132 | Skala.Modernization | Info | A named tuple element is reached by its position.
+SK1133 | Skala.Modernization | Info | A framework copy into the written type is a spread.

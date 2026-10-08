@@ -9094,6 +9094,32 @@
       "configuration": [
         "dotnet_diagnostic.SK1132.severity"
       ]
+    },
+    {
+      "id": "SK1133",
+      "concept": "collection-expression-spread",
+      "title": "A framework copy into the written type is a spread",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "supersedes": [
+        "IDE0305"
+      ],
+      "since": "2.0",
+      "languageVersion": "14.0",
+      "summary": "`xs.ToArray()` or `xs.ToList()`, where the type it returns is the type the position already names, is `[..xs]`.",
+      "rationale": "`int[] ids = source.ToArray();` names the array type twice — once in the declaration and once in the method. A collection expression takes its type from the position, so the copy says only what it copies. It is the fluent half of what `SK1001` does for `new T[] { … }`, and the shape a model writes because `.ToArray()` is what most of its training data does. The fix writes `[..xs]` with no space after the `..`: the formatter keeps a spread exactly as it is written (SK-DIV-0009), so that is the spelling that stays. Parentheses around the receiver are dropped where the spread reads back as the same expression without them, and kept where it does not.",
+      "examples": {
+        "bad": "int[] ids = source.ToArray();\nList<string> names = query.ToList();",
+        "good": "int[] ids = [..source];\nList<string> names = [..query];"
+      },
+      "falsePositives": "TBD",
+      "configuration": [
+        "dotnet_diagnostic.SK1133.severity"
+      ]
     }
   ]
 }

@@ -476,8 +476,14 @@ public sealed class CollectionCallShapeBatchTests {
         RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken);
 
     /// <summary>Applies every edit the single finding of <paramref name="id" /> carries.</summary>
-    internal static string Apply(string source, string id) {
-        var diagnostic = Assert.Single(Analyze(RuleFixtures.Compile(source, "probe.cs")).Where(d => d.Id == id));
+    internal static string Apply(string source, string id) => Apply(source, id, Analyzers);
+
+    /// <summary>The same, with <paramref name="analyzers" /> running instead of this batch.</summary>
+    internal static string Apply(string source, string id, ImmutableArray<DiagnosticAnalyzer> analyzers) {
+        var diagnostic = Assert.Single(
+            RuleFixtures.Analyze(RuleFixtures.Compile(source, "probe.cs"), analyzers, TestContext.Current.CancellationToken)
+                .Where(d => d.Id == id)
+        );
 
         var count = int.Parse(diagnostic.Properties[FixEdits.CountKey]!, CultureInfo.InvariantCulture);
         var edits = Enumerable.Range(0, count)
