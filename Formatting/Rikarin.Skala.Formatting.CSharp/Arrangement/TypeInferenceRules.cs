@@ -172,8 +172,11 @@ public sealed class VarRule : ArrangementRule {
         ///     <c>() =&gt; { }</c>, <c>async</c>, <c>static</c>, an explicit return type
         ///     (<c>Func&lt;object&gt; r = object () =&gt; "x"</c>), a block body, a single method group
         ///     (<c>Action h = Run</c>) and a nullable-annotated <c>Func&lt;int&gt;?</c>. It declines every
-        ///     declaration whose natural type is something else or nothing: <c>Func&lt;object&gt; = () =&gt;
-        ///     "x"</c> (natural <c>Func&lt;string&gt;</c>), <c>Func&lt;int?&gt; = () =&gt; 1</c>, an untyped
+        ///     declaration whose natural type is something else or nothing:
+        ///     <c>
+        /// Func&lt;object&gt; = () =&gt;
+        ///     "x"
+        ///     </c> (natural <c>Func&lt;string&gt;</c>), <c>Func&lt;int?&gt; = () =&gt; 1</c>, an untyped
         ///     parameter <c>x =&gt; x</c>, <c>Expression&lt;…&gt;</c>, a custom delegate type,
         ///     <c>Delegate</c>, a <c>ref</c> parameter (an anonymous delegate type), <c>() =&gt; null</c>,
         ///     an overloaded method group and a parameterless <c>delegate { … }</c>.
@@ -475,8 +478,8 @@ public sealed class ObjectCreationRule : ArrangementRule {
             // threw a NullReferenceException (SK9095 on Testing/…/Program.cs, found by Lint's
             // self-arrange after #524).
             if (owner.Ancestors()
-                    .OfType<ConditionalAccessExpressionSyntax>()
-                    .Any(conditional => conditional.WhenNotNull.Span.Contains(owner.Span))) {
+                .OfType<ConditionalAccessExpressionSyntax>()
+                .Any(conditional => conditional.WhenNotNull.Span.Contains(owner.Span))) {
                 return RebindInStatement(owner, rewritten);
             }
 
