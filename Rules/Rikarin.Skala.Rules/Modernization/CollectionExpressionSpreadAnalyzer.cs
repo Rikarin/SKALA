@@ -233,7 +233,8 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
     ///         binlog's <c>csc</c> path does, and since #517 it reaches the rule
     ///         (<see cref="CompilerIdentity" />), which declines under a toolset package older than 4.14.
     ///         ⚠ So the hole is closed under <c>--load=binlog</c> only: a workspace load has no compiler
-    ///         path, and such a build is still reported there (loose does not run the rule at all). A written <c>14</c> has no hole
+    ///         path, and such a build is still reported there (loose does not run the rule at all). A written <c>14</c> has no
+    ///         hole
     ///         in any mode: every compiler before 5.0 refuses it.
     ///     </para>
     /// </remarks>

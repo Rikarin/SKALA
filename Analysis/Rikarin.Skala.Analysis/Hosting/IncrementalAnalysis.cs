@@ -117,8 +117,20 @@ public static class IncrementalAnalysis {
             }
 
             var content = Encoding.UTF8.GetBytes(tree.GetText(cancellation).ToString());
-            var syntaxKey = CacheKey.For(path, content, compilationFingerprint, ruleSetFingerprint, editorConfigFingerprint);
-            var semanticKey = CacheKey.For(path, content, semanticFingerprint, ruleSetFingerprint, editorConfigFingerprint);
+            var syntaxKey = CacheKey.For(
+                path,
+                content,
+                compilationFingerprint,
+                ruleSetFingerprint,
+                editorConfigFingerprint
+            );
+            var semanticKey = CacheKey.For(
+                path,
+                content,
+                semanticFingerprint,
+                ruleSetFingerprint,
+                editorConfigFingerprint
+            );
             keys[tree] = (syntaxKey, semanticKey);
 
             if (!cache.TryGet(syntaxKey, out var syntaxHalf, path)) {
@@ -170,7 +182,14 @@ public static class IncrementalAnalysis {
             ? new AnalysisOutcome([], [], false)
             : AnalyzerHost.RunForTrees(unit, options, hosted, mode, changed, cancellation, profile);
         if (changed.Count > 0 && Covered(warm)) {
-            Store(cache, changed.Select(tree => KeyValuePair.Create(tree, keys[tree])), unit, warm.Findings, compilationScopedIds, true);
+            Store(
+                cache,
+                changed.Select(tree => KeyValuePair.Create(tree, keys[tree])),
+                unit,
+                warm.Findings,
+                compilationScopedIds,
+                true
+            );
         }
 
         // ⚠ The unchanged files of a compilation something else in changed. Their Syntax half came
@@ -180,7 +199,14 @@ public static class IncrementalAnalysis {
             ? new AnalysisOutcome([], [], false)
             : AnalyzerHost.RunForTrees(unit, options, hosted, mode, rebound, cancellation, profile, true);
         if (rebound.Count > 0 && Covered(again)) {
-            Store(cache, rebound.Select(tree => KeyValuePair.Create(tree, keys[tree])), unit, again.Findings, compilationScopedIds, false);
+            Store(
+                cache,
+                rebound.Select(tree => KeyValuePair.Create(tree, keys[tree])),
+                unit,
+                again.Findings,
+                compilationScopedIds,
+                false
+            );
         }
 
         cache.Save();
@@ -281,7 +307,11 @@ public static class IncrementalAnalysis {
             // which on a tree that is mostly clean is the whole cache.
             var found = byPath.TryGetValue(path, out var all) ? all : [];
             if (bothHalves) {
-                cache.Put(syntaxKey, path, [.. found.Where(static finding => AnalyzerHost.IsSyntaxHalf(finding.RuleId))]);
+                cache.Put(
+                    syntaxKey,
+                    path,
+                    [.. found.Where(static finding => AnalyzerHost.IsSyntaxHalf(finding.RuleId))]
+                );
             }
 
             cache.Put(

@@ -216,7 +216,12 @@ public sealed class CacheKeyTermTests {
         var otherFile = baseline with {
             Compilation = baseline.Compilation.ReplaceSyntaxTree(
                 baseline.Compilation.SyntaxTrees.Last(),
-                CSharpSyntaxTree.ParseText("namespace N { class D { int x; } }\n", BaseParse, "/src/B.cs", cancellationToken: TestContext.Current.CancellationToken)
+                CSharpSyntaxTree.ParseText(
+                    "namespace N { class D { int x; } }\n",
+                    BaseParse,
+                    "/src/B.cs",
+                    cancellationToken: TestContext.Current.CancellationToken
+                )
             )
         };
         Assert.NotEqual(Of(baseline), Of(otherFile));
@@ -224,7 +229,12 @@ public sealed class CacheKeyTermTests {
         // A tree with a generator's kind of path, which no reportable path names.
         var generated = baseline with {
             Compilation = baseline.Compilation.AddSyntaxTrees(
-                CSharpSyntaxTree.ParseText("namespace N { partial class G { } }\n", BaseParse, "Gen/G.g.cs", cancellationToken: TestContext.Current.CancellationToken)
+                CSharpSyntaxTree.ParseText(
+                    "namespace N { partial class G { } }\n",
+                    BaseParse,
+                    "Gen/G.g.cs",
+                    cancellationToken: TestContext.Current.CancellationToken
+                )
             )
         };
         Assert.NotEqual(Of(baseline), Of(generated));
@@ -234,7 +244,14 @@ public sealed class CacheKeyTermTests {
             Siblings = [
                 CSharpCompilation.Create(
                     "Probe",
-                    [CSharpSyntaxTree.ParseText(Source + "// moved\n", BaseParse, "/src/A.cs", cancellationToken: TestContext.Current.CancellationToken)],
+                    [
+                        CSharpSyntaxTree.ParseText(
+                            Source + "// moved\n",
+                            BaseParse,
+                            "/src/A.cs",
+                            cancellationToken: TestContext.Current.CancellationToken
+                        )
+                    ],
                     [Corlib, SameIdentityImages.Value.First],
                     BaseOptions
                 )

@@ -194,7 +194,8 @@ public static class CacheKey {
         }
 
         siblings.Sort(StringComparer.Ordinal);
-        var builder = new StringBuilder(compilationFingerprint).Append("|source=").Append(SourceIdentity(unit.Compilation));
+        var builder = new StringBuilder(compilationFingerprint).Append("|source=")
+            .Append(SourceIdentity(unit.Compilation));
         foreach (var sibling in siblings) {
             builder.Append('+').Append(sibling);
         }
@@ -206,7 +207,9 @@ public static class CacheKey {
     internal static string SourceIdentity(Compilation compilation) {
         var trees = new List<string>();
         foreach (var tree in compilation.SyntaxTrees) {
-            trees.Add(NormalisePath(tree.FilePath) + "@" + Convert.ToHexStringLower(tree.GetText().GetContentHash().AsSpan()));
+            trees.Add(
+                NormalisePath(tree.FilePath) + "@" + Convert.ToHexStringLower(tree.GetText().GetContentHash().AsSpan())
+            );
         }
 
         trees.Sort(StringComparer.Ordinal);

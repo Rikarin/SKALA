@@ -246,14 +246,46 @@ public sealed class CollectionExpressionSpreadTests {
     [Theory]
     [InlineData("", LanguageVersion.Latest, true)]
     [InlineData(@"C:\dotnet\sdk\10.0.400\Roslyn\bincore\csc.exe", LanguageVersion.Latest, true)]
-    [InlineData("/home/u/.nuget/packages/microsoft.net.compilers.toolset/4.11.0/tasks/netcore/bincore/csc.dll", LanguageVersion.Latest, false)]
-    [InlineData(@"C:\nuget\Microsoft.Net.Compilers.Toolset\4.8.0\tasks\netcore\bincore\csc.exe", LanguageVersion.Latest, false)]
-    [InlineData(@"C:\nuget\microsoft.net.compilers.toolset.framework\4.13.0-3.final\tasks\net472\csc.exe", LanguageVersion.Latest, false)]
-    [InlineData(@"C:\nuget\microsoft.net.compilers.toolset\not-a-version\tasks\netcore\bincore\csc.exe", LanguageVersion.Latest, false)]
-    [InlineData(@"C:\nuget\microsoft.net.compilers.toolset\4.14.0\tasks\netcore\bincore\csc.exe", LanguageVersion.Latest, true)]
-    [InlineData(@"C:\nuget\microsoft.net.compilers.toolset\5.0.0\tasks\netcore\bincore\csc.exe", LanguageVersion.Latest, true)]
-    [InlineData(@"C:\nuget\microsoft.net.compilers.toolset\4.11.0\tasks\netcore\bincore\csc.exe", LanguageVersion.CSharp14, true)]
-    public async Task APinnedCompilerOlderThan414_VoidsTheNet10Proof(string compiler, LanguageVersion version, bool fires) {
+    [InlineData(
+        "/home/u/.nuget/packages/microsoft.net.compilers.toolset/4.11.0/tasks/netcore/bincore/csc.dll",
+        LanguageVersion.Latest,
+        false
+    )]
+    [InlineData(
+        @"C:\nuget\Microsoft.Net.Compilers.Toolset\4.8.0\tasks\netcore\bincore\csc.exe",
+        LanguageVersion.Latest,
+        false
+    )]
+    [InlineData(
+        @"C:\nuget\microsoft.net.compilers.toolset.framework\4.13.0-3.final\tasks\net472\csc.exe",
+        LanguageVersion.Latest,
+        false
+    )]
+    [InlineData(
+        @"C:\nuget\microsoft.net.compilers.toolset\not-a-version\tasks\netcore\bincore\csc.exe",
+        LanguageVersion.Latest,
+        false
+    )]
+    [InlineData(
+        @"C:\nuget\microsoft.net.compilers.toolset\4.14.0\tasks\netcore\bincore\csc.exe",
+        LanguageVersion.Latest,
+        true
+    )]
+    [InlineData(
+        @"C:\nuget\microsoft.net.compilers.toolset\5.0.0\tasks\netcore\bincore\csc.exe",
+        LanguageVersion.Latest,
+        true
+    )]
+    [InlineData(
+        @"C:\nuget\microsoft.net.compilers.toolset\4.11.0\tasks\netcore\bincore\csc.exe",
+        LanguageVersion.CSharp14,
+        true
+    )]
+    public async Task APinnedCompilerOlderThan414_VoidsTheNet10Proof(
+        string compiler,
+        LanguageVersion version,
+        bool fires
+    ) {
         var current = RuleFixtures.Compile(
             Directive("net10.0") + Header + "        int[] copied = list.ToArray();" + Footer,
             "probe.cs",

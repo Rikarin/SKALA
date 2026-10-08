@@ -80,7 +80,13 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
                 available,
                 context.CancellationToken
             ) is not { } forward
-            || !CancellationTokens.EverySiblingForwards(invocation, forward, available, siblings, context.CancellationToken)) {
+            || !CancellationTokens.EverySiblingForwards(
+                invocation,
+                forward,
+                available,
+                siblings,
+                context.CancellationToken
+            )) {
             return;
         }
 

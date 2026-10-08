@@ -108,7 +108,8 @@ public sealed class FrameworkAvailabilityReachTests {
             + "the source subclasses it; the fix emits `LoadFromAssemblyPath`, an inherited member of "
             + "that same type.",
         ["Correctness/CaughtExceptionNotLoggedAnalyzer.cs"] =
-            Recognition + " The overload set is the logging call's own containing type, from the package "
+            Recognition
+            + " The overload set is the logging call's own containing type, from the package "
             + "the source already calls; its `exception` overloads date from that package's 1.0.",
         ["Correctness/CollectionModifiedAnalyzer.cs"] = Recognition
             + " Collection table over the enumerated expression; the fix inserts `.ToList()`.",
