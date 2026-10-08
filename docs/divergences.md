@@ -5642,8 +5642,12 @@ counts unconditionally (`GroupPlan.UnconditionalLevel`) and the `=` spends under
 entry, and fixed since (#518): `b ? a` / `: c` — a single conditional broken at one sign — is chopped by
 the oracle at both, in a declarator, a `return`, an argument and after a comment line (`a` / `/* c */`
 / `? 1` / `: 2`); a conditional *chain* keeps its per-sign pins. `PlanTernary`, pinned by
-`ConditionalChopIssue518Tests`. Still open: a conditional nested in a parenthesis inside another's
-branch (`? (a > 0` / `? a` / `: c)`) puts its signs at 20 where the oracle writes 16.
+`ConditionalChopIssue518Tests`. A conditional nested in a parenthesis inside another's branch
+(`? (a > 0` / `? a` / `: c)`) put its signs at 20 where the oracle writes 16 — **fixed (#546)**: any
+conditional directly inside a grouping parenthesis (after `=`, as an argument, in an `if` condition, as
+a binary operand, before `.ToString()`, behind a cast, in a `return`) lands on the parenthesis's level,
+because its own arm scope and the parenthesis's opened on one line and both counted. A conditional
+that is an argument keeps its level. Pinned by `ParenthesisedConditionalIssue546Tests`.
 ⚠ **The filled-list half closed at #471** (SK-DIV-0117): `new[] { 1` / `+ 2, 3 }` already agreed (the
 array initializer's after rule, #444), and `[1` / `+ 2, 3]` now does too — `+ 2,` / `3`.
 
