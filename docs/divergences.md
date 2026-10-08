@@ -9112,8 +9112,13 @@ Once any `?` of the chain starts a line, every member is chopped at both signs h
    two), as an expression body and under `var x =`; and for an arrow the author put on a line of its own
    (`}` / `=> 1`), which #446 had wired only for a `when` clause's list. With the body on the arrow's line
    the braces nest from the arm's line as before; a break the oracle makes after the arrow for width never
-   comes with braces on the arm's line. ⚠ Not a positional pattern's parenthesis: `(` / `int a,` / `int b`
-   / `) =>` puts the elements *and* the `)` one level in, which Skala does not model (still open, below).
+   comes with braces on the arm's line. ⚠ Wired for braces and brackets only. The `when Compute(` list
+   is left as it was: a list in the head is also what pass one can break for width with the body moved
+   below for width, and pass two then read the break after the arrow as kept and lifted the list
+   (generated seed 857717698562573229, `when Materialise<…,` / `…>() =>`), so lifting it needs the
+   width-driven arrow break to lift too, which is not measured. ⚠ Not a positional pattern's parenthesis
+   either: `(` / `int a,` / `int b` / `) =>` puts the elements *and* the `)` one level in, which Skala
+   does not model (SK-DIV-0393).
 2. A subpattern's value stays on its name's line while the line up to the value's first break point fits
    — `Parameter: {` / … / `}`, `Parent: InvocationExpressionSyntax {` / … / `}`, `Parent: A` / `or B` —
    which is the arrow's question; Skala moved the whole value below the name. A break before a bare `{`
@@ -9158,7 +9163,10 @@ name, which Skala does not. Not wired.
 
 Found beside #550. `var empty = next.Parent is A { … }` / `or B { … }` / `&& !C(next);` — the oracle puts
 the `or` at 16 and the `&&` at 12; Skala puts both at 12. The pattern chain inside a binary operand that
-starts on the statement's line takes a level past the `&&`'s continuation. Not wired.
+starts on the statement's line takes a level past the `&&`'s continuation. The same in Skala's own
+`CSharpDocumentBuilder.IsFirstDeclaratorBehindItsType`: `declarator.Parent is V {` / `Parent:` / `A` /
+`or B` / `} declaration` / `&& …` puts the `or`s a level past `A`, where without the `&&` the oracle puts
+them on `A`'s column (SK-DIV-0391's third finding) — Skala now writes the latter for both. Not wired.
 
 - options: none.
 - ⚠ status: **open**, measured.

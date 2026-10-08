@@ -4534,9 +4534,9 @@ public sealed class BreakPlan {
     static EqualsOwner EqualsOwnerOf(SyntaxNode node) =>
         node switch {
             EqualsValueClauseSyntax {
-                Parent:
-                VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Variables.Count: 1 } declaration }
-            } when declaration.Parent is LocalDeclarationStatementSyntax =>
+                    Parent:
+                    VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Variables.Count: 1 } declaration }
+                } when declaration.Parent is LocalDeclarationStatementSyntax =>
                 declaration.Type.IsVar ? EqualsOwner.VarLocal : EqualsOwner.TypedLocal,
             EqualsValueClauseSyntax {
                 Parent:
@@ -5159,30 +5159,38 @@ public sealed class BreakPlan {
         // list — without its measure deciding anything.
         var kept = options.KeepsUserBreaksBetweenItems && BreaksBefore(arrow);
 
-        // ⚠ And so does a break the author kept *after* the arrow, for a property pattern's braces as for
-        // a `when` clause's list (#549): `X {` / the subpatterns two levels past the arm / `} =>` one
+        // ⚠ And so does a break the author kept *after* the arrow, for a property pattern's braces and a
+        // list pattern's brackets (#549): `X {` / the subpatterns two levels past the arm / `} =>` one
         // level / the body one level, where Skala nested the braces from the arm's own line. Measured
         // 2026-10-08 with `Testing ask` (found reformatting Skala's own SpaceRules.cs): the same with a
-        // `when` clause's `prev is {` and with `when Compute(` / … / `) =>`, as an expression body and
-        // under `var x =`; a break before the arrow does it too, braces as well as a list. With the body
-        // on the arrow's line — `X {` / … / `} => 1,` — the braces nest from the arm's line, and a
-        // break the oracle makes after the arrow for width never comes with braces on the arm's line.
-        // A group with no point of its own, broken because the break is certain, carrying the arm's
-        // continuation level and GroupFacts.Continues from the pattern on.
-        // ⚠ Not a positional pattern's parenthesis, under either break: `(` / `int a,` / `int b` /
-        // `) =>` and `Foo(` / … / `) =>` put the elements *and* the `)` one level past the arm, which
-        // is neither nesting (Continues gives two and one) nor not nesting (one and none).
-        var nests = !arm.Pattern.DescendantNodesAndSelf().Any(static node => node is PositionalPatternClauseSyntax);
-        // ⚠ And only for a head that opens a delimiter for it to lift: under a bare `1 =>` the level is
-        // the arrow group's to hold for a body headed by a broken parenthesis (#406, SK-DIV-0157).
+        // `when` clause's `prev is {`, as an expression body and under `var x =`; an arrow the author put
+        // on a line of its own does it too. With the body on the arrow's line — `X {` / … / `} => 1,` —
+        // the braces nest from the arm's line. A group with no point of its own, broken because the
+        // break is certain, carrying the arm's continuation level and GroupFacts.Continues from the
+        // pattern on.
+        // ⚠ Only a head of braces and brackets. The oracle lifts a `when Compute(` / … / `) =>` list
+        // too, and a positional pattern's `(` / … / `) =>` puts the elements *and* the `)` one level in,
+        // which is neither (SK-DIV-0393); but a list in the head is also what pass one can break for
+        // width with the body moved below for width, and pass two would then read the break after the
+        // arrow as kept and lift the list — `when Materialise<…,` / `…>() =>` stepped a level on the
+        // second pass (generated seed 857717698562573229). The arrow's own width break never comes with
+        // braces on the arm's line, so braces alone are stable.
+        SyntaxNode[] head = arm.WhenClause is { } clause ? [arm.Pattern, clause] : [arm.Pattern];
+        var liftsBraces = head.SelectMany(static part => part.DescendantNodesAndSelf())
+                .Any(static node => node is PropertyPatternClauseSyntax or ListPatternSyntax)
+            && !head.SelectMany(static part => part.DescendantNodesAndSelf())
+                .Any(static node => node is PositionalPatternClauseSyntax
+                    or BaseArgumentListSyntax
+                    or TypeArgumentListSyntax
+                    or AnonymousFunctionExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or SwitchExpressionSyntax
+                );
         var keptAfter = !kept
-            && nests
+            && liftsBraces
+            // ⚠ And never under a body the arrow group holds the level for (#406, SK-DIV-0157).
             && !HeadsWithAChoppedParenthesis(arm.Expression, source, options, out _)
-            && (arm.WhenClause is { } when ? when.Span.End : arm.Pattern.Span.End) is var headEnd
-            && arm.DescendantTokens(Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(arm.Pattern.SpanStart, headEnd))
-                .Any(static token => token.Kind() is SyntaxKind.OpenBraceToken
-                    or SyntaxKind.OpenBracketToken
-                    or SyntaxKind.OpenParenToken)
             && options.KeepsUserBreaksBetweenItems
             && BreaksBefore(FirstToken(arm.Expression));
         if (keptAfter) {
@@ -5195,7 +5203,7 @@ public sealed class BreakPlan {
 
         OpenAt(
             arm,
-            kept && (arm.WhenClause is not null || nests) ? arm.Pattern.SpanStart : arrow.SpanStart,
+            kept && (arm.WhenClause is not null || liftsBraces) ? arm.Pattern.SpanStart : arrow.SpanStart,
             new(
                 before,
                 GroupMode.Preserve,
@@ -5203,10 +5211,10 @@ public sealed class BreakPlan {
                     kept,
                     BreaksIfTooLong: true,
                     BreaksOnlyIfHeadOverflows: true,
-                    Continues: kept && (arm.WhenClause is not null || nests)
+                    Continues: kept && (arm.WhenClause is not null || liftsBraces)
                 ),
                 true,
-                !(kept && (arm.WhenClause is not null || nests)),
+                !(kept && (arm.WhenClause is not null || liftsBraces)),
 
                 // ⚠ The arm's level is this group's, not the body's: it is opened first and the body's
                 // group can spend nothing inside it. So it is this group that holds the level for a
