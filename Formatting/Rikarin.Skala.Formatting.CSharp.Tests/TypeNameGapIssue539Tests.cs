@@ -246,7 +246,8 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: a record, a record struct or a class with a parameter list keeps its name on the keyword's line at every width measured; the parameters or the base list take the break.
+    ///     #539 round three: a record, a record struct or a class with a parameter list keeps its name on the keyword's line
+    ///     at every width measured; the parameters or the base list take the break.
     /// </summary>
     [Fact]
     public void ATypeWithAPrimaryConstructor_NeverBreaksBeforeItsName() {
@@ -288,7 +289,8 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: the window is the joined line's overflow, not what the continuation line saves: behind <c>internal sealed class</c> the oracle breaks the name at 124 and not at 125.
+    ///     #539 round three: the window is the joined line's overflow, not what the continuation line saves: behind
+    ///     <c>internal sealed class</c> the oracle breaks the name at 124 and not at 125.
     /// </summary>
     [Fact]
     public void TheNameBreaksOnlyUpTo124Columns_WhateverTheHead() {
@@ -313,7 +315,9 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: <c>9·column + 6·name − 3·first item + 807 ≥ 8·end</c>: an 18-letter name behind <c>public class</c> stays, a 20-letter one breaks at 122 and not at 123, an 8-letter one behind <c>public sealed class</c> breaks at 121, and three interfaces answer as two.
+    ///     #539 round three: <c>9·column + 6·name − 3·first item + 807 ≥ 8·end</c>: an 18-letter name behind
+    ///     <c>public class</c> stays, a 20-letter one breaks at 122 and not at 123, an 8-letter one behind
+    ///     <c>public sealed class</c> breaks at 121, and three interfaces answer as two.
     /// </summary>
     [Fact]
     public void AShortNameBehindAShortHead_StaysAndTheListWraps() {
@@ -375,7 +379,8 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: a 10-letter name breaks at 121 before a 4-letter first base type, a 14-letter one does not before a 20-letter one, and a first base type past 22 letters stops counting.
+    ///     #539 round three: a 10-letter name breaks at 121 before a 4-letter first base type, a 14-letter one does not before
+    ///     a 20-letter one, and a first base type past 22 letters stops counting.
     /// </summary>
     [Fact]
     public void TheFirstBaseTypesWidth_MovesTheThreshold() {
@@ -418,7 +423,8 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: with two type parameters and no base list the list's comma competes the same way, from its own constant: a 25-letter name stays at 121, a 30-letter one breaks to 123.
+    ///     #539 round three: with two type parameters and no base list the list's comma competes the same way, from its own
+    ///     constant: a 25-letter name stays at 121, a 30-letter one breaks to 123.
     /// </summary>
     [Fact]
     public void TwoTypeParameters_TheListsCommaTakesAShortName() {
@@ -452,7 +458,8 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: behind <c>class</c> alone the name never moves down for the base list's sake, but it does when the name itself runs past the margin, and before a lone base type.
+    ///     #539 round three: behind <c>class</c> alone the name never moves down for the base list's sake, but it does when
+    ///     the name itself runs past the margin, and before a lone base type.
     /// </summary>
     [Fact]
     public void ABareKeyword_KeepsTheNameForAList_ButNotForALoneBaseType() {
@@ -486,7 +493,8 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: the oracle measures the header as if <c>{ }</c> ended it: with a member inside, the name breaks while the line through the <c>{</c> is 122 columns and not at 123.
+    ///     #539 round three: the oracle measures the header as if <c>{ }</c> ended it: with a member inside, the name breaks
+    ///     while the line through the <c>{</c> is 122 columns and not at 123.
     /// </summary>
     [Fact]
     public void ABodyBelowTheBrace_CountsAsIfItsBraceFollowed() {
@@ -532,7 +540,9 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: before a lone base type the name moves down whenever the line is too long, behind a type parameter list too (Serilog's <c>LogEventPropertyValueRewriter</c>), and the <c>:</c> breaks as well when that is not enough.
+    ///     #539 round three: before a lone base type the name moves down whenever the line is too long, behind a type
+    ///     parameter list too (Serilog's <c>LogEventPropertyValueRewriter</c>), and the <c>:</c> breaks as well when that is
+    ///     not enough.
     /// </summary>
     [Fact]
     public void ALoneBaseType_TakesTheNameBreakAtAnyWidth() {
@@ -579,7 +589,8 @@ public sealed class TypeNameGapIssue539Tests {
     }
 
     /// <summary>
-    ///     #539 round three: behind <c>class</c> alone a lone base type does not widen the window: a 72-letter name breaks at 124 and not at 126, where behind <c>public class</c> it still breaks at 150.
+    ///     #539 round three: behind <c>class</c> alone a lone base type does not widen the window: a 72-letter name breaks at
+    ///     124 and not at 126, where behind <c>public class</c> it still breaks at 150.
     /// </summary>
     [Fact]
     public void ALoneBaseTypeBehindABareKeyword_KeepsTheOrdinaryWindow() {

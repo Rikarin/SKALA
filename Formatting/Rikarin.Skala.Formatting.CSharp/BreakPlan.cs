@@ -2598,9 +2598,9 @@ public sealed class BreakPlan {
 
     void PlanTypeName(SyntaxNode node) {
         if (node is not (ClassDeclarationSyntax
-                or StructDeclarationSyntax
-                or InterfaceDeclarationSyntax
-                or RecordDeclarationSyntax)
+                    or StructDeclarationSyntax
+                    or InterfaceDeclarationSyntax
+                    or RecordDeclarationSyntax)
             || node is not TypeDeclarationSyntax { Identifier: var name } type
             || name.IsKind(SyntaxKind.None)
             || type.Keyword.IsKind(SyntaxKind.None)
