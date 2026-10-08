@@ -35,7 +35,8 @@ public static class RuleAudit {
     ///     <b>
     ///         Without this, a tree that sets <c>ImplicitUsings</c> silences most of the semantic rule
     ///         set, and the silence looks like a clean result.
-    ///     </b> The loose loader skips <c>obj/</c>, which
+    ///     </b>
+    ///     The loose loader skips <c>obj/</c>, which
     ///     is where the generated global-usings file lives, so every <c>Dictionary&lt;,&gt;</c>,
     ///     <c>List&lt;&gt;</c> and <c>Task</c> in the tree binds to an error type and every rule that
     ///     asks a question about a type answers "no finding" for the wrong reason. Measured over Vixen:

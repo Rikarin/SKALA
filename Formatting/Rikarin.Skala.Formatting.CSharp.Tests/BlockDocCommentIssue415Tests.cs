@@ -66,10 +66,16 @@ public sealed class BlockDocCommentIssue415Tests {
     ///     refused; the comment's text reaches the output byte for byte; the token stream is the input's;
     ///     and a second pass changes nothing.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ Asked of the document builder alone — the documentation-comment pass off — because "byte for
+    ///     byte" is the builder's promise and not the pass's: since #489 the pass rebuilds a one-line
+    ///     <c>/** … */</c> above a declaration as a starred block, and is held to the comment's signature
+    ///     instead (<c>SlashStarStarOneLineIssue489Tests</c>).
+    /// </remarks>
     [Theory]
     [MemberData(nameof(Shapes))]
     public void ASlashStarStarComment_IsNeverRefused_AndKeepsEveryByte(string source) {
-        var result = Format.Run(source);
+        var result = CSharpFormatter.Format("Test.cs", SourceText.From(source), Format.Options, xmlDoc: false);
 
         Assert.NotEqual(FormatOutcome.VerificationFailed, result.Outcome);
         Assert.Equal(FormatOutcome.Formatted, result.Outcome);
@@ -85,10 +91,18 @@ public sealed class BlockDocCommentIssue415Tests {
             Assert.Contains(comment.Split('\n')[0], result.Formatted, StringComparison.Ordinal);
         }
 
-        Assert.Equal(result.Formatted, Format.Text(result.Formatted));
+        Assert.Equal(
+            result.Formatted,
+            CSharpFormatter.Format("Test.cs", SourceText.From(result.Formatted), Format.Options, xmlDoc: false)
+                .Formatted
+        );
     }
 
-    /// <summary>The oracle breaks after an own-line <c>/** … */</c> before a member and a statement.</summary>
+    /// <summary>
+    ///     The oracle breaks after an own-line <c>/** … */</c> before a member and a statement. ⚠ The expected
+    ///     text is <c>SkalaDocComments</c>' since #489, which is Skala's default: the comment above a member is
+    ///     rebuilt as a starred block as well; the one above a statement is not.
+    /// </summary>
     [Fact]
     public void AnOwnLineSlashStarStar_IsFollowedByABreak_LikeABlockComment() =>
         Oracle.Agrees(
@@ -107,10 +121,14 @@ public sealed class BlockDocCommentIssue415Tests {
             """,
             """
             class C {
-                /** single */
+                /**
+                 * single
+                 */
                 public int F;
 
-                /** single */
+                /**
+                 * single
+                 */
                 public class N { }
 
                 public void E() {
@@ -188,7 +206,10 @@ public sealed class BlockDocCommentIssue415Tests {
             """
         );
 
-    /// <summary>The positions where the oracle leaves the comment exactly where it was.</summary>
+    /// <summary>
+    ///     The positions where the oracle leaves the comment exactly where it was — ⚠ except the first, which
+    ///     <c>SkalaDocComments</c> (Skala's default) rebuilds as a starred block since #489.
+    /// </summary>
     [Fact]
     public void WhereTheOracleLeavesIt_SoDoesSkala() =>
         Oracle.Agrees(
@@ -212,7 +233,9 @@ public sealed class BlockDocCommentIssue415Tests {
             """,
             """
             class C {
-                /** <summary>Doc.</summary> */
+                /**
+                 * <summary>Doc.</summary>
+                 */
                 public void M(int x, int y) { }
 
                 /**

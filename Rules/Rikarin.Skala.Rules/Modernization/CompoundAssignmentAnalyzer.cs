@@ -18,7 +18,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     <b>
 ///         The two forms are not the same expression, and the difference runs the way that makes the
 ///         rewrite safe and the reverse unsafe.
-///     </b> C# defines <c>x op= y</c> as <c>x = (T)(x op y)</c>
+///     </b>
+///     C# defines <c>x op= y</c> as <c>x = (T)(x op y)</c>
 ///     with an <em>explicit</em> conversion back to the target's type, which the long form does not
 ///     have — so <c>byte b; b = b + 1;</c> does not compile at all while <c>b += 1;</c> does. Long form
 ///     to compound therefore never loses a conversion: the shapes where the difference matters are

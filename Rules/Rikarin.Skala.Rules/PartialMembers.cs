@@ -29,7 +29,8 @@ namespace Rikarin.Skala.Rules;
 ///         <b>
 ///             Measured on Roslyn 5.9: a syntax-node action never visits a partial constructor's
 ///             defining declaration
-///         </b>, nor any node inside it. <c>SK6003</c> and <c>SK7110</c> each reported
+///         </b>
+///         , nor any node inside it. <c>SK6003</c> and <c>SK7110</c> each reported
 ///         the implementation alone, which is why their fixes edited one half. A rule that must change
 ///         both halves therefore reports from the implementation and finds the definition here, rather
 ///         than trusting the driver to show it the other one. Since #401 every node action registered

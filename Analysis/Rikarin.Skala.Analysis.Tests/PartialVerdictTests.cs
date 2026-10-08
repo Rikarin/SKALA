@@ -21,7 +21,8 @@ namespace Rikarin.Skala.Analysis.Tests;
 ///         <b>
 ///             The issue's account of the <c>json</c> format is wrong and this is worth as much as the
 ///             fix.
-///         </b> "Only <c>--format json</c> carries the <c>SK9098</c>, the *This is a Skala bug; the
+///         </b>
+///         "Only <c>--format json</c> carries the <c>SK9098</c>, the *This is a Skala bug; the
 ///         file was left untouched* sentence, and the path to the crash reproduction" held for the id
 ///         and the message only. The SARIF notification carried neither
 ///         <see cref="SkalaDiagnostic.File" /> nor <see cref="SkalaDiagnostic.Detail" />, so in that

@@ -242,7 +242,8 @@ public sealed record ProjectFile(
     ///     <b>
     ///         Matched against the path relative to <paramref name="root" />, and it used to be matched
     ///         against the absolute path.
-    ///     </b> That worked from a normal checkout and broke completely from
+    ///     </b>
+    ///     That worked from a normal checkout and broke completely from
     ///     inside an agent worktree, which lives at <c>&lt;repo&gt;/.claude/worktrees/&lt;name&gt;/</c> —
     ///     every absolute path under one contains <c>/.claude/</c>, so every project was excluded,
     ///     <see cref="LoadAll" /> returned nothing, and three <c>Assert.Single</c> calls failed on a tree

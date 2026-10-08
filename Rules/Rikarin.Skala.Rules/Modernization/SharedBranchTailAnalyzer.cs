@@ -22,7 +22,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             The leading half of issue #108 is refuted rather than narrowed, and the reason is
 ///             evaluation order.
-///         </b> A shared statement at the <em>top</em> of both branches can only be
+///         </b>
+///         A shared statement at the <em>top</em> of both branches can only be
 ///         hoisted <em>above</em> the <c>if</c>, where it now runs before the condition is evaluated
 ///         instead of after. <c>if (Advance()) { Log(); … } else { Log(); … }</c> and
 ///         <c>Log(); if (Advance()) …</c> are different programs whenever the condition or the shared

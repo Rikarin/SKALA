@@ -360,7 +360,8 @@ public sealed class MultiTargetAvailabilityTests {
     ///     <b>
     ///         Roughly forty <c>SK1xxx</c> rules gate on
     ///         <c>SkalaRule.MeetsLanguageVersion</c> and not one of them was guarded
-    ///     </b>, so this is the
+    ///     </b>
+    ///     , so this is the
     ///     larger half of #343's bug class rather than a footnote to it. <c>SK1005</c> stands for all
     ///     of them: <c>hasFix</c>, <c>fixIsSafe</c>, floor C# 10. The <c>net10.0</c> moniker compiles
     ///     at C# 14 and reports it, <c>skala fix --safe</c> rewrites the block namespace to

@@ -21,7 +21,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///         <b>
 ///             the nullable
 ///             context
-///         </b>. Every fixture is compiled with <c>NullableContextOptions.Enable</c>, so a rule
+///         </b>
+///         . Every fixture is compiled with <c>NullableContextOptions.Enable</c>, so a rule
 ///         whose behaviour depends on the context can only be exercised through <c>#nullable</c>
 ///         directives inside the file — and the compilation-level setting, which is what a real
 ///         project that never migrated actually has, is never seen. These tests compile the same

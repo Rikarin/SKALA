@@ -21,7 +21,8 @@ namespace Rikarin.Skala.Rules.Design;
 ///         <b>
 ///             This is a naming convention, which is the most opinionated thing a linter can hold an
 ///             opinion about, and it ships <c>defaultSeverity: none</c> for that reason.
-///         </b> The
+///         </b>
+///         The
 ///         severity was measured, and the measurement that decided it was not the one expected: Skala's
 ///         own tree contains <b>five</b> methods this rule governs at all, four of them already
 ///         suffixed. A population of five cannot calibrate a naming convention, and a low count on a
@@ -189,7 +190,8 @@ public sealed class AsyncSuffixAnalyzer : DiagnosticAnalyzer {
         ///     <b>
         ///         These are not edge cases; on most real trees they are the majority of the
         ///         <c>Task</c>-returning methods that carry no suffix.
-        ///     </b> An <c>override</c> and an interface
+        ///     </b>
+        ///     An <c>override</c> and an interface
         ///     implementation take their name from the declaration they satisfy, so the finding would be
         ///     made in the wrong file. An ASP.NET action, a Razor page handler and a SignalR hub method
         ///     are named by a routing convention that would break if the suffix were added. A test method

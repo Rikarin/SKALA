@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -31,7 +31,7 @@ using System;
 namespace Newtonsoft.Json.Tests.TestObjects.Events {
     public sealed class Event {
         /// <summary>
-        /// If no current user is specified, returns Nothing (0 from VB)
+        ///     If no current user is specified, returns Nothing (0 from VB)
         /// </summary>
         /// <returns></returns>
         /// <remarks></remarks>
@@ -40,9 +40,9 @@ namespace Newtonsoft.Json.Tests.TestObjects.Events {
         }
 
         /// <summary>
-        /// Gets either the application path or the current stack trace.
-        /// NOTE: You MUST call this from the top level entry point. Otherwise,
-        /// the stack trace will be buried in Logger itself.
+        ///     Gets either the application path or the current stack trace.
+        ///     NOTE: You MUST call this from the top level entry point. Otherwise,
+        ///     the stack trace will be buried in Logger itself.
         /// </summary>
         /// <returns></returns>
         /// <remarks></remarks>

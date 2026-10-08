@@ -17,7 +17,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <b>
 ///         There are at least three different <c>PureAttribute</c>s and they do not mean the same
 ///         thing
-///     </b>, so the rule resolves by namespace-qualified name and accepts exactly two.
+///     </b>
+///     , so the rule resolves by namespace-qualified name and accepts exactly two.
 ///     <list type="bullet">
 ///         <item>
 ///             <c>System.Diagnostics.Contracts.PureAttribute</c> — the BCL one: "makes no visible state

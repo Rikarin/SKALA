@@ -34,7 +34,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             This rule does not withdraw when the nullable context is disabled — it is one of the two
 ///             places it is for.
-///         </b> That inverts the direction the rest of this batch runs in, and it is
+///         </b>
+///         That inverts the direction the rest of this batch runs in, and it is
 ///         safe to invert here because the question asked is <c>GetConstantValue</c> rather than a flow
 ///         state: a <c>null</c> literal is null in every nullable context, and the compiler's flow
 ///         analysis is not consulted.

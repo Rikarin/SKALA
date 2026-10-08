@@ -64,7 +64,8 @@ public sealed class IneffectiveModifierAnalyzer : DiagnosticAnalyzer {
     ///     <b>
     ///         <c>out</c> is the only implicitly-scoped parameter form, and that was measured rather
     ///         than reasoned from the name.
-    ///     </b> Six spellings were put through
+    ///     </b>
+    ///     Six spellings were put through
     ///     <c>jb inspectcode</c> 2025.2.6 — <c>scoped out int</c>, <c>scoped out</c> a <c>ref struct</c>,
     ///     <c>scoped ref</c> a <c>ref struct</c>, <c>scoped in</c> a <c>ref struct</c>, <c>scoped</c> on
     ///     a by-value <c>ref struct</c>, and <c>scoped ref int</c> — and ReSharper reported the two
@@ -236,7 +237,8 @@ public sealed class IneffectiveModifierAnalyzer : DiagnosticAnalyzer {
     ///     <c>
     /// public /* still virtual in the
     ///     base */ sealed override
-    ///     </c> would lose the note under a fix marked safe.
+    ///     </c>
+    ///     would lose the note under a fix marked safe.
     /// </remarks>
     static void Report(SyntaxNodeAnalysisContext context, SyntaxToken keyword, string message) {
         if (!IsWhitespaceOnly(keyword.TrailingTrivia)) {

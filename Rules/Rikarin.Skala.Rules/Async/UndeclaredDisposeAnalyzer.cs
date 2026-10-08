@@ -17,7 +17,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///     <b>
 ///         This is the other half of the ownership question from the one <c>SK3502</c> asks, and the
 ///         two are asked of different declarations.
-///     </b> <c>SK3502</c> reads a <em>field</em> — a type
+///     </b>
+///     <c>SK3502</c> reads a <em>field</em> — a type
 ///     constructs a disposable and offers no matching disposal — and is silent about how the type
 ///     cleans up. This one reads a <em>method</em>: the cleanup is written, it is public, it is
 ///     spelled exactly the way the framework spells it, and the base list does not say so. Every

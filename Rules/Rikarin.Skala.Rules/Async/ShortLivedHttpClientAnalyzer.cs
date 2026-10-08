@@ -24,7 +24,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///         <b>
 ///             The whole family this rule lives in says "this is not disposed" and this one says "this
 ///             is disposed".
-///         </b> <c>SK3501</c>, <c>SK3502</c>, <c>SK3530</c> and <c>SK3532</c> all report a
+///         </b>
+///         <c>SK3501</c>, <c>SK3502</c>, <c>SK3530</c> and <c>SK3532</c> all report a
 ///         resource whose release is missing; here the release is present, correct by the shape of
 ///         every other disposable, and wrong. That inversion is why it needs its own rule rather than an
 ///         exception inside one of theirs — and it is why a rule that reports <c>HttpClient</c> for

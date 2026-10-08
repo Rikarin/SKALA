@@ -14,7 +14,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     <b>
 ///         A rule that covers eight shapes and is tested for two is a rule with six untested
 ///         shapes.
-///     </b> <see cref="RuleFixtureTests" /> asks only whether the rule fired on a file and
+///     </b>
+///     <see cref="RuleFixtureTests" /> asks only whether the rule fired on a file and
 ///     whether its fix parses and silences it; it never looks at what the fix produced. These rules
 ///     each retire several ReSharper inspections under one id, so the fix text is asserted here per
 ///     shape — which is what fails when a branch is deleted, and what would not fail if only the

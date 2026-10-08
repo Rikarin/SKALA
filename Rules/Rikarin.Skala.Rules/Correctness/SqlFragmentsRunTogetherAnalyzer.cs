@@ -26,7 +26,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The whole risk is the "this is SQL" test, so it is three conditions rather than
 ///             one.
-///         </b> The concatenation's first literal must open with a statement keyword; the join
+///         </b>
+///         The concatenation's first literal must open with a statement keyword; the join
 ///         must actually fuse two word characters; and the word the right-hand literal begins with
 ///         must itself be a SQL keyword, matched whole. Anything looser reports ordinary string
 ///         building.

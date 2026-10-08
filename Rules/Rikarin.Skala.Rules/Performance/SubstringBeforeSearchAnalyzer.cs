@@ -26,7 +26,8 @@ namespace Rikarin.Skala.Rules.Performance;
 ///         <b>
 ///             The two expressions do not return the same number, and that is the whole difficulty of
 ///             this rule.
-///         </b> <c>s.Substring(n).IndexOf(x)</c> is an index into the copy and
+///         </b>
+///         <c>s.Substring(n).IndexOf(x)</c> is an index into the copy and
 ///         <c>s.IndexOf(x, n)</c> is an index into <c>s</c>; they differ by exactly <c>n</c>. So the
 ///         rewrite is offered only where the result is being used as a <em>presence test</em> —
 ///         compared with <c>0</c> or <c>-1</c> in a way that asks "found or not" — because that is the

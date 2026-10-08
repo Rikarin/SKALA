@@ -20,7 +20,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             <c>with</c> does not do what the constructor call does, and the difference is the whole
 ///             rule.
-///         </b> <c>with</c> invokes the record's copy constructor, which copies <em>every</em>
+///         </b>
+///         <c>with</c> invokes the record's copy constructor, which copies <em>every</em>
 ///         field — including the ones the hand-written call deliberately left out. So the rewrite is
 ///         sound only where the record has no state beyond its positional parameters, and this asks for
 ///         that rather than pattern-matching the shape: no instance field, no instance event, no
@@ -43,7 +44,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             At least one argument has to be replaced, which is also what keeps this rule and
 ///             <c>SK0230</c> off each other's ground.
-///         </b> A call carrying every member across unchanged
+///         </b>
+///         A call carrying every member across unchanged
 ///         rewrites to <c>x with { }</c> — an empty <c>with</c>, which is exactly what <c>SK0230</c>
 ///         reports. Requiring a replacement means the two rules never see the same code.
 ///     </para>

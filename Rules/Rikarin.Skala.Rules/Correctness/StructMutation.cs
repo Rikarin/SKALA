@@ -16,7 +16,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <b>
 ///         The evidence bar is deliberately "a direct write in the body", not "the method is not
 ///         <c>readonly</c>".
-///     </b> Almost no struct in real code marks its members <c>readonly</c>, so
+///     </b>
+///     Almost no struct in real code marks its members <c>readonly</c>, so
 ///     treating an unmarked member as mutating would report every property read through every
 ///     <c>in</c> parameter in the repository — a defensive copy that is real, invisible, and almost
 ///     always harmless. What is *not* harmless is a write that is discarded, and a write is something

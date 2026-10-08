@@ -21,7 +21,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     <b>
 ///         last statement of its
 ///         enclosing block
-///     </b>: at that point the block's closing brace and the <c>using</c> block's
+///     </b>
+///     : at that point the block's closing brace and the <c>using</c> block's
 ///     closing brace are the same program point, and the object is disposed at the same instant on
 ///     every path out — <c>return</c>, <c>throw</c>, <c>break</c> and falling off the end alike.
 ///     Anywhere else the object starts living longer, and "disposed later than it was" is not a

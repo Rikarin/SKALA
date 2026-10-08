@@ -25,7 +25,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The comparer is not resolved. The rule declines whenever the constructor is given any
 ///             argument at all.
-///         </b> Key equality belongs to the collection's comparer and not to the key
+///         </b>
+///         Key equality belongs to the collection's comparer and not to the key
 ///         type — <c>new Dictionary&lt;string, int&gt;(StringComparer.OrdinalIgnoreCase)</c> throws on
 ///         <c>["a"]</c> and <c>["A"]</c>, which are distinct ordinally — and a comparer can equally
 ///         make two keys this rule believes equal into two entries. Declining on <em>any</em> argument

@@ -25,7 +25,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             The <c>var _</c> spelling is a different question and belongs to a different rule
 ///             that already ships.
-///         </b> <c>M(out var _)</c> becomes <c>M(out _)</c> under
+///         </b>
+///         <c>M(out var _)</c> becomes <c>M(out _)</c> under
 ///         <c>skala_prefer_explicit_discard_declaration</c>, which is a tier-A option
 ///         Skala performs through <c>SK0217</c>'s <c>DiscardDeclarationRule</c> — in both directions,
 ///         against the oracle. Reporting it here as well would be the double-count doc 17 § "Inspection

@@ -56,11 +56,13 @@ public sealed class AdoptionTests {
     ///     <b>
     ///         `formatting: clean` counted findings the formatter refuses to fix, and was therefore
     ///         unsatisfiable.
-    ///     </b> Measured on Vixen's <c>Core/Vixen.Water</c> after a full
+    ///     </b>
+    ///     Measured on Vixen's <c>Core/Vixen.Water</c> after a full
     ///     <c>
     /// skala
     ///  format
-    ///     </c>: <c>format --check</c> reported "0 files would be reformatted" and the <c>ci</c>
+    ///     </c>
+    ///     : <c>format --check</c> reported "0 files would be reformatted" and the <c>ci</c>
     ///     gate still failed with "formatting is not clean; run `skala format`" on 23 <c>SK0002</c>.
     ///     Running the formatter changed nothing, and the bit was computed before scoping so a baseline
     ///     could not absorb them either. Any repository holding one unbreakable long line was locked
@@ -162,7 +164,8 @@ public sealed class AdoptionTests {
     ///     <b>
     ///         `skala explain` is documented as taking `&lt;ruleId | optionKey&gt;` and rejected every
     ///         option key tried
-    ///     </b> — <c>skala_insert_final_newline</c>,
+    ///     </b>
+    ///     — <c>skala_insert_final_newline</c>,
     ///     <c>skala_sort_usings_with_system_first</c> — with "is not a Skala rule". The two halves of
     ///     what Skala reads are rules and options, and only one of them could be asked about.
     /// </summary>

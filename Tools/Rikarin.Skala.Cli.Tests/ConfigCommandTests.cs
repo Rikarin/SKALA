@@ -338,8 +338,11 @@ public sealed class ConfigCommandTests {
 
         Assert.Contains("inert (honoured vacuously", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("largest unimplemented families:", run.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("xmldoc*", run.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("SK-DIV-0006", run.StandardOutput, StringComparison.Ordinal);
+        // ⚠ The xmldoc family is no longer among the largest gaps: SK-DIV-0381 pinned three more of its keys
+        // with `SkalaDocComments` fixtures, which leaves it two unimplemented keys behind six larger
+        // families. Its explanation is printed only when it is listed, so it is absent too.
+        Assert.DoesNotContain("xmldoc*", run.StandardOutput, StringComparison.Ordinal);
+        Assert.DoesNotContain("SK-DIV-0006", run.StandardOutput, StringComparison.Ordinal);
     }
 
     /// <summary>

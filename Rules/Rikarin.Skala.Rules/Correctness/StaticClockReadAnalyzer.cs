@@ -17,7 +17,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <b>
 ///         This ships disabled and the reason is measurement, not taste — see the rule's
 ///         <c>falsePositives</c>.
-///     </b> <c>TimeProvider</c> is the .NET 8 answer and a repository that has not
+///     </b>
+///     <c>TimeProvider</c> is the .NET 8 answer and a repository that has not
 ///     adopted it lights up on every line that asks what time it is, which is the shape that gets an
 ///     analyzer switched off rather than adopted. It is opt-in exactly the way <c>SK7010</c>,
 ///     <c>SK7101</c> and <c>SK6053</c> are.

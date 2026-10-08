@@ -21,7 +21,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             Only the joining half of issue #83 ships, and cutting the other half was a decision
 ///             rather than an omission.
-///         </b> The issue also asks for <c>TooWideLocalVariableScope</c> —
+///         </b>
+///         The issue also asks for <c>TooWideLocalVariableScope</c> —
 ///         moving a declaration <em>into</em> the narrower block that uses it. That rewrite moves a
 ///         declaration <em>inwards</em>, which used to be the one direction <see cref="RewriteGuards" />
 ///         could not check: <c>WouldCollide</c> and <c>DeclaredElsewhereInMember</c> both answer the
@@ -34,7 +35,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             That blocker is gone: <see cref="RewriteGuards.DeclaredWithin" /> is the inward guard,
 ///             and it is what the cut half was waiting for.
-///         </b> The question
+///         </b>
+///         The question
 ///         <c>TooWideLocalVariableScope</c> could not ask — does the block I am about to push this
 ///         declaration into already declare the name, at any depth — is one call against the
 ///         destination block. ⚠ It is <em>not</em> on its own a complete case for shipping the rule:

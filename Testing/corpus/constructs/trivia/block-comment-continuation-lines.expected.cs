@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // Issue #428, SK-DIV-0094 and SK-DIV-0193. A multi-line block comment moves as a unit with the line
 // its first line is on, clamped at column 0, and every line of it loses its trailing whitespace. The
 // one exception is a starred /* */, which skala_align_multiline_comments aligns instead.
@@ -30,8 +30,8 @@ class Doc {
     void A() { }
 
     /**
-       * ragged doc
-   * still ragged
+     * * ragged doc
+     * * still ragged
      */
     void B() { }
 
@@ -41,8 +41,9 @@ class Doc {
      */
     void D() { }
 
-    /** doc plain
-          second
+    /**
+     * doc plain
+     * second
      */
     void E() { }
 }
@@ -88,7 +89,6 @@ class Trim {
 
     /**
      * doc
-     *
      */
     int H;
 

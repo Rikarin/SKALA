@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -32,29 +32,30 @@ using System;
 
 namespace Newtonsoft.Json.Schema {
     /// <summary>
-    /// <para>
-    /// Specifies undefined schema Id handling options for the <see cref="JsonSchemaGenerator"/>.
-    /// </para>
-    /// <note type="caution">
-    /// JSON Schema validation has been moved to its own package. See <see href="https://www.newtonsoft.com/jsonschema">https://www.newtonsoft.com/jsonschema</see> for more details.
-    /// </note>
+    ///     <para>
+    ///         Specifies undefined schema Id handling options for the <see cref="JsonSchemaGenerator" />.
+    ///     </para>
+    ///     <note type="caution">
+    ///         JSON Schema validation has been moved to its own package. See
+    ///         <see href="https://www.newtonsoft.com/jsonschema">https://www.newtonsoft.com/jsonschema</see> for more details.
+    ///     </note>
     /// </summary>
     [Obsolete(
         "JSON Schema validation has been moved to its own package. See https://www.newtonsoft.com/jsonschema for more details."
     )]
     public enum UndefinedSchemaIdHandling {
         /// <summary>
-        /// Do not infer a schema Id.
+        ///     Do not infer a schema Id.
         /// </summary>
         None = 0,
 
         /// <summary>
-        /// Use the .NET type name as the schema Id.
+        ///     Use the .NET type name as the schema Id.
         /// </summary>
         UseTypeName = 1,
 
         /// <summary>
-        /// Use the assembly qualified .NET type name as the schema Id.
+        ///     Use the assembly qualified .NET type name as the schema Id.
         /// </summary>
         UseAssemblyQualifiedName = 2,
     }

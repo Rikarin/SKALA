@@ -30,15 +30,16 @@
 </section>
 <section class="option" id="skala_xmldoc_wrap_tags_and_pi">
 <h2><code>skala_xmldoc_wrap_tags_and_pi</code> <a class="self" href="#skala_xmldoc_wrap_tags_and_pi">#</a></h2>
-<p>Line wrapping — Wrap tags and processing instructions. It wraps a tag's attributes across lines; it is not what lets a tag move to a line of its own. Not implemented — SK-DIV-0079.</p>
+<p>Line wrapping — Wrap tags and processing instructions. It wraps a tag's attributes across lines at the margin; it is not what lets a tag move to a line of its own, and an author's break inside a header is kept at both values. A processing instruction is left whole at both. SK-DIV-0079, SK-DIV-0381.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>true</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>xmldoc</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/xmldoc/skala_xmldoc_wrap_tags_and_pi.cs</code></td></tr>
 </tbody>
 </table>
 </section>

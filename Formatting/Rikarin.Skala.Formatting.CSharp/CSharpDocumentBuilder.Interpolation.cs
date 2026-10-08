@@ -38,7 +38,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///         </item>
     ///     </list>
     ///     ⚠ A gap holding a line break is copied as written — the oracle keeps a hole's breaks and the
-    ///     indentation after them — and a multi-line raw literal's text still does not shift (SK-DIV-0003).
+    ///     indentation after them — and a multi-line raw literal's text shifts afterwards, by <c>RawLiteralPlan</c> (#447).
     ///     Declined, and left verbatim as before: a hole holding a line comment or a directive outside a
     ///     broken gap, a formatter tag, and <c>disable_space_changes</c>.
     /// </remarks>

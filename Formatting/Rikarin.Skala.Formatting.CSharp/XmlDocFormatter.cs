@@ -10,7 +10,7 @@ namespace Rikarin.Skala.Formatting.CSharp;
 /// <summary>What the sub-formatter did to one file.</summary>
 /// <param name="Reflowed">Comments re-wrapped.</param>
 /// <param name="Refused">
-///     Comments left exactly as written. Malformed XML, a multi-line tag header, glue a re-wrap could
+///     Comments left exactly as written. Malformed XML, an attribute written across lines, glue a re-wrap could
 ///     not honour, or a round trip that did not come back identical.
 /// </param>
 /// <param name="Replacements">
@@ -36,7 +36,7 @@ public enum XmlDocRefusalReason {
     /// <summary>Not well-formed XML. Reported at hint as <c>SK0003</c>; hazard 2 of docs/plan/05.</summary>
     Malformed,
 
-    /// <summary>A shape the model declines to represent: a tag header spanning lines, a mismatched end tag.</summary>
+    /// <summary>A shape the model declines to represent: an attribute spanning lines, a mismatched end tag.</summary>
     Unmodelled,
 
     /// <summary>The trivia's line range holds something that is not a <c>///</c> line.</summary>
@@ -63,7 +63,8 @@ public readonly record struct XmlDocReplacement(TextSpan Span, int Length);
 ///     <b>
 ///         This is the one part of Skala that no committed fixture pins, and the reason is the
 ///         profile rather than the tool.
-///     </b> <c>jb cleanupcode</c> 2025.2.6 formats documentation comments
+///     </b>
+///     <c>jb cleanupcode</c> 2025.2.6 formats documentation comments
 ///     perfectly well — it inserts the space after <c>///</c>, wraps a 128-column summary, splits two
 ///     <c>&lt;param&gt;</c> tags onto their own lines, and rewrites tag headers — but only under a
 ///     cleanup profile that enables its <c>CSharpFormatDocComments</c> task, and neither
@@ -118,10 +119,17 @@ public static class XmlDocFormatter {
         var reflowed = 0;
 
         foreach (var trivia in root.DescendantTrivia(descendIntoTrivia: false)) {
+            if (trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {
+                if (!guard.Touches(trivia.FullSpan)
+                    && BlockReplacement(source, trivia, options, newLine) is { } block) {
+                    replacements.Add(block);
+                    reflowed++;
+                }
+
+                continue;
+            }
+
             if (!trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)) {
-                // ⚠ `/** */` is out of scope, not pending. Its interior lines have no marker of
-                // their own, so re-wrapping one means inventing the `*` prefix convention the author
-                // did not necessarily use.
                 continue;
             }
 
@@ -338,6 +346,129 @@ public static class XmlDocFormatter {
             : new Attempt(default, null, XmlDocRefusalReason.RoundTrip);
     }
 
+    /// <summary>
+    ///     A one-line <c>/** … */</c> above a declaration, rebuilt as a starred block. Issue #489,
+    ///     SK-DIV-0181.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured under <c>OracleProfile.DocComments</c>, and the class is narrow. The oracle rebuilds
+    ///     <c>/** &lt;summary&gt;Doc.&lt;/summary&gt; */</c> as <c>/**</c> / <c> * &lt;summary&gt;Doc.&lt;/summary&gt;</c> /
+    ///     <c> */</c>, asterisks on the opener's column plus one, when the comment:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             is on one line, with whitespace before its <c>*/</c> — <c>/** single*/</c>,
+    ///             <c>/**single*/</c> and <c>/**&lt;summary&gt;X&lt;/summary&gt;*/</c> are left as written, while
+    ///             <c>/**single */</c> is rebuilt;
+    ///         </item>
+    ///         <item>starts its line — after <c>[Obsolete] </c> on the same line it is left alone;</item>
+    ///         <item>
+    ///             is the leading trivia of a type or member declaration — above a statement or a local
+    ///             function it is left alone; above an attribute list it is rebuilt;
+    ///         </item>
+    ///         <item>
+    ///             is the only doc comment there — two in a row are merged into one by the oracle, which
+    ///             Skala does not do, so it leaves both.
+    ///         </item>
+    ///     </list>
+    ///     The body is laid out by the same renderer at the same budget as a <c>///</c> comment: probed at
+    ///     code indents 0, 4, 8 and 12 with single-character words, a <c> * </c> line's content wraps exactly
+    ///     where a <c>/// </c> line's does, and a <c>&lt;summary&gt;</c>'s first line carries its start tag's
+    ///     width (SK-DIV-0019) here too.
+    ///     <para>
+    ///         ⚠ A multi-line <c>/** … */</c> is not touched, and the oracle does rebuild some of them — an
+    ///         already-starred block too long for the margin is re-wrapped. That rule was measured only in
+    ///         part (SK-DIV-0380), and Skala leaving the comment as written is the safe half.
+    ///     </para>
+    /// </remarks>
+    static (TextSpan Span, string Text)? BlockReplacement(
+        SourceText source,
+        SyntaxTrivia trivia,
+        in XmlDocOptions options,
+        string newLine
+    ) {
+        var text = trivia.ToFullString();
+        if (text.Contains('\n', StringComparison.Ordinal)
+            || !text.StartsWith("/**", StringComparison.Ordinal)
+            || !text.EndsWith("*/", StringComparison.Ordinal)
+            || text.Length < 6
+            || text[^3] is not (' ' or '\t')
+            || trivia.GetStructure() is not DocumentationCommentTriviaSyntax original
+            || !XmlDocComments.WellFormed(original)) {
+            return null;
+        }
+
+        var line = source.Lines.GetLineFromPosition(trivia.FullSpan.Start);
+        var indent = source.ToString(TextSpan.FromBounds(line.Start, trivia.FullSpan.Start));
+        if (indent.AsSpan().TrimStart(" \t").Length != 0) {
+            return null;
+        }
+
+        // ⚠ Nothing but code may follow it on its line. `/** … */ // note` comes back from the oracle with
+        // the line comment moved below the rebuilt block — a second change Skala does not make.
+        var rest = source.ToString(TextSpan.FromBounds(trivia.FullSpan.End, line.End)).TrimStart(' ', '\t');
+        if (rest.StartsWith("//", StringComparison.Ordinal) || rest.StartsWith("/*", StringComparison.Ordinal)) {
+            return null;
+        }
+
+        // The ending of the comment's own line, as `///` reads its run's own (SK-FUZZ-0015).
+        var lineBreak = source.ToString(TextSpan.FromBounds(line.End, line.EndIncludingLineBreak));
+        if (lineBreak.Length > 0) {
+            newLine = lineBreak;
+        }
+
+        var token = trivia.Token;
+        if (!token.LeadingTrivia.Contains(trivia)
+            || token.LeadingTrivia.Count(static t => t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+                || t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
+            )
+            != 1
+            || token.Parent?.AncestorsAndSelf().OfType<MemberDeclarationSyntax>().FirstOrDefault() is not { } member
+            || member.GetFirstToken() != token) {
+            return null;
+        }
+
+        // The body, read back as a `///` comment so the one model and the one renderer serve both.
+        var body = text[3..^2].Trim(' ', '\t');
+        if (Probe("/// " + body) is not { } probe
+            || !XmlDocComments.WellFormed(probe)
+            || XmlDocModel.Build(probe, true) is not { } nodes
+            || XmlDocRenderer.Render(nodes, options, options.MaxLineLength - 1) is not { Length: > 0 } lines
+            || lines.Any(static rendered => rendered.Text.Length == 0)) {
+            return null;
+        }
+
+        var rebuilt = new StringBuilder("/**");
+        foreach (var rendered in lines) {
+            rebuilt.Append(newLine).Append(indent).Append(" * ").Append(rendered.Text);
+        }
+
+        rebuilt.Append(newLine).Append(indent).Append(" */");
+        var replacement = rebuilt.ToString();
+
+        // ⚠ The property, as for `///`: the rebuilt block must say what the one-liner said, read back
+        // the way the compiler reads it — asterisks as exterior trivia — or nothing is written.
+        return Probe(replacement) is { } produced
+            && XmlDocSignature.Matches(XmlDocSignature.Of(original), XmlDocSignature.Of(produced))
+                ? (trivia.FullSpan, replacement)
+                : null;
+    }
+
+    /// <summary>Parses a documentation comment standing above a declaration.</summary>
+    static DocumentationCommentTriviaSyntax? Probe(string comment) {
+        var tree = CSharpSyntaxTree.ParseText(
+            SourceText.From(comment + "\nclass SkalaXmlDocProbe { }\n"),
+            CSharpFormatter.ParseOptions
+        );
+
+        foreach (var trivia in tree.GetRoot().DescendantTrivia(descendIntoTrivia: false)) {
+            if (trivia.GetStructure() is DocumentationCommentTriviaSyntax structure) {
+                return structure;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>The rendered lines, written as <c>///</c> lines with the given marker.</summary>
     static string Rendered(ImmutableArray<XmlDocLine> lines, string indent, string marker, string newLine) {
         var rendered = new StringBuilder();
@@ -459,7 +590,42 @@ public static class XmlDocSignature {
             return false;
         }
 
-        return string.Equals(Of(original, markerSpace), Of(produced, markerSpace), StringComparison.Ordinal);
+        return Matches(Of(original, markerSpace), Of(produced, markerSpace));
+    }
+
+    /// <summary>A word that follows markup glued to it, with nothing between.</summary>
+    const char Glued = '\u0002';
+
+    /// <summary>A word that follows markup on the next line.</summary>
+    const char LineBreak = '\u0001';
+
+    /// <summary>
+    ///     Whether a rewritten comment's signature says what the original's did.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Equality, with one allowance and only one (#541, #542): where the rewritten comment puts a word
+    ///     on the line after an element's end, the original may have had it beside the end tag — spaced or
+    ///     glued. That is the break the oracle takes after every element that is opened across lines or
+    ///     owns its line, <c>&lt;/i&gt;</c> / <c>. A plan</c> and <c>&lt;seealso/&gt;</c> / <c>.</c> included,
+    ///     and it is the one place whitespace is inserted between markup and prose. Every other separator is
+    ///     compared exactly as before; an original line break the rewrite turned into a space is the
+    ///     ordinary re-flow, and one it turned into nothing is still a refusal.
+    /// </remarks>
+    public static bool Matches(string original, string rewritten) {
+        if (original.Length != rewritten.Length) {
+            return false;
+        }
+
+        for (var i = 0; i < original.Length; i++) {
+            var (left, right) = (original[i], rewritten[i]);
+            if (left == right || right == LineBreak && left is ' ' or Glued || left == LineBreak && right == ' ') {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -502,29 +668,33 @@ public static class XmlDocSignature {
     ///     it and change nothing else.
     /// </remarks>
     static string Content(SyntaxList<XmlNodeSyntax> content, bool markerSpace) {
-        var items = new List<(bool IsText, string Text, bool SpaceBefore)>();
+        var items = new List<(bool IsText, string Text, bool SpaceBefore, bool LineBefore)>();
         var pending = false;
 
         foreach (var node in content) {
             if (node is XmlTextSyntax text) {
-                var (words, before, after) = Prose(text);
+                var (words, before, after, line) = Prose(text);
                 if (words.Length == 0) {
                     pending |= before || after;
                     continue;
                 }
 
-                items.Add((true, words, pending || before));
+                items.Add((true, words, pending || before, line));
                 pending = after;
                 continue;
             }
 
-            items.Add((false, Markup(node, markerSpace), pending));
+            items.Add((false, Markup(node, markerSpace), pending, false));
             pending = false;
         }
 
         var builder = new StringBuilder();
         for (var i = 0; i < items.Count; i++) {
-            if (i > 0 && items[i].SpaceBefore && (items[i].IsText || items[i - 1].IsText)) {
+            if (i > 0 && items[i].IsText && !items[i - 1].IsText) {
+                // ⚠ Markup then a word: the separator is always written, as one of three, so `Matches` can
+                // tell a break after an element's end from a space or from glue.
+                builder.Append(items[i].LineBefore ? LineBreak : items[i].SpaceBefore ? ' ' : Glued);
+            } else if (i > 0 && items[i].SpaceBefore && (items[i].IsText || items[i - 1].IsText)) {
                 builder.Append(' ');
             }
 
@@ -578,7 +748,8 @@ public static class XmlDocSignature {
     ///     <b>
     ///         The whitespace around the <c>=</c> is the only thing dropped, and dropping it is not a
     ///         weakening of the check.
-    ///     </b> <c>name="a"</c> and <c>name = "a"</c> are the same attribute of
+    ///     </b>
+    ///     <c>name="a"</c> and <c>name = "a"</c> are the same attribute of
     ///     the same element in the same document — XML says so — and two keys of this family,
     ///     <c>spaces_around_eq_in_attribute</c> and <c>space_after_last_attribute</c>, exist to change
     ///     exactly that whitespace and nothing else. Comparing the header's raw source text would make
@@ -620,22 +791,28 @@ public static class XmlDocSignature {
     ///     <c>&amp;#60;</c> and <c>&amp;lt;</c> compare equal, and the sub-formatter would then be free
     ///     to swap one for the other.
     /// </remarks>
-    static (string Words, bool Before, bool After) Prose(XmlTextSyntax text) {
+    /// <returns>
+    ///     The words, whether whitespace leads and trails them, and whether the leading whitespace holds a
+    ///     line break — the one thing <see cref="Matches" /> reads it for.
+    /// </returns>
+    static (string Words, bool Before, bool After, bool LineBefore) Prose(XmlTextSyntax text) {
         var raw = new StringBuilder();
         foreach (var token in text.TextTokens) {
-            raw.Append(token.IsKind(SyntaxKind.XmlTextLiteralNewLineToken) ? " " : token.Text);
+            raw.Append(token.IsKind(SyntaxKind.XmlTextLiteralNewLineToken) ? "\n" : token.Text);
         }
 
         var value = raw.ToString();
         if (value.Length == 0) {
-            return (string.Empty, false, false);
+            return (string.Empty, false, false, false);
         }
 
         var words = value.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        var lead = value.Length - value.TrimStart().Length;
         return (
             string.Join(' ', words),
             char.IsWhiteSpace(value[0]),
-            char.IsWhiteSpace(value[^1])
+            char.IsWhiteSpace(value[^1]),
+            value.AsSpan(0, lead).Contains('\n')
         );
     }
 }

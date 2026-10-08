@@ -24,7 +24,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Both ends must be the process's own clock reads, and that is what makes the rule
 ///             precise rather than noisy.
-///         </b> <c>DateTime.UtcNow - order.PlacedAt</c> is "how old is this
+///         </b>
+///         <c>DateTime.UtcNow - order.PlacedAt</c> is "how old is this
 ///         order", a legitimate question about wall-clock time that <c>Stopwatch</c> cannot answer at
 ///         all; only when the earlier value also came from this program reading the clock is the
 ///         subtraction a <em>measurement of elapsed time</em>. Requiring both ends is the difference

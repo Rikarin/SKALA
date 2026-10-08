@@ -20,7 +20,8 @@ namespace Rikarin.Skala.Rules.Design;
 ///         <b>
 ///             The same shape is also how a closed hierarchy dispatches, and that form is declined
 ///             rather than reported.
-///         </b> A base whose instance constructors are all <c>private</c> cannot be
+///         </b>
+///         A base whose instance constructors are all <c>private</c> cannot be
 ///         derived from outside its own declaration, so the set of subclasses is fixed at compile time
 ///         and the test over them is exhaustive by construction — the property that makes the pattern a
 ///         discriminated union rather than a missing <c>virtual</c>. That guard is why this rule ships at
@@ -33,7 +34,8 @@ namespace Rikarin.Skala.Rules.Design;
 ///         <b>
 ///             Four guards this rule was specified to have are absent, because a sabotage pass proved
 ///             that none of them can fail.
-///         </b> The walk in <c>DerivesFrom</c> starts one link above
+///         </b>
+///         The walk in <c>DerivesFrom</c> starts one link above
 ///         <c>target</c> and only ever visits classes, so it alone decides "not <c>sealed</c>", "the
 ///         tested type is a class", "the tested type is not the containing type" and "the subclass is
 ///         declared in this compilation" — the last because a type in metadata cannot derive from a

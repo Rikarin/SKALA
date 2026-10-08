@@ -12,9 +12,11 @@ public sealed record Divergence(string File, int Line, string Expected, string A
 /// <remarks>
 ///     ⚠ It is a parameter and it is printed with every number, because a fidelity figure that
 ///     silently excludes a category is how a measurement stops meaning anything. Skala formats
-///     documentation comments and the oracle's pinned profile does not (SK-DIV-0006), so on
-///     <c>///</c> lines the two are measuring different questions and the answer is not a fidelity at
-///     all. Every other line is still compared, and that is the number the ratchet holds.
+///     documentation comments, and until #449 the oracle's pinned format-only profile did not
+///     (SK-DIV-0006), so on <c>///</c> lines the two measured different questions and the ratchet held
+///     the number without them. Since #449 the profile formats them too and <c>constructs/</c>, <c>real/</c>
+///     and <c>pathological/</c> were regenerated, so their ratchet is over every line again; the exclusion
+///     stays one argument away, and is still the basis of the populations not regenerated.
 /// </remarks>
 public enum FidelityBasis {
     /// <summary>Every line of both texts. The number that includes the known disagreement.</summary>
@@ -113,12 +115,15 @@ public sealed record FidelityReport(
 ///     <em>matched lines ÷ total lines</em> over the longest common subsequence, which is what
 ///     docs/plan/12 § "Differential" means by "identical lines".
 ///     <para>
-///         ⚠ The default basis is <see cref="FidelityBasis.OutsideDocComments" /> and the default is a
-///         decision, taken when the documentation-comment sub-formatter became the default (SK-DIV-0006).
-///         The oracle profile Skala pins does not run ReSharper's "Reformat embedded XML doc comments"
-///         task and Skala does; comparing those lines measures that, not fidelity. The other basis is one
-///         argument away and both are reported at every re-base — docs/plan/12 § "A ratchet compares
-///         numbers over the same population".
+///         ⚠ The default basis is <see cref="FidelityBasis.OutsideDocComments" />, taken when the
+///         pinned format-only profile did not run ReSharper's "Reformat embedded XML doc comments" task and
+///         Skala did, so a <c>///</c> line measured the profile rather than the formatter (SK-DIV-0006).
+///         #449 put the task in <c>OracleProfile.FormatOnly</c> and regenerated <c>constructs/</c>,
+///         <c>real/</c> and <c>pathological/</c> with it, and those three are measured over
+///         <see cref="FidelityBasis.EveryLine" /> — passed explicitly, by the ratchet and by the report. The
+///         default stays for the populations whose fixtures were not regenerated (the preservation variants
+///         and the unformat differential), which each record their basis in <c>fidelity.json</c> —
+///         docs/plan/12 § "A ratchet compares numbers over the same population".
 ///     </para>
 /// </remarks>
 public static class Fidelity {

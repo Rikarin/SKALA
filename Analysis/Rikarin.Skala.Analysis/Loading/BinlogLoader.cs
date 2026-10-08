@@ -350,7 +350,8 @@ public static class BinlogLoader {
     ///         <b>
     ///             The third is incompleteness, and it is why <c>--require-fresh-binlog</c> was not
     ///             enough.
-    ///         </b> A binlog from an *incremental* build contains only the projects MSBuild actually
+    ///         </b>
+    ///         A binlog from an *incremental* build contains only the projects MSBuild actually
     ///         rebuilt, and it is not stale — its mtime is seconds old. Measured: <c>arrange --check</c>
     ///         against an incremental binlog saw <b>824</b> files to change and left <b>2 147</b> in no
     ///         compilation; against a <c>--no-incremental</c> build's binlog, <b>1 188</b> and <b>79</b>.
@@ -547,7 +548,8 @@ public static class BinlogLoader {
     ///     <b>
     ///         This walk decides the denominator of the coverage ratio, so what it counts is what
     ///         <c>--require-fresh-binlog</c> refuses on.
-    ///     </b> It used to be a hard-coded list of four
+    ///     </b>
+    ///     It used to be a hard-coded list of four
     ///     directory names tested against the <em>absolute</em> path — a second copy of
     ///     <c>FormatCommand.IsExcluded</c>, already disagreeing with it about <c>.claude/</c>, and no
     ///     way at all for a repository to say that a directory holds inputs rather than code. Skala's

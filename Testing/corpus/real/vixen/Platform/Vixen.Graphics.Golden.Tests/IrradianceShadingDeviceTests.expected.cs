@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -142,8 +142,11 @@ public class IrradianceShadingDeviceTests {
     /// <summary>Which half of doc 19 § L2 fills the field this frame reads.</summary>
     /// <remarks>
     ///     <para>
-    ///         <b>Both, separately, because until now each had only ever been checked against the
-    ///         other's absence.</b> <c>IrradianceFillDeviceTests</c> dispatches the fill and reads the
+    ///         <b>
+    ///             Both, separately, because until now each had only ever been checked against the
+    ///             other's absence.
+    ///         </b>
+    ///         <c>IrradianceFillDeviceTests</c> dispatches the fill and reads the
     ///         pool back; this file shades from a field the CPU filled. Neither had ever run the
     ///         renderer's own device path — the <c>PassKind.Compute</c> branch, the pool created as a
     ///         storage image, the upload that carries the index volume and nothing else — so the two

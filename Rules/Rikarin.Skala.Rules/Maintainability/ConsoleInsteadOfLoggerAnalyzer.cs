@@ -19,7 +19,8 @@ namespace Rikarin.Skala.Rules.Maintainability;
 ///         <b>
 ///             The rule does not decide whether this code is an application or a library, because
 ///             nothing in the tree can tell it.
-///         </b> <c>LooseLoader</c> builds its compilation as
+///         </b>
+///         <c>LooseLoader</c> builds its compilation as
 ///         <c>OutputKind.DynamicallyLinkedLibrary</c>, so "this is a library" and "no project file was
 ///         loaded" are one observation — and loose is the mode Skala exists for. A rule keyed on
 ///         <c>OutputKind</c> would report every line of every console application analysed without its
@@ -30,7 +31,8 @@ namespace Rikarin.Skala.Rules.Maintainability;
 ///         <b>
 ///             a logger is in scope
 ///             at this call site and the code wrote to the console anyway.
-///         </b> A member or parameter typed
+///         </b>
+///         A member or parameter typed
 ///         <c>ILogger</c>, <c>ILogger&lt;T&gt;</c> or <c>ILog</c> is present, so the routing question is
 ///         already answered for this code and answered differently two lines away. That is not a policy
 ///         judgement about the project's shape; it is a contradiction inside one method. An entry point

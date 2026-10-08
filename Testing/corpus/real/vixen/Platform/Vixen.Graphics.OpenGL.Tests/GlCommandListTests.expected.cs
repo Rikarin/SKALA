@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -124,8 +124,10 @@ public sealed class GlCommandListTests {
     }
 
     /// <summary>Submitting twice is refused.</summary>
-    /// <remarks>A list is a one-shot recording; replaying it again would replay it against state the
-    /// first replay left behind.</remarks>
+    /// <remarks>
+    ///     A list is a one-shot recording; replaying it again would replay it against state the
+    ///     first replay left behind.
+    /// </remarks>
     [Fact]
     public void RefusesASecondSubmission() {
         var gl = new RecordingGlApi();

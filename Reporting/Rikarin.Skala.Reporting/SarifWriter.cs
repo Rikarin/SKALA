@@ -349,7 +349,8 @@ public static class SarifWriter {
     ///         <b>
     ///             What used to end that paragraph — "and code scanning honours it by showing a
     ///             suppressed result as dismissed rather than open" — is false.
-    ///         </b> GitHub's SARIF support
+    ///         </b>
+    ///         GitHub's SARIF support
     ///         documentation does not mention <c>suppressions</c> anywhere; the property is not consumed,
     ///         and every accepted finding was still raised as an open alert. Writing the suppression was
     ///         necessary and not sufficient, and the upload takes

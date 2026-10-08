@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -54,8 +54,12 @@ public sealed record SystemPlacement(Type SystemType, SystemPhase Phase, int Ord
 ///         second.
 ///     </para>
 ///     <para>
-///         ⚠ <b>There are no <c>DependsOn</c> edges here and that is not an omission to be fixed
-///         later.</b> Those come from <see cref="SystemAccess.ConflictsWith" />, and an undeclared
+///         ⚠
+///         <b>
+///             There are no <c>DependsOn</c> edges here and that is not an omission to be fixed
+///             later.
+///         </b>
+///         Those come from <see cref="SystemAccess.ConflictsWith" />, and an undeclared
 ///         access conflicts with everything — so guessing at it would not produce a cautious answer,
 ///         it would produce a confident wrong one.
 ///     </para>

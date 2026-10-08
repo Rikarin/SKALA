@@ -142,7 +142,8 @@ public sealed class ConfigurationDiagnosticsTests {
     ///         <b>
     ///             <c>KeyNamespace.InspectionSeverity</c> is gone and this test now asserts its
     ///             absence.
-    ///         </b> It existed so that a Rider export's ~3 000 inspection severities did not each
+    ///         </b>
+    ///         It existed so that a Rider export's ~3 000 inspection severities did not each
     ///         become an <c>SK9001</c>. Skala reads none of that vocabulary any more, so a
     ///         <c>_highlighting</c> key is an ordinary unknown key — which is the second assertion here,
     ///         and it is the one that fails if the special case comes back.

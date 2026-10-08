@@ -16,7 +16,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <b>
 ///         "No checked operator" is an observation; "checked on some and not others" is a defect, and
 ///         the difference is the whole specification of this rule.
-///     </b> A type that declares no
+///     </b>
+///     A type that declares no
 ///     <c>checked</c> operator at all has simply not opted into C# 11's user-defined checked
 ///     arithmetic, and there is nothing to report: <c>checked</c> around it means what it has always
 ///     meant. But a type that declares <c>operator checked +</c> and not <c>operator checked -</c> has
@@ -29,7 +30,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The eight operators that <em>have</em> a checked form are listed, and the list was
 ///             measured against the compiler rather than remembered.
-///         </b> Binary <c>+</c>, <c>-</c>,
+///         </b>
+///         Binary <c>+</c>, <c>-</c>,
 ///         <c>*</c>, <c>/</c>; unary <c>-</c>; <c>++</c>; <c>--</c>; and the <b>explicit</b> conversion.
 ///         Every other operator is rejected outright: <c>CS9023</c> for unary <c>+</c>, <c>%</c>,
 ///         <c>&amp;</c>, <c>&lt;&lt;</c> and <c>==</c>, and <c>CS9024</c> for an <c>implicit</c>

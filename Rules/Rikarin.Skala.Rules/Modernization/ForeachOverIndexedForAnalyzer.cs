@@ -34,7 +34,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             The receiver must be an array, a <c>string</c>, a <c>List&lt;T&gt;</c> or an
 ///             <c>ImmutableList&lt;T&gt;</c>
-///         </b> — types whose enumerator is documented to yield element
+///         </b>
+///         — types whose enumerator is documented to yield element
 ///         <c>0</c> through <c>Count - 1</c> in that order. An <c>IList&lt;T&gt;</c> or a hand-written
 ///         indexable type promises no such thing, so a <c>foreach</c> over one could visit a different
 ///         sequence entirely.
@@ -44,7 +45,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             The residual risk, and the reason <c>fixIsSafe</c> is false, is mutation this cannot
 ///             see.
-///         </b> A <c>for</c> over a <c>List&lt;T&gt;</c> mutated through a method call in the body
+///         </b>
+///         A <c>for</c> over a <c>List&lt;T&gt;</c> mutated through a method call in the body
 ///         keeps running where a <c>foreach</c> throws <c>InvalidOperationException</c>. Requiring the
 ///         receiver to be a local or a parameter shrinks that surface; proving no call reached the list
 ///         is not decidable and is not attempted. Arrays have no version field and are immune.
@@ -330,7 +332,8 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
     ///     <b>
     ///         and
     ///         neither of them is enough here.
-    ///     </b> The new name is declared <em>outside</em> a body that
+    ///     </b>
+    ///     The new name is declared <em>outside</em> a body that
     ///     stays where it is, so what collides with it is what the <em>loop itself</em> declares:
     ///     <c>LookupSymbols</c> at the loop's start position cannot see a pattern variable scoped to an
     ///     <c>if</c> inside the body, and <c>DeclaredElsewhereInMember</c> skips every node overlapping

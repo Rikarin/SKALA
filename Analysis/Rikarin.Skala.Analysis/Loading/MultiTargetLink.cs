@@ -11,7 +11,8 @@ namespace Rikarin.Skala.Analysis.Loading;
 ///     <b>
 ///         Both real loaders already produce one unit per target framework and neither says they
 ///         belong together.
-///     </b> <c>MSBuildWorkspace</c> hands back one <c>Project</c> per moniker —
+///     </b>
+///     <c>MSBuildWorkspace</c> hands back one <c>Project</c> per moniker —
 ///     <c>Probe (netstandard2.1)</c> and <c>Probe (net10.0)</c> — and a binlog carries one <c>csc</c>
 ///     invocation per moniker. <c>CheckCommand</c> then analyses each in turn and unions the findings,
 ///     which is right for a rule that reads source and wrong for one whose condition is a fact about

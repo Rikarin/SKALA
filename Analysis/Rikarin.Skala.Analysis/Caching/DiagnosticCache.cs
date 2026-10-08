@@ -482,7 +482,8 @@ public sealed record CachedFinding(
 ///         <b>
 ///             The correctness condition is that a rule's output for a file depends only on the key's
 ///             inputs, and that is false for whole-compilation rules.
-///         </b> A "this public member is never used"
+///         </b>
+///         A "this public member is never used"
 ///         rule reads every file, so its answer for <c>A.cs</c> changes when <c>B.cs</c> changes and the key
 ///         for <c>A.cs</c> does not move. Rule metadata therefore carries a <see cref="RuleScope" />, and
 ///         <see cref="RuleScope.Compilation" /> rules are excluded from per-file caching entirely: their

@@ -12,14 +12,14 @@ public sealed class PerformanceAndConcurrencyIntegrationTests {
         var project = scratch.Write(
             "Scratch.csproj",
             $$"""
-            <Project Sdk="Microsoft.NET.Sdk">
-              <PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable></PropertyGroup>
-              <ItemGroup>
-                <Reference Include="{{typeof(FactAttribute).Assembly.GetName().Name}}"><HintPath>{{SecurityElement.Escape(typeof(FactAttribute).Assembly.Location)}}</HintPath></Reference>
-                <Reference Include="{{typeof(Assert).Assembly.GetName().Name}}"><HintPath>{{SecurityElement.Escape(typeof(Assert).Assembly.Location)}}</HintPath></Reference>
-              </ItemGroup>
-            </Project>
-            """
+              <Project Sdk="Microsoft.NET.Sdk">
+                <PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable></PropertyGroup>
+                <ItemGroup>
+                  <Reference Include="{{typeof(FactAttribute).Assembly.GetName().Name}}"><HintPath>{{SecurityElement.Escape(typeof(FactAttribute).Assembly.Location)}}</HintPath></Reference>
+                  <Reference Include="{{typeof(Assert).Assembly.GetName().Name}}"><HintPath>{{SecurityElement.Escape(typeof(Assert).Assembly.Location)}}</HintPath></Reference>
+                </ItemGroup>
+              </Project>
+              """
         );
         const string configuration = """
                                      root = true

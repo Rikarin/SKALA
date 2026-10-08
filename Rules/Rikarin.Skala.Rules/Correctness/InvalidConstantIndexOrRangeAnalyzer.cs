@@ -32,7 +32,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             <c>^0</c> is reported only where it indexes an element, never where it bounds a
 ///             range.
-///         </b> <c>x[..^0]</c> is the whole collection and <c>x[^0..]</c> is an empty slice; both
+///         </b>
+///         <c>x[..^0]</c> is the whole collection and <c>x[^0..]</c> is an empty slice; both
 ///         are legal, measured so on an empty collection too, and both are spellings people choose
 ///         deliberately.
 ///     </para>

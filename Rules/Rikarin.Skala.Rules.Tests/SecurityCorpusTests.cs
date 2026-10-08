@@ -16,7 +16,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     <b>
 ///         This is the only measurement that means anything for the security range, and it exists
 ///         because the reference corpus cannot make it.
-///     </b> <c>Testing/corpus/real</c> and the vendored
+///     </b>
+///     <c>Testing/corpus/real</c> and the vendored
 ///     trees are a logging library, a JSON serialiser and a game engine: between them they contain no
 ///     SQL reaching a request, no disabled certificate validation, no broken cipher and no XXE. A
 ///     <c>SK5xxx</c> run over them returns zero, and zero there proves only that the trees have none of
@@ -27,7 +28,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///         <b>
 ///             The safe half is the half that decides whether a rule ships, and it is not "code with no
 ///             security in it".
-///         </b> Every file under <c>corpus/safe</c> is the <em>same shape</em> as its twin
+///         </b>
+///         Every file under <c>corpus/safe</c> is the <em>same shape</em> as its twin
 ///         under <c>corpus/vulnerable</c> — the same request read, the same builder, the same loop, the
 ///         same callback, the same XML settings — with the vulnerability removed the way a reviewer would
 ///         remove it: a bound parameter, an <c>ArgumentList</c>, a parsed integer, an allow-list, a pinned

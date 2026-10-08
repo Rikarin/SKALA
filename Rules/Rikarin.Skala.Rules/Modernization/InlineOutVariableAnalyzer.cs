@@ -28,7 +28,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             Scope is the whole risk, and it is answered by position rather than by rules about
 ///             each statement kind.
-///         </b> An expression variable is scoped no wider than the statement that
+///         </b>
+///         An expression variable is scoped no wider than the statement that
 ///         introduces it, so the rule requires every reference to the local to be inside the statement
 ///         the <c>out</c> argument belongs to, and requires the argument to sit in that statement's own
 ///         expression — not inside a nested block, a lambda or a local function, each of which would

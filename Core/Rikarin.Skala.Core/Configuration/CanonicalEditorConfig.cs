@@ -104,12 +104,14 @@ public static class CanonicalEditorConfig {
     ///     <b>
     ///         This is the step that used to not exist, and it exists because the export and the
     ///         payload stopped being the same document.
-    ///     </b> ADR-001's workflow is unchanged — change a
+    ///     </b>
+    ///     ADR-001's workflow is unchanged — change a
     ///     setting in Rider, re-export over <c>editor_config_template</c>, run
     ///     <c>
     /// ./build.sh
     ///     Canonical
-    ///     </c> — but the payload is now a <em>translation</em> of the export rather than a
+    ///     </c>
+    ///     — but the payload is now a <em>translation</em> of the export rather than a
     ///     copy of it, because Skala no longer reads <c>resharper_*</c> and shipping a configuration
     ///     the tool cannot read is worse than shipping none: <c>skala config check</c> would report
     ///     every line of its own canonical as an unknown key.

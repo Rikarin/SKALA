@@ -313,7 +313,6 @@ public sealed class XmlDocOracleTests {
         "skala_xmldoc_max_line_length",
         "skala_xmldoc_wrap_lines",
         "skala_xmldoc_wrap_text",
-        "skala_xmldoc_wrap_tags_and_pi",
         "skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
         "skala_xmldoc_linebreak_before_multiline_elements",
         "skala_xmldoc_linebreak_before_singleline_elements",
@@ -337,23 +336,22 @@ public sealed class XmlDocOracleTests {
         // other row, and it exists because the first file is rebuilt at either value of its key and so
         // could not tell the oracle's per-comment rule from Skala's old per-line one.
         //
-        // ⚠ Keyed rows only (#396). The nine shape rows outside xmldoc/ are counted separately below
-        // and are not in this ratchet: they are attributed to no key, and adding them here would let a
-        // key's regression hide behind a shape's agreement. The ninth is
-        // `arrangement/redundancy/qualified-reference.cs` (#460), whose `cref` is the row that says a
-        // documentation reference is never shortened, and the oracle wrote its doc-comment fixture
-        // with the other two.
+        // ⚠ Keyed rows only (#396). The thirteen shape rows outside xmldoc/ are counted separately below and
+        // are not in this ratchet: they are attributed to no key, and adding them here would let a key's
+        // regression hide behind a shape's agreement. Eight from #396, then #451's, #489's, #448's and
+        // #541's, and `arrangement/redundancy/qualified-reference.cs` (#460), whose `cref` is the row that
+        // says a documentation reference is never shortened.
         var all = XmlDocOracle.Rows();
         var rows = all.Where(static row => row.IsKeyed).ToArray();
         var agreeing = rows.Count(static row => row.Agrees);
-        Assert.Equal(9, all.Count(static row => !row.IsKeyed));
-        Assert.Equal(23, rows.Length);
-        Assert.Equal(22, rows.Select(static row => row.Key).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(13, all.Count(static row => !row.IsKeyed));
+        Assert.Equal(25, rows.Length);
+        Assert.Equal(24, rows.Select(static row => row.Key).Distinct(StringComparer.Ordinal).Count());
         Assert.True(
-            agreeing >= 23,
+            agreeing >= 25,
             $"{agreeing.ToString(CultureInfo.InvariantCulture)} of "
             + $"{rows.Length.ToString(CultureInfo.InvariantCulture)} doc-comment fixtures agree; the committed "
-            + "measurement is 23. This is a ratchet and it is now at the ceiling: a fall is a regression, and "
+            + "measurement is 25. This is a ratchet and it is now at the ceiling: a fall is a regression, and "
             + "the key that fell is named by TheRecordedTier_IsWhatTheDocCommentFixtureSays."
         );
     }

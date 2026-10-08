@@ -21,7 +21,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 ///         <b>
 ///             There used to be a fifth key here, and it was measured wrong for a long time before it
 ///             was measured right.
-///         </b> <c>resharper_remove_this_qualifier</c> gated the removing direction.
+///         </b>
+///         <c>resharper_remove_this_qualifier</c> gated the removing direction.
 ///         The same probe with it at <c>false</c> came back byte-identical — the qualifier still
 ///         removed — which said it was dominated by the four Roslyn keys; that was recorded as
 ///         SK-DIV-0070 and the key was kept anyway, because it was Tier A and a fixture claimed it.

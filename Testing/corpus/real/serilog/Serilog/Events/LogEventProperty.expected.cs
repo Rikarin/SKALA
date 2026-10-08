@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,17 +16,17 @@
 namespace Serilog.Events;
 
 /// <summary>
-/// A property associated with a <see cref="LogEvent"/>.
+///     A property associated with a <see cref="LogEvent" />.
 /// </summary>
 public class LogEventProperty {
     /// <summary>
-    /// Construct a <see cref="LogEventProperty"/> with the specified name and value.
+    ///     Construct a <see cref="LogEventProperty" /> with the specified name and value.
     /// </summary>
     /// <param name="name">The name of the property.</param>
     /// <param name="value">The value of the property.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="name"/> is <code>null</code></exception>
-    /// <exception cref="ArgumentException">When <paramref name="name"/> is empty or only contains whitespace</exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="value"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="name" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentException">When <paramref name="name" /> is empty or only contains whitespace</exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="value" /> is <code>null</code></exception>
     public LogEventProperty(string name, LogEventPropertyValue value) {
         Guard.AgainstNull(value);
         EnsureValidName(name);
@@ -36,10 +36,10 @@ public class LogEventProperty {
     }
 
     /// <summary>
-    /// Construct a <see cref="LogEventProperty"/> from an existing <see cref="EventProperty"/> instance.
+    ///     Construct a <see cref="LogEventProperty" /> from an existing <see cref="EventProperty" /> instance.
     /// </summary>
     /// <param name="property">The existing property.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="property"/> is <code>default</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="property" /> is <code>default</code></exception>
     internal LogEventProperty(EventProperty property) {
         if (property.Equals(EventProperty.None)) throw new ArgumentNullException(nameof(property));
 
@@ -48,24 +48,24 @@ public class LogEventProperty {
     }
 
     /// <summary>
-    /// The name of the property.
+    ///     The name of the property.
     /// </summary>
     public string Name { get; }
 
     /// <summary>
-    /// The value of the property.
+    ///     The value of the property.
     /// </summary>
     public LogEventPropertyValue Value { get; }
 
     /// <summary>
-    /// Test <paramref name="name" /> to determine if it is a valid property name.
+    ///     Test <paramref name="name" /> to determine if it is a valid property name.
     /// </summary>
     /// <param name="name">The name to check.</param>
-    /// <returns><see langword="true"/> if the name is valid; otherwise, <see langword="false"/>.</returns>
+    /// <returns><see langword="true" /> if the name is valid; otherwise, <see langword="false" />.</returns>
     public static bool IsValidName([NotNullWhen(true)] string? name) => !string.IsNullOrWhiteSpace(name);
 
-    /// <exception cref="ArgumentNullException">When <paramref name="name"/> is <code>null</code></exception>
-    /// <exception cref="ArgumentException">When <paramref name="name"/> is empty or only contains whitespace</exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="name" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentException">When <paramref name="name" /> is empty or only contains whitespace</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void EnsureValidName(string name) {
         Guard.AgainstNull(name);

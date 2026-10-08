@@ -964,7 +964,8 @@ public sealed partial class CSharpDocumentBuilder {
     ///     <em>
     ///         on the lambda's own
     ///         line
-    ///     </em> — which is why <see cref="VisitDelimited" /> opens that one unconditionally — so a
+    ///     </em>
+    ///     — which is why <see cref="VisitDelimited" /> opens that one unconditionally — so a
     ///     second level for the body is the one-level-per-opening-line rule being paid twice:
     ///     <code>
     /// var b = new Func&lt;int, bool&gt;(x =&gt; x &gt; 0
@@ -2776,9 +2777,31 @@ public sealed partial class CSharpDocumentBuilder {
         var source = new SourceSpan(span.Start, span.Length);
         doc.Anchor(source, -1);
         // The node's first line takes the code's indentation; its interior lines are never
-        // reindented, because the writer only indents at a line start and this text is one piece.
-        // ⚠ An interpolated string on one line has its holes respaced (#492); its text never moves.
-        doc.Verbatim(RespacedInterpolatedString(node) ?? this.source[span.Start..span.End], source);
+        // reindented, because the writer only indents at a line start and this text is one piece —
+        // except the lines a multi-line raw literal inside it owns, which `skala_indent_raw_literal_string`
+        // shifts to that literal's own anchor (SK-DIV-0003, #447; see RawLiteralPlan).
+        // ⚠ An interpolated string has its holes respaced (#492); its text never moves except by that shift,
+        // and the plan is read off the respaced text, whose line structure is the source's.
+        var text = RespacedInterpolatedString(node) ?? this.source[span.Start..span.End];
+        var mode = options.IndentRawLiteralString switch {
+            RawStringIndentStyle.Align => VerbatimFlags.RealignRun | VerbatimFlags.Realign,
+            RawStringIndentStyle.Indent => VerbatimFlags.RealignRun | VerbatimFlags.RealignToIndent,
+            _ => VerbatimFlags.None
+        };
+
+        if (mode != VerbatimFlags.None
+            && node is InterpolatedStringExpressionSyntax
+            && SyntaxFactory.ParseExpression(
+                text,
+                0,
+                CSharpFormatter.ParseOptions
+            ) is InterpolatedStringExpressionSyntax respaced
+            && respaced.FullSpan.Length == text.Length
+            && RawLiteralPlan.For(respaced, text) is { } plan) {
+            doc.Verbatim(text, source, mode, plan);
+        } else {
+            doc.Verbatim(text, source);
+        }
 
         while (cursor < pieces.Length && pieces[cursor].Span.Start < span.End) {
             lastPiece = cursor;
@@ -3015,8 +3038,9 @@ public sealed partial class CSharpDocumentBuilder {
     ///         <item>
     ///             ⚠ <b>Frozen</b> — a comment whose every continuation line begins with <c>*</c>, at
     ///             <c>false</c>, <c>/*</c> and <c>/**</c> alike. The oracle leaves it byte for byte, its
-    ///             opener's column and its trailing whitespace included. Skala still moves the opener
-    ///             (SK-DIV-0033, fact 1) and leaves the rest verbatim, which is the nearest it comes.
+    ///             opener's column and its trailing whitespace included, when it starts its line — and so
+    ///             does Skala since #459. Trailing code, a starred <c>/*</c> keeps its body frozen while its
+    ///             opener rides the code, and a starred <c>/**</c> moves with its line instead.
     ///         </item>
     ///         <item>
     ///             <b>Aligned</b> — the same shape, <c>/*</c> only, at <c>true</c>: every continuation line
@@ -3040,6 +3064,35 @@ public sealed partial class CSharpDocumentBuilder {
     void EmitBlockComment(Piece piece, SourceSpan span, bool lone = false) {
         var text = piece.Text;
         var starred = IsStarredBlockComment(text);
+        if (starred && !options.AlignMultilineComments && !lone) {
+            // ⚠ #459, SK-DIV-0033 fact 1, measured under `SkalaFormatOnly` at `false`: a starred comment
+            // that starts its line is frozen *whole* — its opener stays on the column the author wrote,
+            // too deep or not, `/*` and `/**` alike, in a type body and in a method body. A starred `/*`
+            // that trails code keeps its body frozen while its opener rides the code; a starred `/**`
+            // that trails code moves its body with its line instead, as an unstarred comment does.
+            if (piece.StartsLine) {
+                doc.Verbatim(
+                    text,
+                    span,
+                    VerbatimFlags.OwnIndent,
+                    source[LineStart(piece.Span.Start)..piece.Span.Start]
+                );
+                return;
+            }
+
+            // ⚠ And its trailing whitespace goes only if the line moved: on a line that stays put the
+            // oracle returns it byte for byte, which is the frozen class's rule and not SK-DIV-0193's.
+            if (piece.Kind == PieceKind.BlockDocComment) {
+                doc.Verbatim(
+                    text,
+                    span,
+                    VerbatimFlags.ShiftWithLine | VerbatimFlags.TrimIfShifted,
+                    SourceLineIndent(piece.Span.Start)
+                );
+                return;
+            }
+        }
+
         var flags = CommentFlags(piece) | (lone ? VerbatimFlags.AtColumnZero : VerbatimFlags.None);
         if (text.IndexOf('\n', StringComparison.Ordinal) < 0 || starred && !options.AlignMultilineComments) {
             doc.Verbatim(text, span, flags);

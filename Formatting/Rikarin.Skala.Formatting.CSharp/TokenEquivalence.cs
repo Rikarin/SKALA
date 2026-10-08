@@ -60,7 +60,14 @@ public static class TokenEquivalence {
 
         var count = Math.Min(left.Count, right.Count);
         for (var i = 0; i < count; i++) {
-            if (!string.Equals(left[i], right[i], StringComparison.Ordinal)) {
+            // ⚠ A doc comment's signature is compared by `XmlDocSignature.Matches`, which allows the one
+            // break after an element's end the sub-formatter takes (#541, #542) and nothing else; a plain
+            // comment's "C:" text never carries the separator characters that allowance reads.
+            if (!string.Equals(left[i], right[i], StringComparison.Ordinal)
+                && !(xmlDocReflow
+                    && left[i].StartsWith("C:", StringComparison.Ordinal)
+                    && right[i].StartsWith("C:", StringComparison.Ordinal)
+                    && XmlDocSignature.Matches(left[i], right[i]))) {
                 return new(i, left[i], right[i]);
             }
         }
@@ -97,7 +104,15 @@ public static class TokenEquivalence {
 
             if (!token.IsKind(SyntaxKind.EndOfFileToken)) {
                 builder.Clear();
-                builder.Append('T').Append(token.RawKind).Append(':').Append(token.ValueText);
+                // ⚠ An interpolated raw literal's end token carries the closing delimiter's indentation
+                // in its text, and `skala_indent_raw_literal_string` moves that indentation (#447). What
+                // the indentation *means* — how much every content line is stripped by — is compared
+                // through the text tokens' values, which Roslyn reports already stripped; the end
+                // token's own whitespace says nothing a value does not.
+                var value = token.IsKind(SyntaxKind.InterpolatedRawStringEndToken)
+                    ? token.ValueText.TrimStart(' ', '\t', '\r', '\n')
+                    : token.ValueText;
+                builder.Append('T').Append(token.RawKind).Append(':').Append(value);
                 items.Add(builder.ToString());
             }
 
@@ -127,7 +142,9 @@ public static class TokenEquivalence {
                 items.Add("D:" + trivia.ToFullString());
                 return;
 
-            case SyntaxKind.SingleLineDocumentationCommentTrivia
+            // ⚠ A `/** … */` too since #489: the sub-formatter rebuilds a one-line one as a starred block,
+            // and it is held to the same signature.
+            case SyntaxKind.SingleLineDocumentationCommentTrivia or SyntaxKind.MultiLineDocumentationCommentTrivia
                 when xmlDocReflow && trivia.GetStructure() is DocumentationCommentTriviaSyntax structure:
                 // ⚠ The allowance is the sub-formatter's own signature, not "comments are exempt"
                 // and not "words in order". Words in order would have to be widened again for

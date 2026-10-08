@@ -24,7 +24,8 @@ namespace Rikarin.Skala.Analysis.Tests;
 ///         <b>
 ///             The issue's "exit 0" half was a claim about the path these two were about to be routed
 ///             onto, and it held there.
-///         </b> A baseline that already reached <c>CheckCommand</c>'s filter —
+///         </b>
+///         A baseline that already reached <c>CheckCommand</c>'s filter —
 ///         a file holding the literal <c>null</c> — was written as an error-severity <c>SK9028</c>,
 ///         rendered, and decided on by nothing: the run compared against no baseline, the <c>local</c>
 ///         gate has no <c>newIssues</c> condition, and the agent renderer printed

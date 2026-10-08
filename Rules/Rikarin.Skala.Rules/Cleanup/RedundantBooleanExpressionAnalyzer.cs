@@ -29,7 +29,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             A user-defined <c>==</c> and a user-defined <c>!=</c> need not be each other's
 ///             negation.
-///         </b> Nothing in the language requires the pair to agree, so <c>!(a == b)</c> is
+///         </b>
+///         Nothing in the language requires the pair to agree, so <c>!(a == b)</c> is
 ///         <em>not</em> <c>a != b</c> for a type that overloads them; the negated-equality shape is
 ///         reported only when the comparison binds to <see cref="MethodKind.BuiltinOperator" />. A type
 ///         whose two operators do happen to agree is still declined, because whether they agree is not
@@ -295,7 +296,8 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
     ///     <b>
     ///         An equality operand is flipped rather than wrapped, and that is a termination
     ///         requirement rather than a nicety.
-    ///     </b> Writing <c>flag == false</c> as <c>!(a == b)</c> would
+    ///     </b>
+    ///     Writing <c>flag == false</c> as <c>!(a == b)</c> would
     ///     hand this rule's own negated-equality shape a finding on the fix's output, so one
     ///     <c>skala fix</c> pass would not settle — the defect <c>SK0240</c> records for its composite
     ///     <c>try</c> edit, in a different rule. The flip asks the same two questions that shape asks,

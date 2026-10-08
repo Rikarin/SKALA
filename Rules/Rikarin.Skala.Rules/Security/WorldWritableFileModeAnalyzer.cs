@@ -30,7 +30,8 @@ namespace Rikarin.Skala.Rules.Security;
 ///         <b>
 ///             "<c>Path.GetTempFileName</c> is an insecure temporary file creation method" is refuted on
 ///             .NET.
-///         </b> Measured: it creates the file at mode <c>0600</c> — .NET goes through <c>mkstemp</c>,
+///         </b>
+///         Measured: it creates the file at mode <c>0600</c> — .NET goes through <c>mkstemp</c>,
 ///         so the file exists, owned and private, before the name is returned, and the create-then-open
 ///         race the rule is written about does not arise. What is left of it is a name-exhaustion limit at
 ///         65 535 files on Windows, which is a robustness bug and not a vulnerability.

@@ -27,7 +27,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The two neighbouring inspections this concept was drawn from are not here, and both were
 ///             measured out.
-///         </b> <c>1l</c> is <c>CS0078</c>, on by default; a probe on SDK 10.0.400 confirms
+///         </b>
+///         <c>1l</c> is <c>CS0078</c>, on by default; a probe on SDK 10.0.400 confirms
 ///         it fires on <c>1l</c> and on <c>1lu</c> and stays silent on <c>1ul</c>. A <c>char</c> argument
 ///         widening to an <c>int</c> parameter is a question about overload resolution rather than about
 ///         how a literal reads, and it is a different rule.

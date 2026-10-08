@@ -38,7 +38,8 @@ public static class CliRunner {
     ///     <b>
     ///         The CLI cannot be pointed at <see cref="Template" /> any more, and that is the
     ///         change, not a defect.
-    ///     </b> Skala's keys are <c>skala_*</c>; a Rider export is spelled in
+    ///     </b>
+    ///     Skala's keys are <c>skala_*</c>; a Rider export is spelled in
     ///     ReSharper's namespace and every line of it is an unknown key. <c>config explain</c> on it
     ///     prints a table of defaults, <c>config check</c> reports ~700 SK9001s, and neither is
     ///     wrong — pointing Skala at an export no longer configures it.

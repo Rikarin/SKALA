@@ -33,7 +33,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             A <c>break</c>, a <c>continue</c> or a <c>return</c> in the body does not prevent this
 ///             rewrite, and the belief that it does is what made the shape look unshippable.
-///         </b> Only
+///         </b>
+///         Only
 ///         the filter moves; the body stays a loop body, so <c>continue</c> still advances the same
 ///         <c>foreach</c> and <c>break</c> still leaves it.
 ///     </para>
@@ -42,7 +43,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             Reusing the loop variable's name as the lambda parameter is legal, and that was
 ///             measured rather than assumed.
-///         </b> The iteration variable's scope does not reach the
+///         </b>
+///         The iteration variable's scope does not reach the
 ///         collection expression, so <c>foreach (var x in xs.Where(x =&gt; x &gt; 0))</c> compiles — which
 ///         is what lets the condition move across as source text, unrewritten.
 ///     </para>
@@ -264,7 +266,8 @@ public sealed class LoopFilterAsQueryAnalyzer : DiagnosticAnalyzer {
     ///     <b>
     ///         An <c>if</c> narrows for its body and a <c>Where</c> predicate does not, and the two
     ///         rewrites are otherwise the same tokens.
-    ///     </b> <c>option.Default is not null</c> in the guard
+    ///     </b>
+    ///     <c>option.Default is not null</c> in the guard
     ///     proves <c>option.Default</c> non-null inside the guard's body; in a lambda handed to
     ///     <c>Where</c> it proves nothing about the loop body, and the call that consumed it becomes
     ///     CS8604. Measured: 6 of 133 insertions on this repository moved such a condition, and only one
@@ -321,7 +324,8 @@ public sealed class LoopFilterAsQueryAnalyzer : DiagnosticAnalyzer {
     ///     <b>
     ///         The declared annotation, and <c>Nullability.FlowState</c> was tried first and is
     ///         useless here — measured, not assumed.
-    ///     </b> Asked of the operand of an <c>is</c> pattern,
+    ///     </b>
+    ///     Asked of the operand of an <c>is</c> pattern,
     ///     Roslyn answers <c>MaybeNull</c> for every expression there is: a non-nullable property, a
     ///     non-nullable parameter and a nullable one all come back the same, because the question being
     ///     answered is the pattern's, not the program's. A guard built on it declines everything.
@@ -330,7 +334,8 @@ public sealed class LoopFilterAsQueryAnalyzer : DiagnosticAnalyzer {
     ///         <b>
     ///             A <c>var</c> iteration variable is <c>Annotated</c> whatever it iterates, and that
     ///             is right rather than a limitation.
-    ///         </b> <c>var</c> infers the annotated form and leaves
+    ///         </b>
+    ///         <c>var</c> infers the annotated form and leaves
     ///         non-nullness to the flow state — which is exactly the flow state a <c>Where</c> predicate
     ///         does not carry into the body, so <c>if (item is not null) { Use(item); }</c> really would
     ///         become CS8604.

@@ -28,7 +28,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///         <b>
 ///             It is outright wrong inside a <c>using</c>, which is what <c>SK3007</c> reports — and the
 ///             two are disjoint by construction rather than by <c>supersedes</c>.
-///         </b> The body here must be
+///         </b>
+///         The body here must be
 ///         a <em>single</em> statement that is the <c>return await</c>, or a single expression body. A
 ///         <c>using</c> declaration needs a statement before the return and a <c>using</c> statement
 ///         makes the block's one statement a <c>using</c> rather than a <c>return</c>, so no shape this

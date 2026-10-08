@@ -17,7 +17,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <b>
 ///         The three questions are shared because getting different answers to them would make the
 ///         rules disagree about the same line.
-///     </b> <c>SK2160</c> reports a clock read, <c>SK2163</c> reports a
+///     </b>
+///     <c>SK2160</c> reports a clock read, <c>SK2163</c> reports a
 ///     subtraction of two of them, and <c>SK2161</c> reports a value whose zone was never stated; if each
 ///     carried its own idea of what <c>DateTime.UtcNow</c> is, a shape could be reported twice with two
 ///     different explanations or fall between all three.
@@ -26,7 +27,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Every type test goes through <see cref="IsFrameworkType" />, which requires the symbol to
 ///             come from metadata rather than from source.
-///         </b> A repository's own type called
+///         </b>
+///         A repository's own type called
 ///         <c>DateTime</c> — which <c>Testing/corpus</c> contains — must never be matched, and a rule
 ///         that compared display strings would match it. The same guard is what
 ///         <c>NondeterministicAssertionAnalyzer</c> uses for <c>SK8007</c>.
@@ -97,7 +99,8 @@ static class Clock {
     ///     <b>
     ///         The search is over the whole enclosing member, which is a superset of the local's
     ///         scope, and that over-approximation is the sound direction.
-    ///     </b> Seeing a write that does not
+    ///     </b>
+    ///     Seeing a write that does not
     ///     actually reach this local makes the rule decline; missing one would make it report a value it
     ///     had not proved anything about. Assignments, <c>ref</c>/<c>out</c> arguments and
     ///     increment/decrement are all writes.

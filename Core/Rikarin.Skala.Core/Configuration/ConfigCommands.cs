@@ -595,7 +595,8 @@ public static class ConfigCommands {
     ///         <em>
     ///             the
     ///             formatter reads the option <b>and</b> a committed oracle fixture pins it
-    ///         </em>, so Tier D
+    ///         </em>
+    ///         , so Tier D
     ///         has only ever meant "not Tier A" (docs/tier-d-split.md). Measured on this registry, 70
     ///         of the 161 Tier C and D options are read by production code by name — including
     ///         <c>skala_max_line_length</c>, which is the column limit the entire wrapping engine runs
@@ -613,7 +614,8 @@ public static class ConfigCommands {
     ///         <b>
     ///             "of the keys I set, which ones does the tool
     ///             ignore?"
-    ///         </b>, and on the real Rider export the answer is 244. Nothing looked wrong, because
+    ///         </b>
+    ///         , and on the real Rider export the answer is 244. Nothing looked wrong, because
     ///         fidelity is 99.7 %: an unimplemented key whose configured value coincides with what Skala
     ///         does anyway costs no fidelity at all. The exposure is forward-looking — change one of those
     ///         settings in Rider tomorrow and Skala keeps formatting the old way, silently. That is
@@ -710,17 +712,17 @@ public static class ConfigCommands {
             // ⚠ xmldoc keys sitting in a list of gaps with no explanation read as neglect, and the
             // explanation that used to be printed here was wrong: it said the oracle does not format
             // documentation comments at all. It does — `CSharpFormatDocComments` is a real
-            // `jb cleanupcode` task in 2025.2.6 — and what is true is that neither committed
-            // `OracleProfile` enables it, so no committed fixture can pin these keys today.
+            // `jb cleanupcode` task in 2025.2.6. ⚠ "Neither committed `OracleProfile` enables it" was true
+            // when this was written and is not now: `SkalaDocComments` does, and pins most of the family.
             // SK-DIV-0006 is the entry that corrects the original inference; the wording below no
             // longer repeats it. "Not verifiable yet" and "not verifiable" are different claims, and
             // only the first one is true.
             if (families.Exists(static g => g.Key == "xmldoc")) {
                 output.AppendLine(
-                    "    xmldoc*: honoured and observable, but the committed oracle profiles do not enable"
+                    "    xmldoc*: pinned only under the SkalaDocComments oracle profile, which enables ReSharper's"
                 );
                 output.AppendLine(
-                    "    ReSharper's CSharpFormatDocComments task, so no fixture pins them yet (SK-DIV-0006)."
+                    "    CSharpFormatDocComments task; a key with no fixture there is not pinned yet (SK-DIV-0006)."
                 );
             }
 

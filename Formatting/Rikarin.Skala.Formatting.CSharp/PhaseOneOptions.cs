@@ -1241,11 +1241,11 @@ public static class Ids {
     // whole of what is left of SK-DIV-0032 — the layouts themselves are fixed.
     public static readonly OptionId AlignmentTabFillStyle = OfInert("skala_alignment_tab_fill_style");
 
-    // ⚠ `OfUnoracled` in its documented sense — "asked, and answered differently" — and the mark is
-    // load-bearing rather than a place to park the key. Skala reproduces the oracle at the export's
-    // `true`; at `false` the oracle freezes a starred comment entire, including its opening `/*`'s own
-    // column, and Skala re-indents that. So the key is honoured, observable, and not conformant at one
-    // of its two values, which is exactly what bars it from Tier A. SK-DIV-0033 carries the probe.
+    // ⚠ `OfUnoracled`, and the reason it was given — "asked, and answered differently" at `false`, where
+    // the oracle freezes a starred comment entire, opener included — was paid in #459: Skala now agrees
+    // at both values on every measured shape (SK-DIV-0033). It stays marked only because promotion is
+    // the sweep's to make: Tier A needs an `oracle` glob, and a glob on an unswept Tier D key is a
+    // promotion nobody made. The next key-flip sweep is what moves it.
     public static readonly OptionId AlignMultilineComments =
         OfUnoracled("skala_align_multiline_comments");
 
@@ -1826,10 +1826,8 @@ public static class Ids {
     //     it `false` the oracle leaves a block comment's continuation asterisks exactly where the
     //     author put them; with it `true` — the export's value — it pulls each ` * ` line onto the
     //     opening `/*`'s column plus one. A comment with no asterisks is untouched at either value.
-    //     Not implemented: it rewrites the interior of a comment token, which every other key in this
-    //     family declines to do, and the trivia rewriter that would own it does not exist. ⚠ It is
-    //     also the only key here that is *on* in the export, so Skala's leaving comments alone is a
-    //     divergence at the export's own values rather than a missing option — SK-DIV-0033.
+    //     ⚠ Implemented, at `true` since 2026-08-30 and at `false` since #459 (SK-DIV-0033); see
+    //     `Ids.AlignMultilineComments` for why it is still Tier D.
 
     // ── Column alignment of adjacent constructs (int_align_*) ────────────────────────────────
     // ⚠ Every one of these is `false` in the export and every one of them is read here, so the
@@ -2888,9 +2886,14 @@ public static class Ids {
     public static readonly OptionId XmlDocMaxLineLength = Of("skala_xmldoc_max_line_length");
     public static readonly OptionId XmlDocWrapText = Of("skala_xmldoc_wrap_text");
 
-    // ⚠ `skala_xmldoc_wrap_tags_and_pi` is not registered here at all any more. It is in
-    // `XmlDocIds.Refused` with the four tag-header keys it belongs with: measured, it governs a
-    // break *inside* a tag header, which Skala can neither emit nor re-read. SK-DIV-0079.
+    // ⚠ The tag-header keys, registered and honoured at every value since SK-DIV-0381. #448 taught the
+    // model to record a header's breaks and the renderer to write one across lines at the export's
+    // values; these say where the breaks go at the others, each measured under `OracleProfile.DocComments`
+    // (SK-DIV-0079, SK-DIV-0381). `skala_xmldoc_allow_far_alignment` stays inert and unread: Skala aligns
+    // as its export value `false` says, falling back to a double indent past two thirds of the margin.
+    public static readonly OptionId XmlDocWrapTagsAndPi = Of("skala_xmldoc_wrap_tags_and_pi");
+    public static readonly OptionId XmlDocAttributeStyle = Of("skala_xmldoc_attribute_style");
+    public static readonly OptionId XmlDocAttributeIndent = Of("skala_xmldoc_attribute_indent");
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsLongerThan =
         Of("skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than");

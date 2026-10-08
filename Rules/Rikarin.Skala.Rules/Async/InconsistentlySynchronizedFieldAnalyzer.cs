@@ -48,7 +48,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///             <b>
 ///                 callable from outside the type and is never
 ///                 called from inside the lock
-///             </b>. A private helper, or a public method the type itself
+///             </b>
+///             . A private helper, or a public method the type itself
 ///             only ever invokes while holding the lock, is the "caller holds the lock" contract, and
 ///             it is extremely common.
 ///         </item>

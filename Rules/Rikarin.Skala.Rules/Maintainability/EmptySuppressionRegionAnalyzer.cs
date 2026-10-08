@@ -19,7 +19,8 @@ namespace Rikarin.Skala.Rules.Maintainability;
 ///     <b>
 ///         This is the decidable half of "the suppression has nothing to suppress", and the other half
 ///         is not decidable here at all.
-///     </b> Deciding that a disabled warning "no longer fires" means
+///     </b>
+///     Deciding that a disabled warning "no longer fires" means
 ///     knowing what the compilation would report <em>without</em> the pragma, and an analyzer cannot
 ///     ask that question: pragma filtering is applied to compiler diagnostics before
 ///     <c>Compilation.GetDiagnostics</c> returns, an analyzer cannot enumerate the other analyzers in

@@ -14,7 +14,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     <b>
 ///         <c>SK1130</c>'s rewrite really is illegal inside an expression tree, and the rule really
 ///         has no guard against it.
-///     </b> <c>span is "abc"</c> is a <em>constant pattern</em> — not the type-test operator that
+///     </b>
+///     <c>span is "abc"</c> is a <em>constant pattern</em> — not the type-test operator that
 ///     <c>SK1120</c> emits — and a constant pattern in a lambda converted to
 ///     <c>Expression&lt;TDelegate&gt;</c> is CS8122. What makes the hole unreachable is a property of a
 ///     <em>different</em> language feature: the receiver has to be <c>Span&lt;char&gt;</c> or
@@ -25,7 +26,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///         <b>
 ///             That was verified against csc rather than reasoned about, and the verification changed
 ///             the story: the error is <c>CS8640</c>, not <c>CS8122</c>.
-///         </b> "Expression tree cannot contain value of ref struct or restricted type" fires on the
+///         </b>
+///         "Expression tree cannot contain value of ref struct or restricted type" fires on the
 ///         <em>unrewritten</em> source, so the rule never sees the shape — every one of the four routes
 ///         a span could take into a tree is rejected before <c>SK1130</c> is asked anything: as the
 ///         lambda's own parameter, as the result of a call inside the tree, inside a delegate lambda
