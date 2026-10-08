@@ -749,7 +749,9 @@ public static class SpaceRules {
         return true;
     }
 
-    /// <summary>A query clause's own keyword — <c>where</c>, <c>select</c>, <c>orderby</c>, <c>into</c> and the rest.</summary>
+    /// <summary>
+    ///     A query clause's own keyword — <c>where</c>, <c>select</c>, <c>orderby</c>, <c>into</c> and the rest.
+    /// </summary>
     static bool IsAQueryKeyword(SyntaxToken token) =>
         SyntaxFacts.IsKeywordKind(token.Kind())
         && token.Parent is QueryClauseSyntax or SelectOrGroupClauseSyntax or QueryContinuationSyntax or OrderingSyntax;

@@ -173,11 +173,25 @@ public sealed class QualifiedReferenceRule : ArrangementRule {
                 var meant = model.GetSymbolInfo(spine[i]).Symbol;
                 meant = (meant as IMethodSymbol)?.ContainingType ?? meant;
                 var arity = segments[i] is GenericNameSyntax generic ? generic.Arity : 0;
-                var found = model.LookupNamespacesAndTypes(node.SpanStart, name: segments[i].Identifier.ValueText)
-                    .Where(symbol => symbol is not INamedTypeSymbol type || type.Arity == arity)
-                    .ToArray();
+                // ⚠ A loop rather than two lambdas over the iteration's `arity` and `meant` (SK4002).
+                var found = false;
+                var meantIsFound = false;
+                foreach (var symbol in model.LookupNamespacesAndTypes(
+                             node.SpanStart,
+                             name: segments[i].Identifier.ValueText
+                         )) {
+                    if (symbol is INamedTypeSymbol type && type.Arity != arity) {
+                        continue;
+                    }
 
-                if (found.Length > 0 && !found.Any(symbol => SymbolEqualityComparer.Default.Equals(symbol, meant))) {
+                    found = true;
+                    if (SymbolEqualityComparer.Default.Equals(symbol, meant)) {
+                        meantIsFound = true;
+                        break;
+                    }
+                }
+
+                if (found && !meantIsFound) {
                     return true;
                 }
             }
@@ -192,15 +206,12 @@ public sealed class QualifiedReferenceRule : ArrangementRule {
             ISymbol bound,
             bool expression
         ) {
+            var option = expression
+                ? SpeculativeBindingOption.BindAsExpression
+                : SpeculativeBindingOption.BindAsTypeOrNamespace;
             var info = attribute is not null
                 ? model.GetSpeculativeSymbolInfo(attribute.SpanStart, attribute.WithName((NameSyntax)candidate))
-                : model.GetSpeculativeSymbolInfo(
-                    node.SpanStart,
-                    candidate,
-                    expression
-                        ? SpeculativeBindingOption.BindAsExpression
-                        : SpeculativeBindingOption.BindAsTypeOrNamespace
-                );
+                : model.GetSpeculativeSymbolInfo(node.SpanStart, candidate, option);
 
             return info.CandidateSymbols.IsEmpty && SymbolEqualityComparer.Default.Equals(info.Symbol, bound);
         }

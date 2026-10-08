@@ -789,7 +789,9 @@ public sealed partial class CSharpDocumentBuilder {
         return RunIsDetached(first) ? -1 : next;
     }
 
-    /// <summary>The first piece of the own-line plain comment run that ends at <paramref name="last" />, or −1.</summary>
+    /// <summary>
+    ///     The first piece of the own-line plain comment run that ends at <paramref name="last" />, or −1.
+    /// </summary>
     int RunStart(int last) {
         if (last < 0 || pieces[last].Kind is not (PieceKind.LineComment or PieceKind.BlockComment)) {
             return -1;

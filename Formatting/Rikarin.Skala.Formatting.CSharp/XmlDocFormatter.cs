@@ -352,7 +352,11 @@ public static class XmlDocFormatter {
     /// </summary>
     /// <remarks>
     ///     ⚠ Measured under <c>OracleProfile.DocComments</c>, and the class is narrow. The oracle rebuilds
-    ///     <c>/** &lt;summary&gt;Doc.&lt;/summary&gt; */</c> as <c>/**</c> / <c> * &lt;summary&gt;Doc.&lt;/summary&gt;</c> /
+    ///     <c>
+    ///         /**
+    ///         &lt;summary&gt;Doc.&lt;/summary&gt; */
+    ///     </c>
+    ///     as <c>/**</c> / <c> * &lt;summary&gt;Doc.&lt;/summary&gt;</c> /
     ///     <c> */</c>, asterisks on the opener's column plus one, when the comment:
     ///     <list type="bullet">
     ///         <item>

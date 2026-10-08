@@ -37,7 +37,7 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         count from 1 to 0, and the same above <c>default:</c> did too. This is the shape recorded as
 ///         [#302], and the two branches here now ask
 ///         <see
-///             cref="RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan)" />
+///             cref="RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(SyntaxTree, TextSpan)" />
 ///         over the deleted span instead. ⚠ The sibling rules were probed the same way and are clean:
 ///         <c>SK0241</c> deletes from a keyword to the next token and guards only that keyword's
 ///         <em>trailing</em> trivia, and <c>SK0244</c> deletes a declaration's <em>full</em> span, so
