@@ -3745,7 +3745,15 @@ public sealed class BreakPlan {
         if (options.WrapBeforeTernaryOpsigns) {
             var atQuestion = BreaksBefore(node.QuestionToken);
             var atColon = BreaksBefore(node.ColonToken);
-            if (pins && (atQuestion || atColon)) {
+            if (pins && (atQuestion || atColon) && !IsTernaryChainMember(node)) {
+                // ⚠ A single conditional is chopped at both signs once the author broke at either
+                // (#518). Measured 2026-10-08: `b ? a` / `: c` in a declarator, a `return`, an
+                // argument and a parenthesised operand, `b` / `? a : c`, and `a` / `/* c */` / `? 1 : 2`
+                // all come back `b` / `? a` / `: c`. The per-sign pin below is a chain member's, whose
+                // `cond ? "win"` / `: cond ? "osx"` / `: "linux"` the oracle keeps as written.
+                Mandatory(node.QuestionToken);
+                Mandatory(node.ColonToken);
+            } else if (pins && (atQuestion || atColon)) {
                 Pin(node.QuestionToken, atQuestion);
                 Pin(node.ColonToken, atColon);
             } else if (IsTernaryChainMember(node) && !steps) {
@@ -5154,7 +5162,9 @@ public sealed class BreakPlan {
     ///         <c>always</c> the oracle joins <c>if (c) M(c, d);</c> and <c>while (c) M(c, d);</c> and
     ///         leaves every one of <c>if (c) / if (d) / M()</c>, <c>if (c) / using (…) / M()</c> and the
     ///         nested <c>for</c> exactly where the author put them — so a statement that carries an
-    ///         embedded statement of its own is not simple.
+    ///         embedded statement of its own is not simple. ⚠ "Where the author put them" was measured on
+    ///         broken input only: written on one line, the oracle pushes every one of them off (#519,
+    ///         <see cref="IsPushedOffByNesting" />).
     ///     </para>
     ///     <para>
     ///         ⚠ That alone is not enough, and the probe that says so is the one that separates "nested"
@@ -5185,14 +5195,24 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ At every value of the keep key and of the placement key (#469, #519): measured at keep and
+        // at `false` under `always`, `if_owner_is_single_line` and `never`, every nesting written on one
+        // line comes back one statement per line.
         var keeps = options.KeepExistingEmbeddedArrangement;
-        if (keeps && IsPushedOffByNesting(owner, embedded)) {
+        if (IsPushedOffByNesting(owner, embedded)) {
             Mandatory(first);
             return;
         }
 
         var placement = options.PlaceSimpleEmbeddedStatementOnSameLine;
-        var simple = IsSimpleEmbeddedStatement(owner, embedded);
+
+        // ⚠ And an `if` with an `else` keeps its statement as a simple owner does, though it is itself
+        // embedded (#469, #519): its `else` starts a line of its own (#480), so a group over the whole
+        // `if` would read that break as the statement not fitting. Measured at keep and at `always`;
+        // at `if_owner_is_single_line` the owner is multi-line for the same reason, and it breaks.
+        var simple = IsSimpleEmbeddedStatement(owner, embedded)
+            || owner is IfStatementSyntax { Else: not null }
+            && EmbeddedStatementOf(embedded) is null;
 
         if (!keeps && placement == PlacementStyle.Never) {
             Mandatory(first);
@@ -5221,11 +5241,7 @@ public sealed class BreakPlan {
         // width unbounded.
         // ⚠ Simple owners only. An owner that carries an embedded statement of its own — `if (\n c) if
         // (d) n++;` — is pushed off by the oracle whenever it is multi-line, and keeps the group point.
-        // ⚠ And an `if` with an `else` keeps its statement as a simple owner does, though it is itself
-        // embedded (#469): its `else` now starts a line of its own (#480), so a group over the whole
-        // `if` would read that break as the statement not fitting.
-        if (keeps
-            && (simple || owner is IfStatementSyntax { Else: not null } && EmbeddedStatementOf(embedded) is null)) {
+        if (keeps && simple) {
             if (BreaksBefore(first)) {
                 Mandatory(first);
             } else {
@@ -5236,9 +5252,13 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ `if_owner_is_single_line` reads an `else`'s owner as the whole `if` (#519): at
+        // `keep = false` the oracle writes `else` / `M();` whenever the `if` spans lines, which with a
+        // statement that is not a block it always does, and `} else` / `M();` after a block. A group
+        // over the `else` clause alone saw `else M();` fit.
         Point(first, group);
         Describe(
-            owner,
+            owner is ElseClauseSyntax { Parent: IfStatementSyntax statement } ? statement : owner,
             group,
             GroupMode.Preserve,
             new(
@@ -5320,8 +5340,8 @@ public sealed class BreakPlan {
     ///     exemption carries over to the statement after them: <c>else if (b) if (c) M();</c> pushes
     ///     <c>if (c)</c> down and <c>M()</c> with it.
     ///     <para>
-    ///         Not at <c>keep = false</c>, where the placement key decides and the oracle leaves a nesting
-    ///         where the author put it (see <see cref="PlanEmbeddedStatement" />).
+    ///         ⚠ At <c>keep = false</c> as well, at every placement value (#519): measured on the same
+    ///         nestings, written on one line and written broken.
     ///     </para>
     /// </remarks>
     static bool IsPushedOffByNesting(SyntaxNode owner, StatementSyntax embedded) {
