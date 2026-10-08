@@ -6135,28 +6135,29 @@ public sealed class BreakPlan {
             // width breaks it in 3 664 — so the arrow breaks whenever the body does not fit beside it,
             // with no ordering question asked.
             ArrowWinsOverTheChain(lambda)
-            ? new GroupFacts(BreaksIfTooLong: true)
-            : IsAFilledSoleLambda(lambda, body)
-                ? new GroupFacts(
-                    BreaksIfTooLong: true,
-                    LambdaParameters: lambda switch {
-                        SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
-                        ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Span.Length,
-                        _ => 1
-                    },
-                    LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
-                    LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
-                )
-                : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
+                ? new GroupFacts(BreaksIfTooLong: true)
+                : IsAFilledSoleLambda(lambda, body)
                     ? new GroupFacts(
                         BreaksIfTooLong: true,
+                        LambdaParameters: lambda switch {
+                            SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
+                            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Span
+                                .Length,
+                            _ => 1
+                        },
                         LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
-                        LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
-                        LambdaChainHead: chainHead
+                        LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
                     )
-                    : ArrowMovesACallChainDown(body)
-                        ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
-                        : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+                    : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
+                        ? new GroupFacts(
+                            BreaksIfTooLong: true,
+                            LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
+                            LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
+                            LambdaChainHead: chainHead
+                        )
+                        : ArrowMovesACallChainDown(body)
+                            ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
+                            : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
 
     /// <summary>
