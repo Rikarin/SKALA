@@ -1837,7 +1837,7 @@ public sealed class BreakPlan {
                     // depths and under `chop_always`. Not for a fill, for #418's reason.
                     Continues: !fill
                 ),
-                SpendsIndent: true,
+                true,
 
                 // ⚠ A level of its own on top of the outer group's, and the writer's one level per
                 // opening line decides whether it counts (#503, SK-DIV-0198). On the declaration's line
@@ -2448,8 +2448,8 @@ public sealed class BreakPlan {
                     PrefersOuterBreak: true,
                     SkipsOuterTail: true
                 ),
-                SpendsIndent: true,
-                LeadingGapInside: true
+                true,
+                true
             )
         );
     }
