@@ -213,6 +213,17 @@ public sealed class XmlDocRenderer {
             // `<c>Code.</c> Trailing prose.` sharing a line.
             if (owns || breaksBefore) {
                 Break();
+                return;
+            }
+
+            // ⚠ A tag whose header had to be wrapped spans lines, and what follows it starts a line of its
+            // own — measured on a `<see …/>` wrapped mid-prose and on a `<child …/>` wrapped before
+            // `Body.` (#448). Placed now so the break is known; not taken if the next thing is glued to the
+            // tag, which a break would change.
+            if (options.LinebreakBeforeMultilineElements && flat!.IndexOfAny([SoftGap, HardGap]) >= 0) {
+                var before = lines.Count;
+                Flush();
+                breakAfterHeader = lines.Count > before;
             }
 
             return;
@@ -284,6 +295,13 @@ public sealed class XmlDocRenderer {
         // ⚠ A self-closing element has no inside to break open, and treating one as multi-line
         // rewrites `<code … />` into `<code …>` with a closing tag that was never there.
         // Newtonsoft's `<code source="…" title="…" />` is 130 columns wide and found this.
+        // ⚠ A header the author broke spans lines, so its element cannot be flat: measured, the oracle opens
+        // `<customElement alphaAttribute="1"` / `betaAttribute="2">Body.</customElement>` and puts `Body.`
+        // on a line of its own though it would fit (#448).
+        if (!element.SelfClosing && element.Attributes.Any(static attribute => attribute.BreakBefore)) {
+            return true;
+        }
+
         if (element.SelfClosing || element.Verbatim is not null) {
             // ⚠ Verbatim elements are exempt from the threshold below. The oracle does apply it to
             // `<c>`; doing the same here would move a byte-for-byte code body onto a re-indented
@@ -356,8 +374,12 @@ public sealed class XmlDocRenderer {
     string Tag(XmlDocElement element, string close) {
         var builder = new StringBuilder(element.Header);
         var equals = options.SpacesAroundEqInAttribute ? " = " : "=";
+        var soft = options.WrapLines ? SoftGap : ' ';
         foreach (var attribute in element.Attributes) {
-            builder.Append(' ').Append(attribute.Name).Append(equals).Append(attribute.Value);
+            builder.Append(attribute.BreakBefore ? HardGap : soft)
+                .Append(attribute.Name)
+                .Append(equals)
+                .Append(attribute.Value);
         }
 
         if (close == ">" && options.SpaceAfterLastAttribute && element.Attributes.Length > 0) {
@@ -366,6 +388,40 @@ public sealed class XmlDocRenderer {
 
         return builder.Append(close).ToString();
     }
+
+    /// <summary>
+    ///     ⚠ The gap before an attribute where the header may be broken to fit the margin. Written into the
+    ///     header in place of the space and resolved by <see cref="Flush" />, which is the one place that
+    ///     knows the column. Measures one column, as the space it stands for does.
+    /// </summary>
+    /// <remarks>
+    ///     #448, SK-DIV-0079, measured under <c>OracleProfile.DocComments</c>: the oracle fills a header
+    ///     greedily, an attribute going to a continuation line when its own end — its closing quote; the
+    ///     <c>&gt;</c> or <c>/&gt;</c> after it is not counted — would pass the margin, and the first attribute
+    ///     moves too when it does not fit beside the tag name. The continuation is the tag's column plus one
+    ///     indent. A tag that does not fit after prose is moved to a line of its own first and wrapped
+    ///     there.
+    ///     <para>
+    ///         ⚠ Gated on <c>wrap_lines</c> alone. <c>skala_xmldoc_wrap_tags_and_pi</c> is what the oracle
+    ///         gates it on, and it stays in <see cref="XmlDocIds.Refused" />: Skala behaves as the export's
+    ///         <c>true</c> at both values, and <c>false</c> — "introduce no break" — is SK-DIV-0381. Promoting
+    ///         the key is a registry change that wants a sweep row, not a side effect of this.
+    ///     </para>
+    /// </remarks>
+    const char SoftGap = '\u001F';
+
+    /// <summary>
+    ///     ⚠ The gap before an attribute the author broke the line in front of — always a break. See
+    ///     <see cref="XmlDocNameValue.BreakBefore" />.
+    /// </summary>
+    const char HardGap = '\u001E';
+
+    /// <summary>
+    ///     A child's flat text as it sits inside a flat parent: its soft gaps plain spaces, or null when an
+    ///     author's break means it spans lines.
+    /// </summary>
+    static string? Inline(string flat) =>
+        flat.Contains(HardGap, StringComparison.Ordinal) ? null : flat.Replace(SoftGap, ' ');
 
     /// <summary>The element's self-closing tag.</summary>
     string SelfClosingTag(XmlDocElement element) => Tag(element, options.SpaceBeforeSelfClosing ? " />" : "/>");
@@ -490,11 +546,12 @@ public sealed class XmlDocRenderer {
                     // content was *nothing but* elements, which left mixed content on one line.
                     if (options.BreakBefore(element.Name)
                         || Flat(element) is not { } flat
+                        || Inline(flat) is not { } inline
                         || Structural(element)) {
                         return null;
                     }
 
-                    Join(builder, flat, element.Glued);
+                    Join(builder, inline, element.Glued);
                     break;
             }
         }
@@ -540,7 +597,30 @@ public sealed class XmlDocRenderer {
     bool FitsOpen(XmlDocElement element, string flat) =>
         !options.WrapLines
         || !(options.WrapText || element.HasChildElements)
+        || OneWord(element) && !HeaderWraps(element)
         || IndentWidth() + TextWidth.Measure(flat) - element.Name.Length - "</>".Length <= budget;
+
+    /// <summary>Whether the element's content is one unbreakable word.</summary>
+    /// <remarks>
+    ///     ⚠ The same reason as <c>wrap_text = false</c> above, reached by another road, measured (#448):
+    ///     opening an element cannot move its first word left — the first content line is filled from the
+    ///     start tag's closing column (SK-DIV-0019's rule 2) — so content with nowhere to break gains
+    ///     nothing from it. The oracle keeps <c>&lt;summary&gt;</c> holding one 115-column word on one line,
+    ///     and a 119-column header followed by <c>Body.</c>; one more word in either and it opens.
+    /// </remarks>
+    static bool OneWord(XmlDocElement element) =>
+        element.Children.Length > 0
+        && element.Children.All(static child => child is XmlDocWord)
+        && element.Children.Skip(1).All(static child => child.Glued);
+
+    /// <summary>
+    ///     Whether the start tag will be wrapped at its attributes, which spreads the element over lines
+    ///     whatever its content: measured, a wrapped header's element is opened though it holds one word.
+    /// </summary>
+    bool HeaderWraps(XmlDocElement element) =>
+        options.WrapLines
+        && element.Attributes.Length > 0
+        && IndentWidth() + TextWidth.Measure(Tag(element, string.Empty)) > budget;
 
     /// <summary>What one side of a placed unit is, as the break beside it sees it.</summary>
     /// <remarks>
@@ -572,7 +652,17 @@ public sealed class XmlDocRenderer {
         && before.Depth > 0
         && after.Depth > 0;
 
+    /// <summary>⚠ A wrapped tag header was just placed; the next unit not glued to it starts a new line.</summary>
+    bool breakAfterHeader;
+
     void Push(string text, bool glued, bool tag, Edge lead, Edge trail) {
+        if (breakAfterHeader) {
+            breakAfterHeader = false;
+            if (!glued) {
+                Break();
+            }
+        }
+
         if (glued) {
             // ⚠ Glue has to survive an empty token buffer. Whatever came before may already be on
             // the line, and forgetting that here is how `<c>x</c>s` becomes `<c>x</c> s`.
@@ -621,7 +711,10 @@ public sealed class XmlDocRenderer {
         tokenIsTag = false;
         this.weld = false;
 
-        var width = TextWidth.Measure(text);
+        // ⚠ A header carrying an author's break moves by its first line only: the rest is on lines of its
+        // own whatever this one does.
+        var hard = text.IndexOf(HardGap, StringComparison.Ordinal);
+        var width = TextWidth.Measure(hard < 0 ? text : text[..hard]);
         if (!empty && mayWrap && this.width + 1 + width > budget) {
             EndLine();
         }
@@ -636,10 +729,80 @@ public sealed class XmlDocRenderer {
             this.width++;
         }
 
-        current.Append(text);
-        this.width += width;
+        if (text.IndexOfAny([SoftGap, HardGap]) < 0) {
+            current.Append(text);
+            this.width += width;
+        } else {
+            Header(text);
+        }
+
         placed = true;
         lineTrail = tokenTrail;
+    }
+
+    /// <summary>Places a unit holding a tag header's gaps, breaking the header where it must.</summary>
+    /// <remarks>
+    ///     ⚠ The gaps all belong to one header — <see cref="Inline" /> spends a child's before its parent
+    ///     is flattened — so the tag's column is that of the last <c>&lt;</c> before the first gap, and every
+    ///     continuation goes one indent past it.
+    /// </remarks>
+    void Header(string text) {
+        // ⚠ The line's real width, not `width`: a header placed on a start tag's first content line would
+        // otherwise be measured from the carried column (SK-DIV-0019's rule 2), and measured, the oracle
+        // wraps a child's header there at the plain margin with its continuation one indent past where the
+        // tag really is.
+        var first = text.IndexOfAny([SoftGap, HardGap]);
+        var carried = width - TextWidth.Measure(current.ToString());
+        width -= carried;
+        var tagColumn = width + TextWidth.Measure(text[..text.LastIndexOf('<', first)]);
+        var continuation = tagColumn + options.IndentSize;
+        var broke = false;
+
+        current.Append(text, 0, first);
+        width += TextWidth.Measure(text[..first]);
+
+        var at = first;
+        while (at < text.Length) {
+            var gap = text[at];
+            var next = text.IndexOfAny([SoftGap, HardGap], at + 1);
+            var end = next < 0 ? text.Length : next;
+            var segment = text[(at + 1)..end];
+
+            // ⚠ What has to fit is the attribute — up to its closing quote. The `>` or `/>` after the last
+            // one is not counted, measured: a header whose `>` lands one column past the margin stays whole.
+            var measured = TextWidth.Measure(segment[..AttributeEnd(segment)]);
+            if (gap == HardGap || width + 1 + measured > budget) {
+                lineTrail = new(Edge.Element, depth);
+                EndLine();
+                current.Append(' ', continuation);
+                width = continuation;
+                empty = false;
+                lineLead = new(Edge.Element, depth);
+                broke = true;
+            } else {
+                current.Append(' ');
+                width++;
+            }
+
+            current.Append(segment);
+            width += TextWidth.Measure(segment);
+            at = end;
+        }
+
+        if (!broke) {
+            width += carried;
+        }
+    }
+
+    /// <summary>Where the attribute a segment starts with ends: after its quoted value.</summary>
+    static int AttributeEnd(string segment) {
+        var open = segment.IndexOfAny(['"', '\'']);
+        if (open < 0) {
+            return segment.Length;
+        }
+
+        var close = segment.IndexOf(segment[open], open + 1);
+        return close < 0 ? segment.Length : close + 1;
     }
 
     void Start() {
@@ -671,6 +834,7 @@ public sealed class XmlDocRenderer {
         // breaks in front of a `<para>` that is the first thing in its parent, and the `<para>` line
         // starts at its own indent rather than at the parent's start tag.
         carry = 0;
+        breakAfterHeader = false;
         if (empty) {
             return;
         }

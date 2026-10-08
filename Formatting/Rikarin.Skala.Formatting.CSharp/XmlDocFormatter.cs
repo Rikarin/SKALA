@@ -10,7 +10,7 @@ namespace Rikarin.Skala.Formatting.CSharp;
 /// <summary>What the sub-formatter did to one file.</summary>
 /// <param name="Reflowed">Comments re-wrapped.</param>
 /// <param name="Refused">
-///     Comments left exactly as written. Malformed XML, a multi-line tag header, glue a re-wrap could
+///     Comments left exactly as written. Malformed XML, an attribute written across lines, glue a re-wrap could
 ///     not honour, or a round trip that did not come back identical.
 /// </param>
 /// <param name="Replacements">
@@ -36,7 +36,7 @@ public enum XmlDocRefusalReason {
     /// <summary>Not well-formed XML. Reported at hint as <c>SK0003</c>; hazard 2 of docs/plan/05.</summary>
     Malformed,
 
-    /// <summary>A shape the model declines to represent: a tag header spanning lines, a mismatched end tag.</summary>
+    /// <summary>A shape the model declines to represent: an attribute spanning lines, a mismatched end tag.</summary>
     Unmodelled,
 
     /// <summary>The trivia's line range holds something that is not a <c>///</c> line.</summary>

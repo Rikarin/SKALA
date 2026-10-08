@@ -3571,7 +3571,7 @@ change of its own: the arrow's group now sees a body whose chain is certain to b
 form, so `if_owner_is_single_line` reads the declaration as multi-line. The fixture's header says so
 and its expected output was regenerated.
 
-## SK-DIV-0079 — `skala_xmldoc_wrap_tags_and_pi` wraps a tag's *attributes*, and Skala cannot re-read a header it broke
+## SK-DIV-0079 — `skala_xmldoc_wrap_tags_and_pi` wraps a tag's *attributes*, and Skala cannot re-read a header it broke — **RESOLVED at the export's values (#448)**
 
 ⚠ **The sweep called this one `SPURIOUS` and the verdict was about the fixture, not the key.**
 `constructs/xmldoc/skala_xmldoc_wrap_tags_and_pi.cs` is prose carrying a `<see cref="…" />` that
@@ -3784,6 +3784,40 @@ renderer. What the renderer would actually unlock is `skala_xmldoc_attribute_ind
   after which the emitter side is the easy half and all five keys become answerable at once. ⚠ Needs
   the oracle for the four dependent keys' behaviour, which has never been measured because nothing
   could ask.
+
+### ✅ Resolved at the export's values for #448 (2026-10-08)
+
+The model records an author's break before an attribute (`XmlDocNameValue.BreakBefore`) instead of
+refusing the comment, and the renderer writes a header across lines: the gap before each attribute is a
+marker that `XmlDocRenderer.Flush` resolves where it knows the column. Measured under
+`SkalaDocComments` on 30-odd headers, the rule is:
+
+- **greedy fill**: an attribute moves to a continuation line when its own end — its closing quote —
+  would pass the margin. ⚠ The `>` or `/>` after the last one is **not counted**: a header whose `>` is
+  the 121st column stays whole, one whose quote is stays not. The first attribute moves too when it does
+  not fit beside the tag name (`<param` / `name="…130 columns…">`).
+- **continuation at the tag's real column plus one indent** — real, not the carried column of
+  SK-DIV-0019's rule 2: a `<child …/>` on the first content line of an element whose own header wrapped
+  continues at 8, not 26.
+- **a tag that does not fit after prose moves to a line of its own first**, and is wrapped there; what
+  follows a wrapped tag starts a new line.
+- **an author's break between attributes is kept and re-indented** — before the first attribute too —
+  even in a header that fits; ⚠ a break before `/>` is **joined**. A header the author broke makes its
+  element multi-line (`Body.` goes below though it would fit).
+
+⚠ **And a rule this entry's probes found that is not about headers at all.** An element whose content
+is **one unbreakable word** is never opened, however far past the margin: a `<summary>` holding one
+115-column word stays on one line, and so does a 119-column header followed by `Body.` — while one
+more word opens either. It is SK-DIV-0019's rule 2 seen from the other side: the first content line is
+filled from the start tag's closing column, so opening cannot move the first word left. Skala used to
+open both. `XmlDocRenderer.FitsOpen` (`OneWord`), unless the header itself wraps.
+
+- pinned by `constructs/trivia/doc-comment-tag-header-wrap.cs` (18 shapes, the oracle's doc-comment
+  fixture beside it, Skala agreeing) and `XmlDocHeaderWrapIssue448Tests`.
+- ⚠ **not honoured: every non-export value of the header keys.** `skala_xmldoc_wrap_tags_and_pi`,
+  `skala_xmldoc_attribute_style` and `skala_xmldoc_attribute_indent` stay in `XmlDocIds.Refused` and
+  Skala writes the export's answer whatever they say — SK-DIV-0381.
+- ⚠ status: **resolved at the export's values**.
 
 ## SK-DIV-0080 — an aligned list pattern's continuation lines are not filled greedily, and no one rule fills both it and a collection expression
 
@@ -7115,6 +7149,38 @@ changes a comment the oracle would have left.
 - options: none.
 - ⚠ status: **open**, partly measured (2026-10-08). Reproduction: the shapes above, one per member, asked
   with `Testing ask <dir> --profile=SkalaDocComments`.
+
+## SK-DIV-0381 — the tag-header keys are read at their export values only
+
+Since #448 Skala wraps a tag header at the margin and keeps an author's break inside one — the export's
+`skala_xmldoc_wrap_tags_and_pi = true`, `skala_xmldoc_attribute_style = do_not_touch` and
+`skala_xmldoc_attribute_indent = single_indent` (SK-DIV-0079). It writes that answer at every value of
+the three, which stay in `XmlDocIds.Refused`. Measured, the oracle separates them: at
+`wrap_tags_and_pi = false` it introduces no break (it still keeps an author's), and the other values of
+the other two are tabled in SK-DIV-0079.
+
+⚠ Honouring `false` is one gate in `XmlDocRenderer.Tag` (the soft gap becomes a space). It is held back
+because registering the key moves it from `XmlDocIds.Refused` into the implemented set, where
+`XmlDocKeyCoverageTests` and `OptionCoverageTests` require Tier A on a committed sweep row, and the key's
+committed fixture never wraps a header, so a sweep over it could not separate the values (the
+`SPURIOUS` row SK-DIV-0079 opens with). Paying it: add a wrapping header to
+`constructs/xmldoc/skala_xmldoc_wrap_tags_and_pi.cs`, regenerate, register the key, sweep it.
+
+- options: `skala_xmldoc_wrap_tags_and_pi`, `skala_xmldoc_attribute_style`, `skala_xmldoc_attribute_indent`
+- ⚠ status: **open**, deliberate until the sweep.
+
+## SK-DIV-0382 — the oracle breaks a word glued to an element's end; Skala refuses the comment
+
+`<remarks>Lead. <para>Short.</para>Glued.</remarks>` and a self-closing `<child …/>Body.` written with no
+space after the tag: under `SkalaDocComments` the oracle puts `Glued.` / `Body.` on a line of its own
+below the element. Skala treats the word as welded to the tag — a break there inserts whitespace the author
+did not write, which the round-trip signature compares — and refuses the comment as `Glue` (or, for the
+self-closing case, keeps them on one line). Found beside #451 and #448; not fixed: whether the oracle's
+break is safe depends on whether whitespace beside a block element is ever significant to a doc renderer,
+which is a decision, not a measurement.
+
+- options: none.
+- ⚠ status: **open**.
 
 ## SK-DIV-0177 — a named argument's colon is a break point by the arrow's rule
 

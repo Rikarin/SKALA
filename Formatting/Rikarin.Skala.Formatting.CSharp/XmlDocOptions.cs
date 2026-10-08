@@ -448,19 +448,19 @@ public static class XmlDocIds {
     ///     </para>
     /// </remarks>
     public static ImmutableArray<KeyValuePair<string, string>> Refused => [
-        // ── Measured, real, and not implemented: header wrapping ─────────────────────────────
-        // ⚠ These four are pending rather than refused, and they share one prerequisite: Skala
-        // never breaks a line inside a tag header, and the oracle does. Until the renderer can
-        // wrap a header, none of the four has a subject in Skala's output — but each of them
-        // plainly has one in the oracle's, so the reason is Skala's shape and says nothing
-        // about the key.
+        // ── Measured, real, and not implemented: the shape of a wrapped header ───────────────
+        // ⚠ The prerequisite these shared is paid (#448): the renderer wraps a header past the margin
+        // and keeps an author's break inside one, as the export's `attribute_style = do_not_touch`,
+        // `attribute_indent = single_indent` and `wrap_tags_and_pi = true` ask. What stays refused is
+        // every *other* value of those three — Skala writes the export's answer whatever they say —
+        // and the two keys below them that are inert or masked.
         new(
             "skala_xmldoc_attribute_indent",
-            "Pending, not refused, and now MEASURED rather than assumed. It chooses how a wrapped tag header's continuation lines are indented and all three of its values separate: with the tag opening at column 12, `single_indent` (the export) puts them at 16, `double_indent` at 20, and `align_by_first_attribute` at 17 — under the first attribute. Skala does not yet wrap or re-read a header, so it has no subject here. SK-DIV-0079."
+            "Pending, not refused, and now MEASURED rather than assumed. It chooses how a wrapped tag header's continuation lines are indented and all three of its values separate: with the tag opening at column 12, `single_indent` (the export) puts them at 16, `double_indent` at 20, and `align_by_first_attribute` at 17 — under the first attribute. Since #448 Skala wraps a header and keeps an author's break, always at the export's `single_indent` — one indent past the tag, whatever this key says. SK-DIV-0079."
         ),
         new(
             "skala_xmldoc_attribute_style",
-            """Pending, not refused. ⚠ The reason recorded here — 'it arranges the attributes of a header Skala does not yet wrap' — is MEASURED FALSE: it does not wait for a wrap. `on_different_lines` puts the tag name alone and every attribute on its own line, and `first_attribute_on_single_line` keeps the first on the tag's line and breaks the rest, and BOTH do so to a header that fits on one line comfortably. What survives is the second half: the export leaves it at `do_not_touch`, so the default costs nothing today. ⚠ The open question this entry recorded is now CLOSED and the hypothesis it named was right: `on_single_line` IS distinguished from `do_not_touch`, on exactly the shape it predicted — an already-wrapped short header, `<see cref="System.String"` / `href="https://short.invalid/" />`, which `do_not_touch` keeps wrapped and `on_single_line` joins onto one line. All FOUR values separate. SK-DIV-0079."""
+            """Pending, not refused. ⚠ The reason recorded here — 'it arranges the attributes of a header Skala does not yet wrap' — is MEASURED FALSE: it does not wait for a wrap. `on_different_lines` puts the tag name alone and every attribute on its own line, and `first_attribute_on_single_line` keeps the first on the tag's line and breaks the rest, and BOTH do so to a header that fits on one line comfortably. What survives is the second half: the export leaves it at `do_not_touch`, which is what Skala does at every value since #448 — an author's break is kept and a break is introduced only at the margin. ⚠ The open question this entry recorded is now CLOSED and the hypothesis it named was right: `on_single_line` IS distinguished from `do_not_touch`, on exactly the shape it predicted — an already-wrapped short header, `<see cref="System.String"` / `href="https://short.invalid/" />`, which `do_not_touch` keeps wrapped and `on_single_line` joins onto one line. All FOUR values separate. SK-DIV-0079."""
         ),
         new(
             "skala_xmldoc_alignment_tab_fill_style",
@@ -473,7 +473,7 @@ public static class XmlDocIds {
         // ⚠ The fifth of that family, and it used to be in `Honoured` under a reading of its name.
         new(
             "skala_xmldoc_wrap_tags_and_pi",
-            "Pending on the same prerequisite, and the reading it used to carry is measured false. It was read as 'whether a tag may be moved to a new line to fit', and at both values the oracle moves a <see/> off the end of a line of prose identically — the committed fixture is byte-identical at true and at false, which is the SPURIOUS row the sweep reported. What it really governs is a break INSIDE a tag header: a <see cref=... href=...> 170 columns wide comes back with its second attribute on a continuation line at true and whole at false, and the same probe leaves a <?pi ...?> alone. ⚠ And it governs only whether a break is INTRODUCED: handed a header that is already wrapped the oracle preserves the wrap at BOTH values, even when the header is short enough to fit — so `false` is 'do not break', never 'join'. That is why the reader-only fix is refused: lifting XmlDocModel's Unmodelled refusal without recording where the author's breaks fall would make XmlDocRenderer.Tag rebuild the header joined, which diverges at both values in place of one. SK-DIV-0079."
+            "Not read, and Skala behaves as the export's `true` at both values. What it governs is a break INSIDE a tag header — measured: a <see cref=... href=...> 170 columns wide comes back with its second attribute on a continuation line at true and whole at false, and a <?pi ...?> is left alone at both. Since #448 the model records an author's break between attributes and the renderer wraps a header at the margin, filling greedily, continuation one indent past the tag, the `>` or `/>` not counted; the oracle keeps an author's break at BOTH values, so `false` would be 'introduce no break', never 'join'. ⚠ That `false` is SK-DIV-0381: honouring it is a one-line gate in XmlDocRenderer.Tag, and it is held back only because registering the key moves it into the Tier A machinery, which wants a key-flip sweep row over a fixture that wraps a header — the committed one never did. SK-DIV-0079."
         ),
 
         // ── Measured inert in the oracle: the indent is the C# file's ────────────────────────

@@ -2877,7 +2877,8 @@ public static class Ids {
 
     // ⚠ `skala_xmldoc_wrap_tags_and_pi` is not registered here at all any more. It is in
     // `XmlDocIds.Refused` with the four tag-header keys it belongs with: measured, it governs a
-    // break *inside* a tag header, which Skala can neither emit nor re-read. SK-DIV-0079.
+    // break *inside* a tag header. Since #448 Skala emits and re-reads one — always as the export's
+    // `true` — and registering the key to honour `false` is SK-DIV-0381. SK-DIV-0079.
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsLongerThan =
         Of("skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than");

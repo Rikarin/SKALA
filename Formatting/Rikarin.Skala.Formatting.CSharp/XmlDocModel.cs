@@ -55,7 +55,13 @@ public sealed record XmlDocVerbatim(ImmutableArray<string> Lines, bool Processin
 /// </remarks>
 /// <param name="Name">The attribute name, exactly as written.</param>
 /// <param name="Value">The quoted value, exactly as written, quote characters included.</param>
-public readonly record struct XmlDocNameValue(string Name, string Value);
+/// <param name="BreakBefore">
+///     ⚠ The author broke the header's line before this attribute. #448, SK-DIV-0079: the oracle keeps
+///     such a break at both values of <c>skala_xmldoc_wrap_tags_and_pi</c>, even in a header short enough
+///     to fit, and only re-indents the continuation — so a header that spans lines is recorded rather than
+///     refused, and the renderer writes the break back.
+/// </param>
+public readonly record struct XmlDocNameValue(string Name, string Value, bool BreakBefore = false);
 
 /// <summary>An element, with the pieces of its start tag taken from the source unchanged.</summary>
 /// <param name="Name">The tag name, for <c>skala_xmldoc_linebreak_before_elements</c> and the closing tag.</param>
@@ -313,9 +319,11 @@ public sealed class XmlDocModel {
     ///         of spaces between attributes and dropping the space before <c>&gt;</c>.
     ///     </para>
     ///     <para>
-    ///         ⚠ A header that spans lines is still refused outright rather than joined, and an attribute
-    ///         whose shape does not yield a name and a value is refused with it. A doc comment left exactly
-    ///         as written is never wrong.
+    ///         ⚠ A header that spans lines <em>between</em> attributes is recorded rather than refused
+    ///         (#448): the break is <see cref="XmlDocNameValue.BreakBefore" />. One inside an attribute — a
+    ///         value written across lines, a break around its <c>=</c> — is still refused outright, and so
+    ///         is an attribute whose shape does not yield a name and a value. A doc comment left exactly as
+    ///         written is never wrong.
     ///     </para>
     /// </remarks>
     static ImmutableArray<XmlDocNameValue>? Attributes(SyntaxList<XmlAttributeSyntax> attributes) {
@@ -325,11 +333,13 @@ public sealed class XmlDocModel {
 
         var builder = ImmutableArray.CreateBuilder<XmlDocNameValue>(attributes.Count);
         foreach (var attribute in attributes) {
-            if (attribute.ToFullString().Contains('\n', StringComparison.Ordinal)) {
+            var text = attribute.ToString();
+            if (text.Contains('\n', StringComparison.Ordinal)
+                || attribute.GetTrailingTrivia().ToFullString().Contains('\n', StringComparison.Ordinal)) {
                 return null;
             }
 
-            var text = attribute.ToString();
+            var breakBefore = attribute.GetLeadingTrivia().ToFullString().Contains('\n', StringComparison.Ordinal);
             var equals = attribute.EqualsToken.SpanStart - attribute.Span.Start;
             if (equals <= 0 || equals >= text.Length || text[equals] != '=') {
                 return null;
@@ -341,7 +351,7 @@ public sealed class XmlDocModel {
                 return null;
             }
 
-            builder.Add(new XmlDocNameValue(name, value));
+            builder.Add(new XmlDocNameValue(name, value, breakBefore));
         }
 
         return builder.MoveToImmutable();
