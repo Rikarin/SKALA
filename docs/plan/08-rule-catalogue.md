@@ -9760,4 +9760,82 @@ is no evidence that it is one.
 |---|---|---|---|
 | `SK1133` | `collection-expression-spread` — `int[] a = xs.ToArray();` is `int[] a = [..xs];` | Semantic | replace the call, safe |
 
-MEASUREMENTS-PENDING
+`suggestion`, `supersedes: IDE0305`, 18 positive / 27 negative fixtures, 13 of them executable
+(`Probe`). The fix writes `[..xs]` with **no space after `..`**: `skala_space_within_spread_pattern`
+is inert (SK-DIV-0009 — the oracle keeps a spread as written), so the fix's spelling is the one that
+stays. Receiver parentheses are dropped; a spread's operand is parsed as a whole expression, and a
+cast, `??`, `?:`, an assignment, `as` and a query all read back bare (the fix asks the parser and
+declines what does not read back — nothing measured did not).
+
+### ⚠ The floor is C# 14, not the C# 12 the proposal named — revised here, with the measurement
+
+The safety of the rewrite is a property of the **compiler**, not of the language. Measured by
+compiling one probe with each cached Roslyn and running it, then by decompiling SDK 10.0.401's output:
+
+| Compiler | null `int[]` → `[..a]` | null `List<int>` → `ToList` spread | empty sequence → `[..e]` |
+|---|---|---|---|
+| 4.8 (shipped C# 12) | `ArgumentNullException` → **`NullReferenceException`** | `ArgumentNullException` → **`NullReferenceException`** | `Array.Empty<int>()` → **fresh array** |
+| 4.11 | `ArgumentNullException` → **empty array, no throw** | `ArgumentNullException` → **`NullReferenceException`** | `Array.Empty<int>()` → **fresh array** |
+| 4.14, 5.0, 5.9 | same | same | same |
+
+From 4.14 on, a collection expression holding one spread lowers to `Enumerable.ToArray`,
+`Enumerable.ToList`, `List<T>.ToArray` or `Span<T>.ToArray` — the method the source called — so the
+two forms are one call. A written `/langversion:14` is refused by 4.11 and by 4.14 (`TryParse("14")`
+is false on both), so a file at C# 14 proves its build gets the lowering measured. ⚠ **The version
+must be written**: `latest`/`latestMajor`/`default`/`preview` are resolved by whichever compiler
+builds the project, and Skala's resolves them to 14+. The analyzer reads
+`CSharpParseOptions.SpecifiedLanguageVersion` and declines those. The cost, stated: every project with
+`<LangVersion>latest</LangVersion>` — **Skala's own included** — gets no finding.
+
+The lowering is chosen by the receiver's static type, so only measured receivers are taken: reference
+types through `Enumerable` (arrays, the collection interfaces, `HashSet<T>`, `string`,
+`ConcurrentDictionary` and `.Keys`, queries, own classes counted or not), exactly `List<T>`, and
+spans. Measured to differ and declined: a class deriving from `List<T>` (`Enumerable.ToArray`, so the
+null exception changes), an unconstrained type parameter and a struct of one's own (enumerated into a
+fresh `List<T>`, so an empty copy is a new array), `ImmutableArray<T>` (copied through its span), and
+`ToList<object>()` on a `List<string>` (a counted copy loop). `netstandard2.0` and `netstandard2.1`
+lower every accepted receiver to the same call (decompiled from a `netstandard2.0;netstandard2.1;net10.0`
+scratch project with its own empty `Directory.Build.props`), so no API is missing there and no
+member-availability lookup was added (#511).
+
+### Claims in the proposal, checked
+
+- *Generic inference breaks* — **refuted for `M<T>(T[] a)`**: a collection expression infers `T`
+  through its spread's element type and binds `M<int>` both ways; it is a positive with a `Probe`.
+  `M<T>(T a)` cannot infer and is refused by the rebinding.
+- *`M(object[])` + `M(int[])` moves* — **refuted**: both forms land on `int[]`; a positive with a
+  `Probe`. `M(int[])` + `M(List<int>)` (ambiguous) and `params int[]` + `params ReadOnlySpan<int>`
+  (moves to the span, `Probe` `array` → `span` under sabotage) are the real cases and are refused.
+- *Null receiver changes the exception* — **true only below Roslyn 4.14**, which is the floor above.
+- Overlaps: `SK1081` owns `xs.ToList().ToArray()` and this rule takes the shortened call on the next
+  pass; `SK4006`'s `foreach` has no target type here; `SK1001` never sees a call, and
+  `new[] { … }.ToArray()` → `[..new[] { … }]` → `SK1072`. Each is a test asserting one finding per step.
+
+### Sabotage
+
+Sixteen guards replaced with a non-foldable `Never`. ⚠ **Four turned nothing red at first, and each
+was a finding**: the identity-conversion check was masked by the type comparison beside it; the
+explicit `var` and `void`-arrow refusals by the rebinding; the type-parameter clause by the element
+check (`ElementTypeOf` answers null for one). All four were deleted, and the rebinding's sabotage now
+reddens `var` and the `void` arrow too. ⚠ The value-type guard was masked by the `Enumerable` check —
+the only struct fixture was `ImmutableArray<T>`, whose `ToArray` is `ImmutableArrayExtensions`'s — so a
+struct of one's own was added; its `Probe` goes `True` → `False` under sabotage. Every remaining guard
+reddens at least one fixture: the written-version check (5), the C# 14 floor (2), `Enumerable`-only (1),
+the value type (3), the element type (2), exactly-`List<T>` (3), target is the return type (5), `SK1081`
+ownership (2), the expression tree (2), the comment guards (3), the rebinding (8), the written target (2).
+
+### Reference trees
+
+- **Corpus** (one synthetic `net10.0` project per tree, `LangVersion` 14, `ImplicitUsings` on,
+  `*.expected.cs` excluded, `--no-incremental` binlog, a planted probe firing once per tree and declining
+  its `var` twin): serilog **11**, newtonsoft **2**, vixen **5** — 18 of 124 `.ToArray()`/`.ToList()`
+  sites. All 18 applied from the SARIF fixes and rebuilt: CS errors 972/1806/8218 before and after,
+  per (file, id), none new. Each read by hand: `IEnumerable<T>`, `List<T>` and `ReadOnlySpan<T>`
+  receivers into fields, returns, `Enqueue(T)` and `MakeGenericType(params Type[])`.
+- **Self-tree**, rebuilt at `-p:LangVersion=14.0` because its own `latest` is declined (`SK9021`: 796 of
+  798 files, the two being `build/`): **41** findings. All 41 applied, `Skala.slnx` rebuilt Release with
+  `TreatWarningsAsErrors` — 0 warnings, 0 errors — and the whole suite run on the result: **44 578
+  tests, 0 failed**. Reverted afterwards. At the repository's real `latest` the count is 0 by design.
+
+A low count is not evidence of quality and none is claimed from it; the proof is the lowering table,
+the rebinding and the executable fixtures.
