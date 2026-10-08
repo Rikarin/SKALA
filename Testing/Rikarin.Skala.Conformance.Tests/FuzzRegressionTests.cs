@@ -82,6 +82,10 @@ public sealed class FuzzRegressionTests {
     // kept the `=` by EqualsFloor's extrapolated table and chopped the arguments; pass two read the chop as
     // the author's, lost the floor and broke the `=`. The `(` past the margin now breaks the `=` on both.
     [InlineData(4304693669410283359UL)]
+    // Nightly `fuzz --seed=909`: a typed local's `= context.First` whose receiver ends past the margin. The
+    // `=` yielded to the dot fill (#482), which kept `= context` past the margin and broke at the dot; pass
+    // two read that break as the author's and broke the `=`. GroupFacts.MemberHeadWidth.
+    [InlineData(9552816164132777654UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

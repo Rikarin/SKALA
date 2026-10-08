@@ -293,6 +293,17 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ An `=` before a plain member access yields to its dot fill (#482) — unless the receiver
+                // itself does not fit beside the `=`, where no dot can take the break and the oracle breaks
+                // the `=`: `T v =` / `context.First;`. Pass one kept `T v = context` past the margin and
+                // broke at the dot; pass two read that break as the author's and broke the `=` (Nightly
+                // `fuzz --seed=909`, case 9552816164132777654). See GroupFacts.MemberHeadWidth.
+                if (facts.MemberHeadWidth > 0
+                    && m.PointWidth < Unbounded
+                    && !Fits(m.Column, m.PointWidth + 1 + facts.MemberHeadWidth)) {
+                    return ResolvedMode.Broken;
+                }
+
                 // ⚠ A local's type/name gap one column past the margin (#583, SK-DIV-0127): it breaks where
                 // the `=` would, for the names the planner has already let through. See GroupFacts.OneOverValue.
                 if (facts.OneOverValue > 0) {

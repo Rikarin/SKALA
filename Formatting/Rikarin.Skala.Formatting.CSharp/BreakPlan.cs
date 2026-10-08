@@ -5447,6 +5447,9 @@ public sealed class BreakPlan {
                         Condition: InvocationExpressionSyntax { Expression: IdentifierNameSyntax or GenericNameSyntax }
                     },
                     ValueHeadIsWide: conditionHeadIsWide,
+                    MemberHeadWidth: value is MemberAccessExpressionSyntax plain && IsPlainMemberValue(plain)
+                        ? FlatSourceWidth(ReceiverOf(plain))
+                        : 0,
                     HeldValue: heldCall is null ? 0 : heldKind,
                     HeldValueWidth: heldCall is null
                         ? 0
@@ -7923,6 +7926,16 @@ public sealed class BreakPlan {
     ///     member-access fill (`PlanPropertyFill`), which takes the last dot that fits; only the `=`'s
     ///     yielding to it is read from here.
     /// </summary>
+    /// <summary>The innermost receiver of a plain member access: <c>a</c> in <c>a.b.c.D</c>.</summary>
+    static ExpressionSyntax ReceiverOf(MemberAccessExpressionSyntax access) {
+        ExpressionSyntax current = access;
+        while (current is MemberAccessExpressionSyntax member) {
+            current = member.Expression;
+        }
+
+        return current;
+    }
+
     static bool IsPlainMemberValue(MemberAccessExpressionSyntax access) {
         if (!access.IsKind(SyntaxKind.SimpleMemberAccessExpression)) {
             return false;

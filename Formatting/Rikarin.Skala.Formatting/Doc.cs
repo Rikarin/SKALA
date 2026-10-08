@@ -1257,6 +1257,12 @@ public sealed class Document {
 ///     <c>=</c> reaches <see cref="MinimumHead" /> — whatever the condition's own points could do — or,
 ///     with <see cref="ValueHeadFitsBelow" />, when the condition then fits below. Zero for any other value.
 /// </param>
+/// <param name="MemberHeadWidth">
+///     ⚠ An <c>=</c> whose value is a plain member access the dot fill breaks (#482): the receiver's flat
+///     width, before the first <c>.</c>. The <c>=</c> yields to the fill, and breaks after all when the
+///     receiver itself does not fit beside it (Nightly <c>fuzz --seed=909</c>): the oracle writes
+///     <c>T v =</c> / <c>context.First;</c> where no dot can take the break. Zero for any other value.
+/// </param>
 /// <param name="ValueHeadFitsBelow">
 ///     With <see cref="ValueHeadWidth" />: the condition is a call, whose <c>=</c> breaks only when the
 ///     condition fits on the line below.
@@ -1370,7 +1376,8 @@ public readonly record struct GroupFacts(
     bool HeldCallOnAPath = false,
     int LambdaOperandParameters = 0,
     int LambdaOperandTail = 0,
-    int LambdaOperandFirst = 0);
+    int LambdaOperandFirst = 0,
+    int MemberHeadWidth = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
