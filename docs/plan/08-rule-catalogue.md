@@ -3707,8 +3707,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **367** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **331** | **90.9 %** |
+| Rules this document names | **368** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **332** | **91.0 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, then withdrawn or never built | **3** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
@@ -9750,3 +9750,14 @@ classified as *shape absent*, not as declines:
 The proposal's frequency claim was marked inferred, and this measurement neither confirms nor refutes
 it: the human-written trees never use the shape, which is consistent with it being a model habit and
 is no evidence that it is one.
+
+## `SK1133` — a framework copy into the written type is a spread
+
+[#512](https://github.com/Rikarin/SKALA/issues/512). Roslyn's `IDE0305` fluent form: `xs.ToArray()` /
+`xs.ToList()` → `[..xs]`, safe fix.
+
+| ID | Rule | Scope | Fix |
+|---|---|---|---|
+| `SK1133` | `collection-expression-spread` — `int[] a = xs.ToArray();` is `int[] a = [..xs];` | Semantic | replace the call, safe |
+
+MEASUREMENTS-PENDING
