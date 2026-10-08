@@ -3167,8 +3167,12 @@ public sealed class BreakPlan {
                 // one level past the arrow's. Measured on seventeen shapes. The frame half of the
                 // same rule — an author's break before a dot that is not a point — is
                 // CSharpDocumentBuilder's Frame.HoldsLevel.
-                SharesTheLevelAroundIt(root),
-                OwnLevel: !SharesTheLevelAroundIt(root)
+                SharesTheLevelAroundIt(root) && !ChainFromItsLine(root),
+                OwnLevel: !SharesTheLevelAroundIt(root),
+                // ⚠ As a sole lambda argument's body the chain is one level past the line it starts on, as
+                // the property fill is (#557): the arrow's line while the arrow stays, the body's once it
+                // breaks — `U(x =>` / `source.A…` / `.Select(…)` one level past the body (#582).
+                FromLine: ChainFromItsLine(root)
             )
         );
 
@@ -3201,11 +3205,7 @@ public sealed class BreakPlan {
     ///     rule, and <see cref="GroupFacts.BreaksOnlyIfTailFits" />'s own question.
     /// </remarks>
     void PlanHeldFirstCall(List<SyntaxToken> dots, int points, SyntaxNode? fillRoot) {
-        if (points >= dots.Count || dots[^1] is not { Parent: MemberAccessExpressionSyntax access } dot) {
-            return;
-        }
-
-        if (BreaksBefore(dot)) {
+        if (points >= dots.Count || dots[^1] is not { Parent: MemberAccessExpressionSyntax access }) {
             return;
         }
 
@@ -3216,6 +3216,34 @@ public sealed class BreakPlan {
 
         if (link.Parent is not InvocationExpressionSyntax call || call.Expression != link) {
             return;
+        }
+
+        // ⚠ The held point is the first call's own dot, not the chain's first dot: behind a receiver that
+        // is itself a member access, `source.A….Select(…)`, the first dot is the property's, and the
+        // point planned there never broke before the call (#582). #528 was measured on single-name
+        // receivers, where the two are the same dot.
+        var dot = ((MemberAccessExpressionSyntax)link).OperatorToken;
+        if (BreaksBefore(dot)) {
+            return;
+        }
+
+        // ⚠ And the receiver's own dots break once the receiver alone overflows: `source` / `.A…` /
+        // `.Select(…)` / `.Where(…)`, every link chopped (#582).
+        if (((MemberAccessExpressionSyntax)link).Expression is MemberAccessExpressionSyntax receiver
+            && IsAPathOfNames(receiver)) {
+            var receiverGroup = NewGroup();
+            for (var inner = receiver; inner is not null; inner = inner.Expression as MemberAccessExpressionSyntax) {
+                if (!BreaksBefore(inner.OperatorToken)) {
+                    Point(inner.OperatorToken, receiverGroup);
+                }
+            }
+
+            Describe(
+                receiver,
+                receiverGroup,
+                GroupMode.Preserve,
+                new(BreaksIfTooLong: true, BreaksIfItOverflows: true)
+            );
         }
 
         // ⚠ The argument count picks the measured table (one argument or none, or more), and the call's
@@ -3233,9 +3261,23 @@ public sealed class BreakPlan {
             call,
             group,
             GroupMode.Preserve,
-            new(BreaksIfTooLong: true, HeldCall: kind, HeldCallHead: callHead, HeldCallRest: rest)
+            new(
+                BreaksIfTooLong: true,
+                HeldCall: kind,
+                HeldCallHead: callHead,
+                HeldCallRest: rest,
+                HeldCallOnAPath: IsAPathOfNames(((MemberAccessExpressionSyntax)link).Expression)
+            )
         );
     }
+
+    /// <summary>A plain path of names — <c>a</c>, <c>a.B.C</c> — with no call, index, <c>!</c> or <c>?.</c> in it.</summary>
+    static bool IsAPathOfNames(ExpressionSyntax expression) =>
+        expression switch {
+            SimpleNameSyntax => true,
+            MemberAccessExpressionSyntax member => IsAPathOfNames(member.Expression),
+            _ => false
+        };
 
     /// <summary>
     ///     A single call on a receiver that is the whole value of an <c>=</c> — no chain, one dot: its dot is
@@ -3808,6 +3850,24 @@ public sealed class BreakPlan {
         && IsTheBodyOfASoleLambda(root);
 
     /// <summary>
+    ///     Whether a chain that shares the level around it takes it from the line it starts on: as a sole
+    ///     lambda argument's body, but not behind a parenthesised head (#582). See
+    ///     <see cref="IsTheBodyOfASoleLambda" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not where the lambda's call is itself another lambda's body: `.Executes(() => DotNetTest(settings =>
+    ///     settings` / `.SetProjectFile(…)` puts the links two levels past the line in the oracle (Skala's own
+    ///     build/Build.cs), which a level from the line would write at one. That shape was not measured and
+    ///     keeps the level around it.
+    /// </remarks>
+    bool ChainFromItsLine(SyntaxNode root) =>
+        !HeadSharesTheLevelAroundIt(root)
+        && options.PlaceSingleMethodArgumentLambdaOnSameLine
+        && IsTheBodyOfASoleLambda(root)
+        && root.Parent?.Parent?.Parent?.Parent is InvocationExpressionSyntax call
+        && call.Parent is not LambdaExpressionSyntax;
+
+    /// <summary>
     ///     Whether a chain is the expression body of a lambda that is its call's sole argument — or the
     ///     operand of a prefix operator that is: <c>Use(x =&gt; !source.Select(…)</c> / <c>.Any(p)</c> sits
     ///     at the same column as without the <c>!</c>.
@@ -3907,6 +3967,7 @@ public sealed class BreakPlan {
         }
 
         var pattern = root is BinaryPatternSyntax;
+
         Describe(
             root,
             new(
@@ -6623,16 +6684,23 @@ public sealed class BreakPlan {
                         LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
                         LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
                     )
-                    : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
+                    : OperandSoleLambdaTail(lambda, body) is > 0 and var operandTail
                         ? new GroupFacts(
                             BreaksIfTooLong: true,
-                            LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
-                            LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
-                            LambdaChainHead: chainHead
+                            LambdaOperandParameters: lambda.ArrowToken.SpanStart - 1 - lambda.SpanStart,
+                            LambdaOperandTail: operandTail,
+                            LambdaOperandFirst: FirstOperandWidth(body)
                         )
-                        : ArrowMovesACallChainDown(body)
-                            ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
-                            : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+                        : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
+                            ? new GroupFacts(
+                                BreaksIfTooLong: true,
+                                LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
+                                LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
+                                LambdaChainHead: chainHead
+                            )
+                            : ArrowMovesACallChainDown(body)
+                                ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
+                                : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
 
     /// <summary>
@@ -6698,6 +6766,60 @@ public sealed class BreakPlan {
         return dot.IsKind(SyntaxKind.None) ? 0 : dot.SpanStart - lambda.SpanStart;
     }
 
+    /// <summary>
+    ///     A sole lambda argument whose body is an operand chain — <c>a &amp;&amp; b &amp;&amp; c</c> — or a
+    ///     type test over a binary pattern — <c>x is A or B or C</c> — written on one line: its arrow is
+    ///     decided by <see cref="GroupFacts.LambdaOperandParameters" /> (#578).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on a statement's call, <c>U(params =&gt; …);</c>, with parameter texts of 1 to 45 columns,
+    ///     the arrow ending at columns 14 to 89 and lines of 112 to 200: 10 of 12 243 cells differ, each
+    ///     within a fifth of a column of the boundary.
+    /// </remarks>
+    /// <summary>
+    ///     The width of an operand chain's first operand — the leftmost — or of <c>x is A</c> before a binary
+    ///     pattern's first combinator (#578).
+    /// </summary>
+    static int FirstOperandWidth(ExpressionSyntax body) {
+        switch (body) {
+            case IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax pattern } test:
+                PatternSyntax left = pattern;
+                while (left is BinaryPatternSyntax binary) {
+                    left = binary.Left;
+                }
+
+                return left.Span.End - test.SpanStart;
+            default:
+                var node = body;
+                while (node is BinaryExpressionSyntax binary && !IsTypeTest(binary)) {
+                    node = binary.Left;
+                }
+
+                return node.Span.Length;
+        }
+    }
+
+    /// <returns>
+    ///     The width from the body's end to its statement's end, which must be on the same line; zero where the
+    ///     rule does not apply.
+    /// </returns>
+    int OperandSoleLambdaTail(LambdaExpressionSyntax lambda, ExpressionSyntax body) {
+        if (!options.PlaceSingleMethodArgumentLambdaOnSameLine
+            || !IsTheBodyOfASoleLambda(body)
+            || body switch {
+                BinaryExpressionSyntax binary => IsTypeTest(binary),
+                IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } => false,
+                _ => true
+            }
+            || lambda.FirstAncestorOrSelf<StatementSyntax>() is not { } statement) {
+            return 0;
+        }
+
+        var start = body.SpanStart;
+        var length = statement.Span.End - start;
+        return source.AsSpan(start, length).IndexOfAny('\r', '\n') < 0 ? statement.Span.End - body.Span.End : 0;
+    }
+
     bool IsAFilledSoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
         options.PlaceSingleMethodArgumentLambdaOnSameLine
         && IsTheBodyOfASoleLambda(body)
@@ -6732,12 +6854,18 @@ public sealed class BreakPlan {
     ///     lambda among other arguments whose chain the author broke (<c>x =&gt; x</c> / <c>+ 1</c>).
     /// </remarks>
     bool ArrowWinsOverTheChain(LambdaExpressionSyntax lambda) =>
-        lambda.ExpressionBody is BinaryExpressionSyntax binary
-        && !IsTypeTest(binary)
-        && lambda.Parent is EqualsValueClauseSyntax or AssignmentExpressionSyntax
-        && !binary.DescendantNodesAndSelf(static node => node is BinaryExpressionSyntax)
-            .OfType<BinaryExpressionSyntax>()
-            .Any(link => BreaksBefore(link.OperatorToken) || BreaksBefore(FirstToken(link.Right)));
+        lambda.Parent is EqualsValueClauseSyntax or AssignmentExpressionSyntax
+        && lambda.ExpressionBody switch {
+            BinaryExpressionSyntax binary => !IsTypeTest(binary)
+                && !binary.DescendantNodesAndSelf(static node => node is BinaryExpressionSyntax)
+                    .OfType<BinaryExpressionSyntax>()
+                    .Any(link => BreaksBefore(link.OperatorToken) || BreaksBefore(FirstToken(link.Right))),
+            // ⚠ And a type test over a binary pattern written on one line (#578, group F's probe):
+            // `Func<object, bool> f = x =>` / `x is A` / `or B` / `or C`.
+            IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } test =>
+                source.AsSpan(test.SpanStart, test.Span.Length).IndexOfAny('\r', '\n') < 0,
+            _ => false
+        };
 
     /// <summary>
     ///     Whether an <c>=</c>'s value is a lambda whose arrow takes the break the <c>=</c> would

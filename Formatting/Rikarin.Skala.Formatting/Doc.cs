@@ -1105,6 +1105,31 @@ public sealed class Document {
 ///     do not — one column past the margin, where the parameter list chops up to a head that the type and
 ///     the body set (#572). See <c>EqualsFloor.ChopsOneOver</c>. Zero for any other group.
 /// </param>
+/// <param name="LambdaOperandParameters">
+///     ⚠ The arrow of a sole lambda argument whose body is an operand chain or a binary pattern on one line:
+///     the width of everything before ` =&gt;` — modifiers, parentheses and parameters — or zero for any other
+///     group (#578). Past the margin the arrow breaks exactly when it ends at or past
+///     <c>EqualsFloor.OperandArrowThreshold</c>, read with the line's end and
+///     <see cref="LambdaOperandFirst" />.
+/// </param>
+/// <param name="LambdaOperandFirst">
+///     The width of the body's first operand — <c>a</c> in <c>a &amp;&amp; b</c>, <c>x is A</c> in
+///     <c>x is A or B</c>. See <see cref="LambdaOperandParameters" />.
+/// </param>
+/// <param name="LambdaOperandTail">
+///     The width from the body's end to its statement's end — <c>);</c> for a call statement — which the line's
+///     end is measured with. See <see cref="LambdaOperandParameters" />.
+/// </param>
+/// <param name="HeldCallOnAPath">
+///     ⚠ A held first call whose receiver is a plain path of names, `source.A…`: when the receiver alone
+///     overflows, the call breaks too and every link chops (#582). Not behind a call chain the receiver
+///     ends with a `!` or a `?.`, which the oracle keeps holding (ChainLinksIssue454Tests).
+/// </param>
+/// <param name="BreaksIfItOverflows">
+///     ⚠ Broken exactly when the group's own flat width, nothing after it counted, overflows its line: a
+///     call chain's receiver that is itself a member access, `source.A….Select(…)`, whose dots break only
+///     once the receiver alone runs past the margin (#582).
+/// </param>
 /// <param name="LambdaChainHead">
 ///     ⚠ The arrow of a sole lambda argument whose body is a chain of calls: the width from the lambda's start
 ///     to its first call's dot, or zero for any other group (#571). Past the margin the arrow breaks for a
@@ -1332,7 +1357,12 @@ public readonly record struct GroupFacts(
     LambdaLocal LambdaLocal = LambdaLocal.None,
     int OneOverType = 0,
     int OneOverBody = 0,
-    int LambdaChainHead = 0);
+    int LambdaChainHead = 0,
+    bool BreaksIfItOverflows = false,
+    bool HeldCallOnAPath = false,
+    int LambdaOperandParameters = 0,
+    int LambdaOperandTail = 0,
+    int LambdaOperandFirst = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

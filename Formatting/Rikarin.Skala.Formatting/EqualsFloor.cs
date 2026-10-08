@@ -34,6 +34,38 @@ public enum EqualsOwner {
 
 public static class EqualsFloor {
     /// <summary>
+    ///     The column a sole lambda argument's arrow has to reach for it to break over an operand-chain or
+    ///     binary-pattern body (#578): the larger of 20 and the smaller of a ceiling the parameters and the
+    ///     first operand set and a column that rises with the line's end.
+    /// </summary>
+    /// <param name="parameters">The width of everything before ` =&gt;`, modifiers and parentheses included.</param>
+    /// <param name="first">The body's first operand's width.</param>
+    /// <param name="end">The column the whole line would end at.</param>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> on <c>U(params =&gt; a… &amp;&amp; b… &amp;&amp; c…);</c>,
+    ///     <c>… =&gt; x is A or B or C…</c>, <c>var g = i….Where(params =&gt; …);</c> and <c>static</c> lambdas: parameter
+    ///     texts of 1 to 45 columns, first operands of 6 to 52, the arrow at columns 14 to 95 and lines of 112 to
+    ///     200, 31 671 cells. A modifier counts as parameter text: <c>static n</c> decides as an eight-column
+    ///     name. ⚠ The ceiling rises 2.75 columns per column of parameters and of first operand up to 24, then
+    ///     about one per eight, and never past where the first operand still fits beside the arrow; the end's
+    ///     column moves 0.9 per column of line and 0.3 per column of parameters, three and a quarter later once
+    ///     the first operand passes 18. 28 cells under parameter texts of 36 differ, all within a column of the
+    ///     boundary; past 36 the oracle is not monotone and the rule is not measured.
+    /// </remarks>
+    public static bool BreaksTheOperandArrow(int arrow, int parameters, int first, int end) {
+        var ceiling = Math.Min(
+            85,
+            Math.Min(
+                (int)Math.Floor(2.75 * (parameters + Math.Min(first, 24)) - 52 + Math.Max(0, first - 24) / 8.0),
+                120 - first
+            )
+        );
+        var line = (27.0 * end + 9 * parameters - 2832) / 30 + Math.Min(3.25, Math.Max(0, 0.625 * (first - 18)));
+        return arrow >= Math.Max(20, Math.Min(ceiling, line));
+    }
+
+
+    /// <summary>
     ///     Whether a local's lambda with a bare-name body, on a line that ends exactly one column past the
     ///     margin, chops its parameter list — <c>name = (</c> / parameters / <c>) =&gt; body;</c> — rather
     ///     than breaking its arrow or its <c>=</c> (#572). The declaration's type is <paramref name="type" />
