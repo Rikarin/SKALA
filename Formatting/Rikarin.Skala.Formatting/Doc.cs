@@ -1128,6 +1128,36 @@ public sealed class Document {
 ///     (<see cref="Continues" />), so the second pass — which reads the fill's break as the author's —
 ///     gives the same answer as the first.
 /// </param>
+/// <param name="ValueHeadWidth">
+///     ⚠ An <c>=</c> whose value is a conditional (#553): the flat width of the condition. The oracle
+///     breaks the <c>=</c> exactly when the condition does not fit beside it and the head through the
+///     <c>=</c> reaches <see cref="MinimumHead" /> — whatever the condition's own points could do — or,
+///     with <see cref="ValueHeadFitsBelow" />, when the condition then fits below. Zero for any other value.
+/// </param>
+/// <param name="ValueHeadFitsBelow">
+///     With <see cref="ValueHeadWidth" />: the condition is a call, whose <c>=</c> breaks only when the
+///     condition fits on the line below.
+/// </param>
+/// <param name="HeldValue">
+///     ⚠ An <c>=</c> whose value is a single call on a receiver (#528, SK-DIV-0331), by its head, or zero:
+///     1 a typed local, 2 a <c>var</c> or assignment head under twelve columns, 3 one of twelve or more.
+///     When the value does not fit beside it, the <c>=</c> breaks by a measured table — the typed local
+///     when the value fits below with three columns to spare; the short head when it overflows below by at
+///     most one column or its <c>(</c> lands three short of the margin there; the long head unless the
+///     call would move down at its dot as a chain's held first call does — and otherwise the call's own
+///     dot takes the break: <c>T c = JsonConvert</c> / <c>.DeserializeObject&lt;…&gt;(json);</c>.
+/// </param>
+/// <param name="HeldValueWidth">With <see cref="HeldValue" />: the value's flat width with its <c>;</c>.</param>
+/// <param name="HeldValueReceiver">With <see cref="HeldValue" />: the receiver's flat width.</param>
+/// <param name="HeldValueHead">With <see cref="HeldValue" />: the width from the dot through the <c>(</c>.</param>
+/// <param name="ArmHead">
+///     ⚠ A switch arm's member-access pattern (#531, SK-DIV-0330): the pattern's flat width, with
+///     <see cref="ArmBody" />. The pattern's fill engages by a measured table on the column the arm's
+///     <c>=&gt;</c> ends at and the body's width rather than by its own width alone. See
+///     <c>Fitter.ArmFills</c>.
+/// </param>
+/// <param name="ArmBody">With <see cref="ArmHead" />: the arm's body with its comma, if it has one.</param>
+/// <param name="HeldValueManyArgs">With <see cref="HeldValue" />: the call has more than one argument.</param>
 /// <param name="FlatIfHeadOverflows">
 ///     ⚠ An assignment's <c>=</c> whose target is a member-access fill (#531, SK-DIV-0330): when the target
 ///     with its <c>=</c> does not fit on the line, the target's own dot breaks and the <c>=</c> stays —
@@ -1139,6 +1169,14 @@ public sealed class Document {
 ///     margin by, or zero: the point before it breaks exactly when the
 ///     receiver fits on its line, the receiver with the call does not, and the call fits whole on the
 ///     continuation line. A receiver that does not fit flat breaks inside itself and leaves the point alone.
+///     1 and 2 are a chain's first call with one argument and with more; 3 and 4 a single call that is a
+///     whole <c>=</c> value (<see cref="HeldValue" />) with one argument and with more.
+/// </param>
+/// <param name="HeldCallRest">
+///     ⚠ Under <c>wrap_if_long</c> (#552): the flat width of the chain after the held call, through its
+///     <c>;</c>, or zero. Past the measured table's limit the held call still breaks before itself when
+///     that rest is wider than <c>1.5 · (line − limit) + 9</c> — the longer the rest, the further past the
+///     limit the oracle moves the call down rather than chop it.
 /// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
@@ -1171,8 +1209,20 @@ public readonly record struct GroupFacts(
     EqualsOwner CalleeOwner = EqualsOwner.None,
     int ThroughWidth = 0,
     int HeldCall = 0,
+    int HeldCallHead = 0,
+    int HeldCallRest = 0,
     bool ContinuesIfItBreaks = false,
     bool FlatIfHeadOverflows = false,
+    int ValueHeadWidth = 0,
+    bool ValueHeadFitsBelow = false,
+    bool ValueHeadIsWide = false,
+    int HeldValue = 0,
+    int HeldValueWidth = 0,
+    int HeldValueReceiver = 0,
+    int HeldValueHead = 0,
+    bool HeldValueManyArgs = false,
+    int ArmHead = 0,
+    int ArmBody = 0,
     bool LiftsThroughInnerBreaks = false,
     int PatternHead = 0,
     int PatternWidth = 0,

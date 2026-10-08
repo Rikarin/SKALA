@@ -56,4 +56,46 @@ public sealed class HeldFirstCallIssue528Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     The five grid rows the 76/96 constants held and chopped (round three of #528): two arguments at
+    ///     a call line of 82 behind a 60-column head and 78 behind 100, and one argument at 100 to 106
+    ///     behind heads of 40 to 60. Each breaks before the call by <c>Fitter.HeldCallLimit</c>.
+    /// </summary>
+    [Fact]
+    public void TheFiveResidueGridRows_BreakBeforeTheCall() =>
+        Oracle.Agrees(
+            """
+            class T {
+                void M() {
+                    var y = ssssssssssssssss.Select(bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
+                    var y = ssssssssssssssssssssssssssssssssssss.Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
+                    var y = ssssssssssssssssssssssssssssssssssss.Select(bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
+                    var y = ssssssssssssssssssssssssssssssssssss.Select(bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
+                    var y = ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
+                }
+            }
+            """,
+            """
+            class T {
+                void M() {
+                    var y = ssssssssssssssss
+                        .Select(bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)
+                        .Where(b);
+                    var y = ssssssssssssssssssssssssssssssssssss
+                        .Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)
+                        .Where(b);
+                    var y = ssssssssssssssssssssssssssssssssssss
+                        .Select(bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)
+                        .Where(b);
+                    var y = ssssssssssssssssssssssssssssssssssss
+                        .Select(bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)
+                        .Where(b);
+                    var y = ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+                        .Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)
+                        .Where(b);
+                }
+            }
+            """
+        );
 }
