@@ -125,6 +125,14 @@ public readonly record struct GapSpec(GapRule Rule, int Group);
 ///     the body rather than at it, and <see cref="HeldLevel.WhileChainWhole" /> the same hold under a fill
 ///     that may yet break the chain after the <c>)</c>; see there.
 /// </param>
+/// <param name="UnconditionalLevel">
+///     ⚠ The group's continuation level counts on every line after the one it opened on, even where a
+///     scope opened on that same line already counted (<c>IndentFlags.Unconditional</c>). Only a
+///     multi-declarator list asks for it (#468, SK-DIV-0109): a declarator's own continuation lands one
+///     level past the <em>list's</em> level, the first declarator's included — <c>int x = a</c> /
+///     <c>+ 1,</c> at 16 and <c>y = 2;</c> at 12 — although the list and the <c>=</c> both opened on the
+///     declaration's first line.
+/// </param>
 public readonly record struct GroupPlan(
     int Id,
     GroupMode Mode,
@@ -134,7 +142,8 @@ public readonly record struct GroupPlan(
     bool OwnLevel = false,
     bool SpendsUnderDelimiters = false,
     HeldLevel HoldsLevel = HeldLevel.None,
-    bool FromLine = false);
+    bool FromLine = false,
+    bool UnconditionalLevel = false);
 
 /// <summary>
 ///     Whether a group spends its continuation level as zero columns. See <see cref="GroupPlan.HoldsLevel" />.
@@ -391,6 +400,7 @@ public sealed class BreakPlan {
         var plan = new BreakPlan(source, options) { captured = captured };
         plan.Walk(root);
         plan.SettleForHeaders();
+        plan.SettleOpenBraces(root);
         plan.CollectForcedBreaks();
         return plan;
     }
@@ -521,6 +531,8 @@ public sealed class BreakPlan {
     void Plan(SyntaxNode node) {
         PlanAttributes(node);
         PlanEmbeddedStatement(node, EmbeddedStatementOf(node));
+        PlanStackedUsing(node);
+        PlanClauseAfterAnEmbeddedStatement(node);
         PlanOnePerLine(node);
         PlanConstraints(node);
         PlanConstraintList(node);
@@ -767,6 +779,10 @@ public sealed class BreakPlan {
 
             case PropertyPatternClauseSyntax propertyPattern:
                 PlanPropertyPattern(propertyPattern);
+                return;
+
+            case OrderByClauseSyntax { Orderings.Count: > 1 } orderBy:
+                PlanOrderings(orderBy);
                 return;
 
             case SwitchExpressionArmSyntax arm:
@@ -2298,7 +2314,8 @@ public sealed class BreakPlan {
                 options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: options.WrapMultipleDeclarationStyle != WrapStyle.WrapIfLong
             ),
-            true
+            true,
+            UnconditionalLevel: true
         );
 
         // ⚠ A block comment behind the type breaks the line before the first name (#420), and that
@@ -3666,6 +3683,62 @@ public sealed class BreakPlan {
         return broke;
     }
 
+    /// <summary>
+    ///     An <c>orderby</c> clause's orderings: a fill one continuation level past the clause (#477,
+    ///     SK-DIV-0114).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-08 with <c>Testing ask</c>: <c>orderby a,</c> / <c>b</c>, <c>orderby a</c> /
+    ///     <c>, a</c>, <c>orderby a descending,</c> / <c>a ascending</c> and three orderings one per line all
+    ///     keep the author's breaks and put the continued ordering one level past <c>orderby</c>'s column,
+    ///     where Skala left it on the clause's own; <c>orderby a, a</c> on one line stays; and an
+    ///     <c>orderby</c> past the margin <em>fills</em> — <c>orderby x.Length, x.Length,</c> /
+    ///     <c>x</c> — where Skala did not wrap it at all. The exemption in <c>SeparatedListPlanTests</c>
+    ///     ("nothing to plan") was this list, unmeasured.
+    ///     <para>
+    ///         ⚠ The level is spent under the query's own: the clause is already on a continuation line of
+    ///         the query, which is why the group spends under an open continuation
+    ///         (<see cref="GroupPlan.SpendsUnderDelimiters" />). The two open on different lines, so the
+    ///         writer's one-level-per-line rule counts both.
+    ///     </para>
+    /// </remarks>
+    void PlanOrderings(OrderByClauseSyntax node) {
+        var group = NewGroup();
+        var pins = options.KeepsUserBreaksBetweenItems;
+        foreach (var comma in node.Orderings.GetSeparators()) {
+            var next = comma.GetNextToken();
+            if (next.IsKind(SyntaxKind.None)) {
+                continue;
+            }
+
+            if (options.WrapBeforeComma) {
+                PlanItemGap(comma, group, true, pins);
+                if (!(pins && BreaksBefore(next))) {
+                    Flat(next);
+                }
+            } else {
+                // ⚠ An author's break on the other side of the comma is kept as written, and only while
+                // keep_user_linebreaks is: `orderby a` / `, a` stays, and is joined at `false`.
+                if (!(pins && BreaksBefore(comma))) {
+                    Flat(comma);
+                }
+
+                PlanItemGap(next, group, true, pins);
+            }
+        }
+
+        Describe(
+            node,
+            new GroupPlan(
+                group,
+                GroupMode.Preserve,
+                new GroupFacts(BreaksIfTooLong: true),
+                true,
+                SpendsUnderDelimiters: true
+            )
+        );
+    }
+
     void PlanAroundEquals(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {
         if (equals.IsKind(SyntaxKind.None)) {
             return;
@@ -4101,10 +4174,24 @@ public sealed class BreakPlan {
         && CSharpDocumentBuilder.IsFirstDeclaratorBehindItsType(declarator)
         && HasBlockCommentBefore(declarator.Identifier);
 
+    /// <remarks>
+    ///     ⚠ And a declarator of a list of them, an initializer's or an incrementor's assignment in a
+    ///     <c>for</c> header, and a <c>fixed</c> header's declarator (#468, SK-DIV-0109, SK-DIV-0111).
+    ///     Measured 2026-10-08: <c>for (int i =</c> / <c>0;</c>, <c>i +=</c> / <c>1</c>, <c>k = k</c> /
+    ///     <c>+ 1</c> and <c>j =</c> / <c>1</c> after <c>int i = 0,</c> all land one level past the
+    ///     header's aligned column (17 against 13), <c>fixed (int* p =</c> / <c>&amp;arr[0])</c> at 19
+    ///     against 15, and every continuation inside a declarator of a multi-declarator list — a kept
+    ///     <c>=</c>, a binary operator, a chopped argument list, a chain's dot, a ternary — one level past
+    ///     the list's. ⚠ <c>using (var d =</c> / <c>default(…))</c> was re-asked and still adds none, so
+    ///     the <c>using</c> header stays out; and a single declarator outside a header, <c>int z = a</c> /
+    ///     <c>+ 1;</c>, is one level in as before.
+    /// </remarks>
     static bool IsAListItemsEquals(SyntaxNode node) =>
         node is EqualsValueClauseSyntax { Parent: ParameterSyntax }
-            or AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax }
-            or AttributeArgumentSyntax;
+            or AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax or ForStatementSyntax }
+            or AttributeArgumentSyntax
+        || node is EqualsValueClauseSyntax { Parent.Parent: VariableDeclarationSyntax declaration }
+        && (declaration.Variables.Count > 1 || declaration.Parent is ForStatementSyntax or FixedStatementSyntax);
 
     /// <summary>
     ///     How a group whose body is <paramref name="body" /> holds its level: not at all, always, or —
@@ -4682,6 +4769,11 @@ public sealed class BreakPlan {
         }
 
         var keeps = options.KeepExistingEmbeddedArrangement;
+        if (keeps && IsPushedOffByNesting(owner, embedded)) {
+            Mandatory(first);
+            return;
+        }
+
         var placement = options.PlaceSimpleEmbeddedStatementOnSameLine;
         var simple = IsSimpleEmbeddedStatement(owner, embedded);
 
@@ -4712,7 +4804,11 @@ public sealed class BreakPlan {
         // width unbounded.
         // ⚠ Simple owners only. An owner that carries an embedded statement of its own — `if (\n c) if
         // (d) n++;` — is pushed off by the oracle whenever it is multi-line, and keeps the group point.
-        if (keeps && simple) {
+        // ⚠ And an `if` with an `else` keeps its statement as a simple owner does, though it is itself
+        // embedded (#469): its `else` now starts a line of its own (#480), so a group over the whole
+        // `if` would read that break as the statement not fitting.
+        if (keeps
+            && (simple || owner is IfStatementSyntax { Else: not null } && EmbeddedStatementOf(embedded) is null)) {
             if (BreaksBefore(first)) {
                 Mandatory(first);
             } else {
@@ -4738,9 +4834,100 @@ public sealed class BreakPlan {
         );
     }
 
+    /// <summary>
+    ///     A <c>using</c> directly inside a <c>using</c>, which <see cref="EmbeddedStatementOf" /> leaves
+    ///     out so that a stacked pair the author wrote is never joined: written on one line, the oracle
+    ///     stacks it (#469).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>using (D()) using (D()) M();</c> comes back <c>using (D())</c> / <c>using (D())</c> /
+    ///     <c>M();</c> under the export's <c>keep_existing_embedded_arrangement = true</c> — the inner
+    ///     <c>using</c> carries a statement of its own, which pushes it off its owner's line like any
+    ///     other nesting. The column is <c>skala_indent_nested_usings_stmt</c>'s business, not this one's.
+    /// </remarks>
+    void PlanStackedUsing(SyntaxNode node) {
+        if (options.KeepExistingEmbeddedArrangement
+            && node is UsingStatementSyntax { Statement: UsingStatementSyntax inner }) {
+            Mandatory(FirstToken(inner));
+        }
+    }
+
+    /// <summary>
+    ///     An <c>else</c>, or a <c>do</c>'s <c>while</c>, after a statement that is not a block starts a line
+    ///     of its own (#480, SK-DIV-0115).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-08 with <c>Testing ask</c>, at both values of <c>skala_new_line_before_else</c>
+    ///     and of <c>skala_keep_existing_embedded_arrangement</c>: <c>if (b) M(); else M();</c> comes back
+    ///     <c>if (b) M();</c> / <c>else M();</c>, and so does every <c>else if</c> of a chain, an
+    ///     <c>else</c> after an embedded <c>switch</c>'s or <c>try</c>'s <c>}</c> (<c>}</c> / <c>else M();</c>
+    ///     where a block's would be <c>} else M();</c>), and an <c>else</c> behind a block comment
+    ///     (<c>M(); /* c */</c> / <c>else M();</c>). <c>do M(); while (b);</c> comes back <c>do M();</c> /
+    ///     <c>while (b);</c> the same way. The placement keys only ever governed the gap after a
+    ///     <em>block</em>'s <c>}</c>, which is all <c>ShouldJoin</c> reads; this gap had no plan and kept
+    ///     whatever the author wrote.
+    /// </remarks>
+    void PlanClauseAfterAnEmbeddedStatement(SyntaxNode node) {
+        switch (node) {
+            case IfStatementSyntax { Else: { } clause, Statement: not BlockSyntax }:
+                Mandatory(clause.ElseKeyword);
+                return;
+
+            case DoStatementSyntax { Statement: not BlockSyntax } loop:
+                Mandatory(loop.WhileKeyword);
+                return;
+        }
+    }
+
     /// <summary>Whether this node is itself somebody else's embedded statement.</summary>
     static bool IsEmbeddedStatement(SyntaxNode node) =>
         node.Parent is { } parent && EmbeddedStatementOf(parent) == node;
+
+    /// <summary>
+    ///     Under <c>skala_keep_existing_embedded_arrangement</c>, an embedded statement the oracle puts on a
+    ///     line of its own however it was written and however short it is: one that carries an embedded
+    ///     statement of its own, and one whose owner is itself an embedded statement (#469, SK-DIV-0106,
+    ///     SK-DIV-0115).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-08 with <c>Testing ask</c> on twenty-eight nestings written on one line.
+    ///     <c>if (b) if (c) M();</c>, <c>if (b) using (D()) M();</c>, <c>if (b) while (c) M();</c>,
+    ///     <c>while (b) if (c) M();</c>, <c>foreach (…) if (c) M();</c>, <c>lock (this) if (c) M();</c>,
+    ///     <c>if (b) for (;;) M();</c>, <c>while (b) lock (this) M();</c>, <c>do if (b) M(); while (b);</c>,
+    ///     <c>using (D()) using (D()) M();</c>, three deep, and <c>if (b) if (c) { M(); }</c> all come back
+    ///     one statement per line — the fitting, single-line inner owner included, which is what the
+    ///     group point (a width test) could never write. Two shapes are exempt, and both are an
+    ///     <c>if</c> that the <c>else</c> machinery owns rather than a nesting: an <c>if</c> with an
+    ///     <c>else</c> keeps its own statement — <c>if (b)</c> / <c>if (c) M();</c> / <c>else M();</c>,
+    ///     under <c>while</c> too — and an <c>else if</c> keeps its — <c>else if (c) M();</c>. Neither
+    ///     exemption carries over to the statement after them: <c>else if (b) if (c) M();</c> pushes
+    ///     <c>if (c)</c> down and <c>M()</c> with it.
+    ///     <para>
+    ///         Not at <c>keep = false</c>, where the placement key decides and the oracle leaves a nesting
+    ///         where the author put it (see <see cref="PlanEmbeddedStatement" />).
+    ///     </para>
+    /// </remarks>
+    static bool IsPushedOffByNesting(SyntaxNode owner, StatementSyntax embedded) {
+        if (CarriesAnEmbeddedStatement(embedded)) {
+            return true;
+        }
+
+        if (owner is IfStatementSyntax { Else: not null } or IfStatementSyntax { Parent: ElseClauseSyntax }) {
+            return false;
+        }
+
+        return IsEmbeddedStatement(owner) || owner.Parent is UsingStatementSyntax outer && outer.Statement == owner;
+    }
+
+    static bool CarriesAnEmbeddedStatement(StatementSyntax statement) =>
+        statement is IfStatementSyntax
+            or WhileStatementSyntax
+            or DoStatementSyntax
+            or ForStatementSyntax
+            or CommonForEachStatementSyntax
+            or UsingStatementSyntax
+            or FixedStatementSyntax
+            or LockStatementSyntax;
 
     /// <summary>
     ///     ⚠ A <c>switch</c> or a <c>try</c> never shares its owner's line, at the export's
@@ -4826,10 +5013,10 @@ public sealed class BreakPlan {
     ///         <c>case 1:</c> / <c>case 2: break;</c> — and a braced section is the block's own
     ///         business: <see cref="PlanOnePerLine" /> expands it, and <see cref="Keeps" /> reads the
     ///         <em>embedded</em> key for it, which is the one that kept <c>case 1: { M(); }</c> whole.
-    ///         ⚠ A block that is one statement among several (<c>case 1: { M(); } break;</c>) is not
-    ///         planned here beyond its own line: the oracle writes <c>case 1: {</c> with the block at the
-    ///         label's column and <c>break;</c> one level in, a shape neither this plan nor
-    ///         <see cref="CSharpDocumentBuilder.VisitSwitchSection" /> produces yet.
+    ///         ⚠ A block that is one statement among several (<c>case 1: { M(); } break;</c>): the oracle
+    ///         writes <c>case 1: {</c> with the block at the label's column and <c>break;</c> one level in
+    ///         (#478). A leading block's gap is left to the brace placement here, and
+    ///         <see cref="CSharpDocumentBuilder.VisitSwitchSection" /> puts every block on the label's column.
     ///     </para>
     /// </remarks>
     void PlanCaseStatements(SwitchSectionSyntax node) {
@@ -4843,7 +5030,14 @@ public sealed class BreakPlan {
 
         var first = FirstToken(node.Statements[0]);
         if (!IsSimpleSection(node.Statements)) {
+            // ⚠ Except a block that comes first, which the brace placement joins to the label as it
+            // does a section that is only a block: `case 1: {` under the export, `case 1:` / `{` under
+            // `csharp_new_line_before_open_brace = all` (#478). See CSharpDocumentBuilder.VisitSwitchSection.
             foreach (var statement in node.Statements) {
+                if (statement is BlockSyntax && statement == node.Statements[0]) {
+                    continue;
+                }
+
                 Mandatory(FirstToken(statement));
             }
 
@@ -4907,7 +5101,7 @@ public sealed class BreakPlan {
     ///     no width test and no <c>keep_user_linebreaks</c> in it: a body with anything in it is broken.
     ///     ⚠ Not ignored everywhere, measured for #405: at <c>false</c> the oracle also expands every
     ///     one-statement accessor, lambda and anonymous-method block, <c>get { return _n; }</c> included.
-    ///     Skala does not read the key (Tier D), so that corner is not honoured.
+    ///     <see cref="MayShareItsOwnersLine" /> reads the key, below the keep keys that outrank it (#510).
     ///     <para>
     ///         ⚠ Two exclusions, each measured rather than assumed. An <em>empty</em> body stays together
     ///         (<c>skala_empty_block_style = together</c>). And a one-statement block that may share its
@@ -5070,7 +5264,11 @@ public sealed class BreakPlan {
             broken |= BreaksBefore(FirstToken(accessor));
         }
 
-        var joins = options.KeepExistingDeclarationBlockArrangement ? !broken : bodiless;
+        // ⚠ And `csharp_preserve_single_line_blocks = false` expands a bodiless list too: `int R { get;
+        // set; }` comes back one accessor per line (#510). Not under the keep key, which outranks it.
+        var joins = options.KeepExistingDeclarationBlockArrangement
+            ? !broken
+            : bodiless && options.PreserveSingleLineBlocks;
         if (!joins) {
             foreach (var accessor in node.Accessors) {
                 Mandatory(FirstToken(accessor));
@@ -5199,8 +5397,17 @@ public sealed class BreakPlan {
         }
 
         var broken = BreaksBefore(FirstToken(block.Statements[0])) || BreaksBefore(block.CloseBraceToken);
+
+        // ⚠ `csharp_preserve_single_line_blocks = false` takes the "always" away from an accessor's, a
+        // lambda's and an anonymous method's block — and only while the keep key that owns the block is
+        // off. Measured 2026-10-08 (#510): at `false` under the export `get { return _n; }`,
+        // `() => { A(); }`, `delegate { A(); }` and `x => { return x; }` all come back broken open,
+        // in a statement and as a sole argument alike; with both `keep_existing_*_block_arrangement`
+        // keys `true` the oracle's output at `false` is byte-identical to its output at `true`. A
+        // method's, a local function's and an `if`'s block are only ever kept under their keep key,
+        // which outranks this one, so they are unaffected either way.
         return block.Parent is AccessorDeclarationSyntax or AnonymousFunctionExpressionSyntax
-            ? !(broken && Keeps(block))
+            ? Keeps(block) ? !broken : options.PreserveSingleLineBlocks
             : !broken && Keeps(block);
     }
 
@@ -5585,6 +5792,147 @@ public sealed class BreakPlan {
         var plan = new GroupPlan(group, mode, facts);
         inner[Key(node)] = plan;
         byId[group] = plan;
+    }
+
+    /// <summary>
+    ///     <c>csharp_new_line_before_open_brace</c>'s split direction: a brace the key puts on a line of
+    ///     its own goes there exactly when the line after it breaks (#465, SK-DIV-0091).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The placement family used to be a join decision only — <c>ShouldJoin</c> removed the
+    ///     author's break before a brace and nothing ever added one — so a K&amp;R input under
+    ///     <c>all</c> came back K&amp;R where the oracle writes Allman. Measured 2026-10-08 with
+    ///     <c>Testing ask</c> on every construct the key's seven groups cover, written K&amp;R:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             A body that breaks open puts its brace on a line of its own — a type's, a method's,
+    ///             every control block's, an accessor list's and an accessor's, a lambda's and an
+    ///             anonymous method's, an initializer's, a switch expression's.
+    ///         </item>
+    ///         <item>
+    ///             A body that stays on its owner's line keeps its brace there: <c>get { return _n; }</c>,
+    ///             <c>() =&gt; { A(); }</c>, <c>delegate { A(); }</c>, <c>new List&lt;int&gt; { 1, 2 }</c>,
+    ///             <c>new { X = 1, Y = 2 }</c>, <c>int B { get; set; }</c>. So the brace's gap is a point
+    ///             of whatever decides the gap after it, and the group is entered before the brace,
+    ///             which is the column the owner's-line question is asked from.
+    ///         </item>
+    ///         <item>
+    ///             An empty body follows <c>skala_empty_block_style</c> for a type, a namespace, a method,
+    ///             a local function, a control block and a switch: <c>together</c> gives
+    ///             <c>void M()</c> / <c>{ }</c>, <c>multiline</c> <c>void M()</c> / <c>{</c> / <c>}</c>, and
+    ///             <c>together_same_line</c> <c>void M() { }</c>, which <c>ShouldJoin</c> also pulls back
+    ///             from an Allman input. An empty accessor, lambda, anonymous method or initializer stays
+    ///             <c>{ }</c> on its owner's line at all three values, and is joined back from Allman.
+    ///         </item>
+    ///     </list>
+    /// </remarks>
+    void SettleOpenBraces(SyntaxNode root) {
+        if (options.NewLineBeforeOpenBraceOwners == BraceOwners.None) {
+            return;
+        }
+
+        foreach (var open in root.DescendantTokens()) {
+            if (!open.IsKind(SyntaxKind.OpenBraceToken)
+                || !CSharpDocumentBuilder.OpensAJoinableBody(open)
+                || (options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(open)) == 0
+                || captured is { Count: > 0 }
+                && open.Parent is { } parent
+                && IsInsideCaptured(parent)) {
+                continue;
+            }
+
+            var next = open.GetNextToken();
+            if (next.IsKind(SyntaxKind.None)) {
+                continue;
+            }
+
+            if (CSharpDocumentBuilder.IsEmptyBody(open)) {
+                if (!CSharpDocumentBuilder.EmptyBodyStaysJoined(open)
+                    && options.EmptyBlockStyle != EmptyBlockStyle.TogetherSameLine) {
+                    SplitBefore(open);
+                }
+
+                continue;
+            }
+
+            if (!gaps.TryGetValue(next.SpanStart, out var after)) {
+                if (BreaksBefore(next)) {
+                    SplitBefore(open);
+                }
+
+                continue;
+            }
+
+            switch (after.Rule) {
+                case GapRule.Flat:
+                    continue;
+
+                case GapRule.Mandatory:
+                    SplitBefore(open);
+                    continue;
+
+                default:
+                    if (byId.TryGetValue(after.Group, out var owner) && owner.Mode == GroupMode.Break) {
+                        SplitBefore(open);
+                        continue;
+                    }
+
+                    PointBeforeBrace(open, after.Group);
+                    continue;
+            }
+        }
+    }
+
+    bool IsInsideCaptured(SyntaxNode node) {
+        for (var current = node; current is not null; current = current.Parent) {
+            if (current is ExpressionSyntax && captured!.Contains(current.Span)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void SplitBefore(SyntaxToken open) {
+        if (gaps.TryGetValue(open.SpanStart, out var existing) && existing.Rule != GapRule.Flat) {
+            return;
+        }
+
+        Mandatory(open);
+    }
+
+    /// <summary>
+    ///     The brace's gap as a point of <paramref name="group" />, which is entered before the brace
+    ///     when it is described on the node the brace starts.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A group opened around a node is entered after the gap before that node
+    ///     (<see cref="GroupPlan.LeadingGapInside" />), and a block, an accessor list, an initializer and a
+    ///     property pattern all start at their brace — so the point would land outside its group and be
+    ///     written flat whatever the group decided.
+    /// </remarks>
+    void PointBeforeBrace(SyntaxToken open, int group) {
+        if (gaps.TryGetValue(open.SpanStart, out var existing) && existing.Rule != GapRule.Flat) {
+            return;
+        }
+
+        if (open.Parent is { } node
+            && node.SpanStart == open.SpanStart
+            && groups.TryGetValue(Key(node), out var plans)) {
+            var index = plans.FindIndex(plan => plan.Id == group);
+            if (index < 0) {
+                // The group is not one this node opens: its points enclose the brace already.
+                Point(open, group);
+                return;
+            }
+
+            for (var i = 0; i <= index; i++) {
+                plans[i] = plans[i] with { LeadingGapInside = true };
+                byId[plans[i].Id] = plans[i];
+            }
+        }
+
+        Point(open, group);
     }
 
     /// <summary>

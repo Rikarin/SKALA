@@ -1231,7 +1231,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        OpenIndent(IndentKind.Continuous);
+        OpenIndent(IndentKind.Continuous, planned.UnconditionalLevel);
     }
 
     void CloseGroupAt((int Indented, bool Held) opened) {
@@ -1490,6 +1490,13 @@ public sealed partial class CSharpDocumentBuilder {
                     if (indentBraces) {
                         OpenIndent(braceIndent);
                         EmitToken(token);
+                    } else if (nestsFromAnchor) {
+                        // ⚠ A brace on a line of its own takes its `}`'s column, not the `=`'s
+                        // continuation the gap before it sits in (#465). See IndentKind.AnchoredBrace.
+                        OpenIndent(IndentKind.AnchoredBrace);
+                        EmitToken(token);
+                        CloseIndent(IndentKind.AnchoredBrace);
+                        OpenIndent(braceIndent);
                     } else {
                         EmitToken(token);
                         OpenIndent(braceIndent);
@@ -2147,6 +2154,18 @@ public sealed partial class CSharpDocumentBuilder {
         // The statements of a case take one indent from the label.
         OpenIndent(IndentKind.Block);
         foreach (var statement in node.Statements) {
+            // ⚠ A block among several statements sits on the label's column, with its contents one level
+            // in and the statements after it back on the section's level (#478, SK-DIV-0115). Measured
+            // 2026-10-08: `case 1: { M(); } break;` comes back `case 1: {` / `M();` / `}` / `break;` and
+            // `case 2: M(); { M(); } break;` puts the `{` and `}` on `case`'s column — the same place a
+            // section that is only a block puts them.
+            if (statement is BlockSyntax) {
+                OpenIndent(IndentKind.Outdent);
+                Visit(statement);
+                CloseIndent(IndentKind.Outdent);
+                continue;
+            }
+
             // ⚠ skala_indent_break_from_case = false puts the control transfer back at the
             // label's own level, which is a different shape and not a rounding error.
             if (!options.IndentBreakFromCase
@@ -2187,7 +2206,11 @@ public sealed partial class CSharpDocumentBuilder {
         // still has a scope for its closing delimiter to be aligned against.
         // ⚠ `Anchor` is a marker too, and `AnchoredBlock` is a block in every respect this
         // bookkeeping cares about; only the writer reads the difference.
-        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None or IndentKind.Anchor) {
+        if (kind is IndentKind.Outdent
+            or IndentKind.OutdentColumns
+            or IndentKind.None
+            or IndentKind.Anchor
+            or IndentKind.AnchoredBrace) {
             return;
         }
 
@@ -2211,7 +2234,11 @@ public sealed partial class CSharpDocumentBuilder {
     ///     The next piece is this scope's own closing delimiter and takes its opener's line level.
     /// </param>
     void CloseIndent(IndentKind kind, bool alignsCloser = false) {
-        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None or IndentKind.Anchor) {
+        if (kind is IndentKind.Outdent
+            or IndentKind.OutdentColumns
+            or IndentKind.None
+            or IndentKind.Anchor
+            or IndentKind.AnchoredBrace) {
             doc.Close(alignsCloser);
             return;
         }
@@ -3714,8 +3741,11 @@ public sealed partial class CSharpDocumentBuilder {
             // and third are the same bytes.) ⚠ `together_same_line`'s second half — pulling the pair
             // back onto the declaration's line against `new_line_before_open_brace` — is NOT
             // implemented: it needs the brace-split direction Skala does not have. SK-DIV-0091.
-            return options.EmptyBlockStyle is EmptyBlockStyle.Together or EmptyBlockStyle.TogetherSameLine
-                && OpensAJoinableBody(previousToken);
+            // ⚠ An empty accessor, lambda, anonymous method or initializer is joined at `multiline` too:
+            // `() =>` / `{` / `}` comes back `() => { }` at all three values (#465).
+            return OpensAJoinableBody(previousToken)
+                && (options.EmptyBlockStyle is EmptyBlockStyle.Together or EmptyBlockStyle.TogetherSameLine
+                    || EmptyBodyStaysJoined(previousToken));
         }
 
         if (nextToken.IsKind(SyntaxKind.OpenBraceToken)) {
@@ -3723,8 +3753,15 @@ public sealed partial class CSharpDocumentBuilder {
             // one of the key's twelve members behaved as `all`, and two of its fifteen values agreed
             // with the oracle. See BraceOwners for the seven groups the C# formatter actually has and
             // the probe that established them.
+            // ⚠ And an empty body the key would put on a line of its own is pulled back in two cases,
+            // both measured (#465): `together_same_line`, which is that value's whole meaning, and an
+            // empty accessor, lambda, anonymous method or initializer, which stays `{ }` on its owner's
+            // line at every value of the empty-block key. See BreakPlan.SettleOpenBraces.
             return OpensAJoinableBody(nextToken)
-                && (options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(nextToken)) == 0;
+                && ((options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(nextToken)) == 0
+                    || IsEmptyBody(nextToken)
+                    && (options.EmptyBlockStyle == EmptyBlockStyle.TogetherSameLine
+                        || EmptyBodyStaysJoined(nextToken)));
         }
 
         if (previousToken.IsKind(SyntaxKind.ElseKeyword)) {
@@ -3804,6 +3841,38 @@ public sealed partial class CSharpDocumentBuilder {
             return true;
         }
 
+        // ⚠ `skala_new_line_before_else`, `_catch`, `_finally` and `_while` at `true` split a `} else` the
+        // author wrote joined, and Skala only ever kept a break the author wrote — `ShouldJoin`'s arm
+        // below is the other direction. Measured 2026-10-08 (#480) with all four keys `true` on a K&R
+        // input: `}` / `else {`, `}` / `catch {`, `}` / `finally {`, `}` / `while (b);` and `}` /
+        // `else M();`.
+        if (nextKind == PieceKind.Token
+            && previousToken.IsKind(SyntaxKind.CloseBraceToken)
+            && nextToken.Kind() switch {
+                SyntaxKind.ElseKeyword => options.NewLineBeforeElse,
+                SyntaxKind.CatchKeyword => options.NewLineBeforeCatch,
+                SyntaxKind.FinallyKeyword => options.NewLineBeforeFinally,
+                SyntaxKind.WhileKeyword => nextToken.Parent is DoStatementSyntax && options.NewLineBeforeWhile,
+                _ => false
+            }) {
+            return true;
+        }
+
+        // ⚠ `skala_empty_block_style = multiline` splits an empty body the author wrote `{ }`, and Skala
+        // only ever kept a split one. Measured 2026-10-08 (#465) under `csharp_new_line_before_open_brace`
+        // `none` and `all` alike: a type's, a namespace's, a method's, a local function's, a control
+        // block's and a switch's `{ }` comes back `{` / `}`, and an accessor's, a lambda's, an anonymous
+        // method's and an initializer's stays `{ }`.
+        if (nextKind == PieceKind.Token
+            && previousToken.IsKind(SyntaxKind.OpenBraceToken)
+            && nextToken.IsKind(SyntaxKind.CloseBraceToken)
+            && options.EmptyBlockStyle == EmptyBlockStyle.Multiline
+            && OpensAJoinableBody(previousToken)
+            && IsEmptyBody(previousToken)
+            && !EmptyBodyStaysJoined(previousToken)) {
+            return true;
+        }
+
         // ⚠ `skala_special_else_if_treatment = false` splits `else if` and lets the `if` become what it
         // structurally is — the `else`'s embedded statement, one level in. Measured, and symmetric:
         // the oracle splits a joined `else if` at `false` and joins a split one at `true`, so
@@ -3877,7 +3946,34 @@ public sealed partial class CSharpDocumentBuilder {
         } declaration
         && declaration.Variables[0] == declarator;
 
-    static bool OpensAJoinableBody(SyntaxToken brace) =>
+    /// <summary>
+    ///     Whether the brace opens a body with nothing in it — not a statement, a member, an element nor
+    ///     a comment.
+    /// </summary>
+    internal static bool IsEmptyBody(SyntaxToken open) {
+        var next = open.GetNextToken();
+        return next.IsKind(SyntaxKind.CloseBraceToken)
+            && next.Parent == open.Parent
+            && !open.TrailingTrivia.Any(IsLineOrBlockComment)
+            && !next.LeadingTrivia.Any(static trivia => IsLineOrBlockComment(trivia) || trivia.IsDirective);
+    }
+
+    /// <summary>
+    ///     An empty body that stays <c>{ }</c> on its owner's line whatever the brace keys say.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-08 under <c>csharp_new_line_before_open_brace = all</c> at all three
+    ///     <c>skala_empty_block_style</c> values, written K&amp;R and Allman (#465): an accessor's
+    ///     <c>get { }</c>, a lambda's <c>() =&gt; { }</c>, an anonymous method's <c>delegate { }</c>, a
+    ///     collection initializer's <c>new List&lt;int&gt; { }</c> and an anonymous type's <c>new { }</c>
+    ///     come back joined every time, and <c>() =&gt;</c> / <c>{</c> / <c>}</c> is joined back. A
+    ///     type's, a namespace's, a method's, a local function's, a control block's and a switch's are
+    ///     the ones the empty-block key moves.
+    /// </remarks>
+    internal static bool EmptyBodyStaysJoined(SyntaxToken open) =>
+        BraceOwnerSet.Of(open) is BraceOwners.Accessors or BraceOwners.Lambdas or BraceOwners.Initializers;
+
+    internal static bool OpensAJoinableBody(SyntaxToken brace) =>
         brace.Parent is BlockSyntax
             or AccessorListSyntax
             or BaseTypeDeclarationSyntax

@@ -4337,7 +4337,7 @@ not ask about it.
 - ⚠ Both `oracle` globs are kept, the way SK-DIV-0083's are, so the next sweep re-measures the claim
   and `UNEXERCISED` points here.
 
-## SK-DIV-0091 — `csharp_indent_braces`, and the brace-split direction the placement family does not have
+## SK-DIV-0091 — `csharp_indent_braces`, and the brace-split direction the placement family did not have
 
 Four brace rows were resolved together and three of them are **fixed**; this entry is the residue, and
 it is two separate things that share a mechanism.
@@ -4372,22 +4372,44 @@ lists; `anonymous_methods` moves nothing while `lambdas` moves the `delegate`.
 `skala_new_line_before_while`'s indentation and `skala_special_else_if_treatment`'s split direction were fixed in
 the same pass and all three now read `Conformant`.
 
-### The first thing that is not fixed: the split direction
+### The split direction — fixed (#465)
 
-Brace placement in this formatter is a **join** decision. `ShouldJoin` is "the one place phase 1
-removes a line break the author wrote", and nothing inserts one before a brace. So a K&R input under
-`csharp_new_line_before_open_brace = all` comes back K&R, where the oracle splits every brace onto its
+Brace placement in this formatter was a **join** decision. `ShouldJoin` is "the one place phase 1
+removes a line break the author wrote", and nothing inserted one before a brace. So a K&R input under
+`csharp_new_line_before_open_brace = all` came back K&R, where the oracle splits every brace onto its
 own line; and `skala_empty_block_style = together_same_line`'s second half — pulling `{ }` back onto the
-declaration's line *against* the placement key — cannot be honoured either.
+declaration's line *against* the placement key — could not be honoured either.
 
-⚠ **This is invisible to all four rows, and not by luck.** Every one of their fixtures is written with
+⚠ **This was invisible to all four rows, and not by luck.** Every one of their fixtures is written with
 the break already there, so all fifteen values of the placement key only ever ask the join question.
-`FormatterTests.BraceSplitIsNotImplemented` asserts the gap so that it is a recorded absence rather
-than a discovery. Closing it means a break point before a brace in every construct in the language,
-which is not a change to make from a row that is already `Conformant`.
 
-`skala_special_else_if_treatment` is the one member of the family that *did* get its split direction, in
-`MustBreak`, because its row needed it and its shape is a keyword rather than a brace.
+**Fixed 2026-10-08.** Measured with `Testing ask` on K&R inputs covering every construct the seven live
+groups reach — at `all`, at each of the seven and at `none` — and on empty bodies written K&R and Allman
+at all three `skala_empty_block_style` values under both `none` and `all`. The rule the oracle follows is
+one sentence: **a brace the key puts on a line of its own goes there exactly when the line after it
+breaks.** `get { return _n; }`, `() => { A(); }`, `delegate { A(); }`, `new List<int> { 1, 2 }`,
+`new { X = 1 }` and `int B { get; set; }` keep their brace on the owner's line because their body stays
+there. `BreakPlan.SettleOpenBraces` plans it after the walk, by mirroring the gap after the brace: a
+required break there is a required break before the brace, and a point there is a point of the same
+group before it — with the group entered before the brace (`LeadingGapInside`), since a block, an
+accessor list and an initializer all start at their brace.
+
+Three things came out of the measurement that a reading of the key would not give:
+
+- An **empty** body follows the empty-block key for a type, a namespace, a method, a local function, a
+  control block and a switch — `together` writes `void M()` / `{ }`, `multiline` `void M()` / `{` / `}`,
+  `together_same_line` `void M() { }` (and joins an Allman `{ }` back). An empty accessor, lambda,
+  anonymous method or initializer stays `{ }` on its owner's line **at every value** and is joined back
+  from Allman.
+- ⚠ `multiline` had no split direction either, **under the export's `none` too**: `void M() { }` came
+  back joined where the oracle writes `void M() {` / `}`. Same family, same fix (`MustBreak`).
+- ⚠ A brace on a line of its own after an `=` — `Action b = () =>` / `{`, `var m = new List<int>` / `{`,
+  `var r = 1 switch` / `{` — sits on the statement's column, the column its `}` takes. Skala put it one
+  continuation level in, **from an Allman input as well**, which no fixture could reach under `none`.
+  `IndentKind.AnchoredBrace` puts it on its anchored block's level.
+
+`skala_special_else_if_treatment` was the one member of the family that already had its split direction,
+in `MustBreak`, because its row needed it and its shape is a keyword rather than a brace.
 
 ### The second: `csharp_indent_braces`, and the probe that moved the question
 
@@ -4434,8 +4456,8 @@ that assigning one key in a section silently re-derives another from that sectio
 a rule whose only justification is that ReSharper does it, on a configuration nobody writes. Doc 00's
 non-negotiable 9 is exactly this case: the reference tool is a test subject, not a specification.
 
-- options: `csharp_indent_braces`, and the split-direction gap in `csharp_new_line_before_open_brace`
-  and `skala_empty_block_style`
+- options: `csharp_indent_braces`; the split direction in `csharp_new_line_before_open_brace` and
+  `skala_empty_block_style` is fixed (#465), pinned by `BraceSplitIssue465Tests`
 - ⚠ status: **accepted**. `csharp_indent_braces` agrees with the oracle at both values whenever the
   question is put to both engines the same way; the row's disagreement exists only under a
   single-key section that changes what the oracle was asked. Registered `OfInert` with the mask named,
@@ -5061,10 +5083,15 @@ it, from the finished gap table: a gap nobody planned (kept by `keep_user_linebr
 break, or a point of a group certain to break counts; a `Flat` gap, a fill point and a preserve
 group that may re-join do not.
 
-⚠ **Adjacent and still open**: the last row's value — `i +=` / `1` — takes a level past the
+⚠ **Adjacent, and fixed since (#468)**: the last row's value — `i +=` / `1` — takes a level past the
 incrementor in the oracle and none under Skala, the same shape SK-DIV-0103 records for
 `for (int i =` / `0;` and scoped out of `SpendsUnderDelimiters` because `using (var d =` /
-`default(…))` adds none. Not in the fixture.
+`default(…))` adds none. Measured 2026-10-08 on every header: a `for` header's declarator, a second
+declarator (`j =` / `1`), an initializer's or incrementor's assignment and compound assignment
+(`k =` / `k + 1`, `k = k` / `+ 1`, `i +=` / `1`) all land one level past the header's aligned column
+(17 against 13), and a `fixed` header's declarator too (19 against 15); the `using` header was
+re-asked and still adds none. So the scope is "an item of a `for` or `fixed` header", which
+`IsAListItemsEquals` now names. Pinned by `ContinuedListItemIssue468Tests`.
 
 - options: `skala_wrap_for_stmt_header_style` (`chop_if_long`), `skala_keep_user_linebreaks`,
   `skala_wrap_multiple_declaration_style` (whose join is the one that was miscounted).
@@ -5144,9 +5171,18 @@ ending it (`LineFlags.LastResort`, in the layout engine's `DocumentBuilder.Break
 one. An owner that carries an embedded statement of its own keeps the group point: the oracle
 pushes it off whenever it is multi-line.
 
-⚠ **Adjacent and still open**: the last row's inner `if (n > 0) n++;` — simple, single-line,
-written joined — is broken by the oracle when its owner is itself an embedded statement that was
-pushed off. One shape measured; not in the fixture.
+⚠ **Adjacent, and fixed since (#469)**: the last row's inner `if (n > 0) n++;` — simple, single-line,
+written joined — is broken by the oracle when its owner is itself an embedded statement. Measured
+2026-10-08 on twenty-eight nestings written on one line, and the rule is not "when its owner was
+pushed off": under keep the oracle puts an embedded statement on a line of its own **whenever it
+carries an embedded statement of its own, or its owner is itself embedded** — `if (b) if (c) M();`,
+`if (b) using (D()) M();`, `while (b) lock (this) M();`, `do if (b) M(); while (b);`,
+`using (D()) using (D()) M();` (stacked, per `skala_indent_nested_usings_stmt`), three deep, and
+`if (b) if (c) { M(); }`, every one fitting on its line. ⚠ Two exemptions, both an `if` the `else`
+machinery owns: an `if` with an `else` keeps its statement (`if (b)` / `if (c) M();` / `else M();`) and
+an `else if` keeps its (`else if (c) M();`); neither carries over to what nests inside them
+(`else if (b)` / `if (c)` / `M();`). `BreakPlan.IsPushedOffByNesting`, `PlanStackedUsing`; pinned by
+`EmbeddedNestingIssue469And480Tests`. The `keep = false` paths are untouched.
 
 - options: `skala_keep_existing_embedded_arrangement` (`true`; the `false` paths are untouched),
   `skala_place_simple_embedded_statement_on_same_line` (inert under keep, as before).
@@ -5259,7 +5295,15 @@ together. The tuple, which has no wrap style, fills under both. Not in the fixtu
 levels inside a chopped list that is itself the operand of a broken chain (`F(` / `a` / `&& b` / `)`
 / `|| c` puts `a` at 16 in the oracle, 12 under Skala) and a declarator's value past its `=`
 (`int x = a` / `+ 1,` — 16 against 12), both SK-DIV-0103's scoping and SK-DIV-0112's adjacent
-shape rather than this entry's.
+shape rather than this entry's. ⚠ **The declarator half is fixed (#468)**: measured 2026-10-08, every
+continuation inside a declarator of a multi-declarator list — a kept `=`, a binary operator, a chopped
+argument list (`F(` / arguments at 16 / `)` at 12), a chain's dot, the first declarator's included and a
+field's alike — lands one level past the *list's* level, while `y = 2;` stays at 12 and a single
+declarator's `int z = a` / `+ 1;` stays one level in. The list and the `=` both open on the
+declaration's first line, so the writer's one-level-per-line rule counted one; the list's level now
+counts unconditionally (`GroupPlan.UnconditionalLevel`) and the `=` spends under it. ⚠ Not fixed and
+not this entry: `b ? a` / `: c` — a ternary broken before `:` only — is chopped by the oracle at the `?`
+too, in a single declarator and a `return` alike.
 
 - options: `skala_wrap_arguments_style`, `skala_wrap_parameters_style` and the rest of the
   `chop_if_long` family; `skala_keep_user_linebreaks`.
@@ -5536,6 +5580,14 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
   alone. Skala breaks after the `]` and chops only a section that overflows by itself.
 - `orderby a,\n b`: unmeasured, and `OrderByClause` is the one exemption in `SeparatedListPlanTests`
   without a measurement behind it.
+  **Fixed (#477)**, and the exemption's premise ("nothing to plan") was wrong: measured 2026-10-08,
+  the orderings are a **fill one continuation level past `orderby`**. An author's break after or
+  before a comma is kept and the continued ordering lands at the clause's column plus one
+  (`orderby a,` / `    b`, `orderby a` / `    , a`, with `descending` and `ascending` alike, under
+  `=>`, `return` and an argument list); `orderby a, a` stays; one past the margin wraps at the last
+  comma that fits (`orderby x.Length, x.Length,` / `    x`), where Skala did not wrap it at all; and at
+  `skala_keep_user_linebreaks = false` the breaks are re-joined. `BreakPlan.PlanOrderings`, pinned by
+  `OrderingsIssue477Tests`; `OrderByClauseSyntax` is now a planned sample in `SeparatedListPlanTests`.
 
 - options: `skala_wrap_arguments_style`, `skala_max_invocation_arguments_on_line` (element access); no key
   for the fills or the attribute alignment — `PlanFilledList`'s remarks measure that.
@@ -5598,14 +5650,33 @@ Not fixed, measured on the way:
   break;` — is written by the oracle with the block at the **label's** column (`case 1: {` when it is
   first) and its contents one level in, and the `break;` one level in after it. Skala puts the block one
   level in like any other statement, with its contents two. Pre-existing for broken input and rare.
+  **Fixed (#478)**: re-measured 2026-10-08 on seven sections — a block first, after a statement, two in
+  a row, alone with and without `break;`, written over lines — at the export and with
+  `csharp_new_line_before_open_brace = all`, `skala_indent_switch_labels = false` and
+  `skala_indent_break_from_case = false` flipped one at a time. Every block among several statements
+  sits on the label's column (`case 1: {`, or `case 1:` / `{` under `all`), exactly where a section that
+  is only a block puts it. `PlanCaseStatements` leaves a leading block's gap to the brace placement, and
+  `VisitSwitchSection` outdents a block statement to the label. Pinned by `SwitchSectionBlockIssue478Tests`.
 - `case 1: ; break;` — the oracle keeps the space between `:` and the empty statement's `;`; Skala writes
   `case 1:;`. A spacing gap, not a break.
 - `if (b) M(); else switch (o) { … }` — the oracle writes `if (b) M();` / `else` / `switch (o) {`; Skala
   now pushes the `switch` down but keeps `M(); else` on one line, and after an embedded switch's `}` the
   oracle puts `else` on its own line where Skala writes `} else M();`. The `else` after a non-block
-  statement has no plan at all, which is older than this entry.
+  statement has no plan at all, which is older than this entry. **Fixed (#480)**: measured 2026-10-08
+  at both values of `skala_new_line_before_else` and of `skala_keep_existing_embedded_arrangement`, an
+  `else` after a statement that is not a block always starts a line — `if (b) M();` / `else M();` too,
+  every link of an `else if` chain, and behind a block comment — and so does a `do`'s `while`
+  (`do M();` / `while (b);`). `BreakPlan.PlanClauseAfterAnEmbeddedStatement`. ⚠ The incidental blank
+  line the issue flagged is `skala_blank_lines_after_block_statements` and a second defect, not the
+  same one: `HasChildBlock` did not look through an embedded statement, so `if (b) switch (o) { … }`,
+  `if (b) if (c) { … }` and `… else while (c) { … }` took no blank after them — nor before them, measured
+  at `skala_blank_lines_before_block_statements = 1`. ⚠ And the four clause keys
+  (`skala_new_line_before_else`, `_catch`, `_finally`, `_while`) had no split direction at `true`: a
+  `} else` the author wrote joined stayed joined. Measured with all four on, fixed in `MustBreak`.
+  Pinned by `EmbeddedNestingIssue469And480Tests`.
 - `if (b) using (D()) M();` — the oracle pushes the `using` down (a nested embedded owner); Skala keeps
-  it on the `if`'s line. The "nested embedded statement" rule SK-DIV-0106 left unmeasured.
+  it on the `if`'s line. The "nested embedded statement" rule SK-DIV-0106 left unmeasured. **Fixed
+  (#469)**, see SK-DIV-0106.
 - Under `skala_keep_existing_declaration_block_arrangement = true` Skala keeps a method's `{` on its line
   around a body that is now multi-line (`void S(…) { switch (o) {`); the oracle expands such a body.
 
@@ -6822,10 +6893,23 @@ on pass two is where it belongs.
 
 Not fixed here, and measured:
 
-- `csharp_preserve_single_line_blocks = false` expands every one-statement accessor, lambda and
-  anonymous-method block, `get { return _n; }` included. The key is Tier D and not read.
 - The blank lines around a member the block rule joins are still decided from its source lines
   (#414).
+
+**`csharp_preserve_single_line_blocks = false` — fixed (#510).** Re-measured 2026-10-08 with the key
+flipped alone and again under both `keep_existing_*_block_arrangement` keys. At `false` the oracle
+expands every one-statement accessor, lambda and anonymous-method body and — ⚠ not in the entry's
+first measurement — every **bodiless accessor list**: `int R { get; set; }` comes back one accessor
+per line. Methods, local functions and control blocks are already expanded at `true` under the
+export; initializers, anonymous types, property patterns and empty blocks stay joined at both values.
+⚠ The entry's "the oracle's lambda layout at `false` is not the ordinary broken lambda argument" is
+**refuted**: `Register(() => {` / two levels / `}` / `);` and `Register(` / `delegate {` … are exactly
+what a two-statement lambda and anonymous-method argument already get (SK-DIV-0163), and they came out
+of the same plan once the block stopped sharing its owner's line. Under both keep keys the oracle is
+byte-identical at both values, so the keep keys outrank this one and Skala reads it only where they
+are off (`MayShareItsOwnersLine`, `PlanAccessorList`). Tier A on
+`constructs/braces/csharp_preserve_single_line_blocks.cs`, pinned by
+`PreserveSingleLineBlocksIssue510Tests`.
 
 - options: `skala_keep_existing_declaration_block_arrangement`, `skala_keep_existing_embedded_block_arrangement`, `csharp_preserve_single_line_blocks`.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/one-statement-block-on-its-owners-line.cs`,

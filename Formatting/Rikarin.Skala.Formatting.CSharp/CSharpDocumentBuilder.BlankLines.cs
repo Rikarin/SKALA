@@ -1066,6 +1066,19 @@ public sealed partial class CSharpDocumentBuilder {
                 && child.ChildNodes().Any(static grandchild => grandchild is BlockSyntax)) {
                 return true;
             }
+
+            // ⚠ And an embedded statement that has one counts for its owner, in both directions (#480).
+            // Measured 2026-10-08 at the export and at `blank_lines_before_block_statements = 1`:
+            // `if (b) switch (o) { … }`, `if (b) try { … } finally { … }`, `if (b) if (c) { … }`,
+            // `while (b) lock (this) { … }`, `… else if (c) { … }` and `… else while (c) { … }` all take
+            // the blank after them and the blank before them, as `if (b) { … }` does; `if (b) M(); else
+            // M();` takes neither.
+            if (child is StatementSyntax embedded
+                && HasChildBlock(embedded)
+                || child is ElseClauseSyntax { Statement: not BlockSyntax and var otherwise }
+                && HasChildBlock(otherwise)) {
+                return true;
+            }
         }
 
         return false;

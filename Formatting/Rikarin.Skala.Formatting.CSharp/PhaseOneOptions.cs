@@ -182,6 +182,7 @@ public readonly struct PhaseOneOptions {
         SpecialElseIfTreatment = options.GetBool(Ids.SpecialElseIfTreatment);
         EmptyBlockStyle = (EmptyBlockStyle)options.GetRaw(Ids.EmptyBlockStyle);
         AllowCommentAfterLbrace = options.GetBool(Ids.AllowCommentAfterLbrace);
+        PreserveSingleLineBlocks = options.GetBool(Ids.PreserveSingleLineBlocks);
 
         // ── Indentation ──────────────────────────────────────────────────────────────────────
         IndentBraces = options.GetBool(Ids.IndentBraces);
@@ -685,6 +686,13 @@ public readonly struct PhaseOneOptions {
     public bool SpecialElseIfTreatment { get; }
     public EmptyBlockStyle EmptyBlockStyle { get; }
     public bool AllowCommentAfterLbrace { get; }
+
+    /// <summary>
+    ///     <c>csharp_preserve_single_line_blocks</c>: at <c>false</c> the oracle expands every
+    ///     one-statement accessor, lambda and anonymous-method body and every bodiless accessor list
+    ///     (#510, SK-DIV-0162). See <c>BreakPlan.MayShareItsOwnersLine</c>.
+    /// </summary>
+    public bool PreserveSingleLineBlocks { get; }
 
     public bool IndentBraces { get; }
 
@@ -1579,6 +1587,7 @@ public static class Ids {
     public static readonly OptionId SpecialElseIfTreatment = Of("skala_special_else_if_treatment");
     public static readonly OptionId EmptyBlockStyle = Of("skala_empty_block_style");
     public static readonly OptionId AllowCommentAfterLbrace = Of("skala_allow_comment_after_lbrace");
+    public static readonly OptionId PreserveSingleLineBlocks = Of("csharp_preserve_single_line_blocks");
 
     // ⚠ SK-DIV-0091, and `OfInert` in the established sense: masked at the export's own values, not
     // ignored. It indents a brace that is on a line of its own, and the export's
