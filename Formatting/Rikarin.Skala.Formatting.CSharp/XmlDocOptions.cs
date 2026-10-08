@@ -51,6 +51,9 @@ public readonly struct XmlDocOptions {
         // two-line output it gives at 120. A negative width is not a width and still falls back.
         MaxLineLength = options.GetInt(XmlDocIds.MaxLineLength) is var width and >= 0 ? width : 120;
         WrapText = options.GetBool(XmlDocIds.WrapText);
+        WrapTagsAndPi = options.GetBool(XmlDocIds.WrapTagsAndPi);
+        AttributeStyle = (AttributeArrangementStyle)options.GetRaw(XmlDocIds.AttributeStyle);
+        AttributeIndent = (AttributeIndentStyle)options.GetRaw(XmlDocIds.AttributeIndent);
         KeepUserLinebreaks = options.GetBool(XmlDocIds.KeepUserLinebreaks);
         MaxBlankLinesBetweenTags = Math.Max(0, options.GetInt(XmlDocIds.MaxBlankLinesBetweenTags));
         IndentChildElements = (ChildIndentStyle)options.GetRaw(XmlDocIds.IndentChildElements);
@@ -131,6 +134,35 @@ public readonly struct XmlDocOptions {
 
     /// <summary><c>skala_xmldoc_wrap_text</c>: whether prose may be re-flowed.</summary>
     public bool WrapText { get; }
+
+    /// <summary>
+    ///     <c>skala_xmldoc_wrap_tags_and_pi</c>: whether a break may be <em>introduced</em> between a tag
+    ///     header's attributes to fit the margin. SK-DIV-0079, SK-DIV-0381.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only introduced: an author's break is kept at both values (measured, on a header short enough
+    ///     to fit), so <c>false</c> is "do not break", never "join". A processing instruction is left whole
+    ///     at both.
+    /// </remarks>
+    public bool WrapTagsAndPi { get; }
+
+    /// <summary>
+    ///     <c>skala_xmldoc_attribute_style</c>: where a header's attributes go. SK-DIV-0381, measured:
+    ///     <c>do_not_touch</c> keeps an author's break and breaks at the margin; <c>on_single_line</c> joins
+    ///     an author's break and breaks at the margin; <c>on_different_lines</c> puts the tag name alone and
+    ///     every attribute on its own line, a single one included and fitting or not;
+    ///     <c>first_attribute_on_single_line</c> keeps the first beside the name and puts every other on its
+    ///     own line, leaving a one-attribute header alone.
+    /// </summary>
+    public AttributeArrangementStyle AttributeStyle { get; }
+
+    /// <summary>
+    ///     <c>skala_xmldoc_attribute_indent</c>: where a header's continuation lines start. One indent past the
+    ///     tag, two, or under the first attribute — ⚠ unless that column is two thirds of
+    ///     <c>xmldoc_max_line_length</c> or more, measured at 120 (80) and at 90 (60), where it falls back to
+    ///     two indents: that is the export's <c>allow_far_alignment = false</c>, which Skala does not read.
+    /// </summary>
+    public AttributeIndentStyle AttributeIndent { get; }
 
     /// <summary>
     ///     <c>skala_xmldoc_keep_user_linebreaks</c>: a line break the author wrote is a line break.
@@ -381,6 +413,9 @@ public static class XmlDocIds {
     public static readonly OptionId WrapLines = Ids.XmlDocWrapLines;
     public static readonly OptionId MaxLineLength = Ids.XmlDocMaxLineLength;
     public static readonly OptionId WrapText = Ids.XmlDocWrapText;
+    public static readonly OptionId WrapTagsAndPi = Ids.XmlDocWrapTagsAndPi;
+    public static readonly OptionId AttributeStyle = Ids.XmlDocAttributeStyle;
+    public static readonly OptionId AttributeIndent = Ids.XmlDocAttributeIndent;
     public static readonly OptionId KeepUserLinebreaks = Ids.XmlDocKeepUserLinebreaks;
     public static readonly OptionId MaxBlankLinesBetweenTags = Ids.XmlDocMaxBlankLinesBetweenTags;
     public static readonly OptionId IndentChildElements = Ids.XmlDocIndentChildElements;
@@ -407,11 +442,14 @@ public static class XmlDocIds {
     public static readonly OptionId LinebreaksInsideTagsForElementsLongerThan =
         Ids.XmlDocLinebreaksInsideTagsForElementsLongerThan;
 
-    /// <summary>The twenty-one <c>resharper_xmldoc_*</c> keys the sub-formatter honours.</summary>
+    /// <summary>The <c>skala_xmldoc_*</c> keys the sub-formatter honours.</summary>
     public static ImmutableArray<OptionId> Honoured => [
         WrapLines,
         MaxLineLength,
         WrapText,
+        WrapTagsAndPi,
+        AttributeStyle,
+        AttributeIndent,
         KeepUserLinebreaks,
         MaxBlankLinesBetweenTags,
         IndentChildElements,
@@ -448,32 +486,18 @@ public static class XmlDocIds {
     ///     </para>
     /// </remarks>
     public static ImmutableArray<KeyValuePair<string, string>> Refused => [
-        // ── Measured, real, and not implemented: the shape of a wrapped header ───────────────
-        // ⚠ The prerequisite these shared is paid (#448): the renderer wraps a header past the margin
-        // and keeps an author's break inside one, as the export's `attribute_style = do_not_touch`,
-        // `attribute_indent = single_indent` and `wrap_tags_and_pi = true` ask. What stays refused is
-        // every *other* value of those three — Skala writes the export's answer whatever they say —
-        // and the two keys below them that are inert or masked.
-        new(
-            "skala_xmldoc_attribute_indent",
-            "Pending, not refused, and now MEASURED rather than assumed. It chooses how a wrapped tag header's continuation lines are indented and all three of its values separate: with the tag opening at column 12, `single_indent` (the export) puts them at 16, `double_indent` at 20, and `align_by_first_attribute` at 17 — under the first attribute. Since #448 Skala wraps a header and keeps an author's break, always at the export's `single_indent` — one indent past the tag, whatever this key says. SK-DIV-0079."
-        ),
-        new(
-            "skala_xmldoc_attribute_style",
-            """Pending, not refused. ⚠ The reason recorded here — 'it arranges the attributes of a header Skala does not yet wrap' — is MEASURED FALSE: it does not wait for a wrap. `on_different_lines` puts the tag name alone and every attribute on its own line, and `first_attribute_on_single_line` keeps the first on the tag's line and breaks the rest, and BOTH do so to a header that fits on one line comfortably. What survives is the second half: the export leaves it at `do_not_touch`, which is what Skala does at every value since #448 — an author's break is kept and a break is introduced only at the margin. ⚠ The open question this entry recorded is now CLOSED and the hypothesis it named was right: `on_single_line` IS distinguished from `do_not_touch`, on exactly the shape it predicted — an already-wrapped short header, `<see cref="System.String"` / `href="https://short.invalid/" />`, which `do_not_touch` keeps wrapped and `on_single_line` joins onto one line. All FOUR values separate. SK-DIV-0079."""
-        ),
+        // ── The header family's two that stay refused ─────────────────────────────────────────
+        // ⚠ `wrap_tags_and_pi`, `attribute_style` and `attribute_indent` left this list for `Honoured`
+        // (#448, SK-DIV-0381): the renderer wraps a header and keeps or arranges its breaks at every value
+        // of the three, each measured. What stays is one key the oracle ignores and one masked by the
+        // export's own `false`.
         new(
             "skala_xmldoc_alignment_tab_fill_style",
             "⚠ Not pending — MEASURED INERT, and the pairwise prerequisite this entry named was supplied in full. Under OracleProfile.DocComments with `indent_style = tab`, `skala_xmldoc_indent_style = tab`, `tab_width = 4`, `skala_xmldoc_attribute_indent = align_by_first_attribute` and `skala_xmldoc_allow_far_alignment = true` — so the continuation line carries 96 columns of alignment fill — `use_spaces`, `use_tabs_only` and `optimal_fill` produce byte-identical output, and the fill is spaces at all three. The control is in the same output: the file's own CODE lines took tabs, so a tab regime was live and the alignment still refused it. The inside of a `///` comment is always spaces, which is the same finding `skala_xmldoc_indent_style` carries one line down. Skala spends spaces for the same reason."
         ),
         new(
             "skala_xmldoc_allow_far_alignment",
-            "Pending on the same prerequisite, and NOW MEASURED — with both halves of the shape this entry asked for. It needs `skala_xmldoc_attribute_indent = align_by_first_attribute` flipped beside it AND a tag name long enough to push the alignment out; earlier probes supplied only the first and reported the key flat, which was a fact about the probe. On a 90-character element whose first attribute begins at column 105: at `false` — the export's own value — the continuation falls back to a DOUBLE indent at column 16, and at `true` it aligns at column 100 and the line runs to 129, past the margin. A shorter element whose alignment sits at column 39 aligns at both values, so the threshold lies between 39 and 105. ⚠ Two flips, so the one-key sweep can never reach it. SK-DIV-0079."
-        ),
-        // ⚠ The fifth of that family, and it used to be in `Honoured` under a reading of its name.
-        new(
-            "skala_xmldoc_wrap_tags_and_pi",
-            "Not read, and Skala behaves as the export's `true` at both values. What it governs is a break INSIDE a tag header — measured: a <see cref=... href=...> 170 columns wide comes back with its second attribute on a continuation line at true and whole at false, and a <?pi ...?> is left alone at both. Since #448 the model records an author's break between attributes and the renderer wraps a header at the margin, filling greedily, continuation one indent past the tag, the `>` or `/>` not counted; the oracle keeps an author's break at BOTH values, so `false` would be 'introduce no break', never 'join'. ⚠ That `false` is SK-DIV-0381: honouring it is a one-line gate in XmlDocRenderer.Tag, and it is held back only because registering the key moves it into the Tier A machinery, which wants a key-flip sweep row over a fixture that wraps a header — the committed one never did. SK-DIV-0079."
+            "Not read: Skala aligns as the export's `false` says, falling back to a double indent when the first attribute sits at two thirds of `xmldoc_max_line_length` or further — measured since, at 80 of 120 and at 60 of 90 (SK-DIV-0381). Measured before that with both halves of the shape this entry asked for. It needs `skala_xmldoc_attribute_indent = align_by_first_attribute` flipped beside it AND a tag name long enough to push the alignment out; earlier probes supplied only the first and reported the key flat, which was a fact about the probe. On a 90-character element whose first attribute begins at column 105: at `false` — the export's own value — the continuation falls back to a DOUBLE indent at column 16, and at `true` it aligns at column 100 and the line runs to 129, past the margin. A shorter element whose alignment sits at column 39 aligns at both values, so the threshold lies between 39 and 105. ⚠ Two flips, so the one-key sweep can never reach it. SK-DIV-0079."
         ),
 
         // ── Measured inert in the oracle: the indent is the C# file's ────────────────────────

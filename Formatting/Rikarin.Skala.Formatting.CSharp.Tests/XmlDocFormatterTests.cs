@@ -1394,9 +1394,12 @@ public sealed class XmlDocKeyCoverageTests {
         // and `skala_xmldoc_wrap_tags_and_pi` joins the four tag-header keys it turned out to belong with. Each
         // of the three had been read off a fixture that agrees at the export's own value and cannot
         // separate the key from what else produces that value.
+        //
+        // ⚠ 21 / 11 again, and this time for the opposite reason (SK-DIV-0381): `wrap_tags_and_pi`,
+        // `attribute_style` and `attribute_indent` are honoured at every value, each measured.
         Assert.Equal(32, family.Count);
-        Assert.Equal(18, honoured.Count);
-        Assert.Equal(14, refused.Count);
+        Assert.Equal(21, honoured.Count);
+        Assert.Equal(11, refused.Count);
     }
 
     [Fact]
@@ -1476,7 +1479,7 @@ public sealed class XmlDocKeyCoverageTests {
         // tier the *sweep* justifies, so a key that agrees everywhere is still D while the last
         // committed table says otherwise. Promotion is a diff that carries a new measurement.
         Assert.Equal(
-            19,
+            22,
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash).Count(implemented.Contains)
         );
 

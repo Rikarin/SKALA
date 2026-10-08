@@ -7891,7 +7891,7 @@ changes a comment the oracle would have left.
 - ⚠ status: **open**, partly measured (2026-10-08). Reproduction: the shapes above, one per member, asked
   with `Testing ask <dir> --profile=SkalaDocComments`.
 
-## SK-DIV-0381 — the tag-header keys are read at their export values only
+## SK-DIV-0381 — the tag-header keys are read at their export values only — **RESOLVED**
 
 Since #448 Skala wraps a tag header at the margin and keeps an author's break inside one — the export's
 `skala_xmldoc_wrap_tags_and_pi = true`, `skala_xmldoc_attribute_style = do_not_touch` and
@@ -7907,8 +7907,29 @@ committed fixture never wraps a header, so a sweep over it could not separate th
 `SPURIOUS` row SK-DIV-0079 opens with). Paying it: add a wrapping header to
 `constructs/xmldoc/skala_xmldoc_wrap_tags_and_pi.cs`, regenerate, register the key, sweep it.
 
+### ✅ Resolved (2026-10-08): every value of the three, measured and honoured
+
+Asked under `SkalaDocComments` one key at a time over nine headers — wide, short, author-broken, one
+attribute, two, long names:
+
+| key = value | the oracle |
+|---|---|
+| `wrap_tags_and_pi = false` | no break introduced; an author's break kept |
+| `attribute_indent = double_indent` | continuation two indents past the tag |
+| `attribute_indent = align_by_first_attribute` | under the first attribute — ⚠ until that column reaches two thirds of `xmldoc_max_line_length` (79 aligns and 80 does not at 120; 59 and 60 at 90), then two indents: the export's `allow_far_alignment = false` |
+| `attribute_style = on_single_line` | an author's break joined; still wrapped at the margin |
+| `attribute_style = on_different_lines` | name alone, every attribute on its own line — a lone `<param name="a">` included, so its element opens |
+| `attribute_style = first_attribute_on_single_line` | first beside the name, every other on its own line; a one-attribute header untouched |
+
+`XmlDocRenderer.Tag` picks each attribute's gap from the style and `Header` the continuation column from
+the indent; all three keys are registered, `Honoured`, Tier A on key-named fixtures under
+`constructs/xmldoc/` (the `wrap_tags_and_pi` one gained a wide header and an author-broken one, so the
+key-flip sweep can separate its values at last). Pinned by `XmlDocHeaderKeysSkDiv0381Tests`; each branch
+was sabotaged alone. ⚠ `allow_far_alignment = true` is not read — the key stays inert-marked — so at
+`true` Skala still falls back where the oracle aligns past the margin.
+
 - options: `skala_xmldoc_wrap_tags_and_pi`, `skala_xmldoc_attribute_style`, `skala_xmldoc_attribute_indent`
-- ⚠ status: **open**, deliberate until the sweep.
+- ⚠ status: **resolved**; the next key-flip sweep should confirm the three Tier A claims.
 
 ## SK-DIV-0382 — the oracle breaks a word glued to an element's end; Skala refuses the comment — **RESOLVED (#541, #542)**
 

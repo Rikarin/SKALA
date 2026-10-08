@@ -7266,14 +7266,13 @@
       "type": "enum:AttributeIndentStyle",
       "default": "single_indent",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "InsideOfTagHeader",
-      "summary": "Inside of tag header — Attributes indenting",
+      "summary": "Inside of tag header — Attributes indenting. One indent past the tag, two, or under the first attribute — under it only while that column is short of two thirds of `xmldoc_max_line_length`, past which it falls back to two indents (the export's `allow_far_alignment = false`). SK-DIV-0381.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/xmldoc/skala_xmldoc_attribute_indent.cs",
       "templateLine": 1184,
-      "expands": [],
-      "unsweptBecause": "⚠ Not inert — the oracle separates all three values, and no fixture may carry it. Under `OracleProfile.DocComments`, with the tag opening at column 12 on a `<see cref=… href=… lang=…/>` past the margin: `single_indent` (the export) puts the continuation at column 16, `double_indent` at 20, `align_by_first_attribute` at 17 — under the first attribute. Skala never breaks inside a tag header and `XmlDocModel` refuses a comment whose input carries one, so it has no subject here and is flat at every value; a glob would file an `INERT` row the registry does not declare, and pin a fixture Skala cannot reproduce. SK-DIV-0079."
+      "expands": []
     },
     {
       "key": "skala_xmldoc_attribute_style",
@@ -7282,14 +7281,13 @@
       "type": "enum:AttributeArrangementStyle",
       "default": "do_not_touch",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "InsideOfTagHeader",
-      "summary": "Inside of tag header — Attributes format",
+      "summary": "Inside of tag header — Attributes format. `do_not_touch` keeps an author's break; `on_single_line` joins it; `on_different_lines` puts every attribute on its own line, a lone one included, fitting or not; `first_attribute_on_single_line` keeps the first beside the name and the rest one per line. All four break at the margin as well. SK-DIV-0381.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/xmldoc/skala_xmldoc_attribute_style.cs",
       "templateLine": 593,
-      "expands": [],
-      "unsweptBecause": "⚠ Not inert — all four values separate, and no fixture may carry it. Under `OracleProfile.DocComments`: `on_different_lines` puts the tag name alone and every attribute on its own line, `first_attribute_on_single_line` keeps the first on the tag's line and breaks the rest, and both do so to a header that fits comfortably — the recorded reason 'it arranges the attributes of a header Skala does not yet wrap' is measured false. ⚠ And SK-DIV-0079's own open question is now closed: `on_single_line` IS distinguished from `do_not_touch`, on the shape that entry named — an already-wrapped short header, `<see cref=\"System.String\"` / `href=\"https://short.invalid/\" />`, which `do_not_touch` keeps wrapped and `on_single_line` joins onto one line. Skala cannot re-read a wrapped header, so it is flat at every value and no glob may be set. SK-DIV-0079."
+      "expands": []
     },
     {
       "key": "skala_xmldoc_blank_line_after_pi",
@@ -7708,11 +7706,11 @@
       "type": "bool",
       "default": "true",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "LineWrapping",
-      "summary": "Line wrapping — Wrap tags and processing instructions. It wraps a tag's attributes across lines; it is not what lets a tag move to a line of its own. Not implemented — SK-DIV-0079.",
+      "summary": "Line wrapping — Wrap tags and processing instructions. It wraps a tag's attributes across lines at the margin; it is not what lets a tag move to a line of its own, and an author's break inside a header is kept at both values. A processing instruction is left whole at both. SK-DIV-0079, SK-DIV-0381.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/xmldoc/skala_xmldoc_wrap_tags_and_pi.cs",
       "templateLine": 1193,
       "expands": []
     },

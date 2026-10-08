@@ -15,29 +15,31 @@
 <p class="lede">5 keys.</p>
 <section class="option" id="skala_xmldoc_attribute_indent">
 <h2><code>skala_xmldoc_attribute_indent</code> <a class="self" href="#skala_xmldoc_attribute_indent">#</a></h2>
-<p>Inside of tag header — Attributes indenting</p>
+<p>Inside of tag header — Attributes indenting. One indent past the tag, two, or under the first attribute — under it only while that column is short of two thirds of <code>xmldoc_max_line_length</code>, past which it falls back to two indents (the export's <code>allow_far_alignment = false</code>). SK-DIV-0381.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>single_indent</code>, <code>double_indent</code>, <code>align_by_first_attribute</code></td></tr>
 <tr><th>Default</th><td><code>single_indent</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>xmldoc</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/xmldoc/skala_xmldoc_attribute_indent.cs</code></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="skala_xmldoc_attribute_style">
 <h2><code>skala_xmldoc_attribute_style</code> <a class="self" href="#skala_xmldoc_attribute_style">#</a></h2>
-<p>Inside of tag header — Attributes format</p>
+<p>Inside of tag header — Attributes format. <code>do_not_touch</code> keeps an author's break; <code>on_single_line</code> joins it; <code>on_different_lines</code> puts every attribute on its own line, a lone one included, fitting or not; <code>first_attribute_on_single_line</code> keeps the first beside the name and the rest one per line. All four break at the margin as well. SK-DIV-0381.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>on_single_line</code>, <code>first_attribute_on_single_line</code>, <code>on_different_lines</code>, <code>do_not_touch</code></td></tr>
 <tr><th>Default</th><td><code>do_not_touch</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>xmldoc</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/xmldoc/skala_xmldoc_attribute_style.cs</code></td></tr>
 </tbody>
 </table>
 </section>

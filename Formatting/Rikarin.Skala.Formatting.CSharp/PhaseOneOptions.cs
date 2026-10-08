@@ -2886,10 +2886,14 @@ public static class Ids {
     public static readonly OptionId XmlDocMaxLineLength = Of("skala_xmldoc_max_line_length");
     public static readonly OptionId XmlDocWrapText = Of("skala_xmldoc_wrap_text");
 
-    // ⚠ `skala_xmldoc_wrap_tags_and_pi` is not registered here at all any more. It is in
-    // `XmlDocIds.Refused` with the four tag-header keys it belongs with: measured, it governs a
-    // break *inside* a tag header. Since #448 Skala emits and re-reads one — always as the export's
-    // `true` — and registering the key to honour `false` is SK-DIV-0381. SK-DIV-0079.
+    // ⚠ The tag-header keys, registered and honoured at every value since SK-DIV-0381. #448 taught the
+    // model to record a header's breaks and the renderer to write one across lines at the export's
+    // values; these say where the breaks go at the others, each measured under `OracleProfile.DocComments`
+    // (SK-DIV-0079, SK-DIV-0381). `skala_xmldoc_allow_far_alignment` stays inert and unread: Skala aligns
+    // as its export value `false` says, falling back to a double indent past two thirds of the margin.
+    public static readonly OptionId XmlDocWrapTagsAndPi = Of("skala_xmldoc_wrap_tags_and_pi");
+    public static readonly OptionId XmlDocAttributeStyle = Of("skala_xmldoc_attribute_style");
+    public static readonly OptionId XmlDocAttributeIndent = Of("skala_xmldoc_attribute_indent");
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsLongerThan =
         Of("skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than");

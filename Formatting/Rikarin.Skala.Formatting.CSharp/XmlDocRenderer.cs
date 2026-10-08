@@ -1,3 +1,4 @@
+using Rikarin.Skala.Options;
 using System.Collections.Immutable;
 using System.Text;
 
@@ -301,7 +302,7 @@ public sealed class XmlDocRenderer {
         // ⚠ A header the author broke spans lines, so its element cannot be flat: measured, the oracle opens
         // `<customElement alphaAttribute="1"` / `betaAttribute="2">Body.</customElement>` and puts `Body.`
         // on a line of its own though it would fit (#448).
-        if (!element.SelfClosing && element.Attributes.Any(static attribute => attribute.BreakBefore)) {
+        if (!element.SelfClosing && Tag(element, ">").Contains(HardGap, StringComparison.Ordinal)) {
             return true;
         }
 
@@ -377,12 +378,21 @@ public sealed class XmlDocRenderer {
     string Tag(XmlDocElement element, string close) {
         var builder = new StringBuilder(element.Header);
         var equals = options.SpacesAroundEqInAttribute ? " = " : "=";
-        var soft = options.WrapLines ? SoftGap : ' ';
-        foreach (var attribute in element.Attributes) {
-            builder.Append(attribute.BreakBefore ? HardGap : soft)
-                .Append(attribute.Name)
-                .Append(equals)
-                .Append(attribute.Value);
+        var soft = options.WrapLines && options.WrapTagsAndPi ? SoftGap : ' ';
+        for (var i = 0; i < element.Attributes.Length; i++) {
+            var attribute = element.Attributes[i];
+
+            // ⚠ `skala_xmldoc_attribute_style`, every value measured (SK-DIV-0381): an author's break is
+            // kept only at `do_not_touch`; `on_different_lines` breaks before every attribute, a lone one
+            // included; `first_attribute_on_single_line` before every one but the first.
+            var gap = options.AttributeStyle switch {
+                AttributeArrangementStyle.OnDifferentLines => HardGap,
+                AttributeArrangementStyle.FirstAttributeOnSingleLine when i > 0 => HardGap,
+                AttributeArrangementStyle.DoNotTouch when attribute.BreakBefore => HardGap,
+                _ => soft
+            };
+
+            builder.Append(gap).Append(attribute.Name).Append(equals).Append(attribute.Value);
         }
 
         if (close == ">" && options.SpaceAfterLastAttribute && element.Attributes.Length > 0) {
@@ -405,10 +415,8 @@ public sealed class XmlDocRenderer {
     ///     indent. A tag that does not fit after prose is moved to a line of its own first and wrapped
     ///     there.
     ///     <para>
-    ///         ⚠ Gated on <c>wrap_lines</c> alone. <c>skala_xmldoc_wrap_tags_and_pi</c> is what the oracle
-    ///         gates it on, and it stays in <see cref="XmlDocIds.Refused" />: Skala behaves as the export's
-    ///         <c>true</c> at both values, and <c>false</c> — "introduce no break" — is SK-DIV-0381. Promoting
-    ///         the key is a registry change that wants a sweep row, not a side effect of this.
+    ///         ⚠ Gated on <c>wrap_lines</c> and <c>skala_xmldoc_wrap_tags_and_pi</c> (SK-DIV-0381): at
+    ///         <c>false</c> no break is introduced and an author's is still kept.
     ///     </para>
     /// </remarks>
     const char SoftGap = '\u001F';
@@ -635,9 +643,12 @@ public sealed class XmlDocRenderer {
     ///     whatever its content: measured, a wrapped header's element is opened though it holds one word.
     /// </summary>
     bool HeaderWraps(XmlDocElement element) =>
-        options.WrapLines
-        && element.Attributes.Length > 0
-        && IndentWidth() + TextWidth.Measure(Tag(element, string.Empty)) > budget;
+        Tag(element, string.Empty) is var header
+        && (header.Contains(HardGap, StringComparison.Ordinal)
+            || options.WrapLines
+            && options.WrapTagsAndPi
+            && element.Attributes.Length > 0
+            && IndentWidth() + TextWidth.Measure(header) > budget);
 
     /// <summary>What one side of a placed unit is, as the break beside it sees it.</summary>
     /// <remarks>
@@ -778,8 +789,19 @@ public sealed class XmlDocRenderer {
         var first = text.IndexOfAny([SoftGap, HardGap]);
         var carried = width - TextWidth.Measure(current.ToString());
         width -= carried;
-        var tagColumn = width + TextWidth.Measure(text[..text.LastIndexOf('<', first)]);
-        var continuation = tagColumn + options.IndentSize;
+        var open = text.LastIndexOf('<', first);
+        var tagColumn = width + TextWidth.Measure(text[..open]);
+
+        // ⚠ `skala_xmldoc_attribute_indent`, measured (SK-DIV-0381): one indent past the tag, two, or under
+        // the first attribute — and under it only while that column is short of two thirds of the margin
+        // (80 of 120, 60 of 90); past it, two indents, which is the export's `allow_far_alignment = false`.
+        var aligned = tagColumn + TextWidth.Measure(text[open..first]) + 1;
+        var continuation = options.AttributeIndent switch {
+            AttributeIndentStyle.DoubleIndent => tagColumn + 2 * options.IndentSize,
+            AttributeIndentStyle.AlignByFirstAttribute when aligned * 3 < options.MaxLineLength * 2 => aligned,
+            AttributeIndentStyle.AlignByFirstAttribute => tagColumn + 2 * options.IndentSize,
+            _ => tagColumn + options.IndentSize
+        };
         var broke = false;
 
         current.Append(text, 0, first);

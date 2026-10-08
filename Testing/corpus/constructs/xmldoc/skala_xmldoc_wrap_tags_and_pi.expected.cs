@@ -5,4 +5,16 @@ class WrapTagsAndPi {
     ///     <see cref="System.String" /> as written.
     /// </summary>
     void M() { }
+
+    /// <remarks>
+    ///     <see cref="System.Collections.Generic.Dictionary{TKeyOfSomeVeryLongName,TValueOfSomeVeryLongName}"
+    ///         href="https://example.invalid/a/very/long/documentation/link/that/will/not/fit" />
+    /// </remarks>
+    void HeaderPastTheMargin() { }
+
+    /// <remarks>
+    ///     <see cref="System.String"
+    ///         href="https://short.invalid/" />
+    /// </remarks>
+    void AnAuthorsBreakKeptAtBothValues() { }
 }
