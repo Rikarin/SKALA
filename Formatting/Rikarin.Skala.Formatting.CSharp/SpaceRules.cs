@@ -28,7 +28,9 @@ public static class SpaceRules {
 
         return Ungoverned(prev, next)
             ? SpaceKind.Preserve
-            : Required(prev, next, o) ? SpaceKind.Required : SpaceKind.Forbidden;
+            : Required(prev, next, o)
+                ? SpaceKind.Required
+                : SpaceKind.Forbidden;
     }
 
     /// <summary>
@@ -191,8 +193,8 @@ public static class SpaceRules {
     public static bool OpensAnEmptyPairWithItsSpaceOn(SyntaxToken prev, in PhaseOneOptions o) =>
         prev.IsKind(SyntaxKind.OpenParenToken)
         && prev.Parent
-        is ParameterListSyntax { Parameters.Count: 0, Parent: not ParenthesizedLambdaExpressionSyntax }
-        or ArgumentListSyntax { Arguments.Count: 0 }
+            is ParameterListSyntax { Parameters.Count: 0, Parent: not ParenthesizedLambdaExpressionSyntax }
+            or ArgumentListSyntax { Arguments.Count: 0 }
         && !IsUndocumentedKeywordParenthesis(prev)
         && WithinParentheses(prev.Parent, false, o);
 
@@ -397,12 +399,12 @@ public static class SpaceRules {
     static bool IsUndocumentedKeywordParenthesis(SyntaxToken token) =>
         token.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.CloseParenToken
         && token.Parent
-        is MakeRefExpressionSyntax
-        or RefTypeExpressionSyntax
-        or RefValueExpressionSyntax
-        or ArgumentListSyntax {
-            Parent: InvocationExpressionSyntax { Expression.RawKind: (int)SyntaxKind.ArgListExpression }
-        };
+            is MakeRefExpressionSyntax
+            or RefTypeExpressionSyntax
+            or RefValueExpressionSyntax
+            or ArgumentListSyntax {
+                Parent: InvocationExpressionSyntax { Expression.RawKind: (int)SyntaxKind.ArgListExpression }
+            };
 
     /// <summary>
     ///     True for the <c>(</c> of a positional clause whose recursive pattern names a type, which is
@@ -738,7 +740,7 @@ public static class SpaceRules {
 
     static bool IntroducesAType(SyntaxKind keyword) =>
         keyword is
-        SyntaxKind.NewKeyword
+            SyntaxKind.NewKeyword
             or SyntaxKind.IsKeyword
             or SyntaxKind.AsKeyword
             or SyntaxKind.StackAllocKeyword
@@ -1016,8 +1018,8 @@ public static class SpaceRules {
                 // collection that *breaks*, which takes the space at both values and which this
                 // function cannot see (SK-DIV-0012). `a[i]` and `M()[i]` still close up.
                 CollectionExpressionSyntax when prev is {
-                    RawKind: (int)SyntaxKind.CloseParenToken, Parent: CastExpressionSyntax
-                } =>
+                        RawKind: (int)SyntaxKind.CloseParenToken, Parent: CastExpressionSyntax
+                    } =>
                     o.SpaceAfterCast,
                 CollectionExpressionSyntax or ListPatternSyntax => !ClingsRight(prev.Kind()) && !IsCallSite(prev),
                 // ⚠ `space_before_open_square_brackets` is the generalized name for the two keys
@@ -1045,8 +1047,10 @@ public static class SpaceRules {
         owner switch {
             // A call's parentheses, including an object creation's and an attribute's.
             ArgumentListSyntax {
-                Parent: InvocationExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.Text: "nameof" } }
-            } =>
+                    Parent: InvocationExpressionSyntax {
+                        Expression: IdentifierNameSyntax { Identifier.Text: "nameof" }
+                    }
+                } =>
                 !empty && o.SpaceWithinNameofParentheses,
             ArgumentListSyntax or AttributeArgumentListSyntax =>
                 empty ? o.SpaceWithinEmptyMethodCallParentheses : o.SpaceWithinMethodCallParentheses,
@@ -1142,11 +1146,11 @@ public static class SpaceRules {
             AccessorListSyntax or BlockSyntax { Parent: AccessorDeclarationSyntax } =>
                 o.SpaceInSinglelineAccessorholder,
             BlockSyntax {
-                Parent:
-                AnonymousMethodExpressionSyntax
+                    Parent:
+                    AnonymousMethodExpressionSyntax
                     or SimpleLambdaExpressionSyntax
                     or ParenthesizedLambdaExpressionSyntax
-            } =>
+                } =>
                 o.SpaceInSinglelineAnonymousMethod,
             BlockSyntax { Parent: BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax } =>
                 o.SpaceInSinglelineMethod,

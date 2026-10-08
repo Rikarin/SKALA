@@ -243,7 +243,7 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
         }
 
         if (context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken)
-            is not { } method
+                is not { } method
             || method.DeclaredAccessibility != Accessibility.Private
             || method.MethodKind != MethodKind.Ordinary
             || method.IsPartialDefinition

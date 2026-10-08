@@ -137,7 +137,7 @@ public sealed class RedundantAttributeDetailAnalyzer : DiagnosticAnalyzer {
     static void AnalyzeUsageArguments(SyntaxNodeAnalysisContext context, AttributeSyntax attribute) {
         if (attribute.ArgumentList is not { Arguments.Count: > 1 } list
             || context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol
-            is not IMethodSymbol { ContainingType: { Name: "AttributeUsageAttribute" } usage }
+                is not IMethodSymbol { ContainingType: { Name: "AttributeUsageAttribute" } usage }
             || usage.ContainingNamespace is not { Name: "System", ContainingNamespace.IsGlobalNamespace: true }) {
             return;
         }

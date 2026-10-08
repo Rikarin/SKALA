@@ -313,7 +313,7 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
             // ⚠ #511: and only the calls every other target framework of this file would forward the
             // same way, or the fix writes a token into an overload one leg does not have.
             if (CancellationTokens.Forwarding(model, invocation, tokenType, Parameter, cancellation)
-                is { } forward
+                    is { } forward
                 && CancellationTokens.EverySiblingForwards(invocation, forward, Parameter, siblings, cancellation)) {
                 forwards.Add(forward);
             }

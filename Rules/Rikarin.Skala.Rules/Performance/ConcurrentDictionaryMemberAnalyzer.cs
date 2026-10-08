@@ -183,8 +183,9 @@ public sealed class ConcurrentDictionaryMemberAnalyzer : DiagnosticAnalyzer {
             || (called.ReducedFrom ?? called).OriginalDefinition.ContainingType
             is not {
                 Name: "Enumerable",
-                ContainingNamespace:
-                { Name: "Linq", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true } }
+                ContainingNamespace: {
+                    Name: "Linq", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
+                }
             }) {
             return;
         }

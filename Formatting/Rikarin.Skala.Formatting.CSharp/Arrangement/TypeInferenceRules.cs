@@ -595,7 +595,7 @@ public sealed class ObjectCreationRule : ArrangementRule {
                 case InitializerExpressionSyntax {
                     RawKind:
                     (int)SyntaxKind.CollectionInitializerExpression
-                        or (int)SyntaxKind.ArrayInitializerExpression,
+                    or (int)SyntaxKind.ArrayInitializerExpression,
                     Parent: ObjectCreationExpressionSyntax or ArrayCreationExpressionSyntax
                 }:
                     return model.GetTypeInfo(node).ConvertedType;

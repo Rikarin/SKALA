@@ -75,7 +75,7 @@ public sealed class AsyncVoidLambdaAnalyzer : DiagnosticAnalyzer {
         // until a conversion gives it one, and that conversion is the whole defect: the same text is
         // correct against `Func<Task>` and a process-killer against `Action`.
         if (context.SemanticModel.GetTypeInfo(context.Node, context.CancellationToken).ConvertedType
-            is not INamedTypeSymbol { TypeKind: TypeKind.Delegate } target
+                is not INamedTypeSymbol { TypeKind: TypeKind.Delegate } target
             || target.DelegateInvokeMethod is not { ReturnsVoid: true } invoke
             || AsyncSignature.HasEventHandlerShape(invoke, eventArgs)) {
             return;

@@ -117,7 +117,7 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
         // rewriting. The corpus sweep found it; no fixture did, because none had four arguments.
         if (method.Parameters[method.Parameters.Length - 1].IsParams
             && operation.Arguments[operation.Arguments.Length - 1].ArgumentKind
-            is not (ArgumentKind.ParamArray or ArgumentKind.ParamCollection)) {
+                is not (ArgumentKind.ParamArray or ArgumentKind.ParamCollection)) {
             return;
         }
 

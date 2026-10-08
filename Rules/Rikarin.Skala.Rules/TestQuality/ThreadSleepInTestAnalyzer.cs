@@ -72,7 +72,7 @@ public sealed class ThreadSleepInTestAnalyzer : DiagnosticAnalyzer {
         // on a user type of that name is a different method, and a call that did not resolve is a
         // question the rule cannot answer — docs/plan/07 § loose: silence, not a guess.
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol { IsStatic: true, Name: "Sleep" } method
+                is not IMethodSymbol { IsStatic: true, Name: "Sleep" } method
             || !SymbolEqualityComparer.Default.Equals(method.ContainingType, thread)) {
             return;
         }

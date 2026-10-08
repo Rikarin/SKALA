@@ -120,7 +120,7 @@ public sealed class UngroupedExtensionMethodsAnalyzer : DiagnosticAnalyzer {
             // its receiver really is the one type. Text alone would accept two spellings of two
             // different types that happen to read alike under different usings.
             if (context.SemanticModel.GetDeclaredSymbol(method, context.CancellationToken)
-                is not { IsExtensionMethod: true, Parameters.Length: > 0 } symbol
+                    is not { IsExtensionMethod: true, Parameters.Length: > 0 } symbol
                 || !SymbolEqualityComparer.Default.Equals(
                     symbol.Parameters[0].Type,
                     context.SemanticModel.GetDeclaredSymbol(methods[0], context.CancellationToken)?.Parameters[0].Type

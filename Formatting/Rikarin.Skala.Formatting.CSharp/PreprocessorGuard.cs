@@ -49,7 +49,7 @@ public static class PreprocessorGuard {
 
     static bool IsConditional(DirectiveTriviaSyntax directive) =>
         directive.Kind() is
-        SyntaxKind.IfDirectiveTrivia
+            SyntaxKind.IfDirectiveTrivia
             or SyntaxKind.ElifDirectiveTrivia
             or SyntaxKind.ElseDirectiveTrivia
             or SyntaxKind.EndIfDirectiveTrivia;

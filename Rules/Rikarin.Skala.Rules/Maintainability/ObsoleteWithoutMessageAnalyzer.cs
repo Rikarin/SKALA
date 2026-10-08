@@ -55,7 +55,7 @@ public sealed class ObsoleteWithoutMessageAnalyzer : DiagnosticAnalyzer {
         // is accepted without inspection. The rule proves an omission; it does not guess at an
         // expression it could not evaluate.
         if (context.SemanticModel.GetConstantValue(message.Expression, context.CancellationToken)
-            is { HasValue: true } constant
+                is { HasValue: true } constant
             && (constant.Value is not string text || !Justification.Meaningful(text))) {
             Report(context, attribute, "`Obsolete` names no replacement: its message is empty or a placeholder");
         }
