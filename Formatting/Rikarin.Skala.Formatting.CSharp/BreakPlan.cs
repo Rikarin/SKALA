@@ -4459,19 +4459,29 @@ public sealed class BreakPlan {
 
         var before = NewGroup();
         Point(arrow, before);
+
+        // ⚠ An arrow the author put on a line of its own is kept, and then a list in the arm's `when`
+        // clause nests from the arm's continuation line, #418's rule (#446, SK-DIV-0212): `X x when
+        // Compute(` / the arguments two levels past the arm / `)` one level / `=> 1,` one level,
+        // whether the list chopped for width or was chopped by the author. Measured from 100 to 125
+        // columns: with the arrow written on the pattern's line it never moves and the arguments sit
+        // one level in. A kept break is certain, so the group can open at the arm's start — before the
+        // list — without its measure deciding anything.
+        var kept = options.KeepsUserBreaksBetweenItems && BreaksBefore(arrow);
         OpenAt(
             arm,
-            arrow.SpanStart,
+            kept && arm.WhenClause is not null ? arm.Pattern.SpanStart : arrow.SpanStart,
             new GroupPlan(
                 before,
                 GroupMode.Preserve,
                 new GroupFacts(
-                    options.KeepsUserBreaksBetweenItems && BreaksBefore(arrow),
+                    kept,
                     BreaksIfTooLong: true,
-                    BreaksOnlyIfHeadOverflows: true
+                    BreaksOnlyIfHeadOverflows: true,
+                    Continues: kept && arm.WhenClause is not null
                 ),
                 true,
-                true,
+                !(kept && arm.WhenClause is not null),
 
                 // ⚠ The arm's level is this group's, not the body's: it is opened first and the body's
                 // group can spend nothing inside it. So it is this group that holds the level for a

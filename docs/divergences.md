@@ -7996,7 +7996,9 @@ chain of calls, and after an `=` it declines the `=` break to do it. Wiring that
 of its own, not this rule.
 
 - options: none.
-- ⚠ status: **resolved** for the band, **open** past it. Pinned by `TypeTestKeywordIssue444Tests`.
+- ⚠ status: **resolved** for the band, **open** past it — swept on the receiver's width for #446, see
+  SK-DIV-0211; blocked on a simple member access's `.` having no break point. Pinned by
+  `TypeTestKeywordIssue444Tests`.
 
 ## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
 
@@ -8035,8 +8037,40 @@ at E):
 Breaking the `=` "when the value then fits" explains 116–120 and not 122, and nothing tried separates
 the two pattern shapes that break the `=` from the one that does not.
 
+⚠ **#446, 2026-10-08: a grid instead of a line, and the call half has a shape now — not yet a model.**
+The new measurement holds the call's name fixed (`Compute`) and sweeps the `(`'s column `p` against the
+argument list's width `a` (`(alphaValue, ddd…)`), widening the *declared name* to move `p`; then the same
+with a short head and the *call's name* widened. All with `Testing ask`, one file per grid:
+
+| `p` (the `(`'s column) | the oracle breaks the `=` for `a` ≤ | and chops the arguments from `a` = | Skala |
+|---|---|---|---|
+| 40 | — | 81 (every row, 81–91) | `=` up to 85, then chops |
+| 60 | — | 61 (every row, 61–71) | `=` |
+| 70 | 55 | 59 | `=` |
+| 75 | 53 | 56 | `=` |
+| 80 | 51 | 53 | `=` |
+| 82–95 | 49 and below (every row) | — | `=` |
+| 70, 80, the head short and the *call's name* long | — | every row, 41–70 | chops, identical |
+
+So with a long head the `=` breaks exactly while the argument list is narrower than a floor that falls as
+the `(` moves right — about 57 at 70, 54 at 75, 52 at 80, at most 61 at 60 — and with a short head and
+a long name the value never fits below and both engines chop. That is the preference sweep's floor `F`
+(`sk-div-preference-sweep.md`) depending on the head, which that document records for head widths 12,
+21, 29 and 50; ⚠ but its "0 for a multi-argument call after `=`" is refuted here for these heads, and a
+straight line through the four measured floors (≈ −0.55 a column) predicts 63 at `p = 60` where the
+oracle already chops at 61. Not wired: one more column of `p` breaks the only linear reading.
+
+**`is`/`as` past the margin, SK-DIV-0210's open row, swept on the receiver's width** (`return
+<receiver>.P… as string;`, the operand ending at 121–135, receivers of 8, 30 and 60): with a receiver of
+30 or 60 the oracle breaks before the `.` one level in and keeps `.P… as string` whole on the next line,
+at every width; with a receiver of 8 the `.P…` line goes two levels in and `as`/`string` break after it
+as well. Skala has no point before a simple member access's `.` and breaks before `string` instead. The
+member-access wrap is the missing construct SK-DIV-0124 also records (`A.B.C.D.MoreValue => 2u,`); it is
+a plan of its own and was not attempted here.
+
 - options: `skala_wrap_before_eq = false`, the exported value.
-- ⚠ status: **open**, measured. #444 shapes 2 and 6.
+- ⚠ status: **open**, measured; **blocked** on a model of the floor's dependence on the head (#446).
+  #444 shapes 2 and 6.
 
 ## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
 
@@ -8055,5 +8089,23 @@ arrow's group opens at the arrow and is decided after the list has been written,
 monotone in width (117 moves the arrow, 121 keeps it), so the list cannot read it from a measure taken
 earlier. Opening the arrow's group at the arm's start would change what it measures. Not wired.
 
+⚠ **#446, 2026-10-08: the non-monotone reading is refuted, and the rule is wired.** The new measurement
+was a one-column sweep of the `when` line from both source shapes, 27 arms in one file. Written with the
+arrow on the pattern's line (`… gamma) => 1,`), the oracle **never** moves the arrow anywhere from 104 to
+130 columns: up to 114 the arm stays whole, from 115 the arguments chop one level in and `) => 1,`
+closes — Skala identical. Written with the arrow on a line of its own, the oracle **always keeps** it, from
+100 to 125: up to 120 the `when` line stays whole, from 121 the arguments chop **two** levels past the arm
+with `)` at one — and the same at 110, 117 and 121 when the author chopped the arguments himself. So the
+"117 moves the arrow, 121 keeps it" of the first row compared two different sources: the arrow's line
+is the author's, not the width's, and nothing about it is non-monotone. Because a kept break is certain,
+the arrow's group can open at the arm's start without its measure deciding anything:
+`BreakPlan.PlanArmArrow` now does that for a kept arrow over an arm with a `when` clause, with
+`GroupFacts.Continues`, and #418's lift does the rest. `corpus/real/` and every other construct are
+byte-identical. ⚠ **Still open**: the third row's `is` — `when x.All(static e => e` / `is T` / `)` / `=>`
+puts the `)` one level past the arm in both engines now, but the `is` two levels in the oracle and one
+in Skala (the sole lambda's continuation inside a lifted list; `LayoutWriter.BrokenInsideOnItsLine`
+reads it as an ordinary scope, which is right for `n is not (A` / `or B)` under a chain and wrong here).
+
 - options: none.
-- ⚠ status: **open**, measured.
+- ⚠ status: **fixed** for the list (#446), pinned by
+  `constructs/breaks/when-clause-list-under-a-kept-arrow.cs`; the sole lambda's `is` **open**, measured.
