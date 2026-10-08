@@ -943,6 +943,14 @@ public sealed class Document {
 ///     and the operand with a space and the keyword does not. The operand is the group's flat width less
 ///     the segment after its point and the point's own space. Zero for any other group.
 /// </param>
+/// <param name="ContinuesIfItBreaks">
+///     ⚠ <see cref="Continues" /> for a fill chain, whose group resolving broken does not say it breaks
+///     (#496, SK-DIV-0185): a delimited list on the chain's first line lifts exactly when the chain then
+///     takes one of its points, which the writer answers by writing the rest of the chain ahead with the
+///     list unlifted and watching the group. A chain whose author's breaks the fill pinned lifts outright
+///     (<see cref="Continues" />), so the second pass — which reads the fill's break as the author's —
+///     gives the same answer as the first.
+/// </param>
 /// <param name="HeldCall">
 ///     ⚠ A chain's held first call (#528, SK-DIV-0331), as the columns its line has to end short of the
 ///     margin by, or zero: the point before it breaks exactly when the
@@ -968,4 +976,5 @@ public readonly record struct GroupFacts(
     bool Continues = false,
     int Terminator = 0,
     int KeywordWidth = 0,
-    int HeldCall = 0);
+    int HeldCall = 0,
+    bool ContinuesIfItBreaks = false);

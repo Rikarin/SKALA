@@ -2460,7 +2460,12 @@ public sealed class BreakPlan {
                     // whole, and the oracle lifts only when the fill then breaks after the block or the
                     // list — `source.Select(x => {` … `}).Where(beta);` keeps the body one level in.
                     // That is an output fact the group does not have when the block opens; SK-DIV-0185.
-                    Continues: !fill
+                    // ⚠ So the writer answers it, for a list: it writes the rest of the chain ahead and
+                    // lifts when the fill takes a point (#496). An author's break the fill pins is taken
+                    // whatever the width, so such a chain lifts outright — which is what keeps pass two,
+                    // reading pass one's fill break as the author's, on pass one's answer.
+                    Continues: !fill || pinsLinkBreaks && broken,
+                    ContinuesIfItBreaks: fill && !(pinsLinkBreaks && broken)
                 ),
                 // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
                 // `Break`, at the first break landing before a `.` — and a group's break point never

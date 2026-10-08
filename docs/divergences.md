@@ -7853,9 +7853,23 @@ pinned break is a required break the watch does not see. ⚠ The third row also 
 keep-the-last-head shape, which Skala breaks before (`}` / `)` / `.Where(` / the argument / `);`).
 
 - options: `skala_wrap_chained_method_calls`, `skala_wrap_chained_binary_expressions` at `wrap_if_long`.
-- ⚠ status: **open** — #496 blocked, not fixed: the fix needs a writer lookahead to the end of the
-  chain's group that also counts pinned breaks, and the last attempt at one was not idempotent. Pinned
-  in its current reading by `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`.
+- ⚠ status: **resolved for a call chain's list and block** (#496, round two). Two halves, one per
+  kind of break. A link break the author wrote and the fill pins is taken whatever the width, so a
+  chain holding one carries `GroupFacts.Continues` and lifts outright — read from the source on both
+  passes. A fill without one carries `GroupFacts.ContinuesIfItBreaks`, and the writer answers it when a
+  delimited list opens on the chain's first line: it writes the rest of the chain's group ahead with
+  the list unlifted, watches the group, rolls back (`LayoutWriter.FillBreaksAfter`, the
+  `ChainBreaksInside` technique run to the end of the group rather than of the scope), and lifts when
+  the fill took a point. ⚠ Idempotent where the previous attempt was not: pass one's fill break is
+  pass two's pinned break, and both halves answer "lift". Measured rows that agree: the issue's `r` and
+  `s`, `r3` and `s2` (no point taken, not lifted), and `Outer(first: 1, source.Select(` … under
+  `wrap_if_long`, the shape the last attempt failed on; Skala's output of all of them re-formats to
+  itself. Pinned by `ChainFillLiftIssue496Tests` and, for the unlifted half,
+  `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`. Two rows beside it are not this
+  rule's: `}` / `).Where(` / a chopped argument puts the argument at 16 where the oracle writes 12 (the
+  list on a closer line counts the `=`'s level), and a three-argument `.Select(` under a fill is broken
+  before by the oracle (`source` / `.Select(…)` / `.Where(…).ToList(…)`), the #528 rule at a fill's
+  value, unmeasured further. Binary operators under a fill still carry neither fact.
 
 ## SK-DIV-0193 — a block comment's lines lose their trailing whitespace; Skala kept it
 
