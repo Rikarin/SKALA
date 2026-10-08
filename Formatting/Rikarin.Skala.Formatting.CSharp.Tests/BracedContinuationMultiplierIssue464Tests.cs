@@ -32,22 +32,22 @@ public sealed class BracedContinuationMultiplierIssue464Tests {
     }
 
     const string Source = """
-        class C {
-            void M() {
-                var list = new List<string> {
-                    "an element long enough to keep the initializer broken across lines",
-                    "a second element long enough to keep the initializer broken too"
-                };
-                var obj = new T {
-                    Alpha = "an element long enough to keep the initializer broken across lines",
-                    Bravo = "a second element long enough to keep the initializer broken too"
-                };
-                var s = a switch {
-                    _ => 1
-                };
-            }
-        }
-        """;
+                          class C {
+                              void M() {
+                                  var list = new List<string> {
+                                      "an element long enough to keep the initializer broken across lines",
+                                      "a second element long enough to keep the initializer broken too"
+                                  };
+                                  var obj = new T {
+                                      Alpha = "an element long enough to keep the initializer broken across lines",
+                                      Bravo = "a second element long enough to keep the initializer broken too"
+                                  };
+                                  var s = a switch {
+                                      _ => 1
+                                  };
+                              }
+                          }
+                          """;
 
     [Fact]
     public void AtTwo_TheContentsTakeTwoWidths() =>

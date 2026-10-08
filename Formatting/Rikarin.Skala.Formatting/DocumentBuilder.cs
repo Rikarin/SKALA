@@ -401,12 +401,13 @@ public sealed class DocumentBuilder {
             DocKind.Indent,
             (int)kind,
             (int)((unconditional ? IndentFlags.Unconditional : IndentFlags.None)
-                | (shape & (IndentFlags.Grouping
-                    | IndentFlags.Delimiter
-                    | IndentFlags.CloserAtOpener
-                    | IndentFlags.BrokenAfter
-                    | IndentFlags.AnchorAtLine
-                    | IndentFlags.Multiplied))),
+                | (shape
+                    & (IndentFlags.Grouping
+                        | IndentFlags.Delimiter
+                        | IndentFlags.CloserAtOpener
+                        | IndentFlags.BrokenAfter
+                        | IndentFlags.AnchorAtLine
+                        | IndentFlags.Multiplied))),
             columns
         );
 

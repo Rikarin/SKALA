@@ -154,8 +154,8 @@ public sealed class UnimplementedPartialMethodAnalyzer : DiagnosticAnalyzer {
                             + (count == 1 ? "one call site are" : count + " call sites are")
                             + " erased"
                             + (sideEffecting
-                                    ? " — including the arguments, one of which does work that will therefore not happen"
-                                    : string.Empty)
+                                ? " — including the arguments, one of which does work that will therefore not happen"
+                                : string.Empty)
                         )
                     );
                 }

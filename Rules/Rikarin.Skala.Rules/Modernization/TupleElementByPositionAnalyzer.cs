@@ -235,7 +235,7 @@ public sealed class TupleElementByPositionAnalyzer : DiagnosticAnalyzer {
 
         var renamed = access.WithName(SyntaxFactory.IdentifierName(SyntaxFactory.ParseToken(replacement)));
         return model.GetSpeculativeSymbolInfo(access.SpanStart, renamed, SpeculativeBindingOption.BindAsExpression)
-            .Symbol is IFieldSymbol bound
+                .Symbol is IFieldSymbol bound
             && SymbolEqualityComparer.Default.Equals(bound.CorrespondingTupleField, element.CorrespondingTupleField);
     }
 }
