@@ -8978,8 +8978,22 @@ in Skala (the sole lambda's continuation inside a lifted list; `LayoutWriter.Bro
 reads it as an ordinary scope, which is right for `n is not (A` / `or B)` under a chain and wrong here).
 
 - options: none.
-- ⚠ status: **fixed** for the list (#446), pinned by
-  `constructs/breaks/when-clause-list-under-a-kept-arrow.cs`; the sole lambda's `is` **open**, measured.
+⚠ **Round 3: the sole lambda's lines, fixed.** Measured on an `is`, an `&&` and a `.Member` after
+`when x.All(static e => e`, with `)` on the same line and on its own, and inside a two-argument list. Under
+the kept arrow every one of those lines sits two levels past the arm, on the lifted list's content level.
+Outside an arm and under a broken chain they continue the ordinary way, which is #418's rule and stays.
+So the arm's group carries `GroupFacts.LiftsThroughInnerBreaks`, and in `LayoutWriter` such a lifted
+list:
+
+- is not read as an ordinary scope when a construct broke inside it (`BrokenInsideOnItsLine`);
+- lends its lifted level to a type test's from-line scope opened on its line;
+- spends one level per line with a chain opened on its line.
+
+`corpus/real/` and every other construct are byte-identical.
+
+- options: none.
+- ⚠ status: **fixed** (#446), pinned by `constructs/breaks/when-clause-list-under-a-kept-arrow.cs` and
+  `constructs/breaks/when-clause-lambda-under-a-kept-arrow.cs`.
 
 ## SK-DIV-0310 — a collection expression's spread is spelled one way, which the oracle never does
 

@@ -5222,7 +5222,8 @@ public sealed class BreakPlan {
                     kept,
                     BreaksIfTooLong: true,
                     BreaksOnlyIfHeadOverflows: true,
-                    Continues: kept && arm.WhenClause is not null
+                    Continues: kept && arm.WhenClause is not null,
+                    LiftsThroughInnerBreaks: kept && arm.WhenClause is not null
                 ),
                 true,
                 !(kept && arm.WhenClause is not null),
