@@ -9703,10 +9703,14 @@ statement's head (`System.` / `Console.WriteLine()`), measured; a break *before*
 after a `//` or a `/* */` comment there. `BreakPlan.PlanJoinAfterADot` makes the name's gap flat at
 `skala_wrap_after_dot_in_method_calls = false`. ⚠ Not a qualified name, and found beside it: `using System.` /
 `Text;` is kept by the oracle with `Text` one level in, where Skala writes it at column 0. Open, not this
-issue's.
+issue's. ⚠ **Fixed by #554 (2026-10-08):** a using directive owned no continuation frame, so nothing paid
+for the break. It owns one now (`OwnsAContinuationFrame`). Measured on eight shapes: after a dot and before
+one, `using static`, `global using`, three segments, with the alias and file-scoped-namespace rows that
+already agreed as controls. Pinned by `constructs/syntax/using-directive-broken-name.cs` and
+`UsingDirectiveBrokenNameIssue554Tests`.
 
 - options: `skala_wrap_after_dot_in_method_calls` (the export's `false`).
-- ⚠ status: **resolved** (#536); the `using` row is open. Pinned by `constructs/syntax/parenthesis-residues.cs`
+- ⚠ status: **resolved** (#536), the `using` row by #554. Pinned by `constructs/syntax/parenthesis-residues.cs`
   and `ParenthesisResiduesIssue532To536Tests`.
 
 ## SK-DIV-0370 — a binary pattern chain's level in a statement condition counted the wrong nesting
