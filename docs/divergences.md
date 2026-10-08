@@ -8940,8 +8940,33 @@ several declarators), and the binary-pattern half of this entry. Callee widths b
 and indents and callees crossed, are interpolated.
 
 - options: `skala_wrap_before_eq = false`, the exported value.
-- ⚠ status: the call half **resolved** for the measured owners, pinned by
-  `constructs/breaks/equals-before-a-call-floor.cs`; the binary-pattern half **open**. #444 shapes 2 and 6.
+⚠ **Round 3 of #446: the binary-pattern half, wired as measured tables.** The local
+`bool c… = operand is A or B;` past the margin was swept over head widths 8–60 (statement start through
+`=`), pattern widths 10–107, and line ends 110–152, one column at a time near every boundary — about
+10 000 cells in nine grids, with `> 5 and < 10`, `null or Empty` and three names among the patterns.
+
+- **A head of 12 or more** breaks the `=` unless the pattern is wider than a threshold that falls with the
+  line's end. The threshold runs from 88–90 down to 77–86 over ends 121–152, a column per three, and is
+  higher for a wider head. Wider patterns chop on the declaration's line, which is what
+  `constructs/alignment/outdent.cs` shows.
+- **A head under 12** breaks the `=` only for a narrow pattern: up to 27 / 31 / 35 / 38 columns for heads
+  of 8 / 9 / 10 / 11. Each head then has two transitional widths that break it only from a line end that
+  moves five per column of pattern. One cell (head 11, pattern 39, end 124) is out of line and is kept as
+  measured.
+- **After the `=` breaks, the gap after `is` is a break point** (`BreakPlan.PlanAfterIs`): the pattern
+  moves one level below `operand is` once the line up to its first combinator has no room. That is the
+  arm arrow's head rule, plus `GroupFacts.HeadSlack` — a first operand of one or two columns always moves,
+  and one of three ahead of `or` moves two columns early.
+
+Tables: `EqualsFloor.BreaksBeforeAPattern` (`WidestPattern` at one-column ends) and
+`BreakPlan.PatternHeadOf`. Every grid cell matches; `corpus/real/` and every other construct are
+unchanged. Not measured: assignments and fields, operators other than one `or`/`and` at the root, and
+the `is` gap inside a statement condition (planned, without the from-line level).
+
+- options: `skala_wrap_before_eq = false`, the exported value.
+- ⚠ status: **resolved** for both halves within the measured shapes, pinned by
+  `constructs/breaks/equals-before-a-call-floor.cs` and `constructs/breaks/equals-before-a-binary-pattern.cs`.
+  #444 shapes 2 and 6.
 
 ## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
 

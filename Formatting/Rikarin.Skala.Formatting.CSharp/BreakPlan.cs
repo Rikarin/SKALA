@@ -856,6 +856,10 @@ public sealed class BreakPlan {
                 PlanTypeTest(isPattern, isPattern.IsKeyword, isPattern.Pattern);
                 return;
 
+            case IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } chainTest:
+                PlanAfterIs(chainTest);
+                return;
+
             case BinaryExpressionSyntax binary:
                 if (IsChainRootOperator(binary)) {
                     PlanChainWide(binary, options.WrapChainedBinaryExpressions);
@@ -4446,6 +4450,8 @@ public sealed class BreakPlan {
                     Owner: head,
                     MinimumHead: yieldsToTheBracket || callee > 0 ? MinimumEqualsHead : 0,
                     CalleeWidth: callee,
+                    PatternHead: PatternHeadOf(node, equals, value),
+                    PatternWidth: PatternHeadOf(node, equals, value) > 0 ? ((IsPatternExpressionSyntax)value).Pattern.Span.Length : 0,
                     CalleeOwner: owner,
                     FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
                     && TrailingProperty(target) is not null
@@ -4602,6 +4608,22 @@ public sealed class BreakPlan {
                 when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) => EqualsOwner.Assignment,
             _ => EqualsOwner.None
         };
+
+    /// <summary>
+    ///     For a local's <c>=</c> whose value is <c>operand is A or B</c> written on one line: the head's width
+    ///     through the <c>=</c>, which turns on <see cref="EqualsFloor.BreaksBeforeAPattern" /> (#446,
+    ///     SK-DIV-0211); zero otherwise.
+    /// </summary>
+    static int PatternHeadOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {
+        if (value is not IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } test
+            || EqualsOwnerOf(node) is not (EqualsOwner.VarLocal or EqualsOwner.TypedLocal)
+            || test.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+            || EqualsHeadStartOf(node) is not { RawKind: not 0 } head) {
+            return 0;
+        }
+
+        return equals.Span.End - head.SpanStart;
+    }
 
     static int CalleeWidthOf(ExpressionSyntax value) =>
         value is InvocationExpressionSyntax {
@@ -6316,6 +6338,62 @@ public sealed class BreakPlan {
                     return false;
             }
         }
+    }
+
+    /// <summary>
+    ///     The gap after an <c>is</c> before a binary pattern: broken exactly when the line up to the
+    ///     pattern's first combinator has no room (#446, SK-DIV-0211).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured after an <c>=</c> that broke: <c>operand is &gt; 5</c> / <c>and &lt; 10;</c> while the
+    ///     first operand fits beside <c>is</c>, and <c>operand is</c> / <c>&gt; 5 and &lt; 10;</c> one level in
+    ///     once it does not — the arm arrow's head rule (<see cref="GroupFacts.BreaksOnlyIfHeadOverflows" />).
+    ///     A break the author wrote there is kept.
+    /// </remarks>
+    void PlanAfterIs(IsPatternExpressionSyntax test) {
+        var first = FirstToken(test.Pattern);
+
+        // An `is` the author broke before has spent the level, and the chain then continues on its column
+        // (#520): the gap after it is not this point's.
+        if (first.IsKind(SyntaxKind.None) || gaps.ContainsKey(first.SpanStart) || BreaksBefore(test.IsKeyword)) {
+            return;
+        }
+
+        var group = NewGroup();
+        Point(first, group);
+        Describe(
+            test.Pattern,
+            new GroupPlan(
+                group,
+                GroupMode.Preserve,
+                new GroupFacts(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(first),
+                    BreaksIfTooLong: true,
+                    BreaksOnlyIfHeadOverflows: true,
+                    HeadSlack: HeadSlackAfterIs(test.Pattern)
+                ),
+                LeadingGapInside: true,
+                FromLine: !IsAHeaderCondition(test)
+            )
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ Measured with <c>Testing ask</c> one column at a time on <c>operand is X or Bbb</c> after a broken
+    ///     <c>=</c>: a first operand of one or two columns always moves below the <c>is</c>, one of three
+    ///     ahead of <c>or</c> moves two columns early (the line through it at 119 and 120), and anything
+    ///     wider — or <c>&gt; 5</c> ahead of <c>and</c> — stays while the line through it fits.
+    /// </summary>
+    static int HeadSlackAfterIs(PatternSyntax pattern) {
+        var first = pattern;
+        while (first is BinaryPatternSyntax binary) {
+            first = binary.Left;
+        }
+
+        var width = first.Span.Length;
+        return width <= 2 ? 1000
+            : width == 3 && pattern is BinaryPatternSyntax { OperatorToken.RawKind: (int)SyntaxKind.OrKeyword } ? 2
+            : 0;
     }
 
     /// <summary>Rewrites the facts of every group described on <paramref name="node" />.</summary>
