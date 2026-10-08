@@ -102,7 +102,7 @@ public sealed class LoggedAndRethrownAnalyzer : DiagnosticAnalyzer {
         if (clause.Declaration is not { } declaration
             || declaration.Identifier.ValueText.Length == 0
             || context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken)
-            is not { } caught) {
+                is not { } caught) {
             return;
         }
 

@@ -131,7 +131,7 @@ public sealed class NotImplementedMemberAnalyzer : DiagnosticAnalyzer {
         if (creation.FirstAncestorOrSelf<MemberDeclarationSyntax>() is not { } member
             || !PartialMembers.IsPartialMember(member)
             || PartialMembers.OtherPart(context.SemanticModel.GetDeclaredSymbol(member, context.CancellationToken))
-            is not { } other) {
+                is not { } other) {
             return false;
         }
 

@@ -39,9 +39,9 @@ public sealed class CapturedLoopVariableAnalyzer : DiagnosticAnalyzer {
 
         if (argumentExpression.Parent is not ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax invocation }
             || context.SemanticModel.GetOperation(invocation, context.CancellationToken)
-            is not IInvocationOperation {
-                TargetMethod.Name: "Add", TargetMethod.Parameters.Length: 1, Arguments.Length: 1
-            } call
+                is not IInvocationOperation {
+                    TargetMethod.Name: "Add", TargetMethod.Parameters.Length: 1, Arguments.Length: 1
+                } call
             || call.TargetMethod.Parameters[0].Type.TypeKind != TypeKind.Delegate) {
             return;
         }

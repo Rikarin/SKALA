@@ -83,7 +83,7 @@ public sealed class ProcessExitAnalyzer : DiagnosticAnalyzer {
         // ⚠ The type is resolved, never matched on the written name. `Environment` is a plausible
         // name for somebody's own type and an `Exit` on one of those is not this.
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol { Name: "Exit" } target
+                is not IMethodSymbol { Name: "Exit" } target
             || !SymbolEqualityComparer.Default.Equals(target.ContainingType, environment)) {
             return;
         }

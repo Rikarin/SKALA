@@ -74,7 +74,7 @@ public sealed class DangerousHandleAnalyzer : DiagnosticAnalyzer {
         if (Called(invocation) != "DangerousGetHandle"
             || invocation.ArgumentList.Arguments.Count != 0
             || context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol { Name: "DangerousGetHandle", Parameters.IsEmpty: true } method
+                is not IMethodSymbol { Name: "DangerousGetHandle", Parameters.IsEmpty: true } method
             || !Derives(method.ContainingType, handle)) {
             return;
         }

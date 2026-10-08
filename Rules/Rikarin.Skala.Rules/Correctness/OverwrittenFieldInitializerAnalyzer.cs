@@ -345,7 +345,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
         if (!free
             || field.DeclaringSyntaxReferences.Length != 1
             || field.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
-            is not VariableDeclaratorSyntax { Initializer: { } value } declarator) {
+                is not VariableDeclaratorSyntax { Initializer: { } value } declarator) {
             return;
         }
 

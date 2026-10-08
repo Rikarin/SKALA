@@ -25,7 +25,7 @@ public sealed class InheritedValueTypeEqualsAnalyzer : DiagnosticAnalyzer {
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var invocation = (InvocationExpressionSyntax)context.Node;
         if (context.SemanticModel.GetOperation(invocation, context.CancellationToken)
-            is not IInvocationOperation { TargetMethod.Name: "Equals", TargetMethod.IsStatic: false } call
+                is not IInvocationOperation { TargetMethod.Name: "Equals", TargetMethod.IsStatic: false } call
             || call.TargetMethod.ContainingType.SpecialType != SpecialType.System_ValueType
             || call.Instance?.Type is not INamedTypeSymbol { TypeKind: TypeKind.Struct } type) {
             return;

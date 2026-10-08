@@ -798,6 +798,18 @@ public sealed class LayoutWriter {
                 return Math.Max(0, level + scope.Level);
             }
 
+            // ⚠ A from-the-line scope is absolute, as in Level: its level was taken from the operand's
+            // line and already holds everything outside it, so adding it to that again put a property
+            // pattern's subpatterns under a broken `is` three levels past the `is` (#550). A block on the
+            // operand's own line is laid out as if the scope were not there.
+            if (scope.IsFromLine) {
+                if (scope.OpenLine < line) {
+                    return Math.Max(0, level + (blocked == scope.OpenLine ? scope.Level - indentWidth : scope.Level));
+                }
+
+                continue;
+            }
+
             if (scope.Lifted >= 0 && (scope.LiftsThrough || !BrokenInsideOnItsLine(index, scope))) {
                 // ⚠ A lifted grouping parenthesis is still transparent to a block opened on its own
                 // line: `var x = (y switch {` / … / `}).ToString()` / `.Length` puts the `}` on the

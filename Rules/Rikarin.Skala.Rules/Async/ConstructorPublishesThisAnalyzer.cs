@@ -371,8 +371,10 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        var scheduler = Is(definition, starters.Task) && method.Name is "Run" ? "`Task.Run`"
-            : Is(definition, starters.TaskFactory) && method.Name is "StartNew" ? "`Task.Factory.StartNew`"
+        var scheduler = Is(definition, starters.Task) && method.Name is "Run"
+            ? "`Task.Run`"
+            : Is(definition, starters.TaskFactory) && method.Name is "StartNew"
+                ? "`Task.Factory.StartNew`"
                 : Is(definition, starters.ThreadPool) && method.Name is "QueueUserWorkItem"
                     ? "`ThreadPool.QueueUserWorkItem`"
                     : null;

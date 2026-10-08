@@ -280,7 +280,7 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
             || local.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
                 is not VariableDeclaratorSyntax declarator
             || declarator.Initializer?.Value
-            is not (ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax)) {
+                is not (ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax)) {
             return;
         }
 

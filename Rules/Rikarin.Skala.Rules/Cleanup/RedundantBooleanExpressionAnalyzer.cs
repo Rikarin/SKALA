@@ -284,7 +284,7 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static bool IsPlainBoolean(SyntaxNodeAnalysisContext context, ExpressionSyntax expression) =>
         context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type
-        is { SpecialType: SpecialType.System_Boolean };
+            is { SpecialType: SpecialType.System_Boolean };
 
     /// <summary>Whether the node's own span is free of the trivia a replacement would delete.</summary>
     static bool Replaceable(ExpressionSyntax node) =>
@@ -320,7 +320,7 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
             && !comparison.Left.IsKind(SyntaxKind.NullLiteralExpression)
             && !comparison.Right.IsKind(SyntaxKind.NullLiteralExpression)
             && context.SemanticModel.GetSymbolInfo(comparison, context.CancellationToken).Symbol
-            is IMethodSymbol { MethodKind: MethodKind.BuiltinOperator }) {
+                is IMethodSymbol { MethodKind: MethodKind.BuiltinOperator }) {
             return Flipped(comparison);
         }
 

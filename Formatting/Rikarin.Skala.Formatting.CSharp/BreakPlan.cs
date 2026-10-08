@@ -895,22 +895,19 @@ public sealed class BreakPlan {
                 PlanTypeTest(isPattern, isPattern.IsKeyword, isPattern.Pattern);
                 return;
 
+            // ⚠ An `is` the author broke before or after, ahead of a pattern that can break: the `is` line
+            // (or the pattern's) takes a level past the operand's own line, as a type test's does
+            // (SK-DIV-0206, SK-DIV-0392). Two measurements meet here: group J's (`token.Kind()` / `is A` /
+            // `or B` under an expression body at 12, where Skala wrote 8) and group L's (#550: `keyword is`
+            // / `A` / `or B`, and property patterns, whose braces nest from the `is`'s line since
+            // LayoutWriter.LevelForBlock reads a from-the-line scope as absolute).
+            case IsPatternExpressionSyntax isPattern when BreaksAroundTheIs(isPattern):
+                PlanBrokenTypeTest(isPattern);
+                return;
+
             // ⚠ Only as a local's value, where it was measured: under a lambda or an argument the gap
             // after `is` is not a point, and planning it there moved Skala's own `child is not A` /
             // `and not B` chains off the oracle's column.
-            // ⚠ An `is` the author broke before, ahead of a binary pattern: the `is` line takes a level
-            // past the operand's own line, as a type test's does (SK-DIV-0206). Measured on Skala's own
-            // source: `token.Kind()` / `is A` / `or B` under an expression body puts `is` and every `or` at
-            // 12, where Skala wrote 8.
-            // Not over a property pattern's braces, which then nested a level too deep (SpaceRules.cs's
-            // `or ArgumentListSyntax {` / … / `};`, measured).
-            case IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } brokenTest
-                when options.KeepsUserBreaksBetweenItems
-                && BreaksBefore(brokenTest.IsKeyword)
-                && !brokenTest.Pattern.DescendantNodes().OfType<PropertyPatternClauseSyntax>().Any():
-                PlanKeptIs(brokenTest);
-                return;
-
             case IsPatternExpressionSyntax {
                 Pattern: BinaryPatternSyntax,
                 Parent:
@@ -3514,7 +3511,7 @@ public sealed class BreakPlan {
             // step, not two:
             //     if (o is IDisposable
             //         or IAsyncDisposable) {     ← one, where an argument would take two
-            pattern,
+            pattern && root.Parent is not SubpatternSyntax,
             // ⚠ And only the outermost combinator's chain: an `and` chain inside an `or` chain is a
             // chain of its own since #483, and the oracle writes its links on the `or`s' column —
             // `rune is >= 0x1100` / `and <= 0x115F` / `or >= 0x2E80` / `and <= 0x303E` all one level in
@@ -3525,7 +3522,12 @@ public sealed class BreakPlan {
             ownLevel: pattern
             && !IsStatementCondition(root)
             && root.Parent is not BinaryPatternSyntax
-            && !(EnclosingTypeTest(root) is { } test && BreaksBefore(test.IsKeyword))
+            // ⚠ Nor a subpattern's value (#549): `is {` / `Parent: A` / `or B` / `}` puts the `or`s on
+            // `Parent:`'s column, in a switch arm's braces as in an `is`'s (measured 2026-10-08).
+            && root.Parent is not SubpatternSyntax
+            // ⚠ Before the `is` or after it (#550): `keyword is` / `A` / `or B` puts `A` and the `or`s
+            // on one column too.
+            && !(EnclosingTypeTest(root) is { } test && (BreaksBefore(test.IsKeyword) || BreaksAroundTheIs(test)))
         );
     }
 
@@ -3751,7 +3753,10 @@ public sealed class BreakPlan {
                 // keeps the body one level in (SK-DIV-0185).
                 Continues: !fill
             ),
-            true
+            // ⚠ Except a pattern chain that is a subpattern's value (#549): `is {` / `Parent: A` /
+            // `or B` / `}` puts the `or`s on `Parent:`'s column — the subpattern's break spends no
+            // level either (SK-DIV-0081).
+            ChainRootOf(node).Parent is not SubpatternSyntax
         );
     }
 
@@ -3784,6 +3789,61 @@ public sealed class BreakPlan {
                     or ListPatternSyntax
                     or ParenthesizedPatternSyntax
             );
+
+    /// <summary>
+    ///     Whether the author broke the line on either side of an <c>is</c> whose pattern can break —
+    ///     a combinator chain, a property, positional or list pattern, a parenthesis.
+    /// </summary>
+    bool BreaksAroundTheIs(IsPatternExpressionSyntax test) =>
+        options.KeepsUserBreaksBetweenItems
+        // ⚠ Not after a chain headed by a parenthesis, which holds its level (SK-DIV-0112): `|| (b ?? c).D`
+        // / `is not {` and `(b ?? c).D` / `is A or B` keep the `is` on the operand's column, where
+        // `|| b.D` / `is not {` takes the level (measured 2026-10-08; Skala's own
+        // ConcurrentDictionaryMemberAnalyzer.cs).
+        && !(IsChainRoot(test.Expression) && ChainHeadIsParenthesised(test.Expression))
+        && (BreaksBefore(test.IsKeyword)
+            // ⚠ A break before a pattern's `[` or `{` is not kept: `xs is` / `[1, 2]` comes back joined
+            // (constructs/wrapping/patterns.cs).
+            || BreaksBefore(FirstToken(test.Pattern))
+            && FirstToken(test.Pattern).Kind() is not (SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken));
+
+    /// <summary>
+    ///     An <c>is</c> the author broke before or after, over a pattern that can break: one level past
+    ///     the operand's line, which the pattern under it then shares (#550).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <see cref="PlanTypeTest" />'s level, which only an unbreakable pattern used to get. Measured
+    ///     2026-10-08 with <c>Testing ask</c>: <c>keyword is</c> / <c>A</c> / <c>or B</c> and
+    ///     <c>keyword</c> / <c>is A</c> / <c>or B</c> put <c>A</c> (or the <c>is</c>) and every <c>or</c>
+    ///     one level past <c>keyword</c>'s line — under an expression body's arrow, after <c>return</c>,
+    ///     after <c>var b =</c>, in an argument and under an <c>&amp;&amp;</c> alike — where Skala wrote the
+    ///     first line flush with <c>keyword</c> under the arrow (whose break had already spent the
+    ///     member's level and there was no group to spend another) and stepped the <c>or</c>s a second
+    ///     level after <c>return</c>. The pattern chain's own level is then the one the broken
+    ///     <c>is</c> has spent (<see cref="EnclosingTypeTest" />, #520). Found reformatting Skala's own
+    ///     <c>SpaceRules.cs</c>.
+    /// </remarks>
+    void PlanBrokenTypeTest(IsPatternExpressionSyntax node) {
+        var group = NewGroup();
+        if (BreaksBefore(node.IsKeyword)) {
+            Mandatory(node.IsKeyword);
+        }
+
+        var after = FirstToken(node.Pattern);
+        if (BreaksBefore(after)) {
+            Mandatory(after);
+        }
+
+        Describe(
+            node,
+            new(
+                group,
+                GroupMode.Preserve,
+                new(BreaksIfTooLong: true),
+                FromLine: !IsAHeaderCondition(node)
+            )
+        );
+    }
 
     /// <summary>Whether a binary expression is <c>is</c> or <c>as</c> with a type on its right.</summary>
     static bool IsTypeTest(BinaryExpressionSyntax binary) =>
@@ -3890,16 +3950,24 @@ public sealed class BreakPlan {
             group,
             GroupMode.Preserve,
             new(
-                options.KeepsUserBreaksBetweenItems && BreaksBefore(value),
+                // ⚠ Not a break before a bare `{`, which the oracle joins (#549): `Parameter:` / `{ … }`
+                // comes back `Parameter: {` / … / `}` in Skala's own PrimaryConstructorWrites.cs, where
+                // `Expression:` / `MemberAccessExpressionSyntax { … }` beside it keeps its break.
+                options.KeepsUserBreaksBetweenItems && BreaksBefore(value) && !value.IsKind(SyntaxKind.OpenBraceToken),
                 BreaksIfTooLong: true,
 
-                // ⚠ A kept break before a colon somewhere inside the value is a hard line, which would
-                // otherwise break this group too: `Q: {` / `X` / `: 1` came out `Q:` / `{` (#436). The
-                // oracle keeps the value on the name's line, so the group asks the arrow's question.
-                // ⚠ And so does a kept break anywhere inside the value (#532): `{ X: (2` / `, 3) }` keeps
-                // `X: (2` on one line in the oracle, where the hard line made this group break after `X:`.
-                BreaksOnlyIfHeadOverflows: HoldsAKeptColonBreak(subpattern.Pattern)
-                || HoldsAKeptBreak(subpattern.Pattern)
+                // ⚠ The arrow's question, always: the value leaves the name's line only when the line up
+                // to the value's first break point has no room (#549). Measured 2026-10-08 with
+                // `Testing ask`, found in Skala's own PrimaryConstructorWrites.cs and SpaceRules.cs:
+                // `Parameter: {` / the subpatterns / `}` and `Parent: InvocationExpressionSyntax {` / … /
+                // `}` break the value's braces open where Skala moved the whole value below the name, and
+                // `Parent: A` / `or B` / `or C` chops the chain beside the name. It was asked only for a
+                // kept break before a colon inside the value, which is a hard line that would otherwise
+                // break this group too: `Q: {` / `X` / `: 1` came out `Q:` / `{` (#436). A value too wide
+                // at its own head — a string, a dotted name — still moves down, as SK-DIV-0081 measured.
+                // It subsumes #532's reading too — `{ X: (2` / `, 3) }` keeps `X: (2` on one line, where a
+                // kept break inside the value made this group break after `X:`.
+                BreaksOnlyIfHeadOverflows: true
             )
         );
     }
@@ -4354,6 +4422,16 @@ public sealed class BreakPlan {
                 // argument and a parenthesised operand, `b` / `? a : c`, and `a` / `/* c */` / `? 1 : 2`
                 // all come back `b` / `? a` / `: c`. The per-sign pin below is a chain member's, whose
                 // `cond ? "win"` / `: cond ? "osx"` / `: "linux"` the oracle keeps as written.
+                Mandatory(node.QuestionToken);
+                Mandatory(node.ColonToken);
+            } else if (pins && steps) {
+                // ⚠ A chain the author broke before any `?` is chopped at both signs of every member,
+                // however well each fits (#548). The staircase is the oracle's layout of the whole
+                // chain, not of the member the author broke: `a` / `? 1` / `: b ? 2 : 3`,
+                // `a` / `? 1 : b ? 2 : 3` and `a ? 1 : b` / `? 2 : 3` all come back `a` / `? 1` /
+                // `: b` / `? 2` / `: 3`, in a `return` and in a switch arm alike (measured 2026-10-08,
+                // found reformatting Skala's own SpaceRules.cs). A chain broken only at its `:`s does
+                // not step and keeps the per-sign pins below: `a ? 1` / `: b ? 2 : 3` stays as written.
                 Mandatory(node.QuestionToken);
                 Mandatory(node.ColonToken);
             } else if (pins && (atQuestion || atColon)) {
@@ -4913,9 +4991,9 @@ public sealed class BreakPlan {
     static EqualsOwner EqualsOwnerOf(SyntaxNode node) =>
         node switch {
             EqualsValueClauseSyntax {
-                Parent:
-                VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Variables.Count: 1 } declaration }
-            } when declaration.Parent is LocalDeclarationStatementSyntax =>
+                    Parent:
+                    VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Variables.Count: 1 } declaration }
+                } when declaration.Parent is LocalDeclarationStatementSyntax =>
                 declaration.Type.IsVar ? EqualsOwner.VarLocal : EqualsOwner.TypedLocal,
             EqualsValueClauseSyntax {
                 Parent:
@@ -5569,9 +5647,52 @@ public sealed class BreakPlan {
         // one level in. A kept break is certain, so the group can open at the arm's start — before the
         // list — without its measure deciding anything.
         var kept = options.KeepsUserBreaksBetweenItems && BreaksBefore(arrow);
+
+        // ⚠ And so does a break the author kept *after* the arrow, for a property pattern's braces and a
+        // list pattern's brackets (#549): `X {` / the subpatterns two levels past the arm / `} =>` one
+        // level / the body one level, where Skala nested the braces from the arm's own line. Measured
+        // 2026-10-08 with `Testing ask` (found reformatting Skala's own SpaceRules.cs): the same with a
+        // `when` clause's `prev is {`, as an expression body and under `var x =`; an arrow the author put
+        // on a line of its own does it too. With the body on the arrow's line — `X {` / … / `} => 1,` —
+        // the braces nest from the arm's line. A group with no point of its own, broken because the
+        // break is certain, carrying the arm's continuation level and GroupFacts.Continues from the
+        // pattern on.
+        // ⚠ Only a head of braces and brackets. The oracle lifts a `when Compute(` / … / `) =>` list
+        // too, and a positional pattern's `(` / … / `) =>` puts the elements *and* the `)` one level in,
+        // which is neither (SK-DIV-0393); but a list in the head is also what pass one can break for
+        // width with the body moved below for width, and pass two would then read the break after the
+        // arrow as kept and lift the list — `when Materialise<…,` / `…>() =>` stepped a level on the
+        // second pass (generated seed 857717698562573229). The arrow's own width break never comes with
+        // braces on the arm's line, so braces alone are stable.
+        SyntaxNode[] head = arm.WhenClause is { } clause ? [arm.Pattern, clause] : [arm.Pattern];
+        var liftsBraces = head.SelectMany(static part => part.DescendantNodesAndSelf())
+                .Any(static node => node is PropertyPatternClauseSyntax or ListPatternSyntax)
+            && !head.SelectMany(static part => part.DescendantNodesAndSelf())
+                .Any(static node => node is PositionalPatternClauseSyntax
+                        or BaseArgumentListSyntax
+                        or TypeArgumentListSyntax
+                        or AnonymousFunctionExpressionSyntax
+                        or InitializerExpressionSyntax
+                        or CollectionExpressionSyntax
+                        or SwitchExpressionSyntax
+                );
+        var keptAfter = !kept
+            && liftsBraces
+            // ⚠ And never under a body the arrow group holds the level for (#406, SK-DIV-0157).
+            && !HeadsWithAChoppedParenthesis(arm.Expression, source, options, out _)
+            && options.KeepsUserBreaksBetweenItems
+            && BreaksBefore(FirstToken(arm.Expression));
+        if (keptAfter) {
+            OpenAt(
+                arm,
+                arm.Pattern.SpanStart,
+                new(NewGroup(), GroupMode.Preserve, new(true, Continues: true), true, false)
+            );
+        }
+
         OpenAt(
             arm,
-            kept && arm.WhenClause is not null ? arm.Pattern.SpanStart : arrow.SpanStart,
+            kept && (arm.WhenClause is not null || liftsBraces) ? arm.Pattern.SpanStart : arrow.SpanStart,
             new(
                 before,
                 GroupMode.Preserve,
@@ -5579,11 +5700,11 @@ public sealed class BreakPlan {
                     kept,
                     BreaksIfTooLong: true,
                     BreaksOnlyIfHeadOverflows: true,
-                    Continues: kept && arm.WhenClause is not null,
+                    Continues: kept && (arm.WhenClause is not null || liftsBraces),
                     LiftsThroughInnerBreaks: kept && arm.WhenClause is not null
                 ),
                 true,
-                !(kept && arm.WhenClause is not null),
+                !(kept && (arm.WhenClause is not null || liftsBraces)),
 
                 // ⚠ The arm's level is this group's, not the body's: it is opened first and the body's
                 // group can spend nothing inside it. So it is this group that holds the level for a
@@ -6734,21 +6855,6 @@ public sealed class BreakPlan {
             : 0;
     }
 
-    /// <summary>The kept break before an <c>is</c> ahead of a binary pattern, one level past the operand's line.</summary>
-    void PlanKeptIs(IsPatternExpressionSyntax test) {
-        var group = NewGroup();
-        Mandatory(test.IsKeyword);
-        Describe(
-            test,
-            new(
-                group,
-                GroupMode.Preserve,
-                new(BreaksIfTooLong: true),
-                FromLine: !IsAHeaderCondition(test)
-            )
-        );
-    }
-
     /// <summary>Rewrites the facts of every group described on <paramref name="node" />.</summary>
     void ReviseFacts(SyntaxNode node, Func<GroupFacts, GroupFacts> revise) {
         if (!groups.TryGetValue(Key(node), out var plans)) {
@@ -7322,9 +7428,9 @@ public sealed class BreakPlan {
     ///     back <c>( [</c> / elements / <c>]);</c>, as <c>([</c> and <c>( [</c> do, under an <c>=</c> and as an
     ///     argument; <c>(</c> / <c>[1, 2]);</c>, a collection that stays on one line, keeps the author's
     ///     break. So the join answers whether the collection is multi-line, which is read off the finished
-    ///     plan — a break inside it that survives (<see cref="SourceBreakSurvives" />). ⚠ A collection
-    ///     written on one line that only the margin breaks is not seen here, and keeps a break the author
-    ///     wrote after the <c>(</c>.
+    ///     plan — a break inside it that survives (<see cref="SourceBreakSurvives" />). A collection written
+    ///     on one line is the width's question, answered by a <see cref="GroupFacts.BreaksOnlyIfTailFits" />
+    ///     group below (round 5).
     /// </remarks>
     void SettleParenthesisedCollections(SyntaxNode root) {
         foreach (var paren in root.DescendantNodes().OfType<ParenthesizedExpressionSyntax>()) {
@@ -7335,12 +7441,38 @@ public sealed class BreakPlan {
             }
 
             var open = collection.OpenBracketToken;
-            // ⚠ And at `keep_user_linebreaks = false` always: `(` / `[1, 2]);` is joined there too.
-            if (!options.KeepsUserBreaksBetweenItems
-                || collection.DescendantTokens()
+            if (options.KeepsUserBreaksBetweenItems
+                && collection.DescendantTokens()
                     .Any(token => token.SpanStart > open.SpanStart && SourceBreakSurvives(token))) {
                 gaps[open.SpanStart] = new(GapRule.Flat, -1);
+                continue;
             }
+
+            // ⚠ Otherwise the break after the `(` is the bracket's alternative (#485, round 5): taken —
+            // kept when the author wrote it, added when the line is too long — exactly when the
+            // collection then fits flat on the line below, which is `GroupFacts.BreaksOnlyIfTailFits`,
+            // the rule of the `=` before a collection. Measured 2026-10-08 with `Testing ask`: `(` /
+            // `["…", …]);` whose bracket line is 120 columns keeps the break and at 121 comes back `( [` /
+            // elements / `]);`, under `=`, `return` and an argument alike; a flat `(["…", …]);` too wide
+            // for its line moves the bracket down when it fits there; and at
+            // `skala_keep_user_linebreaks = false` the same, with the author's break no longer a reason
+            // (`(` / `[1, 2]);` re-joins, as round 4 measured).
+            if (gaps.TryGetValue(open.SpanStart, out var existing) && existing.Rule != GapRule.Flat) {
+                continue;
+            }
+
+            var group = NewGroup();
+            gaps[open.SpanStart] = new(GapRule.Point, group);
+            Describe(
+                paren,
+                group,
+                GroupMode.Preserve,
+                new(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(open),
+                    BreaksIfTooLong: true,
+                    BreaksOnlyIfTailFits: true
+                )
+            );
         }
     }
 
@@ -7562,16 +7694,6 @@ public sealed class BreakPlan {
     }
 
     bool KeepsTheBreakBefore(SyntaxToken colon) => options.KeepsUserBreaksBetweenItems && BreaksBefore(colon);
-
-    /// <summary>Whether the author broke a line inside <paramref name="node" /> that the formatter keeps.</summary>
-    bool HoldsAKeptBreak(SyntaxNode node) =>
-        options.KeepUserLinebreaks
-        && node.DescendantTokens().Skip(1).Any(BreaksBefore);
-
-    bool HoldsAKeptColonBreak(SyntaxNode node) =>
-        node.DescendantNodes()
-            .OfType<BaseExpressionColonSyntax>()
-            .Any(colon => colon.Parent is SubpatternSyntax && KeepsTheBreakBefore(colon.ColonToken));
 
     void Mandatory(SyntaxToken token) {
         if (!token.IsKind(SyntaxKind.None)) {

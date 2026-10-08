@@ -69,7 +69,7 @@ public sealed class ImmutableArrayCollectionInitializerAnalyzer : DiagnosticAnal
             } initializer
             || initializer.Expressions.Any(static element => element is InitializerExpressionSyntax)
             || context.SemanticModel.GetSymbolInfo(creation.Type, context.CancellationToken).Symbol
-            is not INamedTypeSymbol { TypeKind: TypeKind.Struct } type
+                is not INamedTypeSymbol { TypeKind: TypeKind.Struct } type
             || type.OriginalDefinition.ToDisplayString() != "System.Collections.Immutable.ImmutableArray<T>"
             || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(creation.SyntaxTree, creation.Span)) {
             return;

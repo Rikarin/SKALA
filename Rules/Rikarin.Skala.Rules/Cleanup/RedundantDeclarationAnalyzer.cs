@@ -555,7 +555,7 @@ public sealed class RedundantDeclarationAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static bool RestatesTheBaseSignature(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax method) {
         if (context.SemanticModel.GetDeclaredSymbol(method, context.CancellationToken)
-            is not { OverriddenMethod: { } overridden } declared
+                is not { OverriddenMethod: { } overridden } declared
             || overridden.Parameters.Length != declared.Parameters.Length) {
             return false;
         }

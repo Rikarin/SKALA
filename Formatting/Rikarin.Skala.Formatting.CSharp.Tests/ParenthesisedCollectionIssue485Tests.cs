@@ -246,12 +246,195 @@ public sealed class ParenthesisedCollectionIssue485Tests {
                                      }
                                      """;
 
+    // ⚠ Round 5: a collection written on one line that only the margin breaks.
+    const string Margin = """
+                          class T {
+                              string[] M() {
+                                  string[] a = (
+                                  ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta", "epsilon epsilon"]);
+                                  string[] b = (["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta", "epsilon"]);
+                                  string[] c = (
+                                  ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta delta"]);
+                                  N(
+                                  (
+                                  ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta", "epsilon epsilon"]));
+                                  return (
+                                  ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta", "epsilon epsilon"]);
+                              }
+                              void N(string[] a) {
+                              }
+                          }
+                          """;
+
+    const string MarginOracle = """
+                                class T {
+                                    string[] M() {
+                                        string[] a = ( [
+                                            "alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta",
+                                            "epsilon epsilon"
+                                        ]);
+                                        string[] b = ( [
+                                            "alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta", "epsilon"
+                                        ]);
+                                        string[] c = (
+                                            ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta delta"]);
+                                        N(
+                                            ( [
+                                                "alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta",
+                                                "epsilon epsilon"
+                                            ])
+                                        );
+                                        return ( [
+                                            "alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta",
+                                            "epsilon epsilon"
+                                        ]);
+                                    }
+
+                                    void N(string[] a) { }
+                                }
+                                """;
+
+    const string MarginAtKeepFalse = """
+                                     class T {
+                                         string[] M() {
+                                             string[] a = ( [
+                                                 "alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta",
+                                                 "epsilon epsilon"
+                                             ]);
+                                             string[] b = ( [
+                                                 "alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta", "epsilon"
+                                             ]);
+                                             string[] c = (
+                                                 ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta delta"]);
+                                             N(
+                                                 ( [
+                                                     "alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta",
+                                                     "epsilon epsilon"
+                                                 ])
+                                             );
+                                             return ( [
+                                                 "alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta",
+                                                 "epsilon epsilon"
+                                             ]);
+                                         }
+
+                                         void N(string[] a) { }
+                                     }
+                                     """;
+
+    const string MarginBoundary = """
+                                  class T {
+                                      string[] M() {
+                                          string[] c1 = (
+                                          ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta delt"]);
+                                          string[] c2 = (
+                                          ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta delta"]);
+                                          string[] c3 = (
+                                          ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta deltaa"]);
+                                          string[] d = (["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta"]);
+                                          string[] e = ((
+                                          ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta", "epsilon epsilon"]));
+                                          return c1;
+                                      }
+                                  }
+                                  """;
+
+    const string MarginBoundaryOracle = """
+                                        class T {
+                                            string[] M() {
+                                                string[] c1 = (
+                                                    ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta delt"]);
+                                                string[] c2 = (
+                                                    ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta delta"]);
+                                                string[] c3 = (
+                                                    ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta deltaa"]);
+                                                string[] d = (["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta"]);
+                                                string[] e = (( [
+                                                    "alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta",
+                                                    "epsilon epsilon"
+                                                ]));
+                                                return c1;
+                                            }
+                                        }
+                                        """;
+
+    const string MarginBoundaryAtKeepFalse = """
+                                             class T {
+                                                 string[] M() {
+                                                     string[] c1 = (
+                                                         ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta delt"]);
+                                                     string[] c2 = (
+                                                         ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta delta"]);
+                                                     string[] c3 = (
+                                                         ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta deltaa"]);
+                                                     string[] d = (["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta"]);
+                                                     string[] e = (( [
+                                                         "alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta",
+                                                         "epsilon epsilon"
+                                                     ]));
+                                                     return c1;
+                                                 }
+                                             }
+                                             """;
+
+    const string MarginFlat = """
+                              class T {
+                                  string[] M() {
+                                      string[] c4 = (
+                                      ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta deltaaa"]);
+                                      string[] c5 = (
+                                      ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta deltaaaa"]);
+                                      string[] f = (["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta delta"]);
+                                      string[] g = (["a", "b"]);
+                                      return c4;
+                                  }
+                              }
+                              """;
+
+    const string MarginFlatOracle = """
+                                    class T {
+                                        string[] M() {
+                                            string[] c4 = (
+                                                ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta deltaaa"]);
+                                            string[] c5 = ( [
+                                                "alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta deltaaaa"
+                                            ]);
+                                            string[] f = (
+                                                ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta delta"]);
+                                            string[] g = (["a", "b"]);
+                                            return c4;
+                                        }
+                                    }
+                                    """;
+
+    const string MarginFlatAtKeepFalse = """
+                                         class T {
+                                             string[] M() {
+                                                 string[] c4 = (
+                                                     ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta deltaaa"]);
+                                                 string[] c5 = ( [
+                                                     "alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta deltaaaa"
+                                                 ]);
+                                                 string[] f = (
+                                                     ["alpha alpha alpha", "beta beta beta beta", "gamma gamma gamma gamma", "delta delta delta delta delta"]);
+                                                 string[] g = (["a", "b"]);
+                                                 return c4;
+                                             }
+                                         }
+                                         """;
+
     public static TheoryData<string, string, string> Cases =>
         new() {
             { Rows, RowsOracle, string.Empty },
             { Rows, RowsAtKeepFalse, "skala_keep_user_linebreaks=false" },
             { Breaks, BreaksOracle, string.Empty },
-            { Breaks, BreaksAtKeepFalse, "skala_keep_user_linebreaks=false" }
+            { Breaks, BreaksAtKeepFalse, "skala_keep_user_linebreaks=false" },
+            { Margin, MarginOracle, string.Empty },
+            { Margin, MarginAtKeepFalse, "skala_keep_user_linebreaks=false" },
+            { MarginBoundary, MarginBoundaryOracle, string.Empty },
+            { MarginBoundary, MarginBoundaryAtKeepFalse, "skala_keep_user_linebreaks=false" },
+            { MarginFlat, MarginFlatOracle, string.Empty },
+            { MarginFlat, MarginFlatAtKeepFalse, "skala_keep_user_linebreaks=false" }
         };
 
     [Theory]

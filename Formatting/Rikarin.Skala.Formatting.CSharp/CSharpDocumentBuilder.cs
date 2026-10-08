@@ -913,8 +913,12 @@ public sealed partial class CSharpDocumentBuilder {
             switch (current) {
                 case PatternSyntax:
                     continue;
+                // ⚠ Or after it (#550): `return keyword is` / `not (A` / `or B);` keeps the `or` on the
+                // `not`'s column.
                 case IsPatternExpressionSyntax test:
-                    return HasLineBreak(test.IsKeyword.GetPreviousToken().Span.End, test.IsKeyword.SpanStart);
+                    return HasLineBreak(test.IsKeyword.GetPreviousToken().Span.End, test.IsKeyword.SpanStart)
+                        || options.KeepsUserBreaksBetweenItems
+                        && HasLineBreak(test.IsKeyword.Span.End, test.Pattern.SpanStart);
                 default:
                     return false;
             }
@@ -3151,7 +3155,8 @@ public sealed partial class CSharpDocumentBuilder {
         // beside a `(` goes, and the blank line the oracle adds on its second pass would be Skala's. That
         // one row of #533 — an author's own-line `/** */` — keeps no blank line, and differs.
         if (pieces[index].StartsLine) {
-            return lambda ? LoneComment.None
+            return lambda
+                ? LoneComment.None
                 : pieces[index].Kind == PieceKind.BlockComment
                     && LineStart(pieces[index].Span.Start) == pieces[index].Span.Start
                     ? LoneComment.ColumnZero
@@ -3501,7 +3506,9 @@ public sealed partial class CSharpDocumentBuilder {
                 ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                 newLines == 0
                 ? DefaultNewLine()
-                : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                : options.EnforceLineEndingStyle
+                    ? DefaultNewLine()
+                    : FirstNewLine(gap) ?? DefaultNewLine()
             );
 
             return;
@@ -3547,7 +3554,9 @@ public sealed partial class CSharpDocumentBuilder {
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                         ? DefaultNewLine()
-                        : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                        : options.EnforceLineEndingStyle
+                            ? DefaultNewLine()
+                            : FirstNewLine(gap) ?? DefaultNewLine()
                     );
                     return;
 
@@ -3568,7 +3577,9 @@ public sealed partial class CSharpDocumentBuilder {
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                         ? DefaultNewLine()
-                        : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                        : options.EnforceLineEndingStyle
+                            ? DefaultNewLine()
+                            : FirstNewLine(gap) ?? DefaultNewLine()
                     );
                     return;
             }
@@ -4714,9 +4725,9 @@ public sealed partial class CSharpDocumentBuilder {
         declarator.Parent is VariableDeclarationSyntax {
             Parent:
             LocalDeclarationStatementSyntax
-                or FieldDeclarationSyntax
-                or EventFieldDeclarationSyntax
-                or UsingStatementSyntax
+            or FieldDeclarationSyntax
+            or EventFieldDeclarationSyntax
+            or UsingStatementSyntax
         } declaration
         && declaration.Variables[0] == declarator;
 
