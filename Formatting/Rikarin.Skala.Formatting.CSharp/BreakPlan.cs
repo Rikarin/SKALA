@@ -5140,9 +5140,9 @@ public sealed class BreakPlan {
                 var breaks = token.LeadingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia))
                     || previous.TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
                 var glued = token.Kind() is SyntaxKind.DotToken
-                    or SyntaxKind.QuestionToken
-                    or SyntaxKind.CloseParenToken
-                    or SyntaxKind.CloseBracketToken
+                        or SyntaxKind.QuestionToken
+                        or SyntaxKind.CloseParenToken
+                        or SyntaxKind.CloseBracketToken
                     || previous.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
                 if (breaks && !glued) {
                     return true;
@@ -5169,9 +5169,9 @@ public sealed class BreakPlan {
                 var breaks = token.LeadingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia))
                     || token.GetPreviousToken().TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
                 var glued = token.Kind() is SyntaxKind.DotToken
-                    or SyntaxKind.QuestionToken
-                    or SyntaxKind.CloseParenToken
-                    or SyntaxKind.CloseBracketToken
+                        or SyntaxKind.QuestionToken
+                        or SyntaxKind.CloseParenToken
+                        or SyntaxKind.CloseBracketToken
                     || token.GetPreviousToken().Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
                 if (!(breaks && glued)) {
                     width++;
