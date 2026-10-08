@@ -914,8 +914,12 @@ public sealed partial class CSharpDocumentBuilder {
             switch (current) {
                 case PatternSyntax:
                     continue;
+                // ⚠ Or after it (#550): `return keyword is` / `not (A` / `or B);` keeps the `or` on the
+                // `not`'s column.
                 case IsPatternExpressionSyntax test:
-                    return HasLineBreak(test.IsKeyword.GetPreviousToken().Span.End, test.IsKeyword.SpanStart);
+                    return HasLineBreak(test.IsKeyword.GetPreviousToken().Span.End, test.IsKeyword.SpanStart)
+                        || options.KeepsUserBreaksBetweenItems
+                        && HasLineBreak(test.IsKeyword.Span.End, test.Pattern.SpanStart);
                 default:
                     return false;
             }
