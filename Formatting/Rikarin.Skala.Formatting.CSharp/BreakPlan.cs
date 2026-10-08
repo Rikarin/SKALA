@@ -5714,7 +5714,7 @@ public sealed class BreakPlan {
 
     /// <summary>
     ///     Whether a node holds a line break that <see cref="FlatSourceWidth" /> reads as a space: anywhere
-    ///     but before a <c>.</c>, a <c>?</c>, a <c>)</c> or a <c>]</c>, or after a <c>(</c> or a <c>[</c>.
+    ///     but before a <c>.</c>, a <c>?</c>, a <c>)</c> or a <c>]</c>, or after a <c>(</c>, a <c>[</c> or a <c>.</c>.
     /// </summary>
     static bool HasLooseBreak(SyntaxNode node) {
         var first = true;
@@ -5727,7 +5727,12 @@ public sealed class BreakPlan {
                         or SyntaxKind.QuestionToken
                         or SyntaxKind.CloseParenToken
                         or SyntaxKind.CloseBracketToken
-                    || previous.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
+                    // ⚠ After a dot too: the formatter joins `n.` / `Name`, so a condition the author broke
+                    // there reads as one written on one line, or pass two answers differently (fuzz seed
+                    // 3423309597191150844).
+                    || previous.Kind() is SyntaxKind.OpenParenToken
+                        or SyntaxKind.OpenBracketToken
+                        or SyntaxKind.DotToken;
                 if (breaks && !glued) {
                     return true;
                 }
@@ -6911,11 +6916,19 @@ public sealed class BreakPlan {
             : 0;
     }
 
+    /// <remarks>
+    ///     ⚠ A body the author broke before one of its dots is still this lambda's: the oracle breaks the arrow
+    ///     by the same measured line, read to the kept break — <c>v.Use(x =&gt;</c> / <c>x.Alpha…Echo</c> /
+    ///     <c>.Foxtrot…</c> — where reading it as a broken body kept the arrow, filled before an earlier dot
+    ///     on pass one and moved the kept break's level on pass two (fuzz seed 3559808079077978877).
+    /// </remarks>
     bool IsAFilledSoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
         options.PlaceSingleMethodArgumentLambdaOnSameLine
         && IsTheBodyOfASoleLambda(body)
         && ChainPointCount(body, options) == 0
-        && ArrowMovesACallChainDown(body)
+        && IsChainRoot(body)
+        && TrailingProperty(body) is not null
+        && !HasLooseBreak(body)
         && lambda.Modifiers.Count == 0;
 
     /// <summary>
