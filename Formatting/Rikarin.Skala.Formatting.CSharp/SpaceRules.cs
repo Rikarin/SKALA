@@ -732,12 +732,27 @@ public static class SpaceRules {
         // operand's node type: `return a;` has an IdentifierNameSyntax after it, and an
         // IdentifierNameSyntax is a TypeSyntax.
         if (SyntaxFacts.IsKeywordKind(left)) {
+            // ⚠ Not a query clause's keyword, which neither key moves: `where "s" == null` and
+            // `where (item > 0)` come back spaced from the oracle at
+            // `space_between_keyword_and_type = false` and at `space_between_keyword_and_expression = false`
+            // alike (measured 2026-10-08), where Skala wrote `where"s"` under the first — `where` is on
+            // IntroducesAType's list for a constraint clause. Found by OptionObservabilityTests on #576's
+            // fixture.
+            if (IsAQueryKeyword(prev)) {
+                return true;
+            }
+
             return IntroducesAType(left) ? o.SpaceBetweenKeywordAndType : o.SpaceBetweenKeywordAndExpression;
         }
 
 
         return true;
     }
+
+    /// <summary>A query clause's own keyword — <c>where</c>, <c>select</c>, <c>orderby</c>, <c>into</c> and the rest.</summary>
+    static bool IsAQueryKeyword(SyntaxToken token) =>
+        SyntaxFacts.IsKeywordKind(token.Kind())
+        && token.Parent is QueryClauseSyntax or SelectOrGroupClauseSyntax or QueryContinuationSyntax or OrderingSyntax;
 
     static bool IntroducesAType(SyntaxKind keyword) =>
         keyword is
@@ -950,7 +965,10 @@ public static class SpaceRules {
                 // which is the one case the general fallback below never sees because a `(` is
                 // handled here.
                 if (SyntaxFacts.IsKeywordKind(prev.Kind()) && !IntroducesAType(prev.Kind())) {
-                    return o.SpaceBetweenKeywordAndExpression;
+                    // ⚠ Except a query clause's keyword: `select (item)` comes back spaced at
+                    // `space_between_keyword_and_expression = false` (measured 2026-10-08), as `where (…)`
+                    // does — see Required.
+                    return IsAQueryKeyword(prev) || o.SpaceBetweenKeywordAndExpression;
                 }
 
                 return !ClingsRight(prev.Kind()) && !IsCallSite(prev);
