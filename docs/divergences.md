@@ -9278,16 +9278,37 @@ left operand (#457), where the chain takes a level past the operator's.
   `return`, an argument and an expression body — signs one level past the statement in every one. ⚠
   Two exceptions keep the late scope, both measured: a broken *binary* condition (`&& c` at one level,
   `? x` at two; `==` the same) and a chain headed by a parenthesis, which shares the level around it
-  (SK-DIV-0112; `ArrowBodyChainIssue404Tests` pinned it). A row beside it is a break choice, not this
-  entry's: `var a7aaaa… = chain ? x : y` where the oracle breaks the `=` and keeps the chain whole —
-  **resolved** (#553, round three): an `=` whose value is a conditional breaks exactly when the condition
-  does not fit beside it and the head through the `=` is twelve columns or more (`GroupFacts.ValueHeadWidth`,
-  the condition's flat width from the source); a call condition additionally needs to fit below or the `=` to
-  stand at column 40 or left of it; a type-test condition keeps the ordinary rule. Measured on chain, `&&`,
-  identifier and call conditions behind heads of 8 to 66 columns; every row agrees. Pinned by
-  `ConditionalAfterEqIssue553Tests` and `constructs/breaks/conditional-after-eq.cs`.
-  Pinned by `TernaryAfterAChoppedConditionIssue530Tests` and
-  `constructs/breaks/ternary-after-a-chopped-condition.cs`.
+  (SK-DIV-0112; `ArrowBodyChainIssue404Tests` pinned it). Pinned by
+  `TernaryAfterAChoppedConditionIssue530Tests` and `constructs/breaks/ternary-after-a-chopped-condition.cs`.
+- A row beside it is a break choice, not this entry's: `var a7aaaa… = chain ? x : y` where the oracle
+  breaks the `=` and keeps the chain whole — **resolved** (#553, round three): an `=` whose value is a
+  conditional breaks exactly when the condition does not fit beside it and the head through the `=` is
+  twelve columns or more (`GroupFacts.ValueHeadWidth`, the condition's flat width from the source); a call
+  condition additionally needs to fit below or the `=` to stand at column 40 or left of it; a type-test
+  condition keeps the ordinary rule. Measured on chain, `&&`, identifier and call conditions behind heads
+  of 8 to 66 columns; every row agrees. Pinned by `ConditionalAfterEqIssue553Tests` and
+  `constructs/breaks/conditional-after-eq.cs`.
+
+## SK-DIV-0334 — a list opened on a closer's line nested from the levels behind the closer
+
+Found beside #484 on 2026-10-08, filed as #551. At `skala_wrap_chained_method_calls = wrap_if_long` a
+chain whose first call's lambda body broke keeps `}` / `).Where(` on one line, and when the `Where`
+argument list chops the oracle puts the argument one level past that line's `)`:
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `var r2 = source.Select(x => { … }).Where(longArgument);` | `).Where(` at 8 / argument at 12 / `);` at 8 | argument at 16, `);` at 12 |
+
+The list counted the `=`'s and the chain's levels, both opened on the statement's line, although the
+line it opened on starts at the closer's level. ⚠ The default `chop_if_long` never writes such a line —
+its chain breaks before `.Where` — which is why no corpus row showed it.
+
+- options: `skala_wrap_chained_method_calls`.
+- ⚠ status: **resolved** (#551). A delimited list opened on a line that a `)` or `]` began nests from that
+  line's own indentation (`LayoutWriter.closerLine`, read in `Push` as a lift). ⚠ Not after a `}`:
+  `} else if (Call(` / arguments aligned past the condition's `(` keeps its alignment, and the first cut
+  that read any closer moved Newtonsoft's `JsonArrayContract.cs` four lines away from the oracle.
+  corpus/real unchanged. Pinned by `ClosingLineListIssue551Tests`.
 
 ## SK-DIV-0320 — a block comment on its own line above an array initializer's first element stayed there
 
