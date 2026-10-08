@@ -550,6 +550,7 @@ public sealed class BreakPlan {
         // ⚠ Before the switch and before the condition's own operators are walked. The walk is
         // pre-order, so the statement is planned first and `PlanOperator` reads what this recorded.
         PlanForcedChopCondition(node);
+        PlanCastBeforeACollection(node);
 
         switch (node) {
             case EnumDeclarationSyntax enumeration:
@@ -3949,6 +3950,48 @@ public sealed class BreakPlan {
     ///     </para>
     /// </remarks>
     static bool BreakYieldsToTheBracket(ExpressionSyntax value) => value is CollectionExpressionSyntax;
+
+    /// <summary>
+    ///     The break between a cast and the collection expression it casts, which is one of two
+    ///     alternatives exactly as an <c>=</c>'s is.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #450, SK-DIV-0012. Measured 2026-10-08: a cast collection too long for its line comes back
+    ///     <c>(Kind[])</c> / <c>[a, b, c];</c> one level in when the collection fits flat on the line below,
+    ///     and <c>(Kind[]) [</c> / chopped elements / <c>];</c> when it does not — in a local, a
+    ///     <c>return</c>, an argument and an expression body. A break the author wrote after the cast is
+    ///     kept when the collection fits there (<c>(int[])</c> / <c>[1, 2, 3]</c>) and given to the bracket
+    ///     when the collection is itself broken. That is <see cref="GroupFacts.BreaksOnlyIfTailFits" />,
+    ///     the rule <see cref="BreakYieldsToTheBracket" /> already gives an <c>=</c> and an arrow; Skala had
+    ///     no point between the two tokens at all. The space in front of a broken bracket is the builder's
+    ///     (<c>CSharpDocumentBuilder.SpaceIfTheCollectionBreaks</c>).
+    /// </remarks>
+    void PlanCastBeforeACollection(SyntaxNode node) {
+        if (node is not CastExpressionSyntax {
+                Expression: CollectionExpressionSyntax { Elements.Count: > 0 } collection
+            } cast) {
+            return;
+        }
+
+        var open = collection.OpenBracketToken;
+        var group = NewGroup();
+        Point(open, group);
+        Describe(
+            cast,
+            new(
+                group,
+                GroupMode.Preserve,
+                new(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(open),
+                    BreaksIfTooLong: true,
+                    PrefersOuterBreak: true,
+                    HidesFlatWidthWhenBroken: true,
+                    BreaksOnlyIfTailFits: true
+                ),
+                true
+            )
+        );
+    }
 
     /// <summary>
     ///     The head a flat line needs before the oracle adds a break after a collection-valued

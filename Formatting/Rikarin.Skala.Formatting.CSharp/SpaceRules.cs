@@ -816,6 +816,12 @@ public static class SpaceRules {
             return o.SpaceAroundAssignmentOp;
         }
 
+        // ⚠ A parenthesis just inside another is the outer one's inner gap: `( ( [` at
+        // `space_within_parentheses = true` (#485), where the `(` answered "a `(` clings" and wrote `(( [`.
+        if (prev.IsKind(SyntaxKind.OpenParenToken) && prev.Parent is ParenthesizedExpressionSyntax) {
+            return WithinParentheses(prev.Parent, false, o);
+        }
+
         if (IsBinaryOperator(prev)
             && prev.Parent is BinaryExpressionSyntax
             && !SyntaxFacts.IsKeywordKind(prev.Kind())

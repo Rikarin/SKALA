@@ -465,6 +465,7 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         levelsOpenedByOwnGroups = indented.Sum() + heldLevels.Count(static held => held);
+        SpaceIfTheCollectionBreaks(node, planned);
         VisitInner(node);
         EmitUpTo(node.Span.End);
 
@@ -487,6 +488,41 @@ public sealed partial class CSharpDocumentBuilder {
 
             doc.Close();
         }
+    }
+
+    /// <summary>
+    ///     One space in front of a collection expression's <c>[</c> behind a cast's <c>)</c> or a
+    ///     parenthesis's <c>(</c>, exactly when the collection breaks.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #450 and #485 (SK-DIV-0012, SK-DIV-0150). `(Kind[])[a, b]` and `([1, 2])` stay closed at the
+    ///     export, and the same collections chopped come back `(Kind[]) [` and `( [`, at both values of
+    ///     <c>space_after_cast</c> and <c>space_within_parentheses</c> — the gap is the key's while the
+    ///     collection is flat and one space once it breaks. The space rules cannot see a resolved mode, and
+    ///     the gap is written before the collection's group opens, so the space is an
+    ///     <see cref="DocKind.IfBroken" /> placed as the group's first child, where the writer has already
+    ///     resolved it. ⚠ A space written there after a break the gap took is dropped by the writer, which
+    ///     never writes a pending space at a line's start. Only the innermost parenthesis: `(([` gives
+    ///     `(( [`.
+    /// </remarks>
+    void SpaceIfTheCollectionBreaks(SyntaxNode node, IReadOnlyList<GroupPlan> planned) {
+        if (node is not CollectionExpressionSyntax { Elements.Count: > 0 } collection
+            || options.DisableSpaceChanges
+            || planned.Count == 0) {
+            return;
+        }
+
+        var before = collection.OpenBracketToken.GetPreviousToken();
+        if (!(before.IsKind(SyntaxKind.OpenParenToken) && before.Parent is ParenthesizedExpressionSyntax
+                || before.IsKind(SyntaxKind.CloseParenToken) && before.Parent is CastExpressionSyntax)) {
+            return;
+        }
+
+        doc.OpenIfBroken(planned[^1].Id);
+        doc.Space(SpaceKind.Required);
+        doc.OpenConcat();
+        doc.Close();
+        doc.Close();
     }
 
     /// <summary>
