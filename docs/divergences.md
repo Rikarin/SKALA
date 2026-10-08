@@ -6844,10 +6844,23 @@ on pass two is where it belongs.
 
 Not fixed here, and measured:
 
-- `csharp_preserve_single_line_blocks = false` expands every one-statement accessor, lambda and
-  anonymous-method block, `get { return _n; }` included. The key is Tier D and not read.
 - The blank lines around a member the block rule joins are still decided from its source lines
   (#414).
+
+**`csharp_preserve_single_line_blocks = false` — fixed (#510).** Re-measured 2026-10-08 with the key
+flipped alone and again under both `keep_existing_*_block_arrangement` keys. At `false` the oracle
+expands every one-statement accessor, lambda and anonymous-method body and — ⚠ not in the entry's
+first measurement — every **bodiless accessor list**: `int R { get; set; }` comes back one accessor
+per line. Methods, local functions and control blocks are already expanded at `true` under the
+export; initializers, anonymous types, property patterns and empty blocks stay joined at both values.
+⚠ The entry's "the oracle's lambda layout at `false` is not the ordinary broken lambda argument" is
+**refuted**: `Register(() => {` / two levels / `}` / `);` and `Register(` / `delegate {` … are exactly
+what a two-statement lambda and anonymous-method argument already get (SK-DIV-0163), and they came out
+of the same plan once the block stopped sharing its owner's line. Under both keep keys the oracle is
+byte-identical at both values, so the keep keys outrank this one and Skala reads it only where they
+are off (`MayShareItsOwnersLine`, `PlanAccessorList`). Tier A on
+`constructs/braces/csharp_preserve_single_line_blocks.cs`, pinned by
+`PreserveSingleLineBlocksIssue510Tests`.
 
 - options: `skala_keep_existing_declaration_block_arrangement`, `skala_keep_existing_embedded_block_arrangement`, `csharp_preserve_single_line_blocks`.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/one-statement-block-on-its-owners-line.cs`,

@@ -30,15 +30,16 @@
 </section>
 <section class="option" id="csharp_preserve_single_line_blocks">
 <h2><code>csharp_preserve_single_line_blocks</code> <a class="self" href="#csharp_preserve_single_line_blocks">#</a></h2>
-<p>Keep a block that was written on one line on one line. ⚠ Measured 2026-08-29 against the oracle at 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified implementable — the oracle honours it and Skala does not. ⚠ The unprefixed-spelling claim is refuted here too: the C# formatter reads this key. Two distinct oracle outputs under <code>CSReformatCode</code> at <code>true</code> against <code>false</code> on single-line method, <code>if</code>, <code>while</code> and accessor bodies; Skala is flat and already disagrees with the oracle on that fixture before the key is touched. An <code>oracle</code> glob would report INERT, so none is added until the baseline is closed.</p>
+<p>Keep a block that was written on one line on one line. ⚠ Not what the name says, and measured twice. 2026-08-29: two distinct oracle outputs at <code>true</code> against <code>false</code>, Skala flat. 2026-10-08 (#510, SK-DIV-0162), probed with each candidate shape: at <code>false</code> the oracle expands every one-statement accessor body (<code>get { return _n; }</code>), lambda and anonymous-method body (in a statement and as a sole argument alike — <code>Register(delegate { A(); })</code> moves the <code>delegate</code> to a line of its own, which is the ordinary layout of a broken anonymous-method argument and not a special one) and every bodiless accessor list (<code>int R { get; set; }</code> comes back one accessor per line). It moves nothing else: methods, local functions and control blocks are expanded at both values under the export, and initializers, anonymous types, property patterns and empty blocks stay joined at both. ⚠ With both <code>skala_keep_existing_*_block_arrangement</code> keys <code>true</code> the oracle is byte-identical at both values — the keep keys outrank this one, and Skala reads it only where they are off.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>true</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/braces/csharp_preserve_single_line_blocks.cs</code></td></tr>
 </tbody>
 </table>
 </section>

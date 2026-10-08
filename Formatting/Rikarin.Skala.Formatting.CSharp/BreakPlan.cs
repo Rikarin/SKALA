@@ -4908,7 +4908,7 @@ public sealed class BreakPlan {
     ///     no width test and no <c>keep_user_linebreaks</c> in it: a body with anything in it is broken.
     ///     ⚠ Not ignored everywhere, measured for #405: at <c>false</c> the oracle also expands every
     ///     one-statement accessor, lambda and anonymous-method block, <c>get { return _n; }</c> included.
-    ///     Skala does not read the key (Tier D), so that corner is not honoured.
+    ///     <see cref="MayShareItsOwnersLine" /> reads the key, below the keep keys that outrank it (#510).
     ///     <para>
     ///         ⚠ Two exclusions, each measured rather than assumed. An <em>empty</em> body stays together
     ///         (<c>skala_empty_block_style = together</c>). And a one-statement block that may share its
@@ -5071,7 +5071,9 @@ public sealed class BreakPlan {
             broken |= BreaksBefore(FirstToken(accessor));
         }
 
-        var joins = options.KeepExistingDeclarationBlockArrangement ? !broken : bodiless;
+        // ⚠ And `csharp_preserve_single_line_blocks = false` expands a bodiless list too: `int R { get;
+        // set; }` comes back one accessor per line (#510). Not under the keep key, which outranks it.
+        var joins = options.KeepExistingDeclarationBlockArrangement ? !broken : bodiless && options.PreserveSingleLineBlocks;
         if (!joins) {
             foreach (var accessor in node.Accessors) {
                 Mandatory(FirstToken(accessor));
@@ -5200,8 +5202,17 @@ public sealed class BreakPlan {
         }
 
         var broken = BreaksBefore(FirstToken(block.Statements[0])) || BreaksBefore(block.CloseBraceToken);
+
+        // ⚠ `csharp_preserve_single_line_blocks = false` takes the "always" away from an accessor's, a
+        // lambda's and an anonymous method's block — and only while the keep key that owns the block is
+        // off. Measured 2026-10-08 (#510): at `false` under the export `get { return _n; }`,
+        // `() => { A(); }`, `delegate { A(); }` and `x => { return x; }` all come back broken open,
+        // in a statement and as a sole argument alike; with both `keep_existing_*_block_arrangement`
+        // keys `true` the oracle's output at `false` is byte-identical to its output at `true`. A
+        // method's, a local function's and an `if`'s block are only ever kept under their keep key,
+        // which outranks this one, so they are unaffected either way.
         return block.Parent is AccessorDeclarationSyntax or AnonymousFunctionExpressionSyntax
-            ? !(broken && Keeps(block))
+            ? Keeps(block) ? !broken : options.PreserveSingleLineBlocks
             : !broken && Keeps(block);
     }
 
