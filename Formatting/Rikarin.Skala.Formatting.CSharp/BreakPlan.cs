@@ -5178,6 +5178,12 @@ public sealed class BreakPlan {
             BaseObjectCreationExpressionSyntax { Initializer: { } initializer } => BreaksAfter(initializer),
             ArrayCreationExpressionSyntax { Initializer: { } initializer } => BreaksAfter(initializer),
             ImplicitArrayCreationExpressionSyntax { Initializer: var initializer } => BreaksAfter(initializer),
+
+            // ⚠ And an anonymous object (#581): the oracle's second pass keeps `var x = new {` / members /
+            // `};` on every cell of a 171-cell grid where its first pass wrote it, and Skala moved it down whole
+            // on its second pass once the first wrote the brace's break.
+            AnonymousObjectCreationExpressionSyntax { Initializers.Count: > 0 } anonymous =>
+                !BreaksBefore(anonymous.OpenBraceToken) && BreaksBefore(anonymous.OpenBraceToken.GetNextToken()),
             _ => false
         };
 
@@ -5392,11 +5398,26 @@ public sealed class BreakPlan {
             return 0;
         }
 
+        // ⚠ Under the collection's twelve-column floor the creation never moves down (#581): `var vvvvvv =`
+        // and `vvvvvvvvv =` break the braces at every width measured, and one column more of head moves the
+        // same values down whole. This is the issue's "the margin grows as the head shrinks".
+        if (HeadWidthThroughEquals(node, equals) < MinimumEqualsHead) {
+            return -1;
+        }
+
         var prefix = WidthThrough(value.GetFirstToken(), open);
         var name = node is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }
             ? WidthThrough(declarator.Identifier, equals)
             : WidthThrough(node.GetFirstToken(), equals);
-        return 4420 + 24 * prefix - 16 * Math.Max(name, 23) - (owner == EqualsOwner.Field ? 80 : 0);
+        // In fortieths of a column: 110.5 + 0.6 · prefix − 0.4 · max(name, 23) for a `var` local, half a
+        // column lower with the knee one column later for a typed one, two columns lower for a field, and
+        // 113 + 0.6 · prefix − 0.45 · max(name, 26) for an assignment, whose name is its whole target.
+        return owner switch {
+            EqualsOwner.TypedLocal => 4400 + 24 * prefix - 16 * Math.Max(name, 24),
+            EqualsOwner.Assignment => 4520 + 24 * prefix - 18 * Math.Max(name, 26),
+            EqualsOwner.Field => 4340 + 24 * prefix - 16 * Math.Max(name, 23),
+            _ => 4420 + 24 * prefix - 16 * Math.Max(name, 23)
+        };
 
         static int WidthThrough(SyntaxToken start, SyntaxToken end) {
             var width = 0;

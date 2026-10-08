@@ -637,10 +637,10 @@ public sealed class Fitter {
     ///     </para>
     /// </remarks>
     ResolvedMode Worth(in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd, int segment, int pointSpace) {
-        if (facts.PrefersOuterBreak && facts.CreationLimit > 0) {
+        if (facts.PrefersOuterBreak && facts.CreationLimit != 0) {
             // ⚠ A creation with a one-line initializer moves down whole by its own measured limit, and the
             // braces break otherwise (#581). See GroupFacts.CreationLimit.
-            if (segment >= Unbounded) {
+            if (segment >= Unbounded || facts.CreationLimit < 0) {
                 return ResolvedMode.Flat;
             }
 

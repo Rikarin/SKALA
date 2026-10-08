@@ -1164,7 +1164,8 @@ public sealed class Document {
 ///     whole to, before the column the indent and the margin move it by. The oracle's limit is not the fitted
 ///     margin's: it grows with the width of <c>new X {</c> and shrinks with the head from the declarator's name
 ///     through the <c>=</c>, by <c>110.5 + 0.6 · prefix − 0.4 · max(name head, 23) − (indent − 8) / 8</c>
-///     columns, two fewer for a field. Otherwise the braces break. See <c>Fitter.Worth</c>.
+///     columns, two fewer for a field. Otherwise the braces break. Negative: the head through the <c>=</c> is
+///     under twelve columns, and the braces always break. See <c>Fitter.Worth</c>.
 /// </param>
 /// <param name="MeasuresThroughTail">
 ///     ⚠ The group is fitted against <see cref="Document.ThroughWidthOf" /> — from its start to the
