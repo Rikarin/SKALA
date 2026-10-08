@@ -69,11 +69,15 @@ public sealed class ArrangementRuleTests {
         string source,
         string? only = null,
         bool removeUnused = false,
-        IReadOnlyList<KeyValuePair<string, string>>? overrides = null
+        IReadOnlyList<KeyValuePair<string, string>>? overrides = null,
+        LanguageVersion? version = null
     ) {
         const string path = "/arrangement/Probe.cs";
         var text = SourceText.From(source);
-        var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions, path);
+        var parse = version is { } pinned
+            ? CSharpFormatter.ParseOptions.WithLanguageVersion(pinned)
+            : CSharpFormatter.ParseOptions;
+        var tree = CSharpSyntaxTree.ParseText(text, parse, path);
 
         // The kind is chosen from the file, as `RuleFixtures.Compile` chose it in #314: a probe
         // holding top-level statements is an executable, and compiled as a library it draws
@@ -1146,6 +1150,142 @@ public sealed class ArrangementRuleTests {
         Assert.Contains("TakeFunc(() => new Foo());", arranged, StringComparison.Ordinal);
         Assert.Contains("TakeFunc(() => { return new Foo(); });", arranged, StringComparison.Ordinal);
         Assert.Contains("Func<Foo> _field = () => new Foo();", arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>The probe #547's rows are asked of: a delegate-typed local initialised by a function.</summary>
+    const string NaturalTypeProbe = """
+                                    using System;
+                                    using System.Linq.Expressions;
+                                    using System.Threading.Tasks;
+
+                                    namespace P;
+
+                                    public class Foo { }
+
+                                    public delegate int MyDelegate();
+                                    public delegate int RefDelegate(ref int x);
+
+                                    public class C {
+                                        static void Run() { }
+                                        static void Over(int x) { }
+                                        static void Over(string x) { }
+                                        static int Twice(int x) => x * 2;
+
+                                        public string M() {
+                                            Func<int> a = () => 1;
+                                            Func<object> b = () => new object();
+                                            Func<object> c = () => "x";
+                                            Func<int, int> d = x => x;
+                                            Func<int, int> e = (int x) => x;
+                                            Action f = () => { };
+                                            Expression<Func<int>> g = () => 1;
+                                            Action h = Run;
+                                            Action<int> i = Over;
+                                            MyDelegate j = () => 1;
+                                            Func<Foo> k = () => new Foo();
+                                            Delegate l = () => 1;
+                                            Func<int?> m = () => 1;
+                                            Func<Task> n = async () => await Task.Delay(1);
+                                            Func<string?> o = () => null;
+                                            Func<int> p = static () => 1;
+                                            RefDelegate q = (ref int x) => x;
+                                            Func<object> r = object () => "x";
+                                            Func<int, int> s = Twice;
+                                            Func<int>? t = () => 1;
+                                            Func<Foo> u = () => { return new Foo(); };
+                                            Func<int> v = delegate { return 1; };
+                                            return $"{a}{b}{c}{d}{e}{f}{g}{h}{i}{j}{k}{l}{m}{n}{o}{p}{q}{r}{s}{t}{u}{v}";
+                                        }
+                                    }
+                                    """;
+
+    /// <summary>
+    ///     #547: a function initialiser takes <c>var</c> exactly when its natural type is the declared type.
+    ///     Every row is the oracle's, under <c>SkalaCleanup</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("var a = () => 1;")]
+    [InlineData("var b = () => new object();")]
+    [InlineData("var e = (int x) => x;")]
+    [InlineData("var f = () => { };")]
+    [InlineData("var h = Run;")]
+    [InlineData("var k = () => new Foo();")]
+    [InlineData("var n = async () => await Task.Delay(1);")]
+    [InlineData("var p = static () => 1;")]
+    [InlineData("var r = object () => \"x\";")]
+    [InlineData("var s = Twice;")]
+    [InlineData("var t = () => 1;")]
+    [InlineData("var u = () => { return new Foo(); };")]
+    public void Var_AFunctionWhoseNaturalTypeIsDeclared_TakesVar(string expected) {
+        var arranged = Declined(Attempt(NaturalTypeProbe, ArrangeIds.Var));
+        Assert.Contains(expected, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>#547's refusals: the natural type is another type, or there is none.</summary>
+    [Theory]
+    [InlineData("Func<object> c = () => \"x\";")]
+    [InlineData("Func<int, int> d = x => x;")]
+    [InlineData("Expression<Func<int>> g = () => 1;")]
+    [InlineData("Action<int> i = Over;")]
+    [InlineData("MyDelegate j = () => 1;")]
+    [InlineData("Delegate l = () => 1;")]
+    [InlineData("Func<int?> m = () => 1;")]
+    [InlineData("Func<string?> o = () => null;")]
+    [InlineData("RefDelegate q = (ref int x) => x;")]
+    [InlineData("Func<int> v = delegate { return 1; };")]
+    public void Var_AFunctionWhoseNaturalTypeIsNotDeclared_KeepsItsType(string kept) {
+        var arranged = Declined(Attempt(NaturalTypeProbe, ArrangeIds.Var));
+        Assert.Contains(kept, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     #547: below C# 10 a lambda has no natural type, so nothing converts — and at
+    ///     <c>csharp_style_var_elsewhere = false</c>, the key that governs these, nothing does either.
+    /// </summary>
+    [Fact]
+    public void Var_AFunction_NeedsCSharp10AndVarElsewhere() {
+        const string old = """
+                           using System;
+
+                           namespace P;
+
+                           public class C {
+                               static void Run() { }
+
+                               public string M() {
+                                   Func<int> a = () => 1;
+                                   Action h = Run;
+                                   return $"{a}{h}";
+                               }
+                           }
+                           """;
+
+        var nine = Declined(Attempt(old, ArrangeIds.Var, version: LanguageVersion.CSharp9));
+        Assert.Contains("Func<int> a = () => 1;", nine, StringComparison.Ordinal);
+        Assert.Contains("Action h = Run;", nine, StringComparison.Ordinal);
+
+        var ten = Declined(Attempt(old, ArrangeIds.Var, version: LanguageVersion.CSharp10));
+        Assert.Contains("var a = () => 1;", ten, StringComparison.Ordinal);
+
+        var elsewhere = Declined(
+            Attempt(NaturalTypeProbe, ArrangeIds.Var, overrides: [new("csharp_style_var_elsewhere", "false")])
+        );
+        Assert.Contains("Func<int> a = () => 1;", elsewhere, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #547 and #524 together, through every rule: where <c>var</c> takes the declarator the creation
+    ///     keeps its type — <c>var k = () =&gt; new Foo();</c>, the oracle's line — and where it does not,
+    ///     the creation is target-typed (<c>csharp_style_var_elsewhere = false</c>, measured).
+    /// </summary>
+    [Fact]
+    public void Var_WinsOverATargetTypedLambdaValue() {
+        var arranged = Declined(Attempt(NaturalTypeProbe));
+        Assert.Contains("var k = () => new Foo();", arranged, StringComparison.Ordinal);
+
+        var elsewhere = Declined(Attempt(NaturalTypeProbe, overrides: [new("csharp_style_var_elsewhere", "false")]));
+        Assert.Contains("Func<Foo> k = () => new();", elsewhere, StringComparison.Ordinal);
+        Assert.Contains("Func<object> b = () => new();", elsewhere, StringComparison.Ordinal);
     }
 
     /// <summary>The probe #462's rows are asked of: every predefined keyword, written as one.</summary>

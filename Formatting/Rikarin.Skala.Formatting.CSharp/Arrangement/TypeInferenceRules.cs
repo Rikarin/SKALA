@@ -72,8 +72,13 @@ public sealed class VarRule : ArrangementRule {
                 return false;
             }
 
-            // ⚠ `var x = null` and `var x = () => …` do not compile: the initializer has no type of
-            // its own to infer. So does a stackalloc in a non-`Span` context, and a method group.
+            // A lambda, an anonymous method or a method group: `var` only through its natural type.
+            if (IsFunction(initializer.Value)) {
+                return options.VarElsewhere && NaturalTypeIsDeclared(node);
+            }
+
+            // ⚠ `var x = null` does not compile: the initializer has no type of its own to infer. So
+            // does a stackalloc in a non-`Span` context.
             var info = model.GetTypeInfo(initializer.Value);
             var initialiserType = info.Type;
             if (initialiserType is null
@@ -147,6 +152,64 @@ public sealed class VarRule : ArrangementRule {
             }
 
             return Applies(node.Type, initializer.Value, initialiserType);
+        }
+
+        /// <summary>A lambda, an anonymous method, or a name that binds to a method group.</summary>
+        bool IsFunction(ExpressionSyntax value) =>
+            value is AnonymousFunctionExpressionSyntax
+            || value is SimpleNameSyntax or MemberAccessExpressionSyntax
+            && model.GetTypeInfo(value).Type is null
+            && (model.GetSymbolInfo(value).Symbol is IMethodSymbol
+                || model.GetSymbolInfo(value).CandidateSymbols.Any(static symbol => symbol is IMethodSymbol));
+
+        /// <summary>
+        ///     Whether <c>var</c> would infer exactly the declared delegate type: the natural-type proof (#547).
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ Measured against <c>jb cleanupcode</c> 2025.2.6 under <c>SkalaCleanup</c>, governed by
+        ///     <c>csharp_style_var_elsewhere</c> (flipping it alone restored every row). The oracle writes
+        ///     <c>var</c> for <c>Func&lt;int&gt; a = () =&gt; 1</c>, <c>(int x) =&gt; x</c>,
+        ///     <c>() =&gt; { }</c>, <c>async</c>, <c>static</c>, an explicit return type
+        ///     (<c>Func&lt;object&gt; r = object () =&gt; "x"</c>), a block body, a single method group
+        ///     (<c>Action h = Run</c>) and a nullable-annotated <c>Func&lt;int&gt;?</c>. It declines every
+        ///     declaration whose natural type is something else or nothing: <c>Func&lt;object&gt; = () =&gt;
+        ///     "x"</c> (natural <c>Func&lt;string&gt;</c>), <c>Func&lt;int?&gt; = () =&gt; 1</c>, an untyped
+        ///     parameter <c>x =&gt; x</c>, <c>Expression&lt;…&gt;</c>, a custom delegate type,
+        ///     <c>Delegate</c>, a <c>ref</c> parameter (an anonymous delegate type), <c>() =&gt; null</c>,
+        ///     an overloaded method group and a parameterless <c>delegate { … }</c>.
+        ///     <para>
+        ///         ⚠ Proven by binding, not by reasoning about the lambda: the statement is re-bound with
+        ///         <c>var</c> and the local must come out with the declared type. That one check answers the
+        ///         overload set and every shape above, and it compares as
+        ///         <see cref="SymbolEqualityComparer.Default" /> because a <c>var</c> local of a reference type
+        ///         is always annotated — <c>Func&lt;int&gt;?</c> — which is exactly the oracle's <c>t</c> row.
+        ///     </para>
+        ///     <para>
+        ///         ⚠ It does <em>not</em> answer the language version, which is why that is asked separately.
+        ///         Below C# 10 the binder still infers <c>Func&lt;int&gt;</c> for the local and reports the
+        ///         feature as <c>CS8773</c> beside it — measured by removing the version check, when the C# 9
+        ///         probe converted and safety layer 2 reverted the document.
+        ///     </para>
+        ///     <para>
+        ///         ⚠ #524 must not fire where <c>var</c> will, and it cannot: this rule runs first, and
+        ///         ObjectCreationRule's lambda case declines a <c>var</c> declarator.
+        ///     </para>
+        /// </remarks>
+        bool NaturalTypeIsDeclared(VariableDeclarationSyntax node) {
+            if (node.Parent is not LocalDeclarationStatementSyntax statement
+                || ((CSharpParseOptions)node.SyntaxTree.Options).LanguageVersion < LanguageVersion.CSharp10
+                || model.GetTypeInfo(node.Type).Type is not { TypeKind: TypeKind.Delegate } declared) {
+                return false;
+            }
+
+            var replaced = statement.WithDeclaration(node.WithType(Var(node.Type)));
+            if (!model.TryGetSpeculativeSemanticModel(statement.SpanStart, replaced, out var speculative)
+                || speculative.GetDeclaredSymbol(replaced.Declaration.Variables[0]) is not ILocalSymbol local
+                || local.Type.TypeKind == TypeKind.Error) {
+                return false;
+            }
+
+            return SymbolEqualityComparer.Default.Equals(local.Type, declared);
         }
 
         /// <summary>Which of the three <c>csharp_style_var_*</c> keys governs this declaration.</summary>
