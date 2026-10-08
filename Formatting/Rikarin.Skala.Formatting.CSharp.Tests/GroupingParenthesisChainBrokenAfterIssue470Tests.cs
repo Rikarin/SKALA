@@ -128,4 +128,58 @@ public sealed class GroupingParenthesisChainBrokenAfterIssue470Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     SK-DIV-0158's row: a switch over a chain with a parenthesised head spends the chain's level even
+    ///     under an arrow, and nests its arms from the dots' line; an ordinary head keeps them at the statement's.
+    /// </summary>
+    [Fact]
+    public void ASwitchOverAParenthesisedChain_NestsFromTheDotsLine() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object A1() =>
+            (
+            a).B().C() switch { _ => a };
+                object A9() =>
+            (a + b).C()
+            .D() switch { _ => a };
+                void M() {
+                    var x4 = (
+            a).B()
+            .C() switch { _ => a };
+                    var x3 = a.B()
+            .C() switch { _ => a };
+                }
+            }
+            """,
+            """
+            class C {
+                object A1() =>
+                    (
+                            a).B()
+                        .C() switch {
+                            _ => a
+                        };
+
+                object A9() =>
+                    (a + b).C()
+                        .D() switch {
+                            _ => a
+                        };
+
+                void M() {
+                    var x4 = (
+                            a).B()
+                        .C() switch {
+                            _ => a
+                        };
+                    var x3 = a.B()
+                        .C() switch {
+                        _ => a
+                    };
+                }
+            }
+            """
+        );
 }

@@ -550,6 +550,7 @@ public sealed class BreakPlan {
         // ⚠ Before the switch and before the condition's own operators are walked. The walk is
         // pre-order, so the statement is planned first and `PlanOperator` reads what this recorded.
         PlanForcedChopCondition(node);
+        PlanJoinAfterADot(node);
 
         switch (node) {
             case EnumDeclarationSyntax enumeration:
@@ -2563,8 +2564,8 @@ public sealed class BreakPlan {
                 group,
                 GroupMode.Preserve,
                 new(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: true),
-                ChainHeadIsParenthesised(root),
-                OwnLevel: !ChainHeadIsParenthesised(root)
+                HeadSharesTheLevelAroundIt(root),
+                OwnLevel: !HeadSharesTheLevelAroundIt(root)
             )
         );
 
@@ -2874,6 +2875,36 @@ public sealed class BreakPlan {
         return options.WrapBeforeFirstMethodCall || headIsACall ? dots.Count : dots.Count - 1;
     }
 
+    /// <summary>
+    ///     The gap after a member access's dot — or a <c>?.</c>'s — is joined: the name follows its dot.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured (#536) on a property, a call, a <c>?.</c>, a run of them, <c>this.</c>, a generic call
+    ///     and a statement's head: the oracle joins every author's break after the dot, <c>c.</c> / <c>X</c>
+    ///     comes back <c>c.X</c>, under <c>keep_user_linebreaks = true</c>. A break *before* the dot is the
+    ///     chain's and is kept; a comment after the dot keeps the break, which the gap rules already do. Not
+    ///     a qualified name: <c>using System.</c> / <c>Text;</c> is kept. Only where a dot is never a break
+    ///     point of its own — <c>skala_wrap_after_dot_in_method_calls = false</c>, the export's value; the
+    ///     other value plans the points after the dots in <see cref="PlanChainedCalls" />, which is walked
+    ///     first and wins.
+    /// </remarks>
+    void PlanJoinAfterADot(SyntaxNode node) {
+        if (options.WrapAfterDotInMethodCalls) {
+            return;
+        }
+
+        var name = node switch {
+            MemberAccessExpressionSyntax access => access.Name.GetFirstToken(),
+            MemberBindingExpressionSyntax binding => binding.Name.GetFirstToken(),
+            _ => default
+        };
+
+        if (!name.IsKind(SyntaxKind.None)
+            && !name.LeadingTrivia.Concat(name.GetPreviousToken().TrailingTrivia).Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))) {
+            Flat(name);
+        }
+    }
+
     /// <summary>Whether <paramref name="invocation" /> is <c>nameof(…)</c>, read from syntax.</summary>
     internal static bool IsNameOf(InvocationExpressionSyntax invocation) =>
         invocation is {
@@ -2891,6 +2922,25 @@ public sealed class BreakPlan {
     ///     not a point — `(a).B\n.C()` has one point, before `.B`, so its group is never described and
     ///     the frame is the only mechanism there.
     /// </remarks>
+    /// <summary>
+    ///     Whether a chain's parenthesised head makes it take its level only when nothing around it
+    ///     spends one (SK-DIV-0112) — unless the chain governs a switch expression.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured for #470's last row (SK-DIV-0158): <c>=&gt;</c> / <c>(</c> / <c>a).B().C() switch {</c>,
+    ///     <c>(</c> / <c>a).B</c> / <c>.C() switch</c>, <c>(a + b).C()</c> / <c>.D() switch</c> and
+    ///     <c>(a + b).C</c> / <c>.D switch</c> all put the dots one level past the arrow's line, where the
+    ///     same chains with no switch after them put the dots on the <c>(</c>'s column. Under <c>var x =</c>
+    ///     and <c>return</c> the two agree. The switch's arms then nest from the dots' line
+    ///     (<see cref="CSharpDocumentBuilder" />'s anchor at the keyword).
+    /// </remarks>
+    internal static bool HeadSharesTheLevelAroundIt(SyntaxNode root) =>
+        ChainHeadIsParenthesised(root) && !GovernsASwitch(root);
+
+    /// <summary>Whether <paramref name="root" /> is a switch expression's governing expression.</summary>
+    internal static bool GovernsASwitch(SyntaxNode root) =>
+        root.Parent is SwitchExpressionSyntax owner && owner.GoverningExpression == root;
+
     internal static bool ChainHeadIsParenthesised(SyntaxNode root) {
         var node = root;
         while (true) {
@@ -2943,7 +2993,7 @@ public sealed class BreakPlan {
     ///     <c>first,</c> / <c>x =&gt; source…</c> / <c>.Where(p)</c> one level past the lambda's line).
     /// </remarks>
     bool SharesTheLevelAroundIt(SyntaxNode root) =>
-        ChainHeadIsParenthesised(root)
+        HeadSharesTheLevelAroundIt(root)
         || root.Parent is IfStatementSyntax or WhileStatementSyntax or DoStatementSyntax
         && IsAHeaderCondition(root)
         || options.PlaceSingleMethodArgumentLambdaOnSameLine
@@ -3431,7 +3481,9 @@ public sealed class BreakPlan {
                 // ⚠ A kept break before a colon somewhere inside the value is a hard line, which would
                 // otherwise break this group too: `Q: {` / `X` / `: 1` came out `Q:` / `{` (#436). The
                 // oracle keeps the value on the name's line, so the group asks the arrow's question.
-                BreaksOnlyIfHeadOverflows: HoldsAKeptColonBreak(subpattern.Pattern)
+                // ⚠ And so does a kept break anywhere inside the value (#532): `{ X: (2` / `, 3) }` keeps
+                // `X: (2` on one line in the oracle, where the hard line made this group break after `X:`.
+                BreaksOnlyIfHeadOverflows: HoldsAKeptColonBreak(subpattern.Pattern) || HoldsAKeptBreak(subpattern.Pattern)
             )
         );
     }
@@ -6590,6 +6642,11 @@ public sealed class BreakPlan {
     }
 
     bool KeepsTheBreakBefore(SyntaxToken colon) => options.KeepsUserBreaksBetweenItems && BreaksBefore(colon);
+
+    /// <summary>Whether the author broke a line inside <paramref name="node" /> that the formatter keeps.</summary>
+    bool HoldsAKeptBreak(SyntaxNode node) =>
+        options.KeepUserLinebreaks
+        && node.DescendantTokens().Skip(1).Any(BreaksBefore);
 
     bool HoldsAKeptColonBreak(SyntaxNode node) =>
         node.DescendantNodes()

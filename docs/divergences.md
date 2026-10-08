@@ -7180,7 +7180,12 @@ arrow stays and the chain stays whole.
   lambda, `return` and an arm, both equal to the oracle). Second row **open** — re-asked for #470
   on 2026-10-08 and unchanged: under `=>` a parenthesised chain head with no switch after it puts its
   dots on the `(`'s column (SK-DIV-0112), and with the chain governing a switch the oracle spends the
-  chain's level after all (`.C() switch {` at 12). Measured further on nine shapes: it is the
+  chain's level after all (`.C() switch {` at 12). ⚠ **Fixed in #470's second round (2026-10-08)**,
+  as measured below: `BreakPlan.HeadSharesTheLevelAroundIt` exempts a chain governing a switch from
+  SK-DIV-0112's shared level, for a group, a property fill and a frame alike, and the switch's anchor is
+  pushed at its keyword (`AnchorAtLine`) when the chain's head is parenthesised and the chain broke.
+  Pinned by `constructs/syntax/switch-over-parenthesised-chain.cs` and
+  `GroupingParenthesisChainBrokenAfterIssue470Tests`. Measured further on nine shapes: it is the
   parenthesised head that matters, not the arrow. `=>` / `(` / `a).B().C() switch`, `(` / `a).B` /
   `.C() switch` and `(a` / `+ b).C()` / `.D() switch` all put the contents at 16, the dots at 12, the arms
   at **16** and the `}` at **12**; `var x = (` / `a).B()` / `.C() switch` and `return (` / `a).B().C()
@@ -8914,3 +8919,66 @@ introduces a chain link as that link's break.
 
 - options: none.
 - ⚠ status: **resolved** (#523). Pinned by `constructs/trivia/a-comment-above-a-chain-link.cs`.
+
+## SK-DIV-0340 — a positional pattern inside a property pattern broke after its subpattern's colon
+
+#532: `o is { X: (2` / `, 3) }` came back `X:` / `(2` / `    , 3)`; the oracle keeps `X: (2` and puts `, 3`
+on `X`'s column. Measured with the property pattern alone, inside a positional pattern and beside another
+subpattern. Two causes: the subpattern's group could not stay flat over the author's kept break inside the
+value, so it now asks the arrow's question when the value holds a kept break (`HoldsAKeptBreak`, as
+`HoldsAKeptColonBreak` already did for #436); and a positional list inside a property pattern opens no level
+of its own (SK-DIV-0114's #473 rule), holding a zero-column level so that the subpattern's frame does not pay
+one for its items either.
+
+- options: none.
+- ⚠ status: **resolved** (#532). Pinned by `constructs/syntax/parenthesis-residues.cs` and
+  `ParenthesisResiduesIssue532To536Tests`.
+
+## SK-DIV-0341 — an empty list's comment on its own line: the oracle adds a blank line before it
+
+#533, the edge #509 left: `Foo(` / `/* a */` / `)` comes back with a blank line after the `(`, for a block, a
+`//` and a multi-line comment, in an argument and a parameter list; and `Foo(/* a */` / `)` — a one-line comment
+beside the `(` that still ends its line — goes to column 0 like #509's. `LoneCommentAt` answers
+`BlankLineBefore`. ⚠ **The oracle is not idempotent here**: given its own answer back, it adds the blank line
+before a column-0 comment and before an own-line `/** */` too. Skala must be, so both are kept as the first
+pass's fixed point — and the one row that costs is an author's own-line `/** */`, which the oracle gives a
+blank line and Skala does not. Not in the fixture.
+
+- options: none.
+- ⚠ status: **resolved** but for the own-line `/** */` row (#533). Pinned by
+  `constructs/syntax/parenthesis-residues.cs` and `ParenthesisResiduesIssue532To536Tests`.
+
+## SK-DIV-0342 — a long qualified name inside `nameof` broke after the `=`
+
+#534: `var n4 = nameof(a.Bbbb….Cccc.Dddd);` past the margin — the oracle breaks before `.Cccc`, one level in.
+⚠ Already right on the merged tree when re-measured for this issue: #507 leaves `nameof`'s parentheses
+unplanned and group F's member-access fill (#482) breaks at the last dot that fits. Sabotaging each of this
+round's changes leaves it right, so none of them is the cause; an earlier probe that disagreed could not be
+reproduced. Pinned, not changed.
+
+- options: none.
+- ⚠ status: **resolved** (#534, by #482 and #507). Pinned by `ParenthesisResiduesIssue532To536Tests`.
+
+## SK-DIV-0343 — a chain lifted through two binaries and two groupings sat one lift short
+
+#535: `((point` / `.X` / `- x)` / `* (point.X - x))` / `+ …` under an arrow — the oracle puts `.X` at 20, Skala
+had 16. ⚠ Right on the merged tree: group F's chain level under operators (#457, `IndentFlags.ChainLevel`)
+together with #481's lifts, once a property fill's own level lifts too (the merge's own fix). Pinned.
+
+- options: none.
+- ⚠ status: **resolved** (#535). Pinned by `constructs/syntax/parenthesis-residues.cs` and
+  `ParenthesisResiduesIssue532To536Tests`.
+
+## SK-DIV-0344 — an author's break after a member access's dot was kept
+
+#536: `c.` / `X` came back as written, and `a.B().` / `C().` / `D()` came back with dots alone on their lines.
+The oracle joins every such break: a property, a call, a `?.`, a run of them, `this.`, a generic call and a
+statement's head (`System.` / `Console.WriteLine()`), measured; a break *before* a dot is kept, and so is one
+after a `//` or a `/* */` comment there. `BreakPlan.PlanJoinAfterADot` makes the name's gap flat at
+`skala_wrap_after_dot_in_method_calls = false`. ⚠ Not a qualified name, and found beside it: `using System.` /
+`Text;` is kept by the oracle with `Text` one level in, where Skala writes it at column 0. Open, not this
+issue's.
+
+- options: `skala_wrap_after_dot_in_method_calls` (the export's `false`).
+- ⚠ status: **resolved** (#536); the `using` row is open. Pinned by `constructs/syntax/parenthesis-residues.cs`
+  and `ParenthesisResiduesIssue532To536Tests`.

@@ -751,7 +751,7 @@ public sealed partial class CSharpDocumentBuilder {
                     // tuple: `(\n a).B\n.C()` puts `.C()` on the `(`'s own column (SK-DIV-0112). The
                     // group half of the same rule is BreakPlan.PlanChainedCalls' HoldsLevel; this is
                     // the frame half, for an author's break before a dot that is not a point.
-                    HoldsLevel: IsChainRoot(node) && BreakPlan.ChainHeadIsParenthesised(node),
+                    HoldsLevel: IsChainRoot(node) && BreakPlan.HeadSharesTheLevelAroundIt(node),
 
                     // ⚠ And a chain pays its level once. The group half — PlanChainedCalls' OwnLevel —
                     // opens a continuation scope over the whole chain when the chain has points, and
@@ -1501,9 +1501,15 @@ public sealed partial class CSharpDocumentBuilder {
         // `    ) switch {` / `        _ => 0` / `    };` — wherever VisitDelimited put it. An argument
         // list's `)` comes back to its opener's level and the arms nest from the statement as before.
         // So the anchor is pushed at the `switch` keyword and records that line's own indentation.
+        // ⚠ And so do the arms of a switch over a chain whose head is parenthesised, once the chain
+        // broke: they nest from the dots' line, `(` / `a).B()` / `.C() switch {` / arms two levels in /
+        // `}` one, where a chain with an ordinary head keeps them at the statement's (SK-DIV-0158).
         var anchorAtKeyword = anchored
             && node is SwitchExpressionSyntax { GoverningExpression: var governing }
-            && KeepsAClosingParenthesisBeforeASwitch(governing);
+            && (KeepsAClosingParenthesisBeforeASwitch(governing)
+                || IsChainRoot(governing)
+                && BreakPlan.ChainHeadIsParenthesised(governing)
+                && HasLineBreak(governing.SpanStart, governing.Span.End));
         if (anchored && !anchorAtKeyword) {
             OpenIndent(IndentKind.Anchor);
         }
@@ -1781,9 +1787,21 @@ public sealed partial class CSharpDocumentBuilder {
 
         var savedDepth = continuousDepth;
         var pending = 0;
+
+        // ⚠ A nested positional list opens no scope, but its contents are still inside a list: a break
+        // between its items is not a continuation any frame around it pays for. Held at zero columns, as
+        // GroupPlan.HoldsLevel holds one — inside a property pattern's braces nothing else is open, and
+        // the subpattern's frame paid a level for `, 3` (#532).
+        var holding = false;
         foreach (var child in node.ChildNodesAndTokens()) {
             if (child.IsToken) {
                 var token = child.AsToken();
+                if (holding && token.SpanStart == close.SpanStart) {
+                    EmitUpTo(close.SpanStart);
+                    ReleaseContinuationLevel();
+                    holding = false;
+                }
+
                 if (opened > 0 && token.SpanStart == close.SpanStart) {
                     // ⚠ A grouping parenthesis's or a tuple's `)` on a line of its own is a continuation
                     // line like any other (#442, SK-DIV-0203): measured, `p = (a + b` / `    );`,
@@ -1855,6 +1873,11 @@ public sealed partial class CSharpDocumentBuilder {
 
                 pending = 0;
 
+                if (levels == 0 && token.SpanStart == open.SpanStart && IsNestedPositionalList(node) && !AlignsFromOwnColumn(node)) {
+                    HoldContinuationLevel();
+                    holding = true;
+                }
+
                 if (opened == 0 && levels > 0 && token.SpanStart == open.SpanStart) {
                     EmitUpToTheAlignmentAnchor(node, scopeKind);
                     var brokenAfter = node is ParenthesizedExpressionSyntax grouping
@@ -1890,6 +1913,11 @@ public sealed partial class CSharpDocumentBuilder {
             }
         }
 
+        if (holding) {
+            EmitUpTo(close.SpanStart);
+            ReleaseContinuationLevel();
+        }
+
         if (opened > 0) {
             EmitUpTo(close.SpanStart);
             if (element) {
@@ -1918,9 +1946,11 @@ public sealed partial class CSharpDocumentBuilder {
 
         for (var ancestor = node.Parent; ancestor is not null; ancestor = ancestor.Parent) {
             switch (ancestor) {
-                case PositionalPatternClauseSyntax or ParenthesizedVariableDesignationSyntax:
+                // ⚠ A property pattern's braces are a level the list nests inside too: `{ X: (2` / `, 3) }`
+                // puts `, 3` on `X`'s column (#532).
+                case PositionalPatternClauseSyntax or ParenthesizedVariableDesignationSyntax or PropertyPatternClauseSyntax:
                     return true;
-                case PatternSyntax or SubpatternSyntax or PropertyPatternClauseSyntax or VariableDesignationSyntax:
+                case PatternSyntax or SubpatternSyntax or VariableDesignationSyntax:
                     continue;
                 default:
                     return false;
@@ -2893,9 +2923,7 @@ public sealed partial class CSharpDocumentBuilder {
     LoneComment LoneCommentAt(int index) {
         if (index <= 0
             || index + 1 >= pieces.Length
-            || pieces[index].Kind is not (PieceKind.BlockComment or PieceKind.BlockDocComment)
-            || !pieces[index].Text.Contains('\n')
-            || pieces[index].StartsLine
+            || pieces[index].Kind is not (PieceKind.BlockComment or PieceKind.BlockDocComment or PieceKind.LineComment)
             || pieces[index - 1].Kind != PieceKind.Token
             || pieces[index + 1].Kind != PieceKind.Token) {
             return LoneComment.None;
@@ -2911,7 +2939,36 @@ public sealed partial class CSharpDocumentBuilder {
             return LoneComment.None;
         }
 
-        return open.Parent.Parent is ParenthesizedLambdaExpressionSyntax ? LoneComment.CloserOnly
+        var lambda = open.Parent.Parent is ParenthesizedLambdaExpressionSyntax;
+
+        // ⚠ A comment the author already put on a line of its own gets a blank line before it (#533):
+        // `Foo(` / `` / `/* a */` / `)`, for a block, a doc and a line comment, one line or several, in an
+        // argument and a parameter list. Unmeasured in a lambda's parameter list, which is left alone.
+        // ⚠ Except a block comment already at column 0, which is this rule's own output: the oracle is not
+        // idempotent there — given its answer back it adds the blank line — and Skala must be, so the
+        // column-0 layout is kept as the fixed point of the first pass, whose answer it is.
+        // ⚠ And a `/** */` comment on its own line, for the same reason: it is where the doc comment
+        // beside a `(` goes, and the blank line the oracle adds on its second pass would be Skala's. That
+        // one row of #533 — an author's own-line `/** */` — keeps no blank line, and differs.
+        if (pieces[index].StartsLine) {
+            return lambda ? LoneComment.None
+                : pieces[index].Kind == PieceKind.BlockComment && LineStart(pieces[index].Span.Start) == pieces[index].Span.Start
+                    ? LoneComment.ColumnZero
+                    : pieces[index].Kind == PieceKind.BlockDocComment
+                        ? LoneComment.OwnLine
+                        : LoneComment.BlankLineBefore;
+        }
+
+        // ⚠ Beside the `(`, a comment that ends its line — spanning lines, or with the `)` on the next —
+        // goes to column 0: `Foo(/* a */` / `)` as much as `Foo(/* a` / `b */)` (#533). One that does not
+        // end its line, `Foo(/* a */)`, stays.
+        var endsItsLine = pieces[index].Text.Contains('\n')
+            || HasLineBreak(pieces[index].Span.End, pieces[index + 1].Span.Start);
+        if (pieces[index].Kind == PieceKind.LineComment || !endsItsLine) {
+            return LoneComment.None;
+        }
+
+        return lambda ? LoneComment.CloserOnly
             : pieces[index].Kind == PieceKind.BlockDocComment ? LoneComment.OwnLine
             : LoneComment.ColumnZero;
     }
@@ -2927,7 +2984,10 @@ public sealed partial class CSharpDocumentBuilder {
         OwnLine,
 
         /// <summary>A <c>/* */</c> comment: a line of its own at column 0, and the <c>)</c> on another.</summary>
-        ColumnZero
+        ColumnZero,
+
+        /// <summary>A comment already on a line of its own: a blank line before it, and the <c>)</c> on another.</summary>
+        BlankLineBefore
     }
 
     /// <summary>The leading whitespace of the source line <paramref name="position" /> is on.</summary>
@@ -3201,9 +3261,10 @@ public sealed partial class CSharpDocumentBuilder {
         // own, and so does the `)` after it (#509). See LoneCommentAt.
         if (!options.DisableLineBreakChanges
             && (nextPieceIndex >= 0
-                && LoneCommentAt(nextPieceIndex) is LoneComment.OwnLine or LoneComment.ColumnZero
+                && LoneCommentAt(nextPieceIndex) is LoneComment.OwnLine or LoneComment.ColumnZero or LoneComment.BlankLineBefore
                 || LoneCommentAt(lastPiece) != LoneComment.None)) {
-            Break(nextPieceIndex, nextToken, 0, DefaultNewLine());
+            var blankBefore = nextPieceIndex >= 0 && LoneCommentAt(nextPieceIndex) == LoneComment.BlankLineBefore;
+            Break(nextPieceIndex, nextToken, blankBefore ? 1 : 0, DefaultNewLine());
             return;
         }
 
