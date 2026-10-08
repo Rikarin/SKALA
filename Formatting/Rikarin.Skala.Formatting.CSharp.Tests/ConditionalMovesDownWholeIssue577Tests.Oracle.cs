@@ -1,10 +1,8 @@
 using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
-using Microsoft.CodeAnalysis.Text;
-using Rikarin.Skala.Core.Configuration;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
-/// <summary>Issue #577's oracle answer, kept apart from the source it answers so that each file stays a readable length.</summary>
+/// <summary>Issue #577's oracle answer, kept apart from the source it answers.</summary>
 public sealed partial class ConditionalMovesDownWholeIssue577Tests {
     static readonly string Oracle = $$"""
                                       class T {

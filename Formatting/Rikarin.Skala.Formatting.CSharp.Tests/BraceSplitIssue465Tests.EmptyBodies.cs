@@ -1,6 +1,3 @@
-using Microsoft.CodeAnalysis.Text;
-using Rikarin.Skala.Core.Configuration;
-
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>Issue #465's empty bodies: the empty-block key beside the brace key.</summary>
