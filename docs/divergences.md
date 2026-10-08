@@ -8769,3 +8769,30 @@ left operand (#457), where the chain takes a level past the operator's. Not wire
 
 - options: none.
 - ⚠ status: **open**, measured.
+
+## SK-DIV-0320 — a block comment on its own line above an array initializer's first element stayed there
+
+#522: `new[] {` / `/* c */` / `1` comes back `/* c */ 1` from the oracle; Skala kept the break after the
+comment. Measured 2026-10-08 with `Testing ask` on twenty shapes: the join happens for `/* */` and `/** */`,
+one comment or two on a line (and on the last of two lines), in an implicit, explicit and field-initializer
+array, before a nested or a multi-token element, with a blank line after the `{` or without. Not after
+`{ /* c */` on the brace's line, not after a `//`, and not in a collection, object, anonymous or `with`
+initializer, a collection expression, a property pattern or a switch expression, which all keep the break.
+The point after the `{` survives the comment (#409) and its group is broken, so it broke; the `{`'s break is
+already taken before the comment. `CSharpDocumentBuilder.FirstArrayElementUnderAnOwnLineComment`.
+
+- options: none.
+- ⚠ status: **resolved** (#522). Pinned by `constructs/trivia/a-block-comment-above-the-first-array-element.cs`.
+
+## SK-DIV-0321 — a comment above a chain link paid a second continuation level
+
+#523: `var y = a` / blank / `// c` / `.B();` put `.B()` one level past the comment, where the oracle keeps it on
+the comment's column. Measured on thirteen shapes: with and without the blank line, `//`, two `//` lines and
+`/* */`, `.` and `?.`, after `=`. ⚠ It was two breaks each paying a level: the break before the comment paid the
+statement's, the break before the dot then paid the chain's. Inside an argument (`Call(a` / `// c` / `.B())`)
+it was the other way round — the comment got no level and sat a level short of `.B()`. A comment before a
+later link, after `return` and as a statement already agreed. `FrameToSpend` now reads a comment run that
+introduces a chain link as that link's break.
+
+- options: none.
+- ⚠ status: **resolved** (#523). Pinned by `constructs/trivia/a-comment-above-a-chain-link.cs`.

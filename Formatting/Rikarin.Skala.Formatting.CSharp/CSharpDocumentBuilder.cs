@@ -2955,6 +2955,17 @@ public sealed partial class CSharpDocumentBuilder {
             && nextKind == PieceKind.Token
             && plan.TryGap(nextStart, out spec);
 
+        // ⚠ An array initializer's first element joins a block comment on its own line above it (#522):
+        // `new[] {` / `/* c */` / `1` comes back `/* c */ 1`. The `{`'s break is already taken before the
+        // comment, so the point after it has nothing left to break. Measured for `/* */` and `/** */`, one
+        // comment or two on a line, an implicit, explicit and field-initializer array, a nested element;
+        // not after `{ /* c */` on the brace's line, and not in a collection, object, anonymous or `with`
+        // initializer, a collection expression or a property pattern, which all keep the break.
+        if (planned && previous.Kind != PieceKind.Token && FirstArrayElementUnderAnOwnLineComment(lastPiece)) {
+            EmitFlatGap(previous, nextKind, nextToken, gap);
+            return;
+        }
+
         if (planned) {
             // ⚠ A preserved run goes *before* the point rather than into its flat rendering, because
             // a point's flat form is one space or nothing and the run may be wider. The writer
@@ -3032,6 +3043,31 @@ public sealed partial class CSharpDocumentBuilder {
 
         // An author's break nothing planned: the draft measure reads it as a space (SK-DIV-0208).
         doc.FlagLastLine(LineFlags.KeptBreak);
+    }
+
+    /// <summary>
+    ///     Whether the block comments ending at <paramref name="lastPieceIndex" /> follow a non-empty array
+    ///     initializer's <c>{</c> and at least one of them starts a line. See #522 in <see cref="EmitGap" />.
+    /// </summary>
+    bool FirstArrayElementUnderAnOwnLineComment(int lastPieceIndex) {
+        var startsLine = false;
+        for (var i = lastPieceIndex; i >= 0; i--) {
+            var piece = pieces[i];
+            switch (piece.Kind) {
+                case PieceKind.BlockComment or PieceKind.BlockDocComment:
+                    startsLine |= piece.StartsLine;
+                    continue;
+                case PieceKind.Token:
+                    return startsLine
+                        && tokens[piece.TokenIndex] is { RawKind: (int)SyntaxKind.OpenBraceToken } open
+                        && open.Parent is InitializerExpressionSyntax { Expressions.Count: > 0 } array
+                        && array.IsKind(SyntaxKind.ArrayInitializerExpression);
+                default:
+                    return false;
+            }
+        }
+
+        return false;
     }
 
     string DefaultNewLine() =>
@@ -3264,9 +3300,30 @@ public sealed partial class CSharpDocumentBuilder {
     ///     spend. Stopping at the innermost frame leaves the body flush with its declaration.
     /// </remarks>
     int FrameToSpend(int nextPieceIndex, SyntaxToken nextToken) {
-        var beforeDot = nextToken.IsKind(SyntaxKind.DotToken)
-            || nextToken.IsKind(SyntaxKind.QuestionToken)
-            && nextToken.Parent is ConditionalAccessExpressionSyntax;
+        // ⚠ A comment run that introduces a chain link is that link's break (#523): the chain pays its
+        // level at the comment, and the link under it on the comment's column pays nothing more. Measured:
+        // `var y = a` / `// c` / `.B();` puts `.B()` on the comment's column, one level in, blank line above
+        // the comment or not, `//` or `/* */`, `.` or `?.`; Skala paid the statement's level for the
+        // comment and the chain's again for the dot. In an argument (`Call(a` / `// c` / `.B())`) it was
+        // the comment that came out a level short.
+        if (nextToken.IsKind(SyntaxKind.None) && nextPieceIndex >= 0) {
+            for (var i = nextPieceIndex; i < pieces.Length; i++) {
+                if (pieces[i].Kind == PieceKind.Token) {
+                    var under = tokens[pieces[i].TokenIndex];
+                    if (IsChainLinkStart(under)) {
+                        nextToken = under;
+                    }
+
+                    break;
+                }
+
+                if (!pieces[i].IsComment) {
+                    break;
+                }
+            }
+        }
+
+        var beforeDot = IsChainLinkStart(nextToken);
 
         for (var i = frames.Count - 1; i >= 0; i--) {
             if (!frames[i].Started) {
@@ -3340,6 +3397,11 @@ public sealed partial class CSharpDocumentBuilder {
 
         return -1;
     }
+
+    static bool IsChainLinkStart(SyntaxToken token) =>
+        token.IsKind(SyntaxKind.DotToken)
+        || token.IsKind(SyntaxKind.QuestionToken)
+        && token.Parent is ConditionalAccessExpressionSyntax;
 
     enum FrameKind {
         Unit,
