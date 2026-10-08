@@ -263,7 +263,9 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
                         Target:
                         IFieldReferenceOperation {
                             Instance:
-                            IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance }
+                            IInstanceReferenceOperation {
+                                ReferenceKind: InstanceReferenceKind.ContainingTypeInstance
+                            }
                         } target
                     } assignment
                 }) {

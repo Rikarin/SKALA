@@ -1114,7 +1114,8 @@ public sealed partial class CSharpDocumentBuilder {
                     // own like a lone conditional's, which only showed where nothing else paid one — as a
                     // call's argument and an array element, `x == 0` / `? 1` / `: b` / `? 2` with `? 1` a
                     // level past `x == 0` (measured 2026-10-08; after `return` the statement paid it).
-                    || ternary.WhenFalse is ConditionalExpressionSyntax && !plan.IsSteppedChainRoot(ternary)
+                    || ternary.WhenFalse is ConditionalExpressionSyntax
+                    && !plan.IsSteppedChainRoot(ternary)
                     || ternary.Parent is ParenthesizedExpressionSyntax;
                 // ⚠ Opened on the condition's *first* line unless the condition is a binary chain
                 // (#530, SK-DIV-0333). A condition that spans lines as a chain or an argument list —
@@ -1562,7 +1563,7 @@ public sealed partial class CSharpDocumentBuilder {
         // it here would mean turning an absolute scope into a relative one under every initializer in
         // `corpus/real` on the strength of a row that does not ask about it.
         var singleInsideInitializer = node is InitializerExpressionSyntax
-            or AnonymousObjectCreationExpressionSyntax
+                or AnonymousObjectCreationExpressionSyntax
             && !options.UseContinuousIndentInsideInitializerBraces;
 
         // ⚠ A generic type's `where` clauses come before its `{`, so the run belongs to this walk as
@@ -1794,10 +1795,10 @@ public sealed partial class CSharpDocumentBuilder {
         var innerIndent = node is TupleExpressionSyntax
             && options.AlignTupleComponents
             || IsAnAlignedAttributeSection(node, source)
-            ? IndentKind.Align
-            : singleInsideParens
-                ? IndentKind.OneLevel
-                : IndentKind.Continuous;
+                ? IndentKind.Align
+                : singleInsideParens
+                    ? IndentKind.OneLevel
+                    : IndentKind.Continuous;
 
         // ⚠ Which delimited scopes spend their level unconditionally — that is, even when another
         // scope opened on the same line — and which are collapsed with it. Both answers come from
@@ -3463,10 +3464,10 @@ public sealed partial class CSharpDocumentBuilder {
                 nextToken,
                 ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                 newLines == 0
-                ? DefaultNewLine()
-                : options.EnforceLineEndingStyle
                     ? DefaultNewLine()
-                    : FirstNewLine(gap) ?? DefaultNewLine()
+                    : options.EnforceLineEndingStyle
+                        ? DefaultNewLine()
+                        : FirstNewLine(gap) ?? DefaultNewLine()
             );
 
             return;
@@ -3511,10 +3512,10 @@ public sealed partial class CSharpDocumentBuilder {
                         PointFlags(spec.Rule, previous, nextKind, nextToken, gap, preserved is null),
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
-                        ? DefaultNewLine()
-                        : options.EnforceLineEndingStyle
                             ? DefaultNewLine()
-                            : FirstNewLine(gap) ?? DefaultNewLine()
+                            : options.EnforceLineEndingStyle
+                                ? DefaultNewLine()
+                                : FirstNewLine(gap) ?? DefaultNewLine()
                     );
                     return;
 
@@ -3534,10 +3535,10 @@ public sealed partial class CSharpDocumentBuilder {
                         nextToken,
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
-                        ? DefaultNewLine()
-                        : options.EnforceLineEndingStyle
                             ? DefaultNewLine()
-                            : FirstNewLine(gap) ?? DefaultNewLine()
+                            : options.EnforceLineEndingStyle
+                                ? DefaultNewLine()
+                                : FirstNewLine(gap) ?? DefaultNewLine()
                     );
                     return;
             }

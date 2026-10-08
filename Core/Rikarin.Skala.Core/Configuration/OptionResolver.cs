@@ -32,10 +32,10 @@ public sealed record ResolvedOption(
 
     public string SourceText =>
         Origin is not null
-        ? Located(Origin)
-        : Refused is null
-            ? "(default)"
-            : $"(default) ⚠ {Diagnostics.ConfigDiagnosticIds.OptionValueOutOfDomain} {Located(Refused)}";
+            ? Located(Origin)
+            : Refused is null
+                ? "(default)"
+                : $"(default) ⚠ {Diagnostics.ConfigDiagnosticIds.OptionValueOutOfDomain} {Located(Refused)}";
 
     static string Located(OptionOrigin origin) =>
         $"{origin.File}:{origin.Line.ToString(System.Globalization.CultureInfo.InvariantCulture)}";

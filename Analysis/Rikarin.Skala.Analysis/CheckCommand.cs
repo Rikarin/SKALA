@@ -567,10 +567,10 @@ public static class CheckCommand {
             || formattingFailed
             || loadCouldNotRead
             || report.Diagnostics.Any(static d => d.Id == RuleIds.TokenStreamChanged)
-            ? ExitCodes.InternalError
-            : !gate.Passed
-                ? ExitCodes.GateFailed
-                : ExitCodes.Ok;
+                ? ExitCodes.InternalError
+                : !gate.Passed
+                    ? ExitCodes.GateFailed
+                    : ExitCodes.Ok;
 
         return (new CommandResult(exit, output), report);
     }
