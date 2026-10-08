@@ -4,7 +4,8 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #504, SK-DIV-0201: a field&apos;s gap after its last attribute section and a block comment. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     Issue #504, SK-DIV-0201: a field&apos;s gap after its last attribute section and a block comment. Every expected
+///     string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class CommentedAttributeGapIssue504Tests {
@@ -12,9 +13,9 @@ public sealed class CommentedAttributeGapIssue504Tests {
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -28,7 +29,10 @@ public sealed class CommentedAttributeGapIssue504Tests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>#504: a field with a block comment after its last attribute section is declined when the joined line overflows, and a call or a creation only while its terminator alone overflows.</summary>
+    /// <summary>
+    ///     #504: a field with a block comment after its last attribute section is declined when the joined line
+    ///     overflows, and a call or a creation only while its terminator alone overflows.
+    /// </summary>
     [Fact]
     public void ACommentAfterTheAttribute_DeclinesTheJoinPastTheMargin() {
         Agrees(

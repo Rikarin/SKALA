@@ -763,7 +763,7 @@ public sealed class DocumentBuilder {
         }
 
         if (first >= 0 && ((LineFlags)nodes[first].Flags & LineFlags.AlignedListHead) != 0) {
-            alignedItems[group] = [.. ownPointNodes.Select(own => segment[own])];
+            alignedItems[group] = [..ownPointNodes.Select(own => segment[own])];
         }
 
         // ⚠ Whether the first point's measure reached the group's end without meeting a break —

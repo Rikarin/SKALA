@@ -4,7 +4,8 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #540, SK-DIV-0127: the gap between a field&apos;s modifiers and its type. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     Issue #540, SK-DIV-0127: the gap between a field&apos;s modifiers and its type. Every expected string is
+///     <c>jb cleanupcode</c> 2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class ModifierTypeGapIssue540Tests {
@@ -12,9 +13,9 @@ public sealed class ModifierTypeGapIssue540Tests {
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -28,7 +29,10 @@ public sealed class ModifierTypeGapIssue540Tests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>#540: the gap between a field&apos;s modifiers and its type breaks when the type does not fit after them, from the type&apos;s 121st column; the name follows by its own gap.</summary>
+    /// <summary>
+    ///     #540: the gap between a field&apos;s modifiers and its type breaks when the type does not fit after them, from
+    ///     the type&apos;s 121st column; the name follows by its own gap.
+    /// </summary>
     [Fact]
     public void ATypeThatDoesNotFitAfterTheModifiers_MovesBelowThem() {
         Agrees(

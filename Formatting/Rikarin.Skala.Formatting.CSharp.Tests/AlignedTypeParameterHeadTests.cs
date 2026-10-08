@@ -4,7 +4,8 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     SK-DIV-0351: an aligned type parameter list&apos;s head on its angle&apos;s line. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     SK-DIV-0351: an aligned type parameter list&apos;s head on its angle&apos;s line. Every expected string is
+///     <c>jb cleanupcode</c> 2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class AlignedTypeParameterHeadTests {
@@ -12,9 +13,9 @@ public sealed class AlignedTypeParameterHeadTests {
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -28,7 +29,10 @@ public sealed class AlignedTypeParameterHeadTests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>SK-DIV-0351: under skala_align_multiline_type_parameter_list = true a list whose head on the angle&apos;s line would be narrower than twelve columns breaks after the angle; twelve and wider keep it and align the rest.</summary>
+    /// <summary>
+    ///     SK-DIV-0351: under skala_align_multiline_type_parameter_list = true a list whose head on the angle&apos;s line
+    ///     would be narrower than twelve columns breaks after the angle; twelve and wider keep it and align the rest.
+    /// </summary>
     [Fact]
     public void ANarrowHead_BreaksAfterTheAngle() {
         Agrees(

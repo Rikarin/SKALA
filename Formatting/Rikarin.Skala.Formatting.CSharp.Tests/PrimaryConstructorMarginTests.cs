@@ -4,7 +4,8 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     SK-DIV-0198: the margin of a primary constructor&apos;s lone base type. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     SK-DIV-0198: the margin of a primary constructor&apos;s lone base type. Every expected string is
+///     <c>jb cleanupcode</c> 2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class PrimaryConstructorMarginTests {
@@ -12,9 +13,9 @@ public sealed class PrimaryConstructorMarginTests {
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -28,7 +29,10 @@ public sealed class PrimaryConstructorMarginTests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>SK-DIV-0198&apos;s margin: a primary constructor&apos;s lone base type breaks before the colon up to an 88-column continuation line nested, 89 at the top level, and keeps : B( past it.</summary>
+    /// <summary>
+    ///     SK-DIV-0198&apos;s margin: a primary constructor&apos;s lone base type breaks before the colon up to an
+    ///     88-column continuation line nested, 89 at the top level, and keeps : B( past it.
+    /// </summary>
     [Fact]
     public void ALoneBaseType_BreaksBeforeTheColonOnlyToAnEightyEightColumnContinuation() {
         Agrees(

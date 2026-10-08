@@ -3184,7 +3184,8 @@ public sealed partial class CSharpDocumentBuilder {
                     return !lineComment
                         && i != lastPieceIndex
                         && (!StopsAtAComment(tokens[piece.TokenIndex]) || plan.PlansPastALeadingComment(nextStart))
-                        && (!EndsAnAttributeRun(tokens[piece.TokenIndex]) || plan.PlansPastAnAttributeComment(nextStart))
+                        && (!EndsAnAttributeRun(tokens[piece.TokenIndex])
+                            || plan.PlansPastAnAttributeComment(nextStart))
                         && !(spansLines && StopsAtAMultiLineComment(tokens[piece.TokenIndex]));
                 default:
                     return false;
@@ -4371,11 +4372,14 @@ public sealed partial class CSharpDocumentBuilder {
     ///     margin is what Skala writes with or without the flag, where the oracle chops (SK-DIV-0352).
     /// </remarks>
     static bool IsAShortParameterBehindItsSection(SyntaxToken token) =>
-        token.Parent?.AncestorsAndSelf().OfType<ParameterSyntax>().FirstOrDefault() is
-            { AttributeLists: [{ Attributes.Count: 1 } section] } parameter
+        token.Parent?.AncestorsAndSelf().OfType<ParameterSyntax>().FirstOrDefault() is {
+            AttributeLists: [{ Attributes.Count: 1 } section]
+        } parameter
         && token == section.CloseBracketToken.GetNextToken()
         && parameter.Span.End - token.SpanStart <= 11
-        && !parameter.SyntaxTree.GetText().ToString(TextSpan.FromBounds(token.SpanStart, parameter.Span.End)).Contains('\n');
+        && !parameter.SyntaxTree.GetText()
+            .ToString(TextSpan.FromBounds(token.SpanStart, parameter.Span.End))
+            .Contains('\n');
 
     /// <summary>
     ///     Whether the token opens a tuple's item with a delimiter — the one fill whose head the oracle
