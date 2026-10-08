@@ -3006,6 +3006,15 @@ public sealed class BreakPlan {
             }
         }
 
+        // ⚠ As a sole lambda argument's body the fill is one level past the line it starts on (#557,
+        // measured): `Use(x => x.Alpha…Papa` / `.Quebec` one level in while the arrow stays, and
+        // `Use(x =>` / `x.Alpha…` / `.Quebec` one past the body once it breaks — a level of its own would
+        // be two on the arrow's line, and a shared one none below it. Among other arguments it keeps its
+        // own level: `x => x.Alpha…` / `.Quebec` two past the chopped list.
+        var fromLine = !HeadSharesTheLevelAroundIt(root)
+            && options.PlaceSingleMethodArgumentLambdaOnSameLine
+            && IsTheBodyOfASoleLambda(root);
+
         Describe(
             root,
             new(
@@ -3023,7 +3032,8 @@ public sealed class BreakPlan {
                         : 0
                 ),
                 HeadSharesTheLevelAroundIt(root),
-                OwnLevel: !HeadSharesTheLevelAroundIt(root)
+                OwnLevel: !HeadSharesTheLevelAroundIt(root) && !fromLine,
+                FromLine: fromLine
             )
         );
 
@@ -4918,7 +4928,8 @@ public sealed class BreakPlan {
                     // value =>` / `value.ToString() + "…";` at every width measured, where Skala broke the
                     // `=` because the whole lambda fitted on the line below (#453, SK-DIV-0050).
                     BreaksIfTooLong: !YieldsToTheLambdaArrow(value)
-                    && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member)),
+                    && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member))
+                    && !KeepsTheEqualsBeforeALambdaCall(node, value),
 
                     // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
                     // Every other right-hand side is measured by what is left of the line and breaks
@@ -4952,6 +4963,7 @@ public sealed class BreakPlan {
                     MinimumHead: yieldsToTheBracket || callee > 0 ? MinimumEqualsHead : 0,
                     CalleeWidth: callee,
                     YieldsThroughArrow: ArrowYieldWidthOf(value),
+                    LambdaLocal: ArrowYieldWidthOf(value) > 0 ? LambdaLocalOf(node) : LambdaLocal.None,
                     PatternHead: PatternHeadOf(node, equals, value),
                     PatternWidth: PatternHeadOf(node, equals, value) > 0
                         ? ((IsPatternExpressionSyntax)value).Pattern.Span.Length
@@ -5258,6 +5270,55 @@ public sealed class BreakPlan {
     ///     12 to 70 and parameter lists of 2 to 70: wherever the line through <c>=&gt;</c> fits, the arrow
     ///     breaks and the <c>=</c> never does, which Skala had the other way round from a head of 30.
     /// </remarks>
+    /// <summary>
+    ///     A local's <c>=</c> before a lambda whose body is a call, under a declarator name of at most nine
+    ///     columns: the oracle never breaks it (#453).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on <c>Func&lt;T…&gt; name = () =&gt; Callee(x, y);</c> over type widths of 2 to 58,
+    ///     name widths of 1 to 49, the body's <c>(</c> at the head's end and at columns 80 and 100, and
+    ///     line ends of 121 to 150: no name of nine columns or fewer breaks the <c>=</c> in any cell. The
+    ///     arrow or the arguments take the break by Skala's own rules. Wider names break it by a rule that
+    ///     moves with the name, the type and the <c>(</c> separately, and that is not wired.
+    /// </remarks>
+    static bool KeepsTheEqualsBeforeALambdaCall(SyntaxNode node, ExpressionSyntax value) =>
+        value is LambdaExpressionSyntax { ExpressionBody: InvocationExpressionSyntax }
+        && node is EqualsValueClauseSyntax {
+            Parent: VariableDeclaratorSyntax {
+                Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: LocalDeclarationStatementSyntax }
+            } declarator
+        }
+        && declarator.Identifier.Span.Length <= 9;
+
+    /// <summary>
+    ///     A local's <c>=</c> before a lambda with a bare-name body: the gates its declarator's name and
+    ///     type widths open (#558). See <see cref="LambdaLocal" />.
+    /// </summary>
+    static LambdaLocal LambdaLocalOf(SyntaxNode node) {
+        if (node is not EqualsValueClauseSyntax {
+                Parent: VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax {
+                        Variables.Count: 1, Parent: LocalDeclarationStatementSyntax
+                    } declaration
+                } declarator
+            }) {
+            return LambdaLocal.None;
+        }
+
+        var type = declaration.Type.Span.Length;
+        var name = declarator.Identifier.Span.Length;
+        var local = LambdaLocal.Measured;
+        if (name <= 10 + (type + 4) / 12) {
+            local |= LambdaLocal.ArrowWhileItFits;
+        }
+
+        if (name <= (type - 6) / 5 + 1) {
+            local |= LambdaLocal.ChopsPastTheParenthesis;
+        }
+
+        return local;
+    }
+
     static int ArrowYieldWidthOf(ExpressionSyntax value) =>
         value is LambdaExpressionSyntax { ExpressionBody: IdentifierNameSyntax } lambda
         && !lambda.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
@@ -5990,10 +6051,39 @@ public sealed class BreakPlan {
             // with no ordering question asked.
             ArrowWinsOverTheChain(lambda)
             ? new GroupFacts(BreaksIfTooLong: true)
-            : ArrowMovesACallChainDown(body)
-                ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
-                : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+            : IsAFilledSoleLambda(lambda, body)
+                ? new GroupFacts(
+                    BreaksIfTooLong: true,
+                    LambdaParameters: lambda switch {
+                        SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
+                        ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Span.Length,
+                        _ => 1
+                    },
+                    LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
+                    LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
+                )
+                : ArrowMovesACallChainDown(body)
+                    ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
+                    : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
+
+    /// <summary>
+    ///     A sole lambda argument whose body is a member access the property fill breaks: its arrow is
+    ///     decided by <see cref="GroupFacts.LambdaParameters" />'s measured line (#557).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on a statement's call, <c>U(x =&gt; x.A.B…Z)</c>, with parameter lists of one to
+    ///     ten columns, lambdas starting at columns 10 to 55 and line ends 112 to 175: 9 of 1 234 cells
+    ///     differ, all parenthesised lambdas one column from the boundary. Elsewhere — among other
+    ///     arguments, as an <c>=</c>'s value — the arrow breaks when the body fits below, as over a
+    ///     chain of calls.
+    /// </remarks>
+    bool IsAFilledSoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
+        options.PlaceSingleMethodArgumentLambdaOnSameLine
+        && IsTheBodyOfASoleLambda(body)
+        && ChainPointCount(body, options) == 0
+        && ArrowMovesACallChainDown(body)
+        && lambda.Modifiers.Count == 0;
 
     /// <summary>
     ///     A lambda whose body is a chain of calls the author did not break: its arrow breaks exactly when
@@ -6008,7 +6098,7 @@ public sealed class BreakPlan {
     /// </remarks>
     bool ArrowMovesACallChainDown(ExpressionSyntax body) =>
         IsChainRoot(body)
-        && ChainPointCount(body, options) > 0
+        && (ChainPointCount(body, options) > 0 || TrailingProperty(body) is not null)
         && source.AsSpan(body.SpanStart, body.Span.Length).IndexOfAny('\r', '\n') < 0;
 
     /// <summary>

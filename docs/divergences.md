@@ -2347,6 +2347,47 @@ name-width sweep at a fixed `(` column.
   `constructs/wrapping/lambda-parameters-before-the-arrow.cs`; the call body **blocked**, measured as
   above. The rule that would arm them is known to one constant and a three-column wander,
   both in [sk-div-preference-sweep.md](sk-div-preference-sweep.md).
+⚠ **Round 4 of #453: the type × name sweep, run. The narrow-name half is wired and the rest stays blocked.**
+
+Measured with `Testing ask` on `Func<T…> name = () => Callee(x, y);`, 10 828 cells over these dimensions:
+- type widths 2 to 58;
+- name widths 1 to 49, four apart;
+- line ends 121 to 150;
+- three placements of the body's `(`: right after a four-column callee (moving with the head), and fixed
+  at columns 80 and 100.
+
+What it settles:
+
+- **A name of nine columns or fewer never breaks the `=`**, in any cell of any grid. Skala broke it on most
+  of them. Wired as `BreakPlan.KeepsTheEqualsBeforeALambdaCall`, a single-declarator local with a call for
+  its lambda's body. The `=` now stays and the arrow or the arguments break by Skala's own rules. In the
+  three grids, Skala's narrow-name errors:
+
+  | `(` placement | errors before | errors after |
+  |---|---|---|
+  | after a four-column callee | 924 | 6 |
+  | column 80 | 856 | 298 |
+  | column 100 | at least 1 326 | 1 263 |
+
+  Pinned by `constructs/breaks/equals-kept-before-a-lambda-call.cs`.
+- **The `=` breaks only past two gates.** The first is a name of about 13 (a name of 9 never does, 13
+  does). The second is a type gate that moves with the `(`: types up to 22 at a `(` of 100 and up to 18
+  at 80 break it, and no wider type does, at any name up to 49. With the `(` right after a short callee,
+  the name gate moves to 29–33.
+- **How far the `=` reaches** (round 3's `g`) grows with the head but is not a function of it. At a head of
+  56 it is 20 columns with a type of 2 and 23 with a type of 22. At a `(` of 80 it is capped, and the cap
+  grows a column per four of type (12 to 16).
+- **For narrow names, the arrow against the arguments** is round 3's floor `F`. At a `(` of 80 the arrow
+  breaks while the arguments are narrower than 54, 56, 57, 59, 61 and 62 for heads of 20 to 40, four
+  apart. At a head of 44 it never breaks. At a `(` of 100 the arrow holds to a head of 76 and drops at 80.
+  The drop's position does not fit `max(65, p − 20)` at both columns: 44 against 60 at a `(` of 80.
+
+**What still blocks it:** the `=`'s gates and reach are functions of the name, the type and the `(`
+column separately, measured here at three `(` placements only. Its floor `F` and the drop are known only
+at the two fixed columns. A table that reproduces every measured cell needs the `(` swept one column at a
+time across the type × name plane, and that has not been done. Skala's remaining errors in these grids
+are the arrow-versus-arguments cells (`A` where Skala chops) and the `=` past the gates.
+
 ## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
 
 ReSharper ships nine keys that **suppress a class of edit** rather than choosing between two
@@ -9350,6 +9391,45 @@ depends on the receiver, the line end, the type's width and the keyword (`is` ha
 receiver of 6, `as string` from 14). Only one type width per keyword was measured, so a table over it
 would be keyed on a dimension the grid has not varied.
 
+⚠ **Round 4: the type-width dimension, swept. The decision is now known except for two ties, and it is
+still not wired.**
+
+Measured on `return r….P… as T…;` and `… is T…;` at indent 12, 3 220 cells:
+- type widths 1, 3, 6, 10, 15, 20 and 30;
+- receivers of 1 to 30 columns;
+- line ends 118 to 140, one column at a time.
+
+`is` and `as` decide identically at equal widths. Five outcomes:
+
+| outcome | layout |
+|---|---|
+| `K` | `… as` / `T;` |
+| `W` | `…` / `as T;` |
+| `D` | the dot one level in, `return r` / `.P… as T;` |
+| `x` | `return r` / `.P…` two levels in / `as` / `T;`, each on its own line |
+| fits | the line fits whole |
+
+Three of them are settled exactly by which layouts fit:
+
+- **Feasibility decides most cells.** If none of `K`, `W` or `D` fits, it is `x` (458 of 458 cells). If
+  only one fits, that one is taken (934 of 934 cells).
+- **One column over the margin** (line end 121) is `D`, except `K` for a receiver of at most
+  `(type − 10) / 5` columns. That holds on every row.
+- **When `K` and `D` both fit** (1 088 cells past column 121), `K` holds up to a line end that falls as the
+  receiver widens and rises as the type widens. For example, it holds to a `K` line of 117 at receiver
+  14 and type 6, to 114 at receiver 20 and type 6, and to 117 at receiver 20 and type 10. The best linear
+  rule in end, receiver, type and the two layouts' line widths misses 22 cells.
+- **When `W` and `D` both fit** (180 cells), the best linear rule misses 6.
+
+**What still blocks it** comes in two parts:
+- *The ties.* The two tie boundaries are not linear at this grid's spacing. A table needs the type and
+  the receiver swept one column at a time where the ties sit: types 3 to 12, receivers 6 to 32.
+- *A formatter construct.* `D` and `x` need a dot point inside a type-test operand, and in `x` its
+  level depends on whether the keyword's own break is taken (two levels when it is). `PlansTheFill`
+  excludes a type-test operand for exactly that reason, and nothing in `BreakPlan` can express a level
+  that is conditional on a sibling group. Skala writes `K` or `W` in all 1 172 `D` and `x` cells, and is
+  right on every `K`, `W` and fits cell.
+
 - ⚠ status: **resolved** for the band and for a plain member access without a type test; **open, blocked**
   for `is`/`as` past the band, measured as above. Pinned by `TypeTestKeywordIssue444Tests` and
   `constructs/breaks/member-access-last-dot.cs`.
@@ -10297,3 +10377,103 @@ the chain. Not wired.
 
 - options: `resharper_csharp_nested_ternary_style` (`autodetect`).
 - ⚠ status: **open**, measured.
+
+## SK-DIV-0371 — a lambda argument's arrow against the member-access fill in its body
+
+⚠ **#557, a regression from merging #482 with #453.** The round-2 merge replaced `PlanLastDot`, which
+covered only a `return`'s, a local's or an assignment's value, with group F's `PlanPropertyFill`, which is
+planned in every position `PlansTheFill` does not exclude. A lambda's expression body is not one of the
+exclusions. The arrow group's facts were `BreaksOnlyIfHeadOverflows`, and with the fill's dots as points
+the head `x.Alpha` always fits, so the arrow never broke. `C2((…) => firstParameterName.Length)` became
+`… => firstParameterName` / `.Length` at two levels. Bisected:
+- `bbf5dade`, the round-2 branch tip, passes `constructs/wrapping/lambda-parameters-before-the-arrow.cs`;
+- `397a9890`, the merge, fails it, and so does every master after it.
+
+Measured with `Testing ask` on `U(params => x.A.B…Z)` over these dimensions, 1 857 cells in all:
+- parameter lists `x`, `(x)`, `(Aaaa x)`, `(A x, B y)` and `(T… x)` of 5 to 74 columns;
+- lambdas starting at columns 10 to 55;
+- line ends 112 to 175, one column at a time near the boundary;
+- indents 8 and 12.
+
+Two rules come out of it:
+
+- **Which break.** The arrow breaks exactly when `9·below + 2·params − 2·start ≤ 969`. Otherwise the body
+  fills on the arrow's line. Here `below` is the column the body would end at on the continuation line,
+  `params` is the parameter text's width, and `start` is the lambda's column. A lambda without
+  parentheses also breaks its arrow whenever it starts at column 21 or later, however wide the body;
+  that was measured to a 175-column line. This is "the body fits below", which group F's #529 uses for a
+  call chain, with roughly ten columns of margin.
+- **Which level.** The fill is one level past the line it starts on. While the arrow stays,
+  `Use(x => x.Alpha…Papa` / `.Quebec` is one level in, where Skala wrote two. Once the arrow breaks,
+  `Use(x =>` / `x.Alpha…` / `.Quebec` is one level past the body. Among other arguments the list chops,
+  and the fill keeps its own level.
+
+Wired as `GroupFacts.LambdaParameters` / `LambdaHead` / `LambdaIsSimple`, decided in `Fitter.Decide`, and
+planned for a sole lambda argument by `BreakPlan.IsAFilledSoleLambda`. The fill's level is a from-line
+level in `PlanPropertyFill`. Any other lambda over a member-access body breaks its arrow when the body
+fits below (`ArrowMovesACallChainDown`).
+
+⚠ Not exact. 19 of the 1 857 grid cells differ, and so do 6 of 350 statements in the exploratory probes.
+All of them are parenthesised lambdas one column from the boundary, most with parameter lists of 60
+columns or more. At the same `below`, a body of `Alpha.Bravo…` names and a body of `Abcde` segments are
+decided differently, so the boundary also depends on where the body's dots fall. No linear rule over the
+body's end, the fill's first-line end, its remainder, the parameter width, the lambda's column or the
+line's end separates every cell; the best has 17 errors.
+
+- Not measured: an `=`'s lambda, a lambda with modifiers (left on the fits-below rule), and a call chain
+  in the same position. That last one breaks its arrow for a lambda from column 21 too, where Skala's
+  #529 rule keeps it and chops the inner call (`Use(x => x…Select(y =>` / `y` / `)`).
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
+- ⚠ status: **fixed** within the residue above. Pinned by
+  `constructs/wrapping/lambda-parameters-before-the-arrow.cs` and
+  `constructs/wrapping/lambda-arrow-over-a-property-fill.cs`.
+
+## SK-DIV-0372 — a local's `=` before a lambda with a bare-name body, past the margin
+
+⚠ **#558, and a refutation of round 3's own claim.** Round 3 (#453) wired the `=` to yield to the arrow
+"wherever the line through `=>` fits". That was measured with the declarator named `f` while the type was
+varied, and it holds only for narrow names. With `Func<A, B>` and names of 13 or more columns, the oracle
+breaks the `=` for a value narrower than a floor. Short parameter runs (`(A a1, A a2, …)`) and one long
+parameter type decide alike.
+
+Measured with `Testing ask` on `Func<T…> name = (…) => body;` over these dimensions, 12 805 cells in all:
+- type widths 2 to 59;
+- name widths 1 to 51, one column at a time from 8 to 18;
+- values (from `(` through `;`) of 12 to 135 columns;
+- bodies of 4 to 40 columns;
+- the `=>` ending 105 to 141.
+
+Four rules come out of it:
+
+- **While the line through `=>` fits**, the arrow breaks when the name is at most
+  `10 + ⌊(type + 4) / 12⌋` wide, the type measured whole, whatever the value. Past that gate the arrow
+  breaks only for a value at least `EqualsFloor.LambdaValue(head)` wide: 88 up to a head of 44, then
+  falling about a column per two and a half of head. A narrower value moves below the `=` whole.
+- **Once the `=>` is past the margin**, the `=` breaks while the `)` is still on the line (the `=>` ending
+  by column 123).
+- **Past that**, the `=` breaks only for a name wider than `⌊(type − 6) / 5⌋ + 1` and a value no wider than
+  the floor plus `⌊(5·body − 41) / 3⌋`. Otherwise the parameter list chops, `name = (` / parameters /
+  `) => body;`.
+- **The name and the type act separately.** The same head made of a wider name breaks the `=`, and made of
+  a wider type keeps the arrow. This is the same finding as #453's call body, so no table keyed on the
+  head alone can reproduce the grid.
+
+Wired as `LambdaLocal`, decided in the plan from the declaration's syntax, with
+`EqualsFloor.LambdaValue` and `EqualsFloor.BreaksBeforeAnOverflowingLambda` read in `Fitter.Decide`.
+Only for a single-declarator local, which is where it was measured. Fields and assignments keep round 3's
+rule.
+
+⚠ Not exact. 233 of the 12 805 cells differ:
+- ⚠ Along the gate's diagonal, at types of 18 to 50, a name exactly at the gate breaks the `=` only below
+  a much lower value. Those cells fit `56.5·name − 8·type − 458`, but that line does not hold at types
+  of 54 and 58.
+- ⚠ The floor is a column off at some types.
+- ⚠ 15 cells sit on the overflowing side's one-column jitter.
+
+Not counted: a line one column over the margin (end 121). There, a body of up to five columns chops the
+parameters at heads up to 37, and the rule does not reproduce it (45 cells). Also not counted: a
+parameter wider than the line, where the oracle breaks between its type and its name.
+
+- options: `skala_wrap_before_eq = false`, the exported value.
+- ⚠ status: **fixed within the residue above**. Pinned by `constructs/breaks/equals-before-a-lambda-floor.cs`
+  and, for the narrow name, `constructs/wrapping/lambda-arrow-over-a-name.cs`.
