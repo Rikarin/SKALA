@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
@@ -30,123 +31,123 @@ public sealed class AttributeArgumentChopIssue476Tests {
     }
 
     /// <summary>
-    ///     #476: behind one attribute section a parameter of at most eleven columns puts the section&apos;s arguments in
+    ///     #476: behind one attribute section a parameter of at most eleven columns puts the section's arguments in
     ///     a chop exactly when the joined line overflows; the oracle never stands it alone below a whole section.
     /// </summary>
     [Fact]
     public void AShortParameter_ChopsTheSectionWhenTheJoinedLineOverflows() {
         Agrees(
-            """
-            class C {
-                void M(int b, [A("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")] int a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [A("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")] int a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [A("{{R('x', 99)}}")] int a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [A("{{R('x', 99)}}")] int a
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [A("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")] int a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [A(
-                        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    )]
-                    int a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [A("{{R('x', 100)}}")] int a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [A(
+                          "{{R('x', 100)}}"
+                      )]
+                      int a
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [A("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")] int a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [A(
-                        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    )]
-                    int a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [A("{{R('x', 105)}}")] int a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [A(
+                          "{{R('x', 105)}}"
+                      )]
+                      int a
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [A("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 1)] string a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [A("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 1)] string a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [A("{{R('x', 93)}}", 1)] string a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [A("{{R('x', 93)}}", 1)] string a
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [A("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 1)] string a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [A(
-                        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-                        1
-                    )]
-                    string a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [A("{{R('x', 94)}}", 1)] string a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [A(
+                          "{{R('x', 94)}}",
+                          1
+                      )]
+                      string a
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class O {
-                class C {
-                    void M(int b, [Obsolete("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", true)] int a) { }
-                }
-            }
-            """,
-            """
-            class O {
-                class C {
-                    void M(
-                        int b,
-                        [Obsolete("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", true)] int a
-                    ) { }
-                }
-            }
-            """
+            $$"""
+              class O {
+                  class C {
+                      void M(int b, [Obsolete("{{R('x', 82)}}", true)] int a) { }
+                  }
+              }
+              """,
+            $$"""
+              class O {
+                  class C {
+                      void M(
+                          int b,
+                          [Obsolete("{{R('x', 82)}}", true)] int a
+                      ) { }
+                  }
+              }
+              """
         );
         Agrees(
-            """
-            class O {
-                class C {
-                    void M(int b, [Obsolete("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", true)] int a) { }
-                }
-            }
-            """,
+            $$"""
+              class O {
+                  class C {
+                      void M(int b, [Obsolete("{{R('x', 83)}}", true)] int a) { }
+                  }
+              }
+              """,
             """
             class O {
                 class C {
@@ -163,26 +164,26 @@ public sealed class AttributeArgumentChopIssue476Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [A("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")] List<int> a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [A("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")] List<int> a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [A("{{R('x', 93)}}")] List<int> a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [A("{{R('x', 93)}}")] List<int> a
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [A("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")] List<int> a) { }
-            }
-            """,
+            $$"""
+              class C {
+                  void M(int b, [A("{{R('x', 94)}}")] List<int> a) { }
+              }
+              """,
             """
             class C {
                 void M(
@@ -196,26 +197,26 @@ public sealed class AttributeArgumentChopIssue476Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] string a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] string a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [Obsolete("{{R('a', 82)}}", true)] string a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [Obsolete("{{R('a', 82)}}", true)] string a
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] string a) { }
-            }
-            """,
+            $$"""
+              class C {
+                  void M(int b, [Obsolete("{{R('a', 84)}}", true)] string a) { }
+              }
+              """,
             """
             class C {
                 void M(
@@ -230,26 +231,26 @@ public sealed class AttributeArgumentChopIssue476Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] ref int a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] ref int a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [Obsolete("{{R('a', 82)}}", true)] ref int a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [Obsolete("{{R('a', 82)}}", true)] ref int a
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] ref int a) { }
-            }
-            """,
+            $$"""
+              class C {
+                  void M(int b, [Obsolete("{{R('a', 84)}}", true)] ref int a) { }
+              }
+              """,
             """
             class C {
                 void M(
@@ -264,26 +265,26 @@ public sealed class AttributeArgumentChopIssue476Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] List<int> a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] List<int> a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [Obsolete("{{R('a', 80)}}", true)] List<int> a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [Obsolete("{{R('a', 80)}}", true)] List<int> a
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true)] List<int> a) { }
-            }
-            """,
+            $$"""
+              class C {
+                  void M(int b, [Obsolete("{{R('a', 82)}}", true)] List<int> a) { }
+              }
+              """,
             """
             class C {
                 void M(
@@ -298,27 +299,27 @@ public sealed class AttributeArgumentChopIssue476Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [A("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")] int aaaaaaaaaaaaa) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [A("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")]
-                    int aaaaaaaaaaaaa
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [A("{{R('x', 95)}}")] int aaaaaaaaaaaaa) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [A("{{R('x', 95)}}")]
+                      int aaaaaaaaaaaaa
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", true)] int aaaaaaaaaaaaaaaaaa) { }
-            }
-            """,
+            $$"""
+              class C {
+                  void M(int b, [Obsolete("{{R('x', 72)}}", true)] int aaaaaaaaaaaaaaaaaa) { }
+              }
+              """,
             """
             class C {
                 void M(

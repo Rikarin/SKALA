@@ -892,30 +892,10 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
-    ///     The index in <paramref name="path" /> of the innermost group around the top of the stack that
-    ///     resolved <see cref="ResolvedMode.Broken" /> and <see cref="GroupFacts.Continues" />, looked for
-    ///     inside the innermost enclosing block only; −1 when there is none.
-    /// </summary>
-    /// <summary>
     ///     <see cref="InnermostBrokenConstruct" /> for a fill chain: the innermost broken group carrying
     ///     <see cref="GroupFacts.ContinuesIfItBreaks" />, inside the innermost enclosing block; −1 for none.
     /// </summary>
-    int InnermostBrokenFill((int Node, int Child)[] path) {
-        for (int a = 0, next = scopes.Count - 1; a < path.Length; a++) {
-            ref var slot = ref document.Nodes[path[a].Node];
-            if (slot.Kind == DocKind.Indent && scopes[next--].IsBlock) {
-                break;
-            }
-
-            if (slot.Kind == DocKind.Group
-                && fitter.ModeOf(slot.Arg1) == ResolvedMode.Broken
-                && document.FactsOf(slot.Arg1).ContinuesIfItBreaks) {
-                return a;
-            }
-        }
-
-        return -1;
-    }
+    int InnermostBrokenFill((int Node, int Child)[] path) => InnermostBroken(path, true);
 
     /// <summary>
     ///     Whether the fill chain at <paramref name="pathIndex" /> takes one of its points once the scope at
@@ -957,16 +937,30 @@ public sealed class LayoutWriter {
         return answer;
     }
 
-    int InnermostBrokenConstruct((int Node, int Child)[] path) {
+    /// <summary>
+    ///     The index in <paramref name="path" /> of the innermost group around the top of the stack that
+    ///     resolved <see cref="ResolvedMode.Broken" /> and <see cref="GroupFacts.Continues" />, looked for
+    ///     inside the innermost enclosing block only; −1 when there is none.
+    /// </summary>
+    int InnermostBrokenConstruct((int Node, int Child)[] path) => InnermostBroken(path, false);
+
+    /// <summary>
+    ///     The walk behind <see cref="InnermostBrokenConstruct" /> and <see cref="InnermostBrokenFill" />,
+    ///     which differ only in the fact the broken group must carry.
+    /// </summary>
+    int InnermostBroken((int Node, int Child)[] path, bool fill) {
         for (int a = 0, next = scopes.Count - 1; a < path.Length; a++) {
             ref var slot = ref document.Nodes[path[a].Node];
             if (slot.Kind == DocKind.Indent && scopes[next--].IsBlock) {
                 break;
             }
 
-            if (slot.Kind == DocKind.Group
-                && fitter.ModeOf(slot.Arg1) == ResolvedMode.Broken
-                && document.FactsOf(slot.Arg1).Continues) {
+            if (slot.Kind != DocKind.Group || fitter.ModeOf(slot.Arg1) != ResolvedMode.Broken) {
+                continue;
+            }
+
+            var facts = document.FactsOf(slot.Arg1);
+            if (fill ? facts.ContinuesIfItBreaks : facts.Continues) {
                 return a;
             }
         }
@@ -1343,8 +1337,8 @@ public sealed class LayoutWriter {
     /// <summary>
     ///     ⚠ A chain that is the body of a sole lambda nested in another's (#585): one level more for each
     ///     enclosing argument list opened on this line beyond the innermost —
-    ///     <c>A(() =&gt; B(s =&gt; s</c> / <c>.X(1)</c> two levels past the line, <c>A(() =&gt; B(() =&gt; C(s =&gt; s</c>
-    ///     three, measured; Skala's own <c>build/Build.cs</c> has the two.
+    ///     <c>A(() =&gt; B(s =&gt; s</c> / <c>.X(1)</c> two levels past the line,
+    ///     <c>A(() =&gt; B(() =&gt; C(s =&gt; s</c> three, measured; Skala's own <c>build/Build.cs</c> has the two.
     /// </summary>
     int NestedSoleLambdaLevels(IndentFlags flags) {
         if ((flags & IndentFlags.NestedSoleLambda) == 0) {
@@ -2058,7 +2052,10 @@ public sealed class LayoutWriter {
         TakeBreak(ref slot);
     }
 
-    /// <summary>Whether the group broke because the group it breaks with did — see <see cref="GroupFacts.BreaksWithOwner" />.</summary>
+    /// <summary>
+    ///     Whether the group broke because the group it breaks with did — see
+    ///     <see cref="GroupFacts.BreaksWithOwner" />.
+    /// </summary>
     bool BrokeWithOwner(int group) =>
         document.FactsOf(group) is { BreaksWithOwner: true, Owner: >= 0 } facts
         && fitter.ModeOf(facts.Owner) == ResolvedMode.Broken;
@@ -2345,11 +2342,11 @@ public sealed class LayoutWriter {
     /// </summary>
     /// <remarks>
     ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 on a method's type parameter list at
-    ///     <c>skala_align_multiline_type_parameter_list = true</c>, the `<` at eleven columns from 20 to 50 and
-    ///     the line 121 to 135: `TFirstPara,` (11 columns) and `TA, TB,` break after the `<` and fill the
-    ///     list one level in, `TFirstParam,` (12) and `TA, TB, TCdef,` keep their line and align the rest
-    ///     under it — the eleven-against-twelve of #379's floor, at every column of the `<`. Skala kept
-    ///     every head.
+    ///     <c>skala_align_multiline_type_parameter_list = true</c>, the <c>&lt;</c> at eleven columns from
+    ///     20 to 50 and the line 121 to 135: <c>TFirstPara,</c> (11 columns) and <c>TA, TB,</c> break after
+    ///     the <c>&lt;</c> and fill the list one level in, <c>TFirstParam,</c> (12) and
+    ///     <c>TA, TB, TCdef,</c> keep their line and align the rest under it — the eleven-against-twelve of
+    ///     #379's floor, at every column of the <c>&lt;</c>. Skala kept every head.
     /// </remarks>
     int AlignedHeadWidth(int[] segments, int column, int trailing) {
         var head = 0;

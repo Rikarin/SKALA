@@ -43,14 +43,18 @@ public static class EqualsFloor {
     /// <param name="end">The column the whole line would end at.</param>
     /// <remarks>
     ///     ⚠ Measured with <c>Testing ask</c> on <c>U(params =&gt; a… &amp;&amp; b… &amp;&amp; c…);</c>,
-    ///     <c>… =&gt; x is A or B or C…</c>, <c>var g = i….Where(params =&gt; …);</c> and <c>static</c> lambdas: parameter
-    ///     texts of 1 to 45 columns, first operands of 6 to 52, the arrow at columns 14 to 95 and lines of 112 to
-    ///     200, 31 671 cells. A modifier counts as parameter text: <c>static n</c> decides as an eight-column
-    ///     name. ⚠ The ceiling rises 2.75 columns per column of parameters and of first operand up to 24, then
-    ///     about one per eight, and never past where the first operand still fits beside the arrow; the end's
-    ///     column moves 0.9 per column of line and 0.3 per column of parameters, three and a quarter later once
-    ///     the first operand passes 18. 28 cells under parameter texts of 36 differ, all within a column of the
-    ///     boundary; past 36 the oracle is not monotone and the rule is not measured.
+    ///     <c>
+    ///         … =&gt; x
+    ///         is A or B or C…
+    ///     </c>
+    ///     , <c>var g = i….Where(params =&gt; …);</c> and <c>static</c> lambdas: parameter texts of
+    ///     1 to 45 columns, first operands of 6 to 52, the arrow at columns 14 to 95 and lines of 112 to 200, 31 671
+    ///     cells. A modifier counts as parameter text: <c>static n</c> decides as an eight-column name. ⚠ The ceiling
+    ///     rises 2.75 columns per column of parameters and of first operand up to 24, then about one per eight, and
+    ///     never past where the first operand still fits beside the arrow; the end's column moves 0.9 per column of
+    ///     line and 0.3 per column of parameters, three and a quarter later once the first operand passes 18. 28 cells
+    ///     under parameter texts of 36 differ, all within a column of the boundary; past 36 the oracle is not monotone
+    ///     and the rule is not measured.
     /// </remarks>
     public static bool BreaksTheOperandArrow(int arrow, int parameters, int first, int end) {
         var ceiling = Math.Min(
@@ -378,7 +382,7 @@ public static class EqualsFloor {
         return rows[^1].Offset;
     }
 
-    static double TwentyOffset(int paren) => paren < 52 || paren > 112 ? 0 : Twenty[paren - 52] - Seven[paren - 52];
+    static double TwentyOffset(int paren) => paren is < 52 or > 112 ? 0 : Twenty[paren - 52] - Seven[paren - 52];
 
     static double IndentOffset(int paren, int indent) {
         if (indent == 8) {
@@ -403,7 +407,9 @@ public static class EqualsFloor {
 
     static double AtIndentRow(int row, int paren) => paren <= 53 ? 122 - paren : Nearest(Indents[row], paren, 53);
 
-    /// <summary>A row measured three columns apart from <paramref name="first" />, read at its nearest column.</summary>
+    /// <summary>
+    ///     A row measured three columns apart from <paramref name="first" />, read at its nearest column.
+    /// </summary>
     static double Nearest(int[] row, int paren, int first) {
         if (paren <= first) {
             return row[0];

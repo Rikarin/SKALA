@@ -82,7 +82,9 @@ public sealed partial class CSharpDocumentBuilder {
     /// <summary>Group id to the plan that created it, built on first use by <c>GuessesSpansLines</c>.</summary>
     Dictionary<int, GroupPlan>? groupPlans;
 
-    /// <summary>Whether each own-line comment run, by its first piece, is detached from the code under it (#494).</summary>
+    /// <summary>
+    ///     Whether each own-line comment run, by its first piece, is detached from the code under it (#494).
+    /// </summary>
     Dictionary<int, bool>? detachedRuns;
 
     /// <summary>The run <see cref="RunIsDetached" /> is resolving the gap under, or −1.</summary>
@@ -3271,16 +3273,22 @@ public sealed partial class CSharpDocumentBuilder {
     enum LoneComment {
         None,
 
-        /// <summary>A lambda's parameter list: the comment stays beside the <c>(</c>, the <c>)</c> moves down.</summary>
+        /// <summary>
+        ///     A lambda's parameter list: the comment stays beside the <c>(</c>, the <c>)</c> moves down.
+        /// </summary>
         CloserOnly,
 
-        /// <summary>A <c>/** */</c> comment: a line of its own at the list's level, and the <c>)</c> on another.</summary>
+        /// <summary>
+        ///     A <c>/** */</c> comment: a line of its own at the list's level, and the <c>)</c> on another.
+        /// </summary>
         OwnLine,
 
         /// <summary>A <c>/* */</c> comment: a line of its own at column 0, and the <c>)</c> on another.</summary>
         ColumnZero,
 
-        /// <summary>A comment already on a line of its own: a blank line before it, and the <c>)</c> on another.</summary>
+        /// <summary>
+        ///     A comment already on a line of its own: a blank line before it, and the <c>)</c> on another.
+        /// </summary>
         BlankLineBefore
     }
 

@@ -53,8 +53,10 @@ public sealed class BrokenCollectionAfterCastOrParenIssue450485Tests {
     [Fact]
     public void ACastCollectionThatFitsBelow_MovesThere() =>
         AssertFormats(
-            "var fits = (int[])[alphaValueNumber, betaValueNumber, gammaValueNumber, alphaValueNumber, betaValueNumber, gammaValueNumber];",
-            "        var fits = (int[])\n            [alphaValueNumber, betaValueNumber, gammaValueNumber, alphaValueNumber, betaValueNumber, gammaValueNumber];\n"
+            "var fits = (int[])[alphaValueNumber, betaValueNumber, "
+            + "gammaValueNumber, alphaValueNumber, betaValueNumber, gammaValueNumber];",
+            "        var fits = (int[])\n            [alphaValueNumber, betaValueNumber, "
+            + "gammaValueNumber, alphaValueNumber, betaValueNumber, gammaValueNumber];\n"
         );
 
     [Fact]

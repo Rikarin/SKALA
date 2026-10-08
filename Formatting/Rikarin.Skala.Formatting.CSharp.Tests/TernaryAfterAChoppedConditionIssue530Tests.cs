@@ -12,17 +12,29 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     except under a binary condition — the control below — and a chain headed by a parenthesis.
 /// </remarks>
 public sealed class TernaryAfterAChoppedConditionIssue530Tests {
+    const string Long1 = "var t = someParticularThingWithALongName.SelfLink().SelfLink().SelectName(n => n"
+        + ".Name).WhereSomething(x => x.IsEnabledAndReady) ? otherFallbackValueName.SomeFal"
+        + "lbackProperty : third;";
+
+    const string Long2 = "return Compute(alphaaaaaaaaaaaaaaaaaaaaaaaaaaa, betaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        + "aaaaaa, gammaaaaaaaaaaaaaaaaaaaaaaaaaaaaa) ? otherFallbackValueName.SomeFallback"
+        + "Property : third;";
+
+    const string Long3 = "var b1 = someParticularThingWithALongNameeeeeeeeeeeeeeee && otherParticularThing"
+        + "WithALongNameeeeeeeeeeeeeeeeeeee && thirdddddd ? otherFallbackValueName.SomeFall"
+        + "backProperty : third;";
+
     [Fact]
     public void AChoppedCallOrChain_PutsTheSignsAtTheStatementsLevel() =>
         Oracle.Agrees(
-            """
-            class T {
-                object M() {
-                    var t = someParticularThingWithALongName.SelfLink().SelfLink().SelectName(n => n.Name).WhereSomething(x => x.IsEnabledAndReady) ? otherFallbackValueName.SomeFallbackProperty : third;
-                    return Compute(alphaaaaaaaaaaaaaaaaaaaaaaaaaaa, betaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, gammaaaaaaaaaaaaaaaaaaaaaaaaaaaaa) ? otherFallbackValueName.SomeFallbackProperty : third;
-                }
-            }
-            """,
+            $$"""
+              class T {
+                  object M() {
+                      {{Long1}}
+                      {{Long2}}
+                  }
+              }
+              """,
             """
             class T {
                 object M() {
@@ -48,13 +60,13 @@ public sealed class TernaryAfterAChoppedConditionIssue530Tests {
     [Fact]
     public void ABinaryCondition_PutsTheSignsPastItsOperators() =>
         Oracle.Agrees(
-            """
-            class T {
-                object M() {
-                    var b1 = someParticularThingWithALongNameeeeeeeeeeeeeeee && otherParticularThingWithALongNameeeeeeeeeeeeeeeeeeee && thirdddddd ? otherFallbackValueName.SomeFallbackProperty : third;
-                }
-            }
-            """,
+            $$"""
+              class T {
+                  object M() {
+                      {{Long3}}
+                  }
+              }
+              """,
             """
             class T {
                 object M() {

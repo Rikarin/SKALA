@@ -14,6 +14,9 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     walk went through a <c>!</c>, counting the call before it as one of the chain's.
 /// </remarks>
 public sealed class ChainLinksIssue454Tests {
+    const string Long1 = ".Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentVa"
+        + "luexxxxxxxxx);";
+
     static string Statement(string statement) =>
         $$"""
           class T {
@@ -29,7 +32,8 @@ public sealed class ChainLinksIssue454Tests {
     /// </summary>
     [Theory]
     [InlineData(
-        "var result = someCollectionOfThingsHere.Where(c => c.IsEnabled).Select(c => c.Name).OrderBy(n => n).ToList().Count;",
+        "var result = someCollectionOfThingsHere.Where(c => "
+        + "c.IsEnabled).Select(c => c.Name).OrderBy(n => n).ToList().Count;",
         """
         var result = someCollectionOfThingsHere.Where(c => c.IsEnabled)
                     .Select(c => c.Name)
@@ -39,7 +43,8 @@ public sealed class ChainLinksIssue454Tests {
         """
     )]
     [InlineData(
-        "var y2 = source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaaaaaaaaaaaaaaaa).Where(beta).Count.Value;",
+        "var y2 = source.Select(alphaArgumentValueNumberOne, "
+        + "betaArgumentValueNumberTwo, gamxaaaaaaaaaaaaaaaaaaa).Where(beta).Count.Value;",
         """
         var y2 = source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaaaaaaaaaaaaaaaa)
                     .Where(beta)
@@ -47,7 +52,8 @@ public sealed class ChainLinksIssue454Tests {
         """
     )]
     [InlineData(
-        "var y3 = source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaaaaaaaaaaaaaaaa).Where(beta).Count?.Value;",
+        "var y3 = source.Select(alphaArgumentValueNumberOne, "
+        + "betaArgumentValueNumberTwo, gamxaaaaaaaaaaaaaaaaaaa).Where(beta).Count?.Value;",
         """
         var y3 = source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaaaaaaaaaaaaaaaa)
                     .Where(beta)
@@ -55,7 +61,8 @@ public sealed class ChainLinksIssue454Tests {
         """
     )]
     [InlineData(
-        "var a = SomeMethod(aaaaaaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, ccccccccccccccccccc).Property;",
+        "var a = SomeMethod(aaaaaaaaaaaaaaaaaaaaaaaaaaaa, "
+        + "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, ccccccccccccccccccc).Property;",
         """
         var a = SomeMethod(aaaaaaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, ccccccccccccccccccc)
                     .Property;
@@ -73,7 +80,8 @@ public sealed class ChainLinksIssue454Tests {
     public void ABang_EndsTheReceiver() {
         Oracle.Agrees(
             Statement(
-                "var bang = receiverWithAVeryLongNameIndeed.SelfLink()!.SelfLink().SelfLink().SelectName(n => n.Name).ToList().Count();"
+                "var bang = receiverWithAVeryLongNameIndeed.SelfLink()!.SelfLink().SelfLink().SelectName(n "
+                + "=> n.Name).ToList().Count();"
             ),
             Statement(
                 """
@@ -88,7 +96,8 @@ public sealed class ChainLinksIssue454Tests {
 
         Oracle.Agrees(
             Statement(
-                "var x4 = sourceeeeeeeeeeeeeeeeeeeee.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo).Where(gammaArgumentValuexxxxx)!.Where(beta).ToList();"
+                "var x4 = sourceeeeeeeeeeeeeeeeeeeee.Select(alphaArgumentValueNumberOne, "
+                + "betaArgumentValueNumberTwo).Where(gammaArgumentValuexxxxx)!.Where(beta).ToList();"
             ),
             Statement(
                 """
@@ -109,7 +118,8 @@ public sealed class ChainLinksIssue454Tests {
     public void AnIndexer_IsACall() {
         Oracle.Agrees(
             Statement(
-                "var elemc = sourceWithAVeryLongName?[0].Children.Where(item => item.IsEnabled).Select(item => item.Name).ToList();"
+                "var elemc = sourceWithAVeryLongName?[0].Children.Where(item "
+                + "=> item.IsEnabled).Select(item => item.Name).ToList();"
             ),
             Statement(
                 """
@@ -123,14 +133,15 @@ public sealed class ChainLinksIssue454Tests {
 
         Oracle.Agrees(
             Statement(
-                "var x6 = source.Make().Items[0].Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValuexxxxxxxxx);"
+                "var x6 = source.Make().Items[0].Select(alphaArgumentValueNumberOne, "
+                + "betaArgumentValueNumberTwo, gammaArgumentValuexxxxxxxxx);"
             ),
             Statement(
-                """
-                var x6 = source.Make()
-                            .Items[0]
-                            .Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValuexxxxxxxxx);
-                """
+                $$"""
+                  var x6 = source.Make()
+                              .Items[0]
+                              {{Long1}}
+                  """
             )
         );
     }
@@ -142,7 +153,8 @@ public sealed class ChainLinksIssue454Tests {
     /// </summary>
     [Theory]
     [InlineData(
-        "var c = someParticularThingWithALongName.Self().Inner?.Children.Where(item => item.IsEnabled).Select(item => item.Name).ToList();",
+        "var c = someParticularThingWithALongName.Self().Inner?.Children.Where(item "
+        + "=> item.IsEnabled).Select(item => item.Name).ToList();",
         """
         var c = someParticularThingWithALongName.Self()
                     .Inner?.Children.Where(item => item.IsEnabled)
@@ -151,7 +163,8 @@ public sealed class ChainLinksIssue454Tests {
         """
     )]
     [InlineData(
-        "var c2 = someParticularThingWithALongName.Self().Outer.Inner?.Children.Where(item => item.IsEnabled).Select(item => item.Name);",
+        "var c2 = someParticularThingWithALongName.Self().Outer.Inner?.Children.Where(item "
+        + "=> item.IsEnabled).Select(item => item.Name);",
         """
         var c2 = someParticularThingWithALongName.Self()
                     .Outer.Inner?.Children.Where(item => item.IsEnabled)
@@ -159,7 +172,8 @@ public sealed class ChainLinksIssue454Tests {
         """
     )]
     [InlineData(
-        "var c3 = someParticularThingWithALongName.Self().Inner?.Children?.Where(item => item.IsEnabled).Select(item => item.Name).ToList();",
+        "var c3 = someParticularThingWithALongName.Self().Inner?.Children?.Where(item "
+        + "=> item.IsEnabled).Select(item => item.Name).ToList();",
         """
         var c3 = someParticularThingWithALongName.Self()
                     .Inner?.Children?.Where(item => item.IsEnabled)
@@ -168,7 +182,8 @@ public sealed class ChainLinksIssue454Tests {
         """
     )]
     [InlineData(
-        "var c4 = someParticularThingWithALongName.Self()?.Inner?.Children.Where(item => item.IsEnabled).Select(item => item.Name).ToList();",
+        "var c4 = someParticularThingWithALongName.Self()?.Inner?.Children.Where(item "
+        + "=> item.IsEnabled).Select(item => item.Name).ToList();",
         """
         var c4 = someParticularThingWithALongName.Self()
                     ?.Inner?.Children.Where(item => item.IsEnabled)

@@ -360,17 +360,20 @@ public sealed class EmbeddedAtKeepFalseIssue519Tests {
             {
                 OneLine,
                 OneLineAlways,
-                "skala_keep_existing_embedded_arrangement=false;skala_place_simple_embedded_statement_on_same_line=always"
+                "skala_keep_existing_embedded_arrangement=false;skala"
+                + "_place_simple_embedded_statement_on_same_line=always"
             },
             {
                 OneLine,
                 OneLineNever,
-                "skala_keep_existing_embedded_arrangement=false;skala_place_simple_embedded_statement_on_same_line=never"
+                "skala_keep_existing_embedded_arrangement=false;skal"
+                + "a_place_simple_embedded_statement_on_same_line=never"
             },
             {
                 Broken,
                 BrokenAlways,
-                "skala_keep_existing_embedded_arrangement=false;skala_place_simple_embedded_statement_on_same_line=always"
+                "skala_keep_existing_embedded_arrangement=false;skala"
+                + "_place_simple_embedded_statement_on_same_line=always"
             },
             { Broken, BrokenIfOwnerIsSingleLine, "skala_keep_existing_embedded_arrangement=false" }
         };

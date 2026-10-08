@@ -270,7 +270,9 @@ public readonly record struct ConstraintRun(GroupPlan Outer, GroupPlan Inner, bo
 public sealed class BreakPlan {
     readonly Dictionary<int, GapSpec> gaps = [];
 
-    /// <summary>The positions <see cref="PlanPastLeadingComments" /> planned. See <see cref="PlansPastALeadingComment" />.</summary>
+    /// <summary>
+    ///     The positions <see cref="PlanPastLeadingComments" /> planned. See <see cref="PlansPastALeadingComment" />.
+    /// </summary>
     readonly HashSet<int> pastLeadingComments = [];
 
     /// <summary>The positions <see cref="PlanCommentedAttributeGap" /> planned past a block comment.</summary>
@@ -356,7 +358,9 @@ public sealed class BreakPlan {
     /// <summary>The groups opened at a child that close right after it — a property's name (#540).</summary>
     readonly HashSet<int> closesAfterChild = [];
 
-    /// <summary>Whether a group opened at a child closes right after that child. See <see cref="PlanPropertyHead" />.</summary>
+    /// <summary>
+    ///     Whether a group opened at a child closes right after that child. See <see cref="PlanPropertyHead" />.
+    /// </summary>
     public bool ClosesAfterItsChild(int group) => closesAfterChild.Contains(group);
 
     /// <summary>
@@ -415,7 +419,9 @@ public sealed class BreakPlan {
     /// </remarks>
     readonly List<ForStatementSyntax> forHeaders = [];
 
-    /// <summary>A lambda-valued local's declarator and its type/name group, linked to the `=`'s group after the walk.</summary>
+    /// <summary>
+    ///     A lambda-valued local's declarator and its type/name group, linked to the `=`'s group after the walk.
+    /// </summary>
     readonly List<(VariableDeclaratorSyntax Declarator, int Group)> oneOverLambdas = [];
 
     readonly string source;
@@ -528,7 +534,9 @@ public sealed class BreakPlan {
         }
     }
 
-    /// <summary>The group over this type declaration's keyword/name gap, if any. See <see cref="PlanTypeName" />.</summary>
+    /// <summary>
+    ///     The group over this type declaration's keyword/name gap, if any. See <see cref="PlanTypeName" />.
+    /// </summary>
     public bool TryTypeNameGroup(SyntaxNode node, out GroupPlan plan) => typeNames.TryGetValue(Key(node), out plan);
 
     /// <summary>
@@ -2626,11 +2634,12 @@ public sealed class BreakPlan {
     ///     The oracle writes <c>public class</c> / <c>    Name…</c> in two cases, which are the ordering rule's
     ///     two questions: when the line runs past the margin before the header's next point (a name that
     ///     fills the line, <c>Name : IFoo,</c> at 123), and when the joined line overflows by at most four
-    ///     columns whatever the head (before a lone base type, at any width) and the name is not one that gives way to the
-    ///     competing list's first comma (<see cref="GroupFacts.NameWidth" />). The base list then sits at
-    ///     the declaration's own level, not one past the name's line — <c>    Name : IFoo,</c> /
-    ///     <c>    IBar {</c> — which <see cref="CSharpDocumentBuilder" /> writes from an anchor the group
-    ///     pushes on the keyword's line; a type parameter list fills one level past the name's line.
+    ///     columns whatever the head (before a lone base type, at any width) and the name is not one that
+    ///     gives way to the competing list's first comma (<see cref="GroupFacts.NameWidth" />). The base
+    ///     list then sits at the declaration's own level, not one past the name's line —
+    ///     <c>    Name : IFoo,</c> / <c>    IBar {</c> — which <see cref="CSharpDocumentBuilder" /> writes
+    ///     from an anchor the group pushes on the keyword's line; a type parameter list fills one level
+    ///     past the name's line.
     /// </remarks>
     /// <summary>
     ///     The constant of <see cref="GroupFacts.NameWidth" />'s rule before a base list (SK-DIV-0353): fitted to
@@ -2784,7 +2793,8 @@ public sealed class BreakPlan {
     ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 (#474, SK-DIV-0127): a field
     ///     <c>IReadOnlyDictionary&lt;string, IReadOnlyList&lt;string&gt;&gt; Overflowing;</c> past the margin and a
     ///     tuple-typed field come back with the name one level in on a line of its own, the type whole —
-    ///     where Skala filled the type's argument list, <c>Dictionary&lt;Guid,</c> / <c>List&lt;Guid&gt;&gt; First, …</c>;
+    ///     where Skala filled the type's argument list, <c>Dictionary&lt;Guid,</c> /
+    ///     <c>List&lt;Guid&gt;&gt; First, …</c>;
     ///     a local whose <c>=</c> lands past 120 the same, <c>T…T</c> / <c>    v9 = [</c>, and
     ///     <c>Dictionary&lt;T…T, int&gt;</c> / <c>    v9 = [</c> rather than a break at the type argument
     ///     list's comma. When the line through the <c>=</c> fits, the <c>=</c>'s own rule decides, as it did.
@@ -3276,7 +3286,15 @@ public sealed class BreakPlan {
         );
     }
 
-    /// <summary>A plain path of names — <c>a</c>, <c>a.B.C</c> — with no call, index, <c>!</c> or <c>?.</c> in it.</summary>
+    /// <summary>
+    ///     The one column of the token after <paramref name="node" /> when it is a <paramref name="kind" />
+    ///     — a <c>,</c> or <c>;</c> that rides on the node's last line — and otherwise none.
+    /// </summary>
+    static int WidthOfNext(SyntaxNode node, SyntaxKind kind) => node.GetLastToken().GetNextToken().IsKind(kind) ? 1 : 0;
+
+    /// <summary>
+    ///     A plain path of names — <c>a</c>, <c>a.B.C</c> — with no call, index, <c>!</c> or <c>?.</c> in it.
+    /// </summary>
     static bool IsAPathOfNames(ExpressionSyntax expression) =>
         expression switch {
             SimpleNameSyntax => true,
@@ -3404,7 +3422,7 @@ public sealed class BreakPlan {
                         : 0,
                     ArmBody: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm }
                         ? FlatSourceWidth(arm.Expression)
-                        + (arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0)
+                        + WidthOfNext(arm, SyntaxKind.CommaToken)
                         : 0
                 ),
                 HeadSharesTheLevelAroundIt(root),
@@ -3464,7 +3482,7 @@ public sealed class BreakPlan {
             // dot, `=> yyyyyyyyyyy.Z,`, is a point the pattern's fill looked ahead to and stopped at, and
             // the arrow broke where the oracle breaks the pattern's dot.
             SwitchExpressionArmSyntax arm when arm.Expression == root =>
-                FlatSourceWidth(root) + (arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0) > 14,
+                FlatSourceWidth(root) + WidthOfNext(arm, SyntaxKind.CommaToken) > 14,
             _ => true
         };
 
@@ -5454,7 +5472,7 @@ public sealed class BreakPlan {
                     HeldValueWidth: heldCall is null
                         ? 0
                         : FlatSourceWidth(value)
-                        + (value.GetLastToken().GetNextToken().IsKind(SyntaxKind.SemicolonToken) ? 1 : 0),
+                        + WidthOfNext(value, SyntaxKind.SemicolonToken),
                     HeldValueReceiver: heldReceiver,
                     HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
@@ -5667,7 +5685,7 @@ public sealed class BreakPlan {
             }
         }
 
-        return width + (root.GetLastToken().GetNextToken().IsKind(SyntaxKind.SemicolonToken) ? 1 : 0);
+        return width + WidthOfNext(root, SyntaxKind.SemicolonToken);
     }
 
     /// <summary>
@@ -6599,13 +6617,13 @@ public sealed class BreakPlan {
                     or CollectionExpressionSyntax
                     or SwitchExpressionSyntax
                 );
-        // ⚠ And a `when` clause's argument list (#564), which the lift reaches only once it chops: `when Compute(` / the
-        // arguments two levels past the arm / `) =>` one level / the body one level. Measured 2026-10-08
-        // written chopped and written whole: whole, the oracle chops the list and keeps the body on the
-        // `) =>` line — `) => Body(…),` and `) => "a long string",` past the margin alike — so a break
-        // after the arrow beside a chopped list is never the width's, which is what makes the lift
-        // idempotent where reading any list in the head was not (generated seed 857717698562573229, a
-        // type argument list that fills, still excluded).
+        // ⚠ And a `when` clause's argument list (#564), which the lift reaches only once it chops:
+        // `when Compute(` / the arguments two levels past the arm / `) =>` one level / the body one
+        // level. Measured 2026-10-08 written chopped and written whole: whole, the oracle chops the list
+        // and keeps the body on the `) =>` line — `) => Body(…),` and `) => "a long string",` past the
+        // margin alike — so a break after the arrow beside a chopped list is never the width's, which is
+        // what makes the lift idempotent where reading any list in the head was not (generated seed
+        // 857717698562573229, a type argument list that fills, still excluded).
         var liftsList = arm.WhenClause is { } when
             && when.DescendantNodes().OfType<ArgumentListSyntax>().Any()
             && !head.SelectMany(static part => part.DescendantNodesAndSelf())
@@ -6776,7 +6794,7 @@ public sealed class BreakPlan {
 
         // The innermost call on the spine whose callee is a member access: the chain's first link.
         SyntaxToken dot = default;
-        var node = (SyntaxNode)body;
+        SyntaxNode node = body;
         while (true) {
             switch (node) {
                 case InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax member } invocation:
@@ -8094,9 +8112,11 @@ public sealed class BreakPlan {
         // keys `true` the oracle's output at `false` is byte-identical to its output at `true`. A
         // method's, a local function's and an `if`'s block are only ever kept under their keep key,
         // which outranks this one, so they are unaffected either way.
-        return block.Parent is AccessorDeclarationSyntax or AnonymousFunctionExpressionSyntax
-            ? Keeps(block) ? !broken : options.PreserveSingleLineBlocks
-            : !broken && Keeps(block);
+        if (block.Parent is AccessorDeclarationSyntax or AnonymousFunctionExpressionSyntax) {
+            return Keeps(block) ? !broken : options.PreserveSingleLineBlocks;
+        }
+
+        return !broken && Keeps(block);
     }
 
     void OnOwnLines<T>(SyntaxList<T> nodes) where T : SyntaxNode {
@@ -8177,10 +8197,9 @@ public sealed class BreakPlan {
                 return;
             }
 
-            foreach (var token in AttributeGaps(node, lists)) {
-                if (!pastAttributeComments.Contains(token.SpanStart)) {
-                    Mandatory(token);
-                }
+            foreach (var token in AttributeGaps(node, lists)
+                         .Where(token => !pastAttributeComments.Contains(token.SpanStart))) {
+                Mandatory(token);
             }
 
             return;
@@ -8631,6 +8650,12 @@ public sealed class BreakPlan {
         }
     }
 
+    /// <summary>Whether a break past <paramref name="collection" />'s <c>[</c> survives.</summary>
+    bool ABreakSurvivesInside(CollectionExpressionSyntax collection) {
+        var open = collection.OpenBracketToken.SpanStart;
+        return collection.DescendantTokens().Any(token => token.SpanStart > open && SourceBreakSurvives(token));
+    }
+
     /// <summary>
     ///     A collection expression that is a grouping parenthesis's whole contents joins its <c>[</c> to the
     ///     <c>(</c> once it breaks (#485, SK-DIV-0150).
@@ -8652,9 +8677,7 @@ public sealed class BreakPlan {
             }
 
             var open = collection.OpenBracketToken;
-            if (options.KeepsUserBreaksBetweenItems
-                && collection.DescendantTokens()
-                    .Any(token => token.SpanStart > open.SpanStart && SourceBreakSurvives(token))) {
+            if (options.KeepsUserBreaksBetweenItems && ABreakSurvivesInside(collection)) {
                 gaps[open.SpanStart] = new(GapRule.Flat, -1);
                 continue;
             }

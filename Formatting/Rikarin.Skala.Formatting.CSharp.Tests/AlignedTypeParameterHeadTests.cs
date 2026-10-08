@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
@@ -9,6 +10,18 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class AlignedTypeParameterHeadTests {
+    const string AlignKey = "skala_align_multiline_type_parameter_list";
+
+    const string Long1 = "public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXX"
+        + "XX, TThirdParameterNameXXXXXXXXXXXXX, TFourth> { }";
+
+    const string Long2 = "public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXX"
+        + "XX, TThirdParameterNameXXXXXXXXXXXXX,";
+
+    const string Long3 = "public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXX"
+        + "XX, TThirdParameterNameXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+        + "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, TFourth> { }";
+
     /// <summary>The oracle's answer under the repository's export with <paramref name="overrides" /> on top.</summary>
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
@@ -30,157 +43,157 @@ public sealed class AlignedTypeParameterHeadTests {
     }
 
     /// <summary>
-    ///     SK-DIV-0351: under skala_align_multiline_type_parameter_list = true a list whose head on the angle&apos;s line
+    ///     SK-DIV-0351: under skala_align_multiline_type_parameter_list = true a list whose head on the angle's line
     ///     would be narrower than twelve columns breaks after the angle; twelve and wider keep it and align the rest.
     /// </summary>
     [Fact]
     public void ANarrowHead_BreaksAfterTheAngle() {
         Agrees(
-            """
-            public class C {
-                public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TFirstPara, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
+            $$"""
+              public class C {
+                  public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TFirstPara, T{{R('y', 55)}}>() { }
+              }
+              """,
             """
             public class C {
                 public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<
                     TFirstPara, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
             }
             """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
-            """
-            public class C {
-                public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TFirstParam, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
-            """
-            public class C {
-                public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TFirstParam,
-                                                           Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            $$"""
+              public class C {
+                  public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TFirstParam, T{{R('y', 54)}}>() { }
+              }
+              """,
+            $$"""
+              public class C {
+                  public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TFirstParam,
+                                                             T{{R('y', 54)}}>() { }
+              }
+              """,
+            (AlignKey, "true")
         );
         Agrees(
-            """
-            public class C {
-                public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TA, TB, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
+            $$"""
+              public class C {
+                  public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TA, TB, T{{R('y', 62)}}>() { }
+              }
+              """,
             """
             public class C {
                 public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<
                     TA, TB, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
             }
             """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
-            """
-            public class C {
-                public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TA, TB, TCdef, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
-            """
-            public class C {
-                public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TA, TB, TCdef,
-                                                           Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            $$"""
+              public class C {
+                  public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TA, TB, TCdef, T{{R('y', 55)}}>() { }
+              }
+              """,
+            $$"""
+              public class C {
+                  public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TA, TB, TCdef,
+                                                             T{{R('y', 55)}}>() { }
+              }
+              """,
+            (AlignKey, "true")
         );
         Agrees(
-            """
-            public class C {
-                public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TFirst, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
+            $$"""
+              public class C {
+                  public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TFirst, T{{R('y', 65)}}>() { }
+              }
+              """,
             """
             public class C {
                 public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<
                     TFirst, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
             }
             """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
-            """
-            public class C {
-                public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TFirst, TSecond, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
-            """
-            public class C {
-                public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TFirst, TSecond,
-                                                           Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            $$"""
+              public class C {
+                  public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TFirst, TSecond, T{{R('y', 56)}}>() { }
+              }
+              """,
+            $$"""
+              public class C {
+                  public void Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm<TFirst, TSecond,
+                                                             T{{R('y', 56)}}>() { }
+              }
+              """,
+            (AlignKey, "true")
         );
         Agrees(
-            """
-            public class C {
-                public void Mnn<TFirst, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
-            """
-            public class C {
-                public void Mnn<
-                    TFirst, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            $$"""
+              public class C {
+                  public void Mnn<TFirst, T{{R('y', 86)}}>() { }
+              }
+              """,
+            $$"""
+              public class C {
+                  public void Mnn<
+                      TFirst, T{{R('y', 86)}}>() { }
+              }
+              """,
+            (AlignKey, "true")
         );
         Agrees(
-            """
-            public class C {
-                public void Mnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn<TFirst, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
+            $$"""
+              public class C {
+                  public void Mnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn<TFirst, T{{R('y', 69)}}>() { }
+              }
+              """,
             """
             public class C {
                 public void Mnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn<
                     TFirst, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
             }
             """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
         Agrees(
-            """
-            public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXXXX, TThirdParameterNameXXXXXXXXXXXXX, TFourth> { }
-            """,
-            """
-            public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXXXX, TThirdParameterNameXXXXXXXXXXXXX,
-                                TFourth> { }
-            """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            $$"""
+              {{Long1}}
+              """,
+            $$"""
+              {{Long2}}
+                                  TFourth> { }
+              """,
+            (AlignKey, "true")
         );
         Agrees(
-            """
-            public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXXXX, TThirdParameterNameXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, TFourth> { }
-            """,
-            """
-            public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXXXX,
-                                TThirdParameterNameXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
-                                TFourth> { }
-            """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            $$"""
+              {{Long3}}
+              """,
+            $$"""
+              public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXXXX,
+                                  TThirdParameterName{{R('X', 87)}},
+                                  TFourth> { }
+              """,
+            (AlignKey, "true")
         );
         Agrees(
-            """
-            public class C {
-                public void OneParameterWiderThanTheMargin<TFirst, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
-            }
-            """,
+            $$"""
+              public class C {
+                  public void OneParameterWiderThanTheMargin<TFirst, T{{R('y', 58)}}>() { }
+              }
+              """,
             """
             public class C {
                 public void OneParameterWiderThanTheMargin<
                     TFirst, Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy>() { }
             }
             """,
-            ("skala_align_multiline_type_parameter_list", "true")
+            (AlignKey, "true")
         );
     }
 }

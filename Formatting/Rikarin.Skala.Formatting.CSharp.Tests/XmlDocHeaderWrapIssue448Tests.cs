@@ -7,34 +7,38 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     carries these and more with the oracle's fixture beside them.
 /// </summary>
 public sealed class XmlDocHeaderWrapIssue448Tests {
+    const string SummaryText = "/// <summary>Text.</summary>";
+
     const string Five =
-        "<customElement alphaAttribute=\"1\" betaAttribute=\"2\" gammaAttribute=\"3\" deltaAttribute=\"4\" "
+        """<customElement alphaAttribute="1" betaAttribute="2" gammaAttribute="3" deltaAttribute="4" """
         + "epsilonAttribute=\"5\"";
 
     const string Cref =
         "<see cref=\"System.Collections.Generic.Dictionary{TKeyOfSomeVeryLongName,TValueOfSomeVeryLongName}\"";
 
-    const string Href = "href=\"https://example.invalid/a/very/long/documentation/link/that/will/not/fit\" />";
+    const string Href = """href="https://example.invalid/a/very/long/documentation/link/that/will/not/fit" />""";
 
     [Fact]
     public void AHeaderPastTheMargin_BreaksBeforeTheFirstAttributeThatDoesNotFit() =>
         Assert.Equal(
             [
-                "/// <summary>Text.</summary>",
+                SummaryText,
                 "/// " + Five,
-                "///     zetaAttribute=\"6\">",
+                """///     zetaAttribute="6">""",
                 "///     Body.",
                 "/// </customElement>"
             ],
-            Doc("/// <summary>Text.</summary>" + Five + " zetaAttribute=\"6\">Body.</customElement>")
+            Doc(SummaryText + Five + """ zetaAttribute="6">Body.</customElement>""")
         );
 
-    /// <summary>The <c>&gt;</c> after the last attribute is not counted: at 120 with it, the header stays whole.</summary>
+    /// <summary>
+    ///     The <c>&gt;</c> after the last attribute is not counted: at 120 with it, the header stays whole.
+    /// </summary>
     [Fact]
     public void TheClosingAngle_IsNotCounted() =>
         Assert.Equal(
-            ["/// <summary>Text.</summary>", "/// " + Five + " z=\"xxxx\">Body.</customElement>"],
-            Doc("/// <summary>Text.</summary>" + Five + " z=\"xxxx\">Body.</customElement>")
+            [SummaryText, "/// " + Five + """ z="xxxx">Body.</customElement>"""],
+            Doc(SummaryText + Five + """ z="xxxx">Body.</customElement>""")
         );
 
     [Fact]
@@ -53,14 +57,14 @@ public sealed class XmlDocHeaderWrapIssue448Tests {
     public void AnAuthorsBreak_IsKept_ButNotOneBeforeTheCloser() {
         Assert.Equal(
             [
-                "/// <summary>Text.</summary>",
+                SummaryText,
                 "/// <customElement alphaAttribute=\"1\"",
                 "///     betaAttribute=\"2\">",
                 "///     Body.",
                 "/// </customElement>"
             ],
             Doc(
-                "/// <summary>Text.</summary>",
+                SummaryText,
                 "/// <customElement alphaAttribute=\"1\"",
                 "///  betaAttribute=\"2\">Body.</customElement>"
             )
@@ -105,13 +109,14 @@ public sealed class XmlDocHeaderWrapIssue448Tests {
         Assert.Equal(
             [
                 "/// <summary>",
-                "///     Some prose that runs on for long enough that the inline element which follows it cannot stay on the same line",
-                "///     <see cref=\"System.String\" /> as written.",
+                "///     Some prose that runs on for long enough that the "
+                + "inline element which follows it cannot stay on the same line",
+                """///     <see cref="System.String" /> as written.""",
                 "/// </summary>"
             ],
             Doc(
                 "/// <summary>Some prose that runs on for long enough that the inline element which follows it cannot "
-                + "stay on the same line <see cref=\"System.String\" /> as written.</summary>"
+                + """stay on the same line <see cref="System.String" /> as written.</summary>"""
             )
         );
 

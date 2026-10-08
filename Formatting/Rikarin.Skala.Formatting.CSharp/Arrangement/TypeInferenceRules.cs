@@ -318,7 +318,9 @@ public sealed class ObjectCreationRule : ArrangementRule {
                 ? options.ObjectCreationWhenTypeEvident == ObjectCreationStyle.TargetTyped
                 : options.ObjectCreationWhenTypeNotEvident == ObjectCreationStyle.TargetTyped);
 
-        /// <summary>Whether <c>new()</c> aimed at <paramref name="target" /> constructs what the creation does.</summary>
+        /// <summary>
+        ///     Whether <c>new()</c> aimed at <paramref name="target" /> constructs what the creation does.
+        /// </summary>
         bool Carries(ObjectCreationExpressionSyntax node, ITypeSymbol target) {
             // ⚠ `new T { … }` with no argument list becomes `new() { … }`, which is legal; but
             // `new T[]`-shaped and anonymous creations are other node kinds and never reach here.

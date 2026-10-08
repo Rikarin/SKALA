@@ -55,10 +55,9 @@ static class RawLiteralPlan {
             }
         }
 
-        foreach (var token in node.DescendantTokens(descendIntoTrivia: false)) {
-            if (token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken)) {
-                literals.Add((new(token.SpanStart, token.Span.End), token.SpanStart, token.Span.End, null));
-            }
+        foreach (var token in node.DescendantTokens(descendIntoTrivia: false)
+                     .Where(static token => token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken))) {
+            literals.Add((new(token.SpanStart, token.Span.End), token.SpanStart, token.Span.End, null));
         }
 
         if (literals.Count == 0) {

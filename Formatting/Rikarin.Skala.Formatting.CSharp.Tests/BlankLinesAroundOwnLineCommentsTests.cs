@@ -10,6 +10,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     overrides named, and each test asserts the second pass too.
 /// </summary>
 public sealed class BlankLinesAroundOwnLineCommentsTests {
+    const string KeepBlankLinesKey = "skala_keep_blank_lines_in_declarations";
+
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
@@ -86,7 +88,9 @@ public sealed class BlankLinesAroundOwnLineCommentsTests {
             ("skala_blank_lines_around_single_line_field", "2")
         );
 
-    /// <summary>#497: at the export, a documented enum member takes <c>blank_lines_around_field</c> above its <c>///</c>.</summary>
+    /// <summary>
+    ///     #497: at the export, a documented enum member takes <c>blank_lines_around_field</c> above its <c>///</c>.
+    /// </summary>
     [Fact]
     public void ADocumentedEnumMember_TakesABlankLineAboveItsDocComment() =>
         Agrees(
@@ -262,10 +266,12 @@ public sealed class BlankLinesAroundOwnLineCommentsTests {
                 }
             }
             """,
-            ("skala_keep_blank_lines_in_declarations", "0")
+            (KeepBlankLinesKey, "0")
         );
 
-    /// <summary>#500: between two accessors at <c>keep_blank_lines_in_declarations = 0</c>, a <c>//</c> keeps one.</summary>
+    /// <summary>
+    ///     #500: between two accessors at <c>keep_blank_lines_in_declarations = 0</c>, a <c>//</c> keeps one.
+    /// </summary>
     [Fact]
     public void BetweenAccessors_ALineCommentKeepsOne() =>
         Agrees(
@@ -291,7 +297,7 @@ public sealed class BlankLinesAroundOwnLineCommentsTests {
                 }
             }
             """,
-            ("skala_keep_blank_lines_in_declarations", "0")
+            (KeepBlankLinesKey, "0")
         );
 
     /// <summary>#500: and a <c>/* */</c> there keeps none.</summary>
@@ -319,7 +325,7 @@ public sealed class BlankLinesAroundOwnLineCommentsTests {
                 }
             }
             """,
-            ("skala_keep_blank_lines_in_declarations", "0")
+            (KeepBlankLinesKey, "0")
         );
 
     /// <summary>
@@ -352,7 +358,7 @@ public sealed class BlankLinesAroundOwnLineCommentsTests {
                 int _d;
             }
             """,
-            ("skala_keep_blank_lines_in_declarations", "0")
+            (KeepBlankLinesKey, "0")
         );
 
     /// <summary>#494: the member below's requirement is paid under such a comment, and nothing above it.</summary>
@@ -411,7 +417,7 @@ public sealed class BlankLinesAroundOwnLineCommentsTests {
                 }
             }
             """,
-            ("skala_keep_blank_lines_in_declarations", "1"),
+            (KeepBlankLinesKey, "1"),
             ("skala_blank_lines_around_invocable", "2")
         );
 
@@ -445,7 +451,7 @@ public sealed class BlankLinesAroundOwnLineCommentsTests {
                 }
             }
             """,
-            ("skala_keep_blank_lines_in_declarations", "1"),
+            (KeepBlankLinesKey, "1"),
             ("skala_blank_lines_around_invocable", "2")
         );
 
@@ -489,6 +495,6 @@ public sealed class BlankLinesAroundOwnLineCommentsTests {
                 B
             }
             """,
-            ("skala_keep_blank_lines_in_declarations", "0")
+            (KeepBlankLinesKey, "0")
         );
 }

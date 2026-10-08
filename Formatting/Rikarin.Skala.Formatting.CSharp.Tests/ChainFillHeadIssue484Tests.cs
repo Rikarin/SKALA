@@ -1,3 +1,5 @@
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
+
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
@@ -7,6 +9,19 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     with <c>Testing ask</c>; the 144-row grid behind the widths is in SK-DIV-0129.
 /// </summary>
 public sealed class ChainFillHeadIssue484Tests {
+    const string Long1 = "var a3 = SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb, ccccccccccccccc)."
+        + "Other(ddddddddddddddddddddddddddddddddddd, eeeeeeeeeeeeeeeeeeeeee, ffffffff);";
+
+    const string Long2 = "var a7 = SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb, ccccccccccccccc)."
+        + "Other(ddddddddddddddddddddddddddddddddddd, eeeeeeeeeeeeeeeeeeeeee, ffffffff).Thi"
+        + "rd(gg);";
+
+    const string Long3 = "var b5 = alpha.SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb).Other(ccccc"
+        + "cccccccccc).Third(dddd).Fourth(eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee, ff);";
+
+    const string Long4 = "var b6 = alpha.SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb).Other(ccccc"
+        + "cccccccccc).Third(ddddddddddddddddddddddddd, eeeeeeeeeeeeeee).Fourth(ff);";
+
     static string UnderAFill(string source) =>
         Overridden.Settled(source, [("skala_wrap_chained_method_calls", "wrap_if_long")]).TrimEnd('\n');
 
@@ -27,31 +42,31 @@ public sealed class ChainFillHeadIssue484Tests {
     public void AWideLink_KeepsItsHead_ANarrowOneMovesDown() =>
         Assert.Equal(
             Statements(
-                """
-                        var a3 = SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb, ccccccccccccccc).Other(
-                            ddddddddddddddddddddddddddddddddddd,
-                            eeeeeeeeeeeeeeeeeeeeee,
-                            ffffffff
-                        );
-                        var a7 = SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb, ccccccccccccccc).Other(
-                            ddddddddddddddddddddddddddddddddddd,
-                            eeeeeeeeeeeeeeeeeeeeee,
-                            ffffffff
-                        ).Third(gg);
-                        var b5 = alpha.SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb).Other(ccccccccccccccc).Third(dddd)
-                            .Fourth(eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee, ff);
-                        var b6 = alpha.SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb).Other(ccccccccccccccc)
-                            .Third(ddddddddddddddddddddddddd, eeeeeeeeeeeeeee).Fourth(ff);
-                """
+                $$"""
+                          var a3 = SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb, ccccccccccccccc).Other(
+                              ddddddddddddddddddddddddddddddddddd,
+                              eeeeeeeeeeeeeeeeeeeeee,
+                              ffffffff
+                          );
+                          var a7 = SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb, ccccccccccccccc).Other(
+                              ddddddddddddddddddddddddddddddddddd,
+                              eeeeeeeeeeeeeeeeeeeeee,
+                              ffffffff
+                          ).Third(gg);
+                          var b5 = alpha.SomeMethod({{R('a', 18)}}, {{R('b', 21)}}).Other(ccccccccccccccc).Third(dddd)
+                              .Fourth(eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee, ff);
+                          var b6 = alpha.SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb).Other(ccccccccccccccc)
+                              .Third(ddddddddddddddddddddddddd, eeeeeeeeeeeeeee).Fourth(ff);
+                  """
             ),
             UnderAFill(
                 Statements(
-                    """
-                            var a3 = SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb, ccccccccccccccc).Other(ddddddddddddddddddddddddddddddddddd, eeeeeeeeeeeeeeeeeeeeee, ffffffff);
-                            var a7 = SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb, ccccccccccccccc).Other(ddddddddddddddddddddddddddddddddddd, eeeeeeeeeeeeeeeeeeeeee, ffffffff).Third(gg);
-                            var b5 = alpha.SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb).Other(ccccccccccccccc).Third(dddd).Fourth(eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee, ff);
-                            var b6 = alpha.SomeMethod(aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbb).Other(ccccccccccccccc).Third(ddddddddddddddddddddddddd, eeeeeeeeeeeeeee).Fourth(ff);
-                    """
+                    $$"""
+                              {{Long1}}
+                              {{Long2}}
+                              {{Long3}}
+                              {{Long4}}
+                      """
                 )
             )
         );
