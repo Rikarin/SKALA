@@ -5410,12 +5410,19 @@ public sealed class BreakPlan {
     ///         declaration key at <c>true</c> expands it.
     ///     </para>
     /// </remarks>
+    /// <remarks>
+    ///     ⚠ Only a section whose block is its only statement (#527): `case 3: { M(); } break;` and
+    ///     `case 7: { M(); }` / `break;` are expanded by the oracle at the embedded key's <c>true</c> too,
+    ///     where `case 1: { M(); }` alone is kept.
+    /// </remarks>
     bool Keeps(BlockSyntax block) =>
-        block.Parent is (StatementSyntax and not LocalFunctionStatementSyntax)
-            or SwitchSectionSyntax
-            or AnonymousFunctionExpressionSyntax
-            ? options.KeepExistingEmbeddedBlockArrangement
-            : options.KeepExistingDeclarationBlockArrangement;
+        block.Parent switch {
+            SwitchSectionSyntax { Statements.Count: > 1 } => false,
+            (StatementSyntax and not LocalFunctionStatementSyntax)
+                or SwitchSectionSyntax
+                or AnonymousFunctionExpressionSyntax => options.KeepExistingEmbeddedBlockArrangement,
+            _ => options.KeepExistingDeclarationBlockArrangement
+        };
 
     /// <summary>
     ///     Whether a block may stay on its owner's line — and then it does exactly when everything in it

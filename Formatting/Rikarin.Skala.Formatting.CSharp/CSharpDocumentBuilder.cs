@@ -2351,7 +2351,8 @@ public sealed partial class CSharpDocumentBuilder {
         doc.Anchor(source, -1);
         // The node's first line takes the code's indentation; its interior lines are never
         // reindented, because the writer only indents at a line start and this text is one piece.
-        doc.Verbatim(this.source[span.Start..span.End], source);
+        // ⚠ An interpolated string on one line has its holes respaced (#492); its text never moves.
+        doc.Verbatim(RespacedInterpolatedString(node) ?? this.source[span.Start..span.End], source);
 
         while (cursor < pieces.Length && pieces[cursor].Span.Start < span.End) {
             lastPiece = cursor;
