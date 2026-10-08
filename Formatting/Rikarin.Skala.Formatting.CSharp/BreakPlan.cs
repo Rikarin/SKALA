@@ -6407,10 +6407,10 @@ public sealed class BreakPlan {
         Point(first, group);
         Describe(
             test.Pattern,
-            new GroupPlan(
+            new(
                 group,
                 GroupMode.Preserve,
-                new GroupFacts(
+                new(
                     options.KeepsUserBreaksBetweenItems && BreaksBefore(first),
                     BreaksIfTooLong: true,
                     BreaksOnlyIfHeadOverflows: true,
@@ -6446,10 +6446,10 @@ public sealed class BreakPlan {
         Mandatory(test.IsKeyword);
         Describe(
             test,
-            new GroupPlan(
+            new(
                 group,
                 GroupMode.Preserve,
-                new GroupFacts(BreaksIfTooLong: true),
+                new(BreaksIfTooLong: true),
                 FromLine: !IsAHeaderCondition(test)
             )
         );
