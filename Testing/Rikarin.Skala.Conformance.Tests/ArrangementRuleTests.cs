@@ -1104,6 +1104,26 @@ public sealed class ArrangementRuleTests {
     }
 
     /// <summary>
+    ///     ⚠ #462: with <em>both</em> keys at <c>false</c> the rule must still run. It used to be enabled
+    ///     only when one of them was <c>true</c>, so this configuration expanded nothing at all.
+    /// </summary>
+    [Fact]
+    public void PredefinedType_BothKeysAtFalse_ExpandBothPositions() {
+        var arranged = Declined(
+            Attempt(
+                KeywordProbe,
+                ArrangeIds.PredefinedType,
+                overrides: [
+                    new("dotnet_style_predefined_type_for_locals_parameters_members", "false"),
+                    new("dotnet_style_predefined_type_for_member_access", "false")
+                ]
+            )
+        );
+        Assert.Contains("Int32 _count;", arranged, StringComparison.Ordinal);
+        Assert.Contains("var max = Int32.MaxValue;", arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     ⚠ #462: where something else answers to <c>Int32</c>, the oracle writes <c>System.Int32</c> —
     ///     measured with a class of that name beside the field — and <c>String</c>, which nothing shadows,
     ///     stays short.
