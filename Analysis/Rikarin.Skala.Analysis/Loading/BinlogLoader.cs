@@ -185,8 +185,12 @@ public static partial class BinlogLoader {
     ///     Splits a recorded <c>Csc</c> command line into the compiler's path and the arguments after it.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The host is recorded unquoted, so a path with a space in it — <c>C:\Program Files\dotnet\dotnet.exe
-    ///     exec "C:\Program Files\dotnet\sdk\…\csc.dll" …</c> on the Windows CI runners — cannot be found by
+    ///     ⚠ The host is recorded unquoted, so a path with a space in it —
+    ///     <c>
+    ///         C:\Program Files\dotnet\dotnet.exe
+    ///         exec "C:\Program Files\dotnet\sdk\…\csc.dll" …
+    ///     </c>
+    ///     on the Windows CI runners — cannot be found by
     ///     splitting the line first: the first token is <c>C:\Program</c>. The path is read off the raw
     ///     line instead, up to the first <c>csc</c>, <c>csc.exe</c> or <c>csc.dll</c> that ends a path
     ///     segment, with an optional <c>dotnet[.exe] [exec]</c> host in front (#517). A line with no such

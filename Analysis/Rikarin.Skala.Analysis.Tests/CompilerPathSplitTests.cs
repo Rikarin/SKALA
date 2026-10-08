@@ -12,7 +12,10 @@ namespace Rikarin.Skala.Analysis.Tests;
 /// </remarks>
 public sealed class CompilerPathSplitTests {
     [Theory]
-    [InlineData("/usr/share/dotnet/sdk/10.0.400/Roslyn/bincore/csc /noconfig a.cs", "/usr/share/dotnet/sdk/10.0.400/Roslyn/bincore/csc")]
+    [InlineData(
+        "/usr/share/dotnet/sdk/10.0.400/Roslyn/bincore/csc /noconfig a.cs",
+        "/usr/share/dotnet/sdk/10.0.400/Roslyn/bincore/csc"
+    )]
     [InlineData(@"C:\sdk\Roslyn\bincore\csc.exe /noconfig a.cs", @"C:\sdk\Roslyn\bincore\csc.exe")]
     [InlineData(
         @"C:\Program Files\dotnet\dotnet.exe exec ""C:\Program Files\dotnet\sdk\10.0.400\Roslyn\bincore\csc.dll"" /noconfig a.cs",
