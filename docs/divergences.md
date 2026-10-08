@@ -6340,6 +6340,26 @@ check. The export's `chop_if_long` is conformant on every one of these shapes.
   four-call chain with each link's width varied before wiring a head measure into the chain fill.
   Recorded in `ChainWithACallRootIssue380Tests`' remarks and deliberately not asserted there.
 
+⚠ **Measured for #484 on 2026-10-08, and the boundary is not "last link against middle link".** With
+`SomeMethod(…)` heads at indent 8, `skala_wrap_chained_method_calls = wrap_if_long`:
+
+| shape | oracle |
+|---|---|
+| `a7`'s middle link `.Other(d35, e22, f8)` followed by `.Third(gg)` | `.Other(` kept, arguments chopped, `).Third(gg);` — a **middle** link's head kept too |
+| `.Other(d35, e22)` with `.Other(` ending anywhere from 90 to 115 | head kept, arguments chopped, at every column |
+| `.Other(eee…, ff)` — a link of 46 columns — after a 3- or 4-call chain or alone, `.Other(`/`.Third(`/`.Fourth(` ending at 100 to 119 | broken before the link, every row |
+| two arguments, the dot-broken line `.Other(e×k, ff);` at 12: k = 36 … 46 (line 61 … 71) | broken before the link |
+| the same, k = 48 … 56 (line 73 … 81) | head kept, arguments chopped |
+| one argument, `.Other(e×k);` at 12: line 61 … 81 | broken before the link |
+| the k = 46 two-argument link behind a head of 40, 50 and 70 columns | broken, **kept**, broken |
+
+So it is neither the link's position, nor the column the head ends at, nor the link's width alone,
+and the last row is not even monotone in the head's width. It reads as a cost comparison between the
+two layouts that this table does not pin down, and wiring a guess would trade the present
+"break before every link that fits on the continuation line" — right on every row in the second half
+of the table — for one right on a different half. #484 is **blocked**, not fixed; these rows are the
+starting point.
+
 ## SK-DIV-0132 — a doc comment kept as written was decided line by line, and the oracle decides it per comment
 
 ⚠ **Filed as issue #382, whose headline claim the oracle refutes.** The issue read
@@ -7317,9 +7337,21 @@ idempotent (`Outer(first: 1, source.Select(` … under `wrap_if_long`). So a fil
 wrong when it breaks after it, idempotent either way. Before #418 a fill lifted every block, which was
 wrong in ten of the thirteen block shapes sampled and right in three.
 
+⚠ **Re-measured for #496 on 2026-10-08**, and the criterion is sharper than "breaks *after* the list":
+the oracle lifts when the fill takes **any** of its points past the list. `source.Select(x => {` … `}`
+/ `).Where(alpha…)` / `.ToList(beta…);` lifts the body to 20 and the `)` to 12 although the chain stays
+whole across `).Where(` — its one break is before `.ToList`, a link later. `…}).Where(beta);` (no point
+taken) and `…}).Where(` / a chopped long argument / `);` (the argument list chopped, no point taken)
+do not lift; a pinned author's `)` / `.Where(beta)` does. So the question the list's scope needs
+answered when it opens is whether the chain's group takes a point anywhere to its right, which is a
+lookahead past the end of the scope — `ChainBreaksInside` runs only the scope's own contents — and the
+pinned break is a required break the watch does not see. ⚠ The third row also shows SK-DIV-0129's
+keep-the-last-head shape, which Skala breaks before (`}` / `)` / `.Where(` / the argument / `);`).
+
 - options: `skala_wrap_chained_method_calls`, `skala_wrap_chained_binary_expressions` at `wrap_if_long`.
-- ⚠ status: **open**, pinned in its current reading by
-  `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`.
+- ⚠ status: **open** — #496 blocked, not fixed: the fix needs a writer lookahead to the end of the
+  chain's group that also counts pinned breaks, and the last attempt at one was not idempotent. Pinned
+  in its current reading by `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`.
 
 ## SK-DIV-0193 — a block comment's lines lose their trailing whitespace; Skala kept it
 
