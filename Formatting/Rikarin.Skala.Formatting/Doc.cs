@@ -257,7 +257,17 @@ public enum LineFlags {
     ///     A required line that keeps a break the author wrote, which the draft measure reads as a space;
     ///     with <see cref="ArrayElement" />, one in front of an element.
     /// </summary>
-    KeptBreak = 512
+    KeptBreak = 512,
+
+    /// <summary>
+    ///     ⚠ A <c>wrap_if_long</c> chain's fill point before a call link (#484, SK-DIV-0129): the link keeps
+    ///     its head on the line and chops its arguments when, moved down, its line would end past 72
+    ///     columns at the export's 120 — 90 with <see cref="ChainCallOneArgument" />.
+    /// </summary>
+    ChainCallLink = 1024,
+
+    /// <summary>With <see cref="ChainCallLink" />: the link's call has one argument or none.</summary>
+    ChainCallOneArgument = 2048
 }
 
 /// <summary>
@@ -1008,6 +1018,26 @@ public sealed class Document {
 ///     and the operand with a space and the keyword does not. The operand is the group's flat width less
 ///     the segment after its point and the point's own space. Zero for any other group.
 /// </param>
+/// <param name="ContinuesIfItBreaks">
+///     ⚠ <see cref="Continues" /> for a fill chain, whose group resolving broken does not say it breaks
+///     (#496, SK-DIV-0185): a delimited list on the chain's first line lifts exactly when the chain then
+///     takes one of its points, which the writer answers by writing the rest of the chain ahead with the
+///     list unlifted and watching the group. A chain whose author's breaks the fill pinned lifts outright
+///     (<see cref="Continues" />), so the second pass — which reads the fill's break as the author's —
+///     gives the same answer as the first.
+/// </param>
+/// <param name="FlatIfHeadOverflows">
+///     ⚠ An assignment's <c>=</c> whose target is a member-access fill (#531, SK-DIV-0330): when the target
+///     with its <c>=</c> does not fit on the line, the target's own dot breaks and the <c>=</c> stays —
+///     <c>A.B.C.D.More</c> / <c>.Value = 1;</c> — where a break after the <c>=</c> would leave the line it
+///     ends as long as it was.
+/// </param>
+/// <param name="HeldCall">
+///     ⚠ A chain's held first call (#528, SK-DIV-0331), as the columns its line has to end short of the
+///     margin by, or zero: the point before it breaks exactly when the
+///     receiver fits on its line, the receiver with the call does not, and the call fits whole on the
+///     continuation line. A receiver that does not fit flat breaks inside itself and leaves the point alone.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1033,4 +1063,7 @@ public readonly record struct GroupFacts(
     int ColonEdgeFloor = 0,
     int CalleeWidth = 0,
     EqualsOwner CalleeOwner = EqualsOwner.None,
-    int ThroughWidth = 0);
+    int ThroughWidth = 0,
+    int HeldCall = 0,
+    bool ContinuesIfItBreaks = false,
+    bool FlatIfHeadOverflows = false);

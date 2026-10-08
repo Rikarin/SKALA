@@ -507,7 +507,8 @@ public sealed class ChainFirstCallArgumentsIssue418Tests {
 
     /// <summary>
     ///     ⚠ <c>wrap_if_long</c>: the chain and the operator stay whole after the list or the block, and the oracle lifts
-    ///     neither. Skala lifts nothing under a fill (SK-DIV-0185); before #418 it lifted every block.
+    ///     neither. Skala lifts a list under a fill only when the fill then takes a point (#496,
+    ///     <c>ChainFillLiftIssue496Tests</c>); before #418 it lifted every block.
     /// </summary>
     [Fact]
     public void AFill_KeepsTheOrdinaryLevel() =>

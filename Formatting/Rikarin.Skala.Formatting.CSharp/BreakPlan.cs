@@ -2481,7 +2481,12 @@ public sealed class BreakPlan {
                     // whole, and the oracle lifts only when the fill then breaks after the block or the
                     // list — `source.Select(x => {` … `}).Where(beta);` keeps the body one level in.
                     // That is an output fact the group does not have when the block opens; SK-DIV-0185.
-                    Continues: !fill
+                    // ⚠ So the writer answers it, for a list: it writes the rest of the chain ahead and
+                    // lifts when the fill takes a point (#496). An author's break the fill pins is taken
+                    // whatever the width, so such a chain lifts outright — which is what keeps pass two,
+                    // reading pass one's fill break as the author's, on pass one's answer.
+                    Continues: !fill || pinsLinkBreaks && broken,
+                    ContinuesIfItBreaks: fill && !(pinsLinkBreaks && broken)
                 ),
                 // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
                 // `Break`, at the first break landing before a `.` — and a group's break point never
@@ -2521,6 +2526,8 @@ public sealed class BreakPlan {
             )
         );
 
+        PlanHeldFirstCall(dots, first);
+
         bool Link(SyntaxToken gap) {
             var broke = BreaksBefore(gap);
             if (pinsLinkBreaks && broke) {
@@ -2531,6 +2538,47 @@ public sealed class BreakPlan {
 
             return broke;
         }
+    }
+
+    /// <summary>
+    ///     The held first call of a chain (<c>skala_wrap_before_first_method_call = false</c>) breaks too
+    ///     when it does not fit on the receiver's line and does fit whole on the continuation line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured for #528 (SK-DIV-0331), a column at a time on two-call chains at indent 8:
+    ///     <c>var y = S….Select(alpha)</c> / <c>.Where(b);</c> holds the call while it ends at 120 and
+    ///     breaks before it from 121 — <c>S…</c> / <c>.Select(alpha)</c> / <c>.Where(b);</c> — even with
+    ///     <c>.Select(</c> itself at 117; with two 19-column arguments the call is broken before at every
+    ///     head from 80 to 113 columns, its arguments whole. Where the call does not fit on the
+    ///     continuation line either, the oracle holds it and chops its arguments (#418's rows,
+    ///     <c>source.Select(</c> / … / <c>)</c> / <c>.Where(beta)</c>) — the other half of the same
+    ///     rule, and <see cref="GroupFacts.BreaksOnlyIfTailFits" />'s own question.
+    /// </remarks>
+    void PlanHeldFirstCall(List<SyntaxToken> dots, int points) {
+        if (points >= dots.Count || dots[^1] is not { Parent: MemberAccessExpressionSyntax access } dot) {
+            return;
+        }
+
+        if (BreaksBefore(dot)) {
+            return;
+        }
+
+        SyntaxNode link = access;
+        while (link.Parent is MemberAccessExpressionSyntax outer && outer.Expression == link) {
+            link = outer;
+        }
+
+        if (link.Parent is not InvocationExpressionSyntax call || call.Expression != link) {
+            return;
+        }
+
+        // ⚠ How short of the margin the call's line below must end, by argument count: 96 columns for
+        // one argument or none, 76 for more, at the export's 120 — the widths every measured row agrees
+        // on (see Fitter's HeldCall arm and SK-DIV-0331).
+        var room = call.ArgumentList.Arguments.Count <= 1 ? 24 : 44;
+        var group = NewGroup();
+        Point(dot, group);
+        Describe(call, group, GroupMode.Preserve, new(BreaksIfTooLong: true, HeldCall: room));
     }
 
     /// <summary>
@@ -2566,7 +2614,7 @@ public sealed class BreakPlan {
             if (options.KeepsUserBreaksBetweenItems && BreaksBefore(dot)) {
                 Mandatory(dot);
             } else {
-                Point(dot, group, true);
+                Point(dot, group, true, IsAssignmentTarget(root));
             }
         }
 
@@ -2575,7 +2623,7 @@ public sealed class BreakPlan {
             new(
                 group,
                 GroupMode.Preserve,
-                new(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: true),
+                new(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: !IsAssignmentTarget(root)),
                 HeadSharesTheLevelAroundIt(root),
                 OwnLevel: !HeadSharesTheLevelAroundIt(root)
             )
@@ -2610,7 +2658,10 @@ public sealed class BreakPlan {
     /// <summary>Whether the property fill is planned in the position <paramref name="root" /> stands in.</summary>
     /// <remarks>
     ///     ⚠ Measured, and the position decides, not the expression. As an assignment's target the
-    ///     <c>=</c> breaks first — <c>A.B.C.D.Value =</c> / <c>yyyyyyyy;</c>. As the operand of <c>is</c>
+    ///     <c>=</c> breaks first — <c>A.B.C.D.Value =</c> / <c>yyyyyyyy;</c> — and the target's dots only
+    ///     when the target with its <c>=</c> overflows by itself (<c>A.B.C.D.More</c> / <c>.Value = 1;</c>,
+    ///     #531): planned there as last-resort points, with the <c>=</c> told to stay
+    ///     (<see cref="GroupFacts.FlatIfHeadOverflows" />). As the operand of <c>is</c>
     ///     or <c>as</c>, the type test's own break, an <c>=</c> or a lambda's arrow is taken instead
     ///     (#440, #444, #445). As a switch arm's pattern, the fill outranks the arrow only for a short
     ///     body: <c>…Dddd</c> / <c>.MoreValue =&gt; yyyyyyyyyyyyy,</c> up to thirteen columns of body,
@@ -2619,12 +2670,19 @@ public sealed class BreakPlan {
     ///     does fill, and a fourteen-column body behind a 118-column head, which it fills too — are
     ///     SK-DIV-0330.
     /// </remarks>
+    static bool IsAssignmentTarget(SyntaxNode root) =>
+        root.Parent is AssignmentExpressionSyntax assignment && assignment.Left == root;
+
     static bool PlansTheFill(SyntaxNode root) =>
         root.Parent switch {
-            AssignmentExpressionSyntax assignment when assignment.Left == root => false,
+            AssignmentExpressionSyntax assignment when assignment.Left == root => true,
             BinaryExpressionSyntax binary when IsTypeTest(binary) && binary.Left == root => false,
             IsPatternExpressionSyntax test when test.Expression == root => false,
-            ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm } => arm.Expression.Span.Length <= 13,
+            // ⚠ The body with its comma, if it has one: a last arm without one fills at fourteen columns
+            // of body, where a comma-led arm of fourteen breaks the arrow (#531).
+            ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm } =>
+                arm.Expression.Span.Length + (arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0)
+                <= 14,
             _ => true
         };
 
@@ -4388,7 +4446,10 @@ public sealed class BreakPlan {
                     Owner: head,
                     MinimumHead: yieldsToTheBracket || callee > 0 ? MinimumEqualsHead : 0,
                     CalleeWidth: callee,
-                    CalleeOwner: owner
+                    CalleeOwner: owner,
+                    FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
+                    && TrailingProperty(target) is not null
+                    && ChainPointCount(target, options) == 0
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -5221,9 +5282,27 @@ public sealed class BreakPlan {
             // width breaks it in 3 664 — so the arrow breaks whenever the body does not fit beside it,
             // with no ordering question asked.
             ArrowWinsOverTheChain(lambda)
-                ? new GroupFacts(BreaksIfTooLong: true)
+            ? new GroupFacts(BreaksIfTooLong: true)
+            : ArrowMovesACallChainDown(body)
+                ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
                 : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
+
+    /// <summary>
+    ///     A lambda whose body is a chain of calls the author did not break: its arrow breaks exactly when
+    ///     the whole chain then fits on the line below (#529, SK-DIV-0332).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured: <c>var r = items.Where(x =&gt;</c> / the chain whole / <c>);</c>, and the same with
+    ///     <c>.ToList()</c> after the call; where the chain does not fit below either —
+    ///     <c>Use(x =&gt; source.Select(…)</c> / <c>.Where(p)</c> — the arrow stays and the chain breaks,
+    ///     which is the arrow's head rule and what Skala did before. The same question the <c>=</c> asks of
+    ///     a collection expression (<see cref="GroupFacts.BreaksOnlyIfTailFits" />).
+    /// </remarks>
+    bool ArrowMovesACallChainDown(ExpressionSyntax body) =>
+        IsChainRoot(body)
+        && ChainPointCount(body, options) > 0
+        && source.AsSpan(body.SpanStart, body.Span.Length).IndexOfAny('\r', '\n') < 0;
 
     /// <summary>
     ///     A lambda that is the value of an <c>=</c>, with a binary operand chain for a body the author

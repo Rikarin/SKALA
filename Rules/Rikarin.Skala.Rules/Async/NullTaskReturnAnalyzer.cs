@@ -140,8 +140,8 @@ public sealed class NullTaskReturnAnalyzer : DiagnosticAnalyzer {
                     System.StringComparison.Ordinal
                 )
             )
-                ? "Task"
-                : fullName;
+            ? "Task"
+            : fullName;
 
         if (!isGeneric) {
             return name + ".CompletedTask";
