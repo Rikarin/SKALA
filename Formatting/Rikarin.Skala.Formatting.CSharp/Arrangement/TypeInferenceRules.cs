@@ -174,8 +174,8 @@ public sealed class VarRule : ArrangementRule {
         ///     (<c>Action h = Run</c>) and a nullable-annotated <c>Func&lt;int&gt;?</c>. It declines every
         ///     declaration whose natural type is something else or nothing:
         ///     <c>
-        /// Func&lt;object&gt; = () =&gt;
-        ///     "x"
+        ///         Func&lt;object&gt; = () =&gt;
+        ///         "x"
         ///     </c>
         ///     (natural <c>Func&lt;string&gt;</c>), <c>Func&lt;int?&gt; = () =&gt; 1</c>, an untyped
         ///     parameter <c>x =&gt; x</c>, <c>Expression&lt;…&gt;</c>, a custom delegate type,

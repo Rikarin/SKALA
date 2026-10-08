@@ -50,8 +50,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///     <para>
 ///         ⚠ <b><c>SK3040</c>'s types are declined, in both shapes.</b>
 ///         <c>
-/// var s = new SemaphoreSlim(1);
-///         lock (s) { }
+///             var s = new SemaphoreSlim(1);
+///             lock (s) { }
 ///         </c>
 ///         is a fresh local <em>and</em> a lock over a synchronization primitive, and
 ///         the second reading is the one that tells the reader what to do. The list is

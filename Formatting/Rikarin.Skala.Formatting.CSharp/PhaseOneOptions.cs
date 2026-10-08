@@ -2894,7 +2894,9 @@ public static class Ids {
     // — and stays Tier D, because the export's `attribute_indent` masks it from every fixture.
     public static readonly OptionId XmlDocWrapTagsAndPi = Of("skala_xmldoc_wrap_tags_and_pi");
     public static readonly OptionId XmlDocAttributeStyle = Of("skala_xmldoc_attribute_style");
+
     public static readonly OptionId XmlDocAttributeIndent = Of("skala_xmldoc_attribute_indent");
+
     // ⚠ Inert at the export, not in Skala: masked by `attribute_indent = single_indent` (#570).
     public static readonly OptionId XmlDocAllowFarAlignment = OfInert("skala_xmldoc_allow_far_alignment");
 

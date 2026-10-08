@@ -169,8 +169,7 @@ public sealed class XmlDocModel {
     ///     trimmed and placed one indent past the tag, a blank one is dropped, a long one wraps at a space, and
     ///     the author's breaks and the spaces inside a line stay. <c>&lt;code&gt;</c> stays verbatim at any length.
     /// </summary>
-    public static bool IsReflowedInlineCode(string name, ImmutableArray<string> body) =>
-        name == "c" && body.Length > 1;
+    public static bool IsReflowedInlineCode(string name, ImmutableArray<string> body) => name == "c" && body.Length > 1;
 
     /// <summary>
     ///     What such a <c>&lt;c&gt;</c> must keep: its lines trimmed, blank ones dropped, joined by one space — so

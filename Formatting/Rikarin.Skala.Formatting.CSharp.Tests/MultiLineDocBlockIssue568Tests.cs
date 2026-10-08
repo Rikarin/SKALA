@@ -21,7 +21,10 @@ public sealed class MultiLineDocBlockIssue568Tests {
         "/**\n     * <summary>\n     * Doc.\n     * </summary>\n     */",
         "/**\n     * <summary>\n     *     Doc.\n     * </summary>\n     */"
     )]
-    [InlineData("/**\n     *\n     * <summary>blank first</summary>\n     */", "/**\n     * <summary>blank first</summary>\n     */")]
+    [InlineData(
+        "/**\n     *\n     * <summary>blank first</summary>\n     */",
+        "/**\n     * <summary>blank first</summary>\n     */"
+    )]
     // Left as written by the oracle, and by Skala.
     [InlineData("/** text\n     */", "/** text\n     */")]
     [InlineData("/**\n     *no space\n     */", "/**\n     *no space\n     */")]

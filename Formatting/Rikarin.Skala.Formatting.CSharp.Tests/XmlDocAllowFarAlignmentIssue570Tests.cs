@@ -65,7 +65,9 @@ file static class Probe {
         var attributes = string.Join(" ", Enumerable.Range(1, 29).Select(static i => $"a{i}=\"{i}\""));
         (string, string)[] overrides = [..keys, ("skala_xmldoc_max_line_length", "90")];
         var once = XmlDoc.Text(
-            XmlDoc.InClass(["/// <summary>Text.</summary><" + new string('n', firstAttribute - 2) + " " + attributes + " />"]),
+            XmlDoc.InClass(
+                ["/// <summary>Text.</summary><" + new string('n', firstAttribute - 2) + " " + attributes + " />"]
+            ),
             overrides
         );
         Assert.Equal(once, XmlDoc.Text(once, overrides));

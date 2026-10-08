@@ -606,13 +606,13 @@ public sealed class WorkspaceLoadingTests {
     ///         Measured on <c>master</c> through the real binary: <c>One.cs</c> beside a <c>.csproj</c>
     ///         naming an SDK that does not exist, no binlog,
     ///         <c>
-    /// check --load=binlog --gate=local
-    ///         --format=agent
+    ///             check --load=binlog --gate=local
+    ///             --format=agent
     ///         </c>
     ///         printed
     ///         <c>
-    /// INCOMPLETE  1 of 1 file was not checked — this is a Skala
-    ///         bug
+    ///             INCOMPLETE  1 of 1 file was not checked — this is a Skala
+    ///             bug
     ///         </c>
     ///         above <b>exit 0</b>, then <c>SKIPPED 260 rule(s) did not run (loose load)</c>. The
     ///         "1 file" was the <c>.csproj</c>; the source file was checked; 260 rules were not; and the

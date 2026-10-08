@@ -46,8 +46,8 @@ public static class ArrangeIds {
     ///     nightly fuzz run means the whole run's report, and for <c>skala arrange</c> means the
     ///     process. Found by the fuzzer as a <c>crash</c>:
     ///     <c>
-    /// Func&lt;int&gt; v = new () { P = (from
-    ///     item in items select null) };
+    ///         Func&lt;int&gt; v = new () { P = (from
+    ///         item in items select null) };
     ///     </c>
     ///     makes Roslyn's own binder throw
     ///     <c>IndexOutOfRangeException</c> out of <c>GetSymbolInfo</c>, which is a legitimate call on a

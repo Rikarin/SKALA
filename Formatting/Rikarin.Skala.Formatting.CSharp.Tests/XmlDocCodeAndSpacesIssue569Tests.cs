@@ -2,7 +2,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
 ///     Issue #569: the last doc-comment hunks of <c>corpus/real</c>, each a rule of its own. Every expected line is
-///     <c>jb cleanupcode</c> 2025.2.6's under <c>SkalaFormatOnly</c>; <c>constructs/trivia/doc-comment-code-block-edges.cs</c>,
+///     <c>jb cleanupcode</c> 2025.2.6's under <c>SkalaFormatOnly</c>;
+///     <c>constructs/trivia/doc-comment-code-block-edges.cs</c>,
 ///     <c>…-inline-code-spanning-lines.cs</c> and <c>…-space-runs.cs</c> carry the wider probes.
 /// </summary>
 public sealed class XmlDocCodeAndSpacesIssue569Tests {
@@ -13,8 +14,19 @@ public sealed class XmlDocCodeAndSpacesIssue569Tests {
     [Fact]
     public void ACodeBlock_KeepsItsEdges() {
         Assert.Equal(
-            ["/// <example>", "///     Text:", "///     <code>", "/// var a = 1;", "///     a++;", "/// </code>", "/// </example>"],
-            Doc("/// <example>", "/// Text:", "/// <code>", "/// var a = 1;", "///     a++;", "/// </code>", "/// </example>")
+            [
+                "/// <example>", "///     Text:", "///     <code>", "/// var a = 1;", "///     a++;", "/// </code>",
+                "/// </example>"
+            ],
+            Doc(
+                "/// <example>",
+                "/// Text:",
+                "/// <code>",
+                "/// var a = 1;",
+                "///     a++;",
+                "/// </code>",
+                "/// </example>"
+            )
         );
         Assert.Equal(
             ["/// <example>", "///     <code>", "/// var a = 1;", "///         </code>", "/// </example>"],
@@ -46,7 +58,10 @@ public sealed class XmlDocCodeAndSpacesIssue569Tests {
     /// </summary>
     [Fact]
     public void ARunOfSpaces_SurvivesAndCounts() {
-        Assert.Equal(["/// <summary>End.  Next sentence.</summary>"], Doc("/// <summary>End.  Next sentence.</summary>"));
+        Assert.Equal(
+            ["/// <summary>End.  Next sentence.</summary>"],
+            Doc("/// <summary>End.  Next sentence.</summary>")
+        );
         Assert.Equal(
             [
                 "/// <returns>",

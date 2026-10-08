@@ -13,8 +13,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 ///     <para>
 ///         First, the oracle does not perform it.
 ///         <c>
-/// skala_null_checking_pattern_style =
-///  not_null_pattern
+///             skala_null_checking_pattern_style =
+///             not_null_pattern
 ///         </c>
 ///         is set in the export and <c>jb cleanupcode</c> 2025.2.6 rewrites nothing —
 ///         under any profile shape, with the inspection at its exported <c>hint</c> or raised to

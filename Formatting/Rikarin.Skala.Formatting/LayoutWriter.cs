@@ -116,8 +116,8 @@ public enum VerbatimFlags {
     ///     With <see cref="ShiftWithLine" />: the comment's lines lose their trailing whitespace only when
     ///     its line actually moved. A starred <c>/**</c> trailing code at
     ///     <c>
-    /// align_multiline_comments =
-    ///     false
+    ///         align_multiline_comments =
+    ///         false
     ///     </c>
     ///     — measured, issue #459: moved four left, its <c>/**   </c> and body lines came back
     ///     trimmed; on a line that did not move, its trailing spaces came back untouched.
@@ -1113,8 +1113,8 @@ public sealed class LayoutWriter {
     /// <remarks>
     ///     ⚠ Read by <see cref="WriteIndentTo" /> and by nothing else.
     ///     <c>
-    /// alignment_tab_fill_style =
-    ///     use_spaces
+    ///         alignment_tab_fill_style =
+    ///         use_spaces
     ///     </c>
     ///     — the export's own value — writes the level part of a line's indentation in tabs
     ///     and the alignment part in spaces, which needs the two numbers separately; every other value,

@@ -17,8 +17,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     probe built outside this repository: <c>ReadOnlySpan&lt;char&gt; == ReadOnlySpan&lt;char&gt;</c>,
 ///     <c>Span&lt;char&gt; == Span&lt;char&gt;</c>,
 ///     <c>
-/// ReadOnlySpan&lt;byte&gt; ==
-///     ReadOnlySpan&lt;byte&gt;
+///         ReadOnlySpan&lt;byte&gt; ==
+///         ReadOnlySpan&lt;byte&gt;
 ///     </c>
 ///     and <c>ReadOnlySpan&lt;char&gt; == string</c> all build clean at
 ///     <c>net10.0</c> with no compiler warning and nothing from the analyzers at

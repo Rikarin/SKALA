@@ -499,11 +499,11 @@ public static class XmlDocFormatter {
         }
 
         if (opener.Length == 0
-            ? rest.Count == 0
-            || (rest.Count == 1
-                && !(rest[0].StartsWith(indent + " * ", StringComparison.Ordinal)
-                    && (!closerAlone || last == indent + " */")))
-            : rest.Count == 0) {
+                ? rest.Count == 0
+                || (rest.Count == 1
+                    && !(rest[0].StartsWith(indent + " * ", StringComparison.Ordinal)
+                        && (!closerAlone || last == indent + " */")))
+                : rest.Count == 0) {
             return null;
         }
 
