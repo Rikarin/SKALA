@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,15 +16,15 @@
 namespace Serilog.Core;
 
 /// <summary>
-/// Dynamically controls logging level.
+///     Dynamically controls logging level.
 /// </summary>
 public class LoggingLevelSwitch {
     volatile LogEventLevel _minimumLevel;
     readonly object _levelUpdateLock = new();
 
     /// <summary>
-    /// Create a <see cref="LoggingLevelSwitch"/> at the initial
-    /// minimum level.
+    ///     Create a <see cref="LoggingLevelSwitch" /> at the initial
+    ///     minimum level.
     /// </summary>
     /// <param name="initialMinimumLevel">The initial level to which the switch is set.</param>
     public LoggingLevelSwitch(LogEventLevel initialMinimumLevel = LogEventLevel.Information) {
@@ -32,14 +32,14 @@ public class LoggingLevelSwitch {
     }
 
     /// <summary>
-    /// The event arises when <see cref="MinimumLevel"/> changed. Note that the event is raised
-    /// under a lock so be careful within event handler to not fall into deadlock.
+    ///     The event arises when <see cref="MinimumLevel" /> changed. Note that the event is raised
+    ///     under a lock so be careful within event handler to not fall into deadlock.
     /// </summary>
     public event EventHandler<LoggingLevelSwitchChangedEventArgs>? MinimumLevelChanged;
 
     /// <summary>
-    /// The current minimum level, below which no events
-    /// should be generated.
+    ///     The current minimum level, below which no events
+    ///     should be generated.
     /// </summary>
     // Reading this property generates a memory barrier,
     // so needs to be used judiciously in the logging pipeline.

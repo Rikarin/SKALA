@@ -1,11 +1,13 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // Issue #415, SK-DIV-0180. Roslyn lexes `/**` as a documentation comment wherever it stands, an
 // argument list included, and the trivia's Span leaves the `/**` out; every file holding one was
 // refused with SK9099. The corpus held none, which is how it went unseen. The oracle treats each of
 // these as the block comment it looks like.
 
 class C {
-    /** <summary>On one line.</summary> */
+    /**
+     * <summary>On one line.</summary>
+     */
     public void M(int x, int y) { }
 
     /**
@@ -21,7 +23,9 @@ class C {
         M(1, 2); /** trailing */
     }
 
-    /** single */
+    /**
+     * single
+     */
     public int F;
 
     public void E() {

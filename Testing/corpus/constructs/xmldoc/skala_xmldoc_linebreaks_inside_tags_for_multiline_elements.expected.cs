@@ -1,5 +1,8 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 class LinebreaksInsideTagsForMultilineElements {
-    /// <summary>A summary written at enough length that it cannot sit on one line, so that the question of whether the start tag keeps the first words of it can be asked.</summary>
+    /// <summary>
+    ///     A summary written at enough length that it cannot sit on one line, so that the question of whether the start
+    ///     tag keeps the first words of it can be asked.
+    /// </summary>
     void M() { }
 }

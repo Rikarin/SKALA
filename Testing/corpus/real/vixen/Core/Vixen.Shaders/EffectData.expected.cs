@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -226,8 +226,11 @@ public sealed record EffectParameterData(
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <strong>This is what makes "zero runtime shader compilation" a structural claim rather
-///         than a policy.</strong> Raven's own <c>.rvnfx</c> already holds bytecode and reflection —
+///         <strong>
+///             This is what makes "zero runtime shader compilation" a structural claim rather
+///             than a policy.
+///         </strong>
+///         Raven's own <c>.rvnfx</c> already holds bytecode and reflection —
 ///         but <c>CompiledEffectReader</c> lives in the compiler assembly, so a runtime that read one
 ///         would link the parser, the lowerer and both backends. Every tier below the in-memory
 ///         dictionary reads <em>this</em> instead: the disk cache, the baked bundle and the answer

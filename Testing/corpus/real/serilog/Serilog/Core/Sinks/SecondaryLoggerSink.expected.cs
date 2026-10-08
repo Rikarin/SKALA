@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 // Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,14 @@
 namespace Serilog.Core.Sinks;
 
 /// <summary>
-/// Forwards log events to another logging pipeline. Copies the events so
-/// that mutations performed on the copies do not affect the originals.
+///     Forwards log events to another logging pipeline. Copies the events so
+///     that mutations performed on the copies do not affect the originals.
 /// </summary>
-/// <remarks>The properties dictionary is copied, however the values within
-/// the dictionary (of type <see cref="LogEventProperty"/> are expected to
-/// be immutable.</remarks>
+/// <remarks>
+///     The properties dictionary is copied, however the values within
+///     the dictionary (of type <see cref="LogEventProperty" /> are expected to
+///     be immutable.
+/// </remarks>
 sealed class SecondaryLoggerSink : ILogEventSink, IDisposable
 #if FEATURE_ASYNCDISPOSABLE
     , IAsyncDisposable

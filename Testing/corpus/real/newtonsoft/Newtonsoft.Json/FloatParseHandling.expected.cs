@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -28,16 +28,16 @@
 
 namespace Newtonsoft.Json {
     /// <summary>
-    /// Specifies how floating point numbers, e.g. 1.0 and 9.9, are parsed when reading JSON text.
+    ///     Specifies how floating point numbers, e.g. 1.0 and 9.9, are parsed when reading JSON text.
     /// </summary>
     public enum FloatParseHandling {
         /// <summary>
-        /// Floating point numbers are parsed to <see cref="Double"/>.
+        ///     Floating point numbers are parsed to <see cref="Double" />.
         /// </summary>
         Double = 0,
 
         /// <summary>
-        /// Floating point numbers are parsed to <see cref="Decimal"/>.
+        ///     Floating point numbers are parsed to <see cref="Decimal" />.
         /// </summary>
         Decimal = 1
     }

@@ -1,22 +1,40 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
-/** above the type */
+/**
+ * above the type
+ */
 class SlashStarStarOneLine {
-    /** <summary>Doc.</summary> */
+    /**
+     * <summary>Doc.</summary>
+     */
     public int Rebuilt;
 
-    /** single */
+    /**
+     * single
+     */
     public int RebuiltWithoutAnElement;
 
-    /**single */
+    /**
+     * single
+     */
     public int RebuiltWithNoSpaceAfterTheOpener;
 
-    /** <summary>Doc.</summary><param name="a">A.</param> */
+    /**
+     * <summary>Doc.</summary>
+     * <param name="a">A.</param>
+     */
     public void RebuiltAndSplit(int a) { }
 
-    /** <summary>A very long block doc comment that will certainly not fit within the margin of one hundred and twenty columns at all.</summary> */
+    /**
+     * <summary>
+     *     A very long block doc comment that will certainly not fit within the margin of one hundred and twenty columns
+     *     at all.
+     * </summary>
+     */
     public int RebuiltAndWrapped;
 
-    /** <summary>Doc.</summary> */
+    /**
+     * <summary>Doc.</summary>
+     */
     [System.Obsolete]
     public int RebuiltAboveAnAttribute;
 
@@ -37,6 +55,7 @@ class SlashStarStarOneLine {
         void LeftAboveALocalFunction() { }
     }
 
-    /// <summary>A <c>///</c> comment beside them, formatted as always.</summary><remarks>Remarks.</remarks>
+    /// <summary>A <c>///</c> comment beside them, formatted as always.</summary>
+    /// <remarks>Remarks.</remarks>
     public int Control;
 }
