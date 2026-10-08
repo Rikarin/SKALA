@@ -160,6 +160,7 @@ skala_max_enum_members_on_line = 1
 max_line_length = 120
 skala_max_line_length = 120
 skala_new_line_before_while = false
+skala_prefer_qualified_reference = false
 skala_space_after_unary_operator = false
 skala_wrap_after_declaration_lpar = true
 skala_wrap_after_invocation_lpar = true

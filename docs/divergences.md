@@ -3408,6 +3408,56 @@ Items 1 and 2 touch generated registries that parallel work regenerates constant
 kind of cross-rule decision that wants its own review. Recorded here as the specification; the probes
 are reproducible from the table.
 
+### ⚠ Fixed 2026-10-08 (#460, round 2) — `SK0219`, the `false` direction only
+
+All four items above are paid. `SK0219` (`QualifiedReferenceRule`, allocated `arrange-qualified-reference`)
+runs at `skala_prefer_qualified_reference = false`, the export's value, now in `options.json` and
+`export-bridge.json`. Re-measured before building it, and three behaviours the table did not have:
+
+- ⚠ **The `UsingsRule` hazard is real, and paid by sharing a set rather than by declining.** On
+  `using System.Text; using System.Text.RegularExpressions;` beside only qualified uses, the oracle wrote
+  `StringBuilder` and `Regex` and kept both usings. `QualifiedReferenceRule.Required` records every
+  directive a shortening binds through, and the `UsingsRule` of the same pass spares those. Sabotaged —
+  the check removed — the probe reverts on `CS0246`. ⚠ The first version compared the type's namespace
+  symbol with the one the using binds to, and they are never `Equal` (a metadata module's namespace
+  against the compilation's merged one): it protected nothing, and the test written for the hazard is
+  what showed it.
+- ⚠ **The oracle keeps a `global::` that the compiler does not need**, in a type position, when a later
+  segment of the name, looked up on its own from there, finds something else. Measured on
+  `real/newtonsoft/…/CustomerDataSet.cs` (in `Newtonsoft.Json.Tests.TestObjects`): 25
+  `global::System.Xml.Schema.…` and `global::System.Runtime.Serialization.…` kept it while
+  `global::System.Data.…`, `…Diagnostics…`, `…ComponentModel…` and `…Collections.IEnumerable` lost
+  it — `Schema` and `Serialization` are also `Newtonsoft.Json.Schema` and `Newtonsoft.Json.Serialization`.
+  Not in an expression: the same file's `global::System.Xml.Schema.XmlSchema.Read(…)` lost it. Segments
+  match by arity (`IEnumerable` is not `IEnumerable<T>`).
+- **At `true`** the oracle does not shorten, and qualifies a reference that only an *explicit* using made
+  bind, dropping the using (`Expression<…>` → `System.Linq.Expressions.Expression<…>`; `Func<…>`, bound
+  through the implicit `global using System`, stays). Skala does nothing at `true`, which is why the key
+  is **Tier D** and kept out of `ArrangementOptions.Implemented`; the fixture is not globbed, because the
+  sweep would flip the key to the value Skala does not perform.
+
+Measured over `corpus/real/` and the arrangement constructs, every line `SK0219` changed (dump with the
+rule against dump without, each line looked up in the oracle's answer): 137 agree, 5 do not, and none of
+the 5 is the rule's error. Two are `[Serializable()]` — the shortening agrees and the oracle also drops
+the empty parentheses, a different rewrite. Three are **types the oracle's probe project cannot
+resolve**: `Newtonsoft.Json.JsonProperty` (the oracle wrote `Json.JsonProperty`, a namespace-relative
+shortening it falls back to for an unresolved name) and Vixen's `System.IO.Hashing.XxHash128` (a NuGet
+package), which Skala's differential compilation resolves because its reference set carries those
+assemblies. ⚠ The same reference set carries Microsoft.Diagnostics.Tracing.TraceEvent, which declares a
+top-level `Diagnostics` namespace, so in that harness `global::System.Diagnostics.…` keeps its `global::`
+by the oracle's own segment rule — 47 lines of `CustomerDataSet.cs` that agree in a real project and
+disagree in the harness.
+
+- options: `skala_prefer_qualified_reference`
+- ⚠ status: **fixed** at `false`; `true` not performed (Tier D).
+- Pinned by `constructs/arrangement/redundancy/qualified-reference.cs` (oracle fixture, agrees byte for
+  byte) and `QualifiedReferenceArrangementTests` — 13 firing rows, 14 that must not fire, the `true`
+  value, and the hazard both ways. Sabotage-checked three ways: without the binding check every row of the
+  should-not-fire set reverts; without the shared set the hazard reverts; without the segment rule the
+  `Serialization` row fails.
+- M4 arrangement differential, rule on against rule off on the same tree: 2181/4123 → 2191/4124, zero
+  reverts (Newtonsoft 803 → 804, Vixen 491 → 492, constructs 167 → 175).
+
 ## SK-DIV-0074 — `dotnet_separate_import_directive_groups` was a formatting key in the oracle and an arrangement key in Skala
 
 ⚠ **Fixed 2026-08-30. See the section at the end**, which also corrects this entry's grouping model
@@ -3636,7 +3686,25 @@ reverted whole by the safety layers, so every row of the test goes red.
   them; the oracle does not, because those types are not in the corpus and its probe project cannot
   resolve them, while Skala's differential compilation finds them in the Newtonsoft.Json assembly its
   reference set happens to carry. A type the oracle cannot resolve is a type it will not drop.
-- Not this entry: the oracle also writes `TakeFunc(() => new())` for a lambda whose delegate return
+- ⚠ **Fixed 2026-10-08 as #524**: a `new` a lambda or anonymous method returns is target-typed when the
+  delegate's return type is fixed from outside — an argument whose call re-binds to the same member
+  (#461's check), a field, a property arrow, an assignment, a cast — through `async` (`Task<T>`) and
+  `Expression<…>`. Declined, as the oracle does: an overload pair the body would choose between, an
+  inferred type argument, `Task.Run`, `Func<object>`, `var f = () => new Foo()`. Governed by
+  `when_type_not_evident`, a block lambda's `return` included. Pinned by
+  `type-inference/target-typed-new-lambda.cs` and `ArrangementRuleTests.ObjectCreation_ALambda*`.
+- ⚠ **And #547, the line #524 moved rather than fixed.** `constructs/arrangement/type-inference/var-refused.cs`
+  carries `Func<int> lambda = () => 1;` and `Action method = Run;`, which the oracle writes as `var` —
+  the file's own header ("every declaration here is one `var` must NOT take") is wrong about those two,
+  and is left as written because the frozen sweep outputs hash its bytes. `VarRule` now takes a
+  function initialiser when re-binding the statement with `var` gives the local exactly the declared
+  delegate type, at C# 10 or later, under `csharp_style_var_elsewhere` (measured: flipping it alone
+  restored every row). Declined, as the oracle declines: `Func<object> = () => "x"`, `Func<int?>`, an
+  untyped parameter, `Expression<…>`, a custom delegate, `Delegate`, a `ref` parameter,
+  `() => null`, an overloaded method group, `delegate { … }`. `var-refused.cs` now agrees with the
+  oracle; the differential's constructs set goes 175 → 176 agreed spans, and `corpus/real/` holds no
+  delegate-typed local at all. Pinned by `ArrangementRuleTests.Var_*`.
+- The original note: the oracle also writes `TakeFunc(() => new())` for a lambda whose delegate return
   type is the created type. That is a *lambda body* position, which `TargetTypeOf` stops at
   deliberately (`EnclosingMember`), and it is reported separately rather than folded in here.
 
@@ -5599,7 +5667,12 @@ carries an embedded statement of its own, or its owner is itself embedded** — 
 machinery owns: an `if` with an `else` keeps its statement (`if (b)` / `if (c) M();` / `else M();`) and
 an `else if` keeps its (`else if (c) M();`); neither carries over to what nests inside them
 (`else if (b)` / `if (c)` / `M();`). `BreakPlan.IsPushedOffByNesting`, `PlanStackedUsing`; pinned by
-`EmbeddedNestingIssue469And480Tests`. The `keep = false` paths are untouched.
+`EmbeddedNestingIssue469And480Tests`. ⚠ **And at `keep = false` too (#519)**: measured at `always`,
+`if_owner_is_single_line` and `never`, every nesting written on one line is pushed off the same way,
+with the same two exemptions at `always`; and `if_owner_is_single_line` reads an `else`'s owner as the
+whole `if`, so `else` / `M();` breaks whenever the `if` spans lines — which, `else` starting a line of
+its own (#480), it always does — and `} else` / `M();` after a block too. Pinned by
+`EmbeddedAtKeepFalseIssue519Tests`, including inputs the author wrote broken.
 
 - options: `skala_keep_existing_embedded_arrangement` (`true`; the `false` paths are untouched),
   `skala_place_simple_embedded_statement_on_same_line` (inert under keep, as before).
@@ -5718,9 +5791,12 @@ argument list (`F(` / arguments at 16 / `)` at 12), a chain's dot, the first dec
 field's alike — lands one level past the *list's* level, while `y = 2;` stays at 12 and a single
 declarator's `int z = a` / `+ 1;` stays one level in. The list and the `=` both open on the
 declaration's first line, so the writer's one-level-per-line rule counted one; the list's level now
-counts unconditionally (`GroupPlan.UnconditionalLevel`) and the `=` spends under it. ⚠ Not fixed and
-not this entry: `b ? a` / `: c` — a ternary broken before `:` only — is chopped by the oracle at the `?`
-too, in a single declarator and a `return` alike.
+counts unconditionally (`GroupPlan.UnconditionalLevel`) and the `=` spends under it. ⚠ Not this
+entry, and fixed since (#518): `b ? a` / `: c` — a single conditional broken at one sign — is chopped by
+the oracle at both, in a declarator, a `return`, an argument and after a comment line (`a` / `/* c */`
+/ `? 1` / `: 2`); a conditional *chain* keeps its per-sign pins. `PlanTernary`, pinned by
+`ConditionalChopIssue518Tests`. Still open: a conditional nested in a parenthesis inside another's
+branch (`? (a > 0` / `? a` / `: c)`) puts its signs at 20 where the oracle writes 16.
 ⚠ **The filled-list half closed at #471** (SK-DIV-0117): `new[] { 1` / `+ 2, 3 }` already agreed (the
 array initializer's after rule, #444), and `[1` / `+ 2, 3]` now does too — `+ 2,` / `3`.
 
