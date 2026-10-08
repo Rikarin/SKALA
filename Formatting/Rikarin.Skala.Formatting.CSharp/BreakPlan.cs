@@ -2551,15 +2551,12 @@ public sealed class BreakPlan {
     ///     type parameters, one and two interfaces, a name of 10 to 100 letters, the line 121 to 135 columns.
     ///     The oracle writes <c>public class</c> / <c>    Name…</c> in two cases, which are the ordering rule's
     ///     two questions: when the line runs past the margin before the header's next point (a name that
-    ///     fills the line, <c>Name : IFoo,</c> at 123), and when the rest of the header fits on the
-    ///     continuation line within a margin — five columns, so the gap breaks up to a 124-column line and
-    ///     the type parameter list's or the base list's own break takes over from 125; one column for a lone
-    ///     base type, which the oracle moves below the name up to 128 at least. The base list then sits at
+    ///     fills the line, <c>Name : IFoo,</c> at 123), and when the joined line overflows by at most four
+    ///     columns whatever the head (eight for a lone base type) and the name is not one that gives way to the
+    ///     competing list's first comma (<see cref="GroupFacts.NameWidth" />). The base list then sits at
     ///     the declaration's own level, not one past the name's line — <c>    Name : IFoo,</c> /
     ///     <c>    IBar {</c> — which <see cref="CSharpDocumentBuilder" /> writes from an anchor the group
     ///     pushes on the keyword's line; a type parameter list fills one level past the name's line.
-    ///     ⚠ Not modelled: two type parameters behind a name of 25 letters or fewer, which the list's comma
-    ///     takes at 121 to 124, and a 10-letter name before two interfaces, broken at 121 only.
     /// </remarks>
     /// <summary>
     ///     The constant of <see cref="GroupFacts.NameWidth" />'s rule before a base list (SK-DIV-0353): fitted to

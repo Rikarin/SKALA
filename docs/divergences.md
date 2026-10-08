@@ -9697,15 +9697,40 @@ keyword's line, and the base list is written inside an `IndentKind.AnchoredBrace
 the anchor's recorded indentation; the base list's own groups spend their levels from there. A type
 parameter list still fills one level past the name's line, as the oracle does.
 
-Still divergent, measured: two type parameters behind a name of 25 letters or fewer, which the oracle
-fills at the list's comma from 121 to 124 where Skala breaks the name (16 cells), the same at 124 behind
-a 30-letter name, a 10-letter name before two interfaces at 122 to 124 (the oracle breaks the name only at
-121), `public sealed class N…100 : Base<int>, IFoo` (the oracle also breaks after the `:`), and a header
-whose name and `<` fill the line (`N…104<TFirst,` — the oracle breaks the name, Skala after the `<`).
+**Round three, second pass: what the name competes with.** The fidelity dump after the first pass showed three
+regressions the sweep had not covered — a record, a record struct and a class with a primary constructor had
+their names broken — and a further 1 100 headers were measured:
+
+- ⚠ **Never before a parameter list.** On 34 records, record structs and classes with one, a name of 10 to 60
+  letters at 121 to 150 columns, the oracle breaks the name in none. The gap is not a point there.
+- ⚠ **The window is the joined line's overflow, not what the continuation line saves.** Behind `internal sealed
+  class` the oracle breaks the name up to a 124-column line and not at 125, as behind `public class`; the old
+  continuation margin, measured behind `public class` only, broke the longer head up to 128.
+  `GroupFacts.JoinedOverflow`: 4 columns, 8 for a lone base type.
+- ⚠ **A short name gives way to the list's first comma, by a rule in three widths.** With `h` the name's column,
+  `L` its length and `F` the width of the competing list's first item capped at 22, the oracle breaks the name iff
+  `9h + 6L − 3F + 807 ≥ 8 · end` (`GroupFacts.NameWidth`/`NameFloor`). It reproduces 727 of 728 cells — heads of 13
+  to 30 columns, names of 4 to 32 letters, a first base type of 4 to 36, two or three interfaces (which answer
+  alike) — missing `public class N…18 : I…16, I…` at 123. ⚠ None of the three is the variable alone: an 8-letter
+  first base type breaks a 14-letter name where a 12-letter one with a 10-letter name does not, though the base
+  list's first line is the same length; and past 22 letters the first item stops counting (28 and 36 answer as
+  22). Before two type parameters and no base list the same form holds with 748 for 807, from one first
+  parameter's width only; one type parameter, type parameters followed by a base list, and a lone base type
+  always break, as before.
+- ⚠ **Behind a bare keyword the name never gives way to a list**, up to a 76-letter name before two interfaces;
+  it still moves down when the name itself fills the line, and before a lone base type.
+
+On the round's sets: 280 of 280 of the first sweep (was 260), 300 of 300 and 312 of 312 over head and name
+lengths, 195 of 196 over the first base type, 59 of 60 primary constructors (the other is SK-DIV-0198), and
+204 of 205 heads, the other a 107-letter name before a lone base type, which the oracle lets run two columns
+past the margin rather than break before the `:`.
+
+Still divergent, measured: that last cell, `public sealed class N…100 : Base<int>, IFoo` (the oracle also breaks
+after the `:`), and a header whose name and `<` fill the line (`N…104<TFirst,` — the oracle breaks the name,
+Skala after the `<`).
 
 - options: none.
-- ⚠ status: **resolved** for the measured shapes but the five above (260 of 280 swept cells, and 9 of 11
-  hand shapes), pinned by `TypeNameGapIssue539Tests`.
+- ⚠ status: **resolved** for the measured shapes but the four above, pinned by `TypeNameGapIssue539Tests`.
 
 ## SK-DIV-0340 — a positional pattern inside a property pattern broke after its subpattern's colon
 
