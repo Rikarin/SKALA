@@ -49,4 +49,48 @@ public sealed class HeldSingleCallIssue528Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     The table where the reference trees bound it, each row from its tree and re-measured here at
+    ///     indent 8: a typed local whose head and receiver are wider than 87 columns breaks the <c>=</c>
+    ///     (Newtonsoft); a typed local's creation argument follows the table; a <c>var</c>'s does not and
+    ///     chops (Vixen); behind a long head a value that fits below with three columns to spare moves down
+    ///     whole, two arguments included (Serilog, Newtonsoft). Before the fix the first, second and last
+    ///     rows came out otherwise.
+    /// </summary>
+    [Fact]
+    public void TheReferenceTreesRows_FollowTheirOracle() =>
+        Oracle.Agrees(
+            """
+            class T {
+                void M() {
+                    PublicParameterizedConstructorRequiringConverterWithParameterAttributeTestClass c = JsonConvert.DeserializeObject<PublicParameterizedConstructorRequiringConverterWithParameterAttributeTestClass>(json);
+                    EnumInfo enumInfo = ValuesAndNamesPerEnum.Get(new StructMultiKey<Type, NamingStrategy?>(enumType, namingStrategy));
+                    var bottom = device.CreateAccelerationStructure(new(AccelerationStructureKind.BottomLevel, bottomSizes.Structure, "as-bottom"));
+                    var methods = CallableConfigurationMethodFinder.FindConfigurationMethods(configurationAssemblies, receiverGroup.Key);
+                    _genericTemporaryCollectionCreator = JsonTypeReflector.ReflectionDelegateFactory.CreateDefaultConstructor<object>(temporaryListType);
+                }
+            }
+            """,
+            """
+            class T {
+                void M() {
+                    PublicParameterizedConstructorRequiringConverterWithParameterAttributeTestClass c =
+                        JsonConvert
+                            .DeserializeObject<PublicParameterizedConstructorRequiringConverterWithParameterAttributeTestClass>(
+                                json
+                            );
+                    EnumInfo enumInfo =
+                        ValuesAndNamesPerEnum.Get(new StructMultiKey<Type, NamingStrategy?>(enumType, namingStrategy));
+                    var bottom = device.CreateAccelerationStructure(
+                        new(AccelerationStructureKind.BottomLevel, bottomSizes.Structure, "as-bottom")
+                    );
+                    var methods =
+                        CallableConfigurationMethodFinder.FindConfigurationMethods(configurationAssemblies, receiverGroup.Key);
+                    _genericTemporaryCollectionCreator =
+                        JsonTypeReflector.ReflectionDelegateFactory.CreateDefaultConstructor<object>(temporaryListType);
+                }
+            }
+            """
+        );
 }

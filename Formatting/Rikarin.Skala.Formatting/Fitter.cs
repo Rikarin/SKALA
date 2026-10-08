@@ -693,7 +693,12 @@ public sealed class Fitter {
         var parenBeside = valueColumn + facts.HeldValueReceiver + facts.HeldValueHead;
         switch (facts.HeldValue) {
             case 1:
-                return below <= width - 3;
+                // ⚠ Or when the head with the receiver beside it is wider than 87 columns: `T… c = JsonConvert`
+                // holds to 87 and breaks from 88, counted from the statement (h12 at indent 8, on one call
+                // width; Newtonsoft's 77, 82 and 95 at indents 12 and 20 agree, where an absolute column
+                // would not).
+                return below <= width - 3
+                    || valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd;
             case 2:
                 // ⚠ One column over beside it, a lone argument's dot breaks instead, as it does below.
                 if (valueColumn <= continuation
@@ -705,6 +710,18 @@ public sealed class Fitter {
                     ? parenBeside > width && parenBelow <= width - 3
                     : below <= width + 1 || parenBelow <= width - 3;
             default:
+                // ⚠ A value that fits below with three columns to spare moves down whole, as a typed local's
+                // does (Newtonsoft's `_genericTemporaryCollectionCreator =`, Serilog's `var methods =` at
+                // indent 8; h8's 119-column row and h10's keep the `=`).
+                if (below <= width - 3) {
+                    return true;
+                }
+
+                // ⚠ Two arguments whose `(` fits beside it keep the `=` and chop there (Newtonsoft, Serilog).
+                if (facts.HeldValueManyArgs && parenBeside <= width) {
+                    return false;
+                }
+
                 var moves = valueColumn + facts.HeldValueReceiver <= width
                     && parenBeside > width
                     && continuation + facts.HeldValueWidth - facts.HeldValueReceiver
@@ -712,6 +729,12 @@ public sealed class Fitter {
                 return !moves;
         }
     }
+
+    /// <summary>
+    ///     The widest a typed local's head and held receiver may be beside its <c>=</c>, from the statement's
+    ///     first column (#528, h12).
+    /// </summary>
+    const int HeldReceiverEnd = 87;
 
     /// <summary>The column a call condition's <c>=</c> breaks at or left of when the call fits nowhere (#553).</summary>
     const int CallConditionColumn = 40;

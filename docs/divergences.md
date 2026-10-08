@@ -9200,9 +9200,16 @@ dot. Measured on `JsonConvert.DeserializeObject<G…>(json)` and `S….Select(a�
 
 | head | the `=` breaks when the value does not fit beside it and … | then |
 |---|---|---|
-| typed local | … it fits below with three columns to spare | otherwise `T c = R` / `.Call(…);` |
+| typed local | … it fits below with three columns to spare, or the head with the receiver is wider than 87 columns (from the statement's first column: Newtonsoft's 77 and 82 hold at indents 20 and 12, 95 breaks) | otherwise `T c = R` / `.Call(…);` |
 | `var` / assignment under 12 columns | … it overflows below by at most one column, or its `(` lands at 117 or less below; never one column over beside it, never where the value would not move left | the dot breaks at one column over, else the argument chops |
-| `var` / assignment of 12 or more | … unless the receiver fits beside it, the `(` beside it does not, and the line below is within `HeldCallLimit` | as above |
+| `var` / assignment of 12 or more | … it fits below with three columns to spare; otherwise, with two or more arguments, not while the `(` fits beside it; otherwise unless the receiver fits beside it, the `(` beside it does not, and the line below is within `HeldCallLimit` | as above |
+
+⚠ Shapes the reference trees bound: behind a `var` or an assignment, an argument holding a call or a
+creation of its own keeps the general rule (`var bottom = device.CreateAccelerationStructure(new(…));` and
+`var listener = fleet.World.Create(AiPerception.Sensing(…), …);` chop beside the `=` in Vixen, where
+the table would break it). A typed local's does follow the table (`EnumInfo e =` /
+`ValuesAndNamesPerEnum.Get(new StructMultiKey<…>(…));`). corpus/real with symbols: 59676/59841 → 59704/59837
+lines and 338 → 341 files against master `4851d591`, five files closer and none further.
 
 Two arguments behind a short head break the `=` only when the `(` does not fit beside it and lands at 117
 or less below — `var w = S…` / `.Selectttt…(alpha, beta);` against `var wwwwwwwwwwww =` / `S….Select…(` /
@@ -9211,9 +9218,10 @@ and arguments that break inside themselves (a lambda, an initializer) keep #529'
 
 - options: `skala_wrap_before_first_method_call`.
 - ⚠ status: **resolved** (#528), with two shapes measured and not modelled: behind a 12-column-or-longer
-  head with a receiver of 70 to 90 columns, the oracle breaks the `=` where the table moves the dot
-  (`h11`'s 9 of 96 rows), and a 40-column receiver whose lone argument overflows below by twelve keeps
-  the `=` and chops — both receivers far past anything in the reference trees. Pinned by
+  head with a receiver of 70 to 92 columns, the oracle breaks the `=` where the table moves the dot
+  (h8's and h11's 17 of 162 rows), and a 40-column receiver whose lone argument overflows below by
+  twelve keeps the `=` and chops — both receivers far past anything in the reference trees.
+  `JsonArrayContract.cs` keeps one row of its own: an author's break after the `=` the oracle keeps. Pinned by
   `HeldFirstCallIssue528Tests`, `HeldSingleCallIssue528Tests`, `constructs/breaks/held-first-call.cs`
   and `constructs/breaks/held-single-call.cs`.
 

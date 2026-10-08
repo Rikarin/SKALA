@@ -2612,6 +2612,14 @@ public sealed class BreakPlan {
                     or SwitchExpressionSyntax
                     or CollectionExpressionSyntax
                     or WithExpressionSyntax)
+            // ⚠ And behind a `var` or an assignment, on arguments with no call or creation of their own:
+            // `var bottom = device.CreateAccelerationStructure(new(…));` and `var listener =
+            // fleet.World.Create(AiPerception.Sensing(…), …);` keep the `=` and chop where the table would
+            // break it (Vixen). A typed local's `EnumInfo e = Values.Get(new StructMultiKey<…>(…));` does
+            // follow it (Newtonsoft).
+            || kind != 1
+            && call.ArgumentList.DescendantNodes()
+                .Any(static node => node is InvocationExpressionSyntax or BaseObjectCreationExpressionSyntax)
             || IsChainRoot(value) && ChainPointCount(value, options) > 0
             || receiver is InvocationExpressionSyntax or ElementAccessExpressionSyntax
             || BreaksBefore(dot)
