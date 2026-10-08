@@ -2594,7 +2594,7 @@ public sealed partial class CSharpDocumentBuilder {
 
             case PieceKind.BlockComment:
             case PieceKind.BlockDocComment:
-                EmitBlockComment(piece, span);
+                EmitBlockComment(piece, span, LoneCommentAt(index) == LoneComment.ColumnZero);
                 break;
 
             case PieceKind.DocCommentLine:
@@ -2741,21 +2741,81 @@ public sealed partial class CSharpDocumentBuilder {
     ///     or <c>///</c> comment keeps its trailing whitespace, so this is a block-comment rule and not
     ///     <c>trim_trailing_whitespace</c>.
     /// </remarks>
-    void EmitBlockComment(Piece piece, SourceSpan span) {
+    /// <param name="lone">
+    ///     ⚠ The comment is all an empty argument or parameter list holds (#509): the oracle writes it at
+    ///     column 0 on a line of its own, its other lines moving with that line.
+    /// </param>
+    void EmitBlockComment(Piece piece, SourceSpan span, bool lone = false) {
         var text = piece.Text;
         var starred = IsStarredBlockComment(text);
+        var flags = CommentFlags(piece) | (lone ? VerbatimFlags.AtColumnZero : VerbatimFlags.None);
         if (text.IndexOf('\n', StringComparison.Ordinal) < 0 || starred && !options.AlignMultilineComments) {
-            doc.Verbatim(text, span, CommentFlags(piece));
+            doc.Verbatim(text, span, flags);
             return;
         }
 
         text = TrimLineEnds(text);
         if (piece.Kind == PieceKind.BlockComment && starred) {
-            doc.Verbatim(text, span, CommentFlags(piece) | StarredFlag(piece));
+            doc.Verbatim(text, span, flags | StarredFlag(piece));
             return;
         }
 
-        doc.Verbatim(text, span, CommentFlags(piece) | VerbatimFlags.ShiftWithLine, SourceLineIndent(piece.Span.Start));
+        doc.Verbatim(text, span, flags | VerbatimFlags.ShiftWithLine, SourceLineIndent(piece.Span.Start));
+    }
+
+    /// <summary>
+    ///     How a block comment spanning lines that is all an empty argument or parameter list holds is
+    ///     laid out — <c>Foo(/* a</c> / <c>b */)</c> — or <see cref="LoneComment.None" /> for any other piece.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured (#509, SK-DIV-0209): the oracle writes <c>Foo(</c> / <c>/* a</c> at column 0 /
+    ///     <c>b */</c> moved by as much as the comment's line moved / <c>)</c> on the opener's level, for a
+    ///     call, an object creation, a constructor initializer and a method's or a constructor's
+    ///     parameters alike. Column 0 looks like a quirk, and it is the oracle's answer: every other
+    ///     placement differs from it on two lines rather than none. ⚠ Narrow, and each edge measured: a
+    ///     <c>/** */</c> comment takes a line of its own at the list's level instead; a lambda's parameter
+    ///     list keeps the comment after its <c>(</c> and puts only the <c>)</c> on a line of its own; a
+    ///     comment the author already put on a line of its own stays there (the oracle adds a blank line
+    ///     before it, which Skala does not); and a comment beside an argument, <c>Foo(/* a</c> /
+    ///     <c>b */ x)</c>, stays after the <c>(</c>. An initializer keeps it after its <c>{</c> (SK-DIV-0209).
+    /// </remarks>
+    LoneComment LoneCommentAt(int index) {
+        if (index <= 0
+            || index + 1 >= pieces.Length
+            || pieces[index].Kind is not (PieceKind.BlockComment or PieceKind.BlockDocComment)
+            || !pieces[index].Text.Contains('\n')
+            || pieces[index].StartsLine
+            || pieces[index - 1].Kind != PieceKind.Token
+            || pieces[index + 1].Kind != PieceKind.Token) {
+            return LoneComment.None;
+        }
+
+        var open = tokens[pieces[index - 1].TokenIndex];
+        var close = tokens[pieces[index + 1].TokenIndex];
+        if (!open.IsKind(SyntaxKind.OpenParenToken)
+            || !close.IsKind(SyntaxKind.CloseParenToken)
+            || open.Parent != close.Parent
+            || open.Parent is not (ArgumentListSyntax { Arguments.Count: 0 } or ParameterListSyntax { Parameters.Count: 0 })) {
+            return LoneComment.None;
+        }
+
+        return open.Parent.Parent is ParenthesizedLambdaExpressionSyntax ? LoneComment.CloserOnly
+            : pieces[index].Kind == PieceKind.BlockDocComment ? LoneComment.OwnLine
+            : LoneComment.ColumnZero;
+    }
+
+    /// <summary>The three layouts <see cref="LoneCommentAt" /> answers with.</summary>
+    enum LoneComment {
+        None,
+
+        /// <summary>A lambda's parameter list: the comment stays beside the <c>(</c>, the <c>)</c> moves down.</summary>
+        CloserOnly,
+
+        /// <summary>A <c>/** */</c> comment: a line of its own at the list's level, and the <c>)</c> on another.</summary>
+        OwnLine,
+
+        /// <summary>A <c>/* */</c> comment: a line of its own at column 0, and the <c>)</c> on another.</summary>
+        ColumnZero
     }
 
     /// <summary>The leading whitespace of the source line <paramref name="position" /> is on.</summary>
@@ -3022,6 +3082,15 @@ public sealed partial class CSharpDocumentBuilder {
         // taken: an inactive `#if` branch is copied byte for byte and no key here reaches inside it.
         if (options.DisableLineBreakChanges && newLines == 0) {
             EmitFlatGap(previous, nextKind, nextToken, gap);
+            return;
+        }
+
+        // ⚠ A lone comment spanning lines in an empty argument or parameter list takes a line of its
+        // own, and so does the `)` after it (#509). See LoneCommentAt.
+        if (!options.DisableLineBreakChanges
+            && (nextPieceIndex >= 0 && LoneCommentAt(nextPieceIndex) is LoneComment.OwnLine or LoneComment.ColumnZero
+                || LoneCommentAt(lastPiece) != LoneComment.None)) {
+            Break(nextPieceIndex, nextToken, 0, DefaultNewLine());
             return;
         }
 

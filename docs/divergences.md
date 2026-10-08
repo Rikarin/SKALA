@@ -7900,6 +7900,18 @@ comment now applies only where there is an element, since otherwise it hid the c
 Measured beside it and left open: `Foo(/* a` / `b */)` — the oracle moves the comment to column 0 on a line
 of its own, a shape that is about comment placement and not about the closer.
 
+⚠ **That row fixed by #509 (2026-10-08)**, and decided in the oracle's favour: column 0 looks like a quirk,
+but every other placement differs from it on two lines. Measured on nine shapes: a call, an object
+creation, a constructor initializer and a method's or a constructor's parameters all write `Foo(` / the
+comment at column 0, its other lines moved by as much as its line moved (`ShiftWithLine`, so `b */` keeps
+its offset from the old line's indentation) / `)` on the opener's level. Each edge differs and is
+followed: a `/** */` comment takes a line of its own at the list's level; a lambda's parameter list keeps
+the comment after its `(` and moves only the `)`; a comment beside an argument stays. `LoneCommentAt` in
+the document builder. ⚠ One edge left open: a comment the author already put on its own line, `Foo(` /
+`/* a` / `b */` / `)`, comes back from the oracle with a blank line inserted before it; Skala keeps it as
+written. Pinned by `constructs/syntax/lone-comment-in-empty-list.cs` and
+`LoneCommentInEmptyListIssue509Tests`.
+
 - options: none.
 - ⚠ status: **resolved**. Pinned by `EmptyContainerCommentIssue444Tests`.
 
