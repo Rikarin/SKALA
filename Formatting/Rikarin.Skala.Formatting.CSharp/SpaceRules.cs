@@ -902,7 +902,7 @@ public static class SpaceRules {
         // and the empty twin leaves it alone; a declaration's `D( /*f*/)` reads
         // `space_before_method_parentheses` the same way.
         var empty = next.Parent is BaseArgumentListSyntax { Arguments.Count: 0 }
-            or BaseParameterListSyntax { Parameters.Count: 0 }
+                or BaseParameterListSyntax { Parameters.Count: 0 }
             && !HoldsAComment(next);
 
         switch (next.Parent) {

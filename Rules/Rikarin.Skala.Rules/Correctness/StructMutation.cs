@@ -73,7 +73,9 @@ static class StructMutation {
                     return target is IFieldReferenceOperation {
                         Field.IsStatic: false,
                         Instance:
-                        IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance }
+                        IInstanceReferenceOperation {
+                            ReferenceKind: InstanceReferenceKind.ContainingTypeInstance
+                        }
                     };
                 }
             );
@@ -81,8 +83,8 @@ static class StructMutation {
 
     static IEnumerable<ExpressionSyntax> TopLevelExpressions(MethodDeclarationSyntax declaration) =>
         declaration.Body is { } body
-        ? body.Statements.OfType<ExpressionStatementSyntax>().Select(static statement => statement.Expression)
-        : declaration.ExpressionBody is { } arrow
-            ? new[] { arrow.Expression }
-            : Enumerable.Empty<ExpressionSyntax>();
+            ? body.Statements.OfType<ExpressionStatementSyntax>().Select(static statement => statement.Expression)
+            : declaration.ExpressionBody is { } arrow
+                ? new[] { arrow.Expression }
+                : Enumerable.Empty<ExpressionSyntax>();
 }

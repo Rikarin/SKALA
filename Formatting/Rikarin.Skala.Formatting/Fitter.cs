@@ -314,6 +314,14 @@ public sealed class Fitter {
                     // ⚠ A local's `=`, past a name wider than the type's gate, yields only to a value at
                     // least as wide as the measured floor; a narrower one moves below the `=` whole
                     // (#558). See GroupFacts.LambdaLocal and EqualsFloor.LambdaValue.
+                    // ⚠ One column past the margin the parameter list may chop instead, and then the `=`
+                    // stays (#572). See EqualsFloor.ChopsOneOver.
+                    if (facts.OneOverType > 0
+                        && head + 1 + value == width + 1
+                        && EqualsFloor.ChopsOneOver(facts.OneOverType, value - facts.YieldsThroughArrow - 2, head)) {
+                        return ResolvedMode.Flat;
+                    }
+
                     if (through <= width) {
                         return facts.LambdaLocal == LambdaLocal.None
                             || facts.LambdaLocal.HasFlag(LambdaLocal.ArrowWhileItFits)
@@ -354,6 +362,14 @@ public sealed class Fitter {
                 // ⚠ A lambda's parameter list: broken only when the line through its `=>` overflows.
                 // See GroupFacts.ThroughWidth (#453).
                 if (facts.ThroughWidth > 0) {
+                    // ⚠ Except a measured local's, one column past the margin (#572): the `=` ends a space
+                    // before the `(`. See EqualsFloor.ChopsOneOver.
+                    if (facts.OneOverType > 0
+                        && m.Column + m.FlatWidth + facts.ThroughWidth + 1 + facts.OneOverBody + 1 == width + 1
+                        && EqualsFloor.ChopsOneOver(facts.OneOverType, facts.OneOverBody, m.Column - 1)) {
+                        return ResolvedMode.Broken;
+                    }
+
                     return Fits(m.Column, m.FlatWidth + facts.ThroughWidth) ? ResolvedMode.Flat : ResolvedMode.Broken;
                 }
 
@@ -446,6 +462,17 @@ public sealed class Fitter {
                 // ⚠ A sole lambda argument over a member-access fill: the arrow or the fill, by the
                 // measured line rather than by whether the body fits below. See
                 // GroupFacts.LambdaParameters (#557).
+                // ⚠ A sole lambda argument over a chain of calls (#571). See GroupFacts.LambdaChainHead.
+                if (facts.LambdaChainHead > 0) {
+                    var start = m.Column - facts.LambdaHead;
+                    var parameters = facts.LambdaHead - 3;
+                    return start >= (facts.LambdaIsSimple ? 21 : 25)
+                        || 9 * (m.ContinuationColumn + tail) + 2 * parameters - 2 * start <= 969
+                        || m.Column >= 21 && start + facts.LambdaChainHead > width
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                }
+
                 if (facts.LambdaParameters > 0) {
                     var below = m.ContinuationColumn + tail;
                     var start = m.Column - facts.LambdaHead;

@@ -90,7 +90,9 @@ public sealed class ReadonlyStructMutationAnalyzer : DiagnosticAnalyzer {
                     return target is IFieldReferenceOperation {
                         Field.IsStatic: false,
                         Instance:
-                        IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance }
+                        IInstanceReferenceOperation {
+                            ReferenceKind: InstanceReferenceKind.ContainingTypeInstance
+                        }
                     };
                 }
             )) {

@@ -416,7 +416,17 @@ public enum IndentFlags {
     ///     the closing brace still returns to the opener's level (#464). At the export's multiplier of 1
     ///     the two are the same number.
     /// </summary>
-    Multiplied = 512
+    Multiplied = 512,
+
+    /// <summary>
+    ///     ⚠ An unconditional continuation scope that leaves the scopes outside it on the same line
+    ///     counting too: a binary pattern chain that is the left operand of a broken <c>&amp;&amp;</c> or
+    ///     <c>||</c> takes its level past that operator's, although both opened on the statement's line —
+    ///     <c>var e = n.P is A</c> / <c>or B</c> / <c>&amp;&amp; c;</c> puts the <c>or</c> at 16 and the
+    ///     <c>&amp;&amp;</c> at 12 (#560, SK-DIV-0394). Where the operator's level opened on an earlier
+    ///     line — under a broken <c>=&gt;</c> — it counts as any scope does, and nothing is added.
+    /// </summary>
+    Additive = 1024
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
@@ -1083,6 +1093,23 @@ public sealed class Document {
 ///     ⚠ An <c>=</c> before a lambda with a bare name for a body: the width from the lambda's start through
 ///     its <c>=&gt;</c>. The <c>=</c> stays flat while that much fits after it on its line (#453).
 /// </param>
+/// <param name="OneOverType">
+///     ⚠ A measured local's lambda with a bare-name body, on its <c>=</c> and on its parameter list: the
+///     declaration type's width, which with <see cref="OneOverBody" /> decides the one line the other rules
+///     do not — one column past the margin, where the parameter list chops up to a head that the type and
+///     the body set (#572). See <c>EqualsFloor.ChopsOneOver</c>. Zero for any other group.
+/// </param>
+/// <param name="LambdaChainHead">
+///     ⚠ The arrow of a sole lambda argument whose body is a chain of calls: the width from the lambda's start
+///     to its first call's dot, or zero for any other group (#571). Past the margin the arrow breaks for a
+///     lambda without parentheses from column 21 and one with them from column 25; otherwise by
+///     <see cref="LambdaParameters" />' measured line; otherwise when the arrow ends at column 21 or later
+///     and the chain's head through that dot no longer fits on the arrow's line. ⚠ Not #529's "the chain
+///     fits below", which broke the arrow where the oracle keeps it and fills the chain: 1 540 cells, 4
+///     of them, at a parenthesised lambda's column 23, differ. See <see cref="LambdaHead" /> and
+///     <see cref="LambdaIsSimple" />, which it shares.
+/// </param>
+/// <param name="OneOverBody">The lambda's body width. See <see cref="OneOverType" />.</param>
 /// <param name="LambdaParameters">
 ///     ⚠ The arrow of a sole lambda argument whose body is a member-access fill: the width of the lambda's
 ///     parameter text — <c>x</c>, <c>(x)</c>, <c>(A x, B y)</c> — or zero for any other group (#557). Past
@@ -1243,7 +1270,10 @@ public readonly record struct GroupFacts(
     int LambdaParameters = 0,
     int LambdaHead = 0,
     bool LambdaIsSimple = false,
-    LambdaLocal LambdaLocal = LambdaLocal.None);
+    LambdaLocal LambdaLocal = LambdaLocal.None,
+    int OneOverType = 0,
+    int OneOverBody = 0,
+    int LambdaChainHead = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

@@ -5968,6 +5968,16 @@ conditional directly inside a grouping parenthesis (after `=`, as an argument, i
 a binary operand, before `.ToString()`, behind a cast, in a `return`) lands on the parenthesis's level,
 because its own arm scope and the parenthesis's opened on one line and both counted. A conditional
 that is an argument keeps its level. Pinned by `ParenthesisedConditionalIssue546Tests`.
+
+⚠ **`&&` and `||` are two chains (#565).** `SameChain` read them as one precedence, on the note "`a && b
+|| c` is chopped at both operators by the oracle" — true only where the `&&` was already broken. Measured
+2026-10-08 on six conditions too wide for their line (in an `if`, an `=` and a `return`, with the `&&`
+before, after and between the `||`s): the oracle chops every `||` and leaves each `&&` operand whole —
+`a && b` / `|| c && d` / `|| e && a`; Skala chopped every `&&` as well. It showed in Skala's own
+`SettleParenthesisedCollections` (`|| captured is { Count: > 0 }` / `&& IsInsideCaptured(paren)`) only
+where the condition crossed the margin, which is why the issue's shape looked indent-dependent. Author's
+breaks were re-measured too (`a` / `&& b || d` chops the `||` by containment) and agree. Pinned by
+`AndOrChainsIssue565Tests`.
 ⚠ **The filled-list half closed at #471** (SK-DIV-0117): `new[] { 1` / `+ 2, 3 }` already agreed (the
 array initializer's after rule, #444), and `[1` / `+ 2, 3]` now does too — `+ 2,` / `3`.
 
@@ -10361,7 +10371,12 @@ Once any `?` of the chain starts a line, every member is chopped at both signs h
 `BreakPlan.PlanArmArrow`, `PlanSubpattern`, `PlanChainWide`, `PlanOperator`.
 
 - options: `keep_user_linebreaks`, `skala_keep_existing_property_patterns_arrangement` (the export's `false`).
-- ⚠ status: **resolved** (#549) except as listed under SK-DIV-0393 and SK-DIV-0395. Pinned by
+⚠ **#564, round two: the `when` list now lifts too.** Asked with the list written whole, the oracle chops it
+and keeps the body on the `) =>` line — `) => Body(…),` and `) => "a long string",` past the margin alike —
+so a break after the arrow beside a chopped argument list is never the width's, and lifting under a kept
+one is idempotent. The generated seed's head was a type argument list that fills, which stays excluded.
+
+- ⚠ status: **resolved** (#549) and #564. Pinned also by `constructs/breaks/when-list-under-a-kept-arrow-break.cs`. Pinned by
   `constructs/breaks/switch-arm-head-under-a-kept-arrow-break.cs`.
 
 ## SK-DIV-0392 — a broken `is` over a breakable pattern had no level of its own
@@ -10395,7 +10410,14 @@ column. And a filled one, `(int a, …, int` / `dddd) =>`, breaks between a desi
 name, which Skala does not. Not wired.
 
 - options: none measured.
-- ⚠ status: **open**, measured.
+
+⚠ **#559, round two.** Re-measured on twelve shapes: the `)` is on the elements' column wherever the
+positional pattern is — in an arm with the body on the `)`'s line or below it, before an arrow on a line
+of its own, as a `case` label and after `is` (`o is (` / … / `);`) — so it is not the arm's at all but
+`skala_indent_pars = inside` answered as `outside` for a positional pattern
+(`CSharpDocumentBuilder.ParenthesesStyleFor`). The fill's break between a declaration's type and its
+name (`…, int` / `dddd) =>`) is still not modelled.
+- ⚠ status: **resolved** (#559) for the closer, pinned by `constructs/breaks/positional-pattern-closer.cs`; **open** for the fill.
 
 ## SK-DIV-0394 — a pattern chain inside the first operand of an `&&` in a declarator
 
@@ -10407,7 +10429,14 @@ starts on the statement's line takes a level past the `&&`'s continuation. The s
 them on `A`'s column (SK-DIV-0391's third finding) — Skala now writes the latter for both. Not wired.
 
 - options: none.
-- ⚠ status: **open**, measured.
+
+⚠ **#560, round two.** Measured on nine shapes: after `var e =` and `return`, with `&&` and `||`, with and
+without braces, and with a further `&&` — the `or` sits a level past the operator's line; under a broken
+`=>`, in an `if` condition and as an argument the two engines already agreed, because there the
+operator's level opened on an earlier line or an aligned column. Both levels opened on the statement's
+line and the writer's one-level-per-opening-line rule collapsed them; the chain's own level is now an
+`IndentFlags.Additive` scope, which counts without blocking the scopes outside it on that line.
+- ⚠ status: **resolved** (#560). Pinned by `constructs/indentation/pattern-chain-left-of-a-logical-operator.cs`.
 
 ## SK-DIV-0395 — a subpattern value the author broke after the colon breaks its braces as if joined
 
@@ -10416,7 +10445,12 @@ access` (109 columns on its own line) keeps the author's break after the colon *
 open, as though measured with the value joined to `Expression:` (121). Not wired.
 
 - options: `keep_user_linebreaks`.
-- ⚠ status: **open**, measured.
+
+⚠ **#561, round two: not a width rule.** Measured at six widths (66 to 118 columns on the value's own
+line, the joined line from 117 to 121) and on `Expression:` / `Bar { A: 1 }`: the braces break open at
+every one of them. A break the author kept after a subpattern's colon forces the value's own property
+pattern open (`BreakPlan.PlanPropertyPattern`); a bare `{` after the colon is still joined to it.
+- ⚠ status: **resolved** (#561). Pinned by `constructs/breaks/subpattern-value-under-a-kept-colon-break.cs`.
 
 ## SK-DIV-0396 — a break after `is` before a list pattern is kept under a broken arrow
 
@@ -10425,7 +10459,15 @@ Found beside #550: `M(object[] xs) =>` / `xs is` / `[1, 2];` comes back from the
 `ABreakBeforeAnOpeningBracket_IsJoinedUnlessTheGapBelongsToAParenthesis` pins). Skala joins both. Not wired.
 
 - options: `keep_user_linebreaks`.
-- ⚠ status: **open**, measured.
+
+⚠ **#562, round two: the test was wrong.** Asked with the test's own input, the oracle writes
+`object A() =>` / `xs is` / `[1, 2];` — the break kept, the list one level past the operand's line and the
+arrow broken for the two-line body — and the same for every shape measured: flush or indented, as an
+expression body, after `return` and `var b =`, as an argument. What it joins is a list pattern the author
+broke inside (`xs is` / `[` / `1,` …, constructs/wrapping/patterns.cs); a property pattern's `{` is joined
+too. `ABreakBeforeAnOpeningBracket_IsJoinedUnlessTheGapBelongsToAParenthesisOrAnIs` now pins the oracle's
+answer.
+- ⚠ status: **resolved** (#562). Pinned by `constructs/wrapping/list-pattern-after-a-broken-is.cs`.
 
 ## SK-DIV-0397 — a stepped conditional chain as a call's argument: the first `?` a level short
 
@@ -10439,7 +10481,14 @@ indented and stepped — `nested_ternary_style = autodetect` ("chop in existing 
 the chain. Not wired.
 
 - options: `resharper_csharp_nested_ternary_style` (`autodetect`).
-- ⚠ status: **open**, measured.
+
+⚠ **#563, round two.** The first half is the builder's: the root of a chain was laid out flat as the
+chain's member ("align_not_nested"), which a stepped chain is not once #548 chops it, so where nothing
+else paid a level — an argument, an array element — its signs sat on the condition's column. The root of
+a stepped chain now nests like a lone conditional. ⚠ The second half was **not reproduced**: the in-file
+call cut out beside flat chains, a colon-only chain and an expression-bodied chain comes back stepped and
+indented from the oracle, exactly as it does alone — nothing found that `autodetect` reads beyond the chain.
+- ⚠ status: **resolved** (#563) for the argument level, pinned by `constructs/wrapping/stepped-chain-as-an-argument.cs`; the in-file answer is unexplained and not reproduced.
 
 ## SK-DIV-0371 — a lambda argument's arrow against the member-access fill in its body
 
@@ -10540,3 +10589,95 @@ parameter wider than the line, where the oracle breaks between its type and its 
 - options: `skala_wrap_before_eq = false`, the exported value.
 - ⚠ status: **fixed within the residue above**. Pinned by `constructs/breaks/equals-before-a-lambda-floor.cs`
   and, for the narrow name, `constructs/wrapping/lambda-arrow-over-a-name.cs`.
+
+## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
+
+⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as
+`o is` / `var (a,` / `b)`. A `git bisect` between the fixture's own commit (cb6013fc, where it passes) and
+e75f5431 names 7f40d7df, #440's "`is`/`as` wrapped on the wrong side". That commit made the gap after `is`
+a last-resort point of `PlanTypeTest` for every pattern `IsUnbreakablePattern` accepts. A `var` pattern
+with a parenthesised designation was accepted as a single type. The break the author kept inside its list
+then made the group too long, and the point after `is` was taken. The fixture has failed since then, at
+every merge of this session included. `PlanBrokenTypeTest` (group L) never sees it, because nothing is
+broken around the `is`.
+
+`IsUnbreakablePattern` now counts a `ParenthesizedVariableDesignationSyntax` as breakable, so the type
+test plans no point and the designation's list keeps the author's break.
+
+- options: `skala_keep_user_linebreaks` (the exported `true`).
+- ⚠ status: **fixed**, pinned by `constructs/breaks/variable-designation.cs` (passing again).
+
+## SK-DIV-0374 — a local's lambda with a bare-name body, one column past the margin
+
+⚠ **#572, the cells SK-DIV-0372 left out.** On a line that ends at exactly 121, the oracle chops the
+parameter list (`name = (` / parameters / `) => body;`) where #558's rules give the arrow or the `=`.
+
+Measured with `Testing ask` on `Func<T…> name = (P… p0) => body;`, 10 320 cells:
+- type widths 8 to 46 (two apart);
+- bodies of 1 to 14;
+- heads of 16 to 79, one column at a time;
+- line ends 121, 122 and 123.
+
+What the grid shows:
+
+- **Only at 121.** No cell at 122 or 123 chops.
+- **Bodies of 1 to 7** chop the parameters from the narrowest head up to a limit. The limit falls two to
+  three columns per column of body and rises about one and a quarter per column of type, until it stops
+  at a type of 32: `69, 66, 63, 60, 58, 55, 52` for bodies of 1 to 7.
+- **A body of 8** chops only at a head of 49, under types of 26 to 36. That is the one cell where the
+  arrow hands over to the `=`.
+- **A body of 9 or more** never chops.
+
+Wired as the table `EqualsFloor.ChopsOneOver`. The `=` reads it to stay flat, and the parameter list
+(`GroupFacts.OneOverType` / `OneOverBody`) reads it to chop, even though the line through `=>` fits.
+Every one of the 2 940 cells at types 10 and 26 reproduces.
+
+⚠ Past the chop run, from a type of 32, the oracle breaks between the declaration's type and its name
+(`Func<T…>` / `name = (…) => body;`) where #558 breaks the `=`. That happens in 1 524 cells of the type
+sweep at 121, and in 171 of about 7 400 cells of #558's own grids. It is the declaration's type/name
+gap, not this rule's, and it is not wired. Odd type widths read the row below and were not measured.
+
+- options: `skala_wrap_before_eq = false`, the exported value.
+- ⚠ status: **fixed** within the type/name residue above, pinned by
+  `constructs/breaks/lambda-parameters-one-column-over.cs`.
+
+## SK-DIV-0375 — a sole lambda argument's arrow over a chain of calls
+
+⚠ **#571.** Group F's #529 rule broke a lambda's arrow whenever the chain in its body fitted on the line
+below. Measured with `Testing ask` on `U(x => source.A….Select(y => y).Where(z => z.Bb));` and the same
+with `(x) =>`: lambdas starting at columns 11 to 57, line ends 112 to 174, two apart, 1 536 cells.
+Against the oracle, that rule is both too eager and too timid:
+
+- **Too eager.** At small columns the oracle keeps the arrow and fills the chain although it fits below
+  (`UU(x => source.A….Select(y => y)` / `.Where(z => z.Bb)`).
+- **Too timid.** From column 21, or 25 with parentheses, the oracle breaks the arrow however long the chain
+  is, and chops the chain under it.
+
+The arrow's rule (`GroupFacts.LambdaChainHead`) is now #557's for a property fill. The arrow breaks in any
+of three cases:
+- from column 21, or 25 with parentheses;
+- by #557's measured line, `9·below + 2·params − 2·start ≤ 969`;
+- when the arrow ends at column 21 or later and the chain's head through its first call's dot no longer
+  fits beside it.
+
+4 cells differ, all at a parenthesised lambda's column 23. #529's own shape (`var r = items.Where(x =>`)
+still reproduces (`constructs/wrapping/lambda-arrow-over-a-chain.cs`).
+
+⚠ Not fixed here, and reported: once the arrow is decided, the chain itself is laid out wrongly in about
+540 of the cells. Where the oracle chops every link (`source.A…` / `.Select(y => y)` / `.Where(…)`),
+Skala keeps `.Select(y =>` on a line past the margin and breaks inside its argument. The same happens
+with no lambda at all, as in `var q = source.A….Select(y => y).Where(…);`. That is the chain fill's own
+defect (group F's), not the arrow's.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
+- ⚠ status: **fixed** for the arrow, pinned by `constructs/wrapping/lambda-arrow-over-a-sole-chain.cs`.
+
+⚠ **Round 5's other two issues, refuted rather than fixed:**
+- **#573**, a lambda parameter's type/name break. All 36 of round 4's cells where the oracle writes
+  `T…` / `p0` match on master. They still differ at 79f15491 (group F round 3) and match from 26321000
+  (group K, "parameter names"). That merge fixed them before this round started.
+- **#574**, `syntax/caller-argument-expression.cs`. It diverges by design and always has. The fixture pins
+  SK-DIV-0187: Skala leaves a `[CallerArgumentExpression]` argument's text as written, and its own header
+  says every divergent line is that decision. It produces the identical diff at f26e3f46, the commit that
+  added it. It is not a regression, so nothing was changed. If it should stop counting against construct
+  fidelity, that is a harness exemption, not a formatter fix.

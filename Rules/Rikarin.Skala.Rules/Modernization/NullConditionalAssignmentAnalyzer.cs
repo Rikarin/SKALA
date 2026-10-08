@@ -71,7 +71,9 @@ public sealed class NullConditionalAssignmentAnalyzer : DiagnosticAnalyzer {
 
         if (body is not ExpressionStatementSyntax {
                 Expression:
-                AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment
+                AssignmentExpressionSyntax {
+                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression
+                } assignment
             }) {
             return;
         }

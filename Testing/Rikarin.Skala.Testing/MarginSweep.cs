@@ -322,10 +322,10 @@ public static class MarginSweep {
             results.Add(
                 (lengths[i],
                     group.Count == 1
-                    ? Layout.Flat
-                    : group.Count == 2 && string.Equals(group[1], tail, StringComparison.Ordinal)
-                        ? Layout.OuterBreak
-                        : Layout.Inner)
+                        ? Layout.Flat
+                        : group.Count == 2 && string.Equals(group[1], tail, StringComparison.Ordinal)
+                            ? Layout.OuterBreak
+                            : Layout.Inner)
             );
         }
 

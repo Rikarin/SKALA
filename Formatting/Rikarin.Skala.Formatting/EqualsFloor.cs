@@ -34,6 +34,57 @@ public enum EqualsOwner {
 
 public static class EqualsFloor {
     /// <summary>
+    ///     Whether a local's lambda with a bare-name body, on a line that ends exactly one column past the
+    ///     margin, chops its parameter list — <c>name = (</c> / parameters / <c>) =&gt; body;</c> — rather
+    ///     than breaking its arrow or its <c>=</c> (#572). The declaration's type is <paramref name="type" />
+    ///     wide, the body <paramref name="body" /> and the <c>=</c> ends at <paramref name="head" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on 6 058 cells of <c>Func&lt;T…&gt; name = (P… p0) =&gt; body;</c> ending at 121: types of
+    ///     8 to 46 columns (two apart), bodies of 1 to 9, heads of 16 to 79 one column at a time. The
+    ///     parameters chop exactly up to a head that falls two to three columns per column of body and rises
+    ///     about one and a quarter per column of type until it stops at a type of 32. A body of eight chops
+    ///     them at a head of 49 only, under types of 26 to 36; a body of nine never does. At 122 and 123 no
+    ///     cell chops. An odd type width reads the row below it, which was not measured. ⚠ Past the run,
+    ///     from a type of 32, the oracle breaks between the type and the name instead of after the
+    ///     <c>=</c>, which is not this rule's and not wired.
+    /// </remarks>
+    public static bool ChopsOneOver(int type, int body, int head) {
+        if (body is < 1 or > 8) {
+            return false;
+        }
+
+        var row = Math.Clamp((type - 8) / 2, 0, OneOverHeads.Length - 1);
+
+        // ⚠ A body of eight chops at one head only, where the arrow hands over to the `=`.
+        return body == 8 ? head == OneOverHeads[row][7] : head <= OneOverHeads[row][body - 1];
+    }
+
+    /// <summary>The widest head that chops at 121, by type (8, 10 … 46) and body (1 … 8); 0 never.</summary>
+    static readonly int[][] OneOverHeads = [
+        [45, 42, 40, 38, 37, 35, 33, 0],
+        [44, 42, 40, 38, 37, 35, 33, 0],
+        [45, 43, 41, 40, 38, 36, 35, 0],
+        [47, 45, 44, 42, 40, 39, 37, 0],
+        [50, 48, 46, 44, 43, 41, 39, 0],
+        [52, 50, 48, 47, 45, 43, 41, 0],
+        [55, 52, 51, 49, 47, 45, 44, 0],
+        [57, 55, 53, 51, 49, 48, 46, 0],
+        [60, 57, 55, 53, 52, 50, 48, 0],
+        [62, 59, 57, 56, 54, 52, 51, 49],
+        [65, 62, 60, 58, 56, 55, 52, 49],
+        [67, 64, 62, 60, 58, 55, 52, 49],
+        [69, 66, 63, 60, 58, 55, 52, 49],
+        [69, 66, 63, 60, 58, 55, 52, 49],
+        [69, 66, 63, 60, 58, 55, 52, 49],
+        [69, 66, 63, 60, 58, 55, 52, 0],
+        [69, 66, 63, 60, 57, 55, 52, 0],
+        [69, 66, 63, 60, 57, 55, 52, 0],
+        [68, 66, 63, 60, 57, 55, 52, 0],
+        [68, 66, 63, 60, 57, 55, 52, 0]
+    ];
+
+    /// <summary>
     ///     The narrowest value — the lambda from its <c>(</c> through the statement's <c>;</c> — that keeps
     ///     an <c>=</c> on its line when the <c>=</c> ends at column <paramref name="head" /> and the line
     ///     through the lambda's <c>=&gt;</c> fits (#558). A narrower value moves below the <c>=</c> whole.

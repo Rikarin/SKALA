@@ -252,7 +252,9 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
         // semantic query that separates those two cases, because the resulting type is identical.
         if (tuple.Parent is not EqualsValueClauseSyntax {
                 Parent:
-                VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Type: TupleTypeSyntax declared } }
+                VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax { Type: TupleTypeSyntax declared }
+                }
             }
             || declared.Elements.Count != tuple.Arguments.Count) {
             return;
