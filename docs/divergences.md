@@ -10469,7 +10469,16 @@ of its own, as a `case` label and after `is` (`o is (` / … / `);`) — so it i
 `skala_indent_pars = inside` answered as `outside` for a positional pattern
 (`CSharpDocumentBuilder.ParenthesesStyleFor`). The fill's break between a declaration's type and its
 name (`…, int` / `dddd) =>`) is still not modelled.
-- ⚠ status: **resolved** (#559) for the closer, pinned by `constructs/breaks/positional-pattern-closer.cs`; **open** for the fill.
+⚠ **#559, round three: the fill.** The gap between a declaration pattern's type and its name (and `var`'s) is a
+fill point of the positional list: the oracle keeps `…, int` on the line when the type fits and the name does
+not, though the whole element would fit below — measured with the element last, inner, and with `var`, in an
+arm and a `case` label. Two shapes stay open: a recursive element (`…, Foo {` / `X: 1` / `}) =>`, the braces
+broken as the fill's head) and an `=` before the `is` (`var x =` / `owner is (…, int ccc` / `, int dddd);`,
+the comma carried to the next line).
+
+- ⚠ status: **resolved** (#559) for the closer and the declaration fill, pinned by
+  `constructs/breaks/positional-pattern-closer.cs` and `constructs/breaks/positional-pattern-fill.cs`; **open** for the
+  two shapes above.
 
 ## SK-DIV-0394 — a pattern chain inside the first operand of an `&&` in a declarator
 
@@ -10540,7 +10549,17 @@ else paid a level — an argument, an array element — its signs sat on the con
 a stepped chain now nests like a lone conditional. ⚠ The second half was **not reproduced**: the in-file
 call cut out beside flat chains, a colon-only chain and an expression-bodied chain comes back stepped and
 indented from the oracle, exactly as it does alone — nothing found that `autodetect` reads beyond the chain.
-- ⚠ status: **resolved** (#563) for the argument level, pinned by `constructs/wrapping/stepped-chain-as-an-argument.cs`; the in-file answer is unexplained and not reproduced.
+⚠ **#563, round three: the in-file answer is SK-DIV-0017, not `autodetect`.** Bisected on the old
+`CSharpDocumentBuilder.cs` with the oracle (the method alone, the file's halves, quarters and eighths): the
+chain comes back unstepped exactly when a comment *mentioning* `// @formatter:off` precedes it — lines 2433 and
+2880 of that file discuss the tag in prose. The oracle's tag test is a substring, so from there to the end of
+the file it formats nothing; Skala deliberately requires the tag to open the comment (`FormatterTagGuard.IsTag`).
+Confirmed on a twelve-line file: a remark mentioning the tag above the chain leaves the chain *and* a
+`var   unformatted   =   1;` below it untouched. The `autodetect` hypothesis is refuted — no file-wide style
+detection was found, and nothing is wired: this is the deliberate divergence, not a new one.
+
+- ⚠ status: **resolved** (#563). Pinned by `constructs/wrapping/stepped-chain-as-an-argument.cs`; the in-file
+  answer is SK-DIV-0017's.
 
 ## SK-DIV-0371 — a lambda argument's arrow against the member-access fill in its body
 
@@ -10641,6 +10660,38 @@ parameter wider than the line, where the oracle breaks between its type and its 
 - options: `skala_wrap_before_eq = false`, the exported value.
 - ⚠ status: **fixed within the residue above**. Pinned by `constructs/breaks/equals-before-a-lambda-floor.cs`
   and, for the narrow name, `constructs/wrapping/lambda-arrow-over-a-name.cs`.
+
+## SK-DIV-0398 — a case label's braces under a `when` on a line of its own sat a level shallow
+
+#575, found in Skala's own `CopyingPropertyAnalyzer.cs`. `case X {` / subpatterns / `} x` / `when …:` — the
+oracle puts the subpatterns two levels past `case` and `} x` one, as an arm does under a kept arrow break
+(SK-DIV-0391); with the `when` on the braces' line both stay at one and none. Measured 2026-10-08 on six
+shapes; a positional pattern's parenthesis keeps SK-DIV-0393's layout. `BreakPlan.PlanWhenClause` opens the
+`when`'s group at the label's pattern, broken and lifting, when the author kept the break before `when`.
+
+- options: `keep_user_linebreaks`.
+- ⚠ status: **resolved** (#575). Pinned by `constructs/breaks/case-label-braces-under-a-kept-when.cs`.
+
+## SK-DIV-0399 — an arm's `when` condition: the gap after `when`
+
+#576, cut down from generated seed 857717698562573229. The oracle breaks after an arm's `when` when the
+condition fits flat on the line below and not beside the `when` — `X when` / `SomeVeryLongIdentifier… => 1,`
+and `X when` / `Materialise<…>() => 1,`, where Skala broke the pattern's braces or filled the type argument
+list — and keeps it beside the `when` when it is too wide for the line below as well (`X when Materialise<…,`
+/ `…>() => 1,`). A condition with a break point of its own — an argument list, braces, an operator — keeps
+its head beside the `when` and breaks inside (`when prev is {`, `when Compute(`), so the rule is planned for a
+condition whose only break points are type argument lists. ⚠ The seed's own line is not reproduced: there the
+oracle breaks after `when` although the condition does not fit below, steps the type argument list's
+continuation two levels, and keeps a query body on the `>>() =>` line breaking it between `from item` and
+`in items` — three further rules, each reachable only past the margin.
+
+- options: none.
+⚠ Its fixture also exposed a spacing defect, fixed beside it: a query clause's keyword (`where "s"`, `select (item)`)
+keeps its space at both `space_between_keyword_and_type = false` and `space_between_keyword_and_expression = false`
+in the oracle, where Skala joined them (`QueryKeywordSpaceTests`).
+
+- ⚠ status: **resolved** (#576) for the cut-down shapes, pinned by `constructs/breaks/arm-when-condition-below.cs`;
+  **open** for the seed's whole line.
 
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 

@@ -17,6 +17,10 @@ public sealed class GroupLRoundTwoFixtureTests {
     [InlineData("wrapping/list-pattern-after-a-broken-is.cs")]
     [InlineData("wrapping/stepped-chain-as-an-argument.cs")]
     [InlineData("breaks/when-list-under-a-kept-arrow-break.cs")]
+    // Round three: #559's fill, #575 and #576.
+    [InlineData("breaks/positional-pattern-fill.cs")]
+    [InlineData("breaks/case-label-braces-under-a-kept-when.cs")]
+    [InlineData("breaks/arm-when-condition-below.cs")]
     public void TheFixture_ComesBackAsTheOracleWritesIt(string fixture) {
         var root = Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Testing", "corpus", "constructs");
         var source = File.ReadAllText(Path.Combine(root, fixture)).Replace("\r\n", "\n", StringComparison.Ordinal);
