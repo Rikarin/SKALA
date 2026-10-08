@@ -296,7 +296,7 @@ public static class FrozenFreeze {
             );
             Report(log, "outputs only the oracle can produce", outstanding.Select(Describe));
             log.WriteLine(
-                "\n`dotnet tool install -g JetBrains.Skala.GlobalTools --version 2025.2.6`. Freezing "
+                "\n`dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`. Freezing "
                 + "Skala's answer instead is the one substitution this corpus must never make: it would "
                 + "make a known-wrong output the permanent standard."
             );
