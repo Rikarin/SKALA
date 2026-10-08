@@ -712,9 +712,28 @@ public sealed class BreakPlan {
             // all (SK-DIV-0114, issue #371): a kept break inside any of them was left as written and an
             // overflowing one was never wrapped. See PlanFilledList for the measurements. A tuple *type*
             // is deliberately absent — the oracle never breaks one at its commas.
-            case PositionalPatternClauseSyntax positional:
-                PlanFilledList(node, positional.OpenParenToken, positional.CloseParenToken, positional.Subpatterns);
+            case PositionalPatternClauseSyntax positional: {
+                var fill = PlanFilledList(node, positional.OpenParenToken, positional.CloseParenToken, positional.Subpatterns);
+
+                // ⚠ And between a declaration's type and its name (#559, SK-DIV-0393): the fill keeps the
+                // type on the line when it fits there and the name does not — `…, int` / `dddd) => 1,` and
+                // `…, var` / `dddd)`, where the whole element would have fitted below. Measured 2026-10-08
+                // in an arm, a `case` label and after `is`, the element first, last and alone too wide.
+                if (fill >= 0) {
+                    foreach (var subpattern in positional.Subpatterns) {
+                        var name = subpattern.Pattern switch {
+                            DeclarationPatternSyntax { Designation: SingleVariableDesignationSyntax declared } => declared,
+                            VarPatternSyntax { Designation: SingleVariableDesignationSyntax declared } => declared,
+                            _ => null
+                        };
+                        if (name is not null) {
+                            Point(name.Identifier, fill, true);
+                        }
+                    }
+                }
+
                 return;
+            }
 
             case ParenthesizedVariableDesignationSyntax designation:
                 PlanFilledList(node, designation.OpenParenToken, designation.CloseParenToken, designation.Variables);
@@ -6239,6 +6258,80 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         Point(keyword, group);
+
+        // ⚠ And the gap after an arm's `when`, by the collection `=`'s rule (#576): the condition moves
+        // below the `when`, one level past the arm, exactly when it fits there flat and not beside it —
+        // `X when` / `SomeVeryLongIdentifier… => 1,` and `X when` / `Materialise<…>() => 1,`, where Skala
+        // broke the pattern's braces or filled the type argument list; one too wide for the line below
+        // too stays and fills (`X when Materialise<…,` / `…>() => 1,`). Measured 2026-10-08 on the
+        // generated seed's shape and four cut down from it.
+        // ⚠ Only a condition with no break point of its own but a type argument list: one that has —
+        // `when prev is {` / …, `when Compute(` / … / `) =>` — keeps its head beside the `when` and breaks
+        // inside, though it would fit below whole.
+        if (node.Parent is SwitchExpressionArmSyntax
+            && !node.Condition.DescendantNodesAndSelf()
+                .Any(static part => part is ArgumentListSyntax { Arguments.Count: > 0 }
+                    or BracketedArgumentListSyntax
+                    or PropertyPatternClauseSyntax
+                    or ListPatternSyntax
+                    or PositionalPatternClauseSyntax
+                    or BinaryExpressionSyntax
+                    or BinaryPatternSyntax
+                    or ConditionalExpressionSyntax
+                    or AnonymousFunctionExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or SwitchExpressionSyntax
+                    or QueryExpressionSyntax
+                    or MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax })
+            && FirstToken(node.Condition) is var condition) {
+            var after = NewGroup();
+            Point(condition, after);
+            Describe(
+                node.Condition,
+                after,
+                GroupMode.Preserve,
+                new(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(condition),
+                    BreaksIfTooLong: true,
+                    BreaksOnlyIfTailFits: true
+                ),
+                true,
+                true
+            );
+        }
+
+        // ⚠ A `case` label whose `when` the author put on a line of its own nests its pattern's braces from
+        // the label's continuation line (#575): `case X {` / the subpatterns two levels past `case` / `} x`
+        // one level / `when …:` one level, as an arm under a kept arrow break does (#549). With the `when`
+        // on the braces' line they nest from the label's own. Measured 2026-10-08 (found in Skala's own
+        // CopyingPropertyAnalyzer.cs); a positional pattern's parenthesis keeps its own layout (#559).
+        if (node.Parent is CasePatternSwitchLabelSyntax label
+            && options.KeepsUserBreaksBetweenItems
+            && BreaksBefore(keyword)
+            && label.Pattern.DescendantNodesAndSelf()
+                .Any(static part => part is PropertyPatternClauseSyntax or ListPatternSyntax)
+            && !label.Pattern.DescendantNodesAndSelf()
+                .Any(static part => part is PositionalPatternClauseSyntax
+                    or BaseArgumentListSyntax
+                    or TypeArgumentListSyntax
+                    or AnonymousFunctionExpressionSyntax
+                    or SwitchExpressionSyntax
+                )) {
+            OpenAt(
+                label,
+                label.Pattern.SpanStart,
+                new(
+                    group,
+                    GroupMode.Preserve,
+                    new(true, BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true, Continues: true),
+                    true,
+                    false
+                )
+            );
+            return;
+        }
+
         Describe(
             node,
             group,
