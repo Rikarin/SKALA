@@ -22,7 +22,13 @@ namespace Rikarin.Skala.Formatting.CSharp;
 public abstract record XmlDocNode(bool Glued);
 
 /// <summary>One whitespace-delimited word of prose. Never split.</summary>
-public sealed record XmlDocWord(string Text, bool Glued) : XmlDocNode(Glued);
+/// <param name="Gap">
+///     ⚠ The run of spaces the author wrote before it on the same line — 0 when glued, 1 when the run held a
+///     line break or a tab. #569, measured: the oracle keeps <c>alpha  beta</c>, <c>End.  Next</c> and
+///     <c>alpha   beta</c> as written wherever the line does not break there, re-flowed paragraphs included,
+///     and drops the run only at a break it places.
+/// </param>
+public sealed record XmlDocWord(string Text, bool Glued, int Gap = 1) : XmlDocNode(Glued);
 
 /// <summary>A line break the author wrote, and the blank lines that followed it.</summary>
 public sealed record XmlDocBreak(int BlankLines) : XmlDocNode(false);
@@ -63,6 +69,19 @@ public sealed record XmlDocVerbatim(ImmutableArray<string> Lines, bool Processin
 /// </param>
 public readonly record struct XmlDocNameValue(string Name, string Value, bool BreakBefore = false);
 
+/// <summary>
+///     Where a <c>&lt;code&gt;</c> whose content spans lines puts its edges, both as the author wrote them. #569,
+///     measured on nine shapes: the oracle writes the start tag at its own indent and everything after it up to
+///     <c>&lt;/code&gt;</c> back byte for byte — code on the start tag's line stays there, an end tag glued to
+///     the last line stays glued, and one on a line of its own keeps that line's whitespace, at 0, 2, 4 or 8.
+/// </summary>
+/// <param name="OnTagLine">The code's first line begins on the start tag's line.</param>
+/// <param name="Tail">
+///     The whitespace in front of <c>&lt;/code&gt;</c> on a line of its own, or null when the end tag follows
+///     the last line of code directly.
+/// </param>
+public readonly record struct XmlDocCodeShape(bool OnTagLine, string? Tail);
+
 /// <summary>An element, with the pieces of its start tag taken from the source unchanged.</summary>
 /// <param name="Name">The tag name, for <c>skala_xmldoc_linebreak_before_elements</c> and the closing tag.</param>
 /// <param name="Header">
@@ -79,7 +98,8 @@ public readonly record struct XmlDocNameValue(string Name, string Value, bool Br
 /// </param>
 /// <param name="Verbatim">
 ///     ⚠ Non-null for <c>&lt;code&gt;</c> and <c>&lt;c&gt;</c>: the element's content as source lines,
-///     which are emitted unchanged rather than re-wrapped.
+///     which are emitted unchanged rather than re-wrapped — except a <c>&lt;c&gt;</c> of more than one line,
+///     which the oracle re-indents (#569, <see cref="XmlDocModel.IsReflowedInlineCode" />).
 /// </param>
 /// <param name="GluedToWord">
 ///     ⚠ The thing directly before it, with no whitespace between, was <em>prose</em>. Only then is a
@@ -106,7 +126,9 @@ public sealed record XmlDocElement(
     bool Glued,
     bool GluedToWord,
     string InnerLead = "",
-    string InnerTrail = ""
+    string InnerTrail = "",
+    XmlDocCodeShape? Code = null,
+    int Gap = 1
 ) : XmlDocNode(Glued) {
     public bool HasChildElements => Children.Any(static child => child is XmlDocElement);
 
@@ -128,6 +150,9 @@ public sealed class XmlDocModel {
     /// <summary>Whether whitespace has been seen since the last word or element.</summary>
     bool separated = true;
 
+    /// <summary>The run of spaces before the next node, as <see cref="XmlDocWord.Gap" /> counts it.</summary>
+    int gap = 1;
+
     /// <summary>Whether the last thing emitted at this level was prose rather than markup.</summary>
     bool afterWord;
 
@@ -137,6 +162,21 @@ public sealed class XmlDocModel {
     XmlDocModel() { }
 
     public static bool IsVerbatimElement(string name) => VerbatimElements.Contains(name, StringComparer.Ordinal);
+
+    /// <summary>
+    ///     ⚠ A <c>&lt;c&gt;</c> whose content spans lines is not verbatim to the oracle, though a one-line one is
+    ///     (SK-DIV-0022's double space survives inside it). #569, measured on eight shapes: every line is
+    ///     trimmed and placed one indent past the tag, a blank one is dropped, a long one wraps at a space, and
+    ///     the author's breaks and the spaces inside a line stay. <c>&lt;code&gt;</c> stays verbatim at any length.
+    /// </summary>
+    public static bool IsReflowedInlineCode(string name, ImmutableArray<string> body) => name == "c" && body.Length > 1;
+
+    /// <summary>
+    ///     What such a <c>&lt;c&gt;</c> must keep: its lines trimmed, blank ones dropped, joined by one space — so
+    ///     a re-indent or a wrap at a space is allowed and any other change to the text is not.
+    /// </summary>
+    public static string InlineCodeSignature(ImmutableArray<string> body) =>
+        string.Join(' ', body.Select(static line => line.Trim()).Where(static line => line.Length > 0));
 
     /// <summary>
     ///     The comment's content, or null when it is not something the sub-formatter will touch.
@@ -165,11 +205,13 @@ public sealed class XmlDocModel {
                     break;
 
                 case XmlElementSyntax element:
+                    // ⚠ Read before the walk below, which spends the state on the element's own children.
+                    var before = separated ? gap : 0;
                     if (Element(element) is not { } built) {
                         return false;
                     }
 
-                    builder.Add(built);
+                    builder.Add(built with { Gap = before });
                     separated = false;
                     afterWord = false;
                     break;
@@ -188,7 +230,8 @@ public sealed class XmlDocModel {
                             [],
                             null,
                             !separated,
-                            !separated && afterWord
+                            !separated && afterWord,
+                            Gap: separated ? gap : 0
                         )
                     );
 
@@ -231,15 +274,17 @@ public sealed class XmlDocModel {
         var glued = !separated;
         var gluedToWord = glued && afterWord;
         if (IsVerbatimElement(name)) {
+            var body = element.Content.ToString();
             return new XmlDocElement(
                 name,
                 header,
                 attributes,
                 false,
                 [],
-                VerbatimBody(element.Content.ToString(), markerSpace),
+                VerbatimBody(body, markerSpace),
                 glued,
-                gluedToWord
+                gluedToWord,
+                Code: name == "code" ? CodeShape(body, markerSpace) : null
             );
         }
 
@@ -371,15 +416,17 @@ public sealed class XmlDocModel {
         var word = new StringBuilder();
         var glued = !separated;
         var newLines = 0;
+        var spaces = 0;
 
         void FlushWord() {
             if (word.Length == 0) {
                 return;
             }
 
-            builder.Add(new XmlDocWord(word.ToString(), glued));
+            builder.Add(new XmlDocWord(word.ToString(), glued, glued ? 0 : spaces > 0 ? spaces : 1));
             word.Clear();
             glued = true;
+            spaces = 0;
         }
 
         void FlushBreaks() {
@@ -397,6 +444,7 @@ public sealed class XmlDocModel {
                 FlushWord();
                 glued = false;
                 newLines++;
+                spaces = -1;
                 continue;
             }
 
@@ -410,6 +458,7 @@ public sealed class XmlDocModel {
                 if (character is ' ' or '\t') {
                     FlushWord();
                     glued = false;
+                    spaces = spaces < 0 || character == '\t' ? -1 : spaces + 1;
                     continue;
                 }
 
@@ -421,6 +470,7 @@ public sealed class XmlDocModel {
         FlushWord();
         FlushBreaks();
         separated = !glued;
+        gap = spaces > 0 ? spaces : 1;
         afterWord = builder.Count > 0 && builder[^1] is XmlDocWord;
     }
 
@@ -523,6 +573,16 @@ public sealed class XmlDocModel {
     ///     block from a re-indented one — which is the single thing the verbatim rule exists to
     ///     guarantee.
     /// </remarks>
+    /// <summary>The edges of a <c>&lt;code&gt;</c> whose content spans lines, or null when it is one line.</summary>
+    static XmlDocCodeShape? CodeShape(string source, bool markerSpace) {
+        var lines = SourceLines(source, markerSpace);
+        if (lines.Length < 2 || VerbatimBody(source, markerSpace).IsEmpty) {
+            return null;
+        }
+
+        return new(lines[0].Trim().Length > 0, lines[^1].Trim().Length == 0 ? lines[^1] : null);
+    }
+
     public static ImmutableArray<string> VerbatimBody(string source, bool markerSpace = true) {
         var lines = SourceLines(source, markerSpace);
         var start = 0;

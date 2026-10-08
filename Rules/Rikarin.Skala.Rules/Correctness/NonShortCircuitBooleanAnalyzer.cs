@@ -37,8 +37,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <para>
 ///         ⚠ <b>A right operand with a side effect is deliberate.</b>
 ///         <c>
-/// if (ValidateName(x) &amp;
-///         ValidateAge(x))
+///             if (ValidateName(x) &amp;
+///             ValidateAge(x))
 ///         </c>
 ///         is written that way so both validators run and both messages are
 ///         collected; short-circuiting it deletes work. Only a right operand that runs no code

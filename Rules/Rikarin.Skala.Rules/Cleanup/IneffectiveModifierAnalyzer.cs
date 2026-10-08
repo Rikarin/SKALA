@@ -235,8 +235,8 @@ public sealed class IneffectiveModifierAnalyzer : DiagnosticAnalyzer {
     ///     before the span's start. What the span does eat is the keyword's trailing trivia, which is
     ///     why a comment or a directive there withdraws the finding:
     ///     <c>
-    /// public /* still virtual in the
-    ///     base */ sealed override
+    ///         public /* still virtual in the
+    ///         base */ sealed override
     ///     </c>
     ///     would lose the note under a fix marked safe.
     /// </remarks>

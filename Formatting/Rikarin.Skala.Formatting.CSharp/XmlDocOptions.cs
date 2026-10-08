@@ -54,6 +54,7 @@ public readonly struct XmlDocOptions {
         WrapTagsAndPi = options.GetBool(XmlDocIds.WrapTagsAndPi);
         AttributeStyle = (AttributeArrangementStyle)options.GetRaw(XmlDocIds.AttributeStyle);
         AttributeIndent = (AttributeIndentStyle)options.GetRaw(XmlDocIds.AttributeIndent);
+        AllowFarAlignment = options.GetBool(XmlDocIds.AllowFarAlignment);
         KeepUserLinebreaks = options.GetBool(XmlDocIds.KeepUserLinebreaks);
         MaxBlankLinesBetweenTags = Math.Max(0, options.GetInt(XmlDocIds.MaxBlankLinesBetweenTags));
         IndentChildElements = (ChildIndentStyle)options.GetRaw(XmlDocIds.IndentChildElements);
@@ -161,9 +162,17 @@ public readonly struct XmlDocOptions {
     ///     <c>skala_xmldoc_attribute_indent</c>: where a header's continuation lines start. One indent past the
     ///     tag, two, or under the first attribute — ⚠ unless that column is two thirds of
     ///     <c>xmldoc_max_line_length</c> or more, measured at 120 (80) and at 90 (60), where it falls back to
-    ///     two indents: that is the export's <c>allow_far_alignment = false</c>, which Skala does not read.
+    ///     two indents unless <see cref="AllowFarAlignment" /> says otherwise.
     /// </summary>
     public AttributeIndentStyle AttributeIndent { get; }
+
+    /// <summary>
+    ///     <c>skala_xmldoc_allow_far_alignment</c>: under <c>align_by_first_attribute</c>, keep aligning under
+    ///     the first attribute however far along the line it sits. #570, measured at 90: at <c>true</c> the
+    ///     continuation stays under the first attribute at 56 to 83 where <c>false</c> takes two indents
+    ///     from 60.
+    /// </summary>
+    public bool AllowFarAlignment { get; }
 
     /// <summary>
     ///     <c>skala_xmldoc_keep_user_linebreaks</c>: a line break the author wrote is a line break.
@@ -418,6 +427,7 @@ public static class XmlDocIds {
     public static readonly OptionId WrapTagsAndPi = Ids.XmlDocWrapTagsAndPi;
     public static readonly OptionId AttributeStyle = Ids.XmlDocAttributeStyle;
     public static readonly OptionId AttributeIndent = Ids.XmlDocAttributeIndent;
+    public static readonly OptionId AllowFarAlignment = Ids.XmlDocAllowFarAlignment;
     public static readonly OptionId KeepUserLinebreaks = Ids.XmlDocKeepUserLinebreaks;
     public static readonly OptionId MaxBlankLinesBetweenTags = Ids.XmlDocMaxBlankLinesBetweenTags;
     public static readonly OptionId IndentChildElements = Ids.XmlDocIndentChildElements;
@@ -491,15 +501,15 @@ public static class XmlDocIds {
         // ── The header family's two that stay refused ─────────────────────────────────────────
         // ⚠ `wrap_tags_and_pi`, `attribute_style` and `attribute_indent` left this list for `Honoured`
         // (#448, SK-DIV-0381): the renderer wraps a header and keeps or arranges its breaks at every value
-        // of the three, each measured. What stays is one key the oracle ignores and one masked by the
-        // export's own `false`.
+        // of the three, each measured. What stays is one key the oracle ignores and one read since #570
+        // but masked by the export's own `attribute_indent`, so no fixture can pin it.
         new(
             "skala_xmldoc_alignment_tab_fill_style",
             "⚠ Not pending — MEASURED INERT, and the pairwise prerequisite this entry named was supplied in full. Under OracleProfile.DocComments with `indent_style = tab`, `skala_xmldoc_indent_style = tab`, `tab_width = 4`, `skala_xmldoc_attribute_indent = align_by_first_attribute` and `skala_xmldoc_allow_far_alignment = true` — so the continuation line carries 96 columns of alignment fill — `use_spaces`, `use_tabs_only` and `optimal_fill` produce byte-identical output, and the fill is spaces at all three. The control is in the same output: the file's own CODE lines took tabs, so a tab regime was live and the alignment still refused it. The inside of a `///` comment is always spaces, which is the same finding `skala_xmldoc_indent_style` carries one line down. Skala spends spaces for the same reason."
         ),
         new(
             "skala_xmldoc_allow_far_alignment",
-            "Not read: Skala aligns as the export's `false` says, falling back to a double indent when the first attribute sits at two thirds of `xmldoc_max_line_length` or further — measured since, at 80 of 120 and at 60 of 90 (SK-DIV-0381). Measured before that with both halves of the shape this entry asked for. It needs `skala_xmldoc_attribute_indent = align_by_first_attribute` flipped beside it AND a tag name long enough to push the alignment out; earlier probes supplied only the first and reported the key flat, which was a fact about the probe. On a 90-character element whose first attribute begins at column 105: at `false` — the export's own value — the continuation falls back to a DOUBLE indent at column 16, and at `true` it aligns at column 100 and the line runs to 129, past the margin. A shorter element whose alignment sits at column 39 aligns at both values, so the threshold lies between 39 and 105. ⚠ Two flips, so the one-key sweep can never reach it. SK-DIV-0079."
+            "Read since #570, and Tier D for a reason that is a property of the export, not of Skala: the key only matters under `skala_xmldoc_attribute_indent = align_by_first_attribute`, and the export's `single_indent` masks it, so a fixture regenerated at the export cannot tell its values apart and the sweep would call it Unexercised. Measured with the prerequisite flipped, at `skala_xmldoc_max_line_length = 90`, a first attribute at 56 to 95: at `true` the continuation stays under the first attribute at every column it fits beside the tag name (to 83), where `false` takes two indents from 60; and at either value a first attribute that does not fit (84 on) puts every attribute one indent past the tag. Pinned by `XmlDocAllowFarAlignmentIssue570Tests`."
         ),
 
         // ── Measured inert in the oracle: the indent is the C# file's ────────────────────────

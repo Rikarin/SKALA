@@ -293,6 +293,23 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ A local's type/name gap one column past the margin (#583, SK-DIV-0127): it breaks where
+                // the `=` would, for the names the planner has already let through. See GroupFacts.OneOverValue.
+                if (facts.OneOverValue > 0) {
+                    if (m.FlatWidth < Unbounded
+                        && m.Trailing < Unbounded
+                        && m.Column + m.FlatWidth + m.Trailing == width + 1
+                        && (facts.OneOverEquals == -1
+                            || facts.OneOverEquals >= 0 && LambdaGivesWayOneOver(facts, m)
+                        )) {
+                        return ResolvedMode.Broken;
+                    }
+
+                    if (facts.OneOverEquals != -1) {
+                        return ResolvedMode.Flat;
+                    }
+                }
+
                 // ⚠ The two sides of a switch arm's `=>` are alternatives: once the arrow itself has
                 // moved down, the body follows it on the arrow's line and never takes a line of its
                 // own, however wide (issue #378). Read after the kept break, so that a break the
@@ -307,43 +324,13 @@ public sealed class Fitter {
                     && m.PointWidth < Unbounded
                     && m.FlatWidth < Unbounded
                     && !Fits(m.Column, m.FlatWidth, m.Trailing)) {
-                    var head = m.Column + m.PointWidth;
-                    var value = m.FlatWidth - m.PointWidth - 1 + m.Trailing;
-                    var through = head + 1 + facts.YieldsThroughArrow;
-
-                    // ⚠ A local's `=`, past a name wider than the type's gate, yields only to a value at
-                    // least as wide as the measured floor; a narrower one moves below the `=` whole
-                    // (#558). See GroupFacts.LambdaLocal and EqualsFloor.LambdaValue.
-                    // ⚠ One column past the margin the parameter list may chop instead, and then the `=`
-                    // stays (#572). See EqualsFloor.ChopsOneOver.
-                    if (facts.OneOverType > 0
-                        && head + 1 + value == width + 1
-                        && EqualsFloor.ChopsOneOver(facts.OneOverType, value - facts.YieldsThroughArrow - 2, head)) {
-                        return ResolvedMode.Flat;
-                    }
-
-                    if (through <= width) {
-                        return facts.LambdaLocal == LambdaLocal.None
-                            || facts.LambdaLocal.HasFlag(LambdaLocal.ArrowWhileItFits)
-                            || value >= EqualsFloor.LambdaValue(head)
-                                ? ResolvedMode.Flat
-                                : ResolvedMode.Broken;
-                    }
-
-                    // ⚠ And once the line through `=>` overflows, the `=` breaks while `(…) =>` reaches no
-                    // further than three columns past the margin, or, past a name wider than the type's
-                    // second gate, while the value is narrow enough for its body; otherwise the parameter
-                    // list chops (#558). See EqualsFloor.BreaksBeforeAnOverflowingLambda.
-                    if (facts.LambdaLocal != LambdaLocal.None) {
-                        return EqualsFloor.BreaksBeforeAnOverflowingLambda(
-                            head,
-                            value,
-                            through - width,
-                            value - facts.YieldsThroughArrow - 2,
-                            facts.LambdaLocal.HasFlag(LambdaLocal.ChopsPastTheParenthesis)
-                        )
-                            ? ResolvedMode.Broken
-                            : ResolvedMode.Flat;
+                    var decided = EqualsBeforeALambda(
+                        facts,
+                        m.Column + m.PointWidth,
+                        m.FlatWidth - m.PointWidth - 1 + m.Trailing
+                    );
+                    if (decided is { } lambdaMode) {
+                        return lambdaMode;
                     }
                 }
 
@@ -509,6 +496,12 @@ public sealed class Fitter {
                 if (facts.ValueHeadWidth > 0) {
                     var beside = Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadWidth);
                     var below = Fits(m.ContinuationColumn, facts.ValueHeadWidth);
+                    if (beside) {
+                        return facts.ValueHeadIsWide && ConditionalMovesDownWhole(facts, m, tail)
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                    }
+
                     return !beside
                         && facts.ValueHeadIsWide
                         && (!facts.ValueHeadFitsBelow || below || m.Column <= CallConditionColumn)
@@ -518,6 +511,28 @@ public sealed class Fitter {
 
                 return Worth(facts, m, afterPointRunsToTheEnd, tail, pointSpace);
         }
+    }
+
+    /// <summary>
+    ///     A conditional whose condition fits beside its <c>=</c>: whether the oracle moves it down whole
+    ///     rather than chopping it on the <c>=</c>'s line (#577).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-08 with <c>Testing ask</c> on 2 273 rows that do not fit on one line —
+    ///     heads through <c>var … =</c> from 9 to 62 columns at a statement indent of 8, conditions of 4
+    ///     to 24 columns, the value's line below from 96 to 121 columns, the branches split evenly and
+    ///     lopsidedly (the split never mattered). The oracle moves the value down whole when the line
+    ///     below is short enough, and the allowance shrinks with the condition and, past the <c>=</c> at
+    ///     column 39, with the head: <c>100·below + 38·min(condition, 24) + 24·max(0, column − 39) ≤ 11 364</c>
+    ///     — a condition past 24 columns costs no more (measured to 40).
+    ///     The fit agrees on 2 174 of the 2 273 rows; ⚠ the 99 it misses are almost all one band the
+    ///     measurement could not explain — a condition of four to six columns behind a head of 17 to 28,
+    ///     where the oracle moves the value down whatever its width, past the margin included.
+    /// </remarks>
+    bool ConditionalMovesDownWhole(in GroupFacts facts, in Measures m, int tail) {
+        var below = m.ContinuationColumn + tail;
+        return TailFits(m, tail)
+            && 100 * below + 38 * Math.Min(facts.ValueHeadWidth, 24) + 24 * Math.Max(0, m.Column - 39) <= 11364;
     }
 
     /// <summary>See <see cref="GroupFacts.CalleeWidth" />.</summary>
@@ -654,9 +669,16 @@ public sealed class Fitter {
 
         if (facts.PrefersOuterBreak) {
             // What lands on the continuation line if this group breaks and nothing inside it does.
-            var margin = facts.OuterMargin > 0 ? facts.OuterMargin : OuterBreakMargin(m);
+            var margin = facts.OuterMargin >= 0 ? facts.OuterMargin : OuterBreakMargin(m);
             var tail = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth + margin;
-            if (!facts.SkipsOuterTail && Fits(m.ContinuationColumn, tail, m.Trailing)) {
+            var finishes = facts.JoinedOverflow >= 0
+                ? m.FlatWidth < Unbounded
+                && Fits(m.Column, m.FlatWidth - facts.JoinedOverflow, m.Trailing)
+                && (facts.NameWidth < 0
+                    || 9 * (m.Column + 1) + 6 * facts.NameWidth + facts.NameFloor
+                    >= 8 * (m.Column + m.FlatWidth + m.Trailing))
+                : Fits(m.ContinuationColumn, tail, m.Trailing);
+            if (!facts.SkipsOuterTail && finishes) {
                 return ResolvedMode.Broken;
             }
 
@@ -669,7 +691,8 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
-                if (Fits(m.ContinuationColumn, segment + OuterBreakMargin(m))) {
+                var tailMargin = facts.TailMargin >= 0 ? facts.TailMargin : OuterBreakMargin(m);
+                if (Fits(m.ContinuationColumn, segment + tailMargin)) {
                     return ResolvedMode.Broken;
                 }
             }
@@ -773,6 +796,71 @@ public sealed class Fitter {
     ///         value of it will close the last of this class. SK-DIV-0005 records that as the argument.
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     Whether a lambda-valued local one column past the margin gives the line to its type/name gap
+    ///     (#583, SK-DIV-0127): not where its parameter list chops (#572), and where the `=` would keep the
+    ///     arrow only while the `=` ends past <c>indent + 41 + (indent − 8) / 4</c> — 49, 54 and 59 at indents
+    ///     8, 12 and 16, measured; the arrow's own floors (#558) do not reach that far for a type this wide.
+    /// </summary>
+    bool LambdaGivesWayOneOver(in GroupFacts facts, in Measures m) {
+        var equals = document.FactsOf(facts.OneOverEquals);
+        var head = width - facts.OneOverValue;
+        if (equals.OneOverType > 0
+            && EqualsFloor.ChopsOneOver(equals.OneOverType, facts.OneOverValue - equals.YieldsThroughArrow - 2, head)) {
+            return false;
+        }
+
+        var indent = m.ContinuationColumn - indentWidth;
+        return head > indent + 41 + (indent - 8) / 4
+            || EqualsBeforeALambda(equals, head, facts.OneOverValue) == ResolvedMode.Broken;
+    }
+
+    /// <summary>
+    ///     An `=` before a lambda with a bare name for a body, whose `=` ends at <paramref name="head" /> and whose
+    ///     value runs <paramref name="value" /> columns from there through the `;`; null when no rule here decides.
+    ///     See GroupFacts.YieldsThroughArrow (#453).
+    /// </summary>
+    ResolvedMode? EqualsBeforeALambda(in GroupFacts facts, int head, int value) {
+        var through = head + 1 + facts.YieldsThroughArrow;
+
+        // ⚠ A local's `=`, past a name wider than the type's gate, yields only to a value at
+        // least as wide as the measured floor; a narrower one moves below the `=` whole
+        // (#558). See GroupFacts.LambdaLocal and EqualsFloor.LambdaValue.
+        // ⚠ One column past the margin the parameter list may chop instead, and then the `=`
+        // stays (#572). See EqualsFloor.ChopsOneOver.
+        if (facts.OneOverType > 0
+            && head + 1 + value == width + 1
+            && EqualsFloor.ChopsOneOver(facts.OneOverType, value - facts.YieldsThroughArrow - 2, head)) {
+            return ResolvedMode.Flat;
+        }
+
+        if (through <= width) {
+            return facts.LambdaLocal == LambdaLocal.None
+                || facts.LambdaLocal.HasFlag(LambdaLocal.ArrowWhileItFits)
+                || value >= EqualsFloor.LambdaValue(head)
+                    ? ResolvedMode.Flat
+                    : ResolvedMode.Broken;
+        }
+
+        // ⚠ And once the line through `=>` overflows, the `=` breaks while `(…) =>` reaches no
+        // further than three columns past the margin, or, past a name wider than the type's
+        // second gate, while the value is narrow enough for its body; otherwise the parameter
+        // list chops (#558). See EqualsFloor.BreaksBeforeAnOverflowingLambda.
+        if (facts.LambdaLocal != LambdaLocal.None) {
+            return EqualsFloor.BreaksBeforeAnOverflowingLambda(
+                head,
+                value,
+                through - width,
+                value - facts.YieldsThroughArrow - 2,
+                facts.LambdaLocal.HasFlag(LambdaLocal.ChopsPastTheParenthesis)
+            )
+                ? ResolvedMode.Broken
+                : ResolvedMode.Flat;
+        }
+
+        return null;
+    }
+
     int OuterBreakMargin(in Measures m) => 11 + m.ContinuationColumn / indentWidth;
 
     /// <summary>

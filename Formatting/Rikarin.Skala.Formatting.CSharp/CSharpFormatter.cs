@@ -446,8 +446,8 @@ public static class CSharpFormatter {
     /// <remarks>
     ///     ⚠ <c>skala_insert_final_newline = true</c> wins over
     ///     <c>
-    /// [*] skala_insert_final_newline
-    ///  = false
+    ///         [*] skala_insert_final_newline
+    ///         = false
     ///     </c>
     ///     by language specificity (docs/plan/03, hazard 3). The BOM is preserved exactly:
     ///     it lives in <see cref="SourceText.Encoding" /> and never in the text, so nothing here can add

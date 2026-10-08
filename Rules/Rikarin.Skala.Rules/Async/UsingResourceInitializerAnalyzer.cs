@@ -192,8 +192,8 @@ public sealed class UsingResourceInitializerAnalyzer : DiagnosticAnalyzer {
     ///     audit): <c>using Base r = new Derived { Mode = "fast" }</c> set <c>Derived.Mode</c> and
     ///     <c>r.Mode = "fast";</c> sets the <c>Base.Mode</c> it hides;
     ///     <c>
-    /// using IDisposable r = new
-    ///     Res { … }
+    ///         using IDisposable r = new
+    ///         Res { … }
     ///     </c>
     ///     is <c>CS1061</c>; and a block local declared below the insertion point with the
     ///     name of a field the value read takes the name, which is <c>CS0844</c>.

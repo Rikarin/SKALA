@@ -28,8 +28,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         sequence and one in their place are not the same conversion: <c>new long[] { anInt }</c>
 ///         spread into a <c>double[]</c> goes <c>int → long → double</c> and would go
 ///         <c>
-/// int →
-///         double
+///             int →
+///             double
 ///         </c>
 ///         , and where a user-defined conversion is involved the single step does not exist at
 ///         all, because C# never chains two of them. Requiring the two element types to be the same

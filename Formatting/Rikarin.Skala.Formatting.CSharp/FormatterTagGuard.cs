@@ -192,8 +192,8 @@ public sealed class FormatterTagGuard {
     ///         So the rule is: <b>the tag must be the first thing in the comment</b>, after the marker and
     ///         any whitespace. <c>// @formatter:off</c> and
     ///         <c>
-    /// // @formatter:off — the table below is
-    ///         hand-aligned
+    ///             // @formatter:off — the table below is
+    ///             hand-aligned
     ///         </c>
     ///         are the tag; <c>// we support @formatter:off here</c> is prose.
     ///         Deliberately not an equality test: a reason written after the tag is the commonest way
@@ -263,8 +263,8 @@ public sealed class FormatterTagGuard {
     ///     ⚠ Anchored at the start of the comment's body rather than searched for anywhere in it, so
     ///     that the regexp reading keeps SK-DIV-0017's narrowing —
     ///     <c>
-    /// // we support @formatter:off
-    ///     here
+    ///         // we support @formatter:off
+    ///         here
     ///     </c>
     ///     is prose under both readings, and a pattern that could match mid-comment would
     ///     quietly re-open the footgun the literal reading was narrowed to close.

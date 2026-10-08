@@ -375,9 +375,9 @@ public static class XmlDocFormatter {
     ///     where a <c>/// </c> line's does, and a <c>&lt;summary&gt;</c>'s first line carries its start tag's
     ///     width (SK-DIV-0019) here too.
     ///     <para>
-    ///         ⚠ A multi-line <c>/** … */</c> is not touched, and the oracle does rebuild some of them — an
-    ///         already-starred block too long for the margin is re-wrapped. That rule was measured only in
-    ///         part (SK-DIV-0380), and Skala leaving the comment as written is the safe half.
+    ///         ⚠ A multi-line <c>/** … */</c> is rebuilt the same way when it is one of the two families
+    ///         <see cref="MultiLineBody" /> names (#568, SK-DIV-0380), under the same four conditions; any other
+    ///         shape is left as written, which never changes a comment the oracle would also have left.
     ///     </para>
     /// </remarks>
     static (TextSpan Span, string Text)? BlockReplacement(
@@ -387,11 +387,11 @@ public static class XmlDocFormatter {
         string newLine
     ) {
         var text = trivia.ToFullString();
-        if (text.Contains('\n', StringComparison.Ordinal)
-            || !text.StartsWith("/**", StringComparison.Ordinal)
+        var multiline = text.Contains('\n', StringComparison.Ordinal);
+        if (!text.StartsWith("/**", StringComparison.Ordinal)
             || !text.EndsWith("*/", StringComparison.Ordinal)
             || text.Length < 6
-            || text[^3] is not (' ' or '\t')
+            || (!multiline && text[^3] is not (' ' or '\t'))
             || trivia.GetStructure() is not DocumentationCommentTriviaSyntax original
             || !XmlDocComments.WellFormed(original)) {
             return null;
@@ -404,14 +404,16 @@ public static class XmlDocFormatter {
         }
 
         // ⚠ Nothing but code may follow it on its line. `/** … */ // note` comes back from the oracle with
-        // the line comment moved below the rebuilt block — a second change Skala does not make.
-        var rest = source.ToString(TextSpan.FromBounds(trivia.FullSpan.End, line.End)).TrimStart(' ', '\t');
+        // the line comment moved below the rebuilt block — a second change Skala does not make. ⚠ The line it
+        // *ends* on: a multi-line block's opener line ends before the block does (#568, found as a crash).
+        var end = source.Lines.GetLineFromPosition(trivia.FullSpan.End);
+        var rest = source.ToString(TextSpan.FromBounds(trivia.FullSpan.End, end.End)).TrimStart(' ', '\t');
         if (rest.StartsWith("//", StringComparison.Ordinal) || rest.StartsWith("/*", StringComparison.Ordinal)) {
             return null;
         }
 
         // The ending of the comment's own line, as `///` reads its run's own (SK-FUZZ-0015).
-        var lineBreak = source.ToString(TextSpan.FromBounds(line.End, line.EndIncludingLineBreak));
+        var lineBreak = source.ToString(TextSpan.FromBounds(end.End, end.EndIncludingLineBreak));
         if (lineBreak.Length > 0) {
             newLine = lineBreak;
         }
@@ -428,8 +430,9 @@ public static class XmlDocFormatter {
         }
 
         // The body, read back as a `///` comment so the one model and the one renderer serve both.
-        var body = text[3..^2].Trim(' ', '\t');
-        if (Probe("/// " + body) is not { } probe
+        var body = multiline ? MultiLineBody(text, indent) : "/// " + text[3..^2].Trim(' ', '\t');
+        if (body is null
+            || Probe(body) is not { } probe
             || !XmlDocComments.WellFormed(probe)
             || XmlDocModel.Build(probe, true) is not { } nodes
             || XmlDocRenderer.Render(nodes, options, options.MaxLineLength - 1) is not { Length: > 0 } lines
@@ -451,6 +454,85 @@ public static class XmlDocFormatter {
             && XmlDocSignature.Matches(XmlDocSignature.Of(original), XmlDocSignature.Of(produced))
                 ? (trivia.FullSpan, replacement)
                 : null;
+    }
+
+    /// <summary>
+    ///     A multi-line <c>/** … */</c>'s content as <c>///</c> lines, or null for a shape the oracle leaves alone
+    ///     or one Skala does not rebuild. #568, SK-DIV-0380, measured on forty shapes under <c>SkalaDocComments</c>.
+    /// </summary>
+    /// <remarks>
+    ///     The content is every line after the opener — the last one too when <c>*/</c> ends it — and, measured:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             The block is rebuilt when the opener's line holds content and one more line follows it, or when
+    ///             it holds none and two or more follow. ⚠ With exactly one, the oracle rebuilds only the canonical
+    ///             <c>/**</c> / <c> * text</c> / <c> */</c> (asterisk and closer on the opener's column plus one, or
+    ///             the closer ending the line) and leaves every other single line as written — <c> *no space</c>, a
+    ///             star a column off, an unstarred line, a closer off the column. So does <c>/** text</c> /
+    ///             <c> */</c>.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ To the oracle an asterisk is a prefix only when every content line starts with the same
+    ///             whitespace and asterisk: <c> *no space</c> / <c> *again</c> loses both, and two lines a column
+    ///             off together lose theirs. Every line is then trimmed. Lines that disagree — <c> * a</c> /
+    ///             <c>  * b</c>, <c> * a</c> / <c> b</c>, a starred line beside an empty one — the oracle rebuilds
+    ///             keeping the stars as text (<c> * * a</c>), and Skala leaves as written: the compiler takes a
+    ///             leading star off every line, so that rebuild adds an asterisk to the documentation.
+    ///         </item>
+    ///     </list>
+    ///     ⚠ Not rebuilt here: a block that renders a blank line (the oracle writes it as <c> * </c>, trailing
+    ///     space and all), and a block holding <c>&lt;code&gt;</c>, of which none was measured and whose trim
+    ///     would take a sample's indentation.
+    /// </remarks>
+    static string? MultiLineBody(string text, string indent) {
+        var lines = text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        if (lines.Length < 2 || text.Contains("<code", StringComparison.Ordinal)) {
+            return null;
+        }
+
+        var opener = lines[0][3..].Trim(' ', '\t');
+        var last = lines[^1];
+        var closerAlone = last.Trim(' ', '\t') == "*/";
+        List<string> rest = [..lines[1..^1]];
+        if (!closerAlone) {
+            rest.Add(last[..^2]);
+        }
+
+        if (opener.Length == 0
+                ? rest.Count == 0
+                || (rest.Count == 1
+                    && !(rest[0].StartsWith(indent + " * ", StringComparison.Ordinal)
+                        && (!closerAlone || last == indent + " */")))
+                : rest.Count == 0) {
+            return null;
+        }
+
+        // ⚠ Lines that disagree on their asterisk are where Skala stops following the oracle, on purpose. The
+        // oracle keeps such a star as text (` * * a`), but the compiler takes a leading star off each line of a
+        // `/** */` whatever the others do, so the star was never documentation text — and in the rebuild it
+        // would be. The round-trip signature refuses that rewrite; it is refused here, by name.
+        var prefix = StarPrefix(rest[0]);
+        if (!rest.TrueForAll(line => StarPrefix(line) == prefix)) {
+            return null;
+        }
+
+        List<string> content = opener.Length > 0 ? [opener] : [];
+        content.AddRange(rest.Select(line => (prefix is null ? line : line[prefix.Length..]).Trim(' ', '\t')));
+        if (!content.Exists(static line => line.Length > 0)) {
+            return null;
+        }
+
+        return string.Join("\n", content.Select(static line => line.Length == 0 ? "///" : "/// " + line));
+    }
+
+    /// <summary>A line's leading whitespace and the asterisk after it, or null when no asterisk leads it.</summary>
+    static string? StarPrefix(string line) {
+        var i = 0;
+        while (i < line.Length && line[i] is ' ' or '\t') {
+            i++;
+        }
+
+        return i < line.Length && line[i] == '*' ? line[..(i + 1)] : null;
     }
 
     /// <summary>Parses a documentation comment standing above a declaration.</summary>
@@ -714,9 +796,13 @@ public static class XmlDocSignature {
                 if (XmlDocModel.IsVerbatimElement(element.StartTag.Name.ToString())) {
                     // ⚠ Byte-for-byte, minus only the lines the tags sat on. This is the check that
                     // catches a re-indented code sample, and it is the reason `<code>` is safe.
-                    builder.Append("|v:")
-                        .Append(string.Join("\n", XmlDocModel.VerbatimBody(element.Content.ToString(), markerSpace)))
-                        .Append('|');
+                    var body = XmlDocModel.VerbatimBody(element.Content.ToString(), markerSpace);
+                    if (XmlDocModel.IsReflowedInlineCode(element.StartTag.Name.ToString(), body)) {
+                        // ⚠ Except a multi-line `<c>`, which the oracle re-indents and wraps (#569).
+                        builder.Append("|c:").Append(XmlDocModel.InlineCodeSignature(body)).Append('|');
+                    } else {
+                        builder.Append("|v:").Append(string.Join("\n", body)).Append('|');
+                    }
                 } else {
                     builder.Append(Content(element.Content, markerSpace));
                 }

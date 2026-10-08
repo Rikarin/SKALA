@@ -7028,6 +7028,18 @@ to 157 — Skala moves the type below for all of them. Nor for a `const` local, 
 `const` line from 121 to 123, nor for a property (`public static` / type / `Property { get; set; }` in the
 oracle), which has no type/name point here. Pinned by `ModifierTypeGapIssue540Tests`.
 
+**Round three (#540): properties, and `const` locals.** A property's head follows the field's rules — the
+modifiers' gap when the type ends past column 120, the name's gap when the line through the name and the
+accessor list's `{` or the arrow does not fit (`…>> P {` stays and expands its accessors, `…>> Property {`
+moves the name below); measured on four property shapes with the type ending at 117 to 125, every cell
+reproduced (`BreakPlan.PlanPropertyHead`, the name's group closing right after the name). A `const` local
+fills its type on the `const` line from 121 to 125, which the field-only rule already gives. ⚠ **Short field
+names stay open, blocked:** with a name of one to four letters the oracle fills the type on the modifiers'
+line from a total width that depends on both the name and the type — 133 to 137 behind
+`Dictionary<string, List<S…>>`, 129 to 135 behind `IReadOnlyDictionary<string, S…>`, and a five-letter name
+fills behind the second from 137 too — with no reading of either width alone; Skala moves the type below.
+Pinned by `PropertyHeadIssue540Tests`.
+
 **The parameter's gap is resolved (#545).** A parameter whose line passes the margin once its list is
 chopped puts its name one level below its type: `int` / `            aaa…` at a parameter on column 8.
 Measured with `jb cleanupcode` 2025.2.6 one column at a time: flat to a 120-column parameter line, broken
@@ -7039,11 +7051,25 @@ with attributes**: there the attribute run's own break (#475, #476, #537) is the
 past the margin behind attributes was not. Nor when a comment sits in the type or before the name.
 Pinned by `constructs/wrapping/parameter-type-and-name.cs` and `ParameterTypeNameIssue545Tests`.
 
-Still divergent, measured: the exactly-121 quirk (`T…T v9 = [1, 2, 3];` at 121 breaks the type/name gap
-in the oracle; Skala breaks the `=`, as the oracle does from 122); a type with a block comment inside it,
-which the oracle breaks past the comment (#409) and Skala leaves to that rule by planning no gap; a
-lambda-valued declarator, left unplanned because the group's level would show under the arrow's held one
-(SK-DIV-0101) and not measured with a type long enough to need the gap; and `public static readonly` /
+**The exactly-121 quirk, for a bare name and a lambda (#583, group H round three).** A local whose line ends
+one column past the margin breaks between its type and its name where 122 breaks the `=`, by the type's width
+`W` and the name's `n` alone: `W ≥ 33` always, `W = 32` up to a 50-letter name, `24 ≤ W ≤ 31` up to `2W − 41`,
+`W` of 22 or 23 up to `2W − 43`, narrower never (`BreakPlan.BreaksItsNameOneOver`). Measured on 2 328 locals
+`Func<T…> g… = w…;` at indents 8 and 12, one column at a time, every cell reproduced; ⚠ the indent does not move
+it. A lambda with a bare name for a body answers the same where its `=` would break, and keeps its own breaks
+where they come first: its parameter list where it chops (#572), and its arrow while the `=` ends no further
+than `indent + 41 + (indent − 8) / 4` — 49, 54 and 59 at indents 8, 12 and 16. ⚠ That reach is not the arrow's
+own floor (#558), which for a type this wide keeps the arrow to about 57 at 122; one column over, the gap takes
+the line from there. The group for a lambda asks nothing but this question, and spends its level as a plain
+value's does: held at zero while flat, it took the `=`'s level with it (`f =` / `(…)` at the declaration's
+column). Of 5 716 lambda cells at 121 to 132, every one of the 603 type/name cells is reproduced; the 219 that
+differ are #572's parameter chop past 121 (SK-DIV-0374's grid), and at indents 12 and 16 the chop's reach,
+measured at 8 only, leaves 34 more. Pinned by `LocalOneOverTypeNameIssue583Tests`.
+
+Still divergent, measured: the exactly-121 quirk for a collection expression (`T…T v9 = [1, 2, 3];`), a call
+and any value but a bare name or a bare-name lambda, not measured against the widths above; a type with a
+block comment inside it, which the oracle breaks past the comment (#409) and Skala leaves to that rule by
+planning no gap; and `public static readonly` /
 type / name, where the oracle also breaks between the modifiers and a type too long for their line —
 Skala fills the type there — resolved for fields by #540, above.
 
@@ -8051,29 +8077,42 @@ reads them — equals the one-liner's; `TokenEquivalence` holds `/** … */` to 
 - options: none.
 - ⚠ status: **resolved** for the one-line class.
 
-## SK-DIV-0380 — the oracle rebuilds some multi-line `/** … */` blocks under `SkalaDocComments`; Skala leaves every multi-line one
+## SK-DIV-0380 — which multi-line `/** … */` blocks the oracle rebuilds — **RESOLVED (#568)**, but for one deliberate refusal
 
-Found while measuring #489, under `SkalaDocComments`; Skala leaves each of these as written:
+Found while measuring #489. Measured for #568 on forty shapes under `SkalaDocComments` (three probes, each
+shape alone above a method), and the rule that separates the rebuilt from the left is about the lines
+*after* the opener — the last too, when `*/` ends it:
 
-| input | the oracle |
+| shape | the oracle |
 |---|---|
-| `/** a` / ` * b` / ` */` | `/**` / ` * a` / ` * b` / ` */` |
-| `/**` / ` * text */` | `/**` / ` * text` / ` */` |
-| `/** <summary>Doc.</summary>` / `    <remarks>Unstarred second.</remarks> */` | starred, one element per line |
-| `/** <summary>Doc` / ` * continues.</summary> */` | starred, `<summary>` opened, `Doc` / `continues.` kept on two lines |
-| `/**` / ` *` / ` * <summary>blank first</summary>` / ` */` | the blank ` *` line dropped |
-| an already-starred block whose `<summary>` passes the margin | re-wrapped, the `<summary>` opened |
-| `/** <summary>A</summary> */` / `/** <summary>B</summary> */` | merged into one starred block |
+| content on the `/**` line and at least one more line, starred or not, aligned or not (`/** a` / ` * b`, ` *b`, `  * b`, `b`, deep `b`, ` * b */`, an empty line) | rebuilt: `/**` / ` * a` / ` * b` / ` */` |
+| content on the `/**` line and the closer alone below (`/** text` / ` */`, `/** <summary>a</summary>` / ` */`) | left |
+| `/**` alone and two or more lines, every one with the same whitespace and asterisk (` * a` / ` * b`, ` *no space` / ` *again`, two lines a column off) | rebuilt, that prefix stripped, each line trimmed and the content formatted (`<summary>` opened, `Doc.` indented, a blank first line dropped) |
+| `/**` alone and two or more lines with no asterisk (`   a` / `   b`, an unstarred `<summary>` at the opener's column) | rebuilt, each line trimmed |
+| `/**` alone and exactly one line: ` * text` with the closer aligned or ending it | rebuilt (already canonical, or the closer moved below) |
+| `/**` alone and exactly one line otherwise (` *no space`, `  * a`, `   a`, `<summary>` at the opener's column, ` * a` over a closer off the column) | left |
+| `/**` alone and lines that disagree on the asterisk (` * a` / `  * b`, ` * a` / ` b`, ` * a` / an empty line / ` * b`, a ragged block) | rebuilt **keeping the stars as text**: ` * * a` |
 
-And these the oracle also leaves: `/** text` / ` */`; `/**` / ` *no space after star` / ` */`; a block whose
-asterisks are misaligned; `/**` / unstarred `<summary>…</summary>` / `*/`; an already-starred block that
-fits. No rule separating the two lists was established — `/** text` / ` */` is left while `/** a` / ` * b` /
-` */` is rebuilt — so nothing is implemented. Leaving a block as written is the safe half: it never
-changes a comment the oracle would have left.
+`XmlDocFormatter.MultiLineBody` reads the first six rows back as `///` lines and the one renderer lays them out,
+as #489 does for a one-line block, under the same four conditions (starts its line, nothing after it, above a
+type or member, the only doc comment there). ⚠ **The last row is refused, deliberately.** The compiler takes a
+leading asterisk off *each* line of a `/** */` whatever the other lines do, so in ` * a` / ` b` the star was
+never documentation text; in the oracle's ` * * a` it is. That rewrite adds an asterisk to what the compiler
+reads, and Skala's round-trip property exists to refuse exactly that. Also left: a block that renders a blank
+line (the oracle writes ` * ` with its trailing space) and a block holding `<code>`, of which none was measured.
+Two adjacent one-line blocks, which the oracle merges, are still left (#489).
 
+⚠ Found on the way: the "nothing but code after it" check read the opener's line, which ends before a
+multi-line block does — an `ArgumentOutOfRangeException` that took the whole file down as an internal error the
+first time the path was opened up. ⚠ And three tests carried expectations measured before `SkalaFormatOnly`
+ran the doc-comment task (#449): `BlockCommentShiftIssue428Tests`' doc and trim inputs and
+`AlignMultilineCommentTests`' `/** doc-style own line`. Re-asked, the oracle rebuilds `/** doc plain` / `second`
+and drops a trailing ` *` line; the ragged block moved to a test of its own that records the refusal.
+
+- pinned by `constructs/trivia/doc-comment-multi-line-block.cs` (twenty-eight shapes, the stars-as-text ones
+  left out) and `MultiLineDocBlockIssue568Tests`; both branches sabotaged alone fail their rows.
 - options: none.
-- ⚠ status: **open**, partly measured (2026-10-08). Reproduction: the shapes above, one per member, asked
-  with `Testing ask <dir> --profile=SkalaDocComments`.
+- ⚠ status: **resolved** but for the stars-as-text row, which stays a divergence on purpose.
 
 ## SK-DIV-0381 — the tag-header keys are read at their export values only — **RESOLVED**
 
@@ -8109,10 +8148,29 @@ attribute, two, long names:
 the indent; all three keys are registered, `Honoured`, Tier A on key-named fixtures under
 `constructs/xmldoc/` (the `wrap_tags_and_pi` one gained a wide header and an author-broken one, so the
 key-flip sweep can separate its values at last). Pinned by `XmlDocHeaderKeysSkDiv0381Tests`; each branch
-was sabotaged alone. ⚠ `allow_far_alignment = true` is not read — the key stays inert-marked — so at
-`true` Skala still falls back where the oracle aligns past the margin.
+was sabotaged alone.
 
-- options: `skala_xmldoc_wrap_tags_and_pi`, `skala_xmldoc_attribute_style`, `skala_xmldoc_attribute_indent`
+**`allow_far_alignment` is read since #570.** Measured at `xmldoc_max_line_length = 90` under
+`align_by_first_attribute`, with the first attribute at 56 to 95 (counted after `/// `) and 29 attributes
+behind it:
+
+| first attribute | `true` | `false` (the export) |
+|---|---|---|
+| 56, 59 | under it | under it |
+| 60, 62, 70, 80, 83 | under it (one attribute per line once they no longer fit) | two indents |
+| 84 to 95 — it does not fit beside the name | one indent past the tag | one indent past the tag |
+
+⚠ The last row was a second divergence under the first: Skala took two indents there at `false` too. A
+first attribute that is not beside the name leaves nothing to align under, and the oracle then uses one
+indent, whether it moved for width, because the author broke before it (the oracle's own output given back
+is a fixed point), or because `attribute_style = on_different_lines` puts it below (measured at 20 and 56).
+`double_indent` and `single_indent` keep their own column in the same rows. ⚠ The key stays **Tier D**,
+`OfInert` and in `XmlDocIds.Refused`, because the export's `attribute_indent = single_indent` masks it: a
+fixture regenerated at the export cannot tell its values apart, and the key-flip sweep would call it
+Unexercised. Pinned by `XmlDocAllowFarAlignmentIssue570Tests`, each of three branches sabotaged alone.
+
+- options: `skala_xmldoc_wrap_tags_and_pi`, `skala_xmldoc_attribute_style`, `skala_xmldoc_attribute_indent`,
+  `skala_xmldoc_allow_far_alignment`
 - ⚠ status: **resolved**; the next key-flip sweep should confirm the three Tier A claims.
 
 ## SK-DIV-0382 — the oracle breaks a word glued to an element's end; Skala refuses the comment — **RESOLVED (#541, #542)**
@@ -8151,6 +8209,37 @@ separator are compared as before; `TokenEquivalence` uses the same comparison fo
 - options: none.
 - ⚠ status: **resolved**. Not measured: hug mode
   (`linebreaks_inside_tags_for_multiline_elements = false`), which keeps the old behaviour.
+
+## SK-DIV-0383 — `<code>` edges, a multi-line `<c>`, and the author's runs of spaces in prose — **RESOLVED (#569)**
+
+The last doc-comment hunks of `corpus/real` after #541 to #544, and three rules behind them, each asked of
+the oracle under `SkalaDocComments` over its own probe:
+
+| construct | the oracle | Skala before |
+|---|---|---|
+| a `<code>` whose content spans lines (nine shapes) | start tag placed; everything after it up to `</code>` byte for byte — code on the tag's line stays there, `a++;</code>` stays glued, `</code>` on its own line keeps its whitespace (0, 2, 4, 8) | `</code>` at the tag's indent, code moved off the tag's line, and one line of code joined into `<code>var a = 1;</code>` |
+| a `<c>` whose content spans lines (eight shapes) | each line trimmed and one indent past the tag, blank lines dropped, a long line wrapped at a space, the author's breaks and inner spaces kept | verbatim, its first line at column 0 |
+| a run of spaces in prose (nine shapes) | kept — `alpha  beta`, `End.  Next`, `alpha   beta`, around an element, through a re-flow — and counted toward the width; dropped only where the line breaks | collapsed to one, so Serilog's `object  is equal … <see langword="false" />.` fitted where the oracle's line is one column wider and wraps |
+
+⚠ Seven hazard tests in `XmlDocFormatterTests` asserted the old `<code>` and `<c>` shapes. They were written
+when no oracle could see doc comments; the oracle was asked about each exact input and agreed with the
+new rules on all nine, so they now assert its output. Their point, the marker space, still holds in every
+row. ⚠ A multi-line `<c>` is no longer compared byte for byte by `XmlDocSignature`: its lines are trimmed,
+blank ones dropped and the rest joined with one space, so a re-indent or a wrap at a space passes and any
+other change to its text is refused. A one-line `<c>` and every `<code>` keep the byte-for-byte signature.
+
+Measured: `corpus/real` doc-comment hunks 17 → 6; the six are Serilog's malformed `LoggerSinkConfiguration`
+comments (`<typeparam>` closed by `</param>`, deliberately refused) and `TimeProvider.cs`, whose summary sits
+inside `#if !NET8_0_OR_GREATER` and is left alone by the oracle without its symbols, code and all. Every
+line: `real` 99.66 % → 99.80 %, 86.32 % → 89.47 % of files.
+
+- pinned by `constructs/trivia/doc-comment-code-block-edges.cs`, `…-inline-code-spanning-lines.cs`,
+  `…-space-runs.cs` and `XmlDocCodeAndSpacesIssue569Tests`; each of the three rules sabotaged alone fails
+  its rows.
+- options: none.
+- ⚠ status: **resolved**. Not measured: a run of spaces exactly at a wrap point that the oracle keeps (it
+  dropped the one probed), tabs in a run (taken as one space, as before), and a one-line `<c>` past the
+  margin.
 
 ## SK-DIV-0177 — a named argument's colon is a break point by the arrow's rule
 
@@ -8880,6 +8969,15 @@ and a chopped base type's arguments two levels past the colon's line with `),` o
 on the colon's column. The commas' group now spends a level of its own, which the writer's one level
 per opening line collapses into the list's on the declaration's line and counts on the colon's.
 
+**Round three.** The base type's name moves both margins: a one-letter base widens the lone base type's by
+two and the interfaces' continuation one by six against a twelve-letter base, and the interfaces' margin is
+12, not the fitted 14 (`GroupFacts.TailMargin`). Of 350 swept cells at the export 340 now agree (iA, iD and
+iE exact; iB, sB one cell each; sC five and iC three). ⚠ A margin that also moves with the head's column
+reproduced all 350, and was refuted by #427's own `L5` — a 70-column head that the oracle breaks before the
+`:` at an 88-column continuation line — so the head's length is not the variable; the swept `sC`/`iC` head
+was also the only one with four parameters. At `skala_wrap_before_extends_colon = true` six cells differ.
+Pinned by `PrimaryConstructorMarginRoundThreeTests`.
+
 **Round two: the lone base type's margin.** With one base type and nothing after it, the first question
 now leaves a margin of its own, 31 columns, in place of the fitted one (`GroupFacts.OuterMargin`): Skala
 breaks before the `:` up to an 88-column continuation line nested two deep, where it went on to 105, which
@@ -9542,7 +9640,14 @@ callee, a chain), other owners (a property initializer, a parameter default, a f
 several declarators), and the binary-pattern half of this entry. Callee widths between those measured,
 and indents and callees crossed, are interpolated.
 
-- options: `skala_wrap_before_eq = false`, the exported value.
+**#555 (group H, round three).** A creation with arguments, `= new Foo(a, b, c)`, is measured as a call
+whose callee is `new Foo` (`BreakPlan.CalleeOf`) and takes the call's floor: on 60 fields, locals and
+attributed fields, the `(` moved over four columns and the line from 121 to 136, 49 cells agree, where
+before 28 did. ⚠ Still divergent: at exactly 121 columns a `(` near column 44 to 59 breaks the `=` in Skala
+and chops in the oracle (four cells), a field whose `(` is near column 74 breaks the `=` from 123 to 130 in
+the oracle (three), and under an attribute and a block comment the oracle declines the join at 123 and 126
+where the floor would break the `=` (four, SK-DIV-0201). Pinned by `CreationEqualsFloorIssue555Tests`.
+
 ⚠ **Round 3 of #446: the binary-pattern half, wired as measured tables.** The local
 `bool c… = operand is A or B;` past the margin was swept over head widths 8–60 (statement start through
 `=`), pattern widths 10–107, and line ends 110–152, one column at a time near every boundary — about
@@ -9577,7 +9682,7 @@ restricted to the `EqualsValueClause` of a local declarator.
   shape in Skala's own `IsStringText` and `IsCallShaped` moved to the oracle's column.
 
 - options: `skala_wrap_before_eq = false`, the exported value.
-- ⚠ status: **resolved** for both halves within the measured shapes, pinned by
+- ⚠ status: **resolved** for both halves within the measured shapes, a creation with arguments too (#555), pinned by
   `constructs/breaks/equals-before-a-call-floor.cs` and `constructs/breaks/equals-before-a-binary-pattern.cs`.
   #444 shapes 2 and 6.
 
@@ -9960,6 +10065,28 @@ left operand (#457), where the chain takes a level past the operator's.
   condition keeps the ordinary rule. Measured on chain, `&&`, identifier and call conditions behind heads
   of 8 to 66 columns; every row agrees. Pinned by `ConditionalAfterEqIssue553Tests` and
   `constructs/breaks/conditional-after-eq.cs`.
+- ⚠ **And a condition that fits beside the `=` (#577, 2026-10-08).** #553 kept the `=` whenever the condition
+  fit; the oracle does not. Measured on 3 452 rows — heads through `var … =` from 9 to 62 columns, conditions of
+  4 to 40 columns, the value's line below from 86 to 121 columns, branches split evenly and lopsidedly (the split
+  never mattered) — it moves the value down whole while the line below is short enough:
+  `100·below + 38·min(condition, 24) + 24·max(0, column of the = − 39) ≤ 11 364`, a condition past 24 columns
+  costing no more. `Fitter.ConditionalMovesDownWhole`; 3 342 of the 3 452 rows agree. ⚠ **Not explained:** a
+  four- to six-column condition behind a 17- to 28-column head, where the oracle moves the value down at every
+  width, past the margin included (then chopping it below) — about a hundred rows, including the issue's own
+  `flag` rows at heads 21 and 31 of group F's grid. No rule found in the lengths alone. Pinned by
+  `ConditionalMovesDownWholeIssue577Tests` (the boundary rows, the band left out).
+- ⚠ **#579 — measured, not wired.** `var v = X || Y` with `X` too wide beside the `=`: the oracle breaks the `=`
+  from a 12-column head when `Y` is `flag` and `X` is an `&&` chain of any width or an `is … or …` pattern of up
+  to 114 columns, keeps it for a wider pattern, and with a wider `Y` breaks it from a head of 9 to 11 columns
+  too (`Y` of 23, 75, 76 and 94 columns move the floor to 12, 11, 10 and 9 head columns) — the resulting lines
+  are identical either way, so no layout cost separates the two answers. The issue's `var glued =` row is the
+  11-column head with a 77-column `Y`. Recorded with the grids; no rule wired, because the measured floor moves
+  with the far operand and the pattern boundary contradicts it.
+- **#580 — fixed.** A `??` chain past the margin: the oracle writes `a` / `?? b ?? c`, Skala chopped every `??`.
+  `??` is right-associative and the oracle breaks it as that tree — before each `??` whose right side does not
+  fit (six operands: `?? b` / `?? c` / `?? d` / `?? e ?? f`). Measured under `=`, `return`, an argument, an `if`
+  condition, a parenthesised left side and a `throw`; `SameChain` no longer joins nested `??`. Pinned by
+  `CoalesceChainIssue580Tests`.
 
 ## SK-DIV-0334 — a list opened on a closer's line nested from the levels behind the closer
 
@@ -10187,34 +10314,88 @@ the attribute's `(` is a few columns further left; no rule tried reproduces both
 section's own answer there. A parameter with a default value is still divergent at 111–112
 (`[…] int a =` / `5` past the margin in Skala): its `=` ends the arguments' measure first.
 
+**Round three.** A parameter with a default value (#556) now chops with the rest: its `=` is no point
+behind a short parameter's section, so the arguments' measure reads through it — `int a = 5` chops from 111,
+the joined line's overflow, at every column swept. Pinned by `ParameterDefaultChopIssue556Tests`. ⚠ **Above
+eleven columns it stays blocked**, and this is exactly why: behind `[Obsolete("…", true)]` the last column
+the oracle keeps whole is 102, 102, 104, 105, 106, 108, 110 and 112 for parameters of 17, 18, 19, 20, 21, 22,
+24 and 25 columns and past 120 at 30 — about 1.2 columns per column, not a constant offset from the joined
+line, with steps of 0 and 2 that no linear reading reproduces — and behind `[A("…")]` a 16- or 17-column
+parameter never chops at all. The two attributes differ in how much the chop saves (14 columns against 3),
+and only two such values were measured, so a table would have one row per attribute shape it has never seen.
+
 - options: `skala_wrap_arguments_style`; no key for the join.
-- ⚠ status: **resolved** for parameters of up to eleven columns (#476), pinned by
+- ⚠ status: **resolved** for parameters of up to eleven columns, defaults included (#476, #556), pinned by
   `AttributeArgumentChopIssue476Tests`; **open**, measured, for longer ones.
 
 ## SK-DIV-0353 — a type declaration's keyword and its name: the oracle breaks between them
 
-#539. Measured with `jb cleanupcode` 2025.2.6 on about seventy class headers: one, two and four type
-parameters, interfaces after the name, no type parameters at all, a name of 10 to 70 letters, at 121, 125
-and 135 columns:
+#539. Measured with `jb cleanupcode` 2025.2.6 on about 360 class headers — one, two and four type
+parameters, one and two interfaces, a lone base type, a name of 10 to 100 letters, 121 to 135 columns, and
+a body, a `where` clause, a nested type, a struct, an interface and a record — and **wired in round three**.
+The gap before the name is a point of a group opened on the keyword's line and closed before the body
+(`BreakPlan.PlanTypeName`), asked the ordering rule's two questions: does the rest of the header fit on
+the continuation line within four columns (none for a lone base type, which the oracle moves below the name
+up to 128 at least), and does the line run past the margin before the header's next point, a type argument
+list's yielding points included (`GroupFacts.StopsAtYieldingPoints`, so `class G : IDictionary<A…, B…,` keeps
+filling its list). Its level is held at zero while it stays flat, so `skala_indent_type_constraints` and
+every list inside the header spend theirs as before.
 
-| shape | oracle | Skala |
-|---|---|---|
-| the head through its first break point past the margin (`public class N…N : IFoo,` at 123+) | `public class` / `    N…N : IFoo,` / `    IBar { }` | the base list's commas |
-| a header with no break point past the margin | `public class` / `    N…N { }` | the line left long |
-| **exactly 121 columns**, one, two or four type parameters, a name of 30 or more | `public class` / `    Name<…> { }` | the list's own break |
-| the same at 121 with a 10-letter name and two or four parameters | the list's comma | identical |
-| the same at 125 and 135 | the list's `<` or comma | identical |
-| `public class Generic…On<TFirst, TSecond> : BaseClass<TFirst> { }` at 128 | `public class` / name and a filled list | after the `:` |
+⚠ **The blocker round two named is solved by an anchor, not a new scope kind.** After the break the oracle
+writes the base list at the declaration's own level — `public class` / `    Name : IFoo,` / `    IBar {` —
+not one past the name's line. The group pushes an `IndentKind.Anchor` with `IndentFlags.AnchorAtLine` on the
+keyword's line, and the base list is written inside an `IndentKind.AnchoredBrace` scope, which is a block at
+the anchor's recorded indentation; the base list's own groups spend their levels from there. A type
+parameter list still fills one level past the name's line, as the oracle does.
 
-So two rules, neither wired. The first is the type/name gap's own — break when the line runs past the
-margin before its next point — and would fix the first two rows; but the name's line then carries the
-base list at the declaration's level (`    IBar { }`, not eight), which the group spending a continuation
-level of its own does not reproduce, and the `FromLine` and held levels this builder has both stack the
-base list's level on top. The second is the exactly-121 quirk SK-DIV-0127 records for a local's name,
-here moved by the name's length; the last row is neither. Not wired.
+**Round three, second pass: what the name competes with.** The fidelity dump after the first pass showed three
+regressions the sweep had not covered — a record, a record struct and a class with a primary constructor had
+their names broken — and a further 1 100 headers were measured:
+
+- ⚠ **Never before a parameter list.** On 34 records, record structs and classes with one, a name of 10 to 60
+  letters at 121 to 150 columns, the oracle breaks the name in none. The gap is not a point there.
+- ⚠ **The window is the joined line's overflow, not what the continuation line saves.** Behind `internal sealed
+  class` the oracle breaks the name up to a 124-column line and not at 125, as behind `public class`; the old
+  continuation margin, measured behind `public class` only, broke the longer head up to 128.
+  `GroupFacts.JoinedOverflow`: 4 columns. ⚠ The oracle measures the header as if ` }` followed its `{` even
+  when the body has members and its brace goes below — with `int x;` inside, the name breaks while the line
+  through the `{` is 122 at most, as with `{ }` at 124 — so for a type with members both limits are taken two
+  columns in (80 of 80 cells; the fidelity dump caught it on `constructs/breaks/comment-before-a-break-point.cs`,
+  whose comment was never the cause: 57 headers with and without `/* f */` answer alike).
+- ⚠ **Before a lone base type, behind modifiers, the name moves down at any width** — to 150 columns for a
+  name of 40 letters or more, behind a type parameter list or not (Serilog's `LogEventPropertyValueRewriter<TState>
+  : LogEventPropertyValueVisitor<…>`) — and the `:` breaks as well when that is not enough. The old "up to 128 at
+  least" was the end of the sweep, not of the rule. Behind a bare `class` the ordinary window holds: a 72-letter
+  name breaks at 124 and not at 126 (`constructs/wrapping/base-list.cs`, which the dump caught).
+- ⚠ **A short name gives way to the list's first comma, by a rule in three widths.** With `h` the name's column,
+  `L` its length and `F` the width of the competing list's first item capped at 22, the oracle breaks the name iff
+  `9h + 6L − 3F + 807 ≥ 8 · end` (`GroupFacts.NameWidth`/`NameFloor`). It reproduces 727 of 728 cells — heads of 13
+  to 30 columns, names of 4 to 32 letters, a first base type of 4 to 36, two or three interfaces (which answer
+  alike) — missing `public class N…18 : I…16, I…` at 123. ⚠ None of the three is the variable alone: an 8-letter
+  first base type breaks a 14-letter name where a 12-letter one with a 10-letter name does not, though the base
+  list's first line is the same length; and past 22 letters the first item stops counting (28 and 36 answer as
+  22). Before two type parameters and no base list the same form holds with 748 for 807, from one first
+  parameter's width only; one type parameter, type parameters followed by a base list, and a lone base type
+  always break, as before.
+- ⚠ **Behind a bare keyword the name never gives way to a list**, up to a 76-letter name before two interfaces;
+  it still moves down when the name itself fills the line, and before a lone base type within the ordinary window.
+
+On the round's sets: 280 of 280 of the first sweep (was 260), 300 of 300 and 312 of 312 over head and name
+lengths, 195 of 196 over the first base type, 59 of 60 primary constructors (the other is SK-DIV-0198), and
+204 of 205 heads, the other a 107-letter name before a lone base type, which the oracle lets run two columns
+past the margin rather than break before the `:`; 84 of 84 and 160 of 168 over the body and the lone base type,
+69 of 72 over a lone base type behind `class`,
+`public class` and `sealed class`; the eight a continuation line still too long, where the oracle fills the base type's argument list
+(`Visitor<TState,` / `L…>`) and Skala breaks after the `:` — the base list's colon rule (SK-DIV-0198), not the
+name's; and three where the window is narrower for a 20-letter name — behind `class` it breaks at 121
+and not at 124, behind modifiers at 140 and not at 150.
+
+Still divergent, measured: those twelve cells, `public sealed class N…100 : Base<int>, IFoo` (the oracle also breaks
+after the `:`), and a header whose name and `<` fill the line (`N…104<TFirst,` — the oracle breaks the name,
+Skala after the `<`).
 
 - options: none.
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved** for the measured shapes but the residue above (fourteen cells), pinned by `TypeNameGapIssue539Tests`.
 
 ## SK-DIV-0340 — a positional pattern inside a property pattern broke after its subpattern's colon
 
@@ -10406,7 +10587,16 @@ of its own, as a `case` label and after `is` (`o is (` / … / `);`) — so it i
 `skala_indent_pars = inside` answered as `outside` for a positional pattern
 (`CSharpDocumentBuilder.ParenthesesStyleFor`). The fill's break between a declaration's type and its
 name (`…, int` / `dddd) =>`) is still not modelled.
-- ⚠ status: **resolved** (#559) for the closer, pinned by `constructs/breaks/positional-pattern-closer.cs`; **open** for the fill.
+⚠ **#559, round three: the fill.** The gap between a declaration pattern's type and its name (and `var`'s) is a
+fill point of the positional list: the oracle keeps `…, int` on the line when the type fits and the name does
+not, though the whole element would fit below — measured with the element last, inner, and with `var`, in an
+arm and a `case` label. Two shapes stay open: a recursive element (`…, Foo {` / `X: 1` / `}) =>`, the braces
+broken as the fill's head) and an `=` before the `is` (`var x =` / `owner is (…, int ccc` / `, int dddd);`,
+the comma carried to the next line).
+
+- ⚠ status: **resolved** (#559) for the closer and the declaration fill, pinned by
+  `constructs/breaks/positional-pattern-closer.cs` and `constructs/breaks/positional-pattern-fill.cs`; **open** for the
+  two shapes above.
 
 ## SK-DIV-0394 — a pattern chain inside the first operand of an `&&` in a declarator
 
@@ -10477,7 +10667,17 @@ else paid a level — an argument, an array element — its signs sat on the con
 a stepped chain now nests like a lone conditional. ⚠ The second half was **not reproduced**: the in-file
 call cut out beside flat chains, a colon-only chain and an expression-bodied chain comes back stepped and
 indented from the oracle, exactly as it does alone — nothing found that `autodetect` reads beyond the chain.
-- ⚠ status: **resolved** (#563) for the argument level, pinned by `constructs/wrapping/stepped-chain-as-an-argument.cs`; the in-file answer is unexplained and not reproduced.
+⚠ **#563, round three: the in-file answer is SK-DIV-0017, not `autodetect`.** Bisected on the old
+`CSharpDocumentBuilder.cs` with the oracle (the method alone, the file's halves, quarters and eighths): the
+chain comes back unstepped exactly when a comment *mentioning* `// @formatter:off` precedes it — lines 2433 and
+2880 of that file discuss the tag in prose. The oracle's tag test is a substring, so from there to the end of
+the file it formats nothing; Skala deliberately requires the tag to open the comment (`FormatterTagGuard.IsTag`).
+Confirmed on a twelve-line file: a remark mentioning the tag above the chain leaves the chain *and* a
+`var   unformatted   =   1;` below it untouched. The `autodetect` hypothesis is refuted — no file-wide style
+detection was found, and nothing is wired: this is the deliberate divergence, not a new one.
+
+- ⚠ status: **resolved** (#563). Pinned by `constructs/wrapping/stepped-chain-as-an-argument.cs`; the in-file
+  answer is SK-DIV-0017's.
 
 ## SK-DIV-0371 — a lambda argument's arrow against the member-access fill in its body
 
@@ -10579,6 +10779,38 @@ parameter wider than the line, where the oracle breaks between its type and its 
 - ⚠ status: **fixed within the residue above**. Pinned by `constructs/breaks/equals-before-a-lambda-floor.cs`
   and, for the narrow name, `constructs/wrapping/lambda-arrow-over-a-name.cs`.
 
+## SK-DIV-0398 — a case label's braces under a `when` on a line of its own sat a level shallow
+
+#575, found in Skala's own `CopyingPropertyAnalyzer.cs`. `case X {` / subpatterns / `} x` / `when …:` — the
+oracle puts the subpatterns two levels past `case` and `} x` one, as an arm does under a kept arrow break
+(SK-DIV-0391); with the `when` on the braces' line both stay at one and none. Measured 2026-10-08 on six
+shapes; a positional pattern's parenthesis keeps SK-DIV-0393's layout. `BreakPlan.PlanWhenClause` opens the
+`when`'s group at the label's pattern, broken and lifting, when the author kept the break before `when`.
+
+- options: `keep_user_linebreaks`.
+- ⚠ status: **resolved** (#575). Pinned by `constructs/breaks/case-label-braces-under-a-kept-when.cs`.
+
+## SK-DIV-0399 — an arm's `when` condition: the gap after `when`
+
+#576, cut down from generated seed 857717698562573229. The oracle breaks after an arm's `when` when the
+condition fits flat on the line below and not beside the `when` — `X when` / `SomeVeryLongIdentifier… => 1,`
+and `X when` / `Materialise<…>() => 1,`, where Skala broke the pattern's braces or filled the type argument
+list — and keeps it beside the `when` when it is too wide for the line below as well (`X when Materialise<…,`
+/ `…>() => 1,`). A condition with a break point of its own — an argument list, braces, an operator — keeps
+its head beside the `when` and breaks inside (`when prev is {`, `when Compute(`), so the rule is planned for a
+condition whose only break points are type argument lists. ⚠ The seed's own line is not reproduced: there the
+oracle breaks after `when` although the condition does not fit below, steps the type argument list's
+continuation two levels, and keeps a query body on the `>>() =>` line breaking it between `from item` and
+`in items` — three further rules, each reachable only past the margin.
+
+- options: none.
+⚠ Its fixture also exposed a spacing defect, fixed beside it: a query clause's keyword (`where "s"`, `select (item)`)
+keeps its space at both `space_between_keyword_and_type = false` and `space_between_keyword_and_expression = false`
+in the oracle, where Skala joined them (`QueryKeywordSpaceTests`).
+
+- ⚠ status: **resolved** (#576) for the cut-down shapes, pinned by `constructs/breaks/arm-when-condition-below.cs`;
+  **open** for the seed's whole line.
+
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
 ⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as
@@ -10624,7 +10856,7 @@ Every one of the 2 940 cells at types 10 and 26 reproduces.
 ⚠ Past the chop run, from a type of 32, the oracle breaks between the declaration's type and its name
 (`Func<T…>` / `name = (…) => body;`) where #558 breaks the `=`. That happens in 1 524 cells of the type
 sweep at 121, and in 171 of about 7 400 cells of #558's own grids. It is the declaration's type/name
-gap, not this rule's, and it is not wired. Odd type widths read the row below and were not measured.
+gap, not this rule's, and is resolved under SK-DIV-0127 (#583).
 
 - options: `skala_wrap_before_eq = false`, the exported value.
 - ⚠ status: **fixed** within the type/name residue above, pinned by
@@ -10670,3 +10902,22 @@ defect (group F's), not the arrow's.
   says every divergent line is that decision. It produces the identical diff at f26e3f46, the commit that
   added it. It is not a regression, so nothing was changed. If it should stop counting against construct
   fidelity, that is a harness exemption, not a formatter fix.
+
+## SK-DIV-0345 — an `or` after a comment in a pattern chain took a level of its own
+
+#584, visible in Skala's own `BreakPlan.IsUnbreakablePattern`: `int` / `or long` / `// c` / `or string` put
+`or string` one level past the other operators, and `if (o is int` / `// c` / `or long)` put `or long` one past
+the condition's column. The oracle keeps every `or` on one column. Measured on nine shapes: under `=>`,
+`return`, `if`, `while` and a switch arm's pattern; a `//` and a `/* */`; the comment before the first `or`
+and before a later one; a trailing `//`. ⚠ It is the chain-link double pay of SK-DIV-0321 in pattern form: a
+comment in front of an `or` makes that gap no point of the chain's group, so the author's break after the
+comment reached the pattern chain's frame, which paid a level the group had already decided — spent under
+`=>`, not spent as a whole `if` condition. The frame now leaves the level to the group whenever the chain
+has one (`Frame.HoldsLevel`). Found beside it and not this: `node.Any(static n => n is A` / `or B` / `or C)` —
+a pattern chain that is a sole lambda's body — puts the `or`s one level past the oracle's, comment or no
+comment, the call chain's SK-DIV-0184 row in pattern form — fixed on master meanwhile by group F's #566,
+and with a comment in it too once merged with this.
+
+- options: none.
+- ⚠ status: **resolved** (#584; the sole-lambda row by #566). Pinned by
+  `constructs/syntax/comment-in-a-pattern-chain.cs` and `CommentInAPatternChainIssue584Tests`.

@@ -183,6 +183,10 @@ It held the right key and the wrong subject: its tag was short, so the alignment
 A shorter element in the same comment, whose alignment sits at column 39, aligns at **both** values —
 so the threshold lies between 39 and 105 and this is not an all-or-nothing switch.
 
+⚠ **Skala reads it since #570** and the threshold is measured: two thirds of `xmldoc_max_line_length` at
+`false`, none at `true`, and one indent at either value once the first attribute is not beside the name
+(SK-DIV-0381's addendum). It stays Tier D for the masking above, not for want of an implementation.
+
 ### ⚠ The four PI keys — “pending on a PI renderer” described Skala, and is true of the oracle too
 
 `jb cleanupcode` 2025.2.6 does not parse a processing instruction's header either.

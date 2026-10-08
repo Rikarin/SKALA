@@ -341,10 +341,12 @@ public sealed class XmlDocOracleTests {
         // regression hide behind a shape's agreement. Eight from #396, then #451's, #489's, #448's and
         // #541's, and `arrangement/redundancy/qualified-reference.cs` (#460), whose `cref` is the row that
         // says a documentation reference is never shortened.
+        // ⚠ Sixteen since #569: `trivia/doc-comment-code-block-edges.cs`, `…-inline-code-spanning-lines.cs` and
+        // `…-space-runs.cs`.
         var all = XmlDocOracle.Rows();
         var rows = all.Where(static row => row.IsKeyed).ToArray();
         var agreeing = rows.Count(static row => row.Agrees);
-        Assert.Equal(13, all.Count(static row => !row.IsKeyed));
+        Assert.Equal(16, all.Count(static row => !row.IsKeyed));
         Assert.Equal(25, rows.Length);
         Assert.Equal(24, rows.Select(static row => row.Key).Distinct(StringComparer.Ordinal).Count());
         Assert.True(

@@ -904,8 +904,8 @@ public static class Fuzzer {
     ///         why it reported <c>0 of 20 000</c> against a generator that was emitting
     ///         <c>return await (state * []);</c> in the nightly.
     ///         <c>
-    /// Compile(new FuzzRandom(Derive(seed,
-    ///         i)))
+    ///             Compile(new FuzzRandom(Derive(seed,
+    ///             i)))
     ///         </c>
     ///         hands the generator a <em>fresh</em> stream, while a case hands it one that the
     ///         mode draw has already consumed a value from; the two explore different generator states,

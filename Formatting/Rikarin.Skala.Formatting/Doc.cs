@@ -1152,9 +1152,17 @@ public sealed class Document {
 ///     arguments of a list that would fit whole below, and breaks before the <c>:</c> only when the
 ///     head up to <c>B(</c> does not fit, or by <see cref="TailEndsAt" />'s question.
 /// </param>
+/// <param name="TailMargin">
+///     ⚠ <see cref="OuterMargin" /> for <see cref="TailEndsAt" />'s continuation question, or −1 for the fitted one.
+/// </param>
+/// <param name="StopsAtYieldingPoints">
+///     ⚠ The ordering rule's second question ends at the first point after this group's own, a type
+///     argument list's yielding points included: a type declaration's keyword/name gap (#539) is not
+///     taken for <c>class G : IDictionary&lt;A…, B…,</c> past the margin, where the list fills.
+/// </param>
 /// <param name="OuterMargin">
 ///     ⚠ For a <see cref="PrefersOuterBreak" /> group: the margin its first question leaves, in place of the
-///     fitted one (<c>Fitter.OuterBreakMargin</c>), or zero. A type's base list with one base type after a
+///     fitted one (<c>Fitter.OuterBreakMargin</c>), or −1. A type's base list with one base type after a
 ///     primary constructor (SK-DIV-0198): the oracle stops breaking before the <c>:</c> once the
 ///     continuation line reaches 88 or 89 columns at two depths, where the fitted margin went on to 105.
 /// </param>
@@ -1166,6 +1174,34 @@ public sealed class Document {
 ///     through the <c>=</c>, by <c>110.5 + 0.6 · prefix − 0.4 · max(name head, 23) − (indent − 8) / 8</c>
 ///     columns, two fewer for a field. Otherwise the braces break. Negative: the head through the <c>=</c> is
 ///     under twelve columns, and the braces always break. See <c>Fitter.Worth</c>.
+/// </param>
+/// <param name="JoinedOverflow">
+///     ⚠ For a <see cref="PrefersOuterBreak" /> group: its first question asks whether the <em>joined</em> line
+///     overflows by at most this many columns, not whether the tail fits on the continuation line, or −1. A
+///     type's name (#539, SK-DIV-0353): the oracle breaks before it up to a 124-column line behind
+///     <c>class</c>, <c>public class</c> and <c>internal sealed class</c> alike, so how much the continuation
+///     line saves is not the variable.
+/// </param>
+/// <param name="NameWidth">
+///     ⚠ With <see cref="JoinedOverflow" />: the width of the name the group's point stands before, or −1. The
+///     first question then also asks <c>9·column + 6·width + <see cref="NameFloor" /> ≥ 8·end</c>, where
+///     <c>column</c> is where the name starts and <c>end</c> where the joined line ends — a short name behind a
+///     short head stays, and the list after it wraps instead (#539, SK-DIV-0353).
+/// </param>
+/// <param name="OneOverValue">
+///     ⚠ For a local's type/name gap: the width of its value through the <c>;</c>, when the planner has found
+///     the type and the name to be ones the oracle breaks between at a line one column past the margin
+///     (#583, SK-DIV-0127); zero otherwise. At exactly that line the gap breaks — where 122 breaks the
+///     <c>=</c> — if the <c>=</c> would break; see <see cref="OneOverEquals" />.
+/// </param>
+/// <param name="OneOverEquals">
+///     −1 for a value of a bare name, whose <c>=</c> breaks there. Otherwise the value is a lambda and this is
+///     its <c>=</c>'s group, whose arrow and parameter-list rules are asked at the head the name gives it
+///     (−2 until the planner links the two); the gap then asks nothing else.
+/// </param>
+/// <param name="NameFloor">
+///     The constant of <see cref="NameWidth" />'s rule, which the planner lowers by three per column of the
+///     competing list's first item: a longer first item keeps more names on the keyword's line.
 /// </param>
 /// <param name="MeasuresThroughTail">
 ///     ⚠ The group is fitted against <see cref="Document.ThroughWidthOf" /> — from its start to the
@@ -1253,8 +1289,15 @@ public readonly record struct GroupFacts(
     int KeywordWidth = 0,
     int TailEndsAt = -1,
     bool SkipsOuterTail = false,
-    int OuterMargin = 0,
+    int OuterMargin = -1,
     int CreationLimit = 0,
+    int JoinedOverflow = -1,
+    int NameWidth = -1,
+    int NameFloor = 0,
+    int OneOverValue = 0,
+    int OneOverEquals = -1,
+    int TailMargin = -1,
+    bool StopsAtYieldingPoints = false,
     bool MeasuresThroughTail = false,
     bool YieldsToOverflowingTypeArguments = false,
     int ColonFloor = 0,

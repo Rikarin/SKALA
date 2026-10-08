@@ -203,11 +203,11 @@ public sealed class CopyingPropertyAnalyzer : DiagnosticAnalyzer {
     ) {
         switch (body) {
             case InvocationExpressionSyntax {
-                Expression:
-                MemberAccessExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
-                } access
-            } invocation
+                    Expression:
+                    MemberAccessExpressionSyntax {
+                        RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
+                    } access
+                } invocation
                 when Array.IndexOf(Materializers, access.Name.Identifier.ValueText) >= 0
                 && invocation.ArgumentList.Arguments.Count == 0: {
                 if (model.GetSymbolInfo(invocation, cancellation).Symbol is not IMethodSymbol method) {
