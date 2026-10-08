@@ -192,7 +192,7 @@ public static class SpaceRules {
         prev.IsKind(SyntaxKind.OpenParenToken)
         && prev.Parent
         is ParameterListSyntax { Parameters.Count: 0, Parent: not ParenthesizedLambdaExpressionSyntax }
-            or ArgumentListSyntax { Arguments.Count: 0 }
+        or ArgumentListSyntax { Arguments.Count: 0 }
         && !IsUndocumentedKeywordParenthesis(prev)
         && WithinParentheses(prev.Parent, false, o);
 
@@ -398,11 +398,11 @@ public static class SpaceRules {
         token.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.CloseParenToken
         && token.Parent
         is MakeRefExpressionSyntax
-            or RefTypeExpressionSyntax
-            or RefValueExpressionSyntax
-            or ArgumentListSyntax {
-                Parent: InvocationExpressionSyntax { Expression.RawKind: (int)SyntaxKind.ArgListExpression }
-            };
+        or RefTypeExpressionSyntax
+        or RefValueExpressionSyntax
+        or ArgumentListSyntax {
+            Parent: InvocationExpressionSyntax { Expression.RawKind: (int)SyntaxKind.ArgListExpression }
+        };
 
     /// <summary>
     ///     True for the <c>(</c> of a positional clause whose recursive pattern names a type, which is
@@ -959,7 +959,7 @@ public static class SpaceRules {
         open.TrailingTrivia.Concat(open.GetNextToken().LeadingTrivia)
             .Any(static trivia => trivia.Kind()
                 is SyntaxKind.MultiLineCommentTrivia
-                    or SyntaxKind.MultiLineDocumentationCommentTrivia
+                or SyntaxKind.MultiLineDocumentationCommentTrivia
             );
 
     /// <summary>

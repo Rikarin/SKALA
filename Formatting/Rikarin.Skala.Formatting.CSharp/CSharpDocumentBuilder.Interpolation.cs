@@ -158,12 +158,12 @@ public sealed partial class CSharpDocumentBuilder {
     static bool IsStringText(SyntaxToken token) =>
         token.Kind()
         is SyntaxKind.InterpolatedStringStartToken
-            or SyntaxKind.InterpolatedVerbatimStringStartToken
-            or SyntaxKind.InterpolatedSingleLineRawStringStartToken
-            or SyntaxKind.InterpolatedMultiLineRawStringStartToken
-            or SyntaxKind.InterpolatedStringEndToken
-            or SyntaxKind.InterpolatedRawStringEndToken
-            or SyntaxKind.InterpolatedStringTextToken;
+        or SyntaxKind.InterpolatedVerbatimStringStartToken
+        or SyntaxKind.InterpolatedSingleLineRawStringStartToken
+        or SyntaxKind.InterpolatedMultiLineRawStringStartToken
+        or SyntaxKind.InterpolatedStringEndToken
+        or SyntaxKind.InterpolatedRawStringEndToken
+        or SyntaxKind.InterpolatedStringTextToken;
 
     static bool IsHoleBrace(SyntaxToken token, SyntaxKind kind) =>
         token.IsKind(kind) && token.Parent is InterpolationSyntax;

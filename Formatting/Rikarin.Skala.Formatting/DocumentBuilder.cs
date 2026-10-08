@@ -663,7 +663,7 @@ public sealed class DocumentBuilder {
             segmentHead,
             draftSegment,
             breaks,
-            [.. facts],
+            [..facts],
             yieldEnds
         );
     }
