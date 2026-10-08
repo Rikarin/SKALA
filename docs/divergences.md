@@ -8248,6 +8248,37 @@ line: `real` 99.66 % → 99.80 %, 86.32 % → 89.47 % of files.
   dropped the one probed), tabs in a run (taken as one space, as before), and a one-line `<c>` past the
   margin.
 
+## SK-DIV-0384 — `///` lines past 120: two glued elements are a break point — **RESOLVED (#587)**
+
+#587 reported the doc-comment reflow writing `///` lines a few columns past 120 in Skala's own source.
+Measured on every such comment (22 runs holding a line wider than 120 after its marker, each asked of the
+oracle under `SkalaDocComments`), most of it is not a defect:
+
+| what the over-wide lines are | the oracle |
+|---|---|
+| 96 of 123 lines past column 120 that fit within 120 after the `///` | the same — the margin is measured from after the marker (SK-DIV-0019), so the file's column runs `indent + 3` past it |
+| 19 of the 22 runs wider than 120 after the marker: a flat element whose content fits and whose end tag rides past, an unbreakable word, `<code>` | the same lines, byte for byte |
+| two sibling elements glued together on a line that overflows — `</item><item>`, `</term><description>` | **breaks between them**; Skala kept the glue |
+| `Doc.cs`'s `GroupFacts` comment | reformats it; Skala refuses it as malformed |
+
+The glue rule, probed on seven shapes: two elements with nothing between them stay together when they fit
+(`<item>A.</item><item>B.</item>`, `<term>short</term><description>short</description>`) and break between
+them when the line overflows — `<c>a</c><c>b</c>` and `<see/><see/>` in prose too, with no space written
+when they do not break. An element glued to a *word* (`<c>x</c>tail`) stays unbreakable and rides past the
+margin in the oracle as well. `XmlDocRenderer.Push` lets the glued unit wrap when both sides are elements;
+the round-trip signature writes no separator between two markup items, so the break is safe.
+
+⚠ The malformed comments are Skala's own source, not the formatter. A bare `&&`, a `<remarks>` never closed, a
+`</b>` with no `<b>` and a `<param>` with no end make a comment malformed XML, which Skala never reflows by
+design; the oracle formats them anyway. Fixed at source in `Doc.cs` (two), `SarifWriter.cs` and
+`RuleFixtures.cs`. ⚠ One remains, in `LayoutWriter.cs` line 2348 — a bare `` `<` `` in prose — left for the
+group that owns that file this round.
+
+- pinned by `constructs/trivia/doc-comment-glued-elements.cs` and `GluedElementsIssue587Tests`; the sibling
+  check sabotaged fails two of its three tests (the third is the word-glue control).
+- options: none.
+- ⚠ status: **resolved**.
+
 ## SK-DIV-0177 — a named argument's colon is a break point by the arrow's rule
 
 ⚠ **Found measuring #409** (#411): `name176: Cast<…>(` at 126 columns, with no comment anywhere, came

@@ -1088,7 +1088,7 @@ public sealed class Document {
 /// <param name="LiftsThroughInnerBreaks">
 ///     ⚠ A <see cref="Continues" /> group whose lifted list keeps its lifted level for the lines of a
 ///     construct that broke inside it on its own line — a switch arm whose arrow the author kept on a line
-///     of its own (#446, SK-DIV-0212): `when x.All(static e => e` / `is T` / `)` puts the `is`, an `&&`
+///     of its own (#446, SK-DIV-0212): `when x.All(static e => e` / `is T` / `)` puts the `is`, an `&amp;&amp;`
 ///     and a `.Member` two levels past the arm, where under a broken chain those lines continue the
 ///     ordinary way (#418).
 /// </param>
@@ -1243,6 +1243,7 @@ public sealed class Document {
 ///     SK-DIV-0350): the oracle puts every section and the parameter on lines of their own as soon as
 ///     the sections do not fit on one line together, or one of them spans lines, and leaves the gap
 ///     before the parameter to its own rule when they do.
+/// </param>
 /// <param name="ContinuesIfItBreaks">
 ///     ⚠ <see cref="Continues" /> for a fill chain, whose group resolving broken does not say it breaks
 ///     (#496, SK-DIV-0185): a delimited list on the chain's first line lifts exactly when the chain then

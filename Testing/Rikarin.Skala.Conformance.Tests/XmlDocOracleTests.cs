@@ -343,10 +343,11 @@ public sealed class XmlDocOracleTests {
         // says a documentation reference is never shortened.
         // ⚠ Sixteen since #569: `trivia/doc-comment-code-block-edges.cs`, `…-inline-code-spanning-lines.cs` and
         // `…-space-runs.cs`.
+        // ⚠ Seventeen since #587: `trivia/doc-comment-glued-elements.cs`.
         var all = XmlDocOracle.Rows();
         var rows = all.Where(static row => row.IsKeyed).ToArray();
         var agreeing = rows.Count(static row => row.Agrees);
-        Assert.Equal(16, all.Count(static row => !row.IsKeyed));
+        Assert.Equal(17, all.Count(static row => !row.IsKeyed));
         Assert.Equal(25, rows.Length);
         Assert.Equal(24, rows.Select(static row => row.Key).Distinct(StringComparer.Ordinal).Count());
         Assert.True(

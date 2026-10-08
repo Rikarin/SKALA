@@ -577,6 +577,7 @@ public static class SarifWriter {
     /// job is to be the thing that never fails.
     /// </item>
     /// </list>
+    /// </remarks>
     public static string Relative(string? root, string path) {
         var normalised = path.Replace('\\', '/');
         if (string.IsNullOrEmpty(root) || !Path.IsPathRooted(path)) {

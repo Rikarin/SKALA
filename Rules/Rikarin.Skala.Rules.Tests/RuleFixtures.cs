@@ -95,6 +95,7 @@ public static class RuleFixtures {
     ///         territory is below the current language version or inside an <c>#if</c> can be fixtured
     ///         (#317), and <c>unsafe</c> compiles (#310).
     ///     </para>
+    ///     <b>
     ///         A fixture holding top-level statements is compiled as an executable, and until [#314]
     ///         the corpus could not hold one at all.
     ///     </b> Every fixture was a
