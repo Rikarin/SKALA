@@ -97,7 +97,15 @@ public static class TokenEquivalence {
 
             if (!token.IsKind(SyntaxKind.EndOfFileToken)) {
                 builder.Clear();
-                builder.Append('T').Append(token.RawKind).Append(':').Append(token.ValueText);
+                // ⚠ An interpolated raw literal's end token carries the closing delimiter's indentation
+                // in its text, and `skala_indent_raw_literal_string` moves that indentation (#447). What
+                // the indentation *means* — how much every content line is stripped by — is compared
+                // through the text tokens' values, which Roslyn reports already stripped; the end
+                // token's own whitespace says nothing a value does not.
+                var value = token.IsKind(SyntaxKind.InterpolatedRawStringEndToken)
+                    ? token.ValueText.TrimStart(' ', '\t', '\r', '\n')
+                    : token.ValueText;
+                builder.Append('T').Append(token.RawKind).Append(':').Append(value);
                 items.Add(builder.ToString());
             }
 

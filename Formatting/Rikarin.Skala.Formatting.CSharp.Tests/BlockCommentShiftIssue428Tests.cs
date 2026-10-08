@@ -389,8 +389,8 @@ public sealed class BlockCommentShiftIssue428Tests {
     /// <summary>
     ///     At <c>skala_align_multiline_comments = false</c> a starred comment is the oracle's to freeze: its
     ///     body and its trailing whitespace are left byte for byte. The unstarred one moves as at
-    ///     <c>true</c>. (The oracle freezes a starred comment's opener too, which Skala does not —
-    ///     SK-DIV-0033's fact 1 — so none here is written off its column.)
+    ///     <c>true</c>. (The oracle freezes a starred comment's opener too, and so does Skala since #459 —
+    ///     <c>AlignMultilineCommentTests</c> carries that probe.)
     /// </summary>
     [Fact]
     public void AtFalse_AStarredCommentsBodyIsNotTouched_AndAnUnstarredOneStillMoves() =>

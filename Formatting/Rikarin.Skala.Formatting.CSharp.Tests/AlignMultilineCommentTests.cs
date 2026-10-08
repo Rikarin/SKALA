@@ -197,29 +197,128 @@ public sealed class AlignMultilineCommentTests {
     }
 
     /// <summary>
-    ///     ⚠ At <c>false</c> Skala still moves the opening <c>/*</c>, and the oracle does not. This
-    ///     asserts the gap rather than hiding it.
+    ///     #459, SK-DIV-0033 fact 1: at <c>false</c> a starred comment that starts its line is frozen whole,
+    ///     its opener on the column the author wrote.
     /// </summary>
     /// <remarks>
-    ///     The oracle freezes a starred comment <em>entire</em> at <c>false</c> — measured, on a comment
-    ///     whose opener is written at 8 where the code indent is 4, it comes back at 8. Skala re-indents
-    ///     the opener at both values, which it did before this key was read at all. That is a second and
-    ///     separable behaviour, about where the comment token starts rather than about its asterisks, and
-    ///     it is why this key is registered <c>OfUnoracled</c> rather than promoted: it is honoured,
-    ///     observable, and not conformant at one of its two values. SK-DIV-0033 carries the probe.
-    ///     <para>
-    ///         ⚠ Asserted as the *current* behaviour, so that implementing the freeze fails here and has to
-    ///         come back and delete this test. A gap nothing asserts is a gap nobody notices closing.
-    ///     </para>
+    ///     ⚠ This replaces a test that asserted the gap — "Skala still moves the opening <c>/*</c>" — and was
+    ///     written to fail the day the freeze landed. Every expected byte is <c>jb cleanupcode</c> 2025.2.6's
+    ///     under <c>SkalaFormatOnly</c> at <c>skala_align_multiline_comments = false</c>: own-line starred
+    ///     comments too deep in a type body and in a method body, <c>/*</c> and <c>/**</c>, stay where they
+    ///     were written; one at column 0 stays there; an unstarred one still moves with its line; a starred
+    ///     <c>/*</c> trailing a statement keeps its body frozen while the opener rides the code; a starred
+    ///     <c>/**</c> trailing a statement moves its body with its line.
     /// </remarks>
     [Fact]
-    public void AtFalse_SkalaStillReindentsTheOpener_WhichTheOracleDoesNot() {
-        const string source = "class C {\n        /*\n    * Body.\n     */\n    int F;\n}\n";
+    public void AtFalse_AStarredCommentStartingItsLine_IsFrozenOpenerAndAll() {
+        const string source = "class Starred {\n"
+            + "        /*\n"
+            + "         * A starred block comment written too deep.\n"
+            + "         */\n"
+            + "    void M() {\n"
+            + "            int x = 1; /**\n"
+            + "                        * trailing doc-style comment\n"
+            + "                        */\n"
+            + "            int y = 2; /*\n"
+            + "                        * trailing plain starred comment\n"
+            + "                        */\n"
+            + "            /*\n"
+            + "             * own line in a body, too deep.\n"
+            + "             */\n"
+            + "            int z = 3;\n"
+            + "    }\n"
+            + "\n"
+            + "/*\n"
+            + " * written too shallow\n"
+            + " */\n"
+            + "    void N() { }\n"
+            + "\n"
+            + "        /* not starred\n"
+            + "           continuation */\n"
+            + "    void O() { }\n"
+            + "\n"
+            + "        /** doc-style own line\n"
+            + "         * continuation\n"
+            + "         */\n"
+            + "    void P() { }\n"
+            + "}\n";
+        const string oracle = "class Starred {\n"
+            + "        /*\n"
+            + "         * A starred block comment written too deep.\n"
+            + "         */\n"
+            + "    void M() {\n"
+            + "        int x = 1; /**\n"
+            + "                    * trailing doc-style comment\n"
+            + "                    */\n"
+            + "        int y = 2; /*\n"
+            + "                        * trailing plain starred comment\n"
+            + "                        */\n"
+            + "            /*\n"
+            + "             * own line in a body, too deep.\n"
+            + "             */\n"
+            + "        int z = 3;\n"
+            + "    }\n"
+            + "\n"
+            + "/*\n"
+            + " * written too shallow\n"
+            + " */\n"
+            + "    void N() { }\n"
+            + "\n"
+            + "    /* not starred\n"
+            + "       continuation */\n"
+            + "    void O() { }\n"
+            + "\n"
+            + "        /** doc-style own line\n"
+            + "         * continuation\n"
+            + "         */\n"
+            + "    void P() { }\n"
+            + "}\n";
 
-        // What the oracle returns at `false`: the comment untouched, opener at 8.
-        Assert.NotEqual(source, Format(source, "false"));
+        var once = Format(source, "false");
+        Assert.Equal(oracle, once);
+        Assert.Equal(once, Format(once, "false"));
+    }
 
-        // What Skala returns: the opener pulled to 4, the body left as written.
-        Assert.Equal("class C {\n    /*\n    * Body.\n     */\n    int F;\n}\n", Format(source, "false"));
+    /// <summary>
+    ///     ⚠ A starred <c>/**</c> trailing code at <c>false</c> loses its trailing whitespace only when its line
+    ///     moved — measured: moved four left, <c>/**   </c> and its body came back trimmed; on a line that
+    ///     stayed, <c>* unmoved line  </c> came back with both its spaces.
+    /// </summary>
+    [Fact]
+    public void AtFalse_ATrailingSlashStarStar_IsTrimmedOnlyWhenItsLineMoves() {
+        const string source = "class S {\n"
+            + "    void M() {\n"
+            + "            int x = 1; /**   \n"
+            + "                        * trailing doc-style comment   \n"
+            + "                        */\n"
+            + "        int y = 2; /**\n"
+            + "                    * unmoved line  \n"
+            + "                    */\n"
+            + "    }\n"
+            + "}\n";
+        const string oracle = "class S {\n"
+            + "    void M() {\n"
+            + "        int x = 1; /**\n"
+            + "                    * trailing doc-style comment\n"
+            + "                    */\n"
+            + "        int y = 2; /**\n"
+            + "                    * unmoved line  \n"
+            + "                    */\n"
+            + "    }\n"
+            + "}\n";
+
+        Assert.Equal(oracle, Format(source, "false"));
+    }
+
+    /// <summary>A frozen comment that is already where it was written produces no edit at all.</summary>
+    [Fact]
+    public void AtFalse_AFrozenCommentOnItsOwnColumn_ProducesNoEdit() {
+        const string source = "class C {\n        /*\n         * Body.\n         */\n    int F;\n}\n";
+        var options = OptionResolver.Resolve(
+            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+            [new KeyValuePair<string, string>("skala_align_multiline_comments", "false")]
+        ).Options;
+
+        Assert.False(CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Changed);
     }
 }

@@ -93,7 +93,7 @@ exact count, and saying so is better than repeating a figure nobody can reproduc
 |---|---|---|---|
 | 0001 | oracle rewrites disabled `#if` whitespace | open | 14 lines, 14 files |
 | 0002 | no preference among break points | **resolved at M3** | — nothing left to measure |
-| 0003 | interpolated raw literal emitted verbatim | open | 11 raw-literal files at 99.68 % / 90.91 %, 12 divergent lines |
+| 0003 | interpolated raw literal emitted verbatim | **resolved (#447)** | 11 raw-literal files at 99.68 % / 90.91 %, 12 divergent lines |
 | 0004 | no preprocessor symbols without a project | **closed at M5** | the six-cell table re-run and identical |
 | 0005 | the ordering rule's margin is a fitted constant | open | 63 lines, 38 files — the largest class. 21 hunks, 14 files by signature |
 | 0006 | ⚠ the pinned oracle *profile* does not format doc comments; Rider does, and Skala now does too | open | 21 keys honoured and observable, 11 refused, none Tier A until the fixtures are regenerated |
@@ -206,7 +206,7 @@ thing. The measurements are kept because the trajectory is the argument for the 
   exists and the whole corpus residue is 231 lines, an order of magnitude below the 747 this entry
   named at M2. There is nothing left to re-measure.
 
-## SK-DIV-0003 — an interpolated raw string literal is still emitted verbatim
+## SK-DIV-0003 — an interpolated raw string literal is still emitted verbatim — **RESOLVED (#447)**
 
 `skala_indent_raw_literal_string = align` asks the formatter to move the closing
 delimiter and the content of a `"""` literal, and milestones 1 and 2 declined on the grounds that
@@ -268,8 +268,49 @@ equivalence guard about all three.
 A verbatim string has no stripping rule, so its content is literal and neither engine can move it;
 both return it untouched. Only the raw-literal half is open.
 
+### ✅ Resolved for #447 (2026-10-08), and two of the four rows were the oracle's first pass
+
+Re-measured under `SkalaFormatOnly`, at `align` and at `indent`, and then **given the oracle's own
+output back** — which is the step that changed the specification:
+
+| shape | oracle, first pass | oracle, given its output back (and a third pass: unchanged) |
+|---|---|---|
+| `$"""` content and closer at 24, quotes at 22 | shifted to 22 — the column of the `"""`, not of the `$` | the same |
+| `$$"""` already on its quotes | unchanged | the same |
+| a multi-line hole: `Hello {` / `x` / `} there` | `Hello {` shifted −4, ⚠ the hole's lines left | ⚠ the hole's lines shifted −4 with `Hello {` |
+| a `$"""` nested in a hole | its own anchor, read after its line moved | the same at `align`; ⚠ at `indent` the first pass read the line where it was *written* (24 → 28) and the second where it lands (12 → 16) |
+| `$@"…"` | untouched | untouched |
+| ⚠ at `indent`, a literal whose quotes start their line (`Call(` / `"""`) | content under its own quotes, **no** level added — plain and interpolated, at 12 and at 16 | the same |
+
+So "the hole's own lines do not move" was a fact about one pass: the oracle re-indents a hole's lines
+from its opening line's indentation, read before the literal's shift on the first pass and after it on
+the second. Skala writes the fixed point in one pass, which is #372's rule for choosing between passes:
+a hole line moves by what the line its hole opens on moved.
+
+`RawLiteralPlan` (Formatting.CSharp) records, for an interpolated string that holds a multi-line raw
+literal, which of its lines each literal owns and which line a hole line follows; `RawLiteralShift`
+(Formatting) applies it at write time, where the quotes' output column is known
+(`VerbatimFlags.RealignRun`). `TokenEquivalence` compares an interpolated raw literal's end token
+without its leading whitespace — the stripping it implies is compared through the text tokens' values,
+which Roslyn reports already stripped, and `InterpolatedRawLiteralIssue447Tests` pins that a closer moved
+without its content is still caught. ⚠ The last row was **also wrong for plain raw literals**, which
+had nothing to do with interpolation: `indent` added a level to a literal chopped onto a line of its own.
+Fixed in the same place (`LayoutWriter.WritePiece`).
+
+⚠ `pathological/interpolated-raw-string-with-nested-braces.cs` is **not** this entry, and no fix here can
+move it: on that file the oracle writes `{{brace` for `{{ brace` inside a `$$"""` literal and puts the
+content six columns right of the closer — it changes the string's value. Skala must not agree with it.
+
 - options: `skala_indent_raw_literal_string` (Tier A, `default = align`, from the template)
-- ⚠ status: **open**, measured
+- ⚠ status: **resolved** at both `align` and `indent`, pinned by
+  `constructs/trivia/interpolated-raw-literal-alignment.cs` (the shapes whose first pass is already the
+  fixed point) and `InterpolatedRawLiteralIssue447Tests` (the oracle's fixed point for the rest, each
+  asserted idempotent).
+- ⚠ `corpus/real/` is **unmoved** by it — 59 657 / 59 840 lines and 335 / 380 files outside doc
+  comments, identical on master and on the fix (`Testing fidelity`, both trees, 2026-10-08) — so the
+  "12 divergent lines over 11 raw-literal files" quoted above were not this entry's by the time it was
+  paid. `pathological/` is unmoved too (589 / 629), for the reason given above.
+- ⚠ superseded status: **open**, measured
 - ⚠ **triage 2026-08-30: `debt`, size M.** Not defensible to a user: "Skala aligns your raw string
   literals, except the interpolated ones" is a bug report, not a policy, and the entry's own
   justification is refuted above. It costs 12 lines over 11 files of `corpus/real/` and owns the
@@ -2907,7 +2948,7 @@ before it. Two clauses of the model this entry carried are **refuted by that run
   it was three cases in one method plus the value on `LayoutWriter`; the *fixture* was and remains the
   larger half.
 
-## SK-DIV-0033 — the oracle realigns a block comment's asterisks; Skala left the comment as written
+## SK-DIV-0033 — the oracle realigns a block comment's asterisks; Skala left the comment as written — **RESOLVED (#459)**
 
 ⚠ **Fixed at the export's value 2026-08-30, and narrowed. See the two sections at the end of this
 entry** — one corrects the shape of comment the key governs, the other records what is left. The text
@@ -3001,8 +3042,37 @@ at 26, not at the member's 5. Measured.
   "returned exactly as written", as the table above says: the oracle empties the whitespace-only line
   (SK-DIV-0193). The asterisks do not move, so the disqualification stands.
 
+### ✅ Fact 1 closed for #459 (2026-10-08)
+
+Re-asked under `SkalaFormatOnly` at `false` on one probe holding every row the issue and the #428 note
+name, plus three it did not:
+
+| shape at `false` | the oracle | Skala before | Skala now |
+|---|---|---|---|
+| starred `/*` starting its line, written at 8 in a type body (indent 4) | frozen whole, opener at 8 | opener 4, body frozen | frozen whole |
+| the same in a method body, written at 12 (indent 8) | frozen whole | opener 8 | frozen whole |
+| starred `/**` starting its line at 8 | frozen whole | opener 4 | frozen whole |
+| starred `/*` at column 0 | stays at 0 | stays (stick comment) | stays |
+| unstarred `/* … */` at 8 | moved to 4 with its line | the same | the same |
+| starred `/*` trailing a statement whose line moves −4 | opener rides the code, body frozen | the same | the same |
+| starred `/**` trailing a statement whose line moves −4 | ⚠ body shifted −4 with its line, and **trimmed** | body frozen | shifted and trimmed |
+| starred `/**` trailing a statement whose line stays | ⚠ byte for byte, trailing spaces kept | the same | the same |
+
+So the frozen class is "a starred comment that *starts its line*", and a trailing starred `/**` is the
+shifted class with one twist the #428 note did not have: its lines lose their trailing whitespace only
+when its line moved. `CSharpDocumentBuilder.EmitBlockComment` writes the first through
+`VerbatimFlags.OwnIndent` — the source's own indentation, written as the line's indent rather than as
+part of the piece, so that a comment already where it was written produces no edit — and the second
+through `ShiftWithLine | TrimIfShifted`. `AlignMultilineCommentTests` carries the probe byte for byte;
+the test that asserted the gap is deleted, as it said it would have to be.
+
 - options: `skala_align_multiline_comments`
-- ⚠ status: **narrowed**. Conformant at the export's `true`, pinned by
+- ⚠ status: **resolved for #459** at both values on every measured shape. Still registered
+  `OfUnoracled` and Tier D: promoting it needs an `oracle` glob and a key-flip sweep run, neither of
+  which this change makes — the glob may only land with the sweep's verdict
+  (`OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt`). Not measured: tab
+  indentation at `false`.
+- ⚠ superseded status (kept for the record): **narrowed**. Conformant at the export's `true`, pinned by
   `Formatting/Rikarin.Skala.Formatting.CSharp.Tests/AlignMultilineCommentTests.cs` against the
   oracle's own bytes plus a fixed-point round trip and four disqualified shapes. Open at `false`, for
   fact 1 above. ⚠ `verify skala_align_multiline_comments` still answers "not swept" — the

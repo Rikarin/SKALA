@@ -97,7 +97,35 @@ public enum VerbatimFlags {
     ///         compares comment text, so anything else going wrong here is still an SK9099.
     ///     </para>
     /// </remarks>
-    ShiftWithLine = 32
+    ShiftWithLine = 32,
+
+    /// <summary>
+    ///     A verbatim run — an interpolated string — holding multi-line raw literals, each of which is
+    ///     shifted to its own anchor by <see cref="Realign" /> or <see cref="RealignToIndent" />'s rule.
+    ///     The plan saying which line belongs to which literal is the node's <see cref="DocNode.Arg2" />
+    ///     string. SK-DIV-0003, issue #447.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The same uniform-shift argument as <see cref="Realign" />, applied per literal: every line one
+    ///     literal owns moves by that literal's amount, a line that begins inside an interpolation hole
+    ///     moves not at all, and a literal nested in a hole has its own amount.
+    /// </remarks>
+    RealignRun = 64,
+
+    /// <summary>
+    ///     With <see cref="ShiftWithLine" />: the comment's lines lose their trailing whitespace only when
+    ///     its line actually moved. A starred <c>/**</c> trailing code at <c>align_multiline_comments =
+    ///     false</c> — measured, issue #459: moved four left, its <c>/**   </c> and body lines came back
+    ///     trimmed; on a line that did not move, its trailing spaces came back untouched.
+    /// </summary>
+    TrimIfShifted = 128,
+
+    /// <summary>
+    ///     At a line start, the indentation written is the node's <see cref="DocNode.Arg2" /> string — the
+    ///     source's own — rather than the scope's. A starred comment that starts its line at
+    ///     <c>align_multiline_comments = false</c> is frozen whole, opener included (#459).
+    /// </summary>
+    OwnIndent = 256
 }
 
 /// <summary>
@@ -1342,6 +1370,18 @@ public sealed class LayoutWriter {
         return builder.ToString();
     }
 
+    /// <summary>Removes the spaces and tabs that end each line of a multi-line text but its last.</summary>
+    static string TrimLineEnds(string text) {
+        var lines = text.Split('\n');
+        for (var i = 0; i < lines.Length - 1; i++) {
+            var carriage = lines[i].EndsWith('\r');
+            var body = (carriage ? lines[i][..^1] : lines[i]).TrimEnd(' ', '\t');
+            lines[i] = carriage ? body + "\r" : body;
+        }
+
+        return string.Join('\n', lines);
+    }
+
     static int LeadingTabs(string run) {
         var count = 0;
         while (count < run.Length && run[count] == '\t') {
@@ -2089,7 +2129,22 @@ public sealed class LayoutWriter {
     void WritePiece(string text, SourceSpan source, VerbatimFlags flags, string? sourceLineIndent = null) {
         // ⚠ Not realigned while the indenter is off. A raw literal's interior lines move only to
         // follow its opening quotes, and under this key the opening quotes did not move.
-        if ((flags & VerbatimFlags.Realign) != 0 && this.source is null) {
+        if ((flags & VerbatimFlags.RealignRun) != 0) {
+            if (this.source is null && sourceLineIndent is not null) {
+                var first = atLineStart ? pendingCloserLevel ?? Effective() : column + PendingWidth;
+                var lineIndent = atLineStart ? pendingCloserLevel ?? Effective() : CurrentLineIndent();
+                text = RawLiteralShift.Apply(
+                    text,
+                    sourceLineIndent,
+                    first,
+                    lineIndent,
+                    (flags & VerbatimFlags.RealignToIndent) != 0 ? indentWidth : null,
+                    atLineStart
+                );
+            }
+
+            sourceLineIndent = null;
+        } else if ((flags & VerbatimFlags.Realign) != 0 && this.source is null) {
             text = Realign(
                 text,
                 atLineStart ? pendingCloserLevel ?? Effective() : column + PendingWidth
@@ -2098,14 +2153,20 @@ public sealed class LayoutWriter {
             // ⚠ The indentation of the line the opening quotes are on, plus one level — not the
             // level the scope stack is at. A literal opened part-way along `var a = """` takes the
             // line's own indent, and the two differ whenever a continuation scope is open.
-            text = Realign(
-                text,
-                (atLineStart ? pendingCloserLevel ?? Effective() : CurrentLineIndent()) + indentWidth
-            );
+            //
+            // ⚠ And no level is added when the quotes *start* their line (#447, measured): a literal
+            // chopped onto a line of its own at 12 or at 16 puts its content at 12 or 16, under its
+            // own quotes, where `var a = """` at 8 puts it at 12.
+            text = Realign(text, atLineStart ? pendingCloserLevel ?? Effective() : CurrentLineIndent() + indentWidth);
         }
 
         if (atLineStart) {
-            if ((flags & VerbatimFlags.AtColumnZero) == 0 && (flags & VerbatimFlags.SelfIndented) == 0) {
+            if ((flags & VerbatimFlags.OwnIndent) != 0 && sourceLineIndent is not null) {
+                // ⚠ Written as the line's indentation rather than as part of the piece, so the anchor
+                // starts where the piece does and an unchanged line produces no edit.
+                output.Append(sourceLineIndent);
+                column = TextWidth.Advance(sourceLineIndent, column);
+            } else if ((flags & VerbatimFlags.AtColumnZero) == 0 && (flags & VerbatimFlags.SelfIndented) == 0) {
                 if (this.source is null) {
                     // ⚠ A closing delimiter's column is its scope's `CloserLevel`, which is a level and
                     // never an alignment column — so the level column and the target coincide and the
@@ -2132,7 +2193,12 @@ public sealed class LayoutWriter {
         // line's leading whitespace is only in the output once it has been written. Not while the
         // indenter is off: the line did not move, so neither does the comment.
         if ((flags & VerbatimFlags.ShiftWithLine) != 0 && sourceLineIndent is not null && this.source is null) {
-            text = ShiftWithLine(text, sourceLineIndent, CurrentLinePrefix(), indentUnit == "\t");
+            var prefix = CurrentLinePrefix();
+            if ((flags & VerbatimFlags.TrimIfShifted) != 0 && prefix != sourceLineIndent) {
+                text = TrimLineEnds(text);
+            }
+
+            text = ShiftWithLine(text, sourceLineIndent, prefix, indentUnit == "\t");
         } else if ((flags & VerbatimFlags.AlignStarred) != 0 && this.source is null) {
             // ⚠ The opening delimiter's own column plus one — measured, and it is the *opener's*
             // column rather than the code's indent, which is why a block comment that begins on a
