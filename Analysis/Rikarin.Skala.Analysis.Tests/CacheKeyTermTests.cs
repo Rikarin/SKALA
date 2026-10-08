@@ -50,6 +50,10 @@ public sealed class CacheKeyTermTests {
         new Dictionary<string, Func<CompilationUnit>>(StringComparer.Ordinal) {
             ["targetFramework"] = static () => Base() with { TargetFramework = "net9.0" },
             ["loaderPreprocessorSymbols"] = static () => Base() with { PreprocessorSymbols = ["SKALA_DEFINE"] },
+            // #517: SK1133 reads it, and a toolset pin moves nothing else in the key.
+            ["compilerPath"] = static () => Base() with {
+                CompilerPath = "/nuget/microsoft.net.compilers.toolset/4.11.0/tasks/netcore/bincore/csc.exe"
+            },
             ["languageVersion"] = static () => Base(BaseParse.WithLanguageVersion(LanguageVersion.CSharp9)),
             ["specifiedLanguageVersion"] = static () => Base(BaseParse.WithLanguageVersion(LanguageVersion.Latest)),
             ["parsePreprocessorSymbols"] = static () => Base(BaseParse.WithPreprocessorSymbols("DEBUG")),

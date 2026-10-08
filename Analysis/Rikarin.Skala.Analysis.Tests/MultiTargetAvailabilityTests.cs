@@ -547,6 +547,17 @@ public sealed class MultiTargetAvailabilityTests {
 
         var versions = loaded.Units.Select(static unit => unit.Compilation.LanguageVersion).ToHashSet();
         Assert.Equal(2, versions.Count);
+
+        // #517: the compiler the build ran is kept off the recorded `csc` line — measured as the SDK's
+        // `…/sdk/<version>/Roslyn/bincore/csc.exe` on Windows — and reaches the analyzers.
+        Assert.All(
+            loaded.Units,
+            static unit => {
+                Assert.Matches(@"[\\/]csc(\.exe|\.dll)?$", unit.CompilerPath);
+                var (options, _, _) = Hosting.EditorConfigOptions.For(unit, Path.GetDirectoryName(unit.ProjectPath)!);
+                Assert.Equal(unit.CompilerPath, Rules.CompilerIdentity.PathOf(options));
+            }
+        );
     }
 
     /// <summary>⚠ A binlog is the record of a real build, so one has to be run to get a real one.</summary>

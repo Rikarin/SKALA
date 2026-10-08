@@ -51,7 +51,8 @@ public static class CacheKey {
         // ⚠ v5 (#516): a file has two entries, a Syntax half under the per-file key and the rest
         // under a key that also names every tree's text (`SourceIdentity`). A v4 entry held both
         // halves under the per-file key, and served as the Syntax half it would bring every stale
-        // semantic finding back with it.
+        // semantic finding back with it. (#517's compiler path joined the compilation term in the same
+        // version.)
         hash.Append(Encoding.UTF8.GetBytes("cache/v5"));
         return Convert.ToHexStringLower(hash.GetCurrentHash());
     }
@@ -128,6 +129,11 @@ public static class CacheKey {
 
         builder.Append('|');
         AppendCompilation(builder, unit.Compilation);
+
+        // ⚠ #517: the compiler the binlog says built this, because `SK1133` reads it — a finding
+        // computed under the SDK's compiler must not be served after a `Microsoft.Net.Compilers.Toolset`
+        // pin replaces it, and nothing else in the key moves when one does. Empty outside a binlog.
+        builder.Append("|csc=").Append(NormalisePath(unit.CompilerPath));
 
         // ⚠ #343: the *other* target frameworks belong in the key, because since #343 a finding is a
         // function of them too. `SK1023` is withheld when any moniker of the project lacks

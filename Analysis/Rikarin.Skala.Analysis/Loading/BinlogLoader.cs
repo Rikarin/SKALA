@@ -192,12 +192,20 @@ public static class BinlogLoader {
             : request.RepositoryRoot;
 
         // ⚠ The recorded line starts with the compiler's own path; the parser wants only arguments.
+        // ⚠ #517: and that path is kept, because it is the one record of *which* compiler ran — a
+        // `Microsoft.Net.Compilers.Toolset` package replaces the SDK's with no other trace.
         var arguments = CommandLine.Split(commandLine);
+        var compilerPath = string.Empty;
         if (arguments.Count > 0 && arguments[0].EndsWith("csc.dll", StringComparison.OrdinalIgnoreCase)) {
+            compilerPath = arguments[0];
             arguments.RemoveAt(0);
         }
 
         if (arguments.Count > 0 && Path.GetFileNameWithoutExtension(arguments[0]) is "csc" or "dotnet") {
+            if (Path.GetFileNameWithoutExtension(arguments[0]) is "csc") {
+                compilerPath = arguments[0];
+            }
+
             arguments.RemoveAt(0);
         }
 
@@ -323,7 +331,8 @@ public static class BinlogLoader {
             AnalyzerReferences = analyzerReferences.ToImmutable(),
             AnalyzerConfigPaths = analyzerConfigPaths,
             ProjectPath = projectPath,
-            DocumentationDiagnosticsOff = !DocumentationComments.CompilerReportsOn(parsed.ParseOptions)
+            DocumentationDiagnosticsOff = !DocumentationComments.CompilerReportsOn(parsed.ParseOptions),
+            CompilerPath = compilerPath
         };
     }
 

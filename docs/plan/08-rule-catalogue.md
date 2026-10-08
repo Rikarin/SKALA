@@ -9880,11 +9880,21 @@ says nothing about the compiler that will build the file.
    `preview`, parse it with 0 errors, compile with 0 diagnostics and emit — resolving `latest` to
    **C# 12** (4.14: C# 13). They instantiate none of the targeting pack's Interop and Regex generators
    (4.14 and 5.0 load all of them), which `csc` reports as a warning on every build. No compiler trace
-   reaches an analyzer: the generated `build_property.*` set (17 keys on `net10.0`) names none; the
-   binlog's `csc` path does, but the loader discards it — filed as [#517](https://github.com/Rikarin/SKALA/issues/517). **Decision: `fixIsSafe` stays `true`.** The
-   exposed configuration is an explicitly pinned compiler package more than a year older than the SDK,
-   on a `net10.0` target, with `LangVersion` not written as a number, and what changes is a null
-   receiver's exception type and an empty copy's identity. A written `14` remains airtight.
+   reaches an analyzer through the build: the generated `build_property.*` set (17 keys on `net10.0`)
+   names none. **The binlog's `csc` path does, and since [#517](https://github.com/Rikarin/SKALA/issues/517)
+   it is kept** (`CompilationUnit.CompilerPath`, measured as `…/sdk/10.0.400/Roslyn/bincore/csc.exe` on
+   Skala's own binlog — `csc.exe`, not the `dotnet.exe … csc.dll` the build's message log shows),
+   published to analyzers as `ICompilerIdentity` beside the siblings, and in the diagnostic-cache key.
+   `SK1133` declines the `net10.0` proof when the path names a `microsoft.net.compilers.toolset[.framework]`
+   package older than **4.14**, or one whose version it cannot read. ⚠ **Closed under `--load=binlog`
+   only** — the default and what CI and the self-gate run. A `--load=workspace` run has no compiler path
+   and still reports such a build; `--load=loose` does not run `SK1133` at all. A sibling moniker is
+   assumed to share the unit's compiler (a toolset reference conditioned on one TFM is not seen).
+   Still **unmeasured**: a real build under the package (paths in the tests are synthetic, in the
+   shapes the SDK and the NuGet cache use). **Decision: `fixIsSafe` stays `true`.** The remaining
+   exposure is a workspace-mode run over an explicitly pinned compiler package more than a year older
+   than the SDK, on a `net10.0` target, with `LangVersion` not written as a number, and what changes is
+   a null receiver's exception type and an empty copy's identity. A written `14` remains airtight.
 2. **Which identity.** As tabled: reference assembly, by name; a `netstandard2.x` or `net48` unit never
    qualifies; a `net10.0` project referencing a `netstandard2.0` library keeps its own corlib.
 3. **Multi-targeting.** Both legs of `netstandard2.1;net10.0` at `latest` are C# 14 to Skala, so
