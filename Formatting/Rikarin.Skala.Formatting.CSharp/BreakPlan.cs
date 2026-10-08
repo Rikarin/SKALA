@@ -4763,7 +4763,8 @@ public sealed class BreakPlan {
                     // value =>` / `value.ToString() + "…";` at every width measured, where Skala broke the
                     // `=` because the whole lambda fitted on the line below (#453, SK-DIV-0050).
                     BreaksIfTooLong: !YieldsToTheLambdaArrow(value)
-                    && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member)),
+                    && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member))
+                    && !KeepsTheEqualsBeforeALambdaCall(node, value),
 
                     // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
                     // Every other right-hand side is measured by what is left of the line and breaks
@@ -4985,6 +4986,26 @@ public sealed class BreakPlan {
     ///     12 to 70 and parameter lists of 2 to 70: wherever the line through <c>=&gt;</c> fits, the arrow
     ///     breaks and the <c>=</c> never does, which Skala had the other way round from a head of 30.
     /// </remarks>
+    /// <summary>
+    ///     A local's <c>=</c> before a lambda whose body is a call, under a declarator name of at most nine
+    ///     columns: the oracle never breaks it (#453).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on <c>Func&lt;T…&gt; name = () =&gt; Callee(x, y);</c> over type widths of 2 to 58,
+    ///     name widths of 1 to 49, the body's <c>(</c> at the head's end and at columns 80 and 100, and
+    ///     line ends of 121 to 150: no name of nine columns or fewer breaks the <c>=</c> in any cell. The
+    ///     arrow or the arguments take the break by Skala's own rules. Wider names break it by a rule that
+    ///     moves with the name, the type and the <c>(</c> separately, and that is not wired.
+    /// </remarks>
+    static bool KeepsTheEqualsBeforeALambdaCall(SyntaxNode node, ExpressionSyntax value) =>
+        value is LambdaExpressionSyntax { ExpressionBody: InvocationExpressionSyntax }
+        && node is EqualsValueClauseSyntax {
+            Parent: VariableDeclaratorSyntax {
+                Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: LocalDeclarationStatementSyntax }
+            } declarator
+        }
+        && declarator.Identifier.Span.Length <= 9;
+
     /// <summary>
     ///     A local's <c>=</c> before a lambda with a bare-name body: the gates its declarator's name and
     ///     type widths open (#558). See <see cref="LambdaLocal" />.

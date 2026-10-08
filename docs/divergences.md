@@ -2246,6 +2246,47 @@ name-width sweep at a fixed `(` column.
   `constructs/wrapping/lambda-parameters-before-the-arrow.cs`; the call body **blocked**, measured as
   above. The rule that would arm them is known to one constant and a three-column wander,
   both in [sk-div-preference-sweep.md](sk-div-preference-sweep.md).
+⚠ **Round 4 of #453: the type × name sweep, run. The narrow-name half is wired and the rest stays blocked.**
+
+Measured with `Testing ask` on `Func<T…> name = () => Callee(x, y);`, 10 828 cells over these dimensions:
+- type widths 2 to 58;
+- name widths 1 to 49, four apart;
+- line ends 121 to 150;
+- three placements of the body's `(`: right after a four-column callee (moving with the head), and fixed
+  at columns 80 and 100.
+
+What it settles:
+
+- **A name of nine columns or fewer never breaks the `=`**, in any cell of any grid. Skala broke it on most
+  of them. Wired as `BreakPlan.KeepsTheEqualsBeforeALambdaCall`, a single-declarator local with a call for
+  its lambda's body. The `=` now stays and the arrow or the arguments break by Skala's own rules. In the
+  three grids, Skala's narrow-name errors:
+
+  | `(` placement | errors before | errors after |
+  |---|---|---|
+  | after a four-column callee | 924 | 6 |
+  | column 80 | 856 | 298 |
+  | column 100 | at least 1 326 | 1 263 |
+
+  Pinned by `constructs/breaks/equals-kept-before-a-lambda-call.cs`.
+- **The `=` breaks only past two gates.** The first is a name of about 13 (a name of 9 never does, 13
+  does). The second is a type gate that moves with the `(`: types up to 22 at a `(` of 100 and up to 18
+  at 80 break it, and no wider type does, at any name up to 49. With the `(` right after a short callee,
+  the name gate moves to 29–33.
+- **How far the `=` reaches** (round 3's `g`) grows with the head but is not a function of it. At a head of
+  56 it is 20 columns with a type of 2 and 23 with a type of 22. At a `(` of 80 it is capped, and the cap
+  grows a column per four of type (12 to 16).
+- **For narrow names, the arrow against the arguments** is round 3's floor `F`. At a `(` of 80 the arrow
+  breaks while the arguments are narrower than 54, 56, 57, 59, 61 and 62 for heads of 20 to 40, four
+  apart. At a head of 44 it never breaks. At a `(` of 100 the arrow holds to a head of 76 and drops at 80.
+  The drop's position does not fit `max(65, p − 20)` at both columns: 44 against 60 at a `(` of 80.
+
+**What still blocks it:** the `=`'s gates and reach are functions of the name, the type and the `(`
+column separately, measured here at three `(` placements only. Its floor `F` and the drop are known only
+at the two fixed columns. A table that reproduces every measured cell needs the `(` swept one column at a
+time across the type × name plane, and that has not been done. Skala's remaining errors in these grids
+are the arrow-versus-arguments cells (`A` where Skala chops) and the `=` past the gates.
+
 ## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
 
 ReSharper ships nine keys that **suppress a class of edit** rather than choosing between two
