@@ -10683,8 +10683,9 @@ comment reached the pattern chain's frame, which paid a level the group had alre
 `=>`, not spent as a whole `if` condition. The frame now leaves the level to the group whenever the chain
 has one (`Frame.HoldsLevel`). Found beside it and not this: `node.Any(static n => n is A` / `or B` / `or C)` —
 a pattern chain that is a sole lambda's body — puts the `or`s one level past the oracle's, comment or no
-comment, the call chain's SK-DIV-0184 row in pattern form.
+comment, the call chain's SK-DIV-0184 row in pattern form — fixed on master meanwhile by group F's #566,
+and with a comment in it too once merged with this.
 
 - options: none.
-- ⚠ status: **resolved** (#584); the sole-lambda row is open. Pinned by
+- ⚠ status: **resolved** (#584; the sole-lambda row by #566). Pinned by
   `constructs/syntax/comment-in-a-pattern-chain.cs` and `CommentInAPatternChainIssue584Tests`.
