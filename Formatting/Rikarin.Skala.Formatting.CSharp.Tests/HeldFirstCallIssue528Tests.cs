@@ -1,3 +1,5 @@
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
+
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
@@ -7,43 +9,49 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     holds the wider set.
 /// </summary>
 public sealed class HeldFirstCallIssue528Tests {
+    const string Long1 = "var x = source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, g"
+        + "ammaArgumentValuexxxxx)!.Where(beta).ToList();";
+
+    const string Long2 = "var x = source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, g"
+        + "ammaArgumentValuexxxxx)!";
+
     /// <summary>Before the fix: <c>….Select(</c> / <c>alpha</c> / <c>)</c> / <c>.Where(b);</c>.</summary>
     [Fact]
     public void AFirstCallThatDoesNotFit_MovesDown() =>
         Oracle.Agrees(
-            """
-            class T {
-                void M() {
-                    var y6 = sourceWithAVeryLongNameeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.Select(alpha).Where(b);
-                    var x = source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValuexxxxx)!.Where(beta).ToList();
-                }
-            }
-            """,
-            """
-            class T {
-                void M() {
-                    var y6 = sourceWithAVeryLongNameeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-                        .Select(alpha)
-                        .Where(b);
-                    var x = source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValuexxxxx)!
-                        .Where(beta)
-                        .ToList();
-                }
-            }
-            """
+            $$"""
+              class T {
+                  void M() {
+                      var y6 = sourceWithAVeryLongNam{{R('e', 70)}}.Select(alpha).Where(b);
+                      {{Long1}}
+                  }
+              }
+              """,
+            $$"""
+              class T {
+                  void M() {
+                      var y6 = sourceWithAVeryLongNam{{R('e', 70)}}
+                          .Select(alpha)
+                          .Where(b);
+                      {{Long2}}
+                          .Where(beta)
+                          .ToList();
+                  }
+              }
+              """
         );
 
     /// <summary>The control: a call whose line below would be wide is held and its arguments chopped.</summary>
     [Fact]
     public void AWideFirstCall_IsHeldAndChopped() =>
         Oracle.Agrees(
-            """
-            class T {
-                void M() {
-                    var y = ssssssssssssssssssssssssssssssssssssssssssssssssssssssss.Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
-                }
-            }
-            """,
+            $$"""
+              class T {
+                  void M() {
+                      var y = {{R('s', 56)}}.Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
+                  }
+              }
+              """,
             """
             class T {
                 void M() {
@@ -65,17 +73,17 @@ public sealed class HeldFirstCallIssue528Tests {
     [Fact]
     public void TheFiveResidueGridRows_BreakBeforeTheCall() =>
         Oracle.Agrees(
-            """
-            class T {
-                void M() {
-                    var y = ssssssssssssssss.Select(bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
-                    var y = ssssssssssssssssssssssssssssssssssss.Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
-                    var y = ssssssssssssssssssssssssssssssssssss.Select(bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
-                    var y = ssssssssssssssssssssssssssssssssssss.Select(bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
-                    var y = ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
-                }
-            }
-            """,
+            $$"""
+              class T {
+                  void M() {
+                      var y = ssssssssssssssss.Select({{R('b', 85)}}).Where(b);
+                      var y = ssssssssssssssssssssssssssssssssssss.Select(aaaaaaaaaaaaaaaaaaa, {{R('b', 40)}}).Where(b);
+                      var y = ssssssssssssssssssssssssssssssssssss.Select({{R('b', 79)}}).Where(b);
+                      var y = ssssssssssssssssssssssssssssssssssss.Select({{R('b', 85)}}).Where(b);
+                      var y = {{R('s', 76)}}.Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(b);
+                  }
+              }
+              """,
             """
             class T {
                 void M() {

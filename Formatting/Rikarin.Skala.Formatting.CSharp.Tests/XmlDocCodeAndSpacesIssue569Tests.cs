@@ -65,12 +65,14 @@ public sealed class XmlDocCodeAndSpacesIssue569Tests {
         Assert.Equal(
             [
                 "/// <returns>",
-                "///     <see langword=\"true\" /> if the specified object  is equal to the current object; otherwise,",
-                "///     <see langword=\"false\" />.", "/// </returns>"
+                """///     <see langword="true" /> if the specified object  is equal to the current object; """
+                + "otherwise,",
+                """///     <see langword="false" />.""", "/// </returns>"
             ],
             Doc(
                 "/// <returns>",
-                "/// <see langword=\"true\" /> if the specified object  is equal to the current object; otherwise, <see langword=\"false\" />.",
+                """/// <see langword="true" /> if the specified object  is equal """
+                + """to the current object; otherwise, <see langword="false" />.""",
                 "/// </returns>"
             )
         );

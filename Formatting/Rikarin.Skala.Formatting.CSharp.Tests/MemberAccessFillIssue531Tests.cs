@@ -5,6 +5,15 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     output, measured 2026-10-08 with <c>Testing ask</c>.
 /// </summary>
 public sealed class MemberAccessFillIssue531Tests {
+    const string Long3 = "Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd.Mo"
+        + "rexxxxValue => yyyyyyyyyyyyy,";
+
+    const string Long1 = "Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd.Mo"
+        + "rexxxxxxxxxxxValue => yyyyyyyyyyy.Z,";
+
+    const string Long2 = "Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd.Mo"
+        + "rexxxxxxxxxxxxxxxxxxxxValueeeeee => yyyyyyyyyyyyyyyyyy,";
+
     const string Head = "Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd";
 
     /// <summary>
@@ -73,17 +82,17 @@ public sealed class MemberAccessFillIssue531Tests {
     [Fact]
     public void TheArmRows_FollowTheArmsTable() =>
         Oracle.Agrees(
-            """
-            class T {
-                object N(object o) =>
-                    o switch {
-                        Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd.MorexxxxValue => yyyyyyyyyyyyy,
-                        Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd.MorexxxxxxxxxxxValue => yyyyyyyyyyy.Z,
-                        Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd.MorexxxxxxxxxxxxxxxxxxxxValueeeeee => yyyyyyyyyyyyyyyyyy,
-                        _ => 0
-                    };
-            }
-            """,
+            $$"""
+              class T {
+                  object N(object o) =>
+                      o switch {
+                          {{Long3}}
+                          {{Long1}}
+                          {{Long2}}
+                          _ => 0
+                      };
+              }
+              """,
             """
             class T {
                 object N(object o) =>

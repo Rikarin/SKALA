@@ -1,13 +1,13 @@
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #475, SK-DIV-0350: a parameter&apos;s run of two or more attribute sections is one line, or every section and
-///     the parameter on lines of their own. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the
-///     input under
-///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
+///     Issue #475, SK-DIV-0350: a parameter's run of two or more attribute sections is one line, or every section and
+///     the parameter on lines of their own. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for
+///     the input under <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class AttributeRunIssue475Tests {
     /// <summary>The oracle's answer under the repository's export with <paramref name="overrides" /> on top.</summary>
@@ -31,197 +31,197 @@ public sealed class AttributeRunIssue475Tests {
     }
 
     /// <summary>
-    ///     #475: once one section spans lines, by an author&apos;s break or by width, first, last or in the middle, every
+    ///     #475: once one section spans lines, by an author's break or by width, first, last or in the middle, every
     ///     gap after a section breaks.
     /// </summary>
     [Fact]
     public void ASectionSpanningLines_PutsEverySectionAndTheParameterOnItsOwnLine() =>
         Agrees(
-            """
-            class C {
-                void M([Description("aaaaaaaaaaaaaaaaaaaaaaa",
-            "bbbbbbbbbbbbbbbbb")] [Obsolete] int a) { }
-            }
+            $$"""
+              class C {
+                  void M([Description("aaaaaaaaaaaaaaaaaaaaaaa",
+              "bbbbbbbbbbbbbbbbb")] [Obsolete] int a) { }
+              }
 
-            class C {
-                void M([Obsolete] [Description("aaaaaaaaaaaaaaaaaaaaaaa",
-            "bbbbbbbbbbbbbbbbb")] int a) { }
-            }
+              class C {
+                  void M([Obsolete] [Description("aaaaaaaaaaaaaaaaaaaaaaa",
+              "bbbbbbbbbbbbbbbbb")] int a) { }
+              }
 
-            class C {
-                void M([Description("aaaaaaaaaaaaaaaaaaaaaaa",
-            "bbbbbbbbbbbbbbbbb")] [Obsolete] [Serializable] int a) { }
-            }
+              class C {
+                  void M([Description("aaaaaaaaaaaaaaaaaaaaaaa",
+              "bbbbbbbbbbbbbbbbb")] [Obsolete] [Serializable] int a) { }
+              }
 
-            class C {
-                void M(int b, [Description("aaaaaaaaaaaaaaaaaaaaaaa",
-            "bbbbbbbbbbbbbbbbb")] [Obsolete] int a) { }
-            }
+              class C {
+                  void M(int b, [Description("aaaaaaaaaaaaaaaaaaaaaaa",
+              "bbbbbbbbbbbbbbbbb")] [Obsolete] int a) { }
+              }
 
-            class C {
-                void M([Description("aaaaaaaaaaaaaaaaaaaaaaa",
-            "bbbbbbbbbbbbbbbbb")] [Obsolete] ref int a, int b) { }
-            }
+              class C {
+                  void M([Description("aaaaaaaaaaaaaaaaaaaaaaa",
+              "bbbbbbbbbbbbbbbbb")] [Obsolete] ref int a, int b) { }
+              }
 
-            class C {
-                void M([Description("aaaaaaaaaaaaaaaaaaaaaaa",
-            "bbbbbbbbbbbbbbbbb")][Obsolete] int a) { }
-            }
+              class C {
+                  void M([Description("aaaaaaaaaaaaaaaaaaaaaaa",
+              "bbbbbbbbbbbbbbbbb")][Obsolete] int a) { }
+              }
 
-            class C {
-                void M([Description("aaaaaaaaaaaaaaaaaaaaaaa",
-            "bbbbbbbbbbbbbbbbb")] [Obsolete]
-             int a) { }
-            }
+              class C {
+                  void M([Description("aaaaaaaaaaaaaaaaaaaaaaa",
+              "bbbbbbbbbbbbbbbbb")] [Obsolete]
+               int a) { }
+              }
 
-            class C {
-                void M(int b, [Description("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")] [Obsolete] int a) { }
-            }
+              class C {
+                  void M(int b, [Description("{{R('a', 100)}}")] [Obsolete] int a) { }
+              }
 
-            class C {
-                void M(int b, [Obsolete] [Description("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")] int a) { }
-            }
+              class C {
+                  void M(int b, [Obsolete] [Description("{{R('a', 100)}}")] int a) { }
+              }
 
-            class C {
-                void M([Obsolete] [Description("aaaaaaaaaaaaaaaaaaaaaaa",
-            "bbbbbbbbbbbbbbbbb")] [Serializable] int a) { }
-            }
+              class C {
+                  void M([Obsolete] [Description("aaaaaaaaaaaaaaaaaaaaaaa",
+              "bbbbbbbbbbbbbbbbb")] [Serializable] int a) { }
+              }
 
-            class C {
-                void M() {
-                    var f = ([Description("aaaaaaaaaaaaaaaaaaaaaaa",
-            "bbbbbbbbbbbbbbbbb")] [Obsolete] int a) => a;
-                }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    [Description(
-                        "aaaaaaaaaaaaaaaaaaaaaaa",
-                        "bbbbbbbbbbbbbbbbb"
-                    )]
-                    [Obsolete]
-                    int a
-                ) { }
-            }
+              class C {
+                  void M() {
+                      var f = ([Description("aaaaaaaaaaaaaaaaaaaaaaa",
+              "bbbbbbbbbbbbbbbbb")] [Obsolete] int a) => a;
+                  }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      [Description(
+                          "aaaaaaaaaaaaaaaaaaaaaaa",
+                          "bbbbbbbbbbbbbbbbb"
+                      )]
+                      [Obsolete]
+                      int a
+                  ) { }
+              }
 
-            class C {
-                void M(
-                    [Obsolete]
-                    [Description(
-                        "aaaaaaaaaaaaaaaaaaaaaaa",
-                        "bbbbbbbbbbbbbbbbb"
-                    )]
-                    int a
-                ) { }
-            }
+              class C {
+                  void M(
+                      [Obsolete]
+                      [Description(
+                          "aaaaaaaaaaaaaaaaaaaaaaa",
+                          "bbbbbbbbbbbbbbbbb"
+                      )]
+                      int a
+                  ) { }
+              }
 
-            class C {
-                void M(
-                    [Description(
-                        "aaaaaaaaaaaaaaaaaaaaaaa",
-                        "bbbbbbbbbbbbbbbbb"
-                    )]
-                    [Obsolete]
-                    [Serializable]
-                    int a
-                ) { }
-            }
+              class C {
+                  void M(
+                      [Description(
+                          "aaaaaaaaaaaaaaaaaaaaaaa",
+                          "bbbbbbbbbbbbbbbbb"
+                      )]
+                      [Obsolete]
+                      [Serializable]
+                      int a
+                  ) { }
+              }
 
-            class C {
-                void M(
-                    int b,
-                    [Description(
-                        "aaaaaaaaaaaaaaaaaaaaaaa",
-                        "bbbbbbbbbbbbbbbbb"
-                    )]
-                    [Obsolete]
-                    int a
-                ) { }
-            }
+              class C {
+                  void M(
+                      int b,
+                      [Description(
+                          "aaaaaaaaaaaaaaaaaaaaaaa",
+                          "bbbbbbbbbbbbbbbbb"
+                      )]
+                      [Obsolete]
+                      int a
+                  ) { }
+              }
 
-            class C {
-                void M(
-                    [Description(
-                        "aaaaaaaaaaaaaaaaaaaaaaa",
-                        "bbbbbbbbbbbbbbbbb"
-                    )]
-                    [Obsolete]
-                    ref int a,
-                    int b
-                ) { }
-            }
+              class C {
+                  void M(
+                      [Description(
+                          "aaaaaaaaaaaaaaaaaaaaaaa",
+                          "bbbbbbbbbbbbbbbbb"
+                      )]
+                      [Obsolete]
+                      ref int a,
+                      int b
+                  ) { }
+              }
 
-            class C {
-                void M(
-                    [Description(
-                        "aaaaaaaaaaaaaaaaaaaaaaa",
-                        "bbbbbbbbbbbbbbbbb"
-                    )]
-                    [Obsolete]
-                    int a
-                ) { }
-            }
+              class C {
+                  void M(
+                      [Description(
+                          "aaaaaaaaaaaaaaaaaaaaaaa",
+                          "bbbbbbbbbbbbbbbbb"
+                      )]
+                      [Obsolete]
+                      int a
+                  ) { }
+              }
 
-            class C {
-                void M(
-                    [Description(
-                        "aaaaaaaaaaaaaaaaaaaaaaa",
-                        "bbbbbbbbbbbbbbbbb"
-                    )]
-                    [Obsolete]
-                    int a
-                ) { }
-            }
+              class C {
+                  void M(
+                      [Description(
+                          "aaaaaaaaaaaaaaaaaaaaaaa",
+                          "bbbbbbbbbbbbbbbbb"
+                      )]
+                      [Obsolete]
+                      int a
+                  ) { }
+              }
 
-            class C {
-                void M(
-                    int b,
-                    [Description(
-                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                    )]
-                    [Obsolete]
-                    int a
-                ) { }
-            }
+              class C {
+                  void M(
+                      int b,
+                      [Description(
+                          "{{R('a', 100)}}"
+                      )]
+                      [Obsolete]
+                      int a
+                  ) { }
+              }
 
-            class C {
-                void M(
-                    int b,
-                    [Obsolete]
-                    [Description(
-                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                    )]
-                    int a
-                ) { }
-            }
+              class C {
+                  void M(
+                      int b,
+                      [Obsolete]
+                      [Description(
+                          "{{R('a', 100)}}"
+                      )]
+                      int a
+                  ) { }
+              }
 
-            class C {
-                void M(
-                    [Obsolete]
-                    [Description(
-                        "aaaaaaaaaaaaaaaaaaaaaaa",
-                        "bbbbbbbbbbbbbbbbb"
-                    )]
-                    [Serializable]
-                    int a
-                ) { }
-            }
+              class C {
+                  void M(
+                      [Obsolete]
+                      [Description(
+                          "aaaaaaaaaaaaaaaaaaaaaaa",
+                          "bbbbbbbbbbbbbbbbb"
+                      )]
+                      [Serializable]
+                      int a
+                  ) { }
+              }
 
-            class C {
-                void M() {
-                    var f = (
-                        [Description(
-                            "aaaaaaaaaaaaaaaaaaaaaaa",
-                            "bbbbbbbbbbbbbbbbb"
-                        )]
-                        [Obsolete]
-                        int a
-                    ) => a;
-                }
-            }
-            """
+              class C {
+                  void M() {
+                      var f = (
+                          [Description(
+                              "aaaaaaaaaaaaaaaaaaaaaaa",
+                              "bbbbbbbbbbbbbbbbb"
+                          )]
+                          [Obsolete]
+                          int a
+                      ) => a;
+                  }
+              }
+              """
         );
 
     /// <summary>
@@ -231,69 +231,69 @@ public sealed class AttributeRunIssue475Tests {
     [Fact]
     public void SectionsThatFitTogether_StayTogether() =>
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")] [Description("dddddddddddddddddddddddddddddddddddddddddddddddddd")] int a) { }
-            }
+            $$"""
+              class C {
+                  void M(int b, [Obsolete("{{R('a', 50)}}")] [Description("{{R('d', 50)}}")] int a) { }
+              }
 
-            class C {
-                void M(int b, [Obsolete] [Serializable] Dictionary<string, List<int>> pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp) { }
-            }
+              class C {
+                  void M(int b, [Obsolete] [Serializable] Dictionary<string, List<int>> {{R('p', 80)}}) { }
+              }
 
-            class C {
-                void M(int b, [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")] [Serializable] int a) { }
-            }
+              class C {
+                  void M(int b, [Obsolete("{{R('a', 75)}}")] [Serializable] int a) { }
+              }
 
-            class C {
-                void M([Obsolete]
-            [Serializable] int a) { }
-            }
+              class C {
+                  void M([Obsolete]
+              [Serializable] int a) { }
+              }
 
-            class C {
-                void M([Obsolete] [Serializable]
-            int a) { }
-            }
+              class C {
+                  void M([Obsolete] [Serializable]
+              int a) { }
+              }
 
-            class C {
-                void M([Obsolete] [Serializable] int a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
-                    [Description("dddddddddddddddddddddddddddddddddddddddddddddddddd")]
-                    int a
-                ) { }
-            }
+              class C {
+                  void M([Obsolete] [Serializable] int a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
+                      [Description("dddddddddddddddddddddddddddddddddddddddddddddddddd")]
+                      int a
+                  ) { }
+              }
 
-            class C {
-                void M(
-                    int b,
-                    [Obsolete] [Serializable]
-                    Dictionary<string, List<int>> pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp
-                ) { }
-            }
+              class C {
+                  void M(
+                      int b,
+                      [Obsolete] [Serializable]
+                      Dictionary<string, List<int>> {{R('p', 80)}}
+                  ) { }
+              }
 
-            class C {
-                void M(
-                    int b,
-                    [Obsolete("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")] [Serializable] int a
-                ) { }
-            }
+              class C {
+                  void M(
+                      int b,
+                      [Obsolete("{{R('a', 75)}}")] [Serializable] int a
+                  ) { }
+              }
 
-            class C {
-                void M([Obsolete] [Serializable] int a) { }
-            }
+              class C {
+                  void M([Obsolete] [Serializable] int a) { }
+              }
 
-            class C {
-                void M([Obsolete] [Serializable] int a) { }
-            }
+              class C {
+                  void M([Obsolete] [Serializable] int a) { }
+              }
 
-            class C {
-                void M([Obsolete] [Serializable] int a) { }
-            }
-            """
+              class C {
+                  void M([Obsolete] [Serializable] int a) { }
+              }
+              """
         );
 }

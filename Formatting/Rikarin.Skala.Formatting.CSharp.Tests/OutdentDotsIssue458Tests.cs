@@ -41,7 +41,8 @@ public sealed class OutdentDotsIssue458Tests {
     /// </summary>
     [Theory]
     [InlineData(
-        "var result = someCollectionOfThingsHere?.WhereEnabled()?.SelectName(item => item.Name).OrderByName(name => name).ToList();",
+        "var result = someCollectionOfThingsHere?.WhereEnabled()?.SelectName(item "
+        + "=> item.Name).OrderByName(name => name).ToList();",
         """
         var result = someCollectionOfThingsHere?.WhereEnabled()
                   ?.SelectName(item => item.Name)
@@ -50,7 +51,8 @@ public sealed class OutdentDotsIssue458Tests {
         """
     )]
     [InlineData(
-        "var result3 = someCollectionOfThingsHere.WhereEnabled()?.SelectName(item => item.Name)?.OrderByName(name => name).Count;",
+        "var result3 = someCollectionOfThingsHere.WhereEnabled()?.SelectName(item "
+        + "=> item.Name)?.OrderByName(name => name).Count;",
         """
         var result3 = someCollectionOfThingsHere.WhereEnabled()
                   ?.SelectName(item => item.Name)
@@ -59,7 +61,8 @@ public sealed class OutdentDotsIssue458Tests {
         """
     )]
     [InlineData(
-        "var result5 = someCollectionOfThingsHere.Where(c => c.IsEnabled).Select(c => c.Name).OrderBy(n => n).ToList()?.Count;",
+        "var result5 = someCollectionOfThingsHere.Where(c => "
+        + "c.IsEnabled).Select(c => c.Name).OrderBy(n => n).ToList()?.Count;",
         """
         var result5 = someCollectionOfThingsHere.Where(c => c.IsEnabled)
                    .Select(c => c.Name)

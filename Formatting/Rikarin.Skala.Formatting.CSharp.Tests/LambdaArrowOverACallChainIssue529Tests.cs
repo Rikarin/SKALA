@@ -7,6 +7,18 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     the wider set.
 /// </summary>
 public sealed class LambdaArrowOverACallChainIssue529Tests {
+    const string Long4 = "Use(x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, "
+        + "gamxaaaaaaaaaaaaaaaaaaaaaaaaaaa)";
+
+    const string Long1 = "var r = items.Where(x => source.Select(alphaArgumentValueNumberOne, betaArgument"
+        + "ValueNumberTwo, gamxaaaaaaaaaaa).Any(predicateValue));";
+
+    const string Long2 = "Use(x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, "
+        + "gamxaaaaaaaaaaaaaaaaaaaaaaaaaaa).Where(predicateValue));";
+
+    const string Long3 = "source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaa"
+        + "aaaaaa).Any(predicateValue)";
+
     /// <summary>
     ///     Before the fix: <c>items.Where(x =&gt; source.Select(…)</c> / <c>.Any(predicateValue)</c>. The
     ///     control keeps the arrow because the chain does not fit below either.
@@ -14,25 +26,25 @@ public sealed class LambdaArrowOverACallChainIssue529Tests {
     [Fact]
     public void AChainThatFitsBelow_MovesDownWhole() =>
         Oracle.Agrees(
-            """
-            class T {
-                void N() {
-                    var r = items.Where(x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaaaaaaaa).Any(predicateValue));
-                    Use(x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaaaaaaaaaaaaaaaaaaaaaaaa).Where(predicateValue));
-                }
-            }
-            """,
-            """
-            class T {
-                void N() {
-                    var r = items.Where(x =>
-                        source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaaaaaaaa).Any(predicateValue)
-                    );
-                    Use(x => source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gamxaaaaaaaaaaaaaaaaaaaaaaaaaaa)
-                        .Where(predicateValue)
-                    );
-                }
-            }
-            """
+            $$"""
+              class T {
+                  void N() {
+                      {{Long1}}
+                      {{Long2}}
+                  }
+              }
+              """,
+            $$"""
+              class T {
+                  void N() {
+                      var r = items.Where(x =>
+                          {{Long3}}
+                      );
+                      {{Long4}}
+                          .Where(predicateValue)
+                      );
+                  }
+              }
+              """
         );
 }

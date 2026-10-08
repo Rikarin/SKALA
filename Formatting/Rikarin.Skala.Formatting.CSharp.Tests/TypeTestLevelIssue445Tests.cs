@@ -9,9 +9,14 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     asserts the second pass too.
 /// </summary>
 public sealed class TypeTestLevelIssue445Tests {
-    const string Long1 = "Microsoft.CodeAnalysis.CSharp.Syntax.Argument" + "Syntax";
-    const string Long2 = "collection.Parent.SomeVeryLongPropertyNameXYZ" + "WVUTSRQPONMLKJIHGFEDCBA";
-    const string Long3 = "collection.Parent.SomeVeryLongPropertyNameXYZ" + "WVUTSRQPONMLKJIHGFEDCBA_AndMoreAndMore";
+    const string Long4 = "&& Compute(alphaArgumentValue, betaArgumentValue, gammaArgumentValue, deltaArgum"
+        + "entValueXYZ) is SomeLongType;";
+
+    const string Long1 = "Microsoft.CodeAnalysis.CSharp.Syntax.ArgumentSyntax";
+    const string Long2 = "collection.Parent.SomeVeryLongPropertyNameXYZWVUTSRQPONMLKJIHGFEDCBA";
+
+    const string Long3 = "collection.Parent.SomeVeryLongPropertyNameXYZWVUTSRQPONMLKJIHGFEDCBA_AndMoreAndM"
+        + "ore";
 
     /// <summary>
     ///     A kept or added break around <c>is</c> lands one level past the operand's line: in a lambda that
@@ -48,7 +53,7 @@ public sealed class TypeTestLevelIssue445Tests {
                               beta)
                           is string;
                       bool a8 = flag
-                          && Compute(alphaArgumentValue, betaArgumentValue, gammaArgumentValue, deltaArgumentValueXYZ) is SomeLongType;
+                          {{Long4}}
                   }
 
                   bool P(object o) => o

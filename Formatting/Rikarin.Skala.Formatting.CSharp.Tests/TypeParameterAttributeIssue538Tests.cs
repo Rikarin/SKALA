@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
@@ -93,16 +94,16 @@ public sealed class TypeParameterAttributeIssue538Tests {
             """
         );
         Agrees(
-            """
-            class C<[Description("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")] T> { }
-            """,
-            """
-            class C<
-                [Description(
-                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                )]
-                T> { }
-            """
+            $$"""
+              class C<[Description("{{R('a', 120)}}")] T> { }
+              """,
+            $$"""
+              class C<
+                  [Description(
+                      "{{R('a', 120)}}"
+                  )]
+                  T> { }
+              """
         );
         Agrees(
             """

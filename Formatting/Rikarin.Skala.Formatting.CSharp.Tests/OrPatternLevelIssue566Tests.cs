@@ -6,6 +6,24 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>jb cleanupcode</c>'s own output, measured 2026-10-09 with <c>Testing ask</c>.
 /// </summary>
 public sealed class OrPatternLevelIssue566Tests {
+    const string Long1 = "var b = node.ArgumentList.DescendantNodes().Any(static node => node is Anonymous"
+        + "FunctionExpressionSyntax or InitializerExpressionSyntax or AnonymousObjectCreati"
+        + "onExpressionSyntax);";
+
+    const string Long2 = "Use(x => x is AnonymousFunctionExpressionSyntax or InitializerExpressionSyntax o"
+        + "r AnonymousObjectCreationExpressionSyntaxxxx);";
+
+    const string Long3 = "Use(first, x => x is AnonymousFunctionExpressionSyntax or InitializerExpressionS"
+        + "yntax or AnonymousObjectCreationExpression);";
+
+    const string Long4 = "var g = token.Kind() is SyntaxKind.DotToken or SyntaxKind.QuestionToken or Synta"
+        + "xKind.CloseParenToken or SyntaxKind.CloseBracketToken || previous.Kind() is Synt"
+        + "axKind.OpenParenToken or SyntaxKind.OpenBracketToken;";
+
+    const string Long5 = "return token.Kind() is SyntaxKind.DotToken or SyntaxKind.QuestionToken or Syntax"
+        + "Kind.CloseParenToken or SyntaxKind.CloseBracketToken || previous.Kind() is Synta"
+        + "xKind.OpenParenToken;";
+
     /// <summary>
     ///     A sole lambda argument kept on the call's line puts its <c>or</c>s one level past that line, as an
     ///     <c>&amp;&amp;</c> body does; among other arguments the lambda's own line is the base. Before the fix the
@@ -14,15 +32,15 @@ public sealed class OrPatternLevelIssue566Tests {
     [Fact]
     public void ASoleLambdasPatternChain_TakesOneLevel() =>
         Oracle.Agrees(
-            """
-            class T {
-                void M() {
-                    var b = node.ArgumentList.DescendantNodes().Any(static node => node is AnonymousFunctionExpressionSyntax or InitializerExpressionSyntax or AnonymousObjectCreationExpressionSyntax);
-                    Use(x => x is AnonymousFunctionExpressionSyntax or InitializerExpressionSyntax or AnonymousObjectCreationExpressionSyntaxxxx);
-                    Use(first, x => x is AnonymousFunctionExpressionSyntax or InitializerExpressionSyntax or AnonymousObjectCreationExpression);
-                }
-            }
-            """,
+            $$"""
+              class T {
+                  void M() {
+                      {{Long1}}
+                      {{Long2}}
+                      {{Long3}}
+                  }
+              }
+              """,
             """
             class T {
                 void M() {
@@ -53,14 +71,14 @@ public sealed class OrPatternLevelIssue566Tests {
     [Fact]
     public void APatternChainBeforeAnOr_TakesALevelPastIt() =>
         Oracle.Agrees(
-            """
-            class T {
-                bool M(SyntaxToken token, SyntaxToken previous) {
-                    var g = token.Kind() is SyntaxKind.DotToken or SyntaxKind.QuestionToken or SyntaxKind.CloseParenToken or SyntaxKind.CloseBracketToken || previous.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
-                    return token.Kind() is SyntaxKind.DotToken or SyntaxKind.QuestionToken or SyntaxKind.CloseParenToken or SyntaxKind.CloseBracketToken || previous.Kind() is SyntaxKind.OpenParenToken;
-                }
-            }
-            """,
+            $$"""
+              class T {
+                  bool M(SyntaxToken token, SyntaxToken previous) {
+                      {{Long4}}
+                      {{Long5}}
+                  }
+              }
+              """,
             """
             class T {
                 bool M(SyntaxToken token, SyntaxToken previous) {
