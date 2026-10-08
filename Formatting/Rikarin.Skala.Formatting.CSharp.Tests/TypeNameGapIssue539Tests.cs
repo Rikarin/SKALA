@@ -484,4 +484,50 @@ public sealed class TypeNameGapIssue539Tests {
             """
         );
     }
+
+    /// <summary>
+    ///     #539 round three: the oracle measures the header as if <c>{ }</c> ended it: with a member inside, the name breaks while the line through the <c>{</c> is 122 columns and not at 123.
+    /// </summary>
+    [Fact]
+    public void ABodyBelowTheBrace_CountsAsIfItsBraceFollowed() {
+        Agrees(
+            """
+            public class Nnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggg {
+                int x;
+            }
+            """,
+            """
+            public class
+                Nnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggggg {
+                int x;
+            }
+            """
+        );
+        Agrees(
+            """
+            public class Nnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue, IGammaggggggggggggggggggggggggggggggggggggggggggggggggg {
+                int x;
+            }
+            """,
+            """
+            public class Nnnnnnnnnnnnnnnnnnnnnnnn : IAlphaInterfaceNameValue,
+                IGammaggggggggggggggggggggggggggggggggggggggggggggggggg {
+                int x;
+            }
+            """
+        );
+        Agrees(
+            """
+            public abstract partial class Nnnnnnnnnn : IAlphaInterfaceNameValue, IGammagggggggggggggggggggggggggggggggggggggggggggggg {
+                int x;
+            }
+            """,
+            """
+            public abstract partial class Nnnnnnnnnn : IAlphaInterfaceNameValue,
+                IGammagggggggggggggggggggggggggggggggggggggggggggggg {
+                int x;
+            }
+            """
+        );
+    }
 }

@@ -2592,6 +2592,12 @@ public sealed class BreakPlan {
         Point(name, group);
         var loneBase = type is { ParameterList: null, TypeParameterList: null, BaseList.Types.Count: 1 };
 
+        // ⚠ The oracle measures the header as if its body's ` }` followed the `{` even when the body has
+        // members and the brace goes below: with `int x;` inside, the name breaks while the line through the
+        // `{` is 122 columns at most, two fewer than with `{ }`. Skala's measure stops at the `{` there, so
+        // both limits are taken two columns in (round three, SK-DIV-0353).
+        var unwrittenBrace = type.Members.Count > 0 ? 2 : 0;
+
         // ⚠ What the name's break competes with decides whether a short name gives way (round three): the
         // base list's first comma behind no type parameter list, or the type parameter list's own first comma
         // when there is no base list. Each is weighed by the width of the item before that comma, capped.
@@ -2610,9 +2616,9 @@ public sealed class BreakPlan {
                 BreaksIfTooLong: true,
                 MeasuresHead: true,
                 PrefersOuterBreak: true,
-                JoinedOverflow: loneBase ? 8 : 4,
+                JoinedOverflow: (loneBase ? 8 : 4) - unwrittenBrace,
                 NameWidth: floor is null ? -1 : name.Span.Length,
-                NameFloor: floor ?? 0,
+                NameFloor: (floor ?? 0) - 8 * unwrittenBrace,
 
                 // ⚠ Behind a bare keyword the oracle never moves the name down for a list's sake — not up to
                 // a 76-letter name before two interfaces — only when the name itself runs past the margin,
