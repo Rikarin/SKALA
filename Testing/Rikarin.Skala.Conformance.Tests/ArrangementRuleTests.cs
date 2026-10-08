@@ -1006,6 +1006,109 @@ public sealed class ArrangementRuleTests {
         Assert.Contains("One(new());", arranged, StringComparison.Ordinal);
     }
 
+    /// <summary>The probe #524's rows are asked of: a <c>new</c> as the value of a lambda.</summary>
+    const string LambdaProbe = """
+                               using System;
+                               using System.Linq.Expressions;
+                               using System.Threading.Tasks;
+
+                               namespace P;
+
+                               public class Foo { public Foo() { } public Foo(int x) { } }
+                               public class Bar { }
+
+                               public class C {
+                                   static void TakeFunc(Func<Foo> f) { }
+                                   static void TakeArg(Func<int, Foo> f) { }
+                                   static void Over(Func<Foo> f) { }
+                                   static void Over(Func<Bar> f) { }
+                                   static void Gen<T>(Func<T> f) { }
+                                   static void TakeExpr(Expression<Func<Foo>> e) { }
+                                   static void TakeObj(Func<object> f) { }
+                                   static void TakeAsync(Func<Task<Foo>> f) { }
+
+                                   Func<Foo> _field = () => new Foo();
+                                   Func<Foo> Property => () => new Foo();
+
+                                   Foo Plain() {
+                                       Func<Foo> local = () => new Foo(1);
+                                       return local();
+                                   }
+
+                                   void M() {
+                                       TakeFunc(() => new Foo());
+                                       TakeArg(x => new Foo(x));
+                                       Over(() => new Foo());
+                                       Gen(() => new Foo());
+                                       Gen<Foo>(() => new Foo());
+                                       TakeExpr(() => new Foo());
+                                       TakeObj(() => new Foo());
+                                       TakeAsync(async () => new Foo());
+                                       TakeFunc(() => { return new Foo(); });
+                                       TakeFunc(delegate { return new Foo(); });
+                                       var inferred = () => new Foo();
+                                       Func<Foo> assigned;
+                                       assigned = () => new Foo();
+                                       Task.Run(() => new Foo());
+                                       Console.WriteLine(inferred() + "" + assigned());
+                                   }
+                               }
+                               """;
+
+    /// <summary>
+    ///     #524: a <c>new</c> that a lambda returns is target-typed when the delegate's return type is fixed
+    ///     from outside the lambda. Each row is the oracle's answer under <c>SkalaCleanup</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("Func<Foo> _field = () => new();")]
+    [InlineData("Func<Foo> Property => () => new();")]
+    [InlineData("TakeFunc(() => new());")]
+    [InlineData("TakeArg(x => new(x));")]
+    [InlineData("Gen<Foo>(() => new());")]
+    [InlineData("TakeExpr(() => new());")]
+    [InlineData("TakeAsync(async () => new());")]
+    [InlineData("TakeFunc(() => { return new(); });")]
+    [InlineData("TakeFunc(delegate { return new(); });")]
+    [InlineData("assigned = () => new();")]
+    public void ObjectCreation_ALambdaValueIsTargetTyped(string expected) {
+        var arranged = Declined(Attempt(LambdaProbe, ArrangeIds.ObjectCreation));
+        Assert.Contains(expected, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     #524's refusals: the lambda's return type is read off the very body being rewritten, or the
+    ///     call would bind something else. The oracle leaves every one as written.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>return local();</c>'s method is the control for the old behaviour that stopped at a lambda:
+    ///     the method's own <c>Foo</c> return type must not be read for a <c>return</c> inside a lambda.
+    /// </remarks>
+    [Theory]
+    [InlineData("Over(() => new Foo());")]
+    [InlineData("Gen(() => new Foo());")]
+    [InlineData("TakeObj(() => new Foo());")]
+    [InlineData("var inferred = () => new Foo();")]
+    [InlineData("Task.Run(() => new Foo());")]
+    public void ObjectCreation_ALambdaWhoseTypeComesFromItsBody_KeepsItsType(string kept) {
+        var arranged = Declined(Attempt(LambdaProbe, ArrangeIds.ObjectCreation));
+        Assert.Contains(kept, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>⚠ #524: a lambda's value is <c>when_type_not_evident</c>'s, its block <c>return</c> included.</summary>
+    [Fact]
+    public void ObjectCreation_ALambdaValueIsNotEvident() {
+        var arranged = Declined(
+            Attempt(
+                LambdaProbe,
+                ArrangeIds.ObjectCreation,
+                overrides: [new("skala_object_creation_when_type_not_evident", "explicitly_typed")]
+            )
+        );
+        Assert.Contains("TakeFunc(() => new Foo());", arranged, StringComparison.Ordinal);
+        Assert.Contains("TakeFunc(() => { return new Foo(); });", arranged, StringComparison.Ordinal);
+        Assert.Contains("Func<Foo> _field = () => new Foo();", arranged, StringComparison.Ordinal);
+    }
+
     /// <summary>The probe #462's rows are asked of: every predefined keyword, written as one.</summary>
     const string KeywordProbe = """
                                 using System;

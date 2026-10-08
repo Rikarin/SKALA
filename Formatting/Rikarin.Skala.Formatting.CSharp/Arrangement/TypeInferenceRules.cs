@@ -351,7 +351,10 @@ public sealed class ObjectCreationRule : ArrangementRule {
                 }
 
                 accepted[argument] = parameter.Type;
-                if (!SymbolEqualityComparer.Default.Equals(Rebind(owner, accepted.Keys), member)) {
+                if (!SymbolEqualityComparer.Default.Equals(
+                        Rebind(owner, accepted.Keys.Select(static accepted => accepted.Expression)),
+                        member
+                    )) {
                     accepted.Remove(argument);
                 }
             }
@@ -385,10 +388,9 @@ public sealed class ObjectCreationRule : ArrangementRule {
         ///     The member <paramref name="owner" /> reaches with <paramref name="converted" /> written
         ///     <c>new()</c>, bound speculatively at the owner's own position; null when it reaches none.
         /// </summary>
-        ISymbol? Rebind(SyntaxNode owner, IEnumerable<ArgumentSyntax> converted) {
-            var creations = converted.Select(static argument => argument.Expression).ToArray();
+        ISymbol? Rebind(SyntaxNode owner, IEnumerable<ExpressionSyntax> converted) {
             var rewritten = owner.ReplaceNodes(
-                creations,
+                converted,
                 static (original, _) => {
                     var creation = (ObjectCreationExpressionSyntax)original;
                     return SyntaxFactory.ImplicitObjectCreationExpression(
@@ -491,7 +493,13 @@ public sealed class ObjectCreationRule : ArrangementRule {
                     return ReturnTypeOf(arrow.Parent);
 
                 case ReturnStatementSyntax statement:
-                    return ReturnTypeOf(EnclosingMember(statement));
+                    return EnclosingMember(statement) is AnonymousFunctionExpressionSyntax function
+                        ? FunctionReturnTargetOf(function, node)
+                        : ReturnTypeOf(EnclosingMember(statement));
+
+                // `Take(() => new Foo())` (#524).
+                case LambdaExpressionSyntax lambda when lambda.ExpressionBody == node:
+                    return FunctionReturnTargetOf(lambda, node);
 
                 // ⚠ An element of a collection or array initializer. This is the one place the
                 // *converted* type is a real target rather than a restatement of the expression's
@@ -536,11 +544,12 @@ public sealed class ObjectCreationRule : ArrangementRule {
                         or AccessorDeclarationSyntax:
                         return current;
 
-                    // ⚠ A lambda's return type is inferred from its own body, so a `new` inside one
-                    // has no target the enclosing method can supply. Stopping here is the difference
-                    // between a correct rewrite and one that reads the wrong method's return type.
+                    // ⚠ A `return` inside a lambda returns from the lambda, never from the enclosing
+                    // method: reading the method's return type here is the wrong method's answer. The
+                    // lambda itself is handed back, and FunctionReturnTargetOf decides whether its
+                    // return type is fixed by its context or inferred from this very body.
                     case AnonymousFunctionExpressionSyntax:
-                        return null;
+                        return current;
                 }
             }
 
@@ -581,7 +590,84 @@ public sealed class ObjectCreationRule : ArrangementRule {
         ///     </para>
         /// </remarks>
         static bool Evident(ObjectCreationExpressionSyntax node) =>
-            node.Parent is EqualsValueClauseSyntax or ArrowExpressionClauseSyntax or ReturnStatementSyntax;
+            node.Parent is EqualsValueClauseSyntax or ArrowExpressionClauseSyntax
+            // ⚠ A lambda's `return` is not evident (#524, measured): the type is in a delegate somewhere
+            // else, not in the header of anything the reader is looking at.
+            || node.Parent is ReturnStatementSyntax && EnclosingMember(node) is not AnonymousFunctionExpressionSyntax;
+
+        /// <summary>
+        ///     The type a <c>new</c> returned from a lambda or an anonymous method is target-typed to, or null
+        ///     when it may not be.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ #524, measured against <c>jb cleanupcode</c> 2025.2.6 under <c>SkalaCleanup</c>. The oracle
+        ///     writes <c>new()</c> for the value of a lambda — arrow or block <c>return</c>, an anonymous
+        ///     method, <c>async</c> (through <c>Task&lt;Foo&gt;</c>), an <c>Expression&lt;Func&lt;Foo&gt;&gt;</c>
+        ///     — whenever the delegate's return type is fixed from outside the lambda: an argument whose
+        ///     call still binds the same member (<c>TakeFunc</c>, <c>Gen&lt;Foo&gt;</c>), a field, a property
+        ///     arrow, an assignment. It declines <c>Over(Func&lt;Foo&gt;)</c> beside
+        ///     <c>Over(Func&lt;Bar&gt;)</c>, an inferred <c>Gen(() =&gt; new Foo())</c>, <c>Task.Run</c>,
+        ///     <c>Func&lt;object&gt;</c>, and <c>var f = () =&gt; new Foo()</c>, whose type comes from the very
+        ///     body being rewritten. Governed by <c>when_type_not_evident</c>, measured: flipping it alone
+        ///     restored every row, the block-bodied <c>return</c> included.
+        ///     <para>
+        ///         ⚠ The argument case is #461's check verbatim: the call is re-bound speculatively with the
+        ///         creation written <c>new()</c> and must reach the same member. A lambda's return type takes
+        ///         part in overload resolution and type inference, so this is the same hazard, one level down.
+        ///     </para>
+        /// </remarks>
+        ITypeSymbol? FunctionReturnTargetOf(
+            AnonymousFunctionExpressionSyntax function,
+            ObjectCreationExpressionSyntax node
+        ) {
+            if (!ContextFixesTheType(function, node)) {
+                return null;
+            }
+
+            var converted = model.GetTypeInfo(function).ConvertedType as INamedTypeSymbol;
+            if (converted is { Name: "Expression", TypeArguments: [INamedTypeSymbol inner] }
+                && converted.ContainingNamespace?.ToDisplayString() == "System.Linq.Expressions") {
+                converted = inner;
+            }
+
+            if (converted is not { TypeKind: TypeKind.Delegate, DelegateInvokeMethod.ReturnType: { } returned }) {
+                return null;
+            }
+
+            if (!function.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword)) {
+                return returned;
+            }
+
+            // An `async` lambda returns the task's result, and only the two task types are asked about.
+            return returned is INamedTypeSymbol { Name: "Task" or "ValueTask", TypeArguments: [{ } result] } task
+                && task.ContainingNamespace?.ToDisplayString() == "System.Threading.Tasks"
+                    ? result
+                    : null;
+        }
+
+        /// <summary>Whether the lambda's delegate type is imposed from outside rather than read off its body.</summary>
+        bool ContextFixesTheType(AnonymousFunctionExpressionSyntax function, ObjectCreationExpressionSyntax node) {
+            switch (function.Parent) {
+                case ArgumentSyntax { Parent: BaseArgumentListSyntax { Parent: { } owner } }:
+                    return model.GetSymbolInfo(owner).Symbol is { } member
+                        && SymbolEqualityComparer.Default.Equals(Rebind(owner, [node]), member);
+
+                case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }:
+                    return declarator.Parent is VariableDeclarationSyntax { Type.IsVar: false };
+
+                case EqualsValueClauseSyntax { Parent: PropertyDeclarationSyntax }:
+                case ArrowExpressionClauseSyntax { Parent: PropertyDeclarationSyntax or MethodDeclarationSyntax }:
+                case CastExpressionSyntax:
+                    return true;
+
+                case AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment:
+                    return assignment.Right == function
+                        && model.GetSymbolInfo(assignment.Left).Symbol is not IDiscardSymbol;
+
+                default:
+                    return false;
+            }
+        }
     }
 }
 
