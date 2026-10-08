@@ -714,9 +714,13 @@ public static class XmlDocSignature {
                 if (XmlDocModel.IsVerbatimElement(element.StartTag.Name.ToString())) {
                     // ⚠ Byte-for-byte, minus only the lines the tags sat on. This is the check that
                     // catches a re-indented code sample, and it is the reason `<code>` is safe.
-                    builder.Append("|v:")
-                        .Append(string.Join("\n", XmlDocModel.VerbatimBody(element.Content.ToString(), markerSpace)))
-                        .Append('|');
+                    var body = XmlDocModel.VerbatimBody(element.Content.ToString(), markerSpace);
+                    if (XmlDocModel.IsReflowedInlineCode(element.StartTag.Name.ToString(), body)) {
+                        // ⚠ Except a multi-line `<c>`, which the oracle re-indents and wraps (#569).
+                        builder.Append("|c:").Append(XmlDocModel.InlineCodeSignature(body)).Append('|');
+                    } else {
+                        builder.Append("|v:").Append(string.Join("\n", body)).Append('|');
+                    }
                 } else {
                     builder.Append(Content(element.Content, markerSpace));
                 }

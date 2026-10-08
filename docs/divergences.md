@@ -8161,6 +8161,37 @@ separator are compared as before; `TokenEquivalence` uses the same comparison fo
 - ⚠ status: **resolved**. Not measured: hug mode
   (`linebreaks_inside_tags_for_multiline_elements = false`), which keeps the old behaviour.
 
+## SK-DIV-0383 — `<code>` edges, a multi-line `<c>`, and the author's runs of spaces in prose — **RESOLVED (#569)**
+
+The last doc-comment hunks of `corpus/real` after #541 to #544, and three rules behind them, each asked of
+the oracle under `SkalaDocComments` over its own probe:
+
+| construct | the oracle | Skala before |
+|---|---|---|
+| a `<code>` whose content spans lines (nine shapes) | start tag placed; everything after it up to `</code>` byte for byte — code on the tag's line stays there, `a++;</code>` stays glued, `</code>` on its own line keeps its whitespace (0, 2, 4, 8) | `</code>` at the tag's indent, code moved off the tag's line, and one line of code joined into `<code>var a = 1;</code>` |
+| a `<c>` whose content spans lines (eight shapes) | each line trimmed and one indent past the tag, blank lines dropped, a long line wrapped at a space, the author's breaks and inner spaces kept | verbatim, its first line at column 0 |
+| a run of spaces in prose (nine shapes) | kept — `alpha  beta`, `End.  Next`, `alpha   beta`, around an element, through a re-flow — and counted toward the width; dropped only where the line breaks | collapsed to one, so Serilog's `object  is equal … <see langword="false" />.` fitted where the oracle's line is one column wider and wraps |
+
+⚠ Seven hazard tests in `XmlDocFormatterTests` asserted the old `<code>` and `<c>` shapes. They were written
+when no oracle could see doc comments; the oracle was asked about each exact input and agreed with the
+new rules on all nine, so they now assert its output. Their point, the marker space, still holds in every
+row. ⚠ A multi-line `<c>` is no longer compared byte for byte by `XmlDocSignature`: its lines are trimmed,
+blank ones dropped and the rest joined with one space, so a re-indent or a wrap at a space passes and any
+other change to its text is refused. A one-line `<c>` and every `<code>` keep the byte-for-byte signature.
+
+Measured: `corpus/real` doc-comment hunks 17 → 6; the six are Serilog's malformed `LoggerSinkConfiguration`
+comments (`<typeparam>` closed by `</param>`, deliberately refused) and `TimeProvider.cs`, whose summary sits
+inside `#if !NET8_0_OR_GREATER` and is left alone by the oracle without its symbols, code and all. Every
+line: `real` 99.66 % → 99.80 %, 86.32 % → 89.47 % of files.
+
+- pinned by `constructs/trivia/doc-comment-code-block-edges.cs`, `…-inline-code-spanning-lines.cs`,
+  `…-space-runs.cs` and `XmlDocCodeAndSpacesIssue569Tests`; each of the three rules sabotaged alone fails
+  its rows.
+- options: none.
+- ⚠ status: **resolved**. Not measured: a run of spaces exactly at a wrap point that the oracle keeps (it
+  dropped the one probed), tabs in a run (taken as one space, as before), and a one-line `<c>` past the
+  margin.
+
 ## SK-DIV-0177 — a named argument's colon is a break point by the arrow's rule
 
 ⚠ **Found measuring #409** (#411): `name176: Cast<…>(` at 126 columns, with no comment anywhere, came
