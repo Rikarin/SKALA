@@ -6977,6 +6977,17 @@ to 157 — Skala moves the type below for all of them. Nor for a `const` local, 
 `const` line from 121 to 123, nor for a property (`public static` / type / `Property { get; set; }` in the
 oracle), which has no type/name point here. Pinned by `ModifierTypeGapIssue540Tests`.
 
+**The parameter's gap is resolved (#545).** A parameter whose line passes the margin once its list is
+chopped puts its name one level below its type: `int` / `            aaa…` at a parameter on column 8.
+Measured with `jb cleanupcode` 2025.2.6 one column at a time: flat to a 120-column parameter line, broken
+from 121, the same for `Dictionary<string, List<string>>`, a second parameter, `ref`, `params`, a
+record's primary constructor and a lambda's parameter list. A parameter with a default value breaks at
+its `=` instead (`int bbb… =` / `    1`), which is that gap's own rule. `BreakPlan.PlanParameterTypeNameGap`
+opens the group at the name and spends a level under the list's delimiters. ⚠ **Not for a parameter
+with attributes**: there the attribute run's own break (#475, #476, #537) is the one measured, and a name
+past the margin behind attributes was not. Nor when a comment sits in the type or before the name.
+Pinned by `constructs/wrapping/parameter-type-and-name.cs` and `ParameterTypeNameIssue545Tests`.
+
 Still divergent, measured: the exactly-121 quirk (`T…T v9 = [1, 2, 3];` at 121 breaks the type/name gap
 in the oracle; Skala breaks the `=`, as the oracle does from 122); a type with a block comment inside it,
 which the oracle breaks past the comment (#409) and Skala leaves to that rule by planning no gap; a
@@ -6986,7 +6997,7 @@ type / name, where the oracle also breaks between the modifiers and a type too l
 Skala fills the type there — resolved for fields by #540, above.
 
 - options: none — no key governs the type/name gap.
-- ⚠ status: **resolved** for fields and locals (#474), pinned by `TypeNameGapIssue474Tests`; **open** for
+- ⚠ status: **resolved** for fields and locals (#474), pinned by `TypeNameGapIssue474Tests`, and for parameters (#545); **open** for
   the rows above.
 
 ## SK-DIV-0128 — a chain was counted in dots, and a call at its head has none

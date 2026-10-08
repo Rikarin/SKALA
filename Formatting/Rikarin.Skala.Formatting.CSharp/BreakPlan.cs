@@ -785,6 +785,10 @@ public sealed class BreakPlan {
                 PlanAttributeRun(node, lists);
                 return;
 
+            case ParameterSyntax parameter:
+                PlanParameterTypeNameGap(parameter);
+                return;
+
             case TypeParameterSyntax { AttributeLists: [_, _, ..] lists }:
                 PlanAttributeRun(node, lists);
                 return;
@@ -2594,6 +2598,58 @@ public sealed class BreakPlan {
                 ),
                 true,
                 true
+            )
+        );
+    }
+
+    /// <summary>
+    ///     The gap between a parameter's type and its name, broken when the line through the name does not
+    ///     fit (#545) — <see cref="PlanTypeNameGap" />'s rule, on a parameter.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 one column at a time on a chopped parameter list:
+    ///     <c>int</c> / <c>    aaa…</c> from a 121-column parameter line up, unchanged to 120; the same for a
+    ///     <c>Dictionary&lt;string, List&lt;string&gt;&gt;</c>, a second parameter, a <c>ref</c> or a <c>params</c>
+    ///     one (the break after the whole type), a record's primary constructor and a lambda's parameter
+    ///     list. A parameter with a default value breaks at its <c>=</c> instead (<c>int bbb… =</c> /
+    ///     <c>    1</c>), which is that gap's own rule, so the group opens at the name and the line it asks
+    ///     about ends at the <c>=</c>. Not when a comment sits in the type or before the name.
+    /// </remarks>
+    void PlanParameterTypeNameGap(ParameterSyntax node) {
+        // ⚠ Not behind an attribute section: the attribute runs' own break (#475, #476, #537) is the one
+        // the oracle takes there, and a parameter with attributes and a name past the margin was not
+        // measured.
+        if (node.Type is null
+            || node.AttributeLists.Count > 0
+            || node.Identifier.IsMissing
+            || node.Parent is not (ParameterListSyntax or BracketedParameterListSyntax)
+            || HasBlockCommentBefore(node.Identifier)
+            || node.Type.DescendantTrivia()
+                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                )) {
+            return;
+        }
+
+        var group = NewGroup();
+        Point(node.Identifier, group);
+        OpenAt(
+            node,
+            node.Identifier.SpanStart,
+            new(
+                group,
+                GroupMode.Preserve,
+                new(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(node.Identifier),
+                    BreaksIfTooLong: true,
+                    PrefersOuterBreak: true,
+                    SkipsOuterTail: true
+                ),
+                true,
+                true,
+                // ⚠ One level past the parameter inside its list, as the `=` of a default value spends one
+                // (SK-DIV-0103): measured, `int` / `            aaa…` at a parameter on column 8.
+                SpendsUnderDelimiters: true
             )
         );
     }
