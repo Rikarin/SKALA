@@ -1225,14 +1225,23 @@ The flat rows are fixed: `SpaceRules.BeforeOpenBracket` reads `space_after_cast`
 cast's `)`, and `BeforeOpenParen` reads it for a parenthesized operand, where both had answered "a `)` is a
 call site" and closed the gap at every value. Pinned by `CastAndSpreadGapIssue450513Tests`. The remark in
 `BeforeOpenBracket` that `(IrBindingKind[]) [a, b]` comes back spaced was true only of a collection that
-breaks, and is corrected. ⚠ **The two broken rows stay open**: the space depends on the collection group's
-resolved mode, and the break after the cast is a break point Skala does not have. `DocKind.IfBroken`
-exists in the IR and no C# construct uses it; the gap before `[` is written before the collection's
-group opens, so an `IfBroken` there would ask the writer about a group it has not reached. That is a
-layout change, not a spacing one.
+breaks, and is corrected.
+
+⚠ **The two broken rows are fixed too (round 2, #450).** The space depends on the collection group's resolved
+mode, which the space rules cannot see, and the gap before `[` is written before that group opens. So the
+space is a `DocKind.IfBroken` placed as the collection group's *first child*
+(`CSharpDocumentBuilder.SpaceIfTheCollectionBreaks`) — the first C# construct to use the node — where the
+writer has resolved the mode already; after a break the gap took, the writer drops a pending space at a
+line's start, so it costs nothing there. The break after the cast is `BreakPlan.PlanCastBeforeACollection`:
+a point at the `[` with `GroupFacts.BreaksOnlyIfTailFits`, the rule an `=` and an expression-bodied arrow
+already apply before a collection. Re-measured on a local, a `return`, an argument and an expression body:
+too long and fits below → `(T[])` / `[…]` one level in; does not fit → `(T[]) [` and chopped; a kept break
+after the cast stays when the collection fits there and yields to a collection that is itself broken.
+Pinned by `BrokenCollectionAfterCastOrParenIssue450485Tests`. `corpus/real/` 59 610 → 59 611 lines and 333 → 334
+files exact — the one line this item was worth.
 
 - options: `skala_keep_existing_embedded_block_arrangement` (Tier A), `skala_wrap_for_stmt_header_style` (Tier A, item 3, at M3.2), `resharper_csharp_align_multiline_for_stmt` (Tier D, and never the cause of item 3), `skala_space_after_cast` (item 1's flat half)
-- ⚠ status: **item 1 half fixed** (flat; the broken half and the break after the cast open, #450), **item 2 open**, item 3 **closed** at M3.2, all measured
+- ⚠ status: **item 1 fixed** (#450, both rounds), **item 2 open**, item 3 **closed** at M3.2, all measured
 
 ## SK-DIV-0013 — three configured rewrites the oracle would not perform
 
@@ -5892,8 +5901,12 @@ Not fixed, measured on the way:
   semicolon's: `case 1:;`, `case 1: ;` and `case 1:   ;` all come back `case 1: ;` at the export (and
   `default:`, a `when` clause and a comment before the `;` the same), `space_after_colon_in_case = false`
   gives `case 1:;`, and `space_before_semicolon = true` does not move it. Pinned by
-  `CommentAndColonGapIssue479491493Tests`. ⚠ Still open beside it: `case 6: { } break;` puts the block on
-  the label's line in the oracle and on its own line in Skala — the first bullet above.
+  `CommentAndColonGapIssue479491493Tests`. `case 6: { } break;` (#527) now matches — #478 put the block on
+  the label's line. ⚠ Found re-measuring it: at `skala_keep_existing_embedded_block_arrangement = true` the
+  oracle **expands** a section's block when another statement shares the section (`case 3: { M(); } break;`
+  and `case 7: { M(); }` / `break;` → `case 3: {` / `M();` / `}`), while `case 1: { M(); }` alone stays
+  kept; `BreakPlan.Keeps` now answers `false` for a block that is not its section's only statement.
+  Pinned by `OperatorParenAndModifierCommentIssue525526527Tests`.
 - `if (b) M(); else switch (o) { … }` — the oracle writes `if (b) M();` / `else` / `switch (o) {`; Skala
   now pushes the `switch` down but keeps `M(); else` on one line, and after an embedded switch's `}` the
   oracle puts `else` on its own line where Skala writes `} else M();`. The `else` after a non-block
@@ -6933,8 +6946,15 @@ so the brace does not share the shape. The gap is "the within key, or one space 
 breaks", which is SK-DIV-0012 item 1's `IfBroken` again; and the space alone would gain nothing,
 because every such line also diverges on this entry's levels. Not fixed.
 
-- options: none.
-- ⚠ status: **open**.
+⚠ **Round 2: the space is fixed, the levels and the join are not.** `( [` and `( ( [` now come back as the
+oracle writes them at both values of `space_within_parentheses` (the `IfBroken` of SK-DIV-0012 item 1, and
+a `(` just inside a grouping parenthesis now reads that parenthesis's within key instead of "a `(`
+clings", which wrote `(( [` at `true`). What remains is this entry's: the elements at +2 and `]` at +1
+where the oracle writes +1 and +0, and the oracle joining `(` / `[` onto one line. Pinned by
+`BrokenCollectionAfterCastOrParenIssue450485Tests`.
+
+- options: `skala_space_within_parentheses` (the space only).
+- ⚠ status: **open** for the levels and the join; the `( [` space fixed (#485).
 
 ## SK-DIV-0156 — a chopped parenthesis heading a body held its level, and then the chain after it broke
 
@@ -7495,7 +7515,14 @@ them; the `/** */` rows are `CSharpDocumentBuilder.GapSpace` treating `PieceKind
 block comment it is. Pinned by `CommentAndColonGapIssue479491493Tests`.
 
 - options: `skala_space_before_trailing_comment`, `skala_space_around_assignment_op`, `skala_space_around_lambda_arrow`, `skala_space_between_method_declaration_parameter_list_parentheses`, `skala_space_between_method_call_parameter_list_parentheses`, and every key the first class reads.
-- ⚠ status: **resolved** except the interpolation row, which is SK-DIV-0311.
+⚠ **Round 2 (#526): the third class is narrower than "after a modifier".** A *parameter's* modifier keeps the
+author's gap after a comment — `params /*f*/int[] a`, `ref /*f*/int a`, `out`, `in`, `this`, `ref readonly`
+and `scoped`, written closed or spaced, at both values of the trailing-comment key — while a member's
+(`static /*f*/int F;`, `public static /*f*/int P`), an argument's `ref /*f*/x`, a declaration
+expression's `out /*f*/int y`, a `ref` local and `is`/`as` still take one space. Pinned by
+`OperatorParenAndModifierCommentIssue525526527Tests`.
+
+- ⚠ status: **resolved**; the interpolation row is resolved under SK-DIV-0311.
 ## SK-DIV-0171 — a member the formatter joins took the multi-line member's blank lines
 
 ⚠ **Issue #414**, found working #405. `CSharpDocumentBuilder.IsSingleLine` decided
@@ -8599,11 +8626,44 @@ the oracle and unchanged from Skala. The cause is wider than the comment: `NodeL
 
 So the hole is ordinary code to the oracle: its `{` and `}` take no space, the alignment comma and the
 format colon take none on either side, and everything between is formatted by the usual rules, comments
-included. **Not fixed.** Making the hole formattable means taking `InterpolatedStringExpression` off the
-verbatim path, emitting the string's text tokens byte for byte between formatted holes, deciding what the
-break plan may do inside a hole (a newline is legal in one since C# 11, and the oracle's answer to a hole
-that runs past the margin was not asked), and SK-DIV-0003's interpolated raw literal sits on the same
-path. That is a construct, not a gap, and nothing above measured its wrapping.
+included.
 
-- options: `skala_space_before_trailing_comment` (the comment rows); none of the others moved the hole's own gaps.
-- ⚠ status: **open**, measured. #492.
+⚠ **Fixed in round 2, after measuring the wrapping the first round had not.** With holes past the margin —
+a call with four arguments twice in one string, a ten-operand sum, a four-call chain, a long string as an
+argument — the oracle **never breaks inside a hole**: it moves the whole string to a continuation line, or
+breaks the call around it, and leaves the string long. A hole the author broke keeps its breaks and the
+indentation after them, and only the gaps on one line are respaced (`deltaValue )}` at the within key's
+`true`). So no break point belongs in a hole, and the string stays one verbatim piece:
+`CSharpDocumentBuilder.RespacedInterpolatedString` rewrites only the gaps between a hole's own tokens —
+`SpaceRules.Decide` for code, the hole's braces, the alignment comma and the format colon closed, comments
+as SK-DIV-0174's gaps with the hole's `{` and `}` as above — and copies the literal text, the format string
+after a `:` and any broken gap byte for byte. At the export and at the flipped binary, assignment,
+parenthesis, call-site, comma and trailing-comment keys every probe row now matches the oracle; `corpus/`
+moved by nothing, because Rider had already spaced its holes. Still declined: `disable_space_changes`, a
+formatter tag in a hole, and a hole holding a line comment on one line; a multi-line raw literal's text
+still does not shift (SK-DIV-0003). Pinned by `InterpolationHoleIssue492Tests`.
+
+- options: `skala_space_before_trailing_comment` (the comment rows), and every key that moves the same tokens outside a string.
+- ⚠ status: **resolved** (#492).
+
+## SK-DIV-0312 — the gap before an operand in parentheses belonged to "whatever precedes", not to the operator
+
+⚠ **Issue #525, found by group D's first round.** `SpaceRules.BeforeOpenParen` answered the gap in front of a
+parenthesized operand as "whatever precedes decides" and never asked the operator in front of it. Measured
+2026-10-08 with `Testing ask` at `space_around_assignment_op`, `space_around_additive_op`,
+`space_around_relational_op` and `space_around_shift_op` all `false`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `f = (1);`, `f += (1);`, `f <<= (1);`, `var x = (a + b);`, `f = (int)g;` | `f=(1);`, `f+=(1);`, `f<<=(1);`, `var x=(a+b);`, `f=(int)g;` | `f= (1);` and the rest |
+| `f = 1 + (2);`, `a < (b)`, `a + (b) + (a)` | `f=1+(2);`, `a<(b)`, `a+(b)+(a)` | `1+ (2)`, `a< (b)`, `a+ (b)+ (a)` |
+| `f = -(a);` | `f=-(a);` — the gap before a prefix operator behind `=` is the assignment's too | `f= -(a)` |
+| `a > (b) ? (a) : (b)` | `a>(b) ? (a) : (b)` — the ternary's `?` and `:` keep their own spaces | `a> (b)` |
+
+At the export every row is unchanged. Fixed in `BeforeOpenParen` (an assignment's or a non-keyword binary
+operator's key, except behind `>>`/`>>>`, whose trailing gap follows what comes after it — the shift-operator
+remark in `SpaceRules.Required`) and in `Required`'s prefix-operator arm. Pinned by
+`OperatorParenAndModifierCommentIssue525526527Tests`.
+
+- options: `skala_space_around_assignment_op`, `skala_space_around_additive_op`, `skala_space_around_relational_op`, `skala_space_around_shift_op`
+- ⚠ status: **resolved** (#525).
