@@ -11110,3 +11110,53 @@ writer's trailing measure stops short of.
 - options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
 - ⚠ status: **fixed** within the residue above, pinned by
   `constructs/wrapping/lambda-arrow-over-an-operand-chain.cs`.
+
+## SK-DIV-0378 — measured widths read off the source broke whitespace absorption
+
+⚠ **Nightly fuzzer, seed 37583856628.** Replay 6225963390046177533 of
+`constructs/breaks/lambda-parameters-one-column-over.cs` broke whitespace absorption
+(`format(mutate(x)) ≡ format(x)`). It widened `Func<T…> name = (P… p0) => v;` to `Func <T… > name = ( P… p0)    =>   v;`,
+and Skala then broke before the name where it chops the parameters for the clean line.
+
+The cause was a class of bug, not the one table. #572's `ChopsOneOver` row and #583's type/name break
+both read the declaration's type off its source span, which counts the author's spacing. So did every
+other width behind a measured rule:
+- #558's name gates and its arrow-yield width;
+- #557's and #571's lambda head;
+- #578's parameter text, first operand and tail;
+- round 3's binary-pattern head and width;
+- #528's held-call head.
+
+All of them now read `BreakPlan.FormattedWidth`: the tokens' text plus the space `SpaceRules.Decide`
+writes between each pair, and one space for a gap the rules leave to the author.
+
+⚠ The minimised case the fuzzer printed, which only changes the indentation, formats identically on master
+too. Absorption was broken by the gaps inside the type and the parameter list. The regression test keeps
+both, and the fuzzer's exact line fails without the fix.
+
+- ⚠ status: **fixed**, pinned by `MeasuredWidthsAbsorbWhitespaceTests`.
+
+⚠ **The same seeds, rerun after that fix, found three more cases of the same two classes.** All three
+are on master too, and all are now fixed:
+- **Seed 1, replay 13096041111892358404** (Newtonsoft's ConstructorHandlingTests.cs, whitespace
+  absorption). `BreakPlan.FlatSourceWidth`, behind #528's held value, counted a run of whitespace as one
+  space, so `DeserializeObject<T >(json)` measured a space the formatter removes. It now uses the
+  formatter's gap (`GapWidth`), as do the #581 and #446 head widths through the `=`.
+- **Seeds 4304693669410283359 and 17091299203163347117** (idempotency). The floor for an `=` before a
+  call (#446, round 2) kept `= Emit(` on a 123-column line, because the arguments cleared the floor.
+  The second pass read the chopped arguments as broken, which that rule declines, and broke the `=`.
+  When the call's `(` is past the margin the `=` now breaks on the first pass. The table was measured with
+  the `(` at columns 52 to 112.
+
+Pinned by four tests in `MeasuredWidthsAbsorbWhitespaceTests`, each of which fails on master.
+
+⚠ **Group I's seed 2 (replay 10561489840196222070, origin `constructs/breaks/equals-before-a-lambda-floor.cs`) has
+the same `Func<…> f = (…) => …` shape.** The fix above already covers it. A rerun of seed 1 then found two
+held-single-call cases that the first sweep had left on the source span:
+- #528's held-call receiver, `CalleeOf` for a `new`, and the base-list, parameter and colon-floor type
+  widths now read `FormattedWidth` too (whitespace absorption, replay 10196079555470681291).
+- **Idempotency (replay 7536332154113230584).** `Fitter.HeldValueBreaks` kept a held single call whose receiver
+  already ran past the margin. The second pass then broke it. A receiver that ends past the margin now
+  breaks the held value on the first pass.
+
+All five cases are pinned in `MeasuredWidthsAbsorbWhitespaceTests`, and each fails against master's sources.
