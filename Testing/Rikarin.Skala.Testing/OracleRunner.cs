@@ -59,7 +59,8 @@ public sealed class OracleRunner {
     static string FindExecutable() =>
         FindExecutableOrNull()
         ?? throw new InvalidOperationException(
-            "jb (JetBrains.ReSharper.GlobalTools) is not installed. `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`. "
+            "jb (JetBrains.ReSharper.GlobalTools) is not installed. "
+            + "`dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`. "
             + "It is a developer-machine and nightly dependency only; the day-to-day test run reads the committed fixtures (ADR-011)."
         );
 

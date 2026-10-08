@@ -46,7 +46,9 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
     static readonly RuleInfo Rule = RuleCatalog.Get(RuleIds.CollectionExpressionSpread);
     static readonly DiagnosticDescriptor Descriptor = SkalaRule.Descriptor(RuleIds.CollectionExpressionSpread);
 
-    /// <summary>The first Roslyn whose lowering of a one-spread collection expression is the call it replaces.</summary>
+    /// <summary>
+    ///     The first Roslyn whose lowering of a one-spread collection expression is the call it replaces.
+    /// </summary>
     static readonly System.Version LoweringCompiler = new(4, 14);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptor);
@@ -233,9 +235,8 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
     ///         binlog's <c>csc</c> path does, and since #517 it reaches the rule
     ///         (<see cref="CompilerIdentity" />), which declines under a toolset package older than 4.14.
     ///         ⚠ So the hole is closed under <c>--load=binlog</c> only: a workspace load has no compiler
-    ///         path, and such a build is still reported there (loose does not run the rule at all). A written <c>14</c> has no
-    ///         hole
-    ///         in any mode: every compiler before 5.0 refuses it.
+    ///         path, and such a build is still reported there (loose does not run the rule at all). A
+    ///         written <c>14</c> has no hole in any mode: every compiler before 5.0 refuses it.
     ///     </para>
     /// </remarks>
     static bool ReferencesDotNet10(Compilation compilation) =>

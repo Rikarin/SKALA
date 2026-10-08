@@ -22,11 +22,15 @@ sealed class SiblingProvider(ImmutableArray<Compilation> siblings, string compil
 
     public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => Empty.Instance;
 
-    /// <summary>Every Skala analyzer over <paramref name="current" />, with <paramref name="siblings" /> published.</summary>
+    /// <summary>
+    ///     Every Skala analyzer over <paramref name="current" />, with <paramref name="siblings" /> published.
+    /// </summary>
     public static Task<ImmutableArray<Diagnostic>> Analyze(Compilation current, params Compilation[] siblings) =>
         Run(current, new SiblingProvider([.. siblings]));
 
-    /// <summary>Every Skala analyzer over <paramref name="current" />, built by <paramref name="compilerPath" />.</summary>
+    /// <summary>
+    ///     Every Skala analyzer over <paramref name="current" />, built by <paramref name="compilerPath" />.
+    /// </summary>
     public static Task<ImmutableArray<Diagnostic>> AnalyzeBuiltBy(Compilation current, string compilerPath) =>
         Run(current, new SiblingProvider([], compilerPath));
 

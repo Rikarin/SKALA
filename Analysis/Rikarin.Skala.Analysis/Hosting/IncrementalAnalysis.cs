@@ -132,20 +132,7 @@ public static class IncrementalAnalysis {
                 editorConfigFingerprint
             );
             keys[tree] = (syntaxKey, semanticKey);
-
-            if (!cache.TryGet(syntaxKey, out var syntaxHalf, path)) {
-                changed.Add(tree);
-                continue;
-            }
-
-            served++;
-            hits.AddRange(syntaxHalf);
-            if (cache.TryGet(semanticKey, out var semanticHalf, path)) {
-                served++;
-                hits.AddRange(semanticHalf);
-            } else {
-                rebound.Add(tree);
-            }
+            served += Serve(cache, tree, path, keys[tree], hits, changed, rebound);
         }
 
         // ⚠ The partition. The rule ids no per-file entry may hold: everything carried by an
@@ -278,6 +265,34 @@ public static class IncrementalAnalysis {
     ///     would be served beside the bucket's own answer on the next warm run — the same finding twice
     ///     — or, for a rule the bucket no longer runs, once from a run that can no longer be reproduced.
     /// </param>
+    /// <summary>
+    ///     How many of one file's two halves the cache served (#516). A missed Syntax half queues the file
+    ///     to re-run whole; a missed semantic half alone queues it to re-run only that half.
+    /// </summary>
+    static int Serve(
+        DiagnosticCache cache,
+        SyntaxTree tree,
+        string path,
+        (string Syntax, string Semantic) key,
+        List<Finding> hits,
+        List<SyntaxTree> changed,
+        List<SyntaxTree> rebound
+    ) {
+        if (!cache.TryGet(key.Syntax, out var syntaxHalf, path)) {
+            changed.Add(tree);
+            return 0;
+        }
+
+        hits.AddRange(syntaxHalf);
+        if (!cache.TryGet(key.Semantic, out var semanticHalf, path)) {
+            rebound.Add(tree);
+            return 1;
+        }
+
+        hits.AddRange(semanticHalf);
+        return 2;
+    }
+
     /// <param name="bothHalves">
     ///     Whether the run covered the files' Syntax half too. <c>false</c> for the unchanged files of a
     ///     touched compilation, whose run carried only the analyzers that report into the semantic half

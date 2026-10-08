@@ -40,6 +40,11 @@ public sealed class MultiTargetAvailabilityTests {
     /// <summary>#351's rule: a <c>languageVersion</c> floor rather than a missing type.</summary>
     const string FileScopedNamespace = "SK1005";
 
+    /// <summary>One spelling of the fixture's file names (<c>SK7083</c>: five literals per file).</summary>
+    const string ProjectFile = "Probe.csproj";
+
+    const string SourceFile = "Probe.cs";
+
     const string MultiTargeted = """
                                  <Project Sdk="Microsoft.NET.Sdk">
                                    <PropertyGroup>
@@ -141,8 +146,8 @@ public sealed class MultiTargetAvailabilityTests {
     [Fact]
     public void MultiTargetedProject_WithholdsALockRewriteNoOlderFrameworkCanCompile() {
         using var scratch = new Scratch();
-        var project = scratch.Write("Probe.csproj", MultiTargeted);
-        var source = scratch.Write("Probe.cs", Source);
+        var project = scratch.Write(ProjectFile, MultiTargeted);
+        var source = scratch.Write(SourceFile, Source);
         Restore(project);
 
         var loaded = ProjectLoader.Load(
@@ -220,8 +225,8 @@ public sealed class MultiTargetAvailabilityTests {
     [Fact]
     public void MultiTargetedProject_WithholdsAGenericGetValuesTheOlderFrameworkLacks() {
         using var scratch = new Scratch();
-        var project = scratch.Write("Probe.csproj", MultiTargeted);
-        var source = scratch.Write("Probe.cs", EnumSource);
+        var project = scratch.Write(ProjectFile, MultiTargeted);
+        var source = scratch.Write(SourceFile, EnumSource);
         Restore(project);
 
         var loaded = ProjectLoader.Load(
@@ -281,8 +286,8 @@ public sealed class MultiTargetAvailabilityTests {
     [Fact]
     public void SingleTargetedProject_StillReportsAndFixesInTheShapeArrangeLeavesAlone() {
         using var scratch = new Scratch();
-        var project = scratch.Write("Probe.csproj", SingleTargeted);
-        var source = scratch.Write("Probe.cs", Source);
+        var project = scratch.Write(ProjectFile, SingleTargeted);
+        var source = scratch.Write(SourceFile, Source);
 
         var request = new CheckRequest {
             RepositoryRoot = scratch.Root,
@@ -372,8 +377,8 @@ public sealed class MultiTargetAvailabilityTests {
     [Fact]
     public void MultiTargetedProject_WithholdsARewriteAnOlderMonikersLanguageVersionCannotParse() {
         using var scratch = new Scratch();
-        var project = scratch.Write("Probe.csproj", MultiTargetedDefaultLanguage);
-        var source = scratch.Write("Probe.cs", BlockNamespaceSource);
+        var project = scratch.Write(ProjectFile, MultiTargetedDefaultLanguage);
+        var source = scratch.Write(SourceFile, BlockNamespaceSource);
         Restore(project);
 
         var loaded = ProjectLoader.Load(
@@ -457,8 +462,8 @@ public sealed class MultiTargetAvailabilityTests {
     [Fact]
     public void SingleTargetedProject_StillConvertsTheNamespaceAtTheDefaultLanguageVersion() {
         using var scratch = new Scratch();
-        var project = scratch.Write("Probe.csproj", SingleTargetedDefaultLanguage);
-        var source = scratch.Write("Probe.cs", BlockNamespaceSource);
+        var project = scratch.Write(ProjectFile, SingleTargetedDefaultLanguage);
+        var source = scratch.Write(SourceFile, BlockNamespaceSource);
 
         var (_, report) = CheckCommand.Run(
             new CheckRequest {
@@ -518,8 +523,8 @@ public sealed class MultiTargetAvailabilityTests {
     [Fact]
     public void MultiTargetedBinlog_GroupsTheMonikersTheSameWayTheWorkspaceDoes() {
         using var scratch = new Scratch();
-        var project = scratch.Write("Probe.csproj", MultiTargetedDefaultLanguage);
-        scratch.Write("Probe.cs", BlockNamespaceSource);
+        var project = scratch.Write(ProjectFile, MultiTargetedDefaultLanguage);
+        scratch.Write(SourceFile, BlockNamespaceSource);
 
         // ⚠ Cuts the Directory.Build.props chain. `Scratch` roots under the temp directory today, but
         // an inherited `<LangVersion>` would make both monikers equal and quietly void the assertion
