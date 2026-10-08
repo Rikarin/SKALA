@@ -354,14 +354,20 @@ public static class XmlDocFormatter {
     ///     <c>/** &lt;summary&gt;Doc.&lt;/summary&gt; */</c> as <c>/**</c> / <c> * &lt;summary&gt;Doc.&lt;/summary&gt;</c> /
     ///     <c> */</c>, asterisks on the opener's column plus one, when the comment:
     ///     <list type="bullet">
-    ///         <item>is on one line, with whitespace before its <c>*/</c> — <c>/** single*/</c>,
-    ///         <c>/**single*/</c> and <c>/**&lt;summary&gt;X&lt;/summary&gt;*/</c> are left as written, while
-    ///         <c>/**single */</c> is rebuilt;</item>
+    ///         <item>
+    ///             is on one line, with whitespace before its <c>*/</c> — <c>/** single*/</c>,
+    ///             <c>/**single*/</c> and <c>/**&lt;summary&gt;X&lt;/summary&gt;*/</c> are left as written, while
+    ///             <c>/**single */</c> is rebuilt;
+    ///         </item>
     ///         <item>starts its line — after <c>[Obsolete] </c> on the same line it is left alone;</item>
-    ///         <item>is the leading trivia of a type or member declaration — above a statement or a local
-    ///         function it is left alone; above an attribute list it is rebuilt;</item>
-    ///         <item>is the only doc comment there — two in a row are merged into one by the oracle, which
-    ///         Skala does not do, so it leaves both.</item>
+    ///         <item>
+    ///             is the leading trivia of a type or member declaration — above a statement or a local
+    ///             function it is left alone; above an attribute list it is rebuilt;
+    ///         </item>
+    ///         <item>
+    ///             is the only doc comment there — two in a row are merged into one by the oracle, which
+    ///             Skala does not do, so it leaves both.
+    ///         </item>
     ///     </list>
     ///     The body is laid out by the same renderer at the same budget as a <c>///</c> comment: probed at
     ///     code indents 0, 4, 8 and 12 with single-character words, a <c> * </c> line's content wraps exactly
@@ -412,7 +418,9 @@ public static class XmlDocFormatter {
         var token = trivia.Token;
         if (!token.LeadingTrivia.Contains(trivia)
             || token.LeadingTrivia.Count(static t => t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
-                || t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)) != 1
+                || t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
+            )
+            != 1
             || token.Parent?.AncestorsAndSelf().OfType<MemberDeclarationSyntax>().FirstOrDefault() is not { } member
             || member.GetFirstToken() != token) {
             return null;

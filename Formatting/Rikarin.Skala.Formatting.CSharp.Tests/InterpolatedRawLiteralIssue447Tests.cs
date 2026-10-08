@@ -11,219 +11,225 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </summary>
 public sealed class InterpolatedRawLiteralIssue447Tests {
     const string AlignSource = """"
-        class RawProbe {
-            void M(int x) {
-                var plain = """
-                                Hello
-                                World
-                                """;
-                var interp = $"""
-                                Hello {x}
-                                World
-                                """;
-                var interp2 = $$"""
-                                Hello {{x}}
-                                World
-                                """;
-                var hole = $"""
-                                Hello {
-                                    x
-                                } there
-                                World
-                                """;
-                var nested = $"""
-                                Outer {$"""
-                                            inner {x}
-                                            """}
-                                World
-                                """;
-                var deeper = $"""
-                  Hello {x}
-                  World
-                  """;
-                Call($"""
-                                Arg {x}
-                                """);
-                var verbatim = $@"
-                                Hello {x}
-                                ";
-            }
+                               class RawProbe {
+                                   void M(int x) {
+                                       var plain = """
+                                                       Hello
+                                                       World
+                                                       """;
+                                       var interp = $"""
+                                                       Hello {x}
+                                                       World
+                                                       """;
+                                       var interp2 = $$"""
+                                                       Hello {{x}}
+                                                       World
+                                                       """;
+                                       var hole = $"""
+                                                       Hello {
+                                                           x
+                                                       } there
+                                                       World
+                                                       """;
+                                       var nested = $"""
+                                                       Outer {$"""
+                                                                   inner {x}
+                                                                   """}
+                                                       World
+                                                       """;
+                                       var deeper = $"""
+                                         Hello {x}
+                                         World
+                                         """;
+                                       Call($"""
+                                                       Arg {x}
+                                                       """);
+                                       var verbatim = $@"
+                                                       Hello {x}
+                                                       ";
+                                   }
 
-            void Call(string s) { }
-        }
-        """" + "\n";
+                                   void Call(string s) { }
+                               }
+                               """"
+        + "\n";
 
     const string AlignOracle = """"
-        class RawProbe {
-            void M(int x) {
-                var plain = """
-                            Hello
-                            World
-                            """;
-                var interp = $"""
-                              Hello {x}
-                              World
-                              """;
-                var interp2 = $$"""
-                                Hello {{x}}
-                                World
-                                """;
-                var hole = $"""
-                            Hello {
-                                x
-                            } there
-                            World
-                            """;
-                var nested = $"""
-                              Outer {$"""
-                                      inner {x}
-                                      """}
-                              World
-                              """;
-                var deeper = $"""
-                              Hello {x}
-                              World
-                              """;
-                Call(
-                    $"""
-                     Arg {x}
-                     """
-                );
-                var verbatim = $@"
-                                Hello {x}
-                                ";
-            }
+                               class RawProbe {
+                                   void M(int x) {
+                                       var plain = """
+                                                   Hello
+                                                   World
+                                                   """;
+                                       var interp = $"""
+                                                     Hello {x}
+                                                     World
+                                                     """;
+                                       var interp2 = $$"""
+                                                       Hello {{x}}
+                                                       World
+                                                       """;
+                                       var hole = $"""
+                                                   Hello {
+                                                       x
+                                                   } there
+                                                   World
+                                                   """;
+                                       var nested = $"""
+                                                     Outer {$"""
+                                                             inner {x}
+                                                             """}
+                                                     World
+                                                     """;
+                                       var deeper = $"""
+                                                     Hello {x}
+                                                     World
+                                                     """;
+                                       Call(
+                                           $"""
+                                            Arg {x}
+                                            """
+                                       );
+                                       var verbatim = $@"
+                                                       Hello {x}
+                                                       ";
+                                   }
 
-            void Call(string s) { }
-        }
-        """" + "\n";
+                                   void Call(string s) { }
+                               }
+                               """"
+        + "\n";
 
     const string IndentOracle = """"
-        class RawProbe {
-            void M(int x) {
-                var plain = """
-                    Hello
-                    World
-                    """;
-                var interp = $"""
-                    Hello {x}
-                    World
-                    """;
-                var interp2 = $$"""
-                    Hello {{x}}
-                    World
-                    """;
-                var hole = $"""
-                    Hello {
-                        x
-                    } there
-                    World
-                    """;
-                var nested = $"""
-                    Outer {$"""
-                        inner {x}
-                        """}
-                    World
-                    """;
-                var deeper = $"""
-                    Hello {x}
-                    World
-                    """;
-                Call(
-                    $"""
-                    Arg {x}
-                    """
-                );
-                var verbatim = $@"
-                                Hello {x}
-                                ";
-            }
+                                class RawProbe {
+                                    void M(int x) {
+                                        var plain = """
+                                            Hello
+                                            World
+                                            """;
+                                        var interp = $"""
+                                            Hello {x}
+                                            World
+                                            """;
+                                        var interp2 = $$"""
+                                            Hello {{x}}
+                                            World
+                                            """;
+                                        var hole = $"""
+                                            Hello {
+                                                x
+                                            } there
+                                            World
+                                            """;
+                                        var nested = $"""
+                                            Outer {$"""
+                                                inner {x}
+                                                """}
+                                            World
+                                            """;
+                                        var deeper = $"""
+                                            Hello {x}
+                                            World
+                                            """;
+                                        Call(
+                                            $"""
+                                            Arg {x}
+                                            """
+                                        );
+                                        var verbatim = $@"
+                                                        Hello {x}
+                                                        ";
+                                    }
 
-            void Call(string s) { }
-        }
-        """" + "\n";
+                                    void Call(string s) { }
+                                }
+                                """"
+        + "\n";
 
     const string ChoppedSource = """"
-        class R {
-            void M(int x) {
-                Call("""
-                                Arg
-                                """);
-                Call($"""
-                                Arg {x}
-                                """);
-                Call(1,
-                    """
-                                Arg
-                                """);
-            }
+                                 class R {
+                                     void M(int x) {
+                                         Call("""
+                                                         Arg
+                                                         """);
+                                         Call($"""
+                                                         Arg {x}
+                                                         """);
+                                         Call(1,
+                                             """
+                                                         Arg
+                                                         """);
+                                     }
 
-            void Call(string s) { }
-            void Call(int a, string s) { }
-        }
-        """" + "\n";
+                                     void Call(string s) { }
+                                     void Call(int a, string s) { }
+                                 }
+                                 """"
+        + "\n";
 
     const string ChoppedIndentOracle = """"
-        class R {
-            void M(int x) {
-                Call(
-                    """
-                    Arg
-                    """
-                );
-                Call(
-                    $"""
-                    Arg {x}
-                    """
-                );
-                Call(
-                    1,
-                    """
-                    Arg
-                    """
-                );
-            }
+                                       class R {
+                                           void M(int x) {
+                                               Call(
+                                                   """
+                                                   Arg
+                                                   """
+                                               );
+                                               Call(
+                                                   $"""
+                                                   Arg {x}
+                                                   """
+                                               );
+                                               Call(
+                                                   1,
+                                                   """
+                                                   Arg
+                                                   """
+                                               );
+                                           }
 
-            void Call(string s) { }
-            void Call(int a, string s) { }
-        }
-        """" + "\n";
+                                           void Call(string s) { }
+                                           void Call(int a, string s) { }
+                                       }
+                                       """"
+        + "\n";
 
     const string NestedIndentOracle = """"
-        class R {
-            void M(int x) {
-                Call(
-                    1,
-                    Inner(
-                        2,
-                        """
-                        Arg
-                        """
-                    )
-                );
-                Call(
-                    1,
-                    Inner(
-                        2,
-                        $"""
-                        Arg {x}
-                        """
-                    )
-                );
-                if (x > 0) {
-                    Call(
-                        """
-                        Arg
-                        """
-                    );
-                }
-            }
+                                      class R {
+                                          void M(int x) {
+                                              Call(
+                                                  1,
+                                                  Inner(
+                                                      2,
+                                                      """
+                                                      Arg
+                                                      """
+                                                  )
+                                              );
+                                              Call(
+                                                  1,
+                                                  Inner(
+                                                      2,
+                                                      $"""
+                                                      Arg {x}
+                                                      """
+                                                  )
+                                              );
+                                              if (x > 0) {
+                                                  Call(
+                                                      """
+                                                      Arg
+                                                      """
+                                                  );
+                                              }
+                                          }
 
-            string Inner(int a, string s) => s;
-            void Call(string s) { }
-            void Call(int a, string s) { }
-        }
-        """" + "\n";
+                                          string Inner(int a, string s) => s;
+                                          void Call(string s) { }
+                                          void Call(int a, string s) { }
+                                      }
+                                      """"
+        + "\n";
 
     /// <summary>
     ///     At the export's <c>align</c>: a <c>$"""</c> literal lands on the column of its <c>"""</c> — not of

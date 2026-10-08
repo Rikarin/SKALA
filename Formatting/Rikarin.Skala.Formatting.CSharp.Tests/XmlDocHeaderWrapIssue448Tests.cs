@@ -67,8 +67,16 @@ public sealed class XmlDocHeaderWrapIssue448Tests {
         );
 
         Assert.Equal(
-            ["/// <remarks>", "///     <see cref=\"System.String\" href=\"https://short.invalid/\" />", "/// </remarks>"],
-            Doc("/// <remarks>", "/// <see cref=\"System.String\" href=\"https://short.invalid/\"", "///  />", "/// </remarks>")
+            [
+                "/// <remarks>", "///     <see cref=\"System.String\" href=\"https://short.invalid/\" />",
+                "/// </remarks>"
+            ],
+            Doc(
+                "/// <remarks>",
+                "/// <see cref=\"System.String\" href=\"https://short.invalid/\"",
+                "///  />",
+                "/// </remarks>"
+            )
         );
     }
 

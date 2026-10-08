@@ -22,104 +22,104 @@ public sealed class TypeTestLevelIssue445Tests {
     public void TheBreakLandsOneLevelPastTheOperandsLine() =>
         Oracle.Agrees(
             $$"""
-            class C {
-                void M() {
-                    var a10 = collection.Elements.All(static element => element
-                        is ExpressionElementSyntax);
-                    var a1 = nodes.Count(static collection => collection.Parent
-                        is {{Long1}});
-                    var a2 = nodes.Count(static collection => {{Long2}} is SomeVeryLongTypeName);
-                    var a3 = Compute(collection.Parent
-                        is ArgumentSyntax);
-                    var a4 = Compute(alpha, {{Long3}} is SomeType);
-                    var a5 = nodes
-                        .Where(static collection => collection.Parent
-                            is ArgumentSyntax)
-                        .Count();
-                    Use(x => x
-                        is string);
-                    if (Compute(alpha,
-                            beta) is string) { }
-                    var a6 = Compute(
-                        alpha,
-                        beta) is string;
-                    var a7 = Compute(
-                            alpha,
-                            beta)
-                        is string;
-                    bool a8 = flag
-                        && Compute(alphaArgumentValue, betaArgumentValue, gammaArgumentValue, deltaArgumentValueXYZ) is SomeLongType;
-                }
+              class C {
+                  void M() {
+                      var a10 = collection.Elements.All(static element => element
+                          is ExpressionElementSyntax);
+                      var a1 = nodes.Count(static collection => collection.Parent
+                          is {{Long1}});
+                      var a2 = nodes.Count(static collection => {{Long2}} is SomeVeryLongTypeName);
+                      var a3 = Compute(collection.Parent
+                          is ArgumentSyntax);
+                      var a4 = Compute(alpha, {{Long3}} is SomeType);
+                      var a5 = nodes
+                          .Where(static collection => collection.Parent
+                              is ArgumentSyntax)
+                          .Count();
+                      Use(x => x
+                          is string);
+                      if (Compute(alpha,
+                              beta) is string) { }
+                      var a6 = Compute(
+                          alpha,
+                          beta) is string;
+                      var a7 = Compute(
+                              alpha,
+                              beta)
+                          is string;
+                      bool a8 = flag
+                          && Compute(alphaArgumentValue, betaArgumentValue, gammaArgumentValue, deltaArgumentValueXYZ) is SomeLongType;
+                  }
 
-                bool P(object o) => o
-                    is string;
+                  bool P(object o) => o
+                      is string;
 
-                object Q(object o) {
-                    return o
-                        is string;
-                }
-            }
-            """,
+                  object Q(object o) {
+                      return o
+                          is string;
+                  }
+              }
+              """,
             $$"""
-            class C {
-                void M() {
-                    var a10 = collection.Elements.All(static element => element
-                        is ExpressionElementSyntax
-                    );
-                    var a1 = nodes.Count(static collection => collection.Parent
-                        is {{Long1}}
-                    );
-                    var a2 = nodes.Count(static collection =>
-                        {{Long2}} is SomeVeryLongTypeName
-                    );
-                    var a3 = Compute(
-                        collection.Parent
-                            is ArgumentSyntax
-                    );
-                    var a4 = Compute(
-                        alpha,
-                        {{Long3}} is SomeType
-                    );
-                    var a5 = nodes
-                        .Where(static collection => collection.Parent
-                            is ArgumentSyntax
-                        )
-                        .Count();
-                    Use(x => x
-                        is string
-                    );
-                    if (Compute(
-                            alpha,
-                            beta
-                        ) is string) { }
+              class C {
+                  void M() {
+                      var a10 = collection.Elements.All(static element => element
+                          is ExpressionElementSyntax
+                      );
+                      var a1 = nodes.Count(static collection => collection.Parent
+                          is {{Long1}}
+                      );
+                      var a2 = nodes.Count(static collection =>
+                          {{Long2}} is SomeVeryLongTypeName
+                      );
+                      var a3 = Compute(
+                          collection.Parent
+                              is ArgumentSyntax
+                      );
+                      var a4 = Compute(
+                          alpha,
+                          {{Long3}} is SomeType
+                      );
+                      var a5 = nodes
+                          .Where(static collection => collection.Parent
+                              is ArgumentSyntax
+                          )
+                          .Count();
+                      Use(x => x
+                          is string
+                      );
+                      if (Compute(
+                              alpha,
+                              beta
+                          ) is string) { }
 
-                    var a6 = Compute(
-                        alpha,
-                        beta
-                    ) is string;
-                    var a7 = Compute(
-                            alpha,
-                            beta
-                        )
-                        is string;
-                    bool a8 = flag
-                        && Compute(
-                            alphaArgumentValue,
-                            betaArgumentValue,
-                            gammaArgumentValue,
-                            deltaArgumentValueXYZ
-                        ) is SomeLongType;
-                }
+                      var a6 = Compute(
+                          alpha,
+                          beta
+                      ) is string;
+                      var a7 = Compute(
+                              alpha,
+                              beta
+                          )
+                          is string;
+                      bool a8 = flag
+                          && Compute(
+                              alphaArgumentValue,
+                              betaArgumentValue,
+                              gammaArgumentValue,
+                              deltaArgumentValueXYZ
+                          ) is SomeLongType;
+                  }
 
-                bool P(object o) =>
-                    o
-                        is string;
+                  bool P(object o) =>
+                      o
+                          is string;
 
-                object Q(object o) {
-                    return o
-                        is string;
-                }
-            }
-            """
+                  object Q(object o) {
+                      return o
+                          is string;
+                  }
+              }
+              """
         );
 }

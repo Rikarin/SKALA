@@ -258,43 +258,43 @@ public sealed class HeldLevelIssue406407Tests {
     public void AnArrowTheMarginMovesDown_SpendsTheLevel_AndOneThatStaysHoldsIt() =>
         Oracle.Agrees(
             $$"""
-            class T {
-                object S(int k) =>
-                    k switch {
-                        {{Held}} =>
-                            (
-                                a).C(),
-                        {{Moved}} =>
-                            (
-                                a).C(),
-                        {{Glued}} => (
-                                a).C(),
-                        _ => null
-                    };
+              class T {
+                  object S(int k) =>
+                      k switch {
+                          {{Held}} =>
+                              (
+                                  a).C(),
+                          {{Moved}} =>
+                              (
+                                  a).C(),
+                          {{Glued}} => (
+                                  a).C(),
+                          _ => null
+                      };
 
-                object a;
-            }
-            """,
+                  object a;
+              }
+              """,
             $$"""
-            class T {
-                object S(int k) =>
-                    k switch {
-                        {{Held}} =>
-                        (
-                            a).C(),
-                        {{Moved}}
-                            =>
-                            (
-                                a).C(),
-                        {{Glued}} =>
-                        (
-                            a).C(),
-                        _ => null
-                    };
+              class T {
+                  object S(int k) =>
+                      k switch {
+                          {{Held}} =>
+                          (
+                              a).C(),
+                          {{Moved}}
+                              =>
+                              (
+                                  a).C(),
+                          {{Glued}} =>
+                          (
+                              a).C(),
+                          _ => null
+                      };
 
-                object a;
-            }
-            """
+                  object a;
+              }
+              """
         );
 
     /// <summary>
@@ -306,64 +306,64 @@ public sealed class HeldLevelIssue406407Tests {
     public void UnderAFill_AChainTheFillBreaks_GivesTheLevelUpInOnePass() =>
         Assert.Equal(
             $$"""
-            using System;
+              using System;
 
-            class T {
-                object A() {
-                    var x =
-                        (
-                            a).{{MidFirst}}
-                        .{{MidLast}};
-                    Func<object> f = () =>
-                        (
-                            a).{{MidFirst}}
-                        .{{MidLast}};
-                    return
-                        (
-                            a).{{MidFirst}}
-                        .{{MidLast}};
-                }
+              class T {
+                  object A() {
+                      var x =
+                          (
+                              a).{{MidFirst}}
+                          .{{MidLast}};
+                      Func<object> f = () =>
+                          (
+                              a).{{MidFirst}}
+                          .{{MidLast}};
+                      return
+                          (
+                              a).{{MidFirst}}
+                          .{{MidLast}};
+                  }
 
-                object B(int k) =>
-                    k switch {
-                        1 =>
-                            (
-                                a).{{MidFirst}}
-                            .{{MidLast}},
-                        _ => null
-                    };
+                  object B(int k) =>
+                      k switch {
+                          1 =>
+                              (
+                                  a).{{MidFirst}}
+                              .{{MidLast}},
+                          _ => null
+                      };
 
-                object a;
-            }
-            """,
+                  object a;
+              }
+              """,
             UnderAFill(
                 $$"""
-                using System;
+                  using System;
 
-                class T {
-                    object A() {
-                        var x =
-                            (
-                                a).{{Mid}};
-                        Func<object> f = () =>
-                            (
-                                a).{{Mid}};
-                        return
-                            (
-                                a).{{Mid}};
-                    }
+                  class T {
+                      object A() {
+                          var x =
+                              (
+                                  a).{{Mid}};
+                          Func<object> f = () =>
+                              (
+                                  a).{{Mid}};
+                          return
+                              (
+                                  a).{{Mid}};
+                      }
 
-                    object B(int k) =>
-                        k switch {
-                            1 =>
-                                (
-                                    a).{{Mid}},
-                            _ => null
-                        };
+                      object B(int k) =>
+                          k switch {
+                              1 =>
+                                  (
+                                      a).{{Mid}},
+                              _ => null
+                          };
 
-                    object a;
-                }
-                """
+                      object a;
+                  }
+                  """
             )
         );
 
@@ -375,60 +375,60 @@ public sealed class HeldLevelIssue406407Tests {
     public void UnderAFill_AChainThatStaysWhole_HoldsTheLevel() =>
         Assert.Equal(
             $$"""
-            using System;
+              using System;
 
-            class T {
-                object A() {
-                    var x =
-                    (
-                        a).{{Whole}};
-                    Func<object> f = () =>
-                    (
-                        a).{{Whole}};
-                    return
-                    (
-                        a).{{Whole}};
-                }
+              class T {
+                  object A() {
+                      var x =
+                      (
+                          a).{{Whole}};
+                      Func<object> f = () =>
+                      (
+                          a).{{Whole}};
+                      return
+                      (
+                          a).{{Whole}};
+                  }
 
-                object B(int k) =>
-                    k switch {
-                        1 =>
-                        (
-                            a).{{Whole}},
-                        _ => null
-                    };
+                  object B(int k) =>
+                      k switch {
+                          1 =>
+                          (
+                              a).{{Whole}},
+                          _ => null
+                      };
 
-                object a;
-            }
-            """,
+                  object a;
+              }
+              """,
             UnderAFill(
                 $$"""
-                using System;
+                  using System;
 
-                class T {
-                    object A() {
-                        var x =
-                            (
-                                a).{{Whole}};
-                        Func<object> f = () =>
-                            (
-                                a).{{Whole}};
-                        return
-                            (
-                                a).{{Whole}};
-                    }
+                  class T {
+                      object A() {
+                          var x =
+                              (
+                                  a).{{Whole}};
+                          Func<object> f = () =>
+                              (
+                                  a).{{Whole}};
+                          return
+                              (
+                                  a).{{Whole}};
+                      }
 
-                    object B(int k) =>
-                        k switch {
-                            1 =>
-                                (
-                                    a).{{Whole}},
-                            _ => null
-                        };
+                      object B(int k) =>
+                          k switch {
+                              1 =>
+                                  (
+                                      a).{{Whole}},
+                              _ => null
+                          };
 
-                    object a;
-                }
-                """
+                      object a;
+                  }
+                  """
             )
         );
 
@@ -443,38 +443,38 @@ public sealed class HeldLevelIssue406407Tests {
     public void TheIssuesCase_SettlesInOnePass() =>
         Assert.Equal(
             $$"""
-            class T {
-                object M() =>
-                    (
-                        a).SomeMethodName({{Args}})
-                    .OtherMethodName({{Args}});
+              class T {
+                  object M() =>
+                      (
+                          a).SomeMethodName({{Args}})
+                      .OtherMethodName({{Args}});
 
-                void N() {
-                    var x =
-                        (
-                            a).SomeMethodName({{Args}})
-                        .OtherMethodName({{Args}});
-                }
+                  void N() {
+                      var x =
+                          (
+                              a).SomeMethodName({{Args}})
+                          .OtherMethodName({{Args}});
+                  }
 
-                object a;
-            }
-            """,
+                  object a;
+              }
+              """,
             UnderAFill(
                 $$"""
-                class T {
-                    object M() =>
-                        (
-                            a).SomeMethodName({{Args}}).OtherMethodName({{Args}});
+                  class T {
+                      object M() =>
+                          (
+                              a).SomeMethodName({{Args}}).OtherMethodName({{Args}});
 
-                    void N() {
-                        var x =
-                            (
-                                a).SomeMethodName({{Args}}).OtherMethodName({{Args}});
-                    }
+                      void N() {
+                          var x =
+                              (
+                                  a).SomeMethodName({{Args}}).OtherMethodName({{Args}});
+                      }
 
-                    object a;
-                }
-                """
+                      object a;
+                  }
+                  """
             )
         );
 }

@@ -22,38 +22,38 @@ public sealed class AttributeCommentIssue434Tests {
 
     const string Members =
         $$"""
-        public class In {
-            [Obsolete] /* c */ public void M1() { }
-            [Obsolete] /* c */ public void M1b() { int x = 1; Use(x); }
-            [Obsolete] /* c */ public int F1;
-            public int P1 { [Obsolete] /* c */ get; set; }
-            [Obsolete] /* c */ [Serializable] public void M2() { }
-            [Obsolete] [Serializable] /* c */ public void M3() { }
-            [Obsolete] /* c
-               d */ public void M4() { }
-            [Obsolete] /* c */
-            public void M6() { }
-            [Obsolete]
-            /* c */ public void M7() { }
-            [Obsolete]
-            /* c */
-            public void M7b() { }
-            [Obsolete] /* c */
-            /* d */ public void M7c() { }
-            [Obsolete] /* c */ public class N1 { }
-            [Obsolete] /* c */ public int P2 { get; set; }
-            [Obsolete] /* c */ public event System.Action E1;
-            [Obsolete] /* c */ public In() { }
-            [Obsolete] /* c */ public void LongMethodName(int {{A20}}, int {{B26}}, int ccccccccccc) { }
-            [Obsolete] /* c */ public void LongMethodNam2(int {{A20}}, int {{B101}}) { }
-            void L() {
-                [Obsolete] /* c */ void Local() { }
-                Local();
-            }
-        }
+          public class In {
+              [Obsolete] /* c */ public void M1() { }
+              [Obsolete] /* c */ public void M1b() { int x = 1; Use(x); }
+              [Obsolete] /* c */ public int F1;
+              public int P1 { [Obsolete] /* c */ get; set; }
+              [Obsolete] /* c */ [Serializable] public void M2() { }
+              [Obsolete] [Serializable] /* c */ public void M3() { }
+              [Obsolete] /* c
+                 d */ public void M4() { }
+              [Obsolete] /* c */
+              public void M6() { }
+              [Obsolete]
+              /* c */ public void M7() { }
+              [Obsolete]
+              /* c */
+              public void M7b() { }
+              [Obsolete] /* c */
+              /* d */ public void M7c() { }
+              [Obsolete] /* c */ public class N1 { }
+              [Obsolete] /* c */ public int P2 { get; set; }
+              [Obsolete] /* c */ public event System.Action E1;
+              [Obsolete] /* c */ public In() { }
+              [Obsolete] /* c */ public void LongMethodName(int {{A20}}, int {{B26}}, int ccccccccccc) { }
+              [Obsolete] /* c */ public void LongMethodNam2(int {{A20}}, int {{B101}}) { }
+              void L() {
+                  [Obsolete] /* c */ void Local() { }
+                  Local();
+              }
+          }
 
-        public record R([Obsolete] /* c */ int A, [property: Obsolete] /* c */ int B);
-        """;
+          public record R([Obsolete] /* c */ int A, [property: Obsolete] /* c */ int B);
+          """;
 
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
@@ -94,65 +94,65 @@ public sealed class AttributeCommentIssue434Tests {
         Agrees(
             Members,
             $$"""
-            public class In {
-                [Obsolete] /* c */ public void M1() { }
+              public class In {
+                  [Obsolete] /* c */ public void M1() { }
 
-                [Obsolete] /* c */ public void M1b() {
-                    int x = 1;
-                    Use(x);
-                }
+                  [Obsolete] /* c */ public void M1b() {
+                      int x = 1;
+                      Use(x);
+                  }
 
-                [Obsolete] /* c */ public int F1;
-                public int P1 { [Obsolete] /* c */ get; set; }
+                  [Obsolete] /* c */ public int F1;
+                  public int P1 { [Obsolete] /* c */ get; set; }
 
-                [Obsolete] /* c */
-                [Serializable]
-                public void M2() { }
+                  [Obsolete] /* c */
+                  [Serializable]
+                  public void M2() { }
 
-                [Obsolete]
-                [Serializable] /* c */ public void M3() { }
+                  [Obsolete]
+                  [Serializable] /* c */ public void M3() { }
 
-                [Obsolete] /* c
-                   d */ public void M4() { }
+                  [Obsolete] /* c
+                     d */ public void M4() { }
 
-                [Obsolete] /* c */
-                public void M6() { }
+                  [Obsolete] /* c */
+                  public void M6() { }
 
-                [Obsolete]
-                /* c */ public void M7() { }
+                  [Obsolete]
+                  /* c */ public void M7() { }
 
-                [Obsolete]
-                /* c */
-                public void M7b() { }
+                  [Obsolete]
+                  /* c */
+                  public void M7b() { }
 
-                [Obsolete] /* c */
-                /* d */ public void M7c() { }
+                  [Obsolete] /* c */
+                  /* d */ public void M7c() { }
 
-                [Obsolete] /* c */ public class N1 { }
+                  [Obsolete] /* c */ public class N1 { }
 
-                [Obsolete] /* c */ public int P2 { get; set; }
-                [Obsolete] /* c */ public event System.Action E1;
-                [Obsolete] /* c */ public In() { }
+                  [Obsolete] /* c */ public int P2 { get; set; }
+                  [Obsolete] /* c */ public event System.Action E1;
+                  [Obsolete] /* c */ public In() { }
 
-                [Obsolete] /* c */ public void LongMethodName(
-                    int {{A20}},
-                    int {{B26}},
-                    int ccccccccccc
-                ) { }
+                  [Obsolete] /* c */ public void LongMethodName(
+                      int {{A20}},
+                      int {{B26}},
+                      int ccccccccccc
+                  ) { }
 
-                [Obsolete] /* c */ public void LongMethodNam2(
-                    int {{A20}},
-                    int {{B101}}
-                ) { }
+                  [Obsolete] /* c */ public void LongMethodNam2(
+                      int {{A20}},
+                      int {{B101}}
+                  ) { }
 
-                void L() {
-                    [Obsolete] /* c */ void Local() { }
-                    Local();
-                }
-            }
+                  void L() {
+                      [Obsolete] /* c */ void Local() { }
+                      Local();
+                  }
+              }
 
-            public record R([Obsolete] /* c */ int A, [property: Obsolete] /* c */ int B);
-            """
+              public record R([Obsolete] /* c */ int A, [property: Obsolete] /* c */ int B);
+              """
         );
 
     /// <summary>
@@ -164,60 +164,60 @@ public sealed class AttributeCommentIssue434Tests {
         Agrees(
             Members,
             $$"""
-            public class In {
-                [Obsolete] /* c */ public void M1() { }
+              public class In {
+                  [Obsolete] /* c */ public void M1() { }
 
-                [Obsolete] /* c */ public void M1b() {
-                    int x = 1;
-                    Use(x);
-                }
+                  [Obsolete] /* c */ public void M1b() {
+                      int x = 1;
+                      Use(x);
+                  }
 
-                [Obsolete] /* c */ public int F1;
-                public int P1 { [Obsolete] /* c */ get; set; }
-                [Obsolete] /* c */ [Serializable] public void M2() { }
-                [Obsolete] [Serializable] /* c */ public void M3() { }
+                  [Obsolete] /* c */ public int F1;
+                  public int P1 { [Obsolete] /* c */ get; set; }
+                  [Obsolete] /* c */ [Serializable] public void M2() { }
+                  [Obsolete] [Serializable] /* c */ public void M3() { }
 
-                [Obsolete] /* c
-                   d */ public void M4() { }
+                  [Obsolete] /* c
+                     d */ public void M4() { }
 
-                [Obsolete] /* c */
-                public void M6() { }
+                  [Obsolete] /* c */
+                  public void M6() { }
 
-                [Obsolete]
-                /* c */ public void M7() { }
+                  [Obsolete]
+                  /* c */ public void M7() { }
 
-                [Obsolete]
-                /* c */
-                public void M7b() { }
+                  [Obsolete]
+                  /* c */
+                  public void M7b() { }
 
-                [Obsolete] /* c */
-                /* d */ public void M7c() { }
+                  [Obsolete] /* c */
+                  /* d */ public void M7c() { }
 
-                [Obsolete] /* c */ public class N1 { }
+                  [Obsolete] /* c */ public class N1 { }
 
-                [Obsolete] /* c */ public int P2 { get; set; }
-                [Obsolete] /* c */ public event System.Action E1;
-                [Obsolete] /* c */ public In() { }
+                  [Obsolete] /* c */ public int P2 { get; set; }
+                  [Obsolete] /* c */ public event System.Action E1;
+                  [Obsolete] /* c */ public In() { }
 
-                [Obsolete] /* c */ public void LongMethodName(
-                    int {{A20}},
-                    int {{B26}},
-                    int ccccccccccc
-                ) { }
+                  [Obsolete] /* c */ public void LongMethodName(
+                      int {{A20}},
+                      int {{B26}},
+                      int ccccccccccc
+                  ) { }
 
-                [Obsolete] /* c */ public void LongMethodNam2(
-                    int {{A20}},
-                    int {{B101}}
-                ) { }
+                  [Obsolete] /* c */ public void LongMethodNam2(
+                      int {{A20}},
+                      int {{B101}}
+                  ) { }
 
-                void L() {
-                    [Obsolete] /* c */ void Local() { }
-                    Local();
-                }
-            }
+                  void L() {
+                      [Obsolete] /* c */ void Local() { }
+                      Local();
+                  }
+              }
 
-            public record R([Obsolete] /* c */ int A, [property: Obsolete] /* c */ int B);
-            """,
+              public record R([Obsolete] /* c */ int A, [property: Obsolete] /* c */ int B);
+              """,
             Every("always")
         );
 
@@ -226,60 +226,60 @@ public sealed class AttributeCommentIssue434Tests {
         Agrees(
             Members,
             $$"""
-            public class In {
-                [Obsolete] /* c */ public void M1() { }
+              public class In {
+                  [Obsolete] /* c */ public void M1() { }
 
-                [Obsolete] /* c */ public void M1b() {
-                    int x = 1;
-                    Use(x);
-                }
+                  [Obsolete] /* c */ public void M1b() {
+                      int x = 1;
+                      Use(x);
+                  }
 
-                [Obsolete] /* c */ public int F1;
-                public int P1 { [Obsolete] /* c */ get; set; }
-                [Obsolete] /* c */ [Serializable] public void M2() { }
-                [Obsolete] [Serializable] /* c */ public void M3() { }
+                  [Obsolete] /* c */ public int F1;
+                  public int P1 { [Obsolete] /* c */ get; set; }
+                  [Obsolete] /* c */ [Serializable] public void M2() { }
+                  [Obsolete] [Serializable] /* c */ public void M3() { }
 
-                [Obsolete] /* c
-                   d */ public void M4() { }
+                  [Obsolete] /* c
+                     d */ public void M4() { }
 
-                [Obsolete] /* c */
-                public void M6() { }
+                  [Obsolete] /* c */
+                  public void M6() { }
 
-                [Obsolete]
-                /* c */ public void M7() { }
+                  [Obsolete]
+                  /* c */ public void M7() { }
 
-                [Obsolete]
-                /* c */
-                public void M7b() { }
+                  [Obsolete]
+                  /* c */
+                  public void M7b() { }
 
-                [Obsolete] /* c */
-                /* d */ public void M7c() { }
+                  [Obsolete] /* c */
+                  /* d */ public void M7c() { }
 
-                [Obsolete] /* c */ public class N1 { }
+                  [Obsolete] /* c */ public class N1 { }
 
-                [Obsolete] /* c */ public int P2 { get; set; }
-                [Obsolete] /* c */ public event System.Action E1;
-                [Obsolete] /* c */ public In() { }
+                  [Obsolete] /* c */ public int P2 { get; set; }
+                  [Obsolete] /* c */ public event System.Action E1;
+                  [Obsolete] /* c */ public In() { }
 
-                [Obsolete] /* c */ public void LongMethodName(
-                    int {{A20}},
-                    int {{B26}},
-                    int ccccccccccc
-                ) { }
+                  [Obsolete] /* c */ public void LongMethodName(
+                      int {{A20}},
+                      int {{B26}},
+                      int ccccccccccc
+                  ) { }
 
-                [Obsolete] /* c */ public void LongMethodNam2(
-                    int {{A20}},
-                    int {{B101}}
-                ) { }
+                  [Obsolete] /* c */ public void LongMethodNam2(
+                      int {{A20}},
+                      int {{B101}}
+                  ) { }
 
-                void L() {
-                    [Obsolete] /* c */ void Local() { }
-                    Local();
-                }
-            }
+                  void L() {
+                      [Obsolete] /* c */ void Local() { }
+                      Local();
+                  }
+              }
 
-            public record R([Obsolete] /* c */ int A, [property: Obsolete] /* c */ int B);
-            """,
+              public record R([Obsolete] /* c */ int A, [property: Obsolete] /* c */ int B);
+              """,
             Every("if_owner_is_single_line")
         );
 
@@ -288,60 +288,60 @@ public sealed class AttributeCommentIssue434Tests {
         Agrees(
             Members,
             $$"""
-            public class In {
-                [Obsolete] /* c */ public void M1() { }
+              public class In {
+                  [Obsolete] /* c */ public void M1() { }
 
-                [Obsolete] /* c */ public void M1b() {
-                    int x = 1;
-                    Use(x);
-                }
+                  [Obsolete] /* c */ public void M1b() {
+                      int x = 1;
+                      Use(x);
+                  }
 
-                [Obsolete] /* c */ public int F1;
-                public int P1 { [Obsolete] /* c */ get; set; }
-                [Obsolete] /* c */ [Serializable] public void M2() { }
-                [Obsolete] [Serializable] /* c */ public void M3() { }
+                  [Obsolete] /* c */ public int F1;
+                  public int P1 { [Obsolete] /* c */ get; set; }
+                  [Obsolete] /* c */ [Serializable] public void M2() { }
+                  [Obsolete] [Serializable] /* c */ public void M3() { }
 
-                [Obsolete] /* c
-                   d */ public void M4() { }
+                  [Obsolete] /* c
+                     d */ public void M4() { }
 
-                [Obsolete] /* c */
-                public void M6() { }
+                  [Obsolete] /* c */
+                  public void M6() { }
 
-                [Obsolete]
-                /* c */ public void M7() { }
+                  [Obsolete]
+                  /* c */ public void M7() { }
 
-                [Obsolete]
-                /* c */
-                public void M7b() { }
+                  [Obsolete]
+                  /* c */
+                  public void M7b() { }
 
-                [Obsolete] /* c */
-                /* d */ public void M7c() { }
+                  [Obsolete] /* c */
+                  /* d */ public void M7c() { }
 
-                [Obsolete] /* c */ public class N1 { }
+                  [Obsolete] /* c */ public class N1 { }
 
-                [Obsolete] /* c */ public int P2 { get; set; }
-                [Obsolete] /* c */ public event System.Action E1;
-                [Obsolete] /* c */ public In() { }
+                  [Obsolete] /* c */ public int P2 { get; set; }
+                  [Obsolete] /* c */ public event System.Action E1;
+                  [Obsolete] /* c */ public In() { }
 
-                [Obsolete] /* c */ public void LongMethodName(
-                    int {{A20}},
-                    int {{B26}},
-                    int ccccccccccc
-                ) { }
+                  [Obsolete] /* c */ public void LongMethodName(
+                      int {{A20}},
+                      int {{B26}},
+                      int ccccccccccc
+                  ) { }
 
-                [Obsolete] /* c */ public void LongMethodNam2(
-                    int {{A20}},
-                    int {{B101}}
-                ) { }
+                  [Obsolete] /* c */ public void LongMethodNam2(
+                      int {{A20}},
+                      int {{B101}}
+                  ) { }
 
-                void L() {
-                    [Obsolete] /* c */ void Local() { }
-                    Local();
-                }
-            }
+                  void L() {
+                      [Obsolete] /* c */ void Local() { }
+                      Local();
+                  }
+              }
 
-            public record R([Obsolete] /* c */ int A, [property: Obsolete] /* c */ int B);
-            """,
+              public record R([Obsolete] /* c */ int A, [property: Obsolete] /* c */ int B);
+              """,
             ("skala_keep_existing_attribute_arrangement", "true")
         );
 
