@@ -2860,7 +2860,7 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         var spec = default(GapSpec);
-        var planned = (previous.Kind == PieceKind.Token || PointSurvivesComments(lastPiece))
+        var planned = (previous.Kind == PieceKind.Token || PointSurvivesComments(lastPiece, nextStart))
             && nextKind == PieceKind.Token
             && plan.TryGap(nextStart, out spec);
 
@@ -2999,7 +2999,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///         <c>SkalaFormatOnly</c> and <c>SkalaDocComments</c> alike.
     ///     </para>
     /// </remarks>
-    bool PointSurvivesComments(int lastPieceIndex) {
+    bool PointSurvivesComments(int lastPieceIndex, int nextStart) {
         var lineComment = false;
         var spansLines = false;
         for (var i = lastPieceIndex; i >= 0; i--) {
@@ -3017,7 +3017,7 @@ public sealed partial class CSharpDocumentBuilder {
                 case PieceKind.Token:
                     return !lineComment
                         && i != lastPieceIndex
-                        && !StopsAtAComment(tokens[piece.TokenIndex])
+                        && (!StopsAtAComment(tokens[piece.TokenIndex]) || plan.PlansPastALeadingComment(nextStart))
                         && !EndsAnAttributeRun(tokens[piece.TokenIndex])
                         && !(spansLines && StopsAtAMultiLineComment(tokens[piece.TokenIndex]));
                 default:
@@ -3036,6 +3036,10 @@ public sealed partial class CSharpDocumentBuilder {
     ///     The two tokens whose wrap the oracle does not carry past a comment after them: <c>(</c> and
     ///     an expression body's <c>=&gt;</c>. See <see cref="PointSurvivesComments" />.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ The list's or the arrow's own wrap stops there; a point of its own past the comment does not,
+    ///     and <see cref="BreakPlan.PlansPastALeadingComment" /> names it (#486).
+    /// </remarks>
     static bool StopsAtAComment(SyntaxToken token) =>
         token.IsKind(SyntaxKind.OpenParenToken)
         || token.IsKind(SyntaxKind.EqualsGreaterThanToken)

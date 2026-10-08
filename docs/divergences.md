@@ -6764,7 +6764,7 @@ the items, and pass two re-decided them. Measured with `Testing ask` on about se
 | `{ /* f */ "a", …` and `[/* f */ a, …` past the margin | `{ /* f */` / the items | a fill after the comment | identical |
 | `= /* f */ "…"` and a lambda's `=> /* f */ "…"` that cannot fit | `= /* f */` / `"…"` | the line left past the margin, or broken before the lambda | identical |
 | `Compute(/* f */ a, b, …)` chopped, and `int P => /* f */ Compute(a, …)` | `Compute( /* f */ a,` / `b,` …, and `=> /* f */ Compute(` / the arguments chopped: the wrap after `(` and after an expression body's arrow stops at the comment | identical | identical |
-| `Compute(/* f */ "…")` and `int P => /* f */ "…"` where the lone item cannot fit | `Compute( /* f */` / `"…"`, `=> /* f */` / `"…"` | `Compute( /* f */ "…"` past the margin | **unchanged, open** |
+| `Compute(/* f */ "…")` and `int P => /* f */ "…"` where the lone item cannot fit | `Compute( /* f */` / `"…"`, `=> /* f */` / `"…"` | `Compute( /* f */ "…"` past the margin | identical since #486: the gap after the comment is a point of its own, by the colon's head rule |
 
 `CSharpDocumentBuilder.PointSurvivesComments` plans the gap between the last block comment and the
 token when every piece back to the previous token is a block comment, the previous token is not `(`
@@ -6780,7 +6780,22 @@ oracle's break after a named argument's colon (`name176:` / `Cast<…>(`) happen
 comment, and Skala has never taken it (#411, now SK-DIV-0177).
 
 - options: none.
-- ⚠ status: **resolved** except the last row, which is **open**.
+⚠ **The last row, fixed at #486: "only when nothing else fits" is the head rule, not a last resort.**
+Measured with `Testing ask` on eighteen shapes: the item moves below the comment exactly when the line
+up to its *first break point* has no room — a lone string of 85 columns as much as one of 120, the first
+of two items (`Compute( /* f */` / `"…",` / `b`), behind a 26-column `var someLongerVariableName =` —
+and stays when it has: `Compute( /* f */ b,` / `"…"`, `Compute( /* f */ Inner(`, `=> /* f */ Compute(`,
+`=> /* f */ "…"` / `+ "…"`, and a 75-column string the whole statement fits around. That is
+`GroupFacts.BreaksOnlyIfHeadOverflows`, the named argument's colon's rule, so the gap is planned by a
+group of its own (`BreakPlan.PlanPastLeadingComments`, read by `PointSurvivesComments` through
+`PlansPastALeadingComment`), on the first argument for a list and opened at the body for an arrow.
+Before it Skala broke the `=` in front of the call, or left a 144-column member. Only for a one-line
+comment the author wrote on the item's line. ⚠ One neighbour stays open: `var x8 = Compute( /* f */
+Inner(` / `"…"` / `)` / `);` puts the inner argument two levels in, the opener's line counting both
+parentheses, where Skala collapses them to one — present before this fix, and an indentation rule.
+Pinned by `constructs/breaks/comment-after-an-opener.cs`.
+
+- ⚠ status: **resolved**.
 ## SK-DIV-0162 — a one-statement block stayed on its owner's line when its statement wrapped
 
 ⚠ **Issue #405**, found working #399. `BreakPlan.PlanOnePerLine` never broke an accessor's, a

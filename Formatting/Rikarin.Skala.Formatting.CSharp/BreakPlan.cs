@@ -246,6 +246,9 @@ public readonly record struct ConstraintRun(GroupPlan Outer, GroupPlan Inner, bo
 public sealed class BreakPlan {
     readonly Dictionary<int, GapSpec> gaps = [];
 
+    /// <summary>The positions <see cref="PlanPastLeadingComments" /> planned. See <see cref="PlansPastALeadingComment" />.</summary>
+    readonly HashSet<int> pastLeadingComments = [];
+
     /// <summary>
     ///     The groups opened around one node, outermost first.
     /// </summary>
@@ -390,6 +393,7 @@ public sealed class BreakPlan {
     ) {
         var plan = new BreakPlan(source, options) { captured = captured };
         plan.Walk(root);
+        plan.PlanPastLeadingComments(root);
         plan.SettleForHeaders();
         plan.CollectForcedBreaks();
         return plan;
@@ -397,6 +401,12 @@ public sealed class BreakPlan {
 
     /// <summary>The rule for the gap immediately before <paramref name="position" />, if any.</summary>
     public bool TryGap(int position, out GapSpec spec) => gaps.TryGetValue(position, out spec);
+
+    /// <summary>
+    ///     Whether the gap before <paramref name="position" /> is planned past the block comment after an
+    ///     argument list's <c>(</c> or an expression body's <c>=&gt;</c>. See <see cref="PlanPastLeadingComments" />.
+    /// </summary>
+    public bool PlansPastALeadingComment(int position) => pastLeadingComments.Contains(position);
 
     /// <summary>The groups the builder opens around <paramref name="node" />, outermost first.</summary>
     public IReadOnlyList<GroupPlan> GroupsOf(SyntaxNode node) =>
@@ -5234,6 +5244,92 @@ public sealed class BreakPlan {
         }
 
         return marker;
+    }
+
+    /// <summary>
+    ///     The gap after a one-line block comment that follows an argument list's <c>(</c> or an
+    ///     expression body's <c>=&gt;</c>: a point of its own, broken only when the line up to the item's
+    ///     first break point has no room (#486, SK-DIV-0165).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The oracle's wrap after either token stops at the comment in the common case and does not in
+    ///     the other, and the two are one rule. Measured with <c>Testing ask</c>: <c>Compute( /* f */ b,</c> /
+    ///     <c>"…"</c> keeps a first item that fits, <c>Compute( /* f */ Inner(</c> and
+    ///     <c>=&gt; /* f */ Compute(</c> keep a head that fits and wrap inside it, <c>=&gt; /* f */ "…"</c> /
+    ///     <c>+ "…"</c> breaks the binary instead; while <c>Compute( /* f */</c> / <c>"…"</c> / <c>);</c>
+    ///     and <c>=&gt; /* f */</c> / <c>"…";</c> move a first item whose head runs past the margin — a
+    ///     string of 85 columns as much as one of 120, a first item of two as much as a lone one. That is
+    ///     <see cref="GroupFacts.BreaksOnlyIfHeadOverflows" />, the named argument's colon's rule. Before
+    ///     this the gap was planned by nothing, so Skala ran the line past the margin or broke the
+    ///     <c>=</c> in front of the call instead.
+    ///     <para>
+    ///         Only where the author wrote the comment and the item on one line, and only for a comment
+    ///         that is one line itself; a break the author wrote after the comment is the builder's to
+    ///         keep, and a comment spanning lines is #435's.
+    ///     </para>
+    /// </remarks>
+    void PlanPastLeadingComments(SyntaxNode root) {
+        foreach (var token in root.DescendantTokens(static node => node is not StructuredTriviaSyntax)) {
+            if (!token.TrailingTrivia.Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))) {
+                continue;
+            }
+
+            SyntaxNode owner;
+            bool spendsIndent;
+            if (token.IsKind(SyntaxKind.OpenParenToken) && token.Parent is ArgumentListSyntax { Arguments.Count: > 0 } list) {
+                owner = list;
+                spendsIndent = false;
+            } else if (token.IsKind(SyntaxKind.EqualsGreaterThanToken) && token.Parent is ArrowExpressionClauseSyntax arrow) {
+                owner = arrow;
+                spendsIndent = true;
+            } else {
+                continue;
+            }
+
+            var next = token.GetNextToken();
+            if (next.IsKind(SyntaxKind.None)
+                || !gaps.TryGetValue(next.SpanStart, out var spec)
+                || spec.Rule != GapRule.Point
+                || !OnlyOneLineBlockComments(token.TrailingTrivia)
+                || !OnlyOneLineBlockComments(next.LeadingTrivia)) {
+                continue;
+            }
+
+            var group = NewGroup();
+            gaps[next.SpanStart] = new(GapRule.Point, group);
+            pastLeadingComments.Add(next.SpanStart);
+            var planned = new GroupPlan(
+                group,
+                GroupMode.Preserve,
+                new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true),
+                spendsIndent,
+                true
+            );
+
+            // An argument list's children are walked by the builder's delimited visitor, which opens
+            // the groups described on a node and not those opened at a position: the group is the
+            // first argument's.
+            if (owner is ArgumentListSyntax arguments) {
+                Describe(arguments.Arguments[0], planned);
+            } else {
+                OpenAt(owner, next.SpanStart, planned);
+            }
+        }
+
+        static bool OnlyOneLineBlockComments(SyntaxTriviaList trivia) {
+            foreach (var piece in trivia) {
+                switch (piece.Kind()) {
+                    case SyntaxKind.WhitespaceTrivia:
+                        continue;
+                    case SyntaxKind.MultiLineCommentTrivia when piece.ToString().AsSpan().IndexOfAny('\n', '\r') < 0:
+                        continue;
+                    default:
+                        return false;
+                }
+            }
+
+            return true;
+        }
     }
 
     /// <summary>The head marker at <paramref name="token" />, shared with any other group that reads it.</summary>
