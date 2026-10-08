@@ -168,7 +168,7 @@ public sealed class CollectionExpressionSpreadTests {
         LanguageVersion version,
         bool fires
     ) {
-        var source = (framework is null ? "" : "// fixture-option: TargetFramework = " + framework + "\n")
+        var source = Directive(framework)
             + Header
             + "        int[] copied = list.ToArray();"
             + Footer;
@@ -218,12 +218,12 @@ public sealed class CollectionExpressionSpreadTests {
     ) {
         var body = Header + "        int[] copied = list.ToArray();" + Footer;
         var current = RuleFixtures.Compile(
-            "// fixture-option: TargetFramework = net10.0\n" + body,
+            Directive("net10.0") + body,
             "shared.cs",
             LanguageVersion.Latest
         );
         var other = RuleFixtures.Compile(
-            (sibling is null ? "" : "// fixture-option: TargetFramework = " + sibling + "\n") + body,
+            Directive(sibling) + body,
             "shared.cs",
             siblingVersion
         );
@@ -244,6 +244,9 @@ public sealed class CollectionExpressionSpreadTests {
         Assert.DoesNotContain(found, static d => d.Id == "AD0001");
         Assert.Equal(fires, found.Any(static d => d.Id == RuleIds.CollectionExpressionSpread));
     }
+
+    static string Directive(string? framework) =>
+        framework is null ? string.Empty : "// fixture-option: TargetFramework = " + framework + "\n";
 
     static string CoreLibrary(Compilation compilation) {
         var identity = compilation.ObjectType.ContainingAssembly.Identity;
