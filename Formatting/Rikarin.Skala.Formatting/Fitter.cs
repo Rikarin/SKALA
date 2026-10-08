@@ -360,18 +360,34 @@ public sealed class Fitter {
                         return ResolvedMode.Flat;
                     }
 
-                    // ⚠ And only a call that leaves room on the line below. The oracle's boundary between
-                    // breaking before the call and holding it to chop its arguments is not one width:
-                    // measured on a grid of heads (40–100) and call lines (50–112), two arguments break
-                    // up to a call line of 82, 74 and 78 behind heads of 60, 80 and 100, one argument up
-                    // to 106 and 96. Every two-argument call line of 76 columns or less breaks in every
-                    // row of the grid and every one-argument line of 96, and nothing that wide holds;
-                    // past them the rows disagree and the call is held, as before. The fact carries how
-                    // far short of the margin the line has to end. SK-DIV-0331 records the grid.
+                    // ⚠ And only a call whose line below is short enough, by the measured table: the
+                    // boundary between breaking before the call and holding it to chop its arguments falls
+                    // as the held `(` moves right, then rises again (HeldCallLimit, SK-DIV-0331).
                     var receiver = m.FlatWidth - tail;
+                    var paren = m.Column + receiver + facts.HeldCallHead;
+
+                    // ⚠ A single call that is a whole `=` value (kinds 3 and 4): moved down whenever its `(`
+                    // would land past the margin — chopping below as well if it must — or, with one argument,
+                    // when the value overflows by a single column; otherwise its arguments chop (#528).
+                    if (facts.HeldCall >= 3) {
+                        return Fits(m.Column, receiver)
+                            && (paren > width
+                                || facts.HeldCall == 3
+                                && m.Column + m.FlatWidth + m.Trailing == width + 1)
+                                ? ResolvedMode.Broken
+                                : ResolvedMode.Flat;
+                    }
+
+                    // ⚠ Under `wrap_if_long` a long rest of the chain pushes the limit out: measured on a
+                    // 2496-row grid, one and two arguments, heads 40 to 110 (#552, GroupFacts.HeldCallRest).
+                    var line = m.ContinuationColumn + tail;
+                    var limit = HeldCallLimit(paren, facts.HeldCall);
                     return Fits(m.Column, receiver)
                         && !Fits(m.Column, m.FlatWidth)
-                        && m.ContinuationColumn + tail <= width - facts.HeldCall
+                        && (line <= limit
+                            || facts.HeldCallRest > 0
+                            && line <= width
+                            && facts.HeldCallRest > 1.5 * (line - limit) + 9)
                             ? ResolvedMode.Broken
                             : ResolvedMode.Flat;
                 }
@@ -381,6 +397,16 @@ public sealed class Fitter {
                     return !Fits(m.Column, m.BreakWidth) && Fits(m.Column, m.BreakWidth - facts.Terminator)
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
+                }
+
+                // ⚠ A switch arm's pattern fill: by the measured table. See GroupFacts.ArmHead.
+                if (facts.ArmHead > 0) {
+                    return ArmFills(facts, m) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                }
+
+                // ⚠ An `=` before a single call: by the measured table. See GroupFacts.HeldValue.
+                if (facts.HeldValue > 0) {
+                    return HeldValueBreaks(facts, m) ? ResolvedMode.Broken : ResolvedMode.Flat;
                 }
 
                 if (!facts.BreaksIfTooLong || Fits(m.Column, m.BreakWidth, m.Trailing)) {
@@ -402,6 +428,22 @@ public sealed class Fitter {
                     return TailFits(m, tail) && HeadIsWideEnough(facts, m, lineStart)
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
+                }
+
+                // ⚠ A conditional's `=` (#553): broken exactly when the condition does not fit beside it
+                // and the head through the `=` is twelve columns or more — and, for a call, when the call
+                // then fits below or the `=` stands at column 40 or left of it: a call that fits nowhere
+                // behind an `=` further right keeps the `=` and chops its arguments. Measured on chain,
+                // binary, identifier and call conditions behind heads from 17 to 66 columns. See
+                // GroupFacts.ValueHeadWidth.
+                if (facts.ValueHeadWidth > 0) {
+                    var beside = Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadWidth);
+                    var below = Fits(m.ContinuationColumn, facts.ValueHeadWidth);
+                    return !beside
+                        && facts.ValueHeadIsWide
+                        && (!facts.ValueHeadFitsBelow || below || m.Column <= CallConditionColumn)
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
                 }
 
                 return Worth(facts, m, afterPointRunsToTheEnd, tail, pointSpace);
@@ -647,6 +689,144 @@ public sealed class Fitter {
     ///     </para>
     /// </remarks>
     int OuterBreakMargin(in Measures m) => 11 + m.ContinuationColumn / indentWidth;
+
+    /// <summary>
+    ///     The widest line a held first call may take below and still be moved there rather than held and
+    ///     chopped, by the column its <c>(</c> would land on held and its argument kind (1 = one argument or
+    ///     none, 2 = more). Measured (#528, SK-DIV-0331).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A table, because the oracle's boundary is not monotone in the head. On a 280-row grid at the
+    ///     export's 120 columns — heads every five columns from 40 to 110, call lines every two columns —
+    ///     two arguments break up to a line of <c>max(108.5 − 0.4·paren, 58 + 0.2·paren)</c>, which
+    ///     reproduces every row; one argument follows the listed thresholds, each the widest line that broke
+    ///     plus one (the next measured width, two wider, held), read at the nearest measured head.
+    /// </remarks>
+    static double HeldCallLimit(int paren, int kind) {
+        if (kind != 1) {
+            return Math.Max(108.5 - 0.4 * paren, 58 + 0.2 * paren);
+        }
+
+        var row = Math.Clamp((int)Math.Round(paren / 5.0) * 5, 40, 110);
+        return row switch {
+            40 => 111,
+            45 or 50 or 55 => 109,
+            60 => 107,
+            65 => 105,
+            70 => 103,
+            75 => 101,
+            80 => 99,
+            85 or 90 => 97,
+            95 or 100 => 99,
+            _ => 101
+        };
+    }
+
+    /// <summary>
+    ///     Whether an <c>=</c> before a single call breaks, by the head's kind. See GroupFacts.HeldValue.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-09 (#528, SK-DIV-0331) on value widths 119 to 126 below, receivers of 11 and
+    ///     40 columns, and the synthetic receivers of 10 to 102 columns that h1, h8 and h9 sweep: the short
+    ///     head keeps the <c>=</c> only once its <c>(</c> would land within two columns of the margin below,
+    ///     and breaks it while the value overflows below by one column (the dot then breaks too); the long
+    ///     head keeps it exactly where a chain's held first call would move down at its dot; the typed local
+    ///     breaks it only while the value fits below with three columns to spare. An assignment whose value
+    ///     starts at the continuation column has nothing to gain from the break and never takes it.
+    /// </remarks>
+    bool HeldValueBreaks(in GroupFacts facts, in Measures m) {
+        var valueColumn = m.Column + m.PointWidth + 1;
+        if (valueColumn + facts.HeldValueWidth <= width) {
+            return false;
+        }
+
+        var continuation = m.ContinuationColumn;
+        var below = continuation + facts.HeldValueWidth;
+        var parenBelow = continuation + facts.HeldValueReceiver + facts.HeldValueHead;
+        var parenBeside = valueColumn + facts.HeldValueReceiver + facts.HeldValueHead;
+        switch (facts.HeldValue) {
+            case 1:
+                // ⚠ Or when the head with the receiver beside it is wider than 87 columns: `T… c = JsonConvert`
+                // holds to 87 and breaks from 88, counted from the statement (h12 at indent 8, on one call
+                // width; Newtonsoft's 77, 82 and 95 at indents 12 and 20 agree, where an absolute column
+                // would not).
+                return below <= width - 3
+                    || valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd;
+            case 2:
+                // ⚠ One column over beside it, a lone argument's dot breaks instead, as it does below.
+                if (valueColumn <= continuation
+                    || !facts.HeldValueManyArgs
+                    && valueColumn + facts.HeldValueWidth == width + 1) {
+                    return false;
+                }
+
+                return facts.HeldValueManyArgs
+                    ? parenBeside > width && parenBelow <= width - 3
+                    : below <= width + 1 || parenBelow <= width - 3;
+            default:
+                // ⚠ A value that fits below with three columns to spare moves down whole, as a typed local's
+                // does (Newtonsoft's `_genericTemporaryCollectionCreator =`, Serilog's `var methods =` at
+                // indent 8; h8's 119-column row and h10's keep the `=`).
+                if (below <= width - 3) {
+                    return true;
+                }
+
+                // ⚠ Two arguments whose `(` fits beside it keep the `=` and chop there (Newtonsoft, Serilog).
+                if (facts.HeldValueManyArgs && parenBeside <= width) {
+                    return false;
+                }
+
+                var moves = valueColumn + facts.HeldValueReceiver <= width
+                    && parenBeside > width
+                    && continuation + facts.HeldValueWidth - facts.HeldValueReceiver
+                    <= HeldCallLimit(parenBeside, facts.HeldValueManyArgs ? 2 : 1);
+                return !moves;
+        }
+    }
+
+    /// <summary>
+    ///     The widest a typed local's head and held receiver may be beside its <c>=</c>, from the statement's
+    ///     first column (#528, h12).
+    /// </summary>
+    const int HeldReceiverEnd = 87;
+
+    /// <summary>
+    ///     Whether a switch arm's member-access pattern breaks at a dot rather than leave the arm to its
+    ///     arrow (#531, SK-DIV-0330).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-09 on 384 arms (heads through the <c>=&gt;</c> of 102 to 127 columns, bodies of
+    ///     2 to 22 with and without a comma, three prefixes): a pattern that overflows by itself breaks its
+    ///     dot whatever the body; one whose <c>=&gt;</c> overflows breaks its dot for a body of fourteen
+    ///     columns or less and moves the <c>=&gt;</c> down otherwise; and an arm that overflows only by its
+    ///     body breaks its dot for a body of fourteen or less once the <c>=&gt;</c> ends at column 111 or
+    ///     right of it, twelve or less at 110, and never left of that — the arrow breaks there.
+    /// </remarks>
+    bool ArmFills(in GroupFacts facts, in Measures m) {
+        var headEnd = m.Column + facts.ArmHead;
+        var arrowEnd = headEnd + 3;
+        if (arrowEnd + 1 + facts.ArmBody <= width) {
+            return false;
+        }
+
+        if (headEnd > width) {
+            return true;
+        }
+
+        if (arrowEnd > width) {
+            return facts.ArmBody <= ArmBodyLimit;
+        }
+
+        return arrowEnd >= width - 9
+            ? facts.ArmBody <= ArmBodyLimit
+            : arrowEnd == width - 10 && facts.ArmBody <= ArmBodyLimit - 2;
+    }
+
+    /// <summary>The widest arm body, comma included, that lets a switch arm's pattern fill (#531).</summary>
+    const int ArmBodyLimit = 14;
+
+    /// <summary>The column a call condition's <c>=</c> breaks at or left of when the call fits nowhere (#553).</summary>
+    const int CallConditionColumn = 40;
 
     bool Fits(int column, int flatWidth, int trailing = 0) =>
         flatWidth < Unbounded && trailing < Unbounded && column + flatWidth + trailing <= width;
