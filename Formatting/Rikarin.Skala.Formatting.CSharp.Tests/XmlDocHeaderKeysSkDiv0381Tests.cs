@@ -20,9 +20,15 @@ public sealed class XmlDocHeaderKeysSkDiv0381Tests {
             Doc(PastTheMargin, ("skala_xmldoc_wrap_tags_and_pi", "false"))
         );
         Assert.Equal(
-            ["/// <remarks>", "///     <see cref=\"System.String\"", "///         href=\"https://short.invalid/\" />", "/// </remarks>"],
+            [
+                "/// <remarks>", "///     <see cref=\"System.String\"",
+                "///         href=\"https://short.invalid/\" />", "/// </remarks>"
+            ],
             Doc(
-                ["/// <remarks>", "/// <see cref=\"System.String\"", "///     href=\"https://short.invalid/\" />", "/// </remarks>"],
+                [
+                    "/// <remarks>", "/// <see cref=\"System.String\"", "///     href=\"https://short.invalid/\" />",
+                    "/// </remarks>"
+                ],
                 ("skala_xmldoc_wrap_tags_and_pi", "false")
             )
         );
@@ -62,9 +68,15 @@ public sealed class XmlDocHeaderKeysSkDiv0381Tests {
 
     [Fact]
     public void AttributeStyle_EveryValue() {
-        string[] broken = ["/// <remarks>", "/// <see cref=\"System.String\"", "///     href=\"https://short.invalid/\" />", "/// </remarks>"];
+        string[] broken = [
+            "/// <remarks>", "/// <see cref=\"System.String\"", "///     href=\"https://short.invalid/\" />",
+            "/// </remarks>"
+        ];
         Assert.Equal(
-            ["/// <remarks>", "///     <see cref=\"System.String\" href=\"https://short.invalid/\" />", "/// </remarks>"],
+            [
+                "/// <remarks>", "///     <see cref=\"System.String\" href=\"https://short.invalid/\" />",
+                "/// </remarks>"
+            ],
             Doc(broken, ("skala_xmldoc_attribute_style", "on_single_line"))
         );
 
@@ -78,7 +90,9 @@ public sealed class XmlDocHeaderKeysSkDiv0381Tests {
             Doc(param, ("skala_xmldoc_attribute_style", "first_attribute_on_single_line"))
         );
 
-        string[] two = ["/// <summary>Text.</summary><customElement alphaAttribute=\"1\" betaAttribute=\"2\">Body.</customElement>"];
+        string[] two = [
+            "/// <summary>Text.</summary><customElement alphaAttribute=\"1\" betaAttribute=\"2\">Body.</customElement>"
+        ];
         Assert.Equal(
             [
                 "/// <summary>Text.</summary>",
@@ -94,6 +108,6 @@ public sealed class XmlDocHeaderKeysSkDiv0381Tests {
     static string[] Doc(string[] lines, params (string Key, string Value)[] overrides) {
         var once = XmlDoc.Text(XmlDoc.InClass(lines), overrides);
         Assert.Equal(once, XmlDoc.Text(once, overrides));
-        return [.. XmlDoc.DocLines(once)];
+        return [..XmlDoc.DocLines(once)];
     }
 }

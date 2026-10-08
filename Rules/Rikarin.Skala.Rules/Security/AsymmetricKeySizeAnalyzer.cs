@@ -103,7 +103,8 @@ public sealed class AsymmetricKeySizeAnalyzer : DiagnosticAnalyzer {
     ///         <b>
     ///             The <c>SpecialType</c> test is a cost filter and not a correctness guard, and a second
     ///             surviving sabotage is how that is known rather than claimed.
-    ///         </b> Deleting it turns no test
+    ///         </b>
+    ///         Deleting it turns no test
     ///         red, because <see cref="Examine" />'s <c>Value: int bits</c> pattern already declines
     ///         <c>RSA.Create(RSAParameters)</c> and <c>RSA.Create(string)</c> — a constant string does not
     ///         match <c>int</c>. What it buys is that this action runs on every object creation and every

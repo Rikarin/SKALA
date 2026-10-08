@@ -21,7 +21,8 @@ namespace Rikarin.Skala.Rules.Security;
 ///         <b>
 ///             The receiver set is the whole argument, and it is drawn on where the safe default
 ///             lives.
-///         </b> <c>XmlDocument</c> (and <c>XmlDataDocument</c> under it) has an
+///         </b>
+///         <c>XmlDocument</c> (and <c>XmlDataDocument</c> under it) has an
 ///         <c>XmlResolver</c> and no <c>DtdProcessing</c> at all, so the resolver is the only switch
 ///         there is. <c>XmlTextReader</c> has both, and its <c>DtdProcessing</c> defaults to
 ///         <c>Parse</c> — so again the resolver alone decides. On both, <c>XmlResolver</c> has defaulted

@@ -28,7 +28,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             Every branch here is guarded by what the deletion would <em>mean</em>, not by what it
 ///             would look like.
-///         </b> An interpolated string is only reported where the compiler was converting
+///         </b>
+///         An interpolated string is only reported where the compiler was converting
 ///         it to <c>string</c>: a <c>FormattableString</c> target and an interpolated-string handler both
 ///         accept <c>$"…"</c> and reject <c>"…"</c>, and the difference is invisible in the syntax. A
 ///         verbatim prefix is only reported where the body holds no backslash, no doubled quote and no

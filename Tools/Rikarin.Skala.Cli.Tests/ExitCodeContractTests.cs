@@ -214,7 +214,8 @@ public sealed class ExitCodeContractTests : IDisposable {
     ///         <c>
     /// INCOMPLETE  1 of 1 file was
     ///         not checked — this is a Skala bug, not a finding in your code.
-    ///         </c> above <b>exit 0</b>,
+    ///         </c>
+    ///         above <b>exit 0</b>,
     ///         then <c>SKIPPED 260 rule(s) did not run (loose load)</c>. The "1 file" was
     ///         <c>Broken.csproj</c>. The source file was checked by the loose rung and its finding
     ///         rendered under the banner; 260 rules did not run; the <c>local</c> gate passed.

@@ -72,7 +72,8 @@ public static class McpServer {
     ///     <em>
     ///         saying
     ///         so
-    ///     </em>, not <em>doing something</em>. An agent with a sanctioned way to disagree does not
+    ///     </em>
+    ///     , not <em>doing something</em>. An agent with a sanctioned way to disagree does not
     ///     need an unsanctioned one.
     /// </remarks>
     const string Instructions = """

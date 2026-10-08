@@ -625,9 +625,9 @@ public sealed class XmlDocRenderer {
         || OneWord(element)
         && !HeaderWraps(element)
         || IndentWidth()
-            + TextWidth.Measure(flat)
-            - (element.Children is [.., XmlDocWord] ? element.Name.Length + "</>".Length : 0)
-            <= budget;
+        + TextWidth.Measure(flat)
+        - (element.Children is [.., XmlDocWord] ? element.Name.Length + "</>".Length : 0)
+        <= budget;
 
     /// <summary>Whether the element's content is one unbreakable word.</summary>
     /// <remarks>
@@ -725,7 +725,8 @@ public sealed class XmlDocRenderer {
     ///     <b>
     ///         A unit carrying a tag may always move, and <c>wrap_tags_and_pi</c> is not what says
     ///         so.
-    ///     </b> This used to read <c>_tokenIsTag ? WrapTagsAndPi : WrapText</c>, and both halves of
+    ///     </b>
+    ///     This used to read <c>_tokenIsTag ? WrapTagsAndPi : WrapText</c>, and both halves of
     ///     that were measured wrong on the same pair of probes. At
     ///     <c>wrap_tags_and_pi = false</c> the oracle still moves a <c>&lt;see/&gt;</c> off the end of a
     ///     line of prose — byte-identical to <c>true</c> on that fixture — and what the key really

@@ -426,7 +426,8 @@ public sealed class FormatterOffSwitchTests {
     ///     <b>
     ///         This is not a duplicate of the corpus-wide property suites; it is the only place these
     ///         four keys are asked at all.
-    ///     </b> <c>PropertyTests</c> and <c>FuzzerTests</c> run at the
+    ///     </b>
+    ///     <c>PropertyTests</c> and <c>FuzzerTests</c> run at the
     ///     export's configuration, where all four of these are <c>false</c> and every branch they
     ///     control is dead — so a suppression could leak arbitrarily and 19 000 green property cases
     ///     would say nothing about it. The keys have to be turned on by something, and this is it.

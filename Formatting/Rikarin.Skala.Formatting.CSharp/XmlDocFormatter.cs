@@ -63,7 +63,8 @@ public readonly record struct XmlDocReplacement(TextSpan Span, int Length);
 ///     <b>
 ///         This is the one part of Skala that no committed fixture pins, and the reason is the
 ///         profile rather than the tool.
-///     </b> <c>jb cleanupcode</c> 2025.2.6 formats documentation comments
+///     </b>
+///     <c>jb cleanupcode</c> 2025.2.6 formats documentation comments
 ///     perfectly well — it inserts the space after <c>///</c>, wraps a 128-column summary, splits two
 ///     <c>&lt;param&gt;</c> tags onto their own lines, and rewrites tag headers — but only under a
 ///     cleanup profile that enables its <c>CSharpFormatDocComments</c> task, and neither
@@ -747,7 +748,8 @@ public static class XmlDocSignature {
     ///     <b>
     ///         The whitespace around the <c>=</c> is the only thing dropped, and dropping it is not a
     ///         weakening of the check.
-    ///     </b> <c>name="a"</c> and <c>name = "a"</c> are the same attribute of
+    ///     </b>
+    ///     <c>name="a"</c> and <c>name = "a"</c> are the same attribute of
     ///     the same element in the same document — XML says so — and two keys of this family,
     ///     <c>spaces_around_eq_in_attribute</c> and <c>space_after_last_attribute</c>, exist to change
     ///     exactly that whitespace and nothing else. Comparing the header's raw source text would make

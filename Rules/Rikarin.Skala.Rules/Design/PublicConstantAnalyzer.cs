@@ -30,7 +30,8 @@ namespace Rikarin.Skala.Rules.Design;
 ///         <b>
 ///             A project can declare which of its constants are frozen, and the analyzer knows nothing
 ///             about which names those are (#330).
-///         </b> The rule's own rationale already says a value that
+///         </b>
+///         The rule's own rationale already says a value that
 ///         "can never change" is correctly <c>public const</c> — a protocol magic number, a format
 ///         version — and it had no way to be told. It does now:
 ///         <c>dotnet_code_quality.SK6034.frozen_constant_types</c> names the containing types whose
@@ -39,7 +40,8 @@ namespace Rikarin.Skala.Rules.Design;
 ///         <b>
 ///             The exemption is declared by the project, never recognised by the
 ///             analyzer.
-///         </b> The first proposal on the issue keyed it on <c>allocated-ids.txt</c> and on the
+///         </b>
+///         The first proposal on the issue keyed it on <c>allocated-ids.txt</c> and on the
 ///         type names <c>RuleIds</c>/<c>ExitCodes</c> — that is one repository's layout carried inside a
 ///         rule that ships to repositories which have neither, and it is the thing the working
 ///         agreement forbids.
@@ -49,7 +51,8 @@ namespace Rikarin.Skala.Rules.Design;
 ///         <b>
 ///             Skala itself does not set the key, and the reason is worth knowing before adding
 ///             another option like it.
-///         </b> Its root <c>.editorconfig</c> is <c>root = true</c> plus the
+///         </b>
+///         Its root <c>.editorconfig</c> is <c>root = true</c> plus the
 ///         ReSharper export byte for byte — ADR-015, asserted by <c>EditorConfigIngestionTests</c> —
 ///         its digest is what 2 814 conformance fixtures record as the configuration they were frozen
 ///         under, and <c>ChainWalk_StopsAtRoot</c> asserts there is no nested one. So this repository
@@ -62,7 +65,8 @@ namespace Rikarin.Skala.Rules.Design;
 ///         <b>
 ///             The fix drops an initialiser that is the type's default, because keeping it is
 ///             <c>CA1805</c>.
-///         </b> <c>public const int Ok = 0;</c> rewritten to
+///         </b>
+///         <c>public const int Ok = 0;</c> rewritten to
 ///         <c>public static readonly int Ok = 0;</c> is an explicit default initialiser, which is
 ///         redundant on a field and legitimate only on a <c>const</c> — so the one-token swap traded
 ///         this rule's finding for the SDK's. Only value types are dropped: <c>const string X = null;</c>

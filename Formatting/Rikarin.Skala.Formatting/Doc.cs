@@ -131,7 +131,8 @@ public enum LineFlags {
     ///     <em>
     ///         whenever
     ///         the initializer wraps at all
-    ///     </em>, and fills only the gaps between elements:
+    ///     </em>
+    ///     , and fills only the gaps between elements:
     ///     <code>
     /// var e = new[] {
     ///     "aaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbb", "ccccccccccccccc", "ddddddddddddddd", "eeeeeeeeeeeeeee",

@@ -15,7 +15,8 @@ namespace Rikarin.Skala.Rules.Maintainability;
 ///     <b>
 ///         <c>goto case</c> and <c>goto default</c> do not fire, and that is the rule's position
 ///         rather than an oversight.
-///     </b> They are the only way C# expresses switch fall-through, they
+///     </b>
+///     They are the only way C# expresses switch fall-through, they
 ///     cannot leave the switch they are written in, and the control flow they describe is exactly the
 ///     one a reader already has in front of them. Reporting them would make the rule a style opinion
 ///     about <c>switch</c> and would be turned off with the part that is worth having.

@@ -26,7 +26,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             <see cref="RegisterCompilationStartAction" />, not
 ///             <see cref="AnalysisContext.RegisterSymbolStartAction(Action{SymbolStartAnalysisContext}, SymbolKind)" />.
-///         </b> A <c>private</c> member is callable from nested types, and a nested type is a different
+///         </b>
+///         A <c>private</c> member is callable from nested types, and a nested type is a different
 ///         <see cref="INamedTypeSymbol" /> — so a per-type symbol start sees the declaration and not
 ///         every call site, and the missing call sites are exactly the ones that make the claim false.
 ///         The price is <see cref="RuleInfo.IsCacheable" />: <c>scope: "Compilation"</c> means the rule
@@ -216,7 +217,8 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
     ///     <b>
     ///         There is no <c>virtual</c>/<c>abstract</c>/<c>override</c> guard, and its absence is a
     ///         measurement rather than an oversight.
-    ///     </b> At <c>private</c> accessibility all three are
+    ///     </b>
+    ///     At <c>private</c> accessibility all three are
     ///     compile errors — <c>private virtual</c> and <c>private abstract</c> are <b>CS0621</b>, and
     ///     <c>private override</c> draws <b>CS0507</b> on top of it, because nothing a base type can
     ///     declare is both private and virtual. A guard against them could never be reached by
@@ -308,7 +310,8 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
     ///     <b>
     ///         One test, and the second one that was written here was dead code — measured, not
     ///         assumed.
-    ///     </b> The draft also unwrapped an <see cref="IDeclarationExpressionOperation" />
+    ///     </b>
+    ///     The draft also unwrapped an <see cref="IDeclarationExpressionOperation" />
     ///     looking for a discard inside it, because <c>out var _</c> and <c>out int _</c> are
     ///     <see cref="DeclarationExpressionSyntax" /> nodes and <c>out _</c> is not. In the operation
     ///     tree they are not distinguishable: all three arrive as a bare

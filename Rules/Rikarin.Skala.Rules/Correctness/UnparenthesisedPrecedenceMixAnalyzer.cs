@@ -25,7 +25,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///             The boundary against <c>SK0209</c> is settled by two facts, one per value of
 ///             <c>skala_parentheses_redundancy_style</c>, and settling it was the condition on shipping
 ///             this at all.
-///         </b> At the default <c>remove_if_not_clarifies_precedence</c>,
+///         </b>
+///         At the default <c>remove_if_not_clarifies_precedence</c>,
 ///         <c>ParenthesesRedundancy.MayRemove</c> refuses a binary operand of a shift or a bitwise
 ///         operator, because <c>resharper_parentheses_non_obvious_operations</c> names exactly those,
 ///         and every pair of parentheses this rule adds is around such an operand. At <c>remove</c> the
@@ -47,7 +48,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The <c>?:</c> row this rule was drafted with is gone, because the grammar makes it
 ///             unreachable.
-///         </b> A conditional expression binds looser than every binary operator, so it can
+///         </b>
+///         A conditional expression binds looser than every binary operator, so it can
 ///         never <em>be</em> an unparenthesised binary operand; the only reachable nesting is
 ///         <c>a ? b : c ? d : e</c>, the chained-ternary idiom every C# reader parses correctly.
 ///     </para>

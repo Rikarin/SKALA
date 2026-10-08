@@ -960,7 +960,8 @@ public sealed partial class CSharpDocumentBuilder {
     ///     <em>
     ///         on the lambda's own
     ///         line
-    ///     </em> — which is why <see cref="VisitDelimited" /> opens that one unconditionally — so a
+    ///     </em>
+    ///     — which is why <see cref="VisitDelimited" /> opens that one unconditionally — so a
     ///     second level for the body is the one-level-per-opening-line rule being paid twice:
     ///     <code>
     /// var b = new Func&lt;int, bool&gt;(x =&gt; x &gt; 0

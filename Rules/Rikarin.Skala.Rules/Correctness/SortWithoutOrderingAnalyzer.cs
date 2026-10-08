@@ -24,7 +24,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The question is only decidable for a sealed type, and that is the finding rather than a
 ///             limitation to apologise for.
-///         </b> <c>Comparer&lt;T&gt;.Default</c> for an unsealed <c>T</c>
+///         </b>
+///         <c>Comparer&lt;T&gt;.Default</c> for an unsealed <c>T</c>
 ///         builds an <c>ObjectComparer</c> that casts each <em>element</em> to <c>IComparable</c> at run
 ///         time, so a <c>List&lt;Animal&gt;</c> holding <c>Dog : Animal, IComparable&lt;Dog&gt;</c> sorts
 ///         correctly even though <c>Animal</c> implements nothing. A non-sealed class therefore cannot

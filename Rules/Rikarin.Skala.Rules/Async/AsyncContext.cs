@@ -110,7 +110,8 @@ internal static class AsyncContext {
     ///     <b>
     ///         The walk is here and the type test is shared, because the type test had a bug and this
     ///         copy had it too (#349).
-    ///     </b> Both copies matched with
+    ///     </b>
+    ///     Both copies matched with
     ///     <c>ToDisplayString().StartsWith("System.Linq.Expressions.Expression")</c>, which also answers
     ///     <c>true</c> for a user-declared <c>System.Linq.Expressions.ExpressionFoo</c>. Two independent
     ///     spellings of one predicate are two places for that to be wrong, so the answer is taken from
@@ -137,7 +138,8 @@ internal static class AsyncContext {
     ///         <b>
     ///             The attribute is on the method, and the blocking call is in the helper the test
     ///             methods share.
-    ///         </b> <see cref="IsTestMethod" /> answers about the <em>enclosing method</em>, so on
+    ///         </b>
+    ///         <see cref="IsTestMethod" /> answers about the <em>enclosing method</em>, so on
     ///         Skala's own tree it exempted all 346 callers of <c>RuleFixtures.Analyze</c> and missed the
     ///         one method they funnel through — the method that actually blocks ([#319]). The same walk
     ///         also declines a fixture constructor, an <c>IDisposable.Dispose</c> teardown and a field
@@ -155,7 +157,8 @@ internal static class AsyncContext {
     ///         <b>
     ///             What this deliberately does <em>not</em> do is recognise a helper in a separate
     ///             class, and that refuses [#319]'s own proposed remedy.
-    ///         </b> #319 asked for "a non-public
+    ///         </b>
+    ///         #319 asked for "a non-public
     ///         helper declared in a test project". Neither half survives contact: <c>RuleFixtures</c> is
     ///         a <c>public static class</c> and <c>Analyze</c> is <c>public static</c>, so an
     ///         accessibility test would have left the finding exactly where it was — and "declared in a

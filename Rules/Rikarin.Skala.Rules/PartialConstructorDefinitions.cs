@@ -20,7 +20,8 @@ namespace Rikarin.Skala.Rules;
 ///         On <c>Microsoft.CodeAnalysis.CSharp</c> 5.9 no syntax-node action, symbol action or
 ///         symbol-start node action is ever given a C# 14 partial constructor's <em>defining</em>
 ///         declaration, nor any node inside it.
-///     </b> Measured with a probe analyzer over
+///     </b>
+///     Measured with a probe analyzer over
 ///     <c>partial C(int x); partial C(int x) { }</c>: the implementation, its parameter and every other
 ///     partial kind's definition were visited; the definition and its parameter were not, and the
 ///     symbol action saw only the implementation's symbol. A syntax-tree action and a semantic-model

@@ -21,17 +21,20 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Every shape reported here was confirmed by running it on .NET 10, not by reading the
 ///             documentation.
-///         </b> A name the target does not declare throws <c>MissingFieldException</c>
+///         </b>
+///         A name the target does not declare throws <c>MissingFieldException</c>
 ///         — <i>Field not found: 'Target._buffer'</i>; a <c>Field</c> kind naming a member that is a
 ///         method throws the same; and <c>UnsafeAccessorKind.Constructor</c> carrying
 ///         <c>Name = "Create"</c> throws
 ///         <b>
 ///             <c>BadImageFormatException</c>
-///         </b>,
+///         </b>
+///         ,
 ///         <i>
 ///             Invalid usage of
 ///             UnsafeAccessorAttribute
-///         </i>. The correctly spelled field accessor and the unnamed
+///         </i>
+///         . The correctly spelled field accessor and the unnamed
 ///         constructor accessor both succeeded in the same run, so the probe was measuring this
 ///         rule's subject rather than a broken harness. That is what justifies <c>error</c> severity.
 ///     </para>
@@ -40,7 +43,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The target type must be declared in this compilation's own source, and that restriction
 ///             is the whole reason the rule can be trusted.
-///         </b> A reference assembly does not carry private
+///         </b>
+///         A reference assembly does not carry private
 ///         members — stripping them is what a reference assembly is for — so
 ///         <c>GetMembers("secret")</c> against a type from a referenced assembly returns nothing
 ///         whether the member is absent or merely invisible. Reporting on that would turn every correct

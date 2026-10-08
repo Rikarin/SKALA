@@ -120,7 +120,8 @@ public static class RuleCoverage {
     ///     <b>
     ///         This overload exists so the filter cannot be applied in one caller and forgotten in
     ///         the other.
-    ///     </b> There are exactly two callers — the <c>skala rules docs</c> generator and
+    ///     </b>
+    ///     There are exactly two callers — the <c>skala rules docs</c> generator and
     ///     the test that asserts the generated block — and when a rule was first retired after
     ///     shipping, only the test was updated. The generator went on counting the withdrawn rule as
     ///     shipped, so the block it wrote and the block the test expected disagreed by two, and the

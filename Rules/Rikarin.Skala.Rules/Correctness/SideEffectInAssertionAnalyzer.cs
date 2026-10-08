@@ -21,7 +21,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <c>Debug.Assert</c> is <c>[Conditional("DEBUG")]</c>, which does not mean the condition
 ///         evaluates to <c>true</c> in release — it means the <em>call site is deleted</em>, arguments and
 ///         all.
-///     </b> <c>Debug.Assert(items.Remove(key))</c> removes the item in every debug run and in no
+///     </b>
+///     <c>Debug.Assert(items.Remove(key))</c> removes the item in every debug run and in no
 ///     release run. The resulting bug exists only in production, disappears the moment anybody attaches a
 ///     debugger or runs the test suite, and every reproduction attempt confirms the code is fine.
 ///     <para>
@@ -29,7 +30,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The rule is on <c>[Conditional]</c>, not on a list of assertion methods, and that is a
 ///             generalisation that costs nothing.
-///         </b> <c>Debug.Assert</c> and <c>Trace.Assert</c> are the
+///         </b>
+///         <c>Debug.Assert</c> and <c>Trace.Assert</c> are the
 ///         motivating case and the commonest one, but the defect is a property of the attribute: a
 ///         repository's own <c>[Conditional("TRACE")]</c> logging helper deletes its arguments exactly the
 ///         same way, and a rule naming only the framework's two would be silent on the version somebody
@@ -51,12 +53,14 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             An <c>out var</c> the code below reads was built as a fifth kind of evidence and
 ///             then removed, because the compiler already reports it.
-///         </b> With the call deleted the
+///         </b>
+///         With the call deleted the
 ///         variable is never assigned, so the reader below it is <c>CS0165</c> —
 ///         <i>
 ///             use of unassigned
 ///             local variable
-///         </i> — in any build without the symbol defined. The positive fixture written
+///         </i>
+///         — in any build without the symbol defined. The positive fixture written
 ///         for it could not be made to compile, which is how this was found rather than argued.
 ///         docs/plan/08 § "the compiler already says it": a rule that restates a compiler error adds
 ///         a second voice and no information.

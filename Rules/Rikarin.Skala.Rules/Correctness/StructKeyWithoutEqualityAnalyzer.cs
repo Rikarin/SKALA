@@ -16,7 +16,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <b>
 ///         <c>SK2011</c> was read before this was written, and the issue proposing the rule had it
 ///         backwards.
-///     </b> Issue #4 says <c>SK2011</c> reports at the <em>declaration</em>; it does not —
+///     </b>
+///     Issue #4 says <c>SK2011</c> reports at the <em>declaration</em>; it does not —
 ///     <c>InheritedValueTypeEqualsAnalyzer</c> registers on <c>InvocationExpression</c> and fires on
 ///     the <c>.Equals</c> call site. So the three inspections in that issue about a comparison
 ///     (<c>UsageOfDefaultStructEquality</c> and both <c>DefaultStructEqualityIsUsed</c> scopes) are

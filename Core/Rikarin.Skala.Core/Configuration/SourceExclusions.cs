@@ -16,7 +16,8 @@ namespace Rikarin.Skala.Core.Configuration;
 ///     <b>
 ///         This type exists because the question was being answered in four places and each of them
 ///         was wrong differently.
-///     </b> <c>FormatCommand.IsExcluded</c> knew about <c>.claude/</c> and not
+///     </b>
+///     <c>FormatCommand.IsExcluded</c> knew about <c>.claude/</c> and not
 ///     <c>.skala/</c>; <c>BinlogLoader.EnumerateSources</c> knew about <c>.skala/</c> and not
 ///     <c>.claude/</c>, and tested the <em>absolute</em> path, which is the bug that made
 ///     <c>skala format &lt;repo root&gt;</c> rewrite 2 796 files inside another agent's worktree;
@@ -60,7 +61,8 @@ public sealed class SourceExclusions {
     ///     <b>
     ///         an agent worktree is a second checkout of this repository
     ///         inside it
-    ///     </b> — the repository's own <c>.gitignore</c> says exactly that. Git honours it; a
+    ///     </b>
+    ///     — the repository's own <c>.gitignore</c> says exactly that. Git honours it; a
     ///     walk over <see cref="SearchOption.AllDirectories" /> does not. ⚠ <c>.skala/</c> is here because
     ///     it holds crash reproductions, which are Skala's own evidence and must be kept byte-for-byte.
     /// </remarks>

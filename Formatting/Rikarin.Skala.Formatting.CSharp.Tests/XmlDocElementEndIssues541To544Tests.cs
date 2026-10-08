@@ -21,7 +21,12 @@ public sealed class XmlDocElementEndIssues541To544Tests {
                 "///     and more prose.",
                 "/// </remarks>"
             ],
-            Doc("/// <remarks>", "///     Lead <i>an italic run", "///     over two lines</i> and more prose.", "/// </remarks>")
+            Doc(
+                "/// <remarks>",
+                "///     Lead <i>an italic run",
+                "///     over two lines</i> and more prose.",
+                "/// </remarks>"
+            )
         );
 
     /// <summary>
@@ -124,6 +129,6 @@ public sealed class XmlDocElementEndIssues541To544Tests {
     static string[] Doc(params string[] lines) {
         var once = XmlDoc.Text(XmlDoc.InClass(lines));
         Assert.Equal(once, XmlDoc.Text(once));
-        return [.. XmlDoc.DocLines(once)];
+        return [..XmlDoc.DocLines(once)];
     }
 }

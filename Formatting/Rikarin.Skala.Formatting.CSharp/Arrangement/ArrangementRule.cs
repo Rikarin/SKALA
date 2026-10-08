@@ -48,7 +48,8 @@ public static class ArrangeIds {
     ///     <c>
     /// Func&lt;int&gt; v = new () { P = (from
     ///     item in items select null) };
-    ///     </c> makes Roslyn's own binder throw
+    ///     </c>
+    ///     makes Roslyn's own binder throw
     ///     <c>IndexOutOfRangeException</c> out of <c>GetSymbolInfo</c>, which is a legitimate call on a
     ///     node of the model's own tree.
     ///     <para>

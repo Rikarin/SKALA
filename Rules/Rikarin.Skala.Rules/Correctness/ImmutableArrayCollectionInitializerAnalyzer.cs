@@ -28,7 +28,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The parser is what excludes
 ///             it, and the element count below is not.
-///         </b> A sabotage run found this: an empty brace pair
+///         </b>
+///         A sabotage run found this: an empty brace pair
 ///         is ambiguous between the two initializer forms and Roslyn classifies it
 ///         <c>ObjectInitializerExpression</c>, so a <c>CollectionInitializerExpression</c> with zero
 ///         expressions does not exist and relaxing the count changes nothing. The count stays as a

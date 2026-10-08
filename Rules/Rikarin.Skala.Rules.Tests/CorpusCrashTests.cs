@@ -23,7 +23,8 @@ public sealed record CorpusCrashFile(string Set, string RelativePath, string Pat
 ///         <b>
 ///             This suite exists because <c>RuleFixtureTests</c>' <c>AD0001</c> assertion covers
 ///             <c>fixtures/</c> and nothing else
-///         </b>, and <c>fixtures/</c> is hand-written: every file in it
+///         </b>
+///         , and <c>fixtures/</c> is hand-written: every file in it
 ///         is a shape somebody thought of. <c>constructs/</c> and <c>pathological/</c> are 1 100-odd
 ///         files chosen to break a formatter, which makes them exactly the population a hand-written
 ///         fixture set cannot be. <c>SK7081</c> threw <c>IndexOutOfRangeException</c> on
@@ -87,7 +88,8 @@ public sealed class CorpusCrashTests {
     ///         <b>
     ///             The <c>.expected.cs</c> oracle fixtures are swept too, unlike everywhere else in
     ///             the repository
-    ///         </b>, where they are the answer a measurement is compared against rather
+    ///         </b>
+    ///         , where they are the answer a measurement is compared against rather
     ///         than an input. Here they are just more C#: a fixture is <c>jb cleanupcode</c>'s
     ///         reformatting of the file beside it, which is a different token stream over the same
     ///         program, and trivia is precisely what <c>pathological/</c> is built to make hostile. It

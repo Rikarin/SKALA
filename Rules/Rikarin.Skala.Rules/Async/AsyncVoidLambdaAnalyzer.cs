@@ -15,7 +15,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///     <b>
 ///         This is <c>async void</c> in a disguise no
 ///         signature carries.
-///     </b> A lambda has no written return type: it takes the one the target delegate
+///     </b>
+///     A lambda has no written return type: it takes the one the target delegate
 ///     asks for, so <c>Register(async () =&gt; await SaveAsync())</c> against a <c>Register(Action)</c>
 ///     compiles into an <c>async void</c> with every one of its consequences. <c>Register</c> returns
 ///     the instant the lambda reaches its first <c>await</c>, the rest of the body runs unobserved, and
@@ -34,7 +35,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///         <b>
 ///             An event-handler delegate is excluded, and it is the same exclusion <c>SK3001</c>
 ///             makes.
-///         </b> <c>(object, TEventArgs) -&gt; void</c> is the shape the language gives events, an
+///         </b>
+///         <c>(object, TEventArgs) -&gt; void</c> is the shape the language gives events, an
 ///         <c>async</c> handler subscribed to one is the sanctioned use of <c>async void</c>, and there
 ///         is no other signature available to it. What is left is the case the rule is about: a
 ///         <c>void</c> delegate somebody chose, where a <c>Func&lt;Task&gt;</c> could have been asked

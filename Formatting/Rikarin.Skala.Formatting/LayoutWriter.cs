@@ -118,7 +118,8 @@ public enum VerbatimFlags {
     ///     <c>
     /// align_multiline_comments =
     ///     false
-    ///     </c> — measured, issue #459: moved four left, its <c>/**   </c> and body lines came back
+    ///     </c>
+    ///     — measured, issue #459: moved four left, its <c>/**   </c> and body lines came back
     ///     trimmed; on a line that did not move, its trailing spaces came back untouched.
     /// </summary>
     TrimIfShifted = 128,
@@ -1081,7 +1082,8 @@ public sealed class LayoutWriter {
     ///     <c>
     /// alignment_tab_fill_style =
     ///     use_spaces
-    ///     </c> — the export's own value — writes the level part of a line's indentation in tabs
+    ///     </c>
+    ///     — the export's own value — writes the level part of a line's indentation in tabs
     ///     and the alignment part in spaces, which needs the two numbers separately; every other value,
     ///     and every space-indented file, needs only <see cref="Effective" />. An
     ///     <see cref="IndentKind.Align" /> scope's <c>CloserLevel</c> is the level it was opened at, which

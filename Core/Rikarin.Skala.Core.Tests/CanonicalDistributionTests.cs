@@ -22,7 +22,8 @@ public sealed class CanonicalDistributionTests {
     ///     <b>
     ///         This asserted byte-level containment: every one of the export's assignments present in
     ///         the canonical verbatim, and a count exactly two higher.
-    ///     </b> That spelling died with the
+    ///     </b>
+    ///     That spelling died with the
     ///     <c>skala_</c> rename, and it had to: the payload is now a <em>translation</em> of the export
     ///     rather than a copy, because a verbatim copy is a configuration Skala cannot read and would
     ///     put a wall of <c>SK9001</c> into every repository it was installed into.

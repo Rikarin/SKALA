@@ -26,7 +26,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             <c>Copy(source, destination)</c> called as <c>Copy(destination, source)</c> is
 ///             undetectable in general and this rule does not try.
-///         </b> The sound signal is the crosswise
+///         </b>
+///         The sound signal is the crosswise
 ///         name match and nothing looser: adjacent parameters, identical types, plain identifiers, and
 ///         both names at least three characters. <c>Max(y, x)</c> and <c>Add(b, a)</c> are where
 ///         reversal is deliberate, and a one-letter name is no evidence about intent at all.

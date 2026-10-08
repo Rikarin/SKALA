@@ -238,7 +238,8 @@ public sealed class ExpressionMisreadingBatchTests {
     ///     <b>
     ///         That sentence is wrong, and this theory is the
     ///         measurement that refutes it.
-    ///     </b> <c>CS1718</c> also covers <c>this.g == this.g</c>,
+    ///     </b>
+    ///     <c>CS1718</c> also covers <c>this.g == this.g</c>,
     ///     <c>b.v == b.v</c> and <c>Box.Which == Box.Which</c> — a member access to a <em>field</em>
     ///     is covered; only a <em>property</em> access is not, which is the example the sentence was
     ///     built from. Since this rule reports storage paths and never properties, the compiler

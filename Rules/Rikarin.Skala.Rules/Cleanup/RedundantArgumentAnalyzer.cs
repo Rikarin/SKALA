@@ -29,7 +29,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <b>
 ///             Deleting an argument can change which method is called, so the rule asks the compiler
 ///             rather than reasoning about it.
-///         </b> With <c>Foo(int a, int b = 0)</c> beside <c>Foo(int a)</c>,
+///         </b>
+///         With <c>Foo(int a, int b = 0)</c> beside <c>Foo(int a)</c>,
 ///         <c>Foo(1, 0)</c> and <c>Foo(1)</c> are calls to different methods, and nothing about the
 ///         argument says so. Every finding here re-binds the shortened call speculatively and withdraws
 ///         unless the same symbol comes back. The other three shapes avoid the question instead of
@@ -374,7 +375,8 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
     ///         <b>
     ///             A parameterless <c>delegate</c> is convertible to a delegate type only when that
     ///             type has no <c>out</c> parameter
-    ///         </b>, because the compiler would have nothing to assign
+    ///         </b>
+    ///         , because the compiler would have nothing to assign
     ///         through. <c>ref</c> and <c>in</c> are fine; <c>out</c> is refused, and it is the one
     ///         difference between this rewrite compiling and not.
     ///     </para>

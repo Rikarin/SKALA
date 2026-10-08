@@ -30,14 +30,17 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             The genuinely ambiguous member is a compiler error and is deliberately not this
 ///             rule.
-///         </b> Probed at the same time: with <c>IBoth : ILeft, IRight</c> both declaring
+///         </b>
+///         Probed at the same time: with <c>IBoth : ILeft, IRight</c> both declaring
 ///         <c>Value</c> and <c>Run()</c>, <c>b.Value</c> is
 ///         <b>
 ///             <c>CS0229</c>
-///         </b> and <c>b.Run()</c> is
+///         </b>
+///         and <c>b.Run()</c> is
 ///         <b>
 ///             <c>CS0121</c>
-///         </b> — both errors. Source shaped like that does not build, so a rule
+///         </b>
+///         — both errors. Source shaped like that does not build, so a rule
 ///         reporting it would report code no analyzer ever sees. Only the binding that succeeds and is
 ///         not the expected one is left.
 ///     </para>
@@ -46,7 +49,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Applicability and betterness must both hold, and together they keep
 ///             <c>IDictionary</c> out.
-///         </b> <c>IDictionary&lt;K,V&gt;.Add(K,V)</c> hides
+///         </b>
+///         <c>IDictionary&lt;K,V&gt;.Add(K,V)</c> hides
 ///         <c>ICollection&lt;KeyValuePair&lt;K,V&gt;&gt;.Add(KVP)</c> by exactly this mechanism, but
 ///         the hidden overload takes one argument and the call passes two, so it is not applicable and
 ///         there is nothing to report.

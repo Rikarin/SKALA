@@ -106,7 +106,8 @@ public readonly struct XmlDocOptions {
     ///     <b>
     ///         This remark used to say the opposite and the opposite was an argument, not a
     ///         measurement.
-    ///     </b> It read: "measured from column 0 of the file, including the code
+    ///     </b>
+    ///     It read: "measured from column 0 of the file, including the code
     ///     indentation and the <c>///</c> marker. The alternative reading — a budget for the comment's
     ///     own text — would make the same sentence wrap differently at two nesting depths and produce
     ///     lines past the margin, which is the one thing a hard wrap exists to prevent." Probed at four
@@ -394,7 +395,8 @@ public readonly struct XmlDocOptions {
 ///         <b>
 ///             This remark used to end "none of them claims Tier A … the oracle has nothing to say
 ///             here". That stopped being true on 2026-08-29 and the sentence outlived the fact.
-///         </b> The
+///         </b>
+///         The
 ///         <c>DocComments</c> profile enables <c>CSharpFormatDocComments</c>, the fixtures under
 ///         <c>constructs/xmldoc/</c> carry <c>oracle</c> globs, and the committed sweep holds a row for
 ///         each. Three came back Conformant at every value and moved to <c>Ids.Of</c>, which is what

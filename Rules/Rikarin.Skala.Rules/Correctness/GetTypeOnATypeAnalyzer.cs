@@ -28,7 +28,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Asking for the runtime type of a <c>Type</c> object is a real question and is
 ///             declined by recognising it.
-///         </b> Reflection-emit code separates a <c>RuntimeType</c> from a
+///         </b>
+///         Reflection-emit code separates a <c>RuntimeType</c> from a
 ///         <c>TypeBuilder</c> or a <c>TypeDelegator</c>, and it does so by testing the result against a
 ///         type that itself derives from <c>System.Type</c>. That test is silent here. The other escape
 ///         hatch is the documented one — <c>((object)t).GetType()</c> — which the rule does not look

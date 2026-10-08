@@ -29,7 +29,8 @@ namespace Rikarin.Skala.Rules.Maintainability;
 ///         <b>
 ///             <c>NotSupportedException</c> and <c>UnreachableException</c> never fire, and that is the
 ///             rule's position rather than an omission.
-///         </b> Both are permanent statements about a contract —
+///         </b>
+///         Both are permanent statements about a contract —
 ///         an operation this type will never offer, a branch the author asserts cannot be reached — and
 ///         they are what an author writes when the answer really is "not here". <c>NotImplemented</c> is
 ///         the one that means "not yet", and "not yet" is what needs an owner.

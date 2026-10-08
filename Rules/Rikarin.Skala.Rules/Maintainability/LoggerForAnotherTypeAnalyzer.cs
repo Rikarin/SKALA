@@ -22,7 +22,8 @@ namespace Rikarin.Skala.Rules.Maintainability;
 ///         <b>
 ///             This is the objective quarter of its issue, and the other three are declined on
 ///             purpose.
-///         </b> <c>S6669</c> (the field's <em>name</em>) and <c>S1312</c> (whether it is
+///         </b>
+///         <c>S6669</c> (the field's <em>name</em>) and <c>S1312</c> (whether it is
 ///         <c>private static readonly</c>) are naming and declaration conventions — the most
 ///         opinionated thing a linter can hold, and a repository's to settle rather than a defect. This
 ///         one has a consequence a person can be shown: the category is wrong, and it is wrong in a way

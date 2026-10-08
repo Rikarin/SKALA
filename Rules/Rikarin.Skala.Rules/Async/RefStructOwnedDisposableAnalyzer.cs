@@ -18,7 +18,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///     <b>
 ///         This is the one
 ///         place in the disposal family that nothing else can reach.
-///     </b> A <c>ref struct</c> that offers
+///     </b>
+///     A <c>ref struct</c> that offers
 ///     only a public parameterless <c>Dispose()</c> is disposable through the pattern rule and through
 ///     nothing else — it implements no interface, so <c>SK3502</c>, which asks whether the owner
 ///     implements the contract the field offers, has no contract to ask about and is silent by
@@ -28,7 +29,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///         <b>
 ///             The field's type must implement neither <c>IDisposable</c> nor <c>IAsyncDisposable</c>,
 ///             and that is the disjointness guard rather than a limitation.
-///         </b> C# 13 lets a <c>ref struct</c>
+///         </b>
+///         C# 13 lets a <c>ref struct</c>
 ///         implement an interface, so without the test the two rules would both report one field — and
 ///         <c>supersedes</c> is the wrong instrument, because <c>Supersession.Apply</c> suppresses the
 ///         superseded finding rather than the duplicate one.

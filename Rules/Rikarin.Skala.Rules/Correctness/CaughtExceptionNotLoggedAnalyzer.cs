@@ -33,7 +33,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <c>
 /// (EventId, Exception,
 ///         string)
-///         </c>, so an exception prepended in front of the event id does not bind and
+///         </c>
+///         , so an exception prepended in front of the event id does not bind and
 ///         <c>skala fix</c> would have broken the build on the tool's own advice. The rule declines
 ///         those calls outright rather than reporting a finding it cannot repair.
 ///     </para>
@@ -129,7 +130,8 @@ public sealed class CaughtExceptionNotLoggedAnalyzer : DiagnosticAnalyzer {
     ///     <c>
     /// catch (Exception ex) { items.ForEach(ex =&gt;
     ///     log.LogError("item {I} failed", ex)); }
-    ///     </c> the inserted <c>ex</c> is the item, and with an
+    ///     </c>
+    ///     the inserted <c>ex</c> is the item, and with an
     ///     <c>int</c> item the call binds the <c>EventId</c> overload instead (#412's audit). The call is
     ///     therefore bound as written, in place, and both the name and the overload are checked.
     /// </remarks>

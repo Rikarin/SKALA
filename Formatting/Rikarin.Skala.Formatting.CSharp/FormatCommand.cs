@@ -456,7 +456,8 @@ public static class FormatCommand {
     ///     <b>
     ///         an agent worktree is a second checkout of this
     ///         repository inside it
-    ///     </b> — the repository's own <c>.gitignore</c> says exactly that, above
+    ///     </b>
+    ///     — the repository's own <c>.gitignore</c> says exactly that, above
     ///     the <c>.claude/worktrees/</c> line. Git honours that; a walker over
     ///     <see cref="SearchOption.AllDirectories" /> does not, so <c>skala format &lt;repo root&gt;</c>
     ///     descended into every worktree under it and rewrote whatever was checked out there.

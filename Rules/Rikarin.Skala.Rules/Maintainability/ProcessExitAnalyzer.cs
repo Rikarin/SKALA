@@ -20,7 +20,8 @@ namespace Rikarin.Skala.Rules.Maintainability;
 ///         <b>
 ///             The rule does not try to tell an application from a library, and that is a measurement
 ///             rather than a shrug.
-///         </b> <c>LooseLoader</c> constructs its compilation with
+///         </b>
+///         <c>LooseLoader</c> constructs its compilation with
 ///         <c>OutputKind.DynamicallyLinkedLibrary</c>, so "this compilation is a library" and "no
 ///         project file was loaded" are the same observation — and loose is the mode Skala exists for,
 ///         because a folder of generated <c>.cs</c> files has no project. A rule keyed on

@@ -26,7 +26,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///         <em>
 ///             second
 ///             reader is outside the constructor's control
-///         </em>: process-wide static state, or a thread
+///         </em>
+///         : process-wide static state, or a thread
 ///         the constructor itself starts. Everything else is declined, and the negative fixture set,
 ///         which is more than twice the size of the positive one, is where that promise is kept.
 ///     </para>
@@ -57,7 +58,8 @@ namespace Rikarin.Skala.Rules.Async;
 ///         <b>
 ///             Shape A stops at the constructor's own static <em>field</em>, and the boundary is
 ///             <c>SK2134</c>.
-///         </b> <c>current = this;</c> in a constructor, writing this type's own static
+///         </b>
+///         <c>current = this;</c> in a constructor, writing this type's own static
 ///         field, is the canonical shape of <c>instance-write-to-static</c> and is already reported
 ///         there. Two rules on one line is a double-report, and the reader who has to decide which of
 ///         two findings to act on acts on neither.
@@ -332,7 +334,8 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
     ///         <b>
     ///             And starting a thread as the last act of a <c>sealed</c> type's constructor is not
     ///             a finding either, because there is nothing left to race.
-    ///         </b> This gate exists because the
+    ///         </b>
+    ///         This gate exists because the
     ///         first draft reported <c>VideoPlayer</c> on the reference tree and that finding was
     ///         <em>wrong</em>: <c>Thread.Start</c>, <c>Task.Run</c> and <c>QueueUserWorkItem</c> all
     ///         publish a memory barrier, so everything the constructor wrote before them is visible to

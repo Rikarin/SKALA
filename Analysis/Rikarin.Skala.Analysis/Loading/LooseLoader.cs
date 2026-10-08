@@ -16,7 +16,8 @@ namespace Rikarin.Skala.Analysis.Loading;
 ///     <b>
 ///         an agent that has just written a file and wants to know
 ///         whether it is acceptable, before anything is wired into a project
-///     </b> (docs/plan/07 § loose,
+///     </b>
+///     (docs/plan/07 § loose,
 ///     docs/plan/10). It is fast — no build, no MSBuild, no restore — it is honest, because the SARIF
 ///     says <c>loadMode: loose</c> and lists the rules that were skipped, and it is the default for the
 ///     MCP <c>skala_check</c> tool when no project is named.

@@ -29,7 +29,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Lazy initialization is the look-alike, and it is declined by recognising the guard
 ///             rather than by recognising the name.
-///         </b> <c>_instance ??= new()</c> is instance code writing
+///         </b>
+///         <c>_instance ??= new()</c> is instance code writing
 ///         static state on purpose: the guard is what makes it write-once, so the "last one wins"
 ///         complaint is not true of it. A <c>??=</c>, and an assignment under an <c>if</c> testing that
 ///         same field against <c>null</c> or <c>default</c>, are both declined — the second form covers
@@ -53,7 +54,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             A counter incremented from a constructor is reported, and that is the intended
 ///             behaviour rather than an oversight.
-///         </b> <c>static int count; C() { count++; }</c> is the
+///         </b>
+///         <c>static int count; C() { count++; }</c> is the
 ///         canonical shape of this concept: it is shared mutable state, it is not atomic, and two
 ///         threads constructing at once lose an increment. The fixtures pin it in the positive
 ///         direction so that nobody later mistakes it for a false positive and adds an exclusion.

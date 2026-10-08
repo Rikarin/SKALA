@@ -48,7 +48,8 @@ namespace Rikarin.Skala.Rules.Security;
 ///         <b>
 ///             It does not: <c>SK7050</c> is allocated in docs/plan/08 and has never
 ///             been built.
-///         </b> Nothing today requires a justification on a suppression of this rule, so the
+///         </b>
+///         Nothing today requires a justification on a suppression of this rule, so the
 ///         visible half of "accept it deliberately and visibly" rests on review rather than on a
 ///         mechanism — which is worth knowing when deciding whether a baseline entry or a pragma is the
 ///         better disposal here. The baseline is the one with a diff somebody reads.

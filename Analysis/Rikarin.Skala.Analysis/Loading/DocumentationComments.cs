@@ -15,7 +15,8 @@ namespace Rikarin.Skala.Analysis.Loading;
 ///     <b>
 ///         A project without <c>GenerateDocumentationFile</c> compiles with
 ///         <see cref="DocumentationMode.None" />, and under it a <c>///</c> comment is ordinary trivia.
-///     </b> Every rule that reads documentation then sees none: measured under <c>--load=binlog</c>,
+///     </b>
+///     Every rule that reads documentation then sees none: measured under <c>--load=binlog</c>,
 ///     <c>SK7010</c> reported every documented member of a two-member probe as undocumented and
 ///     <c>SK7100</c> found nothing, while the same source with the property on — and the same source
 ///     under <c>--load=loose</c>, which always parsed documentation — gave the right answer. A non-zero

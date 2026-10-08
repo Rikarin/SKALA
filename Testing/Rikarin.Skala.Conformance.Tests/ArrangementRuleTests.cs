@@ -787,7 +787,8 @@ public sealed class ArrangementRuleTests {
     ///     <b>
     ///         a discard infers its type from the
     ///         right-hand side
-    ///     </b> — so for <c>_ = new Regex(p, o)</c> the model answered <c>Regex</c>, the
+    ///     </b>
+    ///     — so for <c>_ = new Regex(p, o)</c> the model answered <c>Regex</c>, the
     ///     "target equals created type" precondition passed, and the rewrite produced <c>_ = new(p, o)</c>:
     ///     <c>CS8754: There is no target type for 'new(string, RegexOptions)'</c>. The question the
     ///     precondition means to ask is what the position <em>imposes</em>, and a discard imposes
@@ -1821,7 +1822,8 @@ public sealed class ArrangementRuleTests {
     ///         <b>
     ///             Sabotaged twice, and the first sabotage stayed green — which is the refutation
     ///             restated as an experiment.
-    ///         </b> Swapping the filter from <c>CS8019</c> to <c>CS8933</c>
+    ///         </b>
+    ///         Swapping the filter from <c>CS8019</c> to <c>CS8933</c>
     ///         leaves this test passing, because on this shape the two diagnostics land on the same
     ///         directive and either one puts the name in the set. That is precisely why adding
     ///         <c>CS8933</c> to the filter is a no-op rather than a fix. Making the filter match

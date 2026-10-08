@@ -13,7 +13,8 @@ namespace Rikarin.Skala.Rules.Security;
 ///     <em>
 ///         and its base types and its
 ///         interfaces
-///     </em>, which is the difference between a table that works and a table that has to
+///     </em>
+///     , which is the difference between a table that works and a table that has to
 ///     name every ADO.NET provider ever written. <c>NpgsqlCommand.CommandText</c> overrides
 ///     <c>DbCommand.CommandText</c> and implements <c>IDbCommand.CommandText</c>, so the two entries in
 ///     the table cover Npgsql, SQLite, MySQL, SQL Server and anything else that ever ships.

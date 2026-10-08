@@ -19,7 +19,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             The <c>Cast&lt;T&gt;</c> branch is not "the cast is unnecessary" — it is "the call
 ///             returns its own argument".
-///         </b> <c>Enumerable.Cast&lt;T&gt;</c> opens with
+///         </b>
+///         <c>Enumerable.Cast&lt;T&gt;</c> opens with
 ///         <c>if (source is IEnumerable&lt;T&gt; typed) return typed;</c>, so on a receiver already typed
 ///         <c>IEnumerable&lt;T&gt;</c> the deletion preserves reference identity and not merely the
 ///         sequence.
@@ -38,7 +39,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <b>
 ///             The copy branch's inner call must preserve order and multiplicity, so only
 ///             <c>ToList</c> and <c>ToArray</c> may be inner.
-///         </b> <c>ToHashSet</c> and <c>Distinct</c> remove
+///         </b>
+///         <c>ToHashSet</c> and <c>Distinct</c> remove
 ///         duplicates: an inner one of those is a real operation and deleting it changes the result. They
 ///         are allowed as the <em>outer</em> call, where the inner copy is still unobservable.
 ///     </para>

@@ -26,7 +26,8 @@ public sealed record KindCoverage(
 ///     <em>
 ///         of the constructs the corpus contains, which
 ///         diverge
-///     </em>. It cannot answer the other half, and the other half is the one with a deadline on
+///     </em>
+///     . It cannot answer the other half, and the other half is the one with a deadline on
 ///     it: a construct that appears nowhere in <c>Testing/corpus/</c> has no fidelity number, no
 ///     fixture and no divergence entry, and once <c>jb</c> is uninstalled no authoritative fixture for
 ///     it can ever be authored. Absence is invisible to every other instrument this repository has.

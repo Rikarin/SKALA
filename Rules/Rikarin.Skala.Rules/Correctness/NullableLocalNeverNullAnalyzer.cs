@@ -22,7 +22,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             <c>ReturnTypeCanBeNotNullable</c>, the other half of ReSharper's concept, is cut and the
 ///             reason is a defect rather than noise.
-///         </b> Narrowing a <em>method's</em> return annotation
+///         </b>
+///         Narrowing a <em>method's</em> return annotation
 ///         propagates to every call site through <c>var</c>: <c>var x = M();</c> infers <c>string?</c>
 ///         today and <c>string</c> afterwards, so a later <c>x = null</c> becomes a new warning in a file
 ///         this analyzer never saw. A <see cref="DiagnosticAnalyzer" /> is handed one syntax tree and

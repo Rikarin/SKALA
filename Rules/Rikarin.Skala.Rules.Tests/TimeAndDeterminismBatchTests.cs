@@ -14,7 +14,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     <b>
 ///         The assertion this file exists for is the <c>AD0001</c> one, and it is here because
 ///         <see cref="RuleFixtureTests" /> does not make it.
-///     </b> That harness filters every run down to
+///     </b>
+///     That harness filters every run down to
 ///     <c>diagnostic.Id == fixture.RuleId</c>, so an analyzer that throws produces no finding, and no
 ///     finding is exactly what a negative fixture asserts. A crashed analyzer therefore passes every
 ///     negative fixture it has — silently, and in the direction that decides whether a rule ships. The

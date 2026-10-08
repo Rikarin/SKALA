@@ -206,7 +206,8 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
     ///         <b>
     ///             A <c>partial</c> type silences the rule outright, and that gate is here because the
     ///             shape was tested rather than reasoned about.
-    ///         </b> The walk starts from the
+    ///         </b>
+    ///         The walk starts from the
     ///         <em>syntactic</em> declaration holding the enter, so it sees one part and not the others
     ///         — and the parts are usually in different files. A partial type with <c>Acquire()</c> in
     ///         one part and <c>Release()</c> in the other produced a false positive;
@@ -290,7 +291,8 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
     ///         <b>
     ///             A top-level program's compilation unit <em>is</em> a body, and until [#314] this
     ///             returned null for one.
-    ///         </b> The declining mechanism was not the
+    ///         </b>
+    ///         The declining mechanism was not the
     ///         <see cref="TypeDeclarationSyntax" /> arm — a global statement has no type declaration
     ///         above it — but the walk running out of parents and falling off the end, which looks
     ///         identical from the call site and is a different bug. A top-level program's statements are

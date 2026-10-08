@@ -12,7 +12,8 @@ namespace Rikarin.Skala.Formatting.CSharp;
 ///     <c>
 /// extra_spaces =
 ///  remove_all
-///     </c> is the global backstop — any run of spaces not required by a rule collapses to
+///     </c>
+///     is the global backstop — any run of spaces not required by a rule collapses to
 ///     one or to none — which is why this function is total: there is no "leave it alone" answer.
 ///     <para>
 ///         ⚠ <see cref="MustSeparate" /> overrides everything. A Forbidden gap between two tokens that would
@@ -1194,7 +1195,8 @@ public static class SpaceRules {
     ///         <b>
     ///             <c>~</c> and the prefix <c>++</c>/<c>--</c> are not what this key governs, and the
     ///             note that used to stand here said the opposite.
-    ///         </b> It read "they keep reading the
+    ///         </b>
+    ///         It read "they keep reading the
     ///         generalized key … that is a divergence Skala has always had", and the generalized key
     ///         is exactly what they must not read. Measured against `jb cleanupcode` 2025.2.6 under
     ///         the doc-free format-only profile, one key flipped at a time over the export, on

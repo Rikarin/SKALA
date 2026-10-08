@@ -171,7 +171,8 @@ public sealed class DedicatedLockAnalyzer : DiagnosticAnalyzer {
     ///     <c>
     /// SK0203 target-typed
     ///     new
-    ///     </c>, on a file <c>fix</c> had just written. So the fix is now written in the shape
+    ///     </c>
+    ///     , on a file <c>fix</c> had just written. So the fix is now written in the shape
     ///     arrangement would leave it in: <c>new()</c> unconditionally, because the field's declared
     ///     type is what the creation constructs and no arrangement rule expands an implicit creation
     ///     back out; and the short name where the semantic model says it binds.

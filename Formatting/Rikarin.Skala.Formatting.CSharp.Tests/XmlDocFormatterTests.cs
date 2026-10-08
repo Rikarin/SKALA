@@ -634,7 +634,8 @@ public sealed class XmlDocSubFormatterTests {
 ///             <b>
 ///                 excludes the code indentation and the
 ///                 three slashes
-///             </b> and includes the marker's space. A line is inside the margin when
+///             </b>
+///             and includes the marker's space. A line is inside the margin when
 ///             <c>1 + indent + content &lt;= max_line_length</c> — so the same sentence wraps
 ///             identically at every nesting depth, and the file's own columns run
 ///             <c>codeIndent + 3</c> past the margin.
@@ -1345,7 +1346,8 @@ public sealed class XmlDocKeyCoverageTests {
     ///     <b>
     ///         The prefix here was <c>resharper_xmldoc_</c> and the rename to <c>skala_xmldoc_</c>
     ///         would have been silent either way.
-    ///     </b> Both this filter and the one in
+    ///     </b>
+    ///     Both this filter and the one in
     ///     <see cref="HonouredAndRefused_PartitionTheFamilyExactly" /> select on the same literal, so a
     ///     prefix that matched nothing would empty <em>both</em> sides of the partition and every
     ///     <c>Assert.Empty</c> below would pass on two empty sets — the exact shape of vacuity this

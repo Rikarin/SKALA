@@ -176,7 +176,8 @@ public sealed class VarRule : ArrangementRule {
         ///     <c>
         /// Func&lt;object&gt; = () =&gt;
         ///     "x"
-        ///     </c> (natural <c>Func&lt;string&gt;</c>), <c>Func&lt;int?&gt; = () =&gt; 1</c>, an untyped
+        ///     </c>
+        ///     (natural <c>Func&lt;string&gt;</c>), <c>Func&lt;int?&gt; = () =&gt; 1</c>, an untyped
         ///     parameter <c>x =&gt; x</c>, <c>Expression&lt;…&gt;</c>, a custom delegate type,
         ///     <c>Delegate</c>, a <c>ref</c> parameter (an anonymous delegate type), <c>() =&gt; null</c>,
         ///     an overloaded method group and a parameterless <c>delegate { … }</c>.

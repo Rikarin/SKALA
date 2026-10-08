@@ -1259,7 +1259,8 @@ public sealed class BreakPlan {
     ///     <c>
     /// skala_max_array_initializer_elements_on_line =
     ///  10000
-    ///     </c> — does not move. The counter is not a width and does not consult one.
+    ///     </c>
+    ///     — does not move. The counter is not a width and does not consult one.
     /// </param>
     /// <param name="placeOnSingleLine">
     ///     A <c>place_simple_*_on_single_line</c> key, or null where the construct has none.
@@ -1597,7 +1598,8 @@ public sealed class BreakPlan {
     ///         <c>
     /// new[] { six, long, string, literals, here,
     ///  again }
-    ///         </c> comes back with five on one line and one on the next, while
+    ///         </c>
+    ///         comes back with five on one line and one on the next, while
     ///         <c>new List&lt;string&gt; { four, long, string, literals }</c> comes back with one per line
     ///         even though two of them would have shared. It matches the two counters —
     ///         <c>skala_max_array_initializer_elements_on_line = 10000</c> against
@@ -5558,7 +5560,8 @@ public sealed class BreakPlan {
     ///     <c>
     /// Func&lt;int, int&gt; f = someParameterName
     ///     =&gt;
-    ///     </c> / <c>Convert&lt;CancellationToken, CancellationToken&gt;(…);</c> although
+    ///     </c>
+    ///     / <c>Convert&lt;CancellationToken, CancellationToken&gt;(…);</c> although
     ///     <c>Convert&lt;…&gt;(</c> still fitted at column 119, and <c>M(someParameterName =&gt;</c> /
     ///     <c>ConvertTheValue&lt;…&gt;(…)</c> / <c>);</c> for a sole argument — and otherwise stays and
     ///     lets the body's own construct wrap: <c>f = x =&gt; Convert(</c> with six arguments chopped
@@ -5569,7 +5572,8 @@ public sealed class BreakPlan {
     ///     <c>
     /// case { … } when static x
     ///     =&gt;
-    ///     </c> on its label's line — the <c>when</c> measures its head up to this point at column
+    ///     </c>
+    ///     on its label's line — the <c>when</c> measures its head up to this point at column
     ///     105 and stops, where without it the whole type argument list was the head. Only the gap
     ///     after the arrow is planned; the gap before a lambda's arrow stays <c>keep_user_linebreaks</c>'.
     /// </remarks>
@@ -5668,7 +5672,8 @@ public sealed class BreakPlan {
     ///     <c>
     /// case SomeVeryLongTypeName
     ///     someVeryLongVariableName when Bind(
-    ///     </c> stays and the arguments chop, in a label with a
+    ///     </c>
+    ///     stays and the arguments chop, in a label with a
     ///     declaration pattern and in an arm with <c>{ … } when Bind(</c> / <c>) =&gt; Body(first),</c>
     ///     alike. A kept break before the <c>when</c> is kept (<c>case 1</c> / <c>when x:</c>), and so
     ///     is one after it, which this plan leaves to <c>keep_user_linebreaks</c>.

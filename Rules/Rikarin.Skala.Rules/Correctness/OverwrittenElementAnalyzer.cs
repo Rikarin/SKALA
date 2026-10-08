@@ -27,7 +27,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Roslyn's <c>AnalyzeDataFlow</c> answers questions about variables, not about indexed
 ///             elements
-///         </b>, so there is no dataflow to lean on and this rule does not pretend to have
+///         </b>
+///         , so there is no dataflow to lean on and this rule does not pretend to have
 ///         any. It reports only a <em>contiguous run of element writes to one collection</em>: the
 ///         moment a statement that is not such a write appears between the two, the finding is
 ///         withdrawn. That is not the whole of the defect and it is the part that can be proved

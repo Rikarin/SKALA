@@ -63,7 +63,8 @@ public sealed record DegradedSource(UnformatMode Mode, string Text, int Lines, b
 ///         <b>
 ///             under both symbol
 ///             sets
-///         </b>, or when it introduces a parse error. A degradation that changes the program measures
+///         </b>
+///         , or when it introduces a parse error. A degradation that changes the program measures
 ///         the degrader rather than the formatter, and the fuzzer's history says that is the failure mode to
 ///         expect.
 ///     </para>

@@ -277,7 +277,8 @@ public sealed class XmlDocModel {
     ///         <b>
     ///             Single-line content only, and the reason is that this string is not what it looks
     ///             like.
-    ///         </b> Roslyn's XML content carries each continuation line's <c>///</c> with it, so the
+    ///         </b>
+    ///         Roslyn's XML content carries each continuation line's <c>///</c> with it, so the
     ///         run at the end of a multi-line content is the <em>marker's</em> space and not a gap
     ///         anybody wrote inside a tag — which is how <c>&lt;summary&gt;One. Two.&lt;/summary&gt;</c>
     ///         reflowed with a space before its end tag. A gap that spans lines is the renderer's to

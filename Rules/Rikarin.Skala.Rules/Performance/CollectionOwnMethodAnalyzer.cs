@@ -29,7 +29,8 @@ namespace Rikarin.Skala.Rules.Performance;
 ///         <b>
 ///             Each pair was checked on the empty sequence, which is where these substitutions go
 ///             wrong.
-///         </b> <c>All</c> returns <c>true</c> vacuously and <c>TrueForAll</c> returns
+///         </b>
+///         <c>All</c> returns <c>true</c> vacuously and <c>TrueForAll</c> returns
 ///         <c>true</c> over zero elements; <c>Any</c> and <c>Exists</c> both return <c>false</c>;
 ///         <c>FirstOrDefault</c> and <c>Find</c> both return <c>default(T)</c> — including for a value
 ///         type, where <c>First</c>/<c>Single</c> would have thrown and neither of these does. Nothing

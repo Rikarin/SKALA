@@ -21,7 +21,8 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <b>
 ///             Sequential <c>if</c> statements are deliberately not compared, and that is the rule's
 ///             main exclusion.
-///         </b> <c>if (dirty) { Flush(); } if (dirty) { … }</c> is not a defect: the
+///         </b>
+///         <c>if (dirty) { Flush(); } if (dirty) { … }</c> is not a defect: the
 ///         first body is exactly the thing that changes the answer. The "nothing ran in between"
 ///         argument is what makes the <c>else if</c> case decidable, and it is available nowhere else.
 ///     </para>
