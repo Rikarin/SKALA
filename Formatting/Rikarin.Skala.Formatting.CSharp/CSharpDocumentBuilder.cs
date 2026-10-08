@@ -790,7 +790,7 @@ public sealed partial class CSharpDocumentBuilder {
                     // `if` condition it does not (#584). An author's break after a comment in front of an
                     // `or` is no point of the group and reaches the frame instead.
                     HoldsLevel: IsChainRoot(node) && BreakPlan.HeadSharesTheLevelAroundIt(node)
-                        || IsPatternChainRoot(node) && plan.GroupsOf(node).Count > 0,
+                    || IsPatternChainRoot(node) && plan.GroupsOf(node).Count > 0,
 
                     // ⚠ And a chain pays its level once. The group half — PlanChainedCalls' OwnLevel —
                     // opens a continuation scope over the whole chain when the chain has points, and
