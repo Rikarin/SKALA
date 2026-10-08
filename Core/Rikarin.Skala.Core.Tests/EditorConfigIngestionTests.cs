@@ -93,13 +93,25 @@ public sealed class EditorConfigIngestionTests {
         // `Translate`, and a `Translate` that matched nothing would produce exactly this shape.
         Assert.NotEmpty(export);
 
-        // ⚠ Exactly one deliberate departure, and it is listed rather than tolerated (#513, SK-DIV-0310).
-        // The export sets `space_within_spread_pattern = true`, a key ReSharper's formatter ignores at
-        // both values; Skala governs that gap and the repository spells its spreads `[..xs]`. The
-        // export is not edited — it is the oracle's input and stays what Rider wrote — so the two sides
-        // differ in this one key and in nothing else, which is what is asserted.
-        Assert.Equal([OptionId.SkalaSpaceWithinSpreadPattern + " = false"], own.Except(export));
-        Assert.Equal([OptionId.SkalaSpaceWithinSpreadPattern + " = true"], export.Except(own));
+        // ⚠ Equal again since the canonical took Skala's own value for the one key the oracle does not
+        // read (`CanonicalEditorConfig.Departures`, SK-DIV-0310): the export says
+        // `space_within_spread_pattern = true`, `Translate` writes `false`, and so does the repository.
+        Assert.Equal(export, own);
+    }
+
+    /// <summary>
+    ///     ⚠ The translation departs from the export in exactly the keys it lists, and each one is a key
+    ///     the export sets — an override cannot smuggle an option into the canonical.
+    /// </summary>
+    [Fact]
+    public void Translate_DepartsFromTheExportOnlyWhereItSaysSo() {
+        var template = File.ReadAllText(RepositoryPaths.Template);
+        Assert.Equal([OptionId.SkalaSpaceWithinSpreadPattern], CanonicalEditorConfig.Departures.Keys);
+        Assert.Contains("resharper_space_within_spread_pattern = true", template, StringComparison.Ordinal);
+
+        var translated = CanonicalEditorConfig.Translate(template);
+        Assert.Contains("skala_space_within_spread_pattern = false", translated, StringComparison.Ordinal);
+        Assert.DoesNotContain("skala_space_within_spread_pattern = true", translated, StringComparison.Ordinal);
     }
 
     /// <summary>

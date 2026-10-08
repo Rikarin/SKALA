@@ -283,6 +283,20 @@ public sealed class InterpolatedRawLiteralIssue447Tests {
         );
     }
 
+    /// <summary>
+    ///     A hole respaced (#492) and the literal shifted (#447) in one string — the oracle's answer, measured
+    ///     after the two met in a merge.
+    /// </summary>
+    [Fact]
+    public void ARespacedHole_AndTheShift_Compose() =>
+        Agrees(
+            "class C {\n    void M(int x) {\n        var s = $\"\"\"\n                        Hello {x+1}\n"
+            + "                        World {x}\n                        \"\"\";\n    }\n}\n",
+            "class C {\n    void M(int x) {\n        var s = $\"\"\"\n                 Hello {x + 1}\n"
+            + "                 World {x}\n                 \"\"\";\n    }\n}\n",
+            "align"
+        );
+
     static void Agrees(string source, string expected, string value) {
         var once = Format(source, value);
         Assert.Equal(expected, once);
