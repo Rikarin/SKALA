@@ -414,6 +414,7 @@ public sealed class BreakPlan {
         plan.PlanPastLeadingComments(root);
         plan.SettleForHeaders();
         plan.SettleOpenBraces(root);
+        plan.SettleParenthesisedCollections(root);
         plan.CollectForcedBreaks();
         return plan;
     }
@@ -7109,6 +7110,35 @@ public sealed class BreakPlan {
 
                     PointBeforeBrace(open, after.Group);
                     continue;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     A collection expression that is a grouping parenthesis's whole contents joins its <c>[</c> to the
+    ///     <c>(</c> once it breaks (#485, SK-DIV-0150).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-08 with <c>Testing ask</c>: <c>(</c> / <c>[</c> / elements / <c>]);</c> comes
+    ///     back <c>( [</c> / elements / <c>]);</c>, as <c>([</c> and <c>( [</c> do, under an <c>=</c> and as an
+    ///     argument; <c>(</c> / <c>[1, 2]);</c>, a collection that stays on one line, keeps the author's
+    ///     break. So the join answers whether the collection is multi-line, which is read off the finished
+    ///     plan — a break inside it that survives (<see cref="SourceBreakSurvives" />). ⚠ A collection
+    ///     written on one line that only the margin breaks is not seen here, and keeps a break the author
+    ///     wrote after the <c>(</c>.
+    /// </remarks>
+    void SettleParenthesisedCollections(SyntaxNode root) {
+        foreach (var paren in root.DescendantNodes().OfType<ParenthesizedExpressionSyntax>()) {
+            if (paren.Expression is not CollectionExpressionSyntax { Elements.Count: > 0 } collection
+                || captured is { Count: > 0 } && IsInsideCaptured(paren)) {
+                continue;
+            }
+
+            var open = collection.OpenBracketToken;
+            // ⚠ And at `keep_user_linebreaks = false` always: `(` / `[1, 2]);` is joined there too.
+            if (!options.KeepsUserBreaksBetweenItems
+                || collection.DescendantTokens().Any(token => token.SpanStart > open.SpanStart && SourceBreakSurvives(token))) {
+                gaps[open.SpanStart] = new(GapRule.Flat, -1);
             }
         }
     }
