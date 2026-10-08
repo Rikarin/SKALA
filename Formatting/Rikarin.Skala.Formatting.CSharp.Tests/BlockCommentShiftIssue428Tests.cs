@@ -59,12 +59,6 @@ public sealed class BlockCommentShiftIssue428Tests {
         + "       */\n"
         + "    void A() { }\n"
         + "\n"
-        + "      /**\n"
-        + "         * ragged doc\n"
-        + "     * still ragged\n"
-        + "       */\n"
-        + "    void B() { }\n"
-        + "\n"
         + "      /*\n"
         + "         * ragged plain\n"
         + "     * aligned instead\n"
@@ -84,20 +78,15 @@ public sealed class BlockCommentShiftIssue428Tests {
         + "     */\n"
         + "    void A() { }\n"
         + "\n"
-        + "    /**\n"
-        + "       * ragged doc\n"
-        + "   * still ragged\n"
-        + "     */\n"
-        + "    void B() { }\n"
-        + "\n"
         + "    /*\n"
         + "     * ragged plain\n"
         + "     * aligned instead\n"
         + "     */\n"
         + "    void D() { }\n"
         + "\n"
-        + "    /** doc plain\n"
-        + "          second\n"
+        + "    /**\n"
+        + "     * doc plain\n"
+        + "     * second\n"
         + "     */\n"
         + "    void E() { }\n"
         + "}\n";
@@ -195,7 +184,6 @@ public sealed class BlockCommentShiftIssue428Tests {
         + "\n"
         + "    /**\n"
         + "     * doc\n"
-        + "     *\n"
         + "     */\n"
         + "    int H;\n"
         + "\n"
@@ -350,13 +338,28 @@ public sealed class BlockCommentShiftIssue428Tests {
     public void AnUnstarredComment_MovesAsAUnit_AndClampsAtColumnZero() => Agrees(PlainSource, PlainOracle);
 
     /// <summary>
-    ///     ⚠ A <c>/** … */</c> moves with its line even when every continuation line is starred: a ragged
-    ///     one stays ragged. A ragged <c>/* … */</c> beside it is aligned instead, by
-    ///     <c>skala_align_multiline_comments</c> (SK-DIV-0033).
+    ///     ⚠ A starred <c>/** … */</c> moves with its line, and one with content on the opener's line is rebuilt as
+    ///     a starred block (#568, SK-DIV-0380); a ragged <c>/* … */</c> beside them is aligned instead, by
+    ///     <c>skala_align_multiline_comments</c> (SK-DIV-0033). ⚠ Re-measured once <c>SkalaFormatOnly</c> ran the
+    ///     doc-comment task (#449): this used to expect <c>/** doc plain</c> moved as a unit, which was the oracle
+    ///     without that task.
     /// </summary>
     [Fact]
     public void ASlashStarStarComment_MovesAsAUnit_EvenStarred_WhileAStarredSlashStarAligns() =>
         Agrees(DocSource, DocOracle);
+
+    /// <summary>
+    ///     ⚠ A deliberate divergence, not the oracle's output. A <c>/** … */</c> whose stars are ragged moves with
+    ///     its line as a unit. The oracle rebuilds it keeping the stars as text — <c> * * ragged doc</c> — but the
+    ///     compiler takes a leading star off each line, so that rebuild adds an asterisk to the documentation, and
+    ///     Skala does not write it (SK-DIV-0380).
+    /// </summary>
+    [Fact]
+    public void ARaggedSlashStarStarComment_MovesAsAUnit() =>
+        Agrees(
+            "class C {\n      /**\n         * ragged doc\n     * still ragged\n       */\n    void B() { }\n}\n",
+            "class C {\n    /**\n       * ragged doc\n   * still ragged\n     */\n    void B() { }\n}\n"
+        );
 
     /// <summary>
     ///     ⚠ The continuation moves by what the <em>line</em> the comment starts on moved, never by what

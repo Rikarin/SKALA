@@ -269,12 +269,15 @@ public sealed class AlignMultilineCommentTests {
             + "       continuation */\n"
             + "    void O() { }\n"
             + "\n"
-            + "        /** doc-style own line\n"
+            + "        /**\n"
+            + "         * doc-style own line\n"
             + "         * continuation\n"
             + "         */\n"
             + "    void P() { }\n"
             + "}\n";
 
+        // ⚠ Re-measured once `SkalaFormatOnly` ran the doc-comment task (#449): the last block is rebuilt as a
+        // starred one on the column its opener was written at (#568), where it used to come back as written.
         var once = Format(source, "false");
         Assert.Equal(oracle, once);
         Assert.Equal(once, Format(once, "false"));

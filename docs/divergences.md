@@ -8041,29 +8041,42 @@ reads them — equals the one-liner's; `TokenEquivalence` holds `/** … */` to 
 - options: none.
 - ⚠ status: **resolved** for the one-line class.
 
-## SK-DIV-0380 — the oracle rebuilds some multi-line `/** … */` blocks under `SkalaDocComments`; Skala leaves every multi-line one
+## SK-DIV-0380 — which multi-line `/** … */` blocks the oracle rebuilds — **RESOLVED (#568)**, but for one deliberate refusal
 
-Found while measuring #489, under `SkalaDocComments`; Skala leaves each of these as written:
+Found while measuring #489. Measured for #568 on forty shapes under `SkalaDocComments` (three probes, each
+shape alone above a method), and the rule that separates the rebuilt from the left is about the lines
+*after* the opener — the last too, when `*/` ends it:
 
-| input | the oracle |
+| shape | the oracle |
 |---|---|
-| `/** a` / ` * b` / ` */` | `/**` / ` * a` / ` * b` / ` */` |
-| `/**` / ` * text */` | `/**` / ` * text` / ` */` |
-| `/** <summary>Doc.</summary>` / `    <remarks>Unstarred second.</remarks> */` | starred, one element per line |
-| `/** <summary>Doc` / ` * continues.</summary> */` | starred, `<summary>` opened, `Doc` / `continues.` kept on two lines |
-| `/**` / ` *` / ` * <summary>blank first</summary>` / ` */` | the blank ` *` line dropped |
-| an already-starred block whose `<summary>` passes the margin | re-wrapped, the `<summary>` opened |
-| `/** <summary>A</summary> */` / `/** <summary>B</summary> */` | merged into one starred block |
+| content on the `/**` line and at least one more line, starred or not, aligned or not (`/** a` / ` * b`, ` *b`, `  * b`, `b`, deep `b`, ` * b */`, an empty line) | rebuilt: `/**` / ` * a` / ` * b` / ` */` |
+| content on the `/**` line and the closer alone below (`/** text` / ` */`, `/** <summary>a</summary>` / ` */`) | left |
+| `/**` alone and two or more lines, every one with the same whitespace and asterisk (` * a` / ` * b`, ` *no space` / ` *again`, two lines a column off) | rebuilt, that prefix stripped, each line trimmed and the content formatted (`<summary>` opened, `Doc.` indented, a blank first line dropped) |
+| `/**` alone and two or more lines with no asterisk (`   a` / `   b`, an unstarred `<summary>` at the opener's column) | rebuilt, each line trimmed |
+| `/**` alone and exactly one line: ` * text` with the closer aligned or ending it | rebuilt (already canonical, or the closer moved below) |
+| `/**` alone and exactly one line otherwise (` *no space`, `  * a`, `   a`, `<summary>` at the opener's column, ` * a` over a closer off the column) | left |
+| `/**` alone and lines that disagree on the asterisk (` * a` / `  * b`, ` * a` / ` b`, ` * a` / an empty line / ` * b`, a ragged block) | rebuilt **keeping the stars as text**: ` * * a` |
 
-And these the oracle also leaves: `/** text` / ` */`; `/**` / ` *no space after star` / ` */`; a block whose
-asterisks are misaligned; `/**` / unstarred `<summary>…</summary>` / `*/`; an already-starred block that
-fits. No rule separating the two lists was established — `/** text` / ` */` is left while `/** a` / ` * b` /
-` */` is rebuilt — so nothing is implemented. Leaving a block as written is the safe half: it never
-changes a comment the oracle would have left.
+`XmlDocFormatter.MultiLineBody` reads the first six rows back as `///` lines and the one renderer lays them out,
+as #489 does for a one-line block, under the same four conditions (starts its line, nothing after it, above a
+type or member, the only doc comment there). ⚠ **The last row is refused, deliberately.** The compiler takes a
+leading asterisk off *each* line of a `/** */` whatever the other lines do, so in ` * a` / ` b` the star was
+never documentation text; in the oracle's ` * * a` it is. That rewrite adds an asterisk to what the compiler
+reads, and Skala's round-trip property exists to refuse exactly that. Also left: a block that renders a blank
+line (the oracle writes ` * ` with its trailing space) and a block holding `<code>`, of which none was measured.
+Two adjacent one-line blocks, which the oracle merges, are still left (#489).
 
+⚠ Found on the way: the "nothing but code after it" check read the opener's line, which ends before a
+multi-line block does — an `ArgumentOutOfRangeException` that took the whole file down as an internal error the
+first time the path was opened up. ⚠ And three tests carried expectations measured before `SkalaFormatOnly`
+ran the doc-comment task (#449): `BlockCommentShiftIssue428Tests`' doc and trim inputs and
+`AlignMultilineCommentTests`' `/** doc-style own line`. Re-asked, the oracle rebuilds `/** doc plain` / `second`
+and drops a trailing ` *` line; the ragged block moved to a test of its own that records the refusal.
+
+- pinned by `constructs/trivia/doc-comment-multi-line-block.cs` (twenty-eight shapes, the stars-as-text ones
+  left out) and `MultiLineDocBlockIssue568Tests`; both branches sabotaged alone fail their rows.
 - options: none.
-- ⚠ status: **open**, partly measured (2026-10-08). Reproduction: the shapes above, one per member, asked
-  with `Testing ask <dir> --profile=SkalaDocComments`.
+- ⚠ status: **resolved** but for the stars-as-text row, which stays a divergence on purpose.
 
 ## SK-DIV-0381 — the tag-header keys are read at their export values only — **RESOLVED**
 
