@@ -5968,6 +5968,16 @@ conditional directly inside a grouping parenthesis (after `=`, as an argument, i
 a binary operand, before `.ToString()`, behind a cast, in a `return`) lands on the parenthesis's level,
 because its own arm scope and the parenthesis's opened on one line and both counted. A conditional
 that is an argument keeps its level. Pinned by `ParenthesisedConditionalIssue546Tests`.
+
+⚠ **`&&` and `||` are two chains (#565).** `SameChain` read them as one precedence, on the note "`a && b
+|| c` is chopped at both operators by the oracle" — true only where the `&&` was already broken. Measured
+2026-10-08 on six conditions too wide for their line (in an `if`, an `=` and a `return`, with the `&&`
+before, after and between the `||`s): the oracle chops every `||` and leaves each `&&` operand whole —
+`a && b` / `|| c && d` / `|| e && a`; Skala chopped every `&&` as well. It showed in Skala's own
+`SettleParenthesisedCollections` (`|| captured is { Count: > 0 }` / `&& IsInsideCaptured(paren)`) only
+where the condition crossed the margin, which is why the issue's shape looked indent-dependent. Author's
+breaks were re-measured too (`a` / `&& b || d` chops the `||` by containment) and agree. Pinned by
+`AndOrChainsIssue565Tests`.
 ⚠ **The filled-list half closed at #471** (SK-DIV-0117): `new[] { 1` / `+ 2, 3 }` already agreed (the
 array initializer's after rule, #444), and `[1` / `+ 2, 3]` now does too — `+ 2,` / `3`.
 
@@ -10015,7 +10025,9 @@ is the same level collapsing into the `||` chain's continuation, both opened on 
   (`body.DescendantNodes(x => …)` / `.Any(…)`) the level is spent as before, both measured on Skala's own
   source, which a first cut that dropped the level outright moved; one under the `is` that is an
   `&&`/`||` chain's first operand takes its
-  level as `IndentFlags.Additive` — counted beside the line's other level without hiding it. Measured
+  level as `IndentFlags.Additive` — counted beside the line's other level without hiding it. ⚠ Group L
+  fixed that second half independently (#560, SK-DIV-0394) with the same flag; the two are merged into
+  L's mechanism and L's rule (the type test as the operator's left operand). Measured
   on 2026-10-09 on eighteen shapes (a sole lambda in a call, after a broken chain, in an expression body,
   among other arguments; an `||` operand under `var`, `return` and an `if`); the `if` keeps its
   alignment. ⚠ A row beside it is not this entry's: `var glued = token.Kind() is … || …` breaks the `=`
@@ -10348,7 +10360,12 @@ Once any `?` of the chain starts a line, every member is chopped at both signs h
 `BreakPlan.PlanArmArrow`, `PlanSubpattern`, `PlanChainWide`, `PlanOperator`.
 
 - options: `keep_user_linebreaks`, `skala_keep_existing_property_patterns_arrangement` (the export's `false`).
-- ⚠ status: **resolved** (#549) except as listed under SK-DIV-0393 and SK-DIV-0395. Pinned by
+⚠ **#564, round two: the `when` list now lifts too.** Asked with the list written whole, the oracle chops it
+and keeps the body on the `) =>` line — `) => Body(…),` and `) => "a long string",` past the margin alike —
+so a break after the arrow beside a chopped argument list is never the width's, and lifting under a kept
+one is idempotent. The generated seed's head was a type argument list that fills, which stays excluded.
+
+- ⚠ status: **resolved** (#549) and #564. Pinned also by `constructs/breaks/when-list-under-a-kept-arrow-break.cs`. Pinned by
   `constructs/breaks/switch-arm-head-under-a-kept-arrow-break.cs`.
 
 ## SK-DIV-0392 — a broken `is` over a breakable pattern had no level of its own
@@ -10382,7 +10399,14 @@ column. And a filled one, `(int a, …, int` / `dddd) =>`, breaks between a desi
 name, which Skala does not. Not wired.
 
 - options: none measured.
-- ⚠ status: **open**, measured.
+
+⚠ **#559, round two.** Re-measured on twelve shapes: the `)` is on the elements' column wherever the
+positional pattern is — in an arm with the body on the `)`'s line or below it, before an arrow on a line
+of its own, as a `case` label and after `is` (`o is (` / … / `);`) — so it is not the arm's at all but
+`skala_indent_pars = inside` answered as `outside` for a positional pattern
+(`CSharpDocumentBuilder.ParenthesesStyleFor`). The fill's break between a declaration's type and its
+name (`…, int` / `dddd) =>`) is still not modelled.
+- ⚠ status: **resolved** (#559) for the closer, pinned by `constructs/breaks/positional-pattern-closer.cs`; **open** for the fill.
 
 ## SK-DIV-0394 — a pattern chain inside the first operand of an `&&` in a declarator
 
@@ -10394,7 +10418,14 @@ starts on the statement's line takes a level past the `&&`'s continuation. The s
 them on `A`'s column (SK-DIV-0391's third finding) — Skala now writes the latter for both. Not wired.
 
 - options: none.
-- ⚠ status: **open**, measured.
+
+⚠ **#560, round two.** Measured on nine shapes: after `var e =` and `return`, with `&&` and `||`, with and
+without braces, and with a further `&&` — the `or` sits a level past the operator's line; under a broken
+`=>`, in an `if` condition and as an argument the two engines already agreed, because there the
+operator's level opened on an earlier line or an aligned column. Both levels opened on the statement's
+line and the writer's one-level-per-opening-line rule collapsed them; the chain's own level is now an
+`IndentFlags.Additive` scope, which counts without blocking the scopes outside it on that line.
+- ⚠ status: **resolved** (#560). Pinned by `constructs/indentation/pattern-chain-left-of-a-logical-operator.cs`.
 
 ## SK-DIV-0395 — a subpattern value the author broke after the colon breaks its braces as if joined
 
@@ -10403,7 +10434,12 @@ access` (109 columns on its own line) keeps the author's break after the colon *
 open, as though measured with the value joined to `Expression:` (121). Not wired.
 
 - options: `keep_user_linebreaks`.
-- ⚠ status: **open**, measured.
+
+⚠ **#561, round two: not a width rule.** Measured at six widths (66 to 118 columns on the value's own
+line, the joined line from 117 to 121) and on `Expression:` / `Bar { A: 1 }`: the braces break open at
+every one of them. A break the author kept after a subpattern's colon forces the value's own property
+pattern open (`BreakPlan.PlanPropertyPattern`); a bare `{` after the colon is still joined to it.
+- ⚠ status: **resolved** (#561). Pinned by `constructs/breaks/subpattern-value-under-a-kept-colon-break.cs`.
 
 ## SK-DIV-0396 — a break after `is` before a list pattern is kept under a broken arrow
 
@@ -10412,7 +10448,15 @@ Found beside #550: `M(object[] xs) =>` / `xs is` / `[1, 2];` comes back from the
 `ABreakBeforeAnOpeningBracket_IsJoinedUnlessTheGapBelongsToAParenthesis` pins). Skala joins both. Not wired.
 
 - options: `keep_user_linebreaks`.
-- ⚠ status: **open**, measured.
+
+⚠ **#562, round two: the test was wrong.** Asked with the test's own input, the oracle writes
+`object A() =>` / `xs is` / `[1, 2];` — the break kept, the list one level past the operand's line and the
+arrow broken for the two-line body — and the same for every shape measured: flush or indented, as an
+expression body, after `return` and `var b =`, as an argument. What it joins is a list pattern the author
+broke inside (`xs is` / `[` / `1,` …, constructs/wrapping/patterns.cs); a property pattern's `{` is joined
+too. `ABreakBeforeAnOpeningBracket_IsJoinedUnlessTheGapBelongsToAParenthesisOrAnIs` now pins the oracle's
+answer.
+- ⚠ status: **resolved** (#562). Pinned by `constructs/wrapping/list-pattern-after-a-broken-is.cs`.
 
 ## SK-DIV-0397 — a stepped conditional chain as a call's argument: the first `?` a level short
 
@@ -10426,7 +10470,14 @@ indented and stepped — `nested_ternary_style = autodetect` ("chop in existing 
 the chain. Not wired.
 
 - options: `resharper_csharp_nested_ternary_style` (`autodetect`).
-- ⚠ status: **open**, measured.
+
+⚠ **#563, round two.** The first half is the builder's: the root of a chain was laid out flat as the
+chain's member ("align_not_nested"), which a stepped chain is not once #548 chops it, so where nothing
+else paid a level — an argument, an array element — its signs sat on the condition's column. The root of
+a stepped chain now nests like a lone conditional. ⚠ The second half was **not reproduced**: the in-file
+call cut out beside flat chains, a colon-only chain and an expression-bodied chain comes back stepped and
+indented from the oracle, exactly as it does alone — nothing found that `autodetect` reads beyond the chain.
+- ⚠ status: **resolved** (#563) for the argument level, pinned by `constructs/wrapping/stepped-chain-as-an-argument.cs`; the in-file answer is unexplained and not reproduced.
 
 ## SK-DIV-0371 — a lambda argument's arrow against the member-access fill in its body
 

@@ -493,7 +493,9 @@ public sealed class RedundantDeclarationAnalyzer : DiagnosticAnalyzer {
 
         if (call is not InvocationExpressionSyntax {
                 Expression:
-                MemberAccessExpressionSyntax { Expression: BaseExpressionSyntax, Name: SimpleNameSyntax name }
+                MemberAccessExpressionSyntax {
+                    Expression: BaseExpressionSyntax, Name: SimpleNameSyntax name
+                }
             } invocation
             || name.Identifier.ValueText != method.Identifier.ValueText
             || !ForwardsEveryParameter(method, invocation)

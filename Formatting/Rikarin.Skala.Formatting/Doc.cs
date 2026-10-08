@@ -419,10 +419,12 @@ public enum IndentFlags {
     Multiplied = 512,
 
     /// <summary>
-    ///     ⚠ A continuation level that counts on every line after its own beside one already counted on
-    ///     that line, without itself hiding the next: a pattern chain that is an <c>&amp;&amp;</c> or <c>||</c>
-    ///     chain's first operand puts its <c>or</c>s one level past the operators' (#566). Unlike
-    ///     <see cref="Unconditional" />, which counts and then stands in for the line.
+    ///     ⚠ An unconditional continuation scope that leaves the scopes outside it on the same line
+    ///     counting too: a binary pattern chain that is the left operand of a broken <c>&amp;&amp;</c> or
+    ///     <c>||</c> takes its level past that operator's, although both opened on the statement's line —
+    ///     <c>var e = n.P is A</c> / <c>or B</c> / <c>&amp;&amp; c;</c> puts the <c>or</c> at 16 and the
+    ///     <c>&amp;&amp;</c> at 12 (#560, SK-DIV-0394). Where the operator's level opened on an earlier
+    ///     line — under a broken <c>=&gt;</c> — it counts as any scope does, and nothing is added.
     /// </summary>
     Additive = 1024,
 

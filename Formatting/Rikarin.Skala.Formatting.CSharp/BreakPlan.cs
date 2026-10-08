@@ -1434,8 +1434,14 @@ public sealed class BreakPlan {
             // gap before `grid[0, 1]`'s bracket is the receiver's, and the oracle keeps
             // `grid\n[0, 1]` with the bracket one level in; the gap before an attribute list's `[`
             // is its owner's — a member's, a parameter's — and no list plan owns it.
+            // ⚠ Nor a one-line list pattern straight after an `is` (#562, SK-DIV-0396): `xs is` /
+            // `[1, 2]` keeps its break, one level past the operand's line, as an expression body, after
+            // `return` and `var b =` and as an argument, written indented or flush — it is the list
+            // pattern the author broke *inside* that the oracle joins to its `is`. The existing pin of
+            // `=> xs is` / `[1, 2]` as joined was not the oracle's answer (re-measured 2026-10-08).
             if (!open.GetPreviousToken().IsKind(SyntaxKind.OpenParenToken)
-                && open.Parent is not (BracketedArgumentListSyntax or AttributeListSyntax)) {
+                && open.Parent is not (BracketedArgumentListSyntax or AttributeListSyntax)
+                && !IsAOneLineListPatternAfterIs(open)) {
                 Flat(open);
             }
         }
@@ -3600,51 +3606,55 @@ public sealed class BreakPlan {
         var pattern = root is BinaryPatternSyntax;
         Describe(
             root,
-            group,
-            style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-            // ⚠ A pattern chain the author broke at any one link is chopped at every link, and an
-            // expression chain is not (#483, SK-DIV-0124). Measured: `A or B` / `or C` comes back with
-            // every `or` on its own line — in a switch arm, after `is`, in a `case` label, in an `if`
-            // condition, for `and` as well as `or`, and broken at the inner link as at the outer —
-            // although the whole chain fits; `a && b` / `|| c` in the same arm stays as written.
             new(
-                pattern && options.KeepsUserBreaksBetweenItems && PatternChainIsBroken(root),
-                BreaksIfTooLong: true
-            ),
-            // ⚠ A pattern chain spends a level of its own *and* the continuation the construct
-            // around it would have spent; a binary expression chain spends only the latter. See
-            // GroupPlan.OwnLevel and docs/plan/04 § "Indentation".
-            //
-            // ⚠ Except as a statement's condition, where `skala_align_multiline_statement_conditions` puts
-            // the continuation level and the alignment at the same column and the oracle writes one
-            // step, not two:
-            //     if (o is IDisposable
-            //         or IAsyncDisposable) {     ← one, where an argument would take two
-            pattern && root.Parent is not SubpatternSyntax,
-            // ⚠ And only the outermost combinator's chain: an `and` chain inside an `or` chain is a
-            // chain of its own since #483, and the oracle writes its links on the `or`s' column —
-            // `rune is >= 0x1100` / `and <= 0x115F` / `or >= 0x2E80` / `and <= 0x303E` all one level in
-            // (Skala's own TextWidth.cs, measured).
-            // ⚠ Nor a chain whose `is` the author broke before: `next.Parent` / `is A` / `or B` puts the
-            // `or`s on the `is`'s own line's column (Skala's own SpaceRules.cs, measured) — that break
-            // has already spent the level.
-            // ⚠ Nor the body of a lambda that is a call's only argument: `Use(x => x is A` / `or B` puts the
-            // `or`s one level past the call's line, as `&&` would be — the parenthesis kept on that line
-            // already spends the level the chain would have (#566).
-            ownLevel: pattern
-            && !IsStatementCondition(root)
-            && root.Parent is not BinaryPatternSyntax
-            // ⚠ Nor a subpattern's value (#549): `is {` / `Parent: A` / `or B` / `}` puts the `or`s on
-            // `Parent:`'s column, in a switch arm's braces as in an `is`'s (measured 2026-10-08).
-            && root.Parent is not SubpatternSyntax
-            // ⚠ Before the `is` or after it (#550): `keyword is` / `A` / `or B` puts `A` and the `or`s
-            // on one column too.
-            && !(EnclosingTypeTest(root) is { } test && (BreaksBefore(test.IsKeyword) || BreaksAroundTheIs(test))),
-            // ⚠ And that level counts even beside the `&&` or `||` chain's own, opened on the same line,
-            // when the pattern's `is` is the chain's first operand: `return token.Kind() is A` / `or B` two
-            // levels in / `|| other` one (#566, Skala's own HasLooseBreak and FlatSourceWidth).
-            additiveLevel: pattern && IsFirstLogicalOperand(root),
-            holdsLevel: pattern ? HoldForASoleLambda(root, group) : HeldLevel.None
+                group,
+                style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+                // ⚠ A pattern chain the author broke at any one link is chopped at every link, and an
+                // expression chain is not (#483, SK-DIV-0124). Measured: `A or B` / `or C` comes back with
+                // every `or` on its own line — in a switch arm, after `is`, in a `case` label, in an `if`
+                // condition, for `and` as well as `or`, and broken at the inner link as at the outer —
+                // although the whole chain fits; `a && b` / `|| c` in the same arm stays as written.
+                new(
+                    pattern && options.KeepsUserBreaksBetweenItems && PatternChainIsBroken(root),
+                    BreaksIfTooLong: true
+                ),
+                // ⚠ A pattern chain spends a level of its own *and* the continuation the construct
+                // around it would have spent; a binary expression chain spends only the latter. See
+                // GroupPlan.OwnLevel and docs/plan/04 § "Indentation".
+                //
+                // ⚠ Except as a statement's condition, where `skala_align_multiline_statement_conditions` puts
+                // the continuation level and the alignment at the same column and the oracle writes one
+                // step, not two:
+                //     if (o is IDisposable
+                //         or IAsyncDisposable) {     ← one, where an argument would take two
+                pattern && root.Parent is not SubpatternSyntax,
+                false,
+                // ⚠ And only the outermost combinator's chain: an `and` chain inside an `or` chain is a
+                // chain of its own since #483, and the oracle writes its links on the `or`s' column —
+                // `rune is >= 0x1100` / `and <= 0x115F` / `or >= 0x2E80` / `and <= 0x303E` all one level in
+                // (Skala's own TextWidth.cs, measured).
+                // ⚠ Nor a chain whose `is` the author broke before: `next.Parent` / `is A` / `or B` puts the
+                // `or`s on the `is`'s own line's column (Skala's own SpaceRules.cs, measured) — that break
+                // has already spent the level.
+                pattern
+                && !IsStatementCondition(root)
+                && root.Parent is not BinaryPatternSyntax
+                // ⚠ Nor a subpattern's value (#549): `is {` / `Parent: A` / `or B` / `}` puts the `or`s on
+                // `Parent:`'s column, in a switch arm's braces as in an `is`'s (measured 2026-10-08).
+                && root.Parent is not SubpatternSyntax
+                // ⚠ Before the `is` or after it (#550): `keyword is` / `A` / `or B` puts `A` and the `or`s
+                // on one column too.
+                && !(EnclosingTypeTest(root) is { } test && (BreaksBefore(test.IsKeyword) || BreaksAroundTheIs(test))),
+                // ⚠ And that level counts although the `&&` or `||` the type test is the left operand of
+                // opened its own on the same line (#560, SK-DIV-0394): `var e = n.P is A` / `or B` /
+                // `&& c;` puts the `or` at 16 and the `&&` at 12, after `return` and `var e =`, and with
+                // `||`; one level per opening line had collapsed the two onto 12. Measured 2026-10-08.
+                AdditiveLevel: pattern
+                && EnclosingTypeTest(root) is { Parent: BinaryExpressionSyntax logical } leftTest
+                && logical.Left == leftTest
+                && logical.Kind() is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression,
+                HoldsLevel: pattern ? HoldForASoleLambda(root, group) : HeldLevel.None
+            )
         );
     }
 
@@ -3675,24 +3685,6 @@ public sealed class BreakPlan {
 
         arrowHeldAgainst[group] = arrow;
         return HeldLevel.WhileArrowFlat;
-    }
-
-    /// <summary>
-    ///     Whether a pattern chain's <c>is</c> is the first operand of an <c>&amp;&amp;</c> or <c>||</c> chain (#566).
-    /// </summary>
-    static bool IsFirstLogicalOperand(SyntaxNode pattern) {
-        if (EnclosingTypeTest(pattern) is not { } test) {
-            return false;
-        }
-
-        SyntaxNode operand = test;
-        while (operand.Parent is BinaryExpressionSyntax binary
-               && binary.Left == operand
-               && binary.Kind() is SyntaxKind.LogicalOrExpression or SyntaxKind.LogicalAndExpression) {
-            operand = binary;
-        }
-
-        return operand != test;
     }
 
     /// <summary>The <c>is</c> a pattern sits under, through parenthesised and negated patterns.</summary>
@@ -3969,7 +3961,8 @@ public sealed class BreakPlan {
             // ⚠ A break before a pattern's `[` or `{` is not kept: `xs is` / `[1, 2]` comes back joined
             // (constructs/wrapping/patterns.cs).
             || BreaksBefore(FirstToken(test.Pattern))
-            && FirstToken(test.Pattern).Kind() is not (SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken));
+            && (FirstToken(test.Pattern).Kind() is not (SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken)
+                || IsAOneLineListPatternAfterIs(FirstToken(test.Pattern))));
 
     /// <summary>
     ///     An <c>is</c> the author broke before or after, over a pattern that can break: one level past
@@ -4008,6 +4001,14 @@ public sealed class BreakPlan {
             )
         );
     }
+
+    /// <summary>The <c>[</c> of a list pattern written on one line straight after an <c>is</c>.</summary>
+    bool IsAOneLineListPatternAfterIs(SyntaxToken open) =>
+        open.Parent is ListPatternSyntax { Parent: IsPatternExpressionSyntax } list
+        && open.GetPreviousToken().IsKind(SyntaxKind.IsKeyword)
+        && !HasLineBreakIn(list);
+
+    bool HasLineBreakIn(SyntaxNode node) => source.AsSpan(node.Span.Start, node.Span.Length).Contains('\n');
 
     /// <summary>Whether a binary expression is <c>is</c> or <c>as</c> with a type on its right.</summary>
     static bool IsTypeTest(BinaryExpressionSyntax binary) =>
@@ -4408,11 +4409,16 @@ public sealed class BreakPlan {
             SyntaxKind.AmpersandToken => 6,
             SyntaxKind.CaretToken => 7,
             SyntaxKind.BarToken => 8,
-            // ⚠ `&&` and `||` are one chain, not two. `a && b || c` is chopped at both operators by
-            // the oracle, which is what `skala_wrap_chained_binary_expressions` means by "chained".
-            SyntaxKind.AmpersandAmpersandToken or SyntaxKind.BarBarToken => 9,
-            SyntaxKind.QuestionQuestionToken => 10,
-            _ => 11
+            // ⚠ `&&` and `||` are two chains, not one (#565). The note here said "`a && b || c` is
+            // chopped at both operators by the oracle", and that holds only where the `&&` is broken
+            // already: measured 2026-10-08 on six conditions too wide for their line — in an `if`, an
+            // `=` and a `return`, with the `&&` before, after and between the `||`s — the oracle chops
+            // every `||` and leaves each `&&` operand whole on its line (`a && b` / `|| c && d` /
+            // `|| e && a`). An `&&` the author broke still breaks its `||`, by containment.
+            SyntaxKind.AmpersandAmpersandToken => 9,
+            SyntaxKind.BarBarToken => 10,
+            SyntaxKind.QuestionQuestionToken => 11,
+            _ => 12
         };
 
     /// <summary>
@@ -4698,6 +4704,13 @@ public sealed class BreakPlan {
     ///     the oracle steps every depth or none of them, and a chain broken before its first <c>?</c>
     ///     only still comes back fully stepped.
     /// </remarks>
+    /// <summary>
+    ///     The root of a conditional chain the author stepped — a <c>?</c> of it starts a line — which
+    ///     #548 chops at both signs of every member, so it nests like a lone conditional.
+    /// </summary>
+    public bool IsSteppedChainRoot(ConditionalExpressionSyntax node) =>
+        node.WhenFalse is ConditionalExpressionSyntax && !IsTernaryChainTail(node) && BreaksAtTernaryQuestion(node);
+
     bool BreaksAtTernaryQuestion(ConditionalExpressionSyntax node) {
         if (!options.KeepsUserBreaksBetweenItems || !options.WrapBeforeTernaryOpsigns) {
             return false;
@@ -5228,7 +5241,9 @@ public sealed class BreakPlan {
         node switch {
             EqualsValueClauseSyntax {
                     Parent:
-                    VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Variables.Count: 1 } declaration }
+                    VariableDeclaratorSyntax {
+                        Parent: VariableDeclarationSyntax { Variables.Count: 1 } declaration
+                    }
                 } when declaration.Parent is LocalDeclarationStatementSyntax =>
                 declaration.Type.IsVar ? EqualsOwner.VarLocal : EqualsOwner.TypedLocal,
             EqualsValueClauseSyntax {
@@ -6068,8 +6083,26 @@ public sealed class BreakPlan {
                     or CollectionExpressionSyntax
                     or SwitchExpressionSyntax
                 );
+        // ⚠ And a `when` clause's argument list (#564), which the lift reaches only once it chops: `when Compute(` / the
+        // arguments two levels past the arm / `) =>` one level / the body one level. Measured 2026-10-08
+        // written chopped and written whole: whole, the oracle chops the list and keeps the body on the
+        // `) =>` line — `) => Body(…),` and `) => "a long string",` past the margin alike — so a break
+        // after the arrow beside a chopped list is never the width's, which is what makes the lift
+        // idempotent where reading any list in the head was not (generated seed 857717698562573229, a
+        // type argument list that fills, still excluded).
+        var liftsList = arm.WhenClause is { } when
+            && when.DescendantNodes().OfType<ArgumentListSyntax>().Any()
+            && !head.SelectMany(static part => part.DescendantNodesAndSelf())
+                .Any(static node => node is PositionalPatternClauseSyntax
+                        or TypeArgumentListSyntax
+                        or AnonymousFunctionExpressionSyntax
+                        or InitializerExpressionSyntax
+                        or CollectionExpressionSyntax
+                        or SwitchExpressionSyntax
+                        or QueryExpressionSyntax
+                );
         var keptAfter = !kept
-            && liftsBraces
+            && (liftsBraces || liftsList)
             // ⚠ And never under a body the arrow group holds the level for (#406, SK-DIV-0157).
             && !HeadsWithAChoppedParenthesis(arm.Expression, source, options, out _)
             && options.KeepsUserBreaksBetweenItems
@@ -6155,21 +6188,22 @@ public sealed class BreakPlan {
             // width breaks it in 3 664 — so the arrow breaks whenever the body does not fit beside it,
             // with no ordering question asked.
             ArrowWinsOverTheChain(lambda)
-            ? new GroupFacts(BreaksIfTooLong: true)
-            : IsAFilledSoleLambda(lambda, body)
-                ? new GroupFacts(
-                    BreaksIfTooLong: true,
-                    LambdaParameters: lambda switch {
-                        SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
-                        ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Span.Length,
-                        _ => 1
-                    },
-                    LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
-                    LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
-                )
-                : ArrowMovesACallChainDown(body)
-                    ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
-                    : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+                ? new GroupFacts(BreaksIfTooLong: true)
+                : IsAFilledSoleLambda(lambda, body)
+                    ? new GroupFacts(
+                        BreaksIfTooLong: true,
+                        LambdaParameters: lambda switch {
+                            SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
+                            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Span
+                                .Length,
+                            _ => 1
+                        },
+                        LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
+                        LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
+                    )
+                    : ArrowMovesACallChainDown(body)
+                        ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
+                        : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
 
     /// <summary>
@@ -6348,7 +6382,22 @@ public sealed class BreakPlan {
 
         var keepExisting = options.KeepExistingPropertyPatternsArrangement;
         var joins = options.PlaceSimplePropertyPatternOnSingleLine && !keepExisting;
-        var forced = !options.PlaceSimplePropertyPatternOnSingleLine && !keepExisting;
+        var forced = !options.PlaceSimplePropertyPatternOnSingleLine
+            && !keepExisting
+            // ⚠ And under a break the author kept after a subpattern's colon (#561, SK-DIV-0395): the
+            // value's braces break open however short it is — `Expression:` / `Bar {` / `A: 1` / `}`, and
+            // `Expression:` / `MemberAccessExpressionSyntax {` / … / `} access` at every width measured
+            // around the margin, 66 to 118 columns on its own line. Measured 2026-10-08 with
+            // `Testing ask`, found in Skala's own ReflectiveTypeTestAnalyzer.cs.
+            || !keepExisting
+            && node.Parent is RecursivePatternSyntax {
+                Parent: SubpatternSyntax { ExpressionColon: not null } holder
+            } value
+            && holder.Pattern == value
+            && options.KeepsUserBreaksBetweenItems
+            && FirstToken(value) is var head
+            && !head.IsKind(SyntaxKind.OpenBraceToken)
+            && BreaksBefore(head);
         var chopsAlways = options.WrapPropertyPattern == WrapStyle.ChopAlways && !keepExisting;
 
         var outer = NewGroup();
@@ -7733,7 +7782,6 @@ public sealed class BreakPlan {
         bool spendsIndent = false,
         bool leadingGapInside = false,
         bool ownLevel = false,
-        bool additiveLevel = false,
         HeldLevel holdsLevel = HeldLevel.None
     ) =>
         Describe(
@@ -7745,8 +7793,7 @@ public sealed class BreakPlan {
                 spendsIndent,
                 leadingGapInside,
                 ownLevel,
-                HoldsLevel: holdsLevel,
-                AdditiveLevel: additiveLevel
+                HoldsLevel: holdsLevel
             )
         );
 
@@ -7807,9 +7854,7 @@ public sealed class BreakPlan {
             if (!open.IsKind(SyntaxKind.OpenBraceToken)
                 || !CSharpDocumentBuilder.OpensAJoinableBody(open)
                 || (options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(open)) == 0
-                || captured is { Count: > 0 }
-                && open.Parent is { } parent
-                && IsInsideCaptured(parent)) {
+                || captured is { Count: > 0 } && open.Parent is { } parent && IsInsideCaptured(parent)) {
                 continue;
             }
 
@@ -7871,8 +7916,7 @@ public sealed class BreakPlan {
     void SettleParenthesisedCollections(SyntaxNode root) {
         foreach (var paren in root.DescendantNodes().OfType<ParenthesizedExpressionSyntax>()) {
             if (paren.Expression is not CollectionExpressionSyntax { Elements.Count: > 0 } collection
-                || captured is { Count: > 0 }
-                && IsInsideCaptured(paren)) {
+                || captured is { Count: > 0 } && IsInsideCaptured(paren)) {
                 continue;
             }
 

@@ -2216,18 +2216,18 @@ public static class PreferenceSweep {
         builder.AppendLine();
         builder.AppendLine(
             worst >= 99.9
-            ? "⚠ **This construct is a rule, not a preference.** Two terms, one of them a single"
-            + " constant,\nreproduce the oracle across the whole grid at every content shape"
-            + " swept. Nothing here has\nto survive in a table — it survives in a sentence."
-            : worst >= 97.0
-                ? "⚠ **A rule plus a wander.** Two terms reproduce nearly every cell; what is left"
-                + " is the\nboundary moving a few columns either side of `F` as the total changes."
-                + " That wander is\nthe genuinely preferential part, and it is in the grid below"
-                + " and nowhere else."
-                : "⚠ **A rule for some content shapes and not others.** The floor is not one"
-                + " constant here —\nit moves with what the inner construct is made of, so the"
-                + " model closes some rows and\nleaves others open. The grid is the only record of"
-                + " the ones it leaves open."
+                ? "⚠ **This construct is a rule, not a preference.** Two terms, one of them a single"
+                + " constant,\nreproduce the oracle across the whole grid at every content shape"
+                + " swept. Nothing here has\nto survive in a table — it survives in a sentence."
+                : worst >= 97.0
+                    ? "⚠ **A rule plus a wander.** Two terms reproduce nearly every cell; what is left"
+                    + " is the\nboundary moving a few columns either side of `F` as the total changes."
+                    + " That wander is\nthe genuinely preferential part, and it is in the grid below"
+                    + " and nowhere else."
+                    : "⚠ **A rule for some content shapes and not others.** The floor is not one"
+                    + " constant here —\nit moves with what the inner construct is made of, so the"
+                    + " model closes some rows and\nleaves others open. The grid is the only record of"
+                    + " the ones it leaves open."
         );
 
         return builder.ToString();

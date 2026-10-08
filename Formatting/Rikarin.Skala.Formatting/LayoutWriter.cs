@@ -619,7 +619,7 @@ public sealed class LayoutWriter {
                         Lifted: lifted,
                         IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0,
                         LiftsThrough: liftsThrough,
-                        IsAdditive: (flags & IndentFlags.Additive) != 0
+                        Additive: (flags & IndentFlags.Additive) != 0
                     ),
                 IndentKind.OneLevel =>
                     new Scope(
@@ -876,7 +876,7 @@ public sealed class LayoutWriter {
             if (scope.Unconditional) {
                 if (scope.OpenLine <= line) {
                     level += scope.Level;
-                    blocked = scope.OpenLine;
+                    blocked = scope.Additive ? blocked : scope.OpenLine;
                 }
 
                 continue;
@@ -1242,16 +1242,7 @@ public sealed class LayoutWriter {
             if (scope.Unconditional) {
                 if (nested ? scope.OpenLine <= line : scope.OpenLine < line) {
                     level += scope.Level;
-                    blocked = scope.OpenLine;
-                }
-
-                continue;
-            }
-
-            // ⚠ See IndentFlags.Additive: counted, and the line left to the scope outside it (#566).
-            if (scope.IsAdditive) {
-                if (scope.OpenLine < line) {
-                    level += scope.Level;
+                    blocked = scope.Additive ? blocked : scope.OpenLine;
                 }
 
                 continue;
@@ -1339,7 +1330,7 @@ public sealed class LayoutWriter {
         bool LiftsThrough = false,
         bool IsFromLine = false,
         bool IsBrokenAfter = false,
-        bool IsAdditive = false);
+        bool Additive = false);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     /// <summary>
@@ -1914,15 +1905,6 @@ public sealed class LayoutWriter {
                 && !(scope.OpenLine == line && document.FactsOf(group).Continues)) {
                 level += scope.Lifted + (scope.OpenLine <= line && scope.OpenLine != counted ? scope.Level : 0);
                 break;
-            }
-
-            // ⚠ See IndentFlags.Additive (#566).
-            if (scope.IsAdditive) {
-                if (scope.OpenLine <= line) {
-                    level += scope.Level;
-                }
-
-                continue;
             }
 
             if (scope.OpenLine <= line && scope.OpenLine != counted) {
