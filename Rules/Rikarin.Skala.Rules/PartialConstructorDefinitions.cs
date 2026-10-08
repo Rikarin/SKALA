@@ -73,7 +73,7 @@ public static class PartialConstructorDefinitions {
     ///     descends into a member: it is proportional to the number of declarations, not of nodes.
     /// </remarks>
     public static ImmutableArray<ConstructorDeclarationSyntax> In(SyntaxTree tree, CancellationToken cancellation) =>
-        Found.GetValue(tree, key => new Box(Collect(key.GetRoot(cancellation)))).Definitions;
+        Found.GetValue(tree, key => new(Collect(key.GetRoot(cancellation)))).Definitions;
 
     /// <summary>Whether a node is, or is inside, a partial constructor's defining declaration.</summary>
     public static bool IsInADefinition(SyntaxNode node) {

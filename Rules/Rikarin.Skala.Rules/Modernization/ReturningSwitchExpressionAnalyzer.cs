@@ -105,7 +105,8 @@ public sealed class ReturningSwitchExpressionAnalyzer : DiagnosticAnalyzer {
 
         return statement is ReturnStatementSyntax { Expression: { } expression }
             && expression is not RefExpressionSyntax
-                ? expression : null;
+                ? expression
+                : null;
     }
 
     static bool SameReturnType(

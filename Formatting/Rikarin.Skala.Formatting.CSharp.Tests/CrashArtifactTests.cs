@@ -185,7 +185,7 @@ public sealed class CrashArtifactTests {
 
         Assert.Contains("# arrangement", snapshot, StringComparison.Ordinal);
         Assert.Contains("arrange_scope = Full", snapshot, StringComparison.Ordinal);
-        foreach (var key in (string[])[
+        foreach (var key in (string[]) [
                      "arrange_null_checking_pattern",
                      "arrange_object_creation_when_type_evident",
                      "arrange_arguments_literal",

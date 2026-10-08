@@ -273,6 +273,14 @@ public static class SpaceRules {
             return true;
         }
 
+        // ⚠ A parameter's modifier is not a member's (#526): `params /*f*/int[] a`, `ref /*f*/int a`, `out`,
+        // `in`, `this`, `ref readonly` and `scoped` all come back as written, closed or spaced, at both
+        // values of the trailing-comment key — where `static /*f*/int F;`, an argument's `ref /*f*/x` and
+        // a local's `ref /*f*/int r` take one space, which is what SK-DIV-0174's third class measured.
+        if (prev.Parent is ParameterSyntax parameter && parameter.Modifiers.Contains(prev)) {
+            return true;
+        }
+
         return prev.Kind() switch {
             SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.CommaToken => true,
             SyntaxKind.OpenBraceToken => prev.Parent is InitializerExpressionSyntax,
@@ -657,7 +665,9 @@ public static class SpaceRules {
         }
 
         if (IsPrefixOperator(next)) {
-            return !ClingsRight(left);
+            // ⚠ Behind an assignment it is still the assignment's gap: `f=-(a)` at
+            // `space_around_assignment_op = false`, where Skala wrote `f= -(a)` (#525).
+            return IsAssignmentOperator(prev) ? o.SpaceAroundAssignmentOp : !ClingsRight(left);
         }
 
         // ⚠ `space_before_pointer_asterik_declaration` governs the gap in front of the `*` and there
@@ -794,6 +804,30 @@ public static class SpaceRules {
         // the operand being parenthesised does not change that.
         if (IsPrefixOperator(prev)) {
             return AfterPrefixOperator(prev, o);
+        }
+
+        // ⚠ An operand in parentheses behind an assignment or a binary operator is that operator's gap
+        // (#525). Measured at `space_around_assignment_op = false` and the additive, relational and
+        // shift keys at `false`: `f=(1)`, `f+=(1)`, `f<<=(1)`, `var x=(a+b)`, `f=(int)g`, `1+(2)`,
+        // `a<(b)`, `a+(b)+(a)` — Skala wrote `f= (1)` and `1+ (2)`, answering every one as "whatever
+        // precedes decides". A keyword operator (`as`, `is`) is not here, and neither is the gap behind a
+        // `>>`, which follows what comes after it (see `Required`).
+        if (IsAssignmentOperator(prev)) {
+            return o.SpaceAroundAssignmentOp;
+        }
+
+        // ⚠ A parenthesis just inside another is the outer one's inner gap: `( ( [` at
+        // `space_within_parentheses = true` (#485), where the `(` answered "a `(` clings" and wrote `(( [`.
+        if (prev.IsKind(SyntaxKind.OpenParenToken) && prev.Parent is ParenthesizedExpressionSyntax) {
+            return WithinParentheses(prev.Parent, false, o);
+        }
+
+        if (IsBinaryOperator(prev)
+            && prev.Parent is BinaryExpressionSyntax
+            && !SyntaxFacts.IsKeywordKind(prev.Kind())
+            && prev.Kind() is not (SyntaxKind.GreaterThanGreaterThanToken
+                or SyntaxKind.GreaterThanGreaterThanGreaterThanToken)) {
+            return BinarySpacing(prev, o);
         }
 
         switch (prev.Kind()) {

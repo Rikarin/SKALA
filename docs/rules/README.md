@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 370 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 371 ids are allocated.
 
 ## Async
 
@@ -218,6 +218,7 @@
 | [SK0216](SK0216.md) | The argument naming style is not arranged | suggestion | — | no |
 | [SK0217](SK0217.md) | The discard declaration is not arranged | suggestion | — | yes |
 | [SK0218](SK0218.md) | The boolean member tests can use a property pattern | suggestion | — | no |
+| [SK0219](SK0219.md) | A namespace-qualified reference is not shortened | suggestion | — | no |
 
 ## Lifetime
 
