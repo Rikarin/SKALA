@@ -8099,10 +8099,29 @@ attribute, two, long names:
 the indent; all three keys are registered, `Honoured`, Tier A on key-named fixtures under
 `constructs/xmldoc/` (the `wrap_tags_and_pi` one gained a wide header and an author-broken one, so the
 key-flip sweep can separate its values at last). Pinned by `XmlDocHeaderKeysSkDiv0381Tests`; each branch
-was sabotaged alone. ⚠ `allow_far_alignment = true` is not read — the key stays inert-marked — so at
-`true` Skala still falls back where the oracle aligns past the margin.
+was sabotaged alone.
 
-- options: `skala_xmldoc_wrap_tags_and_pi`, `skala_xmldoc_attribute_style`, `skala_xmldoc_attribute_indent`
+**`allow_far_alignment` is read since #570.** Measured at `xmldoc_max_line_length = 90` under
+`align_by_first_attribute`, with the first attribute at 56 to 95 (counted after `/// `) and 29 attributes
+behind it:
+
+| first attribute | `true` | `false` (the export) |
+|---|---|---|
+| 56, 59 | under it | under it |
+| 60, 62, 70, 80, 83 | under it (one attribute per line once they no longer fit) | two indents |
+| 84 to 95 — it does not fit beside the name | one indent past the tag | one indent past the tag |
+
+⚠ The last row was a second divergence under the first: Skala took two indents there at `false` too. A
+first attribute that is not beside the name leaves nothing to align under, and the oracle then uses one
+indent, whether it moved for width, because the author broke before it (the oracle's own output given back
+is a fixed point), or because `attribute_style = on_different_lines` puts it below (measured at 20 and 56).
+`double_indent` and `single_indent` keep their own column in the same rows. ⚠ The key stays **Tier D**,
+`OfInert` and in `XmlDocIds.Refused`, because the export's `attribute_indent = single_indent` masks it: a
+fixture regenerated at the export cannot tell its values apart, and the key-flip sweep would call it
+Unexercised. Pinned by `XmlDocAllowFarAlignmentIssue570Tests`, each of three branches sabotaged alone.
+
+- options: `skala_xmldoc_wrap_tags_and_pi`, `skala_xmldoc_attribute_style`, `skala_xmldoc_attribute_indent`,
+  `skala_xmldoc_allow_far_alignment`
 - ⚠ status: **resolved**; the next key-flip sweep should confirm the three Tier A claims.
 
 ## SK-DIV-0382 — the oracle breaks a word glued to an element's end; Skala refuses the comment — **RESOLVED (#541, #542)**

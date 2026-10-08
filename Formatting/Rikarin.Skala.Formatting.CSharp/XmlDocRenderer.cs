@@ -801,16 +801,28 @@ public sealed class XmlDocRenderer {
         // the first attribute — and under it only while that column is short of two thirds of the margin
         // (80 of 120, 60 of 90); past it, two indents, which is the export's `allow_far_alignment = false`.
         var aligned = tagColumn + TextWidth.Measure(text[open..first]) + 1;
-        var continuation = options.AttributeIndent switch {
-            AttributeIndentStyle.DoubleIndent => tagColumn + 2 * options.IndentSize,
-            AttributeIndentStyle.AlignByFirstAttribute when aligned * 3 < options.MaxLineLength * 2 => aligned,
-            AttributeIndentStyle.AlignByFirstAttribute => tagColumn + 2 * options.IndentSize,
-            _ => tagColumn + options.IndentSize
-        };
         var broke = false;
 
         current.Append(text, 0, first);
         width += TextWidth.Measure(text[..first]);
+
+        // ⚠ #570, measured at 90 with the first attribute at 56 to 95: `allow_far_alignment = true` aligns under
+        // it wherever it sits, and at either value a first attribute that is not beside the tag name leaves
+        // nothing to align under, so every attribute goes one indent past the tag — not two, which is
+        // `double_indent`'s own answer there and stays so. Not beside it because it does not fit, because the
+        // author broke before it (the oracle's own output given back, a fixed point), or because
+        // `on_different_lines` puts it below (measured at 20 and at 56).
+        var second = text.IndexOfAny([SoftGap, HardGap], first + 1);
+        var lone = text[(first + 1)..(second < 0 ? text.Length : second)];
+        var firstMoves = text[first] == HardGap || width + 1 + TextWidth.Measure(lone[..AttributeEnd(lone)]) > budget;
+        var continuation = options.AttributeIndent switch {
+            AttributeIndentStyle.DoubleIndent => tagColumn + 2 * options.IndentSize,
+            AttributeIndentStyle.AlignByFirstAttribute when firstMoves => tagColumn + options.IndentSize,
+            AttributeIndentStyle.AlignByFirstAttribute
+                when options.AllowFarAlignment || aligned * 3 < options.MaxLineLength * 2 => aligned,
+            AttributeIndentStyle.AlignByFirstAttribute => tagColumn + 2 * options.IndentSize,
+            _ => tagColumn + options.IndentSize
+        };
 
         var at = first;
         while (at < text.Length) {
