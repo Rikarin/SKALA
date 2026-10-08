@@ -4,13 +4,13 @@ public sealed class DocumentBuilderTests {
     [Fact]
     public void Build_NestsChildren_InSourceOrder() {
         var builder = new DocumentBuilder();
-        builder.Text("a", new SourceSpan(0, 1));
+        builder.Text("a", new(0, 1));
         builder.OpenIndent(IndentKind.Block);
         builder.Line(LineKind.Hard);
-        builder.Text("b", new SourceSpan(2, 1));
+        builder.Text("b", new(2, 1));
         builder.Close();
         builder.Line(LineKind.Hard);
-        builder.Text("c", new SourceSpan(4, 1));
+        builder.Text("c", new(4, 1));
 
         var document = builder.Build();
         var layout = LayoutWriter.Write(document, 120, "    ", "\n");
@@ -25,15 +25,15 @@ public sealed class DocumentBuilderTests {
         var builder = new DocumentBuilder();
         var group = builder.NextGroupId();
         builder.OpenGroup(GroupMode.Break, group);
-        builder.Text("a,", new SourceSpan(0, 2));
+        builder.Text("a,", new(0, 2));
         builder.BreakPoint(group, LineFlags.FlatSpace | LineFlags.FillPoint);
         if (nested) {
             builder.OpenGroup(GroupMode.Break, builder.NextGroupId());
         }
 
-        builder.Text("b", new SourceSpan(3, 1));
+        builder.Text("b", new(3, 1));
         builder.Line(LineKind.Hard);
-        builder.Text("c", new SourceSpan(5, 1));
+        builder.Text("c", new(5, 1));
         if (nested) {
             builder.Close();
         }
@@ -51,20 +51,20 @@ public sealed class DocumentBuilderTests {
         var builder = new DocumentBuilder();
         var outer = builder.NextGroupId();
         var inner = builder.NextGroupId();
-        builder.DescribeGroup(inner, new GroupFacts(preserveBreak, HidesFlatWidthWhenBroken: true));
+        builder.DescribeGroup(inner, new(preserveBreak, HidesFlatWidthWhenBroken: true));
         builder.OpenGroup(GroupMode.Break, outer);
-        builder.Text("a,", new SourceSpan(0, 2));
+        builder.Text("a,", new(0, 2));
         builder.BreakPoint(outer, LineFlags.FlatSpace | LineFlags.FillPoint);
         builder.OpenConcat();
         builder.OpenGroup(mode, inner);
-        builder.Text("b", new SourceSpan(3, 1));
+        builder.Text("b", new(3, 1));
         builder.BreakPoint(inner, LineFlags.FlatSpace);
-        builder.Text("c", new SourceSpan(5, 1));
+        builder.Text("c", new(5, 1));
         builder.Close();
         builder.Close();
-        builder.Text(",", new SourceSpan(6, 1));
+        builder.Text(",", new(6, 1));
         builder.BreakPoint(outer, LineFlags.FlatSpace | LineFlags.FillPoint);
-        builder.Text("d", new SourceSpan(8, 1));
+        builder.Text("d", new(8, 1));
         builder.Close();
 
         Assert.Equal(expected, LayoutWriter.Write(builder.Build(), 80, "    ", "\n").Text);
@@ -85,12 +85,12 @@ public sealed class DocumentBuilderTests {
         var builder = new DocumentBuilder();
         var inner = builder.NextGroupId();
         var outer = builder.NextGroupId();
-        builder.DescribeGroup(inner, new GroupFacts(BreaksIfTooLong: true));
+        builder.DescribeGroup(inner, new(BreaksIfTooLong: true));
         builder.OpenGroup(GroupMode.Break, outer);
         builder.OpenGroup(GroupMode.Preserve, inner);
-        builder.Text("a", new SourceSpan(0, 1));
+        builder.Text("a", new(0, 1));
         builder.BreakPoint(inner, LineFlags.FlatSpace);
-        builder.Text("b", new SourceSpan(2, 1));
+        builder.Text("b", new(2, 1));
         builder.Close();
         if (nested) {
             builder.OpenConcat();
@@ -100,7 +100,7 @@ public sealed class DocumentBuilderTests {
             outer,
             LineFlags.FlatSpace | LineFlags.FillPoint | (lastResort ? LineFlags.LastResort : LineFlags.None)
         );
-        builder.Text("c", new SourceSpan(4, 1));
+        builder.Text("c", new(4, 1));
         if (nested) {
             builder.Close();
         }
@@ -125,15 +125,15 @@ public sealed class DocumentBuilderTests {
         var builder = new DocumentBuilder();
         var inner = builder.NextGroupId();
         var outer = builder.NextGroupId();
-        builder.DescribeGroup(inner, new GroupFacts(BreaksIfTooLong: true));
+        builder.DescribeGroup(inner, new(BreaksIfTooLong: true));
         builder.OpenGroup(GroupMode.Break, outer);
         builder.OpenGroup(GroupMode.Preserve, inner);
-        builder.Text("a", new SourceSpan(0, 1));
+        builder.Text("a", new(0, 1));
         builder.BreakPoint(inner, LineFlags.FlatSpace);
-        builder.Text("b", new SourceSpan(2, 1));
+        builder.Text("b", new(2, 1));
         builder.Close();
         builder.BreakPoint(outer, LineFlags.FlatSpace | point);
-        builder.Text("c", new SourceSpan(4, 1));
+        builder.Text("c", new(4, 1));
         builder.Close();
 
         // Four columns: `a b` fits, `a b c` does not.
@@ -153,16 +153,16 @@ public sealed class DocumentBuilderTests {
         var builder = new DocumentBuilder();
         var inner = builder.NextGroupId();
         var list = builder.NextGroupId();
-        builder.DescribeGroup(inner, new GroupFacts(BreaksIfTooLong: true));
+        builder.DescribeGroup(inner, new(BreaksIfTooLong: true));
         builder.OpenGroup(GroupMode.Preserve, inner);
-        builder.Text("a", new SourceSpan(0, 1));
+        builder.Text("a", new(0, 1));
         builder.BreakPoint(inner, LineFlags.FlatSpace);
-        builder.Text("b", new SourceSpan(2, 1));
+        builder.Text("b", new(2, 1));
         builder.Close();
         builder.OpenGroup(GroupMode.Break, list);
-        builder.Text(" c", new SourceSpan(3, 2));
+        builder.Text(" c", new(3, 2));
         builder.BreakPoint(list, LineFlags.FlatSpace | point);
-        builder.Text("d", new SourceSpan(6, 1));
+        builder.Text("d", new(6, 1));
         builder.Close();
 
         // Six columns: `a b c` fits, `a b c d` does not; `b c d` fits after `a` has gone up.
@@ -185,27 +185,27 @@ public sealed class DocumentBuilderTests {
         var builder = new DocumentBuilder();
         var section = builder.NextGroupId();
         var list = builder.NextGroupId();
-        builder.DescribeGroup(section, new GroupFacts(JoinsIfFits: true, BreaksIfTooLong: true));
-        builder.DescribeGroup(list, new GroupFacts(BreaksIfTooLong: true));
+        builder.DescribeGroup(section, new(JoinsIfFits: true, BreaksIfTooLong: true));
+        builder.DescribeGroup(list, new(BreaksIfTooLong: true));
         builder.OpenConcat();
         builder.OpenGroup(GroupMode.Preserve, section);
-        builder.Text("[A", new SourceSpan(0, 2));
+        builder.Text("[A", new(0, 2));
         if (multiLine) {
             builder.Line(LineKind.Hard);
         }
 
-        builder.Text("]", new SourceSpan(2, 1));
+        builder.Text("]", new(2, 1));
         builder.Close();
         builder.BreakPoint(
             section,
             LineFlags.FlatSpace | LineFlags.LastResort | LineFlags.BreaksOnlyIfNextLineOverflows
         );
         builder.OpenGroup(GroupMode.Preserve, list);
-        builder.Text("T<", new SourceSpan(4, 2));
-        builder.Text(first, new SourceSpan(6, first.Length));
+        builder.Text("T<", new(4, 2));
+        builder.Text(first, new(6, first.Length));
         builder.BreakPoint(list, LineFlags.FlatSpace | LineFlags.FillPoint | LineFlags.YieldsToPredecessors);
-        builder.Anchor(new SourceSpan(12, 7), 1);
-        builder.Text("yyyyyy>", new SourceSpan(12, 7));
+        builder.Anchor(new(12, 7), 1);
+        builder.Text("yyyyyy>", new(12, 7));
         builder.Close();
         builder.Close();
 
@@ -230,18 +230,18 @@ public sealed class DocumentBuilderTests {
         var builder = new DocumentBuilder();
         var group = builder.NextGroupId();
         builder.OpenGroup(GroupMode.Break, group);
-        builder.Text("a,", new SourceSpan(0, 2));
+        builder.Text("a,", new(0, 2));
         builder.BreakPoint(group, LineFlags.FlatSpace | LineFlags.FillPoint | LineFlags.DelimitedItem);
 
         // ⚠ A nested *group*: a hard line at the fill's own depth merely ends the segment, and it
         // is a line inside an item that made the item measure as unbounded (#337, #339).
         builder.OpenGroup(GroupMode.Break, builder.NextGroupId());
-        builder.Text("b1", new SourceSpan(3, 2));
+        builder.Text("b1", new(3, 2));
         builder.Line(LineKind.Hard);
-        builder.Text("b2,", new SourceSpan(6, 3));
+        builder.Text("b2,", new(6, 3));
         builder.Close();
         builder.BreakPoint(group, LineFlags.FlatSpace | LineFlags.FillPoint);
-        builder.Text("cccccc", new SourceSpan(10, 6));
+        builder.Text("cccccc", new(10, 6));
         builder.Close();
 
         // Eight columns: `a, b1` fits, `b2, cccccc` does not, `cccccc` alone does.
@@ -252,9 +252,9 @@ public sealed class DocumentBuilderTests {
     public void Line_KeepsTheSourcesOwnEnding() {
         // ⚠ enforce_line_ending_style = false means mixed endings are preserved, not normalised.
         var builder = new DocumentBuilder();
-        builder.Text("a", new SourceSpan(0, 1));
+        builder.Text("a", new(0, 1));
         builder.Line(LineKind.Hard, 0, "\r\n");
-        builder.Text("b", new SourceSpan(3, 1));
+        builder.Text("b", new(3, 1));
 
         var document = builder.Build();
         Assert.Equal("a\r\nb", LayoutWriter.Write(document, 120, "    ", "\n").Text);
@@ -264,10 +264,10 @@ public sealed class DocumentBuilderTests {
     public void Space_BeforeALine_IsNeverWritten() {
         // remove_spaces_on_blank_lines = true, and the writer never produces trailing whitespace.
         var builder = new DocumentBuilder();
-        builder.Text("a", new SourceSpan(0, 1));
+        builder.Text("a", new(0, 1));
         builder.Space(SpaceKind.Required);
         builder.Line(LineKind.Hard, 1);
-        builder.Text("b", new SourceSpan(4, 1));
+        builder.Text("b", new(4, 1));
 
         var document = builder.Build();
         Assert.Equal("a\n\nb", LayoutWriter.Write(document, 120, "    ", "\n").Text);
@@ -279,14 +279,14 @@ public sealed class DocumentBuilderTests {
         // levels — but two scopes opened on the SAME line are one, which is what keeps
         // `Report(Create(` from indenting its arguments twice (docs/plan/04 § "Indentation").
         var builder = new DocumentBuilder();
-        builder.Text("a", new SourceSpan(0, 1));
+        builder.Text("a", new(0, 1));
         builder.OpenIndent(IndentKind.Continuous);
         builder.OpenIndent(IndentKind.Continuous);
         builder.Line(LineKind.Hard);
-        builder.Text("b", new SourceSpan(2, 1));
+        builder.Text("b", new(2, 1));
         builder.OpenIndent(IndentKind.Continuous);
         builder.Line(LineKind.Hard);
-        builder.Text("c", new SourceSpan(4, 1));
+        builder.Text("c", new(4, 1));
         builder.Close();
         builder.Close();
         builder.Close();
@@ -305,28 +305,28 @@ public sealed class DocumentBuilderTests {
 public sealed class FitterTests {
     [Fact]
     public void AutoGroup_BreaksOnlyWhenTheLineRunsOut() {
-        Assert.Equal("a b", Call(GroupMode.Auto, new GroupFacts(), 10));
-        Assert.Equal("a\nb", Call(GroupMode.Auto, new GroupFacts(), 2));
+        Assert.Equal("a b", Call(GroupMode.Auto, new(), 10));
+        Assert.Equal("a\nb", Call(GroupMode.Auto, new(), 2));
     }
 
     [Fact]
     public void PreserveGroup_KeepsTheAuthorsBreak_AndDoesNotAddOne() {
         // ⚠ The two halves of "subject to width" are separate facts, because the export wants a
         // different one per construct family. A group with neither may only reproduce the source.
-        Assert.Equal("a\nb", Call(GroupMode.Preserve, new GroupFacts(true), 80));
-        Assert.Equal("a b", Call(GroupMode.Preserve, new GroupFacts(), 2));
+        Assert.Equal("a\nb", Call(GroupMode.Preserve, new(true), 80));
+        Assert.Equal("a b", Call(GroupMode.Preserve, new(), 2));
     }
 
     [Fact]
     public void PreserveGroup_JoinsOnlyWhenAskedTo_AndOnlyWhenItFits() {
-        Assert.Equal("a b", Call(GroupMode.Preserve, new GroupFacts(true, true), 80));
-        Assert.Equal("a\nb", Call(GroupMode.Preserve, new GroupFacts(true, true), 2));
+        Assert.Equal("a b", Call(GroupMode.Preserve, new(true, true), 80));
+        Assert.Equal("a\nb", Call(GroupMode.Preserve, new(true, true), 2));
     }
 
     [Fact]
     public void PreserveGroup_BreaksOnlyWhenAskedTo_AndOnlyWhenItMust() {
-        Assert.Equal("a\nb", Call(GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true), 2));
-        Assert.Equal("a b", Call(GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true), 80));
+        Assert.Equal("a\nb", Call(GroupMode.Preserve, new(BreaksIfTooLong: true), 2));
+        Assert.Equal("a b", Call(GroupMode.Preserve, new(BreaksIfTooLong: true), 80));
     }
 
     [Fact]
@@ -344,12 +344,12 @@ public sealed class FitterTests {
         var builder = new DocumentBuilder();
         var child = builder.NextGroupId();
         var owner = builder.NextGroupId();
-        builder.DescribeGroup(child, new GroupFacts(Owner: owner));
+        builder.DescribeGroup(child, new(Owner: owner));
         builder.OpenGroup(GroupMode.Owner, child);
-        builder.Text("a", new SourceSpan(0, 1));
+        builder.Text("a", new(0, 1));
         builder.Close();
         builder.OpenGroup(GroupMode.Auto, owner);
-        builder.Text("b", new SourceSpan(2, 1));
+        builder.Text("b", new(2, 1));
         builder.Close();
 
         var layout = LayoutWriter.Write(builder.Build(), 80, "    ", "\n");
@@ -362,9 +362,9 @@ public sealed class FitterTests {
         var group = builder.NextGroupId();
         builder.DescribeGroup(group, facts);
         builder.OpenGroup(mode, group);
-        builder.Text("a", new SourceSpan(0, 1));
+        builder.Text("a", new(0, 1));
         builder.BreakPoint(group, LineFlags.FlatSpace);
-        builder.Text("b", new SourceSpan(2, 1));
+        builder.Text("b", new(2, 1));
         builder.Close();
 
         return LayoutWriter.Write(builder.Build(), width, "    ", "\n").Text;
@@ -375,14 +375,14 @@ public sealed class FitterTests {
         var builder = new DocumentBuilder();
         var owner = builder.NextGroupId();
         var child = builder.NextGroupId();
-        builder.DescribeGroup(owner, new GroupFacts());
-        builder.DescribeGroup(child, new GroupFacts(Owner: owner));
+        builder.DescribeGroup(owner, new());
+        builder.DescribeGroup(child, new(Owner: owner));
 
         builder.OpenGroup(GroupMode.Auto, owner);
-        builder.Text("aaaa", new SourceSpan(0, 4));
+        builder.Text("aaaa", new(0, 4));
         builder.OpenGroup(GroupMode.Owner, child);
         builder.BreakPoint(child, LineFlags.FlatSpace);
-        builder.Text("bbbb", new SourceSpan(5, 4));
+        builder.Text("bbbb", new(5, 4));
         builder.Close();
         builder.Close();
 
@@ -398,7 +398,7 @@ public sealed class EditEmitterTests {
         var layout = new Layout(
             "a b",
             [
-                new AnchorPoint(new SourceSpan(0, 1), 0, 1, 0), new AnchorPoint(new SourceSpan(2, 1), 2, 3, 1)
+                new AnchorPoint(new(0, 1), 0, 1, 0), new AnchorPoint(new(2, 1), 2, 3, 1)
             ]
         );
 
@@ -411,12 +411,12 @@ public sealed class EditEmitterTests {
         var layout = new Layout(
             "a b",
             [
-                new AnchorPoint(new SourceSpan(0, 1), 0, 1, 0), new AnchorPoint(new SourceSpan(5, 1), 2, 3, 1)
+                new AnchorPoint(new(0, 1), 0, 1, 0), new AnchorPoint(new(5, 1), 2, 3, 1)
             ]
         );
 
         var edit = Assert.Single(EditEmitter.Emit(input, layout));
-        Assert.Equal(new SourceSpan(2, 3), edit.Span);
+        Assert.Equal(new(2, 3), edit.Span);
         Assert.Equal(string.Empty, edit.NewText);
         Assert.Equal("a b", EditEmitter.Apply(input, [edit]));
     }
@@ -427,7 +427,7 @@ public sealed class EditEmitterTests {
             new(new SourceSpan(0, 2), "x"), new(new SourceSpan(10, 2), "y")
         ];
 
-        var restricted = EditEmitter.Restrict(edits, new SourceSpan(9, 5));
+        var restricted = EditEmitter.Restrict(edits, new(9, 5));
         Assert.Equal("y", Assert.Single(restricted).NewText);
     }
 }

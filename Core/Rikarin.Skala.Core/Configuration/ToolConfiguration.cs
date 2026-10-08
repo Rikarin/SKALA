@@ -69,7 +69,7 @@ public sealed class ToolConfiguration {
             exclude = SourceExclusions.ReadPatterns(document.RootElement);
         } catch (JsonException exception) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.ToolConfigNotJson,
                     SkalaSeverity.Error,
                     $"{FileName} is not valid JSON: {exception.Message}",
@@ -103,7 +103,7 @@ public sealed class ToolConfiguration {
 
         if (canonical.TryGetProperty("version", out _)) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.CanonicalVersionInToolConfig,
                     SkalaSeverity.Error,
                     $"'canonical.version' cannot be set in {FileName}",
@@ -128,7 +128,7 @@ public sealed class ToolConfiguration {
 
     static CanonicalPolicy Unknown(string? value, string path, ImmutableArray<SkalaDiagnostic>.Builder diagnostics) {
         diagnostics.Add(
-            new SkalaDiagnostic(
+            new(
                 ConfigDiagnosticIds.CanonicalDrift,
                 SkalaSeverity.Warning,
                 $"'canonical.drift' is '{value}'; expected 'error', 'warning' or 'off'. Using 'error'.",
@@ -145,7 +145,7 @@ public sealed class ToolConfiguration {
                 foreach (var property in element.EnumerateObject()) {
                     if (OptionRegistry.TryResolve(property.Name, out var id)) {
                         diagnostics.Add(
-                            new SkalaDiagnostic(
+                            new(
                                 ConfigDiagnosticIds.StyleKeyInToolConfig,
                                 SkalaSeverity.Error,
                                 $"'{property.Name}' is a style option and cannot be set in {FileName}; move it to .editorconfig",

@@ -111,7 +111,7 @@ public sealed class FixSafety {
                     map[full] = list;
                 }
 
-                list.Add(new Bound(unit.Compilation, tree));
+                list.Add(new(unit.Compilation, tree));
             }
         }
 

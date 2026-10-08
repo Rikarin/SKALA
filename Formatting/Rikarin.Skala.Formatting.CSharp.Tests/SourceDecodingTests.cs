@@ -144,11 +144,9 @@ public sealed class SourceDecodingTests : IDisposable {
         var before = File.ReadAllBytes(path);
 
         foreach (var check in new[] { false, true }) {
-            var format = FormatCommand.Run(
-                new FormatRequest { Paths = [path], RepositoryRoot = directory, Check = check }
-            );
+            var format = FormatCommand.Run(new() { Paths = [path], RepositoryRoot = directory, Check = check });
             var arrange = ArrangeCommand.Run(
-                new ArrangeRequest { Paths = [path], RepositoryRoot = directory, Check = check },
+                new() { Paths = [path], RepositoryRoot = directory, Check = check },
                 TestContext.Current.CancellationToken
             );
 
@@ -175,7 +173,7 @@ public sealed class SourceDecodingTests : IDisposable {
         var before = File.ReadAllBytes(path);
         var original = CSharpFormatter.Read(path);
 
-        var result = FormatCommand.Run(new FormatRequest { Paths = [path], RepositoryRoot = directory });
+        var result = FormatCommand.Run(new() { Paths = [path], RepositoryRoot = directory });
 
         Assert.DoesNotContain(FormatDiagnosticIds.NotDecodable, result.Output, StringComparison.Ordinal);
         var after = File.ReadAllBytes(path);

@@ -196,14 +196,14 @@ public sealed class DocumentationModeTests {
     public void UnnecessaryUsing_IsReportedOnlyWhereDocumentationIsParsed(DocumentationMode mode, int expected) {
         var tree = CSharpSyntaxTree.ParseText(
             "using System.Text;\n\nnamespace Probe;\n\npublic static class C { }\n",
-            new CSharpParseOptions(LanguageVersion.Preview, mode),
+            new(LanguageVersion.Preview, mode),
             cancellationToken: TestContext.Current.CancellationToken
         );
         var compilation = CSharpCompilation.Create(
             "Probe",
             [tree],
             [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+            new(OutputKind.DynamicallyLinkedLibrary)
         );
 
         var unnecessary = compilation.GetSemanticModel(tree)
@@ -258,7 +258,7 @@ public sealed class DocumentationModeTests {
         }
 
         var (exit, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = mode,

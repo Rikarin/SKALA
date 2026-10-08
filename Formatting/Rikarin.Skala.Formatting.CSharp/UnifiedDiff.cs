@@ -111,24 +111,24 @@ public static class UnifiedDiff {
         var y = 0;
         while (x < left.Length && y < right.Length) {
             if (string.Equals(left[x], right[y], StringComparison.Ordinal)) {
-                result.Add(new Entry(EditKind.Same, left[x]));
+                result.Add(new(EditKind.Same, left[x]));
                 x++;
                 y++;
             } else if (table[x + 1, y] >= table[x, y + 1]) {
-                result.Add(new Entry(EditKind.Removed, left[x]));
+                result.Add(new(EditKind.Removed, left[x]));
                 x++;
             } else {
-                result.Add(new Entry(EditKind.Added, right[y]));
+                result.Add(new(EditKind.Added, right[y]));
                 y++;
             }
         }
 
         while (x < left.Length) {
-            result.Add(new Entry(EditKind.Removed, left[x++]));
+            result.Add(new(EditKind.Removed, left[x++]));
         }
 
         while (y < right.Length) {
-            result.Add(new Entry(EditKind.Added, right[y++]));
+            result.Add(new(EditKind.Added, right[y++]));
         }
 
         return result;

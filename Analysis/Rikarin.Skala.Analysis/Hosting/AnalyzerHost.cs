@@ -84,7 +84,7 @@ public static class AnalyzerHost {
 
         var builder = ImmutableArray.CreateBuilder<SkippedRule>();
         builder.Add(
-            new SkippedRule(
+            new(
                 RoslynCodeStyle.NamingDiagnosticId,
                 "requires a semantic model; --load=loose has no project (docs/plan/07 § loose)"
             )
@@ -92,7 +92,7 @@ public static class AnalyzerHost {
         foreach (var rule in RuleCatalog.All) {
             if (rule is { Retired: false, RequiresSemantics: true }) {
                 builder.Add(
-                    new SkippedRule(
+                    new(
                         rule.Id,
                         "requires a semantic model; --load=loose has no project (docs/plan/07 § loose)"
                     )
@@ -429,7 +429,7 @@ public static class AnalyzerHost {
                     .ToArray();
 
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         RuleIds.AnalyzerThrew,
                         SkalaSeverity.Warning,
                         $"analyzer '{name}' threw {Times(crash.Count)}, so the rules it carries ({Rules(rules)}) "

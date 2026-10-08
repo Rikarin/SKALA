@@ -91,7 +91,7 @@ public sealed class LoadingTests {
         scratch.Write("Bar.cs", "public sealed class Bar { public Foo Child = new(); }");
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
             TestContext.Current.CancellationToken
         );
 
@@ -111,7 +111,7 @@ public sealed class LoadingTests {
         var path = scratch.Write("Foo.cs", "public sealed class Foo { public string? Name; }");
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
             TestContext.Current.CancellationToken
         );
         var compilation = loaded.Units[0].Compilation;
@@ -127,7 +127,7 @@ public sealed class LoadingTests {
         scratch.Write("Foo.cs", "public sealed class Foo {\n#if DEBUG\n    public int Debug;\n#endif\n}");
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose, Define = ["DEBUG"] },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose, Define = ["DEBUG"] },
             TestContext.Current.CancellationToken
         );
 
@@ -152,7 +152,7 @@ public sealed class LoadingTests {
         scratch.Write("Foo.cs", "public sealed class Foo;");
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Binlog },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Binlog },
             TestContext.Current.CancellationToken
         );
 
@@ -171,7 +171,7 @@ public sealed class LoadingTests {
         scratch.Write("Foo.cs", "public sealed class Foo;");
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
             TestContext.Current.CancellationToken
         );
 
@@ -185,7 +185,7 @@ public sealed class LoadingTests {
         scratch.Write("Foo.cs", "public sealed class Foo;");
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Binlog, AllowFallback = false },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Binlog, AllowFallback = false },
             TestContext.Current.CancellationToken
         );
 
@@ -200,7 +200,7 @@ public sealed class LoadingTests {
         scratch.Write("Foo.g.cs", "public sealed partial class Foo { public int Generated; }");
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
             TestContext.Current.CancellationToken
         );
         var unit = loaded.Units[0];
@@ -217,13 +217,13 @@ public sealed class LoadingTests {
         scratch.Write("Foo.cs", "public sealed class Foo;");
 
         ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
             TestContext.Current.CancellationToken
         );
         var misses = MetadataReferenceCache.Misses;
 
         ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
             TestContext.Current.CancellationToken
         );
         Assert.Equal(misses, MetadataReferenceCache.Misses);

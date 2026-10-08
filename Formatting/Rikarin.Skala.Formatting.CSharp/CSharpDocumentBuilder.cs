@@ -719,7 +719,7 @@ public sealed partial class CSharpDocumentBuilder {
         //       or B    vs    + b     ← one level, not two
         if (IsChainRoot(node) || IsPatternChainRoot(node)) {
             frames.Add(
-                new Frame(
+                new(
                     IsPatternChainRoot(node) ? FrameKind.Pattern : FrameKind.Chain,
                     false,
                     // ⚠ An aligned chain spends no continuation level of its own. The Align scope is
@@ -786,7 +786,7 @@ public sealed partial class CSharpDocumentBuilder {
         // the parameter ends, and the body never sees the reset. Measured: `M(\n a,\n x => p\n
         // && q\n)` came out with `&&` at the argument's own level where the oracle gives it one more.
         frames.Add(
-            new Frame(
+            new(
                 FrameKind.Unit,
                 false,
                 ResetsDepth: node is AnonymousFunctionExpressionSyntax && !IsSoleLambdaArgument(node),
@@ -1783,7 +1783,7 @@ public sealed partial class CSharpDocumentBuilder {
                     if (element) {
                         savedDepth = continuousDepth;
                         continuousDepth = 0;
-                        frames.Add(new Frame(FrameKind.Unit, false));
+                        frames.Add(new(FrameKind.Unit, false));
                     }
                 }
             } else if (child.AsNode() is { } inner) {
@@ -2248,7 +2248,7 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ A block is a frame boundary. A continuation level spent inside it must be closed inside
         // it too, or the document builder's Close pops the wrong container and the whole brace
         // structure of the file shifts by one.
-        frames.Add(new Frame(FrameKind.Unit, false));
+        frames.Add(new(FrameKind.Unit, false));
     }
 
     /// <param name="alignsCloser">
@@ -2822,7 +2822,7 @@ public sealed partial class CSharpDocumentBuilder {
             && newLines > 0
             || TouchesInactiveBranch(previous, nextPieceIndex)) {
             if (gap.Length > 0) {
-                doc.Verbatim(gap, new SourceSpan(previous.Span.End, gap.Length), VerbatimFlags.AtColumnZero);
+                doc.Verbatim(gap, new(previous.Span.End, gap.Length), VerbatimFlags.AtColumnZero);
             }
 
             return;

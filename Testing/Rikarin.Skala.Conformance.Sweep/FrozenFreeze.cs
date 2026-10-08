@@ -389,12 +389,12 @@ public static class FrozenFreeze {
             FrozenCorpus.WriteBody(
                 Path.Combine(FrozenCorpus.Root, target.Output.Replace('/', Path.DirectorySeparatorChar)),
                 body,
-                new OracleHeader(version, digest, profile.Name, OracleFixture.Today)
+                new(version, digest, profile.Name, OracleFixture.Today)
             );
 
             bytes += body.Length;
             outputs.Add(
-                new FrozenOutput(
+                new(
                     target.Output,
                     target.Fixture,
                     profile.Name,
@@ -408,7 +408,7 @@ public static class FrozenFreeze {
         FrozenCorpus.WriteManifest(
             FrozenCorpus.ManifestPath,
             new FrozenManifest(
-                new FrozenProvenance(version, digest, Commit(), OracleFixture.Today, "conformance-sweep.json"),
+                new(version, digest, Commit(), OracleFixture.Today, "conformance-sweep.json"),
                 outputs,
                 [
                     .. configurations

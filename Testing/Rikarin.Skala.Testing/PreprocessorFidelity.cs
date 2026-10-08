@@ -76,7 +76,7 @@ public static class PreprocessorFidelity {
             }
 
             var loaded = ProjectLoader.Load(
-                new LoadRequest {
+                new() {
                     RepositoryRoot = scratch.FullName,
                     Mode = LoadMode.Binlog,
                     BinlogPath = binlog,

@@ -212,7 +212,7 @@ public static class DefaultsProbe {
                 continue;
             }
 
-            candidates.Add(new Candidate(info.Key, values, file));
+            candidates.Add(new(info.Key, values, file));
         }
 
         return candidates;

@@ -182,7 +182,7 @@ public sealed class SecurityCorpusTests {
             .OrderBy(static file => file, StringComparer.Ordinal)
             .Select(static file => CSharpSyntaxTree.ParseText(
                     SourceText.From(File.ReadAllText(file)),
-                    new CSharpParseOptions(LanguageVersion.Preview),
+                    new(LanguageVersion.Preview),
                     file
                 )
             )
@@ -192,7 +192,7 @@ public sealed class SecurityCorpusTests {
             "security-corpus-" + half,
             trees,
             RuleFixtures.References,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 nullableContextOptions: NullableContextOptions.Enable
             )

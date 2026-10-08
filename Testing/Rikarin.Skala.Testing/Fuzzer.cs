@@ -647,7 +647,7 @@ public static class Fuzzer {
             Parallel.For(
                 0,
                 size,
-                new ParallelOptions { MaxDegreeOfParallelism = options.Parallelism, CancellationToken = cancellation },
+                new() { MaxDegreeOfParallelism = options.Parallelism, CancellationToken = cancellation },
                 offset => {
                     var index = start + offset;
                     var seed = FuzzRandom.Derive(options.Seed, index);
@@ -859,7 +859,7 @@ public static class Fuzzer {
 
         var attempts = new List<string> { sequence };
         foreach (var name in FuzzMutations.AbsorbedNames) {
-            if (FuzzMutations.Apply(name, candidate, new FuzzRandom(subject.Seed), Corpus.PropertySymbols) is { } one) {
+            if (FuzzMutations.Apply(name, candidate, new(subject.Seed), Corpus.PropertySymbols) is { } one) {
                 attempts.Add(one);
             }
         }

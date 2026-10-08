@@ -974,7 +974,7 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ The answer the document is built on, not the guess: on a rebuild it is the layout's, and a
         // layout that agrees with it is what ends CSharpFormatter's loop.
         var answer = outputLines is not null && outputLines.TryGetValue(node.Span, out var fact) ? fact : guess;
-        lineQuestions.Add(new LineQuestion(node.Span, answer));
+        lineQuestions.Add(new(node.Span, answer));
         return answer;
     }
 

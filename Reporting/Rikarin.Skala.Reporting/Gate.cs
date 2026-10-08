@@ -452,7 +452,7 @@ public static class Gate {
         try {
             using var document = JsonDocument.Parse(
                 File.ReadAllText(toolConfigPath),
-                new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }
+                new() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }
             );
 
             if (!document.RootElement.TryGetProperty("gates", out var gates)

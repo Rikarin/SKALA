@@ -57,7 +57,7 @@ public static class RuleFixtures {
                 }
 
                 foreach (var file in Directory.GetFiles(path, "*.cs").OrderBy(static f => f, StringComparer.Ordinal)) {
-                    result.Add(new RuleFixture(ruleId, shouldFire, file));
+                    result.Add(new(ruleId, shouldFire, file));
                 }
             }
         }
@@ -127,7 +127,7 @@ public static class RuleFixtures {
             "fixtures",
             [tree],
             options.TargetFramework is { } framework ? ReferencePacks.For(framework) : References,
-            new CSharpCompilationOptions(
+            new(
                 topLevel ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: options.AllowUnsafe,
                 nullableContextOptions: NullableContextOptions.Enable,

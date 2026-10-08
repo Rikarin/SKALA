@@ -263,7 +263,7 @@ public static class FuzzProperties {
         try {
             first = Run(text);
         } catch (Exception exception) when (exception is not OperationCanceledException) {
-            violations.Add(new PropertyViolation(Crash, defined, exception.GetType().Name + ": " + exception.Message));
+            violations.Add(new(Crash, defined, exception.GetType().Name + ": " + exception.Message));
             return;
         }
 
@@ -275,13 +275,13 @@ public static class FuzzProperties {
             // ⚠ Reported as a *fuzzer* defect, not a formatter one. ADR-003 leaves an unparseable
             // file byte-identical, so every property below would hold over it for free — a case that
             // asserted nothing while appearing to assert seven things.
-            violations.Add(new PropertyViolation(ParseLost, defined, "the mutated input does not parse"));
+            violations.Add(new(ParseLost, defined, "the mutated input does not parse"));
             return;
         }
 
         // 2. Token equivalence, compared from the outside rather than read off the outcome.
         if (first.Outcome is FormatOutcome.VerificationFailed) {
-            violations.Add(new PropertyViolation(TokenEquivalence, defined, "the formatter refused to emit"));
+            violations.Add(new(TokenEquivalence, defined, "the formatter refused to emit"));
         } else if (Rikarin.Skala.Formatting.CSharp.TokenEquivalence.Compare(
                        first.Original,
                        SourceText.From(first.Formatted),
@@ -295,7 +295,7 @@ public static class FuzzProperties {
                        first.ReflowedComments > 0
                    ) is { } failure) {
             violations.Add(
-                new PropertyViolation(
+                new(
                     TokenEquivalence,
                     defined,
                     $"token {failure.Index.ToString(CultureInfo.InvariantCulture)}: "
@@ -312,7 +312,7 @@ public static class FuzzProperties {
             if (!second.Edits.IsEmpty) {
                 idempotent = false;
                 violations.Add(
-                    new PropertyViolation(
+                    new(
                         Idempotency,
                         defined,
                         $"the second pass still wants {second.Edits.Length.ToString(CultureInfo.InvariantCulture)} edit(s): "
@@ -321,14 +321,12 @@ public static class FuzzProperties {
                 );
             } else if (!string.Equals(second.Formatted, first.Formatted, StringComparison.Ordinal)) {
                 idempotent = false;
-                violations.Add(
-                    new PropertyViolation(Idempotency, defined, FirstDifference(first.Formatted, second.Formatted))
-                );
+                violations.Add(new(Idempotency, defined, FirstDifference(first.Formatted, second.Formatted)));
             }
         } catch (Exception exception) when (exception is not OperationCanceledException) {
             idempotent = false;
             violations.Add(
-                new PropertyViolation(
+                new(
                     Crash,
                     defined,
                     "on the second pass: " + exception.GetType().Name + ": " + exception.Message
@@ -342,7 +340,7 @@ public static class FuzzProperties {
             var after = ParseDiagnostics(SourceText.From(first.Formatted), cancellation);
             if (!before.SequenceEqual(after, StringComparer.Ordinal)) {
                 violations.Add(
-                    new PropertyViolation(
+                    new(
                         ParseStability,
                         defined,
                         $"[{string.Join(" ", before)}] became [{string.Join(" ", after)}]"
@@ -355,7 +353,7 @@ public static class FuzzProperties {
         for (var run = 0; run < 2; run++) {
             if (!string.Equals(Run(text).Formatted, first.Formatted, StringComparison.Ordinal)) {
                 violations.Add(
-                    new PropertyViolation(
+                    new(
                         Determinism,
                         defined,
                         $"run {(run + 2).ToString(CultureInfo.InvariantCulture)} differed from run 1"
@@ -374,7 +372,7 @@ public static class FuzzProperties {
             var expected = first.Edits.Count(edit => edit.Span.IntersectsWith(range));
             if (restricted.Count != expected || restricted.Any(edit => !first.Edits.Contains(edit))) {
                 violations.Add(
-                    new PropertyViolation(
+                    new(
                         RangeConsistency,
                         defined,
                         $"a range of [{half.ToString(CultureInfo.InvariantCulture)}, end) restricted to "
@@ -387,7 +385,7 @@ public static class FuzzProperties {
             for (var i = 1; i < first.Edits.Length; i++) {
                 if (first.Edits[i - 1].Span.End > first.Edits[i].Span.Start) {
                     violations.Add(
-                        new PropertyViolation(
+                        new(
                             RangeConsistency,
                             defined,
                             $"edits {(i - 1).ToString(CultureInfo.InvariantCulture)} and "
@@ -414,7 +412,7 @@ public static class FuzzProperties {
                 var edit = first.Edits[i];
                 if (edit.Span.End > original.Length) {
                     violations.Add(
-                        new PropertyViolation(
+                        new(
                             RangeConsistency,
                             defined,
                             $"edit {i.ToString(CultureInfo.InvariantCulture)} runs past the end of the input"
@@ -431,7 +429,7 @@ public static class FuzzProperties {
 
                 if (replaced[0] == edit.NewText[0] || replaced[^1] == edit.NewText[^1]) {
                     violations.Add(
-                        new PropertyViolation(
+                        new(
                             RangeConsistency,
                             defined,
                             $"edit {i.ToString(CultureInfo.InvariantCulture)} of "
@@ -448,7 +446,7 @@ public static class FuzzProperties {
             // both, which is the only form of this check worth having.
             if (!string.Equals(EditEmitter.Apply(original, first.Edits), first.Formatted, StringComparison.Ordinal)) {
                 violations.Add(
-                    new PropertyViolation(
+                    new(
                         RangeConsistency,
                         defined,
                         "applying the edit list to the input does not reproduce the formatted output"
@@ -468,7 +466,7 @@ public static class FuzzProperties {
         if (baseline is not null
             && !string.Equals(baseline, first.Formatted, StringComparison.Ordinal)
             && !first.Diagnostics.Any(static d => d.Id == FormatDiagnosticIds.UnbalancedPreprocessor)) {
-            violations.Add(new PropertyViolation(Absorption, defined, FirstDifference(baseline, first.Formatted)));
+            violations.Add(new(Absorption, defined, FirstDifference(baseline, first.Formatted)));
         }
 
         // 6b. Ungoverned gaps — the property the absorption check's exclusion stands on. The gaps
@@ -489,7 +487,7 @@ public static class FuzzProperties {
             pipeline = RunPipeline(path, text, options, symbols, CompileOne(path, text, symbols));
         } catch (Exception exception) when (exception is not OperationCanceledException) {
             violations.Add(
-                new PropertyViolation(
+                new(
                     Crash,
                     defined,
                     "in the arrangement pipeline: " + exception.GetType().Name + ": " + exception.Message
@@ -501,7 +499,7 @@ public static class FuzzProperties {
 
         if (!pipeline.Converged) {
             violations.Add(
-                new PropertyViolation(
+                new(
                     ArrangementConvergence,
                     defined,
                     "arrange-and-format did not reach a fixed point in "
@@ -517,7 +515,7 @@ public static class FuzzProperties {
         var again = RunPipeline(path, rewritten, options, symbols, CompileOne(path, rewritten, symbols));
         if (!again.Edits.IsEmpty) {
             violations.Add(
-                new PropertyViolation(
+                new(
                     ArrangementIdempotency,
                     defined,
                     $"the second pipeline pass still wants {again.Edits.Length.ToString(CultureInfo.InvariantCulture)} "
@@ -546,7 +544,7 @@ public static class FuzzProperties {
         }
 
         if (ReadBack(source, gaps, first.Formatted, symbols) is { } asWritten) {
-            violations.Add(new PropertyViolation(UngovernedGaps, defined, "as written, " + asWritten));
+            violations.Add(new(UngovernedGaps, defined, "as written, " + asWritten));
         }
 
         // ⚠ Every flippable gap at once, not one format per gap: a corpus file can hold dozens of
@@ -573,7 +571,7 @@ public static class FuzzProperties {
             second = run(SourceText.From(flipped));
         } catch (Exception exception) when (exception is not OperationCanceledException) {
             violations.Add(
-                new PropertyViolation(
+                new(
                     Crash,
                     defined,
                     "on the flipped spelling of its ungoverned gaps: "
@@ -588,7 +586,7 @@ public static class FuzzProperties {
 
         if (second.Outcome is not FormatOutcome.Formatted) {
             violations.Add(
-                new PropertyViolation(
+                new(
                     UngovernedGaps,
                     defined,
                     "the flipped spelling of its ungoverned gaps came back " + second.Outcome
@@ -599,7 +597,7 @@ public static class FuzzProperties {
         }
 
         if (ReadBack(flipped, UngovernedGapsOf(flipped, symbols), second.Formatted, symbols) is { } asFlipped) {
-            violations.Add(new PropertyViolation(UngovernedGaps, defined, "flipped, " + asFlipped));
+            violations.Add(new(UngovernedGaps, defined, "flipped, " + asFlipped));
         }
 
         // ⚠ Only when the spelling the case has is itself a fixed point. A file that is not idempotent
@@ -613,7 +611,7 @@ public static class FuzzProperties {
         var third = run(SourceText.From(second.Formatted));
         if (!third.Edits.IsEmpty || !string.Equals(third.Formatted, second.Formatted, StringComparison.Ordinal)) {
             violations.Add(
-                new PropertyViolation(
+                new(
                     UngovernedGaps,
                     defined,
                     "the flipped spelling is not idempotent: " + FirstDifference(second.Formatted, third.Formatted)
@@ -651,7 +649,7 @@ public static class FuzzProperties {
                     spaced = between.Length > 0;
                 }
 
-                gaps.Add(new UngovernedGap(span, text.Lines.GetLineFromPosition(span.Start).LineNumber + 1, spaced));
+                gaps.Add(new(span, text.Lines.GetLineFromPosition(span.Start).LineNumber + 1, spaced));
             }
 
             previous = token;
@@ -766,8 +764,8 @@ public static class FuzzProperties {
         ArrangementPipeline.Run(
             path,
             text,
-            new PhaseOneOptions(options),
-            new ArrangementOptions(options),
+            new(options),
+            new(options),
             compilation,
             ArrangementDifferential.Removable(compilation, path),
             null,
@@ -800,7 +798,7 @@ public static class FuzzProperties {
                 CSharpSyntaxTree.ParseText(text, parse, path)
             ],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable

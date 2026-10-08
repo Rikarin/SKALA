@@ -130,7 +130,7 @@ public sealed class LockAndValueBatchTests {
                 int.Parse(diagnostic.Properties[FixEdits.CountKey]!, CultureInfo.InvariantCulture)
             )
             .Select(index => new TextChange(
-                    new TextSpan(
+                    new(
                         int.Parse(diagnostic.Properties[FixEdits.StartKey(index)]!, CultureInfo.InvariantCulture),
                         int.Parse(diagnostic.Properties[FixEdits.LengthKey(index)]!, CultureInfo.InvariantCulture)
                     ),

@@ -76,7 +76,7 @@ public static class NamingFixCommand {
         }
 
         var resolution = WorkspaceLoader.Resolve(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = repositoryRoot,
                 Mode = LoadMode.Workspace,
                 ProjectPath = request.ProjectPath,

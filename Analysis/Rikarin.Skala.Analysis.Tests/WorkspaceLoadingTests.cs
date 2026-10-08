@@ -119,7 +119,7 @@ public sealed class WorkspaceLoadingTests {
         var project = scratch.Write("Scratch.csproj", Project);
 
         var (result, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -181,7 +181,7 @@ public sealed class WorkspaceLoadingTests {
         var project = scratch.Write("Scratch.csproj", ProjectNamingAMissingAnalyzer);
 
         var (result, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -221,7 +221,7 @@ public sealed class WorkspaceLoadingTests {
         var project = scratch.Write("Scratch.csproj", ProjectNamingAMissingAnalyzer);
 
         var loaded = WorkspaceLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = scratch.Root, Mode = LoadMode.Workspace, ProjectPath = project, Paths = [scratch.Root]
             },
             TestContext.Current.CancellationToken
@@ -231,7 +231,7 @@ public sealed class WorkspaceLoadingTests {
         Assert.True(loaded.IsEmpty);
 
         var (_, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -259,7 +259,7 @@ public sealed class WorkspaceLoadingTests {
         var project = scratch.Write("Scratch.csproj", Project);
 
         var (_, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -295,7 +295,7 @@ public sealed class WorkspaceLoadingTests {
         var project = scratch.Write("Scratch.csproj", Project);
 
         var result = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 ProjectPath = project,
@@ -322,7 +322,7 @@ public sealed class WorkspaceLoadingTests {
         scratch.Write("Scratch.csproj", Project);
 
         var result = VerifyCommand.Run(
-            new VerifyRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
             TestContext.Current.CancellationToken
         );
 
@@ -341,7 +341,7 @@ public sealed class WorkspaceLoadingTests {
         var before = File.ReadAllText(path);
 
         var result = VerifyCommand.Run(
-            new VerifyRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
             TestContext.Current.CancellationToken
         );
 
@@ -358,7 +358,7 @@ public sealed class WorkspaceLoadingTests {
         scratch.Write("Second.csproj", Project);
 
         var result = VerifyCommand.Run(
-            new VerifyRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
             TestContext.Current.CancellationToken
         );
 
@@ -376,9 +376,7 @@ public sealed class WorkspaceLoadingTests {
         scratch.Write("Second.csproj", Project);
 
         var result = VerifyCommand.Run(
-            new VerifyRequest {
-                RepositoryRoot = scratch.Root, Paths = [scratch.Root], ProjectPath = selected, NoCache = true
-            },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root], ProjectPath = selected, NoCache = true },
             TestContext.Current.CancellationToken
         );
 
@@ -398,7 +396,7 @@ public sealed class WorkspaceLoadingTests {
         var before = File.ReadAllText(declaration);
 
         var result = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -457,7 +455,7 @@ public sealed class WorkspaceLoadingTests {
         var safeBefore = File.ReadAllText(safe);
 
         var result = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -495,7 +493,7 @@ public sealed class WorkspaceLoadingTests {
         var referenceBefore = File.ReadAllText(reference);
 
         var result = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -529,7 +527,7 @@ public sealed class WorkspaceLoadingTests {
         var project = scratch.Write("Scratch.csproj", UnloadableProject);
 
         var (result, _) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -554,7 +552,7 @@ public sealed class WorkspaceLoadingTests {
         var project = scratch.Write("Scratch.csproj", UnloadableProject);
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Workspace, ProjectPath = project },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Workspace, ProjectPath = project },
             TestContext.Current.CancellationToken
         );
 
@@ -579,7 +577,7 @@ public sealed class WorkspaceLoadingTests {
         var project = scratch.Write("Scratch.csproj", UnloadableProject);
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Binlog },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Binlog },
             TestContext.Current.CancellationToken
         );
 
@@ -634,7 +632,7 @@ public sealed class WorkspaceLoadingTests {
         scratch.Write("Broken.csproj", UnloadableProject);
 
         var (result, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Binlog,
@@ -685,7 +683,7 @@ public sealed class WorkspaceLoadingTests {
         scratch.Write("Clean.cs", "namespace Scratch;\n\npublic sealed class Clean;\n");
 
         var (result, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Binlog,
@@ -833,7 +831,7 @@ public sealed class WorkspaceLoadingTests {
         var file = MultiProjectTree(scratch);
 
         var result = VerifyCommand.Run(
-            new VerifyRequest { RepositoryRoot = scratch.Root, Paths = [file], NoCache = true },
+            new() { RepositoryRoot = scratch.Root, Paths = [file], NoCache = true },
             TestContext.Current.CancellationToken
         );
 

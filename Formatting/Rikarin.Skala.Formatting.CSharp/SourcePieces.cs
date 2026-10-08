@@ -93,7 +93,7 @@ public static class SourcePieces {
             // and `int[,]` comes out as `int[, ]`.
             if (!token.IsKind(SyntaxKind.EndOfFileToken) && token.Span.Length > 0) {
                 pieces.Add(
-                    new Piece(PieceKind.Token, token.Span, token.Text, tokens.Count, StartsLine(text, token.SpanStart))
+                    new(PieceKind.Token, token.Span, token.Text, tokens.Count, StartsLine(text, token.SpanStart))
                 );
                 tokens.Add(token);
             }
@@ -206,7 +206,7 @@ public static class SourcePieces {
 
             if (trimmedEnd > trimmedStart) {
                 pieces.Add(
-                    new Piece(
+                    new(
                         PieceKind.DocCommentLine,
                         TextSpan.FromBounds(start + trimmedStart, start + trimmedEnd),
                         content[trimmedStart..trimmedEnd],

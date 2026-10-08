@@ -100,7 +100,7 @@ public sealed class SelfCollectionArgumentAnalyzer : DiagnosticAnalyzer {
                 var entries = new List<Entry>();
                 foreach (var (type, method, index, consequence) in Table) {
                     if (start.Compilation.GetTypeByMetadataName(type) is { } symbol) {
-                        entries.Add(new Entry(symbol, method, index, consequence));
+                        entries.Add(new(symbol, method, index, consequence));
                     }
                 }
 

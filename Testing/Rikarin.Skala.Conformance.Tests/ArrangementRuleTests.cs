@@ -93,7 +93,7 @@ public sealed class ArrangementRuleTests {
             "probe",
             [tree],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 topLevel ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -108,7 +108,7 @@ public sealed class ArrangementRuleTests {
         return Arranger.Arrange(
             path,
             text,
-            new ArrangementOptions(options),
+            new(options),
             compilation,
             removeUnused ? UsingsRule.Unused(compilation.GetSemanticModel(tree), tree) : null,
             null,
@@ -716,7 +716,7 @@ public sealed class ArrangementRuleTests {
         var result = Arranger.Arrange(
             path,
             SourceText.From(source),
-            new ArrangementOptions(options, ArrangementScope.Syntactic),
+            new(options, ArrangementScope.Syntactic),
             cancellation: TestContext.Current.CancellationToken
         );
 
@@ -856,6 +856,300 @@ public sealed class ArrangementRuleTests {
         );
 
         Assert.Contains("_ = new(pattern, options);", arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>The probe #461's rows are asked of, compiled as one file.</summary>
+    const string ArgumentProbe = """
+                                 using System;
+                                 using System.Collections.Generic;
+
+                                 namespace P;
+
+                                 public class Foo { public Foo() { } public Foo(Bar b) { } }
+                                 public class Two { public Two(Bar b) { } public Two(Baz z) { } }
+                                 public class Bar { }
+                                 public class Baz { }
+                                 public class Derived : Foo { }
+                                 public struct Val { public int X; }
+                                 public class Box<T> { public static void Put(T value) { } }
+                                 public static class Ext { public static void Use(this string s, Foo f) { } }
+                                 public class Base { public Base(Foo f) { } }
+                                 public class Primary() : Base(new Foo());
+
+                                 public class C : Base {
+                                     public C() : base(new Foo()) { }
+                                     public C(int unused) : this() { }
+
+                                     static void One(Foo f) { }
+                                     static void Over(Foo f) { }
+                                     static void Over(Bar b) { }
+                                     static void Arity(Foo f) { }
+                                     static void Arity(Foo f, int i) { }
+                                     static void Gen<T>(T value) { }
+                                     static void Params(params object[] values) { }
+                                     static void ParamsFoo(params Foo[] values) { }
+                                     static void Optional(Foo? f = null) { }
+                                     static void NullableVal(Val? v) { }
+                                     static void TakeVal(Val v) { }
+                                     static void TakeIn(in Foo f) { }
+                                     static void Pair(Foo a, Foo b) { }
+                                     static void Cross(Foo a, Bar b) { }
+                                     static void Cross(Bar a, Foo b) { }
+                                     static void TakeObj(object o) { }
+                                     static void TakeObj(string s) { }
+
+                                     event EventHandler? Changed;
+
+                                     void M(Action<Foo> action, Dictionary<Foo, int> map) {
+                                         Changed?.Invoke(this, new EventArgs());
+                                         One(new Foo());
+                                         Over(new Foo());
+                                         Arity(new Foo(), 1);
+                                         Gen(new Foo());
+                                         Gen<Foo>(new Foo());
+                                         Params(new object());
+                                         ParamsFoo(new Foo());
+                                         One(new Derived());
+                                         Optional(new Foo());
+                                         NullableVal(new Val());
+                                         TakeVal(new Val());
+                                         TakeIn(new Foo());
+                                         Pair(b: new Foo(), a: new Foo());
+                                         Cross(new Foo(), new Bar());
+                                         Cross(new Bar(), new Foo());
+                                         TakeObj(new object());
+                                         action(new Foo());
+                                         Console.WriteLine(map[new Foo()]);
+                                         Box<Foo>.Put(new Foo());
+                                         "x".Use(new Foo());
+                                         One(new Foo(new Bar()));
+                                         Console.WriteLine(new Two(new Bar()));
+                                         Console.WriteLine(new object());
+                                     }
+                                 }
+                                 """;
+
+    /// <summary>
+    ///     #461: an argument is a target-typed position, and the oracle's rows are reproduced — each
+    ///     line here is what <c>jb cleanupcode</c> 2025.2.6 wrote for it under <c>SkalaCleanup</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The two <c>Cross</c> rows are the order-dependence: the first argument alone keeps one
+    ///     overload applicable, both together would make the call ambiguous, and the oracle converts the
+    ///     first and stops — in either argument order. <c>One(new(new()))</c> is the oracle's too, and it
+    ///     compiles: the outer creation's constructor is chosen against <c>Foo</c> exactly as before.
+    /// </remarks>
+    [Theory]
+    [InlineData("public class Primary() : Base(new());")]
+    [InlineData("public C() : base(new()) { }")]
+    [InlineData("One(new());")]
+    [InlineData("Arity(new(), 1);")]
+    [InlineData("Gen<Foo>(new());")]
+    [InlineData("Optional(new());")]
+    [InlineData("TakeVal(new());")]
+    [InlineData("TakeIn(new());")]
+    [InlineData("Pair(b: new(), a: new());")]
+    [InlineData("Cross(new(), new Bar());")]
+    [InlineData("Cross(new(), new Foo());")]
+    [InlineData("action(new());")]
+    [InlineData("Console.WriteLine(map[new()]);")]
+    [InlineData("Box<Foo>.Put(new());")]
+    [InlineData("\"x\".Use(new());")]
+    [InlineData("One(new(new()));")]
+    [InlineData("Changed?.Invoke(this, new());")]
+    public void ObjectCreation_AnArgumentIsTargetTyped(string expected) {
+        var arranged = Declined(Attempt(ArgumentProbe, ArrangeIds.ObjectCreation));
+        Assert.Contains(expected, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     #461's refusals: each of these would bind another member, fail to infer, or name a type the
+    ///     parameter is not. The oracle leaves every one as written.
+    /// </summary>
+    [Theory]
+    [InlineData("Over(new Foo());")]
+    [InlineData("Gen(new Foo());")]
+    [InlineData("Params(new object());")]
+    [InlineData("ParamsFoo(new Foo());")]
+    [InlineData("One(new Derived());")]
+    [InlineData("NullableVal(new Val());")]
+    [InlineData("TakeObj(new object());")]
+    [InlineData("Console.WriteLine(new Two(new Bar()));")]
+    [InlineData("Console.WriteLine(new object());")]
+    public void ObjectCreation_AnArgumentThatWouldRebindTheCall_KeepsItsType(string kept) {
+        var arranged = Declined(Attempt(ArgumentProbe, ArrangeIds.ObjectCreation));
+        Assert.Contains(kept, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ Arguments are <c>object_creation_when_type_not_evident</c>'s: measured, flipping that key
+    ///     alone restored every argument row and flipping the evident key moved none.
+    /// </summary>
+    [Fact]
+    public void ObjectCreation_AnArgumentIsNotEvident() {
+        var arranged = Declined(
+            Attempt(
+                ArgumentProbe,
+                ArrangeIds.ObjectCreation,
+                overrides: [new("skala_object_creation_when_type_not_evident", "explicitly_typed")]
+            )
+        );
+        Assert.Contains("One(new Foo());", arranged, StringComparison.Ordinal);
+
+        arranged = Declined(
+            Attempt(
+                ArgumentProbe,
+                ArrangeIds.ObjectCreation,
+                overrides: [new("skala_object_creation_when_type_evident", "explicitly_typed")]
+            )
+        );
+        Assert.Contains("One(new());", arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>The probe #462's rows are asked of: every predefined keyword, written as one.</summary>
+    const string KeywordProbe = """
+                                using System;
+                                using System.Collections.Generic;
+
+                                namespace P;
+
+                                enum Small : byte { A }
+
+                                delegate int Handler(string s);
+
+                                interface IThing<T> where T : IComparable<int> { }
+
+                                class Keywords {
+                                    int _count;
+                                    public bool Enabled { get; set; }
+                                    event Func<int>? Raised;
+                                    int this[int i] => i;
+                                    public static Keywords operator +(Keywords a, int b) => a;
+                                    (int, string) _tuple;
+                                    int? _maybe;
+                                    nint _native;
+
+                                    string Name() => nameof(Int32);
+
+                                    void M(ref int r, out int o, params int[] rest) {
+                                        o = 1;
+                                        Dictionary<string, int> map = new Dictionary<string, int>();
+                                        long cast = (long)r;
+                                        object boxed = 1;
+                                        var t = typeof(decimal);
+                                        var d = default(double);
+                                        var s = boxed as string;
+                                        var max = int.MaxValue;
+                                        var empty = string.Empty;
+                                        Console.WriteLine(map.Count + cast + t.Name + d + s + max + empty + _count + _maybe + _native);
+                                    }
+                                }
+                                """;
+
+    /// <summary>
+    ///     #462: at <c>predefined_type_for_locals_parameters_members = false</c> the keyword is expanded
+    ///     to its framework name — every row the oracle's, under <c>SkalaCleanup</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("delegate Int32 Handler(String s);")]
+    [InlineData("where T : IComparable<Int32>")]
+    [InlineData("Int32 _count;")]
+    [InlineData("public Boolean Enabled")]
+    [InlineData("event Func<Int32>? Raised;")]
+    [InlineData("Int32 this[Int32 i] => i;")]
+    [InlineData("operator +(Keywords a, Int32 b)")]
+    [InlineData("(Int32, String) _tuple;")]
+    [InlineData("Int32? _maybe;")]
+    [InlineData("String Name() => nameof(Int32);")]
+    [InlineData("void M(ref Int32 r, out Int32 o, params Int32[] rest)")]
+    [InlineData("Dictionary<String, Int32> map = new Dictionary<String, Int32>();")]
+    [InlineData("Int64 cast = (Int64)r;")]
+    [InlineData("Object boxed = 1;")]
+    [InlineData("typeof(Decimal)")]
+    [InlineData("default(Double)")]
+    [InlineData("boxed as String;")]
+    [InlineData("enum Small : byte { A }")]
+    [InlineData("nint _native;")]
+    [InlineData("var max = int.MaxValue;")]
+    [InlineData("var empty = string.Empty;")]
+    public void PredefinedType_AtFalse_ExpandsToTheFrameworkName(string expected) {
+        var arranged = Declined(
+            Attempt(
+                KeywordProbe,
+                ArrangeIds.PredefinedType,
+                overrides: [new("dotnet_style_predefined_type_for_locals_parameters_members", "false")]
+            )
+        );
+        Assert.Contains(expected, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     #462, the sibling key: at <c>predefined_type_for_member_access = false</c> the receiver expands
+    ///     and the declarations, which the other key still owns at <c>true</c>, do not.
+    /// </summary>
+    [Theory]
+    [InlineData("var max = Int32.MaxValue;")]
+    [InlineData("var empty = String.Empty;")]
+    [InlineData("int _count;")]
+    [InlineData("typeof(decimal)")]
+    public void PredefinedType_MemberAccessAtFalse_ExpandsOnlyTheReceiver(string expected) {
+        var arranged = Declined(
+            Attempt(
+                KeywordProbe,
+                ArrangeIds.PredefinedType,
+                overrides: [new("dotnet_style_predefined_type_for_member_access", "false")]
+            )
+        );
+        Assert.Contains(expected, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #462: with <em>both</em> keys at <c>false</c> the rule must still run. It used to be enabled
+    ///     only when one of them was <c>true</c>, so this configuration expanded nothing at all.
+    /// </summary>
+    [Fact]
+    public void PredefinedType_BothKeysAtFalse_ExpandBothPositions() {
+        var arranged = Declined(
+            Attempt(
+                KeywordProbe,
+                ArrangeIds.PredefinedType,
+                overrides: [
+                    new("dotnet_style_predefined_type_for_locals_parameters_members", "false"),
+                    new("dotnet_style_predefined_type_for_member_access", "false")
+                ]
+            )
+        );
+        Assert.Contains("Int32 _count;", arranged, StringComparison.Ordinal);
+        Assert.Contains("var max = Int32.MaxValue;", arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #462: where something else answers to <c>Int32</c>, the oracle writes <c>System.Int32</c> —
+    ///     measured with a class of that name beside the field — and <c>String</c>, which nothing shadows,
+    ///     stays short.
+    /// </summary>
+    [Fact]
+    public void PredefinedType_AtFalse_QualifiesAShadowedName() {
+        var arranged = Declined(
+            Attempt(
+                """
+                using System;
+
+                namespace P {
+                    class Int32 { }
+
+                    class Masked {
+                        int _count;
+                        string Name() => "x" + _count;
+                    }
+                }
+                """,
+                ArrangeIds.PredefinedType,
+                overrides: [new("dotnet_style_predefined_type_for_locals_parameters_members", "false")]
+            )
+        );
+        Assert.Contains("System.Int32 _count;", arranged, StringComparison.Ordinal);
+        Assert.Contains("String Name()", arranged, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1289,7 +1583,7 @@ public sealed class ArrangementRuleTests {
                 tree
             ],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
+            new(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
         );
 
         var model = compilation.GetSemanticModel(tree);
@@ -1313,8 +1607,8 @@ public sealed class ArrangementRuleTests {
         var arranged = ArrangementPipeline.Run(
             path,
             text,
-            new PhaseOneOptions(options),
-            new ArrangementOptions(options),
+            new(options),
+            new(options),
             compilation,
             unused,
             cancellation: TestContext.Current.CancellationToken
@@ -1434,7 +1728,7 @@ public sealed class ArrangementRuleTests {
             "probe",
             [tree],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -1471,7 +1765,7 @@ public sealed class ArrangementRuleTests {
             "probe",
             trees,
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -1485,8 +1779,8 @@ public sealed class ArrangementRuleTests {
         return ArrangementPipeline.Run(
             path,
             text,
-            new PhaseOneOptions(options),
-            new ArrangementOptions(options),
+            new(options),
+            new(options),
             compilation,
             UsingsRule.Unused(compilation.GetSemanticModel(tree), tree)
         );

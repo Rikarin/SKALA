@@ -92,7 +92,7 @@ public static class DuplicationPass {
                 }
 
                 inputs.Add(
-                    new DuplicationInput(
+                    new(
                         path,
                         tree.GetText(cancellation).ToString(),
                         false,

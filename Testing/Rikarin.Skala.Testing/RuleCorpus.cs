@@ -597,7 +597,7 @@ public static class RuleCorpus {
             // vendored tree's real dependency closure — is what issue #277 rejected as changing what
             // the formatter corpus is for.
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable,
@@ -630,7 +630,7 @@ public static class RuleCorpus {
         CancellationToken cancellation
     ) =>
         AnalyzerHost.Run(
-            new CompilationUnit { Name = name, Compilation = compilation, ReportablePaths = reportable },
+            new() { Name = name, Compilation = compilation, ReportablePaths = reportable },
             new AnalyzerOptions([]),
             [],
             LoadMode.Binlog,

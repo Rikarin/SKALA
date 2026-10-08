@@ -171,7 +171,7 @@ public sealed class ArithmeticAndRangeBatchTests {
             .AddSyntaxTrees(
                 CSharpSyntaxTree.ParseText(
                     "class Limits { public const int One = 1; }",
-                    new CSharpParseOptions(LanguageVersion.Preview),
+                    new(LanguageVersion.Preview),
                     "limits.cs",
                     cancellationToken: TestContext.Current.CancellationToken
                 )

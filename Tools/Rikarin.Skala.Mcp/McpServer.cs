@@ -103,14 +103,14 @@ sealed class SkalaTools(string repositoryRoot) {
     const int MaxCharacters = 16000;
 
     public IEnumerable<McpServerTool> Create() {
-        yield return McpServerTool.Create(Verify, new McpServerToolCreateOptions { Name = "skala_verify" });
-        yield return McpServerTool.Create(Format, new McpServerToolCreateOptions { Name = "skala_format" });
-        yield return McpServerTool.Create(Check, new McpServerToolCreateOptions { Name = "skala_check" });
-        yield return McpServerTool.Create(Fix, new McpServerToolCreateOptions { Name = "skala_fix" });
-        yield return McpServerTool.Create(Explain, new McpServerToolCreateOptions { Name = "skala_explain" });
+        yield return McpServerTool.Create(Verify, new() { Name = "skala_verify" });
+        yield return McpServerTool.Create(Format, new() { Name = "skala_format" });
+        yield return McpServerTool.Create(Check, new() { Name = "skala_check" });
+        yield return McpServerTool.Create(Fix, new() { Name = "skala_fix" });
+        yield return McpServerTool.Create(Explain, new() { Name = "skala_explain" });
         yield return McpServerTool.Create(
             ConfigExplain,
-            new McpServerToolCreateOptions { Name = "skala_config_explain" }
+            new() { Name = "skala_config_explain" }
         );
     }
 
@@ -123,9 +123,7 @@ sealed class SkalaTools(string repositoryRoot) {
         [Description("Files or directories. Empty means the whole repository.")] string[]? paths = null,
         [Description("Apply the safe fixes first, then report what is left.")] bool fix = false
     ) {
-        var result = VerifyCommand.Run(
-            new VerifyRequest { Paths = paths ?? [], RepositoryRoot = repositoryRoot, Fix = fix }
-        );
+        var result = VerifyCommand.Run(new() { Paths = paths ?? [], RepositoryRoot = repositoryRoot, Fix = fix });
 
         return Bound(Verdict(result.ExitCode, result.Output));
     }
@@ -192,7 +190,7 @@ sealed class SkalaTools(string repositoryRoot) {
         }
 
         var command = FormatCommand.Run(
-            new FormatRequest { Paths = paths ?? [], RepositoryRoot = repositoryRoot, Check = check, Quiet = false }
+            new() { Paths = paths ?? [], RepositoryRoot = repositoryRoot, Check = check, Quiet = false }
         );
 
         return Bound(command.Output);
@@ -209,7 +207,7 @@ sealed class SkalaTools(string repositoryRoot) {
         // caller is a model, and a typo in an optional argument should not cost it a whole turn.
         var mode = LoadModes.TryParse(load, out var parsed) ? parsed : LoadMode.Loose;
         var (result, _) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 Paths = paths ?? [],
                 RepositoryRoot = repositoryRoot,
                 Mode = mode,
@@ -234,7 +232,7 @@ sealed class SkalaTools(string repositoryRoot) {
         [Description("Say what would be applied and write nothing.")] bool dryRun = false
     ) {
         var result = FixCommand.Run(
-            new FixRequest {
+            new() {
                 Paths = paths ?? [],
                 RepositoryRoot = repositoryRoot,
                 SafeOnly = safeOnly,

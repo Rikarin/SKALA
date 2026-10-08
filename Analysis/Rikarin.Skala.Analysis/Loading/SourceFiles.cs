@@ -66,9 +66,7 @@ internal static class SourceFiles {
                     known.Id == FormatDiagnosticIds.FileIoFailed
                     && string.Equals(known.File, path, StringComparison.Ordinal)
                 )) {
-                diagnostics.Add(
-                    new SkalaDiagnostic(FormatDiagnosticIds.FileIoFailed, SkalaSeverity.Error, exception.Message, path)
-                );
+                diagnostics.Add(new(FormatDiagnosticIds.FileIoFailed, SkalaSeverity.Error, exception.Message, path));
             }
 
             return null;

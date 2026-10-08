@@ -58,7 +58,7 @@ public static class FormattingFindings {
         Parallel.For(
             0,
             files.Length,
-            new ParallelOptions { MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, 10) },
+            new() { MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, 10) },
             index => {
                 try {
                     results[index] = CSharpFormatter.FormatFile(
@@ -85,7 +85,7 @@ public static class FormattingFindings {
                     results[index] = null;
                     lock (failures) {
                         failures.Add(
-                            new SkalaDiagnostic(
+                            new(
                                 FormatDiagnosticIds.FileIoFailed,
                                 SkalaSeverity.Error,
                                 exception.Message,
@@ -125,7 +125,7 @@ public static class FormattingFindings {
 
             var line = result.Original.Lines.GetLinePosition(result.Edits[0].Span.Start);
             findings.Add(
-                new Finding {
+                new() {
                     RuleId = RuleIds.FileIsNotFormatted,
                     Severity = SkalaSeverity.Info,
                     Message =

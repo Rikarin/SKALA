@@ -181,7 +181,7 @@ public sealed class CrashedRunCacheTests {
     ) {
         var cancellation = token ?? TestContext.Current.CancellationToken;
         var loaded = ProjectLoader.Load(
-            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
+            new() { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
             cancellation
         );
         var unit = Assert.Single(loaded.Units);

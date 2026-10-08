@@ -244,15 +244,19 @@ public sealed class ObjectCreationRule : ArrangementRule {
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
         }
 
-        bool ShouldConvert(ObjectCreationExpressionSyntax node) {
+        bool ShouldConvert(ObjectCreationExpressionSyntax node) =>
+            TargetTypeOf(node) is { } target
+            && Carries(node, target)
+            && (Evident(node)
+                    ? options.ObjectCreationWhenTypeEvident == ObjectCreationStyle.TargetTyped
+                    : options.ObjectCreationWhenTypeNotEvident == ObjectCreationStyle.TargetTyped);
+
+        /// <summary>Whether <c>new()</c> aimed at <paramref name="target" /> constructs what the creation does.</summary>
+        bool Carries(ObjectCreationExpressionSyntax node, ITypeSymbol target) {
             // ⚠ `new T { … }` with no argument list becomes `new() { … }`, which is legal; but
             // `new T[]`-shaped and anonymous creations are other node kinds and never reach here.
             var created = model.GetTypeInfo(node).Type;
             if (created is null || created.TypeKind == TypeKind.Error || created.IsAnonymousType) {
-                return false;
-            }
-
-            if (TargetTypeOf(node) is not { } target) {
                 return false;
             }
 
@@ -280,13 +284,167 @@ public sealed class ObjectCreationRule : ArrangementRule {
                 return false;
             }
 
-            if (target.TypeKind is TypeKind.Interface or TypeKind.Dynamic or TypeKind.TypeParameter) {
-                return false;
+            return target.TypeKind is not (TypeKind.Interface or TypeKind.Dynamic or TypeKind.TypeParameter);
+        }
+
+        /// <summary>The arguments of each argument list that may become <c>new()</c>, decided once per list.</summary>
+        readonly Dictionary<BaseArgumentListSyntax, Dictionary<ArgumentSyntax, ITypeSymbol>> _arguments = [];
+
+        /// <summary>
+        ///     The parameter type an argument's creation is target-typed to, or null when it may not be.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ An argument is the one target-typed position where dropping the type can change which
+        ///     member is called <em>and still compile</em>: <c>new()</c> converts to every type, so
+        ///     <c>Take(new())</c> beside <c>Take(object)</c> and <c>Take(string)</c> binds the
+        ///     <c>string</c> overload that <c>Take(new object())</c> did not. Safety layer 3 compares the
+        ///     name <c>Take</c> before and after and would revert the whole document; this asks first.
+        ///     Each candidate is accepted only when the call, re-bound speculatively with it and every
+        ///     earlier accepted candidate written <c>new()</c>, still reaches the same member.
+        ///     <para>
+        ///         ⚠ Left to right and greedy, because that is what the oracle does. Measured against
+        ///         <c>jb cleanupcode</c> 2025.2.6 under <c>SkalaCleanup</c> with <c>Cross(Foo, Bar)</c> and
+        ///         <c>Cross(Bar, Foo)</c>: <c>Cross(new Foo(), new Bar())</c> becomes
+        ///         <c>Cross(new(), new Bar())</c> — the first alone still picks one overload, both together
+        ///         would be ambiguous — and <c>Cross(new Bar(), new Foo())</c> becomes
+        ///         <c>Cross(new(), new Foo())</c>. Deciding the list all-or-nothing would refuse both.
+        ///     </para>
+        ///     <para>
+        ///         The same probe's other rows, every one of which this reproduces: converted for a single
+        ///         overload, overloads of different arity, a named argument out of order, an <c>in</c>
+        ///         parameter, an optional one, a nullable-annotated reference, a struct, explicit type
+        ///         arguments (<c>Gen&lt;Foo&gt;(new())</c>), a static on a constructed type, an extension
+        ///         method, a delegate invocation, an indexer, a constructor's argument, a <c>base(…)</c>,
+        ///         <c>this(…)</c> and primary-constructor base; declined for an overload pair the
+        ///         conversion would make ambiguous, an inferred type argument (<c>Gen(new Foo())</c>), a
+        ///         <c>params</c> parameter in either form, a base-class, interface or <c>Nullable&lt;T&gt;</c>
+        ///         parameter, a <c>dynamic</c> receiver and <c>Console.WriteLine(new object())</c>. Governed
+        ///         by <c>object_creation_when_type_not_evident</c>: flipping it alone restored every row,
+        ///         flipping the evident key moved none.
+        ///     </para>
+        /// </remarks>
+        ITypeSymbol? ArgumentTargetOf(ArgumentSyntax argument, BaseArgumentListSyntax list) {
+            if (!_arguments.TryGetValue(list, out var accepted)) {
+                accepted = AcceptedArguments(list);
+                _arguments[list] = accepted;
             }
 
-            return Evident(node)
-                ? options.ObjectCreationWhenTypeEvident == ObjectCreationStyle.TargetTyped
-                : options.ObjectCreationWhenTypeNotEvident == ObjectCreationStyle.TargetTyped;
+            return accepted.GetValueOrDefault(argument);
+        }
+
+        Dictionary<ArgumentSyntax, ITypeSymbol> AcceptedArguments(BaseArgumentListSyntax list) {
+            var accepted = new Dictionary<ArgumentSyntax, ITypeSymbol>();
+            if (list.Parent is not { } owner
+                || model.GetSymbolInfo(owner).Symbol is not { } member
+                || ParametersOf(member) is not { } parameters) {
+                return accepted;
+            }
+
+            foreach (var argument in list.Arguments) {
+                if (argument.Expression is not ObjectCreationExpressionSyntax creation
+                    || !argument.RefKindKeyword.IsKind(SyntaxKind.None)
+                    || ParameterOf(argument, list, parameters) is not {
+                        IsParams: false, RefKind: RefKind.None or RefKind.In
+                    } parameter
+                    || !Carries(creation, parameter.Type)) {
+                    continue;
+                }
+
+                accepted[argument] = parameter.Type;
+                if (!SymbolEqualityComparer.Default.Equals(Rebind(owner, accepted.Keys), member)) {
+                    accepted.Remove(argument);
+                }
+            }
+
+            return accepted;
+        }
+
+        static IReadOnlyList<IParameterSymbol>? ParametersOf(ISymbol member) =>
+            member switch {
+                IMethodSymbol method => method.Parameters,
+                IPropertySymbol { IsIndexer: true } indexer => indexer.Parameters,
+                _ => null
+            };
+
+        static IParameterSymbol? ParameterOf(
+            ArgumentSyntax argument,
+            BaseArgumentListSyntax list,
+            IReadOnlyList<IParameterSymbol> parameters
+        ) {
+            if (argument.NameColon is { } name) {
+                return parameters.FirstOrDefault(parameter => parameter.Name == name.Name.Identifier.ValueText);
+            }
+
+            // ⚠ A positional argument after a named one is legal only in its own position, so the index
+            // is the parameter's either way.
+            var index = list.Arguments.IndexOf(argument);
+            return index < parameters.Count ? parameters[index] : null;
+        }
+
+        /// <summary>
+        ///     The member <paramref name="owner" /> reaches with <paramref name="converted" /> written
+        ///     <c>new()</c>, bound speculatively at the owner's own position; null when it reaches none.
+        /// </summary>
+        ISymbol? Rebind(SyntaxNode owner, IEnumerable<ArgumentSyntax> converted) {
+            var creations = converted.Select(static argument => argument.Expression).ToArray();
+            var rewritten = owner.ReplaceNodes(
+                creations,
+                static (original, _) => {
+                    var creation = (ObjectCreationExpressionSyntax)original;
+                    return SyntaxFactory.ImplicitObjectCreationExpression(
+                        SyntaxFactory.Token(SyntaxKind.NewKeyword),
+                        creation.ArgumentList ?? SyntaxFactory.ArgumentList(),
+                        creation.Initializer
+                    );
+                }
+            );
+
+            // ⚠ `Changed?.Invoke(this, new(…))` binds only with its receiver: the invocation's
+            // `.Invoke` is a member binding, which means nothing out of place, and a speculative
+            // conditional access answers with no symbol at all. So the statement around it is re-bound
+            // instead, and the invocation is asked inside that.
+            if (owner.Parent is ConditionalAccessExpressionSyntax) {
+                return RebindInStatement(owner, rewritten);
+            }
+
+            var info = rewritten switch {
+                ConstructorInitializerSyntax initializer => model.GetSpeculativeSymbolInfo(
+                    owner.SpanStart,
+                    initializer
+                ),
+                PrimaryConstructorBaseTypeSyntax baseType => model.GetSpeculativeSymbolInfo(owner.SpanStart, baseType),
+                // ⚠ A target-typed outer `new(…)` has no type of its own to bind against out of place;
+                // its arguments are left as written rather than guessed at.
+                ImplicitObjectCreationExpressionSyntax => default,
+                ExpressionSyntax expression => model.GetSpeculativeSymbolInfo(
+                    owner.SpanStart,
+                    expression,
+                    SpeculativeBindingOption.BindAsExpression
+                ),
+                _ => default
+            };
+
+            return info.CandidateSymbols.IsEmpty ? info.Symbol : null;
+        }
+
+        /// <summary>
+        ///     <see cref="Rebind" /> for an owner that cannot be bound out of place, through a speculative
+        ///     model of the whole statement holding it; null when it is not in a statement.
+        /// </summary>
+        ISymbol? RebindInStatement(SyntaxNode owner, SyntaxNode rewritten) {
+            if (owner.FirstAncestorOrSelf<StatementSyntax>() is not { } statement) {
+                return null;
+            }
+
+            var marker = new SyntaxAnnotation();
+            var replaced = statement.ReplaceNode(owner, rewritten.WithAdditionalAnnotations(marker));
+            if (!model.TryGetSpeculativeSemanticModel(statement.SpanStart, replaced, out var speculative)
+                || replaced.GetAnnotatedNodes(marker).FirstOrDefault() is not { } bound) {
+                return null;
+            }
+
+            var info = speculative.GetSymbolInfo(bound);
+            return info.CandidateSymbols.IsEmpty ? info.Symbol : null;
         }
 
         /// <summary>
@@ -359,6 +517,10 @@ public sealed class ObjectCreationRule : ArrangementRule {
                     Parent: ObjectCreationExpressionSyntax or ArrayCreationExpressionSyntax
                 }:
                     return model.GetTypeInfo(node).ConvertedType;
+
+                // `Take(new Foo())`, `base(new Foo())`, `map[new Foo()]` (#461).
+                case ArgumentSyntax { Parent: BaseArgumentListSyntax list } argument:
+                    return ArgumentTargetOf(argument, list);
 
                 default:
                     return null;

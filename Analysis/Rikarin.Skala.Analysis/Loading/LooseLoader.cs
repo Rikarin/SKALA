@@ -76,7 +76,7 @@ public static class LooseLoader {
             "loose",
             trees.ToImmutable(),
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable,

@@ -282,7 +282,7 @@ public sealed class CapturedArgumentIssue432Tests {
 
     /// <summary>Compiles <paramref name="source" /> and returns what <c>Probe.Run()</c> returns.</summary>
     static string RunProbe(string source) {
-        var tree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Preview));
+        var tree = CSharpSyntaxTree.ParseText(source, new(LanguageVersion.Preview));
         var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
             .Split(Path.PathSeparator)
             .Select(static path => MetadataReference.CreateFromFile(path));
@@ -290,7 +290,7 @@ public sealed class CapturedArgumentIssue432Tests {
             "Probe" + Guid.NewGuid().ToString("N"),
             [tree],
             references,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 nullableContextOptions: NullableContextOptions.Enable
             )

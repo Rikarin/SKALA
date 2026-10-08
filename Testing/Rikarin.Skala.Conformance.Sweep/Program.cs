@@ -183,7 +183,7 @@ int Pairwise() {
         );
     }
 
-    var run = new PairwiseSweep(new OracleRunner(), config, Console.Out, alone).Run(pairs);
+    var run = new PairwiseSweep(new(), config, Console.Out, alone).Run(pairs);
 
     var output = Flag("--out")
         ?? Path.Combine(
@@ -221,7 +221,7 @@ int Measure(out SweepRun? measured) {
     }
 
     var config = Corpus.OracleEditorConfigPath;
-    var run = new KeyFlipSweep(new OracleRunner(), config, Console.Out).Run(plan);
+    var run = new KeyFlipSweep(new(), config, Console.Out).Run(plan);
     var text = SweepReport.Render(run, families);
 
     var output = Flag("--out")
@@ -266,7 +266,7 @@ int Defaults(IReadOnlyCollection<string>? inProcess) {
         return 3;
     }
 
-    var probed = new DefaultsPass(new OracleRunner(), Console.Out).Run(plan);
+    var probed = new DefaultsPass(new(), Console.Out).Run(plan);
 
     var archive = Path.Combine(
         Corpus.RepositoryRoot,

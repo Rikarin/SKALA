@@ -304,7 +304,7 @@ public sealed class CrashArtifactTests {
                 "probe",
                 [tree],
                 SharedFrameworkReferences.Value,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+                new(OutputKind.DynamicallyLinkedLibrary)
             );
 
             var resolved = OptionResolver.Resolve(
@@ -324,7 +324,7 @@ public sealed class CrashArtifactTests {
                 arranged,
                 compilation.GetSemanticModel(tree),
                 Root,
-                new ArrangementOptions(resolved),
+                new(resolved),
                 original
             );
 

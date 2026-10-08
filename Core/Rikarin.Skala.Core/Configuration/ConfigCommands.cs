@@ -79,7 +79,7 @@ public static class ConfigCommands {
             .Append("value".PadRight(valueWidth))
             .Append("  tier  source")
             .AppendLine();
-        output.AppendLine(new string('-', keyWidth + valueWidth + 40));
+        output.AppendLine(new('-', keyWidth + valueWidth + 40));
 
         foreach (var option in rows) {
             output.Append(option.Info.Key.PadRight(keyWidth))

@@ -291,9 +291,9 @@ internal static class CancellationTokens {
 
         var list = invocation.ArgumentList;
         return arguments.Count == 0
-            ? new Forward(new TextSpan(list.CloseParenToken.SpanStart, 0), argument, target.Name)
+            ? new Forward(new(list.CloseParenToken.SpanStart, 0), argument, target.Name)
             : new Forward(
-                new TextSpan(arguments[arguments.Count - 1].Span.End, 0),
+                new(arguments[arguments.Count - 1].Span.End, 0),
                 ", " + argument,
                 target.Name
             );

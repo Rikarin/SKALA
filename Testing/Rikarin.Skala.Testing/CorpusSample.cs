@@ -46,7 +46,7 @@ public static class CorpusSample {
                 continue;
             }
 
-            candidates.Add(new Candidate(relative, path, KeyOf(seed, relative), lines));
+            candidates.Add(new(relative, path, KeyOf(seed, relative), lines));
         }
 
         candidates.Sort(static (left, right) => left.Key != right.Key

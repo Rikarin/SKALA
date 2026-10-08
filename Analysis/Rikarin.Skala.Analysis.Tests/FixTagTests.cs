@@ -45,9 +45,7 @@ public sealed class FixTagTests {
         // ⚠ SK2015 is named explicitly because #412 measured its fix changing behaviour and it is no
         // longer `fixIsSafe`; the tag is what is under test here, not the rule's safety.
         FixCommand.Run(
-            new FixRequest {
-                RepositoryRoot = scratch.Root, Paths = [scratch.Root], SafeOnly = false, Include = ["SK2015"]
-            },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root], SafeOnly = false, Include = ["SK2015"] },
             TestContext.Current.CancellationToken
         );
 
@@ -79,7 +77,7 @@ public sealed class FixTagTests {
         ConfigurationCache.Clear();
 
         var (_, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Loose,

@@ -83,7 +83,7 @@ public sealed class PartialVerdictTests {
         };
 
     static CommandResult Run(ReportFormat format, RunReport report, int exitCode) =>
-        VerifyCommand.Verdict(format, new CommandResult(exitCode, Renderer.Render(report, format)), report);
+        VerifyCommand.Verdict(format, new(exitCode, Renderer.Render(report, format)), report);
 
     /// <summary>
     ///     ⚠ The three assertions the issue asked for, per format: the exit code is still 5, the output
@@ -258,7 +258,7 @@ public sealed class PartialVerdictTests {
     public void Verify_LeavesALoadFailureAlone() {
         var result = Run(
             ReportFormat.Agent,
-            new RunReport { RepositoryRoot = Root, Mode = LoadMode.Loose },
+            new() { RepositoryRoot = Root, Mode = LoadMode.Loose },
             ExitCodes.LoadFailure
         );
 

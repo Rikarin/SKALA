@@ -233,15 +233,13 @@ public static class SuppressionAuditor {
             foreach (var id in match.Groups["ids"].Value.Split(',', StringSplitOptions.RemoveEmptyEntries)) {
                 var trimmed = id.Trim();
                 if (trimmed.Length > 0) {
-                    entries.Add(new SuppressionEntry(SuppressionSource.Pragma, trimmed, path, string.Empty));
+                    entries.Add(new(SuppressionSource.Pragma, trimmed, path, string.Empty));
                 }
             }
         }
 
         foreach (Match match in SuppressMessagePattern.Matches(line)) {
-            entries.Add(
-                new SuppressionEntry(SuppressionSource.Attribute, match.Groups["id"].Value, path, string.Empty)
-            );
+            entries.Add(new(SuppressionSource.Attribute, match.Groups["id"].Value, path, string.Empty));
         }
     }
 
@@ -278,7 +276,7 @@ public static class SuppressionAuditor {
             // back to the whole `key` for a `resharper_*_highlighting` match, which carried no rule
             // id to report.
             var id = match.Groups["id"].Value;
-            entries.Add(new SuppressionEntry(SuppressionSource.EditorConfig, id, path + " [" + section + "]", value));
+            entries.Add(new(SuppressionSource.EditorConfig, id, path + " [" + section + "]", value));
         }
     }
 
@@ -297,7 +295,7 @@ public static class SuppressionAuditor {
             File.WriteAllText(temporary, sarif);
             foreach (var entry in Baseline.Read(temporary).Entries) {
                 entries.Add(
-                    new SuppressionEntry(
+                    new(
                         SuppressionSource.Baseline,
                         entry.RuleId,
                         entry.Path,

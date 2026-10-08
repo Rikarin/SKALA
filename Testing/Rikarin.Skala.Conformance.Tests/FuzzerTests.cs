@@ -80,7 +80,7 @@ public sealed class FuzzerTests {
     public void TheGrammar_EmitsNoParseErrors() {
         var broken = new List<string>();
         for (var index = 0; index < 250; index++) {
-            var source = FuzzGenerator.Compile(new FuzzRandom(FuzzRandom.Derive(7, index)));
+            var source = FuzzGenerator.Compile(new(FuzzRandom.Derive(7, index)));
             var errors = CSharpSyntaxTree
                 .ParseText(
                     SourceText.From(source),
@@ -199,7 +199,7 @@ public sealed class FuzzerTests {
             var mutated = FuzzMutations.Apply(
                 FuzzMutations.WidenIdentifier,
                 source,
-                new FuzzRandom(FuzzRandom.Derive(37, index)),
+                new(FuzzRandom.Derive(37, index)),
                 []
             );
 
@@ -308,7 +308,7 @@ public sealed class FuzzerTests {
     /// </remarks>
     [Fact]
     public void TheMinimiser_ReturnsSomethingSmallerThatStillFails() {
-        var source = FuzzGenerator.Compile(new FuzzRandom(99));
+        var source = FuzzGenerator.Compile(new(99));
         var marked = "class Marker { void Keep() { Trigger(); } }\n" + source;
         var budget = new MinimiseBudget(4000);
         var reduced = FuzzMinimiser.Minimise(
@@ -485,7 +485,7 @@ public sealed class FuzzerTests {
             var text = FuzzMutations.Apply(
                 FuzzMutations.WidenGap,
                 source,
-                new FuzzRandom(seed),
+                new(seed),
                 Corpus.PropertySymbols
             );
             if (text is null) {
@@ -648,7 +648,7 @@ public sealed class FuzzerTests {
     [Fact]
     public void AShortRun_ReachesTheFormatter() {
         var report = Fuzzer.Run(
-            new FuzzOptions {
+            new() {
                 Seed = 3,
                 Cases = 250,
                 Mode = FuzzMode.Both,

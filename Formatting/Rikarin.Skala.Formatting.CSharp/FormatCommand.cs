@@ -295,7 +295,7 @@ public static class FormatCommand {
         Parallel.For(
             0,
             files.Count,
-            new ParallelOptions { MaxDegreeOfParallelism = jobs },
+            new() { MaxDegreeOfParallelism = jobs },
             index => outcomes[index] = FormatOne(files[index], request, crashRoot, root, range)
         );
 

@@ -222,7 +222,7 @@ public sealed class CompilationScopedBucketTests {
     static IncrementalOutcome Run(Scratch scratch, string project, bool useCache = true) {
         var cancellation = TestContext.Current.CancellationToken;
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = scratch.Root, Mode = LoadMode.Workspace, ProjectPath = project, AllowFallback = false
             },
             cancellation

@@ -61,7 +61,7 @@ public sealed class ArrangementCompilationsTests {
         scratch.Write("F.cs", "namespace P;\n\npublic sealed class F;\n");
 
         var (_, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Loose,

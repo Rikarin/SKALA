@@ -233,7 +233,7 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
         }
 
         candidates.Add(
-            new Candidate(
+            new(
                 method.Identifier.ValueText,
                 forwards[0].Callee,
                 method.Identifier.GetLocation(),

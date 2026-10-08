@@ -101,7 +101,7 @@ public static class EditEmitter {
         }
 
         edits.Add(
-            new TextEdit(
+            new(
                 SourceSpan.FromBounds(inputStart + prefix, inputEnd - suffix),
                 output[(outputStart + prefix)..(outputEnd - suffix)]
             )

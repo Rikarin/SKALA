@@ -124,7 +124,7 @@ public sealed class Baseline {
             var result = results[i];
             var prints = result.PartialFingerprints;
             entries.Add(
-                new BaselineEntry(
+                new(
                     result.RuleId ?? string.Empty,
                     Location(result),
                     result.Message?.Text ?? string.Empty,

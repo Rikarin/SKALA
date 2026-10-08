@@ -81,8 +81,8 @@ public static class SkalaSide {
         var result = ArrangementPipeline.Run(
             fixturePath,
             text,
-            new PhaseOneOptions(resolved.Options),
-            new ArrangementOptions(resolved.Options),
+            new(resolved.Options),
+            new(resolved.Options),
             ArrangementCompilation(),
             ArrangementDifferential.Removable(ArrangementCompilation(), fixturePath),
             filter: NeverPerformedUnlessAsked(overrides)
