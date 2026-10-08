@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 
 namespace Rikarin.Skala.Rules.Modernization;
@@ -26,8 +27,10 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         introduced C# 12, did not: <c>ArgumentNullException</c> became <c>NullReferenceException</c> and
 ///         <c>Array.Empty&lt;T&gt;()</c> became a fresh array. Roslyn 4.11 turned
 ///         <c>[.. (int[])null]</c> into an <em>empty array</em>. So the floor is C# 14, which no compiler
-///         before 5.0 accepts, and the version must be written down — <c>latest</c> and <c>preview</c> mean
-///         whatever the compiler that builds the project says, not what Skala's own compiler says.
+///         before 5.0 accepts, and the compiler must be <em>proved</em> — <c>latest</c> and <c>preview</c>
+///         mean whatever the compiler that builds the project says, not what Skala's own compiler says.
+///         Two things prove it: a version written as a number, or (#515) a <c>net10.0</c> or later
+///         reference set, which no SDK before 10 can build.
 ///     </para>
 ///     <para>
 ///         ⚠ The lowering picks its method by the receiver's static type, so only the receivers whose
@@ -58,7 +61,12 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
                     start.Compilation.GetTypeByMetadataName("System.Linq.Enumerable"),
                     start.Compilation.GetTypeByMetadataName("System.Collections.Generic.List`1"),
                     start.Compilation.GetTypeByMetadataName("System.Span`1"),
-                    start.Compilation.GetTypeByMetadataName("System.ReadOnlySpan`1")
+                    start.Compilation.GetTypeByMetadataName("System.ReadOnlySpan`1"),
+                    ReferencesDotNet10(start.Compilation),
+                    // ⚠ #515: a `netstandard2.1;net10.0` project at `latest` proves its compiler in the
+                    // `net10.0` leg and in no other, and the fix lands in a file both legs compile. The
+                    // proof is asked of every sibling, as #351's rules ask their whole condition.
+                    FrameworkAvailability.PathsWithout(start.Options, ProvesTheLowering)
                 );
                 start.RegisterSyntaxNodeAction(
                     context => Analyze(context, framework),
@@ -72,7 +80,9 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
         INamedTypeSymbol? Enumerable,
         INamedTypeSymbol? List,
         INamedTypeSymbol? Span,
-        INamedTypeSymbol? ReadOnlySpan);
+        INamedTypeSymbol? ReadOnlySpan,
+        bool TargetsDotNet10,
+        ImmutableHashSet<string> Unproved);
 
     static void Analyze(SyntaxNodeAnalysisContext context, Framework framework) {
         var invocation = (InvocationExpressionSyntax)context.Node;
@@ -81,7 +91,8 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
                 RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
             } access
             || access.Name.Identifier.ValueText is not ("ToArray" or "ToList")
-            || !IsWrittenLanguageVersion(invocation.SyntaxTree)
+            || !(framework.TargetsDotNet10 || IsWrittenLanguageVersion(invocation.SyntaxTree))
+            || framework.Unproved.Contains(invocation.SyntaxTree.FilePath)
             || WrittenTargetOf(invocation) is not { } target) {
             return;
         }
@@ -177,12 +188,59 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
     ///     compiler, and the compiler Skala loads the project with is not necessarily the one that builds
     ///     it: a project pinned to SDK 8 with <c>latest</c> reads as C# 14 here and compiles as C# 12 with
     ///     Roslyn 4.8, where the rewrite changes behaviour. A written <c>14</c> is refused by every
-    ///     compiler before 5.0 (4.11 and 4.14 measured), so it proves which lowering the build gets.
+    ///     compiler before 5.0 (4.11 and 4.14 measured), so it proves which lowering the build gets. The
+    ///     other proof is <see cref="ReferencesDotNet10" />.
     /// </remarks>
     static bool IsWrittenLanguageVersion(SyntaxTree tree) =>
         tree.Options is CSharpParseOptions { SpecifiedLanguageVersion: var written }
         && written != LanguageVersion.Preview
         && written.MapSpecifiedToEffectiveVersion() == written;
+
+    /// <summary>
+    ///     ⚠ #515: whether the compilation's core library is .NET 10's reference assembly or a later one's,
+    ///     which proves the compiler however the language version is spelled.
+    /// </summary>
+    /// <remarks>
+    ///     A <c>net10.0</c> target is refused by every SDK before 10.0.100 (<c>NETSDK1045</c>), and SDK 10
+    ///     ships Roslyn 5 — past the 4.14 the lowering needs. Measured on SDK 10.0.401 by replaying each
+    ///     probe's recorded <c>csc</c> line: a <c>net10.0</c> unit's <c>System.Object</c> is
+    ///     <c>System.Runtime, Version=10.0.0.0</c> from the targeting pack at <c>latest</c>,
+    ///     <c>latestMajor</c>, <c>default</c>, <c>preview</c> and with nothing written, and still is when
+    ///     the project references a <c>netstandard2.0</c> library (that library is its own unit, whose
+    ///     corlib is <c>netstandard 2.0.0.0</c>). <c>net9.0</c> is <c>System.Runtime 9.0.0.0</c>,
+    ///     <c>netstandard2.1</c> is <c>netstandard 2.1.0.0</c> and <c>net48</c> is <c>mscorlib 4.0.0.0</c>,
+    ///     and none of them qualifies.
+    ///     <para>
+    ///         ⚠ <b>The reference assembly, by name — never <c>System.Private.CoreLib</c>.</b> A build
+    ///         compiles against the targeting pack; an implementation corlib is what a compilation has
+    ///         when nothing was built at all — <c>--load=loose</c> and the test host both reference the
+    ///         running runtime's own assemblies, and the version of the runtime Skala happens to run on
+    ///         says nothing about the compiler that will build the file.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>Not airtight, and the hole is stated rather than hidden.</b> A
+    ///         <c>Microsoft.Net.Compilers.Toolset</c> package replaces the SDK's compiler without a version
+    ///         check (SDK 10.0.401's targets have none), and Roslyn 4.8 and 4.11 both compile and emit a
+    ///         <c>net10.0</c> probe from its real <c>csc</c> line with no diagnostic, resolving
+    ///         <c>latest</c> to C# 12. Nothing an analyzer is given names the compiler — the generated
+    ///         <c>build_property.*</c> set does not — so such a build is reported. A written <c>14</c> has no
+    ///         such hole: every compiler before 5.0 refuses it.
+    ///     </para>
+    /// </remarks>
+    static bool ReferencesDotNet10(Compilation compilation) =>
+        compilation.ObjectType.ContainingAssembly.Identity is { Name: "System.Runtime", Version.Major: >= 10 };
+
+    /// <summary>
+    ///     The whole compiler proof for one compilation, asked of the project's other target frameworks.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The language floor is part of it: a sibling at C# 8 cannot compile <c>[..xs]</c> at all.
+    ///     <c>MultiTargetLanguageFloor</c> withholds that case centrally as well, but only from
+    ///     <c>skala check</c>'s merge; a host that publishes siblings and nothing else gets it here.
+    /// </remarks>
+    static bool ProvesTheLowering(Compilation compilation) =>
+        SkalaRule.MeetsLanguageVersion(compilation, Rule.LanguageVersion)
+        && (ReferencesDotNet10(compilation) || compilation.SyntaxTrees.All(IsWrittenLanguageVersion));
 
     /// <summary>
     ///     Whether the compiler lowers <c>[..receiver]</c> at this call's own type to this very method.
