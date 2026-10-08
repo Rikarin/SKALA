@@ -7069,6 +7069,11 @@ comment the author wrote on the item's line. ⚠ One neighbour stays open: `var 
 Inner(` / `"…"` / `)` / `);` puts the inner argument two levels in, the opener's line counting both
 parentheses, where Skala collapses them to one — present before this fix, and an indentation rule.
 Pinned by `constructs/breaks/comment-after-an-opener.cs`.
+⚠ **That neighbour, fixed at #521**: the outer argument list's scope is now unconditional when its first
+argument is planned past a leading comment (`PlanDelimited`), so it counts on the line the inner
+construct opens on — measured on a call as the lone and as the first argument, a two-argument inner
+call, an array initializer, and with no `=`. Pinned by
+`constructs/indentation/nested-list-after-a-comment-behind-an-opener.cs`.
 
 - ⚠ status: **resolved**.
 ## SK-DIV-0162 — a one-statement block stayed on its owner's line when its statement wrapped

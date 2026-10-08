@@ -1648,9 +1648,15 @@ public sealed partial class CSharpDocumentBuilder {
         // The sole-lambda case is the third: `place_single_method_argument_lambda_on_same_line`
         // keeps the lambda on the call's line, so that parenthesis never gets a line of its own and
         // would otherwise be collapsed into whatever the lambda's body opens.
+        // ⚠ And an argument list whose first argument stays behind a comment after its `(` (#521): the
+        // oracle writes `Compute( /* f */ Inner(` / `"…"` two levels in / `)` one / `);` — the outer
+        // list's level counts although the inner one opened on the same line. See
+        // BreakPlan.PlanPastLeadingComments.
         var unconditional = node is ParenthesizedExpressionSyntax
             || options.PlaceSingleMethodArgumentLambdaOnSameLine
-            && node is ArgumentListSyntax { Arguments: [{ Expression: LambdaExpressionSyntax }] };
+            && node is ArgumentListSyntax { Arguments: [{ Expression: LambdaExpressionSyntax }] }
+            || node is ArgumentListSyntax { Arguments.Count: > 0 } commented
+            && plan.PlansPastALeadingComment(commented.Arguments[0].SpanStart);
 
         // ⚠ A collection expression's elements are elements, like an initializer's: a chain broken
         // inside one takes its own continuation level rather than living off the bracket's.
