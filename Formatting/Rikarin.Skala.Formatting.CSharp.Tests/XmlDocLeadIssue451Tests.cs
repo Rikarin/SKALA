@@ -38,6 +38,6 @@ public sealed class XmlDocLeadIssue451Tests {
     static string[] Doc(params string[] lines) {
         var once = XmlDoc.Text(XmlDoc.InClass(lines));
         Assert.Equal(once, XmlDoc.Text(once));
-        return [.. XmlDoc.DocLines(once)];
+        return [..XmlDoc.DocLines(once)];
     }
 }

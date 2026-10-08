@@ -316,9 +316,10 @@ public sealed class AlignMultilineCommentTests {
     public void AtFalse_AFrozenCommentOnItsOwnColumn_ProducesNoEdit() {
         const string source = "class C {\n        /*\n         * Body.\n         */\n    int F;\n}\n";
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            [new KeyValuePair<string, string>("skala_align_multiline_comments", "false")]
-        ).Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [new KeyValuePair<string, string>("skala_align_multiline_comments", "false")]
+            )
+            .Options;
 
         Assert.False(CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Changed);
     }

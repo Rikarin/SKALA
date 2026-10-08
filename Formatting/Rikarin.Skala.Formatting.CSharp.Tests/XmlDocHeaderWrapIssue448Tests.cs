@@ -67,8 +67,16 @@ public sealed class XmlDocHeaderWrapIssue448Tests {
         );
 
         Assert.Equal(
-            ["/// <remarks>", "///     <see cref=\"System.String\" href=\"https://short.invalid/\" />", "/// </remarks>"],
-            Doc("/// <remarks>", "/// <see cref=\"System.String\" href=\"https://short.invalid/\"", "///  />", "/// </remarks>")
+            [
+                "/// <remarks>", "///     <see cref=\"System.String\" href=\"https://short.invalid/\" />",
+                "/// </remarks>"
+            ],
+            Doc(
+                "/// <remarks>",
+                "/// <see cref=\"System.String\" href=\"https://short.invalid/\"",
+                "///  />",
+                "/// </remarks>"
+            )
         );
     }
 
@@ -110,6 +118,6 @@ public sealed class XmlDocHeaderWrapIssue448Tests {
     static string[] Doc(params string[] lines) {
         var once = XmlDoc.Text(XmlDoc.InClass(lines));
         Assert.Equal(once, XmlDoc.Text(once));
-        return [.. XmlDoc.DocLines(once)];
+        return [..XmlDoc.DocLines(once)];
     }
 }
