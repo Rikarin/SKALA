@@ -6590,13 +6590,25 @@ against its parameter list, and this point exists only between a variable declar
 name. A method's return type, a property's, `object[] P…P => [` and a property initializer stay open, as
 does the `using` header row.
 
+**The modifiers' gap is resolved for fields (#540).** `public static readonly` / `    IReadOnlyDictionary<…>` /
+`    Overflowing;` is the oracle's answer when the type does not fit after the modifiers, the name below by
+its own gap and a type too long for its own line filled there. A group around the type owns the gap
+before it and asks the same second question as the name's. Measured on 65 fields, `Dictionary<string,
+List<S…>> N…N;` with the name 1 to 31 letters and the line 121 to 169 columns: the gap breaks exactly when
+the type ends past column 120, for every name of five letters or more. ⚠ Not for shorter names, and that
+is measured, not modelled: with a name of one letter the oracle fills the type on the modifiers' line from
+a 133-column line up, with two to four letters from somewhere between 133 and 141, and with five never up
+to 157 — Skala moves the type below for all of them. Nor for a `const` local, which the oracle fills on the
+`const` line from 121 to 123, nor for a property (`public static` / type / `Property { get; set; }` in the
+oracle), which has no type/name point here. Pinned by `ModifierTypeGapIssue540Tests`.
+
 Still divergent, measured: the exactly-121 quirk (`T…T v9 = [1, 2, 3];` at 121 breaks the type/name gap
 in the oracle; Skala breaks the `=`, as the oracle does from 122); a type with a block comment inside it,
 which the oracle breaks past the comment (#409) and Skala leaves to that rule by planning no gap; a
 lambda-valued declarator, left unplanned because the group's level would show under the arrow's held one
 (SK-DIV-0101) and not measured with a type long enough to need the gap; and `public static readonly` /
 type / name, where the oracle also breaks between the modifiers and a type too long for their line —
-Skala fills the type there.
+Skala fills the type there — resolved for fields by #540, above.
 
 - options: none — no key governs the type/name gap.
 - ⚠ status: **resolved** for fields and locals (#474), pinned by `TypeNameGapIssue474Tests`; **open** for
@@ -8925,11 +8937,16 @@ run is a group on the parameter whose points are the gaps between sections and w
 the last section's own gap (`GroupFacts.MeasuresThroughTail`); the last section's group breaks with it,
 and its next-line join is not asked then.
 
-Seen beside it and not fixed: a section holding two attributes that spans lines is written
-`[Obsolete, Description(` by the oracle, its first line kept, where Skala's fill breaks after
-`[Obsolete,`; and a type parameter's multi-line section nests its arguments two levels in with `)]` one
-level in (`class C<[Description(` / 8 / 4), where Skala puts them at 4 and 0. A run whose last section
-holds several attributes is left to the sections, as before, unmeasured.
+Seen beside it and fixed in round two: a section holding two or three attributes, one of whose
+arguments are certain to chop, is written `[Obsolete, Description(` by the oracle, its head kept on the
+section's line (#537) — the attribute is now a tuple-shaped fill item, which keeps its head when a break
+inside it is certain and moves whole when it is merely too wide (`[Obsolete,` / `Description("…110…")`,
+the oracle's too); and a type parameter's multi-line section nests its arguments two levels in with `)]`
+one level in (`class C<[Description(` / 8 / 4) on a class, a method and after a first parameter (#538) —
+the angle brackets' scope is now unconditional, as a grouping parenthesis's is, so the `(` opened on the
+same line no longer collapses into it. Pinned by `AttributeSectionHeadIssue537Tests` and
+`TypeParameterAttributeIssue538Tests`. A run whose last section holds several attributes is left to the
+sections, as before, unmeasured.
 
 - options: none.
 - ⚠ status: **resolved** (#475), pinned by `AttributeRunIssue475Tests`.
@@ -8976,4 +8993,29 @@ joined line overflows" would fix the short rows and break the A cells of the lon
 says where one becomes the other between 16 and 22 columns. Not wired.
 
 - options: `skala_wrap_arguments_style`; no key for the join.
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0353 — a type declaration's keyword and its name: the oracle breaks between them
+
+#539. Measured with `jb cleanupcode` 2025.2.6 on about seventy class headers: one, two and four type
+parameters, interfaces after the name, no type parameters at all, a name of 10 to 70 letters, at 121, 125
+and 135 columns:
+
+| shape | oracle | Skala |
+|---|---|---|
+| the head through its first break point past the margin (`public class N…N : IFoo,` at 123+) | `public class` / `    N…N : IFoo,` / `    IBar { }` | the base list's commas |
+| a header with no break point past the margin | `public class` / `    N…N { }` | the line left long |
+| **exactly 121 columns**, one, two or four type parameters, a name of 30 or more | `public class` / `    Name<…> { }` | the list's own break |
+| the same at 121 with a 10-letter name and two or four parameters | the list's comma | identical |
+| the same at 125 and 135 | the list's `<` or comma | identical |
+| `public class Generic…On<TFirst, TSecond> : BaseClass<TFirst> { }` at 128 | `public class` / name and a filled list | after the `:` |
+
+So two rules, neither wired. The first is the type/name gap's own — break when the line runs past the
+margin before its next point — and would fix the first two rows; but the name's line then carries the
+base list at the declaration's level (`    IBar { }`, not eight), which the group spending a continuation
+level of its own does not reproduce, and the `FromLine` and held levels this builder has both stack the
+base list's level on top. The second is the exactly-121 quirk SK-DIV-0127 records for a local's name,
+here moved by the name's length; the last row is neither. Not wired.
+
+- options: none.
 - ⚠ status: **open**, measured.

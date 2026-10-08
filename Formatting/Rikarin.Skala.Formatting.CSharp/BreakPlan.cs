@@ -2466,6 +2466,36 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ And the gap between the modifiers and the type, by the same question (#540): the oracle
+        // writes `public static readonly` / `    IReadOnlyDictionary<…>` / `    Overflowing;` when the
+        // type does not fit after the modifiers, the name below it by the gap that follows, and fills a
+        // type too long for its own line there — `    IReadOnlyDictionary<…,` / `        …>> Overflowing;`.
+        // Skala filled the type on the modifiers' line. A group around the type owning the gap before
+        // it; the type's argument lists yield to it as they yield to everything before them.
+        // ⚠ A field's, and not a `const` local's: measured on `const IReadOnlyDictionary<…> local = null;`
+        // from 121 to 123, the oracle fills the type on the `const` line. Nor, measured and not modelled,
+        // a field whose name is one letter, which the oracle fills from a 133-column line up where every
+        // longer name moves the type below (SK-DIV-0127).
+        if (node.Parent is FieldDeclarationSyntax { Modifiers.Count: > 0 }) {
+            var modifiers = NewGroup();
+            Point(node.Type.GetFirstToken(), modifiers);
+            Describe(
+                node.Type,
+                new(
+                    modifiers,
+                    GroupMode.Preserve,
+                    new(
+                        options.KeepsUserBreaksBetweenItems && BreaksBefore(node.Type.GetFirstToken()),
+                        BreaksIfTooLong: true,
+                        PrefersOuterBreak: true,
+                        SkipsOuterTail: true
+                    ),
+                    true,
+                    true
+                )
+            );
+        }
+
         // ⚠ Around the declarator and owning the gap before it, so that the group is entered once the
         // type has been written: a type too long for any line fills its own argument list first, and
         // the name then stays on the type's last line when it fits there —

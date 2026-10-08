@@ -1660,7 +1660,10 @@ public sealed partial class CSharpDocumentBuilder {
         // The sole-lambda case is the third: `place_single_method_argument_lambda_on_same_line`
         // keeps the lambda on the call's line, so that parenthesis never gets a line of its own and
         // would otherwise be collapsed into whatever the lambda's body opens.
-        var unconditional = node is ParenthesizedExpressionSyntax
+        // ⚠ A type parameter list's angle brackets are a level of their own too (#538): an attribute
+        // whose arguments chop on the `<`'s line, `class C<[Description(`, puts them two levels in and
+        // `)]` one, on a class, a method and after a first parameter — the `(` alone paid one level.
+        var unconditional = node is ParenthesizedExpressionSyntax or TypeParameterListSyntax
             || options.PlaceSingleMethodArgumentLambdaOnSameLine
             && node is ArgumentListSyntax { Arguments: [{ Expression: LambdaExpressionSyntax }] };
 
@@ -4411,13 +4414,21 @@ public sealed partial class CSharpDocumentBuilder {
     /// <remarks>
     ///     ⚠ Measured on the two that are not tuples: <c>o is (1, (2,\n 3))</c>, <c>o is (1\n, (2\n, 3))</c>,
     ///     <c>o is (1, Get(2,\n 3))</c>, <c>var (a, (b,\n c))</c> and <c>var (a\n, (b\n, c))</c> all keep the
-    ///     nested item's head on the outer item's line. An array rank, a function pointer's lists and an
-    ///     attribute list are filled the same way but were not measured on this shape and are left out.
+    ///     nested item's head on the outer item's line. An array rank and a function pointer's lists are
+    ///     filled the same way but were not measured on this shape and are left out.
+    ///     <para>
+    ///         ⚠ An attribute in a section of several is one (#537): `[Obsolete, Description("…",` / `"…")]`
+    ///         comes back from the oracle as `[Obsolete, Description(` with the arguments chopped below,
+    ///         after two attributes or three, on a parameter and on a method, where Skala broke after
+    ///         `[Obsolete,`. An attribute that is merely too wide still moves to a line of its own —
+    ///         `[Obsolete,` / `Description("…110 columns…")` is the oracle's too.
+    ///     </para>
     /// </remarks>
     static bool IsATupleShapedItem(SyntaxNode node) =>
         node is ArgumentSyntax { Parent: TupleExpressionSyntax }
             or SubpatternSyntax { Parent: PositionalPatternClauseSyntax }
-            or VariableDesignationSyntax { Parent: ParenthesizedVariableDesignationSyntax };
+            or VariableDesignationSyntax { Parent: ParenthesizedVariableDesignationSyntax }
+            or AttributeSyntax { Parent: AttributeListSyntax { Attributes.Count: > 1 } };
 
     /// <summary>
     ///     Whether the token is the first of a type argument — the other fill whose head stays on the
