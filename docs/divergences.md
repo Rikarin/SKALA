@@ -11072,3 +11072,28 @@ writer's trailing measure stops short of.
 - options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
 - ⚠ status: **fixed** within the residue above, pinned by
   `constructs/wrapping/lambda-arrow-over-an-operand-chain.cs`.
+
+## SK-DIV-0378 — measured widths read off the source broke whitespace absorption
+
+⚠ **Nightly fuzzer, seed 37583856628.** Replay 6225963390046177533 of
+`constructs/breaks/lambda-parameters-one-column-over.cs` broke whitespace absorption
+(`format(mutate(x)) ≡ format(x)`). It widened `Func<T…> name = (P… p0) => v;` to `Func <T… > name = ( P… p0)    =>   v;`,
+and Skala then broke before the name where it chops the parameters for the clean line.
+
+The cause was a class of bug, not the one table. #572's `ChopsOneOver` row and #583's type/name break
+both read the declaration's type off its source span, which counts the author's spacing. So did every
+other width behind a measured rule:
+- #558's name gates and its arrow-yield width;
+- #557's and #571's lambda head;
+- #578's parameter text, first operand and tail;
+- round 3's binary-pattern head and width;
+- #528's held-call head.
+
+All of them now read `BreakPlan.FormattedWidth`: the tokens' text plus the space `SpaceRules.Decide`
+writes between each pair, and one space for a gap the rules leave to the author.
+
+⚠ The minimised case the fuzzer printed, which only changes the indentation, formats identically on master
+too. Absorption was broken by the gaps inside the type and the parameter list. The regression test keeps
+both, and the fuzzer's exact line fails without the fix.
+
+- ⚠ status: **fixed**, pinned by `MeasuredWidthsAbsorbWhitespaceTests`.

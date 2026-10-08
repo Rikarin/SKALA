@@ -2821,7 +2821,7 @@ public sealed class BreakPlan {
         var oneOver = node is { Parent: LocalDeclarationStatementSyntax, Variables.Count: 1 }
             && value is IdentifierNameSyntax or AnonymousFunctionExpressionSyntax
             && (value is not AnonymousFunctionExpressionSyntax || ArrowYieldWidthOf(value) > 0)
-            && BreaksItsNameOneOver(node.Type.Span.Length, name.Span.Length)
+            && BreaksItsNameOneOver(FormattedWidth(node.Type), name.Span.Length)
                 ? FlatSourceWidth(value!) + 1
                 : 0;
 
@@ -3252,7 +3252,7 @@ public sealed class BreakPlan {
         // head — dot to `(` — places the column the held `(` would land on; see Fitter.HeldCallLimit and
         // SK-DIV-0331.
         var kind = call.ArgumentList.Arguments.Count <= 1 ? 1 : 2;
-        var callHead = call.ArgumentList.OpenParenToken.Span.End - dot.SpanStart;
+        var callHead = FormattedWidth(dot, call.ArgumentList.OpenParenToken);
 
         // ⚠ Under `wrap_if_long` the rest of the chain after the held call weighs in too (#552); see
         // GroupFacts.HeldCallRest.
@@ -3333,7 +3333,7 @@ public sealed class BreakPlan {
             new(
                 BreaksIfTooLong: true,
                 HeldCall: call.ArgumentList.Arguments.Count > 1 ? 4 : 3,
-                HeldCallHead: call.ArgumentList.OpenParenToken.Span.End - dot.SpanStart
+                HeldCallHead: FormattedWidth(dot, call.ArgumentList.OpenParenToken)
             ),
             // ⚠ A level of its own, as a chain's: `var y =` / `R` / `.Call(…)` puts the dot one level past
             // the receiver, and LayoutWriter's one-level-per-line collapse keeps `var y = R` / `.Call(…)` at one.
@@ -5436,7 +5436,7 @@ public sealed class BreakPlan {
                     OneOverType: value is ParenthesizedLambdaExpressionSyntax oneOver ? OneOverOf(oneOver).Type : 0,
                     PatternHead: PatternHeadOf(node, equals, value),
                     PatternWidth: PatternHeadOf(node, equals, value) > 0
-                        ? ((IsPatternExpressionSyntax)value).Pattern.Span.Length
+                        ? FormattedWidth(((IsPatternExpressionSyntax)value).Pattern)
                         : 0,
                     CalleeOwner: owner,
                     FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
@@ -5700,6 +5700,41 @@ public sealed class BreakPlan {
     ///     a <c>)</c> or a <c>]</c> read as nothing — so the chain the first pass chopped measures on the
     ///     second pass what it measured flat. See <see cref="GroupFacts.ValueHeadWidth" /> (#553).
     /// </summary>
+    int FormattedWidth(SyntaxNode node) => FormattedWidth(node.GetFirstToken(), node.GetLastToken());
+
+    /// <summary>
+    ///     The width from <paramref name="first" /> through <paramref name="last" /> as the formatter writes it
+    ///     on one line: each token's text, and between two tokens the space <see cref="SpaceRules.Decide" />
+    ///     puts there — none where it forbids one, however many the source has.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Every measured table keyed on a width reads it here, never off the source's span: a span counts
+    ///     the author's spacing, so `Func <T >` and `( P p0)` moved a table to another row and the formatter's
+    ///     output with them — the fuzzer's whitespace-absorption property, broken by #572's one-column table
+    ///     (seed 37583856628, replay 6225963390046177533). A gap the rules leave to the author
+    ///     (<see cref="SpaceKind.Preserve" />) counts the one space the formatter writes back for it.
+    /// </remarks>
+    int FormattedWidth(SyntaxToken first, SyntaxToken last) {
+        var width = 0;
+        for (var token = first; !token.IsKind(SyntaxKind.None); token = token.GetNextToken()) {
+            if (token != first) {
+                var previous = token.GetPreviousToken();
+                width += SpaceRules.Decide(previous, token, options) switch {
+                    SpaceKind.Required => 1,
+                    SpaceKind.Forbidden => 0,
+                    _ => previous.HasTrailingTrivia || token.HasLeadingTrivia ? 1 : 0
+                };
+            }
+
+            width += token.Span.Length;
+            if (token == last) {
+                break;
+            }
+        }
+
+        return width;
+    }
+
     static int FlatSourceWidth(SyntaxNode node) {
         var width = 0;
         var first = true;
@@ -5829,7 +5864,7 @@ public sealed class BreakPlan {
     ///     through the <c>=</c>, which turns on <see cref="EqualsFloor.BreaksBeforeAPattern" /> (#446,
     ///     SK-DIV-0211); zero otherwise.
     /// </summary>
-    static int PatternHeadOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {
+    int PatternHeadOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {
         if (value is not IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } test
             || EqualsOwnerOf(node) is not (EqualsOwner.VarLocal or EqualsOwner.TypedLocal)
             || test.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
@@ -5837,7 +5872,7 @@ public sealed class BreakPlan {
             return 0;
         }
 
-        return equals.Span.End - head.SpanStart;
+        return FormattedWidth(head, equals);
     }
 
     /// <summary>
@@ -5874,7 +5909,7 @@ public sealed class BreakPlan {
     ///     A local's <c>=</c> before a lambda with a bare-name body: the gates its declarator's name and
     ///     type widths open (#558). See <see cref="LambdaLocal" />.
     /// </summary>
-    static LambdaLocal LambdaLocalOf(SyntaxNode node) {
+    LambdaLocal LambdaLocalOf(SyntaxNode node) {
         if (node is not EqualsValueClauseSyntax {
                 Parent: VariableDeclaratorSyntax {
                     Parent: VariableDeclarationSyntax {
@@ -5885,7 +5920,7 @@ public sealed class BreakPlan {
             return LambdaLocal.None;
         }
 
-        var type = declaration.Type.Span.Length;
+        var type = FormattedWidth(declaration.Type);
         var name = declarator.Identifier.Span.Length;
         var local = LambdaLocal.Measured;
         if (name <= 10 + (type + 4) / 12) {
@@ -5903,18 +5938,18 @@ public sealed class BreakPlan {
     ///     For a parenthesised lambda with a bare-name body that is a measured local's value: the declaration
     ///     type's width and the body's, for the one-column-over rule (#572); zeros otherwise.
     /// </summary>
-    static (int Type, int Body) OneOverOf(ParenthesizedLambdaExpressionSyntax lambda) =>
+    (int Type, int Body) OneOverOf(ParenthesizedLambdaExpressionSyntax lambda) =>
         lambda is { ExpressionBody: IdentifierNameSyntax body, Parent: EqualsValueClauseSyntax equals }
         && ArrowYieldWidthOf(lambda) > 0
         && LambdaLocalOf(equals) != LambdaLocal.None
         && equals.Parent?.Parent is VariableDeclarationSyntax declaration
-            ? (declaration.Type.Span.Length, body.Span.Length)
+            ? (FormattedWidth(declaration.Type), body.Span.Length)
             : (0, 0);
 
-    static int ArrowYieldWidthOf(ExpressionSyntax value) =>
+    int ArrowYieldWidthOf(ExpressionSyntax value) =>
         value is LambdaExpressionSyntax { ExpressionBody: IdentifierNameSyntax } lambda
         && !lambda.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
-            ? lambda.ArrowToken.Span.End - lambda.SpanStart
+            ? FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken)
             : 0;
 
     static int CalleeWidthOf(ExpressionSyntax value) =>
@@ -6682,24 +6717,28 @@ public sealed class BreakPlan {
                         BreaksIfTooLong: true,
                         LambdaParameters: lambda switch {
                             SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
-                            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Span
-                                .Length,
+                            ParenthesizedLambdaExpressionSyntax parenthesized => FormattedWidth(
+                                parenthesized.ParameterList
+                            ),
                             _ => 1
                         },
-                        LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
+                        LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
                         LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
                     )
                     : OperandSoleLambdaTail(lambda, body) is > 0 and var operandTail
                         ? new GroupFacts(
                             BreaksIfTooLong: true,
-                            LambdaOperandParameters: lambda.ArrowToken.SpanStart - 1 - lambda.SpanStart,
+                            LambdaOperandParameters: FormattedWidth(
+                                lambda.GetFirstToken(),
+                                lambda.ArrowToken.GetPreviousToken()
+                            ),
                             LambdaOperandTail: operandTail,
                             LambdaOperandFirst: FirstOperandWidth(body)
                         )
                         : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
                             ? new GroupFacts(
                                 BreaksIfTooLong: true,
-                                LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
+                                LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
                                 LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
                                 LambdaChainHead: chainHead
                             )
@@ -6768,7 +6807,7 @@ public sealed class BreakPlan {
             break;
         }
 
-        return dot.IsKind(SyntaxKind.None) ? 0 : dot.SpanStart - lambda.SpanStart;
+        return dot.IsKind(SyntaxKind.None) ? 0 : FormattedWidth(lambda.GetFirstToken(), dot.GetPreviousToken());
     }
 
     /// <summary>
@@ -6785,7 +6824,7 @@ public sealed class BreakPlan {
     ///     The width of an operand chain's first operand — the leftmost — or of <c>x is A</c> before a binary
     ///     pattern's first combinator (#578).
     /// </summary>
-    static int FirstOperandWidth(ExpressionSyntax body) {
+    int FirstOperandWidth(ExpressionSyntax body) {
         switch (body) {
             case IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax pattern } test:
                 PatternSyntax left = pattern;
@@ -6793,14 +6832,14 @@ public sealed class BreakPlan {
                     left = binary.Left;
                 }
 
-                return left.Span.End - test.SpanStart;
+                return FormattedWidth(test.GetFirstToken(), left.GetLastToken());
             default:
                 var node = body;
                 while (node is BinaryExpressionSyntax binary && !IsTypeTest(binary)) {
                     node = binary.Left;
                 }
 
-                return node.Span.Length;
+                return FormattedWidth(node);
         }
     }
 
@@ -6822,7 +6861,9 @@ public sealed class BreakPlan {
 
         var start = body.SpanStart;
         var length = statement.Span.End - start;
-        return source.AsSpan(start, length).IndexOfAny('\r', '\n') < 0 ? statement.Span.End - body.Span.End : 0;
+        return source.AsSpan(start, length).IndexOfAny('\r', '\n') < 0
+            ? FormattedWidth(body.GetLastToken(), statement.GetLastToken()) - body.GetLastToken().Span.Length
+            : 0;
     }
 
     bool IsAFilledSoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
