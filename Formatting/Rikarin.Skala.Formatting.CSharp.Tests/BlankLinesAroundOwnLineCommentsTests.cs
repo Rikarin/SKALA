@@ -4,7 +4,7 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issues #497, #498, #499 and #500: blank lines around an own-line comment, at the keys the committed
+///     Issues #494, #497, #498, #499 and #500: blank lines around an own-line comment, at the keys the committed
 ///     fixtures under <c>constructs/blank-lines/</c> cannot flip. Every expected string is
 ///     <c>jb cleanupcode</c> 2025.2.6's own output for the input under the repository's export with the
 ///     overrides named, and each test asserts the second pass too.
@@ -320,6 +320,148 @@ public sealed class BlankLinesAroundOwnLineCommentsTests {
             }
             """,
             ("skala_keep_blank_lines_in_declarations", "0")
+        );
+
+    /// <summary>
+    ///     #494: a comment glued under a member with a blank under it hangs from that member, which is
+    ///     multi-line for the gap under the comment — so at <c>keep_blank_lines_in_declarations = 0</c> the
+    ///     blank stays, <c>blank_lines_around_field</c>'s. ⚠ Skala used to take it out on pass one, glue the
+    ///     comment to <c>_b</c> and then write two blank lines the oracle does not, and a different two on pass
+    ///     two.
+    /// </summary>
+    [Fact]
+    public void ACommentWithABlankUnderIt_HangsFromTheMemberAbove() =>
+        Agrees(
+            """
+            class C {
+                int _x;
+                int _a;
+                // c
+
+                int _b;
+                int _d;
+            }
+            """,
+            """
+            class C {
+                int _x;
+                int _a;
+                // c
+
+                int _b;
+                int _d;
+            }
+            """,
+            ("skala_keep_blank_lines_in_declarations", "0")
+        );
+
+    /// <summary>#494: the member below's requirement is paid under such a comment, and nothing above it.</summary>
+    [Fact]
+    public void ACommentWithABlankUnderIt_TakesTheRequirementUnderIt() =>
+        Agrees(
+            """
+            class C {
+                int _a;
+                // own
+
+                int _b;
+                int _c;
+            }
+            """,
+            """
+            class C {
+                int _a;
+                // own
+
+
+                int _b;
+
+
+                int _c;
+            }
+            """,
+            ("skala_blank_lines_around_field", "0"),
+            ("skala_blank_lines_around_single_line_field", "2")
+        );
+
+    /// <summary>#494: a two-line run is one comment, and the requirement goes under its last line.</summary>
+    [Fact]
+    public void ATwoLineRunWithABlankUnderIt_TakesTheRequirementUnderItsLastLine() =>
+        Agrees(
+            """
+            class C {
+                int _a;
+                // one
+                // two
+
+                void M() {
+                    A();
+                }
+            }
+            """,
+            """
+            class C {
+                int _a;
+                // one
+                // two
+
+
+                void M() {
+                    A();
+                }
+            }
+            """,
+            ("skala_keep_blank_lines_in_declarations", "1"),
+            ("skala_blank_lines_around_invocable", "2")
+        );
+
+    /// <summary>
+    ///     #494: of two runs a blank line apart, the first hangs from the member above and the second is the
+    ///     member below's, so the requirement goes between them.
+    /// </summary>
+    [Fact]
+    public void TwoRunsABlankApart_TakeTheRequirementBetweenThem() =>
+        Agrees(
+            """
+            class C {
+                int _a;
+                // one
+
+                // two
+                void M() {
+                    A();
+                }
+            }
+            """,
+            """
+            class C {
+                int _a;
+                // one
+
+
+                // two
+                void M() {
+                    A();
+                }
+            }
+            """,
+            ("skala_keep_blank_lines_in_declarations", "1"),
+            ("skala_blank_lines_around_invocable", "2")
+        );
+
+    /// <summary>
+    ///     #494 with #441: a member's requirement is not paid above a comment that the body's <c>}</c> follows,
+    ///     glued or not.
+    /// </summary>
+    [Theory]
+    [InlineData("    int _a;\n    int _b;\n    // last\n}", "    int _a;\n\n\n    int _b;\n    // last\n}")]
+    [InlineData("    int _a;\n    // own\n\n}", "    int _a;\n    // own\n}")]
+    public void AboveACommentBeforeTheClosingBrace_NothingIsPaid(string body, string expected) =>
+        Agrees(
+            "class C {\n" + body + "\n",
+            "class C {\n" + expected + "\n",
+            ("skala_blank_lines_around_field", "0"),
+            ("skala_blank_lines_around_single_line_field", "2")
         );
 
     /// <summary>
