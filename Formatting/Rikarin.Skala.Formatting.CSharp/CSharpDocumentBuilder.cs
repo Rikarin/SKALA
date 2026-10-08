@@ -2426,7 +2426,11 @@ public sealed partial class CSharpDocumentBuilder {
 
         if (mode != VerbatimFlags.None
             && node is InterpolatedStringExpressionSyntax
-            && SyntaxFactory.ParseExpression(text, 0, CSharpFormatter.ParseOptions) is InterpolatedStringExpressionSyntax respaced
+            && SyntaxFactory.ParseExpression(
+                text,
+                0,
+                CSharpFormatter.ParseOptions
+            ) is InterpolatedStringExpressionSyntax respaced
             && respaced.FullSpan.Length == text.Length
             && RawLiteralPlan.For(respaced, text) is { } plan) {
             doc.Verbatim(text, source, mode, plan);
