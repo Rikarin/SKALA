@@ -3744,7 +3744,15 @@ public sealed class BreakPlan {
         if (options.WrapBeforeTernaryOpsigns) {
             var atQuestion = BreaksBefore(node.QuestionToken);
             var atColon = BreaksBefore(node.ColonToken);
-            if (pins && (atQuestion || atColon)) {
+            if (pins && (atQuestion || atColon) && !IsTernaryChainMember(node)) {
+                // ⚠ A single conditional is chopped at both signs once the author broke at either
+                // (#518). Measured 2026-10-08: `b ? a` / `: c` in a declarator, a `return`, an
+                // argument and a parenthesised operand, `b` / `? a : c`, and `a` / `/* c */` / `? 1 : 2`
+                // all come back `b` / `? a` / `: c`. The per-sign pin below is a chain member's, whose
+                // `cond ? "win"` / `: cond ? "osx"` / `: "linux"` the oracle keeps as written.
+                Mandatory(node.QuestionToken);
+                Mandatory(node.ColonToken);
+            } else if (pins && (atQuestion || atColon)) {
                 Pin(node.QuestionToken, atQuestion);
                 Pin(node.ColonToken, atColon);
             } else if (IsTernaryChainMember(node) && !steps) {
