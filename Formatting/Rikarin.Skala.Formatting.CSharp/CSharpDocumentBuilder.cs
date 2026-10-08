@@ -1873,7 +1873,10 @@ public sealed partial class CSharpDocumentBuilder {
 
                 pending = 0;
 
-                if (levels == 0 && token.SpanStart == open.SpanStart && IsNestedPositionalList(node) && !AlignsFromOwnColumn(node)) {
+                if (levels == 0
+                    && token.SpanStart == open.SpanStart
+                    && IsNestedPositionalList(node)
+                    && !AlignsFromOwnColumn(node)) {
                     HoldContinuationLevel();
                     holding = true;
                 }
@@ -1948,7 +1951,9 @@ public sealed partial class CSharpDocumentBuilder {
             switch (ancestor) {
                 // ⚠ A property pattern's braces are a level the list nests inside too: `{ X: (2` / `, 3) }`
                 // puts `, 3` on `X`'s column (#532).
-                case PositionalPatternClauseSyntax or ParenthesizedVariableDesignationSyntax or PropertyPatternClauseSyntax:
+                case PositionalPatternClauseSyntax
+                    or ParenthesizedVariableDesignationSyntax
+                    or PropertyPatternClauseSyntax:
                     return true;
                 case PatternSyntax or SubpatternSyntax or VariableDesignationSyntax:
                     continue;
@@ -2952,7 +2957,8 @@ public sealed partial class CSharpDocumentBuilder {
         // one row of #533 — an author's own-line `/** */` — keeps no blank line, and differs.
         if (pieces[index].StartsLine) {
             return lambda ? LoneComment.None
-                : pieces[index].Kind == PieceKind.BlockComment && LineStart(pieces[index].Span.Start) == pieces[index].Span.Start
+                : pieces[index].Kind == PieceKind.BlockComment
+                    && LineStart(pieces[index].Span.Start) == pieces[index].Span.Start
                     ? LoneComment.ColumnZero
                     : pieces[index].Kind == PieceKind.BlockDocComment
                         ? LoneComment.OwnLine
@@ -3261,7 +3267,9 @@ public sealed partial class CSharpDocumentBuilder {
         // own, and so does the `)` after it (#509). See LoneCommentAt.
         if (!options.DisableLineBreakChanges
             && (nextPieceIndex >= 0
-                && LoneCommentAt(nextPieceIndex) is LoneComment.OwnLine or LoneComment.ColumnZero or LoneComment.BlankLineBefore
+                && LoneCommentAt(nextPieceIndex) is LoneComment.OwnLine
+                or LoneComment.ColumnZero
+                or LoneComment.BlankLineBefore
                 || LoneCommentAt(lastPiece) != LoneComment.None)) {
             var blankBefore = nextPieceIndex >= 0 && LoneCommentAt(nextPieceIndex) == LoneComment.BlankLineBefore;
             Break(nextPieceIndex, nextToken, blankBefore ? 1 : 0, DefaultNewLine());

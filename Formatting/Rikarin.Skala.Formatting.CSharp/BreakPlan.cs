@@ -2900,7 +2900,10 @@ public sealed class BreakPlan {
         };
 
         if (!name.IsKind(SyntaxKind.None)
-            && !name.LeadingTrivia.Concat(name.GetPreviousToken().TrailingTrivia).Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))) {
+            && !name.LeadingTrivia.Concat(name.GetPreviousToken().TrailingTrivia)
+                .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                )) {
             Flat(name);
         }
     }
@@ -3483,7 +3486,8 @@ public sealed class BreakPlan {
                 // oracle keeps the value on the name's line, so the group asks the arrow's question.
                 // ⚠ And so does a kept break anywhere inside the value (#532): `{ X: (2` / `, 3) }` keeps
                 // `X: (2` on one line in the oracle, where the hard line made this group break after `X:`.
-                BreaksOnlyIfHeadOverflows: HoldsAKeptColonBreak(subpattern.Pattern) || HoldsAKeptBreak(subpattern.Pattern)
+                BreaksOnlyIfHeadOverflows: HoldsAKeptColonBreak(subpattern.Pattern)
+                || HoldsAKeptBreak(subpattern.Pattern)
             )
         );
     }
