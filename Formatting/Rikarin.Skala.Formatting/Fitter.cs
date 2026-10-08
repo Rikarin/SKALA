@@ -296,6 +296,14 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ An `=` before a lambda with a bare name for a body yields to the arrow while the line
+                // through `=>` fits. See GroupFacts.YieldsThroughArrow (#453).
+                if (facts.YieldsThroughArrow > 0
+                    && m.PointWidth < Unbounded
+                    && Fits(m.Column, m.PointWidth + 1 + facts.YieldsThroughArrow)) {
+                    return ResolvedMode.Flat;
+                }
+
                 // ⚠ An `=` before `operand is A or B`: a measured table (#446, SK-DIV-0211).
                 if (facts.PatternHead > 0
                     && facts.BreaksIfTooLong

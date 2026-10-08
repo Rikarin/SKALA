@@ -1029,6 +1029,10 @@ public sealed class Document {
 ///     fits — measured, for the gap after an <c>is</c> before a binary pattern whose first operand is short
 ///     (#446). Zero for any other group.
 /// </param>
+/// <param name="YieldsThroughArrow">
+///     ⚠ An <c>=</c> before a lambda with a bare name for a body: the width from the lambda's start through
+///     its <c>=&gt;</c>. The <c>=</c> stays flat while that much fits after it on its line (#453).
+/// </param>
 /// <param name="PatternWidth">The binary pattern's width. See <see cref="PatternHead" />.</param>
 /// <param name="KeywordWidth">
 ///     ⚠ The width of the keyword after this group's one point, for the point before an <c>is</c> or an
@@ -1088,4 +1092,5 @@ public readonly record struct GroupFacts(
     bool LiftsThroughInnerBreaks = false,
     int PatternHead = 0,
     int PatternWidth = 0,
-    int HeadSlack = 0);
+    int HeadSlack = 0,
+    int YieldsThroughArrow = 0);

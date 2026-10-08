@@ -4450,6 +4450,7 @@ public sealed class BreakPlan {
                     Owner: head,
                     MinimumHead: yieldsToTheBracket || callee > 0 ? MinimumEqualsHead : 0,
                     CalleeWidth: callee,
+                    YieldsThroughArrow: ArrowYieldWidthOf(value),
                     PatternHead: PatternHeadOf(node, equals, value),
                     PatternWidth: PatternHeadOf(node, equals, value) > 0 ? ((IsPatternExpressionSyntax)value).Pattern.Span.Length : 0,
                     CalleeOwner: owner,
@@ -4624,6 +4625,22 @@ public sealed class BreakPlan {
 
         return equals.Span.End - head.SpanStart;
     }
+
+    /// <summary>
+    ///     For an <c>=</c> whose value is a lambda with a bare name for a body, the width from the lambda's
+    ///     start through its <c>=&gt;</c>: the <c>=</c> yields to the arrow while that much fits beside it
+    ///     (#453); zero otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on <c>Func&lt;…&gt; f = (A a1, B b1) =&gt; Name;</c> and <c>… = () =&gt; Name;</c> over heads of
+    ///     12 to 70 and parameter lists of 2 to 70: wherever the line through <c>=&gt;</c> fits, the arrow
+    ///     breaks and the <c>=</c> never does, which Skala had the other way round from a head of 30.
+    /// </remarks>
+    static int ArrowYieldWidthOf(ExpressionSyntax value) =>
+        value is LambdaExpressionSyntax { ExpressionBody: IdentifierNameSyntax } lambda
+            && !lambda.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+            ? lambda.ArrowToken.Span.End - lambda.SpanStart
+            : 0;
 
     static int CalleeWidthOf(ExpressionSyntax value) =>
         value is InvocationExpressionSyntax {

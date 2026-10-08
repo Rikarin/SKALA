@@ -2196,7 +2196,38 @@ It was therefore not wired: a model that misses measured cells is below this ent
 is saved as `J-453-lambda-floor-attempt.patch` in the session scratchpad. What it needs is a one-column
 grid in `hw` around the drop and across the dip.
 
-- ⚠ status: the operand-chain half and the parameter list **fixed** (#453), pinned by
+⚠ **Round 3 of #453.**
+
+**A bare name for a body: fixed.** `Func<…> f = (A a1, B b1) => Name;` and `… = () => Name;`, with heads
+of 12–70 and parameter lists of 2–70, break after the arrow and never after the `=` while the line
+through `=>` fits; Skala broke the `=` from a head of 30. Wired as `GroupFacts.YieldsThroughArrow`
+(`BreakPlan.ArrowYieldWidthOf`) and pinned by `constructs/wrapping/lambda-arrow-over-a-name.cs`. ⚠ When
+`… (params) =>` itself overflows, the oracle chooses between the `=` and chopping the parameters by a
+width this round did not sweep (3 cells each way: a head plus parameters of 110 breaks the `=`, of 120
+chops). Those cells still follow Skala's ordering rule.
+
+**The call body: the one-column grid was run, and it is still blocked.**
+
+The new grid is `Action a… = () => Cccc(x, y);` with the body's `(` at 60–112 (four apart), the head 10–74
+one column at a time, and the argument list 6–79 one column at a time: 36 208 cells, every row
+monotone `E* A* B* C*`. The structure is now exact:
+
+- The `=` breaks while the overflow is at most `g(hw)`, which rises a column per one and a half of head
+  from 1 at a head of 24 to 34 at 74, and is independent of the `(`.
+- The arrow breaks while the arguments are narrower than a floor `F` that rises with the head (0.43 a
+  column) until it would pass `max(65, p − 20)`. Past that it drops to the `=`'s floor (51–62).
+- The drop and the dip recorded in round 2 are this cap, not noise.
+
+**What blocks it** is a dimension no grid has crossed. Every one of those cells grows the head through
+the *declarator name* (`Action aaa…`). The round-3 control grid grows it through the *type*
+(`Func<TTT…> f`), and there the oracle never breaks the `=`. Its arrow-versus-chop answer also
+disagrees with `F` at the same `(` column and head width — `hw = 20`, a 60-column argument list, end 125
+chops where `F` says arrow — and is not monotone in the line end (125 chops, 130 breaks the arrow, 140
+chops). So `F` and `g` are functions of at least the name width and the type width separately, and a
+table keyed on the head width alone would contradict measured cells. The next step is a type-width ×
+name-width sweep at a fixed `(` column.
+
+- ⚠ status: the operand-chain half, the parameter list and a bare-name body **fixed** (#453), pinned by
   `constructs/wrapping/lambda-arrow-over-a-chain.cs` and
   `constructs/wrapping/lambda-parameters-before-the-arrow.cs`; the call body **blocked**, measured as
   above. The rule that would arm them is known to one constant and a three-column wander,
@@ -8837,8 +8868,26 @@ of its own, not this rule.
 No reading of the hand-over column (receiver plus line, the second line's width, the head's) fits all
 of it, so the type-test rows keep the #444 band and nothing else. The grid is the starting point.
 
-- ⚠ status: **resolved** for the band and for a plain member access without a type test; **open** for
-  `is`/`as` past the band, measured as above. Pinned by `TypeTestKeywordIssue444Tests` and
+⚠ **Round 3: still blocked, with the reason stated.** Group F's #482 fill (`PlanPropertyFill`) now
+places the last-dot break for a plain member access. Under `is`/`as` the measured grid
+(`return r.P… as string;`, `… is T;`, receivers of 1–50, line ends 118–140) shows four interleaved
+outcomes per row:
+
+- the dot one level in;
+- the type after the keyword moved (`… as` / `string;`);
+- the keyword moved (`…` / `as string;`);
+- the dot **two** levels in, with the keyword band applied again below it — `return r` / `.P… as` at 16 /
+  `string;` at 12.
+
+Wiring that needs two things the formatter does not have. First, a dot point inside a type-test operand
+whose level depends on whether the keyword break is also taken, which nests the operand's continuation
+under the keyword's. Second, the hand-over column between the dot and the keyword band. That column
+depends on the receiver, the line end, the type's width and the keyword (`is` hands over from a
+receiver of 6, `as string` from 14). Only one type width per keyword was measured, so a table over it
+would be keyed on a dimension the grid has not varied.
+
+- ⚠ status: **resolved** for the band and for a plain member access without a type test; **open, blocked**
+  for `is`/`as` past the band, measured as above. Pinned by `TypeTestKeywordIssue444Tests` and
   `constructs/breaks/member-access-last-dot.cs`.
 
 ## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
