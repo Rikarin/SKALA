@@ -10578,3 +10578,95 @@ parameter wider than the line, where the oracle breaks between its type and its 
 - options: `skala_wrap_before_eq = false`, the exported value.
 - ⚠ status: **fixed within the residue above**. Pinned by `constructs/breaks/equals-before-a-lambda-floor.cs`
   and, for the narrow name, `constructs/wrapping/lambda-arrow-over-a-name.cs`.
+
+## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
+
+⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as
+`o is` / `var (a,` / `b)`. A `git bisect` between the fixture's own commit (cb6013fc, where it passes) and
+e75f5431 names 7f40d7df, #440's "`is`/`as` wrapped on the wrong side". That commit made the gap after `is`
+a last-resort point of `PlanTypeTest` for every pattern `IsUnbreakablePattern` accepts. A `var` pattern
+with a parenthesised designation was accepted as a single type. The break the author kept inside its list
+then made the group too long, and the point after `is` was taken. The fixture has failed since then, at
+every merge of this session included. `PlanBrokenTypeTest` (group L) never sees it, because nothing is
+broken around the `is`.
+
+`IsUnbreakablePattern` now counts a `ParenthesizedVariableDesignationSyntax` as breakable, so the type
+test plans no point and the designation's list keeps the author's break.
+
+- options: `skala_keep_user_linebreaks` (the exported `true`).
+- ⚠ status: **fixed**, pinned by `constructs/breaks/variable-designation.cs` (passing again).
+
+## SK-DIV-0374 — a local's lambda with a bare-name body, one column past the margin
+
+⚠ **#572, the cells SK-DIV-0372 left out.** On a line that ends at exactly 121, the oracle chops the
+parameter list (`name = (` / parameters / `) => body;`) where #558's rules give the arrow or the `=`.
+
+Measured with `Testing ask` on `Func<T…> name = (P… p0) => body;`, 10 320 cells:
+- type widths 8 to 46 (two apart);
+- bodies of 1 to 14;
+- heads of 16 to 79, one column at a time;
+- line ends 121, 122 and 123.
+
+What the grid shows:
+
+- **Only at 121.** No cell at 122 or 123 chops.
+- **Bodies of 1 to 7** chop the parameters from the narrowest head up to a limit. The limit falls two to
+  three columns per column of body and rises about one and a quarter per column of type, until it stops
+  at a type of 32: `69, 66, 63, 60, 58, 55, 52` for bodies of 1 to 7.
+- **A body of 8** chops only at a head of 49, under types of 26 to 36. That is the one cell where the
+  arrow hands over to the `=`.
+- **A body of 9 or more** never chops.
+
+Wired as the table `EqualsFloor.ChopsOneOver`. The `=` reads it to stay flat, and the parameter list
+(`GroupFacts.OneOverType` / `OneOverBody`) reads it to chop, even though the line through `=>` fits.
+Every one of the 2 940 cells at types 10 and 26 reproduces.
+
+⚠ Past the chop run, from a type of 32, the oracle breaks between the declaration's type and its name
+(`Func<T…>` / `name = (…) => body;`) where #558 breaks the `=`. That happens in 1 524 cells of the type
+sweep at 121, and in 171 of about 7 400 cells of #558's own grids. It is the declaration's type/name
+gap, not this rule's, and it is not wired. Odd type widths read the row below and were not measured.
+
+- options: `skala_wrap_before_eq = false`, the exported value.
+- ⚠ status: **fixed** within the type/name residue above, pinned by
+  `constructs/breaks/lambda-parameters-one-column-over.cs`.
+
+## SK-DIV-0375 — a sole lambda argument's arrow over a chain of calls
+
+⚠ **#571.** Group F's #529 rule broke a lambda's arrow whenever the chain in its body fitted on the line
+below. Measured with `Testing ask` on `U(x => source.A….Select(y => y).Where(z => z.Bb));` and the same
+with `(x) =>`: lambdas starting at columns 11 to 57, line ends 112 to 174, two apart, 1 536 cells.
+Against the oracle, that rule is both too eager and too timid:
+
+- **Too eager.** At small columns the oracle keeps the arrow and fills the chain although it fits below
+  (`UU(x => source.A….Select(y => y)` / `.Where(z => z.Bb)`).
+- **Too timid.** From column 21, or 25 with parentheses, the oracle breaks the arrow however long the chain
+  is, and chops the chain under it.
+
+The arrow's rule (`GroupFacts.LambdaChainHead`) is now #557's for a property fill. The arrow breaks in any
+of three cases:
+- from column 21, or 25 with parentheses;
+- by #557's measured line, `9·below + 2·params − 2·start ≤ 969`;
+- when the arrow ends at column 21 or later and the chain's head through its first call's dot no longer
+  fits beside it.
+
+4 cells differ, all at a parenthesised lambda's column 23. #529's own shape (`var r = items.Where(x =>`)
+still reproduces (`constructs/wrapping/lambda-arrow-over-a-chain.cs`).
+
+⚠ Not fixed here, and reported: once the arrow is decided, the chain itself is laid out wrongly in about
+540 of the cells. Where the oracle chops every link (`source.A…` / `.Select(y => y)` / `.Where(…)`),
+Skala keeps `.Select(y =>` on a line past the margin and breaks inside its argument. The same happens
+with no lambda at all, as in `var q = source.A….Select(y => y).Where(…);`. That is the chain fill's own
+defect (group F's), not the arrow's.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
+- ⚠ status: **fixed** for the arrow, pinned by `constructs/wrapping/lambda-arrow-over-a-sole-chain.cs`.
+
+⚠ **Round 5's other two issues, refuted rather than fixed:**
+- **#573**, a lambda parameter's type/name break. All 36 of round 4's cells where the oracle writes
+  `T…` / `p0` match on master. They still differ at 79f15491 (group F round 3) and match from 26321000
+  (group K, "parameter names"). That merge fixed them before this round started.
+- **#574**, `syntax/caller-argument-expression.cs`. It diverges by design and always has. The fixture pins
+  SK-DIV-0187: Skala leaves a `[CallerArgumentExpression]` argument's text as written, and its own header
+  says every divergent line is that decision. It produces the identical diff at f26e3f46, the commit that
+  added it. It is not a regression, so nothing was changed. If it should stop counting against construct
+  fidelity, that is a harness exemption, not a formatter fix.
