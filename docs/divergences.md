@@ -1890,13 +1890,11 @@ the `<` with the parameter one level in, exactly as at `false`; Skala now does t
 fills keeps its parameters under the first one (`public class Widest<TFirst…,` / aligned `TFourth> { }`,
 and a kept comma break), as the aligned fixture already recorded.
 
-⚠ Measured beside it and still divergent (SK-DIV-0351): with two parameters whose aligned continuation
-would not fit — `M<TFirst,` / a 60-column `Tyyy…>() { }` under `TFirst` at column 47 — the oracle breaks
-after the `<` instead and fills `TFirst, Tyyy…` one level in, where the same list at `false` keeps
-`<TFirst,` and breaks at the comma. Skala keeps `<TFirst,` at both values: its fill decides the `<` point
-by the first parameter alone. And a top-level `public class Generic<T…>` past the margin is broken by the
-oracle between `class` and the name (`public class` / `    Generic<T…> { }`) at both values, where Skala
-breaks after the `<` — the type/name family of SK-DIV-0127.
+⚠ Measured beside it (SK-DIV-0351, resolved in round two): `M<TFirst,` / `Tyyy…>() { }` comes back from the
+oracle as `M<` / `TFirst, Tyyy…` at `true`, because the head `TFirst,` is narrower than twelve columns —
+not, as first recorded, because the aligned continuation would not fit. And a top-level
+`public class Generic<T…>` past the margin is broken by the oracle between `class` and the name at both
+values, where Skala breaks after the `<` (SK-DIV-0353, open).
 
 - options: `skala_wrap_before_type_parameter_langle`, `skala_align_multiline_type_parameter_list`, `skala_wrap_parameters_style`
 - ⚠ status: first half **deliberate**, argued above and re-measured in
@@ -8170,6 +8168,15 @@ and a chopped base type's arguments two levels past the colon's line with `),` o
 on the colon's column. The commas' group now spends a level of its own, which the writer's one level
 per opening line collapses into the list's on the declaration's line and counts on the colon's.
 
+**Round two: the lone base type's margin.** With one base type and nothing after it, the first question
+now leaves a margin of its own, 31 columns, in place of the fitted one (`GroupFacts.OuterMargin`): Skala
+breaks before the `:` up to an 88-column continuation line nested two deep, where it went on to 105, which
+is exact for two of the five shapes swept and one (top level), two (a one-letter base) and five (a
+32-column longer head) columns lenient on the others. With interfaces the boundary stays the fitted
+margin's — 106 against the oracle's 108, 108 against 109, 106 against 103 and 102 — because no constant
+moves all four closer (12 fits two exactly and misses the others by five and six). Pinned by
+`PrimaryConstructorMarginTests`.
+
 - options: `skala_wrap_extends_list_style`, `skala_wrap_before_extends_colon`,
   `skala_place_primary_constructor_initializer_on_same_line`
 - ⚠ status: **resolved** (#501, #502, #503) for every shape above, pinned by
@@ -8965,18 +8972,23 @@ sections, as before, unmeasured.
 - options: none.
 - ⚠ status: **resolved** (#475), pinned by `AttributeRunIssue475Tests`.
 
-## SK-DIV-0351 — an aligned type parameter list whose continuation would not fit breaks after its `<`
+## SK-DIV-0351 — an aligned type parameter list with a narrow head breaks after its `<`
 
-Measured beside #452 with `jb cleanupcode` 2025.2.6: `public void OneParameterWiderThanTheMargin<TFirst,
-Tyyy…>() { }` from 121 to 124 columns. At `skala_align_multiline_type_parameter_list = false` both engines
-keep `<TFirst,` and put `Tyyy…` one level in. At `true` the oracle breaks after the `<` and writes
-`TFirst, Tyyy…>() { }` one level in, because `Tyyy…` aligned under `TFirst` at column 47 would not fit;
-Skala keeps `<TFirst,` and aligns `Tyyy…` past the margin. A fill that decides each point by the item
-after it cannot see that the *last* item fails at the aligned column; the oracle's answer needs the
-`<` point to ask whether every remaining item fits there. Not wired.
+Measured beside #452 with `jb cleanupcode` 2025.2.6, and the first reading was wrong: it said the aligned
+continuation would not fit, and it does — `Tyyy…>() { }` under `TFirst` at column 47 is 113 columns. Asked
+again in round two on 140 lists at `skala_align_multiline_type_parameter_list = true` — the `<` at every
+third column from 20 to 50, the line from 121 to 135, the head `T1,`, `TFirst,`, `TFirstPar,`,
+`TFirstPara,`, `TFirstParam,`, `TFirstParame,`, `TFirstParameter,`, `TA, TB,`, `TA, TB, TCdef,` and longer:
+the oracle breaks after the `<` and fills the list one level in exactly when what would stay on the `<`'s
+line before the fill's first wrap is narrower than twelve columns (`TFirstPara,` is 11 and breaks,
+`TFirstParam,` is 12 and stays; `TA, TB,` breaks, `TA, TB, TCdef,` stays), at every column of the `<` —
+#379's eleven-against-twelve floor in a new place. Skala kept every head. The `<`'s fill point now knows
+the segments of its list (`LineFlags.AlignedListHead`, `Document.AlignedItemsOf`) and breaks below that
+floor. ⚠ The round-one rule tried first — break when an item would not fit at the aligned column — is
+refuted by `Widest<…, TThird…103…, TFourth>`, which the oracle aligns past the margin.
 
 - options: `skala_align_multiline_type_parameter_list`
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved**, pinned by `AlignedTypeParameterHeadTests`.
 
 ## SK-DIV-0352 — when a parameter's attribute arguments chop: measured, not wired
 

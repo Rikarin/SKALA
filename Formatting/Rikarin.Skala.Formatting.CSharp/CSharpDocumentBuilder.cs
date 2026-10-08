@@ -4306,6 +4306,14 @@ public sealed partial class CSharpDocumentBuilder {
             flags |= LineFlags.YieldsToPredecessors;
         }
 
+        if (rule is GapRule.FillPoint
+            && nextToken.Parent is TypeParameterSyntax { Parent: TypeParameterListSyntax list }
+            && list.Parameters.Count > 1
+            && list.Parameters[0].GetFirstToken() == nextToken
+            && AlignsTypeParameters(list)) {
+            flags |= LineFlags.AlignedListHead;
+        }
+
         if (rule == GapRule.FollowingPoint) {
             flags |= LineFlags.BreaksOnlyIfNextLineOverflows;
             if (IsAShortParameterBehindItsSection(nextToken)) {

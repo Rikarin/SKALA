@@ -272,7 +272,14 @@ public enum LineFlags {
     ///     parameter (#476, SK-DIV-0352). The oracle chops the section's arguments exactly when the joined
     ///     line overflows, and puts the parameter below them, rather than moving the parameter alone.
     /// </summary>
-    ReadThroughWhenBroken = 1024
+    ReadThroughWhenBroken = 1024,
+
+    /// <summary>
+    ///     ⚠ The first point of a fill whose items align under the first one: it breaks when the items that
+    ///     would stay on its line before the fill's first wrap are narrower than twelve columns (SK-DIV-0351).
+    ///     <c>skala_align_multiline_type_parameter_list = true</c>'s gap after the <c>&lt;</c>.
+    /// </summary>
+    AlignedListHead = 2048
 }
 
 /// <summary>
@@ -552,6 +559,7 @@ public sealed class Document {
     readonly bool[] hasBreak;
     readonly GroupFacts[] facts;
     readonly Dictionary<int, int> throughWidth;
+    readonly Dictionary<int, int[]> alignedItems;
 
     internal Document(
         DocNode[] nodes,
@@ -569,7 +577,8 @@ public sealed class Document {
         int[] draftSegment,
         bool[] hasBreak,
         GroupFacts[] facts,
-        Dictionary<int, int>? throughWidth = null
+        Dictionary<int, int>? throughWidth = null,
+        Dictionary<int, int[]>? alignedItems = null
     ) {
         Nodes = nodes;
         NodeCount = nodeCount;
@@ -587,6 +596,7 @@ public sealed class Document {
         this.hasBreak = hasBreak;
         this.facts = facts;
         this.throughWidth = throughWidth ?? [];
+        this.alignedItems = alignedItems ?? [];
     }
 
     public DocNode[] Nodes { get; }
@@ -708,6 +718,12 @@ public sealed class Document {
     ///     <see cref="GroupFacts.TailEndsAt" /> names — its own points at their flat rendering — or
     ///     <see cref="Unbounded" /> when anything before that point is certain to break. The flat width
     ///     for any other node. See <see cref="GroupFacts.MeasuresThroughTail" />.
+    /// </summary>
+    public int[] AlignedItemsOf(int group) => alignedItems.TryGetValue(group, out var items) ? items : [];
+
+    /// <summary>
+    ///     The flat width from a group's start to the first point of the group its
+    ///     <see cref="GroupFacts.TailEndsAt" /> names — see <see cref="ThroughWidthOf" />.
     /// </summary>
     public int ThroughWidthOf(int node) => throughWidth.TryGetValue(node, out var width) ? width : FlatWidthOf(node);
 
@@ -983,6 +999,12 @@ public sealed class Document {
 ///     arguments of a list that would fit whole below, and breaks before the <c>:</c> only when the
 ///     head up to <c>B(</c> does not fit, or by <see cref="TailEndsAt" />'s question.
 /// </param>
+/// <param name="OuterMargin">
+///     ⚠ For a <see cref="PrefersOuterBreak" /> group: the margin its first question leaves, in place of the
+///     fitted one (<c>Fitter.OuterBreakMargin</c>), or zero. A type's base list with one base type after a
+///     primary constructor (SK-DIV-0198): the oracle stops breaking before the <c>:</c> once the
+///     continuation line reaches 88 or 89 columns at two depths, where the fitted margin went on to 105.
+/// </param>
 /// <param name="MeasuresThroughTail">
 ///     ⚠ The group is fitted against <see cref="Document.ThroughWidthOf" /> — from its start to the
 ///     first point of the group <see cref="TailEndsAt" /> names — with nothing trailing it: flat when
@@ -1012,4 +1034,5 @@ public readonly record struct GroupFacts(
     int KeywordWidth = 0,
     int TailEndsAt = -1,
     bool SkipsOuterTail = false,
+    int OuterMargin = 0,
     bool MeasuresThroughTail = false);

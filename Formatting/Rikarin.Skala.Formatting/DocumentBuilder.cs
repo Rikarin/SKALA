@@ -78,6 +78,12 @@ public sealed class DocumentBuilder {
     readonly Dictionary<int, int> throughWidth = [];
 
     /// <summary>
+    ///     For a fill whose first point is <see cref="LineFlags.AlignedListHead" />, by group: the segment
+    ///     after each of its points, in order.
+    /// </summary>
+    readonly Dictionary<int, int[]> alignedItems = [];
+
+    /// <summary>
     ///     Each group's mode, by id, for <see cref="segmentHead" /> to know which nested points can break.
     /// </summary>
     readonly Dictionary<int, GroupMode> modes = [];
@@ -671,7 +677,8 @@ public sealed class DocumentBuilder {
             draftSegment,
             breaks,
             [..facts],
-            throughWidth
+            throughWidth,
+            alignedItems
         );
     }
 
@@ -724,6 +731,7 @@ public sealed class DocumentBuilder {
 
         var first = -1;
         var current = -1;
+        var ownPointNodes = new List<int>();
         var flat = 0;
         var point = 0;
         var pointStopped = false;
@@ -752,6 +760,10 @@ public sealed class DocumentBuilder {
         Flush();
         if (last >= 0) {
             nodes[last].Flags |= (int)LineFlags.LastPoint;
+        }
+
+        if (first >= 0 && ((LineFlags)nodes[first].Flags & LineFlags.AlignedListHead) != 0) {
+            alignedItems[group] = [.. ownPointNodes.Select(own => segment[own])];
         }
 
         // ⚠ Whether the first point's measure reached the group's end without meeting a break —
@@ -813,6 +825,7 @@ public sealed class DocumentBuilder {
                 if (IsOwnBreakPoint(child, group)) {
                     Flush();
                     current = child;
+                    ownPointNodes.Add(child);
                     ended = false;
                     drafted = 0;
                     draftEnded = false;

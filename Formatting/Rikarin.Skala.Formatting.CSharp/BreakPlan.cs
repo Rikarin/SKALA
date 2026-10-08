@@ -1826,7 +1826,16 @@ public sealed class BreakPlan {
                 MeasuresHead: primaryBase,
                 PrefersOuterBreak: primaryBase,
                 TailEndsAt: primaryBase ? inner : -1,
-                SkipsOuterTail: primaryBase && options.WrapBeforeExtendsColon
+                SkipsOuterTail: primaryBase && options.WrapBeforeExtendsColon,
+
+                // ⚠ One base type and nothing after it: measured one column at a time on five shapes, the
+                // oracle breaks before the `:` up to a continuation line of 88 columns (nested two deep),
+                // 89 (top level), 88 with a second argument, 86 with a one-letter base and 83 behind a
+                // 32-column longer head (SK-DIV-0198): a margin of 30 to 36, the tail counting the colon's
+                // own space, where the fitted one is 14 and went on to 105. 31 is exact on two, and one,
+                // two and five columns lenient on the others. With interfaces after it the whole-list
+                // question keeps the fitted margin, which matched there.
+                OuterMargin: primaryBase && inner < 0 ? SingleBaseTypeMargin : 0
             ),
             true,
 
@@ -1900,6 +1909,9 @@ public sealed class BreakPlan {
             )
         );
     }
+
+    /// <summary>The first question's margin for a primary constructor's lone base type (SK-DIV-0198).</summary>
+    const int SingleBaseTypeMargin = 31;
 
     /// <summary>
     ///     A tuple's components, <c>(A: 1, B: 2,\n C: 3)</c> — and every other delimited list the oracle
