@@ -76,7 +76,7 @@ public static class PairwisePlan {
 
             if (!OptionRegistry.TryResolve(family.SecondaryKey, out var secondaryId)) {
                 excluded.Add(
-                    new PairExclusion(
+                    new(
                         family.Prefix + "_*",
                         family.SecondaryKey,
                         "the secondary key is not in options.json — it was renamed, and this family is "
@@ -96,14 +96,12 @@ public static class PairwisePlan {
                 }
 
                 if (family.Skip.Any(skip => SweepPlan.Strip(primary.Key).StartsWith(skip, StringComparison.Ordinal))) {
-                    excluded.Add(new PairExclusion(primary.Key, secondary.Key, "excluded by name: " + family.Name));
+                    excluded.Add(new(primary.Key, secondary.Key, "excluded by name: " + family.Name));
                     continue;
                 }
 
                 if (!SweepPlan.Languages.Contains(primary.Language, StringComparer.Ordinal)) {
-                    excluded.Add(
-                        new PairExclusion(primary.Key, secondary.Key, "language is '" + primary.Language + "'")
-                    );
+                    excluded.Add(new(primary.Key, secondary.Key, "language is '" + primary.Language + "'"));
                     continue;
                 }
 
@@ -117,7 +115,7 @@ public static class PairwisePlan {
                 // and it is a gap in the pairwise table rather than a claim about the keys.
                 if (arrangement.Contains(primary.Id)) {
                     excluded.Add(
-                        new PairExclusion(
+                        new(
                             primary.Key,
                             secondary.Key,
                             "arrangement option: the pairwise pass has not been taught the cleanup profile"
@@ -127,14 +125,14 @@ public static class PairwisePlan {
                 }
 
                 if (primary.Oracle is not { Length: > 0 } glob) {
-                    excluded.Add(new PairExclusion(primary.Key, secondary.Key, "no `oracle` fixture in the registry"));
+                    excluded.Add(new(primary.Key, secondary.Key, "no `oracle` fixture in the registry"));
                     continue;
                 }
 
                 var matches = CorpusGlob.Resolve(glob);
                 if (matches.Count == 0) {
                     excluded.Add(
-                        new PairExclusion(
+                        new(
                             primary.Key,
                             secondary.Key,
                             "`oracle` is '" + glob + "' and no corpus file matches it"
@@ -147,13 +145,11 @@ public static class PairwisePlan {
 
                 var primaryValues = OptionDomain.Probes(primary).Distinct(StringComparer.Ordinal).ToArray();
                 if (primaryValues.Length < 2 || secondaryValues.Length < 2) {
-                    excluded.Add(
-                        new PairExclusion(primary.Key, secondary.Key, "fewer than two values on one side of the grid")
-                    );
+                    excluded.Add(new(primary.Key, secondary.Key, "fewer than two values on one side of the grid"));
                     continue;
                 }
 
-                candidates.Add(new PairCandidate(primary, secondary, primaryValues, secondaryValues, fixture));
+                candidates.Add(new(primary, secondary, primaryValues, secondaryValues, fixture));
             }
         }
 

@@ -43,7 +43,8 @@ public static class BinlogLoader {
         Path.Combine(
             "artifacts",
             "msbuild.binlog"
-        ), "msbuild.binlog", "build.binlog"
+        ),
+        "msbuild.binlog", "build.binlog"
     ];
 
     public static LoadedProject Load(LoadRequest request, CancellationToken cancellation = default) {
@@ -51,7 +52,7 @@ public static class BinlogLoader {
         var path = Resolve(request);
         if (path is null) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.NoBinlog,
                     SkalaSeverity.Warning,
                     "no binary log was found; run `dotnet build -bl:artifacts/skala.binlog`",
@@ -67,7 +68,7 @@ public static class BinlogLoader {
         // ⚠ Before any MSBuild type is touched in this frame. See MSBuildRuntime's remarks.
         if (!MSBuildRuntime.Ensure(out var locatorError)) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.NoBinlog,
                     SkalaSeverity.Warning,
                     $"the SDK's MSBuild could not be located, so '{path}' cannot be read: {locatorError}",
@@ -123,7 +124,7 @@ public static class BinlogLoader {
                                                 or FileLoadException
                                                 or BadImageFormatException) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.NoBinlog,
                     SkalaSeverity.Warning,
                     $"'{path}' could not be read: {exception.Message}",
@@ -192,12 +193,20 @@ public static class BinlogLoader {
             : request.RepositoryRoot;
 
         // ⚠ The recorded line starts with the compiler's own path; the parser wants only arguments.
+        // ⚠ #517: and that path is kept, because it is the one record of *which* compiler ran — a
+        // `Microsoft.Net.Compilers.Toolset` package replaces the SDK's with no other trace.
         var arguments = CommandLine.Split(commandLine);
+        var compilerPath = string.Empty;
         if (arguments.Count > 0 && arguments[0].EndsWith("csc.dll", StringComparison.OrdinalIgnoreCase)) {
+            compilerPath = arguments[0];
             arguments.RemoveAt(0);
         }
 
         if (arguments.Count > 0 && Path.GetFileNameWithoutExtension(arguments[0]) is "csc" or "dotnet") {
+            if (Path.GetFileNameWithoutExtension(arguments[0]) is "csc") {
+                compilerPath = arguments[0];
+            }
+
             arguments.RemoveAt(0);
         }
 
@@ -206,7 +215,7 @@ public static class BinlogLoader {
             parsed = CSharpCommandLineParser.Default.Parse(arguments, baseDirectory, null);
         } catch (ArgumentException exception) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.NoBinlog,
                     SkalaSeverity.Warning,
                     $"a Csc command line could not be parsed: {exception.Message}",
@@ -302,7 +311,7 @@ public static class BinlogLoader {
             compilation,
             analyzerReferences.ToImmutable(),
             [
-                .. parsed.AdditionalFiles.Select(file => Path.IsPathRooted(file.Path)
+                ..parsed.AdditionalFiles.Select(file => Path.IsPathRooted(file.Path)
                         ? file.Path
                         : Path.Combine(baseDirectory, file.Path)
                 )
@@ -317,13 +326,14 @@ public static class BinlogLoader {
             Name = name,
             Compilation = compilation,
             TargetFramework = TargetFrameworkOf(parsed),
-            PreprocessorSymbols = [.. parseOptions.PreprocessorSymbolNames],
+            PreprocessorSymbols = [..parseOptions.PreprocessorSymbolNames],
             ReportablePaths = reportable.ToImmutable(),
             UnreadablePaths = unreadable.ToImmutable(),
             AnalyzerReferences = analyzerReferences.ToImmutable(),
             AnalyzerConfigPaths = analyzerConfigPaths,
             ProjectPath = projectPath,
-            DocumentationDiagnosticsOff = !DocumentationComments.CompilerReportsOn(parsed.ParseOptions)
+            DocumentationDiagnosticsOff = !DocumentationComments.CompilerReportsOn(parsed.ParseOptions),
+            CompilerPath = compilerPath
         };
     }
 
@@ -434,7 +444,7 @@ public static class BinlogLoader {
             var percent = CoveragePercent(selected, missing.Count);
 
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     RuleIds.BinlogMissingFile,
                     CoverageSeverity(selected, missing.Count, request.RequireFreshBinlog),
                     $"the binary log covers {covered.ToString(CultureInfo.InvariantCulture)} of "
@@ -455,7 +465,7 @@ public static class BinlogLoader {
         // twenty error-coloured file names underneath it are noise on a tree that is at 98 %.
         foreach (var file in missing.Take(20)) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     RuleIds.BinlogMissingFile,
                     SkalaSeverity.Warning,
                     "the binary log names no compilation containing this file, so it was not analysed; rebuild",
@@ -466,7 +476,7 @@ public static class BinlogLoader {
 
         if (missing.Count > 20) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     RuleIds.BinlogMissingFile,
                     SkalaSeverity.Warning,
                     $"and {(missing.Count - 20).ToString(CultureInfo.InvariantCulture)} more file(s) are in no compilation; rebuild",
@@ -477,7 +487,7 @@ public static class BinlogLoader {
 
         if (newest > binlogTime) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     RuleIds.BinlogStaleForFile,
                     request.RequireFreshBinlog ? SkalaSeverity.Error : SkalaSeverity.Info,
                     "the binary log is older than the newest source file; the findings may be about a program that has moved",

@@ -79,7 +79,7 @@ public sealed class ProvenanceTests {
         var prefix = Encoding.UTF8.GetBytes(OracleEditorConfig.RootDeclaration);
 
         Assert.True(
-            handed.AsSpan().SequenceEqual([.. prefix, .. template]),
+            handed.AsSpan().SequenceEqual([..prefix, ..template]),
             Corpus.OracleEditorConfigPath
             + " is not "
             + OracleEditorConfig.TemplatePath

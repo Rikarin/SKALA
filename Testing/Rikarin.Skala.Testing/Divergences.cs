@@ -51,7 +51,7 @@ public static class Divergences {
 
     static void Flush(List<DivergenceEntry> entries, ref string? id, ref string? summary, List<string> options) {
         if (id is not null) {
-            entries.Add(new DivergenceEntry(id, summary ?? string.Empty, [.. options]));
+            entries.Add(new DivergenceEntry(id, summary ?? string.Empty, [..options]));
         }
 
         id = null;

@@ -30,7 +30,7 @@ public static class SweepReport {
     ///     tier system. They are demoted with the reason recorded, not explained away.
     /// </remarks>
     public static IReadOnlyList<Demotion> TierAudit(SweepRun run) => [
-        .. run.Options
+        ..run.Options
             .Where(static option => option.Tier == OptionTier.A && option.Outcome != SweepOutcome.Conformant)
             .Select(static option => new Demotion(option.Key, option.Outcome, option.Fixture, Reason(option)))
             .OrderBy(static demotion => demotion.Key, StringComparer.Ordinal)

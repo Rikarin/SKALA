@@ -19,9 +19,9 @@ namespace Rikarin.Skala.Analysis.Tests;
 public sealed class DocsSiteTests {
     static string RepositoryRoot { get; } =
         Assembly.GetExecutingAssembly()
-        .GetCustomAttributes<AssemblyMetadataAttribute>()
-        .First(static attribute => attribute.Key == "SkalaRepositoryRoot")
-        .Value!;
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .First(static attribute => attribute.Key == "SkalaRepositoryRoot")
+            .Value!;
 
     static string SiteDirectory { get; } = Path.Combine(RepositoryRoot, "docs", "site");
 

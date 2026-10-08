@@ -13,8 +13,8 @@ internal static class StructSizeLowerBound {
         Read(
             type,
             model,
-            new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default),
-            new Dictionary<ITypeSymbol, long>(SymbolEqualityComparer.Default),
+            new(SymbolEqualityComparer.Default),
+            new(SymbolEqualityComparer.Default),
             0,
             cancellation
         );

@@ -43,8 +43,8 @@ public sealed class OptionCoverageTests {
     ///     implements it, while Tier A stays one claim about the whole tool.
     /// </remarks>
     static HashSet<OptionId> Implemented() => [
-        .. PhaseOneOptions.Implemented,
-        .. Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementOptions.Implemented
+        ..PhaseOneOptions.Implemented,
+        ..Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementOptions.Implemented
     ];
 
     [Fact]

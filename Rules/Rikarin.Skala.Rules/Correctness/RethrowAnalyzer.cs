@@ -83,7 +83,7 @@ public sealed class RethrowAnalyzer : DiagnosticAnalyzer {
             );
         }
 
-        var fix = FixEdits.Pack([.. edits]);
+        var fix = FixEdits.Pack([..edits]);
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,

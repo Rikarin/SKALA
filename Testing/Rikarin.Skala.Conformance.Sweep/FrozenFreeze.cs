@@ -223,7 +223,7 @@ public static class FrozenFreeze {
             var fixture = fixtures[configuration.Fixture];
             var produced = SkalaSide.Format(
                 fixture.Path,
-                [.. configuration.Overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                [..configuration.Overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
             );
             var hash = SkalaSide.Digest(produced);
 
@@ -389,12 +389,12 @@ public static class FrozenFreeze {
             FrozenCorpus.WriteBody(
                 Path.Combine(FrozenCorpus.Root, target.Output.Replace('/', Path.DirectorySeparatorChar)),
                 body,
-                new OracleHeader(version, digest, profile.Name, OracleFixture.Today)
+                new(version, digest, profile.Name, OracleFixture.Today)
             );
 
             bytes += body.Length;
             outputs.Add(
-                new FrozenOutput(
+                new(
                     target.Output,
                     target.Fixture,
                     profile.Name,
@@ -408,10 +408,10 @@ public static class FrozenFreeze {
         FrozenCorpus.WriteManifest(
             FrozenCorpus.ManifestPath,
             new FrozenManifest(
-                new FrozenProvenance(version, digest, Commit(), OracleFixture.Today, "conformance-sweep.json"),
+                new(version, digest, Commit(), OracleFixture.Today, "conformance-sweep.json"),
                 outputs,
                 [
-                    .. configurations
+                    ..configurations
                         .OrderBy(static c => c.Overrides[0].Key, StringComparer.Ordinal)
                         .ThenBy(static c => c.Overrides[0].Value, StringComparer.Ordinal)
                 ]

@@ -45,9 +45,10 @@ public sealed class LargeStructArgumentAnalyzer : DiagnosticAnalyzer {
                 || argument.Parameter is not { RefKind: RefKind.None, Type.TypeKind: TypeKind.Struct } parameter
                 || argument.Value.Syntax is not ExpressionSyntax expression
                 || context.SemanticModel.GetSymbolInfo(
-                    PatternSafety.Unwrap(expression),
-                    context.CancellationToken
-                ).Symbol is not (ILocalSymbol or IParameterSymbol)
+                        PatternSafety.Unwrap(expression),
+                        context.CancellationToken
+                    )
+                    .Symbol is not (ILocalSymbol or IParameterSymbol)
                 || !SymbolEqualityComparer.Default.Equals(
                     context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type,
                     parameter.Type

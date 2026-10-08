@@ -109,7 +109,8 @@ public static class Corpus {
     public static string RepositoryRoot { get; } =
         Assembly.GetExecutingAssembly()
             .GetCustomAttributes<AssemblyMetadataAttribute>()
-            .FirstOrDefault(static attribute => attribute.Key == "SkalaRepositoryRoot")?.Value
+            .FirstOrDefault(static attribute => attribute.Key == "SkalaRepositoryRoot")
+            ?.Value
         ?? throw new InvalidOperationException("SkalaRepositoryRoot was not stamped into the assembly.");
 
     public static string Root { get; } = Path.Combine(RepositoryRoot, "Testing", "corpus");
@@ -159,7 +160,7 @@ public static class Corpus {
     public static IReadOnlyList<string> Fixtures() =>
         Directory.Exists(Root)
             ? [
-                .. Directory.EnumerateFiles(Root, "*.expected.cs", SearchOption.AllDirectories)
+                ..Directory.EnumerateFiles(Root, "*.expected.cs", SearchOption.AllDirectories)
                     .OrderBy(static path => path, StringComparer.Ordinal)
             ]
             : [];
@@ -171,21 +172,21 @@ public static class Corpus {
         }
 
         return [
-            .. Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
+            ..Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
                 .Where(static path => !path.EndsWith(".expected.cs", StringComparison.Ordinal))
                 .Select(path => new CorpusFile(set, Path.GetRelativePath(root, path).Replace('\\', '/'), path))
                 .OrderBy(static file => file.Path, StringComparer.Ordinal)
         ];
     }
 
-    public static IReadOnlyList<CorpusFile> All() => [.. Files(Constructs), .. Files(Real), .. Files(Pathological)];
+    public static IReadOnlyList<CorpusFile> All() => [..Files(Constructs), ..Files(Real), ..Files(Pathological)];
 
     /// <summary>
     ///     The files a cleanup fixture is expected for: all of <see cref="Real" />, plus the arrangement
     ///     constructs. This is the set <c>./build.sh Oracle</c> regenerates under the second profile and
     ///     the set the M4 differential is measured over.
     /// </summary>
-    public static IReadOnlyList<CorpusFile> Arrangeable() => [.. ArrangementConstructs(), .. Files(Real)];
+    public static IReadOnlyList<CorpusFile> Arrangeable() => [..ArrangementConstructs(), ..Files(Real)];
 
     /// <summary>
     ///     The arrangement half of <see cref="Arrangeable" />: <c>constructs/arrangement/</c> alone.
@@ -206,7 +207,7 @@ public static class Corpus {
     ///     </para>
     /// </remarks>
     public static IReadOnlyList<CorpusFile> ArrangementConstructs() => [
-        .. Files(Constructs)
+        ..Files(Constructs)
             .Where(static file => file.RelativePath.StartsWith(ArrangementPrefix, StringComparison.Ordinal))
     ];
 
@@ -221,7 +222,7 @@ public static class Corpus {
     ///     this is a subset.
     /// </remarks>
     public static IReadOnlyList<CorpusFile> DocCommented() => [
-        .. Files(Constructs)
+        ..Files(Constructs)
             .Where(static file => file.RelativePath.StartsWith(XmlDocPrefix, StringComparison.Ordinal))
     ];
 
@@ -250,7 +251,7 @@ public static class Corpus {
     ///     </para>
     /// </remarks>
     public static IReadOnlyList<CorpusFile> DocCommentBearing() => [
-        .. Files(Constructs).Where(static file => HoldsDocCommentLine(File.ReadLines(file.Path)))
+        ..Files(Constructs).Where(static file => HoldsDocCommentLine(File.ReadLines(file.Path)))
     ];
 
     /// <summary>

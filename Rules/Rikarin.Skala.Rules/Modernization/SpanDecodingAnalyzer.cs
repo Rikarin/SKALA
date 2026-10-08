@@ -57,10 +57,11 @@ public sealed class SpanDecodingAnalyzer : DiagnosticAnalyzer {
         // Bind the proposed call: a framework without the span overload must remain untouched.
         var replacementNode = invocation.ReplaceNode(argument.Expression, access.Expression.WithoutTrivia());
         if (model.GetSpeculativeSymbolInfo(
-                invocation.SpanStart,
-                replacementNode,
-                SpeculativeBindingOption.BindAsExpression
-            ).Symbol
+                    invocation.SpanStart,
+                    replacementNode,
+                    SpeculativeBindingOption.BindAsExpression
+                )
+                .Symbol
                 is not IMethodSymbol replacementMethod
             || !SymbolEqualityComparer.Default.Equals(
                 replacementMethod.ContainingType,

@@ -210,9 +210,8 @@ public sealed class ConstantForwardingOverloadAnalyzer : DiagnosticAnalyzer {
     static InvocationExpressionSyntax? Named(InvocationExpressionSyntax call, MethodDeclarationSyntax method) {
         var name = call.Expression switch {
             IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            MemberAccessExpressionSyntax {
-                Expression: ThisExpressionSyntax, Name: IdentifierNameSyntax member
-            } => member.Identifier.ValueText,
+            MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax, Name: IdentifierNameSyntax member } =>
+                member.Identifier.ValueText,
             _ => null
         };
 

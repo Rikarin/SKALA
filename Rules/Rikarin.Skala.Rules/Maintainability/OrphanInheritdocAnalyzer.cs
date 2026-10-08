@@ -77,7 +77,7 @@ public sealed class OrphanInheritdocAnalyzer : DiagnosticAnalyzer {
         // and leaves the question unchanged.
         if (elements.Count == 0
             || elements.Exists(static element => DocumentationElements.AttributesOf(element)
-                    .Any(static attribute => attribute.Name.LocalName.ValueText == "cref")
+                .Any(static attribute => attribute.Name.LocalName.ValueText == "cref")
             )) {
             return;
         }

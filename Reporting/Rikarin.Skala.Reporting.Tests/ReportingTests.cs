@@ -12,7 +12,7 @@ public sealed class ReportingTests {
         new() {
             RepositoryRoot = Path.GetFullPath("/tmp/repo"),
             Mode = LoadMode.Loose,
-            Findings = [.. findings],
+            Findings = [..findings],
             LoadSummary = "loose (3 file(s), no project)",
             FileCount = 3,
             LineCount = 120,
@@ -306,7 +306,9 @@ public sealed class ReportingTests {
         var report = Sample(
             Modernization(),
             Modernization("SK1004", 20, false) with { Fix = [new FixEdit("/tmp/repo/Core/Foo.cs", 0, 1, "a")] }
-        ) with { Gate = GateResult.Pass("ci") };
+        ) with {
+            Gate = GateResult.Pass("ci")
+        };
 
         var summary = GithubRenderer.StepSummary(report);
 
@@ -384,10 +386,11 @@ public sealed class ReportingTests {
     public void Gate_RequiringCleanFormatting_FailsWhenItIsNot() =>
         Assert.False(
             Gate.Evaluate(
-                GateDefinition.Local with { RequireCleanFormatting = true },
-                Sample(),
-                false
-            ).Passed
+                    GateDefinition.Local with { RequireCleanFormatting = true },
+                    Sample(),
+                    false
+                )
+                .Passed
         );
 
     /// <summary>

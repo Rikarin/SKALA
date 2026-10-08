@@ -38,9 +38,6 @@ public sealed class SeparatedListPlanTests {
             "inside a documentation comment, as CrefParameterListSyntax (SK-DIV-0114)",
         [typeof(PragmaWarningDirectiveTriviaSyntax)] =
             "a directive: the trivia model owns it and it never reaches the walker (NodeLayout.DirectiveNode)",
-        [typeof(OrderByClauseSyntax)] =
-            "`orderby a,` then `b` on the next line is unmeasured; the query's clauses are PlanQuery's and its "
-            + "orderings are left as written, recorded open in SK-DIV-0114",
         [typeof(AllowsConstraintClauseSyntax)] =
             "`allows ref struct` is the one constraint the clause admits, so the list never has a comma"
     };
@@ -76,7 +73,12 @@ public sealed class SeparatedListPlanTests {
         [typeof(FunctionPointerParameterListSyntax)] = "unsafe class C { delegate*<int, void> F; }",
         [typeof(FunctionPointerUnmanagedCallingConventionListSyntax)] =
             "unsafe class C { delegate* unmanaged[Cdecl, Stdcall]<int, void> F; }",
-        [typeof(TypeParameterConstraintClauseSyntax)] = "class C<T> where T : class, new() { }"
+        [typeof(TypeParameterConstraintClauseSyntax)] = "class C<T> where T : class, new() { }",
+
+        // ⚠ Exempt until #477 as "nothing to plan", which was never measured: the orderings are a fill
+        // one level past the clause.
+        [typeof(OrderByClauseSyntax)] =
+            "class C { object M(int[] xs) => from a in xs orderby a, a select a; }"
     };
 
     /// <summary>

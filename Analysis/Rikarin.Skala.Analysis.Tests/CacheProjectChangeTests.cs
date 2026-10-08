@@ -82,7 +82,7 @@ public sealed class CacheProjectChangeTests {
 
     static RunReport Check(string root, string project, string binlog, bool noCache) {
         var (_, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = root,
                 Paths = [root],
                 Mode = LoadMode.Binlog,

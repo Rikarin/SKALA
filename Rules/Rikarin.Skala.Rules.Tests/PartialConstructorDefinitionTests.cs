@@ -35,7 +35,7 @@ public sealed class PartialConstructorDefinitionTests {
     /// </summary>
     [Fact]
     public void TheDriver_NeverVisitsAPartialConstructorDefinition() {
-        var seen = Visits(new Counter(false));
+        var seen = Visits(new(false));
         Assert.DoesNotContain("ConstructorDeclaration@1", seen);
         Assert.DoesNotContain("Parameter@1", seen);
         Assert.Contains("ConstructorDeclaration@3", seen);
@@ -45,7 +45,7 @@ public sealed class PartialConstructorDefinitionTests {
     /// <summary>Through the wrapper every declaration and parameter is visited exactly once.</summary>
     [Fact]
     public void ThroughTheWrapper_EveryDeclarationIsVisitedExactlyOnce() {
-        var seen = Visits(new Counter(true));
+        var seen = Visits(new(true));
         foreach (var expected in new[] {
                      "ConstructorDeclaration@1", "Parameter@1", "ConstructorDeclaration@3", "Parameter@3",
                      "MethodDeclaration@9", "MethodDeclaration@11"
@@ -124,7 +124,7 @@ public sealed class PartialConstructorDefinitionTests {
                 .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
         );
         RuleFixtures.Analyze(compilation, [counter], TestContext.Current.CancellationToken);
-        return [.. counter.Seen];
+        return [..counter.Seen];
     }
 
     // A probe analyzer: not registered, not shipped, with a descriptor of its own.
@@ -203,7 +203,7 @@ public sealed class PartialConstructorDefinitionTests {
             Action<SyntaxNodeAnalysisContext> action,
             ImmutableArray<TLanguageKindEnum> syntaxKinds
         ) =>
-            Nodes.Add((action, [.. syntaxKinds.Cast<SyntaxKind>()]));
+            Nodes.Add((action, [..syntaxKinds.Cast<SyntaxKind>()]));
     }
 
     /// <summary>

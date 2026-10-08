@@ -164,7 +164,7 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer {
         }
 
         candidates.Add(
-            new Candidate(
+            new(
                 method.Identifier.ValueText,
                 method.Identifier.GetLocation(),
                 Fix(context, method)

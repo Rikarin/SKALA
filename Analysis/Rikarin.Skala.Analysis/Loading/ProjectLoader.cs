@@ -82,7 +82,7 @@ public static class ProjectLoader {
                 }
 
                 attempted.Add(
-                    new SkalaDiagnostic(
+                    new(
                         ConfigDiagnosticIds.LoadModeFellBack,
                         SkalaSeverity.Info,
                         $"--load={mode.ToString().ToLowerInvariant()} could not run; falling back",
@@ -103,7 +103,7 @@ public static class ProjectLoader {
 
             if (mode != LoadMode.Loose) {
                 attempted.Add(
-                    new SkalaDiagnostic(
+                    new(
                         ConfigDiagnosticIds.LoadModeFellBack,
                         SkalaSeverity.Info,
                         $"--load={mode.ToString().ToLowerInvariant()} produced no compilation; falling back",

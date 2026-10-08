@@ -89,7 +89,7 @@ public sealed class ExpressionMisreadingBatchTests {
     public void ATernaryConditionCanNeverBeABareAssignment() {
         var tree = CSharpSyntaxTree.ParseText(
             "class C { bool M(bool flag, bool other) { var x = flag = other ? true : false; return x; } }",
-            new CSharpParseOptions(LanguageVersion.Preview),
+            new(LanguageVersion.Preview),
             cancellationToken: TestContext.Current.CancellationToken
         );
 

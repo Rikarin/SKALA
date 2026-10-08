@@ -105,12 +105,12 @@ public sealed class CultureAndQueryShapeBatchTests {
 
         var onComparison = RuleFixtures.Analyze(
             RuleFixtures.Compile(comparison, "Comparison.cs"),
-            [.. Analyzers, new ImplicitStringCultureAnalyzer()],
+            [..Analyzers, new ImplicitStringCultureAnalyzer()],
             TestContext.Current.CancellationToken
         );
         var onSearch = RuleFixtures.Analyze(
             RuleFixtures.Compile(search, "Search.cs"),
-            [.. Analyzers, new ImplicitStringCultureAnalyzer()],
+            [..Analyzers, new ImplicitStringCultureAnalyzer()],
             TestContext.Current.CancellationToken
         );
 

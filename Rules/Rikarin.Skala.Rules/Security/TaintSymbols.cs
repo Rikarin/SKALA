@@ -177,7 +177,7 @@ public sealed class TaintSymbols {
         for (var current = type.OriginalDefinition;
              current is not null;
              current =
-             current.BaseType?.OriginalDefinition) {
+                 current.BaseType?.OriginalDefinition) {
             yield return Name(current);
         }
 

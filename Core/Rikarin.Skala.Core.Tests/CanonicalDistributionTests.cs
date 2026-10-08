@@ -277,12 +277,13 @@ public sealed class CanonicalDistributionTests {
     [Fact]
     public void EditingTheManagedBlock_IsDriftAndIsAnError() {
         var synced = CanonicalSync.SyncText(
-            Path.Combine(TempRoot, ".editorconfig"),
-            false,
-            string.Empty,
-            Tool,
-            Payload
-        ).Text;
+                Path.Combine(TempRoot, ".editorconfig"),
+                false,
+                string.Empty,
+                Tool,
+                Payload
+            )
+            .Text;
         var tampered = synced.Replace("indent_size = 4", "indent_size = 2", StringComparison.Ordinal);
 
         var status = CanonicalSync.Describe(Path.Combine(TempRoot, ".editorconfig"), true, tampered, Tool, Payload);
@@ -298,12 +299,13 @@ public sealed class CanonicalDistributionTests {
         // The whole point. A repository must be able to say something about itself without the
         // gate calling it drift.
         var synced = CanonicalSync.SyncText(
-            Path.Combine(TempRoot, ".editorconfig"),
-            false,
-            string.Empty,
-            Tool,
-            Payload
-        ).Text;
+                Path.Combine(TempRoot, ".editorconfig"),
+                false,
+                string.Empty,
+                Tool,
+                Payload
+            )
+            .Text;
         var withLocal = synced + "\n[*.generated.cs]\nindent_size = 2\n";
 
         var status = CanonicalSync.Describe(Path.Combine(TempRoot, ".editorconfig"), true, withLocal, Tool, Payload);
@@ -320,12 +322,13 @@ public sealed class CanonicalDistributionTests {
         var older = Payload.Replace("indent_size = 4", "indent_size = 8", StringComparison.Ordinal);
         var olderManifest = CanonicalEditorConfig.DescribeManifest("0.0.9", older);
         var repository = CanonicalSync.SyncText(
-            Path.Combine(TempRoot, ".editorconfig"),
-            false,
-            string.Empty,
-            olderManifest,
-            older
-        ).Text;
+                Path.Combine(TempRoot, ".editorconfig"),
+                false,
+                string.Empty,
+                olderManifest,
+                older
+            )
+            .Text;
 
         var status = CanonicalSync.Describe(Path.Combine(TempRoot, ".editorconfig"), true, repository, Tool, Payload);
 
@@ -347,12 +350,13 @@ public sealed class CanonicalDistributionTests {
         File.WriteAllText(
             Path.Combine(directory, ".editorconfig"),
             CanonicalSync.SyncText(
-                Path.Combine(directory, ".editorconfig"),
-                false,
-                string.Empty,
-                olderManifest,
-                older
-            ).Text
+                    Path.Combine(directory, ".editorconfig"),
+                    false,
+                    string.Empty,
+                    olderManifest,
+                    older
+                )
+                .Text
         );
 
         var result = ConfigCommands.DiffCanonical(directory, true);
@@ -367,12 +371,13 @@ public sealed class CanonicalDistributionTests {
         var directory = TempRoot;
         Directory.CreateDirectory(directory);
         var synced = CanonicalSync.SyncText(
-            Path.Combine(directory, ".editorconfig"),
-            false,
-            string.Empty,
-            Tool,
-            Payload
-        ).Text;
+                Path.Combine(directory, ".editorconfig"),
+                false,
+                string.Empty,
+                Tool,
+                Payload
+            )
+            .Text;
         File.WriteAllText(
             Path.Combine(directory, ".editorconfig"),
             synced.Replace("indent_size = 4", "indent_size = 2", StringComparison.Ordinal)
@@ -392,12 +397,13 @@ public sealed class CanonicalDistributionTests {
         var directory = TempRoot;
         Directory.CreateDirectory(directory);
         var synced = CanonicalSync.SyncText(
-            Path.Combine(directory, ".editorconfig"),
-            false,
-            string.Empty,
-            Tool,
-            Payload
-        ).Text;
+                Path.Combine(directory, ".editorconfig"),
+                false,
+                string.Empty,
+                Tool,
+                Payload
+            )
+            .Text;
         File.WriteAllText(
             Path.Combine(directory, ".editorconfig"),
             synced.Replace("indent_size = 4", "indent_size = 2", StringComparison.Ordinal)

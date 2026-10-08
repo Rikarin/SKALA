@@ -43,7 +43,7 @@ public sealed class IncompleteBannerTests {
             LineCount = 80,
             LoadSummary = "loose (4 file(s), no project)",
             Duration = TimeSpan.FromMilliseconds(300),
-            Diagnostics = [.. diagnostics]
+            Diagnostics = [..diagnostics]
         };
 
     /// <summary>Exactly what <c>FormattingFindings</c> and the loose loader emit for a mode-000 file.</summary>
@@ -200,7 +200,7 @@ public sealed class IncompleteBannerTests {
     public void CauseOf_DefaultsToDefect(string id) =>
         Assert.Equal(
             IncompleteCause.Defect,
-            Renderer.CauseOf(new SkalaDiagnostic(id, SkalaSeverity.Error, "m", Broken))
+            Renderer.CauseOf(new(id, SkalaSeverity.Error, "m", Broken))
         );
 
     /// <summary>
@@ -819,7 +819,7 @@ public sealed class IncompleteBannerTests {
         // The gate's own line, per id: what it fails on is blocking, and the ids the emitters only
         // ever raise at warning must not be. `SK9030` is the one whose two answers differ.
         foreach (var id in neverBlockingInAReport) {
-            Assert.False(Gate.FailsReliability(new SkalaDiagnostic(id, SkalaSeverity.Warning, "m", Root)), id);
+            Assert.False(Gate.FailsReliability(new(id, SkalaSeverity.Warning, "m", Root)), id);
         }
 
         foreach (var id in notAboutAFile) {

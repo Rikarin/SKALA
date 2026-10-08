@@ -8,7 +8,7 @@ namespace Rikarin.Skala.Rules;
 /// <summary>Do not let a per-file diagnostic depend on another source file's constant initializer.</summary>
 internal static class ConstantDependencies {
     public static bool AreFileLocal(SemanticModel model, SyntaxNode expression, CancellationToken cancellation) =>
-        Check(model, expression, new HashSet<ISymbol>(SymbolEqualityComparer.Default), cancellation);
+        Check(model, expression, new(SymbolEqualityComparer.Default), cancellation);
 
     static bool Check(
         SemanticModel model,

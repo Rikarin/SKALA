@@ -45,12 +45,12 @@ public sealed class EditorConfigChain {
         }
 
         found.Reverse();
-        return new EditorConfigChain(full, [.. found], stoppedAtRoot);
+        return new EditorConfigChain(full, [..found], stoppedAtRoot);
     }
 
     /// <summary>A chain built from documents the caller already has. For tests and for `config diff`.</summary>
     public static EditorConfigChain Of(string sourcePath, params EditorConfigDocument[] documents) =>
-        new(Path.GetFullPath(sourcePath), [.. documents], documents.Any(static d => d.IsRoot));
+        new(Path.GetFullPath(sourcePath), [..documents], documents.Any(static d => d.IsRoot));
 
     /// <summary>
     ///     The documents that live above <paramref name="repositoryRoot" />. SK9002 exists because the

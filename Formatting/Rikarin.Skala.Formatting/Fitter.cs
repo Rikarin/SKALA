@@ -119,7 +119,7 @@ public sealed class Fitter {
         var mode = Decide(
             (GroupMode)slot.Arg0,
             facts,
-            new Measures(
+            new(
                 column,
                 continuationColumn,
                 document.FlatWidthOf(node),

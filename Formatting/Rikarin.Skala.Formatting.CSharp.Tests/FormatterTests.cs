@@ -157,25 +157,27 @@ public sealed class IndentationTests {
         // skala_indent_nested_for_stmt = false — a real transformation, and one of the few places the
         // formatter removes indentation the author wrote.
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            [new("csharp_prefer_braces", "false")]
-        ).Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [new("csharp_prefer_braces", "false")]
+            )
+            .Options;
         var formatted = CSharpFormatter.Format(
-            "Test.cs",
-            SourceText.From(
-                """
-                class C {
-                    void M() {
-                        for (var i = 0; i < 2; i++)
-                            for (var j = 0; j < 2; j++) {
-                                M();
-                            }
+                "Test.cs",
+                SourceText.From(
+                    """
+                    class C {
+                        void M() {
+                            for (var i = 0; i < 2; i++)
+                                for (var j = 0; j < 2; j++) {
+                                    M();
+                                }
+                        }
                     }
-                }
-                """
-            ),
-            options
-        ).Formatted;
+                    """
+                ),
+                options
+            )
+            .Formatted;
 
         Assert.Contains(
             "        for (var i = 0; i < 2; i++)\n        for (var j = 0; j < 2; j++) {",
@@ -1004,7 +1006,7 @@ public sealed class BreakPositionTests {
     /// </summary>
     [Fact]
     public void ATupleArgumentLedByACollectionExpression_ConvergesInOnePass_OnTheShapeItsIdentifierTwinTakes() {
-        const string bracket = "[1.0m, .. rest]";
+        const string bracket = "[1.0m, ..rest]";
         const string twin = "first";
         const string member =
             "class T {\n  void M() {\n    var v113 = new int(name114: (\n<X>, source?.Value?.Count));\n  }\n}\n";
@@ -1148,7 +1150,7 @@ public sealed class XmlDocTests {
             static d => d.Id == FormatDiagnosticIds.LineTooLong && d.Severity == SkalaSeverity.Hidden
         );
 
-        Assert.Contains(new string('x', 200), result.Formatted, StringComparison.Ordinal);
+        Assert.Contains(new('x', 200), result.Formatted, StringComparison.Ordinal);
     }
 }
 
@@ -1165,18 +1167,18 @@ public sealed class BracePlacementTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
         return CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
     }
 
-    // ⚠ Written Allman, the way `constructs/braces/csharp_new_line_before_open_brace.cs` is, because
-    // brace placement in this formatter is a *join* decision and not a split one — see
-    // `BraceSplitIsNotImplemented` at the bottom of this class.
+    // Written Allman, the way `constructs/braces/csharp_new_line_before_open_brace.cs` is: these rows
+    // ask the join question. The split direction — the same key on a K&R input — is
+    // BraceSplitIssue465Tests'.
     const string Source = """
                           class C
                           {
@@ -1281,22 +1283,6 @@ public sealed class BracePlacementTests {
     }
 
     /// <summary>
-    ///     ⚠ The half of this key Skala does not implement, asserted rather than left to be discovered.
-    /// </summary>
-    /// <remarks>
-    ///     Brace placement here is a <em>join</em> decision: <c>ShouldJoin</c> is "the one place phase 1
-    ///     removes a line break the author wrote", and nothing inserts one. So a K&amp;R input under
-    ///     <c>csharp_new_line_before_open_brace = all</c> comes back K&amp;R, where the oracle splits every
-    ///     brace onto its own line.
-    ///     <para>
-    ///         ⚠ This is invisible to the key's sweep row, and not by luck: the row's fixture is written
-    ///         Allman, so every one of the fifteen values only ever asks the join question. It is recorded
-    ///         at the key in <c>options.json</c> and in SK-DIV-0091 rather than fixed here — inserting a
-    ///         break before a brace is a new break point in every construct in the language, and it is not
-    ///         reachable from a row that is Conformant.
-    ///     </para>
-    /// </remarks>
-    /// <summary>
     ///     <c>skala_new_line_before_while</c>: the <c>while</c> sits flush with its <c>do</c>.
     /// </summary>
     /// <remarks>
@@ -1358,8 +1344,8 @@ public sealed class BracePlacementTests {
     /// </summary>
     /// <remarks>
     ///     ⚠ Skala read it as <c>multiline</c> and split the braces. The two <c>together</c>s differ only
-    ///     once the brace would be on its own line, which needs the split direction Skala does not have;
-    ///     under the export's <c>none</c> they are the same bytes, and that is what is asserted.
+    ///     once the brace would be on its own line — BraceSplitIssue465Tests asserts that half under
+    ///     <c>all</c>; under the export's <c>none</c> they are the same bytes, and that is what is asserted.
     /// </remarks>
     [Theory]
     [InlineData("multiline", "void M() {\n    }")]
@@ -1374,16 +1360,6 @@ public sealed class BracePlacementTests {
             ),
             StringComparison.Ordinal
         );
-
-    [Fact]
-    public void BraceSplitIsNotImplemented() {
-        var formatted = FormatWith(
-            "class C {\n    void M() {\n        M();\n    }\n}\n",
-            ("csharp_new_line_before_open_brace", "all")
-        );
-
-        Assert.Contains("class C {", formatted, StringComparison.Ordinal);
-    }
 }
 
 /// <summary>
@@ -1403,9 +1379,9 @@ public sealed class SubpatternBreakTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -1486,9 +1462,9 @@ public sealed class ContinuousIndentInsideTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 

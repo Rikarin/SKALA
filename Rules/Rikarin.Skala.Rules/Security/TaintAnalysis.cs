@@ -98,7 +98,7 @@ public static class TaintAnalysis {
                 entry[block.Ordinal] = symbolsIn;
                 captureEntry[block.Ordinal] = capturesIn;
 
-                var walker = new Walker(symbols, CopyOf(symbolsIn), new HashSet<CaptureId>(capturesIn), null);
+                var walker = new Walker(symbols, CopyOf(symbolsIn), new(capturesIn), null);
                 walker.Block(block);
 
                 if (!walker.Tainted.SetEquals(exit[block.Ordinal])
@@ -124,7 +124,7 @@ public static class TaintAnalysis {
             var walker = new Walker(
                 symbols,
                 CopyOf(entry[block.Ordinal]),
-                new HashSet<CaptureId>(captureEntry[block.Ordinal]),
+                new(captureEntry[block.Ordinal]),
                 findings
             );
 
@@ -318,7 +318,7 @@ public static class TaintAnalysis {
                 return;
             }
 
-            findings.Add(new TaintFinding(assignment.Value.Syntax.GetLocation(), sink, Describe(assignment.Value)));
+            findings.Add(new(assignment.Value.Syntax.GetLocation(), sink, Describe(assignment.Value)));
         }
 
         void ReportCallSink(
@@ -343,7 +343,7 @@ public static class TaintAnalysis {
                     continue;
                 }
 
-                findings.Add(new TaintFinding(argument.Value.Syntax.GetLocation(), sink, Describe(argument.Value)));
+                findings.Add(new(argument.Value.Syntax.GetLocation(), sink, Describe(argument.Value)));
                 return;
             }
 

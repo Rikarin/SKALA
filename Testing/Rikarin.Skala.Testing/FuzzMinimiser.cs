@@ -141,7 +141,7 @@ public static class FuzzMinimiser {
     ///     first real finding — a mixed-line-ending case whose whole content was the <c>\r</c> that the
     ///     normalisation deleted on the way past.
     /// </remarks>
-    static List<string> Split(string source) => [.. source.Split('\n')];
+    static List<string> Split(string source) => [..source.Split('\n')];
 
     /// <summary>ddmin — Zeller and Hildebrandt, "Simplifying and Isolating Failure-Inducing Input".</summary>
     static List<string> Ddmin(List<string> lines, Func<List<string>, bool> test) {

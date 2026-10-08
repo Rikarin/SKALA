@@ -35,7 +35,7 @@ public sealed class ToolWarningSurfaceTests {
             Mode = LoadMode.Binlog,
             LoadSummary = "binlog",
             FileCount = 3,
-            Diagnostics = [.. diagnostics]
+            Diagnostics = [..diagnostics]
         };
 
     static SkalaDiagnostic Coverage() =>

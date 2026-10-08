@@ -122,7 +122,7 @@ public sealed class EditorConfigDocument {
                 continue;
             }
 
-            current.Add(new EditorConfigAssignment(key, value, line, current));
+            current.Add(new(key, value, line, current));
             if (current.Name is null && key == "root" && value.Equals("true", StringComparison.OrdinalIgnoreCase)) {
                 isRoot = true;
             }

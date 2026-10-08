@@ -51,7 +51,7 @@ public sealed class CorrectnessIntegrationTests {
         );
         string[] ids = ["SK2002", "SK2004", "SK2008", "SK2010", "SK2011"];
         var (result, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -76,7 +76,7 @@ public sealed class CorrectnessIntegrationTests {
         );
 
         var verified = VerifyCommand.Run(
-            new VerifyRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,

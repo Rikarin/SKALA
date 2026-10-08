@@ -72,7 +72,7 @@ public static class VerifyCommand {
         request = request with { Mode = ResolveMode(request) };
         if (request.Fix) {
             var fixResult = FixCommand.Run(
-                new FixRequest {
+                new() {
                     Paths = request.Paths,
                     RepositoryRoot = request.RepositoryRoot,
                     Mode = request.Mode,
@@ -94,7 +94,7 @@ public static class VerifyCommand {
 
     static CommandResult Verify(VerifyRequest request, CancellationToken cancellation) {
         var (result, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 Paths = request.Paths,
                 RepositoryRoot = request.RepositoryRoot,
                 Mode = request.Mode ?? LoadMode.Loose,
@@ -246,7 +246,7 @@ public static class VerifyCommand {
             ?? Directory.GetCurrentDirectory()
         );
         return ProjectLoader.ResolveAutoMode(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = root,
                 Mode = LoadMode.Workspace,
                 ProjectPath = request.ProjectPath,

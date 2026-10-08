@@ -174,7 +174,7 @@ public sealed class RuleFixtureTests {
 
             var after = CSharpSyntaxTree.ParseText(
                 text,
-                new CSharpParseOptions(LanguageVersion.Preview),
+                new(LanguageVersion.Preview),
                 cancellationToken: TestContext.Current.CancellationToken
             );
             var errors = after.GetDiagnostics(TestContext.Current.CancellationToken)

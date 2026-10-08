@@ -166,7 +166,7 @@ public static class CSharpFormatter {
             // single most important safety property in the tool.
             var position = diagnostic.Location.GetLineSpan().StartLinePosition;
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     FormatDiagnosticIds.NotParseable,
                     SkalaSeverity.Warning,
                     $"not formatted, the file does not parse: {diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture)}",
@@ -252,7 +252,7 @@ public static class CSharpFormatter {
         var after = SourceText.From(formatted, text.Encoding ?? System.Text.Encoding.UTF8);
         if (ForcedVerificationFailure(path) is { } forced) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     FormatDiagnosticIds.TokenStreamChanged,
                     SkalaSeverity.Error,
                     "not written, the formatted output has a different token stream " + forced,
@@ -293,11 +293,11 @@ public static class CSharpFormatter {
                 text.ToString(),
                 formatted,
                 options,
-                new CrashRefusal(CrashRefusal.TokenStream, FormatDiagnosticIds.TokenStreamChanged, message)
+                new(CrashRefusal.TokenStream, FormatDiagnosticIds.TokenStreamChanged, message)
             );
 
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     FormatDiagnosticIds.TokenStreamChanged,
                     SkalaSeverity.Error,
                     message,
@@ -322,7 +322,7 @@ public static class CSharpFormatter {
         var result = new FormatResult(
             path,
             text,
-            [.. edits],
+            [..edits],
             formatted,
             diagnostics.ToImmutable(),
             FormatOutcome.Formatted,
@@ -355,7 +355,7 @@ public static class CSharpFormatter {
             return bracedResult with { Formatted = text.ToString(), Edits = [] };
         }
 
-        return bracedResult with { Edits = [.. RequiredBraces.Edits(root, bracedResult.Formatted)] };
+        return bracedResult with { Edits = [..RequiredBraces.Edits(root, bracedResult.Formatted)] };
     }
 
     /// <summary>
@@ -384,7 +384,7 @@ public static class CSharpFormatter {
             var end = i > start && output[i - 1] == '\r' ? i - 1 : i;
             if (TextWidth.Measure(output[start..end]) > options.MaxLineLength) {
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         FormatDiagnosticIds.LineTooLong,
                         SkalaSeverity.Hidden,
                         $"the line is {TextWidth.Measure(output[start..end]).ToString(System.Globalization.CultureInfo.InvariantCulture)} columns and nothing in it could break",

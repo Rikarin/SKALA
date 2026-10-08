@@ -156,7 +156,7 @@ public sealed class PairwiseClassificationTests {
             Info("skala_keep_user_linebreaks"),
             ["true", "false"],
             ["alpha", "beta"],
-            new Rikarin.Skala.Testing.CorpusFile("constructs", "sample.cs", "/nowhere/sample.cs")
+            new("constructs", "sample.cs", "/nowhere/sample.cs")
         );
 
         Assert.Equal(4, candidate.Corners);

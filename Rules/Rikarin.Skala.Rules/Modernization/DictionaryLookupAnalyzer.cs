@@ -49,15 +49,24 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
                     return;
                 }
 
+                // ⚠ #511's sweep: `TryAdd` is netstandard2.1 / .NET Core 2.0+, a member the
+                // `netstandard2.0` leg of a multi-targeted project lacks while `Dictionary<K, V>`
+                // itself exists everywhere. The `TryGetValue` shape writes nothing new and is not
+                // withheld; only the `TryAdd` one is, on the paths a sibling without it compiles.
+                var withoutTryAdd = FrameworkAvailability.PathsWithout(start.Options, SupportsTryAdd);
                 start.RegisterSyntaxNodeAction(
-                    context => Analyze(context, dictionary),
+                    context => Analyze(context, dictionary, withoutTryAdd),
                     SyntaxKind.IfStatement
                 );
             }
         );
     }
 
-    static void Analyze(SyntaxNodeAnalysisContext context, INamedTypeSymbol dictionary) {
+    static void Analyze(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol dictionary,
+        ImmutableHashSet<string> withoutTryAdd
+    ) {
         var statement = (IfStatementSyntax)context.Node;
 
         // ⚠ An `else` is not merely another shape. Both rewrites move a declaration into the
@@ -99,7 +108,7 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
         }
 
         if (negated) {
-            ReportTryAdd(context, statement, invocation, access, key, receiver);
+            ReportTryAdd(context, statement, invocation, access, key, receiver, withoutTryAdd);
         } else {
             ReportTryGetValue(context, statement, invocation, access, key, receiver);
         }
@@ -196,9 +205,10 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
         InvocationExpressionSyntax invocation,
         MemberAccessExpressionSyntax access,
         ExpressionSyntax key,
-        INamedTypeSymbol receiver
+        INamedTypeSymbol receiver,
+        ImmutableHashSet<string> withoutTryAdd
     ) {
-        if (!HasTryAdd(receiver)) {
+        if (!HasTryAdd(receiver) || withoutTryAdd.Contains(statement.SyntaxTree.FilePath)) {
             return;
         }
 
@@ -281,6 +291,11 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
                 return null;
         }
     }
+
+    /// <summary>Whether <paramref name="compilation" />'s <c>Dictionary&lt;K, V&gt;</c> has <c>TryAdd</c>.</summary>
+    static bool SupportsTryAdd(Compilation compilation) =>
+        compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2") is { } dictionary
+        && HasTryAdd(dictionary);
 
     static bool HasTryAdd(INamedTypeSymbol receiver) {
         foreach (var member in receiver.GetMembers("TryAdd")) {

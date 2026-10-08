@@ -45,7 +45,7 @@ public sealed class CrossFixtureFixTests {
 
         Parallel.ForEach(
             fixtures,
-            new ParallelOptions { CancellationToken = cancellation },
+            new() { CancellationToken = cancellation },
             fixture => {
                 foreach (var failure in Regressions(
                              File.ReadAllText(fixture.Path),
@@ -121,9 +121,9 @@ public sealed class CrossFixtureFixTests {
         Parallel.ForEach(
             RuleFixtures.All()
                 .Where(static fixture => File.ReadAllText(fixture.Path)
-                        .Contains("class Probe", StringComparison.Ordinal)
+                    .Contains("class Probe", StringComparison.Ordinal)
                 ),
-            new ParallelOptions { CancellationToken = cancellation },
+            new() { CancellationToken = cancellation },
             fixture => {
                 var source = File.ReadAllText(fixture.Path);
                 var before = RuleFixtures.Compile(source, fixture.Path);
@@ -541,7 +541,7 @@ public sealed class CrossFixtureFixTests {
         var was = FixRoundTripTests.ErrorsById(before, cancellation);
         var now = FixRoundTripTests.ErrorsById(RuleFixtures.Compile(text, path), cancellation);
         return [
-            .. now
+            ..now
                 .Where(entry => entry.Value > was.GetValueOrDefault(entry.Key))
                 .OrderBy(static entry => entry.Key, StringComparer.Ordinal)
                 .Select(entry => entry.Key

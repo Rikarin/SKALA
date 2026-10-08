@@ -341,7 +341,7 @@ public sealed class XmlDocModel {
                 return null;
             }
 
-            builder.Add(new XmlDocNameValue(name, value));
+            builder.Add(new(name, value));
         }
 
         return builder.MoveToImmutable();
@@ -524,7 +524,7 @@ public sealed class XmlDocModel {
             end--;
         }
 
-        return [.. lines[start..end]];
+        return [..lines[start..end]];
     }
 
     static string StripMarker(string line) {
