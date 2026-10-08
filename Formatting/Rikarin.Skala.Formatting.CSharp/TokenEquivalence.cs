@@ -135,7 +135,9 @@ public static class TokenEquivalence {
                 items.Add("D:" + trivia.ToFullString());
                 return;
 
-            case SyntaxKind.SingleLineDocumentationCommentTrivia
+            // ⚠ A `/** … */` too since #489: the sub-formatter rebuilds a one-line one as a starred block,
+            // and it is held to the same signature.
+            case SyntaxKind.SingleLineDocumentationCommentTrivia or SyntaxKind.MultiLineDocumentationCommentTrivia
                 when xmlDocReflow && trivia.GetStructure() is DocumentationCommentTriviaSyntax structure:
                 // ⚠ The allowance is the sub-formatter's own signature, not "comments are exempt"
                 // and not "words in order". Words in order would have to be widened again for

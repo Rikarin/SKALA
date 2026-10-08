@@ -118,10 +118,17 @@ public static class XmlDocFormatter {
         var reflowed = 0;
 
         foreach (var trivia in root.DescendantTrivia(descendIntoTrivia: false)) {
+            if (trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {
+                if (!guard.Touches(trivia.FullSpan)
+                    && BlockReplacement(source, trivia, options, newLine) is { } block) {
+                    replacements.Add(block);
+                    reflowed++;
+                }
+
+                continue;
+            }
+
             if (!trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)) {
-                // ⚠ `/** */` is out of scope, not pending. Its interior lines have no marker of
-                // their own, so re-wrapping one means inventing the `*` prefix convention the author
-                // did not necessarily use.
                 continue;
             }
 
@@ -336,6 +343,121 @@ public static class XmlDocFormatter {
         return XmlDocSignature.RoundTrips(structure, text, options.SpaceAfterTripleSlash)
             ? new Attempt(span, text, null)
             : new Attempt(default, null, XmlDocRefusalReason.RoundTrip);
+    }
+
+    /// <summary>
+    ///     A one-line <c>/** … */</c> above a declaration, rebuilt as a starred block. Issue #489,
+    ///     SK-DIV-0181.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured under <c>OracleProfile.DocComments</c>, and the class is narrow. The oracle rebuilds
+    ///     <c>/** &lt;summary&gt;Doc.&lt;/summary&gt; */</c> as <c>/**</c> / <c> * &lt;summary&gt;Doc.&lt;/summary&gt;</c> /
+    ///     <c> */</c>, asterisks on the opener's column plus one, when the comment:
+    ///     <list type="bullet">
+    ///         <item>is on one line, with whitespace before its <c>*/</c> — <c>/** single*/</c>,
+    ///         <c>/**single*/</c> and <c>/**&lt;summary&gt;X&lt;/summary&gt;*/</c> are left as written, while
+    ///         <c>/**single */</c> is rebuilt;</item>
+    ///         <item>starts its line — after <c>[Obsolete] </c> on the same line it is left alone;</item>
+    ///         <item>is the leading trivia of a type or member declaration — above a statement or a local
+    ///         function it is left alone; above an attribute list it is rebuilt;</item>
+    ///         <item>is the only doc comment there — two in a row are merged into one by the oracle, which
+    ///         Skala does not do, so it leaves both.</item>
+    ///     </list>
+    ///     The body is laid out by the same renderer at the same budget as a <c>///</c> comment: probed at
+    ///     code indents 0, 4, 8 and 12 with single-character words, a <c> * </c> line's content wraps exactly
+    ///     where a <c>/// </c> line's does, and a <c>&lt;summary&gt;</c>'s first line carries its start tag's
+    ///     width (SK-DIV-0019) here too.
+    ///     <para>
+    ///         ⚠ A multi-line <c>/** … */</c> is not touched, and the oracle does rebuild some of them — an
+    ///         already-starred block too long for the margin is re-wrapped. That rule was measured only in
+    ///         part (SK-DIV-0380), and Skala leaving the comment as written is the safe half.
+    ///     </para>
+    /// </remarks>
+    static (TextSpan Span, string Text)? BlockReplacement(
+        SourceText source,
+        SyntaxTrivia trivia,
+        in XmlDocOptions options,
+        string newLine
+    ) {
+        var text = trivia.ToFullString();
+        if (text.Contains('\n', StringComparison.Ordinal)
+            || !text.StartsWith("/**", StringComparison.Ordinal)
+            || !text.EndsWith("*/", StringComparison.Ordinal)
+            || text.Length < 6
+            || text[^3] is not (' ' or '\t')
+            || trivia.GetStructure() is not DocumentationCommentTriviaSyntax original
+            || !XmlDocComments.WellFormed(original)) {
+            return null;
+        }
+
+        var line = source.Lines.GetLineFromPosition(trivia.FullSpan.Start);
+        var indent = source.ToString(TextSpan.FromBounds(line.Start, trivia.FullSpan.Start));
+        if (indent.AsSpan().TrimStart(" \t").Length != 0) {
+            return null;
+        }
+
+        // ⚠ Nothing but code may follow it on its line. `/** … */ // note` comes back from the oracle with
+        // the line comment moved below the rebuilt block — a second change Skala does not make.
+        var rest = source.ToString(TextSpan.FromBounds(trivia.FullSpan.End, line.End)).TrimStart(' ', '\t');
+        if (rest.StartsWith("//", StringComparison.Ordinal) || rest.StartsWith("/*", StringComparison.Ordinal)) {
+            return null;
+        }
+
+        // The ending of the comment's own line, as `///` reads its run's own (SK-FUZZ-0015).
+        var lineBreak = source.ToString(TextSpan.FromBounds(line.End, line.EndIncludingLineBreak));
+        if (lineBreak.Length > 0) {
+            newLine = lineBreak;
+        }
+
+        var token = trivia.Token;
+        if (!token.LeadingTrivia.Contains(trivia)
+            || token.LeadingTrivia.Count(static t => t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+                || t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)) != 1
+            || token.Parent?.AncestorsAndSelf().OfType<MemberDeclarationSyntax>().FirstOrDefault() is not { } member
+            || member.GetFirstToken() != token) {
+            return null;
+        }
+
+        // The body, read back as a `///` comment so the one model and the one renderer serve both.
+        var body = text[3..^2].Trim(' ', '\t');
+        if (Probe("/// " + body) is not { } probe
+            || !XmlDocComments.WellFormed(probe)
+            || XmlDocModel.Build(probe, true) is not { } nodes
+            || XmlDocRenderer.Render(nodes, options, options.MaxLineLength - 1) is not { Length: > 0 } lines
+            || lines.Any(static rendered => rendered.Text.Length == 0)) {
+            return null;
+        }
+
+        var rebuilt = new StringBuilder("/**");
+        foreach (var rendered in lines) {
+            rebuilt.Append(newLine).Append(indent).Append(" * ").Append(rendered.Text);
+        }
+
+        rebuilt.Append(newLine).Append(indent).Append(" */");
+        var replacement = rebuilt.ToString();
+
+        // ⚠ The property, as for `///`: the rebuilt block must say what the one-liner said, read back
+        // the way the compiler reads it — asterisks as exterior trivia — or nothing is written.
+        return Probe(replacement) is { } produced
+            && string.Equals(XmlDocSignature.Of(original), XmlDocSignature.Of(produced), StringComparison.Ordinal)
+                ? (trivia.FullSpan, replacement)
+                : null;
+    }
+
+    /// <summary>Parses a documentation comment standing above a declaration.</summary>
+    static DocumentationCommentTriviaSyntax? Probe(string comment) {
+        var tree = CSharpSyntaxTree.ParseText(
+            SourceText.From(comment + "\nclass SkalaXmlDocProbe { }\n"),
+            CSharpFormatter.ParseOptions
+        );
+
+        foreach (var trivia in tree.GetRoot().DescendantTrivia(descendIntoTrivia: false)) {
+            if (trivia.GetStructure() is DocumentationCommentTriviaSyntax structure) {
+                return structure;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>The rendered lines, written as <c>///</c> lines with the given marker.</summary>

@@ -7047,7 +7047,7 @@ and in a gap (`doc-comment-line`, `doc-comment-inline`).
 - options: none.
 - ⚠ status: **resolved**; the last three rows belong to #410, #428 and #429.
 
-## SK-DIV-0181 — `SkalaDocComments` rebuilds a one-line `/** … */` above a member; Skala keeps it
+## SK-DIV-0181 — `SkalaDocComments` rebuilds a one-line `/** … */` above a member; Skala keeps it — **RESOLVED (#489)**
 
 Under `SkalaDocComments` (`CSharpFormatDocComments` on) the oracle rewrites
 `/** <summary>Doc.</summary> */` above a member as three lines — `/**`, ` * <summary>Doc.</summary>`,
@@ -7058,8 +7058,63 @@ profiles differ (SK-DIV-0006), so this is a real divergence and not a profile ar
 construct under `xmldoc/` asks about `/** */` (`Corpus.DocCommentBearing` is chosen by `///` lines), so
 it has no fixture yet, and the rebuild's rules for a starred multi-line block were not probed.
 
+### ✅ Resolved for #489 (2026-10-08) — the one-line class, measured to its edges
+
+Probed under `SkalaDocComments` on 40-odd shapes. The oracle rebuilds a `/** … */` as `/**` / one
+` * ` line per rendered line / ` */`, asterisks on the opener's column plus one, exactly when it:
+
+| condition | rebuilt | left as written |
+|---|---|---|
+| is on one line with whitespace before `*/` | `/** single */`, `/**single */`, `/** x   */` | ⚠ `/** single*/`, `/**single*/`, `/**<summary>X</summary>*/` |
+| starts its line | `/** … */ public int Q;` (Q moves below it) | `[Obsolete] /** … */` |
+| is leading trivia of a type, member, namespace or enum member | above a type at column 0, a nested type, a field, a method, above an `[Obsolete]` list | above a statement, a local function, a `using` |
+| is the only doc comment there | | ⚠ two in a row: the oracle **merges** them into one block |
+| has nothing but code after it on its line | | ⚠ `/** … */ // note`: the oracle moves the `//` below the block |
+
+Skala rebuilds the first column and leaves the second; the last two rows are left as written because
+Skala would otherwise do half of what the oracle does. ⚠ The body is laid out by **the same renderer at
+the same budget** as a `///` comment — probed with single-character words in a `<summary>` at code
+indents 0, 4, 8 and 12, a ` * ` line wraps exactly where a `/// ` line does, and the first content line
+of a `<summary>` carries the start tag's width as SK-DIV-0019 says. That also explains the issue's own
+long sample, which looked like a narrower margin and is the carry. ⚠ The oracle writes **CRLF** inside the
+block it rebuilds in an LF file; Skala writes the file's own ending and the harness compares modulo line
+endings.
+
+`XmlDocFormatter.BlockReplacement` reads the body back as a `///` comment, renders it with the one
+renderer, and writes the block only if its signature — asterisks read as exterior trivia, as the compiler
+reads them — equals the one-liner's; `TokenEquivalence` holds `/** … */` to the same signature.
+
+- pinned by `constructs/trivia/slash-star-star-one-line-above-a-member.cs` (it carries a `///` line so
+  `Corpus.DocCommentBearing` asks the doc-comment profile about it) and `SlashStarStarOneLineIssue489Tests`.
+  The #415 and #429 tests that held `SkalaFormatOnly`'s answer for these shapes now hold
+  `SkalaDocComments`', which is Skala's default.
+- ⚠ the multi-line half is **SK-DIV-0380**.
 - options: none.
-- ⚠ status: **open**.
+- ⚠ status: **resolved** for the one-line class.
+
+## SK-DIV-0380 — the oracle rebuilds some multi-line `/** … */` blocks under `SkalaDocComments`; Skala leaves every multi-line one
+
+Found while measuring #489, under `SkalaDocComments`; Skala leaves each of these as written:
+
+| input | the oracle |
+|---|---|
+| `/** a` / ` * b` / ` */` | `/**` / ` * a` / ` * b` / ` */` |
+| `/**` / ` * text */` | `/**` / ` * text` / ` */` |
+| `/** <summary>Doc.</summary>` / `    <remarks>Unstarred second.</remarks> */` | starred, one element per line |
+| `/** <summary>Doc` / ` * continues.</summary> */` | starred, `<summary>` opened, `Doc` / `continues.` kept on two lines |
+| `/**` / ` *` / ` * <summary>blank first</summary>` / ` */` | the blank ` *` line dropped |
+| an already-starred block whose `<summary>` passes the margin | re-wrapped, the `<summary>` opened |
+| `/** <summary>A</summary> */` / `/** <summary>B</summary> */` | merged into one starred block |
+
+And these the oracle also leaves: `/** text` / ` */`; `/**` / ` *no space after star` / ` */`; a block whose
+asterisks are misaligned; `/**` / unstarred `<summary>…</summary>` / `*/`; an already-starred block that
+fits. No rule separating the two lists was established — `/** text` / ` */` is left while `/** a` / ` * b` /
+` */` is rebuilt — so nothing is implemented. Leaving a block as written is the safe half: it never
+changes a comment the oracle would have left.
+
+- options: none.
+- ⚠ status: **open**, partly measured (2026-10-08). Reproduction: the shapes above, one per member, asked
+  with `Testing ask <dir> --profile=SkalaDocComments`.
 
 ## SK-DIV-0177 — a named argument's colon is a break point by the arrow's rule
 
