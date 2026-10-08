@@ -183,10 +183,7 @@ public sealed class ContinuedListItemIssue468Tests {
                                      """;
 
     public static TheoryData<string, string> Cases =>
-        new() {
-            { Headers, HeadersOracle },
-            { Declarators, DeclaratorsOracle }
-        };
+        new() { { Headers, HeadersOracle }, { Declarators, DeclaratorsOracle } };
 
     [Theory]
     [MemberData(nameof(Cases))]

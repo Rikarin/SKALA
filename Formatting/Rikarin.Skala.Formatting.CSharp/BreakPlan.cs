@@ -4190,14 +4190,8 @@ public sealed class BreakPlan {
         node is EqualsValueClauseSyntax { Parent: ParameterSyntax }
             or AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax or ForStatementSyntax }
             or AttributeArgumentSyntax
-            or EqualsValueClauseSyntax {
-                Parent: VariableDeclaratorSyntax {
-                    Parent: VariableDeclarationSyntax { Parent: ForStatementSyntax or FixedStatementSyntax }
-                }
-            }
-            or EqualsValueClauseSyntax {
-                Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Variables.Count: > 1 } }
-            };
+        || node is EqualsValueClauseSyntax { Parent.Parent: VariableDeclarationSyntax declaration }
+        && (declaration.Variables.Count > 1 || declaration.Parent is ForStatementSyntax or FixedStatementSyntax);
 
     /// <summary>
     ///     How a group whose body is <paramref name="body" /> holds its level: not at all, always, or —
@@ -4813,7 +4807,8 @@ public sealed class BreakPlan {
         // ⚠ And an `if` with an `else` keeps its statement as a simple owner does, though it is itself
         // embedded (#469): its `else` now starts a line of its own (#480), so a group over the whole
         // `if` would read that break as the statement not fitting.
-        if (keeps && (simple || owner is IfStatementSyntax { Else: not null } && EmbeddedStatementOf(embedded) is null)) {
+        if (keeps
+            && (simple || owner is IfStatementSyntax { Else: not null } && EmbeddedStatementOf(embedded) is null)) {
             if (BreaksBefore(first)) {
                 Mandatory(first);
             } else {
@@ -4851,7 +4846,8 @@ public sealed class BreakPlan {
     ///     other nesting. The column is <c>skala_indent_nested_usings_stmt</c>'s business, not this one's.
     /// </remarks>
     void PlanStackedUsing(SyntaxNode node) {
-        if (options.KeepExistingEmbeddedArrangement && node is UsingStatementSyntax { Statement: UsingStatementSyntax inner }) {
+        if (options.KeepExistingEmbeddedArrangement
+            && node is UsingStatementSyntax { Statement: UsingStatementSyntax inner }) {
             Mandatory(FirstToken(inner));
         }
     }
@@ -5270,7 +5266,9 @@ public sealed class BreakPlan {
 
         // ⚠ And `csharp_preserve_single_line_blocks = false` expands a bodiless list too: `int R { get;
         // set; }` comes back one accessor per line (#510). Not under the keep key, which outranks it.
-        var joins = options.KeepExistingDeclarationBlockArrangement ? !broken : bodiless && options.PreserveSingleLineBlocks;
+        var joins = options.KeepExistingDeclarationBlockArrangement
+            ? !broken
+            : bodiless && options.PreserveSingleLineBlocks;
         if (!joins) {
             foreach (var accessor in node.Accessors) {
                 Mandatory(FirstToken(accessor));
@@ -5837,7 +5835,9 @@ public sealed class BreakPlan {
             if (!open.IsKind(SyntaxKind.OpenBraceToken)
                 || !CSharpDocumentBuilder.OpensAJoinableBody(open)
                 || (options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(open)) == 0
-                || captured is { Count: > 0 } && open.Parent is { } parent && IsInsideCaptured(parent)) {
+                || captured is { Count: > 0 }
+                && open.Parent is { } parent
+                && IsInsideCaptured(parent)) {
                 continue;
             }
 
@@ -5916,7 +5916,9 @@ public sealed class BreakPlan {
             return;
         }
 
-        if (open.Parent is { } node && node.SpanStart == open.SpanStart && groups.TryGetValue(Key(node), out var plans)) {
+        if (open.Parent is { } node
+            && node.SpanStart == open.SpanStart
+            && groups.TryGetValue(Key(node), out var plans)) {
             var index = plans.FindIndex(plan => plan.Id == group);
             if (index < 0) {
                 // The group is not one this node opens: its points enclose the brace already.

@@ -1073,8 +1073,10 @@ public sealed partial class CSharpDocumentBuilder {
             // `while (b) lock (this) { … }`, `… else if (c) { … }` and `… else while (c) { … }` all take
             // the blank after them and the blank before them, as `if (b) { … }` does; `if (b) M(); else
             // M();` takes neither.
-            if (child is StatementSyntax embedded && HasChildBlock(embedded)
-                || child is ElseClauseSyntax { Statement: not BlockSyntax and var otherwise } && HasChildBlock(otherwise)) {
+            if (child is StatementSyntax embedded
+                && HasChildBlock(embedded)
+                || child is ElseClauseSyntax { Statement: not BlockSyntax and var otherwise }
+                && HasChildBlock(otherwise)) {
                 return true;
             }
         }

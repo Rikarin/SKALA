@@ -2206,7 +2206,10 @@ public sealed partial class CSharpDocumentBuilder {
         // still has a scope for its closing delimiter to be aligned against.
         // ⚠ `Anchor` is a marker too, and `AnchoredBlock` is a block in every respect this
         // bookkeeping cares about; only the writer reads the difference.
-        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None or IndentKind.Anchor
+        if (kind is IndentKind.Outdent
+            or IndentKind.OutdentColumns
+            or IndentKind.None
+            or IndentKind.Anchor
             or IndentKind.AnchoredBrace) {
             return;
         }
@@ -2231,7 +2234,10 @@ public sealed partial class CSharpDocumentBuilder {
     ///     The next piece is this scope's own closing delimiter and takes its opener's line level.
     /// </param>
     void CloseIndent(IndentKind kind, bool alignsCloser = false) {
-        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None or IndentKind.Anchor
+        if (kind is IndentKind.Outdent
+            or IndentKind.OutdentColumns
+            or IndentKind.None
+            or IndentKind.Anchor
             or IndentKind.AnchoredBrace) {
             doc.Close(alignsCloser);
             return;
@@ -3754,7 +3760,8 @@ public sealed partial class CSharpDocumentBuilder {
             return OpensAJoinableBody(nextToken)
                 && ((options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(nextToken)) == 0
                     || IsEmptyBody(nextToken)
-                    && (options.EmptyBlockStyle == EmptyBlockStyle.TogetherSameLine || EmptyBodyStaysJoined(nextToken)));
+                    && (options.EmptyBlockStyle == EmptyBlockStyle.TogetherSameLine
+                        || EmptyBodyStaysJoined(nextToken)));
         }
 
         if (previousToken.IsKind(SyntaxKind.ElseKeyword)) {
