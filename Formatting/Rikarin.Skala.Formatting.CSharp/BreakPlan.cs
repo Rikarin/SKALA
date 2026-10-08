@@ -395,6 +395,9 @@ public sealed class BreakPlan {
     /// </remarks>
     readonly List<ForStatementSyntax> forHeaders = [];
 
+    /// <summary>A lambda-valued local's declarator and its type/name group, linked to the `=`'s group after the walk.</summary>
+    readonly List<(VariableDeclaratorSyntax Declarator, int Group)> oneOverLambdas = [];
+
     readonly string source;
     readonly PhaseOneOptions options;
     IReadOnlySet<Microsoft.CodeAnalysis.Text.TextSpan>? captured;
@@ -423,6 +426,7 @@ public sealed class BreakPlan {
         plan.Walk(root);
         plan.PlanPastLeadingComments(root);
         plan.SettleForHeaders();
+        plan.SettleOneOverNames();
         plan.SettleOpenBraces(root);
         plan.SettleParenthesisedCollections(root);
         plan.CollectForcedBreaks();
@@ -2738,8 +2742,9 @@ public sealed class BreakPlan {
     ///     So the gap is a group of its own whose one question is the ordering rule's second: does the line
     ///     run past the margin before the next place it could end — the <c>=</c>'s point, or the end of
     ///     the declaration. The type's own argument lists see their line end at this point and stay whole.
-    ///     ⚠ One shape stays divergent: at exactly 121 columns, with a bracket that fits below, the oracle
-    ///     breaks here where 122 and wider break the <c>=</c>, and Skala breaks the <c>=</c> at 121 too.
+    ///     ⚠ At exactly 121 columns the oracle breaks here where 122 and wider break the <c>=</c>: for a local
+    ///     whose value is a bare name or a lambda with one for a body, by <see cref="BreaksItsNameOneOver" />
+    ///     (#583); with a bracket that fits below it does too, and that shape stays divergent.
     ///     Not a method's return type or a property's, which the oracle answers with the arrow or the
     ///     accessor list, and not under a block comment behind the type, whose break #420 already takes.
     ///     A break the author wrote here is kept, as it was.
@@ -2754,16 +2759,52 @@ public sealed class BreakPlan {
         // ⚠ Not when a comment sits inside the type: the oracle breaks a type argument list past a block
         // comment (#409) — `Dictionary<A, /* f */` / `B<C, int>> field = null;` — where the same type
         // without it fits whole and gives the break to the name.
-        // ⚠ Nor before a lambda: its arrow and a parenthesised body hold the statement's level at zero
-        // (SK-DIV-0101, #406), and this group's level, spent on the declaration's line, would show
-        // under the hold — `f = () =>` / `    (`. Not measured with a type long enough to break here.
         var name = node.Variables[0].Identifier;
         if (HasBlockCommentBefore(name)
             || node.Type.DescendantTrivia()
                 .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
                     || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                )
-            || node.Variables[0].Initializer?.Value is AnonymousFunctionExpressionSyntax) {
+                )) {
+            return;
+        }
+
+        // ⚠ One column past the margin a local breaks here where 122 breaks the `=` (#583, SK-DIV-0127), for
+        // a value of a bare name and for a lambda with one for a body alike — the lambda only where its `=`
+        // would break, not where the arrow or the parameter list takes the line (#558, #572).
+        var value = node.Variables[0].Initializer?.Value;
+        var oneOver = node is { Parent: LocalDeclarationStatementSyntax, Variables.Count: 1 }
+            && value is IdentifierNameSyntax or AnonymousFunctionExpressionSyntax
+            && (value is not AnonymousFunctionExpressionSyntax || ArrowYieldWidthOf(value) > 0)
+            && BreaksItsNameOneOver(node.Type.Span.Length, name.Span.Length)
+                ? FlatSourceWidth(value!) + 1
+                : 0;
+
+        if (value is AnonymousFunctionExpressionSyntax) {
+            // ⚠ A lambda's arrow and a parenthesised body hold the statement's level at zero (SK-DIV-0101,
+            // #406), so this group's level would show under the hold — `f = () =>` / `    (` — if it were
+            // spent while the group stays flat; it is held at zero until the group breaks, and the group
+            // asks nothing but the one-column question.
+            if (oneOver > 0) {
+                var lambdaGroup = NewGroup();
+                Point(name, lambdaGroup);
+                Describe(
+                    node.Variables[0],
+                    new(
+                        lambdaGroup,
+                        GroupMode.Preserve,
+                        new(
+                            options.KeepsUserBreaksBetweenItems && BreaksBefore(name),
+                            BreaksIfTooLong: true,
+                            OneOverValue: oneOver,
+                            OneOverEquals: -2
+                        ),
+                        true,
+                        true
+                    )
+                );
+                oneOverLambdas.Add((node.Variables[0], lambdaGroup));
+            }
+
             return;
         }
 
@@ -2817,13 +2858,30 @@ public sealed class BreakPlan {
                     options.KeepsUserBreaksBetweenItems && BreaksBefore(name),
                     BreaksIfTooLong: true,
                     PrefersOuterBreak: true,
-                    SkipsOuterTail: true
+                    SkipsOuterTail: true,
+                    OneOverValue: oneOver
                 ),
                 true,
                 true
             )
         );
     }
+
+    /// <summary>
+    ///     Whether a local whose line ends one column past the margin breaks between its type and its name
+    ///     (#583, SK-DIV-0127), by the type's width and the name's.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 on 2 328 locals <c>Func&lt;T…&gt; g… = w…;</c> at
+    ///     indents 8 and 12, one column at a time, and reproduced at every cell: a type of 33 columns or more
+    ///     always, 32 up to a 50-letter name, 24 to 31 up to <c>2 · type − 41</c>, 22 and 23 up to
+    ///     <c>2 · type − 43</c>, narrower never. The indent does not move it.
+    /// </remarks>
+    static bool BreaksItsNameOneOver(int type, int name) =>
+        type >= 33
+        || type == 32 && name <= 50
+        || type >= 24 && name <= 2 * type - 41
+        || type >= 22 && name <= 2 * type - 43;
 
     /// <summary>
     ///     The gap between a parameter's type and its name, broken when the line through the name does not
@@ -8272,6 +8330,35 @@ public sealed class BreakPlan {
     ///     declarator's comma, before a binary operator or after an incrementor's <c>+=</c>. Reading
     ///     the source alone chopped all six.
     /// </remarks>
+    /// <summary>
+    ///     Points each lambda-valued local's type/name group at its `=`'s group, which the walk plans after
+    ///     it (#583). See <see cref="GroupFacts.OneOverEquals" />.
+    /// </summary>
+    void SettleOneOverNames() {
+        foreach (var (declarator, group) in oneOverLambdas) {
+            if (declarator.Initializer is not { } initializer
+                || !groups.TryGetValue(Key(initializer), out var equalsPlans)
+                || !groups.TryGetValue(Key(declarator), out var plans)) {
+                continue;
+            }
+
+            var at = equalsPlans.FindIndex(static p => p.Facts.YieldsThroughArrow > 0);
+            if (at < 0) {
+                continue;
+            }
+
+            var equals = equalsPlans[at];
+
+            var index = plans.FindIndex(p => p.Id == group);
+            if (index < 0) {
+                continue;
+            }
+
+            plans[index] = plans[index] with { Facts = plans[index].Facts with { OneOverEquals = equals.Id } };
+            byId[group] = plans[index];
+        }
+    }
+
     void SettleForHeaders() {
         foreach (var node in forHeaders) {
             var key = Key(node);

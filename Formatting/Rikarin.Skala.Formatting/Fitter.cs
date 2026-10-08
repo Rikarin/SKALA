@@ -293,6 +293,23 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ A local's type/name gap one column past the margin (#583, SK-DIV-0127): it breaks where
+                // the `=` would, for the names the planner has already let through. See GroupFacts.OneOverValue.
+                if (facts.OneOverValue > 0) {
+                    if (m.FlatWidth < Unbounded
+                        && m.Trailing < Unbounded
+                        && m.Column + m.FlatWidth + m.Trailing == width + 1
+                        && (facts.OneOverEquals == -1
+                            || facts.OneOverEquals >= 0 && LambdaGivesWayOneOver(facts, m)
+                        )) {
+                        return ResolvedMode.Broken;
+                    }
+
+                    if (facts.OneOverEquals != -1) {
+                        return ResolvedMode.Flat;
+                    }
+                }
+
                 // ⚠ The two sides of a switch arm's `=>` are alternatives: once the arrow itself has
                 // moved down, the body follows it on the arrow's line and never takes a line of its
                 // own, however wide (issue #378). Read after the kept break, so that a break the
@@ -307,43 +324,13 @@ public sealed class Fitter {
                     && m.PointWidth < Unbounded
                     && m.FlatWidth < Unbounded
                     && !Fits(m.Column, m.FlatWidth, m.Trailing)) {
-                    var head = m.Column + m.PointWidth;
-                    var value = m.FlatWidth - m.PointWidth - 1 + m.Trailing;
-                    var through = head + 1 + facts.YieldsThroughArrow;
-
-                    // ⚠ A local's `=`, past a name wider than the type's gate, yields only to a value at
-                    // least as wide as the measured floor; a narrower one moves below the `=` whole
-                    // (#558). See GroupFacts.LambdaLocal and EqualsFloor.LambdaValue.
-                    // ⚠ One column past the margin the parameter list may chop instead, and then the `=`
-                    // stays (#572). See EqualsFloor.ChopsOneOver.
-                    if (facts.OneOverType > 0
-                        && head + 1 + value == width + 1
-                        && EqualsFloor.ChopsOneOver(facts.OneOverType, value - facts.YieldsThroughArrow - 2, head)) {
-                        return ResolvedMode.Flat;
-                    }
-
-                    if (through <= width) {
-                        return facts.LambdaLocal == LambdaLocal.None
-                            || facts.LambdaLocal.HasFlag(LambdaLocal.ArrowWhileItFits)
-                            || value >= EqualsFloor.LambdaValue(head)
-                                ? ResolvedMode.Flat
-                                : ResolvedMode.Broken;
-                    }
-
-                    // ⚠ And once the line through `=>` overflows, the `=` breaks while `(…) =>` reaches no
-                    // further than three columns past the margin, or, past a name wider than the type's
-                    // second gate, while the value is narrow enough for its body; otherwise the parameter
-                    // list chops (#558). See EqualsFloor.BreaksBeforeAnOverflowingLambda.
-                    if (facts.LambdaLocal != LambdaLocal.None) {
-                        return EqualsFloor.BreaksBeforeAnOverflowingLambda(
-                            head,
-                            value,
-                            through - width,
-                            value - facts.YieldsThroughArrow - 2,
-                            facts.LambdaLocal.HasFlag(LambdaLocal.ChopsPastTheParenthesis)
-                        )
-                            ? ResolvedMode.Broken
-                            : ResolvedMode.Flat;
+                    var decided = EqualsBeforeALambda(
+                        facts,
+                        m.Column + m.PointWidth,
+                        m.FlatWidth - m.PointWidth - 1 + m.Trailing
+                    );
+                    if (decided is { } lambdaMode) {
+                        return lambdaMode;
                     }
                 }
 
@@ -766,6 +753,71 @@ public sealed class Fitter {
     ///         value of it will close the last of this class. SK-DIV-0005 records that as the argument.
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     Whether a lambda-valued local one column past the margin gives the line to its type/name gap
+    ///     (#583, SK-DIV-0127): not where its parameter list chops (#572), and where the `=` would keep the
+    ///     arrow only while the `=` ends past <c>indent + 41 + (indent − 8) / 4</c> — 49, 54 and 59 at indents
+    ///     8, 12 and 16, measured; the arrow's own floors (#558) do not reach that far for a type this wide.
+    /// </summary>
+    bool LambdaGivesWayOneOver(in GroupFacts facts, in Measures m) {
+        var equals = document.FactsOf(facts.OneOverEquals);
+        var head = width - facts.OneOverValue;
+        if (equals.OneOverType > 0
+            && EqualsFloor.ChopsOneOver(equals.OneOverType, facts.OneOverValue - equals.YieldsThroughArrow - 2, head)) {
+            return false;
+        }
+
+        var indent = m.ContinuationColumn - indentWidth;
+        return head > indent + 41 + (indent - 8) / 4
+            || EqualsBeforeALambda(equals, head, facts.OneOverValue) == ResolvedMode.Broken;
+    }
+
+    /// <summary>
+    ///     An `=` before a lambda with a bare name for a body, whose `=` ends at <paramref name="head" /> and whose
+    ///     value runs <paramref name="value" /> columns from there through the `;`; null when no rule here decides.
+    ///     See GroupFacts.YieldsThroughArrow (#453).
+    /// </summary>
+    ResolvedMode? EqualsBeforeALambda(in GroupFacts facts, int head, int value) {
+        var through = head + 1 + facts.YieldsThroughArrow;
+
+        // ⚠ A local's `=`, past a name wider than the type's gate, yields only to a value at
+        // least as wide as the measured floor; a narrower one moves below the `=` whole
+        // (#558). See GroupFacts.LambdaLocal and EqualsFloor.LambdaValue.
+        // ⚠ One column past the margin the parameter list may chop instead, and then the `=`
+        // stays (#572). See EqualsFloor.ChopsOneOver.
+        if (facts.OneOverType > 0
+            && head + 1 + value == width + 1
+            && EqualsFloor.ChopsOneOver(facts.OneOverType, value - facts.YieldsThroughArrow - 2, head)) {
+            return ResolvedMode.Flat;
+        }
+
+        if (through <= width) {
+            return facts.LambdaLocal == LambdaLocal.None
+                || facts.LambdaLocal.HasFlag(LambdaLocal.ArrowWhileItFits)
+                || value >= EqualsFloor.LambdaValue(head)
+                    ? ResolvedMode.Flat
+                    : ResolvedMode.Broken;
+        }
+
+        // ⚠ And once the line through `=>` overflows, the `=` breaks while `(…) =>` reaches no
+        // further than three columns past the margin, or, past a name wider than the type's
+        // second gate, while the value is narrow enough for its body; otherwise the parameter
+        // list chops (#558). See EqualsFloor.BreaksBeforeAnOverflowingLambda.
+        if (facts.LambdaLocal != LambdaLocal.None) {
+            return EqualsFloor.BreaksBeforeAnOverflowingLambda(
+                head,
+                value,
+                through - width,
+                value - facts.YieldsThroughArrow - 2,
+                facts.LambdaLocal.HasFlag(LambdaLocal.ChopsPastTheParenthesis)
+            )
+                ? ResolvedMode.Broken
+                : ResolvedMode.Flat;
+        }
+
+        return null;
+    }
+
     int OuterBreakMargin(in Measures m) => 11 + m.ContinuationColumn / indentWidth;
 
     /// <summary>

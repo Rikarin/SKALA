@@ -7051,11 +7051,25 @@ with attributes**: there the attribute run's own break (#475, #476, #537) is the
 past the margin behind attributes was not. Nor when a comment sits in the type or before the name.
 Pinned by `constructs/wrapping/parameter-type-and-name.cs` and `ParameterTypeNameIssue545Tests`.
 
-Still divergent, measured: the exactly-121 quirk (`T…T v9 = [1, 2, 3];` at 121 breaks the type/name gap
-in the oracle; Skala breaks the `=`, as the oracle does from 122); a type with a block comment inside it,
-which the oracle breaks past the comment (#409) and Skala leaves to that rule by planning no gap; a
-lambda-valued declarator, left unplanned because the group's level would show under the arrow's held one
-(SK-DIV-0101) and not measured with a type long enough to need the gap; and `public static readonly` /
+**The exactly-121 quirk, for a bare name and a lambda (#583, group H round three).** A local whose line ends
+one column past the margin breaks between its type and its name where 122 breaks the `=`, by the type's width
+`W` and the name's `n` alone: `W ≥ 33` always, `W = 32` up to a 50-letter name, `24 ≤ W ≤ 31` up to `2W − 41`,
+`W` of 22 or 23 up to `2W − 43`, narrower never (`BreakPlan.BreaksItsNameOneOver`). Measured on 2 328 locals
+`Func<T…> g… = w…;` at indents 8 and 12, one column at a time, every cell reproduced; ⚠ the indent does not move
+it. A lambda with a bare name for a body answers the same where its `=` would break, and keeps its own breaks
+where they come first: its parameter list where it chops (#572), and its arrow while the `=` ends no further
+than `indent + 41 + (indent − 8) / 4` — 49, 54 and 59 at indents 8, 12 and 16. ⚠ That reach is not the arrow's
+own floor (#558), which for a type this wide keeps the arrow to about 57 at 122; one column over, the gap takes
+the line from there. The group for a lambda asks nothing but this question, and spends its level as a plain
+value's does: held at zero while flat, it took the `=`'s level with it (`f =` / `(…)` at the declaration's
+column). Of 5 716 lambda cells at 121 to 132, every one of the 603 type/name cells is reproduced; the 219 that
+differ are #572's parameter chop past 121 (SK-DIV-0374's grid), and at indents 12 and 16 the chop's reach,
+measured at 8 only, leaves 34 more. Pinned by `LocalOneOverTypeNameIssue583Tests`.
+
+Still divergent, measured: the exactly-121 quirk for a collection expression (`T…T v9 = [1, 2, 3];`), a call
+and any value but a bare name or a bare-name lambda, not measured against the widths above; a type with a
+block comment inside it, which the oracle breaks past the comment (#409) and Skala leaves to that rule by
+planning no gap; and `public static readonly` /
 type / name, where the oracle also breaks between the modifiers and a type too long for their line —
 Skala fills the type there — resolved for fields by #540, above.
 
@@ -10654,7 +10668,7 @@ Every one of the 2 940 cells at types 10 and 26 reproduces.
 ⚠ Past the chop run, from a type of 32, the oracle breaks between the declaration's type and its name
 (`Func<T…>` / `name = (…) => body;`) where #558 breaks the `=`. That happens in 1 524 cells of the type
 sweep at 121, and in 171 of about 7 400 cells of #558's own grids. It is the declaration's type/name
-gap, not this rule's, and it is not wired. Odd type widths read the row below and were not measured.
+gap, not this rule's, and is resolved under SK-DIV-0127 (#583).
 
 - options: `skala_wrap_before_eq = false`, the exported value.
 - ⚠ status: **fixed** within the type/name residue above, pinned by

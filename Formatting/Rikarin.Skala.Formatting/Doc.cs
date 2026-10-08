@@ -1173,6 +1173,17 @@ public sealed class Document {
 ///     <c>column</c> is where the name starts and <c>end</c> where the joined line ends — a short name behind a
 ///     short head stays, and the list after it wraps instead (#539, SK-DIV-0353).
 /// </param>
+/// <param name="OneOverValue">
+///     ⚠ For a local's type/name gap: the width of its value through the <c>;</c>, when the planner has found
+///     the type and the name to be ones the oracle breaks between at a line one column past the margin
+///     (#583, SK-DIV-0127); zero otherwise. At exactly that line the gap breaks — where 122 breaks the
+///     <c>=</c> — if the <c>=</c> would break; see <see cref="OneOverEquals" />.
+/// </param>
+/// <param name="OneOverEquals">
+///     −1 for a value of a bare name, whose <c>=</c> breaks there. Otherwise the value is a lambda and this is
+///     its <c>=</c>'s group, whose arrow and parameter-list rules are asked at the head the name gives it
+///     (−2 until the planner links the two); the gap then asks nothing else.
+/// </param>
 /// <param name="NameFloor">
 ///     The constant of <see cref="NameWidth" />'s rule, which the planner lowers by three per column of the
 ///     competing list's first item: a longer first item keeps more names on the keyword's line.
@@ -1267,6 +1278,8 @@ public readonly record struct GroupFacts(
     int JoinedOverflow = -1,
     int NameWidth = -1,
     int NameFloor = 0,
+    int OneOverValue = 0,
+    int OneOverEquals = -1,
     int TailMargin = -1,
     bool StopsAtYieldingPoints = false,
     bool MeasuresThroughTail = false,
