@@ -133,6 +133,11 @@ public readonly record struct GapSpec(GapRule Rule, int Group);
 ///     <c>+ 1,</c> at 16 and <c>y = 2;</c> at 12 — although the list and the <c>=</c> both opened on the
 ///     declaration's first line.
 /// </param>
+/// <param name="AdditiveLevel">
+///     ⚠ The group's continuation level counts beside one already counted on its line without standing
+///     in for that line (<c>IndentFlags.Additive</c>): a pattern chain that is an <c>&amp;&amp;</c> or
+///     <c>||</c> chain's first operand, whose <c>or</c>s go one level past the operators (#566).
+/// </param>
 public readonly record struct GroupPlan(
     int Id,
     GroupMode Mode,
@@ -143,7 +148,8 @@ public readonly record struct GroupPlan(
     bool SpendsUnderDelimiters = false,
     HeldLevel HoldsLevel = HeldLevel.None,
     bool FromLine = false,
-    bool UnconditionalLevel = false);
+    bool UnconditionalLevel = false,
+    bool AdditiveLevel = false);
 
 /// <summary>
 ///     Whether a group spends its continuation level as zero columns. See <see cref="GroupPlan.HoldsLevel" />.
@@ -3608,16 +3614,52 @@ public sealed class BreakPlan {
             // ⚠ Nor a chain whose `is` the author broke before: `next.Parent` / `is A` / `or B` puts the
             // `or`s on the `is`'s own line's column (Skala's own SpaceRules.cs, measured) — that break
             // has already spent the level.
+            // ⚠ Nor the body of a lambda that is a call's only argument: `Use(x => x is A` / `or B` puts the
+            // `or`s one level past the call's line, as `&&` would be — the parenthesis kept on that line
+            // already spends the level the chain would have (#566).
             ownLevel: pattern
             && !IsStatementCondition(root)
+            && !IsSoleLambdaArgumentBody(root)
             && root.Parent is not BinaryPatternSyntax
             // ⚠ Nor a subpattern's value (#549): `is {` / `Parent: A` / `or B` / `}` puts the `or`s on
             // `Parent:`'s column, in a switch arm's braces as in an `is`'s (measured 2026-10-08).
             && root.Parent is not SubpatternSyntax
             // ⚠ Before the `is` or after it (#550): `keyword is` / `A` / `or B` puts `A` and the `or`s
             // on one column too.
-            && !(EnclosingTypeTest(root) is { } test && (BreaksBefore(test.IsKeyword) || BreaksAroundTheIs(test)))
+            && !(EnclosingTypeTest(root) is { } test && (BreaksBefore(test.IsKeyword) || BreaksAroundTheIs(test))),
+            // ⚠ And that level counts even beside the `&&` or `||` chain's own, opened on the same line,
+            // when the pattern's `is` is the chain's first operand: `return token.Kind() is A` / `or B` two
+            // levels in / `|| other` one (#566, Skala's own HasLooseBreak and FlatSourceWidth).
+            additiveLevel: pattern && IsFirstLogicalOperand(root)
         );
+    }
+
+    /// <summary>
+    ///     Whether a pattern chain is, through its <c>is</c>, the expression body of a lambda that is the
+    ///     only argument of a call (#566).
+    /// </summary>
+    static bool IsSoleLambdaArgumentBody(SyntaxNode pattern) =>
+        EnclosingTypeTest(pattern) is { } test
+        && test.Parent is LambdaExpressionSyntax lambda
+        && lambda.ExpressionBody == test
+        && lambda.Parent is ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } };
+
+    /// <summary>
+    ///     Whether a pattern chain's <c>is</c> is the first operand of an <c>&amp;&amp;</c> or <c>||</c> chain (#566).
+    /// </summary>
+    static bool IsFirstLogicalOperand(SyntaxNode pattern) {
+        if (EnclosingTypeTest(pattern) is not { } test) {
+            return false;
+        }
+
+        SyntaxNode operand = test;
+        while (operand.Parent is BinaryExpressionSyntax binary
+               && binary.Left == operand
+               && binary.Kind() is SyntaxKind.LogicalOrExpression or SyntaxKind.LogicalAndExpression) {
+            operand = binary;
+        }
+
+        return operand != test;
     }
 
     /// <summary>The <c>is</c> a pattern sits under, through parenthesised and negated patterns.</summary>
@@ -7626,9 +7668,10 @@ public sealed class BreakPlan {
         in GroupFacts facts,
         bool spendsIndent = false,
         bool leadingGapInside = false,
-        bool ownLevel = false
+        bool ownLevel = false,
+        bool additiveLevel = false
     ) =>
-        Describe(node, new(group, mode, facts, spendsIndent, leadingGapInside, ownLevel));
+        Describe(node, new(group, mode, facts, spendsIndent, leadingGapInside, ownLevel, AdditiveLevel: additiveLevel));
 
     void Describe(SyntaxNode node, GroupPlan plan) {
         var key = Key(node);

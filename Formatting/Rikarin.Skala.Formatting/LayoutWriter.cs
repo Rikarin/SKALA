@@ -610,7 +610,8 @@ public sealed class LayoutWriter {
                         IsGrouping: (flags & IndentFlags.Grouping) != 0,
                         Lifted: lifted,
                         IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0,
-                        LiftsThrough: liftsThrough
+                        LiftsThrough: liftsThrough,
+                        IsAdditive: (flags & IndentFlags.Additive) != 0
                     ),
                 IndentKind.OneLevel =>
                     new Scope(
@@ -1239,6 +1240,15 @@ public sealed class LayoutWriter {
                 continue;
             }
 
+            // ⚠ See IndentFlags.Additive: counted, and the line left to the scope outside it (#566).
+            if (scope.IsAdditive) {
+                if (scope.OpenLine < line) {
+                    level += scope.Level;
+                }
+
+                continue;
+            }
+
             if (scope.OpenLine < line && scope.OpenLine != blocked) {
                 level += scope.Level;
                 blocked = scope.OpenLine;
@@ -1320,7 +1330,8 @@ public sealed class LayoutWriter {
         int AlignedCloser = -1,
         bool LiftsThrough = false,
         bool IsFromLine = false,
-        bool IsBrokenAfter = false);
+        bool IsBrokenAfter = false,
+        bool IsAdditive = false);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     /// <summary>
@@ -1895,6 +1906,15 @@ public sealed class LayoutWriter {
                 && !(scope.OpenLine == line && document.FactsOf(group).Continues)) {
                 level += scope.Lifted + (scope.OpenLine <= line && scope.OpenLine != counted ? scope.Level : 0);
                 break;
+            }
+
+            // ⚠ See IndentFlags.Additive (#566).
+            if (scope.IsAdditive) {
+                if (scope.OpenLine <= line) {
+                    level += scope.Level;
+                }
+
+                continue;
             }
 
             if (scope.OpenLine <= line && scope.OpenLine != counted) {

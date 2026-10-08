@@ -416,7 +416,15 @@ public enum IndentFlags {
     ///     the closing brace still returns to the opener's level (#464). At the export's multiplier of 1
     ///     the two are the same number.
     /// </summary>
-    Multiplied = 512
+    Multiplied = 512,
+
+    /// <summary>
+    ///     ⚠ A continuation level that counts on every line after its own beside one already counted on
+    ///     that line, without itself hiding the next: a pattern chain that is an <c>&amp;&amp;</c> or <c>||</c>
+    ///     chain's first operand puts its <c>or</c>s one level past the operators' (#566). Unlike
+    ///     <see cref="Unconditional" />, which counts and then stands in for the line.
+    /// </summary>
+    Additive = 1024
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>

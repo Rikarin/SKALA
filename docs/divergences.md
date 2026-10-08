@@ -9995,6 +9995,29 @@ either is held, as before.
   110/116). corpus/real unchanged (its export is `chop_if_long`). Pinned by
   `HeldFirstCallUnderAFillIssue552Tests`.
 
+## SK-DIV-0336 — an `or` pattern chain's level inside a sole lambda and before an `||`
+
+Found on Skala's own `BreakPlan.cs` run through the oracle (round three), filed as #566. Two shapes:
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `.Any(static node => node is A or B or C)`, a call's only argument | `or B` one level past the `.Any(` line | two levels |
+| `return token.Kind() is A or B or C \|\| previous.Kind() is D;` | `or B` two levels in, `\|\| previous…` one | both one level in |
+
+The first is the pattern chain's own level (GroupPlan.OwnLevel) stacked on the argument list's, which a
+sole lambda kept on the call's line already spends — an `&&` body takes one level there too. The second
+is the same level collapsing into the `||` chain's continuation, both opened on the statement's line.
+
+- options: `skala_wrap_chained_binary_patterns`, `place_single_method_argument_lambda_on_same_line`.
+- ⚠ status: **resolved** (#566). A pattern chain under the `is` that is a sole lambda argument's body
+  takes no level of its own; one under the `is` that is an `&&`/`||` chain's first operand takes its
+  level as `IndentFlags.Additive` — counted beside the line's other level without hiding it. Measured
+  on 2026-10-09 on eighteen shapes (a sole lambda in a call, after a broken chain, in an expression body,
+  among other arguments; an `||` operand under `var`, `return` and an `if`); the `if` keeps its
+  alignment. ⚠ A row beside it is not this entry's: `var glued = token.Kind() is … || …` breaks the `=`
+  in the oracle (`var g =` does not) — the `=`'s head floor, reported with round four's survey.
+  Pinned by `OrPatternLevelIssue566Tests`.
+
 ## SK-DIV-0320 — a block comment on its own line above an array initializer's first element stayed there
 
 #522: `new[] {` / `/* c */` / `1` comes back `/* c */ 1` from the oracle; Skala kept the break after the

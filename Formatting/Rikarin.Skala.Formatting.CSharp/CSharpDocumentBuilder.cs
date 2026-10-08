@@ -1365,7 +1365,8 @@ public sealed partial class CSharpDocumentBuilder {
         OpenIndent(
             IndentKind.Continuous,
             planned.UnconditionalLevel,
-            chainLevel ? IndentFlags.ChainLevel : IndentFlags.None
+            (chainLevel ? IndentFlags.ChainLevel : IndentFlags.None)
+            | (planned.AdditiveLevel ? IndentFlags.Additive : IndentFlags.None)
         );
     }
 
