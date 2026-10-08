@@ -2558,7 +2558,7 @@ public sealed class BreakPlan {
         var room = call.ArgumentList.Arguments.Count <= 1 ? 24 : 44;
         var group = NewGroup();
         Point(dot, group);
-        Describe(call, group, GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true, HeldCall: room));
+        Describe(call, group, GroupMode.Preserve, new(BreaksIfTooLong: true, HeldCall: room));
     }
 
     /// <summary>
