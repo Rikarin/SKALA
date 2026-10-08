@@ -183,7 +183,7 @@ public sealed class PropertyPatternArrangementTests {
         var compilation = CSharpCompilation.Create(
             "probe",
             [tree],
-            [.. SharedFrameworkReferences.Value, MetadataReference.CreateFromFile(typeof(RuleInfo).Assembly.Location)],
+            [..SharedFrameworkReferences.Value, MetadataReference.CreateFromFile(typeof(RuleInfo).Assembly.Location)],
             new(
                 OutputKind.DynamicallyLinkedLibrary,
                 nullableContextOptions: language >= LanguageVersion.CSharp8

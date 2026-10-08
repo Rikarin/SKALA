@@ -208,16 +208,16 @@ public static class IncrementalAnalysis {
 
         return new IncrementalOutcome(
             [
-                .. AnalyzerHost.Reassessed(unit, hits),
-                .. warm.Findings,
-                .. again.Findings.Where(static finding => !AnalyzerHost.IsSyntaxHalf(finding.RuleId)),
-                .. whole.Findings
+                ..AnalyzerHost.Reassessed(unit, hits),
+                ..warm.Findings,
+                ..again.Findings.Where(static finding => !AnalyzerHost.IsSyntaxHalf(finding.RuleId)),
+                ..whole.Findings
             ],
-            [.. warm.Diagnostics, .. again.Diagnostics, .. whole.Diagnostics],
+            [..warm.Diagnostics, ..again.Diagnostics, ..whole.Diagnostics],
             served,
             halves - served,
             warm.Partial || again.Partial || whole.Partial,
-            [.. warm.Costs, .. again.Costs, .. whole.Costs]
+            [..warm.Costs, ..again.Costs, ..whole.Costs]
         );
     }
 
@@ -325,14 +325,14 @@ public static class IncrementalAnalysis {
                 cache.Put(
                     syntaxKey,
                     path,
-                    [.. found.Where(static finding => AnalyzerHost.IsSyntaxHalf(finding.RuleId))]
+                    [..found.Where(static finding => AnalyzerHost.IsSyntaxHalf(finding.RuleId))]
                 );
             }
 
             cache.Put(
                 semanticKey,
                 path,
-                [.. found.Where(static finding => !AnalyzerHost.IsSyntaxHalf(finding.RuleId))],
+                [..found.Where(static finding => !AnalyzerHost.IsSyntaxHalf(finding.RuleId))],
                 true
             );
         }

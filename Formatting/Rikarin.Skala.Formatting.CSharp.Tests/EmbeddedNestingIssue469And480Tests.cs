@@ -20,7 +20,7 @@ public sealed class EmbeddedNestingIssue469And480Tests {
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
                 [
                     new KeyValuePair<string, string>("csharp_prefer_braces", "false"),
-                    .. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))
+                    ..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))
                 ]
             )
                 .Options

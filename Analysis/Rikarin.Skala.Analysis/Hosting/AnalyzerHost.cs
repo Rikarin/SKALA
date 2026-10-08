@@ -150,7 +150,7 @@ public static class AnalyzerHost {
             unit,
             options,
             [
-                .. Select(mode, hosted)
+                ..Select(mode, hosted)
                     .Where(analyzer => IsPerFileCacheable(analyzer) && (!semanticHalfOnly || !IsSyntaxOnly(analyzer)))
             ],
             mode,
@@ -225,7 +225,7 @@ public static class AnalyzerHost {
         Execute(
             unit,
             options,
-            [.. Select(mode, hosted).Where(static analyzer => !IsPerFileCacheable(analyzer))],
+            [..Select(mode, hosted).Where(static analyzer => !IsPerFileCacheable(analyzer))],
             mode,
             null,
             true,
@@ -348,7 +348,7 @@ public static class AnalyzerHost {
                 // the compilation-scoped bucket, whose compiler diagnostics are in the per-file entries.
                 produced = analyzerDiagnosticsOnly
                     ? result.GetAllDiagnostics()
-                    : [.. result.GetAllDiagnostics(), .. unit.Compilation.GetDiagnostics(cancellation)];
+                    : [..result.GetAllDiagnostics(), ..unit.Compilation.GetDiagnostics(cancellation)];
             } else if (analyzerDiagnosticsOnly) {
                 produced = withAnalyzers.GetAnalyzerDiagnosticsAsync(cancellation).GetAwaiter().GetResult();
             } else {
@@ -477,7 +477,7 @@ public static class AnalyzerHost {
             builder.Add(
                 new AnalyzerCost(
                     analyzer.GetType().Name,
-                    [.. analyzer.SupportedDiagnostics.Select(static descriptor => descriptor.Id)],
+                    [..analyzer.SupportedDiagnostics.Select(static descriptor => descriptor.Id)],
                     telemetry.ExecutionTime
                 )
             );
@@ -521,7 +521,7 @@ public static class AnalyzerHost {
             builder.AddRange(model.GetDiagnostics(null, cancellation));
         }
 
-        costs = [.. measured];
+        costs = [..measured];
         return builder.ToImmutable();
     }
 
@@ -549,7 +549,7 @@ public static class AnalyzerHost {
 
     static ImmutableArray<DiagnosticAnalyzer> SelectFor(LoadMode mode, ImmutableArray<DiagnosticAnalyzer> hosted) {
         if (mode != LoadMode.Loose) {
-            return [.. Own, .. hosted];
+            return [..Own, ..hosted];
         }
 
         // ⚠ In loose mode only the rules that declare no need for semantics run. A third-party
@@ -773,7 +773,7 @@ public static class AnalyzerHost {
 
     /// <summary>Unpacks the text edits a Skala rule attached to its diagnostic.</summary>
     static ImmutableArray<FixEdit> ReadFix(Diagnostic diagnostic, string path) =>
-        [.. FixEdits.Read(diagnostic).Select(edit => new FixEdit(path, edit.Span.Start, edit.Span.Length, edit.Text))];
+        [..FixEdits.Read(diagnostic).Select(edit => new FixEdit(path, edit.Span.Start, edit.Span.Length, edit.Text))];
 
     /// <summary>
     ///     Whether a finding's fix may be applied without review: the catalogue's answer for the rule,
@@ -891,7 +891,7 @@ public static class AnalyzerHost {
         var builder = ImmutableArray.CreateBuilder<Finding>(order.Count);
         foreach (var key in order) {
             var finding = merged[key];
-            builder.Add(finding with { TargetFrameworks = [.. finding.TargetFrameworks.Sort(StringComparer.Ordinal)] });
+            builder.Add(finding with { TargetFrameworks = [..finding.TargetFrameworks.Sort(StringComparer.Ordinal)] });
         }
 
         return builder.ToImmutable();
