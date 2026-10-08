@@ -825,7 +825,8 @@ public sealed class BreakPlan {
                 PlanOperator(pattern, pattern.OperatorToken, pattern.Right, options.WrapBeforeBinaryPatternOp);
                 return;
 
-            case InvocationExpressionSyntax or ConditionalAccessExpressionSyntax when IsChainRoot(node):
+            case InvocationExpressionSyntax or MemberAccessExpressionSyntax or ConditionalAccessExpressionSyntax
+                when IsChainRoot(node):
                 PlanChainedCalls(node);
                 return;
 
@@ -2359,7 +2360,7 @@ public sealed class BreakPlan {
             return;
         }
 
-        var (dots, _) = ChainLinks(root, options);
+        var (dots, _, _) = ChainLinks(root, options);
         var group = NewGroup();
         chainGroups[Key(root)] = group;
         var broken = false;
@@ -2474,12 +2475,37 @@ public sealed class BreakPlan {
     ///     The dots of a chain rooted at <paramref name="root" />, outermost first, and whether its first
     ///     call is a dot-less head — the walk <see cref="PlanChainedCalls" /> registers its points from.
     /// </summary>
-    static (List<SyntaxToken> Dots, bool HeadIsACall) ChainLinks(SyntaxNode root, in PhaseOneOptions options) {
+    static (List<SyntaxToken> Dots, bool HeadIsACall, bool IsAChain) ChainLinks(SyntaxNode root, in PhaseOneOptions options) {
         var dots = new List<SyntaxToken>();
         var headIsACall = false;
+        var headIsAnInvocation = false;
+        var calls = 0;
         var wrapAfterProperty = options.WrapAfterPropertyInChainedMethodCalls;
+
+        // ⚠ A chain that *ends* in a property run is a chain too, and the run is its last link: the
+        // oracle writes `.ToList()` / `.Count;` and `.Where(beta)` / `.Count.Value;` and
+        // `.Count?.Value;` — one break, before the run's first dot (#454, SK-DIV-0066, SK-DIV-0184).
+        // The walk below registers a property's dot only for the call it feeds, so a trailing run
+        // has to be taken here, before it.
+        if (!wrapAfterProperty && TrailingProperty(root) is var (trailingDot, trailingReceiver)) {
+            dots.Add(PropertyRun(trailingDot, trailingReceiver).Dot);
+        }
+
         Collect(root);
-        return (dots, headIsACall);
+
+        // ⚠ An invocation at the head counts as a call even before a property; an indexer at the
+        // head does only before a call (ChainPointCount).
+        return (dots, headIsACall, (calls > 0 || headIsAnInvocation) && (dots.Count >= 2 || headIsACall));
+
+        // The outermost link of the chain when it is a property — a member access or a `?.` binding
+        // that nothing invokes or indexes — as its break token and the receiver left of it.
+        static (SyntaxToken Dot, ExpressionSyntax Receiver)? TrailingProperty(SyntaxNode node) {
+            while (node is ConditionalAccessExpressionSyntax conditional) {
+                node = conditional.WhenNotNull;
+            }
+
+            return PropertyLink(node);
+        }
 
         void Collect(SyntaxNode node) {
             switch (node) {
@@ -2494,36 +2520,44 @@ public sealed class BreakPlan {
                         // and not `.ToList().Count` followed by `.ToString()`. Registering the
                         // invoked dot and skipping the property's gives exactly the wrong one of the
                         // two.
-                        var dot = access.OperatorToken;
-                        var receiver = access.Expression;
-                        while (!wrapAfterProperty
-                               && receiver is MemberAccessExpressionSyntax property) {
-                            dot = property.OperatorToken;
-                            receiver = property.Expression;
+                        //
+                        // ⚠ And the run does not stop at a `?`. `X(…)?.Value.Trim()` is one run —
+                        // `?.Value` feeding `.Trim()` — and the oracle writes `.FirstOrDefault(…)` /
+                        // `?.Value.Trim();` (measured on Skala's own `VersionSources.Value`); but so is
+                        // `X.Self().Inner?.Children.Where(…)`, whose run begins left of the `?`, and the
+                        // oracle writes `.Self()` / `.Inner?.Children.Where(…)` — with two properties
+                        // left of it, two `?` inside it, or a `?.` at its start alike (#456,
+                        // SK-DIV-0067). The run used to end on the `?` and leave `.Inner` behind.
+                        if (wrapAfterProperty) {
+                            dots.Add(access.OperatorToken);
+                            (headIsACall, headIsAnInvocation) = (false, false);
+                            calls++;
+                            Collect(access.Expression);
+                            return;
                         }
 
-                        // ⚠ A property run that begins at the `?` ends on the `?`, not on the `.`
-                        // beside it. `X(…)?.Value.Trim()` is one run — `?.Value` feeding `.Trim()` —
-                        // and the oracle writes
-                        //     .FirstOrDefault(…)
-                        //     ?.Value.Trim();
-                        // Without this the run stopped at the binding, `.Trim` became the point, and
-                        // the two lines came out the other way round. Measured on Skala's own
-                        // `VersionSources.Value`.
-                        if (!wrapAfterProperty
-                            && receiver is MemberBindingExpressionSyntax bound) {
-                            dot = ChainDot(bound);
+                        var run = PropertyRun(access.OperatorToken, access.Expression);
+                        dots.Add(run.Dot);
+                        (headIsACall, headIsAnInvocation) = (false, false);
+                        calls++;
+                        if (run.Recurse is not null) {
+                            Collect(run.Recurse);
                         }
 
-                        dots.Add(dot);
-                        headIsACall = false;
-                        Collect(receiver);
                         return;
                     }
 
                     if (invocation.Expression is MemberBindingExpressionSyntax binding) {
-                        dots.Add(ChainDot(binding));
-                        headIsACall = false;
+                        // ⚠ No recursion past the `?`, here or in a run that crossed one: the
+                        // conditional access the binding hangs from walks its own receiver.
+                        dots.Add(
+                            !wrapAfterProperty && ConditionalOf(binding) is { } owner
+                                ? PropertyRun(ChainDot(binding), owner.Expression, crossed: true).Dot
+                                : ChainDot(binding)
+                        );
+
+                        (headIsACall, headIsAnInvocation) = (false, false);
+                        calls++;
                         return;
                     }
 
@@ -2533,7 +2567,7 @@ public sealed class BreakPlan {
                     // ⚠ Every call arm assigns the flag and the walk is outermost-first, so the value
                     // left standing is the innermost call's: `a.B()[0].C()`'s first call is `a.B()`,
                     // and its `.B` stays with `a`.
-                    headIsACall = true;
+                    (headIsACall, headIsAnInvocation) = (true, true);
                     Collect(invocation.Expression);
                     return;
 
@@ -2574,12 +2608,50 @@ public sealed class BreakPlan {
                     // `x.Items[0].Other(c, d)` both chop before `.Other` at `chop_always`, exactly as
                     // `F(a).Other(c, d)` does and `x.Other(c, d)` does not; so the `[0]` is the
                     // chain's first call and the dot after it is a point. Measured on #380.
-                    headIsACall = true;
+                    //
+                    // ⚠ Except an indexed property after a call, which is a link of its own: the
+                    // oracle writes `source.Make()` / `.Items[0]` / `.Select(…)`, where
+                    // `source.Items[0]` / `.Select(…)` keeps the indexed property as the head.
+                    if (!wrapAfterProperty && PropertyLink(element.Expression) is var (elementDot, elementReceiver)) {
+                        var run = PropertyRun(
+                            elementDot,
+                            elementReceiver,
+                            element.Expression is MemberBindingExpressionSyntax
+                        );
+
+                        if (run.Final is InvocationExpressionSyntax or ElementAccessExpressionSyntax) {
+                            dots.Add(run.Dot);
+                            (headIsACall, headIsAnInvocation) = (false, false);
+                            calls++;
+                            if (run.Recurse is not null) {
+                                Collect(run.Recurse);
+                            }
+
+                            return;
+                        }
+                    }
+
+                    (headIsACall, headIsAnInvocation) = (true, false);
                     Collect(element.Expression);
                     return;
 
-                case PostfixUnaryExpressionSyntax postfix:
-                    Collect(postfix.Operand);
+                // ⚠ `receiver?[0].Children.Where(…)` has an indexer at the head as much as
+                // `receiver[0]` does: the oracle writes `receiver?[0]` / `.Children.Where(…)` (#455,
+                // SK-DIV-0068). The binding is the `?[0]`, reached as the receiver of the first dot.
+                case ElementBindingExpressionSyntax:
+                    (headIsACall, headIsAnInvocation) = (true, false);
+                    return;
+
+                // ⚠ A `!` ends the chain: everything up to and through it is the receiver, and the
+                // call after it is the chain's first. The oracle writes
+                // `receiver.SelfLink()!.SelfLink()` / `.SelfLink()` …, keeps
+                // `source.Select(…)!.Where(beta)` whole as a one-call chain, and at
+                // wrap_before_first_method_call = true writes `receiver?.SelfLink()!` / `.SelfLink()`
+                // (#455, SK-DIV-0066, SK-DIV-0184). Walking through the `!` made `!.SelfLink` a second
+                // call and broke there. The operand is a chain of its own — IsChainRoot does not stop
+                // at a `!` — and breaks by itself: `X.Select(…)` / `.Where(gamma)!.Where(beta)` /
+                // `.ToList()`.
+                case PostfixUnaryExpressionSyntax:
                     return;
 
                 default:
@@ -2589,15 +2661,61 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
+    ///     A property link — a member access or a <c>?.</c> binding — as the token a break before it
+    ///     lands on and the receiver left of it; <see langword="null" /> for anything else.
+    /// </summary>
+    static (SyntaxToken Dot, ExpressionSyntax Receiver)? PropertyLink(SyntaxNode node) =>
+        node switch {
+            MemberAccessExpressionSyntax member => (member.OperatorToken, member.Expression),
+            MemberBindingExpressionSyntax binding when ConditionalOf(binding) is { } owner =>
+                (ChainDot(binding), owner.Expression),
+            _ => null
+        };
+
+    /// <summary>
+    ///     The run of property links ending at <paramref name="dot" />, walked left over member accesses
+    ///     and <c>?.</c> bindings alike.
+    /// </summary>
+    /// <returns>
+    ///     The run's first break token; the node left of the run when the walk crossed no <c>?</c>, for
+    ///     the caller to recurse into — past a <c>?</c> the conditional access walks its own receiver,
+    ///     and recursing as well would count its dots twice; and that node regardless.
+    /// </returns>
+    static (SyntaxToken Dot, ExpressionSyntax? Recurse, ExpressionSyntax Final) PropertyRun(
+        SyntaxToken dot,
+        ExpressionSyntax receiver,
+        bool crossed = false
+    ) {
+        while (PropertyLink(receiver) is var (next, left)) {
+            crossed |= receiver is MemberBindingExpressionSyntax;
+            (dot, receiver) = (next, left);
+        }
+
+        return (dot, crossed ? null : receiver, receiver);
+    }
+
+    /// <summary>The conditional access whose <c>?</c> stands right before a binding.</summary>
+    static ConditionalAccessExpressionSyntax? ConditionalOf(MemberBindingExpressionSyntax binding) =>
+        binding.OperatorToken.GetPreviousToken() is {
+            RawKind: (int)SyntaxKind.QuestionToken,
+            Parent: ConditionalAccessExpressionSyntax owner
+        }
+            ? owner
+            : null;
+
+    /// <summary>
     ///     How many of a chain's dots <see cref="PlanChainedCalls" /> makes break points of — zero when it
     ///     plans no group at all.
     /// </summary>
     static int ChainPointCount(SyntaxNode root, in PhaseOneOptions options) {
-        var (dots, headIsACall) = ChainLinks(root, options);
+        var (dots, headIsACall, isAChain) = ChainLinks(root, options);
 
         // A chain is two calls or more. The dots count the calls reached through one; a dot-less
-        // call at the head is the other.
-        if (dots.Count < 2 && !headIsACall) {
+        // call at the head is the other. ⚠ A trailing property run counts as a link, but not as a
+        // call: `SomeMethod(…)` / `.Property` and `alpha.SomeMethod(…)` / `.Property` break as chains,
+        // while `(\n a)[0].C` — an indexer head and a property — is left whole where `(\n a)[0]` /
+        // `.C()` chops, and a run of nothing but properties is no chain at all.
+        if (!isAChain) {
             return 0;
         }
 
@@ -5547,14 +5665,17 @@ public sealed class BreakPlan {
     ///     are opened around different nodes.
     /// </remarks>
     internal static bool IsChainRoot(SyntaxNode node) =>
+        // ⚠ A member access too: a chain whose last link is a property is a chain (#454), and a
+        // pure property chain plans no group because it has no call to count.
         node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax or MemberBindingExpressionSyntax }
+            or MemberAccessExpressionSyntax
             or ConditionalAccessExpressionSyntax
+        // ⚠ Not stopped by a `!`: the operand of one is a chain of its own (#455, ChainLinks).
         && node.Parent is not (InvocationExpressionSyntax
             or MemberAccessExpressionSyntax
             or ElementAccessExpressionSyntax
             or ConditionalAccessExpressionSyntax
-            or MemberBindingExpressionSyntax
-            or PostfixUnaryExpressionSyntax);
+            or MemberBindingExpressionSyntax);
 
     // ── Registration ─────────────────────────────────────────────────────────────────────────
 

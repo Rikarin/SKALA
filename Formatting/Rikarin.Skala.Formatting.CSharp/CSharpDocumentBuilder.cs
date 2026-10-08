@@ -901,8 +901,7 @@ public sealed partial class CSharpDocumentBuilder {
             or MemberAccessExpressionSyntax
             or ElementAccessExpressionSyntax
             or ConditionalAccessExpressionSyntax
-            or MemberBindingExpressionSyntax
-            or PostfixUnaryExpressionSyntax);
+            or MemberBindingExpressionSyntax);
 
     static bool IsPatternChainRoot(SyntaxNode node) =>
         node is BinaryPatternSyntax && node.Parent is not BinaryPatternSyntax;
