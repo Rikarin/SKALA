@@ -311,10 +311,10 @@ public static class SweepReport {
 
     static string Duration(TimeSpan value) =>
         value.TotalSeconds < 1
-        ? value.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture) + " ms"
-        : value.TotalSeconds < 90
-            ? value.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " s"
-            : value.TotalMinutes.ToString("F1", CultureInfo.InvariantCulture) + " min";
+            ? value.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture) + " ms"
+            : value.TotalSeconds < 90
+                ? value.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " s"
+                : value.TotalMinutes.ToString("F1", CultureInfo.InvariantCulture) + " min";
 
     static string Count(int value) => value.ToString(CultureInfo.InvariantCulture);
 }

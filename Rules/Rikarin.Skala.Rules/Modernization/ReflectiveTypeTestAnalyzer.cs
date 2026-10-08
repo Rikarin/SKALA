@@ -267,7 +267,9 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
         if (expression is not InvocationExpressionSyntax {
                 ArgumentList.Arguments.Count: 0,
                 Expression:
-                MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access
+                MemberAccessExpressionSyntax {
+                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
+                } access
             } call
             || !string.Equals(access.Name.Identifier.ValueText, "GetType", System.StringComparison.Ordinal)) {
             return false;
