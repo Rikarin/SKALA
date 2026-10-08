@@ -874,6 +874,18 @@ public sealed class BreakPlan {
                 PlanAroundEquals(attributeArgument, nameEquals.EqualsToken, attributeArgument.Expression);
                 return;
 
+            // ⚠ A `using` alias's `=` is the `=` of every other declaration (#467): the oracle breaks
+            // after it when the line through the first break point of the type does not fit, and fills
+            // the type below — `using L =` / `    Dictionary<…,` / `        …>;` — where Skala, with no
+            // plan here, filled the type argument list on the first line. Measured on a generic alias,
+            // a tuple alias, an array and a pointer alias, flat and with the author's break kept, from
+            // 118 to 124 columns. ⚠ The group's own continuation level is also what puts a kept
+            // `using Y =` / `(int A, int B);` one level in: outside a namespace no frame was open to
+            // pay for it, and the type came back at column 0.
+            case UsingDirectiveSyntax { Alias: { } alias } usingAlias:
+                PlanAroundEquals(usingAlias, alias.EqualsToken, usingAlias.NamespaceOrType);
+                return;
+
             case ArrowExpressionClauseSyntax { Expression: not null } arrow:
                 PlanExpressionBody(arrow);
                 return;

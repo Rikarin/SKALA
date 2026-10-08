@@ -4793,8 +4793,27 @@ somebody measures a mechanism.
 ⚠ **Scoped to alias directives.** A plain `using System.…;` has no `=` to break at and was not asked
 about; nothing here says what the oracle does with one.
 
-- options: none identified.
-- ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/alias-any-type.cs` and
+**The alias half is resolved (#467), and it was one mechanism after all — a missing plan.** Re-measured
+with `jb cleanupcode` 2025.2.6 on a generic, a tuple, an array and a pointer alias, at the top of a file,
+inside a block namespace and after a file-scoped one, flat from 118 to 124 columns and with the author's
+break after the `=` kept. The alias's `=` is planned as every other declaration's `=`
+(`PlanAroundEquals`): flat to 120, and from 121 the oracle breaks after it and fills a type argument list
+below — `using L =` / `    Dictionary<…,` / `        …>;` — exactly as the ordering rule answers a
+`var x = new Dictionary<…>(…)`. The `=` group's continuation level is also the kept break's: outside a
+namespace no frame was open to pay for it, so `using Y =` / `(int A, int B);` came back at column 0, and
+inside a namespace the namespace's frame paid, which is why only the top of a file showed it. ⚠ The
+entry's first row is stale twice over: Skala no longer left the line whole (it filled a nested type
+argument list, `IReadOnlyList<` / `string>`), and the oracle no longer chops the tuple — it writes
+`(… Names, …IReadOnlyDictionary<string, int>` / `    Counts);`, breaking a tuple *element* between its
+type and its name. That last break is SK-DIV-0127's type/name family and stays divergent: Skala now
+breaks the `=` as the oracle does and then fills inside `IReadOnlyList<`.
+
+The field half is not this mechanism: re-measured, its kept break already lands at column 8, and the
+flat 121-column field is broken by the oracle between its type and its name, which is SK-DIV-0127's.
+
+- options: `skala_wrap_before_eq`, `skala_keep_user_linebreaks`.
+- ⚠ status: alias **resolved** (#467), pinned by `UsingAliasIssue467Tests`; a tuple alias's interior and
+  the field half **open** as SK-DIV-0127. Also pinned by `constructs/syntax/alias-any-type.cs` and
   `constructs/syntax/unsafe-and-function-pointers.cs`.
 
 ## SK-DIV-0100 — required braces are applied during formatting
