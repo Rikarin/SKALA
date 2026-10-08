@@ -93,7 +93,14 @@ public enum GroupFlags {
     ///     preserves Rider's own output in both cases: a chopped pattern before a short body is not
     ///     re-joined, and a kept arrow break before a wide one is kept.
     /// </remarks>
-    ArrowBodyRunsToTheEnd = 4
+    ArrowBodyRunsToTheEnd = 4,
+
+    /// <summary>
+    ///     The group's first break point renders as a space when flat. Read with
+    ///     <see cref="GroupFacts.TailEndsAt" />: the line that point stays on counts the space, the
+    ///     segment after it does not.
+    /// </summary>
+    FirstPointFlatSpace = 8
 }
 
 /// <summary>What a <see cref="DocKind.Line" /> node carries in <see cref="DocNode.Flags" />.</summary>
@@ -267,7 +274,22 @@ public enum LineFlags {
     ChainCallLink = 1024,
 
     /// <summary>With <see cref="ChainCallLink" />: the link's call has one argument or none.</summary>
-    ChainCallOneArgument = 2048
+    ChainCallOneArgument = 2048,
+
+    /// <summary>
+    ///     ⚠ A <see cref="LastResort" /> point that the rest-of-line measure reads through even once its
+    ///     group has resolved Broken: the gap between a parameter's one attribute section and a short
+    ///     parameter (#476, SK-DIV-0352). The oracle chops the section's arguments exactly when the joined
+    ///     line overflows, and puts the parameter below them, rather than moving the parameter alone.
+    /// </summary>
+    ReadThroughWhenBroken = 4096,
+
+    /// <summary>
+    ///     ⚠ The first point of a fill whose items align under the first one: it breaks when the items that
+    ///     would stay on its line before the fill's first wrap are narrower than twelve columns (SK-DIV-0351).
+    ///     <c>skala_align_multiline_type_parameter_list = true</c>'s gap after the <c>&lt;</c>.
+    /// </summary>
+    AlignedListHead = 8192
 }
 
 /// <summary>
@@ -578,6 +600,8 @@ public sealed class Document {
     readonly bool[] hasBreak;
     readonly GroupFacts[] facts;
     readonly IReadOnlyDictionary<int, int> yieldEnds;
+    readonly Dictionary<int, int> throughWidth;
+    readonly Dictionary<int, int[]> alignedItems;
 
     internal Document(
         DocNode[] nodes,
@@ -595,7 +619,9 @@ public sealed class Document {
         int[] draftSegment,
         bool[] hasBreak,
         GroupFacts[] facts,
-        IReadOnlyDictionary<int, int> yieldEnds
+        IReadOnlyDictionary<int, int> yieldEnds,
+        Dictionary<int, int>? throughWidth = null,
+        Dictionary<int, int[]>? alignedItems = null
     ) {
         Nodes = nodes;
         NodeCount = nodeCount;
@@ -613,6 +639,8 @@ public sealed class Document {
         this.hasBreak = hasBreak;
         this.facts = facts;
         this.yieldEnds = yieldEnds;
+        this.throughWidth = throughWidth ?? [];
+        this.alignedItems = alignedItems ?? [];
     }
 
     public DocNode[] Nodes { get; }
@@ -735,6 +763,27 @@ public sealed class Document {
     /// </summary>
     public bool AfterPointRunsToTheEnd(int node) =>
         Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.AfterPointRunsToTheEnd) != 0;
+
+    /// <summary>
+    ///     The flat width from a group's start to the first point of the group its
+    ///     <see cref="GroupFacts.TailEndsAt" /> names — its own points at their flat rendering — or
+    ///     <see cref="Unbounded" /> when anything before that point is certain to break. The flat width
+    ///     for any other node. See <see cref="GroupFacts.MeasuresThroughTail" />.
+    /// </summary>
+    public int[] AlignedItemsOf(int group) => alignedItems.TryGetValue(group, out var items) ? items : [];
+
+    /// <summary>
+    ///     The flat width from a group's start to the first point of the group its
+    ///     <see cref="GroupFacts.TailEndsAt" /> names — see <see cref="ThroughWidthOf" />.
+    /// </summary>
+    public int ThroughWidthOf(int node) => throughWidth.TryGetValue(node, out var width) ? width : FlatWidthOf(node);
+
+    /// <summary>
+    ///     The width the group's first break point renders as when flat — see
+    ///     <see cref="GroupFlags.FirstPointFlatSpace" />.
+    /// </summary>
+    public int FirstPointFlatWidthOf(int node) =>
+        Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.FirstPointFlatSpace) != 0 ? 1 : 0;
 
     /// <summary>
     ///     Whether the node is an arrow group whose body cannot break, so that the rest-of-line measure
@@ -1012,12 +1061,64 @@ public sealed class Document {
 ///     ⚠ A group that breaks exactly when its flat form and this many columns after it — a lambda's
 ///     <c> =&gt;</c> — do not fit on its line, whatever follows (#453). Zero for any other group.
 /// </param>
+/// <param name="LiftsThroughInnerBreaks">
+///     ⚠ A <see cref="Continues" /> group whose lifted list keeps its lifted level for the lines of a
+///     construct that broke inside it on its own line — a switch arm whose arrow the author kept on a line
+///     of its own (#446, SK-DIV-0212): `when x.All(static e => e` / `is T` / `)` puts the `is`, an `&&`
+///     and a `.Member` two levels past the arm, where under a broken chain those lines continue the
+///     ordinary way (#418).
+/// </param>
+/// <param name="PatternHead">
+///     ⚠ A local's <c>=</c> before <c>operand is A or B</c>: the head's width through the <c>=</c>. With
+///     <see cref="PatternWidth" /> it decides the <c>=</c> by <see cref="EqualsFloor.BreaksBeforeAPattern" />
+///     (#446, SK-DIV-0211). Zero for any other group.
+/// </param>
+/// <param name="HeadSlack">
+///     ⚠ Columns a <see cref="BreaksOnlyIfHeadOverflows" /> group adds to its head before asking whether it
+///     fits — measured, for the gap after an <c>is</c> before a binary pattern whose first operand is short
+///     (#446). Zero for any other group.
+/// </param>
+/// <param name="YieldsThroughArrow">
+///     ⚠ An <c>=</c> before a lambda with a bare name for a body: the width from the lambda's start through
+///     its <c>=&gt;</c>. The <c>=</c> stays flat while that much fits after it on its line (#453).
+/// </param>
+/// <param name="PatternWidth">The binary pattern's width. See <see cref="PatternHead" />.</param>
 /// <param name="KeywordWidth">
 ///     ⚠ The width of the keyword after this group's one point, for the point before an <c>is</c> or an
 ///     <c>as</c> (#444, SK-DIV-0210): broken exactly when the operand before the point fits on its line
 ///     and the operand with a space and the keyword does not. The operand is the group's flat width less
 ///     the segment after its point and the point's own space. Zero for any other group.
 /// </param>
+/// <param name="TailEndsAt">
+///     ⚠ For a <see cref="PrefersOuterBreak" /> group: the group whose first point ends this group's
+///     segment, or −1. A primary constructor's base list with interfaces after its base type
+///     (#501, SK-DIV-0198): once the whole list does not fit on the continuation line, the oracle asks
+///     its two questions about <c>: B(…),</c> alone — through the list's first comma, reading the base
+///     type's argument list as no place to break. The line through that comma fits where the
+///     declaration reached: the list stays and the interfaces chop. Otherwise it fits on the
+///     continuation line, by the fitted margin: the break goes before the <c>:</c>. Otherwise the
+///     ordinary second question decides, and <c>: B(</c> stays with its arguments chopped.
+/// </param>
+/// <param name="SkipsOuterTail">
+///     ⚠ For a <see cref="PrefersOuterBreak" /> group: the first question — does everything after the
+///     point fit on the continuation line — is not asked. A primary constructor's base list at
+///     <c>skala_wrap_before_extends_colon = true</c> (#502): the oracle keeps <c>: B(</c> and chops the
+///     arguments of a list that would fit whole below, and breaks before the <c>:</c> only when the
+///     head up to <c>B(</c> does not fit, or by <see cref="TailEndsAt" />'s question.
+/// </param>
+/// <param name="OuterMargin">
+///     ⚠ For a <see cref="PrefersOuterBreak" /> group: the margin its first question leaves, in place of the
+///     fitted one (<c>Fitter.OuterBreakMargin</c>), or zero. A type's base list with one base type after a
+///     primary constructor (SK-DIV-0198): the oracle stops breaking before the <c>:</c> once the
+///     continuation line reaches 88 or 89 columns at two depths, where the fitted margin went on to 105.
+/// </param>
+/// <param name="MeasuresThroughTail">
+///     ⚠ The group is fitted against <see cref="Document.ThroughWidthOf" /> — from its start to the
+///     first point of the group <see cref="TailEndsAt" /> names — with nothing trailing it: flat when
+///     that much fits, broken otherwise. A parameter's run of two or more attribute sections (#475,
+///     SK-DIV-0350): the oracle puts every section and the parameter on lines of their own as soon as
+///     the sections do not fit on one line together, or one of them spans lines, and leaves the gap
+///     before the parameter to its own rule when they do.
 /// <param name="ContinuesIfItBreaks">
 ///     ⚠ <see cref="Continues" /> for a fill chain, whose group resolving broken does not say it breaks
 ///     (#496, SK-DIV-0185): a delimited list on the chain's first line lifts exactly when the chain then
@@ -1057,6 +1158,10 @@ public readonly record struct GroupFacts(
     bool Continues = false,
     int Terminator = 0,
     int KeywordWidth = 0,
+    int TailEndsAt = -1,
+    bool SkipsOuterTail = false,
+    int OuterMargin = 0,
+    bool MeasuresThroughTail = false,
     bool YieldsToOverflowingTypeArguments = false,
     int ColonFloor = 0,
     int ColonFloorSlope = 0,
@@ -1066,4 +1171,9 @@ public readonly record struct GroupFacts(
     int ThroughWidth = 0,
     int HeldCall = 0,
     bool ContinuesIfItBreaks = false,
-    bool FlatIfHeadOverflows = false);
+    bool FlatIfHeadOverflows = false,
+    bool LiftsThroughInnerBreaks = false,
+    int PatternHead = 0,
+    int PatternWidth = 0,
+    int HeadSlack = 0,
+    int YieldsThroughArrow = 0);

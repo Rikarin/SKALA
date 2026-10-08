@@ -33,6 +33,94 @@ public enum EqualsOwner {
 }
 
 public static class EqualsFloor {
+    /// <summary>
+    ///     Whether a local's <c>=</c> breaks before <c>operand is A or B</c> on a line ending at
+    ///     <paramref name="end" />, the head <paramref name="head" /> columns wide through the <c>=</c> and the
+    ///     binary pattern <paramref name="pattern" /> wide (#446, SK-DIV-0211).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on 2 336 cells — heads of 8 to 60, patterns of 10 to 75 columns (two names joined by
+    ///     <c>or</c>, and <c>&gt; 5 and &lt; 10</c>, <c>null or Empty</c>, three names), lines of 110 to 140.
+    ///     A head of 12 or more always breaks the <c>=</c>, whatever the pattern; a narrower head breaks it
+    ///     only for a pattern under a width that grows with the head, and for the two widths just past
+    ///     that, only once the line reaches a column that moves five per column of pattern. One cell — a
+    ///     head of 11, a pattern of 39, a line of 124 — keeps the pattern where both of its neighbours break
+    ///     the <c>=</c>, and it is in the table as measured.
+    /// </remarks>
+    public static bool BreaksBeforeAPattern(int head, int pattern, int end) {
+        if (head >= 12) {
+            return pattern <= WidestPatternAfterAWideHead(head, end);
+        }
+
+        // Per head 8 … 11: the widest pattern that always breaks the `=`, then the line ends from which the
+        // next two widths do.
+        var row = Math.Clamp(head, 8, 11) - 8;
+        ReadOnlySpan<int> always = [27, 31, 35, 38];
+        ReadOnlySpan<int> firstFrom = [125, 123, 126, 121];
+        ReadOnlySpan<int> secondFrom = [130, 128, 131, 132];
+        if (pattern <= always[row]) {
+            return true;
+        }
+
+        if (pattern == always[row] + 1) {
+            return end >= firstFrom[row] && !(head == 11 && pattern == 39 && end == 124);
+        }
+
+        return pattern == always[row] + 2 && end >= secondFrom[row];
+    }
+
+    /// <summary>Heads of 12 … 40 measured, and the line ends 121 … 152 one apart.</summary>
+    static readonly int[] PatternHeads = [12, 14, 16, 20, 24, 30, 40];
+
+    /// <summary>
+    ///     The widest pattern before which a head of 12 or more still breaks the <c>=</c> (5 847 cells, every
+    ///     row one threshold): a wider one is chopped on the declaration's line instead. 90 where the row was
+    ///     all <c>=</c> breaks as far as measured, the widest any row reached.
+    /// </summary>
+    static readonly int[][] WidestPattern = [
+        [
+            88, 87, 87, 87, 86, 86, 86, 85, 85, 85, 84, 84, 83, 83, 83, 82, 82, 82, 81, 81, 81, 80, 80, 80, 79, 79, 79,
+            78, 78, 77, 77, 77
+        ],
+        [
+            89, 88, 88, 88, 87, 87, 87, 86, 86, 86, 85, 85, 84, 84, 84, 83, 83, 83, 82, 82, 82, 81, 81, 81, 80, 80, 80,
+            79, 79, 78, 78, 78
+        ],
+        [
+            90, 89, 89, 89, 88, 88, 88, 87, 87, 87, 86, 86, 86, 85, 85, 84, 84, 84, 83, 83, 83, 82, 82, 82, 81, 81, 81,
+            80, 80, 80, 79, 79
+        ],
+        [
+            90, 90, 90, 90, 90, 90, 90, 89, 89, 89, 88, 88, 88, 87, 87, 87, 86, 86, 85, 85, 85, 84, 84, 84, 83, 83, 83,
+            82, 82, 82, 81, 81
+        ],
+        [
+            90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 89, 89, 89, 88, 88, 88, 87, 87, 86, 86, 86, 85, 85, 85,
+            84, 84, 84, 83, 83
+        ],
+        [
+            90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 91, 91, 90, 90, 89, 89, 89, 88, 88, 88, 87,
+            87, 87, 86, 86, 86
+        ],
+        [
+            90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 88, 88, 88,
+            87, 87, 87, 86, 86
+        ]
+    ];
+
+    static int WidestPatternAfterAWideHead(int head, int end) {
+        var row = 0;
+        while (row < PatternHeads.Length - 1 && head >= PatternHeads[row + 1]) {
+            row++;
+        }
+
+        // The measured row at or below this head: a wider head only moves the threshold up.
+        var values = WidestPattern[row];
+        return end <= 121 ? values[0]
+            : end >= 152 ? values[^1] - (end - 152) / 3
+            : values[end - 121];
+    }
+
     /// <summary>The floor for a callee of 7 at indent 8, the <c>(</c> at columns 52 … 112.</summary>
     static readonly int[] Seven = [
         70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 58, 57, 57, 56, 56, 56, 55, 55, 55, 54, 54, 53, 53, 53, 52,

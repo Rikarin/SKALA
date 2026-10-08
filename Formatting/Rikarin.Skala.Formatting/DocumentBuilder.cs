@@ -75,6 +75,18 @@ public sealed class DocumentBuilder {
     int[] segmentHead = new int[512];
 
     /// <summary>
+    ///     <see cref="Document.ThroughWidthOf" />, for the groups whose <see cref="GroupFacts.TailEndsAt" />
+    ///     names another, by node.
+    /// </summary>
+    readonly Dictionary<int, int> throughWidth = [];
+
+    /// <summary>
+    ///     For a fill whose first point is <see cref="LineFlags.AlignedListHead" />, by group: the segment
+    ///     after each of its points, in order.
+    /// </summary>
+    readonly Dictionary<int, int[]> alignedItems = [];
+
+    /// <summary>
     ///     Each group's mode, by id, for <see cref="segmentHead" /> to know which nested points can break.
     /// </summary>
     readonly Dictionary<int, GroupMode> modes = [];
@@ -587,10 +599,25 @@ public sealed class DocumentBuilder {
         certain[index] = childCertain || selfOrigin > 0;
         certainOrigin[index] = Math.Max(childOrigin, selfOrigin);
         ownerWidth[index] = owned;
+        if (frame.Kind == DocKind.Group && facts[frame.Arg1].TailEndsAt >= 0) {
+            var through = 0;
+            WidthThrough(childStart, count, facts[frame.Arg1].TailEndsAt, ref through);
+            throughWidth[index] = through;
+        }
+
         var afterPointRuns = false;
+        var firstFlatSpace = false;
         var yieldEnd = 0;
         afterPoint[index] = frame.Kind == DocKind.Group
-            ? MeasureSegments(childStart, count, frame.Arg1, out afterPointRuns, out segment[index], out yieldEnd)
+            ? MeasureSegments(
+                childStart,
+                count,
+                frame.Arg1,
+                out afterPointRuns,
+                out segment[index],
+                out firstFlatSpace,
+                out yieldEnd
+            )
             : 0;
         if (yieldEnd > 0 && facts[frame.Arg1].YieldsToOverflowingTypeArguments) {
             yieldEnds[index] = yieldEnd;
@@ -614,7 +641,8 @@ public sealed class DocumentBuilder {
         nodes[index].Count = count;
         nodes[index].Flags = (alignsCloser ? 1 : 0)
             | (afterPointRuns ? (int)GroupFlags.AfterPointRunsToTheEnd : 0)
-            | (arrowRuns ? (int)GroupFlags.ArrowBodyRunsToTheEnd : 0);
+            | (arrowRuns ? (int)GroupFlags.ArrowBodyRunsToTheEnd : 0)
+            | (firstFlatSpace ? (int)GroupFlags.FirstPointFlatSpace : 0);
         nodes[index].Arg2 = frame.Kind == DocKind.Group ? facts[frame.Arg1].Owner : frame.Arg2;
 
         if (stack.Count == 0) {
@@ -667,7 +695,9 @@ public sealed class DocumentBuilder {
             draftSegment,
             breaks,
             [..facts],
-            yieldEnds
+            yieldEnds,
+            throughWidth,
+            alignedItems
         );
     }
 
@@ -699,6 +729,7 @@ public sealed class DocumentBuilder {
         int group,
         out bool firstRunsToTheEnd,
         out int firstSegment,
+        out bool firstFlatSpace,
         out int firstYieldEnd
     ) {
         // ⚠ An arrow's head ends at a yielding point when nothing ordinary can break after it, and
@@ -710,8 +741,10 @@ public sealed class DocumentBuilder {
         // own after the type arguments, the first has `()`. Measured on four such bodies, in a case
         // label's `when`, in an arm and after a lambda's arrow (issue #378).
         var stopsAtYieldingPoints = facts[group].BreaksOnlyIfHeadOverflows;
+        var tailEndsAt = facts[group].TailEndsAt;
         firstRunsToTheEnd = false;
         firstSegment = 0;
+        firstFlatSpace = false;
         firstYieldEnd = 0;
         var yieldEnd = 0;
         if (!ownPoints.Contains(group)) {
@@ -720,6 +753,7 @@ public sealed class DocumentBuilder {
 
         var first = -1;
         var current = -1;
+        var ownPointNodes = new List<int>();
         var flat = 0;
         var point = 0;
         var pointStopped = false;
@@ -750,6 +784,10 @@ public sealed class DocumentBuilder {
             nodes[last].Flags |= (int)LineFlags.LastPoint;
         }
 
+        if (first >= 0 && ((LineFlags)nodes[first].Flags & LineFlags.AlignedListHead) != 0) {
+            alignedItems[group] = [..ownPointNodes.Select(own => segment[own])];
+        }
+
         // ⚠ Whether the first point's measure reached the group's end without meeting a break —
         // no point of a nested group that can break, no required line. Then nothing inside the group
         // will end the line the group is on, and the ordering rule has to count what trails the
@@ -767,6 +805,7 @@ public sealed class DocumentBuilder {
         // would move to — the point measure stops at the bracket's own first point, one column in.
         if (first >= 0) {
             firstSegment = segment[first];
+            firstFlatSpace = ((LineFlags)nodes[first].Flags & LineFlags.FlatSpace) != 0;
         }
 
         firstYieldEnd = yieldEnd;
@@ -810,6 +849,7 @@ public sealed class DocumentBuilder {
                 if (IsOwnBreakPoint(child, group)) {
                     Flush();
                     current = child;
+                    ownPointNodes.Add(child);
                     ended = false;
                     drafted = 0;
                     draftEnded = false;
@@ -832,6 +872,18 @@ public sealed class DocumentBuilder {
                         first = child;
                     }
 
+                    continue;
+                }
+
+                // ⚠ The first point of the group this one's tail ends at closes the segment — the
+                // base list's first comma for a primary constructor's base type (GroupFacts.TailEndsAt).
+                if (tailEndsAt >= 0
+                    && current >= 0
+                    && nodes[child].Kind == DocKind.Line
+                    && (LineKind)nodes[child].Arg0 == LineKind.Soft
+                    && nodes[child].Arg2 == tailEndsAt) {
+                    Flush();
+                    current = -1;
                     continue;
                 }
 
@@ -966,6 +1018,37 @@ public sealed class DocumentBuilder {
                 }
             }
         }
+    }
+
+    /// <summary>
+    ///     Adds the flat widths of the children in order until the first point of
+    ///     <paramref name="tailGroup" />, splicing containers; true once that point is reached. A child
+    ///     with no flat form makes the width <see cref="Document.Unbounded" />.
+    /// </summary>
+    bool WidthThrough(int start, int n, int tailGroup, ref int width) {
+        for (var i = 0; i < n; i++) {
+            var child = children[start + i];
+            ref var node = ref nodes[child];
+            if (node.Kind == DocKind.Line && (LineKind)node.Arg0 == LineKind.Soft && node.Arg2 == tailGroup) {
+                return true;
+            }
+
+            if (node.Count > 0
+                && flatWidth[child] < Document.Unbounded
+                && node.Kind is DocKind.Concat or DocKind.Group or DocKind.Indent or DocKind.Fill) {
+                if (WidthThrough(node.Payload, node.Count, tailGroup, ref width)) {
+                    return true;
+                }
+
+                continue;
+            }
+
+            width = width >= Document.Unbounded || flatWidth[child] >= Document.Unbounded
+                ? Document.Unbounded
+                : width + flatWidth[child];
+        }
+
+        return false;
     }
 
     /// <summary>Whether this child is a break point belonging to the group being closed.</summary>

@@ -276,9 +276,10 @@ public sealed class CollectionAfterEqIssue379Tests {
 
     /// <summary>
     ///     Skala's own pass one from before the fix, given back: the kept break is given to the bracket
-    ///     (#375's rule) and the line settles glued at 125. ⚠ Not the oracle's answer for this input —
-    ///     it breaks the type/name gap, <c>T…T</c> / <c>v9 = [</c> — but the one Skala can give, and
-    ///     it is stable, where before the fix pass one and pass two disagreed on it.
+    ///     (#375's rule), and the line through the <c>=</c> no longer fits, so the type/name gap breaks
+    ///     (#474, SK-DIV-0127) — <c>T…T</c> / <c>v9 = [</c>, the oracle's own answer for this input, asked
+    ///     again with <c>jb cleanupcode</c> 2025.2.6. Before #474 Skala settled glued at 125 columns, the
+    ///     one stable answer it could give without a type/name point.
     /// </summary>
     [Fact]
     public void TheOldPassOne_PastTheMargin_SettlesGlued() {
@@ -301,10 +302,11 @@ public sealed class CollectionAfterEqIssue379Tests {
 
                       public class C {
                           void M() {
-                              {{T(110)}} v9 = [
-                                  {{Eleven}},
-                                  {{RestOfFour}}
-                              ];
+                              {{T(110)}}
+                                  v9 = [
+                                      {{Eleven}},
+                                      {{RestOfFour}}
+                                  ];
                           }
                       }
                       """;

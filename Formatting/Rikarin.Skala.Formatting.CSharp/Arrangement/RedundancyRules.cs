@@ -390,8 +390,8 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
     /// </remarks>
     public override bool IsEnabled(in ArrangementOptions options) =>
         options.ParenthesesRedundancy
-        is ParenthesesRedundancyStyle.Remove
-        or ParenthesesRedundancyStyle.RemoveIfNotClarifiesPrecedence;
+            is ParenthesesRedundancyStyle.Remove
+            or ParenthesesRedundancyStyle.RemoveIfNotClarifiesPrecedence;
 
     public override SyntaxNode Apply(ArrangementContext context) =>
         new Rewriter(context.Guard, context.Options).Visit(context.Root);
