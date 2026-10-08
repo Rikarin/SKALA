@@ -6443,19 +6443,19 @@ public sealed class BreakPlan {
         if (node.Parent is SwitchExpressionArmSyntax
             && !node.Condition.DescendantNodesAndSelf()
                 .Any(static part => part is ArgumentListSyntax { Arguments.Count: > 0 }
-                        or BracketedArgumentListSyntax
-                        or PropertyPatternClauseSyntax
-                        or ListPatternSyntax
-                        or PositionalPatternClauseSyntax
-                        or BinaryExpressionSyntax
-                        or BinaryPatternSyntax
-                        or ConditionalExpressionSyntax
-                        or AnonymousFunctionExpressionSyntax
-                        or InitializerExpressionSyntax
-                        or CollectionExpressionSyntax
-                        or SwitchExpressionSyntax
-                        or QueryExpressionSyntax
-                        or MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax }
+                    or BracketedArgumentListSyntax
+                    or PropertyPatternClauseSyntax
+                    or ListPatternSyntax
+                    or PositionalPatternClauseSyntax
+                    or BinaryExpressionSyntax
+                    or BinaryPatternSyntax
+                    or ConditionalExpressionSyntax
+                    or AnonymousFunctionExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or SwitchExpressionSyntax
+                    or QueryExpressionSyntax
+                    or MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax }
                 )
             && FirstToken(node.Condition) is var condition) {
             var after = NewGroup();
@@ -6486,10 +6486,10 @@ public sealed class BreakPlan {
                 .Any(static part => part is PropertyPatternClauseSyntax or ListPatternSyntax)
             && !label.Pattern.DescendantNodesAndSelf()
                 .Any(static part => part is PositionalPatternClauseSyntax
-                        or BaseArgumentListSyntax
-                        or TypeArgumentListSyntax
-                        or AnonymousFunctionExpressionSyntax
-                        or SwitchExpressionSyntax
+                    or BaseArgumentListSyntax
+                    or TypeArgumentListSyntax
+                    or AnonymousFunctionExpressionSyntax
+                    or SwitchExpressionSyntax
                 )) {
             OpenAt(
                 label,
