@@ -185,7 +185,10 @@ public sealed class CollectionExpressionSpreadTests {
             CoreLibrary(compilation)
         );
 
-        Assert.Empty(compilation.GetDiagnostics(TestContext.Current.CancellationToken).Where(static d => d.Severity == DiagnosticSeverity.Error));
+        Assert.Empty(
+            compilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(static d => d.Severity == DiagnosticSeverity.Error)
+        );
 
         var found = RuleFixtures.Analyze(compilation, SkalaAnalyzers.All, TestContext.Current.CancellationToken);
         Assert.Equal(fires, found.Any(static d => d.Id == RuleIds.CollectionExpressionSpread));
@@ -214,7 +217,11 @@ public sealed class CollectionExpressionSpreadTests {
         bool fires
     ) {
         var body = Header + "        int[] copied = list.ToArray();" + Footer;
-        var current = RuleFixtures.Compile("// fixture-option: TargetFramework = net10.0\n" + body, "shared.cs", LanguageVersion.Latest);
+        var current = RuleFixtures.Compile(
+            "// fixture-option: TargetFramework = net10.0\n" + body,
+            "shared.cs",
+            LanguageVersion.Latest
+        );
         var other = RuleFixtures.Compile(
             (sibling is null ? "" : "// fixture-option: TargetFramework = " + sibling + "\n") + body,
             "shared.cs",
@@ -243,7 +250,8 @@ public sealed class CollectionExpressionSpreadTests {
         return identity.Name + " " + identity.Version.Major;
     }
 
-    sealed class SiblingProvider(ImmutableArray<Compilation> siblings) : AnalyzerConfigOptionsProvider, ISiblingCompilations {
+    sealed class SiblingProvider(ImmutableArray<Compilation> siblings) : AnalyzerConfigOptionsProvider,
+        ISiblingCompilations {
         public ImmutableArray<Compilation> Siblings { get; } = siblings;
 
         public override AnalyzerConfigOptions GlobalOptions => Empty.Instance;

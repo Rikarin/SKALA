@@ -67,7 +67,10 @@ public sealed class SpreadCompilerProofTests {
         // the wrong reason.
         Assert.Equal(2, loaded.Units.Length);
         Assert.All(loaded.Units, static unit => Assert.Single(unit.Siblings));
-        Assert.All(loaded.Units, static unit => Assert.True(unit.Compilation.LanguageVersion >= LanguageVersion.CSharp14));
+        Assert.All(
+            loaded.Units,
+            static unit => Assert.True(unit.Compilation.LanguageVersion >= LanguageVersion.CSharp14)
+        );
         Assert.Equal(
             ["System.Runtime 10", "netstandard 2"],
             loaded.Units.Select(static unit => CoreLibrary(unit.Compilation)).Order(StringComparer.Ordinal)
@@ -130,7 +133,10 @@ public sealed class SpreadCompilerProofTests {
         Project(scratch, "<TargetFramework>net10.0</TargetFramework>", "latest");
         scratch.Write("Probe.cs", Source);
 
-        Assert.Contains(AnalyzerHost.SkippedFor(LoadMode.Loose), static rule => rule.RuleId == CollectionExpressionSpread);
+        Assert.Contains(
+            AnalyzerHost.SkippedFor(LoadMode.Loose),
+            static rule => rule.RuleId == CollectionExpressionSpread
+        );
 
         var (_, report) = CheckCommand.Run(
             new CheckRequest {
