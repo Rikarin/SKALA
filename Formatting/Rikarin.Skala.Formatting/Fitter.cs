@@ -352,9 +352,16 @@ public sealed class Fitter {
                                 : ResolvedMode.Flat;
                     }
 
+                    // ⚠ Under `wrap_if_long` a long rest of the chain pushes the limit out: measured on a
+                    // 2496-row grid, one and two arguments, heads 40 to 110 (#552, GroupFacts.HeldCallRest).
+                    var line = m.ContinuationColumn + tail;
+                    var limit = HeldCallLimit(paren, facts.HeldCall);
                     return Fits(m.Column, receiver)
                         && !Fits(m.Column, m.FlatWidth)
-                        && m.ContinuationColumn + tail <= HeldCallLimit(paren, facts.HeldCall)
+                        && (line <= limit
+                            || facts.HeldCallRest > 0
+                            && line <= width
+                            && facts.HeldCallRest > 1.5 * (line - limit) + 9)
                             ? ResolvedMode.Broken
                             : ResolvedMode.Flat;
                 }

@@ -9310,6 +9310,29 @@ its chain breaks before `.Where` — which is why no corpus row showed it.
   that read any closer moved Newtonsoft's `JsonArrayContract.cs` four lines away from the oracle.
   corpus/real unchanged. Pinned by `ClosingLineListIssue551Tests`.
 
+## SK-DIV-0335 — under `wrap_if_long` a long rest of the chain moves a held first call down
+
+Found beside #484 on 2026-10-08, filed as #552. At `skala_wrap_chained_method_calls = wrap_if_long`:
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `var t1 = source.Select(a, b, c).Where(p).ToList(q);`, `.Select(…)` ending at 120 below | `source` / `.Select(a, b, c)` / `.Where(p).ToList(q);` | `source.Select(` / three arguments / `).Where(p).ToList(q);` |
+
+Measured on 2026-10-09 on 2 496 rows — one and two arguments, heads (the column after a held `.Select(`)
+every ten columns from 40 to 110, call lines below from just past SK-DIV-0331's limit to 116, and a rest
+of the chain after the call from 10 to 103 columns — and 126 more with two-link rests. With a short rest
+the #528 table holds unchanged (376 rows, `.Where(b);`); past the table's limit the call still moves
+down when the rest is wider than `1.5 · (line − limit) + 9`, the same for one link or two
+(`GroupFacts.HeldCallRest`). Below the limit the call always moves; a call that does not fit below
+either is held, as before.
+
+- options: `skala_wrap_chained_method_calls`.
+- ⚠ status: **resolved** (#552), with 35 of the 2 622 rows off by one grid step: heads of 40 and 50 hold
+  a few rows longer than the formula with two arguments (`h15`'s three, `h16`'s H40/H50 rows), and heads
+  of 100 and 110 hold much longer once the call line passes 110 (a rest of up to 94 columns holding at
+  110/116). corpus/real unchanged (its export is `chop_if_long`). Pinned by
+  `HeldFirstCallUnderAFillIssue552Tests`.
+
 ## SK-DIV-0320 — a block comment on its own line above an array initializer's first element stayed there
 
 #522: `new[] {` / `/* c */` / `1` comes back `/* c */ 1` from the oracle; Skala kept the break after the

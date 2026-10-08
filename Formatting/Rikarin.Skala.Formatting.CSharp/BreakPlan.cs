@@ -2526,7 +2526,7 @@ public sealed class BreakPlan {
             )
         );
 
-        PlanHeldFirstCall(dots, first);
+        PlanHeldFirstCall(dots, first, fill ? root : null);
 
         bool Link(SyntaxToken gap) {
             var broke = BreaksBefore(gap);
@@ -2554,7 +2554,7 @@ public sealed class BreakPlan {
     ///     <c>source.Select(</c> / … / <c>)</c> / <c>.Where(beta)</c>) — the other half of the same
     ///     rule, and <see cref="GroupFacts.BreaksOnlyIfTailFits" />'s own question.
     /// </remarks>
-    void PlanHeldFirstCall(List<SyntaxToken> dots, int points) {
+    void PlanHeldFirstCall(List<SyntaxToken> dots, int points, SyntaxNode? fillRoot) {
         if (points >= dots.Count || dots[^1] is not { Parent: MemberAccessExpressionSyntax access } dot) {
             return;
         }
@@ -2577,13 +2577,17 @@ public sealed class BreakPlan {
         // SK-DIV-0331.
         var kind = call.ArgumentList.Arguments.Count <= 1 ? 1 : 2;
         var callHead = call.ArgumentList.OpenParenToken.Span.End - dot.SpanStart;
+
+        // ⚠ Under `wrap_if_long` the rest of the chain after the held call weighs in too (#552); see
+        // GroupFacts.HeldCallRest.
+        var rest = fillRoot is null || call == fillRoot ? 0 : RestWidth(call, fillRoot);
         var group = NewGroup();
         Point(dot, group);
         Describe(
             call,
             group,
             GroupMode.Preserve,
-            new(BreaksIfTooLong: true, HeldCall: kind, HeldCallHead: callHead)
+            new(BreaksIfTooLong: true, HeldCall: kind, HeldCallHead: callHead, HeldCallRest: rest)
         );
     }
 
@@ -4711,6 +4715,28 @@ public sealed class BreakPlan {
     ///     a <c>)</c> or a <c>]</c> read as nothing — so the chain the first pass chopped measures on the
     ///     second pass what it measured flat. See <see cref="GroupFacts.ValueHeadWidth" /> (#553).
     /// </summary>
+    /// <summary>
+    ///     The flat width of a chain after one of its links, through the <c>;</c> that ends the statement
+    ///     when one does: <c>.Where(p).ToList(q);</c> after <c>.Select(…)</c>. A whitespace run counts as
+    ///     one space, and as nothing where it holds a line break.
+    /// </summary>
+    int RestWidth(SyntaxNode link, SyntaxNode root) {
+        var width = 0;
+        var gap = 0;
+        foreach (var c in source.AsSpan(link.Span.End, root.Span.End - link.Span.End)) {
+            if (c is '\r' or '\n') {
+                gap = 2;
+            } else if (c is ' ' or '\t') {
+                gap = gap == 0 ? 1 : gap;
+            } else {
+                width += gap == 1 ? 2 : 1;
+                gap = 0;
+            }
+        }
+
+        return width + (root.GetLastToken().GetNextToken().IsKind(SyntaxKind.SemicolonToken) ? 1 : 0);
+    }
+
     static int FlatSourceWidth(SyntaxNode node) {
         var width = 0;
         var first = true;

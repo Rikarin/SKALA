@@ -1063,6 +1063,12 @@ public sealed class Document {
 ///     1 and 2 are a chain's first call with one argument and with more; 3 and 4 a single call that is a
 ///     whole <c>=</c> value (<see cref="HeldValue" />) with one argument and with more.
 /// </param>
+/// <param name="HeldCallRest">
+///     ⚠ Under <c>wrap_if_long</c> (#552): the flat width of the chain after the held call, through its
+///     <c>;</c>, or zero. Past the measured table's limit the held call still breaks before itself when
+///     that rest is wider than <c>1.5 · (line − limit) + 9</c> — the longer the rest, the further past the
+///     limit the oracle moves the call down rather than chop it.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1091,6 +1097,7 @@ public readonly record struct GroupFacts(
     int ThroughWidth = 0,
     int HeldCall = 0,
     int HeldCallHead = 0,
+    int HeldCallRest = 0,
     bool ContinuesIfItBreaks = false,
     bool FlatIfHeadOverflows = false,
     int ValueHeadWidth = 0,
