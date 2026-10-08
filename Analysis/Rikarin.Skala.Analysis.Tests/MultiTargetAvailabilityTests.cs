@@ -486,7 +486,7 @@ public sealed class MultiTargetAvailabilityTests {
     ///     an analyzer that never consulted the sibling. The <c>Assert.NotNull</c> on
     ///     <c>System.Threading.Monitor</c> is what makes that failure loud rather than green.
     /// </remarks>
-    static void Restore(string project) => Run("restore", project, "--nologo");
+    internal static void Restore(string project) => Run("restore", project, "--nologo");
 
     /// <summary>One <c>dotnet</c> invocation, with its output kept for the failure message.</summary>
     /// <remarks>
@@ -522,7 +522,7 @@ public sealed class MultiTargetAvailabilityTests {
     ///     assertion about MSBuild rather than about the rewrite. <c>CS0234</c> — the issue's symptom —
     ///     is reported at the type name in <c>Probe.cs</c>, so this is exactly where it would appear.
     /// </remarks>
-    static void AssertEveryTargetFrameworkCompiles(string root, string project, string source) {
+    internal static void AssertEveryTargetFrameworkCompiles(string root, string project, string source) {
         var loaded = ProjectLoader.Load(
             new LoadRequest {
                 RepositoryRoot = root,

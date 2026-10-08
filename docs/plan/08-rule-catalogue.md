@@ -9785,7 +9785,9 @@ is false on both), so a file at C# 14 proves its build gets the lowering measure
 must be written**: `latest`/`latestMajor`/`default`/`preview` are resolved by whichever compiler
 builds the project, and Skala's resolves them to 14+. The analyzer reads
 `CSharpParseOptions.SpecifiedLanguageVersion` and declines those. The cost, stated: every project with
-`<LangVersion>latest</LangVersion>` — **Skala's own included** — gets no finding.
+`<LangVersion>latest</LangVersion>` — **Skala's own included** — gets no finding. ⚠ **Superseded in
+part by [#515](https://github.com/Rikarin/SKALA/issues/515)**, below: a `net10.0` reference set is a
+second proof, and `latest`/`preview` on `net10.0` are now reported.
 
 The lowering is chosen by the receiver's static type, so only measured receivers are taken: reference
 types through `Enumerable` (arrays, the collection interfaces, `HashSet<T>`, `string`,
