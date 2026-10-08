@@ -2140,7 +2140,7 @@ public sealed class LayoutWriter {
         // columns (SK-DIV-0351). See AlignedHeadWidth.
         if ((flags & LineFlags.AlignedListHead) != 0
             && AlignedHeadWidth(document.AlignedItemsOf(group), column, TrailingAfterGroup(stack, group))
-            is >= 0 and < MinimumAlignedHead) {
+                is >= 0 and < MinimumAlignedHead) {
             return false;
         }
 
