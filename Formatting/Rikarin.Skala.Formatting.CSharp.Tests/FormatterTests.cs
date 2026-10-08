@@ -1026,32 +1026,51 @@ public sealed class BreakPositionTests {
     }
 
     /// <summary>
-    ///     The two halves of the bracket rule, side by side: a break in front of a <c>[</c> is joined
-    ///     where the gap is nobody else's, and kept where it is an opening parenthesis's.
+    ///     The bracket rule, side by side: a break in front of a <c>[</c> is joined where the gap is
+    ///     nobody else's, and kept where it is an opening parenthesis's or an <c>is</c>'s before a one-line
+    ///     list pattern.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Both measured against the oracle. <c>xs is\n[1, 2]</c> is the case the join was written
-    ///     for (constructs/wrapping/patterns.cs); <c>(\n[1, 2])</c> and <c>(\n[1, 2], 3)</c> come back
-    ///     with the break where the author put it, as <c>(\nx)</c> and <c>(\nx, 3)</c> do. An
-    ///     invocation's <c>F(\n[1, 2])</c> still joins — by the argument list's own rule,
-    ///     <c>skala_keep_existing_invocation_parens_arrangement = false</c>, not by the bracket's.
+    ///     ⚠ The expected string is the oracle's own answer to this input, asked 2026-10-08 (#562,
+    ///     SK-DIV-0396). It refutes what this test used to pin: <c>=&gt; xs is</c> / <c>[1, 2];</c> is not
+    ///     joined — the break after <c>is</c> is kept, one level past the operand's line, and the arrow
+    ///     breaks for the two-line body. What the join was written for (constructs/wrapping/patterns.cs)
+    ///     is a list pattern the author broke inside, <c>xs is</c> / <c>[</c> / <c>1,</c> …, whose
+    ///     <c>[</c> joins its <c>is</c>. <c>(</c> / <c>[1, 2])</c> keeps the parenthesis's break, and an
+    ///     invocation's <c>F(</c> / <c>[1, 2])</c> joins by the argument list's own rule.
     /// </remarks>
     [Fact]
-    public void ABreakBeforeAnOpeningBracket_IsJoinedUnlessTheGapBelongsToAParenthesis() {
+    public void ABreakBeforeAnOpeningBracket_IsJoinedUnlessTheGapBelongsToAParenthesisOrAnIs() {
         var formatted = Format.Text(
             "class T {\n  object A() => xs is\n[1, 2];\n  object B() => (\n[1, 2]);\n"
-            + "  object C() => (\n[1, 2], 3);\n  object D() => F(\n[1, 2]);\n}\n"
+            + "  object C() => (\n[1, 2], 3);\n  object D() => F(\n[1, 2]);\n  object E() => xs is\n[\n1,\n2];\n}\n"
         );
 
-        Assert.Contains("object A() => xs is [1, 2];", formatted, StringComparison.Ordinal);
-        Assert.Contains("object D() => F([1, 2]);", formatted, StringComparison.Ordinal);
         Assert.Equal(
-            ["object B() =>", "(", "[1, 2]);", "object C() =>", "(", "[1, 2], 3);"],
-            TrimmedLines(formatted)
-                .Where(static line => !line.StartsWith("object A", StringComparison.Ordinal)
-                    && !line.StartsWith("object D", StringComparison.Ordinal)
-                    && line is not ("class T {" or "}")
-                )
+            """
+            class T {
+                object A() =>
+                    xs is
+                        [1, 2];
+
+                object B() =>
+                (
+                    [1, 2]);
+
+                object C() =>
+                (
+                    [1, 2], 3);
+
+                object D() => F([1, 2]);
+
+                object E() =>
+                    xs is [
+                        1,
+                        2
+                    ];
+            }
+            """,
+            formatted.TrimEnd('\n')
         );
         Assert.Equal(formatted, Format.Text(formatted));
     }

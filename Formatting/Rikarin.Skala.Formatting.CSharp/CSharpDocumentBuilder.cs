@@ -2277,6 +2277,12 @@ public sealed partial class CSharpDocumentBuilder {
             PositionalPatternClauseSyntax or TupleExpressionSyntax when options.IndentPars
                 == ParenthesesIndentStyle.None =>
                 ParenthesesIndentStyle.Inside,
+            // ⚠ A positional pattern's `)` on a line of its own sits on its elements' column at the
+            // export's `inside` (#559, SK-DIV-0393): `(` / `int a,` / `int b` / `) =>` in an arm, under a
+            // kept arrow break and with the body on the `)`'s line alike, `case (` / … / `):` and
+            // `o is (` / … / `);` — `outside`'s layout. Measured 2026-10-08; the other values not asked.
+            PositionalPatternClauseSyntax when options.IndentPars == ParenthesesIndentStyle.Inside =>
+                ParenthesesIndentStyle.Outside,
             ArgumentListSyntax { Parent: InvocationExpressionSyntax invocation } when BreakPlan.IsNameOf(invocation) =>
                 options.IndentPars,
             ArgumentListSyntax => options.IndentInvocationPars,

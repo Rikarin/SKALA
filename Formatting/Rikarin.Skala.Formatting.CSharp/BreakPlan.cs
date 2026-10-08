@@ -1410,8 +1410,14 @@ public sealed class BreakPlan {
             // gap before `grid[0, 1]`'s bracket is the receiver's, and the oracle keeps
             // `grid\n[0, 1]` with the bracket one level in; the gap before an attribute list's `[`
             // is its owner's — a member's, a parameter's — and no list plan owns it.
+            // ⚠ Nor a one-line list pattern straight after an `is` (#562, SK-DIV-0396): `xs is` /
+            // `[1, 2]` keeps its break, one level past the operand's line, as an expression body, after
+            // `return` and `var b =` and as an argument, written indented or flush — it is the list
+            // pattern the author broke *inside* that the oracle joins to its `is`. The existing pin of
+            // `=> xs is` / `[1, 2]` as joined was not the oracle's answer (re-measured 2026-10-08).
             if (!open.GetPreviousToken().IsKind(SyntaxKind.OpenParenToken)
-                && open.Parent is not (BracketedArgumentListSyntax or AttributeListSyntax)) {
+                && open.Parent is not (BracketedArgumentListSyntax or AttributeListSyntax)
+                && !IsAOneLineListPatternAfterIs(open)) {
                 Flat(open);
             }
         }
@@ -3759,7 +3765,8 @@ public sealed class BreakPlan {
             // ⚠ A break before a pattern's `[` or `{` is not kept: `xs is` / `[1, 2]` comes back joined
             // (constructs/wrapping/patterns.cs).
             || BreaksBefore(FirstToken(test.Pattern))
-            && FirstToken(test.Pattern).Kind() is not (SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken));
+            && (FirstToken(test.Pattern).Kind() is not (SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken)
+                || IsAOneLineListPatternAfterIs(FirstToken(test.Pattern))));
 
     /// <summary>
     ///     An <c>is</c> the author broke before or after, over a pattern that can break: one level past
@@ -3798,6 +3805,15 @@ public sealed class BreakPlan {
             )
         );
     }
+
+    /// <summary>The <c>[</c> of a list pattern written on one line straight after an <c>is</c>.</summary>
+    bool IsAOneLineListPatternAfterIs(SyntaxToken open) =>
+        open.Parent is ListPatternSyntax { Parent: IsPatternExpressionSyntax } list
+        && open.GetPreviousToken().IsKind(SyntaxKind.IsKeyword)
+        && !HasLineBreakIn(list);
+
+    bool HasLineBreakIn(SyntaxNode node) =>
+        source.AsSpan(node.Span.Start, node.Span.Length).Contains('\n');
 
     /// <summary>Whether a binary expression is <c>is</c> or <c>as</c> with a type on its right.</summary>
     static bool IsTypeTest(BinaryExpressionSyntax binary) =>
@@ -5637,8 +5653,26 @@ public sealed class BreakPlan {
                         or CollectionExpressionSyntax
                         or SwitchExpressionSyntax
                 );
+        // ⚠ And a `when` clause's argument list (#564), which the lift reaches only once it chops: `when Compute(` / the
+        // arguments two levels past the arm / `) =>` one level / the body one level. Measured 2026-10-08
+        // written chopped and written whole: whole, the oracle chops the list and keeps the body on the
+        // `) =>` line — `) => Body(…),` and `) => "a long string",` past the margin alike — so a break
+        // after the arrow beside a chopped list is never the width's, which is what makes the lift
+        // idempotent where reading any list in the head was not (generated seed 857717698562573229, a
+        // type argument list that fills, still excluded).
+        var liftsList = arm.WhenClause is { } when
+            && when.DescendantNodes().OfType<ArgumentListSyntax>().Any()
+            && !head.SelectMany(static part => part.DescendantNodesAndSelf())
+                .Any(static node => node is PositionalPatternClauseSyntax
+                    or TypeArgumentListSyntax
+                    or AnonymousFunctionExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or SwitchExpressionSyntax
+                    or QueryExpressionSyntax
+                );
         var keptAfter = !kept
-            && liftsBraces
+            && (liftsBraces || liftsList)
             // ⚠ And never under a body the arrow group holds the level for (#406, SK-DIV-0157).
             && !HeadsWithAChoppedParenthesis(arm.Expression, source, options, out _)
             && options.KeepsUserBreaksBetweenItems
@@ -5884,7 +5918,19 @@ public sealed class BreakPlan {
 
         var keepExisting = options.KeepExistingPropertyPatternsArrangement;
         var joins = options.PlaceSimplePropertyPatternOnSingleLine && !keepExisting;
-        var forced = !options.PlaceSimplePropertyPatternOnSingleLine && !keepExisting;
+        var forced = !options.PlaceSimplePropertyPatternOnSingleLine && !keepExisting
+            // ⚠ And under a break the author kept after a subpattern's colon (#561, SK-DIV-0395): the
+            // value's braces break open however short it is — `Expression:` / `Bar {` / `A: 1` / `}`, and
+            // `Expression:` / `MemberAccessExpressionSyntax {` / … / `} access` at every width measured
+            // around the margin, 66 to 118 columns on its own line. Measured 2026-10-08 with
+            // `Testing ask`, found in Skala's own ReflectiveTypeTestAnalyzer.cs.
+            || !keepExisting
+            && node.Parent is RecursivePatternSyntax { Parent: SubpatternSyntax { ExpressionColon: not null } holder } value
+            && holder.Pattern == value
+            && options.KeepsUserBreaksBetweenItems
+            && FirstToken(value) is var head
+            && !head.IsKind(SyntaxKind.OpenBraceToken)
+            && BreaksBefore(head);
         var chopsAlways = options.WrapPropertyPattern == WrapStyle.ChopAlways && !keepExisting;
 
         var outer = NewGroup();
