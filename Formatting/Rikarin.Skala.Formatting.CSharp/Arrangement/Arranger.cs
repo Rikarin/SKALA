@@ -50,25 +50,25 @@ public static class Arranger {
         // removal that runs later in the same pass (#460).
         var shortening = new QualifiedReferenceRule();
         return [
-        new AccessibilityRule(),
-        new PredefinedTypeRule(),
-        new ArgumentStyleRule(),
-        new VarRule(),
-        new ObjectCreationRule(),
-        new DefaultValueRule(),
-        new NullCheckingPatternRule(),
-        new PropertyPatternRule(),
-        new EmptyStringRule(),
-        new ThisQualifierRule(),
-        new StaticQualifierRule(),
-        shortening,
-        new DiscardDeclarationRule(),
-        new RedundantBracesRule(),
-        new BodyStyleRule(),
-        new RedundantParenthesesRule(),
-        new TrailingCommaRule(),
-        new NamespaceBodyRule(),
-        new UsingsRule(removableUsings, shortening.Required)
+            new AccessibilityRule(),
+            new PredefinedTypeRule(),
+            new ArgumentStyleRule(),
+            new VarRule(),
+            new ObjectCreationRule(),
+            new DefaultValueRule(),
+            new NullCheckingPatternRule(),
+            new PropertyPatternRule(),
+            new EmptyStringRule(),
+            new ThisQualifierRule(),
+            new StaticQualifierRule(),
+            shortening,
+            new DiscardDeclarationRule(),
+            new RedundantBracesRule(),
+            new BodyStyleRule(),
+            new RedundantParenthesesRule(),
+            new TrailingCommaRule(),
+            new NamespaceBodyRule(),
+            new UsingsRule(removableUsings, shortening.Required)
         ];
     }
 

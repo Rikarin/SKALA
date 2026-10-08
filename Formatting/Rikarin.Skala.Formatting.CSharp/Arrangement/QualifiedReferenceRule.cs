@@ -73,7 +73,9 @@ public sealed class QualifiedReferenceRule : ArrangementRule {
 
         public override SyntaxNode? VisitAliasQualifiedName(AliasQualifiedNameSyntax node) {
             var visited = (AliasQualifiedNameSyntax)base.VisitAliasQualifiedName(node)!;
-            return node.Parent is QualifiedNameSyntax or MemberAccessExpressionSyntax ? visited : Shorten(node, visited);
+            return node.Parent is QualifiedNameSyntax or MemberAccessExpressionSyntax
+                ? visited
+                : Shorten(node, visited);
         }
 
         public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node) {
@@ -120,7 +122,8 @@ public sealed class QualifiedReferenceRule : ArrangementRule {
             }
 
             var expression = node is MemberAccessExpressionSyntax
-                || node is AliasQualifiedNameSyntax && !SyntaxFacts.IsInTypeOnlyContext(node);
+                || node is AliasQualifiedNameSyntax
+                && !SyntaxFacts.IsInTypeOnlyContext(node);
 
             if (boundary >= 0) {
                 var candidate = Build(segments, boundary + 1, expression);
@@ -161,7 +164,11 @@ public sealed class QualifiedReferenceRule : ArrangementRule {
         ///         <c>IEnumerable&lt;T&gt;</c> is in scope.
         ///     </para>
         /// </remarks>
-        bool AnySegmentIsShadowed(ExpressionSyntax node, List<ExpressionSyntax> spine, List<SimpleNameSyntax> segments) {
+        bool AnySegmentIsShadowed(
+            ExpressionSyntax node,
+            List<ExpressionSyntax> spine,
+            List<SimpleNameSyntax> segments
+        ) {
             for (var i = 1; i < segments.Count; i++) {
                 var meant = model.GetSymbolInfo(spine[i]).Symbol;
                 meant = (meant as IMethodSymbol)?.ContainingType ?? meant;
@@ -190,7 +197,9 @@ public sealed class QualifiedReferenceRule : ArrangementRule {
                 : model.GetSpeculativeSymbolInfo(
                     node.SpanStart,
                     candidate,
-                    expression ? SpeculativeBindingOption.BindAsExpression : SpeculativeBindingOption.BindAsTypeOrNamespace
+                    expression
+                        ? SpeculativeBindingOption.BindAsExpression
+                        : SpeculativeBindingOption.BindAsTypeOrNamespace
                 );
 
             return info.CandidateSymbols.IsEmpty && SymbolEqualityComparer.Default.Equals(info.Symbol, bound);
@@ -217,7 +226,9 @@ public sealed class QualifiedReferenceRule : ArrangementRule {
             foreach (var scope in model.GetImportScopes(node.SpanStart)) {
                 foreach (var import in scope.Imports) {
                     if (import.NamespaceOrType?.ToDisplayString() == imported
-                        && import.DeclaringSyntaxReference?.GetSyntax() is UsingDirectiveSyntax { GlobalKeyword.RawKind: (int)SyntaxKind.GlobalKeyword }) {
+                        && import.DeclaringSyntaxReference?.GetSyntax() is UsingDirectiveSyntax {
+                            GlobalKeyword.RawKind: (int)SyntaxKind.GlobalKeyword
+                        }) {
                         return;
                     }
                 }
@@ -229,10 +240,10 @@ public sealed class QualifiedReferenceRule : ArrangementRule {
 
             foreach (var directive in unit.DescendantNodes().OfType<UsingDirectiveSyntax>()) {
                 if (directive.Alias is { } alias
-                    ? alias.Name.Identifier.ValueText == name.Identifier.ValueText
-                    : directive.StaticKeyword == default
-                    && model.GetSymbolInfo(directive.Name!).Symbol is INamespaceSymbol named
-                    && named.ToDisplayString() == imported) {
+                        ? alias.Name.Identifier.ValueText == name.Identifier.ValueText
+                        : directive.StaticKeyword == default
+                        && model.GetSymbolInfo(directive.Name!).Symbol is INamespaceSymbol named
+                        && named.ToDisplayString() == imported) {
                     required.Add(UsingsRule.Key(directive));
                 }
             }
@@ -282,7 +293,12 @@ public sealed class QualifiedReferenceRule : ArrangementRule {
             return Walk(node, spine, segments, ref global);
         }
 
-        static bool Walk(ExpressionSyntax node, List<ExpressionSyntax> spine, List<SimpleNameSyntax> segments, ref bool global) {
+        static bool Walk(
+            ExpressionSyntax node,
+            List<ExpressionSyntax> spine,
+            List<SimpleNameSyntax> segments,
+            ref bool global
+        ) {
             switch (node) {
                 case QualifiedNameSyntax qualified:
                     if (!Walk(qualified.Left, spine, segments, ref global)) {

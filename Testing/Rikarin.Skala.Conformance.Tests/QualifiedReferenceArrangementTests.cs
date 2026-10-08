@@ -160,7 +160,11 @@ public sealed class QualifiedReferenceArrangementTests {
                 overrides: [new("skala_prefer_qualified_reference", "true")]
             )
         );
-        Assert.Contains("System.Text.StringBuilder _builder = new System.Text.StringBuilder();", arranged, StringComparison.Ordinal);
+        Assert.Contains(
+            "System.Text.StringBuilder _builder = new System.Text.StringBuilder();",
+            arranged,
+            StringComparison.Ordinal
+        );
     }
 
     /// <summary>

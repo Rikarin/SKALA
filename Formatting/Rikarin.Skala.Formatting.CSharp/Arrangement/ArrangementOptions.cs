@@ -356,8 +356,8 @@ public readonly struct ArrangementOptions {
         "skala_prefer_qualified_reference",
         out var id
     )
-        ? id
-        : throw new InvalidOperationException("'skala_prefer_qualified_reference' is not in the option registry.");
+            ? id
+            : throw new InvalidOperationException("'skala_prefer_qualified_reference' is not in the option registry.");
 
     /// <summary>Every option the arranger reads — the arrangement half of the Tier A claim.</summary>
     public static ImmutableArray<OptionId> Implemented => Ids.All;

@@ -593,7 +593,8 @@ public sealed class ObjectCreationRule : ArrangementRule {
             node.Parent is EqualsValueClauseSyntax or ArrowExpressionClauseSyntax
             // ⚠ A lambda's `return` is not evident (#524, measured): the type is in a delegate somewhere
             // else, not in the header of anything the reader is looking at.
-            || node.Parent is ReturnStatementSyntax && EnclosingMember(node) is not AnonymousFunctionExpressionSyntax;
+            || node.Parent is ReturnStatementSyntax
+            && EnclosingMember(node) is not AnonymousFunctionExpressionSyntax;
 
         /// <summary>
         ///     The type a <c>new</c> returned from a lambda or an anonymous method is target-typed to, or null
