@@ -7315,9 +7315,7 @@ public sealed class BreakPlan {
             if (!open.IsKind(SyntaxKind.OpenBraceToken)
                 || !CSharpDocumentBuilder.OpensAJoinableBody(open)
                 || (options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(open)) == 0
-                || captured is { Count: > 0 }
-                && open.Parent is { } parent
-                && IsInsideCaptured(parent)) {
+                || captured is { Count: > 0 } && open.Parent is { } parent && IsInsideCaptured(parent)) {
                 continue;
             }
 
@@ -7379,8 +7377,7 @@ public sealed class BreakPlan {
     void SettleParenthesisedCollections(SyntaxNode root) {
         foreach (var paren in root.DescendantNodes().OfType<ParenthesizedExpressionSyntax>()) {
             if (paren.Expression is not CollectionExpressionSyntax { Elements.Count: > 0 } collection
-                || captured is { Count: > 0 }
-                && IsInsideCaptured(paren)) {
+                || captured is { Count: > 0 } && IsInsideCaptured(paren)) {
                 continue;
             }
 
