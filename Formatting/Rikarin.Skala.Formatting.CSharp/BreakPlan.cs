@@ -5039,7 +5039,8 @@ public sealed class BreakPlan {
                     HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
                         ? heldCall.ArgumentList.OpenParenToken.Span.End - heldDot.OperatorToken.SpanStart
                         : 0,
-                    HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1
+                    HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
+                    CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner)
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -5278,6 +5279,66 @@ public sealed class BreakPlan {
     ///     The flat width from the construct's head token (<see cref="EqualsHeadStartOf" />) through the
     ///     <c>=</c> — <c>var name =</c> — counted as written, whitespace runs as one space.
     /// </summary>
+    /// <summary>
+    ///     For an <c>=</c> whose value is a creation with a non-empty initializer, written on one line: the
+    ///     limit <see cref="GroupFacts.CreationLimit" /> moves it down by, in fortieths of a column; zero
+    ///     otherwise (#581).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> on 2 857 cells — heads of 10 to 60 columns, values of 66 to
+    ///     119, at three block depths, for <c>var</c> and typed locals, assignments and fields, for
+    ///     <c>new Something {</c>, <c>new P {</c>, <c>new List&lt;string&gt; {</c>,
+    ///     <c>new SomethingMuchLongerStill {</c> and <c>new {</c>, with identifiers and string literals as
+    ///     members. The fitted margin (<c>Fitter.OuterBreakMargin</c>) answered 2 393 of them; this rule
+    ///     answers 2 821. ⚠ What moves the limit was not the value's width or its members but two widths
+    ///     nobody had measured: the creation's own head up to its <c>{</c> — the wider it is, the further down
+    ///     the oracle moves the creation rather than break its braces — and the head from the declarator's
+    ///     name, not the statement's start, through the <c>=</c>: a typed local and a <c>var</c> one agree once
+    ///     the type is left out. A field sits two columns lower, measured at one depth. ⚠ Not an array
+    ///     creation, a creation with arguments or a target-typed <c>new()</c>, none of which was measured, and
+    ///     not one the author broke inside, which keeps the brace's break (SK-DIV-0337).
+    /// </remarks>
+    static int CreationLimitOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value, EqualsOwner owner) {
+        if (owner == EqualsOwner.None
+            || value.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))) {
+            return 0;
+        }
+
+        var open = value switch {
+            ObjectCreationExpressionSyntax {
+                ArgumentList: null, Initializer: { Expressions.Count: > 0 } initializer
+            } => initializer.OpenBraceToken,
+            AnonymousObjectCreationExpressionSyntax { Initializers.Count: > 0 } anonymous => anonymous.OpenBraceToken,
+            _ => default
+        };
+
+        if (open.IsKind(SyntaxKind.None)) {
+            return 0;
+        }
+
+        var prefix = WidthThrough(value.GetFirstToken(), open);
+        var name = node is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }
+            ? WidthThrough(declarator.Identifier, equals)
+            : WidthThrough(node.GetFirstToken(), equals);
+        return 4420 + 24 * prefix - 16 * Math.Max(name, 23) - (owner == EqualsOwner.Field ? 80 : 0);
+
+        static int WidthThrough(SyntaxToken start, SyntaxToken end) {
+            var width = 0;
+            for (var token = start; !token.IsKind(SyntaxKind.None); token = token.GetNextToken()) {
+                if (token != start && (token.HasLeadingTrivia || token.GetPreviousToken().HasTrailingTrivia)) {
+                    width++;
+                }
+
+                width += token.Span.Length;
+                if (token == end) {
+                    break;
+                }
+            }
+
+            return width;
+        }
+    }
+
     static int HeadWidthThroughEquals(SyntaxNode node, SyntaxToken equals) {
         var start = EqualsHeadStartOf(node);
         if (start.IsKind(SyntaxKind.None)) {

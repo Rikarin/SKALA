@@ -637,6 +637,21 @@ public sealed class Fitter {
     ///     </para>
     /// </remarks>
     ResolvedMode Worth(in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd, int segment, int pointSpace) {
+        if (facts.PrefersOuterBreak && facts.CreationLimit > 0) {
+            // ⚠ A creation with a one-line initializer moves down whole by its own measured limit, and the
+            // braces break otherwise (#581). See GroupFacts.CreationLimit.
+            if (segment >= Unbounded) {
+                return ResolvedMode.Flat;
+            }
+
+            // ⚠ The segment past the point, not FlatWidth − PointWidth, which counts the point's own space.
+            var below = m.ContinuationColumn + segment + m.Trailing;
+            var indent = m.ContinuationColumn - indentWidth;
+            return 40 * below <= facts.CreationLimit - 5 * (indent - 8) + 40 * (width - 120)
+                ? ResolvedMode.Broken
+                : ResolvedMode.Flat;
+        }
+
         if (facts.PrefersOuterBreak) {
             // What lands on the continuation line if this group breaks and nothing inside it does.
             var margin = facts.OuterMargin > 0 ? facts.OuterMargin : OuterBreakMargin(m);
