@@ -156,7 +156,7 @@ public sealed class AnonymousMethodWithParameterListTests {
     static CSharpCompilation Compile(string statement) => RuleFixtures.Compile(Wrap(statement), "probe.cs");
 
     static ImmutableArray<Diagnostic> Findings(CSharpCompilation compilation) => [
-        .. RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)
+        ..RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)
             .Where(static diagnostic => diagnostic.Id is "AD0001" or RuleIds.AnonymousMethodWithParameterList)
     ];
 }

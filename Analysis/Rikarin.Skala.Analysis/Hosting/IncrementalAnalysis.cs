@@ -158,12 +158,12 @@ public static class IncrementalAnalysis {
             : AnalyzerHost.RunCompilationScoped(unit, options, hosted, mode, cancellation, profile);
 
         return new IncrementalOutcome(
-            [.. AnalyzerHost.Reassessed(unit, hits), .. warm.Findings, .. whole.Findings],
-            [.. warm.Diagnostics, .. whole.Diagnostics],
+            [..AnalyzerHost.Reassessed(unit, hits), ..warm.Findings, ..whole.Findings],
+            [..warm.Diagnostics, ..whole.Diagnostics],
             cache.Hits,
             cache.Misses,
             warm.Partial || whole.Partial,
-            [.. warm.Costs, .. whole.Costs]
+            [..warm.Costs, ..whole.Costs]
         );
     }
 

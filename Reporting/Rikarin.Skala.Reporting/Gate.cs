@@ -282,7 +282,7 @@ public static class Gate {
 
     /// <summary>The diagnostics under the given ids that <see cref="FailsReliability" />.</summary>
     static SkalaDiagnostic[] Failing(RunReport report, params string[] ids) => [
-        .. report.Diagnostics.Where(diagnostic => ids.Contains(diagnostic.Id) && FailsReliability(diagnostic))
+        ..report.Diagnostics.Where(diagnostic => ids.Contains(diagnostic.Id) && FailsReliability(diagnostic))
     ];
 
     /// <summary>

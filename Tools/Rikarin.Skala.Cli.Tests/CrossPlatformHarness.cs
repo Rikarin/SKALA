@@ -56,7 +56,7 @@ public sealed class CrossPlatformScratch : IDisposable {
         return path;
     }
 
-    public CliRun Run(params string[] arguments) => Start("dotnet", [CliRunner.Assembly, .. arguments]);
+    public CliRun Run(params string[] arguments) => Start("dotnet", [CliRunner.Assembly, ..arguments]);
 
     public string Git(params string[] arguments) => Start("git", arguments).StandardOutput;
 

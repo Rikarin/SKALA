@@ -259,7 +259,7 @@ public static partial class SkalaCommandLine {
                 var symbols = ParseDefines(parse.GetValue(define));
                 if (parse.GetValue(load) is { Length: > 0 } loadMode
                     && !string.Equals(loadMode, "none", StringComparison.OrdinalIgnoreCase)) {
-                    symbols = [.. symbols, .. SymbolsFromProject(requestedPaths, loadMode)];
+                    symbols = [..symbols, ..SymbolsFromProject(requestedPaths, loadMode)];
                 }
 
                 // `--arrange` with no value means syntactic, which is the mode that always works.

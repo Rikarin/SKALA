@@ -151,9 +151,9 @@ public static class FormatCommand {
                 }
             }
 
-            files = [.. staged.Select(file => Path.Combine(root, file))];
+            files = [..staged.Select(file => Path.Combine(root, file))];
         } else {
-            files = [.. Collect(request.Paths)];
+            files = [..Collect(request.Paths)];
         }
 
         var range = ParseRange(request.Range);
@@ -508,7 +508,7 @@ public static class FormatCommand {
 public static class GitIndex {
     public static ImmutableArray<string> StagedFiles(string root) {
         var output = Run(root, "diff", "--name-only", "--cached", "--diff-filter=ACMR", "--", "*.cs");
-        return [.. output.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static line => line.Trim())];
+        return [..output.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static line => line.Trim())];
     }
 
     public static bool HasUnstagedChanges(string root, string relativePath) =>

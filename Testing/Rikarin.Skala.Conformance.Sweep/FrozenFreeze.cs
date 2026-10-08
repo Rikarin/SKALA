@@ -223,7 +223,7 @@ public static class FrozenFreeze {
             var fixture = fixtures[configuration.Fixture];
             var produced = SkalaSide.Format(
                 fixture.Path,
-                [.. configuration.Overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                [..configuration.Overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
             );
             var hash = SkalaSide.Digest(produced);
 
@@ -411,7 +411,7 @@ public static class FrozenFreeze {
                 new FrozenProvenance(version, digest, Commit(), OracleFixture.Today, "conformance-sweep.json"),
                 outputs,
                 [
-                    .. configurations
+                    ..configurations
                         .OrderBy(static c => c.Overrides[0].Key, StringComparer.Ordinal)
                         .ThenBy(static c => c.Overrides[0].Value, StringComparer.Ordinal)
                 ]

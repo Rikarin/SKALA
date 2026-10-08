@@ -102,7 +102,7 @@ public static class ScratchTree {
     ) {
         if (!profile.IsSemantic) {
             for (var start = 0; start < members.Count; start += size) {
-                yield return [.. members.Skip(start).Take(size)];
+                yield return [..members.Skip(start).Take(size)];
             }
 
             yield break;
@@ -131,7 +131,7 @@ public static class ScratchTree {
         IReadOnlyList<SweepCandidate> batch,
         Func<SweepCandidate, string> config
     ) =>
-        Format(runner, [.. batch.Select(static candidate => candidate.Fixture)], i => config(batch[i]));
+        Format(runner, [..batch.Select(static candidate => candidate.Fixture)], i => config(batch[i]));
 
     /// <summary>
     ///     The same, addressed by fixture and index rather than by <see cref="SweepCandidate" />.

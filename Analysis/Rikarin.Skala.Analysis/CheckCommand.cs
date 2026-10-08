@@ -909,7 +909,7 @@ public static class CheckCommand {
             }
         }
 
-        return [.. rules.Where(rule => !known.Contains(rule))];
+        return [..rules.Where(rule => !known.Contains(rule))];
     }
 
     static ImmutableArray<Finding> Filter(ImmutableArray<Finding> findings, CheckRequest request) {
@@ -974,12 +974,12 @@ public static class CheckCommand {
             return reportable;
         }
 
-        return [.. reportable.Where(path => IsUnder(path, requested))];
+        return [..reportable.Where(path => IsUnder(path, requested))];
     }
 
     /// <summary>The positional paths, absolute and without a trailing separator. Empty means everything.</summary>
     static string[] Requested(CheckRequest request) => [
-        .. request.Paths.Select(static path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))
+        ..request.Paths.Select(static path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))
     ];
 
     /// <summary>

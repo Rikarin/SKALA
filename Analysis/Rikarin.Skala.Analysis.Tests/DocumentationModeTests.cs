@@ -143,7 +143,7 @@ public sealed class DocumentationModeTests {
 
         var units = new[] { Unit("A(net8.0)", a, true), Unit("A(net10.0)", a, true), Unit("B", b, false) };
 
-        var note = Assert.Single(DocumentationComments.Note([.. units], root));
+        var note = Assert.Single(DocumentationComments.Note([..units], root));
         Assert.Equal(DocumentationDiagnosticsOff, note.Id);
         Assert.StartsWith(
             "1 of 2 projects do not set GenerateDocumentationFile",
@@ -158,7 +158,7 @@ public sealed class DocumentationModeTests {
         var many = Enumerable.Range(0, 5)
             .Select(index => Unit("P" + index, Path.Combine(root, "P" + index, "P.csproj"), true))
             .ToArray();
-        var crowded = Assert.Single(DocumentationComments.Note([.. many], root));
+        var crowded = Assert.Single(DocumentationComments.Note([..many], root));
         Assert.EndsWith(" and 2 more", crowded.Message, StringComparison.Ordinal);
         Assert.Equal(5, crowded.Detail!.Split(", ").Length);
     }

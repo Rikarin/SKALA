@@ -219,7 +219,7 @@ public static class FixCommand {
                      .SelectMany(static finding => finding.Fix.Select(edit => (finding, edit)))
                      .GroupBy(static pair => pair.edit.Path, StringComparer.Ordinal)
                      .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
-            var outcome = ApplyToFile(group.Key, [.. group], request, root, safety, cancellation);
+            var outcome = ApplyToFile(group.Key, [..group], request, root, safety, cancellation);
             applied += outcome.Applied;
             if (outcome.Applied > 0 && !outcome.Reverted) {
                 changedFiles.Add(group.Key);

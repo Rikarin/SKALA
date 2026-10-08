@@ -131,7 +131,7 @@ public sealed class LineEndingTests : IDisposable {
     [Fact]
     public void ABomSurvivesALineEndingConversion() {
         Configure("lf", true);
-        var path = scratch.WriteBytes("E.cs", [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(Crlf)]);
+        var path = scratch.WriteBytes("E.cs", [..Encoding.UTF8.GetPreamble(), ..Encoding.UTF8.GetBytes(Crlf)]);
 
         scratch.Run("format", path);
 

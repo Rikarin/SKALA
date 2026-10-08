@@ -447,6 +447,6 @@ public static class NamingFixCommand {
             }
         }
 
-        return [.. paths.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+        return [..paths.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
     }
 }

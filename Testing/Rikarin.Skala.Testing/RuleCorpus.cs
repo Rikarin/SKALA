@@ -90,7 +90,7 @@ public sealed record CorpusSweepResult {
     public required ImmutableSortedSet<string> CanariesSilent { get; init; }
 
     public ImmutableArray<Finding> FindingsFor(string ruleId) => [
-        .. Findings.Where(finding => string.Equals(finding.RuleId, ruleId, StringComparison.Ordinal))
+        ..Findings.Where(finding => string.Equals(finding.RuleId, ruleId, StringComparison.Ordinal))
     ];
 
     /// <summary>What this run is entitled to say about <paramref name="ruleId" />.</summary>
@@ -205,7 +205,7 @@ public static class RuleCorpus {
     ///     cannot bind — turning every count into a floor.
     /// </remarks>
     public static IReadOnlyList<string> Trees() => [
-        .. Sources()
+        ..Sources()
             .Select(static file => file.RelativePath.Split('/')[0])
             .Distinct(StringComparer.Ordinal)
             .OrderBy(static name => name, StringComparer.Ordinal)
@@ -233,7 +233,7 @@ public static class RuleCorpus {
     ///     </para>
     /// </remarks>
     public static IReadOnlyList<CorpusFile> Sources(string? tree = null) => [
-        .. Corpus.Files(Corpus.Real)
+        ..Corpus.Files(Corpus.Real)
             .Where(file => tree is null
                 || file.RelativePath.StartsWith(tree + "/", StringComparison.Ordinal)
             )
@@ -409,7 +409,7 @@ public static class RuleCorpus {
             CompilerErrors = errors,
             AnalyzerFailures = Failures(outcome),
             Missed = [
-                .. expected.Where(entry => !fired.Contains(entry.Key))
+                ..expected.Where(entry => !fired.Contains(entry.Key))
                     .Select(static entry => entry.Value + "/" + Path.GetFileNameWithoutExtension(entry.Key))
                     .OrderBy(static name => name, StringComparer.Ordinal)
             ]
@@ -639,10 +639,10 @@ public static class RuleCorpus {
 
     /// <summary>⚠ <c>SK9030</c> and any <c>AD0001</c> that reached a finding, as messages.</summary>
     static ImmutableArray<string> Failures(AnalysisOutcome outcome) => [
-        .. outcome.Diagnostics
+        ..outcome.Diagnostics
             .Where(static diagnostic => diagnostic.Id is "SK9030")
             .Select(static diagnostic => diagnostic.Message),
-        .. outcome.Findings
+        ..outcome.Findings
             .Where(static finding => finding.RuleId is "AD0001")
             .Select(static finding => finding.Message)
     ];

@@ -50,7 +50,7 @@ public sealed class FormatterOffSwitchTests {
             SourceText.From(source),
             OptionResolver.Resolve(
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
             )
                 .Options
         )

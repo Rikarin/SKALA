@@ -282,7 +282,7 @@ sealed class SkalaTools(string repositoryRoot) {
 
 /// <summary>The rule ids, exposed so an agent's `rules` argument can be checked before a call.</summary>
 public static class McpRuleList {
-    public static IReadOnlyList<string> Ids { get; } = [.. RuleCatalog.All.Select(static rule => rule.Id)];
+    public static IReadOnlyList<string> Ids { get; } = [..RuleCatalog.All.Select(static rule => rule.Id)];
 }
 
 /// <summary>
@@ -295,7 +295,7 @@ public static class McpRuleList {
 /// </remarks>
 public static class McpServerInspection {
     public static IReadOnlyList<McpServerTool> Tools(string repositoryRoot) =>
-        [.. new SkalaTools(Path.GetFullPath(repositoryRoot)).Create()];
+        [..new SkalaTools(Path.GetFullPath(repositoryRoot)).Create()];
 
     public static string FormatContent(string repositoryRoot, string content) =>
         new SkalaTools(Path.GetFullPath(repositoryRoot)).FormatForTest(content);

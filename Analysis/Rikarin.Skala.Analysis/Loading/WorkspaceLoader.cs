@@ -207,11 +207,11 @@ public static class WorkspaceLoader {
                     TargetFramework = project.Name.Contains('(', StringComparison.Ordinal)
                         ? project.Name[(project.Name.IndexOf('(', StringComparison.Ordinal) + 1)..].TrimEnd(')')
                         : string.Empty,
-                    PreprocessorSymbols = parseOptions is null ? [] : [.. parseOptions.PreprocessorSymbolNames],
+                    PreprocessorSymbols = parseOptions is null ? [] : [..parseOptions.PreprocessorSymbolNames],
                     ReportablePaths = reportable.ToImmutable(),
                     UnreadablePaths = unreadable.ToImmutable(),
                     AnalyzerReferences = [
-                        .. project.AnalyzerReferences
+                        ..project.AnalyzerReferences
                             .Select(static reference => reference.FullPath ?? string.Empty)
                             .Where(static path => path.Length > 0)
                     ],

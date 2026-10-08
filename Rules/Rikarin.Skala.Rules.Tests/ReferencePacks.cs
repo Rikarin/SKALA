@@ -39,7 +39,7 @@ public static class ReferencePacks {
         }
 
         return [
-            .. Directory.GetFiles(directory, "*.dll")
+            ..Directory.GetFiles(directory, "*.dll")
                 .Order(StringComparer.Ordinal)
                 .Select(static path => (MetadataReference)MetadataReference.CreateFromFile(path))
         ];

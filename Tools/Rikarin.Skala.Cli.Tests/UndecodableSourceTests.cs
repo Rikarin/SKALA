@@ -57,7 +57,7 @@ public sealed class UndecodableSourceTests : IDisposable {
         var path = WriteFile("Latin1", Encoding.Latin1.GetBytes(Source));
         var before = File.ReadAllBytes(path);
 
-        var run = CliRunner.Run([.. verb, path]);
+        var run = CliRunner.Run([..verb, path]);
 
         Assert.Equal(5, run.ExitCode);
         Assert.Contains("SK9018", run.StandardOutput, StringComparison.Ordinal);
@@ -106,7 +106,7 @@ public sealed class UndecodableSourceTests : IDisposable {
             "utf16be-bom" => ([0xFE, 0xFF], new UnicodeEncoding(true, false)),
             _ => throw new ArgumentOutOfRangeException(nameof(name))
         };
-        var path = WriteFile("Fix-" + name, [.. preamble, .. encoding.GetBytes(Source)]);
+        var path = WriteFile("Fix-" + name, [..preamble, ..encoding.GetBytes(Source)]);
 
         var run = CliRunner.Run("fix", "--load=loose", path);
 

@@ -86,7 +86,7 @@ public sealed record FixtureCompilation(
             : throw new InvalidOperationException($"'{value}' is not a C# language version.");
 
     static ImmutableArray<string> ParseSymbols(string value) => [
-        .. value.Split([';', ','], StringSplitOptions.RemoveEmptyEntries)
+        ..value.Split([';', ','], StringSplitOptions.RemoveEmptyEntries)
             .Select(static symbol => symbol.Trim())
             .Where(static symbol => symbol.Length > 0)
     ];

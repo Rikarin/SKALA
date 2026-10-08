@@ -184,7 +184,7 @@ public static class EditorConfigOptions {
             }
         }
 
-        return [.. found];
+        return [..found];
     }
 
     /// <summary>

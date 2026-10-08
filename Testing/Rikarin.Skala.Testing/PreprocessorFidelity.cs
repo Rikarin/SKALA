@@ -150,8 +150,8 @@ public static class PreprocessorFidelity {
         Row(
             builder,
             "overall",
-            [.. baselineWith, .. baselineWithout],
-            [.. withDirectives, .. withoutDirectives]
+            [..baselineWith, ..baselineWithout],
+            [..withDirectives, ..withoutDirectives]
         );
 
         builder.AppendLine();

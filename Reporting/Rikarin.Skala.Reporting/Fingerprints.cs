@@ -97,7 +97,7 @@ public static class Fingerprints {
             assigned[index] = finding with { OrdinalWithinSymbol = ordinal };
         }
 
-        return [.. assigned];
+        return [..assigned];
     }
 
     /// <summary>The fingerprint versions written for one finding, for the SARIF's <c>partialFingerprints</c>.</summary>
@@ -156,7 +156,7 @@ public static class Fingerprints {
             hashes[index] = LegacyV2(finding.RuleId, identity, finding.EnclosingSymbol, ordinal);
         }
 
-        return [.. hashes];
+        return [..hashes];
     }
 
     static string LegacyV2(string ruleId, string identity, string enclosingSymbol, int ordinalWithinSymbol) {

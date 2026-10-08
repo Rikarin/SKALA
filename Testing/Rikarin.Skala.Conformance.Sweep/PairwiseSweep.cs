@@ -194,7 +194,7 @@ public sealed class PairwiseSweep {
                 var oracleStart = Stopwatch.GetTimestamp();
                 var produced = ScratchTree.Format(
                     runner,
-                    [.. batch.Select(static candidate => candidate.Fixture)],
+                    [..batch.Select(static candidate => candidate.Fixture)],
                     i => ConfigFor(Overrides(batch[i], round))
                 );
                 var elapsed = Stopwatch.GetElapsedTime(oracleStart);
@@ -259,7 +259,7 @@ public sealed class PairwiseSweep {
         }
 
         return new PairwiseRun(
-            [.. candidates.Select(candidate => Verdict(candidate, oracle, skala, baseline, cost[Name(candidate)]))],
+            [..candidates.Select(candidate => Verdict(candidate, oracle, skala, baseline, cost[Name(candidate)]))],
             plan.Excluded,
             rounds,
             invocations,

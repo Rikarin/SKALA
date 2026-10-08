@@ -216,7 +216,7 @@ switch (args[0]) {
         Console.Write(
             RuleCorpus.Report(
                 [
-                    .. args[1..].Where(static argument => !argument.StartsWith("--", StringComparison.Ordinal))
+                    ..args[1..].Where(static argument => !argument.StartsWith("--", StringComparison.Ordinal))
                 ]
             )
         );
@@ -325,7 +325,7 @@ switch (args[0]) {
         var artefact = PreferenceSweep.Run(
             new OracleRunner(),
             Corpus.OracleEditorConfigPath,
-            [.. Enumerable.Range(totalRange.From, totalRange.To - totalRange.From + 1)],
+            [..Enumerable.Range(totalRange.From, totalRange.To - totalRange.From + 1)],
             innerRange.From,
             innerRange.To,
             Console.Error,
@@ -963,7 +963,7 @@ static int RegenerateCleanup(
     var profile = OracleProfile.Cleanup;
     var header = new OracleHeader(version, hash, profile.Name, OracleFixture.Today);
     var wanted = new HashSet<string>(sets, StringComparer.Ordinal);
-    var files = Only([.. Corpus.Arrangeable().Where(file => wanted.Contains(file.Set))], only).ToArray();
+    var files = Only([..Corpus.Arrangeable().Where(file => wanted.Contains(file.Set))], only).ToArray();
     if (files.Length == 0) {
         return 0;
     }
@@ -1003,7 +1003,7 @@ static int RegenerateCleanup(
             produced[target] = file;
         }
 
-        var results = runner.FormatInPlace(scratch.FullName, [.. produced.Keys], profile);
+        var results = runner.FormatInPlace(scratch.FullName, [..produced.Keys], profile);
         var written = 0;
         foreach (var (target, file) in produced) {
             if (results.TryGetValue(target, out var body)) {
@@ -1048,7 +1048,7 @@ static int RegenerateDocComments(
     var wanted = new HashSet<string>(sets, StringComparer.Ordinal);
     var files = Only(
             [
-                .. Corpus.DocCommentBearing()
+                ..Corpus.DocCommentBearing()
                     .UnionBy(Corpus.DocCommented(), static file => file.Path)
                     .Where(file => wanted.Contains(file.Set))
             ],
@@ -1084,7 +1084,7 @@ static int RegenerateDocComments(
 static IReadOnlyList<CorpusFile> Only(IReadOnlyList<CorpusFile> files, string? prefix) =>
     prefix is null
         ? files
-        : [.. files.Where(file => file.RelativePath.StartsWith(prefix, StringComparison.Ordinal))];
+        : [..files.Where(file => file.RelativePath.StartsWith(prefix, StringComparison.Ordinal))];
 
 // ⚠ The fixture sets that are measured under configurations other than the repository's, which is
 // docs/plan/05's four-way keep_existing_* table. Each variant is a separate cleanupcode run with the
@@ -1107,7 +1107,7 @@ static int RegenerateVariants(
             .GroupBy(static pair => pair.Variant, static pair => pair.File);
 
         foreach (var group in byVariant) {
-            var files = Only([.. group], only).ToArray();
+            var files = Only([..group], only).ToArray();
             if (files.Length == 0) {
                 continue;
             }

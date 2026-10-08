@@ -52,7 +52,7 @@ public static class ArrangementCompilations {
     ///     syntactic mode of <see cref="ArrangeCommand" />, not a failure.
     /// </remarks>
     public static IReadOnlyList<CSharpCompilation> For(LoadedProject loaded) =>
-        Semantic(loaded.Mode) ? [.. loaded.Units.Select(static unit => unit.Compilation)] : [];
+        Semantic(loaded.Mode) ? [..loaded.Units.Select(static unit => unit.Compilation)] : [];
 
     /// <summary>The arrangement rules a load in <paramref name="mode" /> does not run, with the reason.</summary>
     /// <remarks>
@@ -66,7 +66,7 @@ public static class ArrangementCompilations {
         }
 
         return [
-            .. Arranger.Rules()
+            ..Arranger.Rules()
                 .Where(static rule => rule.NeedsSemantics)
                 .Select(static rule => rule.Id)
                 .Distinct(StringComparer.Ordinal)

@@ -391,7 +391,7 @@ public static class ConfigCommands {
         AppendDiagnostics(
             output,
             [
-                .. status.Diagnostics.Select(diagnostic => diagnostic.Id == ConfigDiagnosticIds.CanonicalDrift
+                ..status.Diagnostics.Select(diagnostic => diagnostic.Id == ConfigDiagnosticIds.CanonicalDrift
                         ? diagnostic with { Severity = driftSeverity }
                         : diagnostic
                 )

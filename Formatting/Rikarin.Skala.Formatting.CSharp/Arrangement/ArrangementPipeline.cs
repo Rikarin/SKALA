@@ -202,7 +202,7 @@ public static class ArrangementPipeline {
             path,
             text,
             current.ToString(),
-            [.. edits],
+            [..edits],
             applied.ToImmutable(),
             diagnostics.ToImmutable(),
             passes,

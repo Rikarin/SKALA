@@ -640,8 +640,8 @@ public sealed class DocumentBuilder {
         return new Document(
             nodes,
             nodeCount,
-            [.. children],
-            [.. strings],
+            [..children],
+            [..strings],
             root,
             groupCount,
             flatWidth,
@@ -652,7 +652,7 @@ public sealed class DocumentBuilder {
             segmentHead,
             draftSegment,
             breaks,
-            [.. facts]
+            [..facts]
         );
     }
 

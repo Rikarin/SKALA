@@ -255,7 +255,7 @@ public sealed class MultiTargetAvailabilityTests {
                 RepositoryRoot = scratch.Root,
                 Check = true,
                 Quiet = true,
-                Compilations = _ => [.. reloaded.Units.Select(static unit => unit.Compilation)]
+                Compilations = _ => [..reloaded.Units.Select(static unit => unit.Compilation)]
             },
             TestContext.Current.CancellationToken
         );

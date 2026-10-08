@@ -332,7 +332,7 @@ public sealed class PartialVerdictTests {
     [Fact]
     public void Verify_NamesBothCausesWhenARevertAndAnUnreadableFileCoincide() {
         var reverted = Reverted();
-        var mixed = reverted with { Diagnostics = [.. reverted.Diagnostics, .. Unreadable().Diagnostics] };
+        var mixed = reverted with { Diagnostics = [..reverted.Diagnostics, ..Unreadable().Diagnostics] };
 
         var output = Run(ReportFormat.Agent, mixed, ExitCodes.InternalError).Output;
 

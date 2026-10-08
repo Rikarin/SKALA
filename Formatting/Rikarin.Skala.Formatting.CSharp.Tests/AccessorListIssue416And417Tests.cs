@@ -21,7 +21,7 @@ public sealed class AccessorListIssue416And417Tests {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
             )
                 .Options
         );

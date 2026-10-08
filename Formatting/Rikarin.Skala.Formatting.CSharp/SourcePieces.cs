@@ -103,7 +103,7 @@ public static class SourcePieces {
             }
         }
 
-        return ([.. pieces], [.. tokens]);
+        return ([..pieces], [..tokens]);
     }
 
     static void AddTrivia(List<Piece> pieces, SyntaxTrivia trivia, SourceText text) {

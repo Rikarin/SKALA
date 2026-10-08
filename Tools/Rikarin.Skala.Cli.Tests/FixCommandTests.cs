@@ -81,7 +81,7 @@ public sealed class FixCommandTests {
             arguments.AddRange([IncludeOption, RuleId]);
         }
 
-        var run = CliRunner.Run([.. arguments]);
+        var run = CliRunner.Run([..arguments]);
 
         Assert.True(run.ExitCode == 0, run.StandardOutput + run.StandardError);
         Assert.Contains("static value => value + 1", File.ReadAllText(source), StringComparison.Ordinal);

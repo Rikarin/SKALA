@@ -101,7 +101,7 @@ static class Overridden {
     public static string Settled(string source, (string Key, string Value)[] overrides) {
         var options = OptionResolver.Resolve(
             Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, FileName),
-            [.. overrides.Select(static pair => new KeyValuePair<string, string>(pair.Key, pair.Value))]
+            [..overrides.Select(static pair => new KeyValuePair<string, string>(pair.Key, pair.Value))]
         ).Options;
         var once = CSharpFormatter.Format(FileName, SourceText.From(source), options).Formatted;
         var twice = CSharpFormatter.Format(FileName, SourceText.From(once), options).Formatted;

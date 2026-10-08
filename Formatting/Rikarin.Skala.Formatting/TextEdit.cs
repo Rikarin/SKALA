@@ -131,5 +131,5 @@ public static class EditEmitter {
     ///     is the only way range formatting can be consistent with whole-file formatting.
     /// </summary>
     public static IReadOnlyList<TextEdit> Restrict(IReadOnlyList<TextEdit> edits, SourceSpan range) =>
-        [.. edits.Where(edit => edit.Span.IntersectsWith(range))];
+        [..edits.Where(edit => edit.Span.IntersectsWith(range))];
 }

@@ -302,7 +302,7 @@ public static class BinlogLoader {
             compilation,
             analyzerReferences.ToImmutable(),
             [
-                .. parsed.AdditionalFiles.Select(file => Path.IsPathRooted(file.Path)
+                ..parsed.AdditionalFiles.Select(file => Path.IsPathRooted(file.Path)
                         ? file.Path
                         : Path.Combine(baseDirectory, file.Path)
                 )
@@ -317,7 +317,7 @@ public static class BinlogLoader {
             Name = name,
             Compilation = compilation,
             TargetFramework = TargetFrameworkOf(parsed),
-            PreprocessorSymbols = [.. parseOptions.PreprocessorSymbolNames],
+            PreprocessorSymbols = [..parseOptions.PreprocessorSymbolNames],
             ReportablePaths = reportable.ToImmutable(),
             UnreadablePaths = unreadable.ToImmutable(),
             AnalyzerReferences = analyzerReferences.ToImmutable(),

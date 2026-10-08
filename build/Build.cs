@@ -840,7 +840,7 @@ class Build : NukeBuild {
                             .SetConfiguration(Configuration)
                             .EnableNoBuild()
                             .EnableNoRestore()
-                            .SetApplicationArguments([.. arguments])
+                            .SetApplicationArguments([..arguments])
                     );
                 }
             );

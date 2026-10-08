@@ -187,7 +187,7 @@ public static class History {
             return "no history yet. `skala check --record` appends to " + RelativePath + ".\n";
         }
 
-        var shown = entries.Length <= limit ? entries : [.. entries[^limit..]];
+        var shown = entries.Length <= limit ? entries : [..entries[^limit..]];
         var fingerprint = shown[^1].ConfigurationFingerprint;
 
         var builder = new StringBuilder();
@@ -211,9 +211,9 @@ public static class History {
         }
 
         builder.Append('\n');
-        builder.Append("findings  ").Append(Spark([.. shown.Select(static e => (double)e.Total)])).Append('\n');
+        builder.Append("findings  ").Append(Spark([..shown.Select(static e => (double)e.Total)])).Append('\n');
         if (shown.Any(static e => e.Duplication > 0)) {
-            builder.Append("dup %     ").Append(Spark([.. shown.Select(static e => e.Duplication)])).Append('\n');
+            builder.Append("dup %     ").Append(Spark([..shown.Select(static e => e.Duplication)])).Append('\n');
         }
 
         var first = shown[0].Total;

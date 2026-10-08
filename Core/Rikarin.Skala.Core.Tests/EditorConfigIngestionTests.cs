@@ -128,7 +128,7 @@ public sealed class EditorConfigIngestionTests {
     ///     configuration <em>says</em>, and two files can say the same thing through two spellings.
     /// </remarks>
     static string[] ConfiguredOptions(EditorConfigChain chain) => [
-        .. OptionResolver.Resolve(chain)
+        ..OptionResolver.Resolve(chain)
             .Configured
             .Select(static option => option.Id + " = " + option.Value)
             .OrderBy(static entry => entry, StringComparer.Ordinal)

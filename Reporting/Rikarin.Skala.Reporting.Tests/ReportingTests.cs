@@ -12,7 +12,7 @@ public sealed class ReportingTests {
         new() {
             RepositoryRoot = Path.GetFullPath("/tmp/repo"),
             Mode = LoadMode.Loose,
-            Findings = [.. findings],
+            Findings = [..findings],
             LoadSummary = "loose (3 file(s), no project)",
             FileCount = 3,
             LineCount = 120,

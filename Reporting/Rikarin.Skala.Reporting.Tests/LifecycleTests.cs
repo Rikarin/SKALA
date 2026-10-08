@@ -47,7 +47,7 @@ public sealed class LifecycleTests {
         new() {
             RepositoryRoot = Root,
             Mode = LoadMode.Loose,
-            Findings = Fingerprints.Assign([.. findings]),
+            Findings = Fingerprints.Assign([..findings]),
             ConfigurationFingerprint = "abcdef0123456789",
             Duration = TimeSpan.FromSeconds(1)
         };
@@ -387,7 +387,7 @@ public sealed class LifecycleTests {
                 AsWrittenByM6(
                     File.ReadAllText(path),
                     [
-                        .. report.Findings.Select((finding, i) => (
+                        ..report.Findings.Select((finding, i) => (
                                 Fingerprints.V3(finding),
                                 i switch {
                                     0 => OrdinalZero,
@@ -580,7 +580,7 @@ public sealed class LifecycleTests {
 
         var accepted = unscoped with {
             HasBaseline = true,
-            Findings = [.. unscoped.Findings.Select(static f => f with { Bucket = BaselineBucket.Existing })]
+            Findings = [..unscoped.Findings.Select(static f => f with { Bucket = BaselineBucket.Existing })]
         };
 
         Assert.True(Gate.Evaluate(definition, accepted, true).Passed);
