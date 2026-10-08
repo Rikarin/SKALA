@@ -10704,3 +10704,58 @@ decisions recorded in SK-DIV-0375.
 
 - options: `skala_wrap_before_first_method_call = false` (the export's value).
 - ⚠ status: **fixed**, pinned by `constructs/wrapping/chain-head-past-the-margin.cs`.
+
+## SK-DIV-0377 — a sole lambda argument's arrow over an operand chain or a binary pattern
+
+⚠ **#578.** Skala decided this arrow by its head rule, which breaks it only when the head overflows. The
+oracle trades the arrow against three things: the width of everything before ` =>`, the body's first
+operand, and the line's end.
+
+Measured with `Testing ask`, 31 671 cells, one column at a time where it mattered. The shapes:
+- `U(params => a… && b… && c…);`
+- `U(params => x is A or B or C…);`
+- `var g = i….Where(params => …);`
+- `static` lambdas.
+
+The dimensions:
+- parameter texts of 1 to 45 columns;
+- first operands of 6 to 52;
+- the arrow ending at columns 14 to 95;
+- lines of 112 to 200.
+
+The arrow breaks exactly when it ends at or past `max(20, min(T, g))`, where:
+
+- `T` is a ceiling: `⌊2.75·(params + min(first, 24)) − 52 + max(0, first − 24)/8⌋`, capped at 85 and at
+  `120 − first`, the point past which the first operand would not fit beside the arrow.
+- `g` rises with the line: `(27·end + 9·params − 2832)/30`, plus `min(3.25, 0.625·(first − 18))` once the
+  first operand passes 18.
+
+Points about the inputs:
+- `params` counts everything before ` =>`. A modifier counts: `static n` decides exactly as an eight-column
+  name, and `static node` as an eleven-column one.
+- At a first operand of 14, `T` reproduces the saturation table measured one column at a time at a
+  200-column line.
+
+Where the arrow stays, a sole lambda's pattern chain holds its level: group F's `HeldLevel.WhileArrowFlat`
+(#566), merged alongside this rule. A from-line level of this round's own did the same, and was dropped in
+favour of F's. Under an `=`, a type test over a binary pattern on one line now breaks its arrow as an
+operand chain does (`ArrowWinsOverTheChain`).
+
+Wired as `GroupFacts.LambdaOperandParameters` / `LambdaOperandFirst` / `LambdaOperandTail` and
+`EqualsFloor.BreaksTheOperandArrow`. The line's end includes the statement's tail (`);`), which the
+writer's trailing measure stops short of.
+
+⚠ Not exact:
+- 59 cells differ in the arrow decision, and no cell differs in layout. 28 of the 59 have parameter texts
+  under 36 and sit within a column of the boundary. Past 36 the oracle's threshold is not monotone and the
+  rule is not measured.
+- Group F's probes improve against master: `F2/p3` 12 → 5 differing lines, `p4` 7 → 7, `p5` 55 → 50,
+  `p6` 79 → 0, `p7` 97 → 35.
+- What remains there is outside this rule:
+  - a pattern body with a long first operand (`x is AnonymousFunctionExpressionSyntax or …`), whose first
+    operand is not measured;
+  - a lambda call that is itself the receiver of a further link (`items.Where(…).ToList()`).
+
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
+- ⚠ status: **fixed** within the residue above, pinned by
+  `constructs/wrapping/lambda-arrow-over-an-operand-chain.cs`.

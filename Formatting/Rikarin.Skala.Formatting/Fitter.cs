@@ -473,6 +473,20 @@ public sealed class Fitter {
                 // ⚠ A sole lambda argument over a member-access fill: the arrow or the fill, by the
                 // measured line rather than by whether the body fits below. See
                 // GroupFacts.LambdaParameters (#557).
+                // ⚠ A sole lambda argument over an operand chain or a binary pattern (#578). See
+                // GroupFacts.LambdaOperandParameters.
+                if (facts.LambdaOperandParameters > 0 && m.FlatWidth < Unbounded) {
+                    var end = m.Column + m.FlatWidth + facts.LambdaOperandTail;
+                    return EqualsFloor.BreaksTheOperandArrow(
+                        m.Column,
+                        facts.LambdaOperandParameters,
+                        facts.LambdaOperandFirst,
+                        end
+                    )
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
+                }
+
                 // ⚠ A sole lambda argument over a chain of calls (#571). See GroupFacts.LambdaChainHead.
                 if (facts.LambdaChainHead > 0) {
                     var start = m.Column - facts.LambdaHead;

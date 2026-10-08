@@ -3659,6 +3659,7 @@ public sealed class BreakPlan {
         }
 
         var pattern = root is BinaryPatternSyntax;
+
         Describe(
             root,
             new(
@@ -6274,7 +6275,14 @@ public sealed class BreakPlan {
                         LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
                         LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
                     )
-                    : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
+                    : OperandSoleLambdaTail(lambda, body) is > 0 and var operandTail
+                    ? new GroupFacts(
+                        BreaksIfTooLong: true,
+                        LambdaOperandParameters: lambda.ArrowToken.SpanStart - 1 - lambda.SpanStart,
+                        LambdaOperandTail: operandTail,
+                        LambdaOperandFirst: FirstOperandWidth(body)
+                    )
+                : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
                         ? new GroupFacts(
                             BreaksIfTooLong: true,
                             LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
@@ -6349,6 +6357,60 @@ public sealed class BreakPlan {
         return dot.IsKind(SyntaxKind.None) ? 0 : dot.SpanStart - lambda.SpanStart;
     }
 
+    /// <summary>
+    ///     A sole lambda argument whose body is an operand chain — <c>a &amp;&amp; b &amp;&amp; c</c> — or a
+    ///     type test over a binary pattern — <c>x is A or B or C</c> — written on one line: its arrow is
+    ///     decided by <see cref="GroupFacts.LambdaOperandParameters" /> (#578).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on a statement's call, <c>U(params =&gt; …);</c>, with parameter texts of 1 to 45 columns,
+    ///     the arrow ending at columns 14 to 89 and lines of 112 to 200: 10 of 12 243 cells differ, each
+    ///     within a fifth of a column of the boundary.
+    /// </remarks>
+    /// <summary>
+    ///     The width of an operand chain's first operand — the leftmost — or of <c>x is A</c> before a binary
+    ///     pattern's first combinator (#578).
+    /// </summary>
+    static int FirstOperandWidth(ExpressionSyntax body) {
+        switch (body) {
+            case IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax pattern } test:
+                PatternSyntax left = pattern;
+                while (left is BinaryPatternSyntax binary) {
+                    left = binary.Left;
+                }
+
+                return left.Span.End - test.SpanStart;
+            default:
+                var node = body;
+                while (node is BinaryExpressionSyntax binary && !IsTypeTest(binary)) {
+                    node = binary.Left;
+                }
+
+                return node.Span.Length;
+        }
+    }
+
+    /// <returns>
+    ///     The width from the body's end to its statement's end, which must be on the same line; zero where the
+    ///     rule does not apply.
+    /// </returns>
+    int OperandSoleLambdaTail(LambdaExpressionSyntax lambda, ExpressionSyntax body) {
+        if (!options.PlaceSingleMethodArgumentLambdaOnSameLine
+            || !IsTheBodyOfASoleLambda(body)
+            || body switch {
+                BinaryExpressionSyntax binary => IsTypeTest(binary),
+                IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } => false,
+                _ => true
+            }
+            || lambda.FirstAncestorOrSelf<StatementSyntax>() is not { } statement) {
+            return 0;
+        }
+
+        var start = body.SpanStart;
+        var length = statement.Span.End - start;
+        return source.AsSpan(start, length).IndexOfAny('\r', '\n') < 0 ? statement.Span.End - body.Span.End : 0;
+    }
+
     bool IsAFilledSoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
         options.PlaceSingleMethodArgumentLambdaOnSameLine
         && IsTheBodyOfASoleLambda(body)
@@ -6383,12 +6445,18 @@ public sealed class BreakPlan {
     ///     lambda among other arguments whose chain the author broke (<c>x =&gt; x</c> / <c>+ 1</c>).
     /// </remarks>
     bool ArrowWinsOverTheChain(LambdaExpressionSyntax lambda) =>
-        lambda.ExpressionBody is BinaryExpressionSyntax binary
-        && !IsTypeTest(binary)
-        && lambda.Parent is EqualsValueClauseSyntax or AssignmentExpressionSyntax
-        && !binary.DescendantNodesAndSelf(static node => node is BinaryExpressionSyntax)
-            .OfType<BinaryExpressionSyntax>()
-            .Any(link => BreaksBefore(link.OperatorToken) || BreaksBefore(FirstToken(link.Right)));
+        lambda.Parent is EqualsValueClauseSyntax or AssignmentExpressionSyntax
+        && lambda.ExpressionBody switch {
+            BinaryExpressionSyntax binary => !IsTypeTest(binary)
+                && !binary.DescendantNodesAndSelf(static node => node is BinaryExpressionSyntax)
+                    .OfType<BinaryExpressionSyntax>()
+                    .Any(link => BreaksBefore(link.OperatorToken) || BreaksBefore(FirstToken(link.Right))),
+            // ⚠ And a type test over a binary pattern written on one line (#578, group F's probe):
+            // `Func<object, bool> f = x =>` / `x is A` / `or B` / `or C`.
+            IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } test =>
+                source.AsSpan(test.SpanStart, test.Span.Length).IndexOfAny('\r', '\n') < 0,
+            _ => false
+        };
 
     /// <summary>
     ///     Whether an <c>=</c>'s value is a lambda whose arrow takes the break the <c>=</c> would
