@@ -17,15 +17,16 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 public sealed class MeasuredWidthsAbsorbWhitespaceTests {
     static string P(int width) => new('P', width);
 
-    static string Wrap(string indent, string line) => $$"""
-        namespace P;
+    static string Wrap(string indent, string line) =>
+        $$"""
+          namespace P;
 
-        class C {
-        {{indent}}void M() {
-        {{indent}}{{indent}}{{line}}
-        {{indent}}}
-        }
-        """;
+          class C {
+          {{indent}}void M() {
+          {{indent}}{{indent}}{{line}}
+          {{indent}}}
+          }
+          """;
 
     /// <summary>The fuzzer's minimised case: a two-space indent is absorbed like a four-space one.</summary>
     [Fact]
@@ -58,9 +59,15 @@ public sealed class MeasuredWidthsAbsorbWhitespaceTests {
     ///     the `=`, the `=&gt;` and the `;`.
     /// </summary>
     [Theory]
-    [InlineData("Func<A, B> fffffffffffffffffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvv;")]
-    [InlineData("Use((Tttttttttt first, U second) => first.Alpha.Bravo.Charlie.Delta.Echo.Foxtrot.Golf.Hotel.India.Juliett.Kilo.Lima.Mike.November);")]
-    [InlineData("UUUUUUUUUUUU(static nnnnnnnn => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccccc);")]
+    [InlineData(
+        "Func<A, B> fffffffffffffffffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvv;"
+    )]
+    [InlineData(
+        "Use((Tttttttttt first, U second) => first.Alpha.Bravo.Charlie.Delta.Echo.Foxtrot.Golf.Hotel.India.Juliett.Kilo.Lima.Mike.November);"
+    )]
+    [InlineData(
+        "UUUUUUUUUUUU(static nnnnnnnn => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccccc);"
+    )]
     public void WidenedGaps_FormatAsTheCleanLine(string clean) {
         var widened = clean.Replace("<", " < ")
             .Replace(">", " > ")
@@ -85,18 +92,21 @@ public sealed class MeasuredWidthsAbsorbWhitespaceTests {
     [Fact]
     public void ASpaceInsideATypeArgumentList_DoesNotMoveTheHeldValue() {
         const string Name = "PublicParameterizedConstructorWithNonPropertyParameterTestClass";
-        static string Source(string close) => $$"""
-            namespace Newtonsoft.Json.Tests.Serialization
-            {
-              public class ConstructorHandlingTests : TestFixtureBase
+
+        static string Source(string close) =>
+            $$"""
+              namespace Newtonsoft.Json.Tests.Serialization
               {
-              public void SuccessWithPublicParameterizedConstructorWhenParameterIsNotAProperty()
-              {
-               {{Name}} c = JsonConvert.DeserializeObject<{{Name}}{{close}}(json);
+                public class ConstructorHandlingTests : TestFixtureBase
+                {
+                public void SuccessWithPublicParameterizedConstructorWhenParameterIsNotAProperty()
+                {
+                 {{Name}} c = JsonConvert.DeserializeObject<{{Name}}{{close}}(json);
+                }
+                }
               }
-              }
-            }
-            """;
+              """;
+
         Assert.Equal(Format.Text(Source(">")), Format.Text(Source(" >")));
     }
 
@@ -109,10 +119,10 @@ public sealed class MeasuredWidthsAbsorbWhitespaceTests {
     [Fact]
     public void AnEqualsBeforeACallWhoseParenIsPastTheMargin_IsStableOnTheSecondPass() {
         const string Source = """""
-            internal sealed readonly struct T2<T3> {
-                private ImmutableArray<((double? First, long Second) First, (CancellationToken First, long Second) Second)> f23 = Emit(Materialise<TimeSpan>($"value {97} and {items[0]}", x24 => source?.Value?.Length, (state is null)), state, """"a { b } c"""");
-            }
-            """"";
+                              internal sealed readonly struct T2<T3> {
+                                  private ImmutableArray<((double? First, long Second) First, (CancellationToken First, long Second) Second)> f23 = Emit(Materialise<TimeSpan>($"value {97} and {items[0]}", x24 => source?.Value?.Length, (state is null)), state, """"a { b } c"""");
+                              }
+                              """"";
         var once = Format.Text(Source);
         Assert.Equal(once, Format.Text(once));
         Assert.Contains(" f23 =\n", once, StringComparison.Ordinal);
@@ -126,29 +136,29 @@ public sealed class MeasuredWidthsAbsorbWhitespaceTests {
     [Fact]
     public void TheSeedTwoCase_FormatsAsTheCleanOne() {
         const string Clean = """
-            namespace P;
+                             namespace P;
 
-            class C {
-                void M() {
-                    Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2, A a3, A a4, A a5, A a6, A a7, A a8, A a9, A a10x) => vvvvvvvvvvvvvvvvvvvv;
-                    Func<A, B> fffffffffffffffffffffffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
-                    Func<A, B> fffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
-                    Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2, A a3, A a4, A a5, A a6, A a7, A a8, A a9x) => Name;
-                }
-            }
-            """;
+                             class C {
+                                 void M() {
+                                     Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2, A a3, A a4, A a5, A a6, A a7, A a8, A a9, A a10x) => vvvvvvvvvvvvvvvvvvvv;
+                                     Func<A, B> fffffffffffffffffffffffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
+                                     Func<A, B> fffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
+                                     Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2, A a3, A a4, A a5, A a6, A a7, A a8, A a9x) => Name;
+                                 }
+                             }
+                             """;
         const string Mutated = """
-            namespace P;
+                               namespace P;
 
-            class  C {
-                void M( ) {
-                    Func<A , B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1 , A  a2, A a3, A a4 , A  a5, A a6, A a7 , A a8,  A a9, A a10x) =>  vvvvvvvvvvvvvvvvvvvv;
-                    Func<A, B > fffffffffffffffffffffffffffffffffffffffffff = ( TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT  p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
-                    Func<A , B> fffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT  p0 ) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv ;
-                    Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2,  A a3,  A a4, A a5, A a6, A a7,  A a8, A a9x) => Name;
-                }
-            }
-            """;
+                               class  C {
+                                   void M( ) {
+                                       Func<A , B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1 , A  a2, A a3, A a4 , A  a5, A a6, A a7 , A a8,  A a9, A a10x) =>  vvvvvvvvvvvvvvvvvvvv;
+                                       Func<A, B > fffffffffffffffffffffffffffffffffffffffffff = ( TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT  p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
+                                       Func<A , B> fffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT  p0 ) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv ;
+                                       Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2,  A a3,  A a4, A a5, A a6, A a7,  A a8, A a9x) => Name;
+                                   }
+                               }
+                               """;
         Assert.Equal(Format.Text(Clean), Format.Text(Mutated));
     }
 }

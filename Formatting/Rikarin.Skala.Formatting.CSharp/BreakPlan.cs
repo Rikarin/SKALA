@@ -2082,7 +2082,10 @@ public sealed class BreakPlan {
     int BaseNameShift(BaseListSyntax node, int perEleven) =>
         FormattedWidth(node.Types[0].Type) >= 12
             ? 0
-            : (int)Math.Round((12 - FormattedWidth(node.Types[0].Type)) * perEleven / 11.0, MidpointRounding.AwayFromZero);
+            : (int)Math.Round(
+                (12 - FormattedWidth(node.Types[0].Type)) * perEleven / 11.0,
+                MidpointRounding.AwayFromZero
+            );
 
     /// <summary>
     ///     A tuple's components, <c>(A: 1, B: 2,\n C: 3)</c> — and every other delimited list the oracle
