@@ -133,8 +133,8 @@ internal static class NullComparison {
     ) {
         for (var current = node.Parent; current is not null; current = current.Parent) {
             if (current is not (SimpleLambdaExpressionSyntax
-                    or ParenthesizedLambdaExpressionSyntax
-                    or AnonymousMethodExpressionSyntax)) {
+                or ParenthesizedLambdaExpressionSyntax
+                or AnonymousMethodExpressionSyntax)) {
                 continue;
             }
 

@@ -215,23 +215,23 @@ public static class SpaceRules {
             // them as it does in front of any other operand.
             SyntaxKind.OpenParenToken => next.Parent
                 is ArgumentListSyntax
-                    or AttributeArgumentListSyntax
-                    or ParameterListSyntax { Parent: not ParenthesizedLambdaExpressionSyntax }
-                    or IfStatementSyntax
-                    or WhileStatementSyntax
-                    or DoStatementSyntax
-                    or ForStatementSyntax
-                    or CommonForEachStatementSyntax
-                    or SwitchStatementSyntax
-                    or CatchDeclarationSyntax
-                    or CatchFilterClauseSyntax
-                    or LockStatementSyntax
-                    or UsingStatementSyntax
-                    or FixedStatementSyntax
-                    or CheckedExpressionSyntax
-                    or DefaultExpressionSyntax
-                    or SizeOfExpressionSyntax
-                    or TypeOfExpressionSyntax,
+                or AttributeArgumentListSyntax
+                or ParameterListSyntax { Parent: not ParenthesizedLambdaExpressionSyntax }
+                or IfStatementSyntax
+                or WhileStatementSyntax
+                or DoStatementSyntax
+                or ForStatementSyntax
+                or CommonForEachStatementSyntax
+                or SwitchStatementSyntax
+                or CatchDeclarationSyntax
+                or CatchFilterClauseSyntax
+                or LockStatementSyntax
+                or UsingStatementSyntax
+                or FixedStatementSyntax
+                or CheckedExpressionSyntax
+                or DefaultExpressionSyntax
+                or SizeOfExpressionSyntax
+                or TypeOfExpressionSyntax,
             SyntaxKind.OpenBracketToken => next.Parent is BracketedArgumentListSyntax or ArrayRankSpecifierSyntax,
             _ => IsMemberAccessPunctuation(next)
                 || IsTypeAngle(next)
@@ -289,8 +289,8 @@ public static class SpaceRules {
             SyntaxKind.QuestionToken => prev.Parent is ConditionalExpressionSyntax,
             SyntaxKind.ColonToken => prev.Parent
                 is ConditionalExpressionSyntax
-                    or BaseListSyntax
-                    or TypeParameterConstraintClauseSyntax,
+                or BaseListSyntax
+                or TypeParameterConstraintClauseSyntax,
             SyntaxKind.CloseParenToken => prev.Parent is CastExpressionSyntax,
             SyntaxKind.SemicolonToken => prev.Parent is ForStatementSyntax,
             SyntaxKind.NewKeyword => prev.Parent is BaseObjectCreationExpressionSyntax,
@@ -694,7 +694,7 @@ public static class SpaceRules {
             // written identically. `<<` has no such split and closes on both sides.
             if (IsBinaryOperator(prev)
                 && prev.Kind() is SyntaxKind.GreaterThanGreaterThanToken
-                or SyntaxKind.GreaterThanGreaterThanGreaterThanToken) {
+                    or SyntaxKind.GreaterThanGreaterThanGreaterThanToken) {
                 return !ClingsLeft(right);
             }
 

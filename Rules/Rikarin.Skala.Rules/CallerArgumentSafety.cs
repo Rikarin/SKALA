@@ -126,13 +126,13 @@ public static class CallerArgumentSafety {
     static bool IsCallShaped(SyntaxNode node) =>
         node.Kind()
         is SyntaxKind.InvocationExpression
-            or SyntaxKind.ObjectCreationExpression
-            or SyntaxKind.ImplicitObjectCreationExpression
-            or SyntaxKind.BaseConstructorInitializer
-            or SyntaxKind.ThisConstructorInitializer
-            or SyntaxKind.PrimaryConstructorBaseType
-            or SyntaxKind.ElementAccessExpression
-            or SyntaxKind.Attribute;
+        or SyntaxKind.ObjectCreationExpression
+        or SyntaxKind.ImplicitObjectCreationExpression
+        or SyntaxKind.BaseConstructorInitializer
+        or SyntaxKind.ThisConstructorInitializer
+        or SyntaxKind.PrimaryConstructorBaseType
+        or SyntaxKind.ElementAccessExpression
+        or SyntaxKind.Attribute;
 
     static IEnumerable<TextSpan> CapturedSpans(SemanticModel model, SyntaxNode call, CancellationToken cancellation) {
         var operation = model.GetOperation(call, cancellation);
