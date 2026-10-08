@@ -8379,9 +8379,28 @@ chain of calls, and after an `=` it declines the `=` break to do it. Wiring that
 of its own, not this rule.
 
 - options: none.
-- ⚠ status: **resolved** for the band, **open** past it — swept on the receiver's width for #446, see
-  SK-DIV-0211; blocked on a simple member access's `.` having no break point. Pinned by
-  `TypeTestKeywordIssue444Tests`.
+⚠ **Round 2 of #446: the dot has a break point now, and `is`/`as` still does not use it.** Swept with
+`Testing ask` over receivers of 1 to 50 columns, the line from 118 to 140 columns, for `return r.P…;`,
+`var x = r.P…;`, `_x = r.P…;`, `return r.P… as string;` and `return r.P… is T;` (1 380 cells).
+
+- **Without a type test the rule is one sentence.** Whenever the line overflows the oracle breaks before
+  the member access's last dot, one level in, and never after the `=` — every cell. Wired as
+  `BreakPlan.PlanLastDot` for a plain member access (names only, no call) that is a `return`'s value, a
+  local's or an assignment's, with the `=` yielding to it. Pinned by
+  `constructs/breaks/member-access-last-dot.cs`.
+- **Under `as`/`is` it is three rules competing, and the boundary is not modelled.** At 121 columns the
+  dot always wins. From 122 a short receiver takes the keyword band's breaks first: `… as` / `string;`
+  while that line fits (to 128), then `…` / `as string;` (to 131), then the dot two levels in with the
+  keyword band again below it. A longer receiver hands over to the dot earlier — at 126 for a receiver
+  of 14, 125 for 16, 123 for 20, at once for 30. `is` is the same with its shorter tail, and from a
+  receiver of 6 it is the dot from 121.
+
+No reading of the hand-over column (receiver plus line, the second line's width, the head's) fits all
+of it, so the type-test rows keep the #444 band and nothing else. The grid is the starting point.
+
+- ⚠ status: **resolved** for the band and for a plain member access without a type test; **open** for
+  `is`/`as` past the band, measured as above. Pinned by `TypeTestKeywordIssue444Tests` and
+  `constructs/breaks/member-access-last-dot.cs`.
 
 ## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
 

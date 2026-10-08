@@ -860,6 +860,10 @@ public sealed class BreakPlan {
                 PlanOperator(pattern, pattern.OperatorToken, pattern.Right, options.WrapBeforeBinaryPatternOp);
                 return;
 
+            case MemberAccessExpressionSyntax access when IsPlainMemberValue(access):
+                PlanLastDot(access);
+                return;
+
             case InvocationExpressionSyntax or ConditionalAccessExpressionSyntax when IsChainRoot(node):
                 PlanChainedCalls(node);
                 return;
@@ -3975,7 +3979,7 @@ public sealed class BreakPlan {
                     // ⚠ Not before a lambda whose arrow takes the break instead: `Func<int, string> f =
                     // value =>` / `value.ToString() + "…";` at every width measured, where Skala broke the
                     // `=` because the whole lambda fitted on the line below (#453, SK-DIV-0050).
-                    BreaksIfTooLong: !YieldsToTheLambdaArrow(value),
+                    BreaksIfTooLong: !YieldsToTheLambdaArrow(value) && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member)),
 
                     // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
                     // Every other right-hand side is measured by what is left of the line and breaks
@@ -5751,6 +5755,64 @@ public sealed class BreakPlan {
 
             return true;
         }
+    }
+
+    /// <summary>
+    ///     A member access with no call, element access or other construct in it — <c>receiver.Property</c>,
+    ///     <c>a.b.c.D</c> — that is a <c>return</c>'s expression, a local's or an assignment's value: the
+    ///     values the dot break was measured on (#446, SK-DIV-0210/0124).
+    /// </summary>
+    static bool IsPlainMemberValue(MemberAccessExpressionSyntax access) {
+        if (!access.IsKind(SyntaxKind.SimpleMemberAccessExpression)) {
+            return false;
+        }
+
+        var placed = access.Parent switch {
+            ReturnStatementSyntax => true,
+            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Parent: LocalDeclarationStatementSyntax } } } => true,
+            AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } assignment => assignment.Right == access
+                && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression),
+            _ => false
+        };
+
+        if (!placed) {
+            return false;
+        }
+
+        for (ExpressionSyntax current = access; ;) {
+            switch (current) {
+                case MemberAccessExpressionSyntax { Name: IdentifierNameSyntax } member
+                    when member.IsKind(SyntaxKind.SimpleMemberAccessExpression):
+                    current = member.Expression;
+                    continue;
+                case IdentifierNameSyntax or ThisExpressionSyntax or BaseExpressionSyntax:
+                    return !access.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia));
+                default:
+                    return false;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     The break before a plain member access's last <c>.</c> (#446, SK-DIV-0210/0124).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> on <c>return r….P…;</c>, <c>var x = r….P…;</c> and
+    ///     <c>_x = r….P…;</c>, receivers of 1 to 50 columns, the line from 118 to 140: whenever the line
+    ///     overflows the oracle breaks before the dot, one level in, and never after the <c>=</c> — every
+    ///     cell. A break the author wrote there is kept.
+    /// </remarks>
+    void PlanLastDot(MemberAccessExpressionSyntax access) {
+        var group = NewGroup();
+        Point(access.OperatorToken, group);
+        Flat(access.Name.Identifier);
+        Describe(
+            access,
+            group,
+            GroupMode.Preserve,
+            new GroupFacts(options.KeepsUserBreaksBetweenItems && BreaksBefore(access.OperatorToken), BreaksIfTooLong: true),
+            spendsIndent: true
+        );
     }
 
     /// <summary>Rewrites the facts of every group described on <paramref name="node" />.</summary>
