@@ -1094,6 +1094,41 @@ public sealed class ArrangementRuleTests {
         Assert.Contains(kept, arranged, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     ⚠ A call deep inside a <c>?.</c> chain is re-bound through its statement. Bound out of place its
+    ///     leftmost receiver is a member binding, and Roslyn threw — SK9095 on Skala's own
+    ///     <c>Testing/…/Program.cs</c>, found by Lint's self-arrange.
+    /// </summary>
+    [Fact]
+    public void ObjectCreation_ALambdaDeepInAConditionalChain_DoesNotThrow() {
+        var result = Attempt(
+            """
+            using System.Collections.Generic;
+            using System.Linq;
+
+            namespace P;
+
+            public class C {
+                public List<KeyValuePair<string, string>>? M(string[]? args) =>
+                    args?[0..]
+                        .Select(static pair => pair.Split('='))
+                        .Select(static pair => new KeyValuePair<string, string>(pair[0], pair[1]))
+                        .ToList();
+
+                public void N(List<KeyValuePair<string, string>>? list) {
+                    list?.Add(new KeyValuePair<string, string>("a", "b"));
+                }
+            }
+            """,
+            ArrangeIds.ObjectCreation
+        );
+
+        Assert.DoesNotContain(result.Diagnostics, static diagnostic => diagnostic.Id == ArrangeIds.RuleThrew);
+        var arranged = Declined(result);
+        Assert.Contains(".Select(static pair => new KeyValuePair<string, string>(pair[0], pair[1]))", arranged, StringComparison.Ordinal);
+        Assert.Contains("list?.Add(new(\"a\", \"b\"));", arranged, StringComparison.Ordinal);
+    }
+
     /// <summary>⚠ #524: a lambda's value is <c>when_type_not_evident</c>'s, its block <c>return</c> included.</summary>
     [Fact]
     public void ObjectCreation_ALambdaValueIsNotEvident() {

@@ -405,7 +405,15 @@ public sealed class ObjectCreationRule : ArrangementRule {
             // `.Invoke` is a member binding, which means nothing out of place, and a speculative
             // conditional access answers with no symbol at all. So the statement around it is re-bound
             // instead, and the invocation is asked inside that.
-            if (owner.Parent is ConditionalAccessExpressionSyntax) {
+            //
+            // ⚠ Anywhere inside a `?.` chain, not only directly under it. `args.FirstOrDefault(…)?[…]
+            // .Split(…).Select(p => new KeyValuePair<…>(…))` has the `Select` call deep in the
+            // WhenNotNull part, its leftmost receiver a member binding; bound out of place, Roslyn
+            // threw a NullReferenceException (SK9095 on Testing/…/Program.cs, found by Lint's
+            // self-arrange after #524).
+            if (owner.Ancestors()
+                .OfType<ConditionalAccessExpressionSyntax>()
+                .Any(conditional => conditional.WhenNotNull.Span.Contains(owner.Span))) {
                 return RebindInStatement(owner, rewritten);
             }
 
