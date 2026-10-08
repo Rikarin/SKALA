@@ -1504,12 +1504,26 @@ public sealed partial class CSharpDocumentBuilder {
                         : nestsFromAnchor ? IndentKind.AnchoredBlock
                         : IndentKind.Block;
 
+                    // ⚠ A braced initializer's elements and a switch expression's arms are a continuation
+                    // inside braces, and take `skala_continuous_indent_multiplier` widths, not one (#464):
+                    // at a multiplier of 2 the oracle puts them 8 + 2 × 4 = 16 with the `}` at 8, for
+                    // a collection, array, object, anonymous and `with` initializer and a switch
+                    // expression alike, and at 3 likewise. A block body keeps one width, and so does all
+                    // of it under `skala_use_continuous_indent_inside_initializer_braces = false` — the
+                    // switch's arms included, which that key governs too (measured at multiplier 2).
+                    var multiplied = options.UseContinuousIndentInsideInitializerBraces
+                        && node is InitializerExpressionSyntax
+                            or AnonymousObjectCreationExpressionSyntax
+                            or SwitchExpressionSyntax
+                        ? IndentFlags.Multiplied
+                        : IndentFlags.None;
+
                     if (indentBraces) {
-                        OpenIndent(braceIndent);
+                        OpenIndent(braceIndent, false, multiplied);
                         EmitToken(token);
                     } else {
                         EmitToken(token);
-                        OpenIndent(braceIndent);
+                        OpenIndent(braceIndent, false, multiplied);
                     }
 
                     if (hasInner) {

@@ -4325,7 +4325,11 @@ multiplier says, so at any multiplier above 1 Skala's `true` is a level short of
 `skala_continuous_indent_multiplier`'s defect on braced initializers, not this key's; it is recorded at the
 key in `options.json` and is not fixed here, because turning an absolute scope into a relative one
 under every initializer in `corpus/real` is not a change to make on the strength of a row that does
-not ask about it.
+not ask about it. ⚠ **Fixed by #464 (2026-10-08)**, and without that change: the scope
+stays absolute — a `Block` flagged `IndentFlags.Multiplied`, whose width is the multiplier's — so at the
+export's multiplier of 1 nothing in `corpus/` moved (constructs, real, pathological and both unformatted
+modes identical before and after). Measured at 2 and 3 on a collection, array, object, anonymous and
+`with` initializer, a bare array initializer and a switch expression: elements at 8 + m × 4, `}` at 8.
 
 - options: `skala_use_continuous_indent_inside_parens`,
   `skala_use_continuous_indent_inside_initializer_braces`
@@ -5320,7 +5324,11 @@ emitted the gap before the node, so it records the governing expression's own li
 *continuation* in the oracle (16 = 8 + 2 × 4) and a block in Skala (12 = 8 + 4), the same
 `skala_continuous_indent_multiplier` defect `VisitBraced`'s remarks record for every braced
 initializer; at the export's multiplier of 1 the two are the same number. Not this entry's and not
-in the fixture.
+in the fixture. ⚠ **Fixed by #464 (2026-10-08)**, plain `a switch {` included: the arms' block scope
+carries `IndentFlags.Multiplied` and takes the multiplier's widths, absolute as before; at 3 the arms go
+to 8 + 3 × 4, and at `skala_use_continuous_indent_inside_initializer_braces = false` to one width, so
+that key governs a switch expression's arms as well as an initializer's. Pinned by
+`BracedContinuationMultiplierIssue464Tests`.
 
 - options: none behind the divergence; `skala_continuous_indent_multiplier` and
   `skala_align_multiline_switch_expression` measured as above.

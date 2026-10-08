@@ -363,7 +363,17 @@ public enum IndentFlags {
     ///     expression whose governing <c>)</c> was kept on a line of its own nests its arms from that
     ///     line, whatever paid for its indentation (#506).
     /// </summary>
-    AnchorAtLine = 128
+    AnchorAtLine = 128,
+
+    /// <summary>
+    ///     ⚠ A <see cref="IndentKind.Block" /> or <see cref="IndentKind.AnchoredBlock" /> whose contents
+    ///     are a continuation rather than a body: a braced initializer's elements and a switch
+    ///     expression's arms under <c>skala_use_continuous_indent_inside_initializer_braces = true</c>.
+    ///     They take <c>skala_continuous_indent_multiplier</c> indent widths where a body takes one;
+    ///     the closing brace still returns to the opener's level (#464). At the export's multiplier of 1
+    ///     the two are the same number.
+    /// </summary>
+    Multiplied = 256
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>

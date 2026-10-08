@@ -405,7 +405,8 @@ public sealed class DocumentBuilder {
                     | IndentFlags.Delimiter
                     | IndentFlags.CloserAtOpener
                     | IndentFlags.BrokenAfter
-                    | IndentFlags.AnchorAtLine))),
+                    | IndentFlags.AnchorAtLine
+                    | IndentFlags.Multiplied))),
             columns
         );
 

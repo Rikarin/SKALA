@@ -512,9 +512,13 @@ public sealed class LayoutWriter {
             kind = IndentKind.Block;
         }
 
+        // ⚠ A braced continuation — an initializer's elements, a switch expression's arms — is a block
+        // that takes the continuation multiplier's width (#464). See IndentFlags.Multiplied.
+        var blockWidth = (flags & IndentFlags.Multiplied) != 0 ? continuousMultiplier * indentWidth : indentWidth;
+
         scopes.Add(
             kind switch {
-                IndentKind.Block => new Scope(true, outer + indentWidth, line, outer, unconditional),
+                IndentKind.Block => new Scope(true, outer + blockWidth, line, outer, unconditional),
 
                 // ⚠ The level a scope opening here would nest from — `outer` — and not the line's own
                 // indentation. The two differ by the delimited scopes opened earlier on this line, and
