@@ -856,7 +856,32 @@ public sealed class BreakPlan {
                 PlanTypeTest(isPattern, isPattern.IsKeyword, isPattern.Pattern);
                 return;
 
-            case IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } chainTest:
+            // ⚠ Only as a local's value, where it was measured: under a lambda or an argument the gap
+            // after `is` is not a point, and planning it there moved Skala's own `child is not A` /
+            // `and not B` chains off the oracle's column.
+            // ⚠ An `is` the author broke before, ahead of a binary pattern: the `is` line takes a level
+            // past the operand's own line, as a type test's does (SK-DIV-0206). Measured on Skala's own
+            // source: `token.Kind()` / `is A` / `or B` under an expression body puts `is` and every `or` at
+            // 12, where Skala wrote 8.
+            // Not over a property pattern's braces, which then nested a level too deep (SpaceRules.cs's
+            // `or ArgumentListSyntax {` / … / `};`, measured).
+            case IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } brokenTest
+                when options.KeepsUserBreaksBetweenItems
+                && BreaksBefore(brokenTest.IsKeyword)
+                && !brokenTest.Pattern.DescendantNodes().OfType<PropertyPatternClauseSyntax>().Any():
+                PlanKeptIs(brokenTest);
+                return;
+
+            case IsPatternExpressionSyntax {
+                Pattern: BinaryPatternSyntax,
+                Parent:
+                EqualsValueClauseSyntax {
+                    Parent:
+                    VariableDeclaratorSyntax {
+                        Parent: VariableDeclarationSyntax { Parent: LocalDeclarationStatementSyntax }
+                    }
+                }
+            } chainTest:
                 PlanAfterIs(chainTest);
                 return;
 
@@ -4452,7 +4477,9 @@ public sealed class BreakPlan {
                     CalleeWidth: callee,
                     YieldsThroughArrow: ArrowYieldWidthOf(value),
                     PatternHead: PatternHeadOf(node, equals, value),
-                    PatternWidth: PatternHeadOf(node, equals, value) > 0 ? ((IsPatternExpressionSyntax)value).Pattern.Span.Length : 0,
+                    PatternWidth: PatternHeadOf(node, equals, value) > 0
+                        ? ((IsPatternExpressionSyntax)value).Pattern.Span.Length
+                        : 0,
                     CalleeOwner: owner,
                     FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
                     && TrailingProperty(target) is not null
@@ -4638,7 +4665,7 @@ public sealed class BreakPlan {
     /// </remarks>
     static int ArrowYieldWidthOf(ExpressionSyntax value) =>
         value is LambdaExpressionSyntax { ExpressionBody: IdentifierNameSyntax } lambda
-            && !lambda.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+        && !lambda.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
             ? lambda.ArrowToken.Span.End - lambda.SpanStart
             : 0;
 
@@ -6411,6 +6438,21 @@ public sealed class BreakPlan {
         return width <= 2 ? 1000
             : width == 3 && pattern is BinaryPatternSyntax { OperatorToken.RawKind: (int)SyntaxKind.OrKeyword } ? 2
             : 0;
+    }
+
+    /// <summary>The kept break before an <c>is</c> ahead of a binary pattern, one level past the operand's line.</summary>
+    void PlanKeptIs(IsPatternExpressionSyntax test) {
+        var group = NewGroup();
+        Mandatory(test.IsKeyword);
+        Describe(
+            test,
+            new GroupPlan(
+                group,
+                GroupMode.Preserve,
+                new GroupFacts(BreaksIfTooLong: true),
+                FromLine: !IsAHeaderCondition(test)
+            )
+        );
     }
 
     /// <summary>Rewrites the facts of every group described on <paramref name="node" />.</summary>

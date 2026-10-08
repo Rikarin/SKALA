@@ -1123,7 +1123,10 @@ public sealed class LayoutWriter {
             // `var a = Compute(` / arguments one level in, `)` back — not two (#445).
             if (scope.IsFromLine) {
                 if (scope.OpenLine < line) {
-                    var fromLine = Math.Max(0, level + (blocked == scope.OpenLine ? scope.Level - indentWidth : scope.Level));
+                    var fromLine = Math.Max(
+                        0,
+                        level + (blocked == scope.OpenLine ? scope.Level - indentWidth : scope.Level)
+                    );
 
                     // ⚠ Inside a list lifted through its inner breaks, the operand's line is the list's
                     // lifted content level, not the line's own indentation (#446, SK-DIV-0212).

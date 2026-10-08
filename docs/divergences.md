@@ -9010,7 +9010,17 @@ and indents and callees crossed, are interpolated.
 Tables: `EqualsFloor.BreaksBeforeAPattern` (`WidestPattern` at one-column ends) and
 `BreakPlan.PatternHeadOf`. Every grid cell matches; `corpus/real/` and every other construct are
 unchanged. Not measured: assignments and fields, operators other than one `or`/`and` at the root, and
-the `is` gap inside a statement condition (planned, without the from-line level).
+and the `is` gap anywhere but a local's value. ⚠ It was first planned for every `is` ahead of a binary
+pattern, and reformatting Skala's own source refuted that: inside a lambda body or an argument the gap
+moved `child is not A` / `and not B` where the oracle keeps the pattern on the operand's line, so it is
+restricted to the `EqualsValueClause` of a local declarator.
+
+- **A break the author kept before `is`** ahead of a binary pattern (`BreakPlan.PlanKeptIs`) puts the
+  `is` line one level past the operand's own line, with the combinators on its column — under an
+  expression body, after `return` and in a local's value alike. Before this the `is` line sat on the
+  operand's column under an expression body. Excluded: a chain holding a property pattern, whose braces
+  then nested a level too deep. Pinned by `constructs/indentation/kept-break-before-is.cs`; the same
+  shape in Skala's own `IsStringText` and `IsCallShaped` moved to the oracle's column.
 
 - options: `skala_wrap_before_eq = false`, the exported value.
 - ⚠ status: **resolved** for both halves within the measured shapes, pinned by
