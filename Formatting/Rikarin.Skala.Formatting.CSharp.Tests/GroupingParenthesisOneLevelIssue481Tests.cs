@@ -94,4 +94,35 @@ public sealed class GroupingParenthesisOneLevelIssue481Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     A lifted level never moves the line it opened at the start of: a property fill heading a switch
+    ///     arm's <c>or</c> pattern stays on the arm's column (found merging #481's lift with #482's fill).
+    /// </summary>
+    [Fact]
+    public void ALiftedLevel_LeavesItsOwnFirstLine() =>
+        Oracle.Agrees(
+            """
+            class C {
+                static int? K(SyntaxKind kind) =>
+                    kind switch {
+                        SyntaxKind.MultiplyExpression
+                            or SyntaxKind.DivideExpression
+                            or SyntaxKind.ModuloExpression => 1,
+                        _ => null
+                    };
+            }
+            """,
+            """
+            class C {
+                static int? K(SyntaxKind kind) =>
+                    kind switch {
+                        SyntaxKind.MultiplyExpression
+                            or SyntaxKind.DivideExpression
+                            or SyntaxKind.ModuloExpression => 1,
+                        _ => null
+                    };
+            }
+            """
+        );
 }

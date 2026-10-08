@@ -1034,7 +1034,13 @@ public sealed class LayoutWriter {
             // ⚠ Absolute, as a block is: everything outside a lifted list is already in `Lifted`.
             // Unless a broken construct inside the list opened on the list's own line, which is the
             // innermost broken construct around this line and continues the ordinary way.
-            if (scope.Lifted >= 0 && !BrokenInsideOnItsLine(i, scope)) {
+            // ⚠ Not for the line the scope opened at the very start of, before anything was written on
+            // it: a construct's own first line is never moved by its lift. A property fill that is a
+            // switch arm's pattern, `SyntaxKind.A` / `or SyntaxKind.B => …`, opens its level as the arm's
+            // line begins, and lifting there pushed the arm a level in (merge of #481 with #482).
+            if (scope.Lifted >= 0
+                && !BrokenInsideOnItsLine(i, scope)
+                && !(!nested && atLineStart && scope.OpenLine == line)) {
                 var counts = scope.Unconditional
                     ? nested ? scope.OpenLine <= line : scope.OpenLine < line
                     : scope.OpenLine < line && scope.OpenLine != blocked;
