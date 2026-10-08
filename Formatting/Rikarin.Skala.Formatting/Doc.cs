@@ -1191,4 +1191,37 @@ public readonly record struct GroupFacts(
     int YieldsThroughArrow = 0,
     int LambdaParameters = 0,
     int LambdaHead = 0,
-    bool LambdaIsSimple = false);
+    bool LambdaIsSimple = false,
+    LambdaLocal LambdaLocal = LambdaLocal.None);
+
+/// <summary>
+///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
+///     two gates on the declarator's name width, decided from the syntax, under which the measured floors
+///     do not apply. See <see cref="GroupFacts.YieldsThroughArrow" />.
+/// </summary>
+/// <remarks>
+///     ⚠ Measured on <c>Func&lt;T…&gt; name = (…) =&gt; body;</c> over type widths of 2 to 59 and name widths
+///     of 1 to 51, 12 805 cells. The name and the type act separately, which no head-width table can
+///     express: a narrow name keeps the arrow at any value, where the same head made of a wider name
+///     breaks the <c>=</c> below a floor.
+/// </remarks>
+[Flags]
+public enum LambdaLocal {
+    /// <summary>Not a local's <c>=</c>: the arrow while the line through it fits, as measured in round 3.</summary>
+    None = 0,
+
+    /// <summary>A measured local: the floors apply past the gates.</summary>
+    Measured = 1,
+
+    /// <summary>
+    ///     The name is at most <c>10 + ⌊(type + 4) / 12⌋</c> wide, the type measured whole: while the line through <c>=&gt;</c>
+    ///     fits, the arrow breaks whatever the value's width.
+    /// </summary>
+    ArrowWhileItFits = 2,
+
+    /// <summary>
+    ///     The name is at most <c>⌊(type − 6) / 5⌋ + 1</c> wide: once the <c>)</c> is off the line, the
+    ///     parameter list chops whatever the value's width.
+    /// </summary>
+    ChopsPastTheParenthesis = 4
+}

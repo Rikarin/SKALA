@@ -4797,6 +4797,7 @@ public sealed class BreakPlan {
                     MinimumHead: yieldsToTheBracket || callee > 0 ? MinimumEqualsHead : 0,
                     CalleeWidth: callee,
                     YieldsThroughArrow: ArrowYieldWidthOf(value),
+                    LambdaLocal: ArrowYieldWidthOf(value) > 0 ? LambdaLocalOf(node) : LambdaLocal.None,
                     PatternHead: PatternHeadOf(node, equals, value),
                     PatternWidth: PatternHeadOf(node, equals, value) > 0
                         ? ((IsPatternExpressionSyntax)value).Pattern.Span.Length
@@ -4984,6 +4985,35 @@ public sealed class BreakPlan {
     ///     12 to 70 and parameter lists of 2 to 70: wherever the line through <c>=&gt;</c> fits, the arrow
     ///     breaks and the <c>=</c> never does, which Skala had the other way round from a head of 30.
     /// </remarks>
+    /// <summary>
+    ///     A local's <c>=</c> before a lambda with a bare-name body: the gates its declarator's name and
+    ///     type widths open (#558). See <see cref="LambdaLocal" />.
+    /// </summary>
+    static LambdaLocal LambdaLocalOf(SyntaxNode node) {
+        if (node is not EqualsValueClauseSyntax {
+                Parent: VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax {
+                        Variables.Count: 1, Parent: LocalDeclarationStatementSyntax
+                    } declaration
+                } declarator
+            }) {
+            return LambdaLocal.None;
+        }
+
+        var type = declaration.Type.Span.Length;
+        var name = declarator.Identifier.Span.Length;
+        var local = LambdaLocal.Measured;
+        if (name <= 10 + (type + 4) / 12) {
+            local |= LambdaLocal.ArrowWhileItFits;
+        }
+
+        if (name <= (type - 6) / 5 + 1) {
+            local |= LambdaLocal.ChopsPastTheParenthesis;
+        }
+
+        return local;
+    }
+
     static int ArrowYieldWidthOf(ExpressionSyntax value) =>
         value is LambdaExpressionSyntax { ExpressionBody: IdentifierNameSyntax } lambda
         && !lambda.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))

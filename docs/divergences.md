@@ -9937,3 +9937,53 @@ line's end separates every cell; the best has 17 errors.
 - ⚠ status: **fixed** within the residue above. Pinned by
   `constructs/wrapping/lambda-parameters-before-the-arrow.cs` and
   `constructs/wrapping/lambda-arrow-over-a-property-fill.cs`.
+
+## SK-DIV-0372 — a local's `=` before a lambda with a bare-name body, past the margin
+
+⚠ **#558, and a refutation of round 3's own claim.** Round 3 (#453) wired the `=` to yield to the arrow
+"wherever the line through `=>` fits". That was measured with the declarator named `f` while the type was
+varied, and it holds only for narrow names. With `Func<A, B>` and names of 13 or more columns, the oracle
+breaks the `=` for a value narrower than a floor. Short parameter runs (`(A a1, A a2, …)`) and one long
+parameter type decide alike.
+
+Measured with `Testing ask` on `Func<T…> name = (…) => body;` over these dimensions, 12 805 cells in all:
+- type widths 2 to 59;
+- name widths 1 to 51, one column at a time from 8 to 18;
+- values (from `(` through `;`) of 12 to 135 columns;
+- bodies of 4 to 40 columns;
+- the `=>` ending 105 to 141.
+
+Four rules come out of it:
+
+- **While the line through `=>` fits**, the arrow breaks when the name is at most
+  `10 + ⌊(type + 4) / 12⌋` wide, the type measured whole, whatever the value. Past that gate the arrow
+  breaks only for a value at least `EqualsFloor.LambdaValue(head)` wide: 88 up to a head of 44, then
+  falling about a column per two and a half of head. A narrower value moves below the `=` whole.
+- **Once the `=>` is past the margin**, the `=` breaks while the `)` is still on the line (the `=>` ending
+  by column 123).
+- **Past that**, the `=` breaks only for a name wider than `⌊(type − 6) / 5⌋ + 1` and a value no wider than
+  the floor plus `⌊(5·body − 41) / 3⌋`. Otherwise the parameter list chops, `name = (` / parameters /
+  `) => body;`.
+- **The name and the type act separately.** The same head made of a wider name breaks the `=`, and made of
+  a wider type keeps the arrow. This is the same finding as #453's call body, so no table keyed on the
+  head alone can reproduce the grid.
+
+Wired as `LambdaLocal`, decided in the plan from the declaration's syntax, with
+`EqualsFloor.LambdaValue` and `EqualsFloor.BreaksBeforeAnOverflowingLambda` read in `Fitter.Decide`.
+Only for a single-declarator local, which is where it was measured. Fields and assignments keep round 3's
+rule.
+
+⚠ Not exact. 233 of the 12 805 cells differ:
+- ⚠ Along the gate's diagonal, at types of 18 to 50, a name exactly at the gate breaks the `=` only below
+  a much lower value. Those cells fit `56.5·name − 8·type − 458`, but that line does not hold at types
+  of 54 and 58.
+- ⚠ The floor is a column off at some types.
+- ⚠ 15 cells sit on the overflowing side's one-column jitter.
+
+Not counted: a line one column over the margin (end 121). There, a body of up to five columns chops the
+parameters at heads up to 37, and the rule does not reproduce it (45 cells). Also not counted: a
+parameter wider than the line, where the oracle breaks between its type and its name.
+
+- options: `skala_wrap_before_eq = false`, the exported value.
+- ⚠ status: **fixed within the residue above**. Pinned by `constructs/breaks/equals-before-a-lambda-floor.cs`
+  and, for the narrow name, `constructs/wrapping/lambda-arrow-over-a-name.cs`.

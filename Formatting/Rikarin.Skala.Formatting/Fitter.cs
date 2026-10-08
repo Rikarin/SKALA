@@ -305,8 +305,38 @@ public sealed class Fitter {
                 // through `=>` fits. See GroupFacts.YieldsThroughArrow (#453).
                 if (facts.YieldsThroughArrow > 0
                     && m.PointWidth < Unbounded
-                    && Fits(m.Column, m.PointWidth + 1 + facts.YieldsThroughArrow)) {
-                    return ResolvedMode.Flat;
+                    && m.FlatWidth < Unbounded
+                    && !Fits(m.Column, m.FlatWidth, m.Trailing)) {
+                    var head = m.Column + m.PointWidth;
+                    var value = m.FlatWidth - m.PointWidth - 1 + m.Trailing;
+                    var through = head + 1 + facts.YieldsThroughArrow;
+
+                    // ⚠ A local's `=`, past a name wider than the type's gate, yields only to a value at
+                    // least as wide as the measured floor; a narrower one moves below the `=` whole
+                    // (#558). See GroupFacts.LambdaLocal and EqualsFloor.LambdaValue.
+                    if (through <= width) {
+                        return facts.LambdaLocal == LambdaLocal.None
+                            || facts.LambdaLocal.HasFlag(LambdaLocal.ArrowWhileItFits)
+                            || value >= EqualsFloor.LambdaValue(head)
+                                ? ResolvedMode.Flat
+                                : ResolvedMode.Broken;
+                    }
+
+                    // ⚠ And once the line through `=>` overflows, the `=` breaks while `(…) =>` reaches no
+                    // further than three columns past the margin, or, past a name wider than the type's
+                    // second gate, while the value is narrow enough for its body; otherwise the parameter
+                    // list chops (#558). See EqualsFloor.BreaksBeforeAnOverflowingLambda.
+                    if (facts.LambdaLocal != LambdaLocal.None) {
+                        return EqualsFloor.BreaksBeforeAnOverflowingLambda(
+                            head,
+                            value,
+                            through - width,
+                            value - facts.YieldsThroughArrow - 2,
+                            facts.LambdaLocal.HasFlag(LambdaLocal.ChopsPastTheParenthesis)
+                        )
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                    }
                 }
 
                 // ⚠ An `=` before `operand is A or B`: a measured table (#446, SK-DIV-0211).
