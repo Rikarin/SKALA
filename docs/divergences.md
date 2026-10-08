@@ -2667,8 +2667,16 @@ two went. It stays open because item 3 has no home elsewhere.
 
 - options: none
 - ⚠ status: items 1 and 2 **resolved with SK-DIV-0066** (issue #455) — the `!` ends the receiver
-  and `?[0]` is a call at the head; item 3 **open**, re-measured, and its recorded control was wrong —
-  the fact is every left binary operand, not `??`
+  and `?[0]` is a call at the head; item 3 **resolved** (issue #457). The chain's own continuation
+  scope is flagged `IndentFlags.ChainLevel`, and the writer lifts it past a broken binary operator
+  around it exactly as it lifts a delimited list on that line (#418's `LiftedLevel`), skipping the
+  chain's own group. Measured on 2026-10-08 beyond the issue's `+` and `??`: `&&`, a run of two `+`,
+  an assignment, `return`, an expression body, an argument alone and after another, and an aligned
+  `if` condition — the dots one level past the operator's line in every one; the right operand is
+  unchanged. ⚠ A property-only fill on the left of a pattern `or` must *not* lift (Vixen's
+  `PixelFormat.cs` arms moved four columns when it did), so only a chained-call group's scope carries
+  the flag. Pinned by `ChainInALeftOperandIssue457Tests` and
+  `constructs/breaks/chain-in-a-left-operand.cs`.
 
 ## SK-DIV-0069 — `skala_outdent_dots` spends one amount for the whole chain; the oracle spends one per line
 

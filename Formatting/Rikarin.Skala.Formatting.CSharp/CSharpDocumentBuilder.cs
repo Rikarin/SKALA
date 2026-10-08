@@ -440,7 +440,7 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             for (var level = 0; level < indented[i]; level++) {
-                OpenContinuation(plan, level);
+                OpenContinuation(plan, level, plan.OwnLevel && this.plan.ChainGroupOf(node) == plan.Id);
             }
 
             // ⚠ One level past the operand's line, not stacked on what that line opened (#445).
@@ -1230,7 +1230,12 @@ public sealed partial class CSharpDocumentBuilder {
     ///     because a break at the group's own point lands one level in. Only the writer, which knows
     ///     whether the group broke, decides whether the level has columns (issue #406, SK-DIV-0157).
     /// </remarks>
-    void OpenContinuation(in GroupPlan planned, int level) {
+    /// <param name="chainLevel">
+    ///     The level is a chained call's own (<see cref="GroupPlan.OwnLevel" /> on a chain root), which
+    ///     nests from a broken binary operator's continuation line when the chain is the operator's left
+    ///     operand: <see cref="IndentFlags.ChainLevel" />.
+    /// </param>
+    void OpenContinuation(in GroupPlan planned, int level, bool chainLevel = false) {
         var conditions = (planned.HoldsLevel & HeldLevel.WhileFlat) != 0
             ? IndentFlags.HeldWhileOwnerFlat
             : IndentFlags.None;
@@ -1246,7 +1251,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        OpenIndent(IndentKind.Continuous);
+        OpenIndent(IndentKind.Continuous, false, chainLevel ? IndentFlags.ChainLevel : IndentFlags.None);
     }
 
     void CloseGroupAt((int Indented, bool Held) opened) {
