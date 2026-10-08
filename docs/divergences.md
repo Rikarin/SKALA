@@ -10571,5 +10571,9 @@ continuation two levels, and keeps a query body on the `>>() =>` line breaking i
 `in items` — three further rules, each reachable only past the margin.
 
 - options: none.
+⚠ Its fixture also exposed a spacing defect, fixed beside it: a query clause's keyword (`where "s"`, `select (item)`)
+keeps its space at both `space_between_keyword_and_type = false` and `space_between_keyword_and_expression = false`
+in the oracle, where Skala joined them (`QueryKeywordSpaceTests`).
+
 - ⚠ status: **resolved** (#576) for the cut-down shapes, pinned by `constructs/breaks/arm-when-condition-below.cs`;
   **open** for the seed's whole line.
