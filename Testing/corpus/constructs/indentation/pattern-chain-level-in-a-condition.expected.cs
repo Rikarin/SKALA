@@ -2,7 +2,8 @@
 // The level of a binary pattern chain's continuation inside and around a statement condition (#520).
 // Directly the condition — through `is`, a parenthesised or negated pattern — the `or` sits on the
 // condition's aligned column (`while (` aligns it to 15); as the operand of an `&&` or `||` it takes
-// a level past the operand's line, as it does after `var b =` and `return`.
+// a level past the operand's line, as it does after `var b =` and `return`. Under an `is` the author
+// broke before, the `or`s take the `is`'s column.
 
 class C {
     void M(object o, bool x) {
@@ -60,5 +61,14 @@ class C {
         return x
             || o is Alpha
                 or Beta;
+    }
+
+    bool R(Node next) {
+        var x = next.Parent
+            is Alpha
+            or Beta;
+        return next.Parent
+            is not (Alpha
+            or Beta);
     }
 }

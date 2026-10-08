@@ -85,7 +85,7 @@ internal static class PatternSafety {
 
         var symbol = model.GetSymbolInfo(expression, cancellation).Symbol;
         if (symbol is not (ILocalSymbol { RefKind: RefKind.None, IsConst: false }
-                or IParameterSymbol { RefKind: RefKind.None })) {
+            or IParameterSymbol { RefKind: RefKind.None })) {
             return null;
         }
 

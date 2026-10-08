@@ -34,19 +34,39 @@ public enum EqualsOwner {
 
 public static class EqualsFloor {
     /// <summary>The floor for a callee of 7 at indent 8, the <c>(</c> at columns 52 … 112.</summary>
-    static readonly int[] Seven = [70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 58, 57, 57, 56, 56, 56, 55, 55, 55, 54, 54, 53, 53, 53, 52, 52, 51, 51, 51, 50, 50, 50, 50, 51, 51, 51, 51, 51, 52, 52, 52, 52, 52, 53, 53, 53, 53, 53, 54, 54, 54, 54, 54, 55, 55, 55, 55, 55];
+    static readonly int[] Seven = [
+        70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 58, 57, 57, 56, 56, 56, 55, 55, 55, 54, 54, 53, 53, 53, 52,
+        52, 51, 51, 51, 50, 50, 50, 50, 51, 51, 51, 51, 51, 52, 52, 52, 52, 52, 53, 53, 53, 53, 53, 54, 54, 54, 54, 54,
+        55, 55, 55, 55, 55
+    ];
 
     /// <summary>The floor for a callee of 7 under a local with a written type, at indent 8, columns 52 … 112.</summary>
-    static readonly int[] Typed = [70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 58, 58, 57, 57, 57, 56, 56, 55, 55, 55, 54, 54, 53, 53, 53, 52, 52, 52, 51, 51, 50, 51, 51, 51, 51, 51, 52, 52, 52, 52, 52, 53, 53, 53, 53, 53, 54, 54, 54, 54, 54, 55, 55, 55, 55, 55, 56, 56];
+    static readonly int[] Typed = [
+        70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 58, 58, 57, 57, 57, 56, 56, 55, 55, 55, 54, 54, 53, 53, 53,
+        52, 52, 52, 51, 51, 50, 51, 51, 51, 51, 51, 52, 52, 52, 52, 52, 53, 53, 53, 53, 53, 54, 54, 54, 54, 54, 55, 55,
+        55, 55, 55, 56, 56
+    ];
 
     /// <summary>The floor for a callee of 7 under an assignment statement, at indent 8, columns 52 … 112.</summary>
-    static readonly int[] Assigned = [70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 57, 56, 56, 55, 55, 55, 54, 54, 54, 53, 53, 52, 52, 52, 51, 51, 50, 50, 50, 49, 49, 49, 49, 50, 50, 50, 50, 50, 51, 51, 51, 51, 51, 52, 52, 52, 52, 52, 53, 53, 53, 53, 53, 54, 54, 54, 54, 54];
+    static readonly int[] Assigned = [
+        70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 57, 56, 56, 55, 55, 55, 54, 54, 54, 53, 53, 52, 52, 52, 51,
+        51, 50, 50, 50, 49, 49, 49, 49, 50, 50, 50, 50, 50, 51, 51, 51, 51, 51, 52, 52, 52, 52, 52, 53, 53, 53, 53, 53,
+        54, 54, 54, 54, 54
+    ];
 
     /// <summary>The floor for a callee of 7 under a field at indent 4, columns 52 … 112.</summary>
-    static readonly int[] Field = [70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44, 62, 61, 61, 61, 60, 60, 60, 60, 60, 60, 60, 61, 61, 61, 61, 61, 62, 62, 62, 62, 62, 63, 63, 63, 63, 63, 64, 64, 64, 64, 64, 65, 65, 65];
+    static readonly int[] Field = [
+        70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44, 62,
+        61, 61, 61, 60, 60, 60, 60, 60, 60, 60, 61, 61, 61, 61, 61, 62, 62, 62, 62, 62, 63, 63, 63, 63, 63, 64, 64, 64,
+        64, 64, 65, 65, 65
+    ];
 
     /// <summary>The floor for a callee of 20 at indent 8, the <c>(</c> at columns 52 … 112.</summary>
-    static readonly int[] Twenty = [70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 57, 57, 57, 56, 56, 55, 55, 55, 54, 54, 54, 53, 53, 52, 52, 52, 51, 51, 50, 50, 50, 50, 50, 50, 50, 51, 51, 51, 51, 51, 52, 52, 52, 52, 52, 53, 53, 53, 53, 53, 54, 54, 54, 54, 54, 55, 55, 55];
+    static readonly int[] Twenty = [
+        70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 57, 57, 57, 56, 56, 55, 55, 55, 54, 54, 54, 53, 53, 52, 52,
+        52, 51, 51, 50, 50, 50, 50, 50, 50, 50, 51, 51, 51, 51, 51, 52, 52, 52, 52, 52, 53, 53, 53, 53, 53, 54, 54, 54,
+        54, 54, 55, 55, 55
+    ];
 
     /// <summary>The callee widths measured three columns apart, besides 7 and 20.</summary>
     static readonly int[] Callees = [1, 4, 10, 13, 16, 25, 30, 40];
@@ -143,8 +163,7 @@ public static class EqualsFloor {
         return rows[^1].Offset;
     }
 
-    static double TwentyOffset(int paren) =>
-        paren < 52 || paren > 112 ? 0 : Twenty[paren - 52] - Seven[paren - 52];
+    static double TwentyOffset(int paren) => paren < 52 || paren > 112 ? 0 : Twenty[paren - 52] - Seven[paren - 52];
 
     static double IndentOffset(int paren, int indent) {
         if (indent == 8) {
@@ -167,8 +186,7 @@ public static class EqualsFloor {
         return at - 3.0 * beyond / 4;
     }
 
-    static double AtIndentRow(int row, int paren) =>
-        paren <= 53 ? 122 - paren : Nearest(Indents[row], paren, 53);
+    static double AtIndentRow(int row, int paren) => paren <= 53 ? 122 - paren : Nearest(Indents[row], paren, 53);
 
     /// <summary>A row measured three columns apart from <paramref name="first" />, read at its nearest column.</summary>
     static double Nearest(int[] row, int paren, int first) {

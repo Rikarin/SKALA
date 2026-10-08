@@ -851,6 +851,26 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
+    ///     Whether a pattern's parenthesis sits under an <c>is</c> the author broke before, which has spent
+    ///     the level already: <c>next.Parent</c> / <c>is not (Alpha</c> / <c>or Beta);</c> keeps the
+    ///     <c>or</c> on the <c>is</c>'s column (#520).
+    /// </summary>
+    bool FollowsABrokenIs(SyntaxNode node) {
+        for (var current = node.Parent; current is not null; current = current.Parent) {
+            switch (current) {
+                case PatternSyntax:
+                    continue;
+                case IsPatternExpressionSyntax test:
+                    return HasLineBreak(test.IsKeyword.GetPreviousToken().Span.End, test.IsKeyword.SpanStart);
+                default:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     ///     An anonymous function or an object creation whose block nests from the line the construct
     ///     starts on.
     /// </summary>
@@ -1611,8 +1631,9 @@ public sealed partial class CSharpDocumentBuilder {
         // parenthesis keeps its level (#520).
         var suppress = aligned
             || node is ParenthesizedPatternSyntax
-            && options.AlignMultilineStatementConditions
-            && BreakPlan.IsStatementCondition(node);
+            && (options.AlignMultilineStatementConditions
+                && BreakPlan.IsStatementCondition(node)
+                || FollowsABrokenIs(node));
 
         // ⚠ `skala_align_tuple_components = true`: the column *after* the tuple's `(`, which is a
         // different anchor from every key AlignsFromOwnColumn answers and needs a different place

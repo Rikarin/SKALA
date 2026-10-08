@@ -125,9 +125,9 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
         // parentheses can be the precedence, and proving otherwise is a re-parse this rule does not
         // do — SK0209 exists precisely because that proof is expensive.
         if (parenthesized.Parent is not (IsPatternExpressionSyntax
-                or SwitchExpressionArmSyntax
-                or CasePatternSwitchLabelSyntax
-                or SubpatternSyntax)) {
+            or SwitchExpressionArmSyntax
+            or CasePatternSwitchLabelSyntax
+            or SubpatternSyntax)) {
             return;
         }
 

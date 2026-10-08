@@ -126,8 +126,8 @@ public sealed class PlatformDependentPathComparisonAnalyzer : DiagnosticAnalyzer
             if (context.SemanticModel.GetSymbolInfo(argument.Expression, context.CancellationToken).Symbol
                 is IFieldSymbol { IsConst: true } member
                 && member.Name is "OrdinalIgnoreCase"
-                or "InvariantCultureIgnoreCase"
-                or "CurrentCultureIgnoreCase") {
+                    or "InvariantCultureIgnoreCase"
+                    or "CurrentCultureIgnoreCase") {
                 return argument.Expression;
             }
         }

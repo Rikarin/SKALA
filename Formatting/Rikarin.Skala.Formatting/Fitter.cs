@@ -366,7 +366,9 @@ public sealed class Fitter {
         var paren = m.Column + m.PointWidth + 1 + facts.CalleeWidth + 1;
         var arguments = m.FlatWidth - m.PointWidth - 1 - facts.CalleeWidth;
         var indent = m.ContinuationColumn - indentWidth;
-        return arguments < EqualsFloor.Of(paren, indent, facts.CalleeWidth, facts.CalleeOwner) ? ResolvedMode.Broken : ResolvedMode.Flat;
+        return arguments < EqualsFloor.Of(paren, indent, facts.CalleeWidth, facts.CalleeOwner)
+            ? ResolvedMode.Broken
+            : ResolvedMode.Flat;
     }
 
     /// <summary>What a <see cref="GroupMode.Preserve" /> group whose source was broken does with the break.</summary>

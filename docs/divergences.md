@@ -8562,5 +8562,10 @@ never through a binary's operand; and under `skala_align_multiline_statement_con
 parenthesis inside the condition spends no level (`CSharpDocumentBuilder.PlanDelimited`). This is what
 moved `ReflectiveTypeTestAnalyzer.cs` and `TaintedFlowAnalyzer.cs` away from the oracle.
 
+⚠ **And under an `is` the author broke before**, found reformatting Skala's own `SpaceRules.cs`:
+`next.Parent` / `is A` / `or B` and `… is not (A` / `or B)` put the `or`s on the `is`'s own column, since
+that break has already spent the level. So a chain under such an `is` has no level of its own, and
+neither does its parenthesis (`BreakPlan.EnclosingTypeTest`, `CSharpDocumentBuilder.FollowsABrokenIs`).
+
 - options: `skala_align_multiline_statement_conditions` (the export's `true`; `false` not measured).
 - ⚠ status: **fixed**, pinned by `constructs/indentation/pattern-chain-level-in-a-condition.cs`.

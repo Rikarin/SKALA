@@ -626,7 +626,9 @@ public sealed class BreakPlan {
                 // its `=>` fits, and the arrow takes the break instead (#453, SK-DIV-0050): the oracle
                 // writes `C2((SomeType first, OtherType second) =>` / `body` / `);` with the `=>` as far
                 // out as column 120, and chops the parameters only once `) =>` itself is past the margin.
-                if (parameters.Parent is ParenthesizedLambdaExpressionSyntax { ExpressionBody: not null } parenthesized) {
+                if (parameters.Parent is ParenthesizedLambdaExpressionSyntax {
+                        ExpressionBody: not null
+                    } parenthesized) {
                     ReviseFacts(node, facts => facts with { ThroughWidth = 1 + parenthesized.ArrowToken.Span.Length });
                 }
 
@@ -2806,8 +2808,30 @@ public sealed class BreakPlan {
             // chain of its own since #483, and the oracle writes its links on the `or`s' column —
             // `rune is >= 0x1100` / `and <= 0x115F` / `or >= 0x2E80` / `and <= 0x303E` all one level in
             // (Skala's own TextWidth.cs, measured).
-            ownLevel: pattern && !IsStatementCondition(root) && root.Parent is not BinaryPatternSyntax
+            // ⚠ Nor a chain whose `is` the author broke before: `next.Parent` / `is A` / `or B` puts the
+            // `or`s on the `is`'s own line's column (Skala's own SpaceRules.cs, measured) — that break
+            // has already spent the level.
+            ownLevel: pattern
+            && !IsStatementCondition(root)
+            && root.Parent is not BinaryPatternSyntax
+            && !(EnclosingTypeTest(root) is { } test && BreaksBefore(test.IsKeyword))
         );
+    }
+
+    /// <summary>The <c>is</c> a pattern sits under, through parenthesised and negated patterns.</summary>
+    static IsPatternExpressionSyntax? EnclosingTypeTest(SyntaxNode pattern) {
+        for (var current = pattern.Parent; current is not null; current = current.Parent) {
+            switch (current) {
+                case PatternSyntax:
+                    continue;
+                case IsPatternExpressionSyntax test:
+                    return test;
+                default:
+                    return null;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -3261,7 +3285,9 @@ public sealed class BreakPlan {
 
         var generic = value switch {
             InvocationExpressionSyntax { Expression: GenericNameSyntax name } => name,
-            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax name } } => name,
+            InvocationExpressionSyntax {
+                Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax name }
+            } => name,
             _ => null
         };
 
@@ -3273,7 +3299,9 @@ public sealed class BreakPlan {
     static (int Floor, int Slope) ColonFloorOf(SyntaxNode argument, ExpressionSyntax value) {
         var generic = value switch {
             InvocationExpressionSyntax { Expression: GenericNameSyntax name } => name,
-            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax name } } => name,
+            InvocationExpressionSyntax {
+                Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax name }
+            } => name,
             _ => null
         };
 
@@ -3283,7 +3311,8 @@ public sealed class BreakPlan {
             _ => default
         };
 
-        if (generic is not { TypeArgumentList.Arguments: [var firstType, _, ..] } || nameColon.IsKind(SyntaxKind.None)) {
+        if (generic is not { TypeArgumentList.Arguments: [var firstType, _, ..] }
+            || nameColon.IsKind(SyntaxKind.None)) {
             return (-1, 0);
         }
 
@@ -3350,7 +3379,9 @@ public sealed class BreakPlan {
                 // with `or` on the condition's column (and `while (` aligns it to 15), while
                 // `if (x && o is Alpha` / `or Beta)` and `if (x` / `|| o is Alpha` / `or Beta)` put it one
                 // level past the operand's line, as anywhere else.
-                case PatternSyntax or IsPatternExpressionSyntax or ParenthesizedExpressionSyntax
+                case PatternSyntax
+                    or IsPatternExpressionSyntax
+                    or ParenthesizedExpressionSyntax
                     or PrefixUnaryExpressionSyntax:
                     continue;
 
@@ -3979,7 +4010,8 @@ public sealed class BreakPlan {
                     // ⚠ Not before a lambda whose arrow takes the break instead: `Func<int, string> f =
                     // value =>` / `value.ToString() + "…";` at every width measured, where Skala broke the
                     // `=` because the whole lambda fitted on the line below (#453, SK-DIV-0050).
-                    BreaksIfTooLong: !YieldsToTheLambdaArrow(value) && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member)),
+                    BreaksIfTooLong: !YieldsToTheLambdaArrow(value)
+                    && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member)),
 
                     // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
                     // Every other right-hand side is measured by what is left of the line and breaks
@@ -4109,13 +4141,13 @@ public sealed class BreakPlan {
     static EqualsOwner EqualsOwnerOf(SyntaxNode node) =>
         node switch {
             EqualsValueClauseSyntax {
-                Parent: VariableDeclaratorSyntax {
-                    Parent: VariableDeclarationSyntax { Variables.Count: 1 } declaration
-                }
+                Parent:
+                VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Variables.Count: 1 } declaration }
             } when declaration.Parent is LocalDeclarationStatementSyntax =>
                 declaration.Type.IsVar ? EqualsOwner.VarLocal : EqualsOwner.TypedLocal,
             EqualsValueClauseSyntax {
-                Parent: VariableDeclaratorSyntax {
+                Parent:
+                VariableDeclaratorSyntax {
                     Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: FieldDeclarationSyntax }
                 }
             } => EqualsOwner.Field,
@@ -4126,12 +4158,13 @@ public sealed class BreakPlan {
 
     static int CalleeWidthOf(ExpressionSyntax value) =>
         value is InvocationExpressionSyntax {
-                Expression: IdentifierNameSyntax callee,
-                ArgumentList.Arguments.Count: >= 2
-            }
-            && !value.DescendantTrivia().Any(static trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia)
+            Expression: IdentifierNameSyntax callee, ArgumentList.Arguments.Count: >= 2
+        }
+        && !value.DescendantTrivia()
+            .Any(static trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia)
                 || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))
+                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+            )
             ? callee.Span.Length
             : 0;
 
@@ -5769,7 +5802,12 @@ public sealed class BreakPlan {
 
         var placed = access.Parent switch {
             ReturnStatementSyntax => true,
-            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Parent: LocalDeclarationStatementSyntax } } } => true,
+            EqualsValueClauseSyntax {
+                Parent:
+                VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax { Parent: LocalDeclarationStatementSyntax }
+                }
+            } => true,
             AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } assignment => assignment.Right == access
                 && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression),
             _ => false
@@ -5779,7 +5817,7 @@ public sealed class BreakPlan {
             return false;
         }
 
-        for (ExpressionSyntax current = access; ;) {
+        for (ExpressionSyntax current = access;;) {
             switch (current) {
                 case MemberAccessExpressionSyntax { Name: IdentifierNameSyntax } member
                     when member.IsKind(SyntaxKind.SimpleMemberAccessExpression):
@@ -5810,7 +5848,10 @@ public sealed class BreakPlan {
             access,
             group,
             GroupMode.Preserve,
-            new GroupFacts(options.KeepsUserBreaksBetweenItems && BreaksBefore(access.OperatorToken), BreaksIfTooLong: true),
+            new GroupFacts(
+                options.KeepsUserBreaksBetweenItems && BreaksBefore(access.OperatorToken),
+                BreaksIfTooLong: true
+            ),
             spendsIndent: true
         );
     }
