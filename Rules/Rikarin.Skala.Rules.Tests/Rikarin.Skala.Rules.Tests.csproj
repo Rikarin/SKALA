@@ -11,4 +11,17 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
+  <!--
+    Reference packs for `// fixture-option: TargetFramework = …` (#515). A fixture otherwise compiles
+    against the test host's own runtime assemblies, whose core library is System.Private.CoreLib — the
+    shape no real build has, so a rule that reads the target framework off the reference set could not
+    be fixtured at all. net10.0 is the SDK's own targeting pack, already on disk wherever this builds;
+    net9.0 is downloaded by restore like any package (9.0.19, pinned so restore needs nothing new on a
+    machine that has it). The paths reach the tests the way SkalaRepositoryRoot does.
+  -->
+  <ItemGroup>
+    <PackageDownload Include="Microsoft.NETCore.App.Ref" Version="[9.0.19]" />
+    <AssemblyMetadata Include="SkalaReferencePack:net10.0" Value="$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Ref/$(BundledNETCoreAppPackageVersion)/ref/net10.0" />
+    <AssemblyMetadata Include="SkalaReferencePack:net9.0" Value="$(NuGetPackageRoot)microsoft.netcore.app.ref/9.0.19/ref/net9.0" />
+  </ItemGroup>
 </Project>

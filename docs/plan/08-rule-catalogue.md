@@ -9760,7 +9760,7 @@ is no evidence that it is one.
 |---|---|---|---|
 | `SK1133` | `collection-expression-spread` — `int[] a = xs.ToArray();` is `int[] a = [..xs];` | Semantic | replace the call, safe |
 
-`suggestion`, `supersedes: IDE0305`, 18 positive / 27 negative fixtures, 13 of them executable
+`suggestion`, `supersedes: IDE0305`, 20 positive / 29 negative fixtures (after #515), 15 of them executable
 (`Probe`). The fix writes `[..xs]` with **no space after `..`**: `skala_space_within_spread_pattern`
 is inert (SK-DIV-0009 — the oracle keeps a spread as written), so the fix's spelling is the one that
 stays. Receiver parentheses are dropped; a spread's operand is parsed as a whole expression, and a
@@ -9785,7 +9785,9 @@ is false on both), so a file at C# 14 proves its build gets the lowering measure
 must be written**: `latest`/`latestMajor`/`default`/`preview` are resolved by whichever compiler
 builds the project, and Skala's resolves them to 14+. The analyzer reads
 `CSharpParseOptions.SpecifiedLanguageVersion` and declines those. The cost, stated: every project with
-`<LangVersion>latest</LangVersion>` — **Skala's own included** — gets no finding.
+`<LangVersion>latest</LangVersion>` — **Skala's own included** — gets no finding. ⚠ **Superseded in
+part by [#515](https://github.com/Rikarin/SKALA/issues/515)**, below: a `net10.0` reference set is a
+second proof, and `latest`/`preview` on `net10.0` are now reported.
 
 The lowering is chosen by the receiver's static type, so only measured receivers are taken: reference
 types through `Enumerable` (arrays, the collection interfaces, `HashSet<T>`, `string`,
@@ -9835,7 +9837,87 @@ ownership (2), the expression tree (2), the comment guards (3), the rebinding (8
 - **Self-tree**, rebuilt at `-p:LangVersion=14.0` because its own `latest` is declined (`SK9021`: 796 of
   798 files, the two being `build/`): **41** findings. All 41 applied, `Skala.slnx` rebuilt Release with
   `TreatWarningsAsErrors` — 0 warnings, 0 errors — and the whole suite run on the result: **44 578
-  tests, 0 failed**. Reverted afterwards. At the repository's real `latest` the count is 0 by design.
+  tests, 0 failed**. Reverted afterwards. At the repository's real `latest` the count was 0 by design until #515, below, which measured 28 and applied them.
 
 A low count is not evidence of quality and none is claimed from it; the proof is the lowering table,
 the rebinding and the executable fixtures.
+
+### #515 — a `net10.0` reference set is a second proof of the compiler
+
+[#515](https://github.com/Rikarin/SKALA/issues/515). A `net10.0` target is refused by every SDK before
+10.0.100 (`NETSDK1045`), and SDK 10 ships Roslyn 5 — past the 4.14 the lowering needs. So the
+reference set proves the compiler however `LangVersion` is spelled, and `latest`, `latestMajor`,
+`default` and `preview` are now reported when the compilation's core library is
+**`System.Runtime` ≥ 10.0.0.0**. The C# 14 floor is still asked of the effective version.
+
+**The identity, measured rather than assumed.** Thirteen scratch projects outside the repository (own
+empty `Directory.Build.props`/`.targets`), built on SDK 10.0.401, each recorded `csc` line replayed
+through `CSharpCommandLineParser` and asked for `ObjectType.ContainingAssembly`:
+
+| Project | `SpecifiedLanguageVersion` | Core library | SK1133 (binlog, `--no-cache`) |
+|---|---|---|---|
+| `net10.0`, none / `latest` / `latestMajor` / `default` / `preview` | 14 / Latest / LatestMajor / Default / Preview | `System.Runtime 10.0.0.0` (targeting pack) | 2 each |
+| `net10.0`, `13.0` | 13 | `System.Runtime 10.0.0.0` | 0 (floor) |
+| `net10.0` `latest` referencing a `netstandard2.0` library | Latest | `System.Runtime 10.0.0.0` — the library is its own unit, `netstandard 2.0.0.0` | 2 |
+| `net9.0`, `latest` / `preview` | Latest / Preview | `System.Runtime 9.0.0.0` | 0 |
+| `netstandard2.1`, `latest` | Latest | `netstandard 2.1.0.0` | 0 |
+| `net48`, `latest` | Latest | `mscorlib 4.0.0.0` | 0 |
+| `netstandard2.1;net10.0`, `latest` / none | Latest on both / 8 and 14 | `netstandard 2.1` + `System.Runtime 10` | 0 / 0 |
+
+The targeting pack also carries `mscorlib.dll` and `netstandard.dll` facades; Roslyn's core library is
+still `System.Runtime`. ⚠ **Keyed on `System.Runtime` by name, never `System.Private.CoreLib`**: an
+implementation corlib is what a compilation has when nothing was built — `--load=loose` and the fixture
+harness both reference the running runtime's own assemblies — and the runtime Skala happens to run on
+says nothing about the compiler that will build the file.
+
+**Failure classes, each settled.**
+
+1. ⚠ **Toolset override — the proof is defeatable, and that is recorded rather than hidden.**
+   `Microsoft.Net.Compilers.Toolset` is not in the local NuGet cache, so a real build under it was
+   **not run** (nothing was downloaded). What is knowable was measured: SDK 10.0.401's targets contain
+   no version check on a user-referenced toolset package (`RoslynCompilerType` logic only); and the
+   cached Roslyn **4.8 and 4.11** libraries, given `net10.0`'s real `csc` line at `latest` and at
+   `preview`, parse it with 0 errors, compile with 0 diagnostics and emit — resolving `latest` to
+   **C# 12** (4.14: C# 13). They instantiate none of the targeting pack's Interop and Regex generators
+   (4.14 and 5.0 load all of them), which `csc` reports as a warning on every build. No compiler trace
+   reaches an analyzer: the generated `build_property.*` set (17 keys on `net10.0`) names none; the
+   binlog's `csc` path does, but the loader discards it — filed as [#517](https://github.com/Rikarin/SKALA/issues/517). **Decision: `fixIsSafe` stays `true`.** The
+   exposed configuration is an explicitly pinned compiler package more than a year older than the SDK,
+   on a `net10.0` target, with `LangVersion` not written as a number, and what changes is a null
+   receiver's exception type and an empty copy's identity. A written `14` remains airtight.
+2. **Which identity.** As tabled: reference assembly, by name; a `netstandard2.x` or `net48` unit never
+   qualifies; a `net10.0` project referencing a `netstandard2.0` library keeps its own corlib.
+3. **Multi-targeting.** Both legs of `netstandard2.1;net10.0` at `latest` are C# 14 to Skala, so
+   `MultiTargetLanguageFloor` withholds nothing — measured: sabotaging the analyzer's own sibling guard
+   turns the real-project test red with the filter in place. The whole proof (floor included) is asked
+   of every sibling through `FrameworkAvailability.PathsWithout`, so the shared file gets nothing; a
+   sibling with a written 14, or on `net10.0` references, proves and the finding stands.
+4. **`net9.0` at `latest`** — declined (`System.Runtime 9.0.0.0`; SDK 9.0.1xx ships Roslyn 4.12), with a
+   written `14` on the same references as the control that the rule runs there at all.
+5. **Loose mode.** `SK1133` is `requiresSemantics`, so `--load=loose` does not run it
+   (`AnalyzerHost.SkippedFor`), and its compilation's corlib is `System.Private.CoreLib`, which the proof
+   refuses anyway. Both are asserted.
+
+**Fixtures.** `// fixture-option: TargetFramework = net10.0 | net9.0` compiles a fixture against the
+real reference pack: `net10.0` from the SDK's `packs` directory, `net9.0` from a `PackageDownload` of
+`Microsoft.NETCore.App.Ref` 9.0.19 in the Rules test project; a missing pack throws rather than falling
+back to the host. New: `latest` and `preview` positives on `net10.0` references with executable `Probe`s
+(null receivers; empty-copy identity), a `latest` negative on `net9.0`, and C# 13 on `net10.0`. The two
+existing `latest`/`preview` negatives now stand for the implementation-corlib case. A 15-row theory and
+a 5-row sibling theory in `CollectionExpressionSpreadTests`, and `SpreadCompilerProofTests` over real
+SDK projects (`netstandard2.1;net10.0` at `latest`: no finding, `fix --safe` leaves the file
+byte-identical; `net10.0` at `latest`: reported, fixed, compiles; `net9.0` at `latest`/`14.0`; loose).
+
+**Sabotage.** Nine guards, each replaced with a non-foldable `Never`; every one turned something red:
+the TFM proof (8 tests), the written proof (32), the name check (6 — the implementation-corlib rows and
+both host fixtures), the version check `>= 9` (4 — every `net9.0` row), the sibling path check (3, and
+the real multi-target project), the floor at compilation start (5), and inside the sibling predicate
+the floor, the TFM proof and the written proof (1 each, each its own isolating row — none was masked).
+
+**Self-tree.** At the repository's own `latest`, from a fresh `--no-incremental` Release binlog
+(`SK9021`: 797 of 799 files, the two being `build/`): **28** findings, all in `net10.0` projects. All 28
+applied with `skala fix --include SK1133`; `Skala.slnx` rebuilt Release with `TreatWarningsAsErrors` —
+0 warnings, 0 errors — and the whole suite run on the result in a clean clone: **44 607 tests, 0
+failed**. #512's 41 at a forced `LangVersion=14.0` is these 28 plus **13 in `Rikarin.Skala.Rules`**,
+re-measured by rebuilding the fixed tree at 14: that project is `netstandard2.0`, whose `latest` proves
+nothing, so they stay.

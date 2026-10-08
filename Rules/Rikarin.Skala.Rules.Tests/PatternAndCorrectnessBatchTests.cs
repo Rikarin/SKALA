@@ -302,7 +302,8 @@ public sealed class PatternAndCorrectnessBatchTests {
         var context = new AssemblyLoadContext(Guid.NewGuid().ToString(), true);
         try {
             var method = context.LoadFromStream(image).GetType("Probe")!.GetMethod("Run")!;
-            return cases.Select(arguments => {
+            return [
+                ..cases.Select(arguments => {
                         try {
                             return "result:" + method.Invoke(null, arguments);
                         } catch (TargetInvocationException exception) {
@@ -310,7 +311,7 @@ public sealed class PatternAndCorrectnessBatchTests {
                         }
                     }
                 )
-                .ToArray();
+            ];
         } finally {
             context.Unload();
         }

@@ -265,8 +265,8 @@ public sealed class LockLifetimeAndPublicationBatchTests {
         Assert.Contains("SK3061", top);
     }
 
-    static string[] Ids(Compilation compilation) =>
-        RuleFixtures.Analyze(
+    static string[] Ids(Compilation compilation) => [
+        ..RuleFixtures.Analyze(
                 (CSharpCompilation)compilation,
                 Analyzers,
                 TestContext.Current.CancellationToken
@@ -274,7 +274,7 @@ public sealed class LockLifetimeAndPublicationBatchTests {
             .Select(static diagnostic => diagnostic.Id)
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
-            .ToArray();
+    ];
 
     /// <summary>The same compilation the fixture harness builds, as an executable.</summary>
     static CSharpCompilation TopLevel(string source) =>

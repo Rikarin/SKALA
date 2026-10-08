@@ -1055,7 +1055,7 @@ public sealed class BreakPositionTests {
     }
 
     static string[] TrimmedLines(string text) =>
-        text.Split('\n').Select(static line => line.Trim()).Where(static line => line.Length > 0).ToArray();
+        [..text.Split('\n').Select(static line => line.Trim()).Where(static line => line.Length > 0)];
 
     [Fact]
     public void NoDocument_EverPutsAnOwnerDependentGroupOutsideItsOwner() {

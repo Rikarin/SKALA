@@ -289,8 +289,9 @@ public sealed class ExpressionMisreadingBatchTests {
 
     static Diagnostic[] Findings(string source, string path, string ruleId) {
         var compilation = RuleFixtures.Compile(source, path);
-        return RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)
-            .Where(diagnostic => diagnostic.Id == ruleId)
-            .ToArray();
+        return [
+            ..RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Id == ruleId)
+        ];
     }
 }

@@ -215,6 +215,6 @@ public sealed class ApiSurfaceBatchTests {
         var produced = RuleFixtures.Analyze(compilation, Batch, TestContext.Current.CancellationToken);
         Assert.DoesNotContain(produced, static diagnostic => diagnostic.Id == "AD0001");
 
-        return produced.Where(diagnostic => diagnostic.Id == ruleId).ToArray();
+        return [..produced.Where(diagnostic => diagnostic.Id == ruleId)];
     }
 }

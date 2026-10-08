@@ -353,7 +353,7 @@ internal sealed class CloneIndex {
             at += length;
         }
 
-        public byte[] ToArray() => bytes.AsSpan(0, at).ToArray();
+        public byte[] ToArray() => [..bytes.AsSpan(0, at)];
 
         void Ensure(int bytes) {
             if (at + bytes <= this.bytes.Length) {

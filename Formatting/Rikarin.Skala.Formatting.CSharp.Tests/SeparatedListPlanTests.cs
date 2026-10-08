@@ -83,19 +83,20 @@ public sealed class SeparatedListPlanTests {
     ///     Every concrete node type in <c>Microsoft.CodeAnalysis.CSharp.Syntax</c> with a public property
     ///     of type <see cref="SeparatedSyntaxList{TNode}" />.
     /// </summary>
-    static Type[] KindsHoldingASeparatedList { get; } = typeof(CSharpSyntaxNode).Assembly
-        .GetTypes()
-        .Where(static type => type.Namespace == "Microsoft.CodeAnalysis.CSharp.Syntax")
-        .Where(static type => type is { IsClass: true, IsAbstract: false }
-            && type.IsSubclassOf(typeof(CSharpSyntaxNode))
-        )
-        .Where(static type => type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Any(static property => property.PropertyType.IsGenericType
-                    && property.PropertyType.GetGenericTypeDefinition() == typeof(SeparatedSyntaxList<>)
-                )
-        )
-        .OrderBy(static type => type.Name, StringComparer.Ordinal)
-        .ToArray();
+    static Type[] KindsHoldingASeparatedList { get; } = [
+        ..typeof(CSharpSyntaxNode).Assembly
+            .GetTypes()
+            .Where(static type => type.Namespace == "Microsoft.CodeAnalysis.CSharp.Syntax")
+            .Where(static type => type is { IsClass: true, IsAbstract: false }
+                && type.IsSubclassOf(typeof(CSharpSyntaxNode))
+            )
+            .Where(static type => type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Any(static property => property.PropertyType.IsGenericType
+                        && property.PropertyType.GetGenericTypeDefinition() == typeof(SeparatedSyntaxList<>)
+                    )
+            )
+            .OrderBy(static type => type.Name, StringComparer.Ordinal)
+    ];
 
     [Fact]
     public void TheReflectedSet_IsNotTrivial() {
