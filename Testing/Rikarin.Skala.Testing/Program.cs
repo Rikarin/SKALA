@@ -1162,7 +1162,8 @@ static int Report(string[] sets) {
         Console.WriteLine("                    line      file      lines");
         Console.WriteLine($"  basis: {without.BasisName}");
         Row("no symbols", without);
-        Row("with symbols", with);
+        // ⚠ The ratchet's number since #588: the fixtures are the oracle's output under its own symbols.
+        Row("with symbols (the gate)", with);
 
         // ⚠ Both bases, always. The ratchet is over every line again since #449 put the doc-comment
         // task in the format-only profile (SK-DIV-0006); the number without `///` lines is printed
