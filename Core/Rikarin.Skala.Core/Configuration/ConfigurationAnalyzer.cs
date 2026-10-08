@@ -95,7 +95,7 @@ public static class ConfigurationAnalyzer {
         foreach (var error in resolution.ValueErrors) {
             var info = OptionRegistry.Get(error.Id);
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.OptionValueOutOfDomain,
                     SkalaSeverity.Warning,
                     $"'{error.Spelling} = {error.Value}' is not a value this option accepts ({error.Reason}); '{error.Effective}' is in force instead",
@@ -120,7 +120,7 @@ public static class ConfigurationAnalyzer {
                 : $"'{unknown.Assignment.Key}' is not an option Skala knows; did you mean '{suggestion}'?";
 
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.UnknownKey,
                     SkalaSeverity.Info,
                     message,
@@ -158,7 +158,7 @@ public static class ConfigurationAnalyzer {
                 : $"{keys.Length.ToString(CultureInfo.InvariantCulture)} option(s) came from it: {string.Join(", ", keys.Take(8))}{(keys.Length > 8 ? ", …" : string.Empty)}";
 
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.InheritedFromAbove,
                     SkalaSeverity.Info,
                     $"the effective configuration draws from '{document.Path}', which is above the repository root",
@@ -182,7 +182,7 @@ public static class ConfigurationAnalyzer {
                 }
 
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         ConfigDiagnosticIds.DuplicateAlias,
                         SkalaSeverity.Warning,
                         $"'{candidate.Spelling}' and '{winner.Spelling}' are two spellings of the same option, are equally specific, and disagree ('{candidate.Value}' vs '{winner.Value}')",
@@ -211,7 +211,7 @@ public static class ConfigurationAnalyzer {
                 }
 
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         ConfigDiagnosticIds.ContradictoryOptions,
                         SkalaSeverity.Warning,
                         $"'{candidate.Spelling} = {candidate.Value}' contradicts '{winner.Spelling} = {winner.Value}'; the C# key wins, so the effective value is '{winner.Value}'",
@@ -239,7 +239,7 @@ public static class ConfigurationAnalyzer {
             }
 
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.ContradictoryOptions,
                     SkalaSeverity.Warning,
                     $"'{generic.Origin!.Spelling} = {generic.Value}' contradicts '{specific.Origin!.Spelling} = {specific.Value}'; the C# key wins, so the effective behaviour is '{specific.Origin.Spelling} = {specific.Value}'",
@@ -265,7 +265,7 @@ public static class ConfigurationAnalyzer {
             }
 
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.UnhonourableSetting,
                     SkalaSeverity.Warning,
                     $"'{option.Origin!.Spelling} = {option.Value}' is a setting Skala cannot honour",
@@ -282,7 +282,7 @@ public static class ConfigurationAnalyzer {
             }
 
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.UnhonourableSetting,
                     SkalaSeverity.Warning,
                     $"'{option.Origin!.Spelling} = {option.Value}' selects ReSharper's previous formatting engine, which Skala does not reproduce",

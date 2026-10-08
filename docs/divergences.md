@@ -101,7 +101,7 @@ exact count, and saying so is better than repeating a figure nobody can reproduc
 | 0006 | ⚠ the pinned oracle *profile* does not format doc comments; Rider does, and Skala now does too | open | 21 keys honoured and observable, 11 refused, none Tier A until the fixtures are regenerated |
 | 0007 | an argument list around a broken chain does not chop | half closed | 8 hunks, 39 lines, 6 files |
 | 0008 | alignment keys | half closed | statement conditions Tier A; `for` header 5 hunks, 13 lines, 3 files; three keys at 0 lines |
-| 0009 | `space_within_spread_pattern` is inert | **resolved at M3.1** | Tier D confirmed; 0 spread-spacing divergences |
+| 0009 | `space_within_spread_pattern` is inert | **superseded by SK-DIV-0310** | the oracle still preserves the gap; Skala now governs it on purpose |
 | 0010 | breaks of last resort | open, deliberate | 5 lines, 4 files; 2 hunks by the narrow signature |
 | 0011 | a lambda body may leave the arrow's line | open | 12 hunks, 40 lines, 7 files — second largest |
 | 0012 | three small shapes | open | 1 line / 0 lines / 13 lines respectively |
@@ -1121,8 +1121,14 @@ argument. `skala_remove_spaces_on_blank_lines` remains Tier D and inert. The 58 
 two lines in one file, and both are a *range* expression (`line[TerminatorPrefix.Length..]`) whose
 divergence is SK-DIV-0008's indentation, not a spread element's spacing.
 
-- options: `skala_space_within_spread_pattern` (Tier D), `skala_space_within_slice_pattern` (Tier A)
-- ⚠ status: **resolved at M3.1**, re-verified
+⚠ **Superseded 2026-10-08 by SK-DIV-0310 (#513).** The measurement above stands — the oracle still
+returns a spread exactly as written at both values — and is now the reason Skala governs the gap rather
+than the reason it does not: a repository formatted by the oracle spells its spreads both ways (Skala's own
+source held 153 `[.. ` against 87 `[..x` and passed Lint), and the user asked for one spelling.
+`skala_space_within_spread_pattern` is `OfUnoracled`, not inert.
+
+- options: `skala_space_within_spread_pattern` (Tier D, `OfUnoracled` since SK-DIV-0310), `skala_space_within_slice_pattern` (Tier A)
+- ⚠ status: **resolved at M3.1**, re-verified; **superseded** by SK-DIV-0310
 
 ## SK-DIV-0010 — the oracle has break points of last resort that Skala does not
 
@@ -1269,8 +1275,28 @@ lines across 3 files to **2 hunks in 1 file** — neither of which is a `for` ru
 initializer's own `=` continuation lands on the align column where the oracle puts it one level
 further in, unchanged by that branch and owned by `PlanAroundEquals`.
 
-- options: `skala_keep_existing_embedded_block_arrangement` (Tier A), `skala_wrap_for_stmt_header_style` (Tier A, item 3, at M3.2), `resharper_csharp_align_multiline_for_stmt` (Tier D, and never the cause of item 3)
-- ⚠ status: **items 1 and 2 open**, item 3 **closed** at M3.2, all three measured
+⚠ **Item 1 re-measured 2026-10-08 (#450), and it is two facts and a third neither entry had.** With
+`Testing ask`, each shape written closed and spaced, at the export and at `space_after_cast = true`:
+
+| written | export (`space_after_cast = false`) | `space_after_cast = true` | Skala before |
+|---|---|---|---|
+| `(Kind[])[a, b]`, `(Kind[]) [a, b]` — stays on one line | `(Kind[])[a, b]` | `(Kind[]) [a, b]` | `(Kind[])[a, b]` at both — **the key was ignored** |
+| `(int)(1 + 2)`, `(int) (1 + 2)` | `(int)(1 + 2)` | `(int) (1 + 2)` | `(int)(1 + 2)` at both — **the key was ignored** |
+| the collection chopped (`(Kind[]) [` / elements / `];`), written closed or spaced | `(Kind[]) [` | `(Kind[]) [` | `(Kind[])[` |
+| the collection fits on a continuation line | `(Kind[])` / `[a, b, c];` — a break **after the cast** | the same | `(Kind[])[` / elements / `];` |
+
+The flat rows are fixed: `SpaceRules.BeforeOpenBracket` reads `space_after_cast` for a collection behind a
+cast's `)`, and `BeforeOpenParen` reads it for a parenthesized operand, where both had answered "a `)` is a
+call site" and closed the gap at every value. Pinned by `CastAndSpreadGapIssue450513Tests`. The remark in
+`BeforeOpenBracket` that `(IrBindingKind[]) [a, b]` comes back spaced was true only of a collection that
+breaks, and is corrected. ⚠ **The two broken rows stay open**: the space depends on the collection group's
+resolved mode, and the break after the cast is a break point Skala does not have. `DocKind.IfBroken`
+exists in the IR and no C# construct uses it; the gap before `[` is written before the collection's
+group opens, so an `IfBroken` there would ask the writer about a group it has not reached. That is a
+layout change, not a spacing one.
+
+- options: `skala_keep_existing_embedded_block_arrangement` (Tier A), `skala_wrap_for_stmt_header_style` (Tier A, item 3, at M3.2), `resharper_csharp_align_multiline_for_stmt` (Tier D, and never the cause of item 3), `skala_space_after_cast` (item 1's flat half)
+- ⚠ status: **item 1 half fixed** (flat; the broken half and the break after the cast open, #450), **item 2 open**, item 3 **closed** at M3.2, all measured
 
 ## SK-DIV-0013 — three configured rewrites the oracle would not perform
 
@@ -2201,10 +2227,29 @@ three profiles that share one; the fourth is in the same table and says somethin
 is the reason the sweep carries four content profiles and grades on the worst, and it is why this
 entry, alone among the family, still needs its grid rather than its constant.
 
+⚠ **#453, 2026-10-08: the break point was not missing any more, and the operand-chain half is fixed.**
+#378 had already planned the gap after a lambda's arrow (`BreakPlan.PlanLambdaArrow`), under the
+switch arm's head rule (`BreaksOnlyIfHeadOverflows`) — so "the lambda's arrow gets nothing" in this
+entry and in the issue was stale; what was missing was the preference. The oracle-free sentence above
+— *over an operand chain the arrow always wins* — is now wired: a lambda that is an `=`'s value, with a
+binary operand chain for a body the author did not break, breaks its arrow whenever the body does not
+fit beside it, and its `=` no longer breaks for width (`ArrowWinsOverTheChain`,
+`YieldsToTheLambdaArrow`). Re-measured with `Testing ask` from 100 to 170 columns in a field, a local,
+an assignment and a `??=`: every row agrees, the chain chopping below the arrow once it does not fit
+there either. ⚠ **Only as an `=`'s value**, and `corpus/real/` drew that boundary: armed for every
+lambda it cost a Serilog file and `constructs/breaks/multiline-item-chops-the-list.cs` — the oracle keeps
+`.Where(m => m.IsDefined(…)` / `&& m.GetParameters()…` (a sole argument) and `x => x` / `+ 1` (a chain
+the author broke). Scoped, `corpus/real/` and every other construct are byte-identical. ⚠ **Still
+open**: a call body (`Action a125 = () =>` / `Call…(firstArgument, secondArgument);`, where Skala keeps
+the arrow and chops the arguments) — the floor `F` above, not wired because the `=` has no floor of
+its own to add nine to — and the parenthesised parameter list (`C2((…, …) =>` / `body`), which Skala
+chops instead.
+
 - options: `skala_wrap_before_arrow_with_expressions`, `skala_keep_user_linebreaks`, `skala_keep_existing_linebreaks`, `skala_place_single_method_argument_lambda_on_same_line`, `skala_wrap_parameters_style`
-- ⚠ status: **open**, measured; the break point is missing. The rule that would arm it is now known
-  to one constant and a three-column wander, both in
-  [sk-div-preference-sweep.md](sk-div-preference-sweep.md).
+- ⚠ status: the operand-chain half **fixed** (#453), pinned by
+  `constructs/wrapping/lambda-arrow-over-a-chain.cs`; the call-body and parameter-list halves
+  **open**, measured. The rule that would arm them is known to one constant and a three-column wander,
+  both in [sk-div-preference-sweep.md](sk-div-preference-sweep.md).
 ## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
 
 ReSharper ships nine keys that **suppress a class of edit** rather than choosing between two
@@ -2592,9 +2637,21 @@ not predict. That is one break's placement inside a fix whose shape is otherwise
 
 - options: none identified — `skala_wrap_after_property_in_chained_method_calls` is implicated
   but the shape is broken at both of its values
-- ⚠ status: **open**, measured, unfixed. Deliberately not fixed alongside SK-DIV-0030: widening
-  `IsChainRoot` puts a group on every `a.B().C().Prop` in the tree, which is a far larger wrapping
-  change than the `?.` arm and wants its own measurement.
+- ⚠ status: **resolved** (issues #454, #455). `IsChainRoot` reaches a member access, and
+  `ChainLinks` takes a trailing property run as the chain's last link, broken before the run's first
+  dot — which answers the "unknown" above: the oracle writes `.ToList()` / `.Count`, `.Where(beta)` /
+  `.Count.Value` and `.Where(beta)` / `.Count?.Value`, the same rule as a run feeding a call, with
+  nothing after it. ⚠ **A trailing property is a link but not a call**, measured on 2026-10-08:
+  `SomeMethod(…)` / `.Property` and `alpha.SomeMethod(…)` / `.Property` break as chains, while
+  `(\n a)[0].C` — an indexer head and one property — is left whole where `(\n a)[0]` / `.C()` chops;
+  so the chain needs a dotted call or an *invocation* at the head. A `!` ends the receiver and its
+  operand is a chain of its own (`X.Select(…)` / `.Where(gamma)!.Where(beta)` / `.ToList()`); `?[0]`
+  is a call at the head; an indexed property after a call is a link (`.Make()` / `.Items[0]` /
+  `.Select(…)`). ⚠ The recorded `source[0].Children…` claim was already refuted by #455 (#380 had
+  fixed it). One residual, filed as SK-DIV-0331: a `!` makes `source.Select(…)!.Where(beta).ToList()`
+  depend on the first call breaking when it does not fit, which Skala never does. Pinned by
+  `ChainLinksIssue454Tests` and `constructs/breaks/chain-links.cs`; `corpus/real` unchanged,
+  `unformat` 90.21 % → 90.26 % with symbols.
 
 ## SK-DIV-0067 — a property run that *straddles* the `?` is still cut in half
 
@@ -2666,10 +2723,14 @@ keeping: `format --check` on Skala's own repository fails otherwise.
 
 - options: `skala_wrap_after_property_in_chained_method_calls` — read correctly, and conformant on
   every property run that does not straddle a `?`
-- ⚠ status: **open** for shape C only, measured. The remaining fix has to let the run continue past
-  the `?` into the receiver's own property chain, and the walk that would do it is the one the
-  conditional-access arm already performs on `Expression` — so it needs the two not to collect the
-  same dots twice, which is a restructure rather than another arm.
+- ⚠ status: **resolved** (issue #456). `PropertyRun` walks left over member accesses and `?.`
+  bindings alike, and a run that crossed a `?` does not recurse, because the conditional access walks
+  its own receiver — which is the "not collect the same dots twice" condition, met without a
+  restructure. Measured on 2026-10-08 beyond shape C: two properties left of the `?`
+  (`.Self()` / `.Outer.Inner?.Children.Where(…)`), a second `?` inside the run
+  (`.Inner?.Children?.Where(…)`), and a run that begins with `?.` (`.Self()` /
+  `?.Inner?.Children.Where(…)`) all agree. Pinned by `ChainLinksIssue454Tests` and
+  `constructs/breaks/chain-links.cs`.
 
 ## SK-DIV-0068 — three smaller chain-planner divergences, measured together
 
@@ -2740,9 +2801,17 @@ larger in reach than "only observable when the chain chops and the `??` breaks" 
 two went. It stays open because item 3 has no home elsewhere.
 
 - options: none
-- ⚠ status: items 1 and 2 **re-attributed to SK-DIV-0066**, which is where their fix belongs — still
-  unfixed, in both places; item 3 **open**, re-measured, and its recorded control was wrong — the
-  fact is every left binary operand, not `??`
+- ⚠ status: items 1 and 2 **resolved with SK-DIV-0066** (issue #455) — the `!` ends the receiver
+  and `?[0]` is a call at the head; item 3 **resolved** (issue #457). The chain's own continuation
+  scope is flagged `IndentFlags.ChainLevel`, and the writer lifts it past a broken binary operator
+  around it exactly as it lifts a delimited list on that line (#418's `LiftedLevel`), skipping the
+  chain's own group. Measured on 2026-10-08 beyond the issue's `+` and `??`: `&&`, a run of two `+`,
+  an assignment, `return`, an expression body, an argument alone and after another, and an aligned
+  `if` condition — the dots one level past the operator's line in every one; the right operand is
+  unchanged. ⚠ A property-only fill on the left of a pattern `or` must *not* lift (Vixen's
+  `PixelFormat.cs` arms moved four columns when it did), so only a chained-call group's scope carries
+  the flag. Pinned by `ChainInALeftOperandIssue457Tests` and
+  `constructs/breaks/chain-in-a-left-operand.cs`.
 
 ## SK-DIV-0069 — `skala_outdent_dots` spends one amount for the whole chain; the oracle spends one per line
 
@@ -2817,8 +2886,13 @@ changed fixture. ⚠ That practice is the reusable part of this entry and it sho
 
 - options: `skala_outdent_dots` — read correctly, and conformant on every chain whose wrapped
   lines all begin with the same operator, which is every chain the corpus contains
-- ⚠ status: **open**, measured, unfixed. It is an arithmetic in the outdent scope rather than in the
-  chain planner: the amount is computed once for the group and has to be computed per break point.
+- ⚠ status: **resolved** (issue #458). The chain-wide scope keeps the `.`'s amount, and a line that
+  begins with a `?.` inside it opens one more column of outdent for that line alone
+  (`CSharpDocumentBuilder.ExtraOutdentFor`), so `?.SelectName(…)` lands at 10 where `.` lines sit at
+  11. Measured on 2026-10-08 beside the issue's shape: two `?.` lines in one chain, a trailing `?.Count`
+  property (the chain-final property is a chain since #454, and its root's dot now opens the scope
+  too), and a pure member-access fill's `.Value` line — all agree with the oracle at `true`. Pinned by
+  `OutdentDotsIssue458Tests`; still deliberately not a row of `constructs/alignment/outdent.cs`.
 
 ## SK-DIV-0031 — a field with several declarators wraps after the type; Skala wraps at the commas
 
@@ -3273,6 +3347,58 @@ design question of its own and not a detail of the implementation.
   that binds to a *different* symbol of the same name, so that check has to be explicit. ⚠ Needs the
   oracle — the alias preference is exactly the kind of behaviour no specification states.
 
+### ⚠ Re-measured 2026-10-08 for #460 — the specification, and the alias claim refuted
+
+Asked of `jb cleanupcode` 2025.2.6 under `SkalaCleanup` at the export's values, on six probes in a
+net10.0 `ImplicitUsings` project (so `System`, `System.Collections.Generic`, `System.IO`,
+`System.Threading` and `System.Threading.Tasks` are imported everywhere):
+
+| written | oracle | why |
+|---|---|---|
+| `new System.Text.StringBuilder()` with `using System.Text;` | `new StringBuilder()` | the simple name binds to the same type |
+| `global::System.Console.WriteLine(…)` | `Console.WriteLine(…)` | the same, through `global::` |
+| `System.Collections.Generic.List<int>` / `global::System.Collections.Generic.List<int>` | `List<int>` | an implicit using is a using |
+| `System.IO.Stream?`, `(System.IDisposable)x`, `System.StringComparison.Ordinal`, `System.Math.Max` | `Stream?`, `(IDisposable)x`, `StringComparison.Ordinal`, `Math.Max` | every position — nullable, cast, receiver |
+| `typeof(System.Text.StringBuilder)`, `nameof(…)` **with** `using System.Text;` | `typeof(StringBuilder)`, `nameof(StringBuilder)` | |
+| the same **without** the using | unchanged | ⚠ **it never adds a using** |
+| `new System.Text.RegularExpressions.Regex(…)` with only `using System.Text;` | unchanged | ⚠ **no partial shortening** — `RegularExpressions.Regex` is never written |
+| `ProbeShorten6.Outer.Thing` / `global::ProbeShorten6.Outer.Thing` inside `ProbeShorten6.Outer.Inner` | `Thing` | an enclosing namespace is a scope too |
+| `[global::System.Diagnostics.CodeAnalysis.SuppressMessage(…)]`, no using for it | `[System.Diagnostics.CodeAnalysis.SuppressMessage(…)]` | ⚠ `global::` alone is dropped when the rest still binds |
+| `[System.Obsolete]` | `[Obsolete]` | attributes too |
+| `System.Threading.Timer` beside an unimported `System.Timers.Timer` | `Timer`, and `System.Timers.Timer` kept | the short name must bind to *this* type |
+| `new System.Text.StringBuilder()` in a namespace declaring its own `StringBuilder` | unchanged | shadowed |
+| `<see cref="System.Text.StringBuilder"/>`, with or without the using | unchanged | ⚠ a `cref` is never shortened |
+| `global::System.String` in a type argument | `string` | the predefined-type rule then takes it |
+
+⚠ **The alias preference this entry records is refuted on both probes that could show it.** With
+`using System.Text;` and `using Abe = System.Text.StringBuilder;` at file level, `new
+System.Text.StringBuilder()` became `new StringBuilder()` — not `new Abe()` — and the alias was removed
+as unused. With the alias at nested scope in a namespace whose parent declares a conflicting
+`StringBuilder`, the qualified name was left alone and the alias removed: the oracle does not reach for
+an alias even when it is the only short spelling that binds. The probe the old claim came from is not
+recorded, so it cannot be re-run; what can be re-run says "shortest *imported* name or nothing".
+
+⚠ **Not fixed in this session, and the reason is the size, not a missing capability.** Everything above
+is decidable with the semantic model the arranger already holds — speculative binding at the position,
+as `StaticQualifierRule.CanShortenNamespace` and `SK0243` already do. What it costs:
+
+1. a new arrangement rule and id (`SK0219`, `arrange-qualified-reference`), with its `rules.json` entry,
+   `allocated-ids.txt` line and generated `docs/rules/` page;
+2. `resharper_csharp_prefer_qualified_reference` entered in `options.json` and `export-bridge.json`
+   — it is in neither today, so `ArrangementOptions` cannot read it — with the regenerated `docs/site/`;
+3. ⚠ **an ordering hazard with `UsingsRule` that must be designed, not discovered.** The removable-usings
+   set is computed from the text a pass *starts* with. A using that is unused only because every
+   reference to its namespace is fully qualified is in that set; shortening in the same pass makes it
+   needed, `UsingsRule` removes it anyway, and safety layer 2 reverts the whole document on `CS0246`.
+   The oracle shortens and keeps the using. The rule has to either withdraw any using it makes
+   necessary from the set, or decline where the binding comes through a removable using;
+4. `SK0215`'s `global::` refusal (its `falsePositives` text says it preserves `global::`) has to be
+   reconciled with the oracle dropping it at `prefer_qualified_reference = false`.
+
+Items 1 and 2 touch generated registries that parallel work regenerates constantly, and item 3 is the
+kind of cross-rule decision that wants its own review. Recorded here as the specification; the probes
+are reproducible from the table.
+
 ## SK-DIV-0074 — `dotnet_separate_import_directive_groups` was a formatting key in the oracle and an arrangement key in Skala
 
 ⚠ **Fixed 2026-08-30. See the section at the end**, which also corrects this entry's grouping model
@@ -3461,6 +3587,49 @@ else. `TypeInferenceRules`'s `TargetTypeOf` still falls through `default: return
   the rest is one case in `TargetTypeOf` and a fixture beside
   `constructs/arrangement/type-inference/target-typed-new-argument.cs`. ⚠ Needs the oracle for the
   fixture; the overload-stability check is Skala's own and does not.
+
+### ⚠ Fixed 2026-10-08 (#461) — and the oracle's rule is greedy, left to right
+
+Measured under `SkalaCleanup` on two probes of 35 argument shapes, at the export and with each
+object-creation key flipped alone:
+
+- **converted** — a single overload; overloads of different arity (`Arity(new(), 1)`); a named argument
+  out of order (`Pair(b: new(), a: new())`); an `in` parameter; an optional one; a nullable-annotated
+  reference (`Foo?`); a struct; explicit type arguments (`Gen<Foo>(new())`); a static on a constructed
+  type (`Box<Foo>.Put(new())`); an extension method; a delegate invocation; an indexer
+  (`map[new()]`); a constructor's argument, nested (`One(new(new()))`); `base(…)`, `this(…)` and a
+  primary-constructor base; a `?.Invoke(this, new(…))`.
+- **declined** — two one-argument overloads (`Over(Foo)`/`Over(Bar)`, and `Foo`/`int`); an inferred
+  type argument (`Gen(new Foo())`); `params` in either form; a base-class, interface or
+  `Nullable<T>` parameter; `TakeObj(object)` beside `TakeObj(string)`, where `new()` would bind the
+  `string` overload and still compile; a constructor with two one-argument overloads
+  (`new Two(new Bar())`); a `dynamic` receiver; `Console.WriteLine(new object())`.
+- ⚠ **order-dependent** — with `Cross(Foo, Bar)` and `Cross(Bar, Foo)`, `Cross(new Foo(), new Bar())`
+  becomes `Cross(new(), new Bar())` and `Cross(new Bar(), new Foo())` becomes `Cross(new(), new Foo())`:
+  the first argument alone still selects one overload, both together would be ambiguous, and the
+  oracle converts left to right and stops. An all-or-nothing decision per call would refuse both.
+- ⚠ **governed by `object_creation_when_type_not_evident`**: flipping it alone restored every argument
+  row; flipping the evident key moved none.
+
+`ObjectCreationRule.TargetTypeOf` now has the argument case: the call is resolved, each argument mapped
+to its parameter (by name or position; never `params`, never `ref`/`out`), and each candidate accepted
+only if the call — re-bound speculatively with it and every earlier accepted candidate written `new()` —
+still reaches the same member. `?.` calls are re-bound through their statement, because a member
+binding means nothing out of place. Sabotage-checked: with the re-bind comparison disabled the probe is
+reverted whole by the safety layers, so every row of the test goes red.
+
+- ⚠ status: **fixed**. `constructs/arrangement/type-inference/target-typed-new-argument.cs` now carries
+  the overload rows and agrees with the oracle; `ArrangementRuleTests.ObjectCreation_AnArgument*` pins
+  every row above. M4 differential 2158/4097 → 2176/4109 (constructs 150/163 → 162/174; Serilog 718 →
+  720; Vixen 487/818 → 491/819; Newtonsoft unmoved), zero reverts.
+- ⚠ **One "Skala only" span is the corpus's, not the rule's.** `real/newtonsoft/…/JsonSchemaGenerator.cs`
+  passes `new JsonSchemaResolver()` and `new JsonSchema()` to single-overload members and Skala converts
+  them; the oracle does not, because those types are not in the corpus and its probe project cannot
+  resolve them, while Skala's differential compilation finds them in the Newtonsoft.Json assembly its
+  reference set happens to carry. A type the oracle cannot resolve is a type it will not drop.
+- Not this entry: the oracle also writes `TakeFunc(() => new())` for a lambda whose delegate return
+  type is the created type. That is a *lambda body* position, which `TargetTypeOf` stops at
+  deliberately (`EnclosingMember`), and it is reported separately rather than folded in here.
 
 ## SK-DIV-0077 — an anonymous method whose parentheses the author broke leaves the call's line, and its block body breaks with it
 
@@ -4184,6 +4353,37 @@ And what it leaves alone, each for its own reason:
   by the same run: the export sets `true`, the two engines agree at `true`, and `verify` reports
   Conformant.
 
+### ⚠ Fixed 2026-10-08 (#462) — both keys, both directions
+
+Re-measured under `SkalaCleanup`, one key at a time, on a probe holding every predefined keyword in
+every position the language allows:
+
+- at `predefined_type_for_locals_parameters_members = false` the oracle expands field, property,
+  indexer, return, parameter (`ref`/`out`/`params`), delegate, event and operator signatures, type
+  arguments, constraints (`where T : IComparable<Int32>`), arrays, nullables, tuple elements, casts,
+  `checked` casts, `typeof`, `sizeof`, `default(…)`, `as`, type patterns (`case Int32 n`),
+  `stackalloc`, lambda parameter types, local functions and `const`. ⚠ It **keeps** an enum's
+  underlying type (`enum Small : byte`), `nint`, and every member access receiver;
+- ⚠ **the sibling key runs the other way too**: at `predefined_type_for_member_access = false` the
+  oracle writes `Int32.TryParse`, `String.Empty`, `Int32.MaxValue` and touches nothing else. This
+  entry recorded only that the receiver is left alone at the *locals* key's `false`;
+- ⚠ **`System.Int32` when `Int32` is shadowed**: with a `class Int32 { }` in the probe's namespace the
+  oracle wrote `System.Int32 _count;` and kept `String Name()` short. So the issue's question —
+  `Int32` or `System.Int32`? — is answered per site: the simple name where it binds to the type,
+  qualified where it does not.
+
+`PredefinedTypeRule` now has a `PredefinedTypeSyntax` visitor: at the owning key's `false` it looks
+up `Int32`, then `System.Int32`, at the position and writes the first that binds to the same type,
+and keeps the keyword when neither does (a receiver gets the simple name or nothing). It is enabled
+at every value of the pair — before, it was disabled outright when both keys were `false`, the one
+configuration asking most for it. Enum bases, using aliases and `cref`s are left alone.
+
+- ⚠ status: **fixed**. Pinned by `ArrangementRuleTests.PredefinedType_*` at each key's `false`. The
+  committed fixtures are untouched and still agree: `predefined-type-declarations.cs` and
+  `predefined-member-access.cs` are written framework-named, so neither key's sweep row moves; a
+  fixture measuring the expansion needs the keyword spelling and a re-sweep of that row, which is
+  left to the next `Sweep` run rather than hand-edited into the frozen corpus.
+
 ## SK-DIV-0085 — `sort_usings = false` still reorders, and the oracle's unsorted order is not the written one
 
 Skala reads `skala_sort_usings = false` as "leave the block in the order it was written" and
@@ -4331,6 +4531,44 @@ reason; it is the statement's own trailing trivia that is being dropped on the f
     semicolon the way `Semicolon(closeBrace)` already does. A fixture row beside
     `constructs/arrangement/body-style/heuristics.cs`. ⚠ Needs the oracle for the fixture only;
     reachable only at `skala_use_heuristics_for_body_style = false`, which the export does not set.
+
+### ⚠ Trailing half fixed 2026-10-08 (#463) — and it was reachable at the export all along
+
+Re-measured under `SkalaCleanup` at **both** values of the key, on a probe of every placement:
+
+| body | oracle at `true` (export) | oracle at `false` | Skala now |
+|---|---|---|---|
+| `return 1; // c` | `=> 1; // c` | the same | the same, both values |
+| getter `return _n; // c` / `get => _n; // c` | `P => _n; // c` | the same | the same |
+| setter, local function, operator, value spanning two lines, each with `// c` | converted, comment trails `;` | the same | the same |
+| `void` expression statement + `// c` | block (void heuristic) | `=> …; // c` | the same as the oracle |
+| `throw` / `async void` + `// c` | block (heuristic) | `=> …; // c` | the same as the oracle |
+| `return 3; /* c */` | `=> 3 /* c */;` | the same | **block** |
+| `return 2; // c` + `} // d` | `=> 2; // c` ⏎ `// d` | the same | **block** |
+| `return 7; // c` ⏎ `// d` before `}` | `=> 7; // c` ⏎ `// d` | the same | **block** |
+| `return /* c */ 4;` | `=> /* c */4;` | the same | **block** |
+| `/* c */ return 5;` | `=>` ⏎ `/* c */` ⏎ `5;` | the same | **block** |
+| `// c` ⏎ `return 4;` | `=>` ⏎ `// c` ⏎ `4;` | the same | **block** |
+
+⚠ **Two claims in this entry and in #463 are refuted.** "At `true` both engines keep both blocks" is
+false for a trailing comment: the oracle converts it at the export, so this was a divergence on the
+export's own configuration, not only at `false`. And ⚠ **"only when the body holds no comment" is not
+one of the heuristics at all.** The only comment row the committed `heuristics.cs` carries is a
+*void* method, which the heuristic keeps a block for being void; with a `return` instead, a comment
+above the statement converts at `true` too — `public int Above() =>` ⏎ `// c` ⏎ `4;`, measured on the
+first draft of `trailing-comment.cs`. So the leading-comment half below is reachable at the export as
+well; its `deliberate` triage stands on the formatter's comment placement, not on the heuristic.
+
+`BodyStyleRule` now exempts exactly one `//` comment trailing the only statement (or an already-arrow
+getter's semicolon), at both values, and carries that trivia onto the new semicolon. Every other
+placement in the table still keeps the block, at both values, because each needs a placement rule the
+formatter or the rule does not have.
+
+- ⚠ status: **trailing `//` half fixed**; the other placements **open** and `deliberate` as above.
+- Pinned by `constructs/arrangement/body-style/trailing-comment.cs` (oracle fixture, export values) and
+  `BodyStyleIssue399Tests.ATrailingLineComment_RidesBehindTheSemicolon` /
+  `AnyOtherComment_KeepsTheBlock` at both values. The M4 arrangement differential over the corpus is
+  unmoved (2158/4097 before and after): the shape does not occur in `corpus/real/`.
 
 ## SK-DIV-0089 — the four formatter-tag keys, and why no one-key flip can ask about any of them
 
@@ -4490,7 +4728,7 @@ not ask about it.
 - ⚠ Both `oracle` globs are kept, the way SK-DIV-0083's are, so the next sweep re-measures the claim
   and `UNEXERCISED` points here.
 
-## SK-DIV-0091 — `csharp_indent_braces`, and the brace-split direction the placement family does not have
+## SK-DIV-0091 — `csharp_indent_braces`, and the brace-split direction the placement family did not have
 
 Four brace rows were resolved together and three of them are **fixed**; this entry is the residue, and
 it is two separate things that share a mechanism.
@@ -4525,22 +4763,44 @@ lists; `anonymous_methods` moves nothing while `lambdas` moves the `delegate`.
 `skala_new_line_before_while`'s indentation and `skala_special_else_if_treatment`'s split direction were fixed in
 the same pass and all three now read `Conformant`.
 
-### The first thing that is not fixed: the split direction
+### The split direction — fixed (#465)
 
-Brace placement in this formatter is a **join** decision. `ShouldJoin` is "the one place phase 1
-removes a line break the author wrote", and nothing inserts one before a brace. So a K&R input under
-`csharp_new_line_before_open_brace = all` comes back K&R, where the oracle splits every brace onto its
+Brace placement in this formatter was a **join** decision. `ShouldJoin` is "the one place phase 1
+removes a line break the author wrote", and nothing inserted one before a brace. So a K&R input under
+`csharp_new_line_before_open_brace = all` came back K&R, where the oracle splits every brace onto its
 own line; and `skala_empty_block_style = together_same_line`'s second half — pulling `{ }` back onto the
-declaration's line *against* the placement key — cannot be honoured either.
+declaration's line *against* the placement key — could not be honoured either.
 
-⚠ **This is invisible to all four rows, and not by luck.** Every one of their fixtures is written with
+⚠ **This was invisible to all four rows, and not by luck.** Every one of their fixtures is written with
 the break already there, so all fifteen values of the placement key only ever ask the join question.
-`FormatterTests.BraceSplitIsNotImplemented` asserts the gap so that it is a recorded absence rather
-than a discovery. Closing it means a break point before a brace in every construct in the language,
-which is not a change to make from a row that is already `Conformant`.
 
-`skala_special_else_if_treatment` is the one member of the family that *did* get its split direction, in
-`MustBreak`, because its row needed it and its shape is a keyword rather than a brace.
+**Fixed 2026-10-08.** Measured with `Testing ask` on K&R inputs covering every construct the seven live
+groups reach — at `all`, at each of the seven and at `none` — and on empty bodies written K&R and Allman
+at all three `skala_empty_block_style` values under both `none` and `all`. The rule the oracle follows is
+one sentence: **a brace the key puts on a line of its own goes there exactly when the line after it
+breaks.** `get { return _n; }`, `() => { A(); }`, `delegate { A(); }`, `new List<int> { 1, 2 }`,
+`new { X = 1 }` and `int B { get; set; }` keep their brace on the owner's line because their body stays
+there. `BreakPlan.SettleOpenBraces` plans it after the walk, by mirroring the gap after the brace: a
+required break there is a required break before the brace, and a point there is a point of the same
+group before it — with the group entered before the brace (`LeadingGapInside`), since a block, an
+accessor list and an initializer all start at their brace.
+
+Three things came out of the measurement that a reading of the key would not give:
+
+- An **empty** body follows the empty-block key for a type, a namespace, a method, a local function, a
+  control block and a switch — `together` writes `void M()` / `{ }`, `multiline` `void M()` / `{` / `}`,
+  `together_same_line` `void M() { }` (and joins an Allman `{ }` back). An empty accessor, lambda,
+  anonymous method or initializer stays `{ }` on its owner's line **at every value** and is joined back
+  from Allman.
+- ⚠ `multiline` had no split direction either, **under the export's `none` too**: `void M() { }` came
+  back joined where the oracle writes `void M() {` / `}`. Same family, same fix (`MustBreak`).
+- ⚠ A brace on a line of its own after an `=` — `Action b = () =>` / `{`, `var m = new List<int>` / `{`,
+  `var r = 1 switch` / `{` — sits on the statement's column, the column its `}` takes. Skala put it one
+  continuation level in, **from an Allman input as well**, which no fixture could reach under `none`.
+  `IndentKind.AnchoredBrace` puts it on its anchored block's level.
+
+`skala_special_else_if_treatment` was the one member of the family that already had its split direction,
+in `MustBreak`, because its row needed it and its shape is a keyword rather than a brace.
 
 ### The second: `csharp_indent_braces`, and the probe that moved the question
 
@@ -4587,8 +4847,8 @@ that assigning one key in a section silently re-derives another from that sectio
 a rule whose only justification is that ReSharper does it, on a configuration nobody writes. Doc 00's
 non-negotiable 9 is exactly this case: the reference tool is a test subject, not a specification.
 
-- options: `csharp_indent_braces`, and the split-direction gap in `csharp_new_line_before_open_brace`
-  and `skala_empty_block_style`
+- options: `csharp_indent_braces`; the split direction in `csharp_new_line_before_open_brace` and
+  `skala_empty_block_style` is fixed (#465), pinned by `BraceSplitIssue465Tests`
 - ⚠ status: **accepted**. `csharp_indent_braces` agrees with the oracle at both values whenever the
   question is put to both engines the same way; the row's disagreement exists only under a
   single-key section that changes what the oracle was asked. Registered `OfInert` with the mask named,
@@ -4789,9 +5049,26 @@ argument list at all — the `(` belongs to `MakeRefExpressionSyntax` / `RefType
 `return (value)` and `await (task)`; three keywords whose parenthesis is a call site in everything but
 the parse tree reach it by accident.
 
-- options: `skala_space_between_keyword_and_expression` (wrongly), `skala_space_before_method_call_parentheses` (correctly)
-- ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/varargs-and-typed-references.cs`,
-  whose fixture is the oracle's answer.
+⚠ **Resolved 2026-10-08 (#466), and the `__arglist` row was right for the wrong reason.** Asked with every
+gap written closed, spaced and as a run, at the export and with `space_before_method_call_parentheses`,
+`space_between_keyword_and_expression`, `space_within_parentheses` and
+`space_between_method_call_parameter_list_parentheses` flipped:
+
+| written | oracle, every configuration |
+|---|---|
+| `__makeref(o)`, `__makeref (o)`, `__reftype (r)`, `__refvalue (r, int)` | as written |
+| `__makeref(  o  )`, `__reftype(  r)`, `__makeref( o)`, `__refvalue( r, int )` | a run collapses to one; otherwise as written |
+| `__arglist (1, 2)`, `__arglist( 1, 2 )`, `__arglist( )` | as written — and **not** moved by `space_before_method_call_parentheses`, which Skala answered it from |
+| `__refvalue(r,int)` | `__refvalue(r, int)` — the comma is an ordinary comma's |
+
+So no key governs the gap before these four keywords' `(` or the two inside it: they are
+`SpaceRules.Ungoverned`, and the author's choice survives. `__arglist` agreed only because the export's
+method-call key happened to say what the source said. Pinned by `UndocumentedKeywordIssue466Tests` and
+the existing fixture, which Skala now reproduces.
+
+- options: none — every candidate flipped and none moved the gaps.
+- ⚠ status: **resolved** (#466). Pinned by `constructs/syntax/varargs-and-typed-references.cs` and
+  `UndocumentedKeywordIssue466Tests`.
 - ⚠ **Low severity, deliberately recorded anyway.** Nobody writes `__makeref` on purpose. But this is
   precisely the class of defect the audit exists to find: it survived ten milestones because the
   construct was absent from the corpus, and after `jb` is uninstalled no `.expected.cs` for it could
@@ -5214,10 +5491,15 @@ it, from the finished gap table: a gap nobody planned (kept by `keep_user_linebr
 break, or a point of a group certain to break counts; a `Flat` gap, a fill point and a preserve
 group that may re-join do not.
 
-⚠ **Adjacent and still open**: the last row's value — `i +=` / `1` — takes a level past the
+⚠ **Adjacent, and fixed since (#468)**: the last row's value — `i +=` / `1` — takes a level past the
 incrementor in the oracle and none under Skala, the same shape SK-DIV-0103 records for
 `for (int i =` / `0;` and scoped out of `SpendsUnderDelimiters` because `using (var d =` /
-`default(…))` adds none. Not in the fixture.
+`default(…))` adds none. Measured 2026-10-08 on every header: a `for` header's declarator, a second
+declarator (`j =` / `1`), an initializer's or incrementor's assignment and compound assignment
+(`k =` / `k + 1`, `k = k` / `+ 1`, `i +=` / `1`) all land one level past the header's aligned column
+(17 against 13), and a `fixed` header's declarator too (19 against 15); the `using` header was
+re-asked and still adds none. So the scope is "an item of a `for` or `fixed` header", which
+`IsAListItemsEquals` now names. Pinned by `ContinuedListItemIssue468Tests`.
 
 - options: `skala_wrap_for_stmt_header_style` (`chop_if_long`), `skala_keep_user_linebreaks`,
   `skala_wrap_multiple_declaration_style` (whose join is the one that was miscounted).
@@ -5297,9 +5579,18 @@ ending it (`LineFlags.LastResort`, in the layout engine's `DocumentBuilder.Break
 one. An owner that carries an embedded statement of its own keeps the group point: the oracle
 pushes it off whenever it is multi-line.
 
-⚠ **Adjacent and still open**: the last row's inner `if (n > 0) n++;` — simple, single-line,
-written joined — is broken by the oracle when its owner is itself an embedded statement that was
-pushed off. One shape measured; not in the fixture.
+⚠ **Adjacent, and fixed since (#469)**: the last row's inner `if (n > 0) n++;` — simple, single-line,
+written joined — is broken by the oracle when its owner is itself an embedded statement. Measured
+2026-10-08 on twenty-eight nestings written on one line, and the rule is not "when its owner was
+pushed off": under keep the oracle puts an embedded statement on a line of its own **whenever it
+carries an embedded statement of its own, or its owner is itself embedded** — `if (b) if (c) M();`,
+`if (b) using (D()) M();`, `while (b) lock (this) M();`, `do if (b) M(); while (b);`,
+`using (D()) using (D()) M();` (stacked, per `skala_indent_nested_usings_stmt`), three deep, and
+`if (b) if (c) { M(); }`, every one fitting on its line. ⚠ Two exemptions, both an `if` the `else`
+machinery owns: an `if` with an `else` keeps its statement (`if (b)` / `if (c) M();` / `else M();`) and
+an `else if` keeps its (`else if (c) M();`); neither carries over to what nests inside them
+(`else if (b)` / `if (c)` / `M();`). `BreakPlan.IsPushedOffByNesting`, `PlanStackedUsing`; pinned by
+`EmbeddedNestingIssue469And480Tests`. The `keep = false` paths are untouched.
 
 - options: `skala_keep_existing_embedded_arrangement` (`true`; the `false` paths are untouched),
   `skala_place_simple_embedded_statement_on_same_line` (inert under keep, as before).
@@ -5412,7 +5703,17 @@ together. The tuple, which has no wrap style, fills under both. Not in the fixtu
 levels inside a chopped list that is itself the operand of a broken chain (`F(` / `a` / `&& b` / `)`
 / `|| c` puts `a` at 16 in the oracle, 12 under Skala) and a declarator's value past its `=`
 (`int x = a` / `+ 1,` — 16 against 12), both SK-DIV-0103's scoping and SK-DIV-0112's adjacent
-shape rather than this entry's.
+shape rather than this entry's. ⚠ **The declarator half is fixed (#468)**: measured 2026-10-08, every
+continuation inside a declarator of a multi-declarator list — a kept `=`, a binary operator, a chopped
+argument list (`F(` / arguments at 16 / `)` at 12), a chain's dot, the first declarator's included and a
+field's alike — lands one level past the *list's* level, while `y = 2;` stays at 12 and a single
+declarator's `int z = a` / `+ 1;` stays one level in. The list and the `=` both open on the
+declaration's first line, so the writer's one-level-per-line rule counted one; the list's level now
+counts unconditionally (`GroupPlan.UnconditionalLevel`) and the `=` spends under it. ⚠ Not fixed and
+not this entry: `b ? a` / `: c` — a ternary broken before `:` only — is chopped by the oracle at the `?`
+too, in a single declarator and a `return` alike.
+⚠ **The filled-list half closed at #471** (SK-DIV-0117): `new[] { 1` / `+ 2, 3 }` already agreed (the
+array initializer's after rule, #444), and `[1` / `+ 2, 3]` now does too — `+ 2,` / `3`.
 
 - options: `skala_wrap_arguments_style`, `skala_wrap_parameters_style` and the rest of the
   `chop_if_long` family; `skala_keep_user_linebreaks`.
@@ -5508,6 +5809,9 @@ the oracle breaks after the multi-line `]`, and keeps `], (null ? "ss" : 1.5d), 
 Skala fills on; a tuple's next item after a multi-line one stays (`, 3), 4)` above). The same
 wrap-style-versus-plain-fill line SK-DIV-0109 records for `[1` / `+ 2, 3]`. One line better and one
 line worse on that fixture; not in this entry's construct.
+⚠ **Closed at #471.** By the time #471 was filed the two lines had swapped (#444 fixed the line after
+`]` and lost `), [`); the head rule now outranks the after rule in the writer, and the fixture is
+byte-exact. See SK-DIV-0117.
 
 - options: `skala_keep_user_linebreaks`; the tuple has no wrap style of its own.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/nested-multiline-tuple-item.cs`,
@@ -5689,6 +5993,14 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
   alone. Skala breaks after the `]` and chops only a section that overflows by itself.
 - `orderby a,\n b`: unmeasured, and `OrderByClause` is the one exemption in `SeparatedListPlanTests`
   without a measurement behind it.
+  **Fixed (#477)**, and the exemption's premise ("nothing to plan") was wrong: measured 2026-10-08,
+  the orderings are a **fill one continuation level past `orderby`**. An author's break after or
+  before a comma is kept and the continued ordering lands at the clause's column plus one
+  (`orderby a,` / `    b`, `orderby a` / `    , a`, with `descending` and `ascending` alike, under
+  `=>`, `return` and an argument list); `orderby a, a` stays; one past the margin wraps at the last
+  comma that fits (`orderby x.Length, x.Length,` / `    x`), where Skala did not wrap it at all; and at
+  `skala_keep_user_linebreaks = false` the breaks are re-joined. `BreakPlan.PlanOrderings`, pinned by
+  `OrderingsIssue477Tests`; `OrderByClauseSyntax` is now a planned sample in `SeparatedListPlanTests`.
 
 - options: `skala_wrap_arguments_style`, `skala_max_invocation_arguments_on_line` (element access); no key
   for the fills or the attribute alignment — `PlanFilledList`'s remarks measure that.
@@ -5751,14 +6063,37 @@ Not fixed, measured on the way:
   break;` — is written by the oracle with the block at the **label's** column (`case 1: {` when it is
   first) and its contents one level in, and the `break;` one level in after it. Skala puts the block one
   level in like any other statement, with its contents two. Pre-existing for broken input and rare.
-- `case 1: ; break;` — the oracle keeps the space between `:` and the empty statement's `;`; Skala writes
-  `case 1:;`. A spacing gap, not a break.
+  **Fixed (#478)**: re-measured 2026-10-08 on seven sections — a block first, after a statement, two in
+  a row, alone with and without `break;`, written over lines — at the export and with
+  `csharp_new_line_before_open_brace = all`, `skala_indent_switch_labels = false` and
+  `skala_indent_break_from_case = false` flipped one at a time. Every block among several statements
+  sits on the label's column (`case 1: {`, or `case 1:` / `{` under `all`), exactly where a section that
+  is only a block puts it. `PlanCaseStatements` leaves a leading block's gap to the brace placement, and
+  `VisitSwitchSection` outdents a block statement to the label. Pinned by `SwitchSectionBlockIssue478Tests`.
+- ⚠ **Resolved 2026-10-08 (#479).** `case 1: ; break;` — the gap is `space_after_colon_in_case`'s, not the
+  semicolon's: `case 1:;`, `case 1: ;` and `case 1:   ;` all come back `case 1: ;` at the export (and
+  `default:`, a `when` clause and a comment before the `;` the same), `space_after_colon_in_case = false`
+  gives `case 1:;`, and `space_before_semicolon = true` does not move it. Pinned by
+  `CommentAndColonGapIssue479491493Tests`. ⚠ Still open beside it: `case 6: { } break;` puts the block on
+  the label's line in the oracle and on its own line in Skala — the first bullet above.
 - `if (b) M(); else switch (o) { … }` — the oracle writes `if (b) M();` / `else` / `switch (o) {`; Skala
   now pushes the `switch` down but keeps `M(); else` on one line, and after an embedded switch's `}` the
   oracle puts `else` on its own line where Skala writes `} else M();`. The `else` after a non-block
-  statement has no plan at all, which is older than this entry.
+  statement has no plan at all, which is older than this entry. **Fixed (#480)**: measured 2026-10-08
+  at both values of `skala_new_line_before_else` and of `skala_keep_existing_embedded_arrangement`, an
+  `else` after a statement that is not a block always starts a line — `if (b) M();` / `else M();` too,
+  every link of an `else if` chain, and behind a block comment — and so does a `do`'s `while`
+  (`do M();` / `while (b);`). `BreakPlan.PlanClauseAfterAnEmbeddedStatement`. ⚠ The incidental blank
+  line the issue flagged is `skala_blank_lines_after_block_statements` and a second defect, not the
+  same one: `HasChildBlock` did not look through an embedded statement, so `if (b) switch (o) { … }`,
+  `if (b) if (c) { … }` and `… else while (c) { … }` took no blank after them — nor before them, measured
+  at `skala_blank_lines_before_block_statements = 1`. ⚠ And the four clause keys
+  (`skala_new_line_before_else`, `_catch`, `_finally`, `_while`) had no split direction at `true`: a
+  `} else` the author wrote joined stayed joined. Measured with all four on, fixed in `MustBreak`.
+  Pinned by `EmbeddedNestingIssue469And480Tests`.
 - `if (b) using (D()) M();` — the oracle pushes the `using` down (a nested embedded owner); Skala keeps
-  it on the `if`'s line. The "nested embedded statement" rule SK-DIV-0106 left unmeasured.
+  it on the `if`'s line. The "nested embedded statement" rule SK-DIV-0106 left unmeasured. **Fixed
+  (#469)**, see SK-DIV-0106.
 - Under `skala_keep_existing_declaration_block_arrangement = true` Skala keeps a method's `{` on its line
   around a body that is now multi-line (`void S(…) { switch (o) {`); the oracle expands such a body.
 
@@ -5858,9 +6193,25 @@ point — a break the author pinned between two elements would otherwise read as
 spanning lines — which is a per-element marker in the #372 pattern, not a line count. Recorded, not
 fixed.
 
+⚠ **Fixed at #471, and the marker already existed.** #444 (SK-DIV-0208) gave the array initializer
+exactly that per-element marker — `LineFlags.ArrayElement`, read off the output by the writer — and
+`StartsAFilledElement` excluded a collection expression on a reading of `CollectionAfterEqIssue375Tests`
+that had the direction backwards (it pinned Skala's `null!,` / `((`, not the oracle's). A collection
+expression's element now carries `ArrayElement` (the draft measure and the after rule) and
+`KeepsHeadWhenCertain` (the tuple's second head rule); re-measured with `Testing ask`, every row of the
+table above agrees, plus `[1, [2, 3], [` / `4` / `],` / `5]` and `(1, () => {` … `}, 2, 3)` unchanged.
+⚠ **And the head rule outranks the after rule**, which no row above shows: in
+`pathological/nested-collection-in-generated-while.cs`, an *array initializer*, the oracle writes
+`), [` — a delimited element that fits nowhere whole keeps its head on the line the previous multi-line
+element ended on — and only then `],` / `(null ? …)`. The writer's after rule now yields when
+`FillPointStaysFlat` kept the point flat for the head (`headStays`) rather than for a fit. That file is
+byte-exact for the first time (pathological 59/71 → 60/71 files, 93.64 % → 94.26 % lines).
+The `null!, ((` row's nested levels are SK-DIV-0118's and stay open.
+
 - options: none — `skala_wrap_list_pattern = wrap_if_long` and `skala_keep_existing_list_patterns_arrangement`
   govern the fill and the pinned breaks, neither the head nor the after rule.
-- ⚠ status: **open**.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/collection-expression-multi-line-elements.cs`,
+  `pathological/nested-collection-in-generated-while.cs` and `CollectionAfterEqIssue375Tests`.
 
 ## SK-DIV-0118 — a grouping parenthesis spends a level of its own inside the list it wraps, and the oracle does not
 
@@ -6154,12 +6505,33 @@ mechanism and none affects idempotency.
   comes back with every `or` on its own line. SK-DIV-0109 measured the opposite for a binary
   *expression* chain (`a && b` / `|| c` stays whole); whether the two kinds differ or the arm context
   does is unmeasured. Skala keeps the one break, on master and now.
+  ⚠ **Fixed at #483: the kinds differ, the context does not.** Measured with `Testing ask`: the same
+  `or` chain chops at every link after `is` (statement and expression body), in a `case` label and in
+  an `if` condition; `and` chops the same way; a break at the *inner* link (`A` / `or B or C`) chops
+  as the outer one does; while `_ when a && b` / `|| c` and `> 0 when a > 0 && b > 0` / `|| c > 0` in
+  an arm stay as written. A break written *after* `or` (`A or` / `B or C`) is not one of the chain's
+  points and is joined, as Skala already did. The chain-wide group of a pattern chain is now
+  `SourceBroken` whenever a link's point was (`BreakPlan.PatternChainIsBroken`), and the links break
+  with it. ⚠ And a pattern chain is one combinator, not every nested pattern: `A and B or C` / `or D`
+  comes back chopped at the `or`s with `A and B` whole, so `SameChain` now separates `and` from `or`
+  as it separates binary expressions by precedence. Pinned by
+  `constructs/breaks/binary-pattern-chain-kept-break.cs`.
 - **A property pattern that is the first operand of a broken `&&` chain sits one level deeper in the
   oracle**: `var b = value is {` / `Length: …` at 16 / `}` at 12 / `&& other;` at 12, where Skala
   writes the subpatterns at 12 and the `}` at 8. The chain's containment (SK-DIV-0109) is right; the
   operand's own indentation under it is the SK-DIV-0107 family's.
 
-- ⚠ status: **measured, not fixed**.
+- ⚠ status: the pattern-chain bullet **fixed** (#483); the pure member-access chain **resolved** (#482, below); the rest **measured, not fixed**.
+- #482: a member-access expression that is no chain of calls is a fill over its dots
+  (`PlanPropertyFill`). Measured on 2026-10-08 and **wider than "the last dot"**: it is the last dot
+  that *fits* — `….Dddd` / `.MoreValue.Rest;` keeps `.Rest` on the continuation line — taken in
+  preference to an `=`, to a `return`'s line, inside an argument the list already chopped, past an
+  indexer and after a `?.`. Before a switch arm's arrow it outranks the arrow only for a short body:
+  thirteen columns of body or fewer (comma aside) take the dot, fourteen and more the arrow
+  (`… =>` / `yyyyyyyyyyyyyy,`), at heads of 106 to 116 columns, and the issue's `=> 2u,` row is
+  the first kind. Declined where the oracle takes another break: an assignment's target
+  (`A.B.C.D.Value =` / `yyyyyyyy;`), the operand of `is`/`as`. Rows not reached are SK-DIV-0330.
+  Pinned by `MemberAccessFillIssue482Tests` and `constructs/breaks/member-access-fill.cs`.
 
 ## SK-DIV-0125 — a break before a collection expression was added by the ordering rule and kept by the bracket's fit, and the two rules disagreed across passes
 
@@ -6454,6 +6826,26 @@ check. The export's `chop_if_long` is conformant on every one of these shapes.
   four-call chain with each link's width varied before wiring a head measure into the chain fill.
   Recorded in `ChainWithACallRootIssue380Tests`' remarks and deliberately not asserted there.
 
+⚠ **Measured for #484 on 2026-10-08, and the boundary is not "last link against middle link".** With
+`SomeMethod(…)` heads at indent 8, `skala_wrap_chained_method_calls = wrap_if_long`:
+
+| shape | oracle |
+|---|---|
+| `a7`'s middle link `.Other(d35, e22, f8)` followed by `.Third(gg)` | `.Other(` kept, arguments chopped, `).Third(gg);` — a **middle** link's head kept too |
+| `.Other(d35, e22)` with `.Other(` ending anywhere from 90 to 115 | head kept, arguments chopped, at every column |
+| `.Other(eee…, ff)` — a link of 46 columns — after a 3- or 4-call chain or alone, `.Other(`/`.Third(`/`.Fourth(` ending at 100 to 119 | broken before the link, every row |
+| two arguments, the dot-broken line `.Other(e×k, ff);` at 12: k = 36 … 46 (line 61 … 71) | broken before the link |
+| the same, k = 48 … 56 (line 73 … 81) | head kept, arguments chopped |
+| one argument, `.Other(e×k);` at 12: line 61 … 81 | broken before the link |
+| the k = 46 two-argument link behind a head of 40, 50 and 70 columns | broken, **kept**, broken |
+
+So it is neither the link's position, nor the column the head ends at, nor the link's width alone,
+and the last row is not even monotone in the head's width. It reads as a cost comparison between the
+two layouts that this table does not pin down, and wiring a guess would trade the present
+"break before every link that fits on the continuation line" — right on every row in the second half
+of the table — for one right on a different half. #484 is **blocked**, not fixed; these rows are the
+starting point.
+
 ## SK-DIV-0132 — a doc comment kept as written was decided line by line, and the oracle decides it per comment
 
 ⚠ **Filed as issue #382, whose headline claim the oracle refutes.** The issue read
@@ -6744,6 +7136,15 @@ is refuted by a row already in this file and the rule is still to be found. The 
 oracle's and appears only when the collection expression is multi-line (`([1, 2])` stays closed); it
 is the same `IfBroken`-shaped gap as the `) [` cast in the residue list above. Recorded, not fixed.
 
+⚠ **Re-measured 2026-10-08 (#485).** At the export and at `space_within_parentheses = true`:
+`([` / elements / `])`, `( [` / … and `(` / `[` / … all come back `( [` — the oracle **joins** the
+author's break after the `(` — with the elements one level in and `]` at +0; at `space_within_parentheses
+= true` the same with `] )`, one space, not two. `(([` gives `(( [` (only the innermost), `M(([` gives
+`M(` / `( [`, and `([1, 2])` stays closed. `(new[] {` / … / `})` is joined onto one line by both engines,
+so the brace does not share the shape. The gap is "the within key, or one space when the collection
+breaks", which is SK-DIV-0012 item 1's `IfBroken` again; and the space alone would gain nothing,
+because every such line also diverges on this entry's levels. Not fixed.
+
 - options: none.
 - ⚠ status: **open**.
 
@@ -6906,7 +7307,7 @@ the items, and pass two re-decided them. Measured with `Testing ask` on about se
 | `{ /* f */ "a", …` and `[/* f */ a, …` past the margin | `{ /* f */` / the items | a fill after the comment | identical |
 | `= /* f */ "…"` and a lambda's `=> /* f */ "…"` that cannot fit | `= /* f */` / `"…"` | the line left past the margin, or broken before the lambda | identical |
 | `Compute(/* f */ a, b, …)` chopped, and `int P => /* f */ Compute(a, …)` | `Compute( /* f */ a,` / `b,` …, and `=> /* f */ Compute(` / the arguments chopped: the wrap after `(` and after an expression body's arrow stops at the comment | identical | identical |
-| `Compute(/* f */ "…")` and `int P => /* f */ "…"` where the lone item cannot fit | `Compute( /* f */` / `"…"`, `=> /* f */` / `"…"` | `Compute( /* f */ "…"` past the margin | **unchanged, open** |
+| `Compute(/* f */ "…")` and `int P => /* f */ "…"` where the lone item cannot fit | `Compute( /* f */` / `"…"`, `=> /* f */` / `"…"` | `Compute( /* f */ "…"` past the margin | identical since #486: the gap after the comment is a point of its own, by the colon's head rule |
 
 `CSharpDocumentBuilder.PointSurvivesComments` plans the gap between the last block comment and the
 token when every piece back to the previous token is a block comment, the previous token is not `(`
@@ -6922,7 +7323,22 @@ oracle's break after a named argument's colon (`name176:` / `Cast<…>(`) happen
 comment, and Skala has never taken it (#411, now SK-DIV-0177).
 
 - options: none.
-- ⚠ status: **resolved** except the last row, which is **open**.
+⚠ **The last row, fixed at #486: "only when nothing else fits" is the head rule, not a last resort.**
+Measured with `Testing ask` on eighteen shapes: the item moves below the comment exactly when the line
+up to its *first break point* has no room — a lone string of 85 columns as much as one of 120, the first
+of two items (`Compute( /* f */` / `"…",` / `b`), behind a 26-column `var someLongerVariableName =` —
+and stays when it has: `Compute( /* f */ b,` / `"…"`, `Compute( /* f */ Inner(`, `=> /* f */ Compute(`,
+`=> /* f */ "…"` / `+ "…"`, and a 75-column string the whole statement fits around. That is
+`GroupFacts.BreaksOnlyIfHeadOverflows`, the named argument's colon's rule, so the gap is planned by a
+group of its own (`BreakPlan.PlanPastLeadingComments`, read by `PointSurvivesComments` through
+`PlansPastALeadingComment`), on the first argument for a list and opened at the body for an arrow.
+Before it Skala broke the `=` in front of the call, or left a 144-column member. Only for a one-line
+comment the author wrote on the item's line. ⚠ One neighbour stays open: `var x8 = Compute( /* f */
+Inner(` / `"…"` / `)` / `);` puts the inner argument two levels in, the opener's line counting both
+parentheses, where Skala collapses them to one — present before this fix, and an indentation rule.
+Pinned by `constructs/breaks/comment-after-an-opener.cs`.
+
+- ⚠ status: **resolved**.
 ## SK-DIV-0162 — a one-statement block stayed on its owner's line when its statement wrapped
 
 ⚠ **Issue #405**, found working #399. `BreakPlan.PlanOnePerLine` never broke an accessor's, a
@@ -6975,10 +7391,23 @@ on pass two is where it belongs.
 
 Not fixed here, and measured:
 
-- `csharp_preserve_single_line_blocks = false` expands every one-statement accessor, lambda and
-  anonymous-method block, `get { return _n; }` included. The key is Tier D and not read.
 - The blank lines around a member the block rule joins are still decided from its source lines
   (#414).
+
+**`csharp_preserve_single_line_blocks = false` — fixed (#510).** Re-measured 2026-10-08 with the key
+flipped alone and again under both `keep_existing_*_block_arrangement` keys. At `false` the oracle
+expands every one-statement accessor, lambda and anonymous-method body and — ⚠ not in the entry's
+first measurement — every **bodiless accessor list**: `int R { get; set; }` comes back one accessor
+per line. Methods, local functions and control blocks are already expanded at `true` under the
+export; initializers, anonymous types, property patterns and empty blocks stay joined at both values.
+⚠ The entry's "the oracle's lambda layout at `false` is not the ordinary broken lambda argument" is
+**refuted**: `Register(() => {` / two levels / `}` / `);` and `Register(` / `delegate {` … are exactly
+what a two-statement lambda and anonymous-method argument already get (SK-DIV-0163), and they came out
+of the same plan once the block stopped sharing its owner's line. Under both keep keys the oracle is
+byte-identical at both values, so the keep keys outrank this one and Skala reads it only where they
+are off (`MayShareItsOwnersLine`, `PlanAccessorList`). Tier A on
+`constructs/braces/csharp_preserve_single_line_blocks.cs`, pinned by
+`PreserveSingleLineBlocksIssue510Tests`.
 
 - options: `skala_keep_existing_declaration_block_arrangement`, `skala_keep_existing_embedded_block_arrangement`, `csharp_preserve_single_line_blocks`.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/one-statement-block-on-its-owners-line.cs`,
@@ -7053,8 +7482,23 @@ given the oracle's broken form. An object initializer in the same place stays wh
 engines. Recorded, not fixed: it is a break rule, not an indentation one, and SK-DIV-0164's anchor
 does not reach a `with`'s braces yet; add `WithExpressionSyntax` to `AnchoredBlockOf` with the break.
 
-- options: none.
-- ⚠ status: **open**.
+⚠ **Fixed at #487, and the rule is wider than the entry said: it is not the argument list.** Measured
+with `Testing ask`: the oracle breaks the initializer open whenever the expression *before* `with` spans
+lines, whatever broke it — `Make(` / `alpha,` / `beta` / `) with { P = 2 };` (a short list the author
+broke), `(a` / `+ b) with { P = 2 };`, `x.F()` / `.G() with { P = 2 };`, and a flat statement whose
+list the width chopped. It stays whole for `Make(() => {` / `A();` / `}) with { P = 2 };` (the lambda
+block re-joins, so the expression is one line), for a one-line `with` inside a chopped argument list, for
+`with { }`, and for the object creation `new R(` / `a,` / `b` / `) { P = 2 };`. It is
+`if_owner_is_single_line` read off the output, so the braces' outer group takes
+`BreaksIfOwnerIsMultiLine` with a head marker at the `with` expression's first token
+(`BreakPlan.PlanBracedElements`); and `AnchoredBlockOf` now anchors a `with` initializer like an object
+creation's, which is what moves a five-member chop from the `=`'s level plus two to plus one — the
+indentation half the entry did not measure. The members of a `with` after `x =`↵`receiver` nest from
+the receiver's line, as the anchor says.
+
+- options: none (`skala_use_continuous_indent_inside_initializer_braces` gates the anchor, as for an
+  object creation).
+- ⚠ status: **fixed**, pinned by `constructs/breaks/with-initializer-after-a-multi-line-expression.cs`.
 
 ## SK-DIV-0169 — the arrow of a single lambda argument broken before `=>` takes one level, not two
 
@@ -7064,8 +7508,18 @@ arrow's continuation — and the block one level past the `Use(` line's argument
 the `=>` one level past the statement; the block and `}` agree. Without the call
 (`_f = (int first)`↵`=> {`) both engines put the arrow at + 1. Recorded, not fixed.
 
+⚠ **Fixed at #488, and only for a block body.** Measured with `Testing ask`: the arrow takes the two
+levels for `Use((int first)`, `Use(first`, `Use(async (int first)`, `var u = Use((int first)` and inside
+`Outer(Use((int first)` (`Outer` chopped, the arrow two levels past `Use(`'s line) — every one with a
+block body. ⚠ `Use((int first)` / `=> first + 1` / `);` keeps the arrow at **one** level in the oracle,
+as Skala already wrote it, and a named or non-sole lambda argument is chopped onto its own line and laid
+out like any argument. The sole argument's frame does not reset the depth (the call's parenthesis spent
+its level unconditionally), so `FrameToSpend` declined the arrow's level; the frame now names the one
+break it pays for regardless — `Frame.PaysAt`, the arrow of a block-bodied sole lambda argument. The
+block keeps its anchor, so `return` and `}` do not move.
+
 - options: `skala_place_single_method_argument_lambda_on_same_line`.
-- ⚠ status: **open**.
+- ⚠ status: **fixed**, pinned by `constructs/indentation/sole-lambda-argument-arrow.cs`.
 
 ## SK-DIV-0180 — a `/** … */` comment was written without its `/**`, so every file holding one was refused
 
@@ -7241,8 +7695,40 @@ need a generic call whose type arguments alone run past the margin after a named
 all three sets), so neither is chased. Pinned by `constructs/breaks/break-after-argument-name.cs`
 and `ArgumentNameBreakIssue411Tests`.
 
+⚠ **Swept for #490 (2026-10-08), not wired: the boundary depends on the argument's *name*, and the
+model that fits every row with a `>` past the margin breaks a committed fixture.** A new measurement
+idea, one input file per grid with `Testing ask`: the `>`'s column `g` against the argument list's width
+`w` (two arguments), the first type argument's width and nesting, and the name's length, at item indent
+12. Classified line by line (`COLON` = `name:` alone, `FILL` = the type arguments broken, `CHOP` = the
+arguments chopped):
+
+| name | `g` | `w` | oracle |
+|---|---|---|---|
+| `name` | 116–119 (the `(` fits) | 6 | the arguments chop; never the colon, never the fill |
+| `name` | 120 (only the `(` is past) | 6–16 | FILL |
+| `name` | 120 | 18–90 | COLON + CHOP |
+| `name`, first type argument `A` | 120 | 6 / 12–24 | FILL / COLON + CHOP |
+| `name` | 121–125, 128, 130 | 6–40 | FILL (+ CHOP once the arguments do not fit on the fill's line) |
+| `name` | 122 | 80, 100, 124 / 140, 160, 200 | FILL + CHOP / COLON + CHOP |
+| `name1`, `name17`, `name1766` … `name176666` | 122 | 124 | COLON + CHOP |
+| `name176` | 122 | 50–78 / 80–100 | FILL + CHOP / COLON + CHOP |
+| `name176`, first type argument nested (`Dictionary<string, Guid?>`) or plain | 121–128 | 6, 40 / 124 | FILL / COLON |
+
+So at `g ≥ 121` the oracle fills the type arguments until the argument list reaches a width that falls
+steeply with the name's length — between 78 and 80 columns for `name176`, at most 124 for `name1`,
+between 124 and 140 for `name` — and only then breaks after the colon. The fill and the colon give the
+argument list the same lines below, so the choice is made on a width the chop has not yet removed; no
+quantity the fitter has (the head's column, the continuation line's flat width under either break,
+`g + w`) separates the rows. Skala today takes the colon wherever the head up to the `(` overflows (and
+fills as well at `g = 128`). A rule "the colon stays
+flat while the type argument list's `>` is past the margin" (a measured `Document.YieldEndOf`) agreed
+on every `g ≥ 121` row with `w ≤ 78` and moved `constructs/breaks/break-after-argument-name.cs`'s
+`OwnersC` (`name176`, `w = 124`) away from the oracle — constructs 506 → 505 files exact — so it was
+reverted. The `g = 120` band (only the `(` past the margin) is the entry's row and stays as recorded.
+
 - options: none.
-- ⚠ status: **resolved** except the last two rows, which are **open**.
+- ⚠ status: **resolved** except the last two rows, which are **open**: measured above, **blocked** on a
+  model of the name-length dependence (#490).
 ## SK-DIV-0174 — the gap after a block comment was always one space, and the oracle answers it three ways
 
 ⚠ **Found measuring #409's family** (#410). `CSharpDocumentBuilder.GapSpace` returned `Required`
@@ -7261,9 +7747,9 @@ and spaced, at the export's defaults, with 37 space keys flipped in two sets, an
 | one space | after `is`, `as`, `out`, `ref`, a modifier, a member's type, a named argument's or case label's colon, before an accessor and a collection expression's `[` | one space | one space | identical |
 | ⚠ the gap *before* the comment | `f =/*f*/2` at `space_around_assignment_op = false`, `x =>/*f*/x` at `space_around_lambda_arrow = false` | the operator's key, at either value of `skala_space_before_trailing_comment` | the comment key | identical |
 | | a comment that starts a line (`/*f*/M(1, 2);`) | what follows on a line of its own | identical | identical |
-| | `E( /*f*/)` at `space_between_method_declaration_parameter_list_parentheses = true` | `E(  /*f*/ )`, two spaces in front | one | **open** |
-| | `/** f */` inside an expression | `M(1 /** f */, 2)` | SK9099, the opener dropped (#415) | **open**, not in the run |
-| | `{f/*f*/}` in an interpolation | `{f /*f*/}` | verbatim | **open** |
+| | `E( /*f*/)` at `space_between_method_declaration_parameter_list_parentheses = true` | `E(  /*f*/ )`, two spaces in front | one | **fixed** (#493) — see below |
+| | `/** f */` inside an expression | `M(1 /** f */, 2)` | SK9099, the opener dropped (#415); then one space after it | **fixed** (#491) |
+| | `{f/*f*/}` in an interpolation | `{f /*f*/}` | verbatim | **open** — SK-DIV-0311 |
 
 `SpaceRules.AfterBlockComment` takes the token in front of the run of block comments, which must share
 its line, and answers from it and the next token: `OwnsTheGapBeforeIt` lists the first class and reads
@@ -7280,8 +7766,35 @@ where the oracle breaks the line (#420); a constructor initializer's colon and a
 braces reading the base-list and array-initializer keys, with or without a comment (#419); and #409's
 point before a closer joining an author's break after a comment (#421).
 
-- options: `skala_space_before_trailing_comment`, `skala_space_around_assignment_op`, `skala_space_around_lambda_arrow`, and every key the first class reads.
-- ⚠ status: **resolved** except the three rows marked open.
+⚠ **2026-10-08: two of the three open rows fixed, and three neighbours found and fixed with them.**
+Measured with `Testing ask` at the export, with `space_between_method_declaration_parameter_list_parentheses`
+and `space_between_method_call_parameter_list_parentheses` flipped together and apart, with
+`skala_space_before_trailing_comment = false`, and with `space_around_assignment_op` and
+`space_around_lambda_arrow` at `false`:
+
+| written | oracle | Skala before | now |
+|---|---|---|---|
+| `M(1 /** f */ , 2)`, `M(1 /** f */,2)`, `1 /** b */ ;`, `(1 /** c */ )` | the `/* */` twin's answer: `M(1 /** f */, 2)`, `1 /** b */;` | one space after the comment, **added into closed input** | identical (#491) |
+| `M(1, /** f */2)`, `f = /** a */2`, `x =>/** a */x` | the author's bit, as `/* */` | one space | identical (#491) |
+| `void E( /*f*/)`, `I( /*f*/ )`, `H(  /*f*/  )` with the list key on | `E(  /*f*/ )` — the key's space plus the author's | one | identical (#493) |
+| `void F(/*f*/)` with the list key on | `F( /*f*/ )` on the first run, ⚠ `F(  /*f*/ )` on the second | `F( /*f*/ )` | `F(  /*f*/ )` — the oracle's **fixed point**, not its first answer |
+| the same with `skala_space_before_trailing_comment = false` | `E( /*f*/ )` — the list key's one space alone | `E(/*f*/ )` | identical |
+| the same as calls, `new C( /*f*/)` and `: this( /*f*/)` | the same answers from the call-site key | one | identical |
+| ⚠ `void K( /*f*/int a)`, `( /*f*/Foo a)`, `( /*f*/ref int a)`, `( /*f*/[A] int a)`, `( /*f*/this int a)` | one space after the comment, at every value tried | kept closed (the author's bit after `(`) | identical |
+| `(int a, /*f*/int b)`, a lambda's `( /*f*/int x)` | the author's bit | identical | identical |
+| ⚠ `T( /*f*/)` at `space_before_method_call_parentheses = true`; `D( /*f*/)` at `space_before_method_parentheses = true` | `T ( /*f*/)`, `D ( /*f*/)` — the non-empty key, and the empty twins move neither | the empty key | identical |
+
+⚠ The `F(/*f*/)` row is the one place the oracle is not idempotent in this register's measurements:
+`F(/*f*/)` → `F( /*f*/ )` → `F(  /*f*/ )`. Skala cannot copy a first answer that its own second pass
+would contradict, so it writes two spaces whenever both keys ask, which agrees with every input that
+already held a space and with the oracle on its own output. The first-parameter row is the third class
+being narrower than "after `(`": a declaration's parameter list is not an operand list.
+`SpaceRules.OpensAnEmptyPairWithItsSpaceOn` and the first-parameter arm of `AfterBlockComment` carry
+them; the `/** */` rows are `CSharpDocumentBuilder.GapSpace` treating `PieceKind.BlockDocComment` as the
+block comment it is. Pinned by `CommentAndColonGapIssue479491493Tests`.
+
+- options: `skala_space_before_trailing_comment`, `skala_space_around_assignment_op`, `skala_space_around_lambda_arrow`, `skala_space_between_method_declaration_parameter_list_parentheses`, `skala_space_between_method_call_parameter_list_parentheses`, and every key the first class reads.
+- ⚠ status: **resolved** except the interpolation row, which is SK-DIV-0311.
 ## SK-DIV-0171 — a member the formatter joins took the multi-line member's blank lines
 
 ⚠ **Issue #414**, found working #405. `CSharpDocumentBuilder.IsSingleLine` decided
@@ -7356,9 +7869,37 @@ writes the blank between `_x` and `_a` and removes it on its own second pass. Sk
 both passes; under the export's cap of 2 the blank is preserved and both are stable. Pinned by
 `constructs/blank-lines/a-comment-glued-between-two-members.cs`.
 
+**#494, measured 2026-10-08** with `Testing ask` on 25 shapes at the export, at
+`keep_blank_lines_in_declarations = 0` and `= 1`, and at `blank_lines_around_field = 0` /
+`_single_line_field = 2`. ⚠ The issue's own row — `_x` / `_a` / `_b` / `// c` / blank / `}` at
+`keep_blank_lines_in_declarations = 0` — is the oracle's non-idempotency above, and measured: its second pass
+on its own first output is exactly Skala's first pass. No idempotent formatter can agree with both, so Skala
+keeps the fixed point (**deliberate**). What the measurement found underneath it was a real defect, at the
+export and not only at a cap of zero:
+
+- ⚠ **A comment run with a blank line under it is not the member below's.** It hangs from the member above:
+  `int _a;` / `// own` / blank / `void M() { … }` comes back with nothing between `_a` and the comment and
+  `blank_lines_around_invocable` paid *under* it; Skala paid it above. For `//` and `/* */`, one comment line
+  or two, before a field, a method, an attributed or documented member. Of two runs a blank apart, the first
+  hangs from the member above and the second is the member below's, so the requirement goes between them.
+- The member it hangs from is multi-line for the gap under the run: at `keep_blank_lines_in_declarations = 0`,
+  `_x` / `_a` / `// c` / blank / `_b` keeps its blank (`blank_lines_around_field`). Skala removed it on pass
+  one, glued the comment to `_b`, wrote two blank lines the oracle does not, and a different two on pass two.
+- Not through an enum member's comma (`Alpha,` / `// own` / blank / `Beta` at cap 0 loses its blank), and
+  not for `blank_lines_after_using_list`, which stays above a comment under the last `using` (serilog's
+  `LogEvent.cs`).
+- Above a comment run that the body's `}` follows, glued or not, the member above pays nothing (#441's rule):
+  at `blank_lines_around_single_line_field = 2`, `int _b;` / `// last` / `}` took two blank lines in Skala.
+
+"Blank line under it" is read off the output — the gap under the run resolved as if detached, requirement
+included — so a blank only the cap removes is glue, as above. `RunIsDetached`, `RunOwner` and
+`MemberUnderGap` in `CSharpDocumentBuilder.BlankLines.cs`; pinned by
+`constructs/blank-lines/a-comment-with-a-blank-line-under-it.cs` and `BlankLinesAroundOwnLineCommentsTests`.
+
 - options: the same keys as SK-DIV-0171.
-- ⚠ status: **resolved**, except the `keep_blank_lines_in_declarations = 0` second pass, which follows
-  the oracle's non-idempotency and is **open**.
+- ⚠ status: **resolved** (#494 for the attachment), except the `keep_blank_lines_in_declarations = 0` second
+  pass, which follows the oracle's non-idempotency and is **deliberate**: Skala takes the oracle's second-pass
+  answer on the first pass.
 ## SK-DIV-0183 — an accessor list is joined or expanded by what its accessors are, and Skala kept it as written
 
 ⚠ **Issues #416 and #417**, found working #414. #416 is SK-DIV-0096 re-found; #417 is its other
@@ -7478,6 +8019,18 @@ the dots; `)!` / `.Where` breaks after a `!` where the oracle keeps `)!.Where`;
 `source.Select(…).Where(beta).Count` plans no chain at all; `new Foo(a, b).Select(c)` / `.Where` that
 fits after a break before `.Select` is chopped instead; the oracle's own `var x = source` / `.Select(`
 for a three-link chain at a member's first indent, which it does not keep when asked again.
+⚠ Of those, the `!` (#455) and the chain ending in `.Count` (#454) are **resolved** with SK-DIV-0066,
+and the `if` header and lambda-argument level is **resolved** (#495): such a chain takes its level by
+`spendsIndent`'s rule, as a parenthesised head does (`BreakPlan.SharesTheLevelAroundIt`). Measured on
+2026-10-08, the boundary is narrow on both sides. The *whole* condition of an `if`, `else if`, `while`
+or `do`'s `while` puts the dots on the aligned column; `if (!chain`, `if (flag` / `&& chain`, and a
+`switch (`, `foreach (… in` or `using (` header keep the chain's own level past it. The body of a
+call's *sole* lambda argument — `x =>` and `(x, y) =>`, a `!` before the chain included — shares the
+parenthesis's level; after another argument it does not, and nor does it where the call is the
+receiver of a further link (`found.SelectMany(static d => Enumerable.Range(…)` / `.Select(…)` two
+levels in, Skala's own source). Pinned by `ChainInAHeaderIssue495Tests` and
+`constructs/breaks/chain-in-a-header-or-a-sole-lambda.cs`. A break-choice divergence seen beside it is
+SK-DIV-0332.
 
 - options: none behind the divergence; measured at `skala_continuous_indent_multiplier = 2` too.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/chain-first-call-arguments.cs` and
@@ -7506,9 +8059,21 @@ idempotent (`Outer(first: 1, source.Select(` … under `wrap_if_long`). So a fil
 wrong when it breaks after it, idempotent either way. Before #418 a fill lifted every block, which was
 wrong in ten of the thirteen block shapes sampled and right in three.
 
+⚠ **Re-measured for #496 on 2026-10-08**, and the criterion is sharper than "breaks *after* the list":
+the oracle lifts when the fill takes **any** of its points past the list. `source.Select(x => {` … `}`
+/ `).Where(alpha…)` / `.ToList(beta…);` lifts the body to 20 and the `)` to 12 although the chain stays
+whole across `).Where(` — its one break is before `.ToList`, a link later. `…}).Where(beta);` (no point
+taken) and `…}).Where(` / a chopped long argument / `);` (the argument list chopped, no point taken)
+do not lift; a pinned author's `)` / `.Where(beta)` does. So the question the list's scope needs
+answered when it opens is whether the chain's group takes a point anywhere to its right, which is a
+lookahead past the end of the scope — `ChainBreaksInside` runs only the scope's own contents — and the
+pinned break is a required break the watch does not see. ⚠ The third row also shows SK-DIV-0129's
+keep-the-last-head shape, which Skala breaks before (`}` / `)` / `.Where(` / the argument / `);`).
+
 - options: `skala_wrap_chained_method_calls`, `skala_wrap_chained_binary_expressions` at `wrap_if_long`.
-- ⚠ status: **open**, pinned in its current reading by
-  `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`.
+- ⚠ status: **open** — #496 blocked, not fixed: the fix needs a writer lookahead to the end of the
+  chain's group that also counts pinned breaks, and the last attempt at one was not idempotent. Pinned
+  in its current reading by `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`.
 
 ## SK-DIV-0193 — a block comment's lines lose their trailing whitespace; Skala kept it
 
@@ -7570,9 +8135,29 @@ in the oracle while Skala breaks after the comment (#434, since SK-DIV-0199); a 
 enum's chopped member list and before `/* s3 */ static void Local()` at the top level, which the oracle
 writes; and `namespace N2 { /* b3 */` followed by a blank line, which it does not.
 
+The three rows left open here were filed as #497, #498 and #499 and measured 2026-10-08 with the keys
+flipped. ⚠ None of the three is about the comment as such:
+
+- **#497**: an enum member is a field to `blank_lines_around_field` and `_single_line_field` — at
+  `_single_line_field = 2` the oracle writes two blank lines between every pair of one-line members.
+  `RequirementFor` had no arm for it, so SK-DIV-0172's glued-comment rule (which makes the member under the
+  comment multi-line) had nothing to pay; a `///` run or an attribute line above a member was missed the same
+  way. A trailing comma between a member and a comment under it breaks the glue.
+- **#498**: a top-level statement's `GlobalStatementSyntax` is a member declaration, and as the outermost
+  node starting at a local function it hid the function from `blank_lines_around_local_method` and its
+  single-line twin — at the top level, with a comment or without one (a multi-line function took no blank on
+  either side). Measured with both keys flipped: the oracle pays them there exactly as in a body.
+- **#499**: a comment on a namespace's or type's `{` line leaves the gap under it the brace's: no member
+  requirement and no `blank_lines_inside_*` is paid there, and an author's blank is kept at both
+  `remove_blank_lines_near_braces_*` values. `AfterAnOpenBrace` did not look through the comment.
+
+Pinned by `constructs/blank-lines/an-own-line-comment-between-enum-members.cs`,
+`a-commented-local-function-at-the-top-level.cs`, `a-comment-on-a-declarations-open-brace-line.cs` and
+`BlankLinesAroundOwnLineCommentsTests`.
+
 - options: none.
-- ⚠ status: **resolved** (#429). Pinned by `TopLevelLinesIssue429Tests` and
-  `constructs/breaks/top-level-lines.cs`.
+- ⚠ status: **resolved** (#429), and its three open rows **resolved** (#497, #498, #499). Pinned by
+  `TopLevelLinesIssue429Tests` and `constructs/breaks/top-level-lines.cs`.
 
 ## SK-DIV-0187 — a `[CallerArgumentExpression]` argument is left as written; the oracle formats it
 
@@ -7659,9 +8244,28 @@ lines before such a comment in an argument list to one where Skala keeps two. Al
 paid against the body's own brace when the near-brace removal is off) and #442 (a kept `)` of a tuple, a
 `typeof` or a `lock` header at another column), both filed.
 
+**#500, measured 2026-10-08** over 20 contexts × `//` and `/* */` × one and three blank lines, at the
+export, at either keep key `= 0`, at `keep_blank_lines_in_code = 1` and with the near-brace removal off. ⚠ The
+open rows above were one rule, and the cause the issue suggested — the wrong keep key — was real but not what
+moved the export's row:
+
+| above an own-line comment | oracle |
+|---|---|
+| inside a construct (argument, parameter, type-argument, attribute, base list, element access, tuple, chain, after `=` / `return`, before `;`) | a `//` keeps **one** of the author's blank lines, whatever the keep keys; a `/* */` none |
+| straight after the construct's opening `(`, `[` or `<` | none, either kind |
+| before a statement, member, accessor, case, arm, braced-list item or closer | the cap of the code *under* the comment — `keep_blank_lines_in_code` in a body, `_in_declarations` among members |
+| the same at a cap of `0` | a `//` still keeps one; a `/* */` none |
+
+A comment piece arrives as "no token", which answered "declaration": the blank above a comment in a body
+was capped by `keep_blank_lines_in_declarations`, and inside a construct by either key rather than by the
+construct rule. Measured: three blanks before `// c` in an argument list keep one (Skala two), and before
+`/* c */` none (Skala two). `ResolveBlankLinesCore` now reads the context from the token under the comment run
+and adds the `//` floor; pinned by `constructs/blank-lines/blank-lines-above-an-own-line-comment-in-a-construct.cs`
+and `BlankLinesAroundOwnLineCommentsTests`.
+
 - options: `skala_keep_blank_lines_in_code`, `skala_keep_blank_lines_in_declarations`,
   `skala_remove_blank_lines_near_braces_in_code`
-- ⚠ status: **resolved** (#426), with the rows above open. Pinned by
+- ⚠ status: **resolved** (#426), and its open rows **resolved** (#500). Pinned by
   `BlankLineInsideAConstructIssue426Tests` and `constructs/blank-lines/a-blank-line-inside-a-construct.cs`.
 
 ## SK-DIV-0197 — a primary constructor's base type with arguments wrapped as a base type; the oracle wraps it as an initializer
@@ -8113,7 +8717,9 @@ chain of calls, and after an `=` it declines the `=` break to do it. Wiring that
 of its own, not this rule.
 
 - options: none.
-- ⚠ status: **resolved** for the band, **open** past it. Pinned by `TypeTestKeywordIssue444Tests`.
+- ⚠ status: **resolved** for the band, **open** past it — swept on the receiver's width for #446, see
+  SK-DIV-0211; blocked on a simple member access's `.` having no break point. Pinned by
+  `TypeTestKeywordIssue444Tests`.
 
 ## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
 
@@ -8152,8 +8758,40 @@ at E):
 Breaking the `=` "when the value then fits" explains 116–120 and not 122, and nothing tried separates
 the two pattern shapes that break the `=` from the one that does not.
 
+⚠ **#446, 2026-10-08: a grid instead of a line, and the call half has a shape now — not yet a model.**
+The new measurement holds the call's name fixed (`Compute`) and sweeps the `(`'s column `p` against the
+argument list's width `a` (`(alphaValue, ddd…)`), widening the *declared name* to move `p`; then the same
+with a short head and the *call's name* widened. All with `Testing ask`, one file per grid:
+
+| `p` (the `(`'s column) | the oracle breaks the `=` for `a` ≤ | and chops the arguments from `a` = | Skala |
+|---|---|---|---|
+| 40 | — | 81 (every row, 81–91) | `=` up to 85, then chops |
+| 60 | — | 61 (every row, 61–71) | `=` |
+| 70 | 55 | 59 | `=` |
+| 75 | 53 | 56 | `=` |
+| 80 | 51 | 53 | `=` |
+| 82–95 | 49 and below (every row) | — | `=` |
+| 70, 80, the head short and the *call's name* long | — | every row, 41–70 | chops, identical |
+
+So with a long head the `=` breaks exactly while the argument list is narrower than a floor that falls as
+the `(` moves right — about 57 at 70, 54 at 75, 52 at 80, at most 61 at 60 — and with a short head and
+a long name the value never fits below and both engines chop. That is the preference sweep's floor `F`
+(`sk-div-preference-sweep.md`) depending on the head, which that document records for head widths 12,
+21, 29 and 50; ⚠ but its "0 for a multi-argument call after `=`" is refuted here for these heads, and a
+straight line through the four measured floors (≈ −0.55 a column) predicts 63 at `p = 60` where the
+oracle already chops at 61. Not wired: one more column of `p` breaks the only linear reading.
+
+**`is`/`as` past the margin, SK-DIV-0210's open row, swept on the receiver's width** (`return
+<receiver>.P… as string;`, the operand ending at 121–135, receivers of 8, 30 and 60): with a receiver of
+30 or 60 the oracle breaks before the `.` one level in and keeps `.P… as string` whole on the next line,
+at every width; with a receiver of 8 the `.P…` line goes two levels in and `as`/`string` break after it
+as well. Skala has no point before a simple member access's `.` and breaks before `string` instead. The
+member-access wrap is the missing construct SK-DIV-0124 also records (`A.B.C.D.MoreValue => 2u,`); it is
+a plan of its own and was not attempted here.
+
 - options: `skala_wrap_before_eq = false`, the exported value.
-- ⚠ status: **open**, measured. #444 shapes 2 and 6.
+- ⚠ status: **open**, measured; **blocked** on a model of the floor's dependence on the head (#446).
+  #444 shapes 2 and 6.
 
 ## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
 
@@ -8172,5 +8810,229 @@ arrow's group opens at the arrow and is decided after the list has been written,
 monotone in width (117 moves the arrow, 121 keeps it), so the list cannot read it from a measure taken
 earlier. Opening the arrow's group at the arm's start would change what it measures. Not wired.
 
+⚠ **#446, 2026-10-08: the non-monotone reading is refuted, and the rule is wired.** The new measurement
+was a one-column sweep of the `when` line from both source shapes, 27 arms in one file. Written with the
+arrow on the pattern's line (`… gamma) => 1,`), the oracle **never** moves the arrow anywhere from 104 to
+130 columns: up to 114 the arm stays whole, from 115 the arguments chop one level in and `) => 1,`
+closes — Skala identical. Written with the arrow on a line of its own, the oracle **always keeps** it, from
+100 to 125: up to 120 the `when` line stays whole, from 121 the arguments chop **two** levels past the arm
+with `)` at one — and the same at 110, 117 and 121 when the author chopped the arguments himself. So the
+"117 moves the arrow, 121 keeps it" of the first row compared two different sources: the arrow's line
+is the author's, not the width's, and nothing about it is non-monotone. Because a kept break is certain,
+the arrow's group can open at the arm's start without its measure deciding anything:
+`BreakPlan.PlanArmArrow` now does that for a kept arrow over an arm with a `when` clause, with
+`GroupFacts.Continues`, and #418's lift does the rest. `corpus/real/` and every other construct are
+byte-identical. ⚠ **Still open**: the third row's `is` — `when x.All(static e => e` / `is T` / `)` / `=>`
+puts the `)` one level past the arm in both engines now, but the `is` two levels in the oracle and one
+in Skala (the sole lambda's continuation inside a lifted list; `LayoutWriter.BrokenInsideOnItsLine`
+reads it as an ordinary scope, which is right for `n is not (A` / `or B)` under a chain and wrong here).
+
+- options: none.
+- ⚠ status: **fixed** for the list (#446), pinned by
+  `constructs/breaks/when-clause-list-under-a-kept-arrow.cs`; the sole lambda's `is` **open**, measured.
+
+## SK-DIV-0310 — a collection expression's spread is spelled one way, which the oracle never does
+
+⚠ **A deliberate divergence, asked for in #513.** SK-DIV-0009 measured that the oracle returns
+`[1, .. xs]` and `[1, ..xs]` exactly as written at both values of `space_within_spread_pattern`, and only
+collapses a run. That left Skala mirroring it — the gap was `SpaceKind.Preserve` — so one repository could
+spell its spreads both ways and pass its own format check: Skala's own production source held 153 `[.. `
+against 87 `[..x` on the day the issue was filed. Skala now writes the configured spelling.
+
+| | before | now |
+|---|---|---|
+| `skala_space_within_spread_pattern` | `OfInert`, Tier D, default `true`, inert reason SK-DIV-0009 | `OfUnoracled`, Tier D, **default `false`** |
+| `[1, .. xs]`, `[1, ..xs]`, `[1, ..   xs]` | as written, a run collapsed | `[1, ..xs]` at `false`, `[1, .. xs]` at `true` |
+| the repository's own `.editorconfig` | `true` | **`false`** — `[..xs]`, what the issue asked for |
+| a break behind the `..` | kept at the defaults; joined at `keep_user_linebreaks = false` with the indentation's bit | kept at the defaults; joined at `false` with **the key's** answer |
+| `SK1133`'s fix | always `[..xs]` | the configured spelling, read from the tree's `.editorconfig` |
+
+**Settled points from the issue:**
+
+1. **Default.** The registry default flips to `false`; Skala's own configuration says `false` too. The
+   oracle's input is `editor_config_template` (the Rider export, still `true`), not the root
+   `.editorconfig`, since `OracleEditorConfig` separated the two — so no fixture digest moved and nothing
+   was regenerated. ⚠ That makes the repository's configuration differ from the translated export in
+   exactly this key, and the two tests that asserted "no difference"
+   (`EditorConfigIngestionTests.RepositoryEditorConfig_…ExactlyAsTheExportDoes`,
+   `ConfigCommandTests.Diff_…`) now list it as the one departure and still fail on any second. ⚠ **Open:**
+   the canonical payload (`Distribution/Rikarin.Skala.Canonical`) is the export translated, so it still
+   ships `true` — `[.. xs]` — to every consuming repository. Changing that means re-exporting from Rider
+   or teaching `CanonicalEditorConfig.Translate` an override, which breaks its "every option at the value
+   the export sets" claim; it is the user's call, not this entry's.
+2. **Scope.** Only `SpreadElementSyntax`. A slice pattern (`[1, ..var r]`) is
+   `skala_space_within_slice_pattern`'s and stays the oracle's rule (Tier A); a range (`a[1..3]`, and the
+   prefix range Roslyn parses `new[] { ..xs }` as) stays the author's, as the oracle leaves it. Pinned by
+   `CastAndSpreadGapIssue450513Tests`.
+3. **Kept breaks.** The gap is a line break, not a space, and the key does not join it: `..` / `xs` at the
+   defaults comes back as written. At `keep_user_linebreaks = false` the oracle joins it and Skala now writes
+   the key's spelling there rather than the next line's indentation bit (`JoinAtKeepFalseIssue439Tests`).
+4. **Fixes.** `SK1133` writes `[.. ` or `[..` from `skala_space_within_spread_pattern`; the redundant-spread
+   rule (`SK1072`) only removes a spread and writes no gap. `CollectionExpressionSpreadTests` pins both values.
+5. **Tier.** Tier D under `OfUnoracled`, the mark's documented sense — asked, and answered differently.
+   `OptionObservabilityTests` requires the key to be observable (the probe carries a spread) and keeps it
+   out of Tier A; no oracle fixture can ever pin it, by construction.
+6. **Lint.** Skala's own source reflows to `[..x` everywhere, settled in the same change.
+
+⚠ **The comparison knows the gap is Skala's.** An oracle fixture records whichever way the corpus author
+typed the spread, so compared raw, every file written the other way is a divergence — measured on the
+first conformance run with the key flipped: `corpus/real/` went from 59 608 / 59 844 lines and 333 / 380
+files to 59 569 lines and 314 files, almost all of it Vixen's `[.. ` (the
+`inter-token spacing` class went from 1 line to 40). That would ratchet which way Vixen's authors typed,
+not whether Skala reproduces the oracle, and CLAUDE.md is explicit that Vixen is not a specification.
+`SkalaGovernedGaps.Normalise` takes that one gap's horizontal space out of **both** sides before
+`Fidelity.Compare` — symmetric, value-agnostic, parsed rather than matched, a line-break gap left alone —
+and `SkalaGovernedGapsTests` asserts it touches nothing else and that the ratchet still sees every other
+difference. The degraded corpus's scramble keeps not mutating the gap (`SpaceRules.OracleKeepsTheAuthorsGap`,
+the oracle's predicate, beside `Preserves`, Skala's), because its fixtures are the oracle's answer for the
+undegraded file; that is why its committed population did not need regenerating.
+
+With the normalisation in place `corpus/real/` reads 59 608 / 59 844 lines and 333 / 380 files — exactly the
+number before the change — and `constructs/` rose (SK-DIV-0095's fixture). ⚠ **What normalising cannot
+hide, and should not:** a spelling one column narrower can change a layout. `pathological/` went from
+589 / 629 lines to 583 / 626 (93.64 % → 93.13 %, files unchanged at 59 / 71, still above the 0.9189
+ratchet) because `nested-collection-in-generated-switch.cs` and `…-while.cs` each hold a collection the
+oracle chopped at its author's `.. rest`, and at `..rest` it fits. Asked directly with the two inputs
+rewritten to `..rest` / `..Source`, the oracle writes Skala's new layout byte for byte (the switch file's
+pre-existing record-header difference aside), so the residue is the oracle answering a different input,
+not Skala answering this one wrongly.
+
+- options: `skala_space_within_spread_pattern` (Tier D, `OfUnoracled`), `skala_space_within_slice_pattern` (Tier A, unchanged)
+- ⚠ status: **deliberate**, supersedes SK-DIV-0009's "inert".
+
+## SK-DIV-0311 — the oracle formats inside an interpolation hole, and Skala writes the whole string verbatim
+
+⚠ **Found working #492**, which reported one symptom of it: `$"{f/*f*/}"` comes back `$"{f /*f*/}"` from
+the oracle and unchanged from Skala. The cause is wider than the comment: `NodeLayout` maps
+`InterpolatedStringExpression` to `Verbatim`, so nothing inside a hole is formatted at all. Measured
+2026-10-08 with `Testing ask`, at the export, at `skala_space_before_trailing_comment = false`, at
+`space_around_assignment_op = false`, and at `space_within_parentheses` and
+`space_between_method_call_parameter_list_parentheses = true`:
+
+| written | oracle | Skala |
+|---|---|---|
+| `$"{ f }"`, `$"{f+1}"`, `$"{ f , 5}"`, `$"{f :N2}"` | `$"{f}"`, `$"{f + 1}"`, `$"{f,5}"`, `$"{f:N2}"` — at every configuration | verbatim |
+| `$"{f/*f*/}"`, `$"{f  /*f*/}"`, `$@"{f/*f*/}"`, `$"""{f/*f*/}"""`, `$$"""{{f/*f*/}}"""` | `{f /*f*/}` — the trailing-comment key's space; `{f/*f*/}` at its `false` | verbatim |
+| `$"{/*f*/f}"`, `$"{ /*f*/ f}"` | `{ /*f*/f}` — the comment key in front, nothing behind | verbatim |
+| `$"{f /*f*/ }"`, `$"{f/*f*/ }"` | `/*f*/ }` kept — the author's bit before the hole's `}` | verbatim |
+| `$"{f/*f*/:N2}"`, `$"{f/*f*/,5}"`, `$"{f /*f*/, 5}"`, `$"{f,/*f*/5}"` | `{f /*f*/:N2}`, `{f /*f*/,5}`, `{f /*f*/,5}`, `{f, /*f*/5}` | verbatim |
+| `$"{M(f/*f*/)}"`, `$"{(f/*f*/)}"` | the call's and the parenthesis's own keys inside the hole: `{M( f/*f*/ )}` at the within keys' `true` | verbatim |
+
+So the hole is ordinary code to the oracle: its `{` and `}` take no space, the alignment comma and the
+format colon take none on either side, and everything between is formatted by the usual rules, comments
+included. **Not fixed.** Making the hole formattable means taking `InterpolatedStringExpression` off the
+verbatim path, emitting the string's text tokens byte for byte between formatted holes, deciding what the
+break plan may do inside a hole (a newline is legal in one since C# 11, and the oracle's answer to a hole
+that runs past the margin was not asked), and SK-DIV-0003's interpolated raw literal sits on the same
+path. That is a construct, not a gap, and nothing above measured its wrapping.
+
+- options: `skala_space_before_trailing_comment` (the comment rows); none of the others moved the hole's own gaps.
+- ⚠ status: **open**, measured. #492.
+
+## SK-DIV-0330 — the member-access fill's rows the position rule does not reach
+
+Measured for #482 on 2026-10-08 with `Testing ask`, the residue of `PlanPropertyFill` (SK-DIV-0124):
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `A.B.C.D.Morexxxx.Valueeee = 1;` — the target alone overflows | `…Morexxxx` / `.Valueeee = 1;` | `…Valueeee =` / `1;` past the margin |
+| an arm `A.B.C.D.MorexxxxxxxxxxxValueeeeee => yyyyyyyyyyyyyy` — fourteen columns of body behind a 118-column head | `…Dddd` / `.More…Valueeeeee => yyyyyyyyyyyyyy` | `… =>` / `yyyyyyyyyyyyyy` |
+| an arm whose short body has a dot of its own, `=> yyyyyyyyyyy.Z,` | `…Dddd` / `.MoreValue => yyyyyyyyyyy.Z,` | `… =>` / `yyyyyyyyyyy.Z,` |
+
+⚠ The first row is why an assignment's target declines the fill rather than yielding to the `=`:
+planned there, the fill also turned `A.B.C.D.Value = yyyyyyyy;` (a target that fits with its `=`)
+into a 122-column line with no break at all, where the oracle breaks the `=`. ⚠ And planned there it
+happened to move five `corpus/real` lines toward the oracle (`CurrentSchema.AdditionalProperties =
+GenerateInternal(` / … in Newtonsoft's `JsonSchemaGenerator.cs`), by changing what the `=`'s group
+measured rather than by breaking a dot; that is SK-DIV-0211's question, not this one's. The arm
+boundary is not a width of the head alone or of the body alone: a fourteen-column body takes the arrow
+behind heads of 106 to 116 columns and the dot behind 118, and a twenty-two-column body takes the arrow
+behind 118.
+
+- options: `skala_wrap_chained_method_calls`, `skala_wrap_after_property_in_chained_method_calls`.
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0331 — a chain's held first call breaks when it does not fit, and Skala chops its arguments
+
+Found beside #455 on 2026-10-08. At `skala_wrap_before_first_method_call = false` the first call stays
+with the receiver — until it does not fit on the receiver's line, when the oracle breaks before it too:
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `var y6 = sourceWithAVeryLongName…e.Select(alpha).Where(b);`, `.Select(alpha)` ending at 123 | `…e` / `.Select(alpha)` / `.Where(b);` | `….Select(` / `alpha` / `)` / `.Where(b);` |
+| `var x = source.Select(a, b, c)!.Where(beta).ToList();`, `!.Where(beta)` ending at 124 | `…)!` / `.Where(beta)` / `.ToList();` | `…)!.Where(` / `beta` / `)` / `.ToList();` |
+| `PrivateConstructor…TestClass c = JsonConvert.DeserializeObject<…>(json);` (Newtonsoft, a one-call chain) | `… c = JsonConvert` / `.DeserializeObject<…>(json);` | `… c =` / `JsonConvert.DeserializeObject<…>(` / `json` / `);` |
+
+⚠ The second row was right before #455 by accident: Skala walked through the `!` and counted
+`!.Where` as the chain's second call. With the `!` read as the oracle reads it — the end of the
+receiver — the row depends on this rule. The third row shows the rule reaches a single call, which is
+not a chain at all to `PlanChainedCalls`. Not wired: it needs a point before the first call that breaks
+only when the call itself overflows the receiver's line, which no group fact says today.
+
+- options: `skala_wrap_before_first_method_call`.
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0332 — a lambda argument's arrow breaks where the chain in its body would have chopped
+
+Found beside #495 on 2026-10-08, and the same on master (`e75f5431`): when the chain that is a lambda's
+body fits whole on the line after the arrow, the oracle breaks the arrow rather than the chain.
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `var r = items.Where(x => source.Select(a, b, c).Any(predicateValue));` past the margin | `items.Where(x =>` / the chain whole, one level in / `);` | `items.Where(x => source.Select(a, b, c)` / `.Any(predicateValue)` / `);` |
+| the same followed by `.ToList()` | `x =>` / the chain whole two levels in / `)` / `.ToList();` | the inner chain broken |
+
+Where the chain does not fit after the arrow either — `Use(x => source.Select(…)` / `.Where(p)` — both
+engines keep the arrow and break the chain. So the lambda's arrow behaves as an `=` does in front of a
+chain when the tail fits (SK-DIV-0211's question), and Skala's arrow group does not ask it. Not wired.
+
+- options: `skala_wrap_chained_method_calls`, `place_single_method_argument_lambda_on_same_line`.
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0333 — a ternary whose condition is a chopped chain puts its branches a level too deep
+
+Found beside #457 on 2026-10-08, and the same on master (`e75f5431`):
+
+```csharp
+// the oracle
+var t = someParticularThingWithALongName.SelfLink()
+    .SelfLink()
+    .WhereSomething(x => x.IsEnabledAndReady)
+    ? otherFallbackValueName.SomeFallbackProperty
+    : third;
+
+// Skala: `?` and `:` at 16
+```
+
+The chain's dots and the branches share one level in the oracle — the opposite of a binary operator's
+left operand (#457), where the chain takes a level past the operator's. Not wired.
+
 - options: none.
 - ⚠ status: **open**, measured.
+
+## SK-DIV-0320 — a block comment on its own line above an array initializer's first element stayed there
+
+#522: `new[] {` / `/* c */` / `1` comes back `/* c */ 1` from the oracle; Skala kept the break after the
+comment. Measured 2026-10-08 with `Testing ask` on twenty shapes: the join happens for `/* */` and `/** */`,
+one comment or two on a line (and on the last of two lines), in an implicit, explicit and field-initializer
+array, before a nested or a multi-token element, with a blank line after the `{` or without. Not after
+`{ /* c */` on the brace's line, not after a `//`, and not in a collection, object, anonymous or `with`
+initializer, a collection expression, a property pattern or a switch expression, which all keep the break.
+The point after the `{` survives the comment (#409) and its group is broken, so it broke; the `{`'s break is
+already taken before the comment. `CSharpDocumentBuilder.FirstArrayElementUnderAnOwnLineComment`.
+
+- options: none.
+- ⚠ status: **resolved** (#522). Pinned by `constructs/trivia/a-block-comment-above-the-first-array-element.cs`.
+
+## SK-DIV-0321 — a comment above a chain link paid a second continuation level
+
+#523: `var y = a` / blank / `// c` / `.B();` put `.B()` one level past the comment, where the oracle keeps it on
+the comment's column. Measured on thirteen shapes: with and without the blank line, `//`, two `//` lines and
+`/* */`, `.` and `?.`, after `=`. ⚠ It was two breaks each paying a level: the break before the comment paid the
+statement's, the break before the dot then paid the chain's. Inside an argument (`Call(a` / `// c` / `.B())`)
+it was the other way round — the comment got no level and sat a level short of `.B()`. A comment before a
+later link, after `return` and as a statement already agreed. `FrameToSpend` now reads a comment run that
+introduces a chain link as that link's break.
+
+- options: none.
+- ⚠ status: **resolved** (#523). Pinned by `constructs/trivia/a-comment-above-a-chain-link.cs`.

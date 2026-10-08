@@ -507,8 +507,15 @@ public sealed class ConfigCommandTests {
         try {
             var run = CliRunner.Run("config", "diff", CliRunner.TranslatedTemplate, repository);
 
+            // ⚠ Except the one deliberate departure (#513, SK-DIV-0310): the export says
+            // `space_within_spread_pattern = true`, which the oracle ignores, and the repository spells its
+            // spreads `[..xs]`. Listed rather than tolerated — any second difference still fails.
             Assert.Equal(0, run.ExitCode);
-            Assert.Contains("No semantic difference", run.StandardOutput, StringComparison.Ordinal);
+            var changed = run.StandardOutput.Split('\n')
+                .Where(static line => line.Contains(" -> ", StringComparison.Ordinal))
+                .Select(static line => line.Trim())
+                .ToArray();
+            Assert.Equal(["skala_space_within_spread_pattern: true -> false"], changed);
         } finally {
             File.Delete(repository);
         }

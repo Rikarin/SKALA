@@ -46,6 +46,11 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
     static readonly RuleInfo Rule = RuleCatalog.Get(RuleIds.CollectionExpressionSpread);
     static readonly DiagnosticDescriptor Descriptor = SkalaRule.Descriptor(RuleIds.CollectionExpressionSpread);
 
+    /// <summary>
+    ///     The first Roslyn whose lowering of a one-spread collection expression is the call it replaces.
+    /// </summary>
+    static readonly System.Version LoweringCompiler = new(4, 14);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptor);
 
     public override void Initialize(AnalysisContext context) {
@@ -62,7 +67,11 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
                     start.Compilation.GetTypeByMetadataName("System.Collections.Generic.List`1"),
                     start.Compilation.GetTypeByMetadataName("System.Span`1"),
                     start.Compilation.GetTypeByMetadataName("System.ReadOnlySpan`1"),
-                    ReferencesDotNet10(start.Compilation),
+                    // ⚠ #517: the net10.0 proof is about the SDK's compiler, and a pinned
+                    // `Microsoft.Net.Compilers.Toolset` replaces it with no version check. Where the
+                    // binlog names one older than 4.14, the reference set proves nothing.
+                    ReferencesDotNet10(start.Compilation)
+                    && !CompilerIdentity.IsToolsetOlderThan(start.Options, LoweringCompiler),
                     // ⚠ #515: a `netstandard2.1;net10.0` project at `latest` proves its compiler in the
                     // `net10.0` leg and in no other, and the fix lands in a file both legs compile. The
                     // proof is asked of every sibling, as #351's rules ask their whole condition.
@@ -83,6 +92,11 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
         INamedTypeSymbol? ReadOnlySpan,
         bool TargetsDotNet10,
         ImmutableHashSet<string> Unproved);
+
+    static bool WritesASpaceAfterTheSpread(SyntaxNodeAnalysisContext context) =>
+        context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree)
+            .TryGetValue("skala_space_within_spread_pattern", out var value)
+        && string.Equals(value.Trim(), "true", System.StringComparison.OrdinalIgnoreCase);
 
     static void Analyze(SyntaxNodeAnalysisContext context, Framework framework) {
         var invocation = (InvocationExpressionSyntax)context.Node;
@@ -146,9 +160,10 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        // ⚠ No space after `..`: the formatter keeps a spread exactly as written (SK-DIV-0009), so what
-        // the fix writes is what stays.
-        var replacement = "[.." + operand + "]";
+        // ⚠ The configured spelling of the spread's gap (#513, SK-DIV-0310): the formatter governs it
+        // since then, so a fix that wrote the other one would leave `format --check` failing on the
+        // line it just fixed. `false` — `[..xs]` — is the registry's default and applies when unset.
+        var replacement = (WritesASpaceAfterTheSpread(context) ? "[.. " : "[..") + operand + "]";
 
         // ⚠ #425: the target is typed by the position, and an argument's position is chosen by overload
         // resolution — which a collection expression can steer elsewhere, because it converts to every
@@ -222,9 +237,12 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
     ///         <c>Microsoft.Net.Compilers.Toolset</c> package replaces the SDK's compiler without a version
     ///         check (SDK 10.0.401's targets have none), and Roslyn 4.8 and 4.11 both compile and emit a
     ///         <c>net10.0</c> probe from its real <c>csc</c> line with no diagnostic, resolving
-    ///         <c>latest</c> to C# 12. Nothing an analyzer is given names the compiler — the generated
-    ///         <c>build_property.*</c> set does not — so such a build is reported. A written <c>14</c> has no
-    ///         such hole: every compiler before 5.0 refuses it.
+    ///         <c>latest</c> to C# 12. The generated <c>build_property.*</c> set names no compiler; the
+    ///         binlog's <c>csc</c> path does, and since #517 it reaches the rule
+    ///         (<see cref="CompilerIdentity" />), which declines under a toolset package older than 4.14.
+    ///         ⚠ So the hole is closed under <c>--load=binlog</c> only: a workspace load has no compiler
+    ///         path, and such a build is still reported there (loose does not run the rule at all). A
+    ///         written <c>14</c> has no hole in any mode: every compiler before 5.0 refuses it.
     ///     </para>
     /// </remarks>
     static bool ReferencesDotNet10(Compilation compilation) =>

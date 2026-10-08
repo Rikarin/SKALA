@@ -299,7 +299,9 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static bool IsPatternableTarget(ITypeSymbol? type) {
         if (type is null
-            || type.TypeKind is TypeKind.Error or TypeKind.Dynamic or TypeKind.Pointer
+            || type.TypeKind is TypeKind.Error
+            or TypeKind.Dynamic
+            or TypeKind.Pointer
             or TypeKind.FunctionPointer) {
             return false;
         }

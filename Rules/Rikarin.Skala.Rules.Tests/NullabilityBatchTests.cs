@@ -168,13 +168,13 @@ public sealed class NullabilityBatchTests {
             [
                 CSharpSyntaxTree.ParseText(
                     Microsoft.CodeAnalysis.Text.SourceText.From(source),
-                    new CSharpParseOptions(LanguageVersion.Preview),
+                    new(LanguageVersion.Preview),
                     "Subject.cs",
                     TestContext.Current.CancellationToken
                 )
             ],
             RuleFixtures.References,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: options)
+            new(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: options)
         );
 
         var ids = RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)
@@ -240,13 +240,13 @@ public sealed class NullabilityBatchTests {
             [
                 CSharpSyntaxTree.ParseText(
                     Microsoft.CodeAnalysis.Text.SourceText.From(source),
-                    new CSharpParseOptions(LanguageVersion.Preview),
+                    new(LanguageVersion.Preview),
                     "Subject.cs",
                     TestContext.Current.CancellationToken
                 )
             ],
             RuleFixtures.References,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: options)
+            new(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: options)
         );
 
         return RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)

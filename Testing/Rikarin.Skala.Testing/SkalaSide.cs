@@ -81,8 +81,8 @@ public static class SkalaSide {
         var result = ArrangementPipeline.Run(
             fixturePath,
             text,
-            new PhaseOneOptions(resolved.Options),
-            new ArrangementOptions(resolved.Options),
+            new(resolved.Options),
+            new(resolved.Options),
             ArrangementCompilation(),
             ArrangementDifferential.Removable(ArrangementCompilation(), fixturePath),
             filter: NeverPerformedUnlessAsked(overrides)
@@ -131,7 +131,7 @@ public static class SkalaSide {
         new(
             [],
             [
-                .. NeverPerformed.Where(pair => !overrides.Any(o => string.Equals(
+                ..NeverPerformed.Where(pair => !overrides.Any(o => string.Equals(
                                 o.Key,
                                 pair.Key,
                                 StringComparison.Ordinal

@@ -82,10 +82,13 @@ public sealed record UnknownKey(EditorConfigAssignment Assignment, KeyNamespace 
 public enum KeyNamespace {
     /// <summary>A style option Skala does not have in its registry.</summary>
     Option,
+
     /// <summary><c>dotnet_diagnostic.*.severity</c> — a Roslyn analyzer severity. Milestone 5.</summary>
     DiagnosticSeverity,
+
     /// <summary><c>dotnet_naming_*</c> — passed to Roslyn's hosted IDE1006 analyzer (doc 03).</summary>
     NamingRule,
+
     /// <summary><c>root</c>, and anything else structural.</summary>
     Structural
 }
@@ -152,7 +155,7 @@ public static class OptionResolver {
 
                 foreach (var assignment in section.Assignments) {
                     if (!OptionRegistry.TryResolve(assignment.Key, out var id)) {
-                        unknown.Add(new UnknownKey(assignment, Classify(assignment.Key)));
+                        unknown.Add(new(assignment, Classify(assignment.Key)));
                         continue;
                     }
 
@@ -189,7 +192,7 @@ public static class OptionResolver {
                 // appended to the value-error list, where — like every other value error before
                 // M9 — nothing read it.
                 if (!OptionRegistry.TryResolve(key, out var id)) {
-                    unknown.Add(new UnknownKey(assignment, Classify(key)));
+                    unknown.Add(new(assignment, Classify(key)));
                     continue;
                 }
 
@@ -215,7 +218,7 @@ public static class OptionResolver {
             }
 
             var value = origin?.Value ?? info.Default ?? string.Empty;
-            resolved.Add(new ResolvedOption(id, value, origin, [.. candidates[i] ?? []], refused[i]?.Origin));
+            resolved.Add(new ResolvedOption(id, value, origin, [..candidates[i] ?? []], refused[i]?.Origin));
         }
 
         Expand(winners, winnerDocument, applied, builder);
@@ -232,7 +235,7 @@ public static class OptionResolver {
 
             var effective = options.GetText((OptionId)i);
             errors.Add(
-                new OptionValueError(
+                new(
                     (OptionId)i,
                     origin.Spelling,
                     origin.Value,

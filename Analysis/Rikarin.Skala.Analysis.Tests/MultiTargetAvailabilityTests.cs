@@ -40,6 +40,11 @@ public sealed class MultiTargetAvailabilityTests {
     /// <summary>#351's rule: a <c>languageVersion</c> floor rather than a missing type.</summary>
     const string FileScopedNamespace = "SK1005";
 
+    /// <summary>One spelling of the fixture's file names (<c>SK7083</c>: five literals per file).</summary>
+    const string ProjectFile = "Probe.csproj";
+
+    const string SourceFile = "Probe.cs";
+
     const string MultiTargeted = """
                                  <Project Sdk="Microsoft.NET.Sdk">
                                    <PropertyGroup>
@@ -99,6 +104,28 @@ public sealed class MultiTargetAvailabilityTests {
 
                                         """;
 
+    /// <summary>#511's rule: a member one moniker lacks, on a type both have.</summary>
+    const string GenericEnumGetvalues = "SK1035";
+
+    /// <summary>#511's shape: <c>SK1035</c> fires on it wherever <c>GetValues&lt;T&gt;()</c> exists.</summary>
+    const string EnumSource = """
+                              namespace Probe;
+
+                              public enum AlarmId { Low, High }
+
+                              public static class Alarms {
+                                  public static int Count() {
+                                      var count = 0;
+                                      foreach (AlarmId id in Enum.GetValues(typeof(AlarmId))) {
+                                          count++;
+                                      }
+
+                                      return count;
+                                  }
+                              }
+
+                              """;
+
     /// <summary>The issue's reproduction, unchanged.</summary>
     const string Source = """
                           namespace Probe;
@@ -119,12 +146,12 @@ public sealed class MultiTargetAvailabilityTests {
     [Fact]
     public void MultiTargetedProject_WithholdsALockRewriteNoOlderFrameworkCanCompile() {
         using var scratch = new Scratch();
-        var project = scratch.Write("Probe.csproj", MultiTargeted);
-        var source = scratch.Write("Probe.cs", Source);
+        var project = scratch.Write(ProjectFile, MultiTargeted);
+        var source = scratch.Write(SourceFile, Source);
         Restore(project);
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,
@@ -169,7 +196,7 @@ public sealed class MultiTargetAvailabilityTests {
 
         // `fix --safe` has nothing to apply, so the file is untouched and every moniker still builds.
         var fixResult = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -186,6 +213,67 @@ public sealed class MultiTargetAvailabilityTests {
     }
 
     /// <summary>
+    ///     #511: the same union, decided by a <em>member</em> of a type every moniker has.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The issue's reproduction, minus the project around it: <c>Enum.GetValues(typeof(T))</c> in a
+    ///     <c>foreach</c> on <c>netstandard2.1;net10.0</c>. <c>System.Enum</c> resolves on both legs, so a
+    ///     guard that watched type lookups saw nothing; <c>GetValues&lt;T&gt;()</c> is .NET 5+, and
+    ///     <c>skala fix</c> reverted the rewrite with <c>CS0308</c> while <c>check</c> kept reporting it.
+    ///     The single-target control is <c>SK1035</c>'s own positive fixtures, which still fire.
+    /// </remarks>
+    [Fact]
+    public void MultiTargetedProject_WithholdsAGenericGetValuesTheOlderFrameworkLacks() {
+        using var scratch = new Scratch();
+        var project = scratch.Write(ProjectFile, MultiTargeted);
+        var source = scratch.Write(SourceFile, EnumSource);
+        Restore(project);
+
+        var loaded = ProjectLoader.Load(
+            new() {
+                RepositoryRoot = scratch.Root,
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                Paths = [scratch.Root],
+                AllowFallback = false
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        // ⚠ The instrument: both legs have `System.Enum`, and only the newer one has the overload.
+        Assert.Equal(2, loaded.Units.Length);
+        var old = Assert.Single(
+            loaded.Units,
+            static unit => unit.TargetFramework.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase)
+        );
+
+        var current = Assert.Single(loaded.Units, unit => !ReferenceEquals(unit, old));
+        Assert.False(HasGenericGetValues(old.Compilation));
+        Assert.True(HasGenericGetValues(current.Compilation));
+
+        var (result, report) = CheckCommand.Run(
+            new() {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                Output = string.Empty,
+                Rules = [GenericEnumGetvalues],
+                NoCache = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.NotEqual(ExitCodes.LoadFailure, result.ExitCode);
+        Assert.DoesNotContain(report.Reportable, static finding => finding.RuleId == GenericEnumGetvalues);
+        AssertEveryTargetFrameworkCompiles(scratch.Root, project, source);
+    }
+
+    static bool HasGenericGetValues(Compilation compilation) =>
+        compilation.GetTypeByMetadataName("System.Enum") is { } type
+        && type.GetMembers("GetValues").OfType<IMethodSymbol>().Any(static method => method.Arity == 1);
+
+    /// <summary>
     ///     ⚠ The other half of the pair: the rule must not have been disabled into silence.
     /// </summary>
     /// <remarks>
@@ -198,8 +286,8 @@ public sealed class MultiTargetAvailabilityTests {
     [Fact]
     public void SingleTargetedProject_StillReportsAndFixesInTheShapeArrangeLeavesAlone() {
         using var scratch = new Scratch();
-        var project = scratch.Write("Probe.csproj", SingleTargeted);
-        var source = scratch.Write("Probe.cs", Source);
+        var project = scratch.Write(ProjectFile, SingleTargeted);
+        var source = scratch.Write(SourceFile, Source);
 
         var request = new CheckRequest {
             RepositoryRoot = scratch.Root,
@@ -216,7 +304,7 @@ public sealed class MultiTargetAvailabilityTests {
         Assert.True(finding.HasFix);
 
         var fixResult = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -239,7 +327,7 @@ public sealed class MultiTargetAvailabilityTests {
         // ⚠ With the compilations supplied, because `ObjectCreationRule.NeedsSemantics` is true and a
         // syntactic-only `arrange` never asks the question — it would pass over the long form too.
         var reloaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,
@@ -250,12 +338,12 @@ public sealed class MultiTargetAvailabilityTests {
         );
 
         var arranged = ArrangeCommand.Run(
-            new ArrangeRequest {
+            new() {
                 Paths = [scratch.Root],
                 RepositoryRoot = scratch.Root,
                 Check = true,
                 Quiet = true,
-                Compilations = _ => [.. reloaded.Units.Select(static unit => unit.Compilation)]
+                Compilations = _ => [..reloaded.Units.Select(static unit => unit.Compilation)]
             },
             TestContext.Current.CancellationToken
         );
@@ -289,12 +377,12 @@ public sealed class MultiTargetAvailabilityTests {
     [Fact]
     public void MultiTargetedProject_WithholdsARewriteAnOlderMonikersLanguageVersionCannotParse() {
         using var scratch = new Scratch();
-        var project = scratch.Write("Probe.csproj", MultiTargetedDefaultLanguage);
-        var source = scratch.Write("Probe.cs", BlockNamespaceSource);
+        var project = scratch.Write(ProjectFile, MultiTargetedDefaultLanguage);
+        var source = scratch.Write(SourceFile, BlockNamespaceSource);
         Restore(project);
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,
@@ -346,7 +434,7 @@ public sealed class MultiTargetAvailabilityTests {
         Assert.DoesNotContain(report.Reportable, static finding => finding.RuleId == FileScopedNamespace);
 
         var fixResult = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -374,11 +462,11 @@ public sealed class MultiTargetAvailabilityTests {
     [Fact]
     public void SingleTargetedProject_StillConvertsTheNamespaceAtTheDefaultLanguageVersion() {
         using var scratch = new Scratch();
-        var project = scratch.Write("Probe.csproj", SingleTargetedDefaultLanguage);
-        var source = scratch.Write("Probe.cs", BlockNamespaceSource);
+        var project = scratch.Write(ProjectFile, SingleTargetedDefaultLanguage);
+        var source = scratch.Write(SourceFile, BlockNamespaceSource);
 
         var (_, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -394,7 +482,7 @@ public sealed class MultiTargetAvailabilityTests {
         Assert.True(finding.HasFix);
 
         var fixResult = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -435,8 +523,8 @@ public sealed class MultiTargetAvailabilityTests {
     [Fact]
     public void MultiTargetedBinlog_GroupsTheMonikersTheSameWayTheWorkspaceDoes() {
         using var scratch = new Scratch();
-        var project = scratch.Write("Probe.csproj", MultiTargetedDefaultLanguage);
-        scratch.Write("Probe.cs", BlockNamespaceSource);
+        var project = scratch.Write(ProjectFile, MultiTargetedDefaultLanguage);
+        scratch.Write(SourceFile, BlockNamespaceSource);
 
         // ⚠ Cuts the Directory.Build.props chain. `Scratch` roots under the temp directory today, but
         // an inherited `<LangVersion>` would make both monikers equal and quietly void the assertion
@@ -446,7 +534,7 @@ public sealed class MultiTargetAvailabilityTests {
         Build(project, binlog);
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Mode = LoadMode.Binlog,
                 BinlogPath = binlog,
@@ -464,6 +552,17 @@ public sealed class MultiTargetAvailabilityTests {
 
         var versions = loaded.Units.Select(static unit => unit.Compilation.LanguageVersion).ToHashSet();
         Assert.Equal(2, versions.Count);
+
+        // #517: the compiler the build ran is kept off the recorded `csc` line — measured as the SDK's
+        // `…/sdk/<version>/Roslyn/bincore/csc.exe` on Windows — and reaches the analyzers.
+        Assert.All(
+            loaded.Units,
+            static unit => {
+                Assert.Matches(@"[\\/]csc(\.exe|\.dll)?$", unit.CompilerPath);
+                var (options, _, _) = Hosting.EditorConfigOptions.For(unit, Path.GetDirectoryName(unit.ProjectPath)!);
+                Assert.Equal(unit.CompilerPath, Rules.CompilerIdentity.PathOf(options));
+            }
+        );
     }
 
     /// <summary>⚠ A binlog is the record of a real build, so one has to be run to get a real one.</summary>
@@ -524,7 +623,7 @@ public sealed class MultiTargetAvailabilityTests {
     /// </remarks>
     internal static void AssertEveryTargetFrameworkCompiles(string root, string project, string source) {
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = root,
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,

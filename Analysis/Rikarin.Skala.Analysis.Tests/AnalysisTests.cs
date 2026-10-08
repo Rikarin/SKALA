@@ -146,7 +146,7 @@ public sealed class AnalysisTests {
         scratch.Write("Holder.cs", NeedsModernizing);
 
         var dirty = VerifyCommand.Run(
-            new VerifyRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
             TestContext.Current.CancellationToken
         );
 
@@ -156,7 +156,7 @@ public sealed class AnalysisTests {
         clean.Write("Clean.cs", "namespace Scratch;\n\npublic sealed class Clean;\n");
 
         var result = VerifyCommand.Run(
-            new VerifyRequest { RepositoryRoot = clean.Root, Paths = [clean.Root], NoCache = true },
+            new() { RepositoryRoot = clean.Root, Paths = [clean.Root], NoCache = true },
             TestContext.Current.CancellationToken
         );
 
@@ -173,9 +173,7 @@ public sealed class AnalysisTests {
         var before = File.ReadAllText(path);
 
         var result = VerifyCommand.Run(
-            new VerifyRequest {
-                RepositoryRoot = scratch.Root, Paths = [scratch.Root], Mode = LoadMode.Loose, NoCache = true
-            },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root], Mode = LoadMode.Loose, NoCache = true },
             TestContext.Current.CancellationToken
         );
 
@@ -192,7 +190,7 @@ public sealed class AnalysisTests {
         var path = scratch.Write("Holder.cs", NeedsModernizing);
 
         FixCommand.Run(
-            new FixRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root] },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root] },
             TestContext.Current.CancellationToken
         );
 
@@ -212,7 +210,7 @@ public sealed class AnalysisTests {
         scratch.Write("Holder.cs", NeedsModernizing);
 
         var result = FixCommand.Run(
-            new FixRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], SafeOnly = false },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root], SafeOnly = false },
             TestContext.Current.CancellationToken
         );
 
@@ -226,7 +224,7 @@ public sealed class AnalysisTests {
         var before = File.ReadAllText(path);
 
         FixCommand.Run(
-            new FixRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], DryRun = true },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root], DryRun = true },
             TestContext.Current.CancellationToken
         );
 
@@ -239,7 +237,7 @@ public sealed class AnalysisTests {
         scratch.Write("bad_name.cs", "public sealed class bad_name;\n");
 
         var result = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Loose,
@@ -259,7 +257,7 @@ public sealed class AnalysisTests {
         scratch.Write("bad_name.cs", "public sealed class bad_name;\n");
 
         var result = FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
@@ -482,12 +480,12 @@ public sealed class AnalysisTests {
         // One warm-up: the first call in a process pays Roslyn's static initialisation and the
         // framework reference read, which the daemon pays once and a hook never pays at all.
         VerifyCommand.Run(
-            new VerifyRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
             TestContext.Current.CancellationToken
         );
 
         var result = VerifyCommand.Run(
-            new VerifyRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
+            new() { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
             TestContext.Current.CancellationToken
         );
 

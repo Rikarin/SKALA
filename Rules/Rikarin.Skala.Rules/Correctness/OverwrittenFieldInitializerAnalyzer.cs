@@ -353,7 +353,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        facts.Candidates.Add(new Candidate(field, value.GetLocation(), span));
+        facts.Candidates.Add(new(field, value.GetLocation(), span));
     }
 
     /// <summary>
@@ -434,7 +434,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
              current is { SpecialType: not SpecialType.System_Object };
              current = current.BaseType) {
             if (current.GetMembers()
-                    .Any(static member => member is IMethodSymbol { MethodKind: MethodKind.Destructor })) {
+                .Any(static member => member is IMethodSymbol { MethodKind: MethodKind.Destructor })) {
                 return true;
             }
         }

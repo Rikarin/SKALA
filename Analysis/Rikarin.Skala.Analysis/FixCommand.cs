@@ -109,7 +109,7 @@ public static class FixCommand {
             ?? (namingRequested
                     ? LoadMode.Workspace
                     : ProjectLoader.ResolveAutoMode(
-                        new LoadRequest {
+                        new() {
                             RepositoryRoot = root,
                             Mode = LoadMode.Workspace,
                             ProjectPath = request.ProjectPath,
@@ -123,7 +123,7 @@ public static class FixCommand {
         // re-bind was skipped in the first place (#344).
         LoadedProject? loaded = null;
         var (checkResult, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 Paths = request.Paths,
                 RepositoryRoot = root,
                 Mode = mode,
@@ -161,7 +161,7 @@ public static class FixCommand {
             // after a written rename rather than applying a perfectly valid edit at a stale span.
             if (naming.Applied > 0 && !request.DryRun) {
                 (_, report) = CheckCommand.Run(
-                    new CheckRequest {
+                    new() {
                         Paths = request.Paths,
                         RepositoryRoot = root,
                         Mode = mode,
@@ -219,7 +219,7 @@ public static class FixCommand {
                      .SelectMany(static finding => finding.Fix.Select(edit => (finding, edit)))
                      .GroupBy(static pair => pair.edit.Path, StringComparer.Ordinal)
                      .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
-            var outcome = ApplyToFile(group.Key, [.. group], request, root, safety, cancellation);
+            var outcome = ApplyToFile(group.Key, [..group], request, root, safety, cancellation);
             applied += outcome.Applied;
             if (outcome.Applied > 0 && !outcome.Reverted) {
                 changedFiles.Add(group.Key);
@@ -235,7 +235,7 @@ public static class FixCommand {
         if (applied > 0 && !request.DryRun) {
             // ⚠ Formatting last, over the files that changed. See the type's remarks.
             FormatCommand.Run(
-                new FormatRequest {
+                new() {
                     Paths = changedFiles.Order(StringComparer.Ordinal).ToList(),
                     RepositoryRoot = root,
                     Quiet = true,
@@ -366,7 +366,7 @@ public static class FixCommand {
             // suppression mechanisms are the only four there are, and this is not a fifth. What the
             // tag forbids is the *rewrite*: report, never rewrite. An edit is dropped silently, the
             // same way an overlapping one is, and `skala check` goes on naming the line.
-            if (guard.Touches(new Microsoft.CodeAnalysis.Text.TextSpan(edit.Start, edit.End - edit.Start))) {
+            if (guard.Touches(new(edit.Start, edit.End - edit.Start))) {
                 continue;
             }
 

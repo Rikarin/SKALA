@@ -134,13 +134,13 @@ public static class FuzzMutations {
     ) {
         var pool = names is null
             ? Catalogue
-            : [.. Catalogue.Where(entry => names.Contains(entry.Name, StringComparer.Ordinal))];
+            : [..Catalogue.Where(entry => names.Contains(entry.Name, StringComparer.Ordinal))];
 
         if (pool.Length == 0) {
             return null;
         }
 
-        var chosen = random.Pick(pool, [.. pool.Select(static entry => entry.Weight)]);
+        var chosen = random.Pick(pool, [..pool.Select(static entry => entry.Weight)]);
         var text = Apply(chosen.Name, source, random, symbols);
         return text is null || string.Equals(text, source, StringComparison.Ordinal)
             ? null
@@ -485,7 +485,7 @@ public static class FuzzMutations {
         random.Shuffle(indices);
         indices.RemoveRange(count, indices.Count - count);
         indices.Sort();
-        return [.. indices.Select(index => items[index])];
+        return [..indices.Select(index => items[index])];
     }
 
     /// <summary>Applies non-overlapping edits, right to left.</summary>
@@ -888,7 +888,10 @@ public static class FuzzMutations {
                         && !InVerbatimRegion(start)) {
                         var gap = TextSpan.FromBounds(start, end);
                         gaps.Add(gap);
-                        if (!SpaceRules.Preserves(previous, token) && !InOtherDisabledText(start)) {
+                        // ⚠ The oracle's predicate rather than Skala's (#513): a spread's gap is
+                        // governed by Skala now, but the scramble's fixtures are the oracle's answer
+                        // for the undegraded file, and the oracle keeps whatever a mutation writes there.
+                        if (!SpaceRules.OracleKeepsTheAuthorsGap(previous, token) && !InOtherDisabledText(start)) {
                             absorbable.Add(gap);
                         }
                     }
@@ -1020,7 +1023,7 @@ public static class FuzzMutations {
             // ⚠ Ordinal order, not dictionary order. A `Dictionary`'s enumeration order is not part
             // of its contract, and a fuzzer whose choice depends on it is a fuzzer whose seed does
             // not reproduce its run.
-            Identifiers = [.. identifiers.Keys.Order(StringComparer.Ordinal)];
+            Identifiers = [..identifiers.Keys.Order(StringComparer.Ordinal)];
         }
     }
 }

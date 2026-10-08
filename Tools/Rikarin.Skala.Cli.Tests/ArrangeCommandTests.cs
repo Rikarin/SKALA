@@ -510,7 +510,7 @@ public sealed class ArrangeCommandTests {
         return result;
     }
 
-    static string[] Names(string list) => [.. list.Trim().Split(", ").Order(StringComparer.Ordinal)];
+    static string[] Names(string list) => [..list.Trim().Split(", ").Order(StringComparer.Ordinal)];
 
     static string Render(IReadOnlyDictionary<string, string[]> map) =>
         string.Join(

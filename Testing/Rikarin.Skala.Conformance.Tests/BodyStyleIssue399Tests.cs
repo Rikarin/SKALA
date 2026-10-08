@@ -191,6 +191,74 @@ public sealed class BodyStyleIssue399Tests {
         Assert.Contains(expected, arranged, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     #463: one <c>//</c> comment trailing the only statement is carried behind the new semicolon,
+    ///     at both values of the heuristic.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured against <c>jb cleanupcode</c> 2025.2.6 under <c>SkalaCleanup</c> at each value, and
+    ///     the issue's "at <c>true</c> both engines keep the block" is refuted: the oracle converts every
+    ///     row here at the export's <c>true</c> as well. The corpus construct
+    ///     <c>constructs/arrangement/body-style/trailing-comment.cs</c> pins the same rows through the
+    ///     formatter.
+    /// </remarks>
+    [Theory]
+    [InlineData("true", "public int M() { return 1; // c\n }", "public int M() => 1; // c")]
+    [InlineData("false", "public int M() { return 1; // c\n }", "public int M() => 1; // c")]
+    [InlineData("true", "public int P { get { return _n; // c\n } }", "public int P => _n; // c")]
+    [InlineData("true", "public int P { get => _n; // c\n }", "public int P => _n; // c")]
+    [InlineData("false", "public int P { get => _n; // c\n }", "public int P => _n; // c")]
+    [InlineData(
+        "true",
+        "public int P { get { return _n; } set { _n = value; // c\n } }",
+        "public int P { get => _n; set => _n = value; // c"
+    )]
+    [InlineData(
+        "false",
+        "public void M() { Console.WriteLine(); // c\n }",
+        "public void M() => Console.WriteLine(); // c"
+    )]
+    [InlineData(
+        "false",
+        "public void M() { throw new Exception(); // c\n }",
+        "public void M() => throw new Exception(); // c"
+    )]
+    public void ATrailingLineComment_RidesBehindTheSemicolon(string heuristics, string member, string expected) {
+        var arranged = Arrange(
+            member,
+            [new KeyValuePair<string, string>("skala_use_heuristics_for_body_style", heuristics)]
+        );
+        Assert.Contains(expected, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     #463's declined placements: the oracle converts every one of these too, and each needs a
+    ///     placement rule body style does not have, so Skala keeps the block.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Pinned as Skala's own answer, and each is a divergence recorded in SK-DIV-0086: a trailing
+    ///     <c>/* … */</c> (the oracle writes <c>=&gt; 3 /* c */;</c>), a comment after the closing brace or
+    ///     on its own line before it (the oracle moves it to a line of its own after the member), a
+    ///     second trailing comment, and a comment above the statement (the oracle writes it between the
+    ///     <c>=&gt;</c> and the value — at the export's <c>true</c> as well, which the heuristic's "no
+    ///     comment" condition was believed to rule out).
+    /// </remarks>
+    [Theory]
+    [InlineData("public int M() { return 3; /* c */ }")]
+    [InlineData("public int M() { return 3; // c\n } // d\n")]
+    [InlineData("public int M() { return 3; // c\n // d\n }")]
+    [InlineData("public int M() { // c\n return 3; }")]
+    [InlineData("public int M() { return /* c */ 3; }")]
+    public void AnyOtherComment_KeepsTheBlock(string member) {
+        foreach (var heuristics in (string[])["true", "false"]) {
+            var arranged = Arrange(
+                member,
+                [new KeyValuePair<string, string>("skala_use_heuristics_for_body_style", heuristics)]
+            );
+            Assert.Contains("public int M() { ", arranged, StringComparison.Ordinal);
+        }
+    }
+
     static string Arrange(string member, IReadOnlyList<KeyValuePair<string, string>>? overrides = null) {
         const string path = "/arrangement/Probe399.cs";
         var source = Prelude + "    " + member + "\n}\n";
@@ -200,7 +268,7 @@ public sealed class BodyStyleIssue399Tests {
             "probe399",
             [tree],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -214,14 +282,15 @@ public sealed class BodyStyleIssue399Tests {
         );
 
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"),
-            overrides
-        ).Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"),
+                overrides
+            )
+            .Options;
 
         var result = Arranger.Arrange(
             path,
             text,
-            new ArrangementOptions(options),
+            new(options),
             compilation,
             null,
             null,

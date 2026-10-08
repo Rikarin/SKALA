@@ -55,7 +55,7 @@ public sealed class SelfCollectionArgumentAnalyzer : DiagnosticAnalyzer {
     ///     for an instance member and the index after the source for an <c>Enumerable</c> extension.
     /// </remarks>
     static readonly (string Type, string Method, int Index, string Consequence)[] Table = [
-        .. Sets(), ("System.Collections.Generic.List`1", "AddRange", 0, "appends the list to itself and doubles it"),
+        ..Sets(), ("System.Collections.Generic.List`1", "AddRange", 0, "appends the list to itself and doubles it"),
         ("System.Collections.Generic.List`1", "InsertRange", 1, "splices the list into itself and doubles it"),
         ("System.Array", "CopyTo", 0, "copies the array over itself"),
         ("System.Linq.Enumerable", "SequenceEqual", 0, "is always true"),
@@ -100,7 +100,7 @@ public sealed class SelfCollectionArgumentAnalyzer : DiagnosticAnalyzer {
                 var entries = new List<Entry>();
                 foreach (var (type, method, index, consequence) in Table) {
                     if (start.Compilation.GetTypeByMetadataName(type) is { } symbol) {
-                        entries.Add(new Entry(symbol, method, index, consequence));
+                        entries.Add(new(symbol, method, index, consequence));
                     }
                 }
 

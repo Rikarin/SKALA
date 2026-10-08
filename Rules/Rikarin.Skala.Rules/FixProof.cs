@@ -519,10 +519,10 @@ public static class FixRebind {
     /// </remarks>
     public static ISymbol? AsExpression(SemanticModel model, int position, TypeSyntax written) =>
         model.GetSpeculativeSymbolInfo(
-            position,
-            SyntaxFactory.ParseTypeName(written.ToString()),
-            SpeculativeBindingOption.BindAsExpression
-        )
+                position,
+                SyntaxFactory.ParseTypeName(written.ToString()),
+                SpeculativeBindingOption.BindAsExpression
+            )
             .Symbol;
 
     /// <summary>

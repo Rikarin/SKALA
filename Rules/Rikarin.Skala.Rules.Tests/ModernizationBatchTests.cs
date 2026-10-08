@@ -241,7 +241,7 @@ public sealed class ModernizationBatchTests {
         var diagnostics = Analyze(before);
         Assert.Equal(expectedFixes, diagnostics.Length);
         var edits = diagnostics.Select(static diagnostic => new TextChange(
-                    new TextSpan(
+                    new(
                         int.Parse(
                             diagnostic.Properties[FixEdits.StartKey(0)]!,
                             System.Globalization.CultureInfo.InvariantCulture

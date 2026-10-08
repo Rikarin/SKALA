@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Async;
 
@@ -290,9 +291,9 @@ internal static class CancellationTokens {
 
         var list = invocation.ArgumentList;
         return arguments.Count == 0
-            ? new Forward(new TextSpan(list.CloseParenToken.SpanStart, 0), argument, target.Name)
+            ? new Forward(new(list.CloseParenToken.SpanStart, 0), argument, target.Name)
             : new Forward(
-                new TextSpan(arguments[arguments.Count - 1].Span.End, 0),
+                new(arguments[arguments.Count - 1].Span.End, 0),
                 ", " + argument,
                 target.Name
             );
@@ -308,4 +309,40 @@ internal static class CancellationTokens {
         System.Threading.CancellationToken cancellation
     ) =>
         Forwarding(model, invocation, tokenType, "cancellationToken", cancellation) is not null;
+
+    /// <summary>
+    ///     Whether every other target framework compiling this file would forward the token the same way.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #511's sweep. The token goes to an <em>overload</em> or an optional parameter, and those are
+    ///     per framework while the method itself is not: <c>Stream.CopyToAsync(Stream, CancellationToken)</c>
+    ///     is netstandard2.1+, <c>TextReader.ReadLineAsync(CancellationToken)</c> is .NET 7+. The
+    ///     <c>net10.0</c> leg of a multi-targeted project reported the call, and appending the token on the
+    ///     <c>netstandard2.0</c> leg is <c>CS1503</c>. The question depends on the call, so it is asked per
+    ///     site, of the sibling's own binding of the same node. Shared by <c>SK3004</c> and <c>SK3051</c>,
+    ///     whose fix forwards to every call this approves.
+    /// </remarks>
+    public static bool EverySiblingForwards(
+        InvocationExpressionSyntax invocation,
+        Forward forward,
+        string available,
+        ImmutableDictionary<string, ImmutableArray<Compilation>> siblings,
+        System.Threading.CancellationToken cancellation
+    ) {
+        if (siblings.IsEmpty || !siblings.TryGetValue(invocation.SyntaxTree.FilePath, out var others)) {
+            return true;
+        }
+
+        foreach (var sibling in others) {
+            if (sibling.GetTypeByMetadataName("System.Threading.CancellationToken") is not { } token
+                || !FrameworkAvailability.TryCounterpart(sibling, invocation, cancellation, out var model, out var twin)
+                || Forwarding(model, twin, token, available, cancellation) is not { } there
+                || there.Span != forward.Span
+                || !string.Equals(there.Text, forward.Text, StringComparison.Ordinal)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

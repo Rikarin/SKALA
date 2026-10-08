@@ -22,7 +22,7 @@ public static class ArrangementFindings {
         var findings = ImmutableArray.CreateBuilder<Finding>();
         var incomplete = false;
         var command = ArrangeCommand.Run(
-            new ArrangeRequest {
+            new() {
                 Paths = paths,
                 RepositoryRoot = repositoryRoot,
                 Check = true,
@@ -56,7 +56,7 @@ public static class ArrangementFindings {
             // could not inspect every requested file" named a command line nobody typed; `verify`
             // runs three stages and the reader's first question is which of them stopped.
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     FormatDiagnosticIds.FileIoFailed,
                     SkalaSeverity.Error,
                     "the arrange stage could not inspect every requested file; the files it names above "
@@ -90,7 +90,7 @@ public static class ArrangementFindings {
         // One finding per document: all arrangement rules contribute to a single fixed-point diff,
         // so separate findings would carry overlapping instructions for the same structural edit.
         findings.Add(
-            new Finding {
+            new() {
                 RuleId = applied[0],
                 Severity = SkalaSeverity.Info,
                 Message = "the file is not arranged ("

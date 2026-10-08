@@ -67,7 +67,7 @@ public static class XmlDocFidelity {
 
             var outcome = XmlDocFormatter.Rewrite(
                 without,
-                new XmlDocOptions(options),
+                new(options),
                 CSharpFormatter.ParseOptions,
                 "\n"
             );

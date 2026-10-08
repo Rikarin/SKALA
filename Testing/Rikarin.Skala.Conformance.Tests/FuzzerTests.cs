@@ -80,7 +80,7 @@ public sealed class FuzzerTests {
     public void TheGrammar_EmitsNoParseErrors() {
         var broken = new List<string>();
         for (var index = 0; index < 250; index++) {
-            var source = FuzzGenerator.Compile(new FuzzRandom(FuzzRandom.Derive(7, index)));
+            var source = FuzzGenerator.Compile(new(FuzzRandom.Derive(7, index)));
             var errors = CSharpSyntaxTree
                 .ParseText(
                     SourceText.From(source),
@@ -199,7 +199,7 @@ public sealed class FuzzerTests {
             var mutated = FuzzMutations.Apply(
                 FuzzMutations.WidenIdentifier,
                 source,
-                new FuzzRandom(FuzzRandom.Derive(37, index)),
+                new(FuzzRandom.Derive(37, index)),
                 []
             );
 
@@ -308,7 +308,7 @@ public sealed class FuzzerTests {
     /// </remarks>
     [Fact]
     public void TheMinimiser_ReturnsSomethingSmallerThatStillFails() {
-        var source = FuzzGenerator.Compile(new FuzzRandom(99));
+        var source = FuzzGenerator.Compile(new(99));
         var marked = "class Marker { void Keep() { Trigger(); } }\n" + source;
         var budget = new MinimiseBudget(4000);
         var reduced = FuzzMinimiser.Minimise(
@@ -485,7 +485,7 @@ public sealed class FuzzerTests {
             var text = FuzzMutations.Apply(
                 FuzzMutations.WidenGap,
                 source,
-                new FuzzRandom(seed),
+                new(seed),
                 Corpus.PropertySymbols
             );
             if (text is null) {
@@ -575,8 +575,15 @@ public sealed class FuzzerTests {
         );
         Assert.Equal(gaps.Length, oracleGaps.Length);
 
-        // As written, first: the flipped claims below are read off this one.
-        Assert.Equal(oracle, TextNormalisation.Normalise(CorpusFormatter.Format(file, source, defined).Formatted));
+        // As written, first: the flipped claims below are read off this one. ⚠ With the spread's gap
+        // taken out of both sides: the construct writes it three ways, the oracle keeps all three, and
+        // Skala now governs it on purpose (#513, SK-DIV-0310), so it is no longer one of these gaps.
+        Assert.Equal(
+            SkalaGovernedGaps.Normalise(oracle),
+            SkalaGovernedGaps.Normalise(
+                TextNormalisation.Normalise(CorpusFormatter.Format(file, source, defined).Formatted)
+            )
+        );
         for (var i = 0; i < gaps.Length; i++) {
             if (gaps[i].Spaced is { } wrote) {
                 Assert.Equal(wrote, oracleGaps[i].Spaced);
@@ -590,13 +597,16 @@ public sealed class FuzzerTests {
             }
         }
 
-        flips.Add([.. flips.Select(static flip => flip[0])]);
+        flips.Add([..flips.Select(static flip => flip[0])]);
         foreach (var flip in flips) {
-            var input = FuzzProperties.FlipUngovernedGaps(source, [.. flip.Select(i => gaps[i])])!;
-            var expected = FuzzProperties.FlipUngovernedGaps(oracle, [.. flip.Select(i => oracleGaps[i])])!;
+            var input = FuzzProperties.FlipUngovernedGaps(source, [..flip.Select(i => gaps[i])])!;
+            var expected = FuzzProperties.FlipUngovernedGaps(oracle, [..flip.Select(i => oracleGaps[i])])!;
             var first = CorpusFormatter.Format(file, input, defined);
             Assert.Equal(FormatOutcome.Formatted, first.Outcome);
-            Assert.Equal(TextNormalisation.Normalise(expected), TextNormalisation.Normalise(first.Formatted));
+            Assert.Equal(
+                SkalaGovernedGaps.Normalise(TextNormalisation.Normalise(expected)),
+                SkalaGovernedGaps.Normalise(TextNormalisation.Normalise(first.Formatted))
+            );
 
             var second = CorpusFormatter.Format(file, first.Formatted, defined);
             Assert.Empty(second.Edits);
@@ -648,7 +658,7 @@ public sealed class FuzzerTests {
     [Fact]
     public void AShortRun_ReachesTheFormatter() {
         var report = Fuzzer.Run(
-            new FuzzOptions {
+            new() {
                 Seed = 3,
                 Cases = 250,
                 Mode = FuzzMode.Both,

@@ -27,10 +27,10 @@ public static class Arranger {
     ///     becomes <c>List&lt;int&gt; x = new()</c> and then cannot become <c>var</c> at all, and the
     ///     output disagrees with the oracle on every local declaration in the corpus.
     ///     <para>
-    ///         ⚠ <see cref="ArgumentStyleRule" /> must precede <see cref="ObjectCreationRule" />, for a second
-    ///         instance of the same shape: <c>f(other: new object())</c> is not target-typed while the name
-    ///         is still on it. Run the other way round, the argument loses its name and keeps its
-    ///         <c>new object()</c> where the oracle writes <c>new()</c>.
+    ///         <see cref="ArgumentStyleRule" /> precedes <see cref="ObjectCreationRule" />. ⚠ This used to be
+    ///         load-bearing — <c>f(other: new object())</c> was not target-typed while the name was still on
+    ///         it — and since #461 it is not: an argument is a target-typed position named or not, and
+    ///         <c>Pair(b: new(), a: new())</c> is the oracle's own answer for an out-of-order pair.
     ///     </para>
     ///     <para>
     ///         <see cref="BodyStyleRule" /> runs after every rule that rewrites the expression it lifts into
@@ -100,7 +100,7 @@ public static class Arranger {
             // and left byte-identical. Arranging a broken tree is how a broken file becomes a
             // differently broken one.
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     FormatDiagnosticIds.NotParseable,
                     SkalaSeverity.Warning,
                     "not arranged, the file does not parse: "
@@ -196,10 +196,10 @@ public static class Arranger {
             // loop that can know in advance which node will do it. The finding was SK-FUZZ-0012.
             SyntaxNode rewritten;
             try {
-                rewritten = rule.Apply(new ArrangementContext(current, model, options, guard));
+                rewritten = rule.Apply(new(current, model, options, guard));
             } catch (Exception exception) when (exception is not OperationCanceledException) {
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         ArrangeIds.RuleThrew,
                         SkalaSeverity.Warning,
                         $"the {ArrangeIds.NameOf(rule.Id)} rule ({rule.Id}) threw and was skipped; "

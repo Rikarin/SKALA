@@ -248,7 +248,7 @@ public static class IntAlign {
 
     static void Flush(List<List<Row>> runs, List<Row> run) {
         if (run.Count > 1) {
-            runs.Add([.. run]);
+            runs.Add([..run]);
         }
 
         run.Clear();
@@ -374,7 +374,7 @@ public static class IntAlign {
                 node is MethodDeclarationSyntax method ? ParameterSlots(method.ParameterList) : default,
             Kind.Invocations =>
                 node is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation }
-                    ? [.. invocation.ArgumentList.Arguments.Select(static argument => argument.SpanStart)]
+                    ? [..invocation.ArgumentList.Arguments.Select(static argument => argument.SpanStart)]
                     : default,
 
             // ⚠ The `:` and not the subpattern's start. `ExpressionColon` rather than `NameColon`
@@ -474,7 +474,7 @@ public static class IntAlign {
                     }
                 }
 
-                run.Add(new Row(line.Start, One(slot)));
+                run.Add(new(line.Start, One(slot)));
                 previousLine = line.LineNumber;
             }
 
@@ -515,7 +515,7 @@ public static class IntAlign {
                 Flush(runs, run);
             }
 
-            run.Add(new Row(line.Start, One(trivia.SpanStart)));
+            run.Add(new(line.Start, One(trivia.SpanStart)));
             previousLine = line.LineNumber;
         }
 

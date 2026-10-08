@@ -165,7 +165,7 @@ internal static class OptionRegistryReader {
                     continue;
                 }
 
-                values.Add(new OptionEnumValue(name, Naming.Pascal(name), value["summary"].AsString() ?? string.Empty));
+                values.Add(new(name, Naming.Pascal(name), value["summary"].AsString() ?? string.Empty));
             }
 
             var aliases = member.Value["valueAliases"]
@@ -174,7 +174,7 @@ internal static class OptionRegistryReader {
                 .OrderBy(static a => a.Key, StringComparer.Ordinal)
                 .ToList();
 
-            enums.Add(new OptionEnum(member.Key, values, aliases));
+            enums.Add(new(member.Key, values, aliases));
         }
 
         var options = new List<OptionEntry>();
@@ -194,7 +194,7 @@ internal static class OptionRegistryReader {
             };
 
             options.Add(
-                new OptionEntry(
+                new(
                     key,
                     item["aliases"].AsStringList(),
                     bridge.TryGetValue(key, out var export) ? export : [],

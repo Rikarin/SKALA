@@ -145,7 +145,7 @@ int PairwisePlanOnly() {
 int Pairwise() {
     if (OracleRunner.FindExecutableOrNull() is null) {
         Console.Error.WriteLine(
-            "jb (JetBrains.Skala.GlobalTools) is not installed. The pairwise sweep is a nightly job "
+            "jb (JetBrains.ReSharper.GlobalTools) is not installed. The pairwise sweep is a nightly job "
             + "and a developer-machine dependency (ADR-011); the committed table is what the fast path reads."
         );
         return 3;
@@ -183,7 +183,7 @@ int Pairwise() {
         );
     }
 
-    var run = new PairwiseSweep(new OracleRunner(), config, Console.Out, alone).Run(pairs);
+    var run = new PairwiseSweep(new(), config, Console.Out, alone).Run(pairs);
 
     var output = Flag("--out")
         ?? Path.Combine(
@@ -214,14 +214,14 @@ int Measure(out SweepRun? measured) {
     measured = null;
     if (OracleRunner.FindExecutableOrNull() is null) {
         Console.Error.WriteLine(
-            "jb (JetBrains.Skala.GlobalTools) is not installed. The sweep is a nightly job and a "
+            "jb (JetBrains.ReSharper.GlobalTools) is not installed. The sweep is a nightly job and a "
             + "developer-machine dependency (ADR-011); the committed table is what the fast path reads."
         );
         return 3;
     }
 
     var config = Corpus.OracleEditorConfigPath;
-    var run = new KeyFlipSweep(new OracleRunner(), config, Console.Out).Run(plan);
+    var run = new KeyFlipSweep(new(), config, Console.Out).Run(plan);
     var text = SweepReport.Render(run, families);
 
     var output = Flag("--out")
@@ -256,17 +256,17 @@ int Nightly() {
 
     Console.WriteLine();
     return Defaults(
-        [.. run.Options.Where(static option => option.OracleDistinct > 1).Select(static option => option.Key)]
+        [..run.Options.Where(static option => option.OracleDistinct > 1).Select(static option => option.Key)]
     );
 }
 
 int Defaults(IReadOnlyCollection<string>? inProcess) {
     if (OracleRunner.FindExecutableOrNull() is null) {
-        Console.Error.WriteLine("jb (JetBrains.Skala.GlobalTools) is not installed.");
+        Console.Error.WriteLine("jb (JetBrains.ReSharper.GlobalTools) is not installed.");
         return 3;
     }
 
-    var probed = new DefaultsPass(new OracleRunner(), Console.Out).Run(plan);
+    var probed = new DefaultsPass(new(), Console.Out).Run(plan);
 
     var archive = Path.Combine(
         Corpus.RepositoryRoot,

@@ -25,9 +25,9 @@ namespace Rikarin.Skala.Rules.Tests;
 static class TrackedRuleSources {
     public static string RepositoryRoot { get; } =
         Assembly.GetExecutingAssembly()
-        .GetCustomAttributes<AssemblyMetadataAttribute>()
-        .First(static attribute => attribute.Key == "SkalaRepositoryRoot")
-        .Value!;
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .First(static attribute => attribute.Key == "SkalaRepositoryRoot")
+            .Value!;
 
     public static List<string> All() {
         var process = Process.Start(

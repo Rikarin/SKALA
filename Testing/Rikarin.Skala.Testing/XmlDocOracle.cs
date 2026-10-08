@@ -73,7 +73,7 @@ public static class XmlDocOracle {
             var text = CSharpFormatter.Read(file.Path);
             var options = OptionResolver.Resolve(file.Path).Options;
             rows.Add(
-                new Row(
+                new(
                     file,
                     OracleFixture.Read(file, OracleProfile.DocComments),
                     CSharpFormatter.Format(file.Path, text, options).Formatted

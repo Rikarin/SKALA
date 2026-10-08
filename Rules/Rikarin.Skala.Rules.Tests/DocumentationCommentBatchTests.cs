@@ -218,7 +218,7 @@ public sealed class DocumentationCommentBatchTests {
             "probe",
             [tree],
             RuleFixtures.References,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+            new(OutputKind.DynamicallyLinkedLibrary)
         );
 
         return RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken);
@@ -238,7 +238,7 @@ public sealed class DocumentationCommentBatchTests {
         var count = int.Parse(diagnostic.Properties[FixEdits.CountKey]!, CultureInfo.InvariantCulture);
         var edits = Enumerable.Range(0, count)
             .Select(index => new TextChange(
-                    new TextSpan(
+                    new(
                         int.Parse(diagnostic.Properties[FixEdits.StartKey(index)]!, CultureInfo.InvariantCulture),
                         int.Parse(diagnostic.Properties[FixEdits.LengthKey(index)]!, CultureInfo.InvariantCulture)
                     ),

@@ -56,7 +56,7 @@ public static class MultiTargetLanguageFloor {
         ImmutableArray<CompilationUnit> units
     ) {
         if (findings.Count == 0 || LowestVersionPerPath(units) is not { } floors) {
-            return [.. findings];
+            return [..findings];
         }
 
         var kept = ImmutableArray.CreateBuilder<Finding>(findings.Count);

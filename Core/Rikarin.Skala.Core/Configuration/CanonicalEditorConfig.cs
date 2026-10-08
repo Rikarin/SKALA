@@ -261,7 +261,7 @@ public static class CanonicalEditorConfig {
     static CanonicalManifest ReadManifest(string json) {
         using var document = JsonDocument.Parse(
             json,
-            new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip }
+            new() { CommentHandling = JsonCommentHandling.Skip }
         );
         var root = document.RootElement;
         return new(

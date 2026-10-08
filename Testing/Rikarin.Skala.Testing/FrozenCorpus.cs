@@ -193,7 +193,7 @@ public static class FrozenCorpus {
     public static IReadOnlyList<string> Bodies() =>
         Directory.Exists(Root)
             ? [
-                .. Directory.EnumerateFiles(Root, "*.expected.cs", SearchOption.AllDirectories)
+                ..Directory.EnumerateFiles(Root, "*.expected.cs", SearchOption.AllDirectories)
                     .Select(static path => Path.GetRelativePath(Root, path).Replace('\\', '/'))
                     .OrderBy(static path => path, StringComparer.Ordinal)
             ]

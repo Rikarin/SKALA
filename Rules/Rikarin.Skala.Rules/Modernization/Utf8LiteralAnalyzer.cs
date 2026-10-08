@@ -68,10 +68,11 @@ public sealed class Utf8LiteralAnalyzer : DiagnosticAnalyzer {
         if (!SymbolEqualityComparer.Default.Equals(
                 originalMethod,
                 model.GetSpeculativeSymbolInfo(
-                    consumer.SpanStart,
-                    replacement,
-                    SpeculativeBindingOption.BindAsExpression
-                ).Symbol
+                        consumer.SpanStart,
+                        replacement,
+                        SpeculativeBindingOption.BindAsExpression
+                    )
+                    .Symbol
             )) {
             return;
         }

@@ -80,7 +80,7 @@ public static class SarifWriter {
         var run = new Run {
             Tool = new() { Driver = driver, Extensions = Extensions(report) },
             Results = [
-                .. report.Findings
+                ..report.Findings
                     .Where(finding => !excludeSuppressed || !IsSuppressed(finding))
                     .Select(finding => BuildResult(report, finding))
             ],
@@ -100,7 +100,7 @@ public static class SarifWriter {
     /// </summary>
     public static string Serialize(SarifLog log) {
         var serializer = JsonSerializer.Create(
-            new JsonSerializerSettings {
+            new() {
                 Formatting = Formatting.Indented,
                 NullValueHandling = NullValueHandling.Ignore,
                 DateFormatHandling = DateFormatHandling.IsoDateFormat,
@@ -300,14 +300,14 @@ public static class SarifWriter {
                 new Fix {
                     Description = new() { Text = finding.Message },
                     ArtifactChanges = [
-                        .. finding.Fix
+                        ..finding.Fix
                             .GroupBy(static edit => edit.Path, StringComparer.Ordinal)
                             .Select(group => new ArtifactChange {
                                     ArtifactLocation = new() {
                                         Uri = new(Relative(report.RepositoryRoot, group.Key), UriKind.Relative)
                                     },
                                     Replacements = [
-                                        .. group.Select(static edit => new Replacement {
+                                        ..group.Select(static edit => new Replacement {
                                                 DeletedRegion = new() {
                                                     CharOffset = edit.Start, CharLength = edit.Length
                                                 },
@@ -470,7 +470,7 @@ public static class SarifWriter {
 
         if (!report.Diagnostics.IsEmpty) {
             invocation.ToolExecutionNotifications = [
-                .. report.Diagnostics.Select(diagnostic => Notify(report, diagnostic))
+                ..report.Diagnostics.Select(diagnostic => Notify(report, diagnostic))
             ];
         }
 

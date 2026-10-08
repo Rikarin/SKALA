@@ -86,7 +86,7 @@ public static class SarifReader {
                 ? new GateResult(
                     gateName,
                     Property<bool?>(invocation, "gatePassed") ?? true,
-                    [.. Property<string[]>(invocation, "gateFailures") ?? []]
+                    [..Property<string[]>(invocation, "gateFailures") ?? []]
                 )
                 : null
         };

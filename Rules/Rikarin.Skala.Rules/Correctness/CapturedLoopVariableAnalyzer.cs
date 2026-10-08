@@ -93,9 +93,8 @@ public sealed class CapturedLoopVariableAnalyzer : DiagnosticAnalyzer {
 
     static bool Changes(ExpressionSyntax expression, ISymbol symbol, SyntaxNodeAnalysisContext context) {
         var target = context.SemanticModel.GetOperation(expression, context.CancellationToken) switch {
-            IIncrementOrDecrementOperation {
-                OperatorMethod: null, Target: ILocalReferenceOperation local
-            } => local.Local,
+            IIncrementOrDecrementOperation { OperatorMethod: null, Target: ILocalReferenceOperation local } => local
+                .Local,
             ICompoundAssignmentOperation {
                 OperatorMethod: null,
                 OperatorKind: BinaryOperatorKind.Add or BinaryOperatorKind.Subtract,

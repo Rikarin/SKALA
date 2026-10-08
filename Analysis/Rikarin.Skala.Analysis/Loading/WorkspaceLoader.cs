@@ -32,7 +32,7 @@ public static class WorkspaceLoader {
         var resolution = Resolve(request);
         if (resolution.Error is { } error) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.NothingToLoad,
                     SkalaSeverity.Error,
                     error,
@@ -46,7 +46,7 @@ public static class WorkspaceLoader {
         var target = resolution.Target;
         if (target is null) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.NothingToLoad,
                     SkalaSeverity.Warning,
                     "no .slnx, .sln or .csproj was found to load",
@@ -59,7 +59,7 @@ public static class WorkspaceLoader {
 
         if (!MSBuildRuntime.Ensure(out var locatorError)) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.NothingToLoad,
                     SkalaSeverity.Error,
                     $"no MSBuild could be located: {locatorError}",
@@ -90,7 +90,7 @@ public static class WorkspaceLoader {
             // reference is fixed; this exists because the next dependency to go missing must produce
             // a load failure that names itself, not a pass.
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.NothingToLoad,
                     SkalaSeverity.Error,
                     $"the workspace loader could not be initialised — a required assembly is missing from the Skala installation: {exception.Message}",
@@ -132,7 +132,7 @@ public static class WorkspaceLoader {
                                                 or InvalidOperationException
                                                 or NotSupportedException) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.NothingToLoad,
                     SkalaSeverity.Error,
                     $"'{target}' could not be opened: {exception.Message}",
@@ -150,7 +150,7 @@ public static class WorkspaceLoader {
         // references; the difference between "clean" and "not analysed" lives here.
         foreach (var diagnostic in workspace.Diagnostics) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.NothingToLoad,
                     diagnostic.Kind == WorkspaceDiagnosticKind.Failure ? SkalaSeverity.Warning : SkalaSeverity.Info,
                     "workspace: " + diagnostic.Message,
@@ -201,17 +201,17 @@ public static class WorkspaceLoader {
 
             var parseOptions = project.ParseOptions as CSharpParseOptions;
             units.Add(
-                new CompilationUnit {
+                new() {
                     Name = project.Name,
                     Compilation = compilation,
                     TargetFramework = project.Name.Contains('(', StringComparison.Ordinal)
                         ? project.Name[(project.Name.IndexOf('(', StringComparison.Ordinal) + 1)..].TrimEnd(')')
                         : string.Empty,
-                    PreprocessorSymbols = parseOptions is null ? [] : [.. parseOptions.PreprocessorSymbolNames],
+                    PreprocessorSymbols = parseOptions is null ? [] : [..parseOptions.PreprocessorSymbolNames],
                     ReportablePaths = reportable.ToImmutable(),
                     UnreadablePaths = unreadable.ToImmutable(),
                     AnalyzerReferences = [
-                        .. project.AnalyzerReferences
+                        ..project.AnalyzerReferences
                             .Select(static reference => reference.FullPath ?? string.Empty)
                             .Where(static path => path.Length > 0)
                     ],
@@ -245,7 +245,7 @@ public static class WorkspaceLoader {
 
         if (failedOutright) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.NothingToLoad,
                     SkalaSeverity.Error,
                     $"'{target}' yielded no analysable source; every project in it failed to load",
@@ -332,7 +332,7 @@ public static class WorkspaceLoader {
         }
 
         diagnostics.Add(
-            new SkalaDiagnostic(
+            new(
                 ConfigDiagnosticIds.AnalyzerAssemblyMissing,
                 SkalaSeverity.Error,
                 $"refusing to analyse '{Path.GetFileName(target)}': the assemblies above are missing, so the "

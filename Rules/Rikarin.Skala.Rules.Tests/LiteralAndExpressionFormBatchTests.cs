@@ -210,7 +210,7 @@ public sealed class LiteralAndExpressionFormBatchTests {
         var literal = CSharpSyntaxTree
             .ParseText(
                 fixedSource,
-                new CSharpParseOptions(LanguageVersion.Preview),
+                new(LanguageVersion.Preview),
                 cancellationToken: TestContext.Current.CancellationToken
             )
             .GetRoot(TestContext.Current.CancellationToken)
@@ -383,7 +383,7 @@ public sealed class LiteralAndExpressionFormBatchTests {
         var fixedSource = ApplyEdits(source, finding);
         var reparsed = CSharpSyntaxTree.ParseText(
             fixedSource,
-            new CSharpParseOptions(LanguageVersion.Preview),
+            new(LanguageVersion.Preview),
             cancellationToken: TestContext.Current.CancellationToken
         );
 

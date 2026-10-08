@@ -523,7 +523,7 @@ public static class Fuzzer {
         );
 
     static string[] ParseErrors(string text, Microsoft.CodeAnalysis.CSharp.CSharpParseOptions options) => [
-        .. Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree
+        ..Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree
             .ParseText(Microsoft.CodeAnalysis.Text.SourceText.From(text), options)
             .GetDiagnostics()
             .Where(static diagnostic =>
@@ -597,12 +597,13 @@ public static class Fuzzer {
         // throw as `crash`; this call must not be the one that escapes.
         try {
             var edits = Rikarin.Skala.Formatting.CSharp.CSharpFormatter.Format(
-                subject.Path,
-                Microsoft.CodeAnalysis.Text.SourceText.From(subject.Text),
-                options,
-                null,
-                []
-            ).Edits.Length;
+                    subject.Path,
+                    Microsoft.CodeAnalysis.Text.SourceText.From(subject.Text),
+                    options,
+                    null,
+                    []
+                )
+                .Edits.Length;
 
             return (violations, edits);
         } catch (Exception exception) when (exception is not OperationCanceledException) {
@@ -647,7 +648,7 @@ public static class Fuzzer {
             Parallel.For(
                 0,
                 size,
-                new ParallelOptions { MaxDegreeOfParallelism = options.Parallelism, CancellationToken = cancellation },
+                new() { MaxDegreeOfParallelism = options.Parallelism, CancellationToken = cancellation },
                 offset => {
                     var index = start + offset;
                     var seed = FuzzRandom.Derive(options.Seed, index);
@@ -723,10 +724,10 @@ public static class Fuzzer {
             mutations.ToDictionary(static e => e.Key, static e => e.Value, StringComparer.Ordinal),
             refused.ToDictionary(static e => e.Key, static e => e.Value, StringComparer.Ordinal),
             violations.ToDictionary(static e => e.Key, static e => e.Value, StringComparer.Ordinal),
-            [.. touched.Keys.Order(StringComparer.Ordinal)],
+            [..touched.Keys.Order(StringComparer.Ordinal)],
             parseLost,
-            [.. parseLostSeeds.Order().Take(5)],
-            [.. findings.OrderBy(static f => f.Index).Select(static f => f.Finding)]
+            [..parseLostSeeds.Order().Take(5)],
+            [..findings.OrderBy(static f => f.Index).Select(static f => f.Finding)]
         );
     }
 
@@ -766,7 +767,7 @@ public static class Fuzzer {
             subject.Origin,
             subject.Kind.ToString().ToLowerInvariant(),
             violation,
-            [.. subject.Mutations.Select(static m => m.Name)],
+            [..subject.Mutations.Select(static m => m.Name)],
             artefact,
             minimised,
             minimisedDetail
@@ -859,7 +860,7 @@ public static class Fuzzer {
 
         var attempts = new List<string> { sequence };
         foreach (var name in FuzzMutations.AbsorbedNames) {
-            if (FuzzMutations.Apply(name, candidate, new FuzzRandom(subject.Seed), Corpus.PropertySymbols) is { } one) {
+            if (FuzzMutations.Apply(name, candidate, new(subject.Seed), Corpus.PropertySymbols) is { } one) {
                 attempts.Add(one);
             }
         }

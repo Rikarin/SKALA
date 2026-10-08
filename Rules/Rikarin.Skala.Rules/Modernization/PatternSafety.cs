@@ -109,11 +109,11 @@ internal static class PatternSafety {
 
         // A ref alias also allows the storage to escape without a lambda capture.
         if (body.DescendantNodes()
-                .OfType<IdentifierNameSyntax>()
-                .Any(name =>
-                    CanEscape(name)
-                    && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(name, cancellation).Symbol, symbol)
-                )) {
+            .OfType<IdentifierNameSyntax>()
+            .Any(name =>
+                CanEscape(name)
+                && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(name, cancellation).Symbol, symbol)
+            )) {
             return null;
         }
 

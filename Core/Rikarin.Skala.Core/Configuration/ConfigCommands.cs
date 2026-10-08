@@ -79,7 +79,7 @@ public static class ConfigCommands {
             .Append("value".PadRight(valueWidth))
             .Append("  tier  source")
             .AppendLine();
-        output.AppendLine(new string('-', keyWidth + valueWidth + 40));
+        output.AppendLine(new('-', keyWidth + valueWidth + 40));
 
         foreach (var option in rows) {
             output.Append(option.Info.Key.PadRight(keyWidth))
@@ -391,7 +391,7 @@ public static class ConfigCommands {
         AppendDiagnostics(
             output,
             [
-                .. status.Diagnostics.Select(diagnostic => diagnostic.Id == ConfigDiagnosticIds.CanonicalDrift
+                ..status.Diagnostics.Select(diagnostic => diagnostic.Id == ConfigDiagnosticIds.CanonicalDrift
                         ? diagnostic with { Severity = driftSeverity }
                         : diagnostic
                 )

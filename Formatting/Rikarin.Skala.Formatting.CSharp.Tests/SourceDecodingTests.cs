@@ -52,10 +52,10 @@ public sealed class SourceDecodingTests : IDisposable {
     static byte[] Bytes(string name) =>
         name switch {
             "utf8" => Encoding.UTF8.GetBytes(Unformatted),
-            "utf8-bom" => [0xEF, 0xBB, 0xBF, .. Encoding.UTF8.GetBytes(Unformatted)],
-            "utf16le-bom" => [0xFF, 0xFE, .. Encoding.Unicode.GetBytes(Unformatted)],
-            "utf16be-bom" => [0xFE, 0xFF, .. Encoding.BigEndianUnicode.GetBytes(Unformatted)],
-            "utf32le-bom" => [0xFF, 0xFE, 0x00, 0x00, .. Encoding.UTF32.GetBytes(Unformatted)],
+            "utf8-bom" => [0xEF, 0xBB, 0xBF, ..Encoding.UTF8.GetBytes(Unformatted)],
+            "utf16le-bom" => [0xFF, 0xFE, ..Encoding.Unicode.GetBytes(Unformatted)],
+            "utf16be-bom" => [0xFE, 0xFF, ..Encoding.BigEndianUnicode.GetBytes(Unformatted)],
+            "utf32le-bom" => [0xFF, 0xFE, 0x00, 0x00, ..Encoding.UTF32.GetBytes(Unformatted)],
             "utf16le-nobom-ascii" => Encoding.Unicode.GetBytes("class C\n{\n  void M( ) { }\n}\n"),
             "latin1-string" => Latin1.GetBytes(Unformatted),
             "latin1-comment" => Latin1.GetBytes(InAComment),
@@ -63,16 +63,16 @@ public sealed class SourceDecodingTests : IDisposable {
             // A valid `é` first, then a Latin-1 `ï`: the BOM must not switch the reader to a lenient one.
             "utf8-bom-then-latin1" => [
                 0xEF, 0xBB, 0xBF,
-                .. Encoding.UTF8.GetBytes(Unformatted[..Unformatted.IndexOf('ï', StringComparison.Ordinal)]),
-                .. Latin1.GetBytes(Unformatted[Unformatted.IndexOf('ï', StringComparison.Ordinal)..])
+                ..Encoding.UTF8.GetBytes(Unformatted[..Unformatted.IndexOf('ï', StringComparison.Ordinal)]),
+                ..Latin1.GetBytes(Unformatted[Unformatted.IndexOf('ï', StringComparison.Ordinal)..])
             ],
             "utf16le-nobom-nonascii" => Encoding.Unicode.GetBytes(Unformatted),
             // An unpaired high surrogate where the `é` was: UTF-16 has its own invalid sequences.
             "utf16le-bom-lone-surrogate" => [
                 0xFF, 0xFE,
-                .. Encoding.Unicode.GetBytes(Unformatted[..Unformatted.IndexOf('é', StringComparison.Ordinal)]),
+                ..Encoding.Unicode.GetBytes(Unformatted[..Unformatted.IndexOf('é', StringComparison.Ordinal)]),
                 0x00, 0xD8,
-                .. Encoding.Unicode.GetBytes(Unformatted[(Unformatted.IndexOf('é', StringComparison.Ordinal) + 1)..])
+                ..Encoding.Unicode.GetBytes(Unformatted[(Unformatted.IndexOf('é', StringComparison.Ordinal) + 1)..])
             ],
             _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
         };
@@ -144,11 +144,9 @@ public sealed class SourceDecodingTests : IDisposable {
         var before = File.ReadAllBytes(path);
 
         foreach (var check in new[] { false, true }) {
-            var format = FormatCommand.Run(
-                new FormatRequest { Paths = [path], RepositoryRoot = directory, Check = check }
-            );
+            var format = FormatCommand.Run(new() { Paths = [path], RepositoryRoot = directory, Check = check });
             var arrange = ArrangeCommand.Run(
-                new ArrangeRequest { Paths = [path], RepositoryRoot = directory, Check = check },
+                new() { Paths = [path], RepositoryRoot = directory, Check = check },
                 TestContext.Current.CancellationToken
             );
 
@@ -175,7 +173,7 @@ public sealed class SourceDecodingTests : IDisposable {
         var before = File.ReadAllBytes(path);
         var original = CSharpFormatter.Read(path);
 
-        var result = FormatCommand.Run(new FormatRequest { Paths = [path], RepositoryRoot = directory });
+        var result = FormatCommand.Run(new() { Paths = [path], RepositoryRoot = directory });
 
         Assert.DoesNotContain(FormatDiagnosticIds.NotDecodable, result.Output, StringComparison.Ordinal);
         var after = File.ReadAllBytes(path);

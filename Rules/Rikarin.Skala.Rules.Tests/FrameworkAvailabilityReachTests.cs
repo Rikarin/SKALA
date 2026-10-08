@@ -57,8 +57,22 @@ public sealed class FrameworkAvailabilityReachTests {
         + "so a moniker that cannot resolve it is a moniker where the source does not compile either.";
 
     /// <summary>
-    ///     Every fix-carrying analyzer that looks a type up without consulting the siblings, and why
-    ///     that is sound.
+    ///     A negative guard: "this source method implements an interface member, so leave it alone".
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not airtight, and said so rather than called recognition. The interfaces are the source
+    ///     type's, but their member set is the framework's: a default interface member that only a newer
+    ///     moniker declares could make the method an implementation there and not on an older leg, and
+    ///     the older leg would report. The BCL adds interface members only as defaults, so the newer leg
+    ///     still compiles — it falls back to the default. No case of it has been seen.
+    /// </remarks>
+    const string ImplementsGuard =
+        "Negative guard over the source type's interfaces: the rule declines when the method implements a "
+        + "member, and only a default member added by a newer moniker could make that differ per moniker.";
+
+    /// <summary>
+    ///     Every fix-carrying analyzer that looks a type or a named member up without consulting the
+    ///     siblings, and why that is sound.
     /// </summary>
     static readonly Dictionary<string, string> Exempt = new(StringComparer.Ordinal) {
         ["Async/AsyncIteratorNotEnumeratedAnalyzer.cs"] =
@@ -68,8 +82,6 @@ public sealed class FrameworkAvailabilityReachTests {
             + " `EventArgs` identifies a handler shape; the fix writes `Task`, which any source spelling `async` already has.",
         ["Async/BlockingOnAsyncAnalyzer.cs"] = Recognition
             + " Awaiter table matched against the blocked-on expression; the fix only prepends `await`.",
-        ["Async/CancellationTokenForwardingAnalyzer.cs"] =
-            Recognition + " The fix forwards a parameter already in scope.",
         ["Async/NullTaskReturnAnalyzer.cs"] = Recognition + " Task/Task<T> match the declared return type.",
         ["Async/RedundantDisposeAnalyzer.cs"] = Recognition + " The fix deletes a statement and writes no type.",
         ["Async/SpinLockInReadonlyFieldAnalyzer.cs"] =
@@ -77,8 +89,6 @@ public sealed class FrameworkAvailabilityReachTests {
         ["Async/SynchronousAsyncDisposalAnalyzer.cs"] =
             Recognition + " `IAsyncDisposable` types the disposed value in source.",
         ["Async/TaskReturnedFromUsingAnalyzer.cs"] = Recognition + " Task-family table over the returned expression.",
-        ["Async/UncancellableAsyncMethodAnalyzer.cs"] = Recognition
-            + " `CancellationToken` is netstandard2.0-and-up on every supported moniker regardless.",
         ["Async/UndeclaredDisposeAnalyzer.cs"] =
             "The emitted text is only ever `IDisposable`/`System.IDisposable`, present on every "
             + "moniker; the `IAsyncDisposable` lookup is a negative guard over source types.",
@@ -88,12 +98,19 @@ public sealed class FrameworkAvailabilityReachTests {
         ["Async/UsingResourceInitializerAnalyzer.cs"] =
             "The source already has the `using`; the fix only hoists object-initializer assignments "
             + "and emits no new construct.",
+        ["Cleanup/RedundantQualifierAnalyzer.cs"] =
+            "The named lookup is over the enclosing source type's own declared members, which every "
+            + "moniker compiles identically; the fix deletes `base.`.",
         ["Cleanup/RedundantControlFlowAnalyzer.cs"] =
             Recognition + " `FlagsAttribute` on a source enum; every edit is a deletion.",
         ["Correctness/AssemblyLoadedOutsideItsContextAnalyzer.cs"] =
             "`AssemblyLoadContext` only proves the call sits inside an override of its own `Load`, so "
             + "the source subclasses it; the fix emits `LoadFromAssemblyPath`, an inherited member of "
             + "that same type.",
+        ["Correctness/CaughtExceptionNotLoggedAnalyzer.cs"] =
+            Recognition
+            + " The overload set is the logging call's own containing type, from the package "
+            + "the source already calls; its `exception` overloads date from that package's 1.0.",
         ["Correctness/CollectionModifiedAnalyzer.cs"] = Recognition
             + " Collection table over the enumerated expression; the fix inserts `.ToList()`.",
         ["Correctness/DeadConditionalCallAnalyzer.cs"] =
@@ -113,19 +130,21 @@ public sealed class FrameworkAvailabilityReachTests {
         ["Correctness/RedundantSuppressFinalizeAnalyzer.cs"] = Recognition + " `System.GC`; the fix deletes the call.",
         ["Correctness/WrongArgumentNameAnalyzer.cs"] =
             Recognition + " The fix emits `nameof(x)` over a parameter already in scope.",
+        ["Design/CallerInfoParameterOrderAnalyzer.cs"] = ImplementsGuard,
         ["Design/NullSequenceReturnAnalyzer.cs"] =
             "The lookups type the declared return; the fix emits `[]`, whose C# 12 floor is "
             + "declarative and centrally guarded.",
+        ["Maintainability/OrphanInheritdocAnalyzer.cs"] =
+            "The named lookup finds the hidden base member for the message text only; it decides nothing.",
         ["Maintainability/LoggerForAnotherTypeAnalyzer.cs"] =
             Recognition + " The fix rewrites only the type argument, a source type.",
         ["Modernization/CachedEmptyInstanceAnalyzer.cs"] =
             "The table is matched against the expression being replaced, and each entry's replacement "
             + "is a member of the very type the lookup found.",
+        ["Modernization/ConstantForwardingOverloadAnalyzer.cs"] = ImplementsGuard
+            + " The other named lookup counts the source type's own overloads.",
         ["Modernization/CollectionExpressionAnalyzer.cs"] = Recognition
             + " `List<T>` types the source expression; the C# 12 floor is centrally guarded.",
-        ["Modernization/DictionaryLookupAnalyzer.cs"] = Recognition
-            + " `Dictionary<K,V>` is the receiver in source; the fix reuses `TryGetValue`, present wherever the type is.",
-        ["Modernization/EnumGetValuesAnalyzer.cs"] = Recognition + " `System.Enum`; the fix names a source enum.",
         ["Modernization/ForeachOverIndexedForAnalyzer.cs"] = Recognition
             + " Collection table over the indexed receiver; the fix rewrites the loop header only.",
         ["Modernization/IndexerOverElementAtAnalyzer.cs"] =
@@ -137,6 +156,8 @@ public sealed class FrameworkAvailabilityReachTests {
         ["Modernization/SpanDecodingAnalyzer.cs"] =
             "`IsByteSpan` compares a type already in the source against Span/ReadOnlySpan — the "
             + "argument is a span before the rule fires, so no moniker lacking one can reach it.",
+        ["Modernization/TupleElementByPositionAnalyzer.cs"] = Recognition
+            + " The tuple's own element fields, which `ValueTuple` declares identically on every moniker.",
         ["Modernization/Utf8LiteralAnalyzer.cs"] =
             "The `ReadOnlySpan<byte>` lookup types the *called method's parameter*, so the consumer "
             + "already takes one; the `u8` literal's C# 11 floor is declarative and centrally guarded.",
@@ -146,6 +167,11 @@ public sealed class FrameworkAvailabilityReachTests {
         ["Performance/ConcurrentDictionaryMemberAnalyzer.cs"] = Recognition
             + " `ConcurrentDictionary<K,V>` is the receiver; the emitted members are netstandard2.0-era.",
         ["Performance/CopyingPropertyAnalyzer.cs"] = Recognition + " `Enumerable`; the source already calls LINQ.",
+        ["Performance/SubstringBeforeSearchAnalyzer.cs"] =
+            "The start-index overload looked up is the called `IndexOf`/`IndexOfAny`'s with an `int` "
+            + "inserted; every overload the source can already call that has one (`char`, `string`, "
+            + "`char[]`, `string`+`StringComparison`) has had it since netstandard1.0, and "
+            + "`IndexOf(char, StringComparison)` has no start-index form on any moniker, so it declines.",
         ["Performance/SortBeforeFilterAnalyzer.cs"] = Recognition + " `Enumerable`; the fix swaps two existing spans.",
         ["Performance/WhereBeforeOperatorAnalyzer.cs"] =
             Recognition + " `Enumerable`; the fix reorders existing calls.",
@@ -153,8 +179,20 @@ public sealed class FrameworkAvailabilityReachTests {
             Recognition + " The RSA/DSA receiver is in source; the fix emits the integer literal 2048."
     };
 
-    static readonly Regex Lookup =
-        new(@"GetTypesByMetadataName\s*\(|GetTypeByMetadataName\s*\(", RegexOptions.Compiled);
+    /// <summary>A type lookup, or a lookup of a <em>named</em> member on a type (#511).</summary>
+    /// <remarks>
+    ///     ⚠ <b>The member half is #511, and its absence was a hole in the ledger, not in one rule.</b>
+    ///     <c>SK1035</c> asked <c>System.Enum.GetMembers("GetValues")</c> for the arity-1 overload — a
+    ///     type every moniker has, a member only .NET 5+ has — and the ledger, matching type lookups
+    ///     alone, never listed it; it was even exempted as "recognition" while it was listed for its
+    ///     <c>GetTypeByMetadataName("System.Enum")</c>. <c>GetMembers()</c> with no name enumerates what
+    ///     a type the source already holds declares, which is recognition by construction, so only the
+    ///     named form is matched.
+    /// </remarks>
+    static readonly Regex Lookup = new(
+        @"GetTypesByMetadataName\s*\(|GetTypeByMetadataName\s*\(|\.GetMembers\s*\(\s*[^\s)]",
+        RegexOptions.Compiled
+    );
 
     const string Prefix = "Rules/Rikarin.Skala.Rules/";
 
@@ -201,8 +239,8 @@ public sealed class FrameworkAvailabilityReachTests {
         var added = unguarded.Where(static file => !Exempt.ContainsKey(file)).ToList();
         Assert.True(
             added.Count == 0,
-            "⚠ These rules have a fix, ask a compilation whether a type exists, and never ask the "
-            + "project's other target frameworks:\n  "
+            "⚠ These rules have a fix, ask a compilation whether a type or member exists, and never ask "
+            + "the project's other target frameworks:\n  "
             + string.Join("\n  ", added)
             + "\n\nA multi-targeted project is one compilation per moniker over one set of source "
             + """files, and the findings are unioned — so the lookup answers "some moniker has this" """

@@ -138,7 +138,7 @@ public sealed class SpreadCompilerProofTests {
         );
 
         var (_, report) = CheckCommand.Run(
-            new CheckRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Loose,
@@ -171,7 +171,7 @@ public sealed class SpreadCompilerProofTests {
 
     static LoadedProject Load(Scratch scratch, string project) =>
         ProjectLoader.Load(
-            new LoadRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,
@@ -194,7 +194,7 @@ public sealed class SpreadCompilerProofTests {
 
     static CommandResult Fix(Scratch scratch, string project) =>
         FixCommand.Run(
-            new FixRequest {
+            new() {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,

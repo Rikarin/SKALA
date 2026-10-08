@@ -80,6 +80,13 @@ to compilations; the daemon is deleted, so the 5 s warm row has no path to being
 withdrawn with the rest of the table. `check` on a small change stays at the cost of loading the
 projects.
 
+⚠ **Every warm figure above was measured with an unsound cache (#516)** that served a file's semantic
+findings unchanged after another file in its compilation changed. Since #516 an edit re-runs every
+semantic analyzer over the whole of the edited compilation (only the unchanged files' `Syntax`-scoped
+rules and untouched compilations are still served — [07](07-analysis-host.md) § "The incremental
+cache"), so a warm run after an edit costs more than these rows say. Not re-measured. A `verify`/`check`
+over an unchanged tree is unaffected: every half of every file still hits.
+
 ⚠ M3 measures the first row at 280–320 ms cold and 60–70 ms warm, and the second at 11.9 s. The
 whole-corpus budget is met; the warm single-file one is missed by the client's own process start,
 which § "Startup" predicts exactly — `skala daemon status`, doing no work at all, is the same 60 ms.

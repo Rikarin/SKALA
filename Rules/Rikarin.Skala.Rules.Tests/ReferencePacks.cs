@@ -6,7 +6,8 @@ using System.Reflection;
 namespace Rikarin.Skala.Rules.Tests;
 
 /// <summary>
-///     The reference assemblies a real <c>net10.0</c> or <c>net9.0</c> build compiles against (#515).
+///     The reference assemblies a real <c>net10.0</c>, <c>net9.0</c> or <c>netstandard2.x</c> build compiles
+///     against (#515, #511).
 /// </summary>
 /// <remarks>
 ///     ⚠ <b>Throws rather than falling back</b> when a pack is missing. A fixture that asked for
@@ -23,7 +24,8 @@ public static class ReferencePacks {
         DirectoryOf(framework) is not null
             ? framework
             : throw new InvalidOperationException(
-                $"'{framework}' is not a fixture reference pack; the packs are net10.0 and net9.0."
+                $"'{framework}' is not a fixture reference pack; the packs are net10.0, net9.0, "
+                + "netstandard2.1 and netstandard2.0."
             );
 
     /// <summary>Every reference assembly in the pack.</summary>
@@ -39,7 +41,7 @@ public static class ReferencePacks {
         }
 
         return [
-            .. Directory.GetFiles(directory, "*.dll")
+            ..Directory.GetFiles(directory, "*.dll")
                 .Order(StringComparer.Ordinal)
                 .Select(static path => (MetadataReference)MetadataReference.CreateFromFile(path))
         ];

@@ -63,13 +63,13 @@ public sealed class AttributeJoinTerminatorIssue438Tests {
     static void Agrees(string source, string expected) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [
-                    new KeyValuePair<string, string>("skala_place_method_attribute_on_same_line", "always"),
-                    new KeyValuePair<string, string>("skala_place_field_attribute_on_same_line", "always"),
-                    new KeyValuePair<string, string>("skala_place_accessorholder_attribute_on_same_line", "always")
-                ]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [
+                        new KeyValuePair<string, string>("skala_place_method_attribute_on_same_line", "always"),
+                        new KeyValuePair<string, string>("skala_place_field_attribute_on_same_line", "always"),
+                        new KeyValuePair<string, string>("skala_place_accessorholder_attribute_on_same_line", "always")
+                    ]
+                )
                 .Options
         );
 

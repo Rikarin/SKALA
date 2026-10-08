@@ -43,8 +43,8 @@ public sealed class NamespaceQualifierArrangementTests {
         var result = ArrangementPipeline.Run(
             Path,
             text,
-            new PhaseOneOptions(options),
-            new ArrangementOptions(options),
+            new(options),
+            new(options),
             compilation,
             cancellation: TestContext.Current.CancellationToken
         );
@@ -146,7 +146,7 @@ public sealed class NamespaceQualifierArrangementTests {
         var result = Arranger.Arrange(
             Path,
             SourceText.From(source),
-            new ArrangementOptions(Options()),
+            new(Options()),
             filter: new([ArrangeIds.StaticQualifier], []),
             cancellation: TestContext.Current.CancellationToken
         );
@@ -162,9 +162,10 @@ public sealed class NamespaceQualifierArrangementTests {
 
     static Rikarin.Skala.Options.FormattingOptions Options(string qualifier = "none") =>
         OptionResolver.Resolve(
-            System.IO.Path.Combine(Corpus.RepositoryRoot, "Probe.cs"),
-            [new("skala_static_members_qualify_members", qualifier)]
-        ).Options;
+                System.IO.Path.Combine(Corpus.RepositoryRoot, "Probe.cs"),
+                [new("skala_static_members_qualify_members", qualifier)]
+            )
+            .Options;
 
     static (SourceText, CSharpCompilation) Compile(string source) {
         var text = SourceText.From(source);
@@ -178,10 +179,10 @@ public sealed class NamespaceQualifierArrangementTests {
             "probe",
             [tree],
             [
-                .. SharedFrameworkReferences.Value,
+                ..SharedFrameworkReferences.Value,
                 MetadataReference.CreateFromFile(typeof(Fingerprints).Assembly.Location)
             ],
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+            new(OutputKind.DynamicallyLinkedLibrary)
         );
         Assert.DoesNotContain(
             compilation.GetDiagnostics(TestContext.Current.CancellationToken),
@@ -195,7 +196,7 @@ public sealed class NamespaceQualifierArrangementTests {
         return Arranger.Arrange(
             Path,
             text,
-            new ArrangementOptions(Options(qualifier)),
+            new(Options(qualifier)),
             compilation,
             filter: new([ArrangeIds.StaticQualifier], []),
             cancellation: TestContext.Current.CancellationToken

@@ -147,7 +147,8 @@ public sealed class NestedConditionalAnalyzer : DiagnosticAnalyzer {
         pending.Push(root);
         while (pending.Count > 0) {
             var node = pending.Pop();
-            if (node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax
+            if (node is AnonymousFunctionExpressionSyntax
+                or LocalFunctionStatementSyntax
                 or InterpolationSyntax) {
                 continue;
             }

@@ -146,7 +146,7 @@ public static class XmlDocFormatter {
 
             var attempt = Replacement(source, trivia, structure, options, newLine);
             if (attempt.Reason is { } reason) {
-                refusals.Add(new XmlDocRefusal(source.Lines.GetLinePosition(trivia.SpanStart).Line + 1, reason));
+                refusals.Add(new(source.Lines.GetLinePosition(trivia.SpanStart).Line + 1, reason));
             } else {
                 replacements.Add((attempt.Span, attempt.Text!));
                 reflowed++;
@@ -165,7 +165,7 @@ public static class XmlDocFormatter {
         }
 
         foreach (var (span, replacement) in replacements) {
-            applied.Add(new XmlDocReplacement(span, replacement.Length));
+            applied.Add(new(span, replacement.Length));
         }
 
         return new(

@@ -242,7 +242,7 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
             Diagnostic.Create(
                 Descriptor,
                 Location.Create(loop.SyntaxTree, TextSpan.FromBounds(loop.ForEachKeyword.SpanStart, keys.Span.End)),
-                FixEdits.Pack([.. edits]),
+                FixEdits.Pack([..edits]),
                 "The loop already holds this entry; `"
                 + keys.Expression
                 + "["
@@ -299,9 +299,9 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
             }
 
             if (name.Ancestors()
-                    .Any(static ancestor => ancestor is AnonymousFunctionExpressionSyntax
-                            or LocalFunctionStatementSyntax
-                    )) {
+                .Any(static ancestor => ancestor is AnonymousFunctionExpressionSyntax
+                        or LocalFunctionStatementSyntax
+                )) {
                 return false;
             }
 

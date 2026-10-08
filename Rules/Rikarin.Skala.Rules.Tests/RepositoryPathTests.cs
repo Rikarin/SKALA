@@ -57,9 +57,9 @@ public sealed class RepositoryPathTests {
 
     static string RepositoryRoot { get; } =
         Assembly.GetExecutingAssembly()
-        .GetCustomAttributes<AssemblyMetadataAttribute>()
-        .First(static attribute => attribute.Key == "SkalaRepositoryRoot")
-        .Value!;
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .First(static attribute => attribute.Key == "SkalaRepositoryRoot")
+            .Value!;
 
     [Fact]
     public void EveryCommittedPath_CanBeCheckedOutOnWindows() {

@@ -73,8 +73,20 @@ public sealed partial class CSharpDocumentBuilder {
     /// </summary>
     int levelsOpenedByOwnGroups;
 
+    /// <summary>
+    ///     How many <c>skala_outdent_dots</c> chain scopes are open, each pulling its wrapped lines back by
+    ///     a <c>.</c>'s width. See <see cref="ExtraOutdentFor" />.
+    /// </summary>
+    int dotOutdents;
+
     /// <summary>Group id to the plan that created it, built on first use by <c>GuessesSpansLines</c>.</summary>
     Dictionary<int, GroupPlan>? groupPlans;
+
+    /// <summary>Whether each own-line comment run, by its first piece, is detached from the code under it (#494).</summary>
+    Dictionary<int, bool>? detachedRuns;
+
+    /// <summary>The run <see cref="RunIsDetached" /> is resolving the gap under, or −1.</summary>
+    int probingRun = -1;
 
     /// <summary>
     ///     Whether each node occupies one line within the margin, read off an earlier layout of this same
@@ -97,7 +109,7 @@ public sealed partial class CSharpDocumentBuilder {
         this.options = options;
         this.outputLines = outputLines;
         (pieces, tokens) = SourcePieces.Split(root, text);
-        captured = [.. CapturedArguments.Find(root)];
+        captured = [..CapturedArguments.Find(root)];
     }
 
     /// <param name="path">The file's path, for diagnostics.</param>
@@ -434,7 +446,7 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             for (var level = 0; level < indented[i]; level++) {
-                OpenContinuation(plan, level);
+                OpenContinuation(plan, level, plan.OwnLevel && this.plan.ChainGroupOf(node) == plan.Id);
             }
 
             // ⚠ One level past the operand's line, not stacked on what that line opened (#445).
@@ -454,13 +466,22 @@ public sealed partial class CSharpDocumentBuilder {
         // `skala_outdent_binary_ops` both on, the operands take the expression's own column and the
         // operators sit two to the left of it.
         var outdent = OutdentColumnsFor(node);
+        var dotOutdent = outdent > 0 && BreakPlan.IsChainRoot(node);
         if (outdent > 0) {
             OpenIndent(IndentKind.OutdentColumns, columns: outdent);
+        }
+
+        if (dotOutdent) {
+            dotOutdents++;
         }
 
         levelsOpenedByOwnGroups = indented.Sum() + heldLevels.Count(static held => held);
         VisitInner(node);
         EmitUpTo(node.Span.End);
+
+        if (dotOutdent) {
+            dotOutdents--;
+        }
 
         if (outdent > 0) {
             CloseIndent(IndentKind.OutdentColumns);
@@ -555,13 +576,14 @@ public sealed partial class CSharpDocumentBuilder {
                 && BreakPlan.IsChainRootOperator(pattern):
                 return pattern.OperatorToken;
 
-            case InvocationExpressionSyntax or ConditionalAccessExpressionSyntax
+            case InvocationExpressionSyntax or MemberAccessExpressionSyntax or ConditionalAccessExpressionSyntax
                 when options.OutdentDots
                 && !options.WrapAfterDotInMethodCalls
                 && BreakPlan.IsChainRoot(node):
                 return node switch {
                     InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } =>
                         access.OperatorToken,
+                    MemberAccessExpressionSyntax property => property.OperatorToken,
                     InvocationExpressionSyntax { Expression: MemberBindingExpressionSyntax binding } =>
                         binding.OperatorToken,
                     ConditionalAccessExpressionSyntax conditional => conditional.OperatorToken,
@@ -713,7 +735,7 @@ public sealed partial class CSharpDocumentBuilder {
         //       or B    vs    + b     ← one level, not two
         if (IsChainRoot(node) || IsPatternChainRoot(node)) {
             frames.Add(
-                new Frame(
+                new(
                     IsPatternChainRoot(node) ? FrameKind.Pattern : FrameKind.Chain,
                     false,
                     // ⚠ An aligned chain spends no continuation level of its own. The Align scope is
@@ -780,11 +802,20 @@ public sealed partial class CSharpDocumentBuilder {
         // the parameter ends, and the body never sees the reset. Measured: `M(\n a,\n x => p\n
         // && q\n)` came out with `&&` at the argument's own level where the oracle gives it one more.
         frames.Add(
-            new Frame(
+            new(
                 FrameKind.Unit,
                 false,
                 ResetsDepth: node is AnonymousFunctionExpressionSyntax && !IsSoleLambdaArgument(node),
                 SavedDepth: continuousDepth,
+
+                // ⚠ The one break a sole lambda argument's frame pays for although a delimited scope
+                // is open: the arrow, broken before, of a lambda with a block body (#488,
+                // SK-DIV-0169). The oracle writes `Use((int first)` / `=> {` with the arrow two levels
+                // past the statement — the parenthesis's unconditional level and the arrow's own — and
+                // `=> first + 1` under the same call at one. The block keeps its anchor either way.
+                PaysAt: IsSoleLambdaArgument(node) && node is LambdaExpressionSyntax { Block: not null } blockLambda
+                    ? blockLambda.ArrowToken.SpanStart
+                    : -1,
 
                 // ⚠ A `where` clause's continuation lines take no level: `where T : class\n, new()`
                 // puts the next constraint on the `where`'s own column, at every value of every key
@@ -853,6 +884,12 @@ public sealed partial class CSharpDocumentBuilder {
             BaseObjectCreationExpressionSyntax { Initializer: { } initializer }
                 when options.UseContinuousIndentInsideInitializerBraces && !AlignsFromOwnColumn(initializer) =>
                 initializer,
+            // ⚠ And a `with` initializer, from the line the `with` expression starts on (#487,
+            // SK-DIV-0168): `_r = Make(` / `a,` / `b` / `) with {` puts the members at the statement's
+            // level plus one and `};` on it, as an object creation's does.
+            WithExpressionSyntax { Initializer: { } initializer }
+                when options.UseContinuousIndentInsideInitializerBraces && !AlignsFromOwnColumn(initializer) =>
+                initializer,
             _ => null
         };
 
@@ -901,8 +938,7 @@ public sealed partial class CSharpDocumentBuilder {
             or MemberAccessExpressionSyntax
             or ElementAccessExpressionSyntax
             or ConditionalAccessExpressionSyntax
-            or MemberBindingExpressionSyntax
-            or PostfixUnaryExpressionSyntax);
+            or MemberBindingExpressionSyntax);
 
     static bool IsPatternChainRoot(SyntaxNode node) =>
         node is BinaryPatternSyntax && node.Parent is not BinaryPatternSyntax;
@@ -1215,7 +1251,12 @@ public sealed partial class CSharpDocumentBuilder {
     ///     because a break at the group's own point lands one level in. Only the writer, which knows
     ///     whether the group broke, decides whether the level has columns (issue #406, SK-DIV-0157).
     /// </remarks>
-    void OpenContinuation(in GroupPlan planned, int level) {
+    /// <param name="chainLevel">
+    ///     The level is a chained call's own (<see cref="GroupPlan.OwnLevel" /> on a chain root), which
+    ///     nests from a broken binary operator's continuation line when the chain is the operator's left
+    ///     operand: <see cref="IndentFlags.ChainLevel" />.
+    /// </param>
+    void OpenContinuation(in GroupPlan planned, int level, bool chainLevel = false) {
         var conditions = (planned.HoldsLevel & HeldLevel.WhileFlat) != 0
             ? IndentFlags.HeldWhileOwnerFlat
             : IndentFlags.None;
@@ -1231,7 +1272,11 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        OpenIndent(IndentKind.Continuous);
+        OpenIndent(
+            IndentKind.Continuous,
+            planned.UnconditionalLevel,
+            chainLevel ? IndentFlags.ChainLevel : IndentFlags.None
+        );
     }
 
     void CloseGroupAt((int Indented, bool Held) opened) {
@@ -1490,6 +1535,13 @@ public sealed partial class CSharpDocumentBuilder {
                     if (indentBraces) {
                         OpenIndent(braceIndent);
                         EmitToken(token);
+                    } else if (nestsFromAnchor) {
+                        // ⚠ A brace on a line of its own takes its `}`'s column, not the `=`'s
+                        // continuation the gap before it sits in (#465). See IndentKind.AnchoredBrace.
+                        OpenIndent(IndentKind.AnchoredBrace);
+                        EmitToken(token);
+                        CloseIndent(IndentKind.AnchoredBrace);
+                        OpenIndent(braceIndent);
                     } else {
                         EmitToken(token);
                         OpenIndent(braceIndent);
@@ -1755,7 +1807,7 @@ public sealed partial class CSharpDocumentBuilder {
                     if (element) {
                         savedDepth = continuousDepth;
                         continuousDepth = 0;
-                        frames.Add(new Frame(FrameKind.Unit, false));
+                        frames.Add(new(FrameKind.Unit, false));
                     }
                 }
             } else if (child.AsNode() is { } inner) {
@@ -2147,6 +2199,18 @@ public sealed partial class CSharpDocumentBuilder {
         // The statements of a case take one indent from the label.
         OpenIndent(IndentKind.Block);
         foreach (var statement in node.Statements) {
+            // ⚠ A block among several statements sits on the label's column, with its contents one level
+            // in and the statements after it back on the section's level (#478, SK-DIV-0115). Measured
+            // 2026-10-08: `case 1: { M(); } break;` comes back `case 1: {` / `M();` / `}` / `break;` and
+            // `case 2: M(); { M(); } break;` puts the `{` and `}` on `case`'s column — the same place a
+            // section that is only a block puts them.
+            if (statement is BlockSyntax) {
+                OpenIndent(IndentKind.Outdent);
+                Visit(statement);
+                CloseIndent(IndentKind.Outdent);
+                continue;
+            }
+
             // ⚠ skala_indent_break_from_case = false puts the control transfer back at the
             // label's own level, which is a different shape and not a rounding error.
             if (!options.IndentBreakFromCase
@@ -2187,7 +2251,11 @@ public sealed partial class CSharpDocumentBuilder {
         // still has a scope for its closing delimiter to be aligned against.
         // ⚠ `Anchor` is a marker too, and `AnchoredBlock` is a block in every respect this
         // bookkeeping cares about; only the writer reads the difference.
-        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None or IndentKind.Anchor) {
+        if (kind is IndentKind.Outdent
+            or IndentKind.OutdentColumns
+            or IndentKind.None
+            or IndentKind.Anchor
+            or IndentKind.AnchoredBrace) {
             return;
         }
 
@@ -2204,14 +2272,18 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ A block is a frame boundary. A continuation level spent inside it must be closed inside
         // it too, or the document builder's Close pops the wrong container and the whole brace
         // structure of the file shifts by one.
-        frames.Add(new Frame(FrameKind.Unit, false));
+        frames.Add(new(FrameKind.Unit, false));
     }
 
     /// <param name="alignsCloser">
     ///     The next piece is this scope's own closing delimiter and takes its opener's line level.
     /// </param>
     void CloseIndent(IndentKind kind, bool alignsCloser = false) {
-        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None or IndentKind.Anchor) {
+        if (kind is IndentKind.Outdent
+            or IndentKind.OutdentColumns
+            or IndentKind.None
+            or IndentKind.Anchor
+            or IndentKind.AnchoredBrace) {
             doc.Close(alignsCloser);
             return;
         }
@@ -2340,6 +2412,14 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         var token = piece.Kind == PieceKind.Token ? tokens[piece.TokenIndex] : default;
+
+        // ⚠ Opened before the gap, so that a break in it lands inside, and closed after the token, so
+        // that it covers that one line and no other.
+        var extraOutdent = ExtraOutdentFor(token);
+        if (extraOutdent > 0) {
+            OpenIndent(IndentKind.OutdentColumns, columns: extraOutdent);
+        }
+
         if (piece.Span.Start != gapEmittedAt) {
             EmitGap(index, piece.Kind, piece.Span.Start, token);
         }
@@ -2425,7 +2505,33 @@ public sealed partial class CSharpDocumentBuilder {
                 break;
         }
 
+        if (extraOutdent > 0) {
+            CloseIndent(IndentKind.OutdentColumns);
+        }
+
         lastPiece = index;
+    }
+
+    /// <summary>
+    ///     The columns a wrapped line beginning with <paramref name="token" /> is pulled back past what its
+    ///     chain's <c>skala_outdent_dots</c> scope already pulls it: the rest of a <c>?.</c>'s width.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The scope's amount is one chain-wide number, a <c>.</c>'s width, and the oracle outdents
+    ///     each line by its own leading operator (#458, SK-DIV-0069): <c>?.SelectName(…)</c> at column 10
+    ///     where the <c>.</c> lines sit at 11. The option's own meaning — pull the line back by the width
+    ///     of the operator that starts it — says the same without the oracle.
+    /// </remarks>
+    int ExtraOutdentFor(SyntaxToken token) {
+        if (dotOutdents == 0
+            || !token.IsKind(SyntaxKind.QuestionToken)
+            || token.Parent is not ConditionalAccessExpressionSyntax
+            || !token.GetNextToken().IsKind(SyntaxKind.DotToken)) {
+            return 0;
+        }
+
+        var dot = token.GetNextToken();
+        return token.Text.Length + dot.Text.Length - 1;
     }
 
     /// <summary>
@@ -2813,7 +2919,7 @@ public sealed partial class CSharpDocumentBuilder {
             && newLines > 0
             || TouchesInactiveBranch(previous, nextPieceIndex)) {
             if (gap.Length > 0) {
-                doc.Verbatim(gap, new SourceSpan(previous.Span.End, gap.Length), VerbatimFlags.AtColumnZero);
+                doc.Verbatim(gap, new(previous.Span.End, gap.Length), VerbatimFlags.AtColumnZero);
             }
 
             return;
@@ -2884,9 +2990,20 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         var spec = default(GapSpec);
-        var planned = (previous.Kind == PieceKind.Token || PointSurvivesComments(lastPiece))
+        var planned = (previous.Kind == PieceKind.Token || PointSurvivesComments(lastPiece, nextStart))
             && nextKind == PieceKind.Token
             && plan.TryGap(nextStart, out spec);
+
+        // ⚠ An array initializer's first element joins a block comment on its own line above it (#522):
+        // `new[] {` / `/* c */` / `1` comes back `/* c */ 1`. The `{`'s break is already taken before the
+        // comment, so the point after it has nothing left to break. Measured for `/* */` and `/** */`, one
+        // comment or two on a line, an implicit, explicit and field-initializer array, a nested element;
+        // not after `{ /* c */` on the brace's line, and not in a collection, object, anonymous or `with`
+        // initializer, a collection expression or a property pattern, which all keep the break.
+        if (planned && previous.Kind != PieceKind.Token && FirstArrayElementUnderAnOwnLineComment(lastPiece)) {
+            EmitFlatGap(previous, nextKind, nextToken, gap);
+            return;
+        }
 
         if (planned) {
             // ⚠ A preserved run goes *before* the point rather than into its flat rendering, because
@@ -2967,6 +3084,31 @@ public sealed partial class CSharpDocumentBuilder {
         doc.FlagLastLine(LineFlags.KeptBreak);
     }
 
+    /// <summary>
+    ///     Whether the block comments ending at <paramref name="lastPieceIndex" /> follow a non-empty array
+    ///     initializer's <c>{</c> and at least one of them starts a line. See #522 in <see cref="EmitGap" />.
+    /// </summary>
+    bool FirstArrayElementUnderAnOwnLineComment(int lastPieceIndex) {
+        var startsLine = false;
+        for (var i = lastPieceIndex; i >= 0; i--) {
+            var piece = pieces[i];
+            switch (piece.Kind) {
+                case PieceKind.BlockComment or PieceKind.BlockDocComment:
+                    startsLine |= piece.StartsLine;
+                    continue;
+                case PieceKind.Token:
+                    return startsLine
+                        && tokens[piece.TokenIndex] is { RawKind: (int)SyntaxKind.OpenBraceToken } open
+                        && open.Parent is InitializerExpressionSyntax { Expressions.Count: > 0 } array
+                        && array.IsKind(SyntaxKind.ArrayInitializerExpression);
+                default:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
     string DefaultNewLine() =>
         options.LineEnding switch {
             LineEnding.Crlf => "\r\n",
@@ -3023,7 +3165,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///         <c>SkalaFormatOnly</c> and <c>SkalaDocComments</c> alike.
     ///     </para>
     /// </remarks>
-    bool PointSurvivesComments(int lastPieceIndex) {
+    bool PointSurvivesComments(int lastPieceIndex, int nextStart) {
         var lineComment = false;
         var spansLines = false;
         for (var i = lastPieceIndex; i >= 0; i--) {
@@ -3041,7 +3183,7 @@ public sealed partial class CSharpDocumentBuilder {
                 case PieceKind.Token:
                     return !lineComment
                         && i != lastPieceIndex
-                        && !StopsAtAComment(tokens[piece.TokenIndex])
+                        && (!StopsAtAComment(tokens[piece.TokenIndex]) || plan.PlansPastALeadingComment(nextStart))
                         && !EndsAnAttributeRun(tokens[piece.TokenIndex])
                         && !(spansLines && StopsAtAMultiLineComment(tokens[piece.TokenIndex]));
                 default:
@@ -3060,6 +3202,10 @@ public sealed partial class CSharpDocumentBuilder {
     ///     The two tokens whose wrap the oracle does not carry past a comment after them: <c>(</c> and
     ///     an expression body's <c>=&gt;</c>. See <see cref="PointSurvivesComments" />.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ The list's or the arrow's own wrap stops there; a point of its own past the comment does not,
+    ///     and <see cref="BreakPlan.PlansPastALeadingComment" /> names it (#486).
+    /// </remarks>
     static bool StopsAtAComment(SyntaxToken token) =>
         token.IsKind(SyntaxKind.OpenParenToken)
         || token.IsKind(SyntaxKind.EqualsGreaterThanToken)
@@ -3193,9 +3339,30 @@ public sealed partial class CSharpDocumentBuilder {
     ///     spend. Stopping at the innermost frame leaves the body flush with its declaration.
     /// </remarks>
     int FrameToSpend(int nextPieceIndex, SyntaxToken nextToken) {
-        var beforeDot = nextToken.IsKind(SyntaxKind.DotToken)
-            || nextToken.IsKind(SyntaxKind.QuestionToken)
-            && nextToken.Parent is ConditionalAccessExpressionSyntax;
+        // ⚠ A comment run that introduces a chain link is that link's break (#523): the chain pays its
+        // level at the comment, and the link under it on the comment's column pays nothing more. Measured:
+        // `var y = a` / `// c` / `.B();` puts `.B()` on the comment's column, one level in, blank line above
+        // the comment or not, `//` or `/* */`, `.` or `?.`; Skala paid the statement's level for the
+        // comment and the chain's again for the dot. In an argument (`Call(a` / `// c` / `.B())`) it was
+        // the comment that came out a level short.
+        if (nextToken.IsKind(SyntaxKind.None) && nextPieceIndex >= 0) {
+            for (var i = nextPieceIndex; i < pieces.Length; i++) {
+                if (pieces[i].Kind == PieceKind.Token) {
+                    var under = tokens[pieces[i].TokenIndex];
+                    if (IsChainLinkStart(under)) {
+                        nextToken = under;
+                    }
+
+                    break;
+                }
+
+                if (!pieces[i].IsComment) {
+                    break;
+                }
+            }
+        }
+
+        var beforeDot = IsChainLinkStart(nextToken);
 
         for (var i = frames.Count - 1; i >= 0; i--) {
             if (!frames[i].Started) {
@@ -3253,6 +3420,10 @@ public sealed partial class CSharpDocumentBuilder {
                 continue;
             }
 
+            if (frames[i].PaysAt == nextToken.SpanStart) {
+                return i;
+            }
+
             // ⚠ A break before an `=` spends the level inside a delimited scope too — the frame-side
             // half of GroupPlan.SpendsUnderDelimiters. `void D(int a\n = 5)` chops the list and the
             // oracle puts `= 5` one level past `int a`; the depth rule alone left it flush.
@@ -3265,6 +3436,11 @@ public sealed partial class CSharpDocumentBuilder {
 
         return -1;
     }
+
+    static bool IsChainLinkStart(SyntaxToken token) =>
+        token.IsKind(SyntaxKind.DotToken)
+        || token.IsKind(SyntaxKind.QuestionToken)
+        && token.Parent is ConditionalAccessExpressionSyntax;
 
     enum FrameKind {
         Unit,
@@ -3297,7 +3473,8 @@ public sealed partial class CSharpDocumentBuilder {
         bool Aligned = false,
         bool HoldsLevel = false,
         int EntryDepth = 0,
-        int PaysNotBefore = -1);
+        int PaysNotBefore = -1,
+        int PaysAt = -1);
 
     /// <summary>
     ///     Whether the break continues an expression rather than starting a new statement, member or
@@ -3541,6 +3718,21 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
+        // ⚠ The one gap measured to come back two spaces wide (#493): `E( /*f*/)` with the
+        // parameter-list key on is the key's space plus the author's bit, when the trailing-comment
+        // key also asks for one. ⚠ Two whatever the author wrote, which is the oracle's fixed point and
+        // not its first answer: `F(/*f*/)` comes back `F( /*f*/ )`, and that comes back `F(  /*f*/ )`
+        // on the next run, so copying the first answer would make Skala fail its own idempotence.
+        // See SpaceRules.OpensAnEmptyPairWithItsSpaceOn.
+        if (nextKind is PieceKind.BlockComment or PieceKind.BlockDocComment
+            && previous.Kind == PieceKind.Token
+            && !options.DisableSpaceChanges
+            && options.SpaceBeforeTrailingComment
+            && SpaceRules.OpensAnEmptyPairWithItsSpaceOn(tokens[previous.TokenIndex], options)) {
+            doc.Space("  ");
+            return;
+        }
+
         doc.Space(FlatGapSpace(previous, nextKind, nextToken, gap));
     }
 
@@ -3581,14 +3773,21 @@ public sealed partial class CSharpDocumentBuilder {
             or PieceKind.BlockComment
             or PieceKind.DocCommentLine
             or PieceKind.BlockDocComment) {
-            var governed = nextKind == PieceKind.BlockComment && previous.Kind == PieceKind.Token
-                ? SpaceRules.BeforeBlockComment(tokens[previous.TokenIndex], options)
-                : null;
+            // ⚠ A `/** … */` inside an expression is the same comment to the oracle as a `/* … */`, on
+            // both sides of it (#491): `M(1 /** f */ , 2)` comes back `M(1 /** f */, 2)` and
+            // `M(1, /** f */2)` as written, exactly as their `/* */` twins do, where Skala answered
+            // every gap after one with a space.
+            var governed = nextKind is PieceKind.BlockComment or PieceKind.BlockDocComment
+                && previous.Kind == PieceKind.Token
+                    ? SpaceRules.OpensAnEmptyPairWithItsSpaceOn(tokens[previous.TokenIndex], options)
+                        ? true
+                        : SpaceRules.BeforeBlockComment(tokens[previous.TokenIndex], options)
+                    : null;
 
             return governed ?? options.SpaceBeforeTrailingComment ? SpaceKind.Required : SpaceKind.Forbidden;
         }
 
-        if (previous.Kind == PieceKind.BlockComment
+        if (previous.Kind is PieceKind.BlockComment or PieceKind.BlockDocComment
             && nextKind == PieceKind.Token
             && TokenBeforeTheComments(previous) is { } before) {
             // ⚠ A gap holding a line break is a break being joined, and what the author wrote there
@@ -3681,7 +3880,7 @@ public sealed partial class CSharpDocumentBuilder {
                 return i == lastPiece ? null : tokens[piece.TokenIndex];
             }
 
-            if (piece.Kind != PieceKind.BlockComment
+            if (piece.Kind is not (PieceKind.BlockComment or PieceKind.BlockDocComment)
                 || FormatterTagGuard.IsOffTag(piece.Text, options.Tags)
                 || FormatterTagGuard.IsOnTag(piece.Text, options.Tags)
                 || i == 0
@@ -3721,7 +3920,9 @@ public sealed partial class CSharpDocumentBuilder {
         // `o is not` / `null`, `o as` / `P` and `case` / `(1, 2):` are all kept at the defaults and
         // joined here.
         var previousToken = tokens[previous.TokenIndex];
-        return SpaceRules.Preserves(previousToken, nextToken)
+        // ⚠ The oracle's predicate, not Skala's: a spread's `..` is governed since #513 and the oracle
+        // still joins the break behind it here.
+        return SpaceRules.OracleKeepsTheAuthorsGap(previousToken, nextToken)
             || previousToken.IsKind(SyntaxKind.DotDotToken)
             && previousToken.Parent is SlicePatternSyntax
             || previousToken.Kind() is SyntaxKind.IsKeyword or SyntaxKind.AsKeyword
@@ -3753,8 +3954,11 @@ public sealed partial class CSharpDocumentBuilder {
             // and third are the same bytes.) ⚠ `together_same_line`'s second half — pulling the pair
             // back onto the declaration's line against `new_line_before_open_brace` — is NOT
             // implemented: it needs the brace-split direction Skala does not have. SK-DIV-0091.
-            return options.EmptyBlockStyle is EmptyBlockStyle.Together or EmptyBlockStyle.TogetherSameLine
-                && OpensAJoinableBody(previousToken);
+            // ⚠ An empty accessor, lambda, anonymous method or initializer is joined at `multiline` too:
+            // `() =>` / `{` / `}` comes back `() => { }` at all three values (#465).
+            return OpensAJoinableBody(previousToken)
+                && (options.EmptyBlockStyle is EmptyBlockStyle.Together or EmptyBlockStyle.TogetherSameLine
+                    || EmptyBodyStaysJoined(previousToken));
         }
 
         if (nextToken.IsKind(SyntaxKind.OpenBraceToken)) {
@@ -3762,8 +3966,15 @@ public sealed partial class CSharpDocumentBuilder {
             // one of the key's twelve members behaved as `all`, and two of its fifteen values agreed
             // with the oracle. See BraceOwners for the seven groups the C# formatter actually has and
             // the probe that established them.
+            // ⚠ And an empty body the key would put on a line of its own is pulled back in two cases,
+            // both measured (#465): `together_same_line`, which is that value's whole meaning, and an
+            // empty accessor, lambda, anonymous method or initializer, which stays `{ }` on its owner's
+            // line at every value of the empty-block key. See BreakPlan.SettleOpenBraces.
             return OpensAJoinableBody(nextToken)
-                && (options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(nextToken)) == 0;
+                && ((options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(nextToken)) == 0
+                    || IsEmptyBody(nextToken)
+                    && (options.EmptyBlockStyle == EmptyBlockStyle.TogetherSameLine
+                        || EmptyBodyStaysJoined(nextToken)));
         }
 
         if (previousToken.IsKind(SyntaxKind.ElseKeyword)) {
@@ -3843,6 +4054,38 @@ public sealed partial class CSharpDocumentBuilder {
             return true;
         }
 
+        // ⚠ `skala_new_line_before_else`, `_catch`, `_finally` and `_while` at `true` split a `} else` the
+        // author wrote joined, and Skala only ever kept a break the author wrote — `ShouldJoin`'s arm
+        // below is the other direction. Measured 2026-10-08 (#480) with all four keys `true` on a K&R
+        // input: `}` / `else {`, `}` / `catch {`, `}` / `finally {`, `}` / `while (b);` and `}` /
+        // `else M();`.
+        if (nextKind == PieceKind.Token
+            && previousToken.IsKind(SyntaxKind.CloseBraceToken)
+            && nextToken.Kind() switch {
+                SyntaxKind.ElseKeyword => options.NewLineBeforeElse,
+                SyntaxKind.CatchKeyword => options.NewLineBeforeCatch,
+                SyntaxKind.FinallyKeyword => options.NewLineBeforeFinally,
+                SyntaxKind.WhileKeyword => nextToken.Parent is DoStatementSyntax && options.NewLineBeforeWhile,
+                _ => false
+            }) {
+            return true;
+        }
+
+        // ⚠ `skala_empty_block_style = multiline` splits an empty body the author wrote `{ }`, and Skala
+        // only ever kept a split one. Measured 2026-10-08 (#465) under `csharp_new_line_before_open_brace`
+        // `none` and `all` alike: a type's, a namespace's, a method's, a local function's, a control
+        // block's and a switch's `{ }` comes back `{` / `}`, and an accessor's, a lambda's, an anonymous
+        // method's and an initializer's stays `{ }`.
+        if (nextKind == PieceKind.Token
+            && previousToken.IsKind(SyntaxKind.OpenBraceToken)
+            && nextToken.IsKind(SyntaxKind.CloseBraceToken)
+            && options.EmptyBlockStyle == EmptyBlockStyle.Multiline
+            && OpensAJoinableBody(previousToken)
+            && IsEmptyBody(previousToken)
+            && !EmptyBodyStaysJoined(previousToken)) {
+            return true;
+        }
+
         // ⚠ `skala_special_else_if_treatment = false` splits `else if` and lets the `if` become what it
         // structurally is — the `else`'s embedded statement, one level in. Measured, and symmetric:
         // the oracle splits a joined `else if` at `false` and joins a split one at `true`, so
@@ -3916,7 +4159,34 @@ public sealed partial class CSharpDocumentBuilder {
         } declaration
         && declaration.Variables[0] == declarator;
 
-    static bool OpensAJoinableBody(SyntaxToken brace) =>
+    /// <summary>
+    ///     Whether the brace opens a body with nothing in it — not a statement, a member, an element nor
+    ///     a comment.
+    /// </summary>
+    internal static bool IsEmptyBody(SyntaxToken open) {
+        var next = open.GetNextToken();
+        return next.IsKind(SyntaxKind.CloseBraceToken)
+            && next.Parent == open.Parent
+            && !open.TrailingTrivia.Any(IsLineOrBlockComment)
+            && !next.LeadingTrivia.Any(static trivia => IsLineOrBlockComment(trivia) || trivia.IsDirective);
+    }
+
+    /// <summary>
+    ///     An empty body that stays <c>{ }</c> on its owner's line whatever the brace keys say.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-08 under <c>csharp_new_line_before_open_brace = all</c> at all three
+    ///     <c>skala_empty_block_style</c> values, written K&amp;R and Allman (#465): an accessor's
+    ///     <c>get { }</c>, a lambda's <c>() =&gt; { }</c>, an anonymous method's <c>delegate { }</c>, a
+    ///     collection initializer's <c>new List&lt;int&gt; { }</c> and an anonymous type's <c>new { }</c>
+    ///     come back joined every time, and <c>() =&gt;</c> / <c>{</c> / <c>}</c> is joined back. A
+    ///     type's, a namespace's, a method's, a local function's, a control block's and a switch's are
+    ///     the ones the empty-block key moves.
+    /// </remarks>
+    internal static bool EmptyBodyStaysJoined(SyntaxToken open) =>
+        BraceOwnerSet.Of(open) is BraceOwners.Accessors or BraceOwners.Lambdas or BraceOwners.Initializers;
+
+    internal static bool OpensAJoinableBody(SyntaxToken brace) =>
         brace.Parent is BlockSyntax
             or AccessorListSyntax
             or BaseTypeDeclarationSyntax
@@ -4060,6 +4330,13 @@ public sealed partial class CSharpDocumentBuilder {
             if (nextToken.IsKind(SyntaxKind.OpenBracketToken) && nextToken.Parent is CollectionExpressionSyntax) {
                 flags |= LineFlags.DelimitedItem;
             }
+
+            // ⚠ And a collection expression's element keeps an identifier head when the break inside it
+            // is certain, the tuple's rule: `1, F(() => {` with a block that cannot join stays on the
+            // comma's line, while `F("…131 columns…", 2)` moves whole (#471, SK-DIV-0117).
+            if (StartsACollectionElement(nextToken)) {
+                flags |= LineFlags.KeepsHeadWhenCertain;
+            }
         }
 
         return flags;
@@ -4084,13 +4361,31 @@ public sealed partial class CSharpDocumentBuilder {
 
     /// <summary>
     ///     Whether the token is the first of an array initializer's element — the fill whose elements were
-    ///     measured (#444, SK-DIV-0208). ⚠ Not a collection expression's: the oracle puts a multi-line
-    ///     <c>((…</c> element of one on a line of its own (CollectionAfterEqIssue375Tests).
+    ///     measured (#444, SK-DIV-0208) — or of a collection expression's.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ The collection expression was excluded on a reading of CollectionAfterEqIssue375Tests that
+    ///     had it backwards: Skala put <c>((</c> on a line of its own and the oracle keeps
+    ///     <c>null!, ((</c>. Measured for #471 (SK-DIV-0117): a collection expression's fill keeps the
+    ///     head of a multi-line element — <c>1, () =&gt; {</c>, <c>1, o switch {</c>, <c>[1], [</c>,
+    ///     <c>1, 2, Call(</c> — and starts the element after one on a line of its own, exactly as an
+    ///     array initializer's does.
+    /// </remarks>
     static bool StartsAFilledElement(SyntaxToken token) {
         for (SyntaxNode? node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
             if (node.Parent is InitializerExpressionSyntax initializer
                 && initializer.IsKind(SyntaxKind.ArrayInitializerExpression)) {
+                return true;
+            }
+        }
+
+        return StartsACollectionElement(token);
+    }
+
+    /// <summary>Whether the token is the first of a collection expression's element.</summary>
+    static bool StartsACollectionElement(SyntaxToken token) {
+        for (SyntaxNode? node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
+            if (node is CollectionElementSyntax && node.Parent is CollectionExpressionSyntax) {
                 return true;
             }
         }

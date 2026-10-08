@@ -54,26 +54,26 @@ public sealed class ReadonlyStructMutationAnalyzer : DiagnosticAnalyzer {
 
         // The declaring constructor may write its own readonly storage without making a copy.
         if (context.Node.Ancestors()
-                .OfType<ConstructorDeclarationSyntax>()
-                .Any(constructor =>
-                    model.GetDeclaredSymbol(constructor, cancellation) is { } symbol
-                    && SymbolEqualityComparer.Default.Equals(
-                        symbol.ContainingType.OriginalDefinition,
-                        receiver.Field.ContainingType.OriginalDefinition
-                    )
-                )) {
+            .OfType<ConstructorDeclarationSyntax>()
+            .Any(constructor =>
+                model.GetDeclaredSymbol(constructor, cancellation) is { } symbol
+                && SymbolEqualityComparer.Default.Equals(
+                    symbol.ContainingType.OriginalDefinition,
+                    receiver.Field.ContainingType.OriginalDefinition
+                )
+            )) {
             return;
         }
 
         if (context.Node.Ancestors()
-                .OfType<AccessorDeclarationSyntax>()
-                .Any(accessor => accessor.IsKind(SyntaxKind.InitAccessorDeclaration)
-                    && model.GetDeclaredSymbol(accessor, cancellation) is { } symbol
-                    && SymbolEqualityComparer.Default.Equals(
-                        symbol.ContainingType.OriginalDefinition,
-                        receiver.Field.ContainingType.OriginalDefinition
-                    )
-                )) {
+            .OfType<AccessorDeclarationSyntax>()
+            .Any(accessor => accessor.IsKind(SyntaxKind.InitAccessorDeclaration)
+                && model.GetDeclaredSymbol(accessor, cancellation) is { } symbol
+                && SymbolEqualityComparer.Default.Equals(
+                    symbol.ContainingType.OriginalDefinition,
+                    receiver.Field.ContainingType.OriginalDefinition
+                )
+            )) {
             return;
         }
 

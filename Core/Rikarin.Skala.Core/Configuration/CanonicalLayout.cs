@@ -183,7 +183,7 @@ public static class CanonicalLayout {
     }
 
     static List<string> Lines(string text) => [
-        .. CanonicalEditorConfig.Normalize(text).TrimEnd('\n').Split('\n')
+        ..CanonicalEditorConfig.Normalize(text).TrimEnd('\n').Split('\n')
     ];
 
     internal static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);

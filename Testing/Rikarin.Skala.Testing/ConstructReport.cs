@@ -50,12 +50,13 @@ public static class ConstructReport {
             var expected = TextNormalisation.Normalise(OracleFixture.Read(file));
             var actual = TextNormalisation.Normalise(
                 Formatting.CSharp.CSharpFormatter.Format(
-                    file.Path,
-                    Formatting.CSharp.CSharpFormatter.Read(file.Path),
-                    Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(file.Path).Options,
-                    null,
-                    symbols ?? []
-                ).Formatted
+                        file.Path,
+                        Formatting.CSharp.CSharpFormatter.Read(file.Path),
+                        Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(file.Path).Options,
+                        null,
+                        symbols ?? []
+                    )
+                    .Formatted
             );
 
             var text = SourceText.From(expected);
@@ -80,7 +81,7 @@ public static class ConstructReport {
         var kinds = new HashSet<string>(lines.Keys, StringComparer.Ordinal);
         kinds.UnionWith(divergent.Keys);
         return [
-            .. kinds
+            ..kinds
                 .Select(kind => new ConstructShare(
                         kind,
                         occurrences.GetValueOrDefault(kind),
@@ -107,12 +108,13 @@ public static class ConstructReport {
             var expected = TextNormalisation.Normalise(OracleFixture.Read(file));
             var actual = TextNormalisation.Normalise(
                 Formatting.CSharp.CSharpFormatter.Format(
-                    file.Path,
-                    Formatting.CSharp.CSharpFormatter.Read(file.Path),
-                    Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(file.Path).Options,
-                    null,
-                    symbols ?? []
-                ).Formatted
+                        file.Path,
+                        Formatting.CSharp.CSharpFormatter.Read(file.Path),
+                        Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(file.Path).Options,
+                        null,
+                        symbols ?? []
+                    )
+                    .Formatted
             );
 
             if (string.Equals(expected, actual, StringComparison.Ordinal)) {

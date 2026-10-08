@@ -167,7 +167,7 @@ public static class CanonicalSync {
 
         if (!exists) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.CanonicalUnmanaged,
                     SkalaSeverity.Info,
                     "the repository has no .editorconfig; `skala config sync --apply` writes the canonical one",
@@ -176,7 +176,7 @@ public static class CanonicalSync {
             );
         } else if (!layout.IsManaged) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.CanonicalUnmanaged,
                     SkalaSeverity.Info,
                     ".editorconfig carries no canonical block, so drift from the canonical cannot be detected",
@@ -192,7 +192,7 @@ public static class CanonicalSync {
 
         if (status.Drifted) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.CanonicalDrift,
                     SkalaSeverity.Error,
                     $"the canonical block has been edited: it hashes to {Short(actual)} and its marker says {Short(layout.Marker!.Sha256)}",
@@ -205,7 +205,7 @@ public static class CanonicalSync {
 
         if (status.Behind) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.CanonicalBehind,
                     SkalaSeverity.Info,
                     $"this repository is on canonical {layout.Marker!.Version}; {tool.Version} is available",
@@ -218,7 +218,7 @@ public static class CanonicalSync {
 
         foreach (var local in overrides) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.CanonicalLocalOverride,
                     SkalaSeverity.Info,
                     $"[{local.Section}] {local.Key} = {local.LocalValue} overrides the canonical's {local.CanonicalValue}",
@@ -336,7 +336,7 @@ public static class CanonicalSync {
             }
 
             result.Add(
-                new LocalOverride(
+                new(
                     assignment.Key,
                     sectionName,
                     canonicalValue,
@@ -377,7 +377,7 @@ public static class CanonicalSync {
             var raised = breaking.Length - introduced;
 
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.CanonicalSeverityChange,
                     SkalaSeverity.Warning,
                     $"the canonical moves {CanonicalLayout.Number(breaking.Length)} compiler diagnostic severity(ies) "
@@ -407,7 +407,7 @@ public static class CanonicalSync {
 
         if (quieter > 0) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.CanonicalSeverityChange,
                     SkalaSeverity.Info,
                     $"the canonical lowers or stops setting {CanonicalLayout.Number(quieter)} compiler diagnostic severity(ies)",
@@ -422,7 +422,7 @@ public static class CanonicalSync {
         var analyzers = status.SeverityChanges.Count(static change => !change.IsCompilerDiagnostic);
         if (analyzers > 0) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.CanonicalSeverityChange,
                     SkalaSeverity.Info,
                     $"the canonical also changes {CanonicalLayout.Number(analyzers)} analyzer diagnostic severity(ies)",
@@ -491,7 +491,7 @@ public static class CanonicalSync {
             };
 
             result.Add(
-                new DiagnosticSeverityChange(
+                new(
                     $"dotnet_diagnostic.{key.Diagnostic.ToLowerInvariant()}.severity",
                     key.Diagnostic,
                     key.Section,

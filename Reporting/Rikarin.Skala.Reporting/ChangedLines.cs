@@ -152,7 +152,7 @@ public sealed class ChangedLines {
 
     /// <summary>Tags every finding with whether it is inside the changed ranges.</summary>
     public ImmutableArray<Finding> Apply(ImmutableArray<Finding> findings) =>
-        [.. findings.Select(finding => finding with { IsInChangedCode = Contains(finding) })];
+        [..findings.Select(finding => finding with { IsInChangedCode = Contains(finding) })];
 
     static Dictionary<string, ImmutableArray<LineRange>> Parse(string repositoryRoot, string diff) {
         var result = new Dictionary<string, ImmutableArray<LineRange>>(StringComparer.Ordinal);
@@ -192,7 +192,7 @@ public sealed class ChangedLines {
     ) {
         if (path.Length > 0 && ranges.Count > 0) {
             result[path] = result.TryGetValue(path, out var existing)
-                ? [.. existing, .. ranges]
+                ? [..existing, ..ranges]
                 : ranges.ToImmutable();
         }
 

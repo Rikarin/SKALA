@@ -183,7 +183,7 @@ public static class ArrangementPipeline {
 
         if (!converged) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     DidNotConverge,
                     SkalaSeverity.Error,
                     $"arrange-and-format did not reach a fixed point in {MaxPasses.ToString(CultureInfo.InvariantCulture)} passes; the file was left untouched",
@@ -202,7 +202,7 @@ public static class ArrangementPipeline {
             path,
             text,
             current.ToString(),
-            [.. edits],
+            [..edits],
             applied.ToImmutable(),
             diagnostics.ToImmutable(),
             passes,

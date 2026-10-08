@@ -131,14 +131,14 @@ public static class SyntaxCoverage {
         }
 
         return [
-            .. inventory
+            ..inventory
                 .Where(static entry => IsNodeKind(entry.Key, entry.Value))
                 .Select(entry => new KindCoverage(
                         entry.Key,
                         entry.Value,
                         occurrences.GetValueOrDefault(entry.Key),
                         files.GetValueOrDefault(entry.Key),
-                        inSets.TryGetValue(entry.Key, out var owners) ? [.. owners] : []
+                        inSets.TryGetValue(entry.Key, out var owners) ? [..owners] : []
                     )
                 )
                 .OrderBy(static coverage => coverage.Occurrences)
@@ -196,8 +196,8 @@ public static class SyntaxCoverage {
         }
 
         return [
-            .. ProbeNames
-                .Select(name => new KindCoverage(name, "probe", counts[name], files[name], [.. inSets[name]]))
+            ..ProbeNames
+                .Select(name => new KindCoverage(name, "probe", counts[name], files[name], [..inSets[name]]))
                 .OrderBy(static c => c.Occurrences)
                 .ThenBy(static c => c.Kind, StringComparer.Ordinal)
         ];
@@ -297,8 +297,8 @@ public static class SyntaxCoverage {
         yield return ("nested collection expression",
             nodes.OfType<Microsoft.CodeAnalysis.CSharp.Syntax.CollectionExpressionSyntax>()
                 .Count(static collection => collection.Ancestors()
-                        .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.CollectionExpressionSyntax>()
-                        .Any()
+                    .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.CollectionExpressionSyntax>()
+                    .Any()
                 ));
     }
 
@@ -340,11 +340,11 @@ public static class SyntaxCoverage {
             .Append(covered.Length.ToString(CultureInfo.InvariantCulture))
             .AppendLine();
 
-        Band(builder, "token-level constructs the kind census cannot see", [.. Probes()]);
+        Band(builder, "token-level constructs the kind census cannot see", [..Probes()]);
         Band(builder, "absent", absent);
-        Band(builder, "present once", [.. thin.Where(static c => c.Occurrences == 1)]);
-        Band(builder, "2..9", [.. thin.Where(static c => c.Occurrences is >= 2 and <= 9)]);
-        Band(builder, "10..50", [.. thin.Where(static c => c.Occurrences is >= 10 and <= Threshold)]);
+        Band(builder, "present once", [..thin.Where(static c => c.Occurrences == 1)]);
+        Band(builder, "2..9", [..thin.Where(static c => c.Occurrences is >= 2 and <= 9)]);
+        Band(builder, "10..50", [..thin.Where(static c => c.Occurrences is >= 10 and <= Threshold)]);
         return builder.ToString();
     }
 

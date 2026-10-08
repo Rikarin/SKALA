@@ -214,13 +214,13 @@ public sealed class UnchangingLoopConditionAnalyzer : DiagnosticAnalyzer {
             }
 
             if (node.DescendantNodesAndSelf()
-                    .OfType<IdentifierNameSyntax>()
-                    .Any(identifier => string.Equals(
-                            identifier.Identifier.ValueText,
-                            variable.Name,
-                            StringComparison.Ordinal
-                        )
-                    )) {
+                .OfType<IdentifierNameSyntax>()
+                .Any(identifier => string.Equals(
+                        identifier.Identifier.ValueText,
+                        variable.Name,
+                        StringComparison.Ordinal
+                    )
+                )) {
                 return true;
             }
         }

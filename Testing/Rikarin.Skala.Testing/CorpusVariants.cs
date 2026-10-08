@@ -74,7 +74,8 @@ public static class CorpusVariants {
             "keep-rearrange",
             true,
             false
-        ), Variant("reflow-keep", false, true),
+        ),
+        Variant("reflow-keep", false, true),
         Variant(
             "reflow-rearrange",
             false,
@@ -104,7 +105,7 @@ public static class CorpusVariants {
         };
 
         foreach (var key in KeepExistingKeys) {
-            overrides.Add(new KeyValuePair<string, string>(key, keepExisting ? "true" : "false"));
+            overrides.Add(new(key, keepExisting ? "true" : "false"));
         }
 
         return new(name, overrides);

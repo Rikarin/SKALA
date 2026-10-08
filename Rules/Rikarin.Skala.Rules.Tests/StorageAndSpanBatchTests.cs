@@ -229,7 +229,7 @@ public sealed class StorageAndSpanBatchTests {
         var finding = Assert.Single(Analyze(before), diagnostic => diagnostic.Id == id);
         var edits = Enumerable.Range(0, int.Parse(finding.Properties[FixEdits.CountKey]!, CultureInfo.InvariantCulture))
             .Select(index => new TextChange(
-                    new TextSpan(
+                    new(
                         int.Parse(finding.Properties[FixEdits.StartKey(index)]!, CultureInfo.InvariantCulture),
                         int.Parse(finding.Properties[FixEdits.LengthKey(index)]!, CultureInfo.InvariantCulture)
                     ),

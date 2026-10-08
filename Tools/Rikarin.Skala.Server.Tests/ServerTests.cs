@@ -104,7 +104,7 @@ public sealed class LanguageServerTests {
             Request(
                 2,
                 "textDocument/formatting",
-                new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri } }
+                new() { ["textDocument"] = new JsonObject { ["uri"] = uri } }
             )
         );
 
@@ -133,7 +133,7 @@ public sealed class LanguageServerTests {
             Request(
                 1,
                 "textDocument/formatting",
-                new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri } }
+                new() { ["textDocument"] = new JsonObject { ["uri"] = uri } }
             )
         );
 
@@ -142,7 +142,7 @@ public sealed class LanguageServerTests {
             Request(
                 1,
                 "textDocument/rangeFormatting",
-                new JsonObject {
+                new() {
                     ["textDocument"] = new JsonObject { ["uri"] = uri },
                     ["range"] = new JsonObject {
                         ["start"] = new JsonObject { ["line"] = 1, ["character"] = 0 },
@@ -174,7 +174,7 @@ public sealed class LanguageServerTests {
             Request(
                 1,
                 "textDocument/diagnostic",
-                new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri } }
+                new() { ["textDocument"] = new JsonObject { ["uri"] = uri } }
             )
         );
 
@@ -226,7 +226,7 @@ public sealed class LanguageServerTests {
             Request(
                 1,
                 "textDocument/codeAction",
-                new JsonObject {
+                new() {
                     ["textDocument"] = new JsonObject { ["uri"] = uri },
                     ["range"] = new JsonObject {
                         ["start"] = new JsonObject { ["line"] = 0, ["character"] = 0 },

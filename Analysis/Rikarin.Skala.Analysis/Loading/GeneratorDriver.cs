@@ -77,7 +77,7 @@ public static class GeneratorDriver {
 
         foreach (var path in missing) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     ConfigDiagnosticIds.AnalyzerAssemblyMissing,
                     severity,
                     $"the load names '{Path.GetFileName(path)}' as an analyzer or source generator and "
@@ -134,7 +134,7 @@ public static class GeneratorDriver {
                 // ⚠ SK9031, never fatal. A generator that will not load costs its own output; it
                 // must not cost the report.
                 diagnostics.Add(
-                    new SkalaDiagnostic(
+                    new(
                         RuleIds.AnalyzerFailedToLoad,
                         SkalaSeverity.Warning,
                         $"'{Path.GetFileName(path)}' could not be loaded as a generator: {exception.Message}",
@@ -157,7 +157,7 @@ public static class GeneratorDriver {
             var driver = CSharpGeneratorDriver.Create(
                 generators.ToImmutable(),
                 [
-                    .. additionalFiles
+                    ..additionalFiles
                         .Where(File.Exists)
                         .Select(static path => (AdditionalText)new FileText(path))
                 ],
@@ -175,7 +175,7 @@ public static class GeneratorDriver {
             foreach (var diagnostic in produced) {
                 if (diagnostic.Severity == DiagnosticSeverity.Error) {
                     diagnostics.Add(
-                        new SkalaDiagnostic(
+                        new(
                             RuleIds.AnalyzerThrew,
                             SkalaSeverity.Info,
                             $"a source generator reported {diagnostic.Id}: {diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture)}",
@@ -191,7 +191,7 @@ public static class GeneratorDriver {
                                                 or MissingMethodException
                                                 or TargetInvocationException) {
             diagnostics.Add(
-                new SkalaDiagnostic(
+                new(
                     RuleIds.AnalyzerThrew,
                     SkalaSeverity.Warning,
                     $"a source generator threw and the compilation is missing its output: {exception.Message}",

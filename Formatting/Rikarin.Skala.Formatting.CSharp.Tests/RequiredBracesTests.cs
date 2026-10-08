@@ -161,9 +161,10 @@ public sealed class RequiredBracesTests {
     public void DisabledFormatter_DoesNotInsertBraces() {
         const string source = "if (true) return;";
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            [new("skala_disable_formatter", "true")]
-        ).Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [new("skala_disable_formatter", "true")]
+            )
+            .Options;
         Assert.Equal(source, CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted);
     }
 
@@ -179,9 +180,10 @@ public sealed class RequiredBracesTests {
 
     static FormatResult Run(string source, string preference) {
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            [new("csharp_prefer_braces", preference)]
-        ).Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [new("csharp_prefer_braces", preference)]
+            )
+            .Options;
         return CSharpFormatter.Format("Test.cs", SourceText.From(source), options);
     }
 }

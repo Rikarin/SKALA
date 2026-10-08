@@ -436,7 +436,7 @@ public sealed class UsingsRule : ArrangementRule {
         // ⚠ `OrderBy`/`ThenBy` over objects is a stable sort, which is what carries the aliases'
         // written order through — see SortKey.
         return [
-            .. directives.OrderBy(directive => Rank(directive, systemFirst))
+            ..directives.OrderBy(directive => Rank(directive, systemFirst))
                 .ThenBy(SortKey, StringComparer.Ordinal)
         ];
     }

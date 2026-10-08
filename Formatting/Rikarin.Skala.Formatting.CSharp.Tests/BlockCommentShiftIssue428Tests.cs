@@ -404,9 +404,10 @@ public sealed class BlockCommentShiftIssue428Tests {
 
     static string Format(string source, string? key, string? value) {
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            key is null ? [] : [new KeyValuePair<string, string>(key, value!)]
-        ).Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                key is null ? [] : [new KeyValuePair<string, string>(key, value!)]
+            )
+            .Options;
         return CSharpFormatter.Format("Test.cs", SourceText.From(source), options)
             .Formatted.Replace("\r\n", "\n", StringComparison.Ordinal);
     }

@@ -56,7 +56,8 @@ public static class TaintedFlow {
             // ⚠ Only the bodies a control-flow graph can be built from. A field initialiser, a
             // property expression body and an attribute argument are operation blocks too, and
             // asking for the graph of one that is not a body throws rather than returning null.
-            if (block.Kind is not (OperationKind.Block or OperationKind.MethodBody
+            if (block.Kind is not (OperationKind.Block
+                    or OperationKind.MethodBody
                     or OperationKind.ConstructorBody)) {
                 continue;
             }

@@ -147,7 +147,7 @@ public sealed class XmlDocPropertyTests {
     ///     fail on a file the sub-formatter did not write a line of.
     /// </remarks>
     static List<string> Unspaced(string text) => [
-        .. TextNormalisation.Lines(text)
+        ..TextNormalisation.Lines(text)
             .Select(static line => line.TrimStart())
             .Where(static line =>
                 line.StartsWith("///", StringComparison.Ordinal)

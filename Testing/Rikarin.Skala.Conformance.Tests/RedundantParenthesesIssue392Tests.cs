@@ -348,14 +348,13 @@ public sealed class RedundantParenthesesIssue392Tests {
             CSharpFormatter.ParseOptions,
             cancellationToken: TestContext.Current.CancellationToken
         );
-        var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs")
-        ).Options;
+        var options = OptionResolver.Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"))
+            .Options;
         var arranged = new RedundantParenthesesRule().Apply(
-            new ArrangementContext(
+            new(
                 tree.GetRoot(TestContext.Current.CancellationToken),
                 null,
-                new ArrangementOptions(options)
+                new(options)
             )
         );
 
@@ -371,7 +370,7 @@ public sealed class RedundantParenthesesIssue392Tests {
             "probe392",
             [tree],
             SharedFrameworkReferences.Value,
-            new CSharpCompilationOptions(
+            new(
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
@@ -390,7 +389,7 @@ public sealed class RedundantParenthesesIssue392Tests {
         var result = Arranger.Arrange(
             path,
             text,
-            new ArrangementOptions(options),
+            new(options),
             compilation,
             null,
             null,

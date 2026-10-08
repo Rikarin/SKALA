@@ -342,7 +342,17 @@ public enum IndentFlags {
     ///     <c>   ) { }</c> with the <c>)</c> in the <c>(</c>'s column, not the statement's (#442,
     ///     SK-DIV-0203).
     /// </summary>
-    CloserAtOpener = 32
+    CloserAtOpener = 32,
+
+    /// <summary>
+    ///     ⚠ A chained call's own continuation scope. Opened on the first line of a binary operator that
+    ///     broke after it — the chain is the operator's left operand — it nests from the operator's
+    ///     continuation line, as a <see cref="Delimiter" /> list does: <c>var w = a.SelfLink()</c> /
+    ///     <c>.SelfLink()</c> two levels in / <c>+ other;</c> one (#457, SK-DIV-0068). The chain's own
+    ///     group is the scope's owner and is skipped: it is the construct the scope belongs to, not one
+    ///     around it.
+    /// </summary>
+    ChainLevel = 64
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
@@ -399,6 +409,19 @@ public enum IndentKind {
     ///     indentation rather than the level the brace's own line nests from.
     /// </summary>
     AnchoredBlock,
+
+    /// <summary>
+    ///     The innermost <see cref="Anchor" />'s recorded indentation itself — the column an
+    ///     <see cref="AnchoredBlock" />'s <c>}</c> takes — for the <c>{</c> that opens it when the brace
+    ///     is on a line of its own.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured under <c>csharp_new_line_before_open_brace = all</c> (#465): <c>Action b = () =&gt;</c>
+    ///     / <c>{</c>, <c>var m = new List&lt;int&gt;</c> / <c>{</c> and <c>var r = 1 switch</c> / <c>{</c>
+    ///     put the brace on the statement's column, where the <c>=</c>'s continuation had put it one
+    ///     level in; under an argument list's level the brace is one level in, on its <c>}</c>'s column.
+    /// </remarks>
+    AnchoredBrace,
 
     /// <summary>One level less — the nested-statement outdent family.</summary>
     Outdent,

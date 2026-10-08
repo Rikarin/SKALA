@@ -130,9 +130,10 @@ public sealed class AlignMultilineCommentTests {
 
     static string Format(string source, string value) {
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            [new KeyValuePair<string, string>("skala_align_multiline_comments", value)]
-        ).Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [new KeyValuePair<string, string>("skala_align_multiline_comments", value)]
+            )
+            .Options;
         return CSharpFormatter.Format("Test.cs", SourceText.From(source), options)
             .Formatted.Replace("\r\n", "\n", StringComparison.Ordinal);
     }
