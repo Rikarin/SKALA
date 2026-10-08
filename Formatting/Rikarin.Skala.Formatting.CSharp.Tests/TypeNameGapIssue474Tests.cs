@@ -4,7 +4,8 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #474, SK-DIV-0127: the gap between a field's or a local's type and its name. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     Issue #474, SK-DIV-0127: the gap between a field's or a local's type and its name. Every expected string is
+///     <c>jb cleanupcode</c> 2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class TypeNameGapIssue474Tests {
@@ -28,7 +29,10 @@ public sealed class TypeNameGapIssue474Tests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>#474: a field or a local whose line through its name and = does not fit breaks between the type and the name, the type whole, from 121 columns; at 120 it stays.</summary>
+    /// <summary>
+    ///     #474: a field or a local whose line through its name and = does not fit breaks between the type and the name,
+    ///     the type whole, from 121 columns; at 120 it stays.
+    /// </summary>
     [Fact]
     public void PastTheMargin_TheNameMovesBelowTheType() {
         Agrees(
@@ -283,7 +287,10 @@ public sealed class TypeNameGapIssue474Tests {
         );
     }
 
-    /// <summary>The gap is not taken when the line through the = fits, when the value is what overflows, for a kept break, several declarators, an event field and a constant.</summary>
+    /// <summary>
+    ///     The gap is not taken when the line through the = fits, when the value is what overflows, for a kept break,
+    ///     several declarators, an event field and a constant.
+    /// </summary>
     [Fact]
     public void WhenTheHeadFits_TheEqualsOrTheValueDecides() {
         Agrees(

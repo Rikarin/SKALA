@@ -4,7 +4,8 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #467, SK-DIV-0099: a using alias&apos;s = is the = of every other declaration. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     Issue #467, SK-DIV-0099: a using alias&apos;s = is the = of every other declaration. Every expected string is
+///     <c>jb cleanupcode</c> 2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class UsingAliasIssue467Tests {
@@ -28,7 +29,10 @@ public sealed class UsingAliasIssue467Tests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>#467: a using alias&apos;s = breaks when the line through the type&apos;s first break point does not fit, and the type below it, kept or added, is one level in at the top of a file too.</summary>
+    /// <summary>
+    ///     #467: a using alias&apos;s = breaks when the line through the type&apos;s first break point does not fit, and
+    ///     the type below it, kept or added, is one level in at the top of a file too.
+    /// </summary>
     [Fact]
     public void AnAlias_BreaksAfterItsEqualsAndIndentsTheType() {
         Agrees(

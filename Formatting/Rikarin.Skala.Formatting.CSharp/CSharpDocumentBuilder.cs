@@ -1757,7 +1757,8 @@ public sealed partial class CSharpDocumentBuilder {
                     }
 
                     opened = levels;
-                    if (AlignsTypeParameters(node) && node is TypeParameterListSyntax { Parameters: [{ } parameter, ..] }) {
+                    if (AlignsTypeParameters(node)
+                        && node is TypeParameterListSyntax { Parameters: [{ } parameter, ..] }) {
                         EmitLeadingGapAt(parameter.SpanStart);
                         OpenIndent(IndentKind.Align, true);
                         alignedInside = true;
@@ -1804,7 +1805,6 @@ public sealed partial class CSharpDocumentBuilder {
         if (scopeKind == IndentKind.Align && node is AttributeListSyntax { Attributes: [{ } first, ..] }) {
             EmitLeadingGapAt(first.SpanStart);
         }
-
     }
 
     /// <summary>

@@ -2418,8 +2418,10 @@ public sealed class BreakPlan {
         // under the hold — `f = () =>` / `    (`. Not measured with a type long enough to break here.
         var name = node.Variables[0].Identifier;
         if (HasBlockCommentBefore(name)
-            || node.Type.DescendantTrivia().Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
+            || node.Type.DescendantTrivia()
+                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                )
             || node.Variables[0].Initializer?.Value is AnonymousFunctionExpressionSyntax) {
             return;
         }

@@ -4,7 +4,8 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #452, SK-DIV-0024: an aligned type parameter list's first break point is the gap after its angle. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     Issue #452, SK-DIV-0024: an aligned type parameter list's first break point is the gap after its angle. Every
+///     expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class AlignedTypeParameterIssue452Tests {
@@ -28,7 +29,10 @@ public sealed class AlignedTypeParameterIssue452Tests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>#452: under skala_align_multiline_type_parameter_list = true a single type parameter that does not fit moves below the angle, as at false, from 121 columns; a list that fills keeps its parameters under the first.</summary>
+    /// <summary>
+    ///     #452: under skala_align_multiline_type_parameter_list = true a single type parameter that does not fit moves
+    ///     below the angle, as at false, from 121 columns; a list that fills keeps its parameters under the first.
+    /// </summary>
     [Fact]
     public void ASingleTypeParameterWiderThanTheMargin_BreaksAfterTheAngle() =>
         Agrees(

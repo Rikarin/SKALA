@@ -4,7 +4,9 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #475, SK-DIV-0350: a parameter&apos;s run of two or more attribute sections is one line, or every section and the parameter on lines of their own. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     Issue #475, SK-DIV-0350: a parameter&apos;s run of two or more attribute sections is one line, or every section and
+///     the parameter on lines of their own. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the
+///     input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class AttributeRunIssue475Tests {
@@ -28,7 +30,10 @@ public sealed class AttributeRunIssue475Tests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>#475: once one section spans lines, by an author&apos;s break or by width, first, last or in the middle, every gap after a section breaks.</summary>
+    /// <summary>
+    ///     #475: once one section spans lines, by an author&apos;s break or by width, first, last or in the middle, every
+    ///     gap after a section breaks.
+    /// </summary>
     [Fact]
     public void ASectionSpanningLines_PutsEverySectionAndTheParameterOnItsOwnLine() =>
         Agrees(
@@ -219,7 +224,10 @@ public sealed class AttributeRunIssue475Tests {
             """
         );
 
-    /// <summary>Two sections that do not fit together break apart and the parameter follows; two that fit stay together, an author&apos;s break between them is joined, and the gap before a long parameter keeps its own rule.</summary>
+    /// <summary>
+    ///     Two sections that do not fit together break apart and the parameter follows; two that fit stay together, an
+    ///     author&apos;s break between them is joined, and the gap before a long parameter keeps its own rule.
+    /// </summary>
     [Fact]
     public void SectionsThatFitTogether_StayTogether() =>
         Agrees(

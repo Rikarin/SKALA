@@ -4,7 +4,9 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issues #501, #502 and #503, SK-DIV-0198: what the oracle measures before breaking at the <c>:</c> of a type with a parameter list, and where the base types land once it has. Every expected string is <c>jb cleanupcode</c> 2025.2.6's own output for the input under
+///     Issues #501, #502 and #503, SK-DIV-0198: what the oracle measures before breaking at the <c>:</c> of a type with a
+///     parameter list, and where the base types land once it has. Every expected string is <c>jb cleanupcode</c>
+///     2025.2.6's own output for the input under
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class PrimaryConstructorBaseListIssue501Tests {
@@ -28,7 +30,11 @@ public sealed class PrimaryConstructorBaseListIssue501Tests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>#501: interfaces after a primary constructor&apos;s base type. The questions end at the first comma, and the argument list is no place to break; the line through the comma stays when it fits, and moves below when it fits there.</summary>
+    /// <summary>
+    ///     #501: interfaces after a primary constructor&apos;s base type. The questions end at the first comma, and the
+    ///     argument list is no place to break; the line through the comma stays when it fits, and moves below when it fits
+    ///     there.
+    /// </summary>
     [Fact]
     public void InterfacesAfterTheBaseType_BreakBeforeTheColonWhenTheLineThroughTheCommaFitsBelow() =>
         Agrees(
@@ -145,7 +151,10 @@ public sealed class PrimaryConstructorBaseListIssue501Tests {
             """
         );
 
-    /// <summary>Any type with a parameter list: the base type without arguments, generic, an interface list, a record. The break goes before the colon when the list then fits below.</summary>
+    /// <summary>
+    ///     Any type with a parameter list: the base type without arguments, generic, an interface list, a record. The
+    ///     break goes before the colon when the list then fits below.
+    /// </summary>
     [Fact]
     public void AnyPrimaryConstructorType_ItsColonIsTheInitializerPoint() =>
         Agrees(
@@ -259,7 +268,10 @@ public sealed class PrimaryConstructorBaseListIssue501Tests {
             """
         );
 
-    /// <summary>#502: at skala_wrap_before_extends_colon = true the oracle keeps : B( and chops a list that would fit below, breaks before the colon when the head overflows, and asks the interfaces&apos; question as at false.</summary>
+    /// <summary>
+    ///     #502: at skala_wrap_before_extends_colon = true the oracle keeps : B( and chops a list that would fit below,
+    ///     breaks before the colon when the head overflows, and asks the interfaces&apos; question as at false.
+    /// </summary>
     [Fact]
     public void WrapBeforeExtendsColon_KeepsTheHeadAndChops() =>
         Agrees(
@@ -453,7 +465,10 @@ public sealed class PrimaryConstructorBaseListIssue501Tests {
             ("skala_wrap_before_extends_colon", "true")
         );
 
-    /// <summary>#503: after a break before the colon the base types are one level past the colon&apos;s line, and a chopped base type&apos;s arguments nest from there.</summary>
+    /// <summary>
+    ///     #503: after a break before the colon the base types are one level past the colon&apos;s line, and a chopped
+    ///     base type&apos;s arguments nest from there.
+    /// </summary>
     [Fact]
     public void ColonOnItsOwnLine_TypesOneLevelPastIt() =>
         Agrees(
@@ -572,7 +587,10 @@ public sealed class PrimaryConstructorBaseListIssue501Tests {
             ("skala_place_primary_constructor_initializer_on_same_line", "false")
         );
 
-    /// <summary>#503 at the export: an author&apos;s break before the colon kept, and the fitter&apos;s, put the chopped types one level past the colon&apos;s line.</summary>
+    /// <summary>
+    ///     #503 at the export: an author&apos;s break before the colon kept, and the fitter&apos;s, put the chopped types
+    ///     one level past the colon&apos;s line.
+    /// </summary>
     [Fact]
     public void KeptBreakBeforeTheColon_TypesOneLevelPastIt() =>
         Agrees(
