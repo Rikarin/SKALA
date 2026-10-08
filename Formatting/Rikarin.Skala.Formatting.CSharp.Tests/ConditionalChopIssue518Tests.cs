@@ -98,15 +98,18 @@ public sealed class ConditionalChopIssue518Tests {
                                """;
 
     public static TheoryData<string, string, string> Cases =>
-        new() {
-            { Source, Oracle, "" },
-            { Source, AtKeepFalse, "skala_keep_user_linebreaks=false" }
-        };
+        new() { { Source, Oracle, "" }, { Source, AtKeepFalse, "skala_keep_user_linebreaks=false" } };
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public void AConditionalBrokenAtOneSign_ComesBackAsTheOracleWritesIt(string source, string expected, string settings) {
-        var overrides = settings.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(static s => (s.Split('=')[0], s.Split('=')[1])).ToArray();
+    public void AConditionalBrokenAtOneSign_ComesBackAsTheOracleWritesIt(
+        string source,
+        string expected,
+        string settings
+    ) {
+        var overrides = settings.Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Select(static s => (s.Split('=')[0], s.Split('=')[1]))
+            .ToArray();
         var formatted = FormatWith(source, overrides);
         Assert.Equal(expected + "\n", formatted);
         Assert.Equal(formatted, FormatWith(formatted, overrides));

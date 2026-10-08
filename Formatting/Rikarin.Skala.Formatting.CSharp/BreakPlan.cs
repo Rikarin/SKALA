@@ -5168,7 +5168,8 @@ public sealed class BreakPlan {
         // `if` would read that break as the statement not fitting. Measured at keep and at `always`;
         // at `if_owner_is_single_line` the owner is multi-line for the same reason, and it breaks.
         var simple = IsSimpleEmbeddedStatement(owner, embedded)
-            || owner is IfStatementSyntax { Else: not null } && EmbeddedStatementOf(embedded) is null;
+            || owner is IfStatementSyntax { Else: not null }
+            && EmbeddedStatementOf(embedded) is null;
 
         if (!keeps && placement == PlacementStyle.Never) {
             Mandatory(first);
