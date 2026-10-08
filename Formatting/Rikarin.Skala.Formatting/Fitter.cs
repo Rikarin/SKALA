@@ -387,6 +387,19 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ A sole lambda argument over a member-access fill: the arrow or the fill, by the
+                // measured line rather than by whether the body fits below. See
+                // GroupFacts.LambdaParameters (#557).
+                if (facts.LambdaParameters > 0) {
+                    var below = m.ContinuationColumn + tail;
+                    var start = m.Column - facts.LambdaHead;
+                    return 9 * below + 2 * facts.LambdaParameters - 2 * start <= 969
+                        || facts.LambdaIsSimple
+                        && start >= 21
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                }
+
                 // ⚠ A break that is one of two alternatives — the `=`'s or the bracket's after it — is
                 // added by the same rule it is kept by: exactly when the value fits flat on the line it
                 // would move to, and never as a way of making *this* line fit. The oracle writes

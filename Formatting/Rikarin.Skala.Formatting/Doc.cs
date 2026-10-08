@@ -1082,6 +1082,18 @@ public sealed class Document {
 ///     ⚠ An <c>=</c> before a lambda with a bare name for a body: the width from the lambda's start through
 ///     its <c>=&gt;</c>. The <c>=</c> stays flat while that much fits after it on its line (#453).
 /// </param>
+/// <param name="LambdaParameters">
+///     ⚠ The arrow of a sole lambda argument whose body is a member-access fill: the width of the lambda's
+///     parameter text — <c>x</c>, <c>(x)</c>, <c>(A x, B y)</c> — or zero for any other group (#557). Past
+///     the margin the arrow breaks exactly when three times the column the body would end at on the
+///     continuation line, plus this width, is at most 336, and otherwise the body fills on the arrow's
+///     line. Measured over 1 234 cells; see <see cref="LambdaIsSimple" /> for the one exception.
+/// </param>
+/// <param name="LambdaHead">The width from the lambda's start through its <c>=&gt;</c>. See <see cref="LambdaParameters" />.</param>
+/// <param name="LambdaIsSimple">
+///     ⚠ A lambda without parentheses: its arrow breaks whenever the lambda starts at column 21 or past it,
+///     however wide the body — measured to a 175-column line. Not measured for a parenthesised lambda.
+/// </param>
 /// <param name="PatternWidth">The binary pattern's width. See <see cref="PatternHead" />.</param>
 /// <param name="KeywordWidth">
 ///     ⚠ The width of the keyword after this group's one point, for the point before an <c>is</c> or an
@@ -1176,4 +1188,7 @@ public readonly record struct GroupFacts(
     int PatternHead = 0,
     int PatternWidth = 0,
     int HeadSlack = 0,
-    int YieldsThroughArrow = 0);
+    int YieldsThroughArrow = 0,
+    int LambdaParameters = 0,
+    int LambdaHead = 0,
+    bool LambdaIsSimple = false);

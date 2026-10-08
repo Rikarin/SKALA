@@ -2877,6 +2877,15 @@ public sealed class BreakPlan {
             }
         }
 
+        // ⚠ As a sole lambda argument's body the fill is one level past the line it starts on (#557,
+        // measured): `Use(x => x.Alpha…Papa` / `.Quebec` one level in while the arrow stays, and
+        // `Use(x =>` / `x.Alpha…` / `.Quebec` one past the body once it breaks — a level of its own would
+        // be two on the arrow's line, and a shared one none below it. Among other arguments it keeps its
+        // own level: `x => x.Alpha…` / `.Quebec` two past the chopped list.
+        var fromLine = !HeadSharesTheLevelAroundIt(root)
+            && options.PlaceSingleMethodArgumentLambdaOnSameLine
+            && IsTheBodyOfASoleLambda(root);
+
         Describe(
             root,
             new(
@@ -2884,7 +2893,8 @@ public sealed class BreakPlan {
                 GroupMode.Preserve,
                 new(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: !IsAssignmentTarget(root)),
                 HeadSharesTheLevelAroundIt(root),
-                OwnLevel: !HeadSharesTheLevelAroundIt(root)
+                OwnLevel: !HeadSharesTheLevelAroundIt(root) && !fromLine,
+                FromLine: fromLine
             )
         );
 
@@ -5704,10 +5714,39 @@ public sealed class BreakPlan {
             // with no ordering question asked.
             ArrowWinsOverTheChain(lambda)
             ? new GroupFacts(BreaksIfTooLong: true)
-            : ArrowMovesACallChainDown(body)
-                ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
-                : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+            : IsAFilledSoleLambda(lambda, body)
+                ? new GroupFacts(
+                    BreaksIfTooLong: true,
+                    LambdaParameters: lambda switch {
+                        SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
+                        ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Span.Length,
+                        _ => 1
+                    },
+                    LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
+                    LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
+                )
+                : ArrowMovesACallChainDown(body)
+                    ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
+                    : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
+
+    /// <summary>
+    ///     A sole lambda argument whose body is a member access the property fill breaks: its arrow is
+    ///     decided by <see cref="GroupFacts.LambdaParameters" />'s measured line (#557).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on a statement's call, <c>U(x =&gt; x.A.B…Z)</c>, with parameter lists of one to
+    ///     ten columns, lambdas starting at columns 10 to 55 and line ends 112 to 175: 9 of 1 234 cells
+    ///     differ, all parenthesised lambdas one column from the boundary. Elsewhere — among other
+    ///     arguments, as an <c>=</c>'s value — the arrow breaks when the body fits below, as over a
+    ///     chain of calls.
+    /// </remarks>
+    bool IsAFilledSoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
+        options.PlaceSingleMethodArgumentLambdaOnSameLine
+        && IsTheBodyOfASoleLambda(body)
+        && ChainPointCount(body, options) == 0
+        && ArrowMovesACallChainDown(body)
+        && lambda.Modifiers.Count == 0;
 
     /// <summary>
     ///     A lambda whose body is a chain of calls the author did not break: its arrow breaks exactly when
@@ -5722,7 +5761,7 @@ public sealed class BreakPlan {
     /// </remarks>
     bool ArrowMovesACallChainDown(ExpressionSyntax body) =>
         IsChainRoot(body)
-        && ChainPointCount(body, options) > 0
+        && (ChainPointCount(body, options) > 0 || TrailingProperty(body) is not null)
         && source.AsSpan(body.SpanStart, body.Span.Length).IndexOfAny('\r', '\n') < 0;
 
     /// <summary>

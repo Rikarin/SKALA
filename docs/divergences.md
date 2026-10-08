@@ -9887,3 +9887,53 @@ the chain. Not wired.
 
 - options: `resharper_csharp_nested_ternary_style` (`autodetect`).
 - ⚠ status: **open**, measured.
+
+## SK-DIV-0371 — a lambda argument's arrow against the member-access fill in its body
+
+⚠ **#557, a regression from merging #482 with #453.** The round-2 merge replaced `PlanLastDot`, which
+covered only a `return`'s, a local's or an assignment's value, with group F's `PlanPropertyFill`, which is
+planned in every position `PlansTheFill` does not exclude. A lambda's expression body is not one of the
+exclusions. The arrow group's facts were `BreaksOnlyIfHeadOverflows`, and with the fill's dots as points
+the head `x.Alpha` always fits, so the arrow never broke. `C2((…) => firstParameterName.Length)` became
+`… => firstParameterName` / `.Length` at two levels. Bisected:
+- `bbf5dade`, the round-2 branch tip, passes `constructs/wrapping/lambda-parameters-before-the-arrow.cs`;
+- `397a9890`, the merge, fails it, and so does every master after it.
+
+Measured with `Testing ask` on `U(params => x.A.B…Z)` over these dimensions, 1 857 cells in all:
+- parameter lists `x`, `(x)`, `(Aaaa x)`, `(A x, B y)` and `(T… x)` of 5 to 74 columns;
+- lambdas starting at columns 10 to 55;
+- line ends 112 to 175, one column at a time near the boundary;
+- indents 8 and 12.
+
+Two rules come out of it:
+
+- **Which break.** The arrow breaks exactly when `9·below + 2·params − 2·start ≤ 969`. Otherwise the body
+  fills on the arrow's line. Here `below` is the column the body would end at on the continuation line,
+  `params` is the parameter text's width, and `start` is the lambda's column. A lambda without
+  parentheses also breaks its arrow whenever it starts at column 21 or later, however wide the body;
+  that was measured to a 175-column line. This is "the body fits below", which group F's #529 uses for a
+  call chain, with roughly ten columns of margin.
+- **Which level.** The fill is one level past the line it starts on. While the arrow stays,
+  `Use(x => x.Alpha…Papa` / `.Quebec` is one level in, where Skala wrote two. Once the arrow breaks,
+  `Use(x =>` / `x.Alpha…` / `.Quebec` is one level past the body. Among other arguments the list chops,
+  and the fill keeps its own level.
+
+Wired as `GroupFacts.LambdaParameters` / `LambdaHead` / `LambdaIsSimple`, decided in `Fitter.Decide`, and
+planned for a sole lambda argument by `BreakPlan.IsAFilledSoleLambda`. The fill's level is a from-line
+level in `PlanPropertyFill`. Any other lambda over a member-access body breaks its arrow when the body
+fits below (`ArrowMovesACallChainDown`).
+
+⚠ Not exact. 19 of the 1 857 grid cells differ, and so do 6 of 350 statements in the exploratory probes.
+All of them are parenthesised lambdas one column from the boundary, most with parameter lists of 60
+columns or more. At the same `below`, a body of `Alpha.Bravo…` names and a body of `Abcde` segments are
+decided differently, so the boundary also depends on where the body's dots fall. No linear rule over the
+body's end, the fill's first-line end, its remainder, the parameter width, the lambda's column or the
+line's end separates every cell; the best has 17 errors.
+
+- Not measured: an `=`'s lambda, a lambda with modifiers (left on the fits-below rule), and a call chain
+  in the same position. That last one breaks its arrow for a lambda from column 21 too, where Skala's
+  #529 rule keeps it and chops the inner call (`Use(x => x…Select(y =>` / `y` / `)`).
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
+- ⚠ status: **fixed** within the residue above. Pinned by
+  `constructs/wrapping/lambda-parameters-before-the-arrow.cs` and
+  `constructs/wrapping/lambda-arrow-over-a-property-fill.cs`.
