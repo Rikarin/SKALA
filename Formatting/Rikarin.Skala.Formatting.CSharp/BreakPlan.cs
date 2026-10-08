@@ -125,6 +125,14 @@ public readonly record struct GapSpec(GapRule Rule, int Group);
 ///     the body rather than at it, and <see cref="HeldLevel.WhileChainWhole" /> the same hold under a fill
 ///     that may yet break the chain after the <c>)</c>; see there.
 /// </param>
+/// <param name="UnconditionalLevel">
+///     ⚠ The group's continuation level counts on every line after the one it opened on, even where a
+///     scope opened on that same line already counted (<c>IndentFlags.Unconditional</c>). Only a
+///     multi-declarator list asks for it (#468, SK-DIV-0109): a declarator's own continuation lands one
+///     level past the <em>list's</em> level, the first declarator's included — <c>int x = a</c> /
+///     <c>+ 1,</c> at 16 and <c>y = 2;</c> at 12 — although the list and the <c>=</c> both opened on the
+///     declaration's first line.
+/// </param>
 public readonly record struct GroupPlan(
     int Id,
     GroupMode Mode,
@@ -134,7 +142,8 @@ public readonly record struct GroupPlan(
     bool OwnLevel = false,
     bool SpendsUnderDelimiters = false,
     HeldLevel HoldsLevel = HeldLevel.None,
-    bool FromLine = false);
+    bool FromLine = false,
+    bool UnconditionalLevel = false);
 
 /// <summary>
 ///     Whether a group spends its continuation level as zero columns. See <see cref="GroupPlan.HoldsLevel" />.
@@ -2305,7 +2314,8 @@ public sealed class BreakPlan {
                 options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: options.WrapMultipleDeclarationStyle != WrapStyle.WrapIfLong
             ),
-            true
+            true,
+            UnconditionalLevel: true
         );
 
         // ⚠ A block comment behind the type breaks the line before the first name (#420), and that
@@ -4164,10 +4174,30 @@ public sealed class BreakPlan {
         && CSharpDocumentBuilder.IsFirstDeclaratorBehindItsType(declarator)
         && HasBlockCommentBefore(declarator.Identifier);
 
+    /// <remarks>
+    ///     ⚠ And a declarator of a list of them, an initializer's or an incrementor's assignment in a
+    ///     <c>for</c> header, and a <c>fixed</c> header's declarator (#468, SK-DIV-0109, SK-DIV-0111).
+    ///     Measured 2026-10-08: <c>for (int i =</c> / <c>0;</c>, <c>i +=</c> / <c>1</c>, <c>k = k</c> /
+    ///     <c>+ 1</c> and <c>j =</c> / <c>1</c> after <c>int i = 0,</c> all land one level past the
+    ///     header's aligned column (17 against 13), <c>fixed (int* p =</c> / <c>&amp;arr[0])</c> at 19
+    ///     against 15, and every continuation inside a declarator of a multi-declarator list — a kept
+    ///     <c>=</c>, a binary operator, a chopped argument list, a chain's dot, a ternary — one level past
+    ///     the list's. ⚠ <c>using (var d =</c> / <c>default(…))</c> was re-asked and still adds none, so
+    ///     the <c>using</c> header stays out; and a single declarator outside a header, <c>int z = a</c> /
+    ///     <c>+ 1;</c>, is one level in as before.
+    /// </remarks>
     static bool IsAListItemsEquals(SyntaxNode node) =>
         node is EqualsValueClauseSyntax { Parent: ParameterSyntax }
-            or AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax }
-            or AttributeArgumentSyntax;
+            or AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax or ForStatementSyntax }
+            or AttributeArgumentSyntax
+            or EqualsValueClauseSyntax {
+                Parent: VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax { Parent: ForStatementSyntax or FixedStatementSyntax }
+                }
+            }
+            or EqualsValueClauseSyntax {
+                Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Variables.Count: > 1 } }
+            };
 
     /// <summary>
     ///     How a group whose body is <paramref name="body" /> holds its level: not at all, always, or —

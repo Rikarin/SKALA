@@ -1231,7 +1231,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        OpenIndent(IndentKind.Continuous);
+        OpenIndent(IndentKind.Continuous, planned.UnconditionalLevel);
     }
 
     void CloseGroupAt((int Indented, bool Held) opened) {

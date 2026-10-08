@@ -5083,10 +5083,15 @@ it, from the finished gap table: a gap nobody planned (kept by `keep_user_linebr
 break, or a point of a group certain to break counts; a `Flat` gap, a fill point and a preserve
 group that may re-join do not.
 
-⚠ **Adjacent and still open**: the last row's value — `i +=` / `1` — takes a level past the
+⚠ **Adjacent, and fixed since (#468)**: the last row's value — `i +=` / `1` — takes a level past the
 incrementor in the oracle and none under Skala, the same shape SK-DIV-0103 records for
 `for (int i =` / `0;` and scoped out of `SpendsUnderDelimiters` because `using (var d =` /
-`default(…))` adds none. Not in the fixture.
+`default(…))` adds none. Measured 2026-10-08 on every header: a `for` header's declarator, a second
+declarator (`j =` / `1`), an initializer's or incrementor's assignment and compound assignment
+(`k =` / `k + 1`, `k = k` / `+ 1`, `i +=` / `1`) all land one level past the header's aligned column
+(17 against 13), and a `fixed` header's declarator too (19 against 15); the `using` header was
+re-asked and still adds none. So the scope is "an item of a `for` or `fixed` header", which
+`IsAListItemsEquals` now names. Pinned by `ContinuedListItemIssue468Tests`.
 
 - options: `skala_wrap_for_stmt_header_style` (`chop_if_long`), `skala_keep_user_linebreaks`,
   `skala_wrap_multiple_declaration_style` (whose join is the one that was miscounted).
@@ -5290,7 +5295,15 @@ together. The tuple, which has no wrap style, fills under both. Not in the fixtu
 levels inside a chopped list that is itself the operand of a broken chain (`F(` / `a` / `&& b` / `)`
 / `|| c` puts `a` at 16 in the oracle, 12 under Skala) and a declarator's value past its `=`
 (`int x = a` / `+ 1,` — 16 against 12), both SK-DIV-0103's scoping and SK-DIV-0112's adjacent
-shape rather than this entry's.
+shape rather than this entry's. ⚠ **The declarator half is fixed (#468)**: measured 2026-10-08, every
+continuation inside a declarator of a multi-declarator list — a kept `=`, a binary operator, a chopped
+argument list (`F(` / arguments at 16 / `)` at 12), a chain's dot, the first declarator's included and a
+field's alike — lands one level past the *list's* level, while `y = 2;` stays at 12 and a single
+declarator's `int z = a` / `+ 1;` stays one level in. The list and the `=` both open on the
+declaration's first line, so the writer's one-level-per-line rule counted one; the list's level now
+counts unconditionally (`GroupPlan.UnconditionalLevel`) and the `=` spends under it. ⚠ Not fixed and
+not this entry: `b ? a` / `: c` — a ternary broken before `:` only — is chopped by the oracle at the `?`
+too, in a single declarator and a `return` alike.
 
 - options: `skala_wrap_arguments_style`, `skala_wrap_parameters_style` and the rest of the
   `chop_if_long` family; `skala_keep_user_linebreaks`.
