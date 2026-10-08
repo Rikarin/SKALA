@@ -123,16 +123,19 @@ public sealed class Fitter {
                 column,
                 continuationColumn,
                 document.FlatWidthOf(node),
-                facts.MeasuresHead ? document.HeadWidthOf(node) : document.FlatWidthOf(node),
+                facts.MeasuresThroughTail ? document.ThroughWidthOf(node)
+                : facts.MeasuresHead ? document.HeadWidthOf(node)
+                : document.FlatWidthOf(node),
                 document.PointWidthOf(node),
                 document.AfterPointOf(node),
-                trailing,
+                facts.MeasuresThroughTail ? 0 : trailing,
                 line,
                 document.YieldEndOf(node)
             ),
             document.AfterPointRunsToTheEnd(node),
             document.SegmentOf(node),
-            lineStart
+            lineStart,
+            document.FirstPointFlatWidthOf(node)
         );
         modes[id] = mode;
         resolved[id] = true;
@@ -224,13 +227,15 @@ public sealed class Fitter {
     ///     to the bracket.
     /// </param>
     /// <param name="lineStart">The column the current line's first character landed on; see <see cref="Enter" />.</param>
+    /// <param name="pointSpace">What the group's first point renders as when flat; see <see cref="GroupFacts.TailEndsAt" />.</param>
     ResolvedMode Decide(
         GroupMode mode,
         in GroupFacts facts,
         in Measures m,
         bool afterPointRunsToTheEnd,
         int tail,
-        int lineStart
+        int lineStart,
+        int pointSpace
     ) {
         var owner = facts.Owner;
         switch (mode) {
@@ -243,7 +248,7 @@ public sealed class Fitter {
             case GroupMode.Auto:
                 return Fits(m.Column, m.BreakWidth, m.Trailing)
                     ? ResolvedMode.Flat
-                    : Worth(facts, m, afterPointRunsToTheEnd);
+                    : Worth(facts, m, afterPointRunsToTheEnd, tail, pointSpace);
 
             case GroupMode.Owner:
                 if (owner < 0 || !resolved[owner]) {
@@ -294,6 +299,26 @@ public sealed class Fitter {
                 // author wrote after the arrow survives. See GroupFacts.FlatIfOwnerBroke.
                 if (facts.FlatIfOwnerBroke && owner >= 0 && resolved[owner] && modes[owner] == ResolvedMode.Broken) {
                     return ResolvedMode.Flat;
+                }
+
+                // ⚠ An `=` before a lambda with a bare name for a body yields to the arrow while the line
+                // through `=>` fits. See GroupFacts.YieldsThroughArrow (#453).
+                if (facts.YieldsThroughArrow > 0
+                    && m.PointWidth < Unbounded
+                    && Fits(m.Column, m.PointWidth + 1 + facts.YieldsThroughArrow)) {
+                    return ResolvedMode.Flat;
+                }
+
+                // ⚠ An `=` before `operand is A or B`: a measured table (#446, SK-DIV-0211).
+                if (facts.PatternHead > 0
+                    && facts.BreaksIfTooLong
+                    && !Fits(m.Column, m.BreakWidth, m.Trailing)) {
+                    var end = m.FlatWidth >= Unbounded || m.Trailing >= Unbounded
+                        ? int.MaxValue
+                        : m.Column + m.FlatWidth + m.Trailing;
+                    return EqualsFloor.BreaksBeforeAPattern(facts.PatternHead, facts.PatternWidth, end)
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
                 }
 
                 // ⚠ A lambda's parameter list: broken only when the line through its `=>` overflows.
@@ -420,7 +445,7 @@ public sealed class Fitter {
                             : ResolvedMode.Flat;
                 }
 
-                return Worth(facts, m, afterPointRunsToTheEnd);
+                return Worth(facts, m, afterPointRunsToTheEnd, tail, pointSpace);
         }
     }
 
@@ -540,12 +565,27 @@ public sealed class Fitter {
     ///         answer ReSharper gives on the shapes that occur, in one traversal and with no backtracking.
     ///     </para>
     /// </remarks>
-    ResolvedMode Worth(in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd) {
+    ResolvedMode Worth(in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd, int segment, int pointSpace) {
         if (facts.PrefersOuterBreak) {
             // What lands on the continuation line if this group breaks and nothing inside it does.
-            var tail = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth + OuterBreakMargin(m);
-            if (Fits(m.ContinuationColumn, tail, m.Trailing)) {
+            var margin = facts.OuterMargin > 0 ? facts.OuterMargin : OuterBreakMargin(m);
+            var tail = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth + margin;
+            if (!facts.SkipsOuterTail && Fits(m.ContinuationColumn, tail, m.Trailing)) {
                 return ResolvedMode.Broken;
+            }
+
+            // ⚠ The same two questions asked of the segment that ends at another group's first point,
+            // with the construct inside it read as no place to break (#501, SK-DIV-0198): the line
+            // through that point stays when it fits where the group starts, and moves down whole when
+            // it fits on the continuation line. See GroupFacts.TailEndsAt.
+            if (facts.TailEndsAt >= 0 && segment < Unbounded) {
+                if (Fits(m.Column, m.PointWidth + pointSpace + segment)) {
+                    return ResolvedMode.Flat;
+                }
+
+                if (Fits(m.ContinuationColumn, segment + OuterBreakMargin(m))) {
+                    return ResolvedMode.Broken;
+                }
             }
         } else if (!facts.BreaksOnlyIfHeadOverflows) {
             return ResolvedMode.Broken;
@@ -585,7 +625,7 @@ public sealed class Fitter {
         // ⚠ A switch arm's arrow, a lambda's and a `when` ask only this question (issue #378): the
         // oracle never moves the body down to spare the construct inside it a break, and moves it
         // exactly when the head up to that construct's first point has no room on the line.
-        var line = m.PointWidth >= Unbounded ? Unbounded : m.PointWidth + m.AfterPoint;
+        var line = m.PointWidth >= Unbounded ? Unbounded : m.PointWidth + m.AfterPoint + facts.HeadSlack;
         var trailing = afterPointRunsToTheEnd ? m.Trailing : 0;
         return Fits(m.Column, line, trailing) ? ResolvedMode.Flat : ResolvedMode.Broken;
     }

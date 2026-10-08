@@ -491,11 +491,16 @@ public sealed class LayoutWriter {
         // ⚠ A delimited list on the first line of a construct that broke after it nests from that
         // construct's continuation line, and its closer sits on it. See LiftedLevel.
         var lifted = -1;
+        var liftsThrough = false;
         if (kind is IndentKind.Continuous or IndentKind.OneLevel
             && (flags & (IndentFlags.Delimiter | IndentFlags.Grouping | IndentFlags.ChainLevel)) != 0) {
             lifted = LiftedLevel(ancestors, outer, (flags & IndentFlags.ChainLevel) != 0, node, kind, columns);
             if (lifted >= 0) {
                 outer = lifted;
+                var path = ancestors.ToArray();
+                var around = InnermostBrokenConstruct(path);
+                liftsThrough = around >= 0
+                    && document.FactsOf(document.Nodes[path[around].Node].Arg1).LiftsThroughInnerBreaks;
             }
         }
 
@@ -572,7 +577,8 @@ public sealed class LayoutWriter {
                         unconditional,
                         IsGrouping: (flags & IndentFlags.Grouping) != 0,
                         Lifted: lifted,
-                        IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0
+                        IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0,
+                        LiftsThrough: liftsThrough
                     ),
                 IndentKind.OneLevel =>
                     new Scope(
@@ -583,7 +589,8 @@ public sealed class LayoutWriter {
                         unconditional,
                         IsGrouping: (flags & IndentFlags.Grouping) != 0,
                         Lifted: lifted,
-                        IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0
+                        IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0,
+                        LiftsThrough: liftsThrough
                     ),
                 IndentKind.Outdent =>
                     new Scope(true, Math.Max(0, outer - indentWidth), line, outer, unconditional),
@@ -779,7 +786,7 @@ public sealed class LayoutWriter {
                 return Math.Max(0, level + scope.Level);
             }
 
-            if (scope.Lifted >= 0 && !BrokenInsideOnItsLine(index, scope)) {
+            if (scope.Lifted >= 0 && (scope.LiftsThrough || !BrokenInsideOnItsLine(index, scope))) {
                 // ⚠ A lifted grouping parenthesis is still transparent to a block opened on its own
                 // line: `var x = (y switch {` / … / `}).ToString()` / `.Length` puts the `}` on the
                 // chain's continuation line and the arms one past it (SK-DIV-0148). Not once the walk is
@@ -1136,7 +1143,20 @@ public sealed class LayoutWriter {
             // `var a = Compute(` / arguments one level in, `)` back — not two (#445).
             if (scope.IsFromLine) {
                 if (scope.OpenLine < line) {
-                    return Math.Max(0, level + (blocked == scope.OpenLine ? scope.Level - indentWidth : scope.Level));
+                    var fromLine = Math.Max(
+                        0,
+                        level + (blocked == scope.OpenLine ? scope.Level - indentWidth : scope.Level)
+                    );
+
+                    // ⚠ Inside a list lifted through its inner breaks, the operand's line is the list's
+                    // lifted content level, not the line's own indentation (#446, SK-DIV-0212).
+                    for (var j = i - 1; j >= 0; j--) {
+                        if (scopes[j].Lifted >= 0 && scopes[j].LiftsThrough && scopes[j].OpenLine == scope.OpenLine) {
+                            return Math.Max(fromLine, scopes[j].Lifted + scopes[j].Level);
+                        }
+                    }
+
+                    return fromLine;
                 }
 
                 continue;
@@ -1150,11 +1170,17 @@ public sealed class LayoutWriter {
             // switch arm's pattern, `SyntaxKind.A` / `or SyntaxKind.B => …`, opens its level as the arm's
             // line begins, and lifting there pushed the arm a level in (merge of #481 with #482).
             if (scope.Lifted >= 0
-                && !BrokenInsideOnItsLine(i, scope)
+                && (scope.LiftsThrough || !BrokenInsideOnItsLine(i, scope))
                 && !(!nested && atLineStart && scope.OpenLine == line)) {
                 var counts = scope.Unconditional
                     ? nested ? scope.OpenLine <= line : scope.OpenLine < line
                     : scope.OpenLine < line && scope.OpenLine != blocked;
+
+                // ⚠ And a list lifted through its inner breaks spends one level per line with what
+                // opened on its line: `e => e` / `.Value` sits on the lifted content level, not one past.
+                if (scope.LiftsThrough && blocked == scope.OpenLine) {
+                    return Math.Max(0, scope.Lifted + scope.Level);
+                }
 
                 return Math.Max(0, level + scope.Lifted + (counts ? scope.Level : 0));
             }
@@ -1247,6 +1273,7 @@ public sealed class LayoutWriter {
         bool IsGrouping = false,
         int Lifted = -1,
         int AlignedCloser = -1,
+        bool LiftsThrough = false,
         bool IsFromLine = false,
         bool IsBrokenAfter = false);
 
@@ -1692,7 +1719,8 @@ public sealed class LayoutWriter {
                 // builder's point width, which still counts the point as not taken.
                 var flags = (LineFlags)slot.Flags;
                 if ((LineKind)slot.Arg0 == LineKind.Soft && (flags & LineFlags.LastResort) != 0) {
-                    if ((flags & LineFlags.FillPoint) == 0 && fitter.ModeOf(slot.Arg2) == ResolvedMode.Broken) {
+                    if ((flags & (LineFlags.FillPoint | LineFlags.ReadThroughWhenBroken)) == 0
+                        && fitter.ModeOf(slot.Arg2) == ResolvedMode.Broken) {
                         return true;
                     }
 
@@ -1911,9 +1939,12 @@ public sealed class LayoutWriter {
             // its attributes or by arguments that chopped, moves the parameter down whatever the
             // parameter's width (SK-DIV-0114), and that is read off the output like
             // GroupFacts.BreaksIfOwnerIsMultiLine is (#372), not off the source.
+            // ⚠ Nor when the group broke with its owner: a run of attribute sections that did not fit
+            // together puts the parameter on a line of its own however short it is (#475).
             if (!flat
                 && (flags & LineFlags.BreaksOnlyIfNextLineOverflows) != 0
-                && fitter.EnteredOn(slot.Arg2) == line) {
+                && fitter.EnteredOn(slot.Arg2) == line
+                && !BrokeWithOwner(slot.Arg2)) {
                 flat = NextLineFitsBeside(ref slot, flags, stack);
             }
 
@@ -1932,6 +1963,11 @@ public sealed class LayoutWriter {
 
         TakeBreak(ref slot);
     }
+
+    /// <summary>Whether the group broke because the group it breaks with did — see <see cref="GroupFacts.BreaksWithOwner" />.</summary>
+    bool BrokeWithOwner(int group) =>
+        document.FactsOf(group) is { BreaksWithOwner: true, Owner: >= 0 } facts
+        && fitter.ModeOf(facts.Owner) == ResolvedMode.Broken;
 
     /// <summary>Writes a break: the line ends here and the next one begins.</summary>
     void TakeBreak(ref DocNode slot) {
@@ -2157,6 +2193,15 @@ public sealed class LayoutWriter {
             ? pendingCloserLevel ?? Effective()
             : this.column + width;
         var (segment, head) = FillSegment(node, group, flags, stack);
+
+        // ⚠ An aligned list's head breaks when what would stay on its line is narrower than twelve
+        // columns (SK-DIV-0351). See AlignedHeadWidth.
+        if ((flags & LineFlags.AlignedListHead) != 0
+            && AlignedHeadWidth(document.AlignedItemsOf(group), column, TrailingAfterGroup(stack, group))
+                is >= 0 and < MinimumAlignedHead) {
+            return false;
+        }
+
         if (Fits(column, segment)) {
             return true;
         }
@@ -2196,6 +2241,39 @@ public sealed class LayoutWriter {
     }
 
     bool Fits(int column, int width) => width < Document.Unbounded && column + width <= this.width;
+
+    /// <summary>The narrowest head an aligned list keeps on its opener's line (SK-DIV-0351).</summary>
+    const int MinimumAlignedHead = 12;
+
+    /// <summary>
+    ///     How wide the items that stay on an aligned fill's first line are — filled from
+    ///     <paramref name="column" /> until one does not fit — or −1 when every item fits there.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 on a method's type parameter list at
+    ///     <c>skala_align_multiline_type_parameter_list = true</c>, the `<` at eleven columns from 20 to 50 and
+    ///     the line 121 to 135: `TFirstPara,` (11 columns) and `TA, TB,` break after the `<` and fill the
+    ///     list one level in, `TFirstParam,` (12) and `TA, TB, TCdef,` keep their line and align the rest
+    ///     under it — the eleven-against-twelve of #379's floor, at every column of the `<`. Skala kept
+    ///     every head.
+    /// </remarks>
+    int AlignedHeadWidth(int[] segments, int column, int trailing) {
+        var head = 0;
+        for (var i = 0; i < segments.Length; i++) {
+            var item = segments[i] + (i > 0 ? 1 : 0);
+            if (i == segments.Length - 1) {
+                item = trailing >= Document.Unbounded ? Document.Unbounded : item + trailing;
+            }
+
+            if (!Fits(column + head, item)) {
+                return head;
+            }
+
+            head += item;
+        }
+
+        return -1;
+    }
 
     /// <summary>The whole width after a fill point and the width to the item's first breakable place.</summary>
     /// <remarks>
