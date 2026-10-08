@@ -8039,7 +8039,14 @@ against 87 `[..x` on the day the issue was filed. Skala now writes the configure
 1. **Default.** The registry default flips to `false`; Skala's own configuration says `false` too. The
    oracle's input is `editor_config_template` (the Rider export, still `true`), not the root
    `.editorconfig`, since `OracleEditorConfig` separated the two — so no fixture digest moved and nothing
-   was regenerated.
+   was regenerated. ⚠ That makes the repository's configuration differ from the translated export in
+   exactly this key, and the two tests that asserted "no difference"
+   (`EditorConfigIngestionTests.RepositoryEditorConfig_…ExactlyAsTheExportDoes`,
+   `ConfigCommandTests.Diff_…`) now list it as the one departure and still fail on any second. ⚠ **Open:**
+   the canonical payload (`Distribution/Rikarin.Skala.Canonical`) is the export translated, so it still
+   ships `true` — `[.. xs]` — to every consuming repository. Changing that means re-exporting from Rider
+   or teaching `CanonicalEditorConfig.Translate` an override, which breaks its "every option at the value
+   the export sets" claim; it is the user's call, not this entry's.
 2. **Scope.** Only `SpreadElementSyntax`. A slice pattern (`[1, ..var r]`) is
    `skala_space_within_slice_pattern`'s and stays the oracle's rule (Tier A); a range (`a[1..3]`, and the
    prefix range Roslyn parses `new[] { ..xs }` as) stays the author's, as the oracle leaves it. Pinned by
