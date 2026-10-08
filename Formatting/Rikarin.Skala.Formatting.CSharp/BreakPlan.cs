@@ -2876,7 +2876,9 @@ public sealed class BreakPlan {
 
     /// <summary>Whether <paramref name="invocation" /> is <c>nameof(…)</c>, read from syntax.</summary>
     internal static bool IsNameOf(InvocationExpressionSyntax invocation) =>
-        invocation is { Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" }, ArgumentList.Arguments.Count: 1 };
+        invocation is {
+            Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" }, ArgumentList.Arguments.Count: 1
+        };
 
     /// <summary>
     ///     Whether the leftmost receiver of a chain — down the spine of invocations, member, element and

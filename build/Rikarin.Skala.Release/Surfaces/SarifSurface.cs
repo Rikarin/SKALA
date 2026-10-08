@@ -154,8 +154,8 @@ public static class SarifSurface {
                     path
                     + " : "
                     + (element.ValueKind is JsonValueKind.True or JsonValueKind.False
-                            ? "boolean"
-                            : element.ValueKind.ToString().ToLowerInvariant())
+                        ? "boolean"
+                        : element.ValueKind.ToString().ToLowerInvariant())
                 );
 
                 break;

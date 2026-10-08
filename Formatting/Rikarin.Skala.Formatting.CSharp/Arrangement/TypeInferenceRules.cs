@@ -248,8 +248,8 @@ public sealed class ObjectCreationRule : ArrangementRule {
             TargetTypeOf(node) is { } target
             && Carries(node, target)
             && (Evident(node)
-                    ? options.ObjectCreationWhenTypeEvident == ObjectCreationStyle.TargetTyped
-                    : options.ObjectCreationWhenTypeNotEvident == ObjectCreationStyle.TargetTyped);
+                ? options.ObjectCreationWhenTypeEvident == ObjectCreationStyle.TargetTyped
+                : options.ObjectCreationWhenTypeNotEvident == ObjectCreationStyle.TargetTyped);
 
         /// <summary>Whether <c>new()</c> aimed at <paramref name="target" /> constructs what the creation does.</summary>
         bool Carries(ObjectCreationExpressionSyntax node, ITypeSymbol target) {

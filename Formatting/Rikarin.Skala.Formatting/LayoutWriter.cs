@@ -491,7 +491,9 @@ public sealed class LayoutWriter {
 
         // ⚠ A grouping parenthesis whose chain the author broke after it nests from that chain's
         // continuation line — the line after this one — when it is deeper. See IndentFlags.BrokenAfter.
-        if (lifted < 0 && kind is IndentKind.Continuous or IndentKind.OneLevel && (flags & IndentFlags.BrokenAfter) != 0) {
+        if (lifted < 0
+            && kind is IndentKind.Continuous or IndentKind.OneLevel
+            && (flags & IndentFlags.BrokenAfter) != 0) {
             line++;
             var continuation = Level(false);
             line--;

@@ -14,9 +14,9 @@ public sealed class NameofAndIndentParsIssue507508Tests {
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -31,36 +31,36 @@ public sealed class NameofAndIndentParsIssue507508Tests {
     }
 
     const string Shapes = """
-        class C {
-            void M() {
-                var n1 = nameof(a
-                );
-                var n3 = nameof(
-                    a
-                );
-                var t1 = typeof(int
-                );
-                Call(nameof(a
-                ), b);
-                Call(1, (a + b
-                ));
-                if ((a
-                    ) == b) { }
-                var t = typeof(
-                    int);
-                var k = checked(a
-                    + b);
-                var g = (a
-                    + b);
-                var u = (1,
-                    2);
-                var e = arr[
-                    1];
-                bool P(object o) => o is (1,
-                    2);
-            }
-        }
-        """;
+                          class C {
+                              void M() {
+                                  var n1 = nameof(a
+                                  );
+                                  var n3 = nameof(
+                                      a
+                                  );
+                                  var t1 = typeof(int
+                                  );
+                                  Call(nameof(a
+                                  ), b);
+                                  Call(1, (a + b
+                                  ));
+                                  if ((a
+                                      ) == b) { }
+                                  var t = typeof(
+                                      int);
+                                  var k = checked(a
+                                      + b);
+                                  var g = (a
+                                      + b);
+                                  var u = (1,
+                                      2);
+                                  var e = arr[
+                                      1];
+                                  bool P(object o) => o is (1,
+                                      2);
+                              }
+                          }
+                          """;
 
     /// <summary>
     ///     #507: <c>nameof</c> keeps every break the author wrote and puts a kept <c>)</c> on its opener's line;

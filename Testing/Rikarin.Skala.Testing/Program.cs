@@ -301,7 +301,7 @@ switch (args[0]) {
         var totalRange = Range(args, "--totals=", 122, 176);
         var innerRange = Range(args, "--inner=", 10, 100);
         var output = args.FirstOrDefault(static argument => argument.StartsWith("--out=", StringComparison.Ordinal))
-            ?["--out=".Length..]
+                ?["--out=".Length..]
             ?? Path.Combine(Corpus.RepositoryRoot, "docs", "sk-div-preference-sweep");
 
         // ⚠ `--keys` re-runs the same grid under a non-default wrap key, and the result belongs in its
@@ -373,7 +373,7 @@ switch (args[0]) {
         }
 
         var treeMode = args.FirstOrDefault(static a => a.StartsWith("--load=", StringComparison.Ordinal))
-            ?["--load=".Length..]
+                ?["--load=".Length..]
             ?? "binlog";
 
         // `--explain=<path fragment>`: which rule, run alone, makes the re-bind reject this file.
@@ -732,8 +732,8 @@ static int Fuzz(string[] args) {
     Console.Error.WriteLine(
         $"fuzzing from seed {FuzzRandom.Format(options.Seed)}, "
         + (options.Cases is { } total
-                ? total.ToString(CultureInfo.InvariantCulture) + " cases"
-                : options.Budget.TotalMinutes.ToString("F1", CultureInfo.InvariantCulture) + " minutes")
+            ? total.ToString(CultureInfo.InvariantCulture) + " cases"
+            : options.Budget.TotalMinutes.ToString("F1", CultureInfo.InvariantCulture) + " minutes")
         + $", mode {options.Mode.ToString().ToLowerInvariant()}…"
     );
 
