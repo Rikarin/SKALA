@@ -1670,13 +1670,18 @@ public sealed class LayoutWriter {
             // It breaks when the next item would not fit and stays put otherwise, which is what
             // makes `wrap_if_long` a fill rather than a chop.
             if (!flat && (flags & LineFlags.FillPoint) != 0) {
-                flat = FillPointStaysFlat(node, slot.Arg2, flags, stack);
+                flat = FillPointStaysFlat(node, slot.Arg2, flags, stack, out var headStays);
 
                 // ⚠ The element before this point spanned lines, so the next one starts a line of its
                 // own whatever fits (LineFlags.ArrayElement). Read off the output: its first token and
                 // its last were written on different lines. A comment's own lines do not count, and
                 // neither does a break the author kept in the gap before the next element's comment.
+                // ⚠ Except before a delimited element that fits nowhere whole and keeps its head on the
+                // line: `), [` / … / `],` / `(null ? …)` in `pathological/nested-collection-in-generated-
+                // while.cs` keeps the bracket after the multi-line call and breaks after the bracket's
+                // own element (#471, SK-DIV-0110). The head rule outranks the after rule.
                 if (flat
+                    && !headStays
                     && (flags & LineFlags.ArrayElement) != 0
                     && FilledElementStartedOn(slot.Arg2) is var started
                     && started >= 0
@@ -1922,7 +1927,18 @@ public sealed class LayoutWriter {
     ///         flag is read on those.
     ///     </para>
     /// </remarks>
-    bool FillPointStaysFlat(int node, int group, LineFlags flags, Stack<(int Node, int Child)> stack) {
+    /// <param name="headStays">
+    ///     Whether the point stays flat because the item fits nowhere whole and its head stays on the
+    ///     line, rather than because the item fits.
+    /// </param>
+    bool FillPointStaysFlat(
+        int node,
+        int group,
+        LineFlags flags,
+        Stack<(int Node, int Child)> stack,
+        out bool headStays
+    ) {
+        headStays = false;
         var width = pendingSpace ? PendingWidth : (flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
         var column = atLineStart
             ? pendingCloserLevel ?? Effective()
@@ -1943,7 +1959,8 @@ public sealed class LayoutWriter {
             return false;
         }
 
-        return !Fits(ContinuationColumn(group), segment) && Fits(column, head);
+        headStays = !Fits(ContinuationColumn(group), segment) && Fits(column, head);
+        return headStays;
     }
 
     bool Fits(int column, int width) => width < Document.Unbounded && column + width <= this.width;

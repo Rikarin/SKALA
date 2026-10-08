@@ -306,7 +306,9 @@ public sealed class ReportingTests {
         var report = Sample(
             Modernization(),
             Modernization("SK1004", 20, false) with { Fix = [new FixEdit("/tmp/repo/Core/Foo.cs", 0, 1, "a")] }
-        ) with { Gate = GateResult.Pass("ci") };
+        ) with {
+            Gate = GateResult.Pass("ci")
+        };
 
         var summary = GithubRenderer.StepSummary(report);
 

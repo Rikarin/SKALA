@@ -43,7 +43,8 @@ public static class BinlogLoader {
         Path.Combine(
             "artifacts",
             "msbuild.binlog"
-        ), "msbuild.binlog", "build.binlog"
+        ),
+        "msbuild.binlog", "build.binlog"
     ];
 
     public static LoadedProject Load(LoadRequest request, CancellationToken cancellation = default) {

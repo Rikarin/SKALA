@@ -171,7 +171,7 @@ public sealed class SearchValuesAnalyzer : DiagnosticAnalyzer {
             ImplicitArrayCreationExpressionSyntax { Initializer: { } array } => array.Expressions,
             CollectionExpressionSyntax collection when collection.Elements.All(static element => element
                 is ExpressionElementSyntax
-            )
+                )
                 => collection.Elements.OfType<ExpressionElementSyntax>().Select(static element => element.Expression),
             _ => null
         };

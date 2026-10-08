@@ -792,6 +792,15 @@ public sealed partial class CSharpDocumentBuilder {
                 ResetsDepth: node is AnonymousFunctionExpressionSyntax && !IsSoleLambdaArgument(node),
                 SavedDepth: continuousDepth,
 
+                // ⚠ The one break a sole lambda argument's frame pays for although a delimited scope
+                // is open: the arrow, broken before, of a lambda with a block body (#488,
+                // SK-DIV-0169). The oracle writes `Use((int first)` / `=> {` with the arrow two levels
+                // past the statement — the parenthesis's unconditional level and the arrow's own — and
+                // `=> first + 1` under the same call at one. The block keeps its anchor either way.
+                PaysAt: IsSoleLambdaArgument(node) && node is LambdaExpressionSyntax { Block: not null } blockLambda
+                    ? blockLambda.ArrowToken.SpanStart
+                    : -1,
+
                 // ⚠ A `where` clause's continuation lines take no level: `where T : class\n, new()`
                 // puts the next constraint on the `where`'s own column, at every value of every key
                 // measured (SK-DIV-0105). The frame stays — it bounds what the clause's own breaks
@@ -857,6 +866,12 @@ public sealed partial class CSharpDocumentBuilder {
         node switch {
             AnonymousFunctionExpressionSyntax { Block: { } block } => block,
             BaseObjectCreationExpressionSyntax { Initializer: { } initializer }
+                when options.UseContinuousIndentInsideInitializerBraces && !AlignsFromOwnColumn(initializer) =>
+                initializer,
+            // ⚠ And a `with` initializer, from the line the `with` expression starts on (#487,
+            // SK-DIV-0168): `_r = Make(` / `a,` / `b` / `) with {` puts the members at the statement's
+            // level plus one and `};` on it, as an object creation's does.
+            WithExpressionSyntax { Initializer: { } initializer }
                 when options.UseContinuousIndentInsideInitializerBraces && !AlignsFromOwnColumn(initializer) =>
                 initializer,
             _ => null
@@ -2878,7 +2893,7 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         var spec = default(GapSpec);
-        var planned = (previous.Kind == PieceKind.Token || PointSurvivesComments(lastPiece))
+        var planned = (previous.Kind == PieceKind.Token || PointSurvivesComments(lastPiece, nextStart))
             && nextKind == PieceKind.Token
             && plan.TryGap(nextStart, out spec);
 
@@ -3017,7 +3032,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///         <c>SkalaFormatOnly</c> and <c>SkalaDocComments</c> alike.
     ///     </para>
     /// </remarks>
-    bool PointSurvivesComments(int lastPieceIndex) {
+    bool PointSurvivesComments(int lastPieceIndex, int nextStart) {
         var lineComment = false;
         var spansLines = false;
         for (var i = lastPieceIndex; i >= 0; i--) {
@@ -3035,7 +3050,7 @@ public sealed partial class CSharpDocumentBuilder {
                 case PieceKind.Token:
                     return !lineComment
                         && i != lastPieceIndex
-                        && !StopsAtAComment(tokens[piece.TokenIndex])
+                        && (!StopsAtAComment(tokens[piece.TokenIndex]) || plan.PlansPastALeadingComment(nextStart))
                         && !EndsAnAttributeRun(tokens[piece.TokenIndex])
                         && !(spansLines && StopsAtAMultiLineComment(tokens[piece.TokenIndex]));
                 default:
@@ -3054,6 +3069,10 @@ public sealed partial class CSharpDocumentBuilder {
     ///     The two tokens whose wrap the oracle does not carry past a comment after them: <c>(</c> and
     ///     an expression body's <c>=&gt;</c>. See <see cref="PointSurvivesComments" />.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ The list's or the arrow's own wrap stops there; a point of its own past the comment does not,
+    ///     and <see cref="BreakPlan.PlansPastALeadingComment" /> names it (#486).
+    /// </remarks>
     static bool StopsAtAComment(SyntaxToken token) =>
         token.IsKind(SyntaxKind.OpenParenToken)
         || token.IsKind(SyntaxKind.EqualsGreaterThanToken)
@@ -3247,6 +3266,10 @@ public sealed partial class CSharpDocumentBuilder {
                 continue;
             }
 
+            if (frames[i].PaysAt == nextToken.SpanStart) {
+                return i;
+            }
+
             // ⚠ A break before an `=` spends the level inside a delimited scope too — the frame-side
             // half of GroupPlan.SpendsUnderDelimiters. `void D(int a\n = 5)` chops the list and the
             // oracle puts `= 5` one level past `int a`; the depth rule alone left it flush.
@@ -3291,7 +3314,8 @@ public sealed partial class CSharpDocumentBuilder {
         bool Aligned = false,
         bool HoldsLevel = false,
         int EntryDepth = 0,
-        int PaysNotBefore = -1);
+        int PaysNotBefore = -1,
+        int PaysAt = -1);
 
     /// <summary>
     ///     Whether the break continues an expression rather than starting a new statement, member or
@@ -4123,6 +4147,13 @@ public sealed partial class CSharpDocumentBuilder {
             if (nextToken.IsKind(SyntaxKind.OpenBracketToken) && nextToken.Parent is CollectionExpressionSyntax) {
                 flags |= LineFlags.DelimitedItem;
             }
+
+            // ⚠ And a collection expression's element keeps an identifier head when the break inside it
+            // is certain, the tuple's rule: `1, F(() => {` with a block that cannot join stays on the
+            // comma's line, while `F("…131 columns…", 2)` moves whole (#471, SK-DIV-0117).
+            if (StartsACollectionElement(nextToken)) {
+                flags |= LineFlags.KeepsHeadWhenCertain;
+            }
         }
 
         return flags;
@@ -4147,13 +4178,31 @@ public sealed partial class CSharpDocumentBuilder {
 
     /// <summary>
     ///     Whether the token is the first of an array initializer's element — the fill whose elements were
-    ///     measured (#444, SK-DIV-0208). ⚠ Not a collection expression's: the oracle puts a multi-line
-    ///     <c>((…</c> element of one on a line of its own (CollectionAfterEqIssue375Tests).
+    ///     measured (#444, SK-DIV-0208) — or of a collection expression's.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ The collection expression was excluded on a reading of CollectionAfterEqIssue375Tests that
+    ///     had it backwards: Skala put <c>((</c> on a line of its own and the oracle keeps
+    ///     <c>null!, ((</c>. Measured for #471 (SK-DIV-0117): a collection expression's fill keeps the
+    ///     head of a multi-line element — <c>1, () =&gt; {</c>, <c>1, o switch {</c>, <c>[1], [</c>,
+    ///     <c>1, 2, Call(</c> — and starts the element after one on a line of its own, exactly as an
+    ///     array initializer's does.
+    /// </remarks>
     static bool StartsAFilledElement(SyntaxToken token) {
         for (SyntaxNode? node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
             if (node.Parent is InitializerExpressionSyntax initializer
                 && initializer.IsKind(SyntaxKind.ArrayInitializerExpression)) {
+                return true;
+            }
+        }
+
+        return StartsACollectionElement(token);
+    }
+
+    /// <summary>Whether the token is the first of a collection expression's element.</summary>
+    static bool StartsACollectionElement(SyntaxToken token) {
+        for (SyntaxNode? node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
+            if (node is CollectionElementSyntax && node.Parent is CollectionExpressionSyntax) {
                 return true;
             }
         }

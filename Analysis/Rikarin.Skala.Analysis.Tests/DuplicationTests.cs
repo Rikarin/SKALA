@@ -275,7 +275,8 @@ public sealed class DuplicationTests {
                 Test(
                     "/repo/Core.Tests/AlphaTests.cs",
                     Alpha(testOnly)
-                ), Test("/repo/Core.Tests/BetaTests.cs", Beta(testOnly))
+                ),
+                Test("/repo/Core.Tests/BetaTests.cs", Beta(testOnly))
             ]
         );
 
@@ -687,7 +688,8 @@ public sealed class DuplicationTests {
             Production(
                 "/repo/Gamma.cs",
                 Gamma(Block(250, seed: 6))
-            ), Test("/repo/Core.Tests/AlphaTests.cs", Alpha(Block(180, seed: 7))),
+            ),
+            Test("/repo/Core.Tests/AlphaTests.cs", Alpha(Block(180, seed: 7))),
             Test(
                 "/repo/Core.Tests/BetaTests.cs",
                 Beta(Block(180, seed: 7))
