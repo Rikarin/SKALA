@@ -258,6 +258,9 @@ public sealed class BreakPlan {
     /// <summary>The positions <see cref="PlanPastLeadingComments" /> planned. See <see cref="PlansPastALeadingComment" />.</summary>
     readonly HashSet<int> pastLeadingComments = [];
 
+    /// <summary>The positions <see cref="PlanCommentedAttributeGap" /> planned past a block comment.</summary>
+    readonly HashSet<int> pastAttributeComments = [];
+
     /// <summary>
     ///     The groups opened around one node, outermost first.
     /// </summary>
@@ -319,6 +322,12 @@ public sealed class BreakPlan {
     ///     begin. <see cref="CSharpDocumentBuilder.VisitBraced" /> opens it.
     /// </remarks>
     readonly Dictionary<long, GroupPlan> inner = [];
+
+    /// <summary>
+    ///     The last attribute section of a parameter's run, by node: the group its gap belongs to, allocated
+    ///     by <see cref="PlanAttributeRun" />, and the run's own group, which it breaks with (#475).
+    /// </summary>
+    readonly Dictionary<long, (int Section, int Run)> attributeRuns = [];
 
     /// <summary>
     ///     The two groups a run of sibling <c>where</c> clauses needs, keyed by the declaration.
@@ -417,6 +426,12 @@ public sealed class BreakPlan {
     ///     argument list's <c>(</c> or an expression body's <c>=&gt;</c>. See <see cref="PlanPastLeadingComments" />.
     /// </summary>
     public bool PlansPastALeadingComment(int position) => pastLeadingComments.Contains(position);
+
+    /// <summary>
+    ///     Whether the gap before <paramref name="position" /> — after a field's last attribute section and a
+    ///     block comment — is planned past that comment. See <see cref="PlanCommentedAttributeGap" />.
+    /// </summary>
+    public bool PlansPastAnAttributeComment(int position) => pastAttributeComments.Contains(position);
 
     /// <summary>The groups the builder opens around <paramref name="node" />, outermost first.</summary>
     public IReadOnlyList<GroupPlan> GroupsOf(SyntaxNode node) =>
@@ -746,17 +761,32 @@ public sealed class BreakPlan {
                     return;
                 }
 
-                var section = NewGroup();
+                var inRun = attributeRuns.TryGetValue(Key(single), out var run);
+                var section = inRun ? run.Section : NewGroup();
                 FollowingPoint(after, section);
                 Describe(
                     node,
                     section,
                     GroupMode.Preserve,
-                    new(options.KeepsUserBreaksBetweenItems && BreaksBefore(after), true, true)
+                    new(
+                        options.KeepsUserBreaksBetweenItems && BreaksBefore(after),
+                        true,
+                        true,
+                        BreaksWithOwner: inRun,
+                        Owner: inRun ? run.Run : -1
+                    )
                 );
 
                 return;
             }
+
+            case ParameterSyntax { AttributeLists: [_, _, ..] lists }:
+                PlanAttributeRun(node, lists);
+                return;
+
+            case TypeParameterSyntax { AttributeLists: [_, _, ..] lists }:
+                PlanAttributeRun(node, lists);
+                return;
 
             case ForStatementSyntax forStatement:
                 PlanForHeader(forStatement);
@@ -844,8 +874,12 @@ public sealed class BreakPlan {
                 PlanBaseList(baseList);
                 return;
 
-            case VariableDeclarationSyntax { Variables.Count: > 1 } declaration:
-                PlanDeclarators(declaration);
+            case VariableDeclarationSyntax declaration:
+                PlanTypeNameGap(declaration);
+                if (declaration.Variables.Count > 1) {
+                    PlanDeclarators(declaration);
+                }
+
                 return;
 
             case BinaryExpressionSyntax binary when IsTypeTest(binary):
@@ -899,6 +933,18 @@ public sealed class BreakPlan {
             // treats it like every other `=`.
             case AttributeArgumentSyntax { NameEquals: { } nameEquals, Expression: not null } attributeArgument:
                 PlanAroundEquals(attributeArgument, nameEquals.EqualsToken, attributeArgument.Expression);
+                return;
+
+            // ⚠ A `using` alias's `=` is the `=` of every other declaration (#467): the oracle breaks
+            // after it when the line through the first break point of the type does not fit, and fills
+            // the type below — `using L =` / `    Dictionary<…,` / `        …>;` — where Skala, with no
+            // plan here, filled the type argument list on the first line. Measured on a generic alias,
+            // a tuple alias, an array and a pointer alias, flat and with the author's break kept, from
+            // 118 to 124 columns. ⚠ The group's own continuation level is also what puts a kept
+            // `using Y =` / `(int A, int B);` one level in: outside a namespace no frame was open to
+            // pay for it, and the type came back at column 0.
+            case UsingDirectiveSyntax { Alias: { } alias } usingAlias:
+                PlanAroundEquals(usingAlias, alias.EqualsToken, usingAlias.NamespaceOrType);
                 return;
 
             case ArrowExpressionClauseSyntax { Expression: not null } arrow:
@@ -1738,7 +1784,17 @@ public sealed class BreakPlan {
         // ⚠ A primary constructor's base type with arguments is an initializer, not a base type, to the
         // oracle (#427, SK-DIV-0197): its point is before the `:`, as a constructor initializer's is, and
         // it is the `=`'s ordering rule. See the branch.
-        var initializer = !options.WrapBeforeExtendsColon && node.Types[0] is PrimaryConstructorBaseTypeSyntax;
+        // ⚠ At `skala_wrap_before_extends_colon = true` too, and there it skips the first question
+        // (#502, SK-DIV-0198): the oracle keeps `: B(` and chops the arguments of a list that would
+        // fit whole on the continuation line, where `false` breaks before the `:`. Measured from 121
+        // columns up on five shapes at two depths; the break before the `:` is taken only when the
+        // head up to `B(` does not fit, or by the interfaces' question below.
+        // ⚠ And not only a base type with arguments: the base list of any type with a parameter list,
+        // `()` included, measured on a class, a record and a `record struct` whose first base type has
+        // no arguments, is generic, or is an interface (SK-DIV-0198). `class X(int a)` / `    : IFirst,
+        // ISecond { }` is the oracle's answer where Skala broke after the colon or chopped the commas.
+        var primaryBase = node.Parent is TypeDeclarationSyntax { ParameterList: not null };
+        var initializer = !options.WrapBeforeExtendsColon && primaryBase;
 
         // ⚠ `skala_wrap_before_extends_colon = true` makes the `:` itself a break point, which is the only
         // way a base list with a single base type can wrap at all. At `false` — the export's value —
@@ -1776,6 +1832,11 @@ public sealed class BreakPlan {
             broken |= BreaksBefore(node.Types[0].GetFirstToken());
         }
 
+        // ⚠ With interfaces after a primary constructor's base type, the oracle's questions end at the
+        // list's first comma and read the base type's argument list as no place to break (#501,
+        // SK-DIV-0198): `class M3(…)` / `    : B(a, b),` / `        IFirst,` where Skala kept `: B(` and
+        // chopped the arguments. See GroupFacts.TailEndsAt.
+        var inner = node.Types.SeparatorCount > 0 ? NewGroup() : -1;
         Describe(
             node,
             outer,
@@ -1783,20 +1844,35 @@ public sealed class BreakPlan {
             new(
                 options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: true,
-                MeasuresHead: initializer,
-                PrefersOuterBreak: initializer
+                MeasuresHead: primaryBase,
+                PrefersOuterBreak: primaryBase,
+                TailEndsAt: primaryBase ? inner : -1,
+                SkipsOuterTail: primaryBase && options.WrapBeforeExtendsColon,
+
+                // ⚠ One base type and nothing after it: measured one column at a time on five shapes, the
+                // oracle breaks before the `:` up to a continuation line of 88 columns (nested two deep),
+                // 89 (top level), 88 with a second argument, 86 with a one-letter base and 83 behind a
+                // 32-column longer head (SK-DIV-0198): a margin of 30 to 36, the tail counting the colon's
+                // own space, where the fitted one is 14 and went on to 105. 31 is exact on two, and one,
+                // two and five columns lenient on the others. With interfaces after it the whole-list
+                // question keeps the fitted margin, which matched there.
+                OuterMargin: primaryBase && inner < 0 ? SingleBaseTypeMargin : 0
             ),
             true,
-            options.WrapBeforeExtendsColon || initializer
+
+            // ⚠ Always, and not only when the gap is this group's point: an author's break before the
+            // `:` that `keep_user_linebreaks` keeps is written inside the group too, so that the commas'
+            // scope opens on the colon's line and spends its level there (#503) — `class C` / `    : I1,`
+            // / `        I2`, as the oracle writes it.
+            true
         );
 
-        if (node.Types.SeparatorCount == 0) {
+        if (inner < 0) {
             return;
         }
 
         // ⚠ `wrap_if_long` fills the commas one at a time; `chop_*` takes them together.
         var fill = style == WrapStyle.WrapIfLong;
-        var inner = NewGroup();
         var innerBroken = false;
         foreach (var comma in node.Types.GetSeparators()) {
             var next = comma.GetNextToken();
@@ -1827,21 +1903,36 @@ public sealed class BreakPlan {
 
         Describe(
             node,
-            inner,
-            style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
             new(
-                options.KeepsUserBreaksBetweenItems && innerBroken,
-                BreaksIfTooLong: true,
+                inner,
+                style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+                new(
+                    options.KeepsUserBreaksBetweenItems && innerBroken,
+                    BreaksIfTooLong: true,
 
-                // ⚠ A base type whose arguments chop on the declaration's line nests them from the
-                // list's continuation line once the commas break: `class C(int a) : B(` / two levels
-                // in / `    ),` / `    I1,` (#427, SK-DIV-0197) — #418's lift, measured at two
-                // depths and under `chop_always`. Not for a fill, for #418's reason.
-                Continues: !fill
-            ),
-            true
+                    // ⚠ A base type whose arguments chop on the declaration's line nests them from the
+                    // list's continuation line once the commas break: `class C(int a) : B(` / two levels
+                    // in / `    ),` / `    I1,` (#427, SK-DIV-0197) — #418's lift, measured at two
+                    // depths and under `chop_always`. Not for a fill, for #418's reason.
+                    Continues: !fill
+                ),
+                true,
+
+                // ⚠ A level of its own on top of the outer group's, and the writer's one level per
+                // opening line decides whether it counts (#503, SK-DIV-0198). On the declaration's line
+                // the two collapse into one: `class C : Base,` / `    IFirst`. After a break before the
+                // `:` the commas' scope opens on the colon's line, and the oracle puts the types one level
+                // past it — `class C` / `    : IFirst,` / `        ISecond` — at every value of
+                // `skala_wrap_before_extends_colon` and of
+                // `skala_place_primary_constructor_initializer_on_same_line`, the author's break kept or
+                // the fitter's taken alike; Skala put them on the colon's column.
+                SpendsUnderDelimiters: true
+            )
         );
     }
+
+    /// <summary>The first question's margin for a primary constructor's lone base type (SK-DIV-0198).</summary>
+    const int SingleBaseTypeMargin = 31;
 
     /// <summary>
     ///     A tuple's components, <c>(A: 1, B: 2,\n C: 3)</c> — and every other delimited list the oracle
@@ -1954,6 +2045,45 @@ public sealed class BreakPlan {
         if (group >= 0) {
             FollowingPoint(OwnerTokenAfter(node), group);
         }
+    }
+
+    /// <summary>
+    ///     A parameter's two or more attribute sections: one line together, or every section and the
+    ///     parameter on lines of their own.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 (#475, SK-DIV-0350) on a method's, a lambda's and a
+    ///     type's parameter, with two and three sections, the multi-line one first, in the middle or last,
+    ///     by an author's break or by width, one of them holding two attributes: once a section spans lines,
+    ///     or the sections do not fit on one line together, every gap after a section breaks —
+    ///     <c>[Obsolete]</c> / <c>[Description(</c> / … / <c>)]</c> / <c>int a</c>, never
+    ///     <c>[Obsolete] [Description(</c> or <c>)]</c> / <c>[Obsolete] int a</c>, which is what Skala wrote,
+    ///     each section deciding its own gap. Two sections that fit together stay together and the gap
+    ///     before the parameter keeps its own rule (<c>[Obsolete] [Serializable]</c> / a long
+    ///     <c>Dictionary&lt;…&gt; p</c>), and an author's break between two sections that fit is joined.
+    ///     The gaps between sections are the run's points; the gap after the last is its section's, which
+    ///     breaks with the run. A run whose last section holds several attributes is left to the
+    ///     sections, as before: its gap is the fill's and was not measured here.
+    /// </remarks>
+    void PlanAttributeRun(SyntaxNode owner, SyntaxList<AttributeListSyntax> sections) {
+        var last = sections[^1];
+        if (last.Attributes.Count != 1 || OwnerTokenAfter(last).IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        var run = NewGroup();
+        for (var i = 1; i < sections.Count; i++) {
+            Point(sections[i].OpenBracketToken, run);
+        }
+
+        var section = NewGroup();
+        attributeRuns[Key(last)] = (section, run);
+        Describe(
+            owner,
+            run,
+            GroupMode.Preserve,
+            new(JoinsIfFits: true, BreaksIfTooLong: true, TailEndsAt: section, MeasuresThroughTail: true)
+        );
     }
 
     /// <summary>
@@ -2333,6 +2463,108 @@ public sealed class BreakPlan {
             LocalFunctionStatementSyntax function => function.ConstraintClauses,
             _ => default
         };
+
+    /// <summary>
+    ///     The gap between a field's or a local's type and its first name, broken when the line through
+    ///     the name and its <c>=</c> does not fit.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 (#474, SK-DIV-0127): a field
+    ///     <c>IReadOnlyDictionary&lt;string, IReadOnlyList&lt;string&gt;&gt; Overflowing;</c> past the margin and a
+    ///     tuple-typed field come back with the name one level in on a line of its own, the type whole —
+    ///     where Skala filled the type's argument list, <c>Dictionary&lt;Guid,</c> / <c>List&lt;Guid&gt;&gt; First, …</c>;
+    ///     a local whose <c>=</c> lands past 120 the same, <c>T…T</c> / <c>    v9 = [</c>, and
+    ///     <c>Dictionary&lt;T…T, int&gt;</c> / <c>    v9 = [</c> rather than a break at the type argument
+    ///     list's comma. When the line through the <c>=</c> fits, the <c>=</c>'s own rule decides, as it did.
+    ///     So the gap is a group of its own whose one question is the ordering rule's second: does the line
+    ///     run past the margin before the next place it could end — the <c>=</c>'s point, or the end of
+    ///     the declaration. The type's own argument lists see their line end at this point and stay whole.
+    ///     ⚠ One shape stays divergent: at exactly 121 columns, with a bracket that fits below, the oracle
+    ///     breaks here where 122 and wider break the <c>=</c>, and Skala breaks the <c>=</c> at 121 too.
+    ///     Not a method's return type or a property's, which the oracle answers with the arrow or the
+    ///     accessor list, and not under a block comment behind the type, whose break #420 already takes.
+    ///     A break the author wrote here is kept, as it was.
+    /// </remarks>
+    void PlanTypeNameGap(VariableDeclarationSyntax node) {
+        if (node.Parent is not (LocalDeclarationStatementSyntax or FieldDeclarationSyntax)
+            || node.Variables.Count == 0
+            || node.Type.IsVar) {
+            return;
+        }
+
+        // ⚠ Not when a comment sits inside the type: the oracle breaks a type argument list past a block
+        // comment (#409) — `Dictionary<A, /* f */` / `B<C, int>> field = null;` — where the same type
+        // without it fits whole and gives the break to the name.
+        // ⚠ Nor before a lambda: its arrow and a parenthesised body hold the statement's level at zero
+        // (SK-DIV-0101, #406), and this group's level, spent on the declaration's line, would show
+        // under the hold — `f = () =>` / `    (`. Not measured with a type long enough to break here.
+        var name = node.Variables[0].Identifier;
+        if (HasBlockCommentBefore(name)
+            || node.Type.DescendantTrivia()
+                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                )
+            || node.Variables[0].Initializer?.Value is AnonymousFunctionExpressionSyntax) {
+            return;
+        }
+
+        // ⚠ And the gap between the modifiers and the type, by the same question (#540): the oracle
+        // writes `public static readonly` / `    IReadOnlyDictionary<…>` / `    Overflowing;` when the
+        // type does not fit after the modifiers, the name below it by the gap that follows, and fills a
+        // type too long for its own line there — `    IReadOnlyDictionary<…,` / `        …>> Overflowing;`.
+        // Skala filled the type on the modifiers' line. A group around the type owning the gap before
+        // it; the type's argument lists yield to it as they yield to everything before them.
+        // ⚠ A field's, and not a `const` local's: measured on `const IReadOnlyDictionary<…> local = null;`
+        // from 121 to 123, the oracle fills the type on the `const` line. Nor, measured and not modelled,
+        // a field whose name is one letter, which the oracle fills from a 133-column line up where every
+        // longer name moves the type below (SK-DIV-0127).
+        if (node.Parent is FieldDeclarationSyntax { Modifiers.Count: > 0 }) {
+            var modifiers = NewGroup();
+            Point(node.Type.GetFirstToken(), modifiers);
+            Describe(
+                node.Type,
+                new(
+                    modifiers,
+                    GroupMode.Preserve,
+                    new(
+                        options.KeepsUserBreaksBetweenItems && BreaksBefore(node.Type.GetFirstToken()),
+                        BreaksIfTooLong: true,
+                        PrefersOuterBreak: true,
+                        SkipsOuterTail: true
+                    ),
+                    true,
+                    true
+                )
+            );
+        }
+
+        // ⚠ Around the declarator and owning the gap before it, so that the group is entered once the
+        // type has been written: a type too long for any line fills its own argument list first, and
+        // the name then stays on the type's last line when it fits there —
+        // `Dictionary<(…),` / `    List<(…)>> local = null;` is the oracle's, and a group entered at
+        // the type's first token measured the whole type and moved `local` down.
+        var group = NewGroup();
+        Point(name, group);
+        Describe(
+            node.Variables[0],
+            new(
+                group,
+                GroupMode.Preserve,
+                // ⚠ The ordering rule's second question alone, asked through PrefersOuterBreak and
+                // SkipsOuterTail rather than BreaksOnlyIfHeadOverflows: that fact also makes the type's
+                // own argument list read through a name with nothing breakable after it, which filled
+                // `IReadOnlyDictionary<string,` / `…>> Overflowing;` where the oracle moves the name.
+                new(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(name),
+                    BreaksIfTooLong: true,
+                    PrefersOuterBreak: true,
+                    SkipsOuterTail: true
+                ),
+                true,
+                true
+            )
+        );
+    }
 
     /// <summary>
     ///     <c>skala_wrap_multiple_declaration_style = chop_if_long</c>: <c>int a = 1, b = 2, c = 3;</c> puts
@@ -6415,6 +6647,8 @@ public sealed class BreakPlan {
             return;
         }
 
+        PlanCommentedAttributeGap(node, lists);
+
         // ⚠ A local function's attribute sections are each on a line of their own whatever any key says
         // (#444, SK-DIV-0207). Measured with the method key at `always` and `if_owner_is_single_line`,
         // `skala_place_attribute_on_same_line = true`, both together and
@@ -6436,7 +6670,9 @@ public sealed class BreakPlan {
             }
 
             foreach (var token in AttributeGaps(node, lists)) {
-                Mandatory(token);
+                if (!pastAttributeComments.Contains(token.SpanStart)) {
+                    Mandatory(token);
+                }
             }
 
             return;
@@ -6490,6 +6726,49 @@ public sealed class BreakPlan {
             // fits on one line and comes back when it does not.
             new(broken, true, true)
         );
+    }
+
+    /// <summary>
+    ///     A field's gap after its last attribute section and a block comment: declined — the comment ends the
+    ///     line — when the joined line overflows, unless what overflows can wrap inside the value.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 one column at a time from 120 to 134 (#504, SK-DIV-0201):
+    ///     <c>[Obsolete] /* c */ public int F = …;</c> with a binary chain of identifiers, of literals, a single
+    ///     identifier, a string, a conditional, a member chain to 128 and <c>private static readonly</c> in front
+    ///     comes back with the attribute and the comment on their line and the declaration whole below at
+    ///     every overflowing width; an event field the same. A value that is a call or a creation with
+    ///     arguments is declined only while its <c>;</c> alone overflows — <c>)</c> at 120 — and from there is
+    ///     joined with its arguments chopped, the terminator rule of the joining half (#438). Skala left the
+    ///     gap to the author, joined, and broke the <c>=</c>. ⚠ Not a property's or a method's arrow, declined
+    ///     at one to three columns past and joined from there, nor an auto-property's initializer, always
+    ///     joined: no reading of the overflow alone covers them, so they stay the author's.
+    /// </remarks>
+    void PlanCommentedAttributeGap(SyntaxNode node, SyntaxList<AttributeListSyntax> lists) {
+        if (node is not (FieldDeclarationSyntax or EventFieldDeclarationSyntax)) {
+            return;
+        }
+
+        var close = lists[^1].CloseBracketToken;
+        var next = close.GetNextToken();
+        if (next.IsKind(SyntaxKind.None)
+            || BreaksBefore(next)
+            || !close.TrailingTrivia.Concat(next.LeadingTrivia)
+                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))
+            || BreaksInsideTheSignature(node, next)) {
+            return;
+        }
+
+        var value = node is FieldDeclarationSyntax { Declaration.Variables: [{ Initializer.Value: { } initial }] }
+            ? initial
+            : null;
+        var wrapsInside = value is InvocationExpressionSyntax { ArgumentList.Arguments.Count: > 0 }
+            or BaseObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: > 0 };
+
+        var group = NewGroup();
+        Point(next, group);
+        pastAttributeComments.Add(next.SpanStart);
+        Describe(node, group, GroupMode.Preserve, new(MeasuresHead: true, Terminator: wrapsInside ? 1 : WholeLine));
     }
 
     /// <summary>

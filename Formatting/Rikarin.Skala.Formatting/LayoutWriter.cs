@@ -1654,7 +1654,8 @@ public sealed class LayoutWriter {
                 // builder's point width, which still counts the point as not taken.
                 var flags = (LineFlags)slot.Flags;
                 if ((LineKind)slot.Arg0 == LineKind.Soft && (flags & LineFlags.LastResort) != 0) {
-                    if ((flags & LineFlags.FillPoint) == 0 && fitter.ModeOf(slot.Arg2) == ResolvedMode.Broken) {
+                    if ((flags & (LineFlags.FillPoint | LineFlags.ReadThroughWhenBroken)) == 0
+                        && fitter.ModeOf(slot.Arg2) == ResolvedMode.Broken) {
                         return true;
                     }
 
@@ -1871,9 +1872,12 @@ public sealed class LayoutWriter {
             // its attributes or by arguments that chopped, moves the parameter down whatever the
             // parameter's width (SK-DIV-0114), and that is read off the output like
             // GroupFacts.BreaksIfOwnerIsMultiLine is (#372), not off the source.
+            // ⚠ Nor when the group broke with its owner: a run of attribute sections that did not fit
+            // together puts the parameter on a line of its own however short it is (#475).
             if (!flat
                 && (flags & LineFlags.BreaksOnlyIfNextLineOverflows) != 0
-                && fitter.EnteredOn(slot.Arg2) == line) {
+                && fitter.EnteredOn(slot.Arg2) == line
+                && !BrokeWithOwner(slot.Arg2)) {
                 flat = NextLineFitsBeside(ref slot, flags, stack);
             }
 
@@ -1892,6 +1896,11 @@ public sealed class LayoutWriter {
 
         TakeBreak(ref slot);
     }
+
+    /// <summary>Whether the group broke because the group it breaks with did — see <see cref="GroupFacts.BreaksWithOwner" />.</summary>
+    bool BrokeWithOwner(int group) =>
+        document.FactsOf(group) is { BreaksWithOwner: true, Owner: >= 0 } facts
+        && fitter.ModeOf(facts.Owner) == ResolvedMode.Broken;
 
     /// <summary>Writes a break: the line ends here and the next one begins.</summary>
     void TakeBreak(ref DocNode slot) {
@@ -2114,6 +2123,15 @@ public sealed class LayoutWriter {
             ? pendingCloserLevel ?? Effective()
             : this.column + width;
         var (segment, head) = FillSegment(node, group, flags, stack);
+
+        // ⚠ An aligned list's head breaks when what would stay on its line is narrower than twelve
+        // columns (SK-DIV-0351). See AlignedHeadWidth.
+        if ((flags & LineFlags.AlignedListHead) != 0
+            && AlignedHeadWidth(document.AlignedItemsOf(group), column, TrailingAfterGroup(stack, group))
+            is >= 0 and < MinimumAlignedHead) {
+            return false;
+        }
+
         if (Fits(column, segment)) {
             return true;
         }
@@ -2153,6 +2171,39 @@ public sealed class LayoutWriter {
     }
 
     bool Fits(int column, int width) => width < Document.Unbounded && column + width <= this.width;
+
+    /// <summary>The narrowest head an aligned list keeps on its opener's line (SK-DIV-0351).</summary>
+    const int MinimumAlignedHead = 12;
+
+    /// <summary>
+    ///     How wide the items that stay on an aligned fill's first line are — filled from
+    ///     <paramref name="column" /> until one does not fit — or −1 when every item fits there.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 on a method's type parameter list at
+    ///     <c>skala_align_multiline_type_parameter_list = true</c>, the `<` at eleven columns from 20 to 50 and
+    ///     the line 121 to 135: `TFirstPara,` (11 columns) and `TA, TB,` break after the `<` and fill the
+    ///     list one level in, `TFirstParam,` (12) and `TA, TB, TCdef,` keep their line and align the rest
+    ///     under it — the eleven-against-twelve of #379's floor, at every column of the `<`. Skala kept
+    ///     every head.
+    /// </remarks>
+    int AlignedHeadWidth(int[] segments, int column, int trailing) {
+        var head = 0;
+        for (var i = 0; i < segments.Length; i++) {
+            var item = segments[i] + (i > 0 ? 1 : 0);
+            if (i == segments.Length - 1) {
+                item = trailing >= Document.Unbounded ? Document.Unbounded : item + trailing;
+            }
+
+            if (!Fits(column + head, item)) {
+                return head;
+            }
+
+            head += item;
+        }
+
+        return -1;
+    }
 
     /// <summary>The whole width after a fill point and the width to the item's first breakable place.</summary>
     /// <remarks>

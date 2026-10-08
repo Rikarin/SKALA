@@ -320,12 +320,8 @@ public sealed partial class CSharpDocumentBuilder {
             VariableDeclarationSyntax { Variables.Count: > 1, Parent: not FieldDeclarationSyntax } =>
                 options.AlignMultipleDeclaration,
 
-            // ⚠ Only where the list wraps at its own parameters. Under
-            // `skala_wrap_before_type_parameter_langle` the break is the gap before the `<` and the list
-            // has no interior point to align, so an Align scope there would anchor a column nothing
-            // ever lands on.
-            TypeParameterListSyntax { Parameters.Count: > 0 } =>
-                options.AlignMultilineTypeParameterList && !options.WrapBeforeTypeParameterLangle,
+            // ⚠ A type parameter list is not here: its anchor is past its own first break point, the gap
+            // after the `<`, so the scope opens inside the list's group — see AlignsTypeParameters.
             _ => false
         };
 
@@ -1816,11 +1812,15 @@ public sealed partial class CSharpDocumentBuilder {
         // second level it is lifted by a construct that broke after it (`var b = ((` / `1 + 2)` /
         // `* 3);`, LayoutWriter.LiftedLevel), which is what the unconditional scope used to stand in
         // for, and did wrongly everywhere else.
+        // ⚠ A type parameter list's angle brackets are a level of their own too (#538): an attribute
+        // whose arguments chop on the `<`'s line, `class C<[Description(`, puts them two levels in and
+        // `)]` one, on a class, a method and after a first parameter — the `(` alone paid one level.
         // ⚠ And an argument list whose first argument stays behind a comment after its `(` (#521): the
         // oracle writes `Compute( /* f */ Inner(` / `"…"` two levels in / `)` one / `);` — the outer
         // list's level counts although the inner one opened on the same line. See
         // BreakPlan.PlanPastLeadingComments.
-        var unconditional = options.PlaceSingleMethodArgumentLambdaOnSameLine
+        var unconditional = node is TypeParameterListSyntax
+            || options.PlaceSingleMethodArgumentLambdaOnSameLine
             && node is ArgumentListSyntax { Arguments: [{ Expression: LambdaExpressionSyntax }] }
             || node is ArgumentListSyntax { Arguments.Count: > 0 } commented
             && plan.PlansPastALeadingComment(commented.Arguments[0].SpanStart);
@@ -1888,6 +1888,10 @@ public sealed partial class CSharpDocumentBuilder {
         var savedDepth = continuousDepth;
         var pending = 0;
 
+        // ⚠ An alignment scope inside the delimiter's own, opened past the list's first break point.
+        // See AlignsTypeParameters.
+        var alignedInside = false;
+
         // ⚠ A nested positional list opens no scope, but its contents are still inside a list: a break
         // between its items is not a continuation any frame around it pays for. Held at zero columns, as
         // GroupPlan.HoldsLevel holds one — inside a property pattern's braces nothing else is open, and
@@ -1939,6 +1943,11 @@ public sealed partial class CSharpDocumentBuilder {
                     // (#443): `(1, 2` / `    );`, `P(1, 2` / `    );` and `var (a, b` / `    ) = …` keep the
                     // closer one level in, where the author's break left it. A tuple that broke after
                     // its `(` still closes on its opener's level, `(` / `    a,` / `)`.
+                    if (alignedInside) {
+                        CloseIndent(IndentKind.Align);
+                        alignedInside = false;
+                    }
+
                     // ⚠ And it is one level past the opener's *line*, not the ambient level after the
                     // scope closes (#472): the closer is written inside the list's own scope. The two
                     // agree under an `=` or a statement, which is all #443 measured; they part where
@@ -2005,6 +2014,13 @@ public sealed partial class CSharpDocumentBuilder {
                     }
 
                     opened = levels;
+                    if (AlignsTypeParameters(node)
+                        && node is TypeParameterListSyntax { Parameters: [{ } parameter, ..] }) {
+                        EmitLeadingGapAt(parameter.SpanStart);
+                        OpenIndent(IndentKind.Align, true);
+                        alignedInside = true;
+                    }
+
                     if (element) {
                         savedDepth = continuousDepth;
                         continuousDepth = 0;
@@ -2023,6 +2039,10 @@ public sealed partial class CSharpDocumentBuilder {
 
         if (opened > 0) {
             EmitUpTo(close.SpanStart);
+            if (alignedInside) {
+                CloseIndent(IndentKind.Align);
+            }
+
             if (element) {
                 if (frames[^1].Activated) {
                     doc.Close();
@@ -2174,6 +2194,26 @@ public sealed partial class CSharpDocumentBuilder {
             EmitLeadingGapAt(first.SpanStart);
         }
     }
+
+    /// <summary>
+    ///     <c>skala_align_multiline_type_parameter_list = true</c>: the parameters line up under the first
+    ///     one, wherever it landed.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The scope opens inside the list, once the gap after the <c>&lt;</c> is written — and that gap
+    ///     is the list's own first break point (#452, SK-DIV-0024). Opened around the node, the way
+    ///     <see cref="Visit" /> opens every other alignment, the gap was written before the list's group
+    ///     existed, and a group not yet entered renders its point flat: a single type parameter wider
+    ///     than the margin stayed on a 125-column line. Measured with <c>jb cleanupcode</c> 2025.2.6 from
+    ///     121 to 124 columns on a method's list of one and of two parameters: the oracle breaks after the
+    ///     <c>&lt;</c> exactly as at <c>false</c>, the parameters one level in, and they align under the
+    ///     first one there. Not under <c>skala_wrap_before_type_parameter_langle</c>, where the break is
+    ///     before the <c>&lt;</c> and the list has no interior point to align.
+    /// </remarks>
+    bool AlignsTypeParameters(SyntaxNode node) =>
+        node is TypeParameterListSyntax { Parameters.Count: > 0 }
+        && options.AlignMultilineTypeParameterList
+        && !options.WrapBeforeTypeParameterLangle;
 
     /// <summary>
     ///     How many levels a delimited construct's contents take, and how many its closing delimiter
@@ -3608,7 +3648,8 @@ public sealed partial class CSharpDocumentBuilder {
                     return !lineComment
                         && i != lastPieceIndex
                         && (!StopsAtAComment(tokens[piece.TokenIndex]) || plan.PlansPastALeadingComment(nextStart))
-                        && !EndsAnAttributeRun(tokens[piece.TokenIndex])
+                        && (!EndsAnAttributeRun(tokens[piece.TokenIndex])
+                            || plan.PlansPastAnAttributeComment(nextStart))
                         && !(spansLines && StopsAtAMultiLineComment(tokens[piece.TokenIndex]));
                 default:
                     return false;
@@ -4772,8 +4813,19 @@ public sealed partial class CSharpDocumentBuilder {
             flags |= LineFlags.YieldsToPredecessors;
         }
 
+        if (rule is GapRule.FillPoint
+            && nextToken.Parent is TypeParameterSyntax { Parent: TypeParameterListSyntax list }
+            && list.Parameters.Count > 1
+            && list.Parameters[0].GetFirstToken() == nextToken
+            && AlignsTypeParameters(list)) {
+            flags |= LineFlags.AlignedListHead;
+        }
+
         if (rule == GapRule.FollowingPoint) {
             flags |= LineFlags.BreaksOnlyIfNextLineOverflows;
+            if (IsAShortParameterBehindItsSection(nextToken)) {
+                flags |= LineFlags.ReadThroughWhenBroken;
+            }
         }
 
         if (IsADelimitedTupleItem(nextToken) || StartsATypeArgument(nextToken)) {
@@ -4814,6 +4866,33 @@ public sealed partial class CSharpDocumentBuilder {
 
         return flags;
     }
+
+    /// <summary>
+    ///     Whether the token starts a parameter of at most eleven columns behind its one attribute section.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 (#476, SK-DIV-0352), the section's last column swept
+    ///     one at a time: behind <c>[Obsolete("…", true)]</c>, <c>[Description("…")]</c>, <c>[A("…")]</c> and
+    ///     <c>[A("…", 1)]</c>, <c>int a</c>, <c>string a</c>, <c>ref int a</c>, <c>int a = 5</c> and
+    ///     <c>List&lt;int&gt; a</c> chop the section's arguments exactly when the joined line overflows, and
+    ///     never stand alone below a whole section — at two indents. Longer parameters do not follow one
+    ///     rule: a 16- or 17-column parameter behind <c>[A("…")]</c> stands alone below the section at
+    ///     every width, behind <c>[Obsolete("…", true)]</c> it chops from the joined line's overflow up to
+    ///     17 columns and from a threshold that rises with the parameter from 18, and never at 30. So the
+    ///     rule is wired where every cell agrees, and the gap is left to the section's own answer above
+    ///     eleven columns. ⚠ A parameter with a default value is flagged and not helped: its `=` is a
+    ///     point of its own that ends the arguments' measure first, and `[…] int a =` / `5` past the
+    ///     margin is what Skala writes with or without the flag, where the oracle chops (SK-DIV-0352).
+    /// </remarks>
+    static bool IsAShortParameterBehindItsSection(SyntaxToken token) =>
+        token.Parent?.AncestorsAndSelf().OfType<ParameterSyntax>().FirstOrDefault() is {
+            AttributeLists: [{ Attributes.Count: 1 } section]
+        } parameter
+        && token == section.CloseBracketToken.GetNextToken()
+        && parameter.Span.End - token.SpanStart <= 11
+        && !parameter.SyntaxTree.GetText()
+            .ToString(TextSpan.FromBounds(token.SpanStart, parameter.Span.End))
+            .Contains('\n');
 
     /// <summary>
     ///     Whether the token opens a tuple's item with a delimiter — the one fill whose head the oracle
@@ -4887,13 +4966,21 @@ public sealed partial class CSharpDocumentBuilder {
     /// <remarks>
     ///     ⚠ Measured on the two that are not tuples: <c>o is (1, (2,\n 3))</c>, <c>o is (1\n, (2\n, 3))</c>,
     ///     <c>o is (1, Get(2,\n 3))</c>, <c>var (a, (b,\n c))</c> and <c>var (a\n, (b\n, c))</c> all keep the
-    ///     nested item's head on the outer item's line. An array rank, a function pointer's lists and an
-    ///     attribute list are filled the same way but were not measured on this shape and are left out.
+    ///     nested item's head on the outer item's line. An array rank and a function pointer's lists are
+    ///     filled the same way but were not measured on this shape and are left out.
+    ///     <para>
+    ///         ⚠ An attribute in a section of several is one (#537): `[Obsolete, Description("…",` / `"…")]`
+    ///         comes back from the oracle as `[Obsolete, Description(` with the arguments chopped below,
+    ///         after two attributes or three, on a parameter and on a method, where Skala broke after
+    ///         `[Obsolete,`. An attribute that is merely too wide still moves to a line of its own —
+    ///         `[Obsolete,` / `Description("…110 columns…")` is the oracle's too.
+    ///     </para>
     /// </remarks>
     static bool IsATupleShapedItem(SyntaxNode node) =>
         node is ArgumentSyntax { Parent: TupleExpressionSyntax }
             or SubpatternSyntax { Parent: PositionalPatternClauseSyntax }
-            or VariableDesignationSyntax { Parent: ParenthesizedVariableDesignationSyntax };
+            or VariableDesignationSyntax { Parent: ParenthesizedVariableDesignationSyntax }
+            or AttributeSyntax { Parent: AttributeListSyntax { Attributes.Count: > 1 } };
 
     /// <summary>
     ///     Whether the token is the first of a type argument — the other fill whose head stays on the

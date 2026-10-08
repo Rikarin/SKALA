@@ -1891,10 +1891,24 @@ unrelated to it; where Skala and the oracle part is that the oracle asks whether
 *enough* and Skala asks whether the construct is *over*. That is a difference two sentences can
 hold, which is what a `deliberate` verdict needs.
 
+**Second half resolved (#452).** The alignment scope of a type parameter list now opens *inside* the
+list's delimiter scope, once the gap after the `<` — the group's own first point — has been written
+(`CSharpDocumentBuilder.AlignsTypeParameters`). Measured with `jb cleanupcode` 2025.2.6 on a method's
+list of one parameter swept from 118 to 124 columns: flat to 120, and from 121 the oracle breaks after
+the `<` with the parameter one level in, exactly as at `false`; Skala now does the same. A list that
+fills keeps its parameters under the first one (`public class Widest<TFirst…,` / aligned `TFourth> { }`,
+and a kept comma break), as the aligned fixture already recorded.
+
+⚠ Measured beside it (SK-DIV-0351, resolved in round two): `M<TFirst,` / `Tyyy…>() { }` comes back from the
+oracle as `M<` / `TFirst, Tyyy…` at `true`, because the head `TFirst,` is narrower than twelve columns —
+not, as first recorded, because the aligned continuation would not fit. And a top-level
+`public class Generic<T…>` past the margin is broken by the oracle between `class` and the name at both
+values, where Skala breaks after the `<` (SK-DIV-0353, open).
+
 - options: `skala_wrap_before_type_parameter_langle`, `skala_align_multiline_type_parameter_list`, `skala_wrap_parameters_style`
 - ⚠ status: first half **deliberate**, argued above and re-measured in
-  [sk-div-preference-sweep.md](sk-div-preference-sweep.md); second half **open**, measured, `debt`
-  size S.
+  [sk-div-preference-sweep.md](sk-div-preference-sweep.md); second half **resolved** (#452), pinned by
+  `AlignedTypeParameterIssue452Tests`.
 
 ## SK-DIV-0050 — a lambda's `=>` is a break point of the oracle's and not of Skala's
 
@@ -5167,8 +5181,27 @@ somebody measures a mechanism.
 ⚠ **Scoped to alias directives.** A plain `using System.…;` has no `=` to break at and was not asked
 about; nothing here says what the oracle does with one.
 
-- options: none identified.
-- ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/alias-any-type.cs` and
+**The alias half is resolved (#467), and it was one mechanism after all — a missing plan.** Re-measured
+with `jb cleanupcode` 2025.2.6 on a generic, a tuple, an array and a pointer alias, at the top of a file,
+inside a block namespace and after a file-scoped one, flat from 118 to 124 columns and with the author's
+break after the `=` kept. The alias's `=` is planned as every other declaration's `=`
+(`PlanAroundEquals`): flat to 120, and from 121 the oracle breaks after it and fills a type argument list
+below — `using L =` / `    Dictionary<…,` / `        …>;` — exactly as the ordering rule answers a
+`var x = new Dictionary<…>(…)`. The `=` group's continuation level is also the kept break's: outside a
+namespace no frame was open to pay for it, so `using Y =` / `(int A, int B);` came back at column 0, and
+inside a namespace the namespace's frame paid, which is why only the top of a file showed it. ⚠ The
+entry's first row is stale twice over: Skala no longer left the line whole (it filled a nested type
+argument list, `IReadOnlyList<` / `string>`), and the oracle no longer chops the tuple — it writes
+`(… Names, …IReadOnlyDictionary<string, int>` / `    Counts);`, breaking a tuple *element* between its
+type and its name. That last break is SK-DIV-0127's type/name family and stays divergent: Skala now
+breaks the `=` as the oracle does and then fills inside `IReadOnlyList<`.
+
+The field half is not this mechanism: re-measured, its kept break already lands at column 8, and the
+flat 121-column field is broken by the oracle between its type and its name, which is SK-DIV-0127's.
+
+- options: `skala_wrap_before_eq`, `skala_keep_user_linebreaks`.
+- ⚠ status: alias **resolved** (#467), pinned by `UsingAliasIssue467Tests`; a tuple alias's interior and
+  the field half **open** as SK-DIV-0127. Also pinned by `constructs/syntax/alias-any-type.cs` and
   `constructs/syntax/unsafe-and-function-pointers.cs`.
 
 ## SK-DIV-0100 — required braces are applied during formatting
@@ -5985,7 +6018,8 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
   oracle breaks between the type and the name, or between an element's type and its name (SK-DIV-0024's
   family); Skala now fills the type argument list instead, where before it left the line whole.
 - Two attribute sections on one parameter, the first multi-line: the oracle puts each following section
-  and the type on its own line; Skala moves only the token after the multi-line one.
+  and the type on its own line; Skala moved only the token after the multi-line one. **Fixed** by #475,
+  SK-DIV-0350.
 - A type parameter's single attribute whose arguments chop: the oracle keeps `<[Obsolete(` on the `<`'s
   line with the arguments two levels in; Skala nests them one. And `<[Obsolete] T>` comes back
   `< [Obsolete] T>` — a pre-existing spacing defect, like `o is Point (2, 3)` for a recursive pattern's
@@ -5997,6 +6031,8 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
   as if the section were measured with the separator space after it; at 119 it leaves them whole, and
   a one-argument 104-column `[Description("…")]` joined to a 131-column line breaks after the `]`
   alone. Skala breaks after the `]` and chops only a section that overflows by itself.
+  ⚠ **Re-measured for #476 and the reading above is wrong** (SK-DIV-0352): the chop starts well below
+  120 and depends on the parameter.
 - `orderby a,\n b`: unmeasured, and `OrderByClause` is the one exemption in `SeparatedListPlanTests`
   without a measurement behind it.
   **Fixed (#477)**, and the exemption's premise ("nothing to plan") was wrong: measured 2026-10-08,
@@ -6718,8 +6754,45 @@ the keyword itself, which nothing in Skala or in the export's keys describes. Re
 type/name plan touches the SK-DIV-0024 position, which was taken with a measurement and is not this
 entry's to reopen.
 
+**Resolved for fields and locals (#474).** The gap before a field's or a local's first name is now a
+point of a group opened around the declarator, owning the gap before it, so it is entered once the type
+has been written; its one question is the ordering rule's second — does the line run past the margin
+before the next place it could end, the `=`'s point or the declaration's end. Re-measured with `jb
+cleanupcode` 2025.2.6, one column at a time from 118 to 124: a field `IReadOnlyDictionary<…> N…N;`, a
+local `T…T v9 = [six elements]` and `Dictionary<T…T, int> v9 = […]` by the column of their `=`, and a field
+`T…T Name = Compute(alpha, beta);` — flat or the `=`'s answer to 120, the name one level below the whole
+type from 121, every one byte-identical. A tuple-typed field (SK-DIV-0119's residue) moves its name the
+same way, and a type too long for any line fills first and keeps the name on its last line when it fits
+there (`Dictionary<(…),` / `    List<(…)>> local = null;`).
+
+⚠ **The SK-DIV-0024 position is not touched**: that entry is about a *method's* type parameter list
+against its parameter list, and this point exists only between a variable declaration's type and its
+name. A method's return type, a property's, `object[] P…P => [` and a property initializer stay open, as
+does the `using` header row.
+
+**The modifiers' gap is resolved for fields (#540).** `public static readonly` / `    IReadOnlyDictionary<…>` /
+`    Overflowing;` is the oracle's answer when the type does not fit after the modifiers, the name below by
+its own gap and a type too long for its own line filled there. A group around the type owns the gap
+before it and asks the same second question as the name's. Measured on 65 fields, `Dictionary<string,
+List<S…>> N…N;` with the name 1 to 31 letters and the line 121 to 169 columns: the gap breaks exactly when
+the type ends past column 120, for every name of five letters or more. ⚠ Not for shorter names, and that
+is measured, not modelled: with a name of one letter the oracle fills the type on the modifiers' line from
+a 133-column line up, with two to four letters from somewhere between 133 and 141, and with five never up
+to 157 — Skala moves the type below for all of them. Nor for a `const` local, which the oracle fills on the
+`const` line from 121 to 123, nor for a property (`public static` / type / `Property { get; set; }` in the
+oracle), which has no type/name point here. Pinned by `ModifierTypeGapIssue540Tests`.
+
+Still divergent, measured: the exactly-121 quirk (`T…T v9 = [1, 2, 3];` at 121 breaks the type/name gap
+in the oracle; Skala breaks the `=`, as the oracle does from 122); a type with a block comment inside it,
+which the oracle breaks past the comment (#409) and Skala leaves to that rule by planning no gap; a
+lambda-valued declarator, left unplanned because the group's level would show under the arrow's held one
+(SK-DIV-0101) and not measured with a type long enough to need the gap; and `public static readonly` /
+type / name, where the oracle also breaks between the modifiers and a type too long for their line —
+Skala fills the type there — resolved for fields by #540, above.
+
 - options: none — no key governs the type/name gap.
-- ⚠ status: **open**.
+- ⚠ status: **resolved** for fields and locals (#474), pinned by `TypeNameGapIssue474Tests`; **open** for
+  the rows above.
 
 ## SK-DIV-0128 — a chain was counted in dots, and a call at its head has none
 
@@ -8362,23 +8435,65 @@ list's continuation line. An ordinary base type keeps its point after the `:`. A
 
 ## SK-DIV-0198 — what the oracle measures before breaking at a primary constructor's `:` when interfaces follow
 
-Measured beside SK-DIV-0197 and left open. With interfaces after a primary constructor's base type, the
-oracle's second question ends the line at the base list's own first comma and does not count the argument
-list as a place to break: `class M3(…) : B(a, b),` past the margin at a nested depth becomes `class M3(…)`
-/ `        : B(a, b),` / `            IFirst,` …, where Skala keeps `: B(` and chops the arguments. The same
-measure decides `chop_always` (`: B(a, b),` / `IFirst { }` after a break before the `:`) and
-`wrap_if_long`. ⚠ For a single base type it does count the argument list — `: B(` stays and the arguments
-chop when the list does not fit on the continuation line — so the measure is not "the whole first base
-type" either.
+Measured beside SK-DIV-0197 and left open; resolved by #501, #502 and #503. Asked of `jb cleanupcode`
+2025.2.6 under `SkalaFormatOnly` on about 750 generated declarations: a class nested two types deep and
+at the top level, its continuation line swept one column at a time from 78 to 124, with a longer
+parameter list, a second argument, a one-letter base name, no arguments, a generic base, interfaces
+only, a record and a `record struct`, at each of `skala_wrap_before_extends_colon` and at
+`skala_place_primary_constructor_initializer_on_same_line = false`.
 
-Also open: at `skala_wrap_before_extends_colon = true` the oracle keeps `: B(` and chops the arguments of a
-list that would fit on the continuation line (where `false` breaks before the `:`), and Skala breaks before
-the colon; and at `skala_place_primary_constructor_initializer_on_same_line = false`, a chopped base type
-followed by interfaces puts its arguments two levels past the `:` line where Skala puts them one.
+⚠ **The family is every type with a parameter list, `()` included** — not only a base type with
+arguments. `class X(int a) : B, IFirst, ISecond { }`, `class X(int a) : IFirst, ISecond { }`, a generic
+base and a record all break before the `:` by the same questions, where Skala broke after the colon or
+chopped the commas. A type without a parameter list keeps the ordinary base-list rules.
+
+At the export, in order:
+
+| question | answer |
+|---|---|
+| everything after the `:` fits on the continuation line (the fitted margin) | break before the `:`, the list whole: `class X(…)` / `    : B, IFirst, ISecond { }` |
+| interfaces follow, and the line through the list's first comma fits where it is | keep it and chop the interfaces: `class V8(…) : B(a, b),` / `    IFirst,` |
+| interfaces follow, and `: B(…),` fits on the continuation line (the fitted margin) | break before the `:` and chop the interfaces: `class M3(…)` / `    : B(a, b),` / `        IFirst,` |
+| otherwise | keep `: B(` and chop the arguments |
+
+The base type's argument list is no place to break for the two interface questions, which is what the
+entry recorded and what Skala did not do: it asked "does `: B(` fit" and kept it every time.
+
+At `skala_wrap_before_extends_colon = true` the first question is not asked (#502). `: B(` stays and the
+arguments chop for a list that fits whole below — from 121 columns up, on all five shapes, at both
+depths — and the break goes before the `:` only when the head up to `B(` does not fit
+(`class V5(…six parameters…)` / `    : B(a, b) { }`), or by the interface questions, which answer as at
+`false`. `class X(int a) : B, IFirst, ISecond { }` keeps `: B,` and chops at `true` and moves below at
+`false`.
+
+⚠ **Once the `:` has a line of its own, the base types are one level past it** (#503), at every value of
+both keys, from the fitter's break and from an author's break `keep_user_linebreaks` kept, for an
+ordinary base list as much as a primary constructor's: `class C` / `    : IFirst,` / `        ISecond`,
+and a chopped base type's arguments two levels past the colon's line with `),` one. Skala put the types
+on the colon's column. The commas' group now spends a level of its own, which the writer's one level
+per opening line collapses into the list's on the declaration's line and counts on the colon's.
+
+**Round two: the lone base type's margin.** With one base type and nothing after it, the first question
+now leaves a margin of its own, 31 columns, in place of the fitted one (`GroupFacts.OuterMargin`): Skala
+breaks before the `:` up to an 88-column continuation line nested two deep, where it went on to 105, which
+is exact for two of the five shapes swept and one (top level), two (a one-letter base) and five (a
+32-column longer head) columns lenient on the others. With interfaces the boundary stays the fitted
+margin's — 106 against the oracle's 108, 108 against 109, 106 against 103 and 102 — because no constant
+moves all four closer (12 fits two exactly and misses the others by five and six). Pinned by
+`PrimaryConstructorMarginTests`.
 
 - options: `skala_wrap_extends_list_style`, `skala_wrap_before_extends_colon`,
   `skala_place_primary_constructor_initializer_on_same_line`
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved** (#501, #502, #503) for every shape above, pinned by
+  `PrimaryConstructorBaseListIssue501Tests`. ⚠ **What stays open is the fitted margin's boundary**, which
+  this entry does not model and SK-DIV-0005 records for the `=`: both "fits on the continuation line"
+  questions use the ordering rule's fitted margin, and the oracle's own boundary moves with the shape.
+  The last continuation line it still breaks for, nested two deep: with interfaces 108 (Skala 106), at the
+  top level 109 (108), with a 32-column-longer parameter list 103 (106), with a one-letter base name 102
+  (106); for a single base type 88, 89, 83 and 86 where Skala's margin gives 105 — a base type whose
+  continuation line would be 89 to 105 columns breaks before the `:` in Skala and keeps `: B(` in the
+  oracle. At `true` the interface boundary is 107, 108, 110 and 100. No affine function of the widths
+  reproduces these, as for the `=`.
 
 ## SK-DIV-0199 — a block comment after the last attribute section leaves the gap to the author
 
@@ -8672,8 +8787,32 @@ Measured beside it and not this entry: at `always`, `[Obsolete] public int S = C
 margin is joined and the call chopped by the oracle, where Skala breaks after the `=` and leaves the call
 whole; the same happens without any attribute, so it is the `=`'s ordering rule.
 
+⚠ **Re-measured for #504**, a field `[Obsolete] /* c */ public int F = …;` at the export, its line ending
+at 119 to 128, one column at a time, with `jb cleanupcode` 2025.2.6: a binary chain of identifiers, the
+same of numeric literals, a single identifier and a string literal are **declined at every width from 121
+to 128** — the attribute and comment alone, the declaration whole below — and `= Compute(…);` is declined
+at 121 (the `;` alone past the margin) and from 122 is joined with the call's arguments chopped. So for a
+field the comment case declines exactly where the declaration's own wrap would be the break after its
+`=`, and joins where it wraps inside the value; the entry's "joined at 134 (literals)" lies beyond this
+sweep and is not contradicted. It does not carry to the arrow rows above (joined, the arrow broken, from
+three past), so one reading still does not cover the owners, and nothing is wired.
+
+**Round two (#504): wired for fields and event fields.** A further 63 shapes, 120 to 134 columns: a
+conditional value, a member chain, `new Foo(…)`, `private static readonly` in front and an event field
+answer as the round-one fields did — declined at every overflowing width, a call or a creation declined
+only while its `;` or `);` alone overflows and joined with its arguments chopped from there, and a member
+chain declined to 128 (joined at 134, the one cell still divergent). Skala now plans that gap for a field
+and an event field: a point past the comment (`BreakPlan.PlanCommentedAttributeGap`, which the builder's
+comment rule lets through) in a group asked the joining half's terminator question — the `;` for a value
+that wraps inside its argument list, the whole line otherwise. The same answers at `always`. ⚠ Still the
+author's, measured: a property's arrow (declined one to three columns past, joined from there), a method's
+arrow (declined one to two past), and an auto-property's initializer (always joined) — no reading of the
+overflow alone covers the three. A call value joined past 122 still breaks its `=` in Skala where the oracle
+chops the call; that is the `=`'s ordering rule, the aside above.
+
 - options: the six `skala_place_*_attribute_on_same_line` keys.
-- ⚠ status: **resolved** at `always`; **open** for a comment in the gap. Pinned by
+- ⚠ status: **resolved** at `always`; **resolved** for a comment in the gap on fields and event fields (#504),
+  pinned by `CommentedAttributeGapIssue504Tests`; **open** for properties and methods. Pinned by
   `AttributeJoinTerminatorIssue438Tests`.
 
 ## SK-DIV-0206 — a type test's break is one level past its operand's line, not past what that line opened
@@ -9276,6 +9415,138 @@ introduces a chain link as that link's break.
 
 - options: none.
 - ⚠ status: **resolved** (#523). Pinned by `constructs/trivia/a-comment-above-a-chain-link.cs`.
+
+## SK-DIV-0350 — a parameter's attribute sections are one line together, or one line each
+
+#475. Measured with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`, on a method's parameter, a
+lambda's and a type parameter's, with two and three sections:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `[Description("…",` / `"…")] [Obsolete] int a` (the first section spans lines) | `)]` / `[Obsolete]` / `int a` | `)]` / `[Obsolete] int a` |
+| `[Obsolete] [Description("…",` / `"…")] int a` (the last one does) | `[Obsolete]` / `[Description(` / … / `)]` / `int a` | `[Obsolete] [Description(` |
+| three sections, the middle one multi-line | every section and `int a` on a line of its own | the first two joined, the last two joined |
+| a section too wide for the line, first or last | the same as an author's break | the same as before |
+| `[Obsolete("…50…")] [Description("…50…")] int a`, 136 columns joined, each section fits alone | `[Obsolete(…)]` / `[Description(…)]` / `int a` | `[Obsolete(…)] [Description(` and the arguments chopped |
+| `[Obsolete] [Serializable] Dictionary<…> p…` too long, the sections short | `[Obsolete] [Serializable]` / `Dictionary<…> p…` | identical |
+| `[Obsolete]` / `[Serializable] int a`, and `[Obsolete] [Serializable]` / `int a` | joined | identical |
+
+So the sections are one run: flat when they fit on one line together, and otherwise every gap after a
+section breaks, the gap before the parameter included, however short the parameter. When the run fits,
+the gap before the parameter keeps its own rule (SK-DIV-0114's "the parameter's first line fits"). The
+run is a group on the parameter whose points are the gaps between sections and whose measure ends at
+the last section's own gap (`GroupFacts.MeasuresThroughTail`); the last section's group breaks with it,
+and its next-line join is not asked then.
+
+Seen beside it and fixed in round two: a section holding two or three attributes, one of whose
+arguments are certain to chop, is written `[Obsolete, Description(` by the oracle, its head kept on the
+section's line (#537) — the attribute is now a tuple-shaped fill item, which keeps its head when a break
+inside it is certain and moves whole when it is merely too wide (`[Obsolete,` / `Description("…110…")`,
+the oracle's too); and a type parameter's multi-line section nests its arguments two levels in with `)]`
+one level in (`class C<[Description(` / 8 / 4) on a class, a method and after a first parameter (#538) —
+the angle brackets' scope is now unconditional, as a grouping parenthesis's is, so the `(` opened on the
+same line no longer collapses into it. Pinned by `AttributeSectionHeadIssue537Tests` and
+`TypeParameterAttributeIssue538Tests`. A run whose last section holds several attributes is left to the
+sections, as before, unmeasured.
+
+- options: none.
+- ⚠ status: **resolved** (#475), pinned by `AttributeRunIssue475Tests`.
+
+## SK-DIV-0351 — an aligned type parameter list with a narrow head breaks after its `<`
+
+Measured beside #452 with `jb cleanupcode` 2025.2.6, and the first reading was wrong: it said the aligned
+continuation would not fit, and it does — `Tyyy…>() { }` under `TFirst` at column 47 is 113 columns. Asked
+again in round two on 140 lists at `skala_align_multiline_type_parameter_list = true` — the `<` at every
+third column from 20 to 50, the line from 121 to 135, the head `T1,`, `TFirst,`, `TFirstPar,`,
+`TFirstPara,`, `TFirstParam,`, `TFirstParame,`, `TFirstParameter,`, `TA, TB,`, `TA, TB, TCdef,` and longer:
+the oracle breaks after the `<` and fills the list one level in exactly when what would stay on the `<`'s
+line before the fill's first wrap is narrower than twelve columns (`TFirstPara,` is 11 and breaks,
+`TFirstParam,` is 12 and stays; `TA, TB,` breaks, `TA, TB, TCdef,` stays), at every column of the `<` —
+#379's eleven-against-twelve floor in a new place. Skala kept every head. The `<`'s fill point now knows
+the segments of its list (`LineFlags.AlignedListHead`, `Document.AlignedItemsOf`) and breaks below that
+floor. ⚠ The round-one rule tried first — break when an item would not fit at the aligned column — is
+refuted by `Widest<…, TThird…103…, TFourth>`, which the oracle aligns past the margin.
+
+- options: `skala_align_multiline_type_parameter_list`
+- ⚠ status: **resolved**, pinned by `AlignedTypeParameterHeadTests`.
+
+## SK-DIV-0352 — when a parameter's attribute arguments chop: measured, not wired
+
+#476. `void M(int b, [Obsolete("a…a", true)] <parameter>) { }` in a chopped parameter list (indent 8),
+the section's last column E swept one at a time from 98 to 120 with `jb cleanupcode` 2025.2.6, for eight
+parameters. "J" is the section and the parameter on one line, "A" the section whole on its own line and
+the parameter below, "C" the arguments chopped (`[Obsolete(` / … / `)]` / the parameter):
+
+| parameter (width) | J | A | C from E = | the joined line at that E |
+|---|---|---|---|---|
+| `int a` (5) | to 114 | — | 115 | 121 |
+| `string a` (8) | to 111 | — | 112 | 121 |
+| `int a = 5`, `ref int a` (9) | to 110 | — | 111 | 121 |
+| `List<int> a` (11) | to 108 | — | 109 | 121 |
+| `(int A, int B) a` (16) | to 103 | — | 104 | 121 |
+| `Namespace.Inner.Type a` (22) | — | to 108 | 109 | 132 |
+| `int aaaaaaaaaaaaaaaaaaaa` (24) | — | to 110 | 111 | 136 |
+| `Dictionary<string, int> a` (25) | — | to 112 | 113 | 139 |
+
+So a short parameter chops the arguments exactly when the joined line overflows — the oracle never
+puts it alone below an unchopped section — and a long one is put alone below the whole section until a
+threshold that is neither the joined line, nor the section, nor the parameter's first break point: the
+issue's inference ("the rest-of-line reads through the `]` to the parameter's first break point") is
+refuted by `Dictionary<string, int> a`, whose `<` would put the boundary at 109, and by
+`int aaaa…`, which has no break point at all and still stays whole until 110. Skala chops only a section
+that overflows on its own (E ≥ 121), which is right for none of the C cells. Wiring "chop when the
+joined line overflows" would fix the short rows and break the A cells of the long ones; nothing measured
+says where one becomes the other between 16 and 22 columns. Not wired.
+
+**Round two (#476), four more axes, about 450 more cells.** The section's last column swept one at a
+time from 96 to 120 again:
+
+| axis | measured | effect on where the arguments chop |
+|---|---|---|
+| argument count | `[Obsolete("…", true)]` against `[Obsolete("…", true, 1, 2)]`, a 22-column parameter | none (109 both) |
+| the parameter's type | `int a…a` against `string a…a` at 22 columns | none (109 both) |
+| indent | 8 against 12, the same 22-column parameter | one column (109, 110) |
+| the attribute's `(` column | `[A("…")]` against `[Obsolete("…", true)]`, 16 to 22 columns | `[A(` never chops; `[Obsolete(` does |
+| the parameter's width, `[Obsolete(` | 17, 18, 19, 20, 21, 22, 24, 25, 30 columns | 103, 103, 105, 106, 107, 109, 111, 113, never |
+| the parameter's width, `[A(` and `[Description(` | 5, 8, 11 columns; 16, 17 | the joined line's overflow; never |
+
+So below twelve columns every cell — four attributes, two indents, five parameters — chops exactly when
+the joined line overflows, and **that part is now Skala's rule**: the gap between a parameter's one
+section and a parameter of at most eleven columns is read through by the arguments' measure even once
+the section's group has broken (`LineFlags.ReadThroughWhenBroken`), so the arguments chop and the
+parameter goes below them. Above it the boundary rises with the parameter's width, and falls away when
+the attribute's `(` is a few columns further left; no rule tried reproduces both, so the gap stays the
+section's own answer there. A parameter with a default value is still divergent at 111–112
+(`[…] int a =` / `5` past the margin in Skala): its `=` ends the arguments' measure first.
+
+- options: `skala_wrap_arguments_style`; no key for the join.
+- ⚠ status: **resolved** for parameters of up to eleven columns (#476), pinned by
+  `AttributeArgumentChopIssue476Tests`; **open**, measured, for longer ones.
+
+## SK-DIV-0353 — a type declaration's keyword and its name: the oracle breaks between them
+
+#539. Measured with `jb cleanupcode` 2025.2.6 on about seventy class headers: one, two and four type
+parameters, interfaces after the name, no type parameters at all, a name of 10 to 70 letters, at 121, 125
+and 135 columns:
+
+| shape | oracle | Skala |
+|---|---|---|
+| the head through its first break point past the margin (`public class N…N : IFoo,` at 123+) | `public class` / `    N…N : IFoo,` / `    IBar { }` | the base list's commas |
+| a header with no break point past the margin | `public class` / `    N…N { }` | the line left long |
+| **exactly 121 columns**, one, two or four type parameters, a name of 30 or more | `public class` / `    Name<…> { }` | the list's own break |
+| the same at 121 with a 10-letter name and two or four parameters | the list's comma | identical |
+| the same at 125 and 135 | the list's `<` or comma | identical |
+| `public class Generic…On<TFirst, TSecond> : BaseClass<TFirst> { }` at 128 | `public class` / name and a filled list | after the `:` |
+
+So two rules, neither wired. The first is the type/name gap's own — break when the line runs past the
+margin before its next point — and would fix the first two rows; but the name's line then carries the
+base list at the declaration's level (`    IBar { }`, not eight), which the group spending a continuation
+level of its own does not reproduce, and the `FromLine` and held levels this builder has both stack the
+base list's level on top. The second is the exactly-121 quirk SK-DIV-0127 records for a local's name,
+here moved by the name's length; the last row is neither. Not wired.
+
+- options: none.
+- ⚠ status: **open**, measured.
 
 ## SK-DIV-0340 — a positional pattern inside a property pattern broke after its subpattern's colon
 
