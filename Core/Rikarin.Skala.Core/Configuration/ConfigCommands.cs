@@ -712,17 +712,17 @@ public static class ConfigCommands {
             // ⚠ xmldoc keys sitting in a list of gaps with no explanation read as neglect, and the
             // explanation that used to be printed here was wrong: it said the oracle does not format
             // documentation comments at all. It does — `CSharpFormatDocComments` is a real
-            // `jb cleanupcode` task in 2025.2.6 — and what is true is that neither committed
-            // `OracleProfile` enables it, so no committed fixture can pin these keys today.
+            // `jb cleanupcode` task in 2025.2.6. ⚠ "Neither committed `OracleProfile` enables it" was true
+            // when this was written and is not now: `SkalaDocComments` does, and pins most of the family.
             // SK-DIV-0006 is the entry that corrects the original inference; the wording below no
             // longer repeats it. "Not verifiable yet" and "not verifiable" are different claims, and
             // only the first one is true.
             if (families.Exists(static g => g.Key == "xmldoc")) {
                 output.AppendLine(
-                    "    xmldoc*: honoured and observable, but the committed oracle profiles do not enable"
+                    "    xmldoc*: pinned only under the SkalaDocComments oracle profile, which enables ReSharper's"
                 );
                 output.AppendLine(
-                    "    ReSharper's CSharpFormatDocComments task, so no fixture pins them yet (SK-DIV-0006)."
+                    "    CSharpFormatDocComments task; a key with no fixture there is not pinned yet (SK-DIV-0006)."
                 );
             }
 
