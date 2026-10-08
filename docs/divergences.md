@@ -4179,6 +4179,44 @@ reason; it is the statement's own trailing trivia that is being dropped on the f
     `constructs/arrangement/body-style/heuristics.cs`. ⚠ Needs the oracle for the fixture only;
     reachable only at `skala_use_heuristics_for_body_style = false`, which the export does not set.
 
+### ⚠ Trailing half fixed 2026-10-08 (#463) — and it was reachable at the export all along
+
+Re-measured under `SkalaCleanup` at **both** values of the key, on a probe of every placement:
+
+| body | oracle at `true` (export) | oracle at `false` | Skala now |
+|---|---|---|---|
+| `return 1; // c` | `=> 1; // c` | the same | the same, both values |
+| getter `return _n; // c` / `get => _n; // c` | `P => _n; // c` | the same | the same |
+| setter, local function, operator, value spanning two lines, each with `// c` | converted, comment trails `;` | the same | the same |
+| `void` expression statement + `// c` | block (void heuristic) | `=> …; // c` | the same as the oracle |
+| `throw` / `async void` + `// c` | block (heuristic) | `=> …; // c` | the same as the oracle |
+| `return 3; /* c */` | `=> 3 /* c */;` | the same | **block** |
+| `return 2; // c` + `} // d` | `=> 2; // c` ⏎ `// d` | the same | **block** |
+| `return 7; // c` ⏎ `// d` before `}` | `=> 7; // c` ⏎ `// d` | the same | **block** |
+| `return /* c */ 4;` | `=> /* c */4;` | the same | **block** |
+| `/* c */ return 5;` | `=>` ⏎ `/* c */` ⏎ `5;` | the same | **block** |
+| `// c` ⏎ `return 4;` | `=>` ⏎ `// c` ⏎ `4;` | the same | **block** |
+
+⚠ **Two claims in this entry and in #463 are refuted.** "At `true` both engines keep both blocks" is
+false for a trailing comment: the oracle converts it at the export, so this was a divergence on the
+export's own configuration, not only at `false`. And ⚠ **"only when the body holds no comment" is not
+one of the heuristics at all.** The only comment row the committed `heuristics.cs` carries is a
+*void* method, which the heuristic keeps a block for being void; with a `return` instead, a comment
+above the statement converts at `true` too — `public int Above() =>` ⏎ `// c` ⏎ `4;`, measured on the
+first draft of `trailing-comment.cs`. So the leading-comment half below is reachable at the export as
+well; its `deliberate` triage stands on the formatter's comment placement, not on the heuristic.
+
+`BodyStyleRule` now exempts exactly one `//` comment trailing the only statement (or an already-arrow
+getter's semicolon), at both values, and carries that trivia onto the new semicolon. Every other
+placement in the table still keeps the block, at both values, because each needs a placement rule the
+formatter or the rule does not have.
+
+- ⚠ status: **trailing `//` half fixed**; the other placements **open** and `deliberate` as above.
+- Pinned by `constructs/arrangement/body-style/trailing-comment.cs` (oracle fixture, export values) and
+  `BodyStyleIssue399Tests.ATrailingLineComment_RidesBehindTheSemicolon` /
+  `AnyOtherComment_KeepsTheBlock` at both values. The M4 arrangement differential over the corpus is
+  unmoved (2158/4097 before and after): the shape does not occur in `corpus/real/`.
+
 ## SK-DIV-0089 — the four formatter-tag keys, and why no one-key flip can ask about any of them
 
 All four were `SPURIOUS` in the key-flip sweep and all four now read `UNEXERCISED`. **Three real

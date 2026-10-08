@@ -17,7 +17,10 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 ///             a single-statement body whose statement is an expression statement or a <c>return</c> with
 ///             a value — and <em>not</em> a <c>throw</c>, which stays a block;
 ///         </item>
-///         <item>only when the body holds no comment;</item>
+///         <item>
+///             only when the body holds no comment — ⚠ except one <c>//</c> trailing the statement, which
+///             the oracle converts at both values of the key and leaves at the end of the line (#463);
+///         </item>
 ///         <item>only when the body holds no <c>#if</c>;</item>
 ///         <item>never for <c>async void</c>;</item>
 ///         <item>
@@ -163,7 +166,7 @@ public sealed class BodyStyleRule : ArrangementRule {
 
             return visited.WithBody(null)
                 .WithExpressionBody(Arrow(expression))
-                .WithSemicolonToken(Semicolon(block.CloseBraceToken));
+                .WithSemicolonToken(Semicolon(block));
         }
 
         /// <summary>⚠ An indexer is an accessor owner too, and reads the same key.</summary>
@@ -204,9 +207,19 @@ public sealed class BodyStyleRule : ArrangementRule {
                 && only.IsKind(SyntaxKind.GetAccessorDeclaration)
                 && only.AttributeLists.Count == 0
                 && only.Modifiers.Count == 0
-                && ExtractAccessor(only, options.UseHeuristicsForBodyStyle) is { } expression
-                && !HasTriviaThatBlocksConversion(accessors)) {
-                return toExpression(visited, Arrow(expression), Semicolon(accessors.CloseBraceToken));
+                && ExtractAccessor(only, options.UseHeuristicsForBodyStyle) is { } expression) {
+                // ⚠ The getter's own last token, so that a trailing comment on it survives the
+                // collapse (SK-DIV-0086). A block getter has usually been turned into an arrow by
+                // VisitAccessorDeclaration already, and then the comment is on its semicolon.
+                var exempt = Exempt(
+                    only.ExpressionBody is null
+                        ? only.Body?.Statements.LastOrDefault()?.GetLastToken() ?? default
+                        : only.SemicolonToken
+                );
+
+                if (!HasTriviaThatBlocksConversion(accessors, exempt)) {
+                    return toExpression(visited, Arrow(expression), Semicolon(accessors.CloseBraceToken, exempt));
+                }
             }
 
             return visited;
@@ -278,7 +291,7 @@ public sealed class BodyStyleRule : ArrangementRule {
                     return member;
                 }
 
-                return toExpression(member, Arrow(expression), Semicolon(body.CloseBraceToken));
+                return toExpression(member, Arrow(expression), Semicolon(body));
             }
 
             if (expressionBody is null) {
@@ -301,7 +314,9 @@ public sealed class BodyStyleRule : ArrangementRule {
             bool allowExpressionStatement = false,
             bool allowThrow = false
         ) {
-            if (body is null || body.Statements.Count != 1 || HasTriviaThatBlocksConversion(body)) {
+            if (body is null
+                || body.Statements.Count != 1
+                || HasTriviaThatBlocksConversion(body, Exempt(body.Statements[0].GetLastToken()))) {
                 return null;
             }
 
@@ -389,9 +404,17 @@ public sealed class BodyStyleRule : ArrangementRule {
         ///     between the <c>=&gt;</c> and the expression; carrying it through arrangement is easy and
         ///     the *formatter* then leaves it at column 0, which is worse than not converting. It is the
         ///     formatter's comment placement that has to move first.
+        ///     <para>
+        ///         ⚠ Except the one comment <paramref name="exempt" /> trails, which has nowhere new to go:
+        ///         it stays at the end of the line, behind the new semicolon (<see cref="Exempt" />).
+        ///     </para>
         /// </remarks>
-        static bool HasTriviaThatBlocksConversion(SyntaxNode node) {
+        static bool HasTriviaThatBlocksConversion(SyntaxNode node, SyntaxToken exempt = default) {
             foreach (var trivia in node.DescendantTrivia(descendIntoTrivia: true)) {
+                if (!exempt.IsKind(SyntaxKind.None) && trivia.Token == exempt && exempt.TrailingTrivia.Contains(trivia)) {
+                    continue;
+                }
+
                 if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
                     || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
                     || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
@@ -428,8 +451,56 @@ public sealed class BodyStyleRule : ArrangementRule {
         ///     The semicolon that replaces a closing brace — carrying whatever followed that brace on
         ///     its line, because a trailing comment belongs to the author and not to the brace.
         /// </summary>
-        static SyntaxToken Semicolon(SyntaxToken closeBrace) =>
-            SyntaxFactory.Token(SyntaxKind.SemicolonToken).WithTrailingTrivia(closeBrace.TrailingTrivia);
+        /// <remarks>
+        ///     ⚠ Or what followed the lifted statement, when that is the one trailing comment
+        ///     <see cref="Exempt" /> lets through: the brace's own trailing trivia is then a newline at
+        ///     most, because a comment there still blocks the conversion.
+        /// </remarks>
+        static SyntaxToken Semicolon(SyntaxToken closeBrace, SyntaxToken exempt = default) =>
+            SyntaxFactory.Token(SyntaxKind.SemicolonToken)
+                .WithTrailingTrivia(exempt.IsKind(SyntaxKind.None) ? closeBrace.TrailingTrivia : exempt.TrailingTrivia);
+
+        /// <summary>The semicolon for a block whose only statement is being lifted.</summary>
+        static SyntaxToken Semicolon(BlockSyntax block) =>
+            Semicolon(block.CloseBraceToken, Exempt(block.Statements[0].GetLastToken()));
+
+        /// <summary>
+        ///     The token whose trailing comment may ride along onto the new semicolon, or <c>default</c>
+        ///     when none may.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ SK-DIV-0086's trailing half, and ⚠ at <em>both</em> values of
+        ///     <c>use_heuristics_for_body_style</c> — the entry and #463 said the export's <c>true</c> keeps
+        ///     the block, and it does not. Measured against <c>jb cleanupcode</c> 2025.2.6 under the cleanup
+        ///     profile at each value: <c>{ return 1; // trailing }</c> becomes <c>=&gt; 1; // trailing</c>,
+        ///     and so does a getter collapsing onto its property, a setter, a local function, an operator
+        ///     and a multi-line value. What the heuristic refuses at <c>true</c> is the comment on a line
+        ///     of its own <em>above</em> the statement, which stays a block.
+        ///     <para>
+        ///         ⚠ Exactly one <c>//</c> comment and nothing but whitespace around it. Every other
+        ///         placement is declined although the oracle converts it at both values, because each needs
+        ///         a placement rule this one does not have: a trailing <c>/* … */</c> goes in front of the
+        ///         semicolon (<c>=&gt; 3 /* block comment */;</c>), a comment inside or before the
+        ///         statement goes on its own line after the <c>=&gt;</c>, and one after the closing brace or
+        ///         on a line of its own before it goes on its own line after the member.
+        ///     </para>
+        /// </remarks>
+        static SyntaxToken Exempt(SyntaxToken last) {
+            if (last.IsKind(SyntaxKind.None)) {
+                return default;
+            }
+
+            var comments = 0;
+            foreach (var trivia in last.TrailingTrivia) {
+                if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)) {
+                    comments++;
+                } else if (!trivia.IsKind(SyntaxKind.WhitespaceTrivia) && !trivia.IsKind(SyntaxKind.EndOfLineTrivia)) {
+                    return default;
+                }
+            }
+
+            return comments == 1 ? last : default;
+        }
 
         /// <summary>
         ///     The block an expression body expands back into, for <c>body = block_body</c>.
