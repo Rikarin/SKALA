@@ -71,7 +71,8 @@ public sealed record FixtureCompilation(
                 "AllowUnsafe" => result with { AllowUnsafe = ParseBoolean(value) },
                 "TargetFramework" => result with { TargetFramework = ReferencePacks.Known(value) },
                 _ => throw new InvalidOperationException(
-                    $"'{Prefix} {key}' is not a fixture option; the keys are LangVersion, DefineConstants, AllowUnsafe and TargetFramework."
+                    $"'{Prefix} {key}' is not a fixture option; the keys are "
+                    + "LangVersion, DefineConstants, AllowUnsafe and TargetFramework."
                 )
             };
         }
@@ -126,6 +127,8 @@ public sealed record FixtureCompilation(
     public override string ToString() =>
         string.Create(
             CultureInfo.InvariantCulture,
-            $"C# {LanguageVersionFacts.ToDisplayString(LanguageVersion)}, define [{string.Join(";", PreprocessorSymbols)}], unsafe {AllowUnsafe}, references {TargetFramework ?? "test host"}"
+            $"C# {LanguageVersionFacts.ToDisplayString(LanguageVersion)}, "
+            + $"define [{string.Join(";", PreprocessorSymbols)}], "
+            + $"unsafe {AllowUnsafe}, references {TargetFramework ?? "test host"}"
         );
 }

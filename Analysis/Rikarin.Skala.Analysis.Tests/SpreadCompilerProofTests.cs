@@ -39,14 +39,13 @@ public sealed class SpreadCompilerProofTests {
     ///     ⚠ The net9.0 targeting pack pinned to 9.0.19, and no transitive packs: restore then needs
     ///     exactly the package the Rules tests already download, and nothing else.
     /// </summary>
-    const string NineReferences = """
-                                    <ItemGroup>
-                                      <FrameworkReference Update="Microsoft.NETCore.App" TargetingPackVersion="9.0.19" />
-                                    </ItemGroup>
-                                    <PropertyGroup>
-                                      <DisableTransitiveFrameworkReferenceDownloads>true</DisableTransitiveFrameworkReferenceDownloads>
-                                    </PropertyGroup>
-                                  """;
+    const string NineReferences =
+        "<ItemGroup>\n"
+        + "  <FrameworkReference Update=\"Microsoft.NETCore.App\" TargetingPackVersion=\"9.0.19\" />\n"
+        + "</ItemGroup>\n"
+        + "<PropertyGroup>\n"
+        + "  <DisableTransitiveFrameworkReferenceDownloads>true</DisableTransitiveFrameworkReferenceDownloads>\n"
+        + "</PropertyGroup>";
 
     /// <summary>
     ///     ⚠ <b><c>netstandard2.1;net10.0</c> at <c>latest</c>: both legs are C# 14 to Skala</b>, so
