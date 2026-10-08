@@ -5827,8 +5827,12 @@ counts unconditionally (`GroupPlan.UnconditionalLevel`) and the `=` spends under
 entry, and fixed since (#518): `b ? a` / `: c` — a single conditional broken at one sign — is chopped by
 the oracle at both, in a declarator, a `return`, an argument and after a comment line (`a` / `/* c */`
 / `? 1` / `: 2`); a conditional *chain* keeps its per-sign pins. `PlanTernary`, pinned by
-`ConditionalChopIssue518Tests`. Still open: a conditional nested in a parenthesis inside another's
-branch (`? (a > 0` / `? a` / `: c)`) puts its signs at 20 where the oracle writes 16.
+`ConditionalChopIssue518Tests`. A conditional nested in a parenthesis inside another's branch
+(`? (a > 0` / `? a` / `: c)`) put its signs at 20 where the oracle writes 16 — **fixed (#546)**: any
+conditional directly inside a grouping parenthesis (after `=`, as an argument, in an `if` condition, as
+a binary operand, before `.ToString()`, behind a cast, in a `return`) lands on the parenthesis's level,
+because its own arm scope and the parenthesis's opened on one line and both counted. A conditional
+that is an argument keeps its level. Pinned by `ParenthesisedConditionalIssue546Tests`.
 ⚠ **The filled-list half closed at #471** (SK-DIV-0117): `new[] { 1` / `+ 2, 3 }` already agreed (the
 array initializer's after rule, #444), and `[1` / `+ 2, 3]` now does too — `+ 2,` / `3`.
 
@@ -6967,6 +6971,28 @@ two layouts that this table does not pin down, and wiring a guess would trade th
 of the table — for one right on a different half. #484 is **blocked**, not fixed; these rows are the
 starting point.
 
+⚠ **Round two, same day: the line the link would take below is the variable, measured on a grid.**
+144 rows — `var a = SomeMethod(a×n).Other(…);` with the `.Other(` ending at 60, 75, 88, 95, 105 and 112,
+one and two arguments, and the dot-broken line (`;` included) from 56 to 110. Where the chain does not
+fit whole:
+
+| link | broken before | held, arguments chopped | rows that disagree |
+|---|---|---|---|
+| two arguments | line ≤ 70 everywhere, ≤ 72 behind 75, 105, 112, ≤ 74 behind 112 | line ≥ 78 everywhere, 72 behind 88 and 95 | 3 |
+| one argument | line ≤ 90 everywhere, 96 behind 60 | line ≥ 102 everywhere, 96 behind 75–112 | 1 |
+
+So the head's column and the link's position do not decide it; the line below does, with a narrow
+band whose edge moves with the head. Wired (`LineFlags.ChainCallLink`, read by
+`LayoutWriter.FillPointStaysFlat`): a fill point before a call link keeps the link's head and lets the
+arguments chop when the link's line below would end past 72 columns, 90 for one argument or none; and
+always when the link's arguments are certain to break, which is the oracle's own chopped answer read
+back on pass two. 140 of the 144 grid rows agree, as do all the rows in the table above but the
+non-monotone 40/50/70 one (it keeps the 71-column link behind the 50-column head). ⚠ Measured as written
+here: `ContinuationColumn` counts the chain's own scope a second time for a point inside the group, so
+the line is taken from it less that scope. The #407 test's input (`.OtherMethodName(` with three
+arguments under a held parenthesis) now settles on the oracle's own answer in one pass. Pinned by
+`ChainFillHeadIssue484Tests`; resolved (#484) but for the four grid rows and the non-monotone one.
+
 ## SK-DIV-0132 — a doc comment kept as written was decided line by line, and the oracle decides it per comment
 
 ⚠ **Filed as issue #382, whose headline claim the oracle refutes.** The issue read
@@ -7273,8 +7299,15 @@ clings", which wrote `(( [` at `true`). What remains is this entry's: the elemen
 where the oracle writes +1 and +0, and the oracle joining `(` / `[` onto one line. Pinned by
 `BrokenCollectionAfterCastOrParenIssue450485Tests`.
 
+⚠ **The ternary rows: fixed (#546).** A conditional directly inside a grouping parenthesis no longer
+opens its arm scope on the parenthesis's line, so `var x = (c` / `? a` / `: b);`, `return (c` / `? a`,
+`(c` / `? a` / `: b).ToString()` and `1` / `+ (c` / `? a` now land `?` at **+1**, as the oracle does.
+The rows with two groupings (`((c` / `? a`, `((a` / `+ b))`) and the collection rows are the grouping
+model's and stay open.
+
 - options: `skala_space_within_parentheses` (the space only).
-- ⚠ status: **open** for the levels and the join; the `( [` space fixed (#485).
+- ⚠ status: **open** for the grouping-in-grouping levels, the collection levels and the join; the
+  `( [` space fixed (#485) and the single-grouping ternary rows fixed (#546).
 
 ## SK-DIV-0156 — a chopped parenthesis heading a body held its level, and then the chain after it broke
 
@@ -8242,9 +8275,23 @@ pinned break is a required break the watch does not see. ⚠ The third row also 
 keep-the-last-head shape, which Skala breaks before (`}` / `)` / `.Where(` / the argument / `);`).
 
 - options: `skala_wrap_chained_method_calls`, `skala_wrap_chained_binary_expressions` at `wrap_if_long`.
-- ⚠ status: **open** — #496 blocked, not fixed: the fix needs a writer lookahead to the end of the
-  chain's group that also counts pinned breaks, and the last attempt at one was not idempotent. Pinned
-  in its current reading by `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`.
+- ⚠ status: **resolved for a call chain's list and block** (#496, round two). Two halves, one per
+  kind of break. A link break the author wrote and the fill pins is taken whatever the width, so a
+  chain holding one carries `GroupFacts.Continues` and lifts outright — read from the source on both
+  passes. A fill without one carries `GroupFacts.ContinuesIfItBreaks`, and the writer answers it when a
+  delimited list opens on the chain's first line: it writes the rest of the chain's group ahead with
+  the list unlifted, watches the group, rolls back (`LayoutWriter.FillBreaksAfter`, the
+  `ChainBreaksInside` technique run to the end of the group rather than of the scope), and lifts when
+  the fill took a point. ⚠ Idempotent where the previous attempt was not: pass one's fill break is
+  pass two's pinned break, and both halves answer "lift". Measured rows that agree: the issue's `r` and
+  `s`, `r3` and `s2` (no point taken, not lifted), and `Outer(first: 1, source.Select(` … under
+  `wrap_if_long`, the shape the last attempt failed on; Skala's output of all of them re-formats to
+  itself. Pinned by `ChainFillLiftIssue496Tests` and, for the unlifted half,
+  `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`. Two rows beside it are not this
+  rule's: `}` / `).Where(` / a chopped argument puts the argument at 16 where the oracle writes 12 (the
+  list on a closer line counts the `=`'s level), and a three-argument `.Select(` under a fill is broken
+  before by the oracle (`source` / `.Select(…)` / `.Where(…).ToList(…)`), the #528 rule at a fill's
+  value, unmeasured further. Binary operators under a fill still carry neither fact.
 
 ## SK-DIV-0193 — a block comment's lines lose their trailing whitespace; Skala kept it
 
@@ -9204,8 +9251,20 @@ boundary is not a width of the head alone or of the body alone: a fourteen-colum
 behind heads of 106 to 116 columns and the dot behind 118, and a twenty-two-column body takes the arrow
 behind 118.
 
+⚠ **Round two (#531), 2026-10-08.** The first row is fixed: the target's fill is planned as
+last-resort points, so the `=`'s break still comes first where the target with its `=` fits, and the
+`=` is told to stay where it does not (`GroupFacts.FlatIfHeadOverflows`), the target's own dot taking
+the break. The second row is fixed by measuring the body *with its comma*: on a 96-arm grid (heads of
+106 to 128 columns, bodies of 2 to 22) every arm whose body and comma fit in fourteen columns fills and
+every wider one breaks the arrow, but for three rows that stay open — a fourteen-column body with its
+comma behind a 106-column head (the arrow, where the rule fills), any body behind a head whose `=>`
+no longer fits on its line (the dot, where the rule breaks before the arrow), and a body with a dot of
+its own, `yyyyyyyyyyy.Z,` (the dot, where Skala breaks the arrow because the body's own fill point
+answers the arrow's head question). Not measured further.
+
 - options: `skala_wrap_chained_method_calls`, `skala_wrap_after_property_in_chained_method_calls`.
-- ⚠ status: **open**, measured.
+- ⚠ status: **narrowed** (#531): the target row and the comma row resolved, pinned by
+  `MemberAccessFillIssue531Tests`; the three arm rows above open.
 
 ## SK-DIV-0331 — a chain's held first call breaks when it does not fit, and Skala chops its arguments
 
@@ -9221,11 +9280,34 @@ with the receiver — until it does not fit on the receiver's line, when the ora
 ⚠ The second row was right before #455 by accident: Skala walked through the `!` and counted
 `!.Where` as the chain's second call. With the `!` read as the oracle reads it — the end of the
 receiver — the row depends on this rule. The third row shows the rule reaches a single call, which is
-not a chain at all to `PlanChainedCalls`. Not wired: it needs a point before the first call that breaks
-only when the call itself overflows the receiver's line, which no group fact says today.
+not a chain at all to `PlanChainedCalls`.
+
+⚠ **Measured for #528 on 2026-10-08, and the boundary is not "the call does not fit".** A grid of
+two-call chains, `var y = S….Select(args).Where(b);` at indent 8, heads (the column after a held
+`.Select(`) of 40, 60, 80 and 100 against call lines below of 50 to 112, one and two arguments — 104
+rows. Where the whole first call fits on the receiver's line it is held. Where it does not:
+
+| head | two arguments: broken before / held and chopped | one argument: broken / chopped |
+|---:|---|---|
+| 60 | ≤ 82 / ≥ 86 | ≤ 106 / 112 |
+| 80 | ≤ 76 / ≥ 78 | ≤ 96 / ≥ 100 |
+| 100 | ≤ 78 / ≥ 82 | ≤ 96 / ≥ 100 |
+
+Not monotone in the head, and no width of the call, the head or the chopped lines separates the
+columns. Wired as the part every row agrees on: the point before the held call
+(`BreakPlan.PlanHeldFirstCall`, `GroupFacts.HeldCall`) breaks when the receiver fits on its line, the
+receiver with the call does not, and the call's line below ends at 76 columns or less for two or more
+arguments, 96 for one or none. Every row on the "broken" side within those widths agrees, nothing on
+the "held" side is reached, and the five grid rows past them (two arguments at 82 behind a 60 head and
+78 behind 100, one argument at 100–106 behind 40–60) stay held, as before. #418's
+`source.Select(` / … / `)` rows are held by the same rule. A receiver that does not fit flat breaks
+inside itself and leaves the point alone (`X.Select(…)` / `.Where(gamma)!.Where(beta)`).
 
 - options: `skala_wrap_before_first_method_call`.
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved for chains, open for the residue** (#528): the five grid rows above, and the
+  single call that is no chain (the third row; `var y =` / `S….Select(alpha)` breaks the `=` first and
+  then the dot or the arguments, by rules not measured further). Pinned by `HeldFirstCallIssue528Tests`
+  and `constructs/breaks/held-first-call.cs`.
 
 ## SK-DIV-0332 — a lambda argument's arrow breaks where the chain in its body would have chopped
 
@@ -9239,10 +9321,19 @@ body fits whole on the line after the arrow, the oracle breaks the arrow rather 
 
 Where the chain does not fit after the arrow either — `Use(x => source.Select(…)` / `.Where(p)` — both
 engines keep the arrow and break the chain. So the lambda's arrow behaves as an `=` does in front of a
-chain when the tail fits (SK-DIV-0211's question), and Skala's arrow group does not ask it. Not wired.
+chain when the tail fits (SK-DIV-0211's question), and Skala's arrow group does not ask it.
 
 - options: `skala_wrap_chained_method_calls`, `place_single_method_argument_lambda_on_same_line`.
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved** (#529). A lambda whose body is a chain of calls with points, written on one
+  line, asks its arrow `GroupFacts.BreaksOnlyIfTailFits`' question: break exactly when the chain fits
+  flat on the line below. Measured on ten shapes on 2026-10-08 — a sole argument, after another
+  argument, between two, `(x, y) =>`, under `var x =` with and without `.ToList()` after the call, an
+  `=`'s own lambda, and a body that is itself a chain inside a chain — all agree, and corpus/real moved
+  two lines toward the oracle (59659 → 59661 with symbols). ⚠ Only a body written on one line: a body
+  the author broke — `() => (` / `a).B()` / `.C()` — keeps the head rule, which
+  `ArrowBodyChainIssue404Tests` pinned; and pass two of an arrow that broke reads a one-line body
+  again, so the answer is stable. Pinned by `LambdaArrowOverACallChainIssue529Tests` and
+  `constructs/wrapping/lambda-arrow-over-a-call-chain.cs`.
 
 ## SK-DIV-0333 — a ternary whose condition is a chopped chain puts its branches a level too deep
 
@@ -9260,10 +9351,21 @@ var t = someParticularThingWithALongName.SelfLink()
 ```
 
 The chain's dots and the branches share one level in the oracle — the opposite of a binary operator's
-left operand (#457), where the chain takes a level past the operator's. Not wired.
+left operand (#457), where the chain takes a level past the operator's.
 
 - options: none.
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved** (issue #530). The cause was in the builder, not the chain: the arms' scope
+  opened *after* the condition, on its last line, where the one-level-per-line collapse could not meet
+  the statement's own level. It now opens on the condition's first line. Measured on 2026-10-08 on
+  thirteen conditions: a chain, a call chopped with or without `!` or `await` before it, `new Foo(` …
+  `).Ok`, a call with a trailing property, a parenthesised `&&`, under `var x =`, an assignment,
+  `return`, an argument and an expression body — signs one level past the statement in every one. ⚠
+  Two exceptions keep the late scope, both measured: a broken *binary* condition (`&& c` at one level,
+  `? x` at two; `==` the same) and a chain headed by a parenthesis, which shares the level around it
+  (SK-DIV-0112; `ArrowBodyChainIssue404Tests` pinned it). A row beside it is a break choice, not this
+  entry's: `var a7aaaa… = chain ? x : y` where the oracle breaks the `=` and keeps the chain whole.
+  Pinned by `TernaryAfterAChoppedConditionIssue530Tests` and
+  `constructs/breaks/ternary-after-a-chopped-condition.cs`.
 
 ## SK-DIV-0320 — a block comment on its own line above an array initializer's first element stayed there
 

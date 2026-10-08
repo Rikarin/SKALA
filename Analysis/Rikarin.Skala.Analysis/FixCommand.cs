@@ -107,15 +107,15 @@ public static class FixCommand {
 
         var mode = request.Mode
             ?? (namingRequested
-                    ? LoadMode.Workspace
-                    : ProjectLoader.ResolveAutoMode(
-                        new() {
-                            RepositoryRoot = root,
-                            Mode = LoadMode.Workspace,
-                            ProjectPath = request.ProjectPath,
-                            Paths = request.Paths
-                        }
-                    ));
+                ? LoadMode.Workspace
+                : ProjectLoader.ResolveAutoMode(
+                    new() {
+                        RepositoryRoot = root,
+                        Mode = LoadMode.Workspace,
+                        ProjectPath = request.ProjectPath,
+                        Paths = request.Paths
+                    }
+                ));
         request = request with { Mode = mode };
 
         // ⚠ The compilations `check` built, kept so that every edit below can be re-bound in them.

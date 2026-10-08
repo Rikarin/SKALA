@@ -40,13 +40,13 @@ static class UsingResource {
         return local.DeclaringSyntaxReferences[0].GetSyntax(cancellation) is VariableDeclaratorSyntax {
             Parent: VariableDeclarationSyntax { Parent: { } owner }
         }
-                ? owner switch {
-                    UsingStatementSyntax use => use,
-                    LocalDeclarationStatementSyntax { UsingKeyword.RawKind: not (int)SyntaxKind.None } declaration =>
-                        declaration,
-                    _ => null
-                }
-                : null;
+            ? owner switch {
+                UsingStatementSyntax use => use,
+                LocalDeclarationStatementSyntax { UsingKeyword.RawKind: not (int)SyntaxKind.None } declaration =>
+                    declaration,
+                _ => null
+            }
+            : null;
     }
 
     /// <summary>

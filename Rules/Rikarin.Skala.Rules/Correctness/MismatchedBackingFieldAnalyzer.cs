@@ -169,8 +169,8 @@ public sealed class MismatchedBackingFieldAnalyzer : DiagnosticAnalyzer {
             RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
             Right: IdentifierNameSyntax { Identifier.ValueText: "value" }
         } assignment
-                ? Storage(assignment.Left)
-                : null;
+            ? Storage(assignment.Left)
+            : null;
     }
 
     /// <summary>

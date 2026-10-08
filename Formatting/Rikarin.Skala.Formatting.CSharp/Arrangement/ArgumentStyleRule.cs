@@ -298,8 +298,8 @@ public sealed class DiscardDeclarationRule : ArrangementRule {
             return node.Expression is DeclarationExpressionSyntax {
                 Type: IdentifierNameSyntax { Identifier.ValueText: "var" }, Designation: DiscardDesignationSyntax
             }
-                    ? visited.WithExpression(SyntaxFactory.IdentifierName("_").WithTriviaFrom(visited.Expression))
-                    : visited;
+                ? visited.WithExpression(SyntaxFactory.IdentifierName("_").WithTriviaFrom(visited.Expression))
+                : visited;
         }
     }
 }
