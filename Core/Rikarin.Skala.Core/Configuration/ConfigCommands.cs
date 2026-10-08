@@ -65,8 +65,8 @@ public static class ConfigCommands {
         // last thing `--configured-only` should hide, because it is the one row where what the file
         // says and what the tool does come apart.
         var rows = (configuredOnly
-            ? resolution.Resolved.Where(static option => !option.IsDefault || option.Refused is not null)
-            : resolution.Resolved)
+                ? resolution.Resolved.Where(static option => !option.IsDefault || option.Refused is not null)
+                : resolution.Resolved)
             .ToArray();
         var keyWidth = rows.Length == 0 ? 3 : rows.Max(static option => option.Info.Key.Length);
         var valueWidth = Math.Min(
