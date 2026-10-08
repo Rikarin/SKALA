@@ -2590,9 +2590,11 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         Point(name, group);
-        // ⚠ Before a lone base type the oracle moves the name down whenever the line is too long — at every
-        // width measured, to 139 columns, behind a type parameter list or not — and breaks after the `:` as
-        // well when that is not enough (round three, SK-DIV-0353).
+
+        // ⚠ Before a lone base type, behind modifiers, the oracle moves the name down whenever the line is too
+        // long — to 150 columns for a name of 40 letters, behind a type parameter list or not — and breaks after
+        // the `:` as well when that is not enough. Behind a bare keyword it keeps the ordinary window (round
+        // three, SK-DIV-0353): `class N…72 : Base…` breaks the name at 124 and not at 126.
         var loneBase = type is { ParameterList: null, BaseList.Types.Count: 1 };
 
         // ⚠ The oracle measures the header as if its body's ` }` followed the `{` even when the body has
@@ -2619,7 +2621,7 @@ public sealed class BreakPlan {
                 BreaksIfTooLong: true,
                 MeasuresHead: true,
                 PrefersOuterBreak: true,
-                JoinedOverflow: loneBase ? Document.Unbounded : 4 - unwrittenBrace,
+                JoinedOverflow: loneBase && type.Modifiers.Count > 0 ? Document.Unbounded : 4 - unwrittenBrace,
                 NameWidth: floor is null ? -1 : name.Span.Length,
                 NameFloor: (floor ?? 0) - 8 * unwrittenBrace,
 

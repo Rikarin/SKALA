@@ -577,4 +577,40 @@ public sealed class TypeNameGapIssue539Tests {
             """
         );
     }
+
+    /// <summary>
+    ///     #539 round three: behind <c>class</c> alone a lone base type does not widen the window: a 72-letter name breaks at 124 and not at 126, where behind <c>public class</c> it still breaks at 150.
+    /// </summary>
+    [Fact]
+    public void ALoneBaseTypeBehindABareKeyword_KeepsTheOrdinaryWindow() {
+        Agrees(
+            """
+            class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn : SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbb { }
+            """,
+            """
+            class
+                Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn :
+                SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbb { }
+            """
+        );
+        Agrees(
+            """
+            class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn : SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbbbb { }
+            """,
+            """
+            class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn :
+                SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbbbb { }
+            """
+        );
+        Agrees(
+            """
+            public class Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn : SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb { }
+            """,
+            """
+            public class
+                Nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn :
+                SomeVeryLongBasebbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb { }
+            """
+        );
+    }
 }

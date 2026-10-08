@@ -9711,10 +9711,11 @@ their names broken — and a further 1 100 headers were measured:
   through the `{` is 122 at most, as with `{ }` at 124 — so for a type with members both limits are taken two
   columns in (80 of 80 cells; the fidelity dump caught it on `constructs/breaks/comment-before-a-break-point.cs`,
   whose comment was never the cause: 57 headers with and without `/* f */` answer alike).
-- ⚠ **Before a lone base type the name moves down at any width** — to 139 columns, behind a type parameter
-  list or not (Serilog's `LogEventPropertyValueRewriter<TState> : LogEventPropertyValueVisitor<…>`) — and the
-  `:` breaks as well when that is not enough. The old "up to 128 at least" was the end of the sweep, not of the
-  rule.
+- ⚠ **Before a lone base type, behind modifiers, the name moves down at any width** — to 150 columns for a
+  name of 40 letters or more, behind a type parameter list or not (Serilog's `LogEventPropertyValueRewriter<TState>
+  : LogEventPropertyValueVisitor<…>`) — and the `:` breaks as well when that is not enough. The old "up to 128 at
+  least" was the end of the sweep, not of the rule. Behind a bare `class` the ordinary window holds: a 72-letter
+  name breaks at 124 and not at 126 (`constructs/wrapping/base-list.cs`, which the dump caught).
 - ⚠ **A short name gives way to the list's first comma, by a rule in three widths.** With `h` the name's column,
   `L` its length and `F` the width of the competing list's first item capped at 22, the oracle breaks the name iff
   `9h + 6L − 3F + 807 ≥ 8 · end` (`GroupFacts.NameWidth`/`NameFloor`). It reproduces 727 of 728 cells — heads of 13
@@ -9726,22 +9727,24 @@ their names broken — and a further 1 100 headers were measured:
   parameter's width only; one type parameter, type parameters followed by a base list, and a lone base type
   always break, as before.
 - ⚠ **Behind a bare keyword the name never gives way to a list**, up to a 76-letter name before two interfaces;
-  it still moves down when the name itself fills the line, and before a lone base type.
+  it still moves down when the name itself fills the line, and before a lone base type within the ordinary window.
 
 On the round's sets: 280 of 280 of the first sweep (was 260), 300 of 300 and 312 of 312 over head and name
 lengths, 195 of 196 over the first base type, 59 of 60 primary constructors (the other is SK-DIV-0198), and
 204 of 205 heads, the other a 107-letter name before a lone base type, which the oracle lets run two columns
 past the margin rather than break before the `:`; 84 of 84 and 160 of 168 over the body and the lone base type,
-the eight a continuation line still too long, where the oracle fills the base type's argument list
+69 of 72 over a lone base type behind `class`,
+`public class` and `sealed class`; the eight a continuation line still too long, where the oracle fills the base type's argument list
 (`Visitor<TState,` / `L…>`) and Skala breaks after the `:` — the base list's colon rule (SK-DIV-0198), not the
-name's.
+name's; and three where the window is narrower for a 20-letter name — behind `class` it breaks at 121
+and not at 124, behind modifiers at 140 and not at 150.
 
-Still divergent, measured: those nine cells, `public sealed class N…100 : Base<int>, IFoo` (the oracle also breaks
+Still divergent, measured: those twelve cells, `public sealed class N…100 : Base<int>, IFoo` (the oracle also breaks
 after the `:`), and a header whose name and `<` fill the line (`N…104<TFirst,` — the oracle breaks the name,
 Skala after the `<`).
 
 - options: none.
-- ⚠ status: **resolved** for the measured shapes but the residue above (eleven cells), pinned by `TypeNameGapIssue539Tests`.
+- ⚠ status: **resolved** for the measured shapes but the residue above (fourteen cells), pinned by `TypeNameGapIssue539Tests`.
 
 ## SK-DIV-0340 — a positional pattern inside a property pattern broke after its subpattern's colon
 
