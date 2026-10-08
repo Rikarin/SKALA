@@ -5763,6 +5763,16 @@ conditional directly inside a grouping parenthesis (after `=`, as an argument, i
 a binary operand, before `.ToString()`, behind a cast, in a `return`) lands on the parenthesis's level,
 because its own arm scope and the parenthesis's opened on one line and both counted. A conditional
 that is an argument keeps its level. Pinned by `ParenthesisedConditionalIssue546Tests`.
+
+⚠ **`&&` and `||` are two chains (#565).** `SameChain` read them as one precedence, on the note "`a && b
+|| c` is chopped at both operators by the oracle" — true only where the `&&` was already broken. Measured
+2026-10-08 on six conditions too wide for their line (in an `if`, an `=` and a `return`, with the `&&`
+before, after and between the `||`s): the oracle chops every `||` and leaves each `&&` operand whole —
+`a && b` / `|| c && d` / `|| e && a`; Skala chopped every `&&` as well. It showed in Skala's own
+`SettleParenthesisedCollections` (`|| captured is { Count: > 0 }` / `&& IsInsideCaptured(paren)`) only
+where the condition crossed the margin, which is why the issue's shape looked indent-dependent. Author's
+breaks were re-measured too (`a` / `&& b || d` chops the `||` by containment) and agree. Pinned by
+`AndOrChainsIssue565Tests`.
 ⚠ **The filled-list half closed at #471** (SK-DIV-0117): `new[] { 1` / `+ 2, 3 }` already agreed (the
 array initializer's after rule, #444), and `[1` / `+ 2, 3]` now does too — `+ 2,` / `3`.
 
