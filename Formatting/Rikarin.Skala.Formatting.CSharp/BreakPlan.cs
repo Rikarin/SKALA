@@ -5668,12 +5668,12 @@ public sealed class BreakPlan {
     ///     otherwise (#581).
     /// </summary>
     /// <remarks>
-    ///     ⚠ Measured with <c>jb cleanupcode</c> on 2 857 cells — heads of 10 to 60 columns, values of 66 to
+    ///     ⚠ Measured with <c>jb cleanupcode</c> on 3 560 cells — heads of 8 to 60 columns, values of 66 to
     ///     119, at three block depths, for <c>var</c> and typed locals, assignments and fields, for
     ///     <c>new Something {</c>, <c>new P {</c>, <c>new List&lt;string&gt; {</c>,
-    ///     <c>new SomethingMuchLongerStill {</c> and <c>new {</c>, with identifiers and string literals as
-    ///     members. The fitted margin (<c>Fitter.OuterBreakMargin</c>) answered 2 393 of them; this rule
-    ///     answers 2 821. ⚠ What moves the limit was not the value's width or its members but two widths
+    ///     <c>new SomethingMuchLongerStill {</c> and <c>new {</c>, with identifiers, numbers and string literals
+    ///     as members. The fitted margin (<c>Fitter.OuterBreakMargin</c>) answered 2 380 of the first 2 857;
+    ///     this rule answers 3 533 of all 3 560 (SK-DIV-0322). ⚠ What moves the limit was not the value's width or its members but two widths
     ///     nobody had measured: the creation's own head up to its <c>{</c> — the wider it is, the further down
     ///     the oracle moves the creation rather than break its braces — and the head from the declarator's
     ///     name, not the statement's start, through the <c>=</c>: a typed local and a <c>var</c> one agree once
