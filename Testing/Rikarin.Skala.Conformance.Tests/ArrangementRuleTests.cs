@@ -29,6 +29,11 @@ namespace Rikarin.Skala.Conformance.Tests;
 ///     </para>
 /// </remarks>
 public sealed class ArrangementRuleTests {
+    const string Long1 = "return $\"{a}{b}{c}{d}{e}{f}{g}{h}{i}{j}{k}{l}{m}{n}{o}{p}{q}{r}{s}{t}{u}{v}\";";
+
+    const string Long2 = "Console.WriteLine(map.Count + cast + t.Name + d + s + max + empty + _count + _ma"
+        + "ybe + _native);";
+
     /// <param name="removeUnused">
     ///     ⚠ Supply the removable-usings set the product computes, instead of nothing. Removal takes
     ///     its answer from that set rather than from a model, so a helper that always passes
@@ -1154,51 +1159,51 @@ public sealed class ArrangementRuleTests {
     }
 
     /// <summary>The probe #547's rows are asked of: a delegate-typed local initialised by a function.</summary>
-    const string NaturalTypeProbe = """
-                                    using System;
-                                    using System.Linq.Expressions;
-                                    using System.Threading.Tasks;
+    const string NaturalTypeProbe = $$"""
+                                      using System;
+                                      using System.Linq.Expressions;
+                                      using System.Threading.Tasks;
 
-                                    namespace P;
+                                      namespace P;
 
-                                    public class Foo { }
+                                      public class Foo { }
 
-                                    public delegate int MyDelegate();
-                                    public delegate int RefDelegate(ref int x);
+                                      public delegate int MyDelegate();
+                                      public delegate int RefDelegate(ref int x);
 
-                                    public class C {
-                                        static void Run() { }
-                                        static void Over(int x) { }
-                                        static void Over(string x) { }
-                                        static int Twice(int x) => x * 2;
+                                      public class C {
+                                          static void Run() { }
+                                          static void Over(int x) { }
+                                          static void Over(string x) { }
+                                          static int Twice(int x) => x * 2;
 
-                                        public string M() {
-                                            Func<int> a = () => 1;
-                                            Func<object> b = () => new object();
-                                            Func<object> c = () => "x";
-                                            Func<int, int> d = x => x;
-                                            Func<int, int> e = (int x) => x;
-                                            Action f = () => { };
-                                            Expression<Func<int>> g = () => 1;
-                                            Action h = Run;
-                                            Action<int> i = Over;
-                                            MyDelegate j = () => 1;
-                                            Func<Foo> k = () => new Foo();
-                                            Delegate l = () => 1;
-                                            Func<int?> m = () => 1;
-                                            Func<Task> n = async () => await Task.Delay(1);
-                                            Func<string?> o = () => null;
-                                            Func<int> p = static () => 1;
-                                            RefDelegate q = (ref int x) => x;
-                                            Func<object> r = object () => "x";
-                                            Func<int, int> s = Twice;
-                                            Func<int>? t = () => 1;
-                                            Func<Foo> u = () => { return new Foo(); };
-                                            Func<int> v = delegate { return 1; };
-                                            return $"{a}{b}{c}{d}{e}{f}{g}{h}{i}{j}{k}{l}{m}{n}{o}{p}{q}{r}{s}{t}{u}{v}";
-                                        }
-                                    }
-                                    """;
+                                          public string M() {
+                                              Func<int> a = () => 1;
+                                              Func<object> b = () => new object();
+                                              Func<object> c = () => "x";
+                                              Func<int, int> d = x => x;
+                                              Func<int, int> e = (int x) => x;
+                                              Action f = () => { };
+                                              Expression<Func<int>> g = () => 1;
+                                              Action h = Run;
+                                              Action<int> i = Over;
+                                              MyDelegate j = () => 1;
+                                              Func<Foo> k = () => new Foo();
+                                              Delegate l = () => 1;
+                                              Func<int?> m = () => 1;
+                                              Func<Task> n = async () => await Task.Delay(1);
+                                              Func<string?> o = () => null;
+                                              Func<int> p = static () => 1;
+                                              RefDelegate q = (ref int x) => x;
+                                              Func<object> r = object () => "x";
+                                              Func<int, int> s = Twice;
+                                              Func<int>? t = () => 1;
+                                              Func<Foo> u = () => { return new Foo(); };
+                                              Func<int> v = delegate { return 1; };
+                                              {{Long1}}
+                                          }
+                                      }
+                                      """;
 
     /// <summary>
     ///     #547: a function initialiser takes <c>var</c> exactly when its natural type is the declared type.
@@ -1290,44 +1295,44 @@ public sealed class ArrangementRuleTests {
     }
 
     /// <summary>The probe #462's rows are asked of: every predefined keyword, written as one.</summary>
-    const string KeywordProbe = """
-                                using System;
-                                using System.Collections.Generic;
+    const string KeywordProbe = $$"""
+                                  using System;
+                                  using System.Collections.Generic;
 
-                                namespace P;
+                                  namespace P;
 
-                                enum Small : byte { A }
+                                  enum Small : byte { A }
 
-                                delegate int Handler(string s);
+                                  delegate int Handler(string s);
 
-                                interface IThing<T> where T : IComparable<int> { }
+                                  interface IThing<T> where T : IComparable<int> { }
 
-                                class Keywords {
-                                    int _count;
-                                    public bool Enabled { get; set; }
-                                    event Func<int>? Raised;
-                                    int this[int i] => i;
-                                    public static Keywords operator +(Keywords a, int b) => a;
-                                    (int, string) _tuple;
-                                    int? _maybe;
-                                    nint _native;
+                                  class Keywords {
+                                      int _count;
+                                      public bool Enabled { get; set; }
+                                      event Func<int>? Raised;
+                                      int this[int i] => i;
+                                      public static Keywords operator +(Keywords a, int b) => a;
+                                      (int, string) _tuple;
+                                      int? _maybe;
+                                      nint _native;
 
-                                    string Name() => nameof(Int32);
+                                      string Name() => nameof(Int32);
 
-                                    void M(ref int r, out int o, params int[] rest) {
-                                        o = 1;
-                                        Dictionary<string, int> map = new Dictionary<string, int>();
-                                        long cast = (long)r;
-                                        object boxed = 1;
-                                        var t = typeof(decimal);
-                                        var d = default(double);
-                                        var s = boxed as string;
-                                        var max = int.MaxValue;
-                                        var empty = string.Empty;
-                                        Console.WriteLine(map.Count + cast + t.Name + d + s + max + empty + _count + _maybe + _native);
-                                    }
-                                }
-                                """;
+                                      void M(ref int r, out int o, params int[] rest) {
+                                          o = 1;
+                                          Dictionary<string, int> map = new Dictionary<string, int>();
+                                          long cast = (long)r;
+                                          object boxed = 1;
+                                          var t = typeof(decimal);
+                                          var d = default(double);
+                                          var s = boxed as string;
+                                          var max = int.MaxValue;
+                                          var empty = string.Empty;
+                                          {{Long2}}
+                                      }
+                                  }
+                                  """;
 
     /// <summary>
     ///     #462: at <c>predefined_type_for_locals_parameters_members = false</c> the keyword is expanded

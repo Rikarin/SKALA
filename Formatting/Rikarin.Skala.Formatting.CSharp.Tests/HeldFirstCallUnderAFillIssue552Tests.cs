@@ -1,3 +1,5 @@
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
+
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
@@ -8,6 +10,17 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     2026-10-09 with <c>Testing ask</c>.
 /// </summary>
 public sealed class HeldFirstCallUnderAFillIssue552Tests {
+    const string Long1 = ".Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentVa"
+        + "lueNumberThreeeeeeeeeeeeeee)";
+
+    const string Long2 = "var t1 = source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, "
+        + "gammaArgumentValueNumberThreeeeeeeeeeeeeee).Where(alphaPredicateValueNumberOneLo"
+        + "ngerStill).ToList(betaValueArgumentNumberTwoLonger);";
+
+    const string Long3 = "Outer(first: 1, source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumb"
+        + "erTwo, gammaArgumentValueNumberThreeeeeeeeeeeeeee).Where(alpha).ToList(betaaaaaa"
+        + "aaaaaaaaaaaaaaaaaaa));";
+
     static string UnderAFill(string source) =>
         Overridden.Settled(source, [("skala_wrap_chained_method_calls", "wrap_if_long")]).TrimEnd('\n');
 
@@ -30,35 +43,35 @@ public sealed class HeldFirstCallUnderAFillIssue552Tests {
     public void ALongRest_MovesTheHeldCallDown() =>
         Assert.Equal(
             Statements(
-                """
-                        var t1 = source
-                            .Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValueNumberThreeeeeeeeeeeeeee)
-                            .Where(alphaPredicateValueNumberOneLongerStill).ToList(betaValueArgumentNumberTwoLonger);
-                        Outer(
-                            first: 1,
-                            source.Select(
-                                alphaArgumentValueNumberOne,
-                                betaArgumentValueNumberTwo,
-                                gammaArgumentValueNumberThreeeeeeeeeeeeeee
-                            ).Where(alpha).ToList(betaaaaaaaaaaaaaaaaaaaaaaaaa)
-                        );
-                        var y = ssssssssssssssssssssssssssssssssssss.Select(
-                            aaaaaaaaaaaaaaaaaaa,
-                            bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-                        ).Where(wwwwwwwwwwwwwwwwwwwww);
-                        var y = ssssssssssssssssssssssssssssssssssss
-                            .Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)
-                            .Where(wwwwwwwwwwwwwwwwwwwwwwwww);
-                """
+                $$"""
+                          var t1 = source
+                              {{Long1}}
+                              .Where(alphaPredicateValueNumberOneLongerStill).ToList(betaValueArgumentNumberTwoLonger);
+                          Outer(
+                              first: 1,
+                              source.Select(
+                                  alphaArgumentValueNumberOne,
+                                  betaArgumentValueNumberTwo,
+                                  gammaArgumentValueNumberThreeeeeeeeeeeeeee
+                              ).Where(alpha).ToList(betaaaaaaaaaaaaaaaaaaaaaaaaa)
+                          );
+                          var y = ssssssssssssssssssssssssssssssssssss.Select(
+                              aaaaaaaaaaaaaaaaaaa,
+                              bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                          ).Where(wwwwwwwwwwwwwwwwwwwww);
+                          var y = ssssssssssssssssssssssssssssssssssss
+                              .Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)
+                              .Where(wwwwwwwwwwwwwwwwwwwwwwwww);
+                  """
             ),
             UnderAFill(
                 Statements(
-                    """
-                            var t1 = source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValueNumberThreeeeeeeeeeeeeee).Where(alphaPredicateValueNumberOneLongerStill).ToList(betaValueArgumentNumberTwoLonger);
-                            Outer(first: 1, source.Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValueNumberThreeeeeeeeeeeeeee).Where(alpha).ToList(betaaaaaaaaaaaaaaaaaaaaaaaaa));
-                            var y = ssssssssssssssssssssssssssssssssssss.Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(wwwwwwwwwwwwwwwwwwwww);
-                            var y = ssssssssssssssssssssssssssssssssssss.Select(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb).Where(wwwwwwwwwwwwwwwwwwwwwwwww);
-                    """
+                    $$"""
+                              {{Long2}}
+                              {{Long3}}
+                              var y = {{R('s', 36)}}.Select(aaaaaaaaaaaaaaaaaaa, {{R('b', 58)}}).Where({{R('w', 21)}});
+                              var y = {{R('s', 36)}}.Select(aaaaaaaaaaaaaaaaaaa, {{R('b', 58)}}).Where({{R('w', 25)}});
+                      """
                 )
             )
         );

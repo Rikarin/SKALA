@@ -1,3 +1,5 @@
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
+
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
@@ -8,6 +10,34 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>constructs/breaks/held-single-call.cs</c> holds the wider set.
 /// </summary>
 public sealed class HeldSingleCallIssue528Tests {
+    const string Long8 = "ValuesAndNamesPerEnum.Get(new StructMultiKey<Type, NamingStrategy?>(enumType, na"
+        + "mingStrategy));";
+
+    const string Long9 = "JsonTypeReflector.ReflectionDelegateFactory.CreateDefaultConstructor<object>(tem"
+        + "poraryListType);";
+
+    const string Long1 = "PublicParameterizedConstructorRequiringConverterWithParameterAttributeTestClass "
+        + "c = JsonConvert.DeserializeObject<PublicParameterizedConstructorRequiringConvert"
+        + "erWithParameterAttributeTestClass>(json);";
+
+    const string Long2 = "EnumInfo enumInfo = ValuesAndNamesPerEnum.Get(new StructMultiKey<Type, NamingStr"
+        + "ategy?>(enumType, namingStrategy));";
+
+    const string Long3 = "var bottom = device.CreateAccelerationStructure(new(AccelerationStructureKind.Bo"
+        + "ttomLevel, bottomSizes.Structure, \"as-bottom\"));";
+
+    const string Long4 = "var methods = CallableConfigurationMethodFinder.FindConfigurationMethods(configu"
+        + "rationAssemblies, receiverGroup.Key);";
+
+    const string Long5 = "_genericTemporaryCollectionCreator = JsonTypeReflector.ReflectionDelegateFactory"
+        + ".CreateDefaultConstructor<object>(temporaryListType);";
+
+    const string Long6 = ".DeserializeObject<PublicParameterizedConstructorRequiringConverterWithParameter"
+        + "AttributeTestClass>(";
+
+    const string Long7 = "CallableConfigurationMethodFinder.FindConfigurationMethods(configurationAssembli"
+        + "es, receiverGroup.Key);";
+
     /// <summary>
     ///     A typed local keeps its <c>=</c> and breaks before the call. Behind <c>var y</c> the same call breaks
     ///     the <c>=</c> while it fits below, breaks the <c>=</c> and the dot when it overflows below by one
@@ -18,36 +48,36 @@ public sealed class HeldSingleCallIssue528Tests {
     [Fact]
     public void ASingleCallValue_FollowsTheMeasuredTable() =>
         Oracle.Agrees(
-            """
-            class T {
-                void M() {
-                    Taaaa c = JsonConvert.DeserializeObject<Ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg>(json);
-                    var y = Jjjjjjjjjjj.DeserializeObject<Gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg>(json);
-                    var y = Jjjjjjjjjjj.DeserializeObject<Ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg>(json);
-                    var y = Jjjjjjjjjjj.DeserializeObject<Gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg>(json);
-                    var y = Jjjjjjjjjjj.DeserializeObject<Gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg>(json);
-                }
-            }
-            """,
-            """
-            class T {
-                void M() {
-                    Taaaa c = JsonConvert
-                        .DeserializeObject<Ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg>(json);
-                    var y =
-                        Jjjjjjjjjjj.DeserializeObject<Gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg>(json);
-                    var y =
-                        Jjjjjjjjjjj
-                            .DeserializeObject<Ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg>(json);
-                    var y =
-                        Jjjjjjjjjjj.DeserializeObject<Gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg>(
-                            json
-                        );
-                    var y = Jjjjjjjjjjj
-                        .DeserializeObject<Gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg>(json);
-                }
-            }
-            """
+            $$"""
+              class T {
+                  void M() {
+                      Taaaa c = JsonConvert.DeserializeObject<G{{R('g', 74)}}>(json);
+                      var y = Jjjjjjjjjjj.DeserializeObject<G{{R('g', 69)}}>(json);
+                      var y = Jjjjjjjjjjj.DeserializeObject<G{{R('g', 70)}}>(json);
+                      var y = Jjjjjjjjjjj.DeserializeObject<G{{R('g', 71)}}>(json);
+                      var y = Jjjjjjjjjjj.DeserializeObject<G{{R('g', 73)}}>(json);
+                  }
+              }
+              """,
+            $$"""
+              class T {
+                  void M() {
+                      Taaaa c = JsonConvert
+                          .DeserializeObject<G{{R('g', 74)}}>(json);
+                      var y =
+                          Jjjjjjjjjjj.DeserializeObject<G{{R('g', 69)}}>(json);
+                      var y =
+                          Jjjjjjjjjjj
+                              .DeserializeObject<G{{R('g', 70)}}>(json);
+                      var y =
+                          Jjjjjjjjjjj.DeserializeObject<G{{R('g', 71)}}>(
+                              json
+                          );
+                      var y = Jjjjjjjjjjj
+                          .DeserializeObject<G{{R('g', 73)}}>(json);
+                  }
+              }
+              """
         );
 
     /// <summary>
@@ -61,36 +91,36 @@ public sealed class HeldSingleCallIssue528Tests {
     [Fact]
     public void TheReferenceTreesRows_FollowTheirOracle() =>
         Oracle.Agrees(
-            """
-            class T {
-                void M() {
-                    PublicParameterizedConstructorRequiringConverterWithParameterAttributeTestClass c = JsonConvert.DeserializeObject<PublicParameterizedConstructorRequiringConverterWithParameterAttributeTestClass>(json);
-                    EnumInfo enumInfo = ValuesAndNamesPerEnum.Get(new StructMultiKey<Type, NamingStrategy?>(enumType, namingStrategy));
-                    var bottom = device.CreateAccelerationStructure(new(AccelerationStructureKind.BottomLevel, bottomSizes.Structure, "as-bottom"));
-                    var methods = CallableConfigurationMethodFinder.FindConfigurationMethods(configurationAssemblies, receiverGroup.Key);
-                    _genericTemporaryCollectionCreator = JsonTypeReflector.ReflectionDelegateFactory.CreateDefaultConstructor<object>(temporaryListType);
-                }
-            }
-            """,
-            """
-            class T {
-                void M() {
-                    PublicParameterizedConstructorRequiringConverterWithParameterAttributeTestClass c =
-                        JsonConvert
-                            .DeserializeObject<PublicParameterizedConstructorRequiringConverterWithParameterAttributeTestClass>(
-                                json
-                            );
-                    EnumInfo enumInfo =
-                        ValuesAndNamesPerEnum.Get(new StructMultiKey<Type, NamingStrategy?>(enumType, namingStrategy));
-                    var bottom = device.CreateAccelerationStructure(
-                        new(AccelerationStructureKind.BottomLevel, bottomSizes.Structure, "as-bottom")
-                    );
-                    var methods =
-                        CallableConfigurationMethodFinder.FindConfigurationMethods(configurationAssemblies, receiverGroup.Key);
-                    _genericTemporaryCollectionCreator =
-                        JsonTypeReflector.ReflectionDelegateFactory.CreateDefaultConstructor<object>(temporaryListType);
-                }
-            }
-            """
+            $$"""
+              class T {
+                  void M() {
+                      {{Long1}}
+                      {{Long2}}
+                      {{Long3}}
+                      {{Long4}}
+                      {{Long5}}
+                  }
+              }
+              """,
+            $$"""
+              class T {
+                  void M() {
+                      PublicParameterizedConstructorRequiringConverterWithParameterAttributeTestClass c =
+                          JsonConvert
+                              {{Long6}}
+                                  json
+                              );
+                      EnumInfo enumInfo =
+                          {{Long8}}
+                      var bottom = device.CreateAccelerationStructure(
+                          new(AccelerationStructureKind.BottomLevel, bottomSizes.Structure, "as-bottom")
+                      );
+                      var methods =
+                          {{Long7}}
+                      _genericTemporaryCollectionCreator =
+                          {{Long9}}
+                  }
+              }
+              """
         );
 }

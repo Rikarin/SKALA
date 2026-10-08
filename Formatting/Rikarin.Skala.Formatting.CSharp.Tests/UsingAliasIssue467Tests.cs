@@ -1,3 +1,4 @@
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 
@@ -9,6 +10,19 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class UsingAliasIssue467Tests {
+    const string Long1 = "using L = System.Collections.Generic.Dictionary<System.Collections.Generic.IRead"
+        + "OnlyList<string>, System.Collections.Generic.IReadOnlyDictionary<string, int>>;";
+
+    const string Long2 = "using LongAliasName = System.Collections.Generic.IReadOnlyDictionary<System.Coll"
+        + "ections.Generic.IReadOnlyList<string>, System.Collections.Generic.IReadOnlyList<"
+        + "int>>;";
+
+    const string Long3 = "using LongAlias = System.Collections.Generic.Dictionary<System.Collections.Gener"
+        + "ic.IReadOnlyList<string>, Ixxxxxxxxxxx>;";
+
+    const string Long4 = "using LongAlias = System.Collections.Generic.Dictionary<System.Collections.Gener"
+        + "ic.IReadOnlyList<string>, Ixxxxxxxxxxxx>;";
+
     /// <summary>The oracle's answer under the repository's export with <paramref name="overrides" /> on top.</summary>
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
@@ -46,10 +60,10 @@ public sealed class UsingAliasIssue467Tests {
             """
         );
         Agrees(
-            """
-            using Short = (int A, int B);
-            using L = System.Collections.Generic.Dictionary<System.Collections.Generic.IReadOnlyList<string>, System.Collections.Generic.IReadOnlyDictionary<string, int>>;
-            """,
+            $$"""
+              using Short = (int A, int B);
+              {{Long1}}
+              """,
             """
             using Short = (int A, int B);
             using L =
@@ -125,9 +139,9 @@ public sealed class UsingAliasIssue467Tests {
             """
         );
         Agrees(
-            """
-            using LongAliasName = System.Collections.Generic.IReadOnlyDictionary<System.Collections.Generic.IReadOnlyList<string>, System.Collections.Generic.IReadOnlyList<int>>;
-            """,
+            $$"""
+              {{Long2}}
+              """,
             """
             using LongAliasName =
                 System.Collections.Generic.IReadOnlyDictionary<System.Collections.Generic.IReadOnlyList<string>,
@@ -135,37 +149,37 @@ public sealed class UsingAliasIssue467Tests {
             """
         );
         Agrees(
-            """
-            using LongAlias = System.Collections.Generic.Dictionary<System.Collections.Generic.IReadOnlyList<string>, Ixxxxxxxxxxx>;
-            """,
-            """
-            using LongAlias = System.Collections.Generic.Dictionary<System.Collections.Generic.IReadOnlyList<string>, Ixxxxxxxxxxx>;
-            """
+            $$"""
+              {{Long3}}
+              """,
+            $$"""
+              {{Long3}}
+              """
         );
         Agrees(
-            """
-            using LongAlias = System.Collections.Generic.Dictionary<System.Collections.Generic.IReadOnlyList<string>, Ixxxxxxxxxxxx>;
-            """,
+            $$"""
+              {{Long4}}
+              """,
             """
             using LongAlias =
                 System.Collections.Generic.Dictionary<System.Collections.Generic.IReadOnlyList<string>, Ixxxxxxxxxxxx>;
             """
         );
         Agrees(
-            """
-            using LongAlias = (System.Collections.Generic.IReadOnlyList<string> Names, int Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx);
-            """,
+            $$"""
+              using LongAlias = (System.Collections.Generic.IReadOnlyList<string> Names, int C{{R('x', 39)}});
+              """,
             """
             using LongAlias =
                 (System.Collections.Generic.IReadOnlyList<string> Names, int Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx);
             """
         );
         Agrees(
-            """
-            namespace N {
-                using LongAlias = System.Collections.Generic.Dictionary<string, Namespace.Inner.Typexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>;
-            }
-            """,
+            $$"""
+              namespace N {
+                  using LongAlias = System.Collections.Generic.Dictionary<string, Namespace.Inner.Type{{R('x', 31)}}>;
+              }
+              """,
             """
             namespace N {
                 using LongAlias =

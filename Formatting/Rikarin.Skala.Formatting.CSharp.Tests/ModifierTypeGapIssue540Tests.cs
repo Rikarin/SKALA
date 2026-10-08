@@ -1,3 +1,4 @@
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 
@@ -9,6 +10,31 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class ModifierTypeGapIssue540Tests {
+    const string Long1 = "public static readonly System.Collections.Generic.IReadOnlyDictionary<string, Sy"
+        + "stem.Collections.Generic.IReadOnlyList<string>> Overflowing;";
+
+    const string Long2 = "System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generi"
+        + "c.IReadOnlyList<string>>";
+
+    const string Long3 = "public static readonly System.Collections.Generic.IReadOnlyDictionary<string, Sy"
+        + "stem.Collections.Generic.IReadOnlyList<string>> Overflowing = null;";
+
+    const string Long4 = "public static readonly System.Collections.Generic.IReadOnlyDictionary<string, Sy"
+        + "stem.Collections.Generic.IReadOnlyList<string>, System.Collections.Generic.IRead"
+        + "OnlyList<int>> Overflowing;";
+
+    const string Long5 = "System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generi"
+        + "c.IReadOnlyList<string>,";
+
+    const string Long6 = "[Obsolete] public static readonly System.Collections.Generic.IReadOnlyDictionary"
+        + "<string, System.Collections.Generic.IReadOnlyList<string>> Overflowing;";
+
+    const string Long7 = "public static readonly System.Collections.Generic.IReadOnlyDictionary<string, Sy"
+        + "stem.Collections.Generic.IReadOnlyList<S>> Overflowing;";
+
+    const string Long8 = "System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generi"
+        + "c.IReadOnlyList<S>> Overflowing;";
+
     /// <summary>The oracle's answer under the repository's export with <paramref name="overrides" /> on top.</summary>
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
@@ -36,61 +62,61 @@ public sealed class ModifierTypeGapIssue540Tests {
     [Fact]
     public void ATypeThatDoesNotFitAfterTheModifiers_MovesBelowThem() {
         Agrees(
-            """
-            class C {
-                public static readonly System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<string>> Overflowing;
-            }
-            """,
-            """
-            class C {
-                public static readonly
-                    System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<string>>
-                    Overflowing;
-            }
-            """
+            $$"""
+              class C {
+                  {{Long1}}
+              }
+              """,
+            $$"""
+              class C {
+                  public static readonly
+                      {{Long2}}
+                      Overflowing;
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static readonly System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<string>> Overflowing = null;
-            }
-            """,
-            """
-            class C {
-                public static readonly
-                    System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<string>>
-                    Overflowing = null;
-            }
-            """
+            $$"""
+              class C {
+                  {{Long3}}
+              }
+              """,
+            $$"""
+              class C {
+                  public static readonly
+                      {{Long2}}
+                      Overflowing = null;
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static readonly System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<string>, System.Collections.Generic.IReadOnlyList<int>> Overflowing;
-            }
-            """,
-            """
-            class C {
-                public static readonly
-                    System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<string>,
-                        System.Collections.Generic.IReadOnlyList<int>> Overflowing;
-            }
-            """
+            $$"""
+              class C {
+                  {{Long4}}
+              }
+              """,
+            $$"""
+              class C {
+                  public static readonly
+                      {{Long5}}
+                          System.Collections.Generic.IReadOnlyList<int>> Overflowing;
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                [Obsolete] public static readonly System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<string>> Overflowing;
-            }
-            """,
-            """
-            class C {
-                [Obsolete]
-                public static readonly
-                    System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<string>>
-                    Overflowing;
-            }
-            """
+            $$"""
+              class C {
+                  {{Long6}}
+              }
+              """,
+            $$"""
+              class C {
+                  [Obsolete]
+                  public static readonly
+                      {{Long2}}
+                      Overflowing;
+              }
+              """
         );
         Agrees(
             """
@@ -121,11 +147,11 @@ public sealed class ModifierTypeGapIssue540Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                public static readonly Dictionary<string, int> NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN;
-            }
-            """,
+            $$"""
+              class C {
+                  public static readonly Dictionary<string, int> {{R('N', 69)}};
+              }
+              """,
             """
             class C {
                 public static readonly Dictionary<string, int>
@@ -134,63 +160,63 @@ public sealed class ModifierTypeGapIssue540Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                public static readonly Dictionary<string, List<Sxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>> NNNNNN;
-            }
-            """,
-            """
-            class C {
-                public static readonly Dictionary<string, List<Sxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>>
-                    NNNNNN;
-            }
-            """
+            $$"""
+              class C {
+                  public static readonly Dictionary<string, List<S{{R('x', 63)}}>> NNNNNN;
+              }
+              """,
+            $$"""
+              class C {
+                  public static readonly Dictionary<string, List<S{{R('x', 63)}}>>
+                      NNNNNN;
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static readonly Dictionary<string, List<Sxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>> NNNNNN;
-            }
-            """,
-            """
-            class C {
-                public static readonly
-                    Dictionary<string, List<Sxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>> NNNNNN;
-            }
-            """
+            $$"""
+              class C {
+                  public static readonly Dictionary<string, List<S{{R('x', 67)}}>> NNNNNN;
+              }
+              """,
+            $$"""
+              class C {
+                  public static readonly
+                      Dictionary<string, List<S{{R('x', 67)}}>> NNNNNN;
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static readonly Dictionary<string, List<Sxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>> NNNNNNNNNNN;
-            }
-            """,
-            """
-            class C {
-                public static readonly Dictionary<string, List<Sxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>>
-                    NNNNNNNNNNN;
-            }
-            """
+            $$"""
+              class C {
+                  public static readonly Dictionary<string, List<S{{R('x', 66)}}>> NNNNNNNNNNN;
+              }
+              """,
+            $$"""
+              class C {
+                  public static readonly Dictionary<string, List<S{{R('x', 66)}}>>
+                      NNNNNNNNNNN;
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static readonly Dictionary<string, List<Sxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>> NNNNNNNNNNN;
-            }
-            """,
-            """
-            class C {
-                public static readonly
-                    Dictionary<string, List<Sxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>> NNNNNNNNNNN;
-            }
-            """
+            $$"""
+              class C {
+                  public static readonly Dictionary<string, List<S{{R('x', 70)}}>> NNNNNNNNNNN;
+              }
+              """,
+            $$"""
+              class C {
+                  public static readonly
+                      Dictionary<string, List<S{{R('x', 70)}}>> NNNNNNNNNNN;
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static readonly Dictionary<string, List<Sxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>> NNNNNNNNNNNNNNNN;
-            }
-            """,
+            $$"""
+              class C {
+                  public static readonly Dictionary<string, List<S{{R('x', 69)}}>> NNNNNNNNNNNNNNNN;
+              }
+              """,
             """
             class C {
                 public static readonly
@@ -200,24 +226,24 @@ public sealed class ModifierTypeGapIssue540Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                public static readonly Dictionary<string, List<Sxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>> NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN;
-            }
-            """,
-            """
-            class C {
-                public static readonly Dictionary<string, List<Sxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>>
-                    NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN;
-            }
-            """
+            $$"""
+              class C {
+                  public static readonly Dictionary<string, List<S{{R('x', 66)}}>> NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN;
+              }
+              """,
+            $$"""
+              class C {
+                  public static readonly Dictionary<string, List<S{{R('x', 66)}}>>
+                      NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN;
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static readonly Dictionary<string, List<Sxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>> NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN;
-            }
-            """,
+            $$"""
+              class C {
+                  public static readonly Dictionary<string, List<S{{R('x', 70)}}>> NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN;
+              }
+              """,
             """
             class C {
                 public static readonly
@@ -227,17 +253,17 @@ public sealed class ModifierTypeGapIssue540Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                public static readonly System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<S>> Overflowing;
-            }
-            """,
-            """
-            class C {
-                public static readonly
-                    System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<S>> Overflowing;
-            }
-            """
+            $$"""
+              class C {
+                  {{Long7}}
+              }
+              """,
+            $$"""
+              class C {
+                  public static readonly
+                      {{Long8}}
+              }
+              """
         );
     }
 }

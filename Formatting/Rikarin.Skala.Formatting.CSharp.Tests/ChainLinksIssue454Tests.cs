@@ -14,6 +14,9 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     walk went through a <c>!</c>, counting the call before it as one of the chain's.
 /// </remarks>
 public sealed class ChainLinksIssue454Tests {
+    const string Long1 = ".Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentVa"
+        + "luexxxxxxxxx);";
+
     static string Statement(string statement) =>
         $$"""
           class T {
@@ -126,11 +129,11 @@ public sealed class ChainLinksIssue454Tests {
                 "var x6 = source.Make().Items[0].Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValuexxxxxxxxx);"
             ),
             Statement(
-                """
-                var x6 = source.Make()
-                            .Items[0]
-                            .Select(alphaArgumentValueNumberOne, betaArgumentValueNumberTwo, gammaArgumentValuexxxxxxxxx);
-                """
+                $$"""
+                  var x6 = source.Make()
+                              .Items[0]
+                              {{Long1}}
+                  """
             )
         );
     }

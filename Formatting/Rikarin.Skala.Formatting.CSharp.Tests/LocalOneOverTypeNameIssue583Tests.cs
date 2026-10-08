@@ -1,3 +1,4 @@
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 
@@ -37,19 +38,19 @@ public sealed class LocalOneOverTypeNameIssue583Tests {
     [Fact]
     public void APlainValueOneColumnOver() {
         Agrees(
-            """
-            class C {
-                void M() {
-                    Func<TTTTTTTTTTTTTTTTTT> ggggggg = wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww;
-                    Func<TTTTTTTTTTTTTTTTTT> gggggggg = wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww;
-                    Func<TTTTTTTTTTTTTTTTTTTTTTTTTT> gggggggggggggggggggggggggggggggggggggggggggggggggg = wwwwwwwwwwwwwwwwwwwwwwwwww;
-                    Func<TTTTTTTTTTTTTTTTTTTTTTTTTT> ggggggggggggggggggggggggggggggggggggggggggggggggggg = wwwwwwwwwwwwwwwwwwwwwwwww;
-                    Func<TTTTTTTTTTTTTTTT> g = wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww;
-                    Func<TTTTTTTTTTTTTTTT> gg = wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww;
-                    Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg = wwwwwwwww;
-                }
-            }
-            """,
+            $$"""
+              class C {
+                  void M() {
+                      Func<TTTTTTTTTTTTTTTTTT> ggggggg = {{R('w', 77)}};
+                      Func<TTTTTTTTTTTTTTTTTT> gggggggg = {{R('w', 76)}};
+                      Func<TTTTTTTTTTTTTTTTTTTTTTTTTT> {{R('g', 50)}} = wwwwwwwwwwwwwwwwwwwwwwwwww;
+                      Func<TTTTTTTTTTTTTTTTTTTTTTTTTT> {{R('g', 51)}} = wwwwwwwwwwwwwwwwwwwwwwwww;
+                      Func<TTTTTTTTTTTTTTTT> g = {{R('w', 85)}};
+                      Func<TTTTTTTTTTTTTTTT> gg = {{R('w', 84)}};
+                      Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> {{R('g', 63)}} = wwwwwwwww;
+                  }
+              }
+              """,
             """
             class C {
                 void M() {
@@ -77,14 +78,14 @@ public sealed class LocalOneOverTypeNameIssue583Tests {
     [Fact]
     public void OneColumnFurther_TheEqualsBreaks() {
         Agrees(
-            """
-            class C {
-                void M() {
-                    Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> ggggggggggggg = wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww;
-                    Func<TTTTTTTTTTTTTTTTTT> ggggggg = wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww;
-                }
-            }
-            """,
+            $$"""
+              class C {
+                  void M() {
+                      Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> ggggggggggggg = {{R('w', 60)}};
+                      Func<TTTTTTTTTTTTTTTTTT> ggggggg = {{R('w', 78)}};
+                  }
+              }
+              """,
             """
             class C {
                 void M() {
@@ -106,34 +107,34 @@ public sealed class LocalOneOverTypeNameIssue583Tests {
     [Fact]
     public void ALambdaOneColumnOver() {
         Agrees(
-            """
-            class C {
-                void M() {
-                    Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> f = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvv;
-                    Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> ff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvv;
-                    Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> fff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvv;
-                    Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> fffffff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvvvvvvvvvv;
-                    Func<TTTTTTTTTTTTTTTTTTTT> ffffffffffffffffff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvv;
-                }
-            }
-            """,
-            """
-            class C {
-                void M() {
-                    Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> f = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) =>
-                        vvvvvvvv;
-                    Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> ff = (
-                        PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0
-                    ) => vvvvvvvv;
-                    Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT>
-                        fff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvv;
-                    Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT>
-                        fffffff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvvvvvvvvvv;
-                    Func<TTTTTTTTTTTTTTTTTTTT> ffffffffffffffffff =
-                        (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvv;
-                }
-            }
-            """
+            $$"""
+              class C {
+                  void M() {
+                      Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> f = ({{R('P', 54)}} p0) => vvvvvvvv;
+                      Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> ff = ({{R('P', 53)}} p0) => vvvvvvvv;
+                      Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> fff = ({{R('P', 52)}} p0) => vvvvvvvv;
+                      Func<{{R('T', 36)}}> fffffff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvvvvvvvvvv;
+                      Func<TTTTTTTTTTTTTTTTTTTT> ffffffffffffffffff = ({{R('P', 47)}} p0) => vvvvvvvv;
+                  }
+              }
+              """,
+            $$"""
+              class C {
+                  void M() {
+                      Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> f = ({{R('P', 54)}} p0) =>
+                          vvvvvvvv;
+                      Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> ff = (
+                          PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0
+                      ) => vvvvvvvv;
+                      Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT>
+                          fff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvv;
+                      Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT>
+                          fffffff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvvvvvvvvvv;
+                      Func<TTTTTTTTTTTTTTTTTTTT> ffffffffffffffffff =
+                          (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvv;
+                  }
+              }
+              """
         );
     }
 
@@ -141,17 +142,17 @@ public sealed class LocalOneOverTypeNameIssue583Tests {
     [Fact]
     public void ALambdaOneColumnOver_Indented() {
         Agrees(
-            """
-            class C {
-                void M() {
-                    {
-                        Func<TTTTTTTTTTTTTTTTTTTTTTTTTT> fffffff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvvvvvvvvvv;
-                        Func<TTTTTTTTTTTTTTTTTTTTTTTTTT> ffffffff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvvvvvvvvvv;
-                        Func<TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT> fffffffffffff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvv;
-                    }
-                }
-            }
-            """,
+            $$"""
+              class C {
+                  void M() {
+                      {
+                          Func<TTTTTTTTTTTTTTTTTTTTTTTTTT> fffffff = ({{R('P', 40)}} p0) => vvvvvvvvvvvvvvvv;
+                          Func<TTTTTTTTTTTTTTTTTTTTTTTTTT> ffffffff = ({{R('P', 39)}} p0) => vvvvvvvvvvvvvvvv;
+                          Func<{{R('T', 36)}}> fffffffffffff = (PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP p0) => vvvvvvvv;
+                      }
+                  }
+              }
+              """,
             """
             class C {
                 void M() {

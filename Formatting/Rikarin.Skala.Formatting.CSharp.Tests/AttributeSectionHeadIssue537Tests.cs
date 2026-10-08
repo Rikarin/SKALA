@@ -1,3 +1,4 @@
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 
@@ -55,39 +56,39 @@ public sealed class AttributeSectionHeadIssue537Tests {
             """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete, Description("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")] int a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [Obsolete,
-                     Description(
-                         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                     )]
-                    int a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [Obsolete, Description("{{R('a', 110)}}")] int a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [Obsolete,
+                       Description(
+                           "{{R('a', 110)}}"
+                       )]
+                      int a
+                  ) { }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M(int b, [Obsolete, Description("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")] int a) { }
-            }
-            """,
-            """
-            class C {
-                void M(
-                    int b,
-                    [Obsolete, Description("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
-                    int a
-                ) { }
-            }
-            """
+            $$"""
+              class C {
+                  void M(int b, [Obsolete, Description("{{R('a', 80)}}")] int a) { }
+              }
+              """,
+            $$"""
+              class C {
+                  void M(
+                      int b,
+                      [Obsolete, Description("{{R('a', 80)}}")]
+                      int a
+                  ) { }
+              }
+              """
         );
         Agrees(
             """

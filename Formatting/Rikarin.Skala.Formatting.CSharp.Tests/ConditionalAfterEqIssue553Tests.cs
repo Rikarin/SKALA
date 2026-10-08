@@ -1,3 +1,5 @@
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
+
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
@@ -7,6 +9,14 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     holds the wider set.
 /// </summary>
 public sealed class ConditionalAfterEqIssue553Tests {
+    const string Long1 = "var a7aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = someParticularThingWith"
+        + "ALongName.SelfLink().SelfLink().SelectName(n => n.Name) ? otherFallbackValueName"
+        + ".SomeFallbackProperty : third;";
+
+    const string Long2 = "var va = someParticularThingWithALongName.SelfLink().SelfLink().SelectName(n => "
+        + "n.Name).WhereSomething(x => x.IsEnabledAndReady) ? otherFallbackValueName.SomeFa"
+        + "llbackProperty : third;";
+
     /// <summary>
     ///     Before the fix the first row kept the <c>=</c> and chopped the chain. The second, a short head,
     ///     is the control.
@@ -14,15 +24,15 @@ public sealed class ConditionalAfterEqIssue553Tests {
     [Fact]
     public void AConditionThatDoesNotFitBesideAWideHead_BreaksTheEquals() =>
         Oracle.Agrees(
-            """
-            class T {
-                object M() {
-                    var a7aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = someParticularThingWithALongName.SelfLink().SelfLink().SelectName(n => n.Name) ? otherFallbackValueName.SomeFallbackProperty : third;
-                    var va = someParticularThingWithALongName.SelfLink().SelfLink().SelectName(n => n.Name).WhereSomething(x => x.IsEnabledAndReady) ? otherFallbackValueName.SomeFallbackProperty : third;
-                    return null;
-                }
-            }
-            """,
+            $$"""
+              class T {
+                  object M() {
+                      {{Long1}}
+                      {{Long2}}
+                      return null;
+                  }
+              }
+              """,
             """
             class T {
                 object M() {

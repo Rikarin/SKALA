@@ -12,6 +12,18 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     second pass is asserted.
 /// </summary>
 public sealed class AttributeJoinTerminatorIssue438Tests {
+    const string Long41 = "[Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int "
+        + "betaParameterValue, int gammaVa);";
+
+    const string Long42 = "[Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int "
+        + "betaParameterValue, int gammaVal);";
+
+    const string Long43 = "[Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int "
+        + "betaParameterValue, int gammaValu);";
+
+    const string Long44 = "[Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int "
+        + "betaParameterValue, int gammaValueXYZ);";
+
     const string Long1 = "gxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     const string Long2 = "gxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     const string Long3 = "gxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -346,10 +358,10 @@ public sealed class AttributeJoinTerminatorIssue438Tests {
         Agrees(
             $$"""
               public abstract class In {
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVa);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVal);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaValu);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaValueXYZ);
+                  {{Long41}}
+                  {{Long42}}
+                  {{Long43}}
+                  {{Long44}}
                   [Obsolete] public event System.Action<{{Long40}}> EventNameXYZWVUTSR;
                   [Obsolete] public event System.Action<{{Long40}}> EventNameXYZWVUTSRQ;
                   [Obsolete] public event System.Action<{{Long40}}> EventNameXYZWVUTSRQP;
@@ -357,9 +369,9 @@ public sealed class AttributeJoinTerminatorIssue438Tests {
               """,
             $$"""
               public abstract class In {
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVa);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaVal);
-                  [Obsolete] public abstract void AbstractMethodName(int alphaParameterValue, int betaParameterValue, int gammaValu);
+                  {{Long41}}
+                  {{Long42}}
+                  {{Long43}}
 
                   [Obsolete] public abstract void AbstractMethodName(
                       int alphaParameterValue,

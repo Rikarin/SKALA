@@ -12,6 +12,9 @@ namespace Rikarin.Skala.Conformance.Tests;
 ///     purpose — the rule's whole risk is a short name that binds to something else.
 /// </remarks>
 public sealed class QualifiedReferenceArrangementTests {
+    const string Long1 = "return \"\" + _framework + _pattern + _threading + _timers + _list + _info + _nest"
+        + "ed + _commented + new Abe();";
+
     const string Firing = """
                           using System;
                           using System.Collections.Generic;
@@ -79,44 +82,44 @@ public sealed class QualifiedReferenceArrangementTests {
         Assert.Contains(expected, arranged, StringComparison.Ordinal);
     }
 
-    const string Holding = """
-                           using System;
-                           using System.Text;
-                           using System.Threading;
-                           using System.Timers;
-                           using Abe = System.Collections.Generic.List<int>;
+    const string Holding = $$"""
+                             using System;
+                             using System.Text;
+                             using System.Threading;
+                             using System.Timers;
+                             using Abe = System.Collections.Generic.List<int>;
 
-                           namespace P.Serialization {
-                               public class Local { }
-                           }
+                             namespace P.Serialization {
+                                 public class Local { }
+                             }
 
-                           namespace Q {
-                               public class Outer { public class Inner { } }
-                           }
+                             namespace Q {
+                                 public class Outer { public class Inner { } }
+                             }
 
-                           namespace P.Shadow {
-                               public class StringBuilder { }
+                             namespace P.Shadow {
+                                 public class StringBuilder { }
 
-                               /// <summary>See <see cref="System.Text.StringBuilder" />.</summary>
-                               public class Holding : System.IDisposable {
-                                   System.Text.StringBuilder _framework = new System.Text.StringBuilder();
-                                   System.Text.RegularExpressions.Regex? _pattern;
-                                   System.Threading.Timer? _threading;
-                                   System.Timers.Timer? _timers;
-                                   System.Collections.Generic.List<int>? _list;
-                                   global::System.Runtime.Serialization.SerializationInfo? _info;
-                                   Q.Outer.Inner? _nested;
-                                   System./* why */Text.Encoding? _commented;
+                                 /// <summary>See <see cref="System.Text.StringBuilder" />.</summary>
+                                 public class Holding : System.IDisposable {
+                                     System.Text.StringBuilder _framework = new System.Text.StringBuilder();
+                                     System.Text.RegularExpressions.Regex? _pattern;
+                                     System.Threading.Timer? _threading;
+                                     System.Timers.Timer? _timers;
+                                     System.Collections.Generic.List<int>? _list;
+                                     global::System.Runtime.Serialization.SerializationInfo? _info;
+                                     Q.Outer.Inner? _nested;
+                                     System./* why */Text.Encoding? _commented;
 
-                                   void System.IDisposable.Dispose() { }
+                                     void System.IDisposable.Dispose() { }
 
-                                   public string M(object Console) {
-                                       global::System.Console.WriteLine(Console);
-                                       return "" + _framework + _pattern + _threading + _timers + _list + _info + _nested + _commented + new Abe();
-                                   }
-                               }
-                           }
-                           """;
+                                     public string M(object Console) {
+                                         global::System.Console.WriteLine(Console);
+                                         {{Long1}}
+                                     }
+                                 }
+                             }
+                             """;
 
     /// <summary>
     ///     Each of these keeps its qualifier: a shadowed name (<c>StringBuilder</c>), a namespace nothing

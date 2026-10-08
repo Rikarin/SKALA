@@ -1,3 +1,4 @@
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 
@@ -9,6 +10,15 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class AlignedTypeParameterIssue452Tests {
+    const string Long1 = "public void OneParameterWiderThanTheMargin<TAnAbsolutelyEnormousSingleTypeParame"
+        + "terNameThatOverflowsTheMarginOnItsOwn>() { }";
+
+    const string Long2 = "public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXX"
+        + "XX, TThirdParameterNameXXXXXXXXXXXXX, TFourth> { }";
+
+    const string Long3 = "public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXX"
+        + "XX, TThirdParameterNameXXXXXXXXXXXXX,";
+
     /// <summary>The oracle's answer under the repository's export with <paramref name="overrides" /> on top.</summary>
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
@@ -36,67 +46,67 @@ public sealed class AlignedTypeParameterIssue452Tests {
     [Fact]
     public void ASingleTypeParameterWiderThanTheMargin_BreaksAfterTheAngle() =>
         Agrees(
-            """
-            public class SingleTypeParameter {
-                public void OneParameterWiderThanTheMargin<TAnAbsolutelyEnormousSingleTypeParameterNameThatOverflowsTheMarginOnItsOwn>() { }
-            }
+            $$"""
+              public class SingleTypeParameter {
+                  {{Long1}}
+              }
 
-            public class C {
-                public void OneParameterWiderThanTheMargin<Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>() { }
-            }
+              public class C {
+                  public void OneParameterWiderThanTheMargin<T{{R('x', 65)}}>() { }
+              }
 
-            public class C {
-                public void OneParameterWiderThanTheMargin<Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>() { }
-            }
+              public class C {
+                  public void OneParameterWiderThanTheMargin<T{{R('x', 66)}}>() { }
+              }
 
-            public class C {
-                public void OneParameterWiderThanTheMargin<Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>() { }
-            }
+              public class C {
+                  public void OneParameterWiderThanTheMargin<T{{R('x', 67)}}>() { }
+              }
 
-            public class C {
-                public void OneParameterWiderThanTheMargin<Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>() { }
-            }
+              public class C {
+                  public void OneParameterWiderThanTheMargin<T{{R('x', 69)}}>() { }
+              }
 
-            public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXXXX, TThirdParameterNameXXXXXXXXXXXXX, TFourth> { }
+              {{Long2}}
 
-            public class C {
-                public void ManyParams<TFirstParameterName,
-                    TSecondParameterName>(int a) { }
-            }
-            """,
-            """
-            public class SingleTypeParameter {
-                public void OneParameterWiderThanTheMargin<
-                    TAnAbsolutelyEnormousSingleTypeParameterNameThatOverflowsTheMarginOnItsOwn>() { }
-            }
+              public class C {
+                  public void ManyParams<TFirstParameterName,
+                      TSecondParameterName>(int a) { }
+              }
+              """,
+            $$"""
+              public class SingleTypeParameter {
+                  public void OneParameterWiderThanTheMargin<
+                      TAnAbsolutelyEnormousSingleTypeParameterNameThatOverflowsTheMarginOnItsOwn>() { }
+              }
 
-            public class C {
-                public void OneParameterWiderThanTheMargin<Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>() { }
-            }
+              public class C {
+                  public void OneParameterWiderThanTheMargin<T{{R('x', 65)}}>() { }
+              }
 
-            public class C {
-                public void OneParameterWiderThanTheMargin<
-                    Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>() { }
-            }
+              public class C {
+                  public void OneParameterWiderThanTheMargin<
+                      Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>() { }
+              }
 
-            public class C {
-                public void OneParameterWiderThanTheMargin<
-                    Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>() { }
-            }
+              public class C {
+                  public void OneParameterWiderThanTheMargin<
+                      Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>() { }
+              }
 
-            public class C {
-                public void OneParameterWiderThanTheMargin<
-                    Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>() { }
-            }
+              public class C {
+                  public void OneParameterWiderThanTheMargin<
+                      Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>() { }
+              }
 
-            public class Widest<TFirstParameterNameXXXXXXXXXX, TSecondParameterNameXXXXXXXXXXX, TThirdParameterNameXXXXXXXXXXXXX,
-                                TFourth> { }
+              {{Long3}}
+                                  TFourth> { }
 
-            public class C {
-                public void ManyParams<TFirstParameterName,
-                                       TSecondParameterName>(int a) { }
-            }
-            """,
+              public class C {
+                  public void ManyParams<TFirstParameterName,
+                                         TSecondParameterName>(int a) { }
+              }
+              """,
             ("skala_align_multiline_type_parameter_list", "true")
         );
 }

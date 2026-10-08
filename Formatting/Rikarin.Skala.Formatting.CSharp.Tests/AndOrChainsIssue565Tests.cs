@@ -12,6 +12,30 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     under the repository's configuration.
 /// </remarks>
 public sealed class AndOrChainsIssue565Tests {
+    const string Long1 = "bool M(bool alphaAlphaAlpha, bool betaBetaBetaBeta, bool gammaGammaGamma, bool d"
+        + "eltaDeltaDelta, bool epsilonEpsilon) {";
+
+    const string Long2 = "if (alphaAlphaAlpha && betaBetaBetaBeta || gammaGammaGamma && deltaDeltaDelta ||"
+        + " epsilonEpsilon && alphaAlphaAlpha) { }";
+
+    const string Long3 = "if (alphaAlphaAlpha || betaBetaBetaBeta && gammaGammaGamma || deltaDeltaDelta &&"
+        + " epsilonEpsilon || alphaAlphaAlpha) { }";
+
+    const string Long4 = "if (alphaAlphaAlpha || betaBetaBetaBeta || gammaGammaGamma || deltaDeltaDelta &&"
+        + " epsilonEpsilon && alphaAlphaAlpha) { }";
+
+    const string Long5 = "if (alphaAlphaAlpha && betaBetaBetaBeta && gammaGammaGamma && deltaDeltaDelta ||"
+        + " epsilonEpsilon || alphaAlphaAlpha) { }";
+
+    const string Long6 = "var x = alphaAlphaAlpha || betaBetaBetaBeta && gammaGammaGamma || deltaDeltaDelt"
+        + "a && epsilonEpsilon || alphaAlphaAlpha;";
+
+    const string Long7 = "return alphaAlphaAlpha && betaBetaBetaBeta || gammaGammaGamma && deltaDeltaDelta"
+        + " || epsilonEpsilon && alphaAlphaAlpha;";
+
+    const string Long8 = "|| captured is { Count: > 0 } && open.ToString() is { } parent && IsInsideCaptur"
+        + "ed(parent)) {";
+
     static string FormatWith(string source) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"), []).Options
@@ -20,18 +44,18 @@ public sealed class AndOrChainsIssue565Tests {
         return CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
     }
 
-    const string Margin = """
-                          class T {
-                              bool M(bool alphaAlphaAlpha, bool betaBetaBetaBeta, bool gammaGammaGamma, bool deltaDeltaDelta, bool epsilonEpsilon) {
-                                  if (alphaAlphaAlpha && betaBetaBetaBeta || gammaGammaGamma && deltaDeltaDelta || epsilonEpsilon && alphaAlphaAlpha) { }
-                                  if (alphaAlphaAlpha || betaBetaBetaBeta && gammaGammaGamma || deltaDeltaDelta && epsilonEpsilon || alphaAlphaAlpha) { }
-                                  if (alphaAlphaAlpha || betaBetaBetaBeta || gammaGammaGamma || deltaDeltaDelta && epsilonEpsilon && alphaAlphaAlpha) { }
-                                  if (alphaAlphaAlpha && betaBetaBetaBeta && gammaGammaGamma && deltaDeltaDelta || epsilonEpsilon || alphaAlphaAlpha) { }
-                                  var x = alphaAlphaAlpha || betaBetaBetaBeta && gammaGammaGamma || deltaDeltaDelta && epsilonEpsilon || alphaAlphaAlpha;
-                                  return alphaAlphaAlpha && betaBetaBetaBeta || gammaGammaGamma && deltaDeltaDelta || epsilonEpsilon && alphaAlphaAlpha;
-                              }
-                          }
-                          """;
+    const string Margin = $$"""
+                            class T {
+                                {{Long1}}
+                                    {{Long2}}
+                                    {{Long3}}
+                                    {{Long4}}
+                                    {{Long5}}
+                                    {{Long6}}
+                                    {{Long7}}
+                                }
+                            }
+                            """;
 
     const string MarginOracle = """
                                 class T {
@@ -198,57 +222,57 @@ public sealed class AndOrChainsIssue565Tests {
                                        }
                                        """;
 
-    const string Neighbours = """
-                              using System.Collections.Generic;
-                              class T {
-                                  HashSet<int>? captured;
-                                  void M(object node) {
-                                      foreach (var paren in new List<object>()) {
-                                          if (paren is not string { Length: > 0 } collection
-                                              || captured is { Count: > 0 } && IsInsideCaptured(paren)) {
-                                              continue;
-                                          }
-                                      }
-                                      foreach (var open in new List<object>()) {
-                                          if (!open.Equals(1)
-                                              || !open.Equals(2)
-                                              || (open.GetHashCode() & 4) == 0
-                                              || captured is { Count: > 0 } && open.ToString() is { } parent && IsInsideCaptured(parent)) {
-                                              continue;
-                                          }
-                                      }
-                                  }
-                                  bool IsInsideCaptured(object o) => true;
-                              }
-                              """;
-
-    const string NeighboursOracle = """
-                                    using System.Collections.Generic;
-
-                                    class T {
-                                        HashSet<int>? captured;
-
-                                        void M(object node) {
-                                            foreach (var paren in new List<object>()) {
-                                                if (paren is not string { Length: > 0 } collection
-                                                    || captured is { Count: > 0 } && IsInsideCaptured(paren)) {
-                                                    continue;
-                                                }
-                                            }
-
-                                            foreach (var open in new List<object>()) {
-                                                if (!open.Equals(1)
-                                                    || !open.Equals(2)
-                                                    || (open.GetHashCode() & 4) == 0
-                                                    || captured is { Count: > 0 } && open.ToString() is { } parent && IsInsideCaptured(parent)) {
-                                                    continue;
-                                                }
+    const string Neighbours = $$"""
+                                using System.Collections.Generic;
+                                class T {
+                                    HashSet<int>? captured;
+                                    void M(object node) {
+                                        foreach (var paren in new List<object>()) {
+                                            if (paren is not string { Length: > 0 } collection
+                                                || captured is { Count: > 0 } && IsInsideCaptured(paren)) {
+                                                continue;
                                             }
                                         }
-
-                                        bool IsInsideCaptured(object o) => true;
+                                        foreach (var open in new List<object>()) {
+                                            if (!open.Equals(1)
+                                                || !open.Equals(2)
+                                                || (open.GetHashCode() & 4) == 0
+                                                {{Long8}}
+                                                continue;
+                                            }
+                                        }
                                     }
-                                    """;
+                                    bool IsInsideCaptured(object o) => true;
+                                }
+                                """;
+
+    const string NeighboursOracle = $$"""
+                                      using System.Collections.Generic;
+
+                                      class T {
+                                          HashSet<int>? captured;
+
+                                          void M(object node) {
+                                              foreach (var paren in new List<object>()) {
+                                                  if (paren is not string { Length: > 0 } collection
+                                                      || captured is { Count: > 0 } && IsInsideCaptured(paren)) {
+                                                      continue;
+                                                  }
+                                              }
+
+                                              foreach (var open in new List<object>()) {
+                                                  if (!open.Equals(1)
+                                                      || !open.Equals(2)
+                                                      || (open.GetHashCode() & 4) == 0
+                                                      {{Long8}}
+                                                      continue;
+                                                  }
+                                              }
+                                          }
+
+                                          bool IsInsideCaptured(object o) => true;
+                                      }
+                                      """;
 
     public static TheoryData<string, string> Cases =>
         new() {

@@ -9,6 +9,57 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class PropertyHeadIssue540Tests {
+    const string Long1 = "public static System.Collections.Generic.IReadOnlyDictionary<string, System.Coll"
+        + "ections.Generic.IReadOnlyList<Sxx>> Property { get; set; }";
+
+    const string Long2 = "public static System.Collections.Generic.IReadOnlyDictionary<string, System.Coll"
+        + "ections.Generic.IReadOnlyList<Sxx>>";
+
+    const string Long3 = "public static System.Collections.Generic.IReadOnlyDictionary<string, System.Coll"
+        + "ections.Generic.IReadOnlyList<Sxxxx>> Property { get; set; }";
+
+    const string Long4 = "System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generi"
+        + "c.IReadOnlyList<Sxxxx>>";
+
+    const string Long5 = "public static System.Collections.Generic.IReadOnlyDictionary<string, System.Coll"
+        + "ections.Generic.IReadOnlyList<Sxxxxxxxx>> Property { get; set; }";
+
+    const string Long6 = "System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generi"
+        + "c.IReadOnlyList<Sxxxxxxxx>>";
+
+    const string Long7 = "public static System.Collections.Generic.IReadOnlyDictionary<string, System.Coll"
+        + "ections.Generic.IReadOnlyList<S>> Property => null;";
+
+    const string Long8 = "public static System.Collections.Generic.IReadOnlyDictionary<string, System.Coll"
+        + "ections.Generic.IReadOnlyList<S>>";
+
+    const string Long9 = "public static System.Collections.Generic.IReadOnlyDictionary<string, System.Coll"
+        + "ections.Generic.IReadOnlyList<Sxxxx>> Property => null;";
+
+    const string Long10 = "public static System.Collections.Generic.IReadOnlyDictionary<string, System.Coll"
+        + "ections.Generic.IReadOnlyList<Sxxxxxx>> Property { get; }";
+
+    const string Long11 = "System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generi"
+        + "c.IReadOnlyList<Sxxxxxx>>";
+
+    const string Long12 = "public static System.Collections.Generic.IReadOnlyDictionary<string, System.Coll"
+        + "ections.Generic.IReadOnlyList<Sxx>> P { get; set; }";
+
+    const string Long13 = "public static System.Collections.Generic.IReadOnlyDictionary<string, System.Coll"
+        + "ections.Generic.IReadOnlyList<Sxxxx>> P { get; set; }";
+
+    const string Long14 = "System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generi"
+        + "c.IReadOnlyList<Sxxxx>> P {";
+
+    const string Long15 = "const System.Collections.Generic.IReadOnlyDictionary<string, System.Collections."
+        + "Generic.IReadOnlyList<Sxxxx>> local = null;";
+
+    const string Long16 = "const System.Collections.Generic.IReadOnlyDictionary<string, System.Collections."
+        + "Generic.IReadOnlyList<Sxxxx>>";
+
+    const string Long17 = "const System.Collections.Generic.IReadOnlyDictionary<string, System.Collections."
+        + "Generic.IReadOnlyList<Sxxxxxxxx>> local = null;";
+
     /// <summary>The oracle's answer under the repository's export with <paramref name="overrides" /> on top.</summary>
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
@@ -37,143 +88,143 @@ public sealed class PropertyHeadIssue540Tests {
     [Fact]
     public void APropertysHead_BreaksAsAFieldsDoes() {
         Agrees(
-            """
-            class C {
-                public static System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxx>> Property { get; set; }
-            }
-            """,
-            """
-            class C {
-                public static System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxx>>
-                    Property { get; set; }
-            }
-            """
+            $$"""
+              class C {
+                  {{Long1}}
+              }
+              """,
+            $$"""
+              class C {
+                  {{Long2}}
+                      Property { get; set; }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxx>> Property { get; set; }
-            }
-            """,
-            """
-            class C {
-                public static
-                    System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxx>>
-                    Property { get; set; }
-            }
-            """
+            $$"""
+              class C {
+                  {{Long3}}
+              }
+              """,
+            $$"""
+              class C {
+                  public static
+                      {{Long4}}
+                      Property { get; set; }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxxxxxx>> Property { get; set; }
-            }
-            """,
-            """
-            class C {
-                public static
-                    System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxxxxxx>>
-                    Property { get; set; }
-            }
-            """
+            $$"""
+              class C {
+                  {{Long5}}
+              }
+              """,
+            $$"""
+              class C {
+                  public static
+                      {{Long6}}
+                      Property { get; set; }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<S>> Property => null;
-            }
-            """,
-            """
-            class C {
-                public static System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<S>>
-                    Property =>
-                    null;
-            }
-            """
+            $$"""
+              class C {
+                  {{Long7}}
+              }
+              """,
+            $$"""
+              class C {
+                  {{Long8}}
+                      Property =>
+                      null;
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxx>> Property => null;
-            }
-            """,
-            """
-            class C {
-                public static
-                    System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxx>>
-                    Property =>
-                    null;
-            }
-            """
+            $$"""
+              class C {
+                  {{Long9}}
+              }
+              """,
+            $$"""
+              class C {
+                  public static
+                      {{Long4}}
+                      Property =>
+                      null;
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxxxx>> Property { get; }
-            }
-            """,
-            """
-            class C {
-                public static
-                    System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxxxx>>
-                    Property { get; }
-            }
-            """
+            $$"""
+              class C {
+                  {{Long10}}
+              }
+              """,
+            $$"""
+              class C {
+                  public static
+                      {{Long11}}
+                      Property { get; }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxx>> P { get; set; }
-            }
-            """,
-            """
-            class C {
-                public static System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxx>>
-                    P { get; set; }
-            }
-            """
+            $$"""
+              class C {
+                  {{Long12}}
+              }
+              """,
+            $$"""
+              class C {
+                  {{Long2}}
+                      P { get; set; }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                public static System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxx>> P { get; set; }
-            }
-            """,
-            """
-            class C {
-                public static
-                    System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxx>> P {
-                    get;
-                    set;
-                }
-            }
-            """
+            $$"""
+              class C {
+                  {{Long13}}
+              }
+              """,
+            $$"""
+              class C {
+                  public static
+                      {{Long14}}
+                      get;
+                      set;
+                  }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M() {
-                    const System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxx>> local = null;
-                }
-            }
-            """,
-            """
-            class C {
-                void M() {
-                    const System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxx>>
-                        local = null;
-                }
-            }
-            """
+            $$"""
+              class C {
+                  void M() {
+                      {{Long15}}
+                  }
+              }
+              """,
+            $$"""
+              class C {
+                  void M() {
+                      {{Long16}}
+                          local = null;
+                  }
+              }
+              """
         );
         Agrees(
-            """
-            class C {
-                void M() {
-                    const System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<Sxxxxxxxx>> local = null;
-                }
-            }
-            """,
+            $$"""
+              class C {
+                  void M() {
+                      {{Long17}}
+                  }
+              }
+              """,
             """
             class C {
                 void M() {

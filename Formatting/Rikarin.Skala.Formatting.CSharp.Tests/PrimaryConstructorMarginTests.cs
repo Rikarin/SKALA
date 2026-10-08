@@ -1,3 +1,4 @@
+using static Rikarin.Skala.Formatting.CSharp.Tests.TestText;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 
@@ -9,6 +10,24 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <c>SkalaFormatOnly</c>, and each test asserts the second pass too.
 /// </summary>
 public sealed class PrimaryConstructorMarginTests {
+    const string Long3 = "class SA87(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, bet"
+        + "abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) { }";
+
+    const string Long4 = "class SA88(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, bet"
+        + "abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) { }";
+
+    const string Long5 = "class SA89(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, bet"
+        + "abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) { }";
+
+    const string Long6 = "class SA95(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, bet"
+        + "abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) { }";
+
+    const string Long1 = "class SD88(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, gam"
+        + "maValueArgument, betabbbbbbbbbbbb) { }";
+
+    const string Long2 = "class SD89(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, gam"
+        + "maValueArgument, betabbbbbbbbbbbbb) { }";
+
     /// <summary>The oracle's answer under the repository's export with <paramref name="overrides" /> on top.</summary>
     static void Agrees(string source, string expected, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
@@ -36,13 +55,13 @@ public sealed class PrimaryConstructorMarginTests {
     [Fact]
     public void ALoneBaseType_BreaksBeforeTheColonOnlyToAnEightyEightColumnContinuation() {
         Agrees(
-            """
-            class O1 {
-                class O2 {
-                    class SA87(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, betabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) { }
-                }
-            }
-            """,
+            $$"""
+              class O1 {
+                  class O2 {
+                      {{Long3}}
+                  }
+              }
+              """,
             """
             class O1 {
                 class O2 {
@@ -53,13 +72,13 @@ public sealed class PrimaryConstructorMarginTests {
             """
         );
         Agrees(
-            """
-            class O1 {
-                class O2 {
-                    class SA88(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, betabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) { }
-                }
-            }
-            """,
+            $$"""
+              class O1 {
+                  class O2 {
+                      {{Long4}}
+                  }
+              }
+              """,
             """
             class O1 {
                 class O2 {
@@ -70,13 +89,13 @@ public sealed class PrimaryConstructorMarginTests {
             """
         );
         Agrees(
-            """
-            class O1 {
-                class O2 {
-                    class SA89(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, betabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) { }
-                }
-            }
-            """,
+            $$"""
+              class O1 {
+                  class O2 {
+                      {{Long5}}
+                  }
+              }
+              """,
             """
             class O1 {
                 class O2 {
@@ -89,13 +108,13 @@ public sealed class PrimaryConstructorMarginTests {
             """
         );
         Agrees(
-            """
-            class O1 {
-                class O2 {
-                    class SA95(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, betabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) { }
-                }
-            }
-            """,
+            $$"""
+              class O1 {
+                  class O2 {
+                      {{Long6}}
+                  }
+              }
+              """,
             """
             class O1 {
                 class O2 {
@@ -108,13 +127,13 @@ public sealed class PrimaryConstructorMarginTests {
             """
         );
         Agrees(
-            """
-            class O1 {
-                class O2 {
-                    class SD88(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, gammaValueArgument, betabbbbbbbbbbbb) { }
-                }
-            }
-            """,
+            $$"""
+              class O1 {
+                  class O2 {
+                      {{Long1}}
+                  }
+              }
+              """,
             """
             class O1 {
                 class O2 {
@@ -125,13 +144,13 @@ public sealed class PrimaryConstructorMarginTests {
             """
         );
         Agrees(
-            """
-            class O1 {
-                class O2 {
-                    class SD89(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, gammaValueArgument, betabbbbbbbbbbbbb) { }
-                }
-            }
-            """,
+            $$"""
+              class O1 {
+                  class O2 {
+                      {{Long2}}
+                  }
+              }
+              """,
             """
             class O1 {
                 class O2 {
@@ -145,18 +164,18 @@ public sealed class PrimaryConstructorMarginTests {
             """
         );
         Agrees(
-            """
-            class SB88(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, betabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) { }
-            """,
+            $$"""
+              class SB88(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, beta{{R('b', 40)}}) { }
+              """,
             """
             class SB88(int alphaValue, int betaValue)
                 : BaseTypeName(alphaValueArgument, betabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) { }
             """
         );
         Agrees(
-            """
-            class SB90(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, betabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) { }
-            """,
+            $$"""
+              class SB90(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, beta{{R('b', 42)}}) { }
+              """,
             """
             class SB90(int alphaValue, int betaValue) : BaseTypeName(
                 alphaValueArgument,
@@ -165,9 +184,9 @@ public sealed class PrimaryConstructorMarginTests {
             """
         );
         Agrees(
-            """
-            class SB91(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, betabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) { }
-            """,
+            $$"""
+              class SB91(int alphaValue, int betaValue) : BaseTypeName(alphaValueArgument, beta{{R('b', 43)}}) { }
+              """,
             """
             class SB91(int alphaValue, int betaValue) : BaseTypeName(
                 alphaValueArgument,
