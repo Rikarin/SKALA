@@ -4971,7 +4971,8 @@ public sealed class BreakPlan {
                     // `=` because the whole lambda fitted on the line below (#453, SK-DIV-0050).
                     BreaksIfTooLong: !YieldsToTheLambdaArrow(value)
                     && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member))
-                    && !KeepsTheEqualsBeforeALambdaCall(node, value),
+                    && !KeepsTheEqualsBeforeALambdaCall(node, value)
+                    && !InitializerBrokenAfterItsBrace(value),
 
                     // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
                     // Every other right-hand side is measured by what is left of the line and breaks
@@ -5097,6 +5098,32 @@ public sealed class BreakPlan {
     ///     </para>
     /// </remarks>
     static bool BreakYieldsToTheBracket(ExpressionSyntax value) => value is CollectionExpressionSyntax;
+
+    /// <summary>
+    ///     Whether an <c>=</c>'s value is a creation whose initializer the author broke after its <c>{</c>:
+    ///     the <c>=</c> then never breaks, the brace keeps the break (author-layout survey, round four).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-09 behind heads of 12, 30 and 40 columns, values of 80 to 116 columns: the
+    ///     oracle keeps <c>var x = new T {</c> / members / <c>};</c> wherever the statement does not fit on one
+    ///     line, including where the same initializer written on one line moves down whole after the
+    ///     <c>=</c>; where the statement fits it joins it. Skala broke the <c>=</c> and joined the braces.
+    ///     ⚠ Only a brace on the creation's line: Newtonsoft's <c>new T</c> / <c>{</c> / members / <c>};</c>
+    ///     moves down whole after the <c>=</c> in the oracle, and reading it as the author's brace break moved
+    ///     four of its files away.
+    /// </remarks>
+    bool InitializerBrokenAfterItsBrace(ExpressionSyntax value) =>
+        value switch {
+            BaseObjectCreationExpressionSyntax { Initializer: { } initializer } => BreaksAfter(initializer),
+            ArrayCreationExpressionSyntax { Initializer: { } initializer } => BreaksAfter(initializer),
+            ImplicitArrayCreationExpressionSyntax { Initializer: var initializer } => BreaksAfter(initializer),
+            _ => false
+        };
+
+    bool BreaksAfter(InitializerExpressionSyntax initializer) =>
+        initializer.Expressions.Count > 0
+        && !BreaksBefore(initializer.OpenBraceToken)
+        && BreaksBefore(initializer.OpenBraceToken.GetNextToken());
 
     /// <summary>
     ///     The break between a cast and the collection expression it casts, which is one of two
