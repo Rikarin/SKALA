@@ -108,6 +108,9 @@ public sealed class FuzzRegressionTests {
     // skipped the comment, so #528's held-call table kept an `=` the comment had pushed past the margin;
     // pass two, with the arguments chopped, broke it.
     [InlineData(6285859913225113725UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
+    // `fuzz --seed=3`: the same call with a `// fuzz` after its `;` — the comment, not the call, pushed the line
+    // past the margin, and #528's held-call width did not count it.
+    [InlineData(7754551050098241345UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

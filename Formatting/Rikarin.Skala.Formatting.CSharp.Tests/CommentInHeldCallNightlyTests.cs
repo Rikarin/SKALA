@@ -42,4 +42,31 @@ public sealed class CommentInHeldCallNightlyTests {
         );
         Assert.Equal(first, FormatWith(first));
     }
+
+    /// <summary>
+    ///     A line comment after the <c>;</c> pushes the line past the margin, and travels with the value
+    ///     (<c>fuzz --seed=3</c>, case 7754551050098241345); the oracle breaks the <c>=</c> for both inputs.
+    /// </summary>
+    [Fact]
+    public void ATrailingComment_CountsTowardTheHeldValue() {
+        const string source = """
+                              namespace N {
+                              class C {
+                                public void M()
+                                {
+                                 var jsonObjectWithLowercase = JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithLowercase); // fuzz
+                                }
+                              }
+                              }
+                              """;
+
+        var first = FormatWith(source);
+        Assert.Contains(
+            "            var jsonObjectWithLowercase =\n"
+            + "                JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithLowercase); // fuzz\n",
+            first,
+            StringComparison.Ordinal
+        );
+        Assert.Equal(first, FormatWith(first));
+    }
 }

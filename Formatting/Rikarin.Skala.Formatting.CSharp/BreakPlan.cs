@@ -5454,7 +5454,8 @@ public sealed class BreakPlan {
                     HeldValueWidth: heldCall is null
                         ? 0
                         : FlatSourceWidth(value)
-                        + (value.GetLastToken().GetNextToken().IsKind(SyntaxKind.SemicolonToken) ? 1 : 0),
+                        + (value.GetLastToken().GetNextToken().IsKind(SyntaxKind.SemicolonToken) ? 1 : 0)
+                        + TrailingCommentWidth(value.GetLastToken().GetNextToken()),
                     HeldValueReceiver: heldReceiver,
                     HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
                         ? heldCall.ArgumentList.OpenParenToken.Span.End - heldDot.OperatorToken.SpanStart
@@ -5703,6 +5704,26 @@ public sealed class BreakPlan {
     ///     a <c>)</c> or a <c>]</c> read as nothing — so the chain the first pass chopped measures on the
     ///     second pass what it measured flat. See <see cref="GroupFacts.ValueHeadWidth" /> (#553).
     /// </summary>
+    /// <summary>
+    ///     The width a line comment after <paramref name="token" /> adds to its line, with the space before it,
+    ///     or zero.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The comment rides on the value's line wherever the value goes (Nightly <c>fuzz --seed=3</c>, case
+    ///     7754551050098241345): `… = Call&lt;T&gt;(x); // fuzz` past the margin only with the comment. Measured
+    ///     without it, #528's held-call table kept the <c>=</c> and the argument list chopped; pass two, with
+    ///     the arguments chopped, broke the <c>=</c> — the oracle's answer for both inputs.
+    /// </remarks>
+    static int TrailingCommentWidth(SyntaxToken token) {
+        foreach (var trivia in token.TrailingTrivia) {
+            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
+                return 1 + trivia.Span.Length;
+            }
+        }
+
+        return 0;
+    }
+
     static int FlatSourceWidth(SyntaxNode node) {
         var width = 0;
         var first = true;
