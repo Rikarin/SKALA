@@ -3733,7 +3733,7 @@ public sealed class BreakPlan {
                 group,
                 GroupMode.Preserve,
                 new GroupFacts(BreaksIfTooLong: true),
-                SpendsIndent: true,
+                true,
                 SpendsUnderDelimiters: true
             )
         );
