@@ -7317,8 +7317,18 @@ opens its arm scope on the parenthesis's line, so `var x = (c` / `? a` / `: b);`
 The rows with two groupings (`((c` / `? a`, `((a` / `+ b))`) and the collection rows are the grouping
 model's and stay open.
 
-- options: `skala_space_within_parentheses` (the space only).
-- ⚠ status: **fixed** but for the `(` / `[` join — the `( [` space by #485, the single-grouping ternary rows
+⚠ **Round 4 (#485): the join is fixed, and the rest re-measured on the merged tree.** Measured 2026-10-08
+with `Testing ask`: `(` / `[` / elements / `]);` comes back `( [` / elements at +1 / `]);`, as do `((` /
+`[` (`(( [`), a `return (` / `[` and an argument `(` / `[` — the oracle joins the `[` to the `(` whenever
+the collection is multi-line, and keeps an author's `(` / `[1, 2]);` when it is not. At
+`skala_keep_user_linebreaks = false` it joins that one too (`([1, 2]);`). The two-grouping rows —
+`((c` / `? a` / `: b))`, `((a` / `+ b))`, `(((a` / `+ b)))`, `if (((c` / `|| c)))` — already agree since
+#481 and #546, and are pinned beside the join. `BreakPlan.SettleParenthesisedCollections`, read off the
+finished plan; ⚠ a collection written on one line that only the margin breaks is not seen there and keeps
+an author's break after the `(` (not measured). Pinned by `ParenthesisedCollectionIssue485Tests`.
+
+- options: `skala_space_within_parentheses` (the space only); `skala_keep_user_linebreaks` (the join).
+- ⚠ status: **fixed**, the `(` / `[` join included (#485, round 4) — the `( [` space by #485, the single-grouping ternary rows
   by #546 and by #481, the grouping-in-grouping and collection levels by #481. Pinned by
   `constructs/syntax/grouping-parenthesis-one-level.cs`, `GroupingParenthesisOneLevelIssue481Tests` and
   `BrokenCollectionAfterCastOrParenIssue450485Tests`.
