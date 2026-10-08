@@ -3938,8 +3938,10 @@ public sealed class BreakPlan {
         // attribute argument: a marker there would be entered after the group it serves, and the
         // group's own point width is the head.
         var yieldsToTheBracket = BreakYieldsToTheBracket(value);
+        var owner = EqualsOwnerOf(node);
+        var callee = owner == EqualsOwner.None ? 0 : CalleeWidthOf(value);
         var head = -1;
-        if (yieldsToTheBracket
+        if ((yieldsToTheBracket || callee > 0)
             && EqualsHeadStartOf(node) is { RawKind: not 0 } headToken
             && headToken != FirstToken(node)
             && !markers.TryGetValue(headToken.SpanStart, out head)) {
@@ -3995,7 +3997,9 @@ public sealed class BreakPlan {
                     // measured from the marker; see GroupFacts.MinimumHead.
                     BreaksOnlyIfTailFits: yieldsToTheBracket,
                     Owner: head,
-                    MinimumHead: yieldsToTheBracket ? MinimumEqualsHead : 0
+                    MinimumHead: yieldsToTheBracket || callee > 0 ? MinimumEqualsHead : 0,
+                    CalleeWidth: callee,
+                    CalleeOwner: owner
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -4076,6 +4080,47 @@ public sealed class BreakPlan {
     ///     is thirteen and breaks (issue #379).
     /// </remarks>
     const int MinimumEqualsHead = 12;
+
+    /// <summary>
+    ///     For an <c>=</c> whose value is a call on a plain name with two or more arguments, the width of
+    ///     the callee — the value up to its <c>(</c> — which turns on the measured floor of
+    ///     <see cref="GroupFacts.CalleeWidth" /> (#446, SK-DIV-0211); zero for any other value.
+    /// </summary>
+    /// <summary>The measured owner of an <c>=</c> whose floor <see cref="EqualsFloor" /> knows (#446).</summary>
+    /// <remarks>
+    ///     ⚠ Each owner is its own curve, measured one column at a time: a local with a written type sits a
+    ///     column off a <c>var</c> one in places, an assignment statement a column lower, and a field at
+    ///     indent 4 is another curve altogether — every row chops up to a <c>(</c> at column 78 and the floor
+    ///     then jumps to 62 and stays near 60. Anything else keeps the ordering rule.
+    /// </remarks>
+    static EqualsOwner EqualsOwnerOf(SyntaxNode node) =>
+        node switch {
+            EqualsValueClauseSyntax {
+                Parent: VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax { Variables.Count: 1 } declaration
+                }
+            } when declaration.Parent is LocalDeclarationStatementSyntax =>
+                declaration.Type.IsVar ? EqualsOwner.VarLocal : EqualsOwner.TypedLocal,
+            EqualsValueClauseSyntax {
+                Parent: VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: FieldDeclarationSyntax }
+                }
+            } => EqualsOwner.Field,
+            AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } assignment
+                when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) => EqualsOwner.Assignment,
+            _ => EqualsOwner.None
+        };
+
+    static int CalleeWidthOf(ExpressionSyntax value) =>
+        value is InvocationExpressionSyntax {
+                Expression: IdentifierNameSyntax callee,
+                ArgumentList.Arguments.Count: >= 2
+            }
+            && !value.DescendantTrivia().Any(static trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia)
+                || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))
+            ? callee.Span.Length
+            : 0;
 
     /// <summary>
     ///     The token a collection-valued <c>=</c> measures its head from: the first token of the

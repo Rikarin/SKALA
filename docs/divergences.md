@@ -8419,9 +8419,39 @@ as well. Skala has no point before a simple member access's `.` and breaks befor
 member-access wrap is the missing construct SK-DIV-0124 also records (`A.B.C.D.MoreValue => 2u,`); it is
 a plan of its own and was not attempted here.
 
+⚠ **Round 2 of #446: the call half is wired as measured tables, and every measured cell agrees.** Done
+one column at a time this time: the `(` from 52 to 112, the argument list from the overflow up, callees
+of 1 to 40 columns, statement indents 8 to 24 in nested blocks, and four owners — a `var` local, a
+local with a written type, an assignment statement and a field at indent 4. That is about 17 000 cells,
+each row one clean threshold:
+
+- the `=` breaks exactly while the argument list is narrower than a floor `F`, and the arguments chop
+  otherwise. When the value then does not fit on the continuation line either, the oracle takes both
+  (`=` / `Call(` / the arguments chopped);
+- with a head under 12 columns (statement start through `=`) it never breaks the `=`, which is #379's
+  `MinimumHead` again;
+- `F` is the overflow itself up to a `(` near column 62, so every such row chops. It then falls about a
+  third of a column per column to 50 near column 86 and rises a fifth after. A longer callee moves it a
+  column left in places, each four columns of indent lower it by about three, an assignment sits a
+  column under a `var` local and a typed local a column over in places. A field at indent 4 is another
+  curve: every row chops up to a `(` at 78, then the floor is 60 to 65.
+
+No closed form survived, and the near-linear reading above misses a cell in two hundred, so
+`EqualsFloor` holds the tables: one-column rows for the four owners and for a callee of 20, and
+three-column offsets for the other callees and the indents, taken from the nearest measured column
+between points. `BreakPlan.CalleeWidthOf`/`EqualsOwnerOf` turn it on for a call on a plain name with
+two or more arguments, under those four owners. ⚠ The margin `11 + continuation level` is what these
+rows replace: it broke the `=` for values the oracle chops, and declined it for values ending at 119.
+`corpus/real/` gains nine lines and loses none.
+
+⚠ **Not covered, so the ordering rule still decides**: other value shapes (one argument, a member-access
+callee, a chain), other owners (a property initializer, a parameter default, a field at another indent,
+several declarators), and the binary-pattern half of this entry. Callee widths between those measured,
+and indents and callees crossed, are interpolated.
+
 - options: `skala_wrap_before_eq = false`, the exported value.
-- ⚠ status: **open**, measured; **blocked** on a model of the floor's dependence on the head (#446).
-  #444 shapes 2 and 6.
+- ⚠ status: the call half **resolved** for the measured owners, pinned by
+  `constructs/breaks/equals-before-a-call-floor.cs`; the binary-pattern half **open**. #444 shapes 2 and 6.
 
 ## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
 

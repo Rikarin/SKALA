@@ -949,6 +949,14 @@ public sealed class Document {
 ///     ⚠ The same floor for the one column where the type argument list's <c>&gt;</c> fits and only the
 ///     call's <c>(</c> does not: a different table (#490). Zero breaks the colon whatever the width.
 /// </param>
+/// <param name="CalleeWidth">
+///     ⚠ An <c>=</c> before a call with two or more arguments: the callee's width, which turns the ordering
+///     rule into a measured one (#446, SK-DIV-0211). With a head of <see cref="MinimumHead" /> or more the
+///     <c>=</c> breaks exactly when the argument list is narrower than <see cref="EqualsFloor.Of" /> at the
+///     call's <c>(</c> column and the statement's indent — the value then moving down whole, or chopped
+///     below when it does not fit there either — and with a narrower head never. Zero for any other value.
+/// </param>
+/// <param name="CalleeOwner">Which of <see cref="EqualsFloor" />'s measured owners the <c>=</c> belongs to.</param>
 /// <param name="KeywordWidth">
 ///     ⚠ The width of the keyword after this group's one point, for the point before an <c>is</c> or an
 ///     <c>as</c> (#444, SK-DIV-0210): broken exactly when the operand before the point fits on its line
@@ -977,4 +985,6 @@ public readonly record struct GroupFacts(
     bool YieldsToOverflowingTypeArguments = false,
     int ColonFloor = 0,
     int ColonFloorSlope = 0,
-    int ColonEdgeFloor = 0);
+    int ColonEdgeFloor = 0,
+    int CalleeWidth = 0,
+    EqualsOwner CalleeOwner = EqualsOwner.None);

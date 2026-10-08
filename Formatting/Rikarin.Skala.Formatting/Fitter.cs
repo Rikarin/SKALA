@@ -296,6 +296,15 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ An `=` before a call: a measured floor on the argument list, at the call's `(`. See
+                // GroupFacts.CalleeWidth and EqualsFloor (#446).
+                if (facts.CalleeWidth > 0
+                    && facts.BreaksIfTooLong
+                    && !Fits(m.Column, m.BreakWidth, m.Trailing)
+                    && (facts.CalleeOwner != EqualsOwner.Field || m.ContinuationColumn - indentWidth == 4)) {
+                    return EqualsBeforeACall(facts, m, lineStart);
+                }
+
                 // ⚠ Broken exactly when the keyword is what overflows. See GroupFacts.KeywordWidth.
                 if (facts.KeywordWidth > 0) {
                     if (m.FlatWidth >= Unbounded || tail >= Unbounded) {
@@ -338,6 +347,20 @@ public sealed class Fitter {
 
                 return Worth(facts, m, afterPointRunsToTheEnd);
         }
+    }
+
+    /// <summary>See <see cref="GroupFacts.CalleeWidth" />.</summary>
+    ResolvedMode EqualsBeforeACall(in GroupFacts facts, in Measures m, int lineStart) {
+        if (m.FlatWidth >= Unbounded || m.PointWidth >= Unbounded || !HeadIsWideEnough(facts, m, lineStart)) {
+            return ResolvedMode.Flat;
+        }
+
+        // The value starts one space past the point; its `(` follows the callee. Columns are 1-based in
+        // the measured table.
+        var paren = m.Column + m.PointWidth + 1 + facts.CalleeWidth + 1;
+        var arguments = m.FlatWidth - m.PointWidth - 1 - facts.CalleeWidth;
+        var indent = m.ContinuationColumn - indentWidth;
+        return arguments < EqualsFloor.Of(paren, indent, facts.CalleeWidth, facts.CalleeOwner) ? ResolvedMode.Broken : ResolvedMode.Flat;
     }
 
     /// <summary>What a <see cref="GroupMode.Preserve" /> group whose source was broken does with the break.</summary>
