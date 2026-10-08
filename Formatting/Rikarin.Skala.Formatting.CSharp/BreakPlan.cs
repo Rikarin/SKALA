@@ -2759,7 +2759,7 @@ public sealed class BreakPlan {
             // condition, for `and` as well as `or`, and broken at the inner link as at the outer —
             // although the whole chain fits; `a && b` / `|| c` in the same arm stays as written.
             new GroupFacts(
-                SourceBroken: pattern && options.KeepsUserBreaksBetweenItems && PatternChainIsBroken(root),
+                pattern && options.KeepsUserBreaksBetweenItems && PatternChainIsBroken(root),
                 BreaksIfTooLong: true
             ),
             // ⚠ A pattern chain spends a level of its own *and* the continuation the construct
