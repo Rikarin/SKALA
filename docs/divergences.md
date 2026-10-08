@@ -7324,8 +7324,16 @@ the collection is multi-line, and keeps an author's `(` / `[1, 2]);` when it is 
 `skala_keep_user_linebreaks = false` it joins that one too (`([1, 2]);`). The two-grouping rows —
 `((c` / `? a` / `: b))`, `((a` / `+ b))`, `(((a` / `+ b)))`, `if (((c` / `|| c)))` — already agree since
 #481 and #546, and are pinned beside the join. `BreakPlan.SettleParenthesisedCollections`, read off the
-finished plan; ⚠ a collection written on one line that only the margin breaks is not seen there and keeps
-an author's break after the `(` (not measured). Pinned by `ParenthesisedCollectionIssue485Tests`.
+finished plan. Pinned by `ParenthesisedCollectionIssue485Tests`.
+
+⚠ **Round 5 (#485): a collection that only the margin breaks.** Measured 2026-10-08: the break after
+the `(` is the bracket's *alternative*, the rule of the `=` before a collection (#375). `(` /
+`["…", …]);` whose bracket line is 120 columns keeps the break, and at 121 comes back `( [` / elements
+/ `]);` — under `=`, `return`, an argument and `((`; a flat `(["…", …]);` too wide for its line moves
+the bracket down whenever it fits there (`(` / `[…]);`) and joins `( [` when it does not; at
+`skala_keep_user_linebreaks = false` the same, with the author's break no longer a reason. Skala kept
+the author's break and never added one. A `GroupFacts.BreaksOnlyIfTailFits` group at the `[`, in
+`SettleParenthesisedCollections`; pinned by the same tests.
 
 - options: `skala_space_within_parentheses` (the space only); `skala_keep_user_linebreaks` (the join).
 - ⚠ status: **fixed**, the `(` / `[` join included (#485, round 4) — the `( [` space by #485, the single-grouping ternary rows
