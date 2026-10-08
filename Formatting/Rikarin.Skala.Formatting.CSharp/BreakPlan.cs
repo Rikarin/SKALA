@@ -5332,7 +5332,7 @@ public sealed class BreakPlan {
             OpenAt(
                 arm,
                 arm.Pattern.SpanStart,
-                new(NewGroup(), GroupMode.Preserve, new(SourceBroken: true, Continues: true), true, false)
+                new(NewGroup(), GroupMode.Preserve, new(true, Continues: true), true, false)
             );
         }
 
