@@ -42,7 +42,12 @@ public static class CacheKey {
         //
         // ⚠ v3: the path term is now normalised (see `NormalisePath`). Every key on a Windows or
         // macOS machine moves, which is a cold run once and then correct.
-        hash.Append(Encoding.UTF8.GetBytes("cache/v3"));
+        //
+        // ⚠ v4 (#514): the compilation term now carries the language version as specified (from
+        // which the effective one follows), the parse options' symbols, kind and features, the
+        // compilation options and each reference's MVID. Every v3 entry was written under a key
+        // that could not see those, so none of them is trusted again.
+        hash.Append(Encoding.UTF8.GetBytes("cache/v4"));
         return Convert.ToHexStringLower(hash.GetCurrentHash());
     }
 
@@ -89,7 +94,26 @@ public static class CacheKey {
             : separated;
     }
 
-    /// <summary>Reference MVIDs, parse options and preprocessor symbols — the compilation's identity.</summary>
+    /// <summary>
+    ///     Parse options, compilation options and reference identities — everything about the
+    ///     compilation, other than the file's own text, that a per-file rule's answer can read.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #514. Until then this hashed the target framework, the loader's preprocessor symbols, the
+    ///     first tree's <c>Language</c> and <c>DocumentationMode</c>, and each reference's display name —
+    ///     and <em>not</em> the language version. Measured on the Release CLI over a one-file
+    ///     <c>net10.0</c> project whose <c>Q.cs</c> never changed: <c>LangVersion</c> 14.0 then 9.0, both
+    ///     <c>--load=binlog</c>, reported <c>SK1133</c> (floor C# 14) on both runs, and 0 with
+    ///     <c>--no-cache</c>. Every rule behind <c>SkalaRule.MeetsLanguageVersion</c> — Syntax-scoped
+    ///     ones such as <c>SK1005</c> included, because the gate reads the compilation and not the
+    ///     tree — could hand <c>skala fix</c> a rewrite the project cannot compile. The key is one
+    ///     string for every scope, so whatever a gate reads reaches it whichever scope the rule declares.
+    ///     <para>
+    ///         ⚠ <b>Enumerated, not reflected.</b> Each term below is one an analyzer can observe, and
+    ///         <c>CacheKeyTermTests</c> has one row per term that turns red when the term is dropped.
+    ///         What is deliberately left out is listed in <see cref="AppendCompilationOptions" />.
+    ///     </para>
+    /// </remarks>
     public static string CompilationFingerprint(CompilationUnit unit) {
         var builder = new StringBuilder();
         builder.Append(unit.TargetFramework).Append('|');
@@ -98,15 +122,7 @@ public static class CacheKey {
         }
 
         builder.Append('|');
-        var parseOptions = unit.Compilation.SyntaxTrees.FirstOrDefault()?.Options;
-        if (parseOptions is not null) {
-            builder.Append(parseOptions.Language)
-                .Append(':')
-                .Append(parseOptions.DocumentationMode)
-                .Append('|');
-        }
-
-        AppendReferences(builder, unit.Compilation);
+        AppendCompilation(builder, unit.Compilation);
 
         // ⚠ #343: the *other* target frameworks belong in the key, because since #343 a finding is a
         // function of them too. `SK1023` is withheld when any moniker of the project lacks
@@ -115,10 +131,15 @@ public static class CacheKey {
         // that serves the old finding, with its build-breaking fix, indefinitely. Sorted, because the
         // order the loader hands them back in is not part of the answer; and appended only when there
         // are siblings, so no single-target key moves.
+        //
+        // ⚠ #514: the sibling's whole identity, not only its references. `SK1023`'s availability
+        // predicate asks `MeetsLanguageVersion(sibling, "13.0")`, and a `netstandard2.1` leg's default
+        // language version is 8.0 — so a sibling's `LangVersion` moving decides a `net10.0` finding
+        // exactly as its reference set does.
         var siblings = new List<string>();
         foreach (var sibling in unit.Siblings) {
             var identity = new StringBuilder();
-            AppendReferences(identity, sibling);
+            AppendCompilation(identity, sibling);
             siblings.Add(identity.ToString());
         }
 
@@ -130,23 +151,186 @@ public static class CacheKey {
         return Convert.ToHexStringLower(XxHash128.Hash(Encoding.UTF8.GetBytes(builder.ToString())));
     }
 
+    static void AppendCompilation(StringBuilder builder, Compilation compilation) {
+        AppendParseOptions(builder, compilation);
+        AppendCompilationOptions(builder, compilation);
+        AppendReferences(builder, compilation);
+    }
+
+    /// <summary>
+    ///     Every distinct set of parse options the compilation's trees were parsed with.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The language version as specified, not the effective one.</b> Roslyn maps
+    ///     <c>latest</c> to a concrete version before the compilation exists, so <c>14.0</c> and
+    ///     <c>latest</c> have equal <c>LanguageVersion</c> — and <c>SK1133</c> tells them apart on
+    ///     purpose (its rewrite is safe only at a <em>written</em> C# 14, because <c>latest</c> moves
+    ///     with the SDK). Hashing the effective version would make the pair one key.
+    ///     <para>
+    ///         ⚠ Every tree, not the first: a rule may read its own tree's options (<c>SK1133</c> does),
+    ///         and while Roslyn refuses two language versions in one compilation it accepts two symbol
+    ///         sets, so the first tree does not speak for the rest. Distinct and sorted, so the cost is one
+    ///         string per tree and the key does not depend on tree order.
+    ///     </para>
+    /// </remarks>
+    static void AppendParseOptions(StringBuilder builder, Compilation compilation) {
+        var distinct = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var tree in compilation.SyntaxTrees) {
+            distinct.Add(Describe(tree.Options));
+        }
+
+        foreach (var description in distinct) {
+            builder.Append(description).Append('|');
+        }
+    }
+
+    internal static string Describe(ParseOptions options) {
+        var builder = new StringBuilder();
+        builder.Append(options.Language)
+            .Append(':')
+            .Append(options.Kind)
+            .Append(':')
+            .Append(options.DocumentationMode);
+
+        // ⚠ The specified version only. The effective one is `MapSpecifiedToEffectiveVersion` of it under
+        // the compiler Skala ships, which the rule set's MVIDs and the Skala version already pin — so
+        // hashing both added a term no test could redden: the sabotage that dropped the effective
+        // version left every row of `CacheKeyTermTests` green, `9.0` against `14.0` included.
+        if (options is Microsoft.CodeAnalysis.CSharp.CSharpParseOptions csharp) {
+            builder.Append(":lang=").Append(csharp.SpecifiedLanguageVersion);
+        }
+
+        builder.Append(":define=");
+        foreach (var symbol in options.PreprocessorSymbolNames.Order(StringComparer.Ordinal)) {
+            builder.Append(symbol).Append(',');
+        }
+
+        // `/features:` — a feature flag can turn on syntax the language version alone does not, so a
+        // tree parsed with one is a different tree.
+        builder.Append(":features=");
+        foreach (var (name, value) in options.Features.OrderBy(static pair => pair.Key, StringComparer.Ordinal)) {
+            builder.Append(name).Append('=').Append(value).Append(',');
+        }
+
+        return builder.ToString();
+    }
+
+    /// <summary>The compilation options a per-file analyzer, or the binder under it, can observe.</summary>
+    /// <remarks>
+    ///     ⚠ #514, beside the language version. <c>&lt;Nullable&gt;</c> decides
+    ///     <c>GetNullableContext</c>, which <c>SK1094</c>, <c>SK2172</c> and every rule behind
+    ///     <c>NullabilityFacts</c> read; <c>&lt;NoWarn&gt;SK1005&lt;/NoWarn&gt;</c> and
+    ///     <c>&lt;WarningsAsErrors&gt;</c> reach the driver as <c>SpecificDiagnosticOptions</c> and decide
+    ///     whether and at what severity a finding is reported at all; the assembly name decides which
+    ///     <c>InternalsVisibleTo</c> applies.
+    ///     <para>
+    ///         Deliberately left out, because nothing a rule reads depends on them: <c>ConcurrentBuild</c>
+    ///         (the binlog loader forces it on), <c>Deterministic</c>, the signing terms
+    ///         (<c>CryptoKeyFile</c>, <c>CryptoKeyContainer</c>, <c>DelaySign</c>, <c>PublicSign</c>), the
+    ///         resolvers and <c>StrongNameProvider</c> (objects, not values — the references they resolved
+    ///         are keyed below), and the <c>SyntaxTreeOptionsProvider</c> (built from the
+    ///         <c>.editorconfig</c> chain, which is the key's own term).
+    ///     </para>
+    /// </remarks>
+    static void AppendCompilationOptions(StringBuilder builder, Compilation compilation) {
+        var options = compilation.Options;
+        builder.Append("asm=")
+            .Append(compilation.AssemblyName)
+            .Append(":out=")
+            .Append(options.OutputKind)
+            .Append(":module=")
+            .Append(options.ModuleName)
+            .Append(":main=")
+            .Append(options.MainTypeName)
+            .Append(":script=")
+            .Append(options.ScriptClassName)
+            .Append(":opt=")
+            .Append(options.OptimizationLevel)
+            .Append(":checked=")
+            .Append(options.CheckOverflow)
+            .Append(":platform=")
+            .Append(options.Platform)
+            .Append(":import=")
+            .Append(options.MetadataImportOptions)
+            .Append(":nullable=")
+            .Append(options.NullableContextOptions)
+            .Append(":warn=")
+            .Append(options.WarningLevel)
+            .Append(':')
+            .Append(options.GeneralDiagnosticOption)
+            .Append(":suppressed=")
+            .Append(options.ReportSuppressedDiagnostics);
+
+        if (options is Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions csharp) {
+            builder.Append(":unsafe=").Append(csharp.AllowUnsafe).Append(":usings=");
+            foreach (var imported in csharp.Usings) {
+                builder.Append(imported).Append(',');
+            }
+        }
+
+        builder.Append(":diagnostics=");
+        foreach (var (id, severity) in options.SpecificDiagnosticOptions.OrderBy(
+                     static pair => pair.Key,
+                     StringComparer.Ordinal
+                 )) {
+            builder.Append(id).Append('=').Append(severity).Append(',');
+        }
+
+        builder.Append('|');
+    }
+
     /// <summary>
     ///     ⚠ MVIDs, not paths: a rebuilt dependency at the same path is a different program, and a
     ///     cache that cannot see that is a cache that serves findings about the previous build.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ #514: the summary above was the intent and not the code. This hashed
+    ///     <c>assembly.Identity.GetDisplayName()</c> — name, version, culture and public key token —
+    ///     which does not move when a project reference is rebuilt with a different API at the same
+    ///     <c>1.0.0.0</c>, the default for every project that never sets a version. A Semantic rule's
+    ///     answer about a call into that reference then came from the previous build. The module
+    ///     version id is what changes when the bits change (and, under deterministic builds, only then).
+    ///     A reference with no metadata — a <see cref="CompilationReference" /> to another in-memory
+    ///     compilation — is keyed on that compilation's own identity, recursively.
+    /// </remarks>
     static void AppendReferences(StringBuilder builder, Compilation compilation) {
-        var mvids = new List<string>();
+        var identities = new List<string>();
         foreach (var reference in compilation.References) {
-            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assembly) {
-                mvids.Add(assembly.Identity.GetDisplayName());
+            var symbol = compilation.GetAssemblyOrModuleSymbol(reference);
+            if (symbol is IAssemblySymbol assembly) {
+                identities.Add(assembly.Identity.GetDisplayName() + "#" + VersionIdOf(assembly, reference));
             } else if (reference is PortableExecutableReference { FilePath: { } path }) {
-                mvids.Add(path);
+                identities.Add(path);
             }
         }
 
-        mvids.Sort(StringComparer.Ordinal);
-        foreach (var mvid in mvids) {
-            builder.Append(mvid).Append(';');
+        identities.Sort(StringComparer.Ordinal);
+        foreach (var identity in identities) {
+            builder.Append(identity).Append(';');
+        }
+    }
+
+    static string VersionIdOf(IAssemblySymbol assembly, MetadataReference reference) {
+        if (reference is CompilationReference { Compilation: var referenced }) {
+            var nested = new StringBuilder();
+            foreach (var tree in referenced.SyntaxTrees) {
+                nested.Append(tree.FilePath)
+                    .Append('@')
+                    .Append(Convert.ToHexStringLower(tree.GetText().GetContentHash().AsSpan()))
+                    .Append(';');
+            }
+
+            AppendCompilation(nested, referenced);
+            return Convert.ToHexStringLower(XxHash128.Hash(Encoding.UTF8.GetBytes(nested.ToString())));
+        }
+
+        try {
+            var modules = assembly.GetMetadata()?.GetModules();
+            return modules is { Length: > 0 } ? modules.Value[0].GetModuleVersionId().ToString("N") : string.Empty;
+        } catch (BadImageFormatException) {
+            // An image the compiler could bind but whose MVID cannot be read: keyed on its identity
+            // alone, which is what every reference was keyed on before #514.
+            return string.Empty;
         }
     }
 

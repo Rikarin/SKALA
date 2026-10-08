@@ -350,8 +350,9 @@ Points of substance:
   -p:TargetFramework=…`), and roughly forty `SK1xxx` rules gate on exactly that — so the
   language-version axis was both the larger half of the bug and *already declared* as
   `rules.json`'s `languageVersion`. `MultiTargetLanguageFloor` therefore settles it centrally, after
-  the per-unit loop and so after the incremental cache (the sibling set is not in the cache
-  fingerprint, so a guard applied inside an analyzer can be baked into a cached result). **A rule
+  the per-unit loop and so after the incremental cache (when this was written the siblings' language versions were not in the
+  cache fingerprint, so a guard applied inside an analyzer could be baked into a cached result; #514
+  added them). **A rule
   added tomorrow with a `languageVersion` is guarded the day it lands**, which no convention policed
   by a test achieves. `FrameworkAvailability` keeps the cases a rule alone can state — `SK1023`'s
   `Lock` shape checks, `SK1060`'s *accessibility* test against `System.Memory`'s internal
@@ -412,6 +413,29 @@ xxHash128(
 
 Stored in `.skala/cache/` as a single append-only file per compilation plus an index, mmap-read on
 startup. Invalidation is by key mismatch only — no timestamps, no watchers, no partial states.
+
+⚠ **The compilation term above was the design and not the code until #514.** `CompilationFingerprint`
+hashed the target framework, the loader's symbols, the first tree's language and documentation mode,
+and each reference's *display name* — no language version, no compilation option, no MVID. Measured
+on the Release CLI over a one-file `net10.0` project with a byte-identical `Q.cs`, `--load=binlog`:
+`LangVersion` 14.0 → 9.0 kept reporting `SK1133` (floor C# 14) from the cache, and so did `latest`
+(which `SK1133` deliberately refuses); `--no-cache` said 0. Every `MeetsLanguageVersion` rule —
+Syntax-scoped ones too, since the gate reads the compilation — was exposed, as was `<NoWarn>` and
+`<Nullable>`. The term now carries, per distinct tree options: the **specified** language version
+(the effective one follows from it under the compiler Skala ships, and a sabotage dropping it reddened
+nothing), kind, documentation mode, symbols and `/features`; the compilation options a binder or
+driver reads (assembly name, output kind, module/main/script names, optimisation, overflow, platform,
+import options, nullable, warning level, general and specific diagnostic options, suppressed-report,
+unsafe, usings); each reference's identity **and MVID** (a `CompilationReference` by its sources and
+options); and the same for every sibling moniker. Left out on purpose: `ConcurrentBuild`,
+`Deterministic`, signing, resolvers, and the tree-options provider (the `.editorconfig` term). Key
+version `cache/v4`. `CacheKeyTermTests` has one row per term, each sabotaged red alone, and
+`CacheProjectChangeTests` is the binlog repro end to end.
+
+⚠ **Still open (#516): a `Semantic` rule's answer depends on other files.** The per-file key carries
+the file's own text, and a declaration change in `B.cs` moves nothing for `A.cs` — measured: `SK1133`
+in an unchanged `A.cs` stays reported from the cache after `B.cs` retypes the field it calls
+`ToArray()` on, on master and with #514's key alike. This is a scope question, not a missing term.
 
 ⚠ **The correctness condition is that a rule's output for a file depends only on the key's inputs.**
 That is false for whole-compilation rules: a "this public member is never used" rule reads every
