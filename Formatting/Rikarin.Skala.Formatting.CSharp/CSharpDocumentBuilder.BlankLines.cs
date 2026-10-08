@@ -68,14 +68,22 @@ public sealed partial class CSharpDocumentBuilder {
             return sourceBlanks;
         }
 
-        var declaration = nextToken.IsKind(SyntaxKind.None) || InDeclarationContext(nextToken);
+        // ⚠ Above an own-line comment the context is the code under the comment run, not "no token" (#500).
+        // A comment piece arrives as `None`, and `None` used to answer "declaration" — so the blank above a
+        // comment in a method body was capped by `keep_blank_lines_in_declarations` and not by
+        // `_in_code`, and one inside an argument list was capped by either rather than removed.
+        var beforeComment = nextToken.IsKind(SyntaxKind.None) && OwnLineCommentAt(nextPieceIndex);
+        var subject = beforeComment ? TokenUnderComments(nextPieceIndex) : nextToken;
+        var declaration = subject.IsKind(SyntaxKind.None) || InDeclarationContext(subject);
 
         // 1. Caps. The author's runs are truncated, never extended.
         var cap = Math.Max(0, declaration ? options.KeepBlankLinesInDeclarations : options.KeepBlankLinesInCode);
 
         // 1½. ⚠ Neither keep key reaches inside a construct: the oracle keeps an author's blank line
-        // only in front of something that stands on a line of its own (#426, SK-DIV-0196).
-        if (!BlankLineMayStandBefore(previous, nextToken)) {
+        // only in front of something that stands on a line of its own (#426, SK-DIV-0196). Above a comment
+        // run that is asked of the code under it, with a braced list's items counted as standing alone
+        // whatever the comment is.
+        if (!BlankLineMayStandBefore(previous, subject, beforeComment)) {
             cap = 0;
         }
 
@@ -107,6 +115,20 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         var blanks = Math.Min(sourceBlanks, cap);
+
+        // 1¾. ⚠ An own-line `//` comment keeps one blank line of the author's above it whatever the cap is
+        // (#500): inside an argument, parameter, type-argument or attribute list, a tuple, a chain, after
+        // `=` or `return`, before a statement's `;` — where the cap above is zero — and at
+        // `keep_blank_lines_in_code = 0` or `_in_declarations = 0` between statements, members, accessors
+        // and initializer items alike. Never more than one, and never for a `/* */`, which keeps only what
+        // the cap allows. Not straight after an opening `(`, `[` or `<`, where the oracle keeps none; a
+        // `{` is the near-brace removal's below, which outranks this as it outranks a requirement.
+        if (beforeComment
+            && sourceBlanks > 0
+            && pieces[nextPieceIndex].Kind == PieceKind.LineComment
+            && !AfterAnOpeningBracket(previous)) {
+            blanks = Math.Max(blanks, 1);
+        }
 
         // 2. Requirements. A minimum inserted where absent.
         blanks = Math.Max(blanks, RequiredBlankLines(previous, nextPieceIndex, nextToken));
@@ -512,9 +534,88 @@ public sealed partial class CSharpDocumentBuilder {
         return required;
     }
 
-    /// <summary>Whether the gap opens straight after a <c>{</c>.</summary>
-    bool AfterAnOpenBrace(Piece previous) =>
-        previous.Kind == PieceKind.Token && tokens[previous.TokenIndex].IsKind(SyntaxKind.OpenBraceToken);
+    /// <summary>Whether the piece at <paramref name="index" /> is a plain comment that starts a line.</summary>
+    bool OwnLineCommentAt(int index) =>
+        index >= 0
+        && index < pieces.Length
+        && pieces[index].Kind is PieceKind.LineComment or PieceKind.BlockComment
+        && pieces[index].StartsLine;
+
+    /// <summary>The first token after the comments starting at <paramref name="index" />, or <c>None</c>.</summary>
+    SyntaxToken TokenUnderComments(int index) {
+        for (var i = index; i < pieces.Length; i++) {
+            if (pieces[i].Kind == PieceKind.Token) {
+                return tokens[pieces[i].TokenIndex];
+            }
+
+            if (!pieces[i].IsComment) {
+                break;
+            }
+        }
+
+        return default;
+    }
+
+    /// <summary>
+    ///     Whether the gap opens straight after a construct's opening <c>(</c>, <c>[</c> or <c>&lt;</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Measured for #500 on an argument list, a parameter list, an element access and a type-argument
+    ///     list, at both near-brace values: no blank line survives there above a <c>//</c> either. A
+    ///     collection expression's <c>[</c> is a brace, and <see cref="RemovesNearBrace" />'s.
+    /// </remarks>
+    bool AfterAnOpeningBracket(Piece previous) {
+        if (previous.Kind != PieceKind.Token) {
+            return false;
+        }
+
+        var token = tokens[previous.TokenIndex];
+        return token.Kind() switch {
+            SyntaxKind.OpenParenToken => true,
+            SyntaxKind.OpenBracketToken => token.Parent is not CollectionExpressionSyntax,
+            SyntaxKind.LessThanToken => token.Parent is TypeArgumentListSyntax or TypeParameterListSyntax,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    ///     Whether the gap opens straight after a <c>{</c>, or after comments that share the <c>{</c>'s line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The comments are looked through (#499): <c>namespace N2 { /* b3 */ class X { } }</c> comes back
+    ///     <c>namespace N2 { /* b3 */</c> / <c>class X { }</c> with nothing between, where Skala paid
+    ///     <c>blank_lines_around_single_line_type</c> for the class against the comment. Measured with
+    ///     <c>jb cleanupcode</c> 2025.2.6 for <c>//</c> and <c>/* */</c>, after a namespace's and a type's
+    ///     brace, before a one-line and a multi-line member, at the export and at
+    ///     <c>blank_lines_around_single_line_type = 2</c>. <c>blank_lines_inside_namespace</c> and
+    ///     <c>_inside_type</c> are not paid there either, which <see cref="InsideDeclarationBraces" /> already
+    ///     gets right by asking only of a <c>{</c> token; an author's blank under the comment is kept at
+    ///     both <c>remove_blank_lines_near_braces_*</c> values, which <see cref="RemovesNearBrace" /> already
+    ///     gets right the same way.
+    /// </remarks>
+    bool AfterAnOpenBrace(Piece previous) {
+        if (previous.Kind == PieceKind.Token) {
+            return tokens[previous.TokenIndex].IsKind(SyntaxKind.OpenBraceToken);
+        }
+
+        if (!previous.IsComment || previous.Kind == PieceKind.DocCommentLine) {
+            return false;
+        }
+
+        for (var i = lastPiece; i >= 0; i--) {
+            if (pieces[i].IsComment) {
+                if (pieces[i].StartsLine) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            return pieces[i].Kind == PieceKind.Token && tokens[pieces[i].TokenIndex].IsKind(SyntaxKind.OpenBraceToken);
+        }
+
+        return false;
+    }
 
     /// <summary>
     ///     Whether either side of the gap is a conditional directive, a <c>#pragma</c> or disabled text.
@@ -1105,7 +1206,12 @@ public sealed partial class CSharpDocumentBuilder {
                     : options.BlankLinesAroundProperty,
             IndexerDeclarationSyntax or EventDeclarationSyntax =>
                 single ? options.BlankLinesAroundSingleLineProperty : options.BlankLinesAroundProperty,
-            FieldDeclarationSyntax or EventFieldDeclarationSyntax =>
+            // ⚠ An enum member is a field to both keys (#497). Measured with `jb cleanupcode` 2025.2.6: at
+            // `blank_lines_around_single_line_field = 2` the oracle writes two blank lines between every pair
+            // of one-line members, and at the export's `blank_lines_around_field = 1` one above a member that
+            // a comment, a `///` run or an attribute line makes multi-line — the "own-line comment between
+            // two enum members" the issue saw, and SK-DIV-0172's glued-comment rule along with it.
+            FieldDeclarationSyntax or EventFieldDeclarationSyntax or EnumMemberDeclarationSyntax =>
                 single ? options.BlankLinesAroundSingleLineField : options.BlankLinesAroundField,
             AccessorDeclarationSyntax =>
                 single ? options.BlankLinesAroundSingleLineAccessor : options.BlankLinesAroundAccessor,
@@ -1439,8 +1545,16 @@ public sealed partial class CSharpDocumentBuilder {
         return found;
     }
 
+    /// <remarks>
+    ///     ⚠ Not a top-level statement's <see cref="GlobalStatementSyntax" /> wrapper (#498). It is a
+    ///     <see cref="MemberDeclarationSyntax" />, and as the outermost node starting at a top-level local
+    ///     function it hid the function from <see cref="RequirementFor" />, which states nothing for it — so
+    ///     <c>blank_lines_around_local_method</c> and its single-line twin reached a local function in a body
+    ///     and never one at the file's level. Measured with <c>jb cleanupcode</c> 2025.2.6: the oracle pays
+    ///     both keys at the top level exactly as in a body, at the export and with the two flipped.
+    /// </remarks>
     static bool IsBlankLineSubject(SyntaxNode node) =>
-        node is MemberDeclarationSyntax
+        node is MemberDeclarationSyntax and not GlobalStatementSyntax
             or AccessorDeclarationSyntax
             or UsingDirectiveSyntax
             or ExternAliasDirectiveSyntax
@@ -1486,7 +1600,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///         </item>
     ///     </list>
     /// </remarks>
-    static bool BlankLineMayStandBefore(Piece previous, SyntaxToken token) {
+    static bool BlankLineMayStandBefore(Piece previous, SyntaxToken token, bool beforeComment = false) {
         if (token.IsKind(SyntaxKind.None) || token.IsKind(SyntaxKind.EndOfFileToken)) {
             return true;
         }
@@ -1498,7 +1612,10 @@ public sealed partial class CSharpDocumentBuilder {
             return true;
         }
 
-        var afterLineComment = previous.Kind == PieceKind.LineComment;
+        // ⚠ Above a comment run whose code is a braced list's item or closer, a `/* */` counts as a `//`
+        // does (#500): measured, three blank lines above either kind come back as the cap's two in an array,
+        // object, anonymous, `with` and property-pattern list, and as zero in an argument list.
+        var afterLineComment = previous.Kind == PieceKind.LineComment || beforeComment;
         if (afterLineComment && token.IsKind(SyntaxKind.CloseBraceToken) && IsBracedList(token.Parent)) {
             return true;
         }
