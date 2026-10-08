@@ -93,7 +93,14 @@ public enum GroupFlags {
     ///     preserves Rider's own output in both cases: a chopped pattern before a short body is not
     ///     re-joined, and a kept arrow break before a wide one is kept.
     /// </remarks>
-    ArrowBodyRunsToTheEnd = 4
+    ArrowBodyRunsToTheEnd = 4,
+
+    /// <summary>
+    ///     The group's first break point renders as a space when flat. Read with
+    ///     <see cref="GroupFacts.TailEndsAt" />: the line that point stays on counts the space, the
+    ///     segment after it does not.
+    /// </summary>
+    FirstPointFlatSpace = 8
 }
 
 /// <summary>What a <see cref="DocKind.Line" /> node carries in <see cref="DocNode.Flags" />.</summary>
@@ -663,6 +670,13 @@ public sealed class Document {
         Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.AfterPointRunsToTheEnd) != 0;
 
     /// <summary>
+    ///     The width the group's first break point renders as when flat — see
+    ///     <see cref="GroupFlags.FirstPointFlatSpace" />.
+    /// </summary>
+    public int FirstPointFlatWidthOf(int node) =>
+        Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.FirstPointFlatSpace) != 0 ? 1 : 0;
+
+    /// <summary>
     ///     Whether the node is an arrow group whose body cannot break, so that the rest-of-line measure
     ///     of what precedes it runs through it — see <see cref="GroupFlags.ArrowBodyRunsToTheEnd" />.
     /// </summary>
@@ -910,6 +924,23 @@ public sealed class Document {
 ///     and the operand with a space and the keyword does not. The operand is the group's flat width less
 ///     the segment after its point and the point's own space. Zero for any other group.
 /// </param>
+/// <param name="TailEndsAt">
+///     ⚠ For a <see cref="PrefersOuterBreak" /> group: the group whose first point ends this group's
+///     segment, or −1. A primary constructor's base list with interfaces after its base type
+///     (#501, SK-DIV-0198): once the whole list does not fit on the continuation line, the oracle asks
+///     its two questions about <c>: B(…),</c> alone — through the list's first comma, reading the base
+///     type's argument list as no place to break. The line through that comma fits where the
+///     declaration reached: the list stays and the interfaces chop. Otherwise it fits on the
+///     continuation line, by the fitted margin: the break goes before the <c>:</c>. Otherwise the
+///     ordinary second question decides, and <c>: B(</c> stays with its arguments chopped.
+/// </param>
+/// <param name="SkipsOuterTail">
+///     ⚠ For a <see cref="PrefersOuterBreak" /> group: the first question — does everything after the
+///     point fit on the continuation line — is not asked. A primary constructor's base list at
+///     <c>skala_wrap_before_extends_colon = true</c> (#502): the oracle keeps <c>: B(</c> and chops the
+///     arguments of a list that would fit whole below, and breaks before the <c>:</c> only when the
+///     head up to <c>B(</c> does not fit, or by <see cref="TailEndsAt" />'s question.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -928,4 +959,6 @@ public readonly record struct GroupFacts(
     bool FlatIfOwnerBroke = false,
     bool Continues = false,
     int Terminator = 0,
-    int KeywordWidth = 0);
+    int KeywordWidth = 0,
+    int TailEndsAt = -1,
+    bool SkipsOuterTail = false);

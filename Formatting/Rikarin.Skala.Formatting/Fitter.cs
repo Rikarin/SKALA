@@ -131,7 +131,8 @@ public sealed class Fitter {
             ),
             document.AfterPointRunsToTheEnd(node),
             document.SegmentOf(node),
-            lineStart
+            lineStart,
+            document.FirstPointFlatWidthOf(node)
         );
         modes[id] = mode;
         resolved[id] = true;
@@ -222,13 +223,15 @@ public sealed class Fitter {
     ///     to the bracket.
     /// </param>
     /// <param name="lineStart">The column the current line's first character landed on; see <see cref="Enter" />.</param>
+    /// <param name="pointSpace">What the group's first point renders as when flat; see <see cref="GroupFacts.TailEndsAt" />.</param>
     ResolvedMode Decide(
         GroupMode mode,
         in GroupFacts facts,
         in Measures m,
         bool afterPointRunsToTheEnd,
         int tail,
-        int lineStart
+        int lineStart,
+        int pointSpace
     ) {
         var owner = facts.Owner;
         switch (mode) {
@@ -241,7 +244,7 @@ public sealed class Fitter {
             case GroupMode.Auto:
                 return Fits(m.Column, m.BreakWidth, m.Trailing)
                     ? ResolvedMode.Flat
-                    : Worth(facts, m, afterPointRunsToTheEnd);
+                    : Worth(facts, m, afterPointRunsToTheEnd, tail, pointSpace);
 
             case GroupMode.Owner:
                 if (owner < 0 || !resolved[owner]) {
@@ -334,7 +337,7 @@ public sealed class Fitter {
                         : ResolvedMode.Flat;
                 }
 
-                return Worth(facts, m, afterPointRunsToTheEnd);
+                return Worth(facts, m, afterPointRunsToTheEnd, tail, pointSpace);
         }
     }
 
@@ -438,12 +441,26 @@ public sealed class Fitter {
     ///         answer ReSharper gives on the shapes that occur, in one traversal and with no backtracking.
     ///     </para>
     /// </remarks>
-    ResolvedMode Worth(in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd) {
+    ResolvedMode Worth(in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd, int segment, int pointSpace) {
         if (facts.PrefersOuterBreak) {
             // What lands on the continuation line if this group breaks and nothing inside it does.
             var tail = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth + OuterBreakMargin(m);
-            if (Fits(m.ContinuationColumn, tail, m.Trailing)) {
+            if (!facts.SkipsOuterTail && Fits(m.ContinuationColumn, tail, m.Trailing)) {
                 return ResolvedMode.Broken;
+            }
+
+            // ⚠ The same two questions asked of the segment that ends at another group's first point,
+            // with the construct inside it read as no place to break (#501, SK-DIV-0198): the line
+            // through that point stays when it fits where the group starts, and moves down whole when
+            // it fits on the continuation line. See GroupFacts.TailEndsAt.
+            if (facts.TailEndsAt >= 0 && segment < Unbounded) {
+                if (Fits(m.Column, m.PointWidth + pointSpace + segment)) {
+                    return ResolvedMode.Flat;
+                }
+
+                if (Fits(m.ContinuationColumn, segment + OuterBreakMargin(m))) {
+                    return ResolvedMode.Broken;
+                }
             }
         } else if (!facts.BreaksOnlyIfHeadOverflows) {
             return ResolvedMode.Broken;

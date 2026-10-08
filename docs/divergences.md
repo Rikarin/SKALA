@@ -7453,23 +7453,56 @@ list's continuation line. An ordinary base type keeps its point after the `:`. A
 
 ## SK-DIV-0198 — what the oracle measures before breaking at a primary constructor's `:` when interfaces follow
 
-Measured beside SK-DIV-0197 and left open. With interfaces after a primary constructor's base type, the
-oracle's second question ends the line at the base list's own first comma and does not count the argument
-list as a place to break: `class M3(…) : B(a, b),` past the margin at a nested depth becomes `class M3(…)`
-/ `        : B(a, b),` / `            IFirst,` …, where Skala keeps `: B(` and chops the arguments. The same
-measure decides `chop_always` (`: B(a, b),` / `IFirst { }` after a break before the `:`) and
-`wrap_if_long`. ⚠ For a single base type it does count the argument list — `: B(` stays and the arguments
-chop when the list does not fit on the continuation line — so the measure is not "the whole first base
-type" either.
+Measured beside SK-DIV-0197 and left open; resolved by #501, #502 and #503. Asked of `jb cleanupcode`
+2025.2.6 under `SkalaFormatOnly` on about 750 generated declarations: a class nested two types deep and
+at the top level, its continuation line swept one column at a time from 78 to 124, with a longer
+parameter list, a second argument, a one-letter base name, no arguments, a generic base, interfaces
+only, a record and a `record struct`, at each of `skala_wrap_before_extends_colon` and at
+`skala_place_primary_constructor_initializer_on_same_line = false`.
 
-Also open: at `skala_wrap_before_extends_colon = true` the oracle keeps `: B(` and chops the arguments of a
-list that would fit on the continuation line (where `false` breaks before the `:`), and Skala breaks before
-the colon; and at `skala_place_primary_constructor_initializer_on_same_line = false`, a chopped base type
-followed by interfaces puts its arguments two levels past the `:` line where Skala puts them one.
+⚠ **The family is every type with a parameter list, `()` included** — not only a base type with
+arguments. `class X(int a) : B, IFirst, ISecond { }`, `class X(int a) : IFirst, ISecond { }`, a generic
+base and a record all break before the `:` by the same questions, where Skala broke after the colon or
+chopped the commas. A type without a parameter list keeps the ordinary base-list rules.
+
+At the export, in order:
+
+| question | answer |
+|---|---|
+| everything after the `:` fits on the continuation line (the fitted margin) | break before the `:`, the list whole: `class X(…)` / `    : B, IFirst, ISecond { }` |
+| interfaces follow, and the line through the list's first comma fits where it is | keep it and chop the interfaces: `class V8(…) : B(a, b),` / `    IFirst,` |
+| interfaces follow, and `: B(…),` fits on the continuation line (the fitted margin) | break before the `:` and chop the interfaces: `class M3(…)` / `    : B(a, b),` / `        IFirst,` |
+| otherwise | keep `: B(` and chop the arguments |
+
+The base type's argument list is no place to break for the two interface questions, which is what the
+entry recorded and what Skala did not do: it asked "does `: B(` fit" and kept it every time.
+
+At `skala_wrap_before_extends_colon = true` the first question is not asked (#502). `: B(` stays and the
+arguments chop for a list that fits whole below — from 121 columns up, on all five shapes, at both
+depths — and the break goes before the `:` only when the head up to `B(` does not fit
+(`class V5(…six parameters…)` / `    : B(a, b) { }`), or by the interface questions, which answer as at
+`false`. `class X(int a) : B, IFirst, ISecond { }` keeps `: B,` and chops at `true` and moves below at
+`false`.
+
+⚠ **Once the `:` has a line of its own, the base types are one level past it** (#503), at every value of
+both keys, from the fitter's break and from an author's break `keep_user_linebreaks` kept, for an
+ordinary base list as much as a primary constructor's: `class C` / `    : IFirst,` / `        ISecond`,
+and a chopped base type's arguments two levels past the colon's line with `),` one. Skala put the types
+on the colon's column. The commas' group now spends a level of its own, which the writer's one level
+per opening line collapses into the list's on the declaration's line and counts on the colon's.
 
 - options: `skala_wrap_extends_list_style`, `skala_wrap_before_extends_colon`,
   `skala_place_primary_constructor_initializer_on_same_line`
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved** (#501, #502, #503) for every shape above, pinned by
+  `PrimaryConstructorBaseListIssue501Tests`. ⚠ **What stays open is the fitted margin's boundary**, which
+  this entry does not model and SK-DIV-0005 records for the `=`: both "fits on the continuation line"
+  questions use the ordering rule's fitted margin, and the oracle's own boundary moves with the shape.
+  The last continuation line it still breaks for, nested two deep: with interfaces 108 (Skala 106), at the
+  top level 109 (108), with a 32-column-longer parameter list 103 (106), with a one-letter base name 102
+  (106); for a single base type 88, 89, 83 and 86 where Skala's margin gives 105 — a base type whose
+  continuation line would be 89 to 105 columns breaks before the `:` in Skala and keeps `: B(` in the
+  oracle. At `true` the interface boundary is 107, 108, 110 and 100. No affine function of the widths
+  reproduces these, as for the `=`.
 
 ## SK-DIV-0199 — a block comment after the last attribute section leaves the gap to the author
 

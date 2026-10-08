@@ -1677,7 +1677,17 @@ public sealed class BreakPlan {
         // ⚠ A primary constructor's base type with arguments is an initializer, not a base type, to the
         // oracle (#427, SK-DIV-0197): its point is before the `:`, as a constructor initializer's is, and
         // it is the `=`'s ordering rule. See the branch.
-        var initializer = !options.WrapBeforeExtendsColon && node.Types[0] is PrimaryConstructorBaseTypeSyntax;
+        // ⚠ At `skala_wrap_before_extends_colon = true` too, and there it skips the first question
+        // (#502, SK-DIV-0198): the oracle keeps `: B(` and chops the arguments of a list that would
+        // fit whole on the continuation line, where `false` breaks before the `:`. Measured from 121
+        // columns up on five shapes at two depths; the break before the `:` is taken only when the
+        // head up to `B(` does not fit, or by the interfaces' question below.
+        // ⚠ And not only a base type with arguments: the base list of any type with a parameter list,
+        // `()` included, measured on a class, a record and a `record struct` whose first base type has
+        // no arguments, is generic, or is an interface (SK-DIV-0198). `class X(int a)` / `    : IFirst,
+        // ISecond { }` is the oracle's answer where Skala broke after the colon or chopped the commas.
+        var primaryBase = node.Parent is TypeDeclarationSyntax { ParameterList: not null };
+        var initializer = !options.WrapBeforeExtendsColon && primaryBase;
 
         // ⚠ `skala_wrap_before_extends_colon = true` makes the `:` itself a break point, which is the only
         // way a base list with a single base type can wrap at all. At `false` — the export's value —
@@ -1715,6 +1725,11 @@ public sealed class BreakPlan {
             broken |= BreaksBefore(node.Types[0].GetFirstToken());
         }
 
+        // ⚠ With interfaces after a primary constructor's base type, the oracle's questions end at the
+        // list's first comma and read the base type's argument list as no place to break (#501,
+        // SK-DIV-0198): `class M3(…)` / `    : B(a, b),` / `        IFirst,` where Skala kept `: B(` and
+        // chopped the arguments. See GroupFacts.TailEndsAt.
+        var inner = node.Types.SeparatorCount > 0 ? NewGroup() : -1;
         Describe(
             node,
             outer,
@@ -1722,20 +1737,26 @@ public sealed class BreakPlan {
             new GroupFacts(
                 options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: true,
-                MeasuresHead: initializer,
-                PrefersOuterBreak: initializer
+                MeasuresHead: primaryBase,
+                PrefersOuterBreak: primaryBase,
+                TailEndsAt: primaryBase ? inner : -1,
+                SkipsOuterTail: primaryBase && options.WrapBeforeExtendsColon
             ),
             true,
-            options.WrapBeforeExtendsColon || initializer
+
+            // ⚠ Always, and not only when the gap is this group's point: an author's break before the
+            // `:` that `keep_user_linebreaks` keeps is written inside the group too, so that the commas'
+            // scope opens on the colon's line and spends its level there (#503) — `class C` / `    : I1,`
+            // / `        I2`, as the oracle writes it.
+            true
         );
 
-        if (node.Types.SeparatorCount == 0) {
+        if (inner < 0) {
             return;
         }
 
         // ⚠ `wrap_if_long` fills the commas one at a time; `chop_*` takes them together.
         var fill = style == WrapStyle.WrapIfLong;
-        var inner = NewGroup();
         var innerBroken = false;
         foreach (var comma in node.Types.GetSeparators()) {
             var next = comma.GetNextToken();
@@ -1766,19 +1787,31 @@ public sealed class BreakPlan {
 
         Describe(
             node,
-            inner,
-            style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(
-                options.KeepsUserBreaksBetweenItems && innerBroken,
-                BreaksIfTooLong: true,
+            new GroupPlan(
+                inner,
+                style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+                new GroupFacts(
+                    options.KeepsUserBreaksBetweenItems && innerBroken,
+                    BreaksIfTooLong: true,
 
-                // ⚠ A base type whose arguments chop on the declaration's line nests them from the
-                // list's continuation line once the commas break: `class C(int a) : B(` / two levels
-                // in / `    ),` / `    I1,` (#427, SK-DIV-0197) — #418's lift, measured at two
-                // depths and under `chop_always`. Not for a fill, for #418's reason.
-                Continues: !fill
-            ),
-            true
+                    // ⚠ A base type whose arguments chop on the declaration's line nests them from the
+                    // list's continuation line once the commas break: `class C(int a) : B(` / two levels
+                    // in / `    ),` / `    I1,` (#427, SK-DIV-0197) — #418's lift, measured at two
+                    // depths and under `chop_always`. Not for a fill, for #418's reason.
+                    Continues: !fill
+                ),
+                SpendsIndent: true,
+
+                // ⚠ A level of its own on top of the outer group's, and the writer's one level per
+                // opening line decides whether it counts (#503, SK-DIV-0198). On the declaration's line
+                // the two collapse into one: `class C : Base,` / `    IFirst`. After a break before the
+                // `:` the commas' scope opens on the colon's line, and the oracle puts the types one level
+                // past it — `class C` / `    : IFirst,` / `        ISecond` — at every value of
+                // `skala_wrap_before_extends_colon` and of
+                // `skala_place_primary_constructor_initializer_on_same_line`, the author's break kept or
+                // the fitter's taken alike; Skala put them on the colon's column.
+                SpendsUnderDelimiters: true
+            )
         );
     }
 

@@ -578,8 +578,9 @@ public sealed class DocumentBuilder {
         certainOrigin[index] = Math.Max(childOrigin, selfOrigin);
         ownerWidth[index] = owned;
         var afterPointRuns = false;
+        var firstFlatSpace = false;
         afterPoint[index] = frame.Kind == DocKind.Group
-            ? MeasureSegments(childStart, count, frame.Arg1, out afterPointRuns, out segment[index])
+            ? MeasureSegments(childStart, count, frame.Arg1, out afterPointRuns, out segment[index], out firstFlatSpace)
             : 0;
 
         // ⚠ An arrow whose body cannot break is read through by what precedes it (issue #378):
@@ -600,7 +601,8 @@ public sealed class DocumentBuilder {
         nodes[index].Count = count;
         nodes[index].Flags = (alignsCloser ? 1 : 0)
             | (afterPointRuns ? (int)GroupFlags.AfterPointRunsToTheEnd : 0)
-            | (arrowRuns ? (int)GroupFlags.ArrowBodyRunsToTheEnd : 0);
+            | (arrowRuns ? (int)GroupFlags.ArrowBodyRunsToTheEnd : 0)
+            | (firstFlatSpace ? (int)GroupFlags.FirstPointFlatSpace : 0);
         nodes[index].Arg2 = frame.Kind == DocKind.Group ? facts[frame.Arg1].Owner : frame.Arg2;
 
         if (stack.Count == 0) {
@@ -678,7 +680,14 @@ public sealed class DocumentBuilder {
     ///     ⚠ Linear despite the nested loop: the segments partition the children, so each child is
     ///     visited by exactly one of them.
     /// </remarks>
-    int MeasureSegments(int childStart, int count, int group, out bool firstRunsToTheEnd, out int firstSegment) {
+    int MeasureSegments(
+        int childStart,
+        int count,
+        int group,
+        out bool firstRunsToTheEnd,
+        out int firstSegment,
+        out bool firstFlatSpace
+    ) {
         // ⚠ An arrow's head ends at a yielding point when nothing ordinary can break after it, and
         // reads through it when something can. The same gap answers the `=`'s question the other way
         // — a type argument list's points are "not taken" for the construct in front of the list, so
@@ -688,8 +697,10 @@ public sealed class DocumentBuilder {
         // own after the type arguments, the first has `()`. Measured on four such bodies, in a case
         // label's `when`, in an arm and after a lambda's arrow (issue #378).
         var stopsAtYieldingPoints = facts[group].BreaksOnlyIfHeadOverflows;
+        var tailEndsAt = facts[group].TailEndsAt;
         firstRunsToTheEnd = false;
         firstSegment = 0;
+        firstFlatSpace = false;
         if (!ownPoints.Contains(group)) {
             return 0;
         }
@@ -743,6 +754,7 @@ public sealed class DocumentBuilder {
         // would move to — the point measure stops at the bracket's own first point, one column in.
         if (first >= 0) {
             firstSegment = segment[first];
+            firstFlatSpace = ((LineFlags)nodes[first].Flags & LineFlags.FlatSpace) != 0;
         }
 
         return first < 0 ? 0 : afterPoint[first];
@@ -806,6 +818,18 @@ public sealed class DocumentBuilder {
                         first = child;
                     }
 
+                    continue;
+                }
+
+                // ⚠ The first point of the group this one's tail ends at closes the segment — the
+                // base list's first comma for a primary constructor's base type (GroupFacts.TailEndsAt).
+                if (tailEndsAt >= 0
+                    && current >= 0
+                    && nodes[child].Kind == DocKind.Line
+                    && (LineKind)nodes[child].Arg0 == LineKind.Soft
+                    && nodes[child].Arg2 == tailEndsAt) {
+                    Flush();
+                    current = -1;
                     continue;
                 }
 
