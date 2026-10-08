@@ -6001,12 +6001,23 @@ mechanism and none affects idempotency.
   comes back with every `or` on its own line. SK-DIV-0109 measured the opposite for a binary
   *expression* chain (`a && b` / `|| c` stays whole); whether the two kinds differ or the arm context
   does is unmeasured. Skala keeps the one break, on master and now.
+  ⚠ **Fixed at #483: the kinds differ, the context does not.** Measured with `Testing ask`: the same
+  `or` chain chops at every link after `is` (statement and expression body), in a `case` label and in
+  an `if` condition; `and` chops the same way; a break at the *inner* link (`A` / `or B or C`) chops
+  as the outer one does; while `_ when a && b` / `|| c` and `> 0 when a > 0 && b > 0` / `|| c > 0` in
+  an arm stay as written. A break written *after* `or` (`A or` / `B or C`) is not one of the chain's
+  points and is joined, as Skala already did. The chain-wide group of a pattern chain is now
+  `SourceBroken` whenever a link's point was (`BreakPlan.PatternChainIsBroken`), and the links break
+  with it. ⚠ And a pattern chain is one combinator, not every nested pattern: `A and B or C` / `or D`
+  comes back chopped at the `or`s with `A and B` whole, so `SameChain` now separates `and` from `or`
+  as it separates binary expressions by precedence. Pinned by
+  `constructs/breaks/binary-pattern-chain-kept-break.cs`.
 - **A property pattern that is the first operand of a broken `&&` chain sits one level deeper in the
   oracle**: `var b = value is {` / `Length: …` at 16 / `}` at 12 / `&& other;` at 12, where Skala
   writes the subpatterns at 12 and the `}` at 8. The chain's containment (SK-DIV-0109) is right; the
   operand's own indentation under it is the SK-DIV-0107 family's.
 
-- ⚠ status: **measured, not fixed**.
+- ⚠ status: the pattern-chain bullet **fixed** (#483); the other two **measured, not fixed**.
 
 ## SK-DIV-0125 — a break before a collection expression was added by the ordering rule and kept by the bracket's fit, and the two rules disagreed across passes
 
@@ -6900,8 +6911,23 @@ given the oracle's broken form. An object initializer in the same place stays wh
 engines. Recorded, not fixed: it is a break rule, not an indentation one, and SK-DIV-0164's anchor
 does not reach a `with`'s braces yet; add `WithExpressionSyntax` to `AnchoredBlockOf` with the break.
 
-- options: none.
-- ⚠ status: **open**.
+⚠ **Fixed at #487, and the rule is wider than the entry said: it is not the argument list.** Measured
+with `Testing ask`: the oracle breaks the initializer open whenever the expression *before* `with` spans
+lines, whatever broke it — `Make(` / `alpha,` / `beta` / `) with { P = 2 };` (a short list the author
+broke), `(a` / `+ b) with { P = 2 };`, `x.F()` / `.G() with { P = 2 };`, and a flat statement whose
+list the width chopped. It stays whole for `Make(() => {` / `A();` / `}) with { P = 2 };` (the lambda
+block re-joins, so the expression is one line), for a one-line `with` inside a chopped argument list, for
+`with { }`, and for the object creation `new R(` / `a,` / `b` / `) { P = 2 };`. It is
+`if_owner_is_single_line` read off the output, so the braces' outer group takes
+`BreaksIfOwnerIsMultiLine` with a head marker at the `with` expression's first token
+(`BreakPlan.PlanBracedElements`); and `AnchoredBlockOf` now anchors a `with` initializer like an object
+creation's, which is what moves a five-member chop from the `=`'s level plus two to plus one — the
+indentation half the entry did not measure. The members of a `with` after `x =`↵`receiver` nest from
+the receiver's line, as the anchor says.
+
+- options: none (`skala_use_continuous_indent_inside_initializer_braces` gates the anchor, as for an
+  object creation).
+- ⚠ status: **fixed**, pinned by `constructs/breaks/with-initializer-after-a-multi-line-expression.cs`.
 
 ## SK-DIV-0169 — the arrow of a single lambda argument broken before `=>` takes one level, not two
 
@@ -6911,8 +6937,18 @@ arrow's continuation — and the block one level past the `Use(` line's argument
 the `=>` one level past the statement; the block and `}` agree. Without the call
 (`_f = (int first)`↵`=> {`) both engines put the arrow at + 1. Recorded, not fixed.
 
+⚠ **Fixed at #488, and only for a block body.** Measured with `Testing ask`: the arrow takes the two
+levels for `Use((int first)`, `Use(first`, `Use(async (int first)`, `var u = Use((int first)` and inside
+`Outer(Use((int first)` (`Outer` chopped, the arrow two levels past `Use(`'s line) — every one with a
+block body. ⚠ `Use((int first)` / `=> first + 1` / `);` keeps the arrow at **one** level in the oracle,
+as Skala already wrote it, and a named or non-sole lambda argument is chopped onto its own line and laid
+out like any argument. The sole argument's frame does not reset the depth (the call's parenthesis spent
+its level unconditionally), so `FrameToSpend` declined the arrow's level; the frame now names the one
+break it pays for regardless — `Frame.PaysAt`, the arrow of a block-bodied sole lambda argument. The
+block keeps its anchor, so `return` and `}` do not move.
+
 - options: `skala_place_single_method_argument_lambda_on_same_line`.
-- ⚠ status: **open**.
+- ⚠ status: **fixed**, pinned by `constructs/indentation/sole-lambda-argument-arrow.cs`.
 
 ## SK-DIV-0180 — a `/** … */` comment was written without its `/**`, so every file holding one was refused
 

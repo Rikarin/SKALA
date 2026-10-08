@@ -1579,7 +1579,20 @@ public sealed class BreakPlan {
             true
         );
 
-        Describe(node, outer, mode, facts);
+        // ⚠ A `with` initializer breaks open whenever the expression before `with` spans lines, and an
+        // object creation's initializer does not (#487, SK-DIV-0168). Measured: `Make(` / `a,` / `b` /
+        // `) with { P = 2 };`, `(a` / `+ b) with { P = 2 };` and `x.F()` / `.G() with { P = 2 };` all come
+        // back as `with {` / `P = 2` / `};`, while `new R(` / `a,` / `b` / `) { P = 2 };`,
+        // `Make(() => { A(); }) with { P = 2 };` and a `with` that is one line inside a chopped argument
+        // list stay whole. It is `if_owner_is_single_line` read off the output, so a list the fitter
+        // chopped counts as much as one the author broke.
+        var withOwner = node.Parent is WithExpressionSyntax with ? MarkerAt(FirstToken(with)) : -1;
+        Describe(
+            node,
+            outer,
+            mode,
+            withOwner >= 0 ? facts with { Owner = withOwner, BreaksIfOwnerIsMultiLine = true } : facts
+        );
         DescribeInner(
             node,
             inner,
@@ -2730,7 +2743,15 @@ public sealed class BreakPlan {
             root,
             group,
             style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(BreaksIfTooLong: true),
+            // ⚠ A pattern chain the author broke at any one link is chopped at every link, and an
+            // expression chain is not (#483, SK-DIV-0124). Measured: `A or B` / `or C` comes back with
+            // every `or` on its own line — in a switch arm, after `is`, in a `case` label, in an `if`
+            // condition, for `and` as well as `or`, and broken at the inner link as at the outer —
+            // although the whole chain fits; `a && b` / `|| c` in the same arm stays as written.
+            new GroupFacts(
+                SourceBroken: pattern && options.KeepsUserBreaksBetweenItems && PatternChainIsBroken(root),
+                BreaksIfTooLong: true
+            ),
             // ⚠ A pattern chain spends a level of its own *and* the continuation the construct
             // around it would have spent; a binary expression chain spends only the latter. See
             // GroupPlan.OwnLevel and docs/plan/04 § "Indentation".
@@ -2743,6 +2764,24 @@ public sealed class BreakPlan {
             pattern,
             ownLevel: pattern && !IsStatementCondition(root)
         );
+    }
+
+    /// <summary>
+    ///     Whether the author broke a binary pattern chain at one of its links' break points — before
+    ///     the combinator at <c>skala_wrap_before_binary_pattern_op = true</c>, after it otherwise. A break
+    ///     on the other side of the combinator is not the chain's and does not count: the oracle joins
+    ///     <c>A or</c> / <c>B or C</c> whole.
+    /// </summary>
+    bool PatternChainIsBroken(SyntaxNode root) {
+        foreach (var node in root.DescendantNodesAndSelf(static node => node is BinaryPatternSyntax)) {
+            if (node is BinaryPatternSyntax link
+                && ChainRootOf(link) == root
+                && BreaksBefore(options.WrapBeforeBinaryPatternOp ? link.OperatorToken : FirstToken(link.Right))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -3209,7 +3248,11 @@ public sealed class BreakPlan {
                 !IsTypeTest(outer)
                 && !IsTypeTest(inner)
                 && Precedence(outer.OperatorToken.Kind()) == Precedence(inner.OperatorToken.Kind()),
-            (BinaryPatternSyntax, BinaryPatternSyntax) => true,
+            // ⚠ The same combinator, which is the same precedence: `and` binds tighter than `or`, and
+            // `A and B or C` / `or D` comes back from the oracle chopped at the `or`s with `A and B`
+            // whole (#483). Every pattern chain measured before that was of one combinator.
+            (BinaryPatternSyntax outer, BinaryPatternSyntax inner) =>
+                outer.IsKind(inner.Kind()),
             _ => false
         };
 
@@ -5188,6 +5231,16 @@ public sealed class BreakPlan {
         if (!markers.TryGetValue(head.SpanStart, out var marker)) {
             marker = NewGroup();
             markers[head.SpanStart] = marker;
+        }
+
+        return marker;
+    }
+
+    /// <summary>The head marker at <paramref name="token" />, shared with any other group that reads it.</summary>
+    int MarkerAt(SyntaxToken token) {
+        if (!markers.TryGetValue(token.SpanStart, out var marker)) {
+            marker = NewGroup();
+            markers[token.SpanStart] = marker;
         }
 
         return marker;

@@ -786,6 +786,15 @@ public sealed partial class CSharpDocumentBuilder {
                 ResetsDepth: node is AnonymousFunctionExpressionSyntax && !IsSoleLambdaArgument(node),
                 SavedDepth: continuousDepth,
 
+                // ⚠ The one break a sole lambda argument's frame pays for although a delimited scope
+                // is open: the arrow, broken before, of a lambda with a block body (#488,
+                // SK-DIV-0169). The oracle writes `Use((int first)` / `=> {` with the arrow two levels
+                // past the statement — the parenthesis's unconditional level and the arrow's own — and
+                // `=> first + 1` under the same call at one. The block keeps its anchor either way.
+                PaysAt: IsSoleLambdaArgument(node) && node is LambdaExpressionSyntax { Block: not null } blockLambda
+                    ? blockLambda.ArrowToken.SpanStart
+                    : -1,
+
                 // ⚠ A `where` clause's continuation lines take no level: `where T : class\n, new()`
                 // puts the next constraint on the `where`'s own column, at every value of every key
                 // measured (SK-DIV-0105). The frame stays — it bounds what the clause's own breaks
@@ -851,6 +860,12 @@ public sealed partial class CSharpDocumentBuilder {
         node switch {
             AnonymousFunctionExpressionSyntax { Block: { } block } => block,
             BaseObjectCreationExpressionSyntax { Initializer: { } initializer }
+                when options.UseContinuousIndentInsideInitializerBraces && !AlignsFromOwnColumn(initializer) =>
+                initializer,
+            // ⚠ And a `with` initializer, from the line the `with` expression starts on (#487,
+            // SK-DIV-0168): `_r = Make(` / `a,` / `b` / `) with {` puts the members at the statement's
+            // level plus one and `};` on it, as an object creation's does.
+            WithExpressionSyntax { Initializer: { } initializer }
                 when options.UseContinuousIndentInsideInitializerBraces && !AlignsFromOwnColumn(initializer) =>
                 initializer,
             _ => null
@@ -3214,6 +3229,10 @@ public sealed partial class CSharpDocumentBuilder {
                 continue;
             }
 
+            if (frames[i].PaysAt == nextToken.SpanStart) {
+                return i;
+            }
+
             // ⚠ A break before an `=` spends the level inside a delimited scope too — the frame-side
             // half of GroupPlan.SpendsUnderDelimiters. `void D(int a\n = 5)` chops the list and the
             // oracle puts `= 5` one level past `int a`; the depth rule alone left it flush.
@@ -3258,7 +3277,8 @@ public sealed partial class CSharpDocumentBuilder {
         bool Aligned = false,
         bool HoldsLevel = false,
         int EntryDepth = 0,
-        int PaysNotBefore = -1);
+        int PaysNotBefore = -1,
+        int PaysAt = -1);
 
     /// <summary>
     ///     Whether the break continues an expression rather than starting a new statement, member or
