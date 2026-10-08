@@ -192,7 +192,7 @@ public static class SpaceRules {
         prev.IsKind(SyntaxKind.OpenParenToken)
         && prev.Parent
         is ParameterListSyntax { Parameters.Count: 0, Parent: not ParenthesizedLambdaExpressionSyntax }
-            or ArgumentListSyntax { Arguments.Count: 0 }
+        or ArgumentListSyntax { Arguments.Count: 0 }
         && !IsUndocumentedKeywordParenthesis(prev)
         && WithinParentheses(prev.Parent, false, o);
 
@@ -215,23 +215,23 @@ public static class SpaceRules {
             // them as it does in front of any other operand.
             SyntaxKind.OpenParenToken => next.Parent
                 is ArgumentListSyntax
-                    or AttributeArgumentListSyntax
-                    or ParameterListSyntax { Parent: not ParenthesizedLambdaExpressionSyntax }
-                    or IfStatementSyntax
-                    or WhileStatementSyntax
-                    or DoStatementSyntax
-                    or ForStatementSyntax
-                    or CommonForEachStatementSyntax
-                    or SwitchStatementSyntax
-                    or CatchDeclarationSyntax
-                    or CatchFilterClauseSyntax
-                    or LockStatementSyntax
-                    or UsingStatementSyntax
-                    or FixedStatementSyntax
-                    or CheckedExpressionSyntax
-                    or DefaultExpressionSyntax
-                    or SizeOfExpressionSyntax
-                    or TypeOfExpressionSyntax,
+                or AttributeArgumentListSyntax
+                or ParameterListSyntax { Parent: not ParenthesizedLambdaExpressionSyntax }
+                or IfStatementSyntax
+                or WhileStatementSyntax
+                or DoStatementSyntax
+                or ForStatementSyntax
+                or CommonForEachStatementSyntax
+                or SwitchStatementSyntax
+                or CatchDeclarationSyntax
+                or CatchFilterClauseSyntax
+                or LockStatementSyntax
+                or UsingStatementSyntax
+                or FixedStatementSyntax
+                or CheckedExpressionSyntax
+                or DefaultExpressionSyntax
+                or SizeOfExpressionSyntax
+                or TypeOfExpressionSyntax,
             SyntaxKind.OpenBracketToken => next.Parent is BracketedArgumentListSyntax or ArrayRankSpecifierSyntax,
             _ => IsMemberAccessPunctuation(next)
                 || IsTypeAngle(next)
@@ -273,6 +273,14 @@ public static class SpaceRules {
             return true;
         }
 
+        // ⚠ A parameter's modifier is not a member's (#526): `params /*f*/int[] a`, `ref /*f*/int a`, `out`,
+        // `in`, `this`, `ref readonly` and `scoped` all come back as written, closed or spaced, at both
+        // values of the trailing-comment key — where `static /*f*/int F;`, an argument's `ref /*f*/x` and
+        // a local's `ref /*f*/int r` take one space, which is what SK-DIV-0174's third class measured.
+        if (prev.Parent is ParameterSyntax parameter && parameter.Modifiers.Contains(prev)) {
+            return true;
+        }
+
         return prev.Kind() switch {
             SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.CommaToken => true,
             SyntaxKind.OpenBraceToken => prev.Parent is InitializerExpressionSyntax,
@@ -281,8 +289,8 @@ public static class SpaceRules {
             SyntaxKind.QuestionToken => prev.Parent is ConditionalExpressionSyntax,
             SyntaxKind.ColonToken => prev.Parent
                 is ConditionalExpressionSyntax
-                    or BaseListSyntax
-                    or TypeParameterConstraintClauseSyntax,
+                or BaseListSyntax
+                or TypeParameterConstraintClauseSyntax,
             SyntaxKind.CloseParenToken => prev.Parent is CastExpressionSyntax,
             SyntaxKind.SemicolonToken => prev.Parent is ForStatementSyntax,
             SyntaxKind.NewKeyword => prev.Parent is BaseObjectCreationExpressionSyntax,
@@ -390,11 +398,11 @@ public static class SpaceRules {
         token.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.CloseParenToken
         && token.Parent
         is MakeRefExpressionSyntax
-            or RefTypeExpressionSyntax
-            or RefValueExpressionSyntax
-            or ArgumentListSyntax {
-                Parent: InvocationExpressionSyntax { Expression.RawKind: (int)SyntaxKind.ArgListExpression }
-            };
+        or RefTypeExpressionSyntax
+        or RefValueExpressionSyntax
+        or ArgumentListSyntax {
+            Parent: InvocationExpressionSyntax { Expression.RawKind: (int)SyntaxKind.ArgListExpression }
+        };
 
     /// <summary>
     ///     True for the <c>(</c> of a positional clause whose recursive pattern names a type, which is
@@ -657,7 +665,9 @@ public static class SpaceRules {
         }
 
         if (IsPrefixOperator(next)) {
-            return !ClingsRight(left);
+            // ⚠ Behind an assignment it is still the assignment's gap: `f=-(a)` at
+            // `space_around_assignment_op = false`, where Skala wrote `f= -(a)` (#525).
+            return IsAssignmentOperator(prev) ? o.SpaceAroundAssignmentOp : !ClingsRight(left);
         }
 
         // ⚠ `space_before_pointer_asterik_declaration` governs the gap in front of the `*` and there
@@ -684,7 +694,7 @@ public static class SpaceRules {
             // written identically. `<<` has no such split and closes on both sides.
             if (IsBinaryOperator(prev)
                 && prev.Kind() is SyntaxKind.GreaterThanGreaterThanToken
-                or SyntaxKind.GreaterThanGreaterThanGreaterThanToken) {
+                    or SyntaxKind.GreaterThanGreaterThanGreaterThanToken) {
                 return !ClingsLeft(right);
             }
 
@@ -794,6 +804,30 @@ public static class SpaceRules {
         // the operand being parenthesised does not change that.
         if (IsPrefixOperator(prev)) {
             return AfterPrefixOperator(prev, o);
+        }
+
+        // ⚠ An operand in parentheses behind an assignment or a binary operator is that operator's gap
+        // (#525). Measured at `space_around_assignment_op = false` and the additive, relational and
+        // shift keys at `false`: `f=(1)`, `f+=(1)`, `f<<=(1)`, `var x=(a+b)`, `f=(int)g`, `1+(2)`,
+        // `a<(b)`, `a+(b)+(a)` — Skala wrote `f= (1)` and `1+ (2)`, answering every one as "whatever
+        // precedes decides". A keyword operator (`as`, `is`) is not here, and neither is the gap behind a
+        // `>>`, which follows what comes after it (see `Required`).
+        if (IsAssignmentOperator(prev)) {
+            return o.SpaceAroundAssignmentOp;
+        }
+
+        // ⚠ A parenthesis just inside another is the outer one's inner gap: `( ( [` at
+        // `space_within_parentheses = true` (#485), where the `(` answered "a `(` clings" and wrote `(( [`.
+        if (prev.IsKind(SyntaxKind.OpenParenToken) && prev.Parent is ParenthesizedExpressionSyntax) {
+            return WithinParentheses(prev.Parent, false, o);
+        }
+
+        if (IsBinaryOperator(prev)
+            && prev.Parent is BinaryExpressionSyntax
+            && !SyntaxFacts.IsKeywordKind(prev.Kind())
+            && prev.Kind() is not (SyntaxKind.GreaterThanGreaterThanToken
+                or SyntaxKind.GreaterThanGreaterThanGreaterThanToken)) {
+            return BinarySpacing(prev, o);
         }
 
         switch (prev.Kind()) {
@@ -925,7 +959,7 @@ public static class SpaceRules {
         open.TrailingTrivia.Concat(open.GetNextToken().LeadingTrivia)
             .Any(static trivia => trivia.Kind()
                 is SyntaxKind.MultiLineCommentTrivia
-                    or SyntaxKind.MultiLineDocumentationCommentTrivia
+                or SyntaxKind.MultiLineDocumentationCommentTrivia
             );
 
     /// <summary>

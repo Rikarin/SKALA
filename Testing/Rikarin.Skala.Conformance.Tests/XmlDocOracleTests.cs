@@ -337,13 +337,16 @@ public sealed class XmlDocOracleTests {
         // other row, and it exists because the first file is rebuilt at either value of its key and so
         // could not tell the oracle's per-comment rule from Skala's old per-line one.
         //
-        // ⚠ Keyed rows only (#396). The eight shape rows outside xmldoc/ are counted separately below
+        // ⚠ Keyed rows only (#396). The nine shape rows outside xmldoc/ are counted separately below
         // and are not in this ratchet: they are attributed to no key, and adding them here would let a
-        // key's regression hide behind a shape's agreement.
+        // key's regression hide behind a shape's agreement. The ninth is
+        // `arrangement/redundancy/qualified-reference.cs` (#460), whose `cref` is the row that says a
+        // documentation reference is never shortened, and the oracle wrote its doc-comment fixture
+        // with the other two.
         var all = XmlDocOracle.Rows();
         var rows = all.Where(static row => row.IsKeyed).ToArray();
         var agreeing = rows.Count(static row => row.Agrees);
-        Assert.Equal(8, all.Count(static row => !row.IsKeyed));
+        Assert.Equal(9, all.Count(static row => !row.IsKeyed));
         Assert.Equal(23, rows.Length);
         Assert.Equal(22, rows.Select(static row => row.Key).Distinct(StringComparer.Ordinal).Count());
         Assert.True(

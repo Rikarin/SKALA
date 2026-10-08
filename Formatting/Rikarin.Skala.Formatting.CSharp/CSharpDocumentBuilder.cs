@@ -472,6 +472,7 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         levelsOpenedByOwnGroups = indented.Sum() + heldLevels.Count(static held => held);
+        SpaceIfTheCollectionBreaks(node, planned);
         VisitInner(node);
         EmitUpTo(node.Span.End);
 
@@ -498,6 +499,43 @@ public sealed partial class CSharpDocumentBuilder {
 
             doc.Close();
         }
+    }
+
+    /// <summary>
+    ///     One space in front of a collection expression's <c>[</c> behind a cast's <c>)</c> or a
+    ///     parenthesis's <c>(</c>, exactly when the collection breaks.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #450 and #485 (SK-DIV-0012, SK-DIV-0150). `(Kind[])[a, b]` and `([1, 2])` stay closed at the
+    ///     export, and the same collections chopped come back `(Kind[]) [` and `( [`, at both values of
+    ///     <c>space_after_cast</c> and <c>space_within_parentheses</c> — the gap is the key's while the
+    ///     collection is flat and one space once it breaks. The space rules cannot see a resolved mode, and
+    ///     the gap is written before the collection's group opens, so the space is an
+    ///     <see cref="DocKind.IfBroken" /> placed as the group's first child, where the writer has already
+    ///     resolved it. ⚠ A space written there after a break the gap took is dropped by the writer, which
+    ///     never writes a pending space at a line's start. Only the innermost parenthesis: `(([` gives
+    ///     `(( [`.
+    /// </remarks>
+    void SpaceIfTheCollectionBreaks(SyntaxNode node, IReadOnlyList<GroupPlan> planned) {
+        if (node is not CollectionExpressionSyntax { Elements.Count: > 0 } collection
+            || options.DisableSpaceChanges
+            || planned.Count == 0) {
+            return;
+        }
+
+        var before = collection.OpenBracketToken.GetPreviousToken();
+        if (!(before.IsKind(SyntaxKind.OpenParenToken)
+                && before.Parent is ParenthesizedExpressionSyntax
+                || before.IsKind(SyntaxKind.CloseParenToken)
+                && before.Parent is CastExpressionSyntax)) {
+            return;
+        }
+
+        doc.OpenIfBroken(planned[^1].Id);
+        doc.Space(SpaceKind.Required);
+        doc.OpenConcat();
+        doc.Close();
+        doc.Close();
     }
 
     /// <summary>
@@ -860,6 +898,26 @@ public sealed partial class CSharpDocumentBuilder {
         var restored = frames[^1].SavedDepth;
         frames.RemoveAt(frames.Count - 1);
         continuousDepth = restored;
+    }
+
+    /// <summary>
+    ///     Whether a pattern's parenthesis sits under an <c>is</c> the author broke before, which has spent
+    ///     the level already: <c>next.Parent</c> / <c>is not (Alpha</c> / <c>or Beta);</c> keeps the
+    ///     <c>or</c> on the <c>is</c>'s column (#520).
+    /// </summary>
+    bool FollowsABrokenIs(SyntaxNode node) {
+        for (var current = node.Parent; current is not null; current = current.Parent) {
+            switch (current) {
+                case PatternSyntax:
+                    continue;
+                case IsPatternExpressionSyntax test:
+                    return HasLineBreak(test.IsKeyword.GetPreviousToken().Span.End, test.IsKeyword.SpanStart);
+                default:
+                    return false;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -1624,7 +1682,16 @@ public sealed partial class CSharpDocumentBuilder {
         // is exactly why the sweep called this key `SPURIOUS`, with Skala moving where the oracle
         // could not — and separate at any other multiplier. See IndentKind.OneLevel.
         var singleInsideParens = layout == NodeLayout.Parens && !options.UseContinuousIndentInsideParens;
-        var suppress = aligned;
+        // ⚠ And a pattern's own parenthesis inside an aligned statement condition spends nothing: the
+        // oracle writes `if (o is not (Alpha` / `or Beta))` with `or` on the condition's column, and
+        // `while (` / `or` at 15 — where a grouping parenthesis around an *expression* there is a
+        // level of its own (`if ((a` / `== b))`). Under `var b = o is not (Alpha` / `or Beta);` the
+        // parenthesis keeps its level (#520).
+        var suppress = aligned
+            || node is ParenthesizedPatternSyntax
+            && (options.AlignMultilineStatementConditions
+                && BreakPlan.IsStatementCondition(node)
+                || FollowsABrokenIs(node));
 
         // ⚠ `skala_align_tuple_components = true`: the column *after* the tuple's `(`, which is a
         // different anchor from every key AlignsFromOwnColumn answers and needs a different place
@@ -1663,9 +1730,15 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ A type parameter list's angle brackets are a level of their own too (#538): an attribute
         // whose arguments chop on the `<`'s line, `class C<[Description(`, puts them two levels in and
         // `)]` one, on a class, a method and after a first parameter — the `(` alone paid one level.
+        // ⚠ And an argument list whose first argument stays behind a comment after its `(` (#521): the
+        // oracle writes `Compute( /* f */ Inner(` / `"…"` two levels in / `)` one / `);` — the outer
+        // list's level counts although the inner one opened on the same line. See
+        // BreakPlan.PlanPastLeadingComments.
         var unconditional = node is ParenthesizedExpressionSyntax or TypeParameterListSyntax
             || options.PlaceSingleMethodArgumentLambdaOnSameLine
-            && node is ArgumentListSyntax { Arguments: [{ Expression: LambdaExpressionSyntax }] };
+            && node is ArgumentListSyntax { Arguments: [{ Expression: LambdaExpressionSyntax }] }
+            || node is ArgumentListSyntax { Arguments.Count: > 0 } commented
+            && plan.PlansPastALeadingComment(commented.Arguments[0].SpanStart);
 
         // ⚠ A collection expression's elements are elements, like an initializer's: a chain broken
         // inside one takes its own continuation level rather than living off the bracket's.
@@ -2414,7 +2487,8 @@ public sealed partial class CSharpDocumentBuilder {
         doc.Anchor(source, -1);
         // The node's first line takes the code's indentation; its interior lines are never
         // reindented, because the writer only indents at a line start and this text is one piece.
-        doc.Verbatim(this.source[span.Start..span.End], source);
+        // ⚠ An interpolated string on one line has its holes respaced (#492); its text never moves.
+        doc.Verbatim(RespacedInterpolatedString(node) ?? this.source[span.Start..span.End], source);
 
         while (cursor < pieces.Length && pieces[cursor].Span.Start < span.End) {
             lastPiece = cursor;

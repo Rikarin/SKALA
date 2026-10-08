@@ -452,7 +452,7 @@ public static partial class SkalaCommandLine {
                         // your repository" is context for everything below it, not a footnote.
                         var text = Prefix(NotAlreadyReported(loadDiagnostics, result.Output)) + result.Output;
 
-                        return new CommandResult(
+                        return new(
                             LoadRefused(loadDiagnostics) ? ExitCodes.LoadFailure : result.ExitCode,
                             text
                         );

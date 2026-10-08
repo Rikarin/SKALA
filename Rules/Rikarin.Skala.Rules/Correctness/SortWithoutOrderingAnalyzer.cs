@@ -207,11 +207,11 @@ public sealed class SortWithoutOrderingAnalyzer : DiagnosticAnalyzer {
         // The decidability gate. Anything whose runtime type may be a subtype is out of reach, and so
         // is anything with no declaration to read.
         if (type.TypeKind is TypeKind.TypeParameter
-            or TypeKind.Interface
-            or TypeKind.Error
-            or TypeKind.Dynamic
-            or TypeKind.Delegate
-            or TypeKind.Array
+                or TypeKind.Interface
+                or TypeKind.Error
+                or TypeKind.Dynamic
+                or TypeKind.Delegate
+                or TypeKind.Array
             || type.SpecialType == SpecialType.System_Object
             || (type.TypeKind == TypeKind.Class && !type.IsSealed)) {
             return false;

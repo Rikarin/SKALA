@@ -565,6 +565,7 @@ public sealed class BreakPlan {
         // ⚠ Before the switch and before the condition's own operators are walked. The walk is
         // pre-order, so the statement is planned first and `PlanOperator` reads what this recorded.
         PlanForcedChopCondition(node);
+        PlanCastBeforeACollection(node);
 
         switch (node) {
             case EnumDeclarationSyntax enumeration:
@@ -636,6 +637,17 @@ public sealed class BreakPlan {
                     parameters.CloseParenToken,
                     parameters.Parameters
                 );
+
+                // ⚠ A lambda's parameter list with an expression body stays whole while the line through
+                // its `=>` fits, and the arrow takes the break instead (#453, SK-DIV-0050): the oracle
+                // writes `C2((SomeType first, OtherType second) =>` / `body` / `);` with the `=>` as far
+                // out as column 120, and chops the parameters only once `) =>` itself is past the margin.
+                if (parameters.Parent is ParenthesizedLambdaExpressionSyntax {
+                        ExpressionBody: not null
+                    } parenthesized) {
+                    ReviseFacts(node, facts => facts with { ThroughWidth = 1 + parenthesized.ArrowToken.Span.Length });
+                }
+
                 return;
 
             // ⚠ An indexer's parameter list had no plan at all (SK-DIV-0108): `int this[int a =\n 5]`
@@ -3294,8 +3306,30 @@ public sealed class BreakPlan {
             // chain of its own since #483, and the oracle writes its links on the `or`s' column —
             // `rune is >= 0x1100` / `and <= 0x115F` / `or >= 0x2E80` / `and <= 0x303E` all one level in
             // (Skala's own TextWidth.cs, measured).
-            ownLevel: pattern && !IsStatementCondition(root) && root.Parent is not BinaryPatternSyntax
+            // ⚠ Nor a chain whose `is` the author broke before: `next.Parent` / `is A` / `or B` puts the
+            // `or`s on the `is`'s own line's column (Skala's own SpaceRules.cs, measured) — that break
+            // has already spent the level.
+            ownLevel: pattern
+            && !IsStatementCondition(root)
+            && root.Parent is not BinaryPatternSyntax
+            && !(EnclosingTypeTest(root) is { } test && BreaksBefore(test.IsKeyword))
         );
+    }
+
+    /// <summary>The <c>is</c> a pattern sits under, through parenthesised and negated patterns.</summary>
+    static IsPatternExpressionSyntax? EnclosingTypeTest(SyntaxNode pattern) {
+        for (var current = pattern.Parent; current is not null; current = current.Parent) {
+            switch (current) {
+                case PatternSyntax:
+                    continue;
+                case IsPatternExpressionSyntax test:
+                    return test;
+                default:
+                    return null;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -3696,9 +3730,122 @@ public sealed class BreakPlan {
             new(
                 options.KeepsUserBreaksBetweenItems && BreaksBefore(first),
                 BreaksIfTooLong: true,
-                BreaksOnlyIfHeadOverflows: true
+                BreaksOnlyIfHeadOverflows: true,
+                YieldsToOverflowingTypeArguments: ColonFloorOf(argument, value) is var (floor, _) && floor >= 0,
+                ColonFloor: ColonFloorOf(argument, value).Floor,
+                ColonFloorSlope: ColonFloorOf(argument, value).Slope,
+                ColonEdgeFloor: ColonEdgeFloorOf(argument, value)
             )
         );
+    }
+
+    /// <summary>
+    ///     The argument list width from which a named argument's colon breaks before a generic call whose
+    ///     type arguments run past the margin, and how it moves with the head (#490, SK-DIV-0177); −1 when
+    ///     the value is not such a call.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A table, because no model of it survived: measured with <c>Testing ask</c> one argument list
+    ///     width at a time (2 columns apart, 30 to 200) for name lengths 3 to 12, first type arguments of
+    ///     2, 8, 14, 20, 25 and 40 columns, the <c>&gt;</c> at 121 to 140 and item indents 12, 16 and 20.
+    ///     Every row is a clean threshold: below it the oracle fills the type argument list and above it
+    ///     breaks after the colon. A name of three or fewer never breaks the colon and one of eleven or
+    ///     more always does; between, the floor falls with the name and rises with the first type argument
+    ///     up to 20 columns, and is independent of the <c>&gt;</c>'s column and the indent — except at four,
+    ///     where it rises 1.6 columns for every column of head past 118. Interpolated linearly between the
+    ///     measured first-argument widths; the floor is the first width measured breaking, less one.
+    /// </remarks>
+    /// <summary>
+    ///     <see cref="ColonFloorOf" />'s floor for the one column where the <c>&gt;</c> ends on the margin
+    ///     and only the call's <c>(</c> overflows (#490).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on its own grid (names of 3 to 11, first type arguments of 1, 8 and 25 columns,
+    ///     argument lists of 6 to 68): from a name of five the colon always breaks, and a name of three
+    ///     or four fills the type arguments below a floor 32 columns apart — 40, 44 and 50 for three, 8,
+    ///     12 and 18 for four.
+    /// </remarks>
+    static int ColonEdgeFloorOf(SyntaxNode argument, ExpressionSyntax value) {
+        var (floor, _) = ColonFloorOf(argument, value);
+        if (floor < 0) {
+            return 0;
+        }
+
+        var n = argument switch {
+            ArgumentSyntax { NameColon: { } colon } => colon.Name.Identifier.Span.Length,
+            AttributeArgumentSyntax { NameColon: { } colon } => colon.Name.Identifier.Span.Length,
+            _ => 0
+        };
+
+        if (n >= 5) {
+            return 0;
+        }
+
+        var generic = value switch {
+            InvocationExpressionSyntax { Expression: GenericNameSyntax name } => name,
+            InvocationExpressionSyntax {
+                Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax name }
+            } => name,
+            _ => null
+        };
+
+        var f = Math.Clamp(generic!.TypeArgumentList.Arguments[0].Span.Length, 1, 25);
+        var four = f <= 8 ? 8 + (f - 1) * 4 / 7 : 12 + (f - 8) * 6 / 17;
+        return (n == 4 ? four : four + 32) - 1;
+    }
+
+    static (int Floor, int Slope) ColonFloorOf(SyntaxNode argument, ExpressionSyntax value) {
+        var generic = value switch {
+            InvocationExpressionSyntax { Expression: GenericNameSyntax name } => name,
+            InvocationExpressionSyntax {
+                Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax name }
+            } => name,
+            _ => null
+        };
+
+        var nameColon = argument switch {
+            ArgumentSyntax { NameColon: { } colon } => colon.Name.Identifier,
+            AttributeArgumentSyntax { NameColon: { } colon } => colon.Name.Identifier,
+            _ => default
+        };
+
+        if (generic is not { TypeArgumentList.Arguments: [var firstType, _, ..] }
+            || nameColon.IsKind(SyntaxKind.None)) {
+            return (-1, 0);
+        }
+
+        var n = nameColon.Span.Length;
+        if (n <= 3) {
+            return (int.MaxValue / 4, 0);
+        }
+
+        if (n >= 11) {
+            return (0, 0);
+        }
+
+        // Rows: name length 4 … 10; columns: first type argument 2, 8, 14, 20 and 40 columns (and wider).
+        ReadOnlySpan<int> widths = [2, 8, 14, 20, 40];
+        ReadOnlySpan<int> table = [
+            128, 136, 146, 152, 152,
+            96, 100, 102, 106, 108,
+            82, 84, 88, 90, 90,
+            70, 74, 78, 80, 80,
+            62, 66, 68, 72, 72,
+            56, 59, 61, 64, 64,
+            50, 54, 56, 60, 60
+        ];
+
+        var f = Math.Clamp(firstType.Span.Length, widths[0], widths[^1]);
+        var column = 0;
+        while (column < widths.Length - 2 && f > widths[column + 1]) {
+            column++;
+        }
+
+        var row = (n - 4) * widths.Length;
+        var low = table[row + column];
+        var high = table[row + column + 1];
+        var first = low + (high - low) * (f - widths[column]) / (widths[column + 1] - widths[column]);
+        return (first - 1, n == 4 ? 160 : 0);
     }
 
     /// <summary>
@@ -3715,7 +3862,7 @@ public sealed class BreakPlan {
         node.Parent is null ? default : FirstTokenAfterAttributes(node.Parent);
 
     /// <summary>Whether this expression is the condition of an if, while, do, for or switch.</summary>
-    static bool IsStatementCondition(SyntaxNode node) {
+    internal static bool IsStatementCondition(SyntaxNode node) {
         for (var current = node; current is not null; current = current.Parent) {
             switch (current.Parent) {
                 case IfStatementSyntax statement when statement.Condition == current:
@@ -3724,7 +3871,16 @@ public sealed class BreakPlan {
                 case SwitchStatementSyntax statement4 when statement4.Expression == current:
                     return true;
 
-                case ExpressionSyntax:
+                // ⚠ Through the pattern's own nesting — a parenthesised or negated pattern, the `is`, a
+                // grouping parenthesis — and never through an operand of a binary (#520). Measured: the
+                // oracle writes `if (o is not (Alpha` / `or Beta))` and `if (o is (Alpha` / `or Beta))`
+                // with `or` on the condition's column (and `while (` aligns it to 15), while
+                // `if (x && o is Alpha` / `or Beta)` and `if (x` / `|| o is Alpha` / `or Beta)` put it one
+                // level past the operand's line, as anywhere else.
+                case PatternSyntax
+                    or IsPatternExpressionSyntax
+                    or ParenthesizedExpressionSyntax
+                    or PrefixUnaryExpressionSyntax:
                     continue;
 
                 default:
@@ -3976,7 +4132,15 @@ public sealed class BreakPlan {
         if (options.WrapBeforeTernaryOpsigns) {
             var atQuestion = BreaksBefore(node.QuestionToken);
             var atColon = BreaksBefore(node.ColonToken);
-            if (pins && (atQuestion || atColon)) {
+            if (pins && (atQuestion || atColon) && !IsTernaryChainMember(node)) {
+                // ⚠ A single conditional is chopped at both signs once the author broke at either
+                // (#518). Measured 2026-10-08: `b ? a` / `: c` in a declarator, a `return`, an
+                // argument and a parenthesised operand, `b` / `? a : c`, and `a` / `/* c */` / `? 1 : 2`
+                // all come back `b` / `? a` / `: c`. The per-sign pin below is a chain member's, whose
+                // `cond ? "win"` / `: cond ? "osx"` / `: "linux"` the oracle keeps as written.
+                Mandatory(node.QuestionToken);
+                Mandatory(node.ColonToken);
+            } else if (pins && (atQuestion || atColon)) {
                 Pin(node.QuestionToken, atQuestion);
                 Pin(node.ColonToken, atColon);
             } else if (IsTernaryChainMember(node) && !steps) {
@@ -4324,8 +4488,10 @@ public sealed class BreakPlan {
         // attribute argument: a marker there would be entered after the group it serves, and the
         // group's own point width is the head.
         var yieldsToTheBracket = BreakYieldsToTheBracket(value);
+        var owner = EqualsOwnerOf(node);
+        var callee = owner == EqualsOwner.None ? 0 : CalleeWidthOf(value);
         var head = -1;
-        if (yieldsToTheBracket
+        if ((yieldsToTheBracket || callee > 0)
             && EqualsHeadStartOf(node) is { RawKind: not 0 } headToken
             && headToken != FirstToken(node)
             && !markers.TryGetValue(headToken.SpanStart, out head)) {
@@ -4350,7 +4516,8 @@ public sealed class BreakPlan {
                     // ⚠ Not before a lambda whose arrow takes the break instead: `Func<int, string> f =
                     // value =>` / `value.ToString() + "…";` at every width measured, where Skala broke the
                     // `=` because the whole lambda fitted on the line below (#453, SK-DIV-0050).
-                    BreaksIfTooLong: !YieldsToTheLambdaArrow(value),
+                    BreaksIfTooLong: !YieldsToTheLambdaArrow(value)
+                    && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member)),
 
                     // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
                     // Every other right-hand side is measured by what is left of the line and breaks
@@ -4381,7 +4548,9 @@ public sealed class BreakPlan {
                     // measured from the marker; see GroupFacts.MinimumHead.
                     BreaksOnlyIfTailFits: yieldsToTheBracket,
                     Owner: head,
-                    MinimumHead: yieldsToTheBracket ? MinimumEqualsHead : 0
+                    MinimumHead: yieldsToTheBracket || callee > 0 ? MinimumEqualsHead : 0,
+                    CalleeWidth: callee,
+                    CalleeOwner: owner
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -4452,6 +4621,48 @@ public sealed class BreakPlan {
     static bool BreakYieldsToTheBracket(ExpressionSyntax value) => value is CollectionExpressionSyntax;
 
     /// <summary>
+    ///     The break between a cast and the collection expression it casts, which is one of two
+    ///     alternatives exactly as an <c>=</c>'s is.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #450, SK-DIV-0012. Measured 2026-10-08: a cast collection too long for its line comes back
+    ///     <c>(Kind[])</c> / <c>[a, b, c];</c> one level in when the collection fits flat on the line below,
+    ///     and <c>(Kind[]) [</c> / chopped elements / <c>];</c> when it does not — in a local, a
+    ///     <c>return</c>, an argument and an expression body. A break the author wrote after the cast is
+    ///     kept when the collection fits there (<c>(int[])</c> / <c>[1, 2, 3]</c>) and given to the bracket
+    ///     when the collection is itself broken. That is <see cref="GroupFacts.BreaksOnlyIfTailFits" />,
+    ///     the rule <see cref="BreakYieldsToTheBracket" /> already gives an <c>=</c> and an arrow; Skala had
+    ///     no point between the two tokens at all. The space in front of a broken bracket is the builder's
+    ///     (<c>CSharpDocumentBuilder.SpaceIfTheCollectionBreaks</c>).
+    /// </remarks>
+    void PlanCastBeforeACollection(SyntaxNode node) {
+        if (node is not CastExpressionSyntax {
+                Expression: CollectionExpressionSyntax { Elements.Count: > 0 } collection
+            } cast) {
+            return;
+        }
+
+        var open = collection.OpenBracketToken;
+        var group = NewGroup();
+        Point(open, group);
+        Describe(
+            cast,
+            new(
+                group,
+                GroupMode.Preserve,
+                new(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(open),
+                    BreaksIfTooLong: true,
+                    PrefersOuterBreak: true,
+                    HidesFlatWidthWhenBroken: true,
+                    BreaksOnlyIfTailFits: true
+                ),
+                true
+            )
+        );
+    }
+
+    /// <summary>
     ///     The head a flat line needs before the oracle adds a break after a collection-valued
     ///     <c>=</c>: twelve columns from the owning construct's first token through the <c>=</c>.
     ///     See <see cref="GroupFacts.MinimumHead" />.
@@ -4462,6 +4673,48 @@ public sealed class BreakPlan {
     ///     is thirteen and breaks (issue #379).
     /// </remarks>
     const int MinimumEqualsHead = 12;
+
+    /// <summary>
+    ///     For an <c>=</c> whose value is a call on a plain name with two or more arguments, the width of
+    ///     the callee — the value up to its <c>(</c> — which turns on the measured floor of
+    ///     <see cref="GroupFacts.CalleeWidth" /> (#446, SK-DIV-0211); zero for any other value.
+    /// </summary>
+    /// <summary>The measured owner of an <c>=</c> whose floor <see cref="EqualsFloor" /> knows (#446).</summary>
+    /// <remarks>
+    ///     ⚠ Each owner is its own curve, measured one column at a time: a local with a written type sits a
+    ///     column off a <c>var</c> one in places, an assignment statement a column lower, and a field at
+    ///     indent 4 is another curve altogether — every row chops up to a <c>(</c> at column 78 and the floor
+    ///     then jumps to 62 and stays near 60. Anything else keeps the ordering rule.
+    /// </remarks>
+    static EqualsOwner EqualsOwnerOf(SyntaxNode node) =>
+        node switch {
+            EqualsValueClauseSyntax {
+                Parent:
+                VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Variables.Count: 1 } declaration }
+            } when declaration.Parent is LocalDeclarationStatementSyntax =>
+                declaration.Type.IsVar ? EqualsOwner.VarLocal : EqualsOwner.TypedLocal,
+            EqualsValueClauseSyntax {
+                Parent:
+                VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: FieldDeclarationSyntax }
+                }
+            } => EqualsOwner.Field,
+            AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } assignment
+                when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) => EqualsOwner.Assignment,
+            _ => EqualsOwner.None
+        };
+
+    static int CalleeWidthOf(ExpressionSyntax value) =>
+        value is InvocationExpressionSyntax {
+            Expression: IdentifierNameSyntax callee, ArgumentList.Arguments.Count: >= 2
+        }
+        && !value.DescendantTrivia()
+            .Any(static trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia)
+                || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+            )
+            ? callee.Span.Length
+            : 0;
 
     /// <summary>
     ///     The token a collection-valued <c>=</c> measures its head from: the first token of the
@@ -5343,7 +5596,9 @@ public sealed class BreakPlan {
     ///         <c>always</c> the oracle joins <c>if (c) M(c, d);</c> and <c>while (c) M(c, d);</c> and
     ///         leaves every one of <c>if (c) / if (d) / M()</c>, <c>if (c) / using (…) / M()</c> and the
     ///         nested <c>for</c> exactly where the author put them — so a statement that carries an
-    ///         embedded statement of its own is not simple.
+    ///         embedded statement of its own is not simple. ⚠ "Where the author put them" was measured on
+    ///         broken input only: written on one line, the oracle pushes every one of them off (#519,
+    ///         <see cref="IsPushedOffByNesting" />).
     ///     </para>
     ///     <para>
     ///         ⚠ That alone is not enough, and the probe that says so is the one that separates "nested"
@@ -5374,14 +5629,24 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ At every value of the keep key and of the placement key (#469, #519): measured at keep and
+        // at `false` under `always`, `if_owner_is_single_line` and `never`, every nesting written on one
+        // line comes back one statement per line.
         var keeps = options.KeepExistingEmbeddedArrangement;
-        if (keeps && IsPushedOffByNesting(owner, embedded)) {
+        if (IsPushedOffByNesting(owner, embedded)) {
             Mandatory(first);
             return;
         }
 
         var placement = options.PlaceSimpleEmbeddedStatementOnSameLine;
-        var simple = IsSimpleEmbeddedStatement(owner, embedded);
+
+        // ⚠ And an `if` with an `else` keeps its statement as a simple owner does, though it is itself
+        // embedded (#469, #519): its `else` starts a line of its own (#480), so a group over the whole
+        // `if` would read that break as the statement not fitting. Measured at keep and at `always`;
+        // at `if_owner_is_single_line` the owner is multi-line for the same reason, and it breaks.
+        var simple = IsSimpleEmbeddedStatement(owner, embedded)
+            || owner is IfStatementSyntax { Else: not null }
+            && EmbeddedStatementOf(embedded) is null;
 
         if (!keeps && placement == PlacementStyle.Never) {
             Mandatory(first);
@@ -5410,11 +5675,7 @@ public sealed class BreakPlan {
         // width unbounded.
         // ⚠ Simple owners only. An owner that carries an embedded statement of its own — `if (\n c) if
         // (d) n++;` — is pushed off by the oracle whenever it is multi-line, and keeps the group point.
-        // ⚠ And an `if` with an `else` keeps its statement as a simple owner does, though it is itself
-        // embedded (#469): its `else` now starts a line of its own (#480), so a group over the whole
-        // `if` would read that break as the statement not fitting.
-        if (keeps
-            && (simple || owner is IfStatementSyntax { Else: not null } && EmbeddedStatementOf(embedded) is null)) {
+        if (keeps && simple) {
             if (BreaksBefore(first)) {
                 Mandatory(first);
             } else {
@@ -5425,9 +5686,13 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ `if_owner_is_single_line` reads an `else`'s owner as the whole `if` (#519): at
+        // `keep = false` the oracle writes `else` / `M();` whenever the `if` spans lines, which with a
+        // statement that is not a block it always does, and `} else` / `M();` after a block. A group
+        // over the `else` clause alone saw `else M();` fit.
         Point(first, group);
         Describe(
-            owner,
+            owner is ElseClauseSyntax { Parent: IfStatementSyntax statement } ? statement : owner,
             group,
             GroupMode.Preserve,
             new(
@@ -5509,8 +5774,8 @@ public sealed class BreakPlan {
     ///     exemption carries over to the statement after them: <c>else if (b) if (c) M();</c> pushes
     ///     <c>if (c)</c> down and <c>M()</c> with it.
     ///     <para>
-    ///         Not at <c>keep = false</c>, where the placement key decides and the oracle leaves a nesting
-    ///         where the author put it (see <see cref="PlanEmbeddedStatement" />).
+    ///         ⚠ At <c>keep = false</c> as well, at every placement value (#519): measured on the same
+    ///         nestings, written on one line and written broken.
     ///     </para>
     /// </remarks>
     static bool IsPushedOffByNesting(SyntaxNode owner, StatementSyntax embedded) {
@@ -5911,12 +6176,19 @@ public sealed class BreakPlan {
     ///         declaration key at <c>true</c> expands it.
     ///     </para>
     /// </remarks>
+    /// <remarks>
+    ///     ⚠ Only a section whose block is its only statement (#527): `case 3: { M(); } break;` and
+    ///     `case 7: { M(); }` / `break;` are expanded by the oracle at the embedded key's <c>true</c> too,
+    ///     where `case 1: { M(); }` alone is kept.
+    /// </remarks>
     bool Keeps(BlockSyntax block) =>
-        block.Parent is (StatementSyntax and not LocalFunctionStatementSyntax)
-            or SwitchSectionSyntax
-            or AnonymousFunctionExpressionSyntax
-            ? options.KeepExistingEmbeddedBlockArrangement
-            : options.KeepExistingDeclarationBlockArrangement;
+        block.Parent switch {
+            SwitchSectionSyntax { Statements.Count: > 1 } => false,
+            (StatementSyntax and not LocalFunctionStatementSyntax)
+                or SwitchSectionSyntax
+                or AnonymousFunctionExpressionSyntax => options.KeepExistingEmbeddedBlockArrangement,
+            _ => options.KeepExistingDeclarationBlockArrangement
+        };
 
     /// <summary>
     ///     Whether a block may stay on its owner's line — and then it does exactly when everything in it
@@ -6082,6 +6354,61 @@ public sealed class BreakPlan {
             }
 
             return true;
+        }
+    }
+
+    /// <summary>
+    ///     A member access with no call, element access or other construct in it — <c>receiver.Property</c>,
+    ///     <c>a.b.c.D</c> — that is a <c>return</c>'s expression, a local's or an assignment's value: the
+    ///     values the dot break was measured on (#446, SK-DIV-0210/0124). The break itself is #482's
+    ///     member-access fill (`PlanPropertyFill`), which takes the last dot that fits; only the `=`'s
+    ///     yielding to it is read from here.
+    /// </summary>
+    static bool IsPlainMemberValue(MemberAccessExpressionSyntax access) {
+        if (!access.IsKind(SyntaxKind.SimpleMemberAccessExpression)) {
+            return false;
+        }
+
+        var placed = access.Parent switch {
+            ReturnStatementSyntax => true,
+            EqualsValueClauseSyntax {
+                Parent:
+                VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax { Parent: LocalDeclarationStatementSyntax }
+                }
+            } => true,
+            AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } assignment => assignment.Right == access
+                && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression),
+            _ => false
+        };
+
+        if (!placed) {
+            return false;
+        }
+
+        for (ExpressionSyntax current = access;;) {
+            switch (current) {
+                case MemberAccessExpressionSyntax { Name: IdentifierNameSyntax } member
+                    when member.IsKind(SyntaxKind.SimpleMemberAccessExpression):
+                    current = member.Expression;
+                    continue;
+                case IdentifierNameSyntax or ThisExpressionSyntax or BaseExpressionSyntax:
+                    return !access.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia));
+                default:
+                    return false;
+            }
+        }
+    }
+
+    /// <summary>Rewrites the facts of every group described on <paramref name="node" />.</summary>
+    void ReviseFacts(SyntaxNode node, Func<GroupFacts, GroupFacts> revise) {
+        if (!groups.TryGetValue(Key(node), out var plans)) {
+            return;
+        }
+
+        for (var i = 0; i < plans.Count; i++) {
+            plans[i] = plans[i] with { Facts = revise(plans[i].Facts) };
+            byId[plans[i].Id] = plans[i];
         }
     }
 
