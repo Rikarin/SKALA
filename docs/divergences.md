@@ -7324,8 +7324,16 @@ the collection is multi-line, and keeps an author's `(` / `[1, 2]);` when it is 
 `skala_keep_user_linebreaks = false` it joins that one too (`([1, 2]);`). The two-grouping rows —
 `((c` / `? a` / `: b))`, `((a` / `+ b))`, `(((a` / `+ b)))`, `if (((c` / `|| c)))` — already agree since
 #481 and #546, and are pinned beside the join. `BreakPlan.SettleParenthesisedCollections`, read off the
-finished plan; ⚠ a collection written on one line that only the margin breaks is not seen there and keeps
-an author's break after the `(` (not measured). Pinned by `ParenthesisedCollectionIssue485Tests`.
+finished plan. Pinned by `ParenthesisedCollectionIssue485Tests`.
+
+⚠ **Round 5 (#485): a collection that only the margin breaks.** Measured 2026-10-08: the break after
+the `(` is the bracket's *alternative*, the rule of the `=` before a collection (#375). `(` /
+`["…", …]);` whose bracket line is 120 columns keeps the break, and at 121 comes back `( [` / elements
+/ `]);` — under `=`, `return`, an argument and `((`; a flat `(["…", …]);` too wide for its line moves
+the bracket down whenever it fits there (`(` / `[…]);`) and joins `( [` when it does not; at
+`skala_keep_user_linebreaks = false` the same, with the author's break no longer a reason. Skala kept
+the author's break and never added one. A `GroupFacts.BreaksOnlyIfTailFits` group at the `[`, in
+`SettleParenthesisedCollections`; pinned by the same tests.
 
 - options: `skala_space_within_parentheses` (the space only); `skala_keep_user_linebreaks` (the join).
 - ⚠ status: **fixed**, the `(` / `[` join included (#485, round 4) — the `( [` space by #485, the single-grouping ternary rows
@@ -9392,9 +9400,29 @@ no longer fits on its line (the dot, where the rule breaks before the arrow), an
 its own, `yyyyyyyyyyy.Z,` (the dot, where Skala breaks the arrow because the body's own fill point
 answers the arrow's head question). Not measured further.
 
+⚠ **Round three (#531), 2026-10-09: the three arm rows.** The comma rule was the right width read in the
+wrong place: whether an arm's pattern fills depends on where its `=>` ends, which the plan cannot see.
+On 384 arms — heads through the `=>` ending at columns 102 to 127, bodies of 2 to 22 columns with and
+without a comma, patterns whose prefix before the last dot is 60, 77 and 87 columns — the oracle:
+
+| the arm | the pattern's dot breaks when the body with its comma is | otherwise |
+|---|---|---|
+| fits | never | whole |
+| the pattern alone overflows | any width | — |
+| the `=>` overflows | 14 or less | `head` / `=> body` |
+| only the body overflows, `=>` ending at 111 or right of it | 14 or less | `head =>` / `body` |
+| the same, `=>` ending at 110 | 12 or less | the same |
+| the same, `=>` ending at 109 or left of it | never | the same |
+
+`GroupFacts.ArmHead` / `ArmBody` carry the widths and `Fitter.ArmFills` answers; the arm's pattern is
+always planned. ⚠ A body short enough to fill no longer plans its own property fill: its dot,
+`=> yyyyyyyyyyy.Z,`, was the point the pattern's fill looked ahead to and stopped at. Six rows stay off:
+behind the 60-column prefix the oracle's limit is thirteen, not fourteen (five rows), and one 77-column
+row fills at 109 with an eleven-column body.
+
 - options: `skala_wrap_chained_method_calls`, `skala_wrap_after_property_in_chained_method_calls`.
-- ⚠ status: **narrowed** (#531): the target row and the comma row resolved, pinned by
-  `MemberAccessFillIssue531Tests`; the three arm rows above open.
+- ⚠ status: **resolved** (#531): the target row and the comma row in round two, the three arm rows in
+  round three; corpus/real unchanged. Pinned by `MemberAccessFillIssue531Tests`.
 
 ## SK-DIV-0331 — a chain's held first call breaks when it does not fit, and Skala chops its arguments
 
@@ -9433,11 +9461,44 @@ the "held" side is reached, and the five grid rows past them (two arguments at 8
 `source.Select(` / … / `)` rows are held by the same rule. A receiver that does not fit flat breaks
 inside itself and leaves the point alone (`X.Select(…)` / `.Where(gamma)!.Where(beta)`).
 
+⚠ **The residue, measured on 2026-10-09 (#528 round three).** The five rows were the 76/96 constants
+being wrong, not exceptions: a 280-row grid — heads every five columns from 40 to 110, call lines every
+two columns, one and two arguments — has two arguments break up to a line of
+`max(108.5 − 0.4·paren, 58 + 0.2·paren)` and one argument up to a per-head threshold that falls from 111
+at a 40-column head to 97 at 85–90 and rises again to 101 (`Fitter.HeldCallLimit`). The table reproduces
+all 280 rows and the 104 above.
+
+The single call that is no chain is a separate question, because there the `=` is the alternative to the
+dot. Measured on `JsonConvert.DeserializeObject<G…>(json)` and `S….Select(a…)` with receivers of 10 to
+102 columns, values 117 to 132 columns wide below, behind `var y`, `y`, typed heads of 15 and 38 columns,
+`var zzzzzzzzzzzz` and a twenty-column assignment target (`Fitter.HeldValueBreaks`, `GroupFacts.HeldValue`):
+
+| head | the `=` breaks when the value does not fit beside it and … | then |
+|---|---|---|
+| typed local | … it fits below with three columns to spare, or the head with the receiver is wider than 87 columns (from the statement's first column: Newtonsoft's 77 and 82 hold at indents 20 and 12, 95 breaks) | otherwise `T c = R` / `.Call(…);` |
+| `var` / assignment under 12 columns | … it overflows below by at most one column, or its `(` lands at 117 or less below; never one column over beside it, never where the value would not move left | the dot breaks at one column over, else the argument chops |
+| `var` / assignment of 12 or more | … it fits below with three columns to spare; otherwise, with two or more arguments, not while the `(` fits beside it; otherwise unless the receiver fits beside it, the `(` beside it does not, and the line below is within `HeldCallLimit` | as above |
+
+⚠ Shapes the reference trees bound: behind a `var` or an assignment, an argument holding a call or a
+creation of its own keeps the general rule (`var bottom = device.CreateAccelerationStructure(new(…));` and
+`var listener = fleet.World.Create(AiPerception.Sensing(…), …);` chop beside the `=` in Vixen, where
+the table would break it). A typed local's does follow the table (`EnumInfo e =` /
+`ValuesAndNamesPerEnum.Get(new StructMultiKey<…>(…));`). corpus/real with symbols: 59676/59841 → 59704/59837
+lines and 338 → 341 files against master `4851d591`, five files closer and none further.
+
+Two arguments behind a short head break the `=` only when the `(` does not fit beside it and lands at 117
+or less below — `var w = S…` / `.Selectttt…(alpha, beta);` against `var wwwwwwwwwwww =` / `S….Select…(` /
+`alpha,` / `beta` / `);`. ⚠ A typed local with two or more arguments was not measured and plans nothing,
+and arguments that break inside themselves (a lambda, an initializer) keep #529's and #378's layout.
+
 - options: `skala_wrap_before_first_method_call`.
-- ⚠ status: **resolved for chains, open for the residue** (#528): the five grid rows above, and the
-  single call that is no chain (the third row; `var y =` / `S….Select(alpha)` breaks the `=` first and
-  then the dot or the arguments, by rules not measured further). Pinned by `HeldFirstCallIssue528Tests`
-  and `constructs/breaks/held-first-call.cs`.
+- ⚠ status: **resolved** (#528), with two shapes measured and not modelled: behind a 12-column-or-longer
+  head with a receiver of 70 to 92 columns, the oracle breaks the `=` where the table moves the dot
+  (h8's and h11's 17 of 162 rows), and a 40-column receiver whose lone argument overflows below by
+  twelve keeps the `=` and chops — both receivers far past anything in the reference trees.
+  `JsonArrayContract.cs` keeps one row of its own: an author's break after the `=` the oracle keeps. Pinned by
+  `HeldFirstCallIssue528Tests`, `HeldSingleCallIssue528Tests`, `constructs/breaks/held-first-call.cs`
+  and `constructs/breaks/held-single-call.cs`.
 
 ## SK-DIV-0332 — a lambda argument's arrow breaks where the chain in its body would have chopped
 
@@ -9492,10 +9553,60 @@ left operand (#457), where the chain takes a level past the operator's.
   `return`, an argument and an expression body — signs one level past the statement in every one. ⚠
   Two exceptions keep the late scope, both measured: a broken *binary* condition (`&& c` at one level,
   `? x` at two; `==` the same) and a chain headed by a parenthesis, which shares the level around it
-  (SK-DIV-0112; `ArrowBodyChainIssue404Tests` pinned it). A row beside it is a break choice, not this
-  entry's: `var a7aaaa… = chain ? x : y` where the oracle breaks the `=` and keeps the chain whole.
-  Pinned by `TernaryAfterAChoppedConditionIssue530Tests` and
-  `constructs/breaks/ternary-after-a-chopped-condition.cs`.
+  (SK-DIV-0112; `ArrowBodyChainIssue404Tests` pinned it). Pinned by
+  `TernaryAfterAChoppedConditionIssue530Tests` and `constructs/breaks/ternary-after-a-chopped-condition.cs`.
+- A row beside it is a break choice, not this entry's: `var a7aaaa… = chain ? x : y` where the oracle
+  breaks the `=` and keeps the chain whole — **resolved** (#553, round three): an `=` whose value is a
+  conditional breaks exactly when the condition does not fit beside it and the head through the `=` is
+  twelve columns or more (`GroupFacts.ValueHeadWidth`, the condition's flat width from the source); a call
+  condition additionally needs to fit below or the `=` to stand at column 40 or left of it; a type-test
+  condition keeps the ordinary rule. Measured on chain, `&&`, identifier and call conditions behind heads
+  of 8 to 66 columns; every row agrees. Pinned by `ConditionalAfterEqIssue553Tests` and
+  `constructs/breaks/conditional-after-eq.cs`.
+
+## SK-DIV-0334 — a list opened on a closer's line nested from the levels behind the closer
+
+Found beside #484 on 2026-10-08, filed as #551. At `skala_wrap_chained_method_calls = wrap_if_long` a
+chain whose first call's lambda body broke keeps `}` / `).Where(` on one line, and when the `Where`
+argument list chops the oracle puts the argument one level past that line's `)`:
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `var r2 = source.Select(x => { … }).Where(longArgument);` | `).Where(` at 8 / argument at 12 / `);` at 8 | argument at 16, `);` at 12 |
+
+The list counted the `=`'s and the chain's levels, both opened on the statement's line, although the
+line it opened on starts at the closer's level. ⚠ The default `chop_if_long` never writes such a line —
+its chain breaks before `.Where` — which is why no corpus row showed it.
+
+- options: `skala_wrap_chained_method_calls`.
+- ⚠ status: **resolved** (#551). A delimited list opened on a line that a `)` or `]` began nests from that
+  line's own indentation (`LayoutWriter.closerLine`, read in `Push` as a lift). ⚠ Not after a `}`:
+  `} else if (Call(` / arguments aligned past the condition's `(` keeps its alignment, and the first cut
+  that read any closer moved Newtonsoft's `JsonArrayContract.cs` four lines away from the oracle.
+  corpus/real unchanged. Pinned by `ClosingLineListIssue551Tests`.
+
+## SK-DIV-0335 — under `wrap_if_long` a long rest of the chain moves a held first call down
+
+Found beside #484 on 2026-10-08, filed as #552. At `skala_wrap_chained_method_calls = wrap_if_long`:
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `var t1 = source.Select(a, b, c).Where(p).ToList(q);`, `.Select(…)` ending at 120 below | `source` / `.Select(a, b, c)` / `.Where(p).ToList(q);` | `source.Select(` / three arguments / `).Where(p).ToList(q);` |
+
+Measured on 2026-10-09 on 2 496 rows — one and two arguments, heads (the column after a held `.Select(`)
+every ten columns from 40 to 110, call lines below from just past SK-DIV-0331's limit to 116, and a rest
+of the chain after the call from 10 to 103 columns — and 126 more with two-link rests. With a short rest
+the #528 table holds unchanged (376 rows, `.Where(b);`); past the table's limit the call still moves
+down when the rest is wider than `1.5 · (line − limit) + 9`, the same for one link or two
+(`GroupFacts.HeldCallRest`). Below the limit the call always moves; a call that does not fit below
+either is held, as before.
+
+- options: `skala_wrap_chained_method_calls`.
+- ⚠ status: **resolved** (#552), with 35 of the 2 622 rows off by one grid step: heads of 40 and 50 hold
+  a few rows longer than the formula with two arguments (`h15`'s three, `h16`'s H40/H50 rows), and heads
+  of 100 and 110 hold much longer once the call line passes 110 (a rest of up to 94 columns holding at
+  110/116). corpus/real unchanged (its export is `chop_if_long`). Pinned by
+  `HeldFirstCallUnderAFillIssue552Tests`.
 
 ## SK-DIV-0320 — a block comment on its own line above an array initializer's first element stayed there
 

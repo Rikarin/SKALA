@@ -115,6 +115,10 @@ public sealed class LayoutWriter {
     int column;
     int line;
     int? pendingCloserLevel;
+
+    /// <summary>The line the latest closing delimiter written at a line's start began, or -1 (#551).</summary>
+    int closerLine = -1;
+
     bool atLineStart = true;
     bool pendingSpace;
 
@@ -497,6 +501,22 @@ public sealed class LayoutWriter {
                 var around = InnermostBrokenConstruct(path);
                 liftsThrough = around >= 0
                     && document.FactsOf(document.Nodes[path[around].Node].Arg1).LiftsThroughInnerBreaks;
+            }
+        }
+
+        // ⚠ A delimited list opened on a line that a closing delimiter began nests from that line's own
+        // indentation, not from the levels still open behind the closer: `}` / `).Where(` / an argument
+        // one level past the `)` — where the `=`'s and the chain's levels, both opened on the
+        // statement's line, put it two (#551, measured at `wrap_if_long`, where such a line survives).
+        if (lifted < 0
+            && kind is IndentKind.Continuous or IndentKind.OneLevel
+            && (flags & IndentFlags.Delimiter) != 0
+            && closerLine == line
+            && !atLineStart
+            && CurrentLineFirst() is ')' or ']') {
+            var indent = CurrentLineIndent();
+            if (indent < outer) {
+                lifted = outer = indent;
             }
         }
 
@@ -1288,6 +1308,24 @@ public sealed class LayoutWriter {
         return indent;
     }
 
+    /// <summary>
+    ///     The first character written on the current line after its indentation — a <c>}</c> of
+    ///     <c>} else if (</c>, which an aligned condition nests past, against the <c>)</c> of
+    ///     <c>).Where(</c> (#551) — or a NUL on an empty line.
+    /// </summary>
+    char CurrentLineFirst() {
+        var start = output.Length;
+        while (start > 0 && output[start - 1] != '\n') {
+            start--;
+        }
+
+        while (start < output.Length && output[start] is ' ' or '\t') {
+            start++;
+        }
+
+        return start < output.Length ? output[start] : '\0';
+    }
+
     int CurrentLineIndent() {
         var start = output.Length;
         while (start > 0 && output[start - 1] != '\n') {
@@ -1822,7 +1860,9 @@ public sealed class LayoutWriter {
             }
         }
 
-        if (document.FactsOf(group).SpendsIndent) {
+        // ⚠ Except a single `=` value's held call (GroupFacts.HeldValue), whose own level collapses into the
+        // `=`'s when both opened on this line — `var y = R` / `.Call(…)` lands one level in, not two (#528).
+        if (document.FactsOf(group).SpendsIndent && !(document.FactsOf(group).HeldCall >= 3 && counted == line)) {
             level += continuousMultiplier * indentWidth;
         }
 
@@ -2076,6 +2116,7 @@ public sealed class LayoutWriter {
         public int Column;
         public int Line;
         public int? PendingCloserLevel;
+        public int CloserLine;
         public bool AtLineStart;
         public bool PendingSpace;
         public string? PendingSpaceText;
@@ -2096,6 +2137,7 @@ public sealed class LayoutWriter {
             Column = column,
             Line = line,
             PendingCloserLevel = pendingCloserLevel,
+            CloserLine = closerLine,
             AtLineStart = atLineStart,
             PendingSpace = pendingSpace,
             PendingSpaceText = pendingSpaceText,
@@ -2116,6 +2158,7 @@ public sealed class LayoutWriter {
         column = state.Column;
         line = state.Line;
         pendingCloserLevel = state.PendingCloserLevel;
+        closerLine = state.CloserLine;
         atLineStart = state.AtLineStart;
         pendingSpace = state.PendingSpace;
         pendingSpaceText = state.PendingSpaceText;
@@ -2416,6 +2459,9 @@ public sealed class LayoutWriter {
                     // whole indent is written in whole units. Only the `Effective` branch can differ.
                     var closer = pendingCloserLevel;
                     WriteIndentTo(closer ?? Effective(), closer ?? LevelColumn());
+                    if (closer is not null) {
+                        closerLine = line;
+                    }
                 } else {
                     WriteSuppressedIndent(source);
                 }
