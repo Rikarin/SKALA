@@ -478,8 +478,12 @@ public sealed class XmlDocRenderer {
             // already counted and handing it to `Start` a second time would reserve it twice.
             // ⚠ And none when the content holds a break the author wrote, measured (#544): a `<remarks>`
             // whose first line runs `… should end up public` / `in future.` is filled from the plain indent,
-            // where the same prose on one line is filled from the start tag's closing column.
-            this.carry = hug || element.Children.Any(static child => child is XmlDocBreak) ? 0 : carry;
+            // where the same prose on one line is filled from the start tag's closing column. ⚠ Only while
+            // the break is kept: at `keep_user_linebreaks = false` it is not a break, and the frozen oracle
+            // output for that value fills from the start tag's column across one (the sweep caught it).
+            this.carry = hug || options.KeepUserLinebreaks && element.Children.Any(static child => child is XmlDocBreak)
+                ? 0
+                : carry;
             Nodes(element.Children);
             this.carry = 0;
         }
