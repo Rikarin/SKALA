@@ -7377,8 +7377,35 @@ on every `g ≥ 121` row with `w ≤ 78` and moved `constructs/breaks/break-afte
 reverted. The `g = 120` band (only the `(` past the margin) is the entry's row and stays as recorded.
 
 - options: none.
-- ⚠ status: **resolved** except the last two rows, which are **open**: measured above, **blocked** on a
-  model of the name-length dependence (#490).
+⚠ **Round 2 of #490: wired as a measured table, every measured row reproduced.** 7 296 more cells,
+2 columns apart: name lengths 3–12, first type arguments of 2, 8, 14, 20, 25 and 40 columns, the `>` at
+121–140, item indents 12, 16 and 20. Every row is one clean threshold on the argument list's width `w`:
+
+| name length | floor on `w`, first type argument 2 / 8 / 14 / 20 / 40 columns |
+|---|---|
+| ≤ 3 | never — the oracle always fills |
+| 4 | 128 / 136 / 146 / 152 / 152 at a head of 118, rising 1.6 per column of head (the width from the argument's start to the `>`), any indent |
+| 5 | 96 / 100 / 102 / 106 / 108 |
+| 6 | 82 / 84 / 88 / 90 / 90 |
+| 7 | 70 / 74 / 78 / 80 / 80 |
+| 8 | 62 / 66 / 68 / 72 / 72 |
+| 9 | 56 / – / – / 64 / 64 |
+| 10 | 50 / 54 / 56 / 60 / 60 |
+| ≥ 11 | 0 — the oracle always breaks the colon |
+
+From name length 5 the floor does not move with the `>`'s column or the indent at all. No closed form
+fits it: `w·(n+1)` comes closest, and its intervals do not intersect. So it is a table
+(`BreakPlan.ColonFloorOf`, linear between the measured first-argument widths), read by the fitter
+through `GroupFacts.ColonFloor`/`ColonFloorSlope` once `Document.YieldEndOf` says the type argument
+list's `>` is past the margin. Every grid cell is byte-identical to the oracle, `OwnersC` included, and
+`corpus/real/` is unmoved. ⚠ Interpolated, not measured: first type arguments between the measured
+widths, name length 9 at 8 and 14, and anything other than two type arguments and a two-argument list.
+The `g = 120` band, where only the `(` overflows, is untouched and still diverges for a narrow argument
+list (the first two rows of the earlier table).
+
+- options: none.
+- ⚠ status: **resolved** for a type argument list past the margin, pinned by
+  `constructs/breaks/named-argument-generic-call-colon-floor.cs`; the `g = 120` band **open**.
 ## SK-DIV-0174 — the gap after a block comment was always one space, and the oracle answers it three ways
 
 ⚠ **Found measuring #409's family** (#410). `CSharpDocumentBuilder.GapSpace` returned `Required`

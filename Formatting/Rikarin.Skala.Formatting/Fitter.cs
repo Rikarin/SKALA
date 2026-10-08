@@ -127,7 +127,8 @@ public sealed class Fitter {
                 document.PointWidthOf(node),
                 document.AfterPointOf(node),
                 trailing,
-                line
+                line,
+                document.YieldEndOf(node)
             ),
             document.AfterPointRunsToTheEnd(node),
             document.SegmentOf(node),
@@ -201,7 +202,8 @@ public sealed class Fitter {
         int PointWidth,
         int AfterPoint,
         int Trailing,
-        int Line);
+        int Line,
+        int YieldEnd = 0);
 
     /// <summary>The mode a group resolved to. Flat until the walk reaches it.</summary>
     public ResolvedMode ModeOf(int group) => modes[group];
@@ -447,6 +449,20 @@ public sealed class Fitter {
             }
         } else if (!facts.BreaksOnlyIfHeadOverflows) {
             return ResolvedMode.Broken;
+        }
+
+        // ⚠ The type argument list after the point overflows by itself, so it fills and this group's
+        // break is not the one taken — unless the argument list after it is at least the measured
+        // floor. See GroupFacts.YieldsToOverflowingTypeArguments and ColonFloor (#490).
+        if (facts.YieldsToOverflowingTypeArguments
+            && m.YieldEnd > 0
+            && m.PointWidth < Unbounded
+            && !Fits(m.Column, m.PointWidth + m.YieldEnd)) {
+            var arguments = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth - m.YieldEnd;
+            var floor = facts.ColonFloor + facts.ColonFloorSlope * (m.PointWidth + m.YieldEnd - 118) / 100;
+            if (arguments < floor) {
+                return ResolvedMode.Flat;
+            }
         }
 
         // What lands on *this* line if the group stays flat and the construct inside wraps instead.

@@ -526,6 +526,7 @@ public sealed class Document {
     readonly int[] draftSegment;
     readonly bool[] hasBreak;
     readonly GroupFacts[] facts;
+    readonly IReadOnlyDictionary<int, int> yieldEnds;
 
     internal Document(
         DocNode[] nodes,
@@ -542,7 +543,8 @@ public sealed class Document {
         int[] segmentHead,
         int[] draftSegment,
         bool[] hasBreak,
-        GroupFacts[] facts
+        GroupFacts[] facts,
+        IReadOnlyDictionary<int, int> yieldEnds
     ) {
         Nodes = nodes;
         NodeCount = nodeCount;
@@ -559,6 +561,7 @@ public sealed class Document {
         this.draftSegment = draftSegment;
         this.hasBreak = hasBreak;
         this.facts = facts;
+        this.yieldEnds = yieldEnds;
     }
 
     public DocNode[] Nodes { get; }
@@ -631,6 +634,13 @@ public sealed class Document {
     ///     the group declines to break and lets the construct inside it wrap instead.
     /// </remarks>
     public int AfterPointOf(int node) => afterPoint[node];
+
+    /// <summary>
+    ///     For a group that <see cref="GroupFacts.YieldsToOverflowingTypeArguments" />: the point width from
+    ///     its own first point to the end of the first group of yielding points after it — a type argument
+    ///     list's <c>&gt;</c>. Zero when there is none.
+    /// </summary>
+    public int YieldEndOf(int node) => yieldEnds.TryGetValue(node, out var end) ? end : 0;
 
     /// <summary>
     ///     The flat width from one break point to the next one of the same group: what a fill puts on
@@ -917,6 +927,24 @@ public sealed class Document {
 ///     chops the parameters when the <c>)</c> itself is past the margin, and declines the join — the
 ///     attribute on its own line — when only the terminator is. Zero for any other group.
 /// </param>
+/// <param name="YieldsToOverflowingTypeArguments">
+///     ⚠ A <see cref="BreaksOnlyIfHeadOverflows" /> group that stays flat whenever the line up to the end of
+///     the first type argument list after its point — the <c>&gt;</c> — does not fit, and leaves that list
+///     to fill (#490, SK-DIV-0177). A named argument's colon: the oracle writes
+///     <c>name: Cast&lt;SomeVeryLongTypeArgumentNumberOne,</c> / <c>Taaa…&gt;(x, y)</c> whenever the
+///     <c>&gt;</c> is past the margin, at every argument list width swept (6 to 80 columns, the
+///     arguments chopped below the fill once they do not fit), and never <c>name:</c> alone. The head
+///     the colon otherwise asks about reads through the type arguments to the call's <c>(</c>, which is
+///     right when only the <c>(</c> overflows. See <see cref="Document.YieldEndOf" />.
+/// </param>
+/// <param name="ColonFloor">
+///     ⚠ With <see cref="YieldsToOverflowingTypeArguments" />: the argument list width from which the
+///     colon breaks after all, the type argument list overflowing or not — measured, not derived (#490,
+///     SK-DIV-0177). The front end reads it off the measured grid for the argument's name and first type
+///     argument; <see cref="ColonFloorSlope" /> moves it by hundredths of a column per column of the head
+///     (the width from the argument's start through the <c>&gt;</c>) past 118.
+/// </param>
+/// <param name="ColonFloorSlope">See <see cref="ColonFloor" />.</param>
 /// <param name="KeywordWidth">
 ///     ⚠ The width of the keyword after this group's one point, for the point before an <c>is</c> or an
 ///     <c>as</c> (#444, SK-DIV-0210): broken exactly when the operand before the point fits on its line
@@ -941,4 +969,7 @@ public readonly record struct GroupFacts(
     bool FlatIfOwnerBroke = false,
     bool Continues = false,
     int Terminator = 0,
-    int KeywordWidth = 0);
+    int KeywordWidth = 0,
+    bool YieldsToOverflowingTypeArguments = false,
+    int ColonFloor = 0,
+    int ColonFloorSlope = 0);

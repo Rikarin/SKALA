@@ -3195,9 +3195,79 @@ public sealed class BreakPlan {
             new GroupFacts(
                 options.KeepsUserBreaksBetweenItems && BreaksBefore(first),
                 BreaksIfTooLong: true,
-                BreaksOnlyIfHeadOverflows: true
+                BreaksOnlyIfHeadOverflows: true,
+                YieldsToOverflowingTypeArguments: ColonFloorOf(argument, value) is var (floor, _) && floor >= 0,
+                ColonFloor: ColonFloorOf(argument, value).Floor,
+                ColonFloorSlope: ColonFloorOf(argument, value).Slope
             )
         );
+    }
+
+    /// <summary>
+    ///     The argument list width from which a named argument's colon breaks before a generic call whose
+    ///     type arguments run past the margin, and how it moves with the head (#490, SK-DIV-0177); −1 when
+    ///     the value is not such a call.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A table, because no model of it survived: measured with <c>Testing ask</c> one argument list
+    ///     width at a time (2 columns apart, 30 to 200) for name lengths 3 to 12, first type arguments of
+    ///     2, 8, 14, 20, 25 and 40 columns, the <c>&gt;</c> at 121 to 140 and item indents 12, 16 and 20.
+    ///     Every row is a clean threshold: below it the oracle fills the type argument list and above it
+    ///     breaks after the colon. A name of three or fewer never breaks the colon and one of eleven or
+    ///     more always does; between, the floor falls with the name and rises with the first type argument
+    ///     up to 20 columns, and is independent of the <c>&gt;</c>'s column and the indent — except at four,
+    ///     where it rises 1.6 columns for every column of head past 118. Interpolated linearly between the
+    ///     measured first-argument widths; the floor is the first width measured breaking, less one.
+    /// </remarks>
+    static (int Floor, int Slope) ColonFloorOf(SyntaxNode argument, ExpressionSyntax value) {
+        var generic = value switch {
+            InvocationExpressionSyntax { Expression: GenericNameSyntax name } => name,
+            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax name } } => name,
+            _ => null
+        };
+
+        var nameColon = argument switch {
+            ArgumentSyntax { NameColon: { } colon } => colon.Name.Identifier,
+            AttributeArgumentSyntax { NameColon: { } colon } => colon.Name.Identifier,
+            _ => default
+        };
+
+        if (generic is not { TypeArgumentList.Arguments: [var firstType, _, ..] } || nameColon.IsKind(SyntaxKind.None)) {
+            return (-1, 0);
+        }
+
+        var n = nameColon.Span.Length;
+        if (n <= 3) {
+            return (int.MaxValue / 4, 0);
+        }
+
+        if (n >= 11) {
+            return (0, 0);
+        }
+
+        // Rows: name length 4 … 10; columns: first type argument 2, 8, 14, 20 and 40 columns (and wider).
+        ReadOnlySpan<int> widths = [2, 8, 14, 20, 40];
+        ReadOnlySpan<int> table = [
+            128, 136, 146, 152, 152,
+            96, 100, 102, 106, 108,
+            82, 84, 88, 90, 90,
+            70, 74, 78, 80, 80,
+            62, 66, 68, 72, 72,
+            56, 59, 61, 64, 64,
+            50, 54, 56, 60, 60
+        ];
+
+        var f = Math.Clamp(firstType.Span.Length, widths[0], widths[^1]);
+        var column = 0;
+        while (column < widths.Length - 2 && f > widths[column + 1]) {
+            column++;
+        }
+
+        var row = (n - 4) * widths.Length;
+        var low = table[row + column];
+        var high = table[row + column + 1];
+        var first = low + (high - low) * (f - widths[column]) / (widths[column + 1] - widths[column]);
+        return (first - 1, n == 4 ? 160 : 0);
     }
 
     /// <summary>
