@@ -9063,11 +9063,36 @@ the "held" side is reached, and the five grid rows past them (two arguments at 8
 `source.Select(` / … / `)` rows are held by the same rule. A receiver that does not fit flat breaks
 inside itself and leaves the point alone (`X.Select(…)` / `.Where(gamma)!.Where(beta)`).
 
+⚠ **The residue, measured on 2026-10-09 (#528 round three).** The five rows were the 76/96 constants
+being wrong, not exceptions: a 280-row grid — heads every five columns from 40 to 110, call lines every
+two columns, one and two arguments — has two arguments break up to a line of
+`max(108.5 − 0.4·paren, 58 + 0.2·paren)` and one argument up to a per-head threshold that falls from 111
+at a 40-column head to 97 at 85–90 and rises again to 101 (`Fitter.HeldCallLimit`). The table reproduces
+all 280 rows and the 104 above.
+
+The single call that is no chain is a separate question, because there the `=` is the alternative to the
+dot. Measured on `JsonConvert.DeserializeObject<G…>(json)` and `S….Select(a…)` with receivers of 10 to
+102 columns, values 117 to 132 columns wide below, behind `var y`, `y`, typed heads of 15 and 38 columns,
+`var zzzzzzzzzzzz` and a twenty-column assignment target (`Fitter.HeldValueBreaks`, `GroupFacts.HeldValue`):
+
+| head | the `=` breaks when the value does not fit beside it and … | then |
+|---|---|---|
+| typed local | … it fits below with three columns to spare | otherwise `T c = R` / `.Call(…);` |
+| `var` / assignment under 12 columns | … it overflows below by at most one column, or its `(` lands at 117 or less below; never one column over beside it, never where the value would not move left | the dot breaks at one column over, else the argument chops |
+| `var` / assignment of 12 or more | … unless the receiver fits beside it, the `(` beside it does not, and the line below is within `HeldCallLimit` | as above |
+
+Two arguments behind a short head break the `=` only when the `(` does not fit beside it and lands at 117
+or less below — `var w = S…` / `.Selectttt…(alpha, beta);` against `var wwwwwwwwwwww =` / `S….Select…(` /
+`alpha,` / `beta` / `);`. ⚠ A typed local with two or more arguments was not measured and plans nothing,
+and arguments that break inside themselves (a lambda, an initializer) keep #529's and #378's layout.
+
 - options: `skala_wrap_before_first_method_call`.
-- ⚠ status: **resolved for chains, open for the residue** (#528): the five grid rows above, and the
-  single call that is no chain (the third row; `var y =` / `S….Select(alpha)` breaks the `=` first and
-  then the dot or the arguments, by rules not measured further). Pinned by `HeldFirstCallIssue528Tests`
-  and `constructs/breaks/held-first-call.cs`.
+- ⚠ status: **resolved** (#528), with two shapes measured and not modelled: behind a 12-column-or-longer
+  head with a receiver of 70 to 90 columns, the oracle breaks the `=` where the table moves the dot
+  (`h11`'s 9 of 96 rows), and a 40-column receiver whose lone argument overflows below by twelve keeps
+  the `=` and chops — both receivers far past anything in the reference trees. Pinned by
+  `HeldFirstCallIssue528Tests`, `HeldSingleCallIssue528Tests`, `constructs/breaks/held-first-call.cs`
+  and `constructs/breaks/held-single-call.cs`.
 
 ## SK-DIV-0332 — a lambda argument's arrow breaks where the chain in its body would have chopped
 

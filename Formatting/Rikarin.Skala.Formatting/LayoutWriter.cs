@@ -1727,7 +1727,9 @@ public sealed class LayoutWriter {
             }
         }
 
-        if (document.FactsOf(group).SpendsIndent) {
+        // ⚠ Except a single `=` value's held call (GroupFacts.HeldValue), whose own level collapses into the
+        // `=`'s when both opened on this line — `var y = R` / `.Call(…)` lands one level in, not two (#528).
+        if (document.FactsOf(group).SpendsIndent && !(document.FactsOf(group).HeldCall >= 3 && counted == line)) {
             level += continuousMultiplier * indentWidth;
         }
 

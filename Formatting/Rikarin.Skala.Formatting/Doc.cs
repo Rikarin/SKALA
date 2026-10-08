@@ -1005,6 +1005,19 @@ public sealed class Document {
 ///     With <see cref="ValueHeadWidth" />: the condition is a call, whose <c>=</c> breaks only when the
 ///     condition fits on the line below.
 /// </param>
+/// <param name="HeldValue">
+///     ⚠ An <c>=</c> whose value is a single call on a receiver (#528, SK-DIV-0331), by its head, or zero:
+///     1 a typed local, 2 a <c>var</c> or assignment head under twelve columns, 3 one of twelve or more.
+///     When the value does not fit beside it, the <c>=</c> breaks by a measured table — the typed local
+///     when the value fits below with three columns to spare; the short head when it overflows below by at
+///     most one column or its <c>(</c> lands three short of the margin there; the long head unless the
+///     call would move down at its dot as a chain's held first call does — and otherwise the call's own
+///     dot takes the break: <c>T c = JsonConvert</c> / <c>.DeserializeObject&lt;…&gt;(json);</c>.
+/// </param>
+/// <param name="HeldValueWidth">With <see cref="HeldValue" />: the value's flat width with its <c>;</c>.</param>
+/// <param name="HeldValueReceiver">With <see cref="HeldValue" />: the receiver's flat width.</param>
+/// <param name="HeldValueHead">With <see cref="HeldValue" />: the width from the dot through the <c>(</c>.</param>
+/// <param name="HeldValueManyArgs">With <see cref="HeldValue" />: the call has more than one argument.</param>
 /// <param name="FlatIfHeadOverflows">
 ///     ⚠ An assignment's <c>=</c> whose target is a member-access fill (#531, SK-DIV-0330): when the target
 ///     with its <c>=</c> does not fit on the line, the target's own dot breaks and the <c>=</c> stays —
@@ -1016,6 +1029,8 @@ public sealed class Document {
 ///     margin by, or zero: the point before it breaks exactly when the
 ///     receiver fits on its line, the receiver with the call does not, and the call fits whole on the
 ///     continuation line. A receiver that does not fit flat breaks inside itself and leaves the point alone.
+///     1 and 2 are a chain's first call with one argument and with more; 3 and 4 a single call that is a
+///     whole <c>=</c> value (<see cref="HeldValue" />) with one argument and with more.
 /// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
@@ -1044,8 +1059,14 @@ public readonly record struct GroupFacts(
     EqualsOwner CalleeOwner = EqualsOwner.None,
     int ThroughWidth = 0,
     int HeldCall = 0,
+    int HeldCallHead = 0,
     bool ContinuesIfItBreaks = false,
     bool FlatIfHeadOverflows = false,
     int ValueHeadWidth = 0,
     bool ValueHeadFitsBelow = false,
-    bool ValueHeadIsWide = false);
+    bool ValueHeadIsWide = false,
+    int HeldValue = 0,
+    int HeldValueWidth = 0,
+    int HeldValueReceiver = 0,
+    int HeldValueHead = 0,
+    bool HeldValueManyArgs = false);

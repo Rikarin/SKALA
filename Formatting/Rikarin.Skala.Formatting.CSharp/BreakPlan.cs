@@ -2563,13 +2563,69 @@ public sealed class BreakPlan {
             return;
         }
 
-        // ⚠ How short of the margin the call's line below must end, by argument count: 96 columns for
-        // one argument or none, 76 for more, at the export's 120 — the widths every measured row agrees
-        // on (see Fitter's HeldCall arm and SK-DIV-0331).
-        var room = call.ArgumentList.Arguments.Count <= 1 ? 24 : 44;
+        // ⚠ The argument count picks the measured table (one argument or none, or more), and the call's
+        // head — dot to `(` — places the column the held `(` would land on; see Fitter.HeldCallLimit and
+        // SK-DIV-0331.
+        var kind = call.ArgumentList.Arguments.Count <= 1 ? 1 : 2;
+        var callHead = call.ArgumentList.OpenParenToken.Span.End - dot.SpanStart;
         var group = NewGroup();
         Point(dot, group);
-        Describe(call, group, GroupMode.Preserve, new(BreaksIfTooLong: true, HeldCall: room));
+        Describe(
+            call,
+            group,
+            GroupMode.Preserve,
+            new(BreaksIfTooLong: true, HeldCall: kind, HeldCallHead: callHead)
+        );
+    }
+
+    /// <summary>
+    ///     A single call on a receiver that is the whole value of an <c>=</c> — no chain, one dot: its dot is
+    ///     a point, and the <c>=</c> before it answers by the measured table in GroupFacts.HeldValue (#528,
+    ///     SK-DIV-0331). Returns the call, or null where nothing was planned.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-09 against <c>T c = JsonConvert</c> / <c>.DeserializeObject&lt;…&gt;(json);</c>
+    ///     (Newtonsoft) and synthetic receivers of 10 to 102 columns, behind <c>var y</c>, <c>y</c>,
+    ///     <c>var zzzzzzzzzzzz</c>, a twenty-column assignment target and typed heads of 15 and 38 columns.
+    ///     ⚠ A typed local with more than one argument was not measured and plans nothing.
+    /// </remarks>
+    InvocationExpressionSyntax? PlanHeldSingleCall(ExpressionSyntax value, int kind) {
+        if (value is not InvocationExpressionSyntax {
+                Expression: MemberAccessExpressionSyntax { OperatorToken: var dot, Expression: var receiver }
+            } call
+            || kind == 1 && call.ArgumentList.Arguments.Count > 1
+            // ⚠ Measured on plain arguments only: an argument that breaks inside itself — a lambda's body,
+            // an initializer — is #529's and #378's layout, not this table's.
+            || call.ArgumentList.DescendantNodes()
+                .Any(static node => node is AnonymousFunctionExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or AnonymousObjectCreationExpressionSyntax
+                    or SwitchExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or WithExpressionSyntax)
+            || IsChainRoot(value) && ChainPointCount(value, options) > 0
+            || receiver is InvocationExpressionSyntax or ElementAccessExpressionSyntax
+            || BreaksBefore(dot)
+            || source.AsSpan(value.SpanStart, value.Span.Length).IndexOfAny('\r', '\n') >= 0) {
+            return null;
+        }
+
+        var group = NewGroup();
+        Point(dot, group);
+        Describe(
+            call,
+            group,
+            GroupMode.Preserve,
+            new(
+                BreaksIfTooLong: true,
+                HeldCall: call.ArgumentList.Arguments.Count > 1 ? 4 : 3,
+                HeldCallHead: call.ArgumentList.OpenParenToken.Span.End - dot.SpanStart
+            ),
+            // ⚠ A level of its own, as a chain's: `var y =` / `R` / `.Call(…)` puts the dot one level past
+            // the receiver, and LayoutWriter's one-level-per-line collapse keeps `var y = R` / `.Call(…)` at one.
+            ownLevel: true
+        );
+        return call;
     }
 
     /// <summary>
@@ -4326,6 +4382,20 @@ public sealed class BreakPlan {
             ? FlatSourceWidth(conditional.Condition)
             : 0;
         var conditionHeadIsWide = conditionHead > 0 && HeadWidthThroughEquals(node, equals) >= MinimumEqualsHead;
+
+        // ⚠ A single call on a receiver, as the whole value: moved down at its dot rather than chopped
+        // when the `=` stays (#528). See PlanHeldSingleCall for where the `=` stays.
+        var heldKind = owner switch {
+            EqualsOwner.TypedLocal => 1,
+            EqualsOwner.VarLocal or EqualsOwner.Assignment => HeadWidthThroughEquals(node, equals) < MinimumEqualsHead
+                ? 2
+                : 3,
+            _ => 0,
+        };
+        var heldCall = heldKind > 0 ? PlanHeldSingleCall(value, heldKind) : null;
+        var heldReceiver = heldCall?.Expression is MemberAccessExpressionSyntax heldAccess
+            ? FlatSourceWidth(heldAccess.Expression)
+            : 0;
         var head = -1;
         if ((yieldsToTheBracket || callee > 0)
             && EqualsHeadStartOf(node) is { RawKind: not 0 } headToken
@@ -4394,7 +4464,16 @@ public sealed class BreakPlan {
                     ValueHeadFitsBelow: value is ConditionalExpressionSyntax {
                         Condition: InvocationExpressionSyntax { Expression: IdentifierNameSyntax or GenericNameSyntax }
                     },
-                    ValueHeadIsWide: conditionHeadIsWide
+                    ValueHeadIsWide: conditionHeadIsWide,
+                    HeldValue: heldCall is null ? 0 : heldKind,
+                    HeldValueWidth: heldCall is null
+                        ? 0
+                        : FlatSourceWidth(value) + (value.GetLastToken().GetNextToken().IsKind(SyntaxKind.SemicolonToken) ? 1 : 0),
+                    HeldValueReceiver: heldReceiver,
+                    HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
+                        ? heldCall.ArgumentList.OpenParenToken.Span.End - heldDot.OperatorToken.SpanStart
+                        : 0,
+                    HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
