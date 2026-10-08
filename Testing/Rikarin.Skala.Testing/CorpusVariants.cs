@@ -74,7 +74,8 @@ public static class CorpusVariants {
             "keep-rearrange",
             true,
             false
-        ), Variant("reflow-keep", false, true),
+        ),
+        Variant("reflow-keep", false, true),
         Variant(
             "reflow-rearrange",
             false,

@@ -2772,7 +2772,11 @@ public sealed class BreakPlan {
             //     if (o is IDisposable
             //         or IAsyncDisposable) {     ← one, where an argument would take two
             pattern,
-            ownLevel: pattern && !IsStatementCondition(root)
+            // ⚠ And only the outermost combinator's chain: an `and` chain inside an `or` chain is a
+            // chain of its own since #483, and the oracle writes its links on the `or`s' column —
+            // `rune is >= 0x1100` / `and <= 0x115F` / `or >= 0x2E80` / `and <= 0x303E` all one level in
+            // (Skala's own TextWidth.cs, measured).
+            ownLevel: pattern && !IsStatementCondition(root) && root.Parent is not BinaryPatternSyntax
         );
     }
 
@@ -5324,10 +5328,12 @@ public sealed class BreakPlan {
 
             SyntaxNode owner;
             bool spendsIndent;
-            if (token.IsKind(SyntaxKind.OpenParenToken) && token.Parent is ArgumentListSyntax { Arguments.Count: > 0 } list) {
+            if (token.IsKind(SyntaxKind.OpenParenToken)
+                && token.Parent is ArgumentListSyntax { Arguments.Count: > 0 } list) {
                 owner = list;
                 spendsIndent = false;
-            } else if (token.IsKind(SyntaxKind.EqualsGreaterThanToken) && token.Parent is ArrowExpressionClauseSyntax arrow) {
+            } else if (token.IsKind(SyntaxKind.EqualsGreaterThanToken)
+                       && token.Parent is ArrowExpressionClauseSyntax arrow) {
                 owner = arrow;
                 spendsIndent = true;
             } else {

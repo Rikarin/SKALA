@@ -54,6 +54,12 @@ class BinaryPatternChainKeptBreak {
         var d = f is PixelFormat.Rgba16Float and PixelFormat.Rg16Float
             or PixelFormat.Bgra8
             or PixelFormat.Rgba16UNorm;
+        var e = rune is >= 0x1100
+            and <= 0x115F
+            or >= 0x2E80
+            and <= 0x303E
+            or >= 0x3041
+            and <= 0x33FF;
         if (f is PixelFormat.Rgba16Float
             or PixelFormat.Rg16Float
             or PixelFormat.Rgba16UNorm) { }
