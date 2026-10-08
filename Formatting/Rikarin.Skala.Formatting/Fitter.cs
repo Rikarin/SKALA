@@ -571,6 +571,15 @@ public sealed class Fitter {
         var paren = m.Column + m.PointWidth + 1 + facts.CalleeWidth + 1;
         var arguments = m.FlatWidth - m.PointWidth - 1 - facts.CalleeWidth;
         var indent = m.ContinuationColumn - indentWidth;
+
+        // ⚠ A `(` past the margin leaves the `=` nothing to keep: the line through it overflows whatever the
+        // arguments do, and the table was measured with the `(` at columns 52 to 112. Kept, the second pass —
+        // reading the chopped arguments as broken, which this rule declines — broke the `=` the first pass had
+        // kept (Nightly fuzzer, seeds 4304693669410283359 and 17091299203163347117: idempotency).
+        if (paren > width) {
+            return ResolvedMode.Broken;
+        }
+
         return arguments < EqualsFloor.Of(paren, indent, facts.CalleeWidth, facts.CalleeOwner)
             ? ResolvedMode.Broken
             : ResolvedMode.Flat;

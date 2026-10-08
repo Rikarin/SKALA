@@ -75,4 +75,45 @@ public sealed class MeasuredWidthsAbsorbWhitespaceTests {
         Assert.NotEqual(clean, widened);
         Assert.Equal(Format.Text(Wrap("    ", clean)), Format.Text(Wrap("    ", widened)));
     }
+
+    /// <summary>
+    ///     ⚠ Nightly fuzzer, seed 1 (replay 13096041111892358404, Newtonsoft's ConstructorHandlingTests.cs): a
+    ///     space before a type argument list's <c>&gt;</c> that the formatter removes moved #528's held-value
+    ///     table, read through <c>BreakPlan.FlatSourceWidth</c>.
+    /// </summary>
+    [Fact]
+    public void ASpaceInsideATypeArgumentList_DoesNotMoveTheHeldValue() {
+        const string Name = "PublicParameterizedConstructorWithNonPropertyParameterTestClass";
+        static string Source(string close) => $$"""
+            namespace Newtonsoft.Json.Tests.Serialization
+            {
+              public class ConstructorHandlingTests : TestFixtureBase
+              {
+              public void SuccessWithPublicParameterizedConstructorWhenParameterIsNotAProperty()
+              {
+               {{Name}} c = JsonConvert.DeserializeObject<{{Name}}{{close}}(json);
+              }
+              }
+            }
+            """;
+        Assert.Equal(Format.Text(Source(">")), Format.Text(Source(" >")));
+    }
+
+    /// <summary>
+    ///     ⚠ Nightly fuzzer, seeds 4304693669410283359 and 17091299203163347117 (idempotency): with the call's
+    ///     <c>(</c> past the margin the first pass kept <c>= Emit(</c> on a 123-column line and chopped the
+    ///     arguments, and the second, reading them as broken, moved the call below the <c>=</c>. The <c>=</c>
+    ///     breaks on the first pass now.
+    /// </summary>
+    [Fact]
+    public void AnEqualsBeforeACallWhoseParenIsPastTheMargin_IsStableOnTheSecondPass() {
+        const string Source = """""
+            internal sealed readonly struct T2<T3> {
+                private ImmutableArray<((double? First, long Second) First, (CancellationToken First, long Second) Second)> f23 = Emit(Materialise<TimeSpan>($"value {97} and {items[0]}", x24 => source?.Value?.Length, (state is null)), state, """"a { b } c"""");
+            }
+            """"";
+        var once = Format.Text(Source);
+        Assert.Equal(once, Format.Text(once));
+        Assert.Contains(" f23 =\n", once, StringComparison.Ordinal);
+    }
 }

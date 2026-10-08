@@ -3451,7 +3451,7 @@ public sealed class BreakPlan {
     static bool IsAssignmentTarget(SyntaxNode root) =>
         root.Parent is AssignmentExpressionSyntax assignment && assignment.Left == root;
 
-    static bool PlansTheFill(SyntaxNode root) =>
+    bool PlansTheFill(SyntaxNode root) =>
         root.Parent switch {
             AssignmentExpressionSyntax assignment when assignment.Left == root => true,
             BinaryExpressionSyntax binary when IsTypeTest(binary) && binary.Left == root => false,
@@ -5718,12 +5718,7 @@ public sealed class BreakPlan {
         var width = 0;
         for (var token = first; !token.IsKind(SyntaxKind.None); token = token.GetNextToken()) {
             if (token != first) {
-                var previous = token.GetPreviousToken();
-                width += SpaceRules.Decide(previous, token, options) switch {
-                    SpaceKind.Required => 1,
-                    SpaceKind.Forbidden => 0,
-                    _ => previous.HasTrailingTrivia || token.HasLeadingTrivia ? 1 : 0
-                };
+                width += GapWidth(token.GetPreviousToken(), token);
             }
 
             width += token.Span.Length;
@@ -5735,20 +5730,25 @@ public sealed class BreakPlan {
         return width;
     }
 
-    static int FlatSourceWidth(SyntaxNode node) {
+    int FlatSourceWidth(SyntaxNode node) {
         var width = 0;
         var first = true;
         foreach (var token in node.DescendantTokens()) {
-            if (!first && token.HasLeadingTrivia || !first && token.GetPreviousToken().HasTrailingTrivia) {
+            if (!first) {
+                var previous = token.GetPreviousToken();
                 var breaks = token.LeadingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia))
-                    || token.GetPreviousToken().TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
+                    || previous.TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
                 var glued = token.Kind() is SyntaxKind.DotToken
                         or SyntaxKind.QuestionToken
                         or SyntaxKind.CloseParenToken
                         or SyntaxKind.CloseBracketToken
-                    || token.GetPreviousToken().Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
+                    || previous.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
+
+                // ⚠ The space the formatter writes, not the author's (Nightly fuzzer, seed 1 replay
+                // 13096041111892358404): `DeserializeObject<T >(json)` counted a space before the `>` that the
+                // formatter removes, and the held value's table read another row.
                 if (!(breaks && glued)) {
-                    width++;
+                    width += GapWidth(previous, token);
                 }
             }
 
@@ -5758,6 +5758,14 @@ public sealed class BreakPlan {
 
         return width;
     }
+
+    /// <summary>The space the formatter writes between two adjacent tokens on one line.</summary>
+    int GapWidth(SyntaxToken previous, SyntaxToken token) =>
+        SpaceRules.Decide(previous, token, options) switch {
+            SpaceKind.Required => 1,
+            SpaceKind.Forbidden => 0,
+            _ => previous.HasTrailingTrivia || token.HasLeadingTrivia ? 1 : 0
+        };
 
     /// <summary>
     ///     The flat width from the construct's head token (<see cref="EqualsHeadStartOf" />) through the
@@ -5783,7 +5791,7 @@ public sealed class BreakPlan {
     ///     creation, a creation with arguments or a target-typed <c>new()</c>, none of which was measured, and
     ///     not one the author broke inside, which keeps the brace's break (SK-DIV-0337).
     /// </remarks>
-    static int CreationLimitOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value, EqualsOwner owner) {
+    int CreationLimitOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value, EqualsOwner owner) {
         if (owner == EqualsOwner.None
             || value.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))) {
             return 0;
@@ -5821,42 +5829,16 @@ public sealed class BreakPlan {
             _ => 4420 + 24 * prefix - 16 * Math.Max(name, 23)
         };
 
-        static int WidthThrough(SyntaxToken start, SyntaxToken end) {
-            var width = 0;
-            for (var token = start; !token.IsKind(SyntaxKind.None); token = token.GetNextToken()) {
-                if (token != start && (token.HasLeadingTrivia || token.GetPreviousToken().HasTrailingTrivia)) {
-                    width++;
-                }
-
-                width += token.Span.Length;
-                if (token == end) {
-                    break;
-                }
-            }
-
-            return width;
-        }
+        int WidthThrough(SyntaxToken start, SyntaxToken end) => FormattedWidth(start, end);
     }
 
-    static int HeadWidthThroughEquals(SyntaxNode node, SyntaxToken equals) {
+    int HeadWidthThroughEquals(SyntaxNode node, SyntaxToken equals) {
         var start = EqualsHeadStartOf(node);
         if (start.IsKind(SyntaxKind.None)) {
             start = FirstToken(node);
         }
 
-        var width = 0;
-        for (var token = start; !token.IsKind(SyntaxKind.None); token = token.GetNextToken()) {
-            if (token != start && (token.HasLeadingTrivia || token.GetPreviousToken().HasTrailingTrivia)) {
-                width++;
-            }
-
-            width += token.Span.Length;
-            if (token == equals) {
-                break;
-            }
-        }
-
-        return width;
+        return FormattedWidth(start, equals);
     }
 
     /// <summary>

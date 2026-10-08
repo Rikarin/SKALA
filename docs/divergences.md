@@ -11097,3 +11097,17 @@ too. Absorption was broken by the gaps inside the type and the parameter list. T
 both, and the fuzzer's exact line fails without the fix.
 
 - ⚠ status: **fixed**, pinned by `MeasuredWidthsAbsorbWhitespaceTests`.
+
+⚠ **The same seeds, rerun after that fix, found three more cases of the same two classes.** All three
+are on master too, and all are now fixed:
+- **Seed 1, replay 13096041111892358404** (Newtonsoft's ConstructorHandlingTests.cs, whitespace
+  absorption). `BreakPlan.FlatSourceWidth`, behind #528's held value, counted a run of whitespace as one
+  space, so `DeserializeObject<T >(json)` measured a space the formatter removes. It now uses the
+  formatter's gap (`GapWidth`), as do the #581 and #446 head widths through the `=`.
+- **Seeds 4304693669410283359 and 17091299203163347117** (idempotency). The floor for an `=` before a
+  call (#446, round 2) kept `= Emit(` on a 123-column line, because the arguments cleared the floor.
+  The second pass read the chopped arguments as broken, which that rule declines, and broke the `=`.
+  When the call's `(` is past the margin the `=` now breaks on the first pass. The table was measured with
+  the `(` at columns 52 to 112.
+
+Pinned by four tests in `MeasuredWidthsAbsorbWhitespaceTests`, each of which fails on master.
