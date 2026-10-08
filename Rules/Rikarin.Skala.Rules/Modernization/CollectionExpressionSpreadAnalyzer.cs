@@ -323,7 +323,7 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
                 when ReferenceEquals(assignment.Right, value) && RewriteGuards.IsPlainNamePath(assignment.Left):
                 return "the assignment target";
 
-            case ArgumentSyntax { RefKindKeyword.RawKind: (int)SyntaxKind.None, Parent: ArgumentListSyntax }:
+            case ArgumentSyntax { Parent: ArgumentListSyntax }:
                 return "the parameter";
 
             default:
