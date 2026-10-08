@@ -32,8 +32,7 @@ public sealed class ReadonlyStructMutationAnalyzer : DiagnosticAnalyzer {
             }
             || model.GetOperation(context.Node, cancellation) is not IInvocationOperation {
                 Instance: IFieldReferenceOperation { Field.IsReadOnly: true } receiver,
-                TargetMethod:
-                {
+                TargetMethod: {
                     IsReadOnly: false,
                     IsStatic: false,
                     ReturnsVoid: true,

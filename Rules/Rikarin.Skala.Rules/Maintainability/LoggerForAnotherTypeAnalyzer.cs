@@ -63,7 +63,7 @@ public sealed class LoggerForAnotherTypeAnalyzer : DiagnosticAnalyzer {
         }
 
         if (context.SemanticModel.GetSymbolInfo(name, context.CancellationToken).Symbol
-            is not INamedTypeSymbol { IsGenericType: true } constructed
+                is not INamedTypeSymbol { IsGenericType: true } constructed
             || !SymbolEqualityComparer.Default.Equals(constructed.OriginalDefinition, loggerOfT)) {
             return;
         }
@@ -76,7 +76,7 @@ public sealed class LoggerForAnotherTypeAnalyzer : DiagnosticAnalyzer {
 
         if (EnclosingType(name) is not { } declaration
             || context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken)
-            is not { } enclosing
+                is not { } enclosing
             || IsSelfOrBase(enclosing, argument)) {
             return;
         }
@@ -134,7 +134,7 @@ public sealed class LoggerForAnotherTypeAnalyzer : DiagnosticAnalyzer {
         if (!PartialMembers.IsImplementation(constructor)
             || PartialMembers.Sibling(constructor) is not ConstructorDeclarationSyntax definition
             || definition.ParameterList.Parameters[list.Parameters.IndexOf(parameter)].Type
-            is not GenericNameSyntax { TypeArgumentList.Arguments.Count: 1 } other) {
+                is not GenericNameSyntax { TypeArgumentList.Arguments.Count: 1 } other) {
             return null;
         }
 

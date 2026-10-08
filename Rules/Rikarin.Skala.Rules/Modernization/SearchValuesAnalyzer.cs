@@ -161,8 +161,9 @@ public sealed class SearchValuesAnalyzer : DiagnosticAnalyzer {
     ) {
         if (initializer is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } invocation
             && model.GetOperation(invocation, cancellation) is IInvocationOperation {
-                TargetMethod:
-                { Name: "ToCharArray", Parameters.Length: 0, ContainingType.SpecialType: SpecialType.System_String }
+                TargetMethod: {
+                    Name: "ToCharArray", Parameters.Length: 0, ContainingType.SpecialType: SpecialType.System_String
+                }
             }
             && model.GetConstantValue(access.Expression, cancellation) is { HasValue: true, Value: string text }) {
             return text;

@@ -134,7 +134,7 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
             case ArgumentSyntax argument:
                 return !argument.RefKindKeyword.IsKind(SyntaxKind.None)
                     || model.GetOperation(argument, cancellation)
-                    is Microsoft.CodeAnalysis.Operations.IArgumentOperation { Parameter.RefKind: not RefKind.None };
+                        is Microsoft.CodeAnalysis.Operations.IArgumentOperation { Parameter.RefKind: not RefKind.None };
 
             default:
                 return false;

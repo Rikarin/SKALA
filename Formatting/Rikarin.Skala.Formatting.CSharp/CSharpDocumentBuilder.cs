@@ -3049,7 +3049,9 @@ public sealed partial class CSharpDocumentBuilder {
                 ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                 newLines == 0
                 ? DefaultNewLine()
-                : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                : options.EnforceLineEndingStyle
+                    ? DefaultNewLine()
+                    : FirstNewLine(gap) ?? DefaultNewLine()
             );
 
             return;
@@ -3095,7 +3097,9 @@ public sealed partial class CSharpDocumentBuilder {
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                         ? DefaultNewLine()
-                        : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                        : options.EnforceLineEndingStyle
+                            ? DefaultNewLine()
+                            : FirstNewLine(gap) ?? DefaultNewLine()
                     );
                     return;
 
@@ -3116,7 +3120,9 @@ public sealed partial class CSharpDocumentBuilder {
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                         ? DefaultNewLine()
-                        : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                        : options.EnforceLineEndingStyle
+                            ? DefaultNewLine()
+                            : FirstNewLine(gap) ?? DefaultNewLine()
                     );
                     return;
             }
@@ -4236,9 +4242,9 @@ public sealed partial class CSharpDocumentBuilder {
         declarator.Parent is VariableDeclarationSyntax {
             Parent:
             LocalDeclarationStatementSyntax
-                or FieldDeclarationSyntax
-                or EventFieldDeclarationSyntax
-                or UsingStatementSyntax
+            or FieldDeclarationSyntax
+            or EventFieldDeclarationSyntax
+            or UsingStatementSyntax
         } declaration
         && declaration.Variables[0] == declarator;
 

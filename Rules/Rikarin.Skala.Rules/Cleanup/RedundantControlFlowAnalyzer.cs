@@ -299,7 +299,7 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
                 || BindsAName(arm.Pattern)
                 || !SyntaxFactory.AreEquivalent(arm.Expression, last.Expression, false)
                 || context.SemanticModel.GetOperation(arm, context.CancellationToken)
-                is not ISwitchExpressionArmOperation { Pattern: var pattern }
+                    is not ISwitchExpressionArmOperation { Pattern: var pattern }
                 || !RewriteGuards.IsFreeToSkip(pattern)) {
                 break;
             }

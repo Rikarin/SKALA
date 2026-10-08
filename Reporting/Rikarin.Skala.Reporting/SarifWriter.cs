@@ -449,7 +449,9 @@ public static class SarifWriter {
             ExecutionSuccessful = !report.Partial && !Renderer.Blocking(report).Any(),
             ExitCode = failed
                 ? ExitCodes.InternalError
-                : report.Gate is { Passed: false } ? ExitCodes.GateFailed : ExitCodes.Ok,
+                : report.Gate is { Passed: false }
+                    ? ExitCodes.GateFailed
+                    : ExitCodes.Ok,
             StartTimeUtc = end - report.Duration,
             EndTimeUtc = end
         };

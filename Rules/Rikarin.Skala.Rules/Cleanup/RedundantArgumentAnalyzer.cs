@@ -304,7 +304,7 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
         }
 
         if (context.SemanticModel.GetTypeInfo(creation, context.CancellationToken).Type
-            is not INamedTypeSymbol { TypeKind: TypeKind.Delegate } type
+                is not INamedTypeSymbol { TypeKind: TypeKind.Delegate } type
             || !TargetTypeIs(context, creation, type)) {
             return;
         }

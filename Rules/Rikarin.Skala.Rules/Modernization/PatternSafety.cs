@@ -63,7 +63,7 @@ internal static class PatternSafety {
 
     public static bool IsIntegral(ITypeSymbol? type) =>
         type?.SpecialType is
-        SpecialType.System_SByte
+            SpecialType.System_SByte
             or SpecialType.System_Byte
             or SpecialType.System_Int16
             or SpecialType.System_UInt16

@@ -75,7 +75,7 @@ public sealed class AsyncIteratorNotEnumeratedAnalyzer : DiagnosticAnalyzer {
         }
 
         if (context.SemanticModel.GetTypeInfo(invocation, context.CancellationToken).Type
-            is not INamedTypeSymbol { IsGenericType: true } type
+                is not INamedTypeSymbol { IsGenericType: true } type
             || !SymbolEqualityComparer.Default.Equals(type.OriginalDefinition, enumerable)) {
             return;
         }

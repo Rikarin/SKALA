@@ -124,7 +124,7 @@ public sealed class PlatformDependentPathComparisonAnalyzer : DiagnosticAnalyzer
             // is already the shape this rule asks for — the value can be chosen at run time — and
             // reporting it would report the fix.
             if (context.SemanticModel.GetSymbolInfo(argument.Expression, context.CancellationToken).Symbol
-                is IFieldSymbol { IsConst: true } member
+                    is IFieldSymbol { IsConst: true } member
                 && member.Name is "OrdinalIgnoreCase"
                     or "InvariantCultureIgnoreCase"
                     or "CurrentCultureIgnoreCase") {

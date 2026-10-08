@@ -263,8 +263,9 @@ static class PrimaryConstructorWrites {
     /// </summary>
     public static bool PassesAsRefReceiver(IOperation operation) =>
         operation.Parent is IArgumentOperation {
-            Parameter:
-            { Ordinal: 0, RefKind: RefKind.Ref, ContainingSymbol: IMethodSymbol { IsExtensionMethod: true } },
+            Parameter: {
+                Ordinal: 0, RefKind: RefKind.Ref, ContainingSymbol: IMethodSymbol { IsExtensionMethod: true }
+            },
             Parent: IInvocationOperation
         };
 

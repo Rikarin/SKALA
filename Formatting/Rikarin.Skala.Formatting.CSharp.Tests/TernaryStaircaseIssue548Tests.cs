@@ -16,118 +16,118 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </remarks>
 public sealed class TernaryStaircaseIssue548Tests {
     const string Source = """
-        class C548 {
-            int A(bool a, bool b) {
-                return a
-                    ? 1
-                    : b ? 2 : 3;
-            }
+                          class C548 {
+                              int A(bool a, bool b) {
+                                  return a
+                                      ? 1
+                                      : b ? 2 : 3;
+                              }
 
-            int B(bool a, bool b) {
-                return a ? 1
-                    : b ? 2 : 3;
-            }
+                              int B(bool a, bool b) {
+                                  return a ? 1
+                                      : b ? 2 : 3;
+                              }
 
-            int D(bool a, bool b, bool c) {
-                return a
-                    ? 1
-                    : b ? 2 : c ? 3 : 4;
-            }
+                              int D(bool a, bool b, bool c) {
+                                  return a
+                                      ? 1
+                                      : b ? 2 : c ? 3 : 4;
+                              }
 
-            int E(bool a, bool b) {
-                return a ? 1 : b
-                    ? 2 : 3;
-            }
+                              int E(bool a, bool b) {
+                                  return a ? 1 : b
+                                      ? 2 : 3;
+                              }
 
-            int F(bool a, bool b, int k) => k switch {
-                1 => a
-                    ? 1
-                    : b ? 2 : 3,
-                _ => a ? 1 : b ? 2 : 3
-            };
+                              int F(bool a, bool b, int k) => k switch {
+                                  1 => a
+                                      ? 1
+                                      : b ? 2 : 3,
+                                  _ => a ? 1 : b ? 2 : 3
+                              };
 
-            int G(bool a, bool b) {
-                return a
-                    ? b ? 2 : 3
-                    : 1;
-            }
+                              int G(bool a, bool b) {
+                                  return a
+                                      ? b ? 2 : 3
+                                      : 1;
+                              }
 
-            int H(bool a, bool b) {
-                return a
-                    ? 1 : b ? 2 : 3;
-            }
+                              int H(bool a, bool b) {
+                                  return a
+                                      ? 1 : b ? 2 : 3;
+                              }
 
-            int I(bool a, bool b) {
-                return a ? 1 : b ? 2
-                    : 3;
-            }
-        }
-        """;
+                              int I(bool a, bool b) {
+                                  return a ? 1 : b ? 2
+                                      : 3;
+                              }
+                          }
+                          """;
 
     const string Oracle = """
-        class C548 {
-            int A(bool a, bool b) {
-                return a
-                    ? 1
-                    : b
-                        ? 2
-                        : 3;
-            }
+                          class C548 {
+                              int A(bool a, bool b) {
+                                  return a
+                                      ? 1
+                                      : b
+                                          ? 2
+                                          : 3;
+                              }
 
-            int B(bool a, bool b) {
-                return a ? 1
-                    : b ? 2 : 3;
-            }
+                              int B(bool a, bool b) {
+                                  return a ? 1
+                                      : b ? 2 : 3;
+                              }
 
-            int D(bool a, bool b, bool c) {
-                return a
-                    ? 1
-                    : b
-                        ? 2
-                        : c
-                            ? 3
-                            : 4;
-            }
+                              int D(bool a, bool b, bool c) {
+                                  return a
+                                      ? 1
+                                      : b
+                                          ? 2
+                                          : c
+                                              ? 3
+                                              : 4;
+                              }
 
-            int E(bool a, bool b) {
-                return a
-                    ? 1
-                    : b
-                        ? 2
-                        : 3;
-            }
+                              int E(bool a, bool b) {
+                                  return a
+                                      ? 1
+                                      : b
+                                          ? 2
+                                          : 3;
+                              }
 
-            int F(bool a, bool b, int k) =>
-                k switch {
-                    1 => a
-                        ? 1
-                        : b
-                            ? 2
-                            : 3,
-                    _ => a ? 1 : b ? 2 : 3
-                };
+                              int F(bool a, bool b, int k) =>
+                                  k switch {
+                                      1 => a
+                                          ? 1
+                                          : b
+                                              ? 2
+                                              : 3,
+                                      _ => a ? 1 : b ? 2 : 3
+                                  };
 
-            int G(bool a, bool b) {
-                return a
-                    ? b ? 2 : 3
-                    : 1;
-            }
+                              int G(bool a, bool b) {
+                                  return a
+                                      ? b ? 2 : 3
+                                      : 1;
+                              }
 
-            int H(bool a, bool b) {
-                return a
-                    ? 1
-                    : b
-                        ? 2
-                        : 3;
-            }
+                              int H(bool a, bool b) {
+                                  return a
+                                      ? 1
+                                      : b
+                                          ? 2
+                                          : 3;
+                              }
 
-            int I(bool a, bool b) {
-                return a ? 1
-                    : b ? 2
-                    : 3;
-            }
-        }
-        """;
+                              int I(bool a, bool b) {
+                                  return a ? 1
+                                      : b ? 2
+                                      : 3;
+                              }
+                          }
+                          """;
 
     [Fact]
     public void AChainBrokenBeforeAQuestion_StepsEveryMember() {

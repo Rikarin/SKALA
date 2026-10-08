@@ -75,7 +75,7 @@ public sealed class RedundantSuppressFinalizeAnalyzer : DiagnosticAnalyzer {
         }
 
         if (model.GetTypeInfo(invocation.ArgumentList.Arguments[0].Expression, cancellation).Type
-            is not INamedTypeSymbol { TypeKind: TypeKind.Class, IsSealed: true, IsStatic: false } type
+                is not INamedTypeSymbol { TypeKind: TypeKind.Class, IsSealed: true, IsStatic: false } type
             || type.BaseType?.SpecialType != SpecialType.System_Object
             || type.DeclaringSyntaxReferences.Length != 1
             || HasFinalizer(type)) {
