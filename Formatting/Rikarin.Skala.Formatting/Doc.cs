@@ -1214,7 +1214,8 @@ public enum LambdaLocal {
     Measured = 1,
 
     /// <summary>
-    ///     The name is at most <c>10 + ⌊(type + 4) / 12⌋</c> wide, the type measured whole: while the line through <c>=&gt;</c>
+    ///     The name is at most <c>10 + ⌊(type + 4) / 12⌋</c> wide, the type measured whole: while the line through
+    ///     <c>=&gt;</c>
     ///     fits, the arrow breaks whatever the value's width.
     /// </summary>
     ArrowWhileItFits = 2,
