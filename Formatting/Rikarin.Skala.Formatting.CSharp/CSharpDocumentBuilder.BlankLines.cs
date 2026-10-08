@@ -68,14 +68,22 @@ public sealed partial class CSharpDocumentBuilder {
             return sourceBlanks;
         }
 
-        var declaration = nextToken.IsKind(SyntaxKind.None) || InDeclarationContext(nextToken);
+        // ⚠ Above an own-line comment the context is the code under the comment run, not "no token" (#500).
+        // A comment piece arrives as `None`, and `None` used to answer "declaration" — so the blank above a
+        // comment in a method body was capped by `keep_blank_lines_in_declarations` and not by
+        // `_in_code`, and one inside an argument list was capped by either rather than removed.
+        var beforeComment = nextToken.IsKind(SyntaxKind.None) && OwnLineCommentAt(nextPieceIndex);
+        var subject = beforeComment ? TokenUnderComments(nextPieceIndex) : nextToken;
+        var declaration = subject.IsKind(SyntaxKind.None) || InDeclarationContext(subject);
 
         // 1. Caps. The author's runs are truncated, never extended.
         var cap = Math.Max(0, declaration ? options.KeepBlankLinesInDeclarations : options.KeepBlankLinesInCode);
 
         // 1½. ⚠ Neither keep key reaches inside a construct: the oracle keeps an author's blank line
-        // only in front of something that stands on a line of its own (#426, SK-DIV-0196).
-        if (!BlankLineMayStandBefore(previous, nextToken)) {
+        // only in front of something that stands on a line of its own (#426, SK-DIV-0196). Above a comment
+        // run that is asked of the code under it, with a braced list's items counted as standing alone
+        // whatever the comment is.
+        if (!BlankLineMayStandBefore(previous, subject, beforeComment)) {
             cap = 0;
         }
 
@@ -107,6 +115,20 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         var blanks = Math.Min(sourceBlanks, cap);
+
+        // 1¾. ⚠ An own-line `//` comment keeps one blank line of the author's above it whatever the cap is
+        // (#500): inside an argument, parameter, type-argument or attribute list, a tuple, a chain, after
+        // `=` or `return`, before a statement's `;` — where the cap above is zero — and at
+        // `keep_blank_lines_in_code = 0` or `_in_declarations = 0` between statements, members, accessors
+        // and initializer items alike. Never more than one, and never for a `/* */`, which keeps only what
+        // the cap allows. Not straight after an opening `(`, `[` or `<`, where the oracle keeps none; a
+        // `{` is the near-brace removal's below, which outranks this as it outranks a requirement.
+        if (beforeComment
+            && sourceBlanks > 0
+            && pieces[nextPieceIndex].Kind == PieceKind.LineComment
+            && !AfterAnOpeningBracket(previous)) {
+            blanks = Math.Max(blanks, 1);
+        }
 
         // 2. Requirements. A minimum inserted where absent.
         blanks = Math.Max(blanks, RequiredBlankLines(previous, nextPieceIndex, nextToken));
@@ -384,7 +406,30 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ The run of comments starts the line, not necessarily the last one: `/* x */ /* y */` above
         // `public class L { }` is one comment line, and the oracle writes no blank below it. Reachable
         // since #429 breaks after the run, where the two used to share the class's line.
+        //
+        // ⚠ Unless the run is detached from the code under it (#494), in which case it is not the member
+        // below's at all: it hangs from the member above, and this gap — the one directly above the
+        // member — is the boundary both members' requirements are paid on. See RunIsDetached.
         if (previous.IsComment && CommentRunStartsLine()) {
+            // Only under the run's last comment: the gaps between its lines are inside it.
+            var start = RunStart(lastPiece);
+            if (start < 0 || RunEnd(start) != lastPiece || !RunIsDetached(start)) {
+                return required;
+            }
+
+            var hangsFrom = RunOwner(start);
+            if (hangsFrom is not null && !nextToken.IsKind(SyntaxKind.CloseBraceToken)) {
+                required = Math.Max(required, RequirementFor(hangsFrom, true));
+            }
+
+            var under = MemberUnderGap(nextPieceIndex, nextToken);
+            if (under is not null) {
+                var underMultiLine = nextToken.IsKind(SyntaxKind.None)
+                    && GluedCommentRunEnd(nextPieceIndex) >= 0
+                    || GluedToTheCommentBelow(under);
+                required = Math.Max(required, RequirementFor(under, underMultiLine));
+            }
+
             return required;
         }
 
@@ -466,7 +511,24 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         var above = previous.Kind == PieceKind.Token ? MemberEndingAt(tokens[previous.TokenIndex]) : null;
-        var below = MemberStartingAt(nextPieceIndex, nextToken);
+        var below = MemberUnderGap(nextPieceIndex, nextToken);
+
+        // ⚠ Above a comment run the member above pays nothing when the run is its own — glued under it and
+        // detached from what follows (#494) — or when the code under the run is the body's `}` (#441's rule,
+        // which a comment in between used to hide). Measured at `blank_lines_around_single_line_field = 2`:
+        // `int _b;` / `// last` / `}` and `int _a;` / `// own` / blank / `int _b;` take nothing above the comment.
+        //
+        // ⚠ Not a using directive: `blank_lines_after_using_list` is the boundary's and stays above the comment
+        // — `using System.Diagnostics;` / `// ReSharper disable …` / blank / `namespace` in serilog's
+        // LogEvent.cs takes its blank above the comment.
+        if (above is not null and not (UsingDirectiveSyntax or ExternAliasDirectiveSyntax)
+            && nextToken.IsKind(SyntaxKind.None)
+            && OwnLineCommentAt(nextPieceIndex)
+            && (TokenUnderComments(nextPieceIndex).IsKind(SyntaxKind.CloseBraceToken)
+                || BlankLinesBetween(previous.Span.End, pieces[nextPieceIndex].Span.Start) == 0
+                && RunIsDetached(nextPieceIndex))) {
+            above = null;
+        }
 
         // ⚠ Above a plain comment glued to the member below, that member is multi-line — the comment's line
         // and its own — and only for this gap: the gap under it still sees one line. Measured for #414
@@ -512,9 +574,88 @@ public sealed partial class CSharpDocumentBuilder {
         return required;
     }
 
-    /// <summary>Whether the gap opens straight after a <c>{</c>.</summary>
-    bool AfterAnOpenBrace(Piece previous) =>
-        previous.Kind == PieceKind.Token && tokens[previous.TokenIndex].IsKind(SyntaxKind.OpenBraceToken);
+    /// <summary>Whether the piece at <paramref name="index" /> is a plain comment that starts a line.</summary>
+    bool OwnLineCommentAt(int index) =>
+        index >= 0
+        && index < pieces.Length
+        && pieces[index].Kind is PieceKind.LineComment or PieceKind.BlockComment
+        && pieces[index].StartsLine;
+
+    /// <summary>The first token after the comments starting at <paramref name="index" />, or <c>None</c>.</summary>
+    SyntaxToken TokenUnderComments(int index) {
+        for (var i = index; i < pieces.Length; i++) {
+            if (pieces[i].Kind == PieceKind.Token) {
+                return tokens[pieces[i].TokenIndex];
+            }
+
+            if (!pieces[i].IsComment) {
+                break;
+            }
+        }
+
+        return default;
+    }
+
+    /// <summary>
+    ///     Whether the gap opens straight after a construct's opening <c>(</c>, <c>[</c> or <c>&lt;</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Measured for #500 on an argument list, a parameter list, an element access and a type-argument
+    ///     list, at both near-brace values: no blank line survives there above a <c>//</c> either. A
+    ///     collection expression's <c>[</c> is a brace, and <see cref="RemovesNearBrace" />'s.
+    /// </remarks>
+    bool AfterAnOpeningBracket(Piece previous) {
+        if (previous.Kind != PieceKind.Token) {
+            return false;
+        }
+
+        var token = tokens[previous.TokenIndex];
+        return token.Kind() switch {
+            SyntaxKind.OpenParenToken => true,
+            SyntaxKind.OpenBracketToken => token.Parent is not CollectionExpressionSyntax,
+            SyntaxKind.LessThanToken => token.Parent is TypeArgumentListSyntax or TypeParameterListSyntax,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    ///     Whether the gap opens straight after a <c>{</c>, or after comments that share the <c>{</c>'s line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The comments are looked through (#499): <c>namespace N2 { /* b3 */ class X { } }</c> comes back
+    ///     <c>namespace N2 { /* b3 */</c> / <c>class X { }</c> with nothing between, where Skala paid
+    ///     <c>blank_lines_around_single_line_type</c> for the class against the comment. Measured with
+    ///     <c>jb cleanupcode</c> 2025.2.6 for <c>//</c> and <c>/* */</c>, after a namespace's and a type's
+    ///     brace, before a one-line and a multi-line member, at the export and at
+    ///     <c>blank_lines_around_single_line_type = 2</c>. <c>blank_lines_inside_namespace</c> and
+    ///     <c>_inside_type</c> are not paid there either, which <see cref="InsideDeclarationBraces" /> already
+    ///     gets right by asking only of a <c>{</c> token; an author's blank under the comment is kept at
+    ///     both <c>remove_blank_lines_near_braces_*</c> values, which <see cref="RemovesNearBrace" /> already
+    ///     gets right the same way.
+    /// </remarks>
+    bool AfterAnOpenBrace(Piece previous) {
+        if (previous.Kind == PieceKind.Token) {
+            return tokens[previous.TokenIndex].IsKind(SyntaxKind.OpenBraceToken);
+        }
+
+        if (!previous.IsComment || previous.Kind == PieceKind.DocCommentLine) {
+            return false;
+        }
+
+        for (var i = lastPiece; i >= 0; i--) {
+            if (pieces[i].IsComment) {
+                if (pieces[i].StartsLine) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            return pieces[i].Kind == PieceKind.Token && tokens[pieces[i].TokenIndex].IsKind(SyntaxKind.OpenBraceToken);
+        }
+
+        return false;
+    }
 
     /// <summary>
     ///     Whether either side of the gap is a conditional directive, a <c>#pragma</c> or disabled text.
@@ -645,15 +786,137 @@ public sealed partial class CSharpDocumentBuilder {
             return -1;
         }
 
-        var declaration = InDeclarationContext(token);
-        var cap = Math.Max(0, declaration ? options.KeepBlankLinesInDeclarations : options.KeepBlankLinesInCode);
-        var kept = Math.Min(BlankLinesBetween(pieces[last].Span.End, pieces[next].Span.Start), cap);
-        if (close && RemovesNearBrace(pieces[last], token, declaration)) {
-            kept = 0;
+        return RunIsDetached(first) ? -1 : next;
+    }
+
+    /// <summary>The first piece of the own-line plain comment run that ends at <paramref name="last" />, or −1.</summary>
+    int RunStart(int last) {
+        if (last < 0 || pieces[last].Kind is not (PieceKind.LineComment or PieceKind.BlockComment)) {
+            return -1;
         }
 
-        return kept == 0 ? next : -1;
+        var first = last;
+        while (first > 0
+               && pieces[first - 1].Kind is PieceKind.LineComment or PieceKind.BlockComment
+               && BlankLinesBetween(pieces[first - 1].Span.End, pieces[first].Span.Start) == 0
+               && (pieces[first - 1].StartsLine || !pieces[first].StartsLine)) {
+            first--;
+        }
+
+        return pieces[first].StartsLine ? first : -1;
     }
+
+    /// <summary>The last piece of the own-line plain comment run starting at <paramref name="first" />.</summary>
+    int RunEnd(int first) {
+        var last = first;
+        while (last + 1 < pieces.Length
+               && pieces[last + 1].Kind is PieceKind.LineComment or PieceKind.BlockComment
+               && BlankLinesBetween(pieces[last].Span.End, pieces[last + 1].Span.Start) == 0) {
+            last++;
+        }
+
+        return last;
+    }
+
+    /// <summary>
+    ///     Whether the own-line plain comment run starting at <paramref name="first" /> ends in a blank line the
+    ///     output keeps — so that it is not the code below's comment.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured for #494 with <c>jb cleanupcode</c> 2025.2.6, and the attachment docs/plan/04 assumed is
+    ///     only half of it. A run glued to the member under it belongs to that member (SK-DIV-0172). A run with
+    ///     a blank line under it does not: <c>int _a;</c> / <c>// own</c> / blank / <c>void M() { … }</c> comes
+    ///     back with nothing between <c>_a</c> and the comment and <c>blank_lines_around_invocable</c> paid under
+    ///     it, where Skala paid it above — at the export, for <c>//</c> and <c>/* */</c>, one comment or two,
+    ///     before a field, a method, an attributed or a documented member, after a field, a method and an enum
+    ///     member's comma. Then the run hangs from the member above it, which counts as multi-line for the gap
+    ///     under the run: at <c>keep_blank_lines_in_declarations = 0</c>, <c>int _a;</c> / <c>// own</c> / blank
+    ///     / <c>int _b;</c> keeps its blank, <c>blank_lines_around_field</c>'s.
+    ///     <para>
+    ///         ⚠ "Keeps": read off the output, not the source, or the answer flips between passes — a blank the
+    ///         cap removes is glue on the second pass. The oracle reads the source here and so is not
+    ///         idempotent where nothing pays for the blank; the output reading takes its second pass. So the
+    ///         gap under the run is resolved as if the run were detached, and the run is detached when that
+    ///         leaves a blank line: requirement or cap, whichever keeps one. A blank-separated second run counts
+    ///         as a blank line kept.
+    ///     </para>
+    /// </remarks>
+    bool RunIsDetached(int first) {
+        if (!OwnLineCommentAt(first)) {
+            return false;
+        }
+
+        detachedRuns ??= new();
+        if (detachedRuns.TryGetValue(first, out var known)) {
+            return known;
+        }
+
+        // A probe of this same run, reached again from inside its own resolution below, assumes the answer
+        // it is testing.
+        if (probingRun == first) {
+            return true;
+        }
+
+        var last = RunEnd(first);
+        var next = last + 1;
+        if (next >= pieces.Length) {
+            return false;
+        }
+
+        var sourceBlanks = BlankLinesBetween(pieces[last].Span.End, pieces[next].Span.Start);
+        bool detached;
+        if (sourceBlanks == 0) {
+            detached = false;
+        } else if (pieces[next].IsComment) {
+            detached = true;
+        } else if (pieces[next].Kind != PieceKind.Token) {
+            detached = false;
+        } else {
+            var (savedPiece, savedProbe) = (lastPiece, probingRun);
+            (lastPiece, probingRun) = (last, first);
+            try {
+                detached = ResolveBlankLinesCore(pieces[last], next, tokens[pieces[next].TokenIndex], sourceBlanks) > 0;
+            } finally {
+                (lastPiece, probingRun) = (savedPiece, savedProbe);
+            }
+        }
+
+        detachedRuns[first] = detached;
+        return detached;
+    }
+
+    /// <summary>
+    ///     The member a detached run hangs from: the one whose last token the run is glued under, looking past
+    ///     a comment on that token's line.
+    /// </summary>
+    SyntaxNode? RunOwner(int first) {
+        if (first <= 0 || BlankLinesBetween(pieces[first - 1].Span.End, pieces[first].Span.Start) > 0) {
+            return null;
+        }
+
+        var i = first - 1;
+        while (i >= 0 && pieces[i].Kind is PieceKind.LineComment or PieceKind.BlockComment && !pieces[i].StartsLine) {
+            i--;
+        }
+
+        if (i < 0 || pieces[i].Kind != PieceKind.Token) {
+            return null;
+        }
+
+        // ⚠ Not through an enum member's comma: measured at `keep_blank_lines_in_declarations = 0`,
+        // `Alpha,` / `// own` / blank / `Beta,` loses its blank, so `Alpha` is not multi-line for it — the
+        // comma breaks the attachment as it breaks SK-DIV-0172's glue.
+        return MemberEndingAt(tokens[pieces[i].TokenIndex]);
+    }
+
+    /// <summary>
+    ///     <see cref="MemberStartingAt" />, except that a detached comment run is not looked through: the member
+    ///     under it is not the gap above the run's.
+    /// </summary>
+    SyntaxNode? MemberUnderGap(int nextPieceIndex, SyntaxToken nextToken) =>
+        nextToken.IsKind(SyntaxKind.None) && OwnLineCommentAt(nextPieceIndex) && RunIsDetached(nextPieceIndex)
+            ? null
+            : MemberStartingAt(nextPieceIndex, nextToken);
 
     /// <summary>The blank lines in the source between two positions on different lines.</summary>
     int BlankLinesBetween(int from, int to) {
@@ -1118,7 +1381,12 @@ public sealed partial class CSharpDocumentBuilder {
                     : options.BlankLinesAroundProperty,
             IndexerDeclarationSyntax or EventDeclarationSyntax =>
                 single ? options.BlankLinesAroundSingleLineProperty : options.BlankLinesAroundProperty,
-            FieldDeclarationSyntax or EventFieldDeclarationSyntax =>
+            // ⚠ An enum member is a field to both keys (#497). Measured with `jb cleanupcode` 2025.2.6: at
+            // `blank_lines_around_single_line_field = 2` the oracle writes two blank lines between every pair
+            // of one-line members, and at the export's `blank_lines_around_field = 1` one above a member that
+            // a comment, a `///` run or an attribute line makes multi-line — the "own-line comment between
+            // two enum members" the issue saw, and SK-DIV-0172's glued-comment rule along with it.
+            FieldDeclarationSyntax or EventFieldDeclarationSyntax or EnumMemberDeclarationSyntax =>
                 single ? options.BlankLinesAroundSingleLineField : options.BlankLinesAroundField,
             AccessorDeclarationSyntax =>
                 single ? options.BlankLinesAroundSingleLineAccessor : options.BlankLinesAroundAccessor,
@@ -1452,8 +1720,17 @@ public sealed partial class CSharpDocumentBuilder {
         return found;
     }
 
+    /// <remarks>
+    ///     ⚠ Not a top-level statement's <see cref="GlobalStatementSyntax" /> wrapper (#498). It is a
+    ///     <see cref="MemberDeclarationSyntax" />, and as the outermost node starting at a top-level local
+    ///     function it hid the function from <see cref="RequirementFor" />, which states nothing for it — so
+    ///     <c>blank_lines_around_local_method</c> and its single-line twin reached a local function in a body
+    ///     and never one at the file's level. Measured with <c>jb cleanupcode</c> 2025.2.6: the oracle pays
+    ///     both keys at the top level exactly as in a body, at the export and with the two flipped.
+    /// </remarks>
     static bool IsBlankLineSubject(SyntaxNode node) =>
         node is MemberDeclarationSyntax
+            and not GlobalStatementSyntax
             or AccessorDeclarationSyntax
             or UsingDirectiveSyntax
             or ExternAliasDirectiveSyntax
@@ -1480,8 +1757,10 @@ public sealed partial class CSharpDocumentBuilder {
     ///     collection-expression element, <c>else</c>, <c>catch</c> and <c>finally</c>.
     ///     <list type="bullet">
     ///         <item>
-    ///             Before a comment it keeps it (<c>1,</c> / blank / <c>// c</c> / <c>2</c>), and between
-    ///             two comments: a comment piece arrives here as <c>None</c>, so that gap is not asked.
+    ///             ⚠ Above a comment the question is asked of the code under the comment run (#500): the
+    ///             <c>1,</c> / blank / <c>// c</c> / <c>2</c> this list once recorded as kept is kept by the
+    ///             <c>//</c> floor in <see cref="ResolveBlankLinesCore" />, not by the cap — a <c>/* */</c> there
+    ///             loses it, and three blank lines come back as one.
     ///         </item>
     ///         <item>
     ///             ⚠ <b>After a <c>//</c> comment inside braces it keeps it too, and only there.</b> In an
@@ -1499,7 +1778,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///         </item>
     ///     </list>
     /// </remarks>
-    static bool BlankLineMayStandBefore(Piece previous, SyntaxToken token) {
+    static bool BlankLineMayStandBefore(Piece previous, SyntaxToken token, bool beforeComment = false) {
         if (token.IsKind(SyntaxKind.None) || token.IsKind(SyntaxKind.EndOfFileToken)) {
             return true;
         }
@@ -1511,7 +1790,10 @@ public sealed partial class CSharpDocumentBuilder {
             return true;
         }
 
-        var afterLineComment = previous.Kind == PieceKind.LineComment;
+        // ⚠ Above a comment run whose code is a braced list's item or closer, a `/* */` counts as a `//`
+        // does (#500): measured, three blank lines above either kind come back as the cap's two in an array,
+        // object, anonymous, `with` and property-pattern list, and as zero in an argument list.
+        var afterLineComment = previous.Kind == PieceKind.LineComment || beforeComment;
         if (afterLineComment && token.IsKind(SyntaxKind.CloseBraceToken) && IsBracedList(token.Parent)) {
             return true;
         }

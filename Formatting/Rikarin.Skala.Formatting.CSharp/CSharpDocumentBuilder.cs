@@ -76,6 +76,12 @@ public sealed partial class CSharpDocumentBuilder {
     /// <summary>Group id to the plan that created it, built on first use by <c>GuessesSpansLines</c>.</summary>
     Dictionary<int, GroupPlan>? groupPlans;
 
+    /// <summary>Whether each own-line comment run, by its first piece, is detached from the code under it (#494).</summary>
+    Dictionary<int, bool>? detachedRuns;
+
+    /// <summary>The run <see cref="RunIsDetached" /> is resolving the gap under, or −1.</summary>
+    int probingRun = -1;
+
     /// <summary>
     ///     Whether each node occupies one line within the margin, read off an earlier layout of this same
     ///     file, or null on the first build. See <c>OccupiesOneLine</c>.

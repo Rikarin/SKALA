@@ -7200,9 +7200,37 @@ writes the blank between `_x` and `_a` and removes it on its own second pass. Sk
 both passes; under the export's cap of 2 the blank is preserved and both are stable. Pinned by
 `constructs/blank-lines/a-comment-glued-between-two-members.cs`.
 
+**#494, measured 2026-10-08** with `Testing ask` on 25 shapes at the export, at
+`keep_blank_lines_in_declarations = 0` and `= 1`, and at `blank_lines_around_field = 0` /
+`_single_line_field = 2`. ⚠ The issue's own row — `_x` / `_a` / `_b` / `// c` / blank / `}` at
+`keep_blank_lines_in_declarations = 0` — is the oracle's non-idempotency above, and measured: its second pass
+on its own first output is exactly Skala's first pass. No idempotent formatter can agree with both, so Skala
+keeps the fixed point (**deliberate**). What the measurement found underneath it was a real defect, at the
+export and not only at a cap of zero:
+
+- ⚠ **A comment run with a blank line under it is not the member below's.** It hangs from the member above:
+  `int _a;` / `// own` / blank / `void M() { … }` comes back with nothing between `_a` and the comment and
+  `blank_lines_around_invocable` paid *under* it; Skala paid it above. For `//` and `/* */`, one comment line
+  or two, before a field, a method, an attributed or documented member. Of two runs a blank apart, the first
+  hangs from the member above and the second is the member below's, so the requirement goes between them.
+- The member it hangs from is multi-line for the gap under the run: at `keep_blank_lines_in_declarations = 0`,
+  `_x` / `_a` / `// c` / blank / `_b` keeps its blank (`blank_lines_around_field`). Skala removed it on pass
+  one, glued the comment to `_b`, wrote two blank lines the oracle does not, and a different two on pass two.
+- Not through an enum member's comma (`Alpha,` / `// own` / blank / `Beta` at cap 0 loses its blank), and
+  not for `blank_lines_after_using_list`, which stays above a comment under the last `using` (serilog's
+  `LogEvent.cs`).
+- Above a comment run that the body's `}` follows, glued or not, the member above pays nothing (#441's rule):
+  at `blank_lines_around_single_line_field = 2`, `int _b;` / `// last` / `}` took two blank lines in Skala.
+
+"Blank line under it" is read off the output — the gap under the run resolved as if detached, requirement
+included — so a blank only the cap removes is glue, as above. `RunIsDetached`, `RunOwner` and
+`MemberUnderGap` in `CSharpDocumentBuilder.BlankLines.cs`; pinned by
+`constructs/blank-lines/a-comment-with-a-blank-line-under-it.cs` and `BlankLinesAroundOwnLineCommentsTests`.
+
 - options: the same keys as SK-DIV-0171.
-- ⚠ status: **resolved**, except the `keep_blank_lines_in_declarations = 0` second pass, which follows
-  the oracle's non-idempotency and is **open**.
+- ⚠ status: **resolved** (#494 for the attachment), except the `keep_blank_lines_in_declarations = 0` second
+  pass, which follows the oracle's non-idempotency and is **deliberate**: Skala takes the oracle's second-pass
+  answer on the first pass.
 ## SK-DIV-0183 — an accessor list is joined or expanded by what its accessors are, and Skala kept it as written
 
 ⚠ **Issues #416 and #417**, found working #414. #416 is SK-DIV-0096 re-found; #417 is its other
@@ -7414,9 +7442,29 @@ in the oracle while Skala breaks after the comment (#434, since SK-DIV-0199); a 
 enum's chopped member list and before `/* s3 */ static void Local()` at the top level, which the oracle
 writes; and `namespace N2 { /* b3 */` followed by a blank line, which it does not.
 
+The three rows left open here were filed as #497, #498 and #499 and measured 2026-10-08 with the keys
+flipped. ⚠ None of the three is about the comment as such:
+
+- **#497**: an enum member is a field to `blank_lines_around_field` and `_single_line_field` — at
+  `_single_line_field = 2` the oracle writes two blank lines between every pair of one-line members.
+  `RequirementFor` had no arm for it, so SK-DIV-0172's glued-comment rule (which makes the member under the
+  comment multi-line) had nothing to pay; a `///` run or an attribute line above a member was missed the same
+  way. A trailing comma between a member and a comment under it breaks the glue.
+- **#498**: a top-level statement's `GlobalStatementSyntax` is a member declaration, and as the outermost
+  node starting at a local function it hid the function from `blank_lines_around_local_method` and its
+  single-line twin — at the top level, with a comment or without one (a multi-line function took no blank on
+  either side). Measured with both keys flipped: the oracle pays them there exactly as in a body.
+- **#499**: a comment on a namespace's or type's `{` line leaves the gap under it the brace's: no member
+  requirement and no `blank_lines_inside_*` is paid there, and an author's blank is kept at both
+  `remove_blank_lines_near_braces_*` values. `AfterAnOpenBrace` did not look through the comment.
+
+Pinned by `constructs/blank-lines/an-own-line-comment-between-enum-members.cs`,
+`a-commented-local-function-at-the-top-level.cs`, `a-comment-on-a-declarations-open-brace-line.cs` and
+`BlankLinesAroundOwnLineCommentsTests`.
+
 - options: none.
-- ⚠ status: **resolved** (#429). Pinned by `TopLevelLinesIssue429Tests` and
-  `constructs/breaks/top-level-lines.cs`.
+- ⚠ status: **resolved** (#429), and its three open rows **resolved** (#497, #498, #499). Pinned by
+  `TopLevelLinesIssue429Tests` and `constructs/breaks/top-level-lines.cs`.
 
 ## SK-DIV-0187 — a `[CallerArgumentExpression]` argument is left as written; the oracle formats it
 
@@ -7503,9 +7551,28 @@ lines before such a comment in an argument list to one where Skala keeps two. Al
 paid against the body's own brace when the near-brace removal is off) and #442 (a kept `)` of a tuple, a
 `typeof` or a `lock` header at another column), both filed.
 
+**#500, measured 2026-10-08** over 20 contexts × `//` and `/* */` × one and three blank lines, at the
+export, at either keep key `= 0`, at `keep_blank_lines_in_code = 1` and with the near-brace removal off. ⚠ The
+open rows above were one rule, and the cause the issue suggested — the wrong keep key — was real but not what
+moved the export's row:
+
+| above an own-line comment | oracle |
+|---|---|
+| inside a construct (argument, parameter, type-argument, attribute, base list, element access, tuple, chain, after `=` / `return`, before `;`) | a `//` keeps **one** of the author's blank lines, whatever the keep keys; a `/* */` none |
+| straight after the construct's opening `(`, `[` or `<` | none, either kind |
+| before a statement, member, accessor, case, arm, braced-list item or closer | the cap of the code *under* the comment — `keep_blank_lines_in_code` in a body, `_in_declarations` among members |
+| the same at a cap of `0` | a `//` still keeps one; a `/* */` none |
+
+A comment piece arrives as "no token", which answered "declaration": the blank above a comment in a body
+was capped by `keep_blank_lines_in_declarations`, and inside a construct by either key rather than by the
+construct rule. Measured: three blanks before `// c` in an argument list keep one (Skala two), and before
+`/* c */` none (Skala two). `ResolveBlankLinesCore` now reads the context from the token under the comment run
+and adds the `//` floor; pinned by `constructs/blank-lines/blank-lines-above-an-own-line-comment-in-a-construct.cs`
+and `BlankLinesAroundOwnLineCommentsTests`.
+
 - options: `skala_keep_blank_lines_in_code`, `skala_keep_blank_lines_in_declarations`,
   `skala_remove_blank_lines_near_braces_in_code`
-- ⚠ status: **resolved** (#426), with the rows above open. Pinned by
+- ⚠ status: **resolved** (#426), and its open rows **resolved** (#500). Pinned by
   `BlankLineInsideAConstructIssue426Tests` and `constructs/blank-lines/a-blank-line-inside-a-construct.cs`.
 
 ## SK-DIV-0197 — a primary constructor's base type with arguments wrapped as a base type; the oracle wraps it as an initializer
