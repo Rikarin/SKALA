@@ -282,9 +282,10 @@ public sealed class BodyStyleIssue399Tests {
         );
 
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"),
-            overrides
-        ).Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"),
+                overrides
+            )
+            .Options;
 
         var result = Arranger.Arrange(
             path,

@@ -55,10 +55,10 @@ public sealed class ArrangementTagTests {
         }
 
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"),
-            overrides.Count == 0 ? null : overrides
-        )
-                .Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"),
+                overrides.Count == 0 ? null : overrides
+            )
+            .Options;
 
         var result = Arranger.Arrange(path, text, new(options), compilation);
         Assert.NotEqual(ArrangementOutcome.Reverted, result.Outcome);

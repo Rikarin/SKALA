@@ -308,9 +308,10 @@ public sealed class CrashArtifactTests {
             );
 
             var resolved = OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, ProbePath),
-                [new("indent_size", "7"), new("skala_max_line_length", "43")]
-            ).Options;
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, ProbePath),
+                    [new("indent_size", "7"), new("skala_max_line_length", "43")]
+                )
+                .Options;
 
             var passed = detach
                 ? CSharpSyntaxTree.ParseText(original, CSharpFormatter.ParseOptions, ProbePath)

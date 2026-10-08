@@ -157,25 +157,27 @@ public sealed class IndentationTests {
         // skala_indent_nested_for_stmt = false — a real transformation, and one of the few places the
         // formatter removes indentation the author wrote.
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            [new("csharp_prefer_braces", "false")]
-        ).Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [new("csharp_prefer_braces", "false")]
+            )
+            .Options;
         var formatted = CSharpFormatter.Format(
-            "Test.cs",
-            SourceText.From(
-                """
-                class C {
-                    void M() {
-                        for (var i = 0; i < 2; i++)
-                            for (var j = 0; j < 2; j++) {
-                                M();
-                            }
+                "Test.cs",
+                SourceText.From(
+                    """
+                    class C {
+                        void M() {
+                            for (var i = 0; i < 2; i++)
+                                for (var j = 0; j < 2; j++) {
+                                    M();
+                                }
+                        }
                     }
-                }
-                """
-            ),
-            options
-        ).Formatted;
+                    """
+                ),
+                options
+            )
+            .Formatted;
 
         Assert.Contains(
             "        for (var i = 0; i < 2; i++)\n        for (var j = 0; j < 2; j++) {",
@@ -1165,9 +1167,9 @@ public sealed class BracePlacementTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -1377,9 +1379,9 @@ public sealed class SubpatternBreakTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 
@@ -1460,9 +1462,9 @@ public sealed class ContinuousIndentInsideTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
                 .Options
         );
 

@@ -81,12 +81,13 @@ public static class CorpusArranger {
     public static string RunWith(CorpusFile file, Rikarin.Skala.Options.FormattingOptions options) {
         var compilation = CompilationFor(false);
         return Arranger.Arrange(
-            file.Path,
-            CSharpFormatter.Read(file.Path),
-            new(options),
-            compilation,
-            ArrangementDifferential.Removable(compilation, file.Path)
-        ).Text;
+                file.Path,
+                CSharpFormatter.Read(file.Path),
+                new(options),
+                compilation,
+                ArrangementDifferential.Removable(compilation, file.Path)
+            )
+            .Text;
     }
 
     static CSharpCompilation Replace(CSharpCompilation compilation, string path, SourceText text) {

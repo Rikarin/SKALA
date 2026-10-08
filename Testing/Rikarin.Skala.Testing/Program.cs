@@ -1344,9 +1344,10 @@ static int Variants(string[] sets) {
 
                 var text = CSharpFormatter.Read(file.Path);
                 var options = Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
-                    file.Path,
-                    group.Key.Overrides
-                ).Options;
+                        file.Path,
+                        group.Key.Overrides
+                    )
+                    .Options;
                 var result = CSharpFormatter.Format(file.Path, text, options);
                 results.Add((file.ToString(), OracleFixture.Read(file, group.Key), result.Formatted));
             }

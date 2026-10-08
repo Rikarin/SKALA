@@ -297,8 +297,8 @@ public static class SyntaxCoverage {
         yield return ("nested collection expression",
             nodes.OfType<Microsoft.CodeAnalysis.CSharp.Syntax.CollectionExpressionSyntax>()
                 .Count(static collection => collection.Ancestors()
-                        .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.CollectionExpressionSyntax>()
-                        .Any()
+                    .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.CollectionExpressionSyntax>()
+                    .Any()
                 ));
     }
 

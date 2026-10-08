@@ -34,7 +34,7 @@ public static class CallerArgumentSafety {
             };
             if (!parameters.IsDefault
                 && parameters.Any(static candidate => candidate.GetAttributes()
-                        .Any(static attribute => attribute.AttributeClass?.ToDisplayString() == AttributeName)
+                    .Any(static attribute => attribute.AttributeClass?.ToDisplayString() == AttributeName)
                 )) {
                 return true;
             }

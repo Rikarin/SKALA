@@ -16,9 +16,9 @@ public sealed class OutdentDotsIssue458Tests {
     static string Format(string source) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [new KeyValuePair<string, string>("skala_outdent_dots", "true")]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [new KeyValuePair<string, string>("skala_outdent_dots", "true")]
+                )
                 .Options
         );
 

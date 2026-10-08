@@ -260,10 +260,11 @@ sealed class SkalaTools(string repositoryRoot) {
     ) =>
         Bound(
             ConfigCommands.Explain(
-                Path.GetFullPath(Path.Combine(repositoryRoot, path)),
-                repositoryRoot,
-                configuredOnly
-            ).Output
+                    Path.GetFullPath(Path.Combine(repositoryRoot, path)),
+                    repositoryRoot,
+                    configuredOnly
+                )
+                .Output
         );
 
     /// <summary>The content path of <c>skala_format</c>, without the tool plumbing.</summary>

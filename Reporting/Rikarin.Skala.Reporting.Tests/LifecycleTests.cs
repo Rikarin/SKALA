@@ -637,18 +637,20 @@ public sealed class LifecycleTests {
 
         Assert.True(
             Gate.Evaluate(
-                new() { Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("duplication", 3.0) },
-                report,
-                true
-            ).Passed
+                    new() { Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("duplication", 3.0) },
+                    report,
+                    true
+                )
+                .Passed
         );
 
         Assert.False(
             Gate.Evaluate(
-                new() { Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("commentDensity", 60) },
-                report,
-                true
-            ).Passed
+                    new() { Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("commentDensity", 60) },
+                    report,
+                    true
+                )
+                .Passed
         );
     }
 
@@ -658,18 +660,20 @@ public sealed class LifecycleTests {
 
         Assert.False(
             Gate.Evaluate(
-                new() { Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK5*", 0) },
-                report,
-                true
-            ).Passed
+                    new() { Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK5*", 0) },
+                    report,
+                    true
+                )
+                .Passed
         );
 
         Assert.True(
             Gate.Evaluate(
-                new() { Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK9001", 0) },
-                report,
-                true
-            ).Passed
+                    new() { Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK9001", 0) },
+                    report,
+                    true
+                )
+                .Passed
         );
     }
 

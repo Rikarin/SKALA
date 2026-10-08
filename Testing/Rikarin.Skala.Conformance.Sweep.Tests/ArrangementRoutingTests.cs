@@ -137,12 +137,13 @@ public sealed class ArrangementRoutingTests {
         var path = candidate.Fixture.Path;
         var arranged = SkalaSide.Format(path, candidate.Key, "true");
         var formatted = CSharpFormatter.Format(
-            path,
-            CSharpFormatter.Read(path),
-            Rikarin.Skala.Core.Configuration.OptionResolver
-                .Resolve(path, [new KeyValuePair<string, string>(candidate.Key, "true")])
-                .Options
-        ).Formatted;
+                path,
+                CSharpFormatter.Read(path),
+                Rikarin.Skala.Core.Configuration.OptionResolver
+                    .Resolve(path, [new KeyValuePair<string, string>(candidate.Key, "true")])
+                    .Options
+            )
+            .Formatted;
 
         Assert.NotEqual(formatted, arranged);
         Assert.DoesNotContain("did-not-converge", arranged, StringComparison.Ordinal);

@@ -57,8 +57,8 @@ public sealed class ParamsSpanOverloadAnalyzer : DiagnosticAnalyzer {
         if (initializer is not { Expressions.Count: > 0 }
             || initializer.ContainsDirectives
             || initializer.Expressions.Any(static expression => expression.DescendantNodesAndSelf()
-                    .OfType<AwaitExpressionSyntax>()
-                    .Any()
+                .OfType<AwaitExpressionSyntax>()
+                .Any()
             )
             || PrivateFieldUsage.FrameworkType(model.Compilation, "System.ReadOnlySpan`1") is not { } span) {
             return;
@@ -74,10 +74,11 @@ public sealed class ParamsSpanOverloadAnalyzer : DiagnosticAnalyzer {
         );
         var proposed = invocation.ReplaceNode(argument.Expression, replacement);
         if (model.GetSpeculativeSymbolInfo(
-                invocation.SpanStart,
-                proposed,
-                SpeculativeBindingOption.BindAsExpression
-            ).Symbol
+                    invocation.SpanStart,
+                    proposed,
+                    SpeculativeBindingOption.BindAsExpression
+                )
+                .Symbol
                 is not IMethodSymbol alternative
             || !SymbolEqualityComparer.Default.Equals(alternative.ContainingType, call.TargetMethod.ContainingType)
             || !SymbolEqualityComparer.Default.Equals(alternative.ReturnType, call.TargetMethod.ReturnType)

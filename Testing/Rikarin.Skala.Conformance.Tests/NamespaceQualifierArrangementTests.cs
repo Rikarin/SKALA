@@ -162,9 +162,10 @@ public sealed class NamespaceQualifierArrangementTests {
 
     static Rikarin.Skala.Options.FormattingOptions Options(string qualifier = "none") =>
         OptionResolver.Resolve(
-            System.IO.Path.Combine(Corpus.RepositoryRoot, "Probe.cs"),
-            [new("skala_static_members_qualify_members", qualifier)]
-        ).Options;
+                System.IO.Path.Combine(Corpus.RepositoryRoot, "Probe.cs"),
+                [new("skala_static_members_qualify_members", qualifier)]
+            )
+            .Options;
 
     static (SourceText, CSharpCompilation) Compile(string source) {
         var text = SourceText.From(source);

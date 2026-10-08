@@ -28,9 +28,10 @@ public static class XmlDoc {
 
     static FormattingOptions Resolve(params (string Key, string Value)[] overrides) =>
         OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-        ).Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+            )
+            .Options;
 
     public static FormatResult Run(string source, params (string Key, string Value)[] overrides) {
         var options = Resolve(overrides);

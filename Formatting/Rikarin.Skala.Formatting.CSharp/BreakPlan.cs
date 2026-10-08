@@ -2623,7 +2623,10 @@ public sealed class BreakPlan {
     ///     The dots of a chain rooted at <paramref name="root" />, outermost first, and whether its first
     ///     call is a dot-less head — the walk <see cref="PlanChainedCalls" /> registers its points from.
     /// </summary>
-    static (List<SyntaxToken> Dots, bool HeadIsACall, bool IsAChain) ChainLinks(SyntaxNode root, in PhaseOneOptions options) {
+    static (List<SyntaxToken> Dots, bool HeadIsACall, bool IsAChain) ChainLinks(
+        SyntaxNode root,
+        in PhaseOneOptions options
+    ) {
         var dots = new List<SyntaxToken>();
         var headIsACall = false;
         var headIsAnInvocation = false;
@@ -2835,8 +2838,7 @@ public sealed class BreakPlan {
     /// <summary>The conditional access whose <c>?</c> stands right before a binding.</summary>
     static ConditionalAccessExpressionSyntax? ConditionalOf(MemberBindingExpressionSyntax binding) =>
         binding.OperatorToken.GetPreviousToken() is {
-            RawKind: (int)SyntaxKind.QuestionToken,
-            Parent: ConditionalAccessExpressionSyntax owner
+            RawKind: (int)SyntaxKind.QuestionToken, Parent: ConditionalAccessExpressionSyntax owner
         }
             ? owner
             : null;
@@ -2928,8 +2930,10 @@ public sealed class BreakPlan {
     /// </remarks>
     bool SharesTheLevelAroundIt(SyntaxNode root) =>
         ChainHeadIsParenthesised(root)
-        || root.Parent is IfStatementSyntax or WhileStatementSyntax or DoStatementSyntax && IsAHeaderCondition(root)
-        || options.PlaceSingleMethodArgumentLambdaOnSameLine && IsTheBodyOfASoleLambda(root);
+        || root.Parent is IfStatementSyntax or WhileStatementSyntax or DoStatementSyntax
+        && IsAHeaderCondition(root)
+        || options.PlaceSingleMethodArgumentLambdaOnSameLine
+        && IsTheBodyOfASoleLambda(root);
 
     /// <summary>
     ///     Whether a chain is the expression body of a lambda that is its call's sole argument — or the
@@ -2944,9 +2948,11 @@ public sealed class BreakPlan {
         // it — `found.SelectMany(static d => Enumerable.Range(…)` / `.Select(…)` two levels in /
         // `)` / `.OrderByDescending(…)`, Skala's own source.
         return body.Parent is LambdaExpressionSyntax {
-                Parent: ArgumentSyntax {
+                Parent:
+                ArgumentSyntax {
                     NameColon: null,
-                    Parent: ArgumentListSyntax {
+                    Parent:
+                    ArgumentListSyntax {
                         Arguments.Count: 1,
                         Parent: InvocationExpressionSyntax { Parent: not MemberAccessExpressionSyntax }
                     }

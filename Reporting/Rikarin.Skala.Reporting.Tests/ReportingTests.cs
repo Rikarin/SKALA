@@ -386,10 +386,11 @@ public sealed class ReportingTests {
     public void Gate_RequiringCleanFormatting_FailsWhenItIsNot() =>
         Assert.False(
             Gate.Evaluate(
-                GateDefinition.Local with { RequireCleanFormatting = true },
-                Sample(),
-                false
-            ).Passed
+                    GateDefinition.Local with { RequireCleanFormatting = true },
+                    Sample(),
+                    false
+                )
+                .Passed
         );
 
     /// <summary>

@@ -121,7 +121,7 @@ public sealed class CrossFixtureFixTests {
         Parallel.ForEach(
             RuleFixtures.All()
                 .Where(static fixture => File.ReadAllText(fixture.Path)
-                        .Contains("class Probe", StringComparison.Ordinal)
+                    .Contains("class Probe", StringComparison.Ordinal)
                 ),
             new() { CancellationToken = cancellation },
             fixture => {

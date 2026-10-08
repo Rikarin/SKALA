@@ -137,9 +137,10 @@ public sealed class EnumGetValuesAnalyzer : DiagnosticAnalyzer {
 
                 var element = model.GetTypeInfo(statement.Type, cancellation).Type;
                 var enumType = model.GetTypeInfo(
-                    ((TypeOfExpressionSyntax)invocation.ArgumentList.Arguments[0].Expression).Type,
-                    cancellation
-                ).Type;
+                        ((TypeOfExpressionSyntax)invocation.ArgumentList.Arguments[0].Expression).Type,
+                        cancellation
+                    )
+                    .Type;
                 return element is not null
                     && (element.SpecialType == SpecialType.System_Object
                         || SymbolEqualityComparer.Default.Equals(element, enumType));

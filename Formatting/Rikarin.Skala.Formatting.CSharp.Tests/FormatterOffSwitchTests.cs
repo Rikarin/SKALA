@@ -46,14 +46,14 @@ public sealed class FormatterOffSwitchTests {
 
     static string Format(string source, params (string Key, string Value)[] overrides) =>
         CSharpFormatter.Format(
-            "Test.cs",
-            SourceText.From(source),
-            OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                "Test.cs",
+                SourceText.From(source),
+                OptionResolver.Resolve(
+                        Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                        [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                    )
+                    .Options
             )
-                .Options
-        )
             .Formatted;
 
     /// <summary>
@@ -78,9 +78,9 @@ public sealed class FormatterOffSwitchTests {
             "Test.cs",
             SourceText.From(Crooked),
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [new KeyValuePair<string, string>("skala_disable_formatter", "true")]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [new KeyValuePair<string, string>("skala_disable_formatter", "true")]
+                )
                 .Options
         );
 
@@ -102,9 +102,9 @@ public sealed class FormatterOffSwitchTests {
             "Test.cs",
             SourceText.From("class C { void M( { }"),
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [new KeyValuePair<string, string>("skala_disable_formatter", "true")]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [new KeyValuePair<string, string>("skala_disable_formatter", "true")]
+                )
                 .Options
         );
 
@@ -189,9 +189,9 @@ public sealed class FormatterOffSwitchTests {
             "Test.cs",
             SourceText.From(source),
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [new KeyValuePair<string, string>("skala_disable_blank_line_changes", "true")]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [new KeyValuePair<string, string>("skala_disable_blank_line_changes", "true")]
+                )
                 .Options
         );
 
@@ -486,9 +486,9 @@ public sealed class FormatterOffSwitchTests {
             "Test.cs",
             SourceText.From(source),
             OptionResolver.Resolve(
-                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [new KeyValuePair<string, string>(key, "true")]
-            )
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [new KeyValuePair<string, string>(key, "true")]
+                )
                 .Options
         );
 }

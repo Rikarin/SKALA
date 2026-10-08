@@ -348,9 +348,8 @@ public sealed class RedundantParenthesesIssue392Tests {
             CSharpFormatter.ParseOptions,
             cancellationToken: TestContext.Current.CancellationToken
         );
-        var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs")
-        ).Options;
+        var options = OptionResolver.Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"))
+            .Options;
         var arranged = new RedundantParenthesesRule().Apply(
             new(
                 tree.GetRoot(TestContext.Current.CancellationToken),

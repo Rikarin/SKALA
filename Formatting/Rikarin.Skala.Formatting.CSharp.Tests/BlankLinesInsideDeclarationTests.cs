@@ -27,9 +27,10 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 public class BlankLinesInsideDeclarationTests {
     static string Format(string source, params (string Key, string Value)[] overrides) {
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-        ).Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [..overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+            )
+            .Options;
         return CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
     }
 

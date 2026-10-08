@@ -597,12 +597,13 @@ public static class Fuzzer {
         // throw as `crash`; this call must not be the one that escapes.
         try {
             var edits = Rikarin.Skala.Formatting.CSharp.CSharpFormatter.Format(
-                subject.Path,
-                Microsoft.CodeAnalysis.Text.SourceText.From(subject.Text),
-                options,
-                null,
-                []
-            ).Edits.Length;
+                    subject.Path,
+                    Microsoft.CodeAnalysis.Text.SourceText.From(subject.Text),
+                    options,
+                    null,
+                    []
+                )
+                .Edits.Length;
 
             return (violations, edits);
         } catch (Exception exception) when (exception is not OperationCanceledException) {

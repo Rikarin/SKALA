@@ -317,7 +317,7 @@ public static class ArrangementSafety {
             if (current is Microsoft.CodeAnalysis.CSharp.Syntax.MemberDeclarationSyntax
                 or Microsoft.CodeAnalysis.CSharp.Syntax.LocalFunctionStatementSyntax) {
                 return model.GetDeclaredSymbol(current, cancellation)
-                    ?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                        ?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
                     ?? current.Kind().ToString();
             }
         }

@@ -299,9 +299,9 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
             }
 
             if (name.Ancestors()
-                    .Any(static ancestor => ancestor is AnonymousFunctionExpressionSyntax
-                            or LocalFunctionStatementSyntax
-                    )) {
+                .Any(static ancestor => ancestor is AnonymousFunctionExpressionSyntax
+                        or LocalFunctionStatementSyntax
+                )) {
                 return false;
             }
 

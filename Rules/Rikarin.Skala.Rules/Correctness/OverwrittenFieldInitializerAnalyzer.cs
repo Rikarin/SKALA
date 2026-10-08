@@ -434,7 +434,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
              current is { SpecialType: not SpecialType.System_Object };
              current = current.BaseType) {
             if (current.GetMembers()
-                    .Any(static member => member is IMethodSymbol { MethodKind: MethodKind.Destructor })) {
+                .Any(static member => member is IMethodSymbol { MethodKind: MethodKind.Destructor })) {
                 return true;
             }
         }

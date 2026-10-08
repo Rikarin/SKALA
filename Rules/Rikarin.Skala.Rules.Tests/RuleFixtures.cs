@@ -34,9 +34,9 @@ public sealed record RuleFixture(string RuleId, bool ShouldFire, string Path) {
 public static class RuleFixtures {
     public static string Root { get; } = Path.Combine(
         Assembly.GetExecutingAssembly()
-        .GetCustomAttributes<AssemblyMetadataAttribute>()
-        .First(static attribute => attribute.Key == "SkalaRepositoryRoot")
-        .Value!,
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .First(static attribute => attribute.Key == "SkalaRepositoryRoot")
+            .Value!,
         "Rules",
         "Rikarin.Skala.Rules.Tests",
         "fixtures"

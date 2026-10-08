@@ -101,9 +101,10 @@ public sealed class ArrangementRuleTests {
         );
 
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"),
-            overrides
-        ).Options;
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"),
+                overrides
+            )
+            .Options;
 
         return Arranger.Arrange(
             path,
@@ -709,9 +710,8 @@ public sealed class ArrangementRuleTests {
                               }
                               """;
 
-        var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs")
-        ).Options;
+        var options = OptionResolver.Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"))
+            .Options;
 
         var result = Arranger.Arrange(
             path,
@@ -1600,19 +1600,19 @@ public sealed class ArrangementRuleTests {
         var unused = UsingsRule.Unused(model, tree, TestContext.Current.CancellationToken);
         Assert.Contains("System.Text", unused);
 
-        var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs")
-        ).Options;
+        var options = OptionResolver.Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"))
+            .Options;
 
         var arranged = ArrangementPipeline.Run(
-            path,
-            text,
-            new(options),
-            new(options),
-            compilation,
-            unused,
-            cancellation: TestContext.Current.CancellationToken
-        ).Text;
+                path,
+                text,
+                new(options),
+                new(options),
+                compilation,
+                unused,
+                cancellation: TestContext.Current.CancellationToken
+            )
+            .Text;
 
         Assert.DoesNotContain("using System.Text;", arranged, StringComparison.Ordinal);
         Assert.Contains("using System.Reflection;\nusing System.Xml;", arranged, StringComparison.Ordinal);
@@ -1772,9 +1772,8 @@ public sealed class ArrangementRuleTests {
             )
         );
 
-        var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs")
-        ).Options;
+        var options = OptionResolver.Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"))
+            .Options;
 
         return ArrangementPipeline.Run(
             path,

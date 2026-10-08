@@ -17,9 +17,9 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class RuleCatalogTests {
     static string RepositoryRoot { get; } =
         Assembly.GetExecutingAssembly()
-        .GetCustomAttributes<AssemblyMetadataAttribute>()
-        .First(static attribute => attribute.Key == "SkalaRepositoryRoot")
-        .Value!;
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .First(static attribute => attribute.Key == "SkalaRepositoryRoot")
+            .Value!;
 
     static string AllocatedIdsPath { get; } = Path.Combine(
         RepositoryRoot,
