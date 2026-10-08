@@ -101,7 +101,7 @@ public sealed class InlineOutVariableAnalyzer : DiagnosticAnalyzer {
             if (identifier.Ancestors()
                 .TakeWhile(ancestor => ancestor != following)
                 .Any(static ancestor => ancestor is AnonymousFunctionExpressionSyntax
-                        or LocalFunctionStatementSyntax
+                    or LocalFunctionStatementSyntax
                 )) {
                 return;
             }

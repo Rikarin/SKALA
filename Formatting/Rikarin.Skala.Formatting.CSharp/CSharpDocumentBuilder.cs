@@ -1358,7 +1358,8 @@ public sealed partial class CSharpDocumentBuilder {
 
         // ⚠ Held while a sole lambda's arrow stays on the call's line (#566); the slot carries the arrow's
         // group in place of a chain's, the two never meeting on one group.
-        if ((planned.HoldsLevel & HeldLevel.WhileArrowFlat) != 0 && plan.ArrowHeldAgainst(planned.Id) is >= 0 and var arrow) {
+        if ((planned.HoldsLevel & HeldLevel.WhileArrowFlat) != 0
+            && plan.ArrowHeldAgainst(planned.Id) is >= 0 and var arrow) {
             conditions |= IndentFlags.HeldWhileGroupFlat;
             chain = arrow;
         }
@@ -1566,7 +1567,7 @@ public sealed partial class CSharpDocumentBuilder {
         // it here would mean turning an absolute scope into a relative one under every initializer in
         // `corpus/real` on the strength of a row that does not ask about it.
         var singleInsideInitializer = node is InitializerExpressionSyntax
-            or AnonymousObjectCreationExpressionSyntax
+                or AnonymousObjectCreationExpressionSyntax
             && !options.UseContinuousIndentInsideInitializerBraces;
 
         // ⚠ A generic type's `where` clauses come before its `{`, so the run belongs to this walk as

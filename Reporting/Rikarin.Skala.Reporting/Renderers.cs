@@ -893,7 +893,7 @@ public static class AgentRenderer {
         }
 
         var suppressed = report.Findings.Count(static f => f.Suppression is SuppressionKind.Pragma
-                or SuppressionKind.Attribute
+            or SuppressionKind.Attribute
         );
         if (suppressed > 0) {
             // ⚠ docs/plan/10 point 3: given a warning and the ability to edit, `#pragma warning

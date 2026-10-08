@@ -2949,11 +2949,11 @@ public sealed class BreakPlan {
             // an initializer — is #529's and #378's layout, not this table's.
             || call.ArgumentList.DescendantNodes()
                 .Any(static node => node is AnonymousFunctionExpressionSyntax
-                        or InitializerExpressionSyntax
-                        or AnonymousObjectCreationExpressionSyntax
-                        or SwitchExpressionSyntax
-                        or CollectionExpressionSyntax
-                        or WithExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or AnonymousObjectCreationExpressionSyntax
+                    or SwitchExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or WithExpressionSyntax
                 )
             // ⚠ And behind a `var` or an assignment, on arguments with no call or creation of their own:
             // `var bottom = device.CreateAccelerationStructure(new(…));` and `var listener =
@@ -3949,9 +3949,9 @@ public sealed class BreakPlan {
     static bool IsUnbreakablePattern(PatternSyntax pattern) =>
         !pattern.DescendantNodesAndSelf()
             .Any(static node => node is BinaryPatternSyntax
-                    or RecursivePatternSyntax
-                    or ListPatternSyntax
-                    or ParenthesizedPatternSyntax
+                or RecursivePatternSyntax
+                or ListPatternSyntax
+                or ParenthesizedPatternSyntax
             );
 
     /// <summary>
@@ -5276,9 +5276,9 @@ public sealed class BreakPlan {
                 var breaks = token.LeadingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia))
                     || previous.TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
                 var glued = token.Kind() is SyntaxKind.DotToken
-                    or SyntaxKind.QuestionToken
-                    or SyntaxKind.CloseParenToken
-                    or SyntaxKind.CloseBracketToken
+                        or SyntaxKind.QuestionToken
+                        or SyntaxKind.CloseParenToken
+                        or SyntaxKind.CloseBracketToken
                     || previous.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
                 if (breaks && !glued) {
                     return true;
@@ -5305,9 +5305,9 @@ public sealed class BreakPlan {
                 var breaks = token.LeadingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia))
                     || token.GetPreviousToken().TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
                 var glued = token.Kind() is SyntaxKind.DotToken
-                    or SyntaxKind.QuestionToken
-                    or SyntaxKind.CloseParenToken
-                    or SyntaxKind.CloseBracketToken
+                        or SyntaxKind.QuestionToken
+                        or SyntaxKind.CloseParenToken
+                        or SyntaxKind.CloseBracketToken
                     || token.GetPreviousToken().Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
                 if (!(breaks && glued)) {
                     width++;
@@ -6061,12 +6061,12 @@ public sealed class BreakPlan {
                 .Any(static node => node is PropertyPatternClauseSyntax or ListPatternSyntax)
             && !head.SelectMany(static part => part.DescendantNodesAndSelf())
                 .Any(static node => node is PositionalPatternClauseSyntax
-                        or BaseArgumentListSyntax
-                        or TypeArgumentListSyntax
-                        or AnonymousFunctionExpressionSyntax
-                        or InitializerExpressionSyntax
-                        or CollectionExpressionSyntax
-                        or SwitchExpressionSyntax
+                    or BaseArgumentListSyntax
+                    or TypeArgumentListSyntax
+                    or AnonymousFunctionExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or SwitchExpressionSyntax
                 );
         var keptAfter = !kept
             && liftsBraces
