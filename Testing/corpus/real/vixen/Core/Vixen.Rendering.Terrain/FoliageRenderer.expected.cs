@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -52,11 +52,8 @@ public readonly record struct FoliageBatch(
 ///         survivors and fills a <c>DrawIndexedIndirect</c> command.
 ///     </para>
 ///     <para>
-///         <b>
-///             The LOD decision is in that second pass, and it is a deliberate divergence from
-///             <c>LodRenderFeature</c>.
-///         </b>
-///         That feature is right for its case — a LOD group is several
+///         <b>The LOD decision is in that second pass, and it is a deliberate divergence from
+///         <c>LodRenderFeature</c>.</b> That feature is right for its case — a LOD group is several
 ///         render objects and it clears bits — and it cannot express "these four thousand trees in
 ///         this cell are at level 1 and those six hundred are at level 2", because its level is per
 ///         object and here it is per instance. So the pass bins each instance into its level's own

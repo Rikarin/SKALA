@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -17,11 +17,8 @@ namespace Vixen.Editor.Assets.Models;
 ///         what is built here — what the cluster DAG is.
 ///     </para>
 ///     <para>
-///         <b>
-///             Meshlet generation is phase 1 of
-///             <c>docs/plan/22-virtualized-geometry.md</c>
-///         </b>
-///         , and the whole of the algorithm lives in
+///         <b>Meshlet generation is phase 1 of
+///         <c>docs/plan/22-virtualized-geometry.md</c></b>, and the whole of the algorithm lives in
 ///         <c>Vixen.Rendering.VirtualGeometry</c> rather than here, for the reason the distance-field
 ///         bake lives in <c>Vixen.Rendering.DistanceFields</c>: a <see cref="MeshletMesh" /> is what
 ///         this writes and what a player deserialises, so both halves have to be talking about one

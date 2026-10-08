@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -11,11 +11,8 @@ namespace Vixen.Ui.Tests;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         ⚠
-///         <b>
-///             The <c>shown</c> branch in <see cref="DrawListBuilder" /> had no test at all, and
-///             that is the reason this file exists rather than the keyword being a one-line change.
-///         </b>
+///         ⚠ <b>The <c>shown</c> branch in <see cref="DrawListBuilder" /> had no test at all, and
+///         that is the reason this file exists rather than the keyword being a one-line change.</b>
 ///         The property was read; nothing anywhere asserted that reading it did anything, so the
 ///         difference between "honoured" and "parsed and dropped" was invisible to the suite. Two of
 ///         the four behaviours below turned out to be missing when they were finally written down.

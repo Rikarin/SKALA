@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright 2013-2018 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,13 @@
 namespace Serilog.Settings.KeyValuePairs;
 
 /// <summary>
-///     Contains "fake extension" methods for the Serilog configuration API.
-///     By default the settings knows how to find extension methods, but some configuration
-///     are actually "regular" method calls and would not be found otherwise.
-///     This static class contains internal methods that can be used instead.
-///     See also <seealso cref="CallableConfigurationMethodFinder" />
+/// Contains "fake extension" methods for the Serilog configuration API.
+/// By default the settings knows how to find extension methods, but some configuration
+/// are actually "regular" method calls and would not be found otherwise.
+///
+/// This static class contains internal methods that can be used instead.
+///
+/// See also <seealso cref="CallableConfigurationMethodFinder"/>
 /// </summary>
 static class SurrogateConfigurationMethods {
     static readonly Dictionary<Type, MethodInfo[]> SurrogateMethodCandidates = typeof(SurrogateConfigurationMethods)

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -160,12 +160,8 @@ public sealed class AssetEditorRegistry {
     ///         document is one that answers twice.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             And not from <c>EditorProject.Register</c>, which is where it looks like it
-    ///             belongs.
-    ///         </b>
-    ///         That runs from <c>EditorDocument</c>'s base constructor, so a subscriber
+    ///         ⚠ <b>And not from <c>EditorProject.Register</c>, which is where it looks like it
+    ///         belongs.</b> That runs from <c>EditorDocument</c>'s base constructor, so a subscriber
     ///         would be handed a half-built document — the one thing that class's own remarks promise
     ///         does not happen.
     ///     </para>

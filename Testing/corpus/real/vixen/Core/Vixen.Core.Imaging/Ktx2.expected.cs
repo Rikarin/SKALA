@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -184,12 +184,8 @@ public static class Ktx2 {
     /// <param name="file">The file's bytes, or at least <see cref="LayoutLength" /> of the front of it.</param>
     /// <returns>The layout.</returns>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         This validates the level index against the format and the extents, and not against
-    ///         the file's length.
-    ///     </b>
-    ///     A caller holding only the head has no length to check against, and
+    ///     ⚠ <b>This validates the level index against the format and the extents, and not against
+    ///     the file's length.</b> A caller holding only the head has no length to check against, and
     ///     one holding the whole file gets the check from <see cref="Read" /> and
     ///     <see cref="ReadTail" /> where the copy happens. What is checked here is the part a short
     ///     read cannot excuse: a level whose declared size disagrees with what its extent and format

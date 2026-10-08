@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-07
 // Issue #429. The file's own level had no break plan, so a block comment before a top-level
 // declaration stayed on its line, and so did two declarations, two usings or two [assembly: ...]
 // lists written on one. The oracle puts each on a line of its own, after any comment before it.
@@ -18,9 +18,7 @@ public class C { }
 /* top */
 public class D { }
 
-/**
- * top
- */
+/** top */
 public class E { }
 
 /* attr */
@@ -41,9 +39,7 @@ namespace N {
     /* inner */
     public class H { }
 
-    /**
-     * inner2
-     */
+    /** inner2 */
     public struct I { }
 
     public class J { } /* after */

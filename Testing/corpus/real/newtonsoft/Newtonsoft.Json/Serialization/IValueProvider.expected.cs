@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -28,18 +28,18 @@
 
 namespace Newtonsoft.Json.Serialization {
     /// <summary>
-    ///     Provides methods to get and set values.
+    /// Provides methods to get and set values.
     /// </summary>
     public interface IValueProvider {
         /// <summary>
-        ///     Sets the value.
+        /// Sets the value.
         /// </summary>
         /// <param name="target">The target to set the value on.</param>
         /// <param name="value">The value to set on the target.</param>
         void SetValue(object target, object? value);
 
         /// <summary>
-        ///     Gets the value.
+        /// Gets the value.
         /// </summary>
         /// <param name="target">The target to get the value from.</param>
         /// <returns>The value.</returns>

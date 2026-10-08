@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -22,12 +22,8 @@ namespace Vixen.Editor.Water.Tests;
 ///         because both are device-free and world-free on purpose.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             The registration test is the one doc 31's "built and not yet reachable" failure asks
-///             for
-///         </b>
-///         , and it is the reason <c>Register</c> and <c>Activated</c> are separate moments: a
+///         ⚠ <b>The registration test is the one doc 31's "built and not yet reachable" failure asks
+///         for</b>, and it is the reason <c>Register</c> and <c>Activated</c> are separate moments: a
 ///         mode whose commands appear only once somebody has entered it is a mode absent from the
 ///         palette and unbindable until then.
 ///     </para>

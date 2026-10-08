@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -61,12 +61,8 @@ public interface IAssetImporter {
 ///         <c>ImportContext&lt;TSettings&gt;</c> and is not a simplification. Building an
 ///         <c>ImportContext&lt;T&gt;</c> for a settings type the pipeline only knows at run time
 ///         needs <c>MakeGenericType</c>, which NativeAOT does not have. The importer's own type
-///         parameter costs nothing — it is closed at the
-///         <c>
-///             class TextureImporter :
-///             AssetImporter&lt;TextureImportSettings&gt;
-///         </c>
-///         declaration — so the settings arrive as a
+///         parameter costs nothing — it is closed at the <c>class TextureImporter :
+///         AssetImporter&lt;TextureImportSettings&gt;</c> declaration — so the settings arrive as a
 ///         typed parameter and everything stays statically bound.
 ///     </para>
 ///     <para>

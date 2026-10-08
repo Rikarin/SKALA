@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -10,12 +10,8 @@ namespace Vixen.Geometry.Uv.Tests;
 /// <summary>Every input where zero means something, and what the answer is when it does.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠
-///         <b>
-///             This engine has the general form of this bug written down: a frame that draws and
-///             looks wrong, because a struct field was left zero and its zero means disabled.
-///         </b>
-///         A solver
+///         ⚠ <b>This engine has the general form of this bug written down: a frame that draws and
+///         looks wrong, because a struct field was left zero and its zero means disabled.</b> A solver
 ///         has four of them and they all arrive as ordinary geometry — a chart with one vertex nothing
 ///         references, a mesh whose conditioning pass dropped the only triangle touching an unknown, a
 ///         local–global step whose right-hand side came out exactly zero because nothing moved. None

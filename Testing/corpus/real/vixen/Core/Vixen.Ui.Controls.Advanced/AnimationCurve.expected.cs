@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -157,12 +157,8 @@ public sealed class AnimationCurve {
     /// <param name="time">Its new time.</param>
     /// <param name="value">Its new value.</param>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         The list is re-sorted, so a key dragged past its neighbour changes places with
-    ///         it.
-    ///     </b>
-    ///     The alternative — clamping a key between its neighbours — is what makes a curve
+    ///     ⚠ <b>The list is re-sorted, so a key dragged past its neighbour changes places with
+    ///     it.</b> The alternative — clamping a key between its neighbours — is what makes a curve
     ///     editor feel stuck, and the reordering is exactly what the user means by dragging one key
     ///     over another.
     /// </remarks>

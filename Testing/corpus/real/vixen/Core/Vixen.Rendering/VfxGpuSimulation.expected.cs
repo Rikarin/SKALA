@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -272,11 +272,8 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <summary>How many compute dispatches this has recorded since it was built.</summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             Counted because "the GPU path ran" and "the GPU path was constructed" look identical
-    ///             from everywhere else.
-    ///         </b>
-    ///         A host that builds one of these, never records a dispatch and
+    ///         <b>Counted because "the GPU path ran" and "the GPU path was constructed" look identical
+    ///         from everywhere else.</b> A host that builds one of these, never records a dispatch and
     ///         draws the CPU expansion produces exactly the frame a working device path produces, at
     ///         exactly the cost — and there is no validation error, no log line and no counter to tell
     ///         the two apart. This is that counter.
@@ -559,32 +556,21 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <exception cref="InvalidOperationException">The shader has no reap kernel.</exception>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             What was owed after the dispatch pair: the last thing the CPU still did for a device
-    ///             effect.
-    ///         </b>
-    ///         The kernels age a particle and stop; this is what removes the finished ones
+    ///         <b>What was owed after the dispatch pair: the last thing the CPU still did for a device
+    ///         effect.</b> The kernels age a particle and stop; this is what removes the finished ones
     ///         without the state leaving the device. The counter is zeroed by a copy first — an
     ///         <c>atomicAdd</c> onto last frame's count appends past the end of the buffer, which is
     ///         the failure <c>DrawArguments.rvn</c> warns about in the same words.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             The live set flips, so <see cref="Descriptors" /> and <see cref="Storage" /> mean
-    ///             something different after this returns.
-    ///         </b>
-    ///         Nothing is copied back: the survivors are
+    ///         ⚠ <b>The live set flips, so <see cref="Descriptors" /> and <see cref="Storage" /> mean
+    ///         something different after this returns.</b> Nothing is copied back: the survivors are
     ///         in the set that was the spare, and it becomes the live one. A renderer that cached a
     ///         buffer handle across a reap draws the particles as they were before it.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             The survivors come out in an order neither backend promises and the two do not
-    ///             share.
-    ///         </b>
-    ///         The CPU fills each hole from the tail; here a slot is whatever the atomic
+    ///         ⚠ <b>The survivors come out in an order neither backend promises and the two do not
+    ///         share.</b> The CPU fills each hole from the tail; here a slot is whatever the atomic
     ///         handed back, which depends on how the invocations interleaved and is not reproducible
     ///         between two runs of one frame. A particle's randomness follows its identifier rather
     ///         than its slot exactly so that this cannot matter — which is what

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -15,11 +15,9 @@ namespace Vixen.Core.Mathematics;
 ///     is worth one shared helper rather than the same loop written eight times slightly differently.
 /// </remarks>
 static class VectorFormat {
-    /// <summary>
-    ///     Culture used when the caller does not supply one. Never the current culture: a
+    /// <summary>Culture used when the caller does not supply one. Never the current culture: a
     ///     vector in a log file that reads <c>(1,5, 2,0)</c> in one region and <c>(1.5, 2.0)</c> in
-    ///     another is a diffing and parsing problem nobody needs.
-    /// </summary>
+    ///     another is a diffing and parsing problem nobody needs.</summary>
     public static IFormatProvider DefaultProvider => CultureInfo.InvariantCulture;
 
     public static bool TryFormat(

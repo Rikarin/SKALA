@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,28 +16,26 @@
 namespace Serilog.Parsing;
 
 /// <summary>
-///     Parses message template strings into sequences of text or property
-///     tokens.
+/// Parses message template strings into sequences of text or property
+/// tokens.
 /// </summary>
 public class MessageTemplateParser : IMessageTemplateParser {
     static readonly TextToken EmptyTextToken = new("");
 
     /// <summary>
-    ///     Construct a <see cref="MessageTemplateParser" />.
+    /// Construct a <see cref="MessageTemplateParser"/>.
     /// </summary>
     public MessageTemplateParser() { }
 
     /// <summary>
-    ///     Parse the supplied message template.
+    /// Parse the supplied message template.
     /// </summary>
     /// <param name="messageTemplate">The message template to parse.</param>
-    /// <returns>
-    ///     A sequence of text or property tokens. Where the template
-    ///     is not syntactically valid, text tokens will be returned. The parser
-    ///     will make a best effort to extract valid property tokens even in the
-    ///     presence of parsing issues.
-    /// </returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="messageTemplate" /> is <code>null</code></exception>
+    /// <returns>A sequence of text or property tokens. Where the template
+    /// is not syntactically valid, text tokens will be returned. The parser
+    /// will make a best effort to extract valid property tokens even in the
+    /// presence of parsing issues.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="messageTemplate"/> is <code>null</code></exception>
     public MessageTemplate Parse(string messageTemplate) {
         Guard.AgainstNull(messageTemplate);
 

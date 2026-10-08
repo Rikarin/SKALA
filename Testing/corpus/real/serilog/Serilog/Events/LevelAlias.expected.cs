@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,28 +16,26 @@
 namespace Serilog.Events;
 
 /// <summary>
-///     Descriptive aliases for <see cref="LogEventLevel" />.
+/// Descriptive aliases for <see cref="LogEventLevel"/>.
 /// </summary>
-/// <remarks>
-///     These do not appear as members of the enumeration
-///     as duplicated underlying values result in issues when presenting
-///     enum values with <see cref="object.ToString()" />.
-/// </remarks>
+/// <remarks>These do not appear as members of the enumeration
+/// as duplicated underlying values result in issues when presenting
+/// enum values with <see cref="object.ToString()"/>.</remarks>
 public static class LevelAlias {
     /// <summary>
-    ///     The least significant level of event.
+    /// The least significant level of event.
     /// </summary>
     public const LogEventLevel Minimum = LogEventLevel.Verbose;
 
     /// <summary>
-    ///     The most significant level of event.
+    /// The most significant level of event.
     /// </summary>
     public const LogEventLevel Maximum = LogEventLevel.Fatal;
 
     /// <summary>
-    ///     A value that, when used as a "minimum" level, will result in no
-    ///     events being emitted.
+    /// A value that, when used as a "minimum" level, will result in no
+    /// events being emitted.
     /// </summary>
-    /// <remarks>It is never correct to construct a <see cref="LogEvent" /> with this value.</remarks>
+    /// <remarks>It is never correct to construct a <see cref="LogEvent"/> with this value.</remarks>
     public const LogEventLevel Off = Maximum + 1;
 }

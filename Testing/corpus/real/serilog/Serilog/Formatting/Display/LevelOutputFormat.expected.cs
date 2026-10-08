@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright 2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,10 @@
 namespace Serilog.Formatting.Display;
 
 /// <summary>
-///     Implements the {Level} element.
-///     can now have a fixed width applied to it, as well as casing rules.
-///     Width is set through formats like "u3" (uppercase three chars),
-///     "w1" (one lowercase char), or "t4" (title case four chars).
+/// Implements the {Level} element.
+/// can now have a fixed width applied to it, as well as casing rules.
+/// Width is set through formats like "u3" (uppercase three chars),
+/// "w1" (one lowercase char), or "t4" (title case four chars).
 /// </summary>
 static class LevelOutputFormat {
     static readonly string[][] _titleCaseLevelMap = [

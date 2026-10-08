@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -87,12 +87,8 @@ public sealed partial class LayoutTree {
 
     /// <summary>Rebuilds every stale order-modified child list, before the pass descends.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Here rather than lazily inside <see cref="ChildIds" />, and that is a correctness
-    ///         rule rather than a preference.
-    ///     </b>
-    ///     Building a block can grow the arena, and growing the
+    ///     ⚠ <b>Here rather than lazily inside <see cref="ChildIds" />, and that is a correctness
+    ///     rule rather than a preference.</b> Building a block can grow the arena, and growing the
     ///     arena moves the one array every outstanding child span points into — while the algorithm
     ///     is holding such a span across the recursive call that lays each child out. A lazy sort
     ///     would therefore leave an ancestor's loop iterating freed memory, intermittently and only

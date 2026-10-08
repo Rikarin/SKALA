@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -110,12 +110,8 @@ public class PathTessellationCacheTests {
     }
 
     /// <summary>
-    ///     ⚠
-    ///     <b>
-    ///         Every input the tessellator reads is in the key, and a stroke's width is the one most
-    ///         easily forgotten.
-    ///     </b>
-    ///     Leaving it out is a line that keeps the weight it had.
+    ///     ⚠ <b>Every input the tessellator reads is in the key, and a stroke's width is the one most
+    ///     easily forgotten.</b> Leaving it out is a line that keeps the weight it had.
     /// </summary>
     [Fact]
     public void A_stroke_that_changed_width_is_tessellated_again() {

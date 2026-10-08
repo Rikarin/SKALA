@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -13,12 +13,8 @@ namespace Vixen.Geometry.Uv.Solving;
 ///         misuse, and <see cref="Build" /> is what turns them into one sorted row.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             Duplicates are summed in the order they were added, and that order is part of the
-///             answer.
-///         </b>
-///         Floating-point addition is not associative, so <c>(a + b) + c</c> and
+///         ⚠ <b>Duplicates are summed in the order they were added, and that order is part of the
+///         answer.</b> Floating-point addition is not associative, so <c>(a + b) + c</c> and
 ///         <c>a + (b + c)</c> are different matrices — near enough to look identical and far enough to
 ///         move the last bit of a coordinate, which is what docs/plan/42 § D12's byte-identical gate
 ///         is measured on. The sort below is therefore <i>stable</i>: it orders by column and leaves

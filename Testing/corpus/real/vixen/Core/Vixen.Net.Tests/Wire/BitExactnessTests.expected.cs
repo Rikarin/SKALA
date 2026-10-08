@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-08
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -17,11 +17,8 @@ namespace Vixen.Net.Tests.Wire;
 /// <summary>Phase 9's last exit criterion: the same bytes on every machine.</summary>
 /// <remarks>
 ///     <para>
-///         <b>
-///             Two peers that encode the same value differently do not disagree — they desync, and
-///             they do it quietly.
-///         </b>
-///         A snapshot is a difference measured against a capture the receiver
+///         <b>Two peers that encode the same value differently do not disagree — they desync, and
+///         they do it quietly.</b> A snapshot is a difference measured against a capture the receiver
 ///         also holds, so one machine rounding a quantized level one step differently from another
 ///         corrupts every difference measured from it afterwards. Nothing throws, nothing is refused,
 ///         and the object is in the wrong place on one player's screen for the rest of the match.
