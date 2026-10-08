@@ -2210,7 +2210,38 @@ It was therefore not wired: a model that misses measured cells is below this ent
 is saved as `J-453-lambda-floor-attempt.patch` in the session scratchpad. What it needs is a one-column
 grid in `hw` around the drop and across the dip.
 
-- ⚠ status: the operand-chain half and the parameter list **fixed** (#453), pinned by
+⚠ **Round 3 of #453.**
+
+**A bare name for a body: fixed.** `Func<…> f = (A a1, B b1) => Name;` and `… = () => Name;`, with heads
+of 12–70 and parameter lists of 2–70, break after the arrow and never after the `=` while the line
+through `=>` fits; Skala broke the `=` from a head of 30. Wired as `GroupFacts.YieldsThroughArrow`
+(`BreakPlan.ArrowYieldWidthOf`) and pinned by `constructs/wrapping/lambda-arrow-over-a-name.cs`. ⚠ When
+`… (params) =>` itself overflows, the oracle chooses between the `=` and chopping the parameters by a
+width this round did not sweep (3 cells each way: a head plus parameters of 110 breaks the `=`, of 120
+chops). Those cells still follow Skala's ordering rule.
+
+**The call body: the one-column grid was run, and it is still blocked.**
+
+The new grid is `Action a… = () => Cccc(x, y);` with the body's `(` at 60–112 (four apart), the head 10–74
+one column at a time, and the argument list 6–79 one column at a time: 36 208 cells, every row
+monotone `E* A* B* C*`. The structure is now exact:
+
+- The `=` breaks while the overflow is at most `g(hw)`, which rises a column per one and a half of head
+  from 1 at a head of 24 to 34 at 74, and is independent of the `(`.
+- The arrow breaks while the arguments are narrower than a floor `F` that rises with the head (0.43 a
+  column) until it would pass `max(65, p − 20)`. Past that it drops to the `=`'s floor (51–62).
+- The drop and the dip recorded in round 2 are this cap, not noise.
+
+**What blocks it** is a dimension no grid has crossed. Every one of those cells grows the head through
+the *declarator name* (`Action aaa…`). The round-3 control grid grows it through the *type*
+(`Func<TTT…> f`), and there the oracle never breaks the `=`. Its arrow-versus-chop answer also
+disagrees with `F` at the same `(` column and head width — `hw = 20`, a 60-column argument list, end 125
+chops where `F` says arrow — and is not monotone in the line end (125 chops, 130 breaks the arrow, 140
+chops). So `F` and `g` are functions of at least the name width and the type width separately, and a
+table keyed on the head width alone would contradict measured cells. The next step is a type-width ×
+name-width sweep at a fixed `(` column.
+
+- ⚠ status: the operand-chain half, the parameter list and a bare-name body **fixed** (#453), pinned by
   `constructs/wrapping/lambda-arrow-over-a-chain.cs` and
   `constructs/wrapping/lambda-parameters-before-the-arrow.cs`; the call body **blocked**, measured as
   above. The rule that would arm them is known to one constant and a three-column wander,
@@ -7298,8 +7329,18 @@ opens its arm scope on the parenthesis's line, so `var x = (c` / `? a` / `: b);`
 The rows with two groupings (`((c` / `? a`, `((a` / `+ b))`) and the collection rows are the grouping
 model's and stay open.
 
-- options: `skala_space_within_parentheses` (the space only).
-- ⚠ status: **fixed** but for the `(` / `[` join — the `( [` space by #485, the single-grouping ternary rows
+⚠ **Round 4 (#485): the join is fixed, and the rest re-measured on the merged tree.** Measured 2026-10-08
+with `Testing ask`: `(` / `[` / elements / `]);` comes back `( [` / elements at +1 / `]);`, as do `((` /
+`[` (`(( [`), a `return (` / `[` and an argument `(` / `[` — the oracle joins the `[` to the `(` whenever
+the collection is multi-line, and keeps an author's `(` / `[1, 2]);` when it is not. At
+`skala_keep_user_linebreaks = false` it joins that one too (`([1, 2]);`). The two-grouping rows —
+`((c` / `? a` / `: b))`, `((a` / `+ b))`, `(((a` / `+ b)))`, `if (((c` / `|| c)))` — already agree since
+#481 and #546, and are pinned beside the join. `BreakPlan.SettleParenthesisedCollections`, read off the
+finished plan; ⚠ a collection written on one line that only the margin breaks is not seen there and keeps
+an author's break after the `(` (not measured). Pinned by `ParenthesisedCollectionIssue485Tests`.
+
+- options: `skala_space_within_parentheses` (the space only); `skala_keep_user_linebreaks` (the join).
+- ⚠ status: **fixed**, the `(` / `[` join included (#485, round 4) — the `( [` space by #485, the single-grouping ternary rows
   by #546 and by #481, the grouping-in-grouping and collection levels by #481. Pinned by
   `constructs/syntax/grouping-parenthesis-one-level.cs`, `GroupingParenthesisOneLevelIssue481Tests` and
   `BrokenCollectionAfterCastOrParenIssue450485Tests`.
@@ -8997,8 +9038,26 @@ of its own, not this rule.
 No reading of the hand-over column (receiver plus line, the second line's width, the head's) fits all
 of it, so the type-test rows keep the #444 band and nothing else. The grid is the starting point.
 
-- ⚠ status: **resolved** for the band and for a plain member access without a type test; **open** for
-  `is`/`as` past the band, measured as above. Pinned by `TypeTestKeywordIssue444Tests` and
+⚠ **Round 3: still blocked, with the reason stated.** Group F's #482 fill (`PlanPropertyFill`) now
+places the last-dot break for a plain member access. Under `is`/`as` the measured grid
+(`return r.P… as string;`, `… is T;`, receivers of 1–50, line ends 118–140) shows four interleaved
+outcomes per row:
+
+- the dot one level in;
+- the type after the keyword moved (`… as` / `string;`);
+- the keyword moved (`…` / `as string;`);
+- the dot **two** levels in, with the keyword band applied again below it — `return r` / `.P… as` at 16 /
+  `string;` at 12.
+
+Wiring that needs two things the formatter does not have. First, a dot point inside a type-test operand
+whose level depends on whether the keyword break is also taken, which nests the operand's continuation
+under the keyword's. Second, the hand-over column between the dot and the keyword band. That column
+depends on the receiver, the line end, the type's width and the keyword (`is` hands over from a
+receiver of 6, `as string` from 14). Only one type width per keyword was measured, so a table over it
+would be keyed on a dimension the grid has not varied.
+
+- ⚠ status: **resolved** for the band and for a plain member access without a type test; **open, blocked**
+  for `is`/`as` past the band, measured as above. Pinned by `TypeTestKeywordIssue444Tests` and
   `constructs/breaks/member-access-last-dot.cs`.
 
 ## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
@@ -9107,9 +9166,43 @@ and chops in the oracle (four cells), a field whose `(` is near column 74 breaks
 the oracle (three), and under an attribute and a block comment the oracle declines the join at 123 and 126
 where the floor would break the `=` (four, SK-DIV-0201). Pinned by `CreationEqualsFloorIssue555Tests`.
 
+⚠ **Round 3 of #446: the binary-pattern half, wired as measured tables.** The local
+`bool c… = operand is A or B;` past the margin was swept over head widths 8–60 (statement start through
+`=`), pattern widths 10–107, and line ends 110–152, one column at a time near every boundary — about
+10 000 cells in nine grids, with `> 5 and < 10`, `null or Empty` and three names among the patterns.
+
+- **A head of 12 or more** breaks the `=` unless the pattern is wider than a threshold that falls with the
+  line's end. The threshold runs from 88–90 down to 77–86 over ends 121–152, a column per three, and is
+  higher for a wider head. Wider patterns chop on the declaration's line, which is what
+  `constructs/alignment/outdent.cs` shows.
+- **A head under 12** breaks the `=` only for a narrow pattern: up to 27 / 31 / 35 / 38 columns for heads
+  of 8 / 9 / 10 / 11. Each head then has two transitional widths that break it only from a line end that
+  moves five per column of pattern. One cell (head 11, pattern 39, end 124) is out of line and is kept as
+  measured.
+- **After the `=` breaks, the gap after `is` is a break point** (`BreakPlan.PlanAfterIs`): the pattern
+  moves one level below `operand is` once the line up to its first combinator has no room. That is the
+  arm arrow's head rule, plus `GroupFacts.HeadSlack` — a first operand of one or two columns always moves,
+  and one of three ahead of `or` moves two columns early.
+
+Tables: `EqualsFloor.BreaksBeforeAPattern` (`WidestPattern` at one-column ends) and
+`BreakPlan.PatternHeadOf`. Every grid cell matches; `corpus/real/` and every other construct are
+unchanged. Not measured: assignments and fields, operators other than one `or`/`and` at the root, and
+and the `is` gap anywhere but a local's value. ⚠ It was first planned for every `is` ahead of a binary
+pattern, and reformatting Skala's own source refuted that: inside a lambda body or an argument the gap
+moved `child is not A` / `and not B` where the oracle keeps the pattern on the operand's line, so it is
+restricted to the `EqualsValueClause` of a local declarator.
+
+- **A break the author kept before `is`** ahead of a binary pattern (`BreakPlan.PlanKeptIs`) puts the
+  `is` line one level past the operand's own line, with the combinators on its column — under an
+  expression body, after `return` and in a local's value alike. Before this the `is` line sat on the
+  operand's column under an expression body. Excluded: a chain holding a property pattern, whose braces
+  then nested a level too deep. Pinned by `constructs/indentation/kept-break-before-is.cs`; the same
+  shape in Skala's own `IsStringText` and `IsCallShaped` moved to the oracle's column.
+
 - options: `skala_wrap_before_eq = false`, the exported value.
-- ⚠ status: the call half **resolved** for the measured owners, a creation with arguments too, pinned by
-  `constructs/breaks/equals-before-a-call-floor.cs`; the binary-pattern half **open**. #444 shapes 2 and 6.
+- ⚠ status: **resolved** for both halves within the measured shapes, a creation with arguments too (#555), pinned by
+  `constructs/breaks/equals-before-a-call-floor.cs` and `constructs/breaks/equals-before-a-binary-pattern.cs`.
+  #444 shapes 2 and 6.
 
 ## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
 
@@ -9146,8 +9239,22 @@ in Skala (the sole lambda's continuation inside a lifted list; `LayoutWriter.Bro
 reads it as an ordinary scope, which is right for `n is not (A` / `or B)` under a chain and wrong here).
 
 - options: none.
-- ⚠ status: **fixed** for the list (#446), pinned by
-  `constructs/breaks/when-clause-list-under-a-kept-arrow.cs`; the sole lambda's `is` **open**, measured.
+⚠ **Round 3: the sole lambda's lines, fixed.** Measured on an `is`, an `&&` and a `.Member` after
+`when x.All(static e => e`, with `)` on the same line and on its own, and inside a two-argument list. Under
+the kept arrow every one of those lines sits two levels past the arm, on the lifted list's content level.
+Outside an arm and under a broken chain they continue the ordinary way, which is #418's rule and stays.
+So the arm's group carries `GroupFacts.LiftsThroughInnerBreaks`, and in `LayoutWriter` such a lifted
+list:
+
+- is not read as an ordinary scope when a construct broke inside it (`BrokenInsideOnItsLine`);
+- lends its lifted level to a type test's from-line scope opened on its line;
+- spends one level per line with a chain opened on its line.
+
+`corpus/real/` and every other construct are byte-identical.
+
+- options: none.
+- ⚠ status: **fixed** (#446), pinned by `constructs/breaks/when-clause-list-under-a-kept-arrow.cs` and
+  `constructs/breaks/when-clause-lambda-under-a-kept-arrow.cs`.
 
 ## SK-DIV-0310 — a collection expression's spread is spelled one way, which the oracle never does
 
@@ -9649,10 +9756,14 @@ statement's head (`System.` / `Console.WriteLine()`), measured; a break *before*
 after a `//` or a `/* */` comment there. `BreakPlan.PlanJoinAfterADot` makes the name's gap flat at
 `skala_wrap_after_dot_in_method_calls = false`. ⚠ Not a qualified name, and found beside it: `using System.` /
 `Text;` is kept by the oracle with `Text` one level in, where Skala writes it at column 0. Open, not this
-issue's.
+issue's. ⚠ **Fixed by #554 (2026-10-08):** a using directive owned no continuation frame, so nothing paid
+for the break. It owns one now (`OwnsAContinuationFrame`). Measured on eight shapes: after a dot and before
+one, `using static`, `global using`, three segments, with the alias and file-scoped-namespace rows that
+already agreed as controls. Pinned by `constructs/syntax/using-directive-broken-name.cs` and
+`UsingDirectiveBrokenNameIssue554Tests`.
 
 - options: `skala_wrap_after_dot_in_method_calls` (the export's `false`).
-- ⚠ status: **resolved** (#536); the `using` row is open. Pinned by `constructs/syntax/parenthesis-residues.cs`
+- ⚠ status: **resolved** (#536), the `using` row by #554. Pinned by `constructs/syntax/parenthesis-residues.cs`
   and `ParenthesisResiduesIssue532To536Tests`.
 
 ## SK-DIV-0370 — a binary pattern chain's level in a statement condition counted the wrong nesting

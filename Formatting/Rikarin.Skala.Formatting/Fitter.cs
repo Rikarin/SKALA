@@ -301,6 +301,26 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ An `=` before a lambda with a bare name for a body yields to the arrow while the line
+                // through `=>` fits. See GroupFacts.YieldsThroughArrow (#453).
+                if (facts.YieldsThroughArrow > 0
+                    && m.PointWidth < Unbounded
+                    && Fits(m.Column, m.PointWidth + 1 + facts.YieldsThroughArrow)) {
+                    return ResolvedMode.Flat;
+                }
+
+                // ⚠ An `=` before `operand is A or B`: a measured table (#446, SK-DIV-0211).
+                if (facts.PatternHead > 0
+                    && facts.BreaksIfTooLong
+                    && !Fits(m.Column, m.BreakWidth, m.Trailing)) {
+                    var end = m.FlatWidth >= Unbounded || m.Trailing >= Unbounded
+                        ? int.MaxValue
+                        : m.Column + m.FlatWidth + m.Trailing;
+                    return EqualsFloor.BreaksBeforeAPattern(facts.PatternHead, facts.PatternWidth, end)
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
+                }
+
                 // ⚠ A lambda's parameter list: broken only when the line through its `=>` overflows.
                 // See GroupFacts.ThroughWidth (#453).
                 if (facts.ThroughWidth > 0) {
@@ -565,7 +585,7 @@ public sealed class Fitter {
         // ⚠ A switch arm's arrow, a lambda's and a `when` ask only this question (issue #378): the
         // oracle never moves the body down to spare the construct inside it a break, and moves it
         // exactly when the head up to that construct's first point has no room on the line.
-        var line = m.PointWidth >= Unbounded ? Unbounded : m.PointWidth + m.AfterPoint;
+        var line = m.PointWidth >= Unbounded ? Unbounded : m.PointWidth + m.AfterPoint + facts.HeadSlack;
         var trailing = afterPointRunsToTheEnd ? m.Trailing : 0;
         return Fits(m.Column, line, trailing) ? ResolvedMode.Flat : ResolvedMode.Broken;
     }
