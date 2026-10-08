@@ -26,10 +26,10 @@ public sealed class DeclarationPerformanceBatchTests {
             var data = new TheoryData<RuleFixture>();
             foreach (var fixture in RuleFixtures.All()
                          .Where(static fixture => fixture.RuleId is "SK4020"
-                                 or "SK4021"
-                                 or ImmutableStructId
-                                 or "SK4023"
-                                 or "SK4024"
+                             or "SK4021"
+                             or ImmutableStructId
+                             or "SK4023"
+                             or "SK4024"
                          )) {
                 data.Add(fixture);
             }

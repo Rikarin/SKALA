@@ -136,7 +136,7 @@ public sealed class CollectionModifiedAnalyzer : DiagnosticAnalyzer {
     ) {
         var text = enumerated.ToString();
         foreach (var node in body.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
-                         and not LocalFunctionStatementSyntax
+                     and not LocalFunctionStatementSyntax
                  )) {
             if (node is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } invocation
                 || !Mutators.Contains(access.Name.Identifier.ValueText)) {
@@ -166,7 +166,7 @@ public sealed class CollectionModifiedAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static bool HasAnExit(SyntaxNode body) {
         foreach (var node in body.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
-                         and not LocalFunctionStatementSyntax
+                     and not LocalFunctionStatementSyntax
                  )) {
             switch (node) {
                 case BreakStatementSyntax:
