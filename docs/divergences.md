@@ -10023,6 +10023,28 @@ left operand (#457), where the chain takes a level past the operator's.
   condition keeps the ordinary rule. Measured on chain, `&&`, identifier and call conditions behind heads
   of 8 to 66 columns; every row agrees. Pinned by `ConditionalAfterEqIssue553Tests` and
   `constructs/breaks/conditional-after-eq.cs`.
+- ⚠ **And a condition that fits beside the `=` (#577, 2026-10-08).** #553 kept the `=` whenever the condition
+  fit; the oracle does not. Measured on 3 452 rows — heads through `var … =` from 9 to 62 columns, conditions of
+  4 to 40 columns, the value's line below from 86 to 121 columns, branches split evenly and lopsidedly (the split
+  never mattered) — it moves the value down whole while the line below is short enough:
+  `100·below + 38·min(condition, 24) + 24·max(0, column of the = − 39) ≤ 11 364`, a condition past 24 columns
+  costing no more. `Fitter.ConditionalMovesDownWhole`; 3 342 of the 3 452 rows agree. ⚠ **Not explained:** a
+  four- to six-column condition behind a 17- to 28-column head, where the oracle moves the value down at every
+  width, past the margin included (then chopping it below) — about a hundred rows, including the issue's own
+  `flag` rows at heads 21 and 31 of group F's grid. No rule found in the lengths alone. Pinned by
+  `ConditionalMovesDownWholeIssue577Tests` (the boundary rows, the band left out).
+- ⚠ **#579 — measured, not wired.** `var v = X || Y` with `X` too wide beside the `=`: the oracle breaks the `=`
+  from a 12-column head when `Y` is `flag` and `X` is an `&&` chain of any width or an `is … or …` pattern of up
+  to 114 columns, keeps it for a wider pattern, and with a wider `Y` breaks it from a head of 9 to 11 columns
+  too (`Y` of 23, 75, 76 and 94 columns move the floor to 12, 11, 10 and 9 head columns) — the resulting lines
+  are identical either way, so no layout cost separates the two answers. The issue's `var glued =` row is the
+  11-column head with a 77-column `Y`. Recorded with the grids; no rule wired, because the measured floor moves
+  with the far operand and the pattern boundary contradicts it.
+- **#580 — fixed.** A `??` chain past the margin: the oracle writes `a` / `?? b ?? c`, Skala chopped every `??`.
+  `??` is right-associative and the oracle breaks it as that tree — before each `??` whose right side does not
+  fit (six operands: `?? b` / `?? c` / `?? d` / `?? e ?? f`). Measured under `=`, `return`, an argument, an `if`
+  condition, a parenthesised left side and a `throw`; `SameChain` no longer joins nested `??`. Pinned by
+  `CoalesceChainIssue580Tests`.
 
 ## SK-DIV-0334 — a list opened on a closer's line nested from the levels behind the closer
 

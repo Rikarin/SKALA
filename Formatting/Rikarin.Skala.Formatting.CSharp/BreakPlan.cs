@@ -4423,6 +4423,12 @@ public sealed class BreakPlan {
             (BinaryExpressionSyntax outer, BinaryExpressionSyntax inner) =>
                 !IsTypeTest(outer)
                 && !IsTypeTest(inner)
+                // ⚠ Not `??` (#580): it is right-associative, `a ?? (b ?? c)`, and the oracle breaks it
+                // as the tree it is — before each `??` whose right side does not fit, so `a` / `?? b ?? c`,
+                // and with six operands `?? b` / `?? c` / `?? d` / `?? e ?? f`. Measured 2026-10-08 under
+                // `=`, `return`, an argument, an `if` condition, a parenthesised left side and a `throw`;
+                // one chain of them chopped every `??`.
+                && !outer.IsKind(SyntaxKind.CoalesceExpression)
                 && Precedence(outer.OperatorToken.Kind()) == Precedence(inner.OperatorToken.Kind()),
             // ⚠ The same combinator, which is the same precedence: `and` binds tighter than `or`, and
             // `A and B or C` / `or D` comes back from the oracle chopped at the `or`s with `A and B`
