@@ -1856,10 +1856,26 @@ unrelated to it; where Skala and the oracle part is that the oracle asks whether
 *enough* and Skala asks whether the construct is *over*. That is a difference two sentences can
 hold, which is what a `deliberate` verdict needs.
 
+**Second half resolved (#452).** The alignment scope of a type parameter list now opens *inside* the
+list's delimiter scope, once the gap after the `<` — the group's own first point — has been written
+(`CSharpDocumentBuilder.AlignsTypeParameters`). Measured with `jb cleanupcode` 2025.2.6 on a method's
+list of one parameter swept from 118 to 124 columns: flat to 120, and from 121 the oracle breaks after
+the `<` with the parameter one level in, exactly as at `false`; Skala now does the same. A list that
+fills keeps its parameters under the first one (`public class Widest<TFirst…,` / aligned `TFourth> { }`,
+and a kept comma break), as the aligned fixture already recorded.
+
+⚠ Measured beside it and still divergent (SK-DIV-0351): with two parameters whose aligned continuation
+would not fit — `M<TFirst,` / a 60-column `Tyyy…>() { }` under `TFirst` at column 47 — the oracle breaks
+after the `<` instead and fills `TFirst, Tyyy…` one level in, where the same list at `false` keeps
+`<TFirst,` and breaks at the comma. Skala keeps `<TFirst,` at both values: its fill decides the `<` point
+by the first parameter alone. And a top-level `public class Generic<T…>` past the margin is broken by the
+oracle between `class` and the name (`public class` / `    Generic<T…> { }`) at both values, where Skala
+breaks after the `<` — the type/name family of SK-DIV-0127.
+
 - options: `skala_wrap_before_type_parameter_langle`, `skala_align_multiline_type_parameter_list`, `skala_wrap_parameters_style`
 - ⚠ status: first half **deliberate**, argued above and re-measured in
-  [sk-div-preference-sweep.md](sk-div-preference-sweep.md); second half **open**, measured, `debt`
-  size S.
+  [sk-div-preference-sweep.md](sk-div-preference-sweep.md); second half **resolved** (#452), pinned by
+  `AlignedTypeParameterIssue452Tests`.
 
 ## SK-DIV-0050 — a lambda's `=>` is a break point of the oracle's and not of Skala's
 
@@ -7999,3 +8015,16 @@ holds several attributes is left to the sections, as before, unmeasured.
 
 - options: none.
 - ⚠ status: **resolved** (#475), pinned by `AttributeRunIssue475Tests`.
+
+## SK-DIV-0351 — an aligned type parameter list whose continuation would not fit breaks after its `<`
+
+Measured beside #452 with `jb cleanupcode` 2025.2.6: `public void OneParameterWiderThanTheMargin<TFirst,
+Tyyy…>() { }` from 121 to 124 columns. At `skala_align_multiline_type_parameter_list = false` both engines
+keep `<TFirst,` and put `Tyyy…` one level in. At `true` the oracle breaks after the `<` and writes
+`TFirst, Tyyy…>() { }` one level in, because `Tyyy…` aligned under `TFirst` at column 47 would not fit;
+Skala keeps `<TFirst,` and aligns `Tyyy…` past the margin. A fill that decides each point by the item
+after it cannot see that the *last* item fails at the aligned column; the oracle's answer needs the
+`<` point to ask whether every remaining item fits there. Not wired.
+
+- options: `skala_align_multiline_type_parameter_list`
+- ⚠ status: **open**, measured.

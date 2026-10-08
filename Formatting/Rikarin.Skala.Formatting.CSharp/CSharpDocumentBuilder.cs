@@ -308,12 +308,8 @@ public sealed partial class CSharpDocumentBuilder {
             VariableDeclarationSyntax { Variables.Count: > 1, Parent: not FieldDeclarationSyntax } =>
                 options.AlignMultipleDeclaration,
 
-            // ⚠ Only where the list wraps at its own parameters. Under
-            // `skala_wrap_before_type_parameter_langle` the break is the gap before the `<` and the list
-            // has no interior point to align, so an Align scope there would anchor a column nothing
-            // ever lands on.
-            TypeParameterListSyntax { Parameters.Count: > 0 } =>
-                options.AlignMultilineTypeParameterList && !options.WrapBeforeTypeParameterLangle,
+            // ⚠ A type parameter list is not here: its anchor is past its own first break point, the gap
+            // after the `<`, so the scope opens inside the list's group — see AlignsTypeParameters.
             _ => false
         };
 
@@ -1678,6 +1674,10 @@ public sealed partial class CSharpDocumentBuilder {
 
         var savedDepth = continuousDepth;
         var pending = 0;
+
+        // ⚠ An alignment scope inside the delimiter's own, opened past the list's first break point.
+        // See AlignsTypeParameters.
+        var alignedInside = false;
         foreach (var child in node.ChildNodesAndTokens()) {
             if (child.IsToken) {
                 var token = child.AsToken();
@@ -1715,6 +1715,11 @@ public sealed partial class CSharpDocumentBuilder {
                     // (#443): `(1, 2` / `    );`, `P(1, 2` / `    );` and `var (a, b` / `    ) = …` keep the
                     // closer one level in, where the author's break left it. A tuple that broke after
                     // its `(` still closes on its opener's level, `(` / `    a,` / `)`.
+                    if (alignedInside) {
+                        CloseIndent(IndentKind.Align);
+                        alignedInside = false;
+                    }
+
                     var keepsCloserIn = IsOnlyFilled(node)
                         && !HasLineBreak(open.Span.End, open.GetNextToken().SpanStart);
                     for (var i = opened; i > closer; i--) {
@@ -1752,6 +1757,12 @@ public sealed partial class CSharpDocumentBuilder {
                     }
 
                     opened = levels;
+                    if (AlignsTypeParameters(node) && node is TypeParameterListSyntax { Parameters: [{ } parameter, ..] }) {
+                        EmitLeadingGapAt(parameter.SpanStart);
+                        OpenIndent(IndentKind.Align, true);
+                        alignedInside = true;
+                    }
+
                     if (element) {
                         savedDepth = continuousDepth;
                         continuousDepth = 0;
@@ -1765,6 +1776,10 @@ public sealed partial class CSharpDocumentBuilder {
 
         if (opened > 0) {
             EmitUpTo(close.SpanStart);
+            if (alignedInside) {
+                CloseIndent(IndentKind.Align);
+            }
+
             if (element) {
                 if (frames[^1].Activated) {
                     doc.Close();
@@ -1789,7 +1804,28 @@ public sealed partial class CSharpDocumentBuilder {
         if (scopeKind == IndentKind.Align && node is AttributeListSyntax { Attributes: [{ } first, ..] }) {
             EmitLeadingGapAt(first.SpanStart);
         }
+
     }
+
+    /// <summary>
+    ///     <c>skala_align_multiline_type_parameter_list = true</c>: the parameters line up under the first
+    ///     one, wherever it landed.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The scope opens inside the list, once the gap after the <c>&lt;</c> is written — and that gap
+    ///     is the list's own first break point (#452, SK-DIV-0024). Opened around the node, the way
+    ///     <see cref="Visit" /> opens every other alignment, the gap was written before the list's group
+    ///     existed, and a group not yet entered renders its point flat: a single type parameter wider
+    ///     than the margin stayed on a 125-column line. Measured with <c>jb cleanupcode</c> 2025.2.6 from
+    ///     121 to 124 columns on a method's list of one and of two parameters: the oracle breaks after the
+    ///     <c>&lt;</c> exactly as at <c>false</c>, the parameters one level in, and they align under the
+    ///     first one there. Not under <c>skala_wrap_before_type_parameter_langle</c>, where the break is
+    ///     before the <c>&lt;</c> and the list has no interior point to align.
+    /// </remarks>
+    bool AlignsTypeParameters(SyntaxNode node) =>
+        node is TypeParameterListSyntax { Parameters.Count: > 0 }
+        && options.AlignMultilineTypeParameterList
+        && !options.WrapBeforeTypeParameterLangle;
 
     /// <summary>
     ///     How many levels a delimited construct's contents take, and how many its closing delimiter
