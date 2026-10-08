@@ -115,11 +115,11 @@ class Build : NukeBuild {
                     output.CreateOrCleanDirectory();
 
                     DotNetPublish(settings => settings
-                            .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
-                            .SetConfiguration(Configuration)
-                            .SetRuntime(rid)
-                            .SetSelfContained(false)
-                            .SetOutput(output)
+                        .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
+                        .SetConfiguration(Configuration)
+                        .SetRuntime(rid)
+                        .SetSelfContained(false)
+                        .SetOutput(output)
                     );
 
                     Serilog.Log.Information("Native layout in {Output}", output);
@@ -154,11 +154,11 @@ class Build : NukeBuild {
             .Executes(() => {
                     var cli = RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj";
                     DotNetRun(settings => settings
-                            .SetProjectFile(cli)
-                            .SetConfiguration(Configuration)
-                            .EnableNoBuild()
-                            .EnableNoRestore()
-                            .SetApplicationArguments("config", "check", RootDirectory)
+                        .SetProjectFile(cli)
+                        .SetConfiguration(Configuration)
+                        .EnableNoBuild()
+                        .EnableNoRestore()
+                        .SetApplicationArguments("config", "check", RootDirectory)
                     );
 
                     // ⚠ `Distribution` was missing from this list and its two projects' sources
@@ -239,28 +239,28 @@ class Build : NukeBuild {
                     // one gate whose instrument could not check itself.
                     var binlog = RootDirectory / "artifacts" / "skala.binlog";
                     DotNetBuild(settings => settings
-                            .SetProjectFile(Solution)
-                            .SetConfiguration(Configuration)
-                            .EnableNoRestore()
-                            .EnableNoIncremental()
-                            .AddProcessAdditionalArguments("-bl:" + binlog.ToString())
+                        .SetProjectFile(Solution)
+                        .SetConfiguration(Configuration)
+                        .EnableNoRestore()
+                        .EnableNoIncremental()
+                        .AddProcessAdditionalArguments("-bl:" + binlog.ToString())
                     );
 
                     DotNetRun(settings => settings
-                            .SetProjectFile(cli)
-                            .SetConfiguration(Configuration)
-                            .EnableNoBuild()
-                            .EnableNoRestore()
-                            .SetApplicationArguments(
-                                "arrange",
-                                "--check",
-                                "--quiet",
-                                "--load=binlog",
-                                "--binlog",
-                                binlog,
-                                "--require-fresh-binlog",
-                                RootDirectory
-                            )
+                        .SetProjectFile(cli)
+                        .SetConfiguration(Configuration)
+                        .EnableNoBuild()
+                        .EnableNoRestore()
+                        .SetApplicationArguments(
+                            "arrange",
+                            "--check",
+                            "--quiet",
+                            "--load=binlog",
+                            "--binlog",
+                            binlog,
+                            "--require-fresh-binlog",
+                            RootDirectory
+                        )
                     );
                 }
             );
@@ -838,13 +838,13 @@ class Build : NukeBuild {
                     // takes one argument string and re-quotes it whole, which turned the twelve arguments
                     // below into a single path that does not exist.
                     DotNetRun(settings => settings
-                            .SetProjectFile(
-                                RootDirectory / "build" / "Rikarin.Skala.Release" / "Rikarin.Skala.Release.csproj"
-                            )
-                            .SetConfiguration(Configuration)
-                            .EnableNoBuild()
-                            .EnableNoRestore()
-                            .SetApplicationArguments([..arguments])
+                        .SetProjectFile(
+                            RootDirectory / "build" / "Rikarin.Skala.Release" / "Rikarin.Skala.Release.csproj"
+                        )
+                        .SetConfiguration(Configuration)
+                        .EnableNoBuild()
+                        .EnableNoRestore()
+                        .SetApplicationArguments([..arguments])
                     );
                 }
             );
@@ -1059,11 +1059,11 @@ class Build : NukeBuild {
     void Skala(params object[] arguments) {
         var cli = RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj";
         DotNetRun(settings => settings
-                .SetProjectFile(cli)
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetApplicationArguments(arguments.Select(static argument => argument.ToString()!).ToArray())
+            .SetProjectFile(cli)
+            .SetConfiguration(Configuration)
+            .EnableNoBuild()
+            .EnableNoRestore()
+            .SetApplicationArguments(arguments.Select(static argument => argument.ToString()!).ToArray())
         );
     }
 }

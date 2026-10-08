@@ -2943,7 +2943,12 @@ public sealed class BreakPlan {
                 }
             }
 
-            Describe(receiver, receiverGroup, GroupMode.Preserve, new(BreaksIfTooLong: true, BreaksIfItOverflows: true));
+            Describe(
+                receiver,
+                receiverGroup,
+                GroupMode.Preserve,
+                new(BreaksIfTooLong: true, BreaksIfItOverflows: true)
+            );
         }
 
         // ⚠ The argument count picks the measured table (one argument or none, or more), and the call's
@@ -3554,10 +3559,18 @@ public sealed class BreakPlan {
     ///     lambda argument's body, but not behind a parenthesised head (#582). See
     ///     <see cref="IsTheBodyOfASoleLambda" />.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ Not where the lambda's call is itself another lambda's body: `.Executes(() => DotNetTest(settings =>
+    ///     settings` / `.SetProjectFile(…)` puts the links two levels past the line in the oracle (Skala's own
+    ///     build/Build.cs), which a level from the line would write at one. That shape was not measured and
+    ///     keeps the level around it.
+    /// </remarks>
     bool ChainFromItsLine(SyntaxNode root) =>
         !HeadSharesTheLevelAroundIt(root)
         && options.PlaceSingleMethodArgumentLambdaOnSameLine
-        && IsTheBodyOfASoleLambda(root);
+        && IsTheBodyOfASoleLambda(root)
+        && root.Parent?.Parent?.Parent?.Parent is InvocationExpressionSyntax call
+        && call.Parent is not LambdaExpressionSyntax;
 
     /// <summary>
     ///     Whether a chain is the expression body of a lambda that is its call's sole argument — or the
@@ -6276,22 +6289,22 @@ public sealed class BreakPlan {
                         LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
                     )
                     : OperandSoleLambdaTail(lambda, body) is > 0 and var operandTail
-                    ? new GroupFacts(
-                        BreaksIfTooLong: true,
-                        LambdaOperandParameters: lambda.ArrowToken.SpanStart - 1 - lambda.SpanStart,
-                        LambdaOperandTail: operandTail,
-                        LambdaOperandFirst: FirstOperandWidth(body)
-                    )
-                : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
                         ? new GroupFacts(
                             BreaksIfTooLong: true,
-                            LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
-                            LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
-                            LambdaChainHead: chainHead
+                            LambdaOperandParameters: lambda.ArrowToken.SpanStart - 1 - lambda.SpanStart,
+                            LambdaOperandTail: operandTail,
+                            LambdaOperandFirst: FirstOperandWidth(body)
                         )
-                        : ArrowMovesACallChainDown(body)
-                            ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
-                            : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+                        : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
+                            ? new GroupFacts(
+                                BreaksIfTooLong: true,
+                                LambdaHead: lambda.ArrowToken.Span.End - lambda.SpanStart,
+                                LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
+                                LambdaChainHead: chainHead
+                            )
+                            : ArrowMovesACallChainDown(body)
+                                ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
+                                : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
 
     /// <summary>

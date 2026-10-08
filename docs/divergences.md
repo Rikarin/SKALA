@@ -10696,6 +10696,13 @@ What changed:
   property fill does. That puts it one past the body's line once the arrow breaks, where it was at the
   body's own column.
 
+⚠ The chain's from-line level, too, is limited to the measured shape: a sole lambda whose call is not
+itself another lambda's body. Skala's own build/Build.cs confirmed the rule on
+`DotNetPublish(settings => settings` / `.SetProject(…)`, one level past the statement where Skala wrote
+two. It also showed `.Executes(() => DotNetTest(settings => settings` / `.Set…(…)` taking two levels in the
+oracle, which a level from the line would write at one, so that shape keeps the level around it. On that
+file, Skala's output now differs from the oracle in 59 lines, where master's differs in 141.
+
 ⚠ The receiver rule is limited to a path of names. A receiver that is itself a call chain ending in `!`
 (`ChainLinksIssue454Tests.ABang_EndsTheReceiver`) stays held, as the oracle writes it.
 
