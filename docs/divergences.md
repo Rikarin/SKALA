@@ -10921,3 +10921,99 @@ and with a comment in it too once merged with this.
 - options: none.
 - ⚠ status: **resolved** (#584; the sole-lambda row by #566). Pinned by
   `constructs/syntax/comment-in-a-pattern-chain.cs` and `CommentInAPatternChainIssue584Tests`.
+
+## SK-DIV-0376 — a chain whose receiver is a path of names, pushing its first call past the margin
+
+⚠ **#582, a held-call point planned on the wrong dot.** `PlanHeldFirstCall` (#528) put its point on the
+chain's first dot. Behind a receiver that is itself a member access, `source.A….Select(…)`, that dot is the
+property's, not the call's. So Skala never broke before `.Select`: it kept `.Select(y =>` on a line past the
+margin and broke inside the argument. #528 was measured on single-name receivers (`S….Select`), where the
+two dots coincide.
+
+Measured with `Testing ask` on `var q = source.A….Select(y => y).Where(z => z.Bb);`, the same as a statement,
+and the same with `.Select(alpha)`. The receiver ends at columns 96 to 135, one at a time: 160 cells, plus
+the 1 536 cells of #571's grid. The oracle's three bands are:
+- held, while `.Select(…)` fits;
+- the call broken before, the receiver whole, while the receiver fits;
+- every link chopped once the receiver alone runs past the margin, the receiver's own dot included
+  (`source` / `.A…` / `.Select(…)` / `.Where(…)`), and never the `=`.
+
+What changed:
+- The held point is now the first call's own dot.
+- When the receiver is a plain path of names (`GroupFacts.HeldCallOnAPath`), it also breaks once the
+  receiver alone overflows.
+- The receiver's own dots form a group that breaks exactly then (`GroupFacts.BreaksIfItOverflows`).
+- A chain that is a sole lambda argument's body takes its level from the line it starts on, as #557's
+  property fill does. That puts it one past the body's line once the arrow breaks, where it was at the
+  body's own column.
+
+⚠ The chain's from-line level, too, is limited to the measured shape: a sole lambda whose call is not
+itself another lambda's body. Skala's own build/Build.cs confirmed the rule on
+`DotNetPublish(settings => settings` / `.SetProject(…)`, one level past the statement where Skala wrote
+two. It also showed `.Executes(() => DotNetTest(settings => settings` / `.Set…(…)` taking two levels in the
+oracle, which a level from the line would write at one, so that shape keeps the level around it. On that
+file, Skala's output now differs from the oracle in 59 lines, where master's differs in 141.
+
+⚠ The receiver rule is limited to a path of names. A receiver that is itself a call chain ending in `!`
+(`ChainLinksIssue454Tests.ABang_EndsTheReceiver`) stays held, as the oracle writes it.
+
+All 160 cells reproduce byte for byte. #571's grid is down from about 540 differing cells to the 4 arrow
+decisions recorded in SK-DIV-0375.
+
+- options: `skala_wrap_before_first_method_call = false` (the export's value).
+- ⚠ status: **fixed**, pinned by `constructs/wrapping/chain-head-past-the-margin.cs`.
+
+## SK-DIV-0377 — a sole lambda argument's arrow over an operand chain or a binary pattern
+
+⚠ **#578.** Skala decided this arrow by its head rule, which breaks it only when the head overflows. The
+oracle trades the arrow against three things: the width of everything before ` =>`, the body's first
+operand, and the line's end.
+
+Measured with `Testing ask`, 31 671 cells, one column at a time where it mattered. The shapes:
+- `U(params => a… && b… && c…);`
+- `U(params => x is A or B or C…);`
+- `var g = i….Where(params => …);`
+- `static` lambdas.
+
+The dimensions:
+- parameter texts of 1 to 45 columns;
+- first operands of 6 to 52;
+- the arrow ending at columns 14 to 95;
+- lines of 112 to 200.
+
+The arrow breaks exactly when it ends at or past `max(20, min(T, g))`, where:
+
+- `T` is a ceiling: `⌊2.75·(params + min(first, 24)) − 52 + max(0, first − 24)/8⌋`, capped at 85 and at
+  `120 − first`, the point past which the first operand would not fit beside the arrow.
+- `g` rises with the line: `(27·end + 9·params − 2832)/30`, plus `min(3.25, 0.625·(first − 18))` once the
+  first operand passes 18.
+
+Points about the inputs:
+- `params` counts everything before ` =>`. A modifier counts: `static n` decides exactly as an eight-column
+  name, and `static node` as an eleven-column one.
+- At a first operand of 14, `T` reproduces the saturation table measured one column at a time at a
+  200-column line.
+
+Where the arrow stays, a sole lambda's pattern chain holds its level: group F's `HeldLevel.WhileArrowFlat`
+(#566), merged alongside this rule. A from-line level of this round's own did the same, and was dropped in
+favour of F's. Under an `=`, a type test over a binary pattern on one line now breaks its arrow as an
+operand chain does (`ArrowWinsOverTheChain`).
+
+Wired as `GroupFacts.LambdaOperandParameters` / `LambdaOperandFirst` / `LambdaOperandTail` and
+`EqualsFloor.BreaksTheOperandArrow`. The line's end includes the statement's tail (`);`), which the
+writer's trailing measure stops short of.
+
+⚠ Not exact:
+- 59 cells differ in the arrow decision, and no cell differs in layout. 28 of the 59 have parameter texts
+  under 36 and sit within a column of the boundary. Past 36 the oracle's threshold is not monotone and the
+  rule is not measured.
+- Group F's probes improve against master: `F2/p3` 12 → 5 differing lines, `p4` 7 → 7, `p5` 55 → 50,
+  `p6` 79 → 0, `p7` 97 → 35.
+- What remains there is outside this rule:
+  - a pattern body with a long first operand (`x is AnonymousFunctionExpressionSyntax or …`), whose first
+    operand is not measured;
+  - a lambda call that is itself the receiver of a further link (`items.Where(…).ToList()`).
+
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
+- ⚠ status: **fixed** within the residue above, pinned by
+  `constructs/wrapping/lambda-arrow-over-an-operand-chain.cs`.
