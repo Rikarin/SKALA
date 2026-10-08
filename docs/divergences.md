@@ -10183,6 +10183,29 @@ Measured behind heads of 12, 30 and 40 columns, values of 80 to 116 columns belo
   open here were #581 and are **resolved** by SK-DIV-0322; an anonymous object's brace break is kept too
   since then. corpus/real unchanged. Pinned by `InitializerBrokenAfterBraceTests`.
 
+
+## SK-DIV-0338 — a sole lambda's chain nested in another lambda's body took a level too many
+
+Found on Skala's own `build/Build.cs` (#582, round six of group J), filed as #585.
+
+| written | oracle | Skala |
+|---|---|---|
+| `.Executes(() => DotNetTest(settings => settings` / `.SetProjectFile(…)` | links two levels past the `.Executes` line | three |
+| `A(() => B(() => C(s => s` / `.X(1)` | three levels past the line | four |
+
+#582 gave a sole lambda's chain body its level from its own line (`IndentKind.FromLine`) and kept the
+level around it where the lambda's call is another lambda's body, a shape it had not measured. Measured
+2026-10-09 on eight shapes: the oracle puts the links one level past the line for each argument list
+opened on it — two at depth two, three at depth three — behind `() =>` and `x =>`, under `var v =`, with
+the chain broken at its first link or after it; a lambda among other arguments and a block body keep
+their own rules.
+
+- options: `place_single_method_argument_lambda_on_same_line`.
+- ⚠ status: **resolved** (#585). The nested case now takes the line's level too, plus one level per
+  argument list opened on the line beyond the innermost (`IndentFlags.NestedSoleLambda`, read in
+  `LayoutWriter`'s `FromLine` scope). `build/Build.cs` through the oracle: 59 lines apart → 3, the rest a
+  collection fill. Pinned by `NestedSoleLambdaChainIssue585Tests`.
+
 ## SK-DIV-0320 — a block comment on its own line above an array initializer's first element stayed there
 
 #522: `new[] {` / `/* c */` / `1` comes back `/* c */ 1` from the oracle; Skala kept the break after the

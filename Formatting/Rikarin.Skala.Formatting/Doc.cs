@@ -432,7 +432,14 @@ public enum IndentFlags {
     ///     ⚠ A held level spent once the group named beside it resolves broken: a sole lambda's arrow, for
     ///     the pattern chain in its body (#566). See <c>HeldLevel.WhileArrowFlat</c>.
     /// </summary>
-    HeldWhileGroupFlat = 2048
+    HeldWhileGroupFlat = 2048,
+
+    /// <summary>
+    ///     ⚠ An <see cref="IndentKind.FromLine" /> scope for a chain that is the body of a sole lambda nested
+    ///     in another's: one level more for each enclosing argument list opened on the line beyond the
+    ///     innermost (#585).
+    /// </summary>
+    NestedSoleLambda = 4096
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
