@@ -2743,8 +2743,13 @@ changed fixture. ⚠ That practice is the reusable part of this entry and it sho
 
 - options: `skala_outdent_dots` — read correctly, and conformant on every chain whose wrapped
   lines all begin with the same operator, which is every chain the corpus contains
-- ⚠ status: **open**, measured, unfixed. It is an arithmetic in the outdent scope rather than in the
-  chain planner: the amount is computed once for the group and has to be computed per break point.
+- ⚠ status: **resolved** (issue #458). The chain-wide scope keeps the `.`'s amount, and a line that
+  begins with a `?.` inside it opens one more column of outdent for that line alone
+  (`CSharpDocumentBuilder.ExtraOutdentFor`), so `?.SelectName(…)` lands at 10 where `.` lines sit at
+  11. Measured on 2026-10-08 beside the issue's shape: two `?.` lines in one chain, a trailing `?.Count`
+  property (the chain-final property is a chain since #454, and its root's dot now opens the scope
+  too), and a pure member-access fill's `.Value` line — all agree with the oracle at `true`. Pinned by
+  `OutdentDotsIssue458Tests`; still deliberately not a row of `constructs/alignment/outdent.cs`.
 
 ## SK-DIV-0031 — a field with several declarators wraps after the type; Skala wraps at the commas
 
