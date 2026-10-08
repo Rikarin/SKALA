@@ -12,15 +12,25 @@ public sealed class GluedElementsIssue587Tests {
     [Fact]
     public void GluedItems_StayTogetherWhenTheyFit_AndBreakWhenTheyDoNot() {
         Assert.Equal(
-            ["/// <remarks>", "///     <list>", "///         <item>A.</item><item>B.</item>", "///     </list>", "/// </remarks>"],
+            [
+                "/// <remarks>", "///     <list>", "///         <item>A.</item><item>B.</item>", "///     </list>",
+                "/// </remarks>"
+            ],
             Doc("/// <remarks>", "/// <list><item>A.</item><item>B.</item></list>", "/// </remarks>")
         );
         Assert.Equal(
             [
-                "/// <remarks>", "///     <list>", "///         <item>One item.</item>", "///         <item>" + Long + "</item>",
+                "/// <remarks>", "///     <list>", "///         <item>One item.</item>",
+                "///         <item>" + Long + "</item>",
                 "///     </list>", "/// </remarks>"
             ],
-            Doc("/// <remarks>", "/// <list>", "/// <item>One item.</item><item>" + Long + "</item>", "/// </list>", "/// </remarks>")
+            Doc(
+                "/// <remarks>",
+                "/// <list>",
+                "/// <item>One item.</item><item>" + Long + "</item>",
+                "/// </list>",
+                "/// </remarks>"
+            )
         );
     }
 

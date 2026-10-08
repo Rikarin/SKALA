@@ -18,8 +18,12 @@ public sealed class OracleSymbolsTests {
         var probed = PreprocessorFidelity.OracleSymbols(log).Order(StringComparer.Ordinal).ToArray();
         Assert.True(
             probed.SequenceEqual(Corpus.OracleSymbols.Order(StringComparer.Ordinal)),
-            "The oracle's project defines " + string.Join(' ', probed) + ", and Corpus.OracleSymbols says "
-            + string.Join(' ', Corpus.OracleSymbols) + ".\n" + log
+            "The oracle's project defines "
+            + string.Join(' ', probed)
+            + ", and Corpus.OracleSymbols says "
+            + string.Join(' ', Corpus.OracleSymbols)
+            + ".\n"
+            + log
         );
     }
 }

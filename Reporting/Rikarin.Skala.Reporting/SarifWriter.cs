@@ -548,35 +548,39 @@ public static class SarifWriter {
     }
 
     /// <summary>
-    /// A repository-relative, forward-slashed path — how every surface displays a file.
+    ///     A repository-relative, forward-slashed path — how every surface displays a file.
     /// </summary>
     /// <remarks>
-    /// ⚠ Public because the commands outside this assembly display paths too, and a second
-    /// implementation would eventually disagree about the separator on Windows.
-    /// <para>
-    /// ⚠ <b>The obvious one-liner here was wrong three ways, and each one printed absolute paths
-    /// into an output doc 10 caps at 8 000 characters.</b> It was
-    /// <c>path.StartsWith(root, Ordinal)</c>, which:
-    /// </para>
-    /// <list type="number">
-    /// <item>
-    /// <b>Compared case-sensitively.</b> On Windows and on a case-insensitive macOS volume the
-    /// repository root arrives as <c>C:\Src\Repo</c> and the file as <c>c:\src\repo\a.cs</c>
-    /// whenever either came from a different API, and every path in the report fell back to
-    /// absolute. This is doc 12 § "Cross-platform"'s case-insensitive-path hazard, reached through
-    /// the reporting layer rather than the cache key.
-    /// </item>
-    /// <item>
-    /// <b>Had no component boundary.</b> A root of <c>/src/repo</c> and a sibling
-    /// <c>/src/repo-old/a.cs</c> passed the prefix test and rendered as <c>../repo-old/a.cs</c> —
-    /// a "repo-relative" path escaping the repository.
-    /// </item>
-    /// <item>
-    /// <b>Took a non-nullable <c>root</c> that callers reach with a nullable one.</b>
-    /// <c>RunReport.RepositoryRoot</c> is <c>string?</c>; a null root threw out of a renderer whose
-    /// job is to be the thing that never fails.
-    /// </item>
-    /// </list>
+    ///     ⚠ Public because the commands outside this assembly display paths too, and a second
+    ///     implementation would eventually disagree about the separator on Windows.
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             The obvious one-liner here was wrong three ways, and each one printed absolute paths
+    ///             into an output doc 10 caps at 8 000 characters.
+    ///         </b>
+    ///         It was
+    ///         <c>path.StartsWith(root, Ordinal)</c>, which:
+    ///     </para>
+    ///     <list type="number">
+    ///         <item>
+    ///             <b>Compared case-sensitively.</b> On Windows and on a case-insensitive macOS volume the
+    ///             repository root arrives as <c>C:\Src\Repo</c> and the file as <c>c:\src\repo\a.cs</c>
+    ///             whenever either came from a different API, and every path in the report fell back to
+    ///             absolute. This is doc 12 § "Cross-platform"'s case-insensitive-path hazard, reached through
+    ///             the reporting layer rather than the cache key.
+    ///         </item>
+    ///         <item>
+    ///             <b>Had no component boundary.</b> A root of <c>/src/repo</c> and a sibling
+    ///             <c>/src/repo-old/a.cs</c> passed the prefix test and rendered as <c>../repo-old/a.cs</c> —
+    ///             a "repo-relative" path escaping the repository.
+    ///         </item>
+    ///         <item>
+    ///             <b>Took a non-nullable <c>root</c> that callers reach with a nullable one.</b>
+    ///             <c>RunReport.RepositoryRoot</c> is <c>string?</c>; a null root threw out of a renderer whose
+    ///             job is to be the thing that never fails.
+    ///         </item>
+    ///     </list>
     /// </remarks>
     public static string Relative(string? root, string path) {
         var normalised = path.Replace('\\', '/');

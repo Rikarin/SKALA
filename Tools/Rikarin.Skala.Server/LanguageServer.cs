@@ -19,7 +19,8 @@ namespace Rikarin.Skala.Server;
 ///             <term>textDocument/formatting</term><description>full-file edits</description>
 ///         </item>
 ///         <item>
-///             <term>textDocument/rangeFormatting</term><description>full-file fit, edits filtered to the range</description>
+///             <term>textDocument/rangeFormatting</term>
+///             <description>full-file fit, edits filtered to the range</description>
 ///         </item>
 ///         <item>
 ///             <term>textDocument/diagnostic</term><description>the findings for the file (pull model)</description>

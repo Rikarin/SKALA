@@ -75,7 +75,8 @@ public static class RuleFixtures {
     ///     <b>
     ///         The reference set is the test host's, not a project's, and that is a blind spot rather
     ///         than a detail.
-    ///     </b> A real project is compiled against its own reference assemblies, and where
+    ///     </b>
+    ///     A real project is compiled against its own reference assemblies, and where
     ///     the two differ a rule can be correct on every fixture and wrong in production with nothing
     ///     failing — overload resolution, <c>params</c> binding and shim visibility all move with the
     ///     reference set. Two measured examples (#297): <c>SK1063</c> declined every
@@ -87,7 +88,8 @@ public static class RuleFixtures {
     ///     <b>
     ///         The binlog self-sweep, not this harness, is
     ///         the only check that sees a real reference set
-    ///     </b>, which is why it is part of shipping a rule.
+    ///     </b>
+    ///     , which is why it is part of shipping a rule.
     ///     <para>
     ///         What the harness <em>can</em> express per fixture is the rest of the compilation:
     ///         <see cref="FixtureCompilation" /> reads <c>// fixture-option:</c> directives for
@@ -98,7 +100,8 @@ public static class RuleFixtures {
     ///     <b>
     ///         A fixture holding top-level statements is compiled as an executable, and until [#314]
     ///         the corpus could not hold one at all.
-    ///     </b> Every fixture was a
+    ///     </b>
+    ///     Every fixture was a
     ///     <see cref="OutputKind.DynamicallyLinkedLibrary" />, which answers a top-level program with
     ///     <c>CS8805</c> — "Program using top-level statements must be an executable" — and
     ///     <see cref="RuleFixtureTests.Rule_FiresExactlyWhereTheFixtureSaysItShould" /> rejects a fixture
