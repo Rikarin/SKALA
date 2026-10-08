@@ -713,7 +713,12 @@ public sealed class BreakPlan {
             // overflowing one was never wrapped. See PlanFilledList for the measurements. A tuple *type*
             // is deliberately absent — the oracle never breaks one at its commas.
             case PositionalPatternClauseSyntax positional: {
-                var fill = PlanFilledList(node, positional.OpenParenToken, positional.CloseParenToken, positional.Subpatterns);
+                var fill = PlanFilledList(
+                    node,
+                    positional.OpenParenToken,
+                    positional.CloseParenToken,
+                    positional.Subpatterns
+                );
 
                 // ⚠ And between a declaration's type and its name (#559, SK-DIV-0393): the fill keeps the
                 // type on the line when it fits there and the name does not — `…, int` / `dddd) => 1,` and
@@ -722,7 +727,9 @@ public sealed class BreakPlan {
                 if (fill >= 0) {
                     foreach (var subpattern in positional.Subpatterns) {
                         var name = subpattern.Pattern switch {
-                            DeclarationPatternSyntax { Designation: SingleVariableDesignationSyntax declared } => declared,
+                            DeclarationPatternSyntax {
+                                Designation: SingleVariableDesignationSyntax declared
+                            } => declared,
                             VarPatternSyntax { Designation: SingleVariableDesignationSyntax declared } => declared,
                             _ => null
                         };
@@ -6271,19 +6278,20 @@ public sealed class BreakPlan {
         if (node.Parent is SwitchExpressionArmSyntax
             && !node.Condition.DescendantNodesAndSelf()
                 .Any(static part => part is ArgumentListSyntax { Arguments.Count: > 0 }
-                    or BracketedArgumentListSyntax
-                    or PropertyPatternClauseSyntax
-                    or ListPatternSyntax
-                    or PositionalPatternClauseSyntax
-                    or BinaryExpressionSyntax
-                    or BinaryPatternSyntax
-                    or ConditionalExpressionSyntax
-                    or AnonymousFunctionExpressionSyntax
-                    or InitializerExpressionSyntax
-                    or CollectionExpressionSyntax
-                    or SwitchExpressionSyntax
-                    or QueryExpressionSyntax
-                    or MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax })
+                        or BracketedArgumentListSyntax
+                        or PropertyPatternClauseSyntax
+                        or ListPatternSyntax
+                        or PositionalPatternClauseSyntax
+                        or BinaryExpressionSyntax
+                        or BinaryPatternSyntax
+                        or ConditionalExpressionSyntax
+                        or AnonymousFunctionExpressionSyntax
+                        or InitializerExpressionSyntax
+                        or CollectionExpressionSyntax
+                        or SwitchExpressionSyntax
+                        or QueryExpressionSyntax
+                        or MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax }
+                )
             && FirstToken(node.Condition) is var condition) {
             var after = NewGroup();
             Point(condition, after);
@@ -6313,10 +6321,10 @@ public sealed class BreakPlan {
                 .Any(static part => part is PropertyPatternClauseSyntax or ListPatternSyntax)
             && !label.Pattern.DescendantNodesAndSelf()
                 .Any(static part => part is PositionalPatternClauseSyntax
-                    or BaseArgumentListSyntax
-                    or TypeArgumentListSyntax
-                    or AnonymousFunctionExpressionSyntax
-                    or SwitchExpressionSyntax
+                        or BaseArgumentListSyntax
+                        or TypeArgumentListSyntax
+                        or AnonymousFunctionExpressionSyntax
+                        or SwitchExpressionSyntax
                 )) {
             OpenAt(
                 label,

@@ -265,21 +265,21 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
     ) {
         switch (expression) {
             case AssignmentExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
-                Left: ElementAccessExpressionSyntax { ArgumentList.Arguments.Count: 1 } element
-            } assignment
+                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
+                    Left: ElementAccessExpressionSyntax { ArgumentList.Arguments.Count: 1 } element
+                } assignment
                 when RewriteGuards.Same(element.Expression, receiver)
                 && RewriteGuards.Same(element.ArgumentList.Arguments[0].Expression, key):
                 return assignment.Right;
 
             case InvocationExpressionSyntax {
-                Expression:
-                MemberAccessExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                    Name: IdentifierNameSyntax { Identifier.ValueText: "Add" }
-                } add,
-                ArgumentList.Arguments: { Count: 2 } arguments
-            }
+                    Expression:
+                    MemberAccessExpressionSyntax {
+                        RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
+                        Name: IdentifierNameSyntax { Identifier.ValueText: "Add" }
+                    } add,
+                    ArgumentList.Arguments: { Count: 2 } arguments
+                }
                 when RewriteGuards.Same(add.Expression, receiver)
                 && RewriteGuards.Same(arguments[0].Expression, key)
                 && arguments[0].NameColon is null
