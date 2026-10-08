@@ -7547,9 +7547,9 @@ public sealed class BreakPlan {
     ///     back <c>( [</c> / elements / <c>]);</c>, as <c>([</c> and <c>( [</c> do, under an <c>=</c> and as an
     ///     argument; <c>(</c> / <c>[1, 2]);</c>, a collection that stays on one line, keeps the author's
     ///     break. So the join answers whether the collection is multi-line, which is read off the finished
-    ///     plan — a break inside it that survives (<see cref="SourceBreakSurvives" />). ⚠ A collection
-    ///     written on one line that only the margin breaks is not seen here, and keeps a break the author
-    ///     wrote after the <c>(</c>.
+    ///     plan — a break inside it that survives (<see cref="SourceBreakSurvives" />). A collection written
+    ///     on one line is the width's question, answered by a <see cref="GroupFacts.BreaksOnlyIfTailFits" />
+    ///     group below (round 5).
     /// </remarks>
     void SettleParenthesisedCollections(SyntaxNode root) {
         foreach (var paren in root.DescendantNodes().OfType<ParenthesizedExpressionSyntax>()) {
@@ -7560,12 +7560,38 @@ public sealed class BreakPlan {
             }
 
             var open = collection.OpenBracketToken;
-            // ⚠ And at `keep_user_linebreaks = false` always: `(` / `[1, 2]);` is joined there too.
-            if (!options.KeepsUserBreaksBetweenItems
-                || collection.DescendantTokens()
+            if (options.KeepsUserBreaksBetweenItems
+                && collection.DescendantTokens()
                     .Any(token => token.SpanStart > open.SpanStart && SourceBreakSurvives(token))) {
                 gaps[open.SpanStart] = new(GapRule.Flat, -1);
+                continue;
             }
+
+            // ⚠ Otherwise the break after the `(` is the bracket's alternative (#485, round 5): taken —
+            // kept when the author wrote it, added when the line is too long — exactly when the
+            // collection then fits flat on the line below, which is `GroupFacts.BreaksOnlyIfTailFits`,
+            // the rule of the `=` before a collection. Measured 2026-10-08 with `Testing ask`: `(` /
+            // `["…", …]);` whose bracket line is 120 columns keeps the break and at 121 comes back `( [` /
+            // elements / `]);`, under `=`, `return` and an argument alike; a flat `(["…", …]);` too wide
+            // for its line moves the bracket down when it fits there; and at
+            // `skala_keep_user_linebreaks = false` the same, with the author's break no longer a reason
+            // (`(` / `[1, 2]);` re-joins, as round 4 measured).
+            if (gaps.TryGetValue(open.SpanStart, out var existing) && existing.Rule != GapRule.Flat) {
+                continue;
+            }
+
+            var group = NewGroup();
+            gaps[open.SpanStart] = new(GapRule.Point, group);
+            Describe(
+                paren,
+                group,
+                GroupMode.Preserve,
+                new(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(open),
+                    BreaksIfTooLong: true,
+                    BreaksOnlyIfTailFits: true
+                )
+            );
         }
     }
 
