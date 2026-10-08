@@ -10179,10 +10179,9 @@ Measured behind heads of 12, 30 and 40 columns, values of 80 to 116 columns belo
 
 - options: `skala_keep_user_linebreaks`, `prefer_wrap_around_eq`.
 - ⚠ status: **resolved** for the brace break (`BreakPlan.InitializerBrokenAfterItsBrace`): a creation whose
-  `{` sits on its own line and is followed by a break never takes the `=`'s break. ⚠ Open: two flat rows
-  at the boundary — the oracle still moves a 110-column value down behind a 12-column head and a
-  107-column one behind 30, where Skala breaks the brace — so the oracle's margin there grows as the
-  head shrinks. corpus/real unchanged. Pinned by `InitializerBrokenAfterBraceTests`.
+  `{` sits on its own line and is followed by a break never takes the `=`'s break. The two flat rows left
+  open here were #581 and are **resolved** by SK-DIV-0322; an anonymous object's brace break is kept too
+  since then. corpus/real unchanged. Pinned by `InitializerBrokenAfterBraceTests`.
 
 
 ## SK-DIV-0338 — a sole lambda's chain nested in another lambda's body took a level too many
@@ -10233,6 +10232,39 @@ introduces a chain link as that link's break.
 
 - options: none.
 - ⚠ status: **resolved** (#523). Pinned by `constructs/trivia/a-comment-above-a-chain-link.cs`.
+
+## SK-DIV-0322 — a creation with a one-line initializer moves below the `=` by a limit of its own
+
+#581, left open by SK-DIV-0337. `var x = new T { … };` too long for its line either moves down whole after the
+`=` or breaks its braces, and Skala decided it by the ordering rule's fitted margin (SK-DIV-0005), which is the
+same for every value. Measured 2026-10-09 with `Testing ask` on **3 560 cells**: heads of 8 to 60 columns ×
+values of 66 to 119, at block depths 2, 4 and 6, for `var` and typed locals, assignments and fields, for
+`new Something {`, `new P {`, `new List<string> {`, `new SomethingMuchLongerStill {`,
+`new SomeTypeWithALongName {` and `new {`, with identifiers, numbers and string literals as members, one to
+three of them, and the oracle's own output asked again.
+
+- ⚠ **The value's own width and its members do not move the limit; two widths nobody had measured do.** The
+  creation's head through its `{` — the wider `new X {` is, the further down the oracle moves the creation rather
+  than break its braces — and the head from the declarator's *name* through the `=`, not from the statement's
+  start: a typed and a `var` local agree once the type is left out. The continuation line moves down while it is
+  at most `110.5 + 0.6 · prefix − 0.4 · max(name, 23) − (indent − 8) / 8` columns (a `var` local; a typed one
+  half a column lower with its knee at 24, a field two lower, an assignment `113 + 0.6 · prefix −
+  0.45 · max(target, 26)`).
+- ⚠ **Under a twelve-column head through the `=` it never moves down** — the collection's `MinimumEqualsHead`
+  floor (#375): `var vvvvvv =` and `vvvvvvvvv =` break the braces at every width, one more column moves the same
+  value down. That is the issue's "margin that grows as the head shrinks", and it is why
+  `constructs/wrapping/alignment.cs`'s `var value = new SomeTypeWithALongName { … }` breaks its braces.
+- An anonymous object the author broke after its `{` keeps the break, as SK-DIV-0337's creations do: the oracle's
+  second pass keeps it on all 171 cells of that grid, and Skala's moved it down.
+
+Skala agrees on **3 533** of the 3 560 cells, from 2 380 of the first 2 857 under the fitted margin; the 27 left
+are within a column of the boundary. Pass two is identical on every cell. Not measured, and left to the margin: a
+creation with arguments (`new T(…) { … }`, which #555's floor partly owns), a target-typed `new() { … }`, an array
+creation, a property initializer, other margins. corpus/real and pathological unchanged.
+
+- options: `prefer_wrap_around_eq`.
+- ⚠ status: **resolved** (#581). `BreakPlan.CreationLimitOf`, `GroupFacts.CreationLimit`. Pinned by
+  `constructs/wrapping/a-creation-moved-below-the-equals.cs` and `CreationBelowTheEqualsIssue581Tests`.
 
 ## SK-DIV-0350 — a parameter's attribute sections are one line together, or one line each
 
