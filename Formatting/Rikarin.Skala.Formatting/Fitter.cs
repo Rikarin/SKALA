@@ -509,6 +509,12 @@ public sealed class Fitter {
                 if (facts.ValueHeadWidth > 0) {
                     var beside = Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadWidth);
                     var below = Fits(m.ContinuationColumn, facts.ValueHeadWidth);
+                    if (beside) {
+                        return facts.ValueHeadIsWide && ConditionalMovesDownWhole(facts, m, tail)
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                    }
+
                     return !beside
                         && facts.ValueHeadIsWide
                         && (!facts.ValueHeadFitsBelow || below || m.Column <= CallConditionColumn)
@@ -518,6 +524,28 @@ public sealed class Fitter {
 
                 return Worth(facts, m, afterPointRunsToTheEnd, tail, pointSpace);
         }
+    }
+
+    /// <summary>
+    ///     A conditional whose condition fits beside its <c>=</c>: whether the oracle moves it down whole
+    ///     rather than chopping it on the <c>=</c>'s line (#577).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-08 with <c>Testing ask</c> on 2 273 rows that do not fit on one line —
+    ///     heads through <c>var … =</c> from 9 to 62 columns at a statement indent of 8, conditions of 4
+    ///     to 24 columns, the value's line below from 96 to 121 columns, the branches split evenly and
+    ///     lopsidedly (the split never mattered). The oracle moves the value down whole when the line
+    ///     below is short enough, and the allowance shrinks with the condition and, past the <c>=</c> at
+    ///     column 39, with the head: <c>100·below + 38·min(condition, 24) + 24·max(0, column − 39) ≤ 11 364</c>
+    ///     — a condition past 24 columns costs no more (measured to 40).
+    ///     The fit agrees on 2 174 of the 2 273 rows; ⚠ the 99 it misses are almost all one band the
+    ///     measurement could not explain — a condition of four to six columns behind a head of 17 to 28,
+    ///     where the oracle moves the value down whatever its width, past the margin included.
+    /// </remarks>
+    bool ConditionalMovesDownWhole(in GroupFacts facts, in Measures m, int tail) {
+        var below = m.ContinuationColumn + tail;
+        return TailFits(m, tail)
+            && 100 * below + 38 * Math.Min(facts.ValueHeadWidth, 24) + 24 * Math.Max(0, m.Column - 39) <= 11364;
     }
 
     /// <summary>See <see cref="GroupFacts.CalleeWidth" />.</summary>
