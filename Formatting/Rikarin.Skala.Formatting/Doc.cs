@@ -1061,6 +1061,28 @@ public sealed class Document {
 ///     ⚠ A group that breaks exactly when its flat form and this many columns after it — a lambda's
 ///     <c> =&gt;</c> — do not fit on its line, whatever follows (#453). Zero for any other group.
 /// </param>
+/// <param name="LiftsThroughInnerBreaks">
+///     ⚠ A <see cref="Continues" /> group whose lifted list keeps its lifted level for the lines of a
+///     construct that broke inside it on its own line — a switch arm whose arrow the author kept on a line
+///     of its own (#446, SK-DIV-0212): `when x.All(static e => e` / `is T` / `)` puts the `is`, an `&&`
+///     and a `.Member` two levels past the arm, where under a broken chain those lines continue the
+///     ordinary way (#418).
+/// </param>
+/// <param name="PatternHead">
+///     ⚠ A local's <c>=</c> before <c>operand is A or B</c>: the head's width through the <c>=</c>. With
+///     <see cref="PatternWidth" /> it decides the <c>=</c> by <see cref="EqualsFloor.BreaksBeforeAPattern" />
+///     (#446, SK-DIV-0211). Zero for any other group.
+/// </param>
+/// <param name="HeadSlack">
+///     ⚠ Columns a <see cref="BreaksOnlyIfHeadOverflows" /> group adds to its head before asking whether it
+///     fits — measured, for the gap after an <c>is</c> before a binary pattern whose first operand is short
+///     (#446). Zero for any other group.
+/// </param>
+/// <param name="YieldsThroughArrow">
+///     ⚠ An <c>=</c> before a lambda with a bare name for a body: the width from the lambda's start through
+///     its <c>=&gt;</c>. The <c>=</c> stays flat while that much fits after it on its line (#453).
+/// </param>
+/// <param name="PatternWidth">The binary pattern's width. See <see cref="PatternHead" />.</param>
 /// <param name="KeywordWidth">
 ///     ⚠ The width of the keyword after this group's one point, for the point before an <c>is</c> or an
 ///     <c>as</c> (#444, SK-DIV-0210): broken exactly when the operand before the point fits on its line
@@ -1149,4 +1171,9 @@ public readonly record struct GroupFacts(
     int ThroughWidth = 0,
     int HeldCall = 0,
     bool ContinuesIfItBreaks = false,
-    bool FlatIfHeadOverflows = false);
+    bool FlatIfHeadOverflows = false,
+    bool LiftsThroughInnerBreaks = false,
+    int PatternHead = 0,
+    int PatternWidth = 0,
+    int HeadSlack = 0,
+    int YieldsThroughArrow = 0);

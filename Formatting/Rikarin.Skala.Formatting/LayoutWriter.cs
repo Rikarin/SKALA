@@ -487,11 +487,16 @@ public sealed class LayoutWriter {
         // ⚠ A delimited list on the first line of a construct that broke after it nests from that
         // construct's continuation line, and its closer sits on it. See LiftedLevel.
         var lifted = -1;
+        var liftsThrough = false;
         if (kind is IndentKind.Continuous or IndentKind.OneLevel
             && (flags & (IndentFlags.Delimiter | IndentFlags.Grouping | IndentFlags.ChainLevel)) != 0) {
             lifted = LiftedLevel(ancestors, outer, (flags & IndentFlags.ChainLevel) != 0, node, kind, columns);
             if (lifted >= 0) {
                 outer = lifted;
+                var path = ancestors.ToArray();
+                var around = InnermostBrokenConstruct(path);
+                liftsThrough = around >= 0
+                    && document.FactsOf(document.Nodes[path[around].Node].Arg1).LiftsThroughInnerBreaks;
             }
         }
 
@@ -552,7 +557,8 @@ public sealed class LayoutWriter {
                         unconditional,
                         IsGrouping: (flags & IndentFlags.Grouping) != 0,
                         Lifted: lifted,
-                        IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0
+                        IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0,
+                        LiftsThrough: liftsThrough
                     ),
                 IndentKind.OneLevel =>
                     new Scope(
@@ -563,7 +569,8 @@ public sealed class LayoutWriter {
                         unconditional,
                         IsGrouping: (flags & IndentFlags.Grouping) != 0,
                         Lifted: lifted,
-                        IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0
+                        IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0,
+                        LiftsThrough: liftsThrough
                     ),
                 IndentKind.Outdent =>
                     new Scope(true, Math.Max(0, outer - indentWidth), line, outer, unconditional),
@@ -759,7 +766,7 @@ public sealed class LayoutWriter {
                 return Math.Max(0, level + scope.Level);
             }
 
-            if (scope.Lifted >= 0 && !BrokenInsideOnItsLine(index, scope)) {
+            if (scope.Lifted >= 0 && (scope.LiftsThrough || !BrokenInsideOnItsLine(index, scope))) {
                 // ⚠ A lifted grouping parenthesis is still transparent to a block opened on its own
                 // line: `var x = (y switch {` / … / `}).ToString()` / `.Length` puts the `}` on the
                 // chain's continuation line and the arms one past it (SK-DIV-0148). Not once the walk is
@@ -1116,7 +1123,20 @@ public sealed class LayoutWriter {
             // `var a = Compute(` / arguments one level in, `)` back — not two (#445).
             if (scope.IsFromLine) {
                 if (scope.OpenLine < line) {
-                    return Math.Max(0, level + (blocked == scope.OpenLine ? scope.Level - indentWidth : scope.Level));
+                    var fromLine = Math.Max(
+                        0,
+                        level + (blocked == scope.OpenLine ? scope.Level - indentWidth : scope.Level)
+                    );
+
+                    // ⚠ Inside a list lifted through its inner breaks, the operand's line is the list's
+                    // lifted content level, not the line's own indentation (#446, SK-DIV-0212).
+                    for (var j = i - 1; j >= 0; j--) {
+                        if (scopes[j].Lifted >= 0 && scopes[j].LiftsThrough && scopes[j].OpenLine == scope.OpenLine) {
+                            return Math.Max(fromLine, scopes[j].Lifted + scopes[j].Level);
+                        }
+                    }
+
+                    return fromLine;
                 }
 
                 continue;
@@ -1130,11 +1150,17 @@ public sealed class LayoutWriter {
             // switch arm's pattern, `SyntaxKind.A` / `or SyntaxKind.B => …`, opens its level as the arm's
             // line begins, and lifting there pushed the arm a level in (merge of #481 with #482).
             if (scope.Lifted >= 0
-                && !BrokenInsideOnItsLine(i, scope)
+                && (scope.LiftsThrough || !BrokenInsideOnItsLine(i, scope))
                 && !(!nested && atLineStart && scope.OpenLine == line)) {
                 var counts = scope.Unconditional
                     ? nested ? scope.OpenLine <= line : scope.OpenLine < line
                     : scope.OpenLine < line && scope.OpenLine != blocked;
+
+                // ⚠ And a list lifted through its inner breaks spends one level per line with what
+                // opened on its line: `e => e` / `.Value` sits on the lifted content level, not one past.
+                if (scope.LiftsThrough && blocked == scope.OpenLine) {
+                    return Math.Max(0, scope.Lifted + scope.Level);
+                }
 
                 return Math.Max(0, level + scope.Lifted + (counts ? scope.Level : 0));
             }
@@ -1227,6 +1253,7 @@ public sealed class LayoutWriter {
         bool IsGrouping = false,
         int Lifted = -1,
         int AlignedCloser = -1,
+        bool LiftsThrough = false,
         bool IsFromLine = false,
         bool IsBrokenAfter = false);
 
