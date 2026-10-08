@@ -772,6 +772,10 @@ public sealed class BreakPlan {
                 PlanPropertyPattern(propertyPattern);
                 return;
 
+            case OrderByClauseSyntax { Orderings.Count: > 1 } orderBy:
+                PlanOrderings(orderBy);
+                return;
+
             case SwitchExpressionArmSyntax arm:
                 PlanArmArrow(arm);
                 return;
@@ -3667,6 +3671,62 @@ public sealed class BreakPlan {
         }
 
         return broke;
+    }
+
+    /// <summary>
+    ///     An <c>orderby</c> clause's orderings: a fill one continuation level past the clause (#477,
+    ///     SK-DIV-0114).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-08 with <c>Testing ask</c>: <c>orderby a,</c> / <c>b</c>, <c>orderby a</c> /
+    ///     <c>, a</c>, <c>orderby a descending,</c> / <c>a ascending</c> and three orderings one per line all
+    ///     keep the author's breaks and put the continued ordering one level past <c>orderby</c>'s column,
+    ///     where Skala left it on the clause's own; <c>orderby a, a</c> on one line stays; and an
+    ///     <c>orderby</c> past the margin <em>fills</em> — <c>orderby x.Length, x.Length,</c> /
+    ///     <c>x</c> — where Skala did not wrap it at all. The exemption in <c>SeparatedListPlanTests</c>
+    ///     ("nothing to plan") was this list, unmeasured.
+    ///     <para>
+    ///         ⚠ The level is spent under the query's own: the clause is already on a continuation line of
+    ///         the query, which is why the group spends under an open continuation
+    ///         (<see cref="GroupPlan.SpendsUnderDelimiters" />). The two open on different lines, so the
+    ///         writer's one-level-per-line rule counts both.
+    ///     </para>
+    /// </remarks>
+    void PlanOrderings(OrderByClauseSyntax node) {
+        var group = NewGroup();
+        var pins = options.KeepsUserBreaksBetweenItems;
+        foreach (var comma in node.Orderings.GetSeparators()) {
+            var next = comma.GetNextToken();
+            if (next.IsKind(SyntaxKind.None)) {
+                continue;
+            }
+
+            if (options.WrapBeforeComma) {
+                PlanItemGap(comma, group, true, pins);
+                if (!(pins && BreaksBefore(next))) {
+                    Flat(next);
+                }
+            } else {
+                // ⚠ An author's break on the other side of the comma is kept as written, and only while
+                // keep_user_linebreaks is: `orderby a` / `, a` stays, and is joined at `false`.
+                if (!(pins && BreaksBefore(comma))) {
+                    Flat(comma);
+                }
+
+                PlanItemGap(next, group, true, pins);
+            }
+        }
+
+        Describe(
+            node,
+            new GroupPlan(
+                group,
+                GroupMode.Preserve,
+                new GroupFacts(BreaksIfTooLong: true),
+                SpendsIndent: true,
+                SpendsUnderDelimiters: true
+            )
+        );
     }
 
     void PlanAroundEquals(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {

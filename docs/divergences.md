@@ -5567,6 +5567,14 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
   alone. Skala breaks after the `]` and chops only a section that overflows by itself.
 - `orderby a,\n b`: unmeasured, and `OrderByClause` is the one exemption in `SeparatedListPlanTests`
   without a measurement behind it.
+  **Fixed (#477)**, and the exemption's premise ("nothing to plan") was wrong: measured 2026-10-08,
+  the orderings are a **fill one continuation level past `orderby`**. An author's break after or
+  before a comma is kept and the continued ordering lands at the clause's column plus one
+  (`orderby a,` / `    b`, `orderby a` / `    , a`, with `descending` and `ascending` alike, under
+  `=>`, `return` and an argument list); `orderby a, a` stays; one past the margin wraps at the last
+  comma that fits (`orderby x.Length, x.Length,` / `    x`), where Skala did not wrap it at all; and at
+  `skala_keep_user_linebreaks = false` the breaks are re-joined. `BreakPlan.PlanOrderings`, pinned by
+  `OrderingsIssue477Tests`; `OrderByClauseSyntax` is now a planned sample in `SeparatedListPlanTests`.
 
 - options: `skala_wrap_arguments_style`, `skala_max_invocation_arguments_on_line` (element access); no key
   for the fills or the attribute alignment — `PlanFilledList`'s remarks measure that.
