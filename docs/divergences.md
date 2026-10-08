@@ -21,7 +21,9 @@ prints the pair.
 
 ⚠ **Those two figures, and every per-class count below them, are over `every line` and predate the
 documentation-comment default.** They are kept because the classes they rank are still the work
-queue and re-deriving each one is a separate measurement. The differential's basis is now
+queue and re-deriving each one is a separate measurement. ⚠ Since #449 the basis of `constructs/`,
+`real/` and `pathological/` is every line again, over fixtures regenerated with the doc-comment task on
+(SK-DIV-0006's last section carries the numbers). Before that it was
 `outside doc comments` (SK-DIV-0006), and on that basis the same corpus at the same commit is
 **99.61 % / 85.79 %** with symbols and **99.53 % / 85.26 %** without. The gap is `///` lines leaving
 the denominator, where they had been counted as agreeing because neither side touched them — not a
@@ -880,8 +882,29 @@ existing and makes lifting it out the exercise that proves the `ISkalaLanguage` 
 — in `Formatting.CSharp`, as four files that share no state with the document builder — but
 `ISkalaLanguage` still does not, and doc 14 still has no correction note.
 
+### ⚠ #449 (2026-10-08): the profile element is in, the fixtures are regenerated, and the basis is every line
+
+`OracleProfile.FormatOnly` runs `CSharpFormatDocComments`, `constructs/`, `real/` and `pathological/`
+were regenerated with it (192 fixtures changed in body, every one of them only on `///` lines or on a
+rebuilt `/** */` block — checked), and their ratchet is over every line again. Measured on the
+regenerated fixtures, no symbols: `real/` **98.99 % / 65.53 %** every line against **99.61 % / 87.63 %**
+outside doc comments, unchanged from before; `constructs/` 99.75 % / 98.63 %; `pathological/`
+93.66 % / 83.10 %. ⚠ So the old basis was hiding 84 files of `real/` whose doc comments Skala writes
+differently from the oracle — the work queue, ranked by `Testing fidelity`: a break after an opened
+inline element's end tag (`</b>` / prose on the next line, 219 hunks, SK-DIV-0382's family), an element
+ending in `<code>…</code>` the oracle opens, comments Skala leaves as written that the oracle rebuilds,
+and the start-tag carry not applying when the content holds an author's break.
+
+⚠ **An oracle environment difference, found by this regeneration.** `xmldoc/marker/skala_space_after_triple_slash.cs`
+— SK-DIV-0132's shapes — comes back from this machine's `jb` (installed 2026-10-08) with its markerless
+comments rebuilt, where the doc-comment fixture generated 2026-10-07 keeps them; asked alone, the same.
+The doc-comment fixture was kept as the measurement of record and the format-only one carries today's
+answer, so the two now disagree about one profile. Whoever regenerates next should re-ask that file
+and settle which machine was right.
+
 - options: `skala_space_after_triple_slash`, `skala_xmldoc_wrap_lines`, `skala_xmldoc_max_line_length`, `skala_xmldoc_linebreak_before_elements`, `trim_trailing_whitespace`
-- ⚠ status: **open, and no longer deliberate.** The sub-formatter is the default and Skala follows
+- ⚠ status since #449: the harness debt is paid; the doc-comment divergences it exposes are open work.
+- ⚠ superseded status: **open, and no longer deliberate.** The sub-formatter is the default and Skala follows
   Rider. Seventeen keys honoured and asserted observable, ten refused with a reason, none Tier A —
   and, unlike before, all of them *able* to become Tier A. What is left is one element in
   `OracleProfile.FormatOnly` and a fixture regeneration; the `outside doc comments` fidelity basis

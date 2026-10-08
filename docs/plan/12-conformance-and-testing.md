@@ -152,6 +152,15 @@ hiding place; and the exclusion has a stated expiry — enabling `CSharpFormatDo
 marking one's own homework; excluding "the files that have doc comments" would hide a real
 regression in the code around them.
 
+⚠ **Paid for three sets by #449.** `OracleProfile.FormatOnly` runs `CSharpFormatDocComments`, and
+`constructs/`, `real/` and `pathological/` were regenerated with it (`Testing oracle`, then every fixture
+whose body did not change put back so the diff is only the bodies that did). Their `fidelity.json`
+entries are `every line` and `Fidelity_DoesNotDecrease` asserts it; `real/` re-based from 99.54 % /
+85.78 % outside doc comments to 98.99 % / 65.53 % every line, with the outside number unmoved at
+99.61 % / 87.63 % — the difference is doc-comment work the old basis could not see. The preservation
+variants and the unformat differential keep `outside doc comments` until their own fixtures are
+regenerated; every consumer measures over the basis its entry records.
+
 ### ⚠ Every construct with a `///` line is asked under the doc-comment profile (#396)
 
 The exclusion above is only honest where something else asks about the excluded lines. Under
@@ -184,6 +193,9 @@ them, asked by hand at a non-export value, is where #382's third shape was found
   differential; what changed is that they are now asserted, whole-file, by the doc-comment row. The
   basis's expiry above is unchanged and still applies to `real/` and `pathological/`, which are out of
   this decision's scope (273 and 1 files with a `///` line respectively, measured 2026-10-07).
+  ⚠ Superseded by #449: the format-only fixture formats doc comments now, so a construct's two
+  fixtures are the same question asked twice; the doc-comment row stays because it is what the keyed
+  ratchet reads.
 
 Measured when it landed: all eight shape rows agree with the oracle at the repository's
 configuration, and seven of the eight doc-comment fixtures are byte-identical to the format-only

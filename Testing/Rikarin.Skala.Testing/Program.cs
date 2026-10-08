@@ -1155,8 +1155,8 @@ static int Report(string[] sets) {
             );
         }
 
-        var without = Fidelity.Compare(bare);
-        var with = Fidelity.Compare(defined);
+        var without = Fidelity.Compare(bare, FidelityBasis.EveryLine);
+        var with = Fidelity.Compare(defined, FidelityBasis.EveryLine);
 
         Console.WriteLine($"── {set} ──────────────────────────────────────────────────────────");
         Console.WriteLine("                    line      file      lines");
@@ -1164,18 +1164,17 @@ static int Report(string[] sets) {
         Row("no symbols", without);
         Row("with symbols", with);
 
-        // ⚠ Both bases, always, and the second one is not decoration. The ratchet excludes `///`
-        // lines because Skala formats documentation comments and the pinned oracle profile does
-        // not (SK-DIV-0006); an excluded category that is never printed is an excluded category
-        // that can grow unwatched. docs/plan/12 § "A ratchet compares numbers over the same
-        // population".
-        var everyLine = Fidelity.Compare(bare, FidelityBasis.EveryLine);
-        Row("no symbols, " + everyLine.BasisName, everyLine);
+        // ⚠ Both bases, always. The ratchet is over every line again since #449 put the doc-comment
+        // task in the format-only profile (SK-DIV-0006); the number without `///` lines is printed
+        // beside it so that what the doc comments cost stays a measurement rather than a memory.
+        // docs/plan/12 § "A ratchet compares numbers over the same population".
+        var outside = Fidelity.Compare(bare, FidelityBasis.OutsideDocComments);
+        Row("no symbols, " + outside.BasisName, outside);
         Console.WriteLine();
 
         foreach (var origin in defined.GroupBy(static r => r.File.Split('/')[1], StringComparer.Ordinal)
                      .OrderBy(static g => g.Key, StringComparer.Ordinal)) {
-            var report = Fidelity.Compare(origin);
+            var report = Fidelity.Compare(origin, FidelityBasis.EveryLine);
             Console.WriteLine(
                 $"  {origin.Key,-14} line {report.LineFidelity * 100:F2}%  file {report.FileFidelity * 100:F2}%  ({report.Files} files)"
             );
