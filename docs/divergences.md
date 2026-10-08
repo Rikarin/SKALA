@@ -5570,6 +5570,8 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
   as if the section were measured with the separator space after it; at 119 it leaves them whole, and
   a one-argument 104-column `[Description("…")]` joined to a 131-column line breaks after the `]`
   alone. Skala breaks after the `]` and chops only a section that overflows by itself.
+  ⚠ **Re-measured for #476 and the reading above is wrong** (SK-DIV-0352): the chop starts well below
+  120 and depends on the parameter.
 - `orderby a,\n b`: unmeasured, and `OrderByClause` is the one exemption in `SeparatedListPlanTests`
   without a measurement behind it.
 
@@ -7833,8 +7835,18 @@ Measured beside it and not this entry: at `always`, `[Obsolete] public int S = C
 margin is joined and the call chopped by the oracle, where Skala breaks after the `=` and leaves the call
 whole; the same happens without any attribute, so it is the `=`'s ordering rule.
 
+⚠ **Re-measured for #504**, a field `[Obsolete] /* c */ public int F = …;` at the export, its line ending
+at 119 to 128, one column at a time, with `jb cleanupcode` 2025.2.6: a binary chain of identifiers, the
+same of numeric literals, a single identifier and a string literal are **declined at every width from 121
+to 128** — the attribute and comment alone, the declaration whole below — and `= Compute(…);` is declined
+at 121 (the `;` alone past the margin) and from 122 is joined with the call's arguments chopped. So for a
+field the comment case declines exactly where the declaration's own wrap would be the break after its
+`=`, and joins where it wraps inside the value; the entry's "joined at 134 (literals)" lies beyond this
+sweep and is not contradicted. It does not carry to the arrow rows above (joined, the arrow broken, from
+three past), so one reading still does not cover the owners, and nothing is wired.
+
 - options: the six `skala_place_*_attribute_on_same_line` keys.
-- ⚠ status: **resolved** at `always`; **open** for a comment in the gap. Pinned by
+- ⚠ status: **resolved** at `always`; **open** for a comment in the gap (#504, re-measured above). Pinned by
   `AttributeJoinTerminatorIssue438Tests`.
 
 ## SK-DIV-0206 — a type test's break is one level past its operand's line, not past what that line opened
@@ -8071,4 +8083,35 @@ after it cannot see that the *last* item fails at the aligned column; the oracle
 `<` point to ask whether every remaining item fits there. Not wired.
 
 - options: `skala_align_multiline_type_parameter_list`
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0352 — when a parameter's attribute arguments chop: measured, not wired
+
+#476. `void M(int b, [Obsolete("a…a", true)] <parameter>) { }` in a chopped parameter list (indent 8),
+the section's last column E swept one at a time from 98 to 120 with `jb cleanupcode` 2025.2.6, for eight
+parameters. "J" is the section and the parameter on one line, "A" the section whole on its own line and
+the parameter below, "C" the arguments chopped (`[Obsolete(` / … / `)]` / the parameter):
+
+| parameter (width) | J | A | C from E = | the joined line at that E |
+|---|---|---|---|---|
+| `int a` (5) | to 114 | — | 115 | 121 |
+| `string a` (8) | to 111 | — | 112 | 121 |
+| `int a = 5`, `ref int a` (9) | to 110 | — | 111 | 121 |
+| `List<int> a` (11) | to 108 | — | 109 | 121 |
+| `(int A, int B) a` (16) | to 103 | — | 104 | 121 |
+| `Namespace.Inner.Type a` (22) | — | to 108 | 109 | 132 |
+| `int aaaaaaaaaaaaaaaaaaaa` (24) | — | to 110 | 111 | 136 |
+| `Dictionary<string, int> a` (25) | — | to 112 | 113 | 139 |
+
+So a short parameter chops the arguments exactly when the joined line overflows — the oracle never
+puts it alone below an unchopped section — and a long one is put alone below the whole section until a
+threshold that is neither the joined line, nor the section, nor the parameter's first break point: the
+issue's inference ("the rest-of-line reads through the `]` to the parameter's first break point") is
+refuted by `Dictionary<string, int> a`, whose `<` would put the boundary at 109, and by
+`int aaaa…`, which has no break point at all and still stays whole until 110. Skala chops only a section
+that overflows on its own (E ≥ 121), which is right for none of the C cells. Wiring "chop when the
+joined line overflows" would fix the short rows and break the A cells of the long ones; nothing measured
+says where one becomes the other between 16 and 22 columns. Not wired.
+
+- options: `skala_wrap_arguments_style`; no key for the join.
 - ⚠ status: **open**, measured.
