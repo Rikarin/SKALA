@@ -29,7 +29,7 @@ namespace Rikarin.Skala.Analysis.Loading;
 ///     the one that already produced the binlog. ⚠ It is the only option that is <em>definitionally</em>
 ///     correct, and it costs one real build, which CI is doing anyway.
 /// </remarks>
-public static class BinlogLoader {
+public static partial class BinlogLoader {
     /// <summary>Where a binlog is looked for when none is named, in the order they are tried.</summary>
     /// <remarks>
     ///     ⚠ <c>ImmutableArray</c> rather than <c>string[]</c>, and the order is the contract. A
@@ -181,6 +181,34 @@ public static class BinlogLoader {
         return string.Empty;
     }
 
+    /// <summary>
+    ///     Splits a recorded <c>Csc</c> command line into the compiler's path and the arguments after it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The host is recorded unquoted, so a path with a space in it —
+    ///     <c>
+    ///         C:\Program Files\dotnet\dotnet.exe
+    ///         exec "C:\Program Files\dotnet\sdk\…\csc.dll" …
+    ///     </c>
+    ///     on the Windows CI runners — cannot be found by
+    ///     splitting the line first: the first token is <c>C:\Program</c>. The path is read off the raw
+    ///     line instead, up to the first <c>csc</c>, <c>csc.exe</c> or <c>csc.dll</c> that ends a path
+    ///     segment, with an optional <c>dotnet[.exe] [exec]</c> host in front (#517). A line with no such
+    ///     prefix is returned whole, as before.
+    /// </remarks>
+    internal static (string CompilerPath, string Arguments) SplitCompiler(string commandLine) {
+        var match = CompilerPrefix().Match(commandLine);
+        return match.Success
+            ? (match.Groups["csc"].Value, commandLine[match.Length..])
+            : (string.Empty, commandLine);
+    }
+
+    [System.Text.RegularExpressions.GeneratedRegex(
+        """^\s*(?:"?(?:(?!\s[/-])[^"])*?dotnet(?:\.exe)?"?\s+(?:exec\s+)?)?"?(?<csc>(?:(?!\s[/-])[^"])*?(?:^|[\\/]|(?<="))csc(?:\.exe|\.dll)?)"?(?=\s|$)""",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase
+    )]
+    private static partial System.Text.RegularExpressions.Regex CompilerPrefix();
+
     static CompilationUnit? Build(
         string projectPath,
         string commandLine,
@@ -195,20 +223,8 @@ public static class BinlogLoader {
         // ⚠ The recorded line starts with the compiler's own path; the parser wants only arguments.
         // ⚠ #517: and that path is kept, because it is the one record of *which* compiler ran — a
         // `Microsoft.Net.Compilers.Toolset` package replaces the SDK's with no other trace.
-        var arguments = CommandLine.Split(commandLine);
-        var compilerPath = string.Empty;
-        if (arguments.Count > 0 && arguments[0].EndsWith("csc.dll", StringComparison.OrdinalIgnoreCase)) {
-            compilerPath = arguments[0];
-            arguments.RemoveAt(0);
-        }
-
-        if (arguments.Count > 0 && Path.GetFileNameWithoutExtension(arguments[0]) is "csc" or "dotnet") {
-            if (Path.GetFileNameWithoutExtension(arguments[0]) is "csc") {
-                compilerPath = arguments[0];
-            }
-
-            arguments.RemoveAt(0);
-        }
+        var (compilerPath, rest) = SplitCompiler(commandLine);
+        var arguments = CommandLine.Split(rest);
 
         CSharpCommandLineArguments parsed;
         try {
