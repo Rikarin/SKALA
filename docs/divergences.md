@@ -7073,8 +7073,40 @@ need a generic call whose type arguments alone run past the margin after a named
 all three sets), so neither is chased. Pinned by `constructs/breaks/break-after-argument-name.cs`
 and `ArgumentNameBreakIssue411Tests`.
 
+⚠ **Swept for #490 (2026-10-08), not wired: the boundary depends on the argument's *name*, and the
+model that fits every row with a `>` past the margin breaks a committed fixture.** A new measurement
+idea, one input file per grid with `Testing ask`: the `>`'s column `g` against the argument list's width
+`w` (two arguments), the first type argument's width and nesting, and the name's length, at item indent
+12. Classified line by line (`COLON` = `name:` alone, `FILL` = the type arguments broken, `CHOP` = the
+arguments chopped):
+
+| name | `g` | `w` | oracle |
+|---|---|---|---|
+| `name` | 116–119 (the `(` fits) | 6 | the arguments chop; never the colon, never the fill |
+| `name` | 120 (only the `(` is past) | 6–16 | FILL |
+| `name` | 120 | 18–90 | COLON + CHOP |
+| `name`, first type argument `A` | 120 | 6 / 12–24 | FILL / COLON + CHOP |
+| `name` | 121–125, 128, 130 | 6–40 | FILL (+ CHOP once the arguments do not fit on the fill's line) |
+| `name` | 122 | 80, 100, 124 / 140, 160, 200 | FILL + CHOP / COLON + CHOP |
+| `name1`, `name17`, `name1766` … `name176666` | 122 | 124 | COLON + CHOP |
+| `name176` | 122 | 50–78 / 80–100 | FILL + CHOP / COLON + CHOP |
+| `name176`, first type argument nested (`Dictionary<string, Guid?>`) or plain | 121–128 | 6, 40 / 124 | FILL / COLON |
+
+So at `g ≥ 121` the oracle fills the type arguments until the argument list reaches a width that falls
+steeply with the name's length — between 78 and 80 columns for `name176`, at most 124 for `name1`,
+between 124 and 140 for `name` — and only then breaks after the colon. The fill and the colon give the
+argument list the same lines below, so the choice is made on a width the chop has not yet removed; no
+quantity the fitter has (the head's column, the continuation line's flat width under either break,
+`g + w`) separates the rows. Skala today takes the colon wherever the head up to the `(` overflows (and
+fills as well at `g = 128`). A rule "the colon stays
+flat while the type argument list's `>` is past the margin" (a measured `Document.YieldEndOf`) agreed
+on every `g ≥ 121` row with `w ≤ 78` and moved `constructs/breaks/break-after-argument-name.cs`'s
+`OwnersC` (`name176`, `w = 124`) away from the oracle — constructs 506 → 505 files exact — so it was
+reverted. The `g = 120` band (only the `(` past the margin) is the entry's row and stays as recorded.
+
 - options: none.
-- ⚠ status: **resolved** except the last two rows, which are **open**.
+- ⚠ status: **resolved** except the last two rows, which are **open**: measured above, **blocked** on a
+  model of the name-length dependence (#490).
 ## SK-DIV-0174 — the gap after a block comment was always one space, and the oracle answers it three ways
 
 ⚠ **Found measuring #409's family** (#410). `CSharpDocumentBuilder.GapSpace` returned `Required`
