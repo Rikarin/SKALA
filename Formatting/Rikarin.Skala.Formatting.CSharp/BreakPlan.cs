@@ -189,7 +189,15 @@ public enum HeldLevel {
     ///     broke (<see cref="IndentFlags.WhileChainWhole" />). Pass two reads the fill's break back as
     ///     an author's and disqualifies the hold from the source, which is the same answer.
     /// </summary>
-    WhileChainWhole = 4
+    WhileChainWhole = 4,
+
+    /// <summary>
+    ///     ⚠ The level is spent as zero columns while the arrow of the lambda the group is the body of stays
+    ///     flat (#566): <c>Use(x =&gt; x is A</c> / <c>or B</c> puts the <c>or</c>s one level past the call's line,
+    ///     the parenthesis having spent it, and <c>All(x =&gt;</c> / <c>x is A</c> / <c>or B</c> one level past
+    ///     the body's line. See <see cref="BreakPlan.ArrowHeldAgainst" />.
+    /// </summary>
+    WhileArrowFlat = 8
 }
 
 /// <summary>
@@ -290,6 +298,12 @@ public sealed class BreakPlan {
     ///     <see cref="HeldLevel.WhileChainWhole" />.
     /// </summary>
     readonly Dictionary<int, long> heldAgainst = [];
+
+    /// <summary>The arrow group <see cref="PlanArrowBody" /> opened for each lambda, by the lambda's key.</summary>
+    readonly Dictionary<long, int> arrowGroups = [];
+
+    /// <summary>The arrow group each <see cref="HeldLevel.WhileArrowFlat" /> hold is decided by.</summary>
+    readonly Dictionary<int, int> arrowHeldAgainst = [];
 
     /// <summary>
     ///     The chain roots whose <c>wrap_chained_binary_*</c> style is <c>wrap_if_long</c>, so that
@@ -3619,7 +3633,6 @@ public sealed class BreakPlan {
             // already spends the level the chain would have (#566).
             ownLevel: pattern
             && !IsStatementCondition(root)
-            && !IsSoleLambdaArgumentBody(root)
             && root.Parent is not BinaryPatternSyntax
             // ⚠ Nor a subpattern's value (#549): `is {` / `Parent: A` / `or B` / `}` puts the `or`s on
             // `Parent:`'s column, in a switch arm's braces as in an `is`'s (measured 2026-10-08).
@@ -3630,7 +3643,8 @@ public sealed class BreakPlan {
             // ⚠ And that level counts even beside the `&&` or `||` chain's own, opened on the same line,
             // when the pattern's `is` is the chain's first operand: `return token.Kind() is A` / `or B` two
             // levels in / `|| other` one (#566, Skala's own HasLooseBreak and FlatSourceWidth).
-            additiveLevel: pattern && IsFirstLogicalOperand(root)
+            additiveLevel: pattern && IsFirstLogicalOperand(root),
+            holdsLevel: pattern ? HoldForASoleLambda(root, group) : HeldLevel.None
         );
     }
 
@@ -3643,6 +3657,25 @@ public sealed class BreakPlan {
         && test.Parent is LambdaExpressionSyntax lambda
         && lambda.ExpressionBody == test
         && lambda.Parent is ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } };
+
+    /// <summary>
+    ///     A sole lambda argument's pattern chain holds its level while the arrow stays on the call's line
+    ///     (<see cref="HeldLevel.WhileArrowFlat" />). ⚠ Not where more links follow the call:
+    ///     <c>body.DescendantNodes(x =&gt; x is not A</c> / <c>and not B</c> / <c>)</c> / <c>.Any(…)</c> takes
+    ///     two levels in the oracle, the chain's level standing beside the parenthesis's.
+    /// </summary>
+    HeldLevel HoldForASoleLambda(SyntaxNode pattern, int group) {
+        if (!IsSoleLambdaArgumentBody(pattern)
+            || EnclosingTypeTest(pattern)?.Parent is not LambdaExpressionSyntax lambda
+            || lambda.Parent?.Parent?.Parent is not InvocationExpressionSyntax call
+            || call.Parent is MemberAccessExpressionSyntax
+            || !arrowGroups.TryGetValue(Key(lambda), out var arrow)) {
+            return HeldLevel.None;
+        }
+
+        arrowHeldAgainst[group] = arrow;
+        return HeldLevel.WhileArrowFlat;
+    }
 
     /// <summary>
     ///     Whether a pattern chain's <c>is</c> is the first operand of an <c>&amp;&amp;</c> or <c>||</c> chain (#566).
@@ -5719,6 +5752,9 @@ public sealed class BreakPlan {
     /// </summary>
     public int ChainHeldAgainst(int group) => heldAgainst.TryGetValue(group, out var root) ? ChainGroupOf(root) : -1;
 
+    /// <summary>The arrow group a <see cref="HeldLevel.WhileArrowFlat" /> hold is decided by, or -1.</summary>
+    public int ArrowHeldAgainst(int group) => arrowHeldAgainst.TryGetValue(group, out var arrow) ? arrow : -1;
+
     /// <summary>The group <see cref="PlanChainedCalls" /> opened over the chain rooted at this key, or -1.</summary>
     int ChainGroupOf(long root) => chainGroups.TryGetValue(root, out var group) ? group : -1;
 
@@ -6207,6 +6243,7 @@ public sealed class BreakPlan {
         }
 
         var group = NewGroup();
+        arrowGroups[Key(owner)] = group;
         Point(first, group);
         OpenAt(
             owner,
@@ -7696,9 +7733,22 @@ public sealed class BreakPlan {
         bool spendsIndent = false,
         bool leadingGapInside = false,
         bool ownLevel = false,
-        bool additiveLevel = false
+        bool additiveLevel = false,
+        HeldLevel holdsLevel = HeldLevel.None
     ) =>
-        Describe(node, new(group, mode, facts, spendsIndent, leadingGapInside, ownLevel, AdditiveLevel: additiveLevel));
+        Describe(
+            node,
+            new(
+                group,
+                mode,
+                facts,
+                spendsIndent,
+                leadingGapInside,
+                ownLevel,
+                HoldsLevel: holdsLevel,
+                AdditiveLevel: additiveLevel
+            )
+        );
 
     void Describe(SyntaxNode node, GroupPlan plan) {
         var key = Key(node);

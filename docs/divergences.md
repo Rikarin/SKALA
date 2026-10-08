@@ -10010,7 +10010,11 @@ is the same level collapsing into the `||` chain's continuation, both opened on 
 
 - options: `skala_wrap_chained_binary_patterns`, `place_single_method_argument_lambda_on_same_line`.
 - ⚠ status: **resolved** (#566). A pattern chain under the `is` that is a sole lambda argument's body
-  takes no level of its own; one under the `is` that is an `&&`/`||` chain's first operand takes its
+  holds its level while the lambda's arrow stays on the call's line (`HeldLevel.WhileArrowFlat`) — where
+  the arrow breaks the `or`s go one level past the body's line, and where more links follow the call
+  (`body.DescendantNodes(x => …)` / `.Any(…)`) the level is spent as before, both measured on Skala's own
+  source, which a first cut that dropped the level outright moved; one under the `is` that is an
+  `&&`/`||` chain's first operand takes its
   level as `IndentFlags.Additive` — counted beside the line's other level without hiding it. Measured
   on 2026-10-09 on eighteen shapes (a sole lambda in a call, after a broken chain, in an expression body,
   among other arguments; an `||` operand under `var`, `return` and an `if`); the `if` keeps its

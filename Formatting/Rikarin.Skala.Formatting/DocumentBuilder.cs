@@ -437,7 +437,8 @@ public sealed class DocumentBuilder {
         Open(
             DocKind.Indent,
             (int)kind,
-            (int)(conditions & (IndentFlags.HeldWhileOwnerFlat | IndentFlags.HeldWhileChainWhole)),
+            (int)(conditions
+                & (IndentFlags.HeldWhileOwnerFlat | IndentFlags.HeldWhileChainWhole | IndentFlags.HeldWhileGroupFlat)),
             chainGroup
         );
 

@@ -424,7 +424,13 @@ public enum IndentFlags {
     ///     chain's first operand puts its <c>or</c>s one level past the operators' (#566). Unlike
     ///     <see cref="Unconditional" />, which counts and then stands in for the line.
     /// </summary>
-    Additive = 1024
+    Additive = 1024,
+
+    /// <summary>
+    ///     ⚠ A held level spent once the group named beside it resolves broken: a sole lambda's arrow, for
+    ///     the pattern chain in its body (#566). See <c>HeldLevel.WhileArrowFlat</c>.
+    /// </summary>
+    HeldWhileGroupFlat = 2048
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>

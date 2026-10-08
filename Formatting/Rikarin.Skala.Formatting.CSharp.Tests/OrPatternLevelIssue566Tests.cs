@@ -78,4 +78,49 @@ public sealed class OrPatternLevelIssue566Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     The level the first fact removes is only held: where the arrow breaks, the <c>or</c>s go one
+    ///     level past the body's own line; and where more links follow the call, the chain's level stands
+    ///     beside the parenthesis's (Skala's own <c>ConstantBytes</c> and <c>UndisposedLocalAnalyzer</c>,
+    ///     which the first cut moved).
+    /// </summary>
+    [Fact]
+    public void TheLevelIsHeldOnlyWhileTheArrowStays() =>
+        Oracle.Agrees(
+            """
+            class T {
+                bool M(object[] expressions) {
+                    return expressions.Length > 0
+                        && expressions.All(static expression =>
+                            expression is LiteralExpressionSyntax
+                                or PrefixUnaryExpressionSyntax { Operand: LiteralExpressionSyntax }
+                        );
+                }
+
+                static bool IsIterator(SyntaxNode body) =>
+                    body.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
+                            and not LocalFunctionStatementSyntax
+                        )
+                        .Any(static node => node is YieldStatementSyntax);
+            }
+            """,
+            """
+            class T {
+                bool M(object[] expressions) {
+                    return expressions.Length > 0
+                        && expressions.All(static expression =>
+                            expression is LiteralExpressionSyntax
+                                or PrefixUnaryExpressionSyntax { Operand: LiteralExpressionSyntax }
+                        );
+                }
+
+                static bool IsIterator(SyntaxNode body) =>
+                    body.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
+                            and not LocalFunctionStatementSyntax
+                        )
+                        .Any(static node => node is YieldStatementSyntax);
+            }
+            """
+        );
 }

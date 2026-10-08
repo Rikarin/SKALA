@@ -1356,6 +1356,13 @@ public sealed partial class CSharpDocumentBuilder {
             conditions |= IndentFlags.HeldWhileChainWhole;
         }
 
+        // ⚠ Held while a sole lambda's arrow stays on the call's line (#566); the slot carries the arrow's
+        // group in place of a chain's, the two never meeting on one group.
+        if ((planned.HoldsLevel & HeldLevel.WhileArrowFlat) != 0 && plan.ArrowHeldAgainst(planned.Id) is >= 0 and var arrow) {
+            conditions |= IndentFlags.HeldWhileGroupFlat;
+            chain = arrow;
+        }
+
         if (level == 0 && conditions != IndentFlags.None) {
             doc.OpenHeldIndent(IndentKind.Continuous, conditions, chain);
             continuousDepth++;
