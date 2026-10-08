@@ -9977,6 +9977,11 @@ left operand (#457), where the chain takes a level past the operator's.
   are identical either way, so no layout cost separates the two answers. The issue's `var glued =` row is the
   11-column head with a 77-column `Y`. Recorded with the grids; no rule wired, because the measured floor moves
   with the far operand and the pattern boundary contradicts it.
+- **#580 — fixed.** A `??` chain past the margin: the oracle writes `a` / `?? b ?? c`, Skala chopped every `??`.
+  `??` is right-associative and the oracle breaks it as that tree — before each `??` whose right side does not
+  fit (six operands: `?? b` / `?? c` / `?? d` / `?? e ?? f`). Measured under `=`, `return`, an argument, an `if`
+  condition, a parenthesised left side and a `throw`; `SameChain` no longer joins nested `??`. Pinned by
+  `CoalesceChainIssue580Tests`.
 
 ## SK-DIV-0334 — a list opened on a closer's line nested from the levels behind the closer
 
