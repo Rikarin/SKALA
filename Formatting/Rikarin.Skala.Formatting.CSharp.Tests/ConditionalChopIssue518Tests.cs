@@ -98,7 +98,7 @@ public sealed class ConditionalChopIssue518Tests {
                                """;
 
     public static TheoryData<string, string, string> Cases =>
-        new() { { Source, Oracle, "" }, { Source, AtKeepFalse, "skala_keep_user_linebreaks=false" } };
+        new() { { Source, Oracle, string.Empty }, { Source, AtKeepFalse, "skala_keep_user_linebreaks=false" } };
 
     [Theory]
     [MemberData(nameof(Cases))]

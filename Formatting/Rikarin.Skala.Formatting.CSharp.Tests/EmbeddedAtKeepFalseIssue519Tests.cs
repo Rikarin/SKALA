@@ -355,7 +355,7 @@ public sealed class EmbeddedAtKeepFalseIssue519Tests {
 
     public static TheoryData<string, string, string> Cases =>
         new() {
-            { OneLine, OneLineAtKeep, "" },
+            { OneLine, OneLineAtKeep, string.Empty },
             { OneLine, OneLineIfOwnerIsSingleLine, "skala_keep_existing_embedded_arrangement=false" },
             {
                 OneLine,
