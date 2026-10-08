@@ -8726,11 +8726,34 @@ with the receiver — until it does not fit on the receiver's line, when the ora
 ⚠ The second row was right before #455 by accident: Skala walked through the `!` and counted
 `!.Where` as the chain's second call. With the `!` read as the oracle reads it — the end of the
 receiver — the row depends on this rule. The third row shows the rule reaches a single call, which is
-not a chain at all to `PlanChainedCalls`. Not wired: it needs a point before the first call that breaks
-only when the call itself overflows the receiver's line, which no group fact says today.
+not a chain at all to `PlanChainedCalls`.
+
+⚠ **Measured for #528 on 2026-10-08, and the boundary is not "the call does not fit".** A grid of
+two-call chains, `var y = S….Select(args).Where(b);` at indent 8, heads (the column after a held
+`.Select(`) of 40, 60, 80 and 100 against call lines below of 50 to 112, one and two arguments — 104
+rows. Where the whole first call fits on the receiver's line it is held. Where it does not:
+
+| head | two arguments: broken before / held and chopped | one argument: broken / chopped |
+|---:|---|---|
+| 60 | ≤ 82 / ≥ 86 | ≤ 106 / 112 |
+| 80 | ≤ 76 / ≥ 78 | ≤ 96 / ≥ 100 |
+| 100 | ≤ 78 / ≥ 82 | ≤ 96 / ≥ 100 |
+
+Not monotone in the head, and no width of the call, the head or the chopped lines separates the
+columns. Wired as the part every row agrees on: the point before the held call
+(`BreakPlan.PlanHeldFirstCall`, `GroupFacts.HeldCall`) breaks when the receiver fits on its line, the
+receiver with the call does not, and the call's line below ends at 76 columns or less for two or more
+arguments, 96 for one or none. Every row on the "broken" side within those widths agrees, nothing on
+the "held" side is reached, and the five grid rows past them (two arguments at 82 behind a 60 head and
+78 behind 100, one argument at 100–106 behind 40–60) stay held, as before. #418's
+`source.Select(` / … / `)` rows are held by the same rule. A receiver that does not fit flat breaks
+inside itself and leaves the point alone (`X.Select(…)` / `.Where(gamma)!.Where(beta)`).
 
 - options: `skala_wrap_before_first_method_call`.
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved for chains, open for the residue** (#528): the five grid rows above, and the
+  single call that is no chain (the third row; `var y =` / `S….Select(alpha)` breaks the `=` first and
+  then the dot or the arguments, by rules not measured further). Pinned by `HeldFirstCallIssue528Tests`
+  and `constructs/breaks/held-first-call.cs`.
 
 ## SK-DIV-0332 — a lambda argument's arrow breaks where the chain in its body would have chopped
 

@@ -933,6 +933,12 @@ public sealed class Document {
 ///     and the operand with a space and the keyword does not. The operand is the group's flat width less
 ///     the segment after its point and the point's own space. Zero for any other group.
 /// </param>
+/// <param name="HeldCall">
+///     ⚠ A chain's held first call (#528, SK-DIV-0331), as the columns its line has to end short of the
+///     margin by, or zero: the point before it breaks exactly when the
+///     receiver fits on its line, the receiver with the call does not, and the call fits whole on the
+///     continuation line. A receiver that does not fit flat breaks inside itself and leaves the point alone.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -951,4 +957,5 @@ public readonly record struct GroupFacts(
     bool FlatIfOwnerBroke = false,
     bool Continues = false,
     int Terminator = 0,
-    int KeywordWidth = 0);
+    int KeywordWidth = 0,
+    int HeldCall = 0);

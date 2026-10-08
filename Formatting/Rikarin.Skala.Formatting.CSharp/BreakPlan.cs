@@ -2500,6 +2500,8 @@ public sealed class BreakPlan {
             )
         );
 
+        PlanHeldFirstCall(dots, first);
+
         bool Link(SyntaxToken gap) {
             var broke = BreaksBefore(gap);
             if (pinsLinkBreaks && broke) {
@@ -2510,6 +2512,47 @@ public sealed class BreakPlan {
 
             return broke;
         }
+    }
+
+    /// <summary>
+    ///     The held first call of a chain (<c>skala_wrap_before_first_method_call = false</c>) breaks too
+    ///     when it does not fit on the receiver's line and does fit whole on the continuation line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured for #528 (SK-DIV-0331), a column at a time on two-call chains at indent 8:
+    ///     <c>var y = S….Select(alpha)</c> / <c>.Where(b);</c> holds the call while it ends at 120 and
+    ///     breaks before it from 121 — <c>S…</c> / <c>.Select(alpha)</c> / <c>.Where(b);</c> — even with
+    ///     <c>.Select(</c> itself at 117; with two 19-column arguments the call is broken before at every
+    ///     head from 80 to 113 columns, its arguments whole. Where the call does not fit on the
+    ///     continuation line either, the oracle holds it and chops its arguments (#418's rows,
+    ///     <c>source.Select(</c> / … / <c>)</c> / <c>.Where(beta)</c>) — the other half of the same
+    ///     rule, and <see cref="GroupFacts.BreaksOnlyIfTailFits" />'s own question.
+    /// </remarks>
+    void PlanHeldFirstCall(List<SyntaxToken> dots, int points) {
+        if (points >= dots.Count || dots[^1] is not { Parent: MemberAccessExpressionSyntax access } dot) {
+            return;
+        }
+
+        if (BreaksBefore(dot)) {
+            return;
+        }
+
+        SyntaxNode link = access;
+        while (link.Parent is MemberAccessExpressionSyntax outer && outer.Expression == link) {
+            link = outer;
+        }
+
+        if (link.Parent is not InvocationExpressionSyntax call || call.Expression != link) {
+            return;
+        }
+
+        // ⚠ How short of the margin the call's line below must end, by argument count: 96 columns for
+        // one argument or none, 76 for more, at the export's 120 — the widths every measured row agrees
+        // on (see Fitter's HeldCall arm and SK-DIV-0331).
+        var room = call.ArgumentList.Arguments.Count <= 1 ? 24 : 44;
+        var group = NewGroup();
+        Point(dot, group);
+        Describe(call, group, GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true, HeldCall: room));
     }
 
     /// <summary>
