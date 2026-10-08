@@ -785,7 +785,12 @@ public sealed partial class CSharpDocumentBuilder {
                     // tuple: `(\n a).B\n.C()` puts `.C()` on the `(`'s own column (SK-DIV-0112). The
                     // group half of the same rule is BreakPlan.PlanChainedCalls' HoldsLevel; this is
                     // the frame half, for an author's break before a dot that is not a point.
-                    HoldsLevel: IsChainRoot(node) && BreakPlan.HeadSharesTheLevelAroundIt(node),
+                    // ⚠ And a pattern chain whose operators are its group's points leaves its level to
+                    // that group, which knows whether the chain spends one — under `=>` it does, as a whole
+                    // `if` condition it does not (#584). An author's break after a comment in front of an
+                    // `or` is no point of the group and reaches the frame instead.
+                    HoldsLevel: IsChainRoot(node) && BreakPlan.HeadSharesTheLevelAroundIt(node)
+                    || IsPatternChainRoot(node) && plan.GroupsOf(node).Count > 0,
 
                     // ⚠ And a chain pays its level once. The group half — PlanChainedCalls' OwnLevel —
                     // opens a continuation scope over the whole chain when the chain has points, and
@@ -3972,8 +3977,15 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             if (frames[i].Kind == FrameKind.Pattern) {
+                // ⚠ And nothing when the pattern chain's group decides its level (#584, Frame.HoldsLevel):
+                // a comment in front of an `or` makes that gap no point of the group, so the author's break
+                // after the comment reached this frame and paid a level of its own — `int` / `or long` /
+                // `// c` / `or string` put `or string` a level past the others under `=>`, and `if (o is
+                // int` / `// c` / `or long)` a level past the condition's column, where the oracle keeps
+                // every `or` on one column. Measured under `=>`, `return`, `if`, `while`, a switch arm's
+                // pattern, and with the comment before the first `or` and as a trailing `//`.
                 if (nextToken.Parent is BinaryPatternSyntax pattern && pattern.OperatorToken == nextToken) {
-                    return i;
+                    return frames[i].HoldsLevel || continuousDepth > frames[i].EntryDepth ? -1 : i;
                 }
 
                 continue;

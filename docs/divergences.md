@@ -10733,3 +10733,22 @@ defect (group F's), not the arrow's.
   says every divergent line is that decision. It produces the identical diff at f26e3f46, the commit that
   added it. It is not a regression, so nothing was changed. If it should stop counting against construct
   fidelity, that is a harness exemption, not a formatter fix.
+
+## SK-DIV-0345 — an `or` after a comment in a pattern chain took a level of its own
+
+#584, visible in Skala's own `BreakPlan.IsUnbreakablePattern`: `int` / `or long` / `// c` / `or string` put
+`or string` one level past the other operators, and `if (o is int` / `// c` / `or long)` put `or long` one past
+the condition's column. The oracle keeps every `or` on one column. Measured on nine shapes: under `=>`,
+`return`, `if`, `while` and a switch arm's pattern; a `//` and a `/* */`; the comment before the first `or`
+and before a later one; a trailing `//`. ⚠ It is the chain-link double pay of SK-DIV-0321 in pattern form: a
+comment in front of an `or` makes that gap no point of the chain's group, so the author's break after the
+comment reached the pattern chain's frame, which paid a level the group had already decided — spent under
+`=>`, not spent as a whole `if` condition. The frame now leaves the level to the group whenever the chain
+has one (`Frame.HoldsLevel`). Found beside it and not this: `node.Any(static n => n is A` / `or B` / `or C)` —
+a pattern chain that is a sole lambda's body — puts the `or`s one level past the oracle's, comment or no
+comment, the call chain's SK-DIV-0184 row in pattern form — fixed on master meanwhile by group F's #566,
+and with a comment in it too once merged with this.
+
+- options: none.
+- ⚠ status: **resolved** (#584; the sole-lambda row by #566). Pinned by
+  `constructs/syntax/comment-in-a-pattern-chain.cs` and `CommentInAPatternChainIssue584Tests`.
