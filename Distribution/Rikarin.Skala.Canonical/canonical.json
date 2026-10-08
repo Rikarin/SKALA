@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "sha256": "1ea318428c1d1a3d2d928d209fcdb30c23fe7a5b2de843b560dc4bb53e3e9409",
+  "sha256": "5a8c46684a14f8fe4e7f89fb0a4b06cb3fd6266e851088418e5db77cdde5baeb",
   "assignments": 377,
   "sections": 3,
   "source": "editor_config_template — the Rider export (ADR-001)",
