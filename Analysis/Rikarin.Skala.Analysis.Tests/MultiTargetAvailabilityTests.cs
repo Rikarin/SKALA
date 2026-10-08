@@ -99,6 +99,28 @@ public sealed class MultiTargetAvailabilityTests {
 
                                         """;
 
+    /// <summary>#511's rule: a member one moniker lacks, on a type both have.</summary>
+    const string GenericEnumGetvalues = "SK1035";
+
+    /// <summary>#511's shape: <c>SK1035</c> fires on it wherever <c>GetValues&lt;T&gt;()</c> exists.</summary>
+    const string EnumSource = """
+                              namespace Probe;
+
+                              public enum AlarmId { Low, High }
+
+                              public static class Alarms {
+                                  public static int Count() {
+                                      var count = 0;
+                                      foreach (AlarmId id in Enum.GetValues(typeof(AlarmId))) {
+                                          count++;
+                                      }
+
+                                      return count;
+                                  }
+                              }
+
+                              """;
+
     /// <summary>The issue's reproduction, unchanged.</summary>
     const string Source = """
                           namespace Probe;
@@ -184,6 +206,67 @@ public sealed class MultiTargetAvailabilityTests {
         Assert.Equal(Source, File.ReadAllText(source));
         AssertEveryTargetFrameworkCompiles(scratch.Root, project, source);
     }
+
+    /// <summary>
+    ///     #511: the same union, decided by a <em>member</em> of a type every moniker has.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The issue's reproduction, minus the project around it: <c>Enum.GetValues(typeof(T))</c> in a
+    ///     <c>foreach</c> on <c>netstandard2.1;net10.0</c>. <c>System.Enum</c> resolves on both legs, so a
+    ///     guard that watched type lookups saw nothing; <c>GetValues&lt;T&gt;()</c> is .NET 5+, and
+    ///     <c>skala fix</c> reverted the rewrite with <c>CS0308</c> while <c>check</c> kept reporting it.
+    ///     The single-target control is <c>SK1035</c>'s own positive fixtures, which still fire.
+    /// </remarks>
+    [Fact]
+    public void MultiTargetedProject_WithholdsAGenericGetValuesTheOlderFrameworkLacks() {
+        using var scratch = new Scratch();
+        var project = scratch.Write("Probe.csproj", MultiTargeted);
+        var source = scratch.Write("Probe.cs", EnumSource);
+        Restore(project);
+
+        var loaded = ProjectLoader.Load(
+            new LoadRequest {
+                RepositoryRoot = scratch.Root,
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                Paths = [scratch.Root],
+                AllowFallback = false
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        // ⚠ The instrument: both legs have `System.Enum`, and only the newer one has the overload.
+        Assert.Equal(2, loaded.Units.Length);
+        var old = Assert.Single(
+            loaded.Units,
+            static unit => unit.TargetFramework.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase)
+        );
+
+        var current = Assert.Single(loaded.Units, unit => !ReferenceEquals(unit, old));
+        Assert.False(HasGenericGetValues(old.Compilation));
+        Assert.True(HasGenericGetValues(current.Compilation));
+
+        var (result, report) = CheckCommand.Run(
+            new CheckRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                Output = string.Empty,
+                Rules = [GenericEnumGetvalues],
+                NoCache = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.NotEqual(ExitCodes.LoadFailure, result.ExitCode);
+        Assert.DoesNotContain(report.Reportable, static finding => finding.RuleId == GenericEnumGetvalues);
+        AssertEveryTargetFrameworkCompiles(scratch.Root, project, source);
+    }
+
+    static bool HasGenericGetValues(Compilation compilation) =>
+        compilation.GetTypeByMetadataName("System.Enum") is { } type
+        && type.GetMembers("GetValues").OfType<IMethodSymbol>().Any(static method => method.Arity == 1);
 
     /// <summary>
     ///     ⚠ The other half of the pair: the rule must not have been disabled into silence.

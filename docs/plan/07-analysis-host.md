@@ -367,6 +367,21 @@ Points of substance:
   (`WorldWritableFileMode`, `RefStructOwnedDisposable`) were refuted. ⚠ The trap is the lookup that
   looks like recognition and is not: `SK2182` resolves a **string literal** from the source, so the
   literal compiles under every moniker while the type it names may exist under one.
+- ⚠ **A member of a type every moniker has is the same question, and the ledger did not ask it
+  (#511).** `SK1035` asked `System.Enum.GetMembers("GetValues")` for the generic overload (.NET 5+);
+  on `netstandard2.1;net10.0` it reported from the `net10.0` leg and `skala fix` reverted the rewrite
+  with `CS0308`. It was in the ledger — for its `GetTypeByMetadataName("System.Enum")` — exempted as
+  *recognition*, which was wrong. The sweep the ledger now forces (its pattern matches a *named*
+  `GetMembers(…)` too) found three more real holes and seven named lookups that are sound, each
+  recorded with why. `SK1033`'s `Dictionary<K, V>.TryAdd` is netstandard2.1+, so it gates through
+  `PathsWithout` and withholds only that shape (`TryGetValue` is everywhere). `SK3004` and `SK3051`
+  forward a token to an *overload* — `Stream.CopyToAsync(Stream, CancellationToken)` is
+  netstandard2.1+ — and were exempted as "forwards a parameter already in scope", also wrong. That
+  question depends on the call, so it is asked per site: `FrameworkAvailability.TryCounterpart` finds
+  the same node in the sibling's copy of the file and the sibling's own binding must produce the same
+  edit. Still outside the ledger: a member check made by *speculative binding* rather than by lookup,
+  and lookups in helper files that name no `RuleIds` (`CancellationTokens.HasAppendedOverload` was
+  one, found only by reading).
 
 ### Loading third-party analyzers (ADR-008)
 

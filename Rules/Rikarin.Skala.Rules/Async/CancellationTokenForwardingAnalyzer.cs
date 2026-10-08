@@ -40,12 +40,20 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
                     return;
                 }
 
-                start.RegisterSyntaxNodeAction(context => Analyze(context, token), SyntaxKind.InvocationExpression);
+                var siblings = FrameworkAvailability.SiblingsByPath(start.Options);
+                start.RegisterSyntaxNodeAction(
+                    context => Analyze(context, token, siblings),
+                    SyntaxKind.InvocationExpression
+                );
             }
         );
     }
 
-    static void Analyze(SyntaxNodeAnalysisContext context, INamedTypeSymbol tokenType) {
+    static void Analyze(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol tokenType,
+        ImmutableDictionary<string, ImmutableArray<Compilation>> siblings
+    ) {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
         // ⚠ Cleanup that a cancellation can abort is worse than cleanup that ignores one, and a
@@ -71,7 +79,8 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
                 tokenType,
                 available,
                 context.CancellationToken
-            ) is not { } forward) {
+            ) is not { } forward
+            || !CancellationTokens.EverySiblingForwards(invocation, forward, available, siblings, context.CancellationToken)) {
             return;
         }
 

@@ -29,18 +29,32 @@ public sealed class EnumGetValuesAnalyzer : DiagnosticAnalyzer {
         context.EnableConcurrentExecution();
         var registrar = PartialConstructorDefinitions.Visiting(context);
         registrar.RegisterCompilationStartAction(static start => {
-                var enumType = start.Compilation.GetTypeByMetadataName("System.Enum");
-                if (enumType is null || !HasGenericGetValues(enumType)) {
+                if (start.Compilation.GetTypeByMetadataName("System.Enum") is not { } enumType
+                    || !HasGenericGetValues(enumType)) {
                     return;
                 }
 
+                // ⚠ #511: a *member* availability question is per target framework exactly as a type
+                // one is. `System.Enum` exists on every moniker, so nothing that only watched type
+                // lookups saw this; `GetValues<T>()` is .NET 5+, and on a `netstandard2.1;net10.0`
+                // project the net10.0 leg reported a rewrite the netstandard2.1 leg cannot compile
+                // (CS0308). The whole predicate is asked of every sibling.
+                var unavailable = FrameworkAvailability.PathsWithout(start.Options, Supports);
                 start.RegisterSyntaxNodeAction(
-                    context => Analyze(context, enumType),
+                    context => {
+                        if (unavailable.IsEmpty || !unavailable.Contains(context.Node.SyntaxTree.FilePath)) {
+                            Analyze(context, enumType);
+                        }
+                    },
                     SyntaxKind.InvocationExpression
                 );
             }
         );
     }
+
+    /// <summary>Whether <paramref name="compilation" />'s <c>System.Enum</c> has <c>GetValues&lt;T&gt;()</c>.</summary>
+    static bool Supports(Compilation compilation) =>
+        compilation.GetTypeByMetadataName("System.Enum") is { } enumType && HasGenericGetValues(enumType);
 
     static bool HasGenericGetValues(INamedTypeSymbol enumType) {
         foreach (var member in enumType.GetMembers("GetValues")) {

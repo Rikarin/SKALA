@@ -1,9 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Rikarin.Skala.Rules.Tests;
 
@@ -228,18 +226,7 @@ public sealed class CollectionExpressionSpreadTests {
             siblingVersion
         );
 
-        var found = await current
-            .WithAnalyzers(
-                SkalaAnalyzers.All,
-                new CompilationWithAnalyzersOptions(
-                    new AnalyzerOptions([], new SiblingProvider([other])),
-                    null,
-                    true,
-                    false,
-                    true
-                )
-            )
-            .GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken);
+        var found = await SiblingProvider.Analyze(current, other);
 
         Assert.DoesNotContain(found, static d => d.Id == "AD0001");
         Assert.Equal(fires, found.Any(static d => d.Id == RuleIds.CollectionExpressionSpread));
@@ -251,26 +238,6 @@ public sealed class CollectionExpressionSpreadTests {
     static string CoreLibrary(Compilation compilation) {
         var identity = compilation.ObjectType.ContainingAssembly.Identity;
         return identity.Name + " " + identity.Version.Major;
-    }
-
-    sealed class SiblingProvider(ImmutableArray<Compilation> siblings) : AnalyzerConfigOptionsProvider,
-        ISiblingCompilations {
-        public ImmutableArray<Compilation> Siblings { get; } = siblings;
-
-        public override AnalyzerConfigOptions GlobalOptions => Empty.Instance;
-
-        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => Empty.Instance;
-
-        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => Empty.Instance;
-    }
-
-    sealed class Empty : AnalyzerConfigOptions {
-        public static Empty Instance { get; } = new();
-
-        public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value) {
-            value = null;
-            return false;
-        }
     }
 
     static ImmutableArray<Diagnostic> Analyze(string source) =>
