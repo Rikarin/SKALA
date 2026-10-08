@@ -199,19 +199,26 @@ public sealed class CollectionExpressionSpreadTests {
     ///     <c>MultiTargetLanguageFloor</c> cannot see this: both legs are at C# 14 to Skala. The sibling is
     ///     stood in for by a compilation whose core library is not .NET 10's — the test host's own, which
     ///     is exactly as unproved as <c>netstandard 2.1.0.0</c> — and the control row is the same pair
-    ///     with the sibling on <c>net10.0</c> references too.
+    ///     with the sibling on <c>net10.0</c> references too. The proof asked of the sibling is the whole
+    ///     one: a <c>net10.0</c> sibling at C# 13 withholds, and a sibling with a written C# 14 proves.
     /// </remarks>
     [Theory]
-    [InlineData(null, false)]
-    [InlineData("net10.0", true)]
-    [InlineData("net9.0", false)]
-    public async Task ASiblingThatDoesNotProveTheCompiler_WithholdsTheSharedFile(string? sibling, bool fires) {
+    [InlineData(null, LanguageVersion.Latest, false)]
+    [InlineData("net9.0", LanguageVersion.Latest, false)]
+    [InlineData("net10.0", LanguageVersion.Latest, true)]
+    [InlineData("net10.0", LanguageVersion.CSharp13, false)]
+    [InlineData(null, LanguageVersion.CSharp14, true)]
+    public async Task ASiblingThatDoesNotProveTheCompiler_WithholdsTheSharedFile(
+        string? sibling,
+        LanguageVersion siblingVersion,
+        bool fires
+    ) {
         var body = Header + "        int[] copied = list.ToArray();" + Footer;
         var current = RuleFixtures.Compile("// fixture-option: TargetFramework = net10.0\n" + body, "shared.cs", LanguageVersion.Latest);
         var other = RuleFixtures.Compile(
             (sibling is null ? "" : "// fixture-option: TargetFramework = " + sibling + "\n") + body,
             "shared.cs",
-            LanguageVersion.Latest
+            siblingVersion
         );
 
         var found = await current
