@@ -5734,8 +5734,9 @@ public sealed class BreakPlan {
     ///     <c>new Something {</c>, <c>new P {</c>, <c>new List&lt;string&gt; {</c>,
     ///     <c>new SomethingMuchLongerStill {</c> and <c>new {</c>, with identifiers, numbers and string literals
     ///     as members. The fitted margin (<c>Fitter.OuterBreakMargin</c>) answered 2 380 of the first 2 857;
-    ///     this rule answers 3 533 of all 3 560 (SK-DIV-0322). ⚠ What moves the limit was not the value's width or its members but two widths
-    ///     nobody had measured: the creation's own head up to its <c>{</c> — the wider it is, the further down
+    ///     this rule answers 3 533 of all 3 560 (SK-DIV-0322). ⚠ What moves the limit was not the value's
+    ///     width or its members but two widths nobody had measured: the creation's own head up to its
+    ///     <c>{</c> — the wider it is, the further down
     ///     the oracle moves the creation rather than break its braces — and the head from the declarator's
     ///     name, not the statement's start, through the <c>=</c>: a typed local and a <c>var</c> one agree once
     ///     the type is left out. A field sits two columns lower, measured at one depth. ⚠ Not an array
@@ -5749,9 +5750,8 @@ public sealed class BreakPlan {
         }
 
         var open = value switch {
-            ObjectCreationExpressionSyntax {
-                ArgumentList: null, Initializer: { Expressions.Count: > 0 } initializer
-            } => initializer.OpenBraceToken,
+            ObjectCreationExpressionSyntax { ArgumentList: null, Initializer: { Expressions.Count: > 0 } initializer }
+                => initializer.OpenBraceToken,
             AnonymousObjectCreationExpressionSyntax { Initializers.Count: > 0 } anonymous => anonymous.OpenBraceToken,
             _ => default
         };
