@@ -97,7 +97,7 @@ public sealed partial class CSharpDocumentBuilder {
         this.options = options;
         this.outputLines = outputLines;
         (pieces, tokens) = SourcePieces.Split(root, text);
-        captured = [.. CapturedArguments.Find(root)];
+        captured = [..CapturedArguments.Find(root)];
     }
 
     /// <param name="path">The file's path, for diagnostics.</param>
@@ -3502,6 +3502,21 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
+        // ⚠ The one gap measured to come back two spaces wide (#493): `E( /*f*/)` with the
+        // parameter-list key on is the key's space plus the author's bit, when the trailing-comment
+        // key also asks for one. ⚠ Two whatever the author wrote, which is the oracle's fixed point and
+        // not its first answer: `F(/*f*/)` comes back `F( /*f*/ )`, and that comes back `F(  /*f*/ )`
+        // on the next run, so copying the first answer would make Skala fail its own idempotence.
+        // See SpaceRules.OpensAnEmptyPairWithItsSpaceOn.
+        if (nextKind is PieceKind.BlockComment or PieceKind.BlockDocComment
+            && previous.Kind == PieceKind.Token
+            && !options.DisableSpaceChanges
+            && options.SpaceBeforeTrailingComment
+            && SpaceRules.OpensAnEmptyPairWithItsSpaceOn(tokens[previous.TokenIndex], options)) {
+            doc.Space("  ");
+            return;
+        }
+
         doc.Space(FlatGapSpace(previous, nextKind, nextToken, gap));
     }
 
@@ -3542,14 +3557,21 @@ public sealed partial class CSharpDocumentBuilder {
             or PieceKind.BlockComment
             or PieceKind.DocCommentLine
             or PieceKind.BlockDocComment) {
-            var governed = nextKind == PieceKind.BlockComment && previous.Kind == PieceKind.Token
-                ? SpaceRules.BeforeBlockComment(tokens[previous.TokenIndex], options)
-                : null;
+            // ⚠ A `/** … */` inside an expression is the same comment to the oracle as a `/* … */`, on
+            // both sides of it (#491): `M(1 /** f */ , 2)` comes back `M(1 /** f */, 2)` and
+            // `M(1, /** f */2)` as written, exactly as their `/* */` twins do, where Skala answered
+            // every gap after one with a space.
+            var governed = nextKind is PieceKind.BlockComment or PieceKind.BlockDocComment
+                && previous.Kind == PieceKind.Token
+                    ? SpaceRules.OpensAnEmptyPairWithItsSpaceOn(tokens[previous.TokenIndex], options)
+                        ? true
+                        : SpaceRules.BeforeBlockComment(tokens[previous.TokenIndex], options)
+                    : null;
 
             return governed ?? options.SpaceBeforeTrailingComment ? SpaceKind.Required : SpaceKind.Forbidden;
         }
 
-        if (previous.Kind == PieceKind.BlockComment
+        if (previous.Kind is PieceKind.BlockComment or PieceKind.BlockDocComment
             && nextKind == PieceKind.Token
             && TokenBeforeTheComments(previous) is { } before) {
             // ⚠ A gap holding a line break is a break being joined, and what the author wrote there
@@ -3642,7 +3664,7 @@ public sealed partial class CSharpDocumentBuilder {
                 return i == lastPiece ? null : tokens[piece.TokenIndex];
             }
 
-            if (piece.Kind != PieceKind.BlockComment
+            if (piece.Kind is not (PieceKind.BlockComment or PieceKind.BlockDocComment)
                 || FormatterTagGuard.IsOffTag(piece.Text, options.Tags)
                 || FormatterTagGuard.IsOnTag(piece.Text, options.Tags)
                 || i == 0
@@ -3682,7 +3704,9 @@ public sealed partial class CSharpDocumentBuilder {
         // `o is not` / `null`, `o as` / `P` and `case` / `(1, 2):` are all kept at the defaults and
         // joined here.
         var previousToken = tokens[previous.TokenIndex];
-        return SpaceRules.Preserves(previousToken, nextToken)
+        // ⚠ The oracle's predicate, not Skala's: a spread's `..` is governed since #513 and the oracle
+        // still joins the break behind it here.
+        return SpaceRules.OracleKeepsTheAuthorsGap(previousToken, nextToken)
             || previousToken.IsKind(SyntaxKind.DotDotToken)
             && previousToken.Parent is SlicePatternSyntax
             || previousToken.Kind() is SyntaxKind.IsKeyword or SyntaxKind.AsKeyword

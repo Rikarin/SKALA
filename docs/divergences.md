@@ -99,7 +99,7 @@ exact count, and saying so is better than repeating a figure nobody can reproduc
 | 0006 | ⚠ the pinned oracle *profile* does not format doc comments; Rider does, and Skala now does too | open | 21 keys honoured and observable, 11 refused, none Tier A until the fixtures are regenerated |
 | 0007 | an argument list around a broken chain does not chop | half closed | 8 hunks, 39 lines, 6 files |
 | 0008 | alignment keys | half closed | statement conditions Tier A; `for` header 5 hunks, 13 lines, 3 files; three keys at 0 lines |
-| 0009 | `space_within_spread_pattern` is inert | **resolved at M3.1** | Tier D confirmed; 0 spread-spacing divergences |
+| 0009 | `space_within_spread_pattern` is inert | **superseded by SK-DIV-0310** | the oracle still preserves the gap; Skala now governs it on purpose |
 | 0010 | breaks of last resort | open, deliberate | 5 lines, 4 files; 2 hunks by the narrow signature |
 | 0011 | a lambda body may leave the arrow's line | open | 12 hunks, 40 lines, 7 files — second largest |
 | 0012 | three small shapes | open | 1 line / 0 lines / 13 lines respectively |
@@ -1057,8 +1057,14 @@ argument. `skala_remove_spaces_on_blank_lines` remains Tier D and inert. The 58 
 two lines in one file, and both are a *range* expression (`line[TerminatorPrefix.Length..]`) whose
 divergence is SK-DIV-0008's indentation, not a spread element's spacing.
 
-- options: `skala_space_within_spread_pattern` (Tier D), `skala_space_within_slice_pattern` (Tier A)
-- ⚠ status: **resolved at M3.1**, re-verified
+⚠ **Superseded 2026-10-08 by SK-DIV-0310 (#513).** The measurement above stands — the oracle still
+returns a spread exactly as written at both values — and is now the reason Skala governs the gap rather
+than the reason it does not: a repository formatted by the oracle spells its spreads both ways (Skala's own
+source held 153 `[.. ` against 87 `[..x` and passed Lint), and the user asked for one spelling.
+`skala_space_within_spread_pattern` is `OfUnoracled`, not inert.
+
+- options: `skala_space_within_spread_pattern` (Tier D, `OfUnoracled` since SK-DIV-0310), `skala_space_within_slice_pattern` (Tier A)
+- ⚠ status: **resolved at M3.1**, re-verified; **superseded** by SK-DIV-0310
 
 ## SK-DIV-0010 — the oracle has break points of last resort that Skala does not
 
@@ -1205,8 +1211,28 @@ lines across 3 files to **2 hunks in 1 file** — neither of which is a `for` ru
 initializer's own `=` continuation lands on the align column where the oracle puts it one level
 further in, unchanged by that branch and owned by `PlanAroundEquals`.
 
-- options: `skala_keep_existing_embedded_block_arrangement` (Tier A), `skala_wrap_for_stmt_header_style` (Tier A, item 3, at M3.2), `resharper_csharp_align_multiline_for_stmt` (Tier D, and never the cause of item 3)
-- ⚠ status: **items 1 and 2 open**, item 3 **closed** at M3.2, all three measured
+⚠ **Item 1 re-measured 2026-10-08 (#450), and it is two facts and a third neither entry had.** With
+`Testing ask`, each shape written closed and spaced, at the export and at `space_after_cast = true`:
+
+| written | export (`space_after_cast = false`) | `space_after_cast = true` | Skala before |
+|---|---|---|---|
+| `(Kind[])[a, b]`, `(Kind[]) [a, b]` — stays on one line | `(Kind[])[a, b]` | `(Kind[]) [a, b]` | `(Kind[])[a, b]` at both — **the key was ignored** |
+| `(int)(1 + 2)`, `(int) (1 + 2)` | `(int)(1 + 2)` | `(int) (1 + 2)` | `(int)(1 + 2)` at both — **the key was ignored** |
+| the collection chopped (`(Kind[]) [` / elements / `];`), written closed or spaced | `(Kind[]) [` | `(Kind[]) [` | `(Kind[])[` |
+| the collection fits on a continuation line | `(Kind[])` / `[a, b, c];` — a break **after the cast** | the same | `(Kind[])[` / elements / `];` |
+
+The flat rows are fixed: `SpaceRules.BeforeOpenBracket` reads `space_after_cast` for a collection behind a
+cast's `)`, and `BeforeOpenParen` reads it for a parenthesized operand, where both had answered "a `)` is a
+call site" and closed the gap at every value. Pinned by `CastAndSpreadGapIssue450513Tests`. The remark in
+`BeforeOpenBracket` that `(IrBindingKind[]) [a, b]` comes back spaced was true only of a collection that
+breaks, and is corrected. ⚠ **The two broken rows stay open**: the space depends on the collection group's
+resolved mode, and the break after the cast is a break point Skala does not have. `DocKind.IfBroken`
+exists in the IR and no C# construct uses it; the gap before `[` is written before the collection's
+group opens, so an `IfBroken` there would ask the writer about a group it has not reached. That is a
+layout change, not a spacing one.
+
+- options: `skala_keep_existing_embedded_block_arrangement` (Tier A), `skala_wrap_for_stmt_header_style` (Tier A, item 3, at M3.2), `resharper_csharp_align_multiline_for_stmt` (Tier D, and never the cause of item 3), `skala_space_after_cast` (item 1's flat half)
+- ⚠ status: **item 1 half fixed** (flat; the broken half and the break after the cast open, #450), **item 2 open**, item 3 **closed** at M3.2, all measured
 
 ## SK-DIV-0013 — three configured rewrites the oracle would not perform
 
@@ -4636,9 +4662,26 @@ argument list at all — the `(` belongs to `MakeRefExpressionSyntax` / `RefType
 `return (value)` and `await (task)`; three keywords whose parenthesis is a call site in everything but
 the parse tree reach it by accident.
 
-- options: `skala_space_between_keyword_and_expression` (wrongly), `skala_space_before_method_call_parentheses` (correctly)
-- ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/varargs-and-typed-references.cs`,
-  whose fixture is the oracle's answer.
+⚠ **Resolved 2026-10-08 (#466), and the `__arglist` row was right for the wrong reason.** Asked with every
+gap written closed, spaced and as a run, at the export and with `space_before_method_call_parentheses`,
+`space_between_keyword_and_expression`, `space_within_parentheses` and
+`space_between_method_call_parameter_list_parentheses` flipped:
+
+| written | oracle, every configuration |
+|---|---|
+| `__makeref(o)`, `__makeref (o)`, `__reftype (r)`, `__refvalue (r, int)` | as written |
+| `__makeref(  o  )`, `__reftype(  r)`, `__makeref( o)`, `__refvalue( r, int )` | a run collapses to one; otherwise as written |
+| `__arglist (1, 2)`, `__arglist( 1, 2 )`, `__arglist( )` | as written — and **not** moved by `space_before_method_call_parentheses`, which Skala answered it from |
+| `__refvalue(r,int)` | `__refvalue(r, int)` — the comma is an ordinary comma's |
+
+So no key governs the gap before these four keywords' `(` or the two inside it: they are
+`SpaceRules.Ungoverned`, and the author's choice survives. `__arglist` agreed only because the export's
+method-call key happened to say what the source said. Pinned by `UndocumentedKeywordIssue466Tests` and
+the existing fixture, which Skala now reproduces.
+
+- options: none — every candidate flipped and none moved the gaps.
+- ⚠ status: **resolved** (#466). Pinned by `constructs/syntax/varargs-and-typed-references.cs` and
+  `UndocumentedKeywordIssue466Tests`.
 - ⚠ **Low severity, deliberately recorded anyway.** Nobody writes `__makeref` on purpose. But this is
   precisely the class of defect the audit exists to find: it survived ten milestones because the
   construct was absent from the corpus, and after `jb` is uninstalled no `.expected.cs` for it could
@@ -5598,8 +5641,12 @@ Not fixed, measured on the way:
   break;` — is written by the oracle with the block at the **label's** column (`case 1: {` when it is
   first) and its contents one level in, and the `break;` one level in after it. Skala puts the block one
   level in like any other statement, with its contents two. Pre-existing for broken input and rare.
-- `case 1: ; break;` — the oracle keeps the space between `:` and the empty statement's `;`; Skala writes
-  `case 1:;`. A spacing gap, not a break.
+- ⚠ **Resolved 2026-10-08 (#479).** `case 1: ; break;` — the gap is `space_after_colon_in_case`'s, not the
+  semicolon's: `case 1:;`, `case 1: ;` and `case 1:   ;` all come back `case 1: ;` at the export (and
+  `default:`, a `when` clause and a comment before the `;` the same), `space_after_colon_in_case = false`
+  gives `case 1:;`, and `space_before_semicolon = true` does not move it. Pinned by
+  `CommentAndColonGapIssue479491493Tests`. ⚠ Still open beside it: `case 6: { } break;` puts the block on
+  the label's line in the oracle and on its own line in Skala — the first bullet above.
 - `if (b) M(); else switch (o) { … }` — the oracle writes `if (b) M();` / `else` / `switch (o) {`; Skala
   now pushes the `switch` down but keeps `M(); else` on one line, and after an embedded switch's `}` the
   oracle puts `else` on its own line where Skala writes `} else M();`. The `else` after a non-block
@@ -6591,6 +6638,15 @@ is refuted by a row already in this file and the rule is still to be found. The 
 oracle's and appears only when the collection expression is multi-line (`([1, 2])` stays closed); it
 is the same `IfBroken`-shaped gap as the `) [` cast in the residue list above. Recorded, not fixed.
 
+⚠ **Re-measured 2026-10-08 (#485).** At the export and at `space_within_parentheses = true`:
+`([` / elements / `])`, `( [` / … and `(` / `[` / … all come back `( [` — the oracle **joins** the
+author's break after the `(` — with the elements one level in and `]` at +0; at `space_within_parentheses
+= true` the same with `] )`, one space, not two. `(([` gives `(( [` (only the innermost), `M(([` gives
+`M(` / `( [`, and `([1, 2])` stays closed. `(new[] {` / … / `})` is joined onto one line by both engines,
+so the brace does not share the shape. The gap is "the within key, or one space when the collection
+breaks", which is SK-DIV-0012 item 1's `IfBroken` again; and the space alone would gain nothing,
+because every such line also diverges on this entry's levels. Not fixed.
+
 - options: none.
 - ⚠ status: **open**.
 
@@ -7021,9 +7077,9 @@ and spaced, at the export's defaults, with 37 space keys flipped in two sets, an
 | one space | after `is`, `as`, `out`, `ref`, a modifier, a member's type, a named argument's or case label's colon, before an accessor and a collection expression's `[` | one space | one space | identical |
 | ⚠ the gap *before* the comment | `f =/*f*/2` at `space_around_assignment_op = false`, `x =>/*f*/x` at `space_around_lambda_arrow = false` | the operator's key, at either value of `skala_space_before_trailing_comment` | the comment key | identical |
 | | a comment that starts a line (`/*f*/M(1, 2);`) | what follows on a line of its own | identical | identical |
-| | `E( /*f*/)` at `space_between_method_declaration_parameter_list_parentheses = true` | `E(  /*f*/ )`, two spaces in front | one | **open** |
-| | `/** f */` inside an expression | `M(1 /** f */, 2)` | SK9099, the opener dropped (#415) | **open**, not in the run |
-| | `{f/*f*/}` in an interpolation | `{f /*f*/}` | verbatim | **open** |
+| | `E( /*f*/)` at `space_between_method_declaration_parameter_list_parentheses = true` | `E(  /*f*/ )`, two spaces in front | one | **fixed** (#493) — see below |
+| | `/** f */` inside an expression | `M(1 /** f */, 2)` | SK9099, the opener dropped (#415); then one space after it | **fixed** (#491) |
+| | `{f/*f*/}` in an interpolation | `{f /*f*/}` | verbatim | **open** — SK-DIV-0311 |
 
 `SpaceRules.AfterBlockComment` takes the token in front of the run of block comments, which must share
 its line, and answers from it and the next token: `OwnsTheGapBeforeIt` lists the first class and reads
@@ -7040,8 +7096,35 @@ where the oracle breaks the line (#420); a constructor initializer's colon and a
 braces reading the base-list and array-initializer keys, with or without a comment (#419); and #409's
 point before a closer joining an author's break after a comment (#421).
 
-- options: `skala_space_before_trailing_comment`, `skala_space_around_assignment_op`, `skala_space_around_lambda_arrow`, and every key the first class reads.
-- ⚠ status: **resolved** except the three rows marked open.
+⚠ **2026-10-08: two of the three open rows fixed, and three neighbours found and fixed with them.**
+Measured with `Testing ask` at the export, with `space_between_method_declaration_parameter_list_parentheses`
+and `space_between_method_call_parameter_list_parentheses` flipped together and apart, with
+`skala_space_before_trailing_comment = false`, and with `space_around_assignment_op` and
+`space_around_lambda_arrow` at `false`:
+
+| written | oracle | Skala before | now |
+|---|---|---|---|
+| `M(1 /** f */ , 2)`, `M(1 /** f */,2)`, `1 /** b */ ;`, `(1 /** c */ )` | the `/* */` twin's answer: `M(1 /** f */, 2)`, `1 /** b */;` | one space after the comment, **added into closed input** | identical (#491) |
+| `M(1, /** f */2)`, `f = /** a */2`, `x =>/** a */x` | the author's bit, as `/* */` | one space | identical (#491) |
+| `void E( /*f*/)`, `I( /*f*/ )`, `H(  /*f*/  )` with the list key on | `E(  /*f*/ )` — the key's space plus the author's | one | identical (#493) |
+| `void F(/*f*/)` with the list key on | `F( /*f*/ )` on the first run, ⚠ `F(  /*f*/ )` on the second | `F( /*f*/ )` | `F(  /*f*/ )` — the oracle's **fixed point**, not its first answer |
+| the same with `skala_space_before_trailing_comment = false` | `E( /*f*/ )` — the list key's one space alone | `E(/*f*/ )` | identical |
+| the same as calls, `new C( /*f*/)` and `: this( /*f*/)` | the same answers from the call-site key | one | identical |
+| ⚠ `void K( /*f*/int a)`, `( /*f*/Foo a)`, `( /*f*/ref int a)`, `( /*f*/[A] int a)`, `( /*f*/this int a)` | one space after the comment, at every value tried | kept closed (the author's bit after `(`) | identical |
+| `(int a, /*f*/int b)`, a lambda's `( /*f*/int x)` | the author's bit | identical | identical |
+| ⚠ `T( /*f*/)` at `space_before_method_call_parentheses = true`; `D( /*f*/)` at `space_before_method_parentheses = true` | `T ( /*f*/)`, `D ( /*f*/)` — the non-empty key, and the empty twins move neither | the empty key | identical |
+
+⚠ The `F(/*f*/)` row is the one place the oracle is not idempotent in this register's measurements:
+`F(/*f*/)` → `F( /*f*/ )` → `F(  /*f*/ )`. Skala cannot copy a first answer that its own second pass
+would contradict, so it writes two spaces whenever both keys ask, which agrees with every input that
+already held a space and with the oracle on its own output. The first-parameter row is the third class
+being narrower than "after `(`": a declaration's parameter list is not an operand list.
+`SpaceRules.OpensAnEmptyPairWithItsSpaceOn` and the first-parameter arm of `AfterBlockComment` carry
+them; the `/** */` rows are `CSharpDocumentBuilder.GapSpace` treating `PieceKind.BlockDocComment` as the
+block comment it is. Pinned by `CommentAndColonGapIssue479491493Tests`.
+
+- options: `skala_space_before_trailing_comment`, `skala_space_around_assignment_op`, `skala_space_around_lambda_arrow`, `skala_space_between_method_declaration_parameter_list_parentheses`, `skala_space_between_method_call_parameter_list_parentheses`, and every key the first class reads.
+- ⚠ status: **resolved** except the interpolation row, which is SK-DIV-0311.
 ## SK-DIV-0171 — a member the formatter joins took the multi-line member's blank lines
 
 ⚠ **Issue #414**, found working #405. `CSharpDocumentBuilder.IsSingleLine` decided
@@ -7934,3 +8017,94 @@ earlier. Opening the arrow's group at the arm's start would change what it measu
 
 - options: none.
 - ⚠ status: **open**, measured.
+
+## SK-DIV-0310 — a collection expression's spread is spelled one way, which the oracle never does
+
+⚠ **A deliberate divergence, asked for in #513.** SK-DIV-0009 measured that the oracle returns
+`[1, .. xs]` and `[1, ..xs]` exactly as written at both values of `space_within_spread_pattern`, and only
+collapses a run. That left Skala mirroring it — the gap was `SpaceKind.Preserve` — so one repository could
+spell its spreads both ways and pass its own format check: Skala's own production source held 153 `[.. `
+against 87 `[..x` on the day the issue was filed. Skala now writes the configured spelling.
+
+| | before | now |
+|---|---|---|
+| `skala_space_within_spread_pattern` | `OfInert`, Tier D, default `true`, inert reason SK-DIV-0009 | `OfUnoracled`, Tier D, **default `false`** |
+| `[1, .. xs]`, `[1, ..xs]`, `[1, ..   xs]` | as written, a run collapsed | `[1, ..xs]` at `false`, `[1, .. xs]` at `true` |
+| the repository's own `.editorconfig` | `true` | **`false`** — `[..xs]`, what the issue asked for |
+| a break behind the `..` | kept at the defaults; joined at `keep_user_linebreaks = false` with the indentation's bit | kept at the defaults; joined at `false` with **the key's** answer |
+| `SK1133`'s fix | always `[..xs]` | the configured spelling, read from the tree's `.editorconfig` |
+
+**Settled points from the issue:**
+
+1. **Default.** The registry default flips to `false`; Skala's own configuration says `false` too. The
+   oracle's input is `editor_config_template` (the Rider export, still `true`), not the root
+   `.editorconfig`, since `OracleEditorConfig` separated the two — so no fixture digest moved and nothing
+   was regenerated.
+2. **Scope.** Only `SpreadElementSyntax`. A slice pattern (`[1, ..var r]`) is
+   `skala_space_within_slice_pattern`'s and stays the oracle's rule (Tier A); a range (`a[1..3]`, and the
+   prefix range Roslyn parses `new[] { ..xs }` as) stays the author's, as the oracle leaves it. Pinned by
+   `CastAndSpreadGapIssue450513Tests`.
+3. **Kept breaks.** The gap is a line break, not a space, and the key does not join it: `..` / `xs` at the
+   defaults comes back as written. At `keep_user_linebreaks = false` the oracle joins it and Skala now writes
+   the key's spelling there rather than the next line's indentation bit (`JoinAtKeepFalseIssue439Tests`).
+4. **Fixes.** `SK1133` writes `[.. ` or `[..` from `skala_space_within_spread_pattern`; the redundant-spread
+   rule (`SK1072`) only removes a spread and writes no gap. `CollectionExpressionSpreadTests` pins both values.
+5. **Tier.** Tier D under `OfUnoracled`, the mark's documented sense — asked, and answered differently.
+   `OptionObservabilityTests` requires the key to be observable (the probe carries a spread) and keeps it
+   out of Tier A; no oracle fixture can ever pin it, by construction.
+6. **Lint.** Skala's own source reflows to `[..x` everywhere, settled in the same change.
+
+⚠ **The comparison knows the gap is Skala's.** An oracle fixture records whichever way the corpus author
+typed the spread, so compared raw, every file written the other way is a divergence — measured on the
+first conformance run with the key flipped: `corpus/real/` went from 59 608 / 59 844 lines and 333 / 380
+files to 59 569 lines and 314 files, almost all of it Vixen's `[.. ` (the
+`inter-token spacing` class went from 1 line to 40). That would ratchet which way Vixen's authors typed,
+not whether Skala reproduces the oracle, and CLAUDE.md is explicit that Vixen is not a specification.
+`SkalaGovernedGaps.Normalise` takes that one gap's horizontal space out of **both** sides before
+`Fidelity.Compare` — symmetric, value-agnostic, parsed rather than matched, a line-break gap left alone —
+and `SkalaGovernedGapsTests` asserts it touches nothing else and that the ratchet still sees every other
+difference. The degraded corpus's scramble keeps not mutating the gap (`SpaceRules.OracleKeepsTheAuthorsGap`,
+the oracle's predicate, beside `Preserves`, Skala's), because its fixtures are the oracle's answer for the
+undegraded file; that is why its committed population did not need regenerating.
+
+With the normalisation in place `corpus/real/` reads 59 608 / 59 844 lines and 333 / 380 files — exactly the
+number before the change — and `constructs/` rose (SK-DIV-0095's fixture). ⚠ **What normalising cannot
+hide, and should not:** a spelling one column narrower can change a layout. `pathological/` went from
+589 / 629 lines to 583 / 626 (93.64 % → 93.13 %, files unchanged at 59 / 71, still above the 0.9189
+ratchet) because `nested-collection-in-generated-switch.cs` and `…-while.cs` each hold a collection the
+oracle chopped at its author's `.. rest`, and at `..rest` it fits. Asked directly with the two inputs
+rewritten to `..rest` / `..Source`, the oracle writes Skala's new layout byte for byte (the switch file's
+pre-existing record-header difference aside), so the residue is the oracle answering a different input,
+not Skala answering this one wrongly.
+
+- options: `skala_space_within_spread_pattern` (Tier D, `OfUnoracled`), `skala_space_within_slice_pattern` (Tier A, unchanged)
+- ⚠ status: **deliberate**, supersedes SK-DIV-0009's "inert".
+
+## SK-DIV-0311 — the oracle formats inside an interpolation hole, and Skala writes the whole string verbatim
+
+⚠ **Found working #492**, which reported one symptom of it: `$"{f/*f*/}"` comes back `$"{f /*f*/}"` from
+the oracle and unchanged from Skala. The cause is wider than the comment: `NodeLayout` maps
+`InterpolatedStringExpression` to `Verbatim`, so nothing inside a hole is formatted at all. Measured
+2026-10-08 with `Testing ask`, at the export, at `skala_space_before_trailing_comment = false`, at
+`space_around_assignment_op = false`, and at `space_within_parentheses` and
+`space_between_method_call_parameter_list_parentheses = true`:
+
+| written | oracle | Skala |
+|---|---|---|
+| `$"{ f }"`, `$"{f+1}"`, `$"{ f , 5}"`, `$"{f :N2}"` | `$"{f}"`, `$"{f + 1}"`, `$"{f,5}"`, `$"{f:N2}"` — at every configuration | verbatim |
+| `$"{f/*f*/}"`, `$"{f  /*f*/}"`, `$@"{f/*f*/}"`, `$"""{f/*f*/}"""`, `$$"""{{f/*f*/}}"""` | `{f /*f*/}` — the trailing-comment key's space; `{f/*f*/}` at its `false` | verbatim |
+| `$"{/*f*/f}"`, `$"{ /*f*/ f}"` | `{ /*f*/f}` — the comment key in front, nothing behind | verbatim |
+| `$"{f /*f*/ }"`, `$"{f/*f*/ }"` | `/*f*/ }` kept — the author's bit before the hole's `}` | verbatim |
+| `$"{f/*f*/:N2}"`, `$"{f/*f*/,5}"`, `$"{f /*f*/, 5}"`, `$"{f,/*f*/5}"` | `{f /*f*/:N2}`, `{f /*f*/,5}`, `{f /*f*/,5}`, `{f, /*f*/5}` | verbatim |
+| `$"{M(f/*f*/)}"`, `$"{(f/*f*/)}"` | the call's and the parenthesis's own keys inside the hole: `{M( f/*f*/ )}` at the within keys' `true` | verbatim |
+
+So the hole is ordinary code to the oracle: its `{` and `}` take no space, the alignment comma and the
+format colon take none on either side, and everything between is formatted by the usual rules, comments
+included. **Not fixed.** Making the hole formattable means taking `InterpolatedStringExpression` off the
+verbatim path, emitting the string's text tokens byte for byte between formatted holes, deciding what the
+break plan may do inside a hole (a newline is legal in one since C# 11, and the oracle's answer to a hole
+that runs past the margin was not asked), and SK-DIV-0003's interpolated raw literal sits on the same
+path. That is a construct, not a gap, and nothing above measured its wrapping.
+
+- options: `skala_space_before_trailing_comment` (the comment rows); none of the others moved the hole's own gaps.
+- ⚠ status: **open**, measured. #492.

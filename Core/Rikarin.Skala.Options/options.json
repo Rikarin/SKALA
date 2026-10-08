@@ -7125,16 +7125,15 @@
       "aliases": [],
       "language": "csharp",
       "type": "bool",
-      "default": "true",
+      "default": "false",
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "ListPattern",
-      "summary": "Inert: the oracle returns a collection expression's spread exactly as written at both values (SK-DIV-0009).",
+      "summary": "The gap after a collection expression's spread `..`: `[..xs]` at `false`, `[.. xs]` at `true`. ⚠ Governed by Skala on purpose: the oracle returns the spread exactly as written at both values (SK-DIV-0009), so a codebase formatted by it spells its spreads both ways. Registered `OfUnoracled` — honoured, observable, and a deliberate divergence rather than the oracle's rule. A slice pattern's gap is `skala_space_within_slice_pattern`'s and a range's stays as written. SK-DIV-0310, #513.",
       "since": "0.1",
       "oracle": null,
       "templateLine": 1085,
-      "expands": [],
-      "inert": "Inert at both values — SK-DIV-0009."
+      "expands": []
     },
     {
       "key": "skala_use_indent_from_vs",

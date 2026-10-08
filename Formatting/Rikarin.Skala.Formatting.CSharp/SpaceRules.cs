@@ -51,6 +51,25 @@ public static class SpaceRules {
         !MustSeparate(prev, next) && Ungoverned(prev, next);
 
     /// <summary>
+    ///     True when the <em>oracle</em> writes back the author's bit in the gap: every gap
+    ///     <see cref="Preserves" /> answers, and the one Skala governs where the oracle does not — the gap
+    ///     behind a collection expression's spread <c>..</c> (#513, SK-DIV-0310).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two predicates because two questions. "Does Skala keep the bit" is
+    ///     <see cref="Preserves" />, and it is what the fuzzer's bit-comes-back property asks. "Does the
+    ///     oracle" is this, and it is what anything building an input whose oracle answer must stay
+    ///     known has to avoid mutating — the degraded corpus's scramble, whose fixtures are the oracle's
+    ///     answer for the undegraded file — and what the oracle's joining of an author's break at
+    ///     <c>keep_user_linebreaks = false</c> follows.
+    /// </remarks>
+    public static bool OracleKeepsTheAuthorsGap(SyntaxToken prev, SyntaxToken next) =>
+        Preserves(prev, next)
+        || !MustSeparate(prev, next)
+        && prev.IsKind(SyntaxKind.DotDotToken)
+        && prev.Parent is SpreadElementSyntax;
+
+    /// <summary>
     ///     The gap between a block comment and the token after it, where <paramref name="prev" /> is the
     ///     token in front of the comment — on the same line — and <paramref name="next" /> the one behind.
     /// </summary>
@@ -110,6 +129,18 @@ public static class SpaceRules {
             return SpaceKind.Required;
         }
 
+        // ⚠ A declaration's first parameter is not an operand after a `(` (#493): `K( /*f*/int a)`,
+        // `( /*f*/Foo a)`, `( /*f*/ref int a)`, `( /*f*/[A] int a)` and `( /*f*/this int a)` all come back
+        // with one space after the comment, at every value of the trailing-comment and parameter-list
+        // keys, for a method, a constructor and a local function alike. A lambda's `( /*f*/int x)` and a
+        // later parameter's `, /*f*/int b` keep the author's gap, and stay in the class below.
+        if (prev.IsKind(SyntaxKind.OpenParenToken)
+            && prev.Parent is ParameterListSyntax {
+                Parameters.Count: > 0, Parent: not ParenthesizedLambdaExpressionSyntax
+            }) {
+            return SpaceKind.Required;
+        }
+
         return KeepsTheAuthorsGapAfterAComment(prev, next) ? SpaceKind.Preserve : SpaceKind.Required;
     }
 
@@ -136,6 +167,34 @@ public static class SpaceRules {
             ? o.SpaceAroundLambdaArrow
             : null;
     }
+
+    /// <summary>
+    ///     True when <paramref name="prev" /> opens an empty parameter or argument list — one holding
+    ///     nothing but a comment — whose key for a non-empty pair asks for a space inside it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The gap between such a <c>(</c> and the comment is not
+    ///     <c>skala_space_before_trailing_comment</c>'s alone (#493). Measured on <c>void E( /*f*/) { }</c>,
+    ///     <c>F(/*f*/)</c>, <c>H(  /*f*/  )</c> and the same shapes as calls: with
+    ///     <c>space_between_method_declaration_parameter_list_parentheses</c> (or its call-site twin)
+    ///     <c>true</c>, the oracle writes the key's space whatever
+    ///     <c>skala_space_before_trailing_comment</c> says, and at that key's <c>true</c> it adds the
+    ///     author's own bit on top — <c>E( /*f*/)</c> comes back <c>E(  /*f*/ )</c> and <c>F(/*f*/)</c>
+    ///     <c>F( /*f*/ )</c> — which is not the oracle's fixed point, because its second run turns that
+    ///     into <c>F(  /*f*/ )</c>. Skala writes the fixed point, two spaces, whatever the author wrote,
+    ///     and stays idempotent. At the key's <c>false</c> the trailing-comment key decides alone, as it
+    ///     does for every other token. ⚠ Only an <em>empty</em> list: <c>K( /*f*/int a)</c> at the same
+    ///     values gets one space, the trailing-comment key's. Measured on a method, a constructor, a local
+    ///     function, a call, an object creation and a <c>: this( /*f*/)</c> initializer; a lambda's
+    ///     parameter list was not asked and is left out.
+    /// </remarks>
+    public static bool OpensAnEmptyPairWithItsSpaceOn(SyntaxToken prev, in PhaseOneOptions o) =>
+        prev.IsKind(SyntaxKind.OpenParenToken)
+        && prev.Parent
+        is ParameterListSyntax { Parameters.Count: 0, Parent: not ParenthesizedLambdaExpressionSyntax }
+            or ArgumentListSyntax { Arguments.Count: 0 }
+        && !IsUndocumentedKeywordParenthesis(prev)
+        && WithinParentheses(prev.Parent, false, o);
 
     /// <summary>
     ///     The tokens whose left gap is theirs: the first class in <see cref="AfterBlockComment" />.
@@ -281,7 +340,9 @@ public static class SpaceRules {
     /// </remarks>
     static bool Ungoverned(SyntaxToken prev, SyntaxToken next) {
         if (prev.IsKind(SyntaxKind.DotDotToken)) {
-            return prev.Parent is SpreadElementSyntax or RangeExpressionSyntax { RightOperand: not null };
+            // ⚠ A collection expression's spread is not here, though the oracle preserves it too: Skala
+            // governs it on purpose, out of `skala_space_within_spread_pattern` (#513, SK-DIV-0310).
+            return prev.Parent is RangeExpressionSyntax { RightOperand: not null };
         }
 
         if (next.IsKind(SyntaxKind.DotDotToken)) {
@@ -296,8 +357,44 @@ public static class SpaceRules {
             return next.Parent is BaseExpressionColonSyntax { Parent: SubpatternSyntax } or LabeledStatementSyntax;
         }
 
+        // `__makeref`, `__reftype`, `__refvalue` and `__arglist` (#466): the gap in front of their `(`
+        // and both gaps just inside it come back as written, a run collapses to one, and none of
+        // the parenthesis keys moves them.
+        // ⚠ Not the gap behind the `)`, which belongs to whatever follows: `__makeref(o);`.
+        if (IsUndocumentedKeywordParenthesis(next)
+            || prev.IsKind(SyntaxKind.OpenParenToken)
+            && IsUndocumentedKeywordParenthesis(prev)) {
+            return true;
+        }
+
         return next.IsKind(SyntaxKind.OpenParenToken) && FollowsItsPatternType(next);
     }
+
+    /// <summary>
+    ///     True for either parenthesis of <c>__makeref(…)</c>, <c>__reftype(…)</c>, <c>__refvalue(…, T)</c>
+    ///     and <c>__arglist(…)</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured (#466, SK-DIV-0095), every gap written closed, spaced and as a run, at the export
+    ///     and again with <c>space_before_method_call_parentheses</c>,
+    ///     <c>space_between_keyword_and_expression</c>, <c>space_within_parentheses</c> and
+    ///     <c>space_between_method_call_parameter_list_parentheses</c> flipped: <c>__makeref(o)</c> and
+    ///     <c>__makeref (o)</c> both come back as written, <c>__makeref(  o  )</c> comes back
+    ///     <c>__makeref( o )</c>, and <c>__arglist( )</c> keeps its space. Skala used to answer the first
+    ///     three's <c>(</c> from the keyword-and-expression key, whose export value put a space into
+    ///     every one. ⚠ <c>__arglist(…)</c> is an invocation of an <c>ArgListExpression</c> to Roslyn,
+    ///     so its parenthesis reached the method-call keys — which do not move it either. The comma in
+    ///     <c>__refvalue(r, int)</c> is an ordinary comma's and stays with the rule.
+    /// </remarks>
+    static bool IsUndocumentedKeywordParenthesis(SyntaxToken token) =>
+        token.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.CloseParenToken
+        && token.Parent
+        is MakeRefExpressionSyntax
+            or RefTypeExpressionSyntax
+            or RefValueExpressionSyntax
+            or ArgumentListSyntax {
+                Parent: InvocationExpressionSyntax { Expression.RawKind: (int)SyntaxKind.ArgListExpression }
+            };
 
     /// <summary>
     ///     True for the <c>(</c> of a positional clause whose recursive pattern names a type, which is
@@ -381,6 +478,17 @@ public static class SpaceRules {
             return true;
         }
 
+        // ⚠ Nor is a case label's (#479): it is the colon's. `case 1:;`, `case 1: ;` and `case 1:   ;`
+        // all come back `case 1: ;` at the export, and `space_after_colon_in_case = false` gives
+        // `case 1:;` while `space_before_semicolon = true` leaves it alone. A `when` clause and
+        // `default:` answer the same way.
+        if (right == SyntaxKind.SemicolonToken
+            && left == SyntaxKind.ColonToken
+            && prev.Parent is SwitchLabelSyntax
+            && next.Parent is EmptyStatementSyntax) {
+            return o.SpaceAfterColonInCase;
+        }
+
         if (right == SyntaxKind.SemicolonToken) {
             return next.Parent is ForStatementSyntax ? o.SpaceBeforeSemicolonInFor : o.SpaceBeforeSemicolon;
         }
@@ -418,14 +526,15 @@ public static class SpaceRules {
         }
 
         // ── Spread and range ─────────────────────────────────────────────────────────────────
-        // `a is [1, .. var rest]` — space_within_slice_pattern = true. A collection expression's
-        // spread never reaches here: `Ungoverned` answered it before `Required` was called.
+        // `a is [1, .. var rest]` — space_within_slice_pattern = true; `[1, ..xs]` —
+        // skala_space_within_spread_pattern = false. A range never reaches here: `Ungoverned` answered it
+        // before `Required` was called.
         if (left == SyntaxKind.DotDotToken) {
-            return SpreadSpacing(prev, o);
+            return SpreadSpacing(prev, true, o);
         }
 
         if (right == SyntaxKind.DotDotToken) {
-            return SpreadSpacing(next, o);
+            return SpreadSpacing(next, false, o);
         }
 
         // ── Member access ────────────────────────────────────────────────────────────────────
@@ -636,19 +745,26 @@ public static class SpaceRules {
             or SyntaxKind.WhereKeyword;
 
     /// <summary>
-    ///     The gap around a <c>..</c>. ⚠ A prefix range with no left operand — which is how Roslyn
-    ///     parses a spread inside an array initializer — is a spread, not a range, and gets the space.
-    /// </summary>
-    /// <summary>
-    ///     The gap beside a <c>..</c> that a rule really does govern: a slice pattern's.
+    ///     The gap beside a <c>..</c> that a rule governs: a slice pattern's, and the one behind a
+    ///     collection expression's spread.
     /// </summary>
     /// <remarks>
-    ///     ⚠ A collection expression's spread element used to be answered here too, out of
-    ///     <c>space_within_spread_pattern</c>. It is not governed at all — see <see cref="Ungoverned" />
-    ///     — and the key is inert at both values.
+    ///     ⚠ The two are told apart on purpose and answer different keys. A slice pattern's is the
+    ///     oracle's own rule — <c>a is [1, ..var r]</c> comes back <c>.. var r</c> at
+    ///     <c>space_within_slice_pattern = true</c>. A spread's is <em>Skala's</em> (#513, SK-DIV-0310):
+    ///     the oracle returns <c>[1, .. xs]</c> and <c>[1, ..xs]</c> exactly as written at both values of
+    ///     <c>space_within_spread_pattern</c> (SK-DIV-0009), so one repository spells its spreads both
+    ///     ways and passes its own format check. Governing it is a deliberate divergence, which is why
+    ///     the key is registered <c>OfUnoracled</c> rather than claimed as the oracle's. A range —
+    ///     <c>a[1..3]</c>, and the prefix range Roslyn parses a spread in an array initializer as — is a
+    ///     third gap, and stays the author's (<see cref="Ungoverned" />).
     /// </remarks>
-    static bool SpreadSpacing(SyntaxToken token, in PhaseOneOptions o) =>
-        token.Parent is SlicePatternSyntax && o.SpaceWithinSlicePattern;
+    static bool SpreadSpacing(SyntaxToken token, bool after, in PhaseOneOptions o) =>
+        token.Parent switch {
+            SlicePatternSyntax => o.SpaceWithinSlicePattern,
+            SpreadElementSyntax => after && o.SpaceWithinSpreadPattern,
+            _ => false
+        };
 
     /// <summary>Tokens that never take a space on their left.</summary>
     static bool ClingsLeft(SyntaxKind kind) =>
@@ -733,12 +849,24 @@ public static class SpaceRules {
                 return next.Parent is TupleTypeSyntax || o.SpaceBeforeNewParentheses;
         }
 
+        // ⚠ A cast's closing parenthesis before a parenthesized operand: `(int)(1 + 2)` comes back
+        // `(int) (1 + 2)` at `space_after_cast = true`, written either way. The general fallback below
+        // never saw the cast key, because a `(` is answered here.
+        if (prev.IsKind(SyntaxKind.CloseParenToken) && prev.Parent is CastExpressionSyntax) {
+            return o.SpaceAfterCast;
+        }
+
         if (prev.Text is "nameof") {
             return o.SpaceBeforeNameofParentheses;
         }
 
+        // ⚠ A pair holding nothing but a comment is not empty to the oracle, in front of it as much as
+        // inside it (SK-DIV-0174): at `space_before_method_call_parentheses = true` it writes `E ( /*f*/)`,
+        // and the empty twin leaves it alone; a declaration's `D( /*f*/)` reads
+        // `space_before_method_parentheses` the same way.
         var empty = next.Parent is BaseArgumentListSyntax { Arguments.Count: 0 }
-            or BaseParameterListSyntax { Parameters.Count: 0 };
+            or BaseParameterListSyntax { Parameters.Count: 0 }
+            && !HoldsAComment(next);
 
         switch (next.Parent) {
             case ParameterListSyntax { Parent: ParenthesizedLambdaExpressionSyntax }:
@@ -792,6 +920,14 @@ public static class SpaceRules {
         }
     }
 
+    /// <summary>True when a block comment stands between <paramref name="open" /> and the token after it.</summary>
+    static bool HoldsAComment(SyntaxToken open) =>
+        open.TrailingTrivia.Concat(open.GetNextToken().LeadingTrivia)
+            .Any(static trivia => trivia.Kind()
+                is SyntaxKind.MultiLineCommentTrivia
+                    or SyntaxKind.MultiLineDocumentationCommentTrivia
+            );
+
     /// <summary>
     ///     True when <paramref name="prev" /> would make the following <c>(</c> read as a call.
     /// </summary>
@@ -838,10 +974,17 @@ public static class SpaceRules {
                 BracketedArgumentListSyntax => o.SpaceBeforeArrayAccessBrackets,
                 ImplicitElementAccessSyntax => !ClingsRight(prev.Kind()),
                 BracketedParameterListSyntax => o.SpaceBeforeMethodParentheses,
-                // ⚠ A cast's closing parenthesis is not a call site, and this is the one place the
-                // difference shows: `(IrBindingKind[]) [a, b]` comes back from the oracle with the
-                // space, because the bracket is the cast's operand rather than an indexer on its
-                // result. `a[i]` and `M()[i]` still close up.
+                // ⚠ A cast's closing parenthesis is not a call site: the bracket is the cast's operand
+                // rather than an indexer on its result, and the cast's own key decides the gap while
+                // the collection stays on one line (#450) — `(Kind[])[a, b]` at the export and
+                // `(Kind[]) [a, b]` at `space_after_cast = true`, written closed or spaced. The remark
+                // that stood here, that `(IrBindingKind[]) [a, b]` comes back spaced, is true only of a
+                // collection that *breaks*, which takes the space at both values and which this
+                // function cannot see (SK-DIV-0012). `a[i]` and `M()[i]` still close up.
+                CollectionExpressionSyntax when prev is {
+                    RawKind: (int)SyntaxKind.CloseParenToken, Parent: CastExpressionSyntax
+                } =>
+                    o.SpaceAfterCast,
                 CollectionExpressionSyntax or ListPatternSyntax => !ClingsRight(prev.Kind()) && !IsCallSite(prev),
                 // ⚠ `space_before_open_square_brackets` is the generalized name for the two keys
                 // above it and is honoured by the resolver expanding it into them, so the fallback

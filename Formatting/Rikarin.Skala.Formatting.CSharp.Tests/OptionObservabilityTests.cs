@@ -152,9 +152,10 @@ public sealed class OptionObservabilityTests {
         // comment entire, including the column its opening `/*` is written at, which Skala re-indents
         // at both values. Honoured, observable, and not conformant at one of two values, which is
         // exactly what bars Tier A. The probe above carries the block comment it is observed on.
-        // SK-DIV-0100 adds required braces as a second intentional oracle divergence.
+        // SK-DIV-0100 adds required braces as a second intentional oracle divergence, and SK-DIV-0310 a
+        // collection expression's spread gap as a third (#513): the oracle keeps whatever was written.
         Assert.Equal(
-            ["csharp_prefer_braces", "skala_align_multiline_comments"],
+            ["csharp_prefer_braces", "skala_align_multiline_comments", "skala_space_within_spread_pattern"],
             Ids.ReadButUnoracled.Select(static id => OptionRegistry.Get(id).Key)
         );
     }
@@ -220,13 +221,16 @@ public sealed class OptionObservabilityTests {
                           * makes the comment qualify — see CSharpDocumentBuilder.StarredFlag.
                               */
                              int Second() => 2;
+
+                             // `skala_space_within_spread_pattern` moves this gap and nothing else does (#513).
+                             int[] Third(int[] xs) => [.. xs];
                          }
                          """;
 
     static HashSet<string> FormatProbeAtEveryValue(string key, out string[] values) {
         Assert.True(OptionRegistry.TryResolve(key, out var id), $"{key} is not in the registry.");
         var info = OptionRegistry.Get(id);
-        values = [.. OptionDomain.Probes(info)];
+        values = [..OptionDomain.Probes(info)];
         Assert.True(values.Length >= 2, $"{key}: fewer than two values to compare.");
 
         // ⚠ A real path under the corpus, because the .editorconfig chain is resolved from it and
@@ -279,7 +283,7 @@ public sealed class OptionObservabilityTests {
     static HashSet<string> FormatAtEveryValue(string key, out string[] files, out string[] values) {
         Assert.True(OptionRegistry.TryResolve(key, out var id), $"{key} is not in the registry.");
         var info = OptionRegistry.Get(id);
-        values = [.. OptionDomain.Probes(info)];
+        values = [..OptionDomain.Probes(info)];
         Assert.True(values.Length >= 2, $"{key}: fewer than two values to compare.");
 
         // ⚠ A key with no `oracle` glob is measured on the whole constructs set rather than skipped.
@@ -287,7 +291,7 @@ public sealed class OptionObservabilityTests {
         // fixture requirement exists to prevent.
         var corpus = info.Oracle is null ? Corpus.Files(Corpus.Constructs).ToList() : Resolve(info.Oracle);
         Assert.True(corpus.Count > 0, $"{key}: `oracle` is '{info.Oracle}' and no corpus file matches it.");
-        files = [.. corpus.Select(static file => file.RelativePath)];
+        files = [..corpus.Select(static file => file.RelativePath)];
 
         var distinct = new HashSet<string>(StringComparer.Ordinal);
         foreach (var file in corpus) {

@@ -84,6 +84,11 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
         bool TargetsDotNet10,
         ImmutableHashSet<string> Unproved);
 
+    static bool WritesASpaceAfterTheSpread(SyntaxNodeAnalysisContext context) =>
+        context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree)
+            .TryGetValue("skala_space_within_spread_pattern", out var value)
+        && string.Equals(value.Trim(), "true", System.StringComparison.OrdinalIgnoreCase);
+
     static void Analyze(SyntaxNodeAnalysisContext context, Framework framework) {
         var invocation = (InvocationExpressionSyntax)context.Node;
         if (invocation.ArgumentList.Arguments.Count != 0
@@ -146,9 +151,10 @@ public sealed class CollectionExpressionSpreadAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        // ⚠ No space after `..`: the formatter keeps a spread exactly as written (SK-DIV-0009), so what
-        // the fix writes is what stays.
-        var replacement = "[.." + operand + "]";
+        // ⚠ The configured spelling of the spread's gap (#513, SK-DIV-0310): the formatter governs it
+        // since then, so a fix that wrote the other one would leave `format --check` failing on the
+        // line it just fixed. `false` — `[..xs]` — is the registry's default and applies when unset.
+        var replacement = (WritesASpaceAfterTheSpread(context) ? "[.. " : "[..") + operand + "]";
 
         // ⚠ #425: the target is typed by the position, and an argument's position is chosen by overload
         // resolution — which a collection expression can steer elsewhere, because it converts to every
