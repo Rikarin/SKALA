@@ -8028,3 +8028,41 @@ only when the call itself overflows the receiver's line, which no group fact say
 
 - options: `skala_wrap_before_first_method_call`.
 - ⚠ status: **open**, measured.
+
+## SK-DIV-0332 — a lambda argument's arrow breaks where the chain in its body would have chopped
+
+Found beside #495 on 2026-10-08, and the same on master (`e75f5431`): when the chain that is a lambda's
+body fits whole on the line after the arrow, the oracle breaks the arrow rather than the chain.
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `var r = items.Where(x => source.Select(a, b, c).Any(predicateValue));` past the margin | `items.Where(x =>` / the chain whole, one level in / `);` | `items.Where(x => source.Select(a, b, c)` / `.Any(predicateValue)` / `);` |
+| the same followed by `.ToList()` | `x =>` / the chain whole two levels in / `)` / `.ToList();` | the inner chain broken |
+
+Where the chain does not fit after the arrow either — `Use(x => source.Select(…)` / `.Where(p)` — both
+engines keep the arrow and break the chain. So the lambda's arrow behaves as an `=` does in front of a
+chain when the tail fits (SK-DIV-0211's question), and Skala's arrow group does not ask it. Not wired.
+
+- options: `skala_wrap_chained_method_calls`, `place_single_method_argument_lambda_on_same_line`.
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0333 — a ternary whose condition is a chopped chain puts its branches a level too deep
+
+Found beside #457 on 2026-10-08, and the same on master (`e75f5431`):
+
+```csharp
+// the oracle
+var t = someParticularThingWithALongName.SelfLink()
+    .SelfLink()
+    .WhereSomething(x => x.IsEnabledAndReady)
+    ? otherFallbackValueName.SomeFallbackProperty
+    : third;
+
+// Skala: `?` and `:` at 16
+```
+
+The chain's dots and the branches share one level in the oracle — the opposite of a binary operator's
+left operand (#457), where the chain takes a level past the operator's. Not wired.
+
+- options: none.
+- ⚠ status: **open**, measured.
