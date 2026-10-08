@@ -892,30 +892,10 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
-    ///     The index in <paramref name="path" /> of the innermost group around the top of the stack that
-    ///     resolved <see cref="ResolvedMode.Broken" /> and <see cref="GroupFacts.Continues" />, looked for
-    ///     inside the innermost enclosing block only; −1 when there is none.
-    /// </summary>
-    /// <summary>
     ///     <see cref="InnermostBrokenConstruct" /> for a fill chain: the innermost broken group carrying
     ///     <see cref="GroupFacts.ContinuesIfItBreaks" />, inside the innermost enclosing block; −1 for none.
     /// </summary>
-    int InnermostBrokenFill((int Node, int Child)[] path) {
-        for (int a = 0, next = scopes.Count - 1; a < path.Length; a++) {
-            ref var slot = ref document.Nodes[path[a].Node];
-            if (slot.Kind == DocKind.Indent && scopes[next--].IsBlock) {
-                break;
-            }
-
-            if (slot.Kind == DocKind.Group
-                && fitter.ModeOf(slot.Arg1) == ResolvedMode.Broken
-                && document.FactsOf(slot.Arg1).ContinuesIfItBreaks) {
-                return a;
-            }
-        }
-
-        return -1;
-    }
+    int InnermostBrokenFill((int Node, int Child)[] path) => InnermostBroken(path, fill: true);
 
     /// <summary>
     ///     Whether the fill chain at <paramref name="pathIndex" /> takes one of its points once the scope at
@@ -957,16 +937,30 @@ public sealed class LayoutWriter {
         return answer;
     }
 
-    int InnermostBrokenConstruct((int Node, int Child)[] path) {
+    /// <summary>
+    ///     The index in <paramref name="path" /> of the innermost group around the top of the stack that
+    ///     resolved <see cref="ResolvedMode.Broken" /> and <see cref="GroupFacts.Continues" />, looked for
+    ///     inside the innermost enclosing block only; −1 when there is none.
+    /// </summary>
+    int InnermostBrokenConstruct((int Node, int Child)[] path) => InnermostBroken(path, fill: false);
+
+    /// <summary>
+    ///     The walk behind <see cref="InnermostBrokenConstruct" /> and <see cref="InnermostBrokenFill" />,
+    ///     which differ only in the fact the broken group must carry.
+    /// </summary>
+    int InnermostBroken((int Node, int Child)[] path, bool fill) {
         for (int a = 0, next = scopes.Count - 1; a < path.Length; a++) {
             ref var slot = ref document.Nodes[path[a].Node];
             if (slot.Kind == DocKind.Indent && scopes[next--].IsBlock) {
                 break;
             }
 
-            if (slot.Kind == DocKind.Group
-                && fitter.ModeOf(slot.Arg1) == ResolvedMode.Broken
-                && document.FactsOf(slot.Arg1).Continues) {
+            if (slot.Kind != DocKind.Group || fitter.ModeOf(slot.Arg1) != ResolvedMode.Broken) {
+                continue;
+            }
+
+            var facts = document.FactsOf(slot.Arg1);
+            if (fill ? facts.ContinuesIfItBreaks : facts.Continues) {
                 return a;
             }
         }
