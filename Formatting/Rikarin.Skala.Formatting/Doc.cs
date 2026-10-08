@@ -1083,6 +1083,13 @@ public sealed class Document {
 ///     ⚠ An <c>=</c> before a lambda with a bare name for a body: the width from the lambda's start through
 ///     its <c>=&gt;</c>. The <c>=</c> stays flat while that much fits after it on its line (#453).
 /// </param>
+/// <param name="OneOverType">
+///     ⚠ A measured local's lambda with a bare-name body, on its <c>=</c> and on its parameter list: the
+///     declaration type's width, which with <see cref="OneOverBody" /> decides the one line the other rules
+///     do not — one column past the margin, where the parameter list chops up to a head that the type and
+///     the body set (#572). See <c>EqualsFloor.ChopsOneOver</c>. Zero for any other group.
+/// </param>
+/// <param name="OneOverBody">The lambda's body width. See <see cref="OneOverType" />.</param>
 /// <param name="LambdaParameters">
 ///     ⚠ The arrow of a sole lambda argument whose body is a member-access fill: the width of the lambda's
 ///     parameter text — <c>x</c>, <c>(x)</c>, <c>(A x, B y)</c> — or zero for any other group (#557). Past
@@ -1243,7 +1250,9 @@ public readonly record struct GroupFacts(
     int LambdaParameters = 0,
     int LambdaHead = 0,
     bool LambdaIsSimple = false,
-    LambdaLocal LambdaLocal = LambdaLocal.None);
+    LambdaLocal LambdaLocal = LambdaLocal.None,
+    int OneOverType = 0,
+    int OneOverBody = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

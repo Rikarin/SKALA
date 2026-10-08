@@ -655,7 +655,15 @@ public sealed class BreakPlan {
                 if (parameters.Parent is ParenthesizedLambdaExpressionSyntax {
                         ExpressionBody: not null
                     } parenthesized) {
-                    ReviseFacts(node, facts => facts with { ThroughWidth = 1 + parenthesized.ArrowToken.Span.Length });
+                    var (type, body) = OneOverOf(parenthesized);
+                    ReviseFacts(
+                        node,
+                        facts => facts with {
+                            ThroughWidth = 1 + parenthesized.ArrowToken.Span.Length,
+                            OneOverType = type,
+                            OneOverBody = body
+                        }
+                    );
                 }
 
                 return;
@@ -4974,6 +4982,7 @@ public sealed class BreakPlan {
                     CalleeWidth: callee,
                     YieldsThroughArrow: ArrowYieldWidthOf(value),
                     LambdaLocal: ArrowYieldWidthOf(value) > 0 ? LambdaLocalOf(node) : LambdaLocal.None,
+                    OneOverType: value is ParenthesizedLambdaExpressionSyntax oneOver ? OneOverOf(oneOver).Type : 0,
                     PatternHead: PatternHeadOf(node, equals, value),
                     PatternWidth: PatternHeadOf(node, equals, value) > 0
                         ? ((IsPatternExpressionSyntax)value).Pattern.Span.Length
@@ -5328,6 +5337,18 @@ public sealed class BreakPlan {
 
         return local;
     }
+
+    /// <summary>
+    ///     For a parenthesised lambda with a bare-name body that is a measured local's value: the declaration
+    ///     type's width and the body's, for the one-column-over rule (#572); zeros otherwise.
+    /// </summary>
+    static (int Type, int Body) OneOverOf(ParenthesizedLambdaExpressionSyntax lambda) =>
+        lambda is { ExpressionBody: IdentifierNameSyntax body, Parent: EqualsValueClauseSyntax equals }
+        && ArrowYieldWidthOf(lambda) > 0
+        && LambdaLocalOf(equals) != LambdaLocal.None
+        && equals.Parent?.Parent is VariableDeclarationSyntax declaration
+            ? (declaration.Type.Span.Length, body.Span.Length)
+            : (0, 0);
 
     static int ArrowYieldWidthOf(ExpressionSyntax value) =>
         value is LambdaExpressionSyntax { ExpressionBody: IdentifierNameSyntax } lambda

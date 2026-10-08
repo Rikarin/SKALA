@@ -10504,3 +10504,37 @@ test plans no point and the designation's list keeps the author's break.
 
 - options: `skala_keep_user_linebreaks` (the exported `true`).
 - ⚠ status: **fixed**, pinned by `constructs/breaks/variable-designation.cs` (passing again).
+
+## SK-DIV-0374 — a local's lambda with a bare-name body, one column past the margin
+
+⚠ **#572, the cells SK-DIV-0372 left out.** On a line that ends at exactly 121, the oracle chops the
+parameter list (`name = (` / parameters / `) => body;`) where #558's rules give the arrow or the `=`.
+
+Measured with `Testing ask` on `Func<T…> name = (P… p0) => body;`, 10 320 cells:
+- type widths 8 to 46 (two apart);
+- bodies of 1 to 14;
+- heads of 16 to 79, one column at a time;
+- line ends 121, 122 and 123.
+
+What the grid shows:
+
+- **Only at 121.** No cell at 122 or 123 chops.
+- **Bodies of 1 to 7** chop the parameters from the narrowest head up to a limit. The limit falls two to
+  three columns per column of body and rises about one and a quarter per column of type, until it stops
+  at a type of 32: `69, 66, 63, 60, 58, 55, 52` for bodies of 1 to 7.
+- **A body of 8** chops only at a head of 49, under types of 26 to 36. That is the one cell where the
+  arrow hands over to the `=`.
+- **A body of 9 or more** never chops.
+
+Wired as the table `EqualsFloor.ChopsOneOver`. The `=` reads it to stay flat, and the parameter list
+(`GroupFacts.OneOverType` / `OneOverBody`) reads it to chop, even though the line through `=>` fits.
+Every one of the 2 940 cells at types 10 and 26 reproduces.
+
+⚠ Past the chop run, from a type of 32, the oracle breaks between the declaration's type and its name
+(`Func<T…>` / `name = (…) => body;`) where #558 breaks the `=`. That happens in 1 524 cells of the type
+sweep at 121, and in 171 of about 7 400 cells of #558's own grids. It is the declaration's type/name
+gap, not this rule's, and it is not wired. Odd type widths read the row below and were not measured.
+
+- options: `skala_wrap_before_eq = false`, the exported value.
+- ⚠ status: **fixed** within the type/name residue above, pinned by
+  `constructs/breaks/lambda-parameters-one-column-over.cs`.
