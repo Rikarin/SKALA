@@ -4672,7 +4672,11 @@ multiplier says, so at any multiplier above 1 Skala's `true` is a level short of
 `skala_continuous_indent_multiplier`'s defect on braced initializers, not this key's; it is recorded at the
 key in `options.json` and is not fixed here, because turning an absolute scope into a relative one
 under every initializer in `corpus/real` is not a change to make on the strength of a row that does
-not ask about it.
+not ask about it. ⚠ **Fixed by #464 (2026-10-08)**, and without that change: the scope
+stays absolute — a `Block` flagged `IndentFlags.Multiplied`, whose width is the multiplier's — so at the
+export's multiplier of 1 nothing in `corpus/` moved (constructs, real, pathological and both unformatted
+modes identical before and after). Measured at 2 and 3 on a collection, array, object, anonymous and
+`with` initializer, a bare array initializer and a switch expression: elements at 8 + m × 4, `}` at 8.
 
 - options: `skala_use_continuous_indent_inside_parens`,
   `skala_use_continuous_indent_inside_initializer_braces`
@@ -5604,6 +5608,21 @@ lambda body pushed by the chain's level and its `)` given a line of its own in t
 => {` / `var y = x;` at 20 / `}` at 16 / `)` at 12 / `.C()` at 12) where Skala writes 16 / 12 / 8 /
 12. Neither is in the fixture.
 
+**The adjacent row, fixed (#470, 2026-10-08).** Re-asked on fourteen shapes: `var z = (`, a bare
+`(`, `return (`, an assignment, `(a` / `+ b).C`, a `)` on a line of its own, a property chain
+(`.B` / `.C`) and a single `.B` all put the contents at 16 and the dots at 12; under `=>` and inside
+`Call(` the contents stay one level past the `(`'s line (12 and 16), because the break before the dot
+spends nothing there. One rule: the contents nest from the chain's continuation line — the line after
+the `(`'s — when that line is deeper. The chain's level was the one thing the writer could not see,
+because for an author's break before a dot that is not a point it is a *frame's*, spent lazily at the
+dot. So `CSharpDocumentBuilder.PrepayTheLevelOfAChainBrokenAfter` reads the break from the source,
+lets the frame `FrameToSpend` names for that dot pay at the `(` instead, and flags the parenthesis's
+scope `IndentFlags.BrokenAfter`; `LayoutWriter.Push` then lifts it to the next line's level when that
+is deeper. A chain with points of its own already had a group, and a grouping parenthesis now takes
+`LiftedLevel` from it as a delimited list does (SK-DIV-0159). Pinned by
+`constructs/syntax/grouping-parenthesis-chain-broken-after.cs` and
+`GroupingParenthesisChainBrokenAfterIssue470Tests`.
+
 - options: none; `skala_continuous_indent_multiplier` measured at 2 and the rule holds.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/chain-after-parenthesised-head.cs` and
   `ChainAfterParenthesisedHeadTests`.
@@ -5727,7 +5746,11 @@ emitted the gap before the node, so it records the governing expression's own li
 *continuation* in the oracle (16 = 8 + 2 × 4) and a block in Skala (12 = 8 + 4), the same
 `skala_continuous_indent_multiplier` defect `VisitBraced`'s remarks record for every braced
 initializer; at the export's multiplier of 1 the two are the same number. Not this entry's and not
-in the fixture.
+in the fixture. ⚠ **Fixed by #464 (2026-10-08)**, plain `a switch {` included: the arms' block scope
+carries `IndentFlags.Multiplied` and takes the multiplier's widths, absolute as before; at 3 the arms go
+to 8 + 3 × 4, and at `skala_use_continuous_indent_inside_initializer_braces = false` to one width, so
+that key governs a switch expression's arms as well as an initializer's. Pinned by
+`BracedContinuationMultiplierIssue464Tests`.
 
 - options: none behind the divergence; `skala_continuous_indent_multiplier` and
   `skala_align_multiline_switch_expression` measured as above.
@@ -5934,7 +5957,14 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
   for Skala: `(int a, int b\n)` as a return type, `o is (1, 2\n)`, `var (a, b\n)`, `delegate*<int, void\n>`,
   `unmanaged[Cdecl, X\n]` — and the tuple *expression* twin in `return (1, 2\n);` and `var b = (1, 2\n) == t;`,
   where `=>\n(1, 2\n)` and `Get(\n(1, 2\n))` already agree. Brackets and a type argument list's `>` go to
-  the owner's indent on both sides. Kept out of the constructs.
+  the owner's indent on both sides. Kept out of the constructs. ⚠ **Fixed by #472 (2026-10-08)**,
+  re-asked: the closer of a list the oracle only fills, a tuple type's `)` and a function pointer's `>`
+  is written *inside* the list's scope — one level past the opener's line, wherever that line sits:
+  under an arrow (`o is (1, 2` / `    );`), at a member's level, and four past the aligned column in
+  `foreach (var (k, v` / `) in d)`. #443's "keep the closer where the break left it" closed the scope
+  and took the ambient level, which agrees only where an `=` or a statement pays. A tuple *expression*'s
+  `)` is a grouping's (SK-DIV-0204), not this. Pinned by `constructs/syntax/kept-closer-continuation.cs`
+  and `KeptCloserIssue472505506Tests`.
 - `grid\n[0, 1]`: the oracle indents the bracket one level, Skala leaves it on the receiver's column.
 - A deconstruction *assignment* whose designation overflows: the oracle fills the designation and keeps
   `x) = Tuple();`; Skala fills and breaks the `=` too, because the assignment's `=` group is entered at
@@ -5943,6 +5973,14 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
 - Inside a positional pattern's or a designation's nested item the oracle spends one level per
   statement (`o is (1\n, (2\n, 3))` puts `, 3` under `, (2`); a tuple expression spends one per
   parenthesis, and Skala does the tuple's for all three.
+  ⚠ **Fixed by #473 (2026-10-08)**, re-asked on twelve shapes: three deep, through a recursive
+  pattern's type (`, P(2`), with a nested `)` on its own line, inside a property pattern, and the
+  designation twins all keep one level for the whole pattern; and directly in an aligned `if (o is (1`
+  the outermost list spends none either (`, (2` on the condition's column). A nested list opens no
+  scope (`IsNestedPositionalList`), as an aligned one does; the aligned-condition case reads
+  `DirectlyInAnAlignedHeader`. Pinned by `constructs/syntax/nested-positional-pattern.cs` and
+  `NestedPositionalPatternIssue473Tests`. Met on the way and not this: `{ X: (2` / `, 3) }` — Skala
+  breaks after the subpattern's `X:`, the oracle keeps `X: (2`.
 - `Dictionary<A, B, int> Name() =>` and `List<(A a, B b, int c)> list = null;` past the margin: the
   oracle breaks between the type and the name, or between an element's type and its name (SK-DIV-0024's
   family); Skala now fills the type argument list instead, where before it left the line whole.
@@ -6210,9 +6248,28 @@ it for the list's lines and for the list's closer alike. The fix is a third kind
 list's push — which touches the one-level-per-line rule that 1.7 points of fidelity sit on, and is
 left for its own measurement. Recorded, not fixed.
 
+**Fixed by #481 (2026-10-08)**, with SK-DIV-0150, and the rule is the one SK-DIV-0148 already wrote
+for a block. A grouping parenthesis's scope is no longer unconditional: it is one line's one level with
+the `=`, a list or a ternary opened beside it. Where it spends a second level, a construct that broke
+after it lifts it — `var b = ((` / `1 + 2)` / `* 3);` is the `*`'s, through `LayoutWriter.LiftedLevel`,
+which #470 opened to groupings — and a statement condition's parenthesis is unconditional on its own, so
+`if ((a` / `== b))` is untouched. Two things the unconditional scope had been standing in for had to
+become explicit, both found on `corpus/unformatted/scramble` where conditional groupings alone cost 7
+lines: a grouping is lifted even when a construct inside it broke on its own line (`- ((c.X` / `- a.X)`
+/ `* …)`, `BrokenInsideOnItsLine` no longer exempts it), and a chain frame's level lifts like a list's
+(`+ (meshlet` / `.TriangleCount` / `* 3)` puts the dot two levels past the `+`). And a grouping met
+*outside* the broken construct is part of the construct's continuation line, so nested groupings lift
+once each (`(((ax * ax)` / `+ (az` three levels in). Measured against master's formatter:
+`corpus/real/` 59 657 → 59 660 lines and 335 → 336 files with symbols; `pathological/` 589 → 594 lines,
+59 → 60 files; `unformatted/scramble` 64 437 → 64 482 lines, `collapse` 52 852 → 52 856; `constructs/`
+unchanged but for the new fixtures. Residue, recorded and not fixed: `((point` / `.X` / `- x)` /
+`* (point.X - x))` / `+ …` under an arrow (CurveEditor) puts `.X` at 20 for the oracle and 16 for Skala —
+a chain lifted by a binary lifted by a grouping lifted by a binary, one lift short.
+
 - options: `skala_indent_pars = inside` (the level a grouping spends when it does), no key for the
   transparency.
-- ⚠ status: **open**.
+- ⚠ status: **fixed**, pinned by `constructs/syntax/grouping-parenthesis-one-level.cs` and
+  `GroupingParenthesisOneLevelIssue481Tests`.
 
 ## SK-DIV-0119 — a parameter's attribute section joins its parameter by the parameter's first line, and the oracle answers that gap twice
 
@@ -7078,7 +7135,9 @@ began, a separate shape;
 - options: none behind the divergence.
 - ⚠ status: **fixed**, pinned by `constructs/syntax/block-in-a-grouping-parenthesis.cs`,
   `constructs/syntax/block-in-a-broken-construct.cs` and `BlockIndentIssue393Tests`; the
-  author-broken chain row is open.
+  author-broken chain row is **fixed** by #470 (see SK-DIV-0112's last paragraph): `var x = (y switch {`
+  / … / `}).ToString()` / `.Length` puts the arms at 16 and the `}` at 12, a lifted grouping
+  parenthesis staying transparent to a block on its own line.
 
 ## SK-DIV-0149 — a delimited list on the first line of a construct that broke after it is not lifted by the construct
 
@@ -7139,12 +7198,14 @@ so the brace does not share the shape. The gap is "the within key, or one space 
 breaks", which is SK-DIV-0012 item 1's `IfBroken` again; and the space alone would gain nothing,
 because every such line also diverges on this entry's levels. Not fixed.
 
-⚠ **Round 2: the space is fixed, the levels and the join are not.** `( [` and `( ( [` now come back as the
-oracle writes them at both values of `space_within_parentheses` (the `IfBroken` of SK-DIV-0012 item 1, and
-a `(` just inside a grouping parenthesis now reads that parenthesis's within key instead of "a `(`
-clings", which wrote `(( [` at `true`). What remains is this entry's: the elements at +2 and `]` at +1
-where the oracle writes +1 and +0, and the oracle joining `(` / `[` onto one line. Pinned by
-`BrokenCollectionAfterCastOrParenIssue450485Tests`.
+⚠ **Round 2 (#485): the space is fixed.** `( [` and `( ( [` now come back as the oracle writes them at both
+values of `space_within_parentheses` (the `IfBroken` of SK-DIV-0012 item 1, and a `(` just inside a grouping
+parenthesis now reads that parenthesis's within key instead of "a `(` clings", which wrote `(( [` at `true`).
+Pinned by `BrokenCollectionAfterCastOrParenIssue450485Tests`.
+
+**The levels: fixed by #481 (2026-10-08)** — see SK-DIV-0118's last paragraph: the `var b = ((` row is a
+lift, not a grouping that spends, and the elements now come back at +1 and `]` at +0. What remains is the
+oracle joining `(` / `[` onto one line.
 
 ⚠ **The ternary rows: fixed (#546).** A conditional directly inside a grouping parenthesis no longer
 opens its arm scope on the parenthesis's line, so `var x = (c` / `? a` / `: b);`, `return (c` / `? a`,
@@ -7153,8 +7214,10 @@ The rows with two groupings (`((c` / `? a`, `((a` / `+ b))`) and the collection 
 model's and stay open.
 
 - options: `skala_space_within_parentheses` (the space only).
-- ⚠ status: **open** for the grouping-in-grouping levels, the collection levels and the join; the
-  `( [` space fixed (#485) and the single-grouping ternary rows fixed (#546).
+- ⚠ status: **fixed** but for the `(` / `[` join — the `( [` space by #485, the single-grouping ternary rows
+  by #546 and by #481, the grouping-in-grouping and collection levels by #481. Pinned by
+  `constructs/syntax/grouping-parenthesis-one-level.cs`, `GroupingParenthesisOneLevelIssue481Tests` and
+  `BrokenCollectionAfterCastOrParenIssue450485Tests`.
 
 ## SK-DIV-0156 — a chopped parenthesis heading a body held its level, and then the chain after it broke
 
@@ -7275,7 +7338,25 @@ arrow stays and the chain stays whole.
 - options: `skala_wrap_chained_method_calls`.
 - ⚠ status: first row **fixed**, pinned by `HeldLevelIssue406407Tests` (the issue's input settles in
   one pass; a chain the fill breaks gives the level up and one that fits keeps it, under `=`, a
-  lambda, `return` and an arm, both equal to the oracle). Second row **open**.
+  lambda, `return` and an arm, both equal to the oracle). Second row **open** — re-asked for #470
+  on 2026-10-08 and unchanged: under `=>` a parenthesised chain head with no switch after it puts its
+  dots on the `(`'s column (SK-DIV-0112), and with the chain governing a switch the oracle spends the
+  chain's level after all (`.C() switch {` at 12). ⚠ **Fixed in #470's second round (2026-10-08)**,
+  as measured below: `BreakPlan.HeadSharesTheLevelAroundIt` exempts a chain governing a switch from
+  SK-DIV-0112's shared level, for a group, a property fill and a frame alike, and the switch's anchor is
+  pushed at its keyword (`AnchorAtLine`) when the chain's head is parenthesised and the chain broke.
+  Pinned by `constructs/syntax/switch-over-parenthesised-chain.cs` and
+  `GroupingParenthesisChainBrokenAfterIssue470Tests`. Measured further on nine shapes: it is the
+  parenthesised head that matters, not the arrow. `=>` / `(` / `a).B().C() switch`, `(` / `a).B` /
+  `.C() switch` and `(a` / `+ b).C()` / `.D() switch` all put the contents at 16, the dots at 12, the arms
+  at **16** and the `}` at **12**; `var x = (` / `a).B()` / `.C() switch` and `return (` / `a).B().C()
+  switch` the same (Skala now right on the contents and dots there, the arms and `}` a level short); and
+  `=>` / `a.B()` / `.C() switch`, `var x = a.B()` / `.C() switch` keep the arms at 12 and the `}` at 8,
+  where Skala agrees. So a switch governed by a chain whose parenthesised head was lifted nests its arms
+  from the chain's continuation line, and under an arrow such a chain spends its level as it does in a
+  statement. Two changes — a governing expression as a continuation context of its own, and an anchor at
+  the lifted level — and not attempted here; `GroupingParenthesisChainBrokenAfterIssue470Tests` pins the
+  neighbours that are right.
 
 ## SK-DIV-0159 — a switch arm's `=> (` on the pattern's line, with a chain or a binary that breaks after the `)`
 
@@ -7294,8 +7375,14 @@ parenthesis's own scope as two levels once something after the `)` breaks, which
 one-level-per-opening-line collapse in `LayoutWriter.Level` read the other way, and the boundary has
 not been measured beyond these three bodies.
 
+**Fixed (#470, 2026-10-08).** The chain and the binary after the `)` each have a group, resolved broken
+and `Continues`; a grouping parenthesis's scope now takes `LayoutWriter.LiftedLevel` from it exactly as
+a delimited list's does (SK-DIV-0184), where before only `IndentFlags.Delimiter` qualified. Re-asked:
+both rows match, and `corpus/` fidelity is unchanged by it.
+
 - options: none.
-- ⚠ status: **open**.
+- ⚠ status: **fixed**, pinned by `constructs/syntax/grouping-parenthesis-chain-broken-after.cs` and
+  `GroupingParenthesisChainBrokenAfterIssue470Tests`.
 
 ## SK-DIV-0165 — a break point whose gap holds a block comment breaks after the comment
 
@@ -8439,20 +8526,44 @@ so the break pays the statement's continuation level. What stays open is SK-DIV-
 
 - `return (a` / `);` and `(a` / `).B();` as a statement: the oracle puts the `)` one level in, Skala at
   the statement's column. The same rule as SK-DIV-0203's grouping row; the break reaches no frame that
-  pays for it (`p = (a + b` / `);` agrees).
+  pays for it (`p = (a + b` / `);` agrees). ⚠ **Fixed by #505 (2026-10-08):** a grouping's or a tuple's
+  `)` is a continuation for `FrameToSpend` (`IsContinuation`), no longer a unit, so the statement's frame
+  pays. Re-asked: `=>` / `(a + b` / `)` and `var q =` / `(a + b` / `)` keep the `)` on the `(`'s line's
+  level in both engines, the frame having paid already.
 - A tuple's items after a kept break, `var t2 = (1,` / `2`: two levels in for the oracle, one for Skala.
 - `var t4 = (1, 2` / `) switch {`: the `)` agrees; the arms nest from it in the oracle and from the
-  statement in Skala.
+  statement in Skala. ⚠ **Fixed by #506 (2026-10-08)**, and wider than recorded: before a `switch` the
+  `)` is not the statement's continuation line but one level past the `(`'s line — under an arrow
+  (`(1, 2` / `    ) switch {`) and inside an argument list too, where a plain tuple's `)` spends nothing
+  — and the arms nest from that line. The `)` is written inside the parenthesis's scope, and the
+  switch's anchor is pushed at its keyword recording the line's own indentation
+  (`IndentFlags.AnchorAtLine`).
 - `nameof(a` / `);`: the oracle keeps the break and treats the parentheses as a `typeof`'s; Skala reads
-  `nameof` as an invocation and joins it.
+  `nameof` as an invocation and joins it. ⚠ **Fixed by #507 (2026-10-08)**: `BreakPlan` plans no list for
+  `nameof(…)`'s one argument (read syntactically, `BreakPlan.IsNameOf`), so every author's break inside
+  it is kept and a kept `)` goes back to its opener's line — measured on `nameof(a` / `)`, `nameof(` /
+  `a)`, `nameof(` / `a` / `)` and inside a call, which then chops because it holds a line break — and
+  its parentheses follow `skala_indent_pars` as `typeof`'s do. ⚠ Left open beside it:
+  `nameof(a.Bbbb….Cccc.Dddd)` past the margin, where the oracle breaks before the property `.Cccc` one
+  level in and Skala, with no point inside, breaks after the `=` (before #507 it chopped the
+  parentheses, also not the oracle's answer).
 - At `indent_pars = outside` a grouping parenthesis's `)` inside an argument list or a condition is one
   level deeper than the oracle's, which ignores that key for it. At `none`, a break straight after a
   `typeof(` or inside `checked(a` / `+ b)` puts the contents one level deeper than the oracle's. Not
   from #442: with the `typeof` family laid out as before (no scope of its own), the contents land on the
-  same column, and so does `arr[` / `1]`.
+  same column, and so does `arr[` / `1]`. ⚠ **Fixed by #508 (2026-10-08)**, re-measured on fifteen
+  kinds at both values: a grouping parenthesis is `inside` at every value of the key, and a tuple and a
+  positional pattern are `inside` at `none` (`var u = (1,` / `2);` and `o is (1,` / `2)` keep their
+  level) — `ParenthesesStyleFor`. The `typeof` family, `nameof` and a bracket do follow `none`, and the
+  level they lost was the `=`'s: the `none` marker opened no line, so the statement's continuation
+  opened beside it paid for the contents. The marker now opens on its line at no level and blocks it, as
+  any delimiter does (`LayoutWriter.Push`).
 
 - options: `skala_indent_pars`, `skala_align_tuple_components`
-- ⚠ status: **open**, measured.
+- ⚠ status: rows 1 and 3–5 **fixed** (#505, #506, #507, #508), pinned by
+  `constructs/syntax/kept-closer-continuation.cs`, `KeptCloserIssue472505506Tests` and
+  `NameofAndIndentParsIssue507508Tests`; the tuple-items row and `nameof`'s long qualified name are
+  **open**.
 
 ## SK-DIV-0205 — the neighbours of a block comment that spans lines: a ternary, `is`/`as`, an array's opener, a fill
 
@@ -8624,6 +8735,18 @@ comment now applies only where there is an element, since otherwise it hid the c
 
 Measured beside it and left open: `Foo(/* a` / `b */)` — the oracle moves the comment to column 0 on a line
 of its own, a shape that is about comment placement and not about the closer.
+
+⚠ **That row fixed by #509 (2026-10-08)**, and decided in the oracle's favour: column 0 looks like a quirk,
+but every other placement differs from it on two lines. Measured on nine shapes: a call, an object
+creation, a constructor initializer and a method's or a constructor's parameters all write `Foo(` / the
+comment at column 0, its other lines moved by as much as its line moved (`ShiftWithLine`, so `b */` keeps
+its offset from the old line's indentation) / `)` on the opener's level. Each edge differs and is
+followed: a `/** */` comment takes a line of its own at the list's level; a lambda's parameter list keeps
+the comment after its `(` and moves only the `)`; a comment beside an argument stays. `LoneCommentAt` in
+the document builder. ⚠ One edge left open: a comment the author already put on its own line, `Foo(` /
+`/* a` / `b */` / `)`, comes back from the oracle with a blank line inserted before it; Skala keeps it as
+written. Pinned by `constructs/syntax/lone-comment-in-empty-list.cs` and
+`LoneCommentInEmptyListIssue509Tests`.
 
 - options: none.
 - ⚠ status: **resolved**. Pinned by `EmptyContainerCommentIssue444Tests`.
@@ -9153,6 +9276,69 @@ introduces a chain link as that link's break.
 
 - options: none.
 - ⚠ status: **resolved** (#523). Pinned by `constructs/trivia/a-comment-above-a-chain-link.cs`.
+
+## SK-DIV-0340 — a positional pattern inside a property pattern broke after its subpattern's colon
+
+#532: `o is { X: (2` / `, 3) }` came back `X:` / `(2` / `    , 3)`; the oracle keeps `X: (2` and puts `, 3`
+on `X`'s column. Measured with the property pattern alone, inside a positional pattern and beside another
+subpattern. Two causes: the subpattern's group could not stay flat over the author's kept break inside the
+value, so it now asks the arrow's question when the value holds a kept break (`HoldsAKeptBreak`, as
+`HoldsAKeptColonBreak` already did for #436); and a positional list inside a property pattern opens no level
+of its own (SK-DIV-0114's #473 rule), holding a zero-column level so that the subpattern's frame does not pay
+one for its items either.
+
+- options: none.
+- ⚠ status: **resolved** (#532). Pinned by `constructs/syntax/parenthesis-residues.cs` and
+  `ParenthesisResiduesIssue532To536Tests`.
+
+## SK-DIV-0341 — an empty list's comment on its own line: the oracle adds a blank line before it
+
+#533, the edge #509 left: `Foo(` / `/* a */` / `)` comes back with a blank line after the `(`, for a block, a
+`//` and a multi-line comment, in an argument and a parameter list; and `Foo(/* a */` / `)` — a one-line comment
+beside the `(` that still ends its line — goes to column 0 like #509's. `LoneCommentAt` answers
+`BlankLineBefore`. ⚠ **The oracle is not idempotent here**: given its own answer back, it adds the blank line
+before a column-0 comment and before an own-line `/** */` too. Skala must be, so both are kept as the first
+pass's fixed point — and the one row that costs is an author's own-line `/** */`, which the oracle gives a
+blank line and Skala does not. Not in the fixture.
+
+- options: none.
+- ⚠ status: **resolved** but for the own-line `/** */` row (#533). Pinned by
+  `constructs/syntax/parenthesis-residues.cs` and `ParenthesisResiduesIssue532To536Tests`.
+
+## SK-DIV-0342 — a long qualified name inside `nameof` broke after the `=`
+
+#534: `var n4 = nameof(a.Bbbb….Cccc.Dddd);` past the margin — the oracle breaks before `.Cccc`, one level in.
+⚠ Already right on the merged tree when re-measured for this issue: #507 leaves `nameof`'s parentheses
+unplanned and group F's member-access fill (#482) breaks at the last dot that fits. Sabotaging each of this
+round's changes leaves it right, so none of them is the cause; an earlier probe that disagreed could not be
+reproduced. Pinned, not changed.
+
+- options: none.
+- ⚠ status: **resolved** (#534, by #482 and #507). Pinned by `ParenthesisResiduesIssue532To536Tests`.
+
+## SK-DIV-0343 — a chain lifted through two binaries and two groupings sat one lift short
+
+#535: `((point` / `.X` / `- x)` / `* (point.X - x))` / `+ …` under an arrow — the oracle puts `.X` at 20, Skala
+had 16. ⚠ Right on the merged tree: group F's chain level under operators (#457, `IndentFlags.ChainLevel`)
+together with #481's lifts, once a property fill's own level lifts too (the merge's own fix). Pinned.
+
+- options: none.
+- ⚠ status: **resolved** (#535). Pinned by `constructs/syntax/parenthesis-residues.cs` and
+  `ParenthesisResiduesIssue532To536Tests`.
+
+## SK-DIV-0344 — an author's break after a member access's dot was kept
+
+#536: `c.` / `X` came back as written, and `a.B().` / `C().` / `D()` came back with dots alone on their lines.
+The oracle joins every such break: a property, a call, a `?.`, a run of them, `this.`, a generic call and a
+statement's head (`System.` / `Console.WriteLine()`), measured; a break *before* a dot is kept, and so is one
+after a `//` or a `/* */` comment there. `BreakPlan.PlanJoinAfterADot` makes the name's gap flat at
+`skala_wrap_after_dot_in_method_calls = false`. ⚠ Not a qualified name, and found beside it: `using System.` /
+`Text;` is kept by the oracle with `Text` one level in, where Skala writes it at column 0. Open, not this
+issue's.
+
+- options: `skala_wrap_after_dot_in_method_calls` (the export's `false`).
+- ⚠ status: **resolved** (#536); the `using` row is open. Pinned by `constructs/syntax/parenthesis-residues.cs`
+  and `ParenthesisResiduesIssue532To536Tests`.
 
 ## SK-DIV-0370 — a binary pattern chain's level in a statement condition counted the wrong nesting
 
