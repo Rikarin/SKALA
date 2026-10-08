@@ -8815,10 +8815,19 @@ body fits whole on the line after the arrow, the oracle breaks the arrow rather 
 
 Where the chain does not fit after the arrow either — `Use(x => source.Select(…)` / `.Where(p)` — both
 engines keep the arrow and break the chain. So the lambda's arrow behaves as an `=` does in front of a
-chain when the tail fits (SK-DIV-0211's question), and Skala's arrow group does not ask it. Not wired.
+chain when the tail fits (SK-DIV-0211's question), and Skala's arrow group does not ask it.
 
 - options: `skala_wrap_chained_method_calls`, `place_single_method_argument_lambda_on_same_line`.
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved** (#529). A lambda whose body is a chain of calls with points, written on one
+  line, asks its arrow `GroupFacts.BreaksOnlyIfTailFits`' question: break exactly when the chain fits
+  flat on the line below. Measured on ten shapes on 2026-10-08 — a sole argument, after another
+  argument, between two, `(x, y) =>`, under `var x =` with and without `.ToList()` after the call, an
+  `=`'s own lambda, and a body that is itself a chain inside a chain — all agree, and corpus/real moved
+  two lines toward the oracle (59659 → 59661 with symbols). ⚠ Only a body written on one line: a body
+  the author broke — `() => (` / `a).B()` / `.C()` — keeps the head rule, which
+  `ArrowBodyChainIssue404Tests` pinned; and pass two of an arrow that broke reads a one-line body
+  again, so the answer is stable. Pinned by `LambdaArrowOverACallChainIssue529Tests` and
+  `constructs/wrapping/lambda-arrow-over-a-call-chain.cs`.
 
 ## SK-DIV-0333 — a ternary whose condition is a chopped chain puts its branches a level too deep
 

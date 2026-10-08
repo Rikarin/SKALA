@@ -4960,8 +4960,26 @@ public sealed class BreakPlan {
             // with no ordering question asked.
             ArrowWinsOverTheChain(lambda)
                 ? new GroupFacts(BreaksIfTooLong: true)
-                : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+                : ArrowMovesACallChainDown(body)
+                    ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
+                    : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
+
+    /// <summary>
+    ///     A lambda whose body is a chain of calls the author did not break: its arrow breaks exactly when
+    ///     the whole chain then fits on the line below (#529, SK-DIV-0332).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured: <c>var r = items.Where(x =&gt;</c> / the chain whole / <c>);</c>, and the same with
+    ///     <c>.ToList()</c> after the call; where the chain does not fit below either —
+    ///     <c>Use(x =&gt; source.Select(…)</c> / <c>.Where(p)</c> — the arrow stays and the chain breaks,
+    ///     which is the arrow's head rule and what Skala did before. The same question the <c>=</c> asks of
+    ///     a collection expression (<see cref="GroupFacts.BreaksOnlyIfTailFits" />).
+    /// </remarks>
+    bool ArrowMovesACallChainDown(ExpressionSyntax body) =>
+        IsChainRoot(body)
+        && ChainPointCount(body, options) > 0
+        && source.AsSpan(body.SpanStart, body.Span.Length).IndexOfAny('\r', '\n') < 0;
 
     /// <summary>
     ///     A lambda that is the value of an <c>=</c>, with a binary operand chain for a body the author
