@@ -5688,7 +5688,9 @@ public sealed class BreakPlan {
                     // ⚠ After a dot too: the formatter joins `n.` / `Name`, so a condition the author broke
                     // there reads as one written on one line, or pass two answers differently (fuzz seed
                     // 3423309597191150844).
-                    || previous.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.DotToken;
+                    || previous.Kind() is SyntaxKind.OpenParenToken
+                        or SyntaxKind.OpenBracketToken
+                        or SyntaxKind.DotToken;
                 if (breaks && !glued) {
                     return true;
                 }

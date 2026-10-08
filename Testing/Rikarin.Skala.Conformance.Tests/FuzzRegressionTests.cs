@@ -108,7 +108,10 @@ public sealed class FuzzRegressionTests {
     [InlineData(11718305405350914591UL, "constructs/breaks/chain-after-parenthesised-head.cs")]
     [InlineData(3559808079077978877UL, "constructs/wrapping/lambda-arrow-over-a-property-fill.cs")]
     [InlineData(3423309597191150844UL, "constructs/breaks/conditional-after-eq.cs")]
-    [InlineData(11806697963186320743UL, "real/newtonsoft/Newtonsoft.Json.Tests/Converters/KeyValuePairConverterTests.cs")]
+    [InlineData(
+        11806697963186320743UL,
+        "real/newtonsoft/Newtonsoft.Json.Tests/Converters/KeyValuePairConverterTests.cs"
+    )]
     [InlineData(1332581229878653148UL, "constructs/breaks/held-single-call.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
