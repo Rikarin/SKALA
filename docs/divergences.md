@@ -10562,7 +10562,7 @@ of three cases:
 still reproduces (`constructs/wrapping/lambda-arrow-over-a-chain.cs`).
 
 ⚠ Not fixed here, and reported: once the arrow is decided, the chain itself is laid out wrongly in about
-280 of the cells. Where the oracle chops every link (`source.A…` / `.Select(y => y)` / `.Where(…)`),
+540 of the cells. Where the oracle chops every link (`source.A…` / `.Select(y => y)` / `.Where(…)`),
 Skala keeps `.Select(y =>` on a line past the margin and breaks inside its argument. The same happens
 with no lambda at all, as in `var q = source.A….Select(y => y).Where(…);`. That is the chain fill's own
 defect (group F's), not the arrow's.
