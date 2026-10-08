@@ -1447,13 +1447,27 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ And an anonymous function's block and an object creation's initializer nest from the
         // anchor VisitInner pushed where the construct begins (SK-DIV-0164).
         var nestsFromAnchor = anchored || node.Parent is { } owner && AnchoredBlockOf(owner) == node;
-        if (anchored) {
+
+        // ⚠ Unless the governing expression is a grouping parenthesis or a tuple whose `)` the author
+        // kept on a line of its own (#506): the arms nest from that `)`'s line — `var t = (1, 2` /
+        // `    ) switch {` / `        _ => 0` / `    };` — wherever VisitDelimited put it. An argument
+        // list's `)` comes back to its opener's level and the arms nest from the statement as before.
+        // So the anchor is pushed at the `switch` keyword and records that line's own indentation.
+        var anchorAtKeyword = anchored
+            && node is SwitchExpressionSyntax { GoverningExpression: var governing }
+            && KeepsAClosingParenthesisBeforeASwitch(governing);
+        if (anchored && !anchorAtKeyword) {
             OpenIndent(IndentKind.Anchor);
         }
 
         foreach (var child in node.ChildNodesAndTokens()) {
             if (child.IsToken) {
                 var token = child.AsToken();
+                if (anchorAtKeyword && token.IsKind(SyntaxKind.SwitchKeyword)) {
+                    EmitUpTo(token.SpanStart);
+                    OpenIndent(IndentKind.Anchor, false, IndentFlags.AnchorAtLine);
+                }
+
                 if (opened && !close.IsKind(SyntaxKind.None) && token.SpanStart == close.SpanStart) {
                     EmitUpTo(close.SpanStart);
                     if (hasInner) {
@@ -1478,7 +1492,10 @@ public sealed partial class CSharpDocumentBuilder {
                     // ⚠ Same rule as VisitChild's: a body indents from its declaration's level.
                     // `class C\n    : B {` puts the base list on a continuation line, and the members
                     // still take one level from the class rather than two.
-                    if (OwnsAContinuationFrame(node) && frames.Count > 0 && frames[^1].Activated) {
+                    // ⚠ Not when the switch's anchor was pushed at its keyword, inside the level its own
+                    // frame spent at the `)` (`return (1, 2` / `    ) switch {`): closing it here would
+                    // pop the anchor instead, and the anchored block nests from that anchor anyway.
+                    if (!anchorAtKeyword && OwnsAContinuationFrame(node) && frames.Count > 0 && frames[^1].Activated) {
                         CloseIndent(IndentKind.Continuous);
                         frames[^1] = frames[^1] with { Activated = false };
                     }
@@ -1688,7 +1705,10 @@ public sealed partial class CSharpDocumentBuilder {
                     // level, and inside an argument list the item's line — while `typeof(int` / `);`
                     // comes back to its opener's line as an argument list's `)` does. So its scopes
                     // close before the gap, where the break can spend the statement's level.
-                    var continues = closer == 0 && node is ParenthesizedExpressionSyntax or TupleExpressionSyntax;
+                    var governsASwitch = KeepsAClosingParenthesisBeforeASwitch(node);
+                    var continues = closer == 0
+                        && node is ParenthesizedExpressionSyntax or TupleExpressionSyntax
+                        && !governsASwitch;
                     if (continues) {
                         for (var i = opened; i > 0; i--) {
                             CloseIndent(scopeKind);
@@ -1715,13 +1735,29 @@ public sealed partial class CSharpDocumentBuilder {
                     // (#443): `(1, 2` / `    );`, `P(1, 2` / `    );` and `var (a, b` / `    ) = …` keep the
                     // closer one level in, where the author's break left it. A tuple that broke after
                     // its `(` still closes on its opener's level, `(` / `    a,` / `)`.
-                    var keepsCloserIn = IsOnlyFilled(node)
+                    // ⚠ And it is one level past the opener's *line*, not the ambient level after the
+                    // scope closes (#472): the closer is written inside the list's own scope. The two
+                    // agree under an `=` or a statement, which is all #443 measured; they part where
+                    // nothing else pays — `o is (1, 2` / `    );` under an arrow that already broke,
+                    // `(int a, int b` / `    ) M()` and `delegate*<int, void` / `    > F` at a member's
+                    // level, and `foreach (var (k, v` / `) in d)` four past the aligned column.
+                    // ⚠ And so does a grouping parenthesis's or a tuple's `)` before a `switch`, which is
+                    // not the statement's continuation line there but one level past the `(`'s, under an
+                    // arrow and inside an argument list too (#506).
+                    var keepsCloserIn = governsASwitch
+                        || !continues
+                        && (IsOnlyFilled(node) || node is TupleTypeSyntax or FunctionPointerParameterListSyntax)
                         && !HasLineBreak(open.Span.End, open.GetNextToken().SpanStart);
-                    for (var i = opened; i > closer; i--) {
-                        CloseIndent(scopeKind, closer == 0 && i == closer + 1 && !keepsCloserIn);
+                    if (keepsCloserIn) {
+                        pending = opened;
+                    } else {
+                        for (var i = opened; i > closer; i--) {
+                            CloseIndent(scopeKind, closer == 0 && i == closer + 1);
+                        }
+
+                        pending = continues ? 0 : closer;
                     }
 
-                    pending = continues ? 0 : closer;
                     opened = 0;
                 }
 
@@ -1783,6 +1819,26 @@ public sealed partial class CSharpDocumentBuilder {
                 CloseIndent(scopeKind);
             }
         }
+    }
+
+    /// <summary>
+    ///     Whether <paramref name="node" /> is a grouping parenthesis or a tuple governing a switch
+    ///     expression, with its first item on the <c>(</c>'s line and its <c>)</c> kept on a line of its
+    ///     own (#506).
+    /// </summary>
+    bool KeepsAClosingParenthesisBeforeASwitch(SyntaxNode node) {
+        if (node is not (ParenthesizedExpressionSyntax or TupleExpressionSyntax)
+            || node.Parent is not SwitchExpressionSyntax owner
+            || owner.GoverningExpression != node
+            || AlignsFromOwnColumn(owner)
+            || DelimiterLevels(options.IndentPars).Closer != 0) {
+            return false;
+        }
+
+        var open = node.GetFirstToken();
+        var close = node.GetLastToken();
+        return HasLineBreak(close.GetPreviousToken().Span.End, close.SpanStart)
+            && !HasLineBreak(open.Span.End, open.GetNextToken().SpanStart);
     }
 
     /// <summary>
@@ -3362,6 +3418,18 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             return false;
+        }
+
+        // ⚠ A grouping parenthesis's or a tuple's `)` kept on a line of its own is a continuation line
+        // of the statement, and the statement's frame pays for it where nothing has yet (#505):
+        // `return (a` / `    );` and `(a` / `    ).B();` take one level, as `p = (a + b` / `    );`
+        // already did through the `=`. Under an arrow that already broke, the `)` stays on the `(`'s
+        // line's level, because the frame has paid. VisitDelimited's `continues` closes the
+        // parenthesis's scopes before this break for the same reason.
+        if (nextToken.IsKind(SyntaxKind.CloseParenToken)
+            && nextToken.Parent is ParenthesizedExpressionSyntax or TupleExpressionSyntax
+            && DelimiterLevels(options.IndentPars).Closer == 0) {
+            return true;
         }
 
         return !StartsAUnit(nextToken);

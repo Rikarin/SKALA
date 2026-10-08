@@ -474,6 +474,9 @@ public sealed class LayoutWriter {
         // ⚠ A block — and the anchor a switch expression's block nests from — reads the scopes opened
         // on its own line differently from every other scope. See LevelForBlock.
         var outer = kind is IndentKind.Block or IndentKind.Anchor ? LevelForBlock(ancestors) : LevelForNested();
+        if (kind == IndentKind.Anchor && (flags & IndentFlags.AnchorAtLine) != 0) {
+            outer = CurrentLineIndent();
+        }
 
         // ⚠ A delimited list on the first line of a construct that broke after it nests from that
         // construct's continuation line, and its closer sits on it. See LiftedLevel.

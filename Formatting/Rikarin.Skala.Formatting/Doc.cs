@@ -352,7 +352,15 @@ public enum IndentFlags {
     ///     past the statement and <c>.C</c> one. The writer cannot see a frame's break coming, so the
     ///     document builder reads it from the source and says so.
     /// </summary>
-    BrokenAfter = 64
+    BrokenAfter = 64,
+
+    /// <summary>
+    ///     ⚠ An <see cref="IndentKind.Anchor" /> that records the indentation of the line it is pushed
+    ///     on as written, rather than the level a block opening there would nest from: a switch
+    ///     expression whose governing <c>)</c> was kept on a line of its own nests its arms from that
+    ///     line, whatever paid for its indentation (#506).
+    /// </summary>
+    AnchorAtLine = 128
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>

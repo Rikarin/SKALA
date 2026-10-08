@@ -5524,7 +5524,14 @@ exempted, in `SeparatedListPlanTests`, with the rows above as the reason.
   for Skala: `(int a, int b\n)` as a return type, `o is (1, 2\n)`, `var (a, b\n)`, `delegate*<int, void\n>`,
   `unmanaged[Cdecl, X\n]` — and the tuple *expression* twin in `return (1, 2\n);` and `var b = (1, 2\n) == t;`,
   where `=>\n(1, 2\n)` and `Get(\n(1, 2\n))` already agree. Brackets and a type argument list's `>` go to
-  the owner's indent on both sides. Kept out of the constructs.
+  the owner's indent on both sides. Kept out of the constructs. ⚠ **Fixed by #472 (2026-10-08)**,
+  re-asked: the closer of a list the oracle only fills, a tuple type's `)` and a function pointer's `>`
+  is written *inside* the list's scope — one level past the opener's line, wherever that line sits:
+  under an arrow (`o is (1, 2` / `    );`), at a member's level, and four past the aligned column in
+  `foreach (var (k, v` / `) in d)`. #443's "keep the closer where the break left it" closed the scope
+  and took the ambient level, which agrees only where an `=` or a statement pays. A tuple *expression*'s
+  `)` is a grouping's (SK-DIV-0204), not this. Pinned by `constructs/syntax/kept-closer-continuation.cs`
+  and `KeptCloserIssue472505506Tests`.
 - `grid\n[0, 1]`: the oracle indents the bracket one level, Skala leaves it on the receiver's column.
 - A deconstruction *assignment* whose designation overflows: the oracle fills the designation and keeps
   `x) = Tuple();`; Skala fills and breaks the `=` too, because the assignment's `=` group is entered at
@@ -7644,10 +7651,18 @@ so the break pays the statement's continuation level. What stays open is SK-DIV-
 
 - `return (a` / `);` and `(a` / `).B();` as a statement: the oracle puts the `)` one level in, Skala at
   the statement's column. The same rule as SK-DIV-0203's grouping row; the break reaches no frame that
-  pays for it (`p = (a + b` / `);` agrees).
+  pays for it (`p = (a + b` / `);` agrees). ⚠ **Fixed by #505 (2026-10-08):** a grouping's or a tuple's
+  `)` is a continuation for `FrameToSpend` (`IsContinuation`), no longer a unit, so the statement's frame
+  pays. Re-asked: `=>` / `(a + b` / `)` and `var q =` / `(a + b` / `)` keep the `)` on the `(`'s line's
+  level in both engines, the frame having paid already.
 - A tuple's items after a kept break, `var t2 = (1,` / `2`: two levels in for the oracle, one for Skala.
 - `var t4 = (1, 2` / `) switch {`: the `)` agrees; the arms nest from it in the oracle and from the
-  statement in Skala.
+  statement in Skala. ⚠ **Fixed by #506 (2026-10-08)**, and wider than recorded: before a `switch` the
+  `)` is not the statement's continuation line but one level past the `(`'s line — under an arrow
+  (`(1, 2` / `    ) switch {`) and inside an argument list too, where a plain tuple's `)` spends nothing
+  — and the arms nest from that line. The `)` is written inside the parenthesis's scope, and the
+  switch's anchor is pushed at its keyword recording the line's own indentation
+  (`IndentFlags.AnchorAtLine`).
 - `nameof(a` / `);`: the oracle keeps the break and treats the parentheses as a `typeof`'s; Skala reads
   `nameof` as an invocation and joins it.
 - At `indent_pars = outside` a grouping parenthesis's `)` inside an argument list or a condition is one
