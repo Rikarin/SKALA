@@ -250,9 +250,12 @@ public sealed class LayoutWriter {
 
             if (child == 0) {
                 switch (slot.Kind) {
-                    case DocKind.Text:
+                    case DocKind.Text: {
+                        var startedOn = line;
                         WritePiece(document.TextOf(node), slot.Source, (VerbatimFlags)slot.Flags);
+                        StartFilledElements(startedOn);
                         continue;
+                    }
 
                     case DocKind.Verbatim:
                         WritePiece(
@@ -1608,6 +1611,46 @@ public sealed class LayoutWriter {
         return level;
     }
 
+    /// <summary>
+    ///     The line each array-initializer fill's latest element <em>started</em> on — its first token's,
+    ///     so that a comment the author put on a line of its own in front of the element is not read as
+    ///     the element spanning lines (<c>1,</c> / <c>/* f */ 2</c>).
+    /// </summary>
+    readonly Dictionary<int, int> filledElementLines = [];
+
+    /// <summary>The fills whose element after their latest point has not written a token yet.</summary>
+    readonly List<int> awaitingElement = [];
+
+    /// <summary>
+    ///     The line the element before this fill point started on: the fill's own record, or for the first
+    ///     element the braces' — the group the fill names as its owner — or −1.
+    /// </summary>
+    int FilledElementStartedOn(int group) {
+        if (filledElementLines.TryGetValue(group, out var started)) {
+            return started;
+        }
+
+        var owner = document.FactsOf(group).Owner;
+        return owner >= 0 && filledElementLines.TryGetValue(owner, out started) ? started : -1;
+    }
+
+    /// <summary>The line the latest token was written on: an element's last, at the point after it.</summary>
+    int lastTokenLine;
+
+    /// <param name="startedOn">The line the token began on: a literal spanning lines ends on another.</param>
+    void StartFilledElements(int startedOn) {
+        lastTokenLine = line;
+        if (awaitingElement.Count == 0) {
+            return;
+        }
+
+        foreach (var group in awaitingElement) {
+            filledElementLines[group] = startedOn;
+        }
+
+        awaitingElement.Clear();
+    }
+
     void WriteLine(ref DocNode slot, int node, Stack<(int Node, int Child)> stack) {
         var kind = (LineKind)slot.Arg0;
         if (kind == LineKind.Soft) {
@@ -1622,6 +1665,23 @@ public sealed class LayoutWriter {
             // makes `wrap_if_long` a fill rather than a chop.
             if (!flat && (flags & LineFlags.FillPoint) != 0) {
                 flat = FillPointStaysFlat(node, slot.Arg2, flags, stack);
+
+                // ⚠ The element before this point spanned lines, so the next one starts a line of its
+                // own whatever fits (LineFlags.ArrayElement). Read off the output: its first token and
+                // its last were written on different lines. A comment's own lines do not count, and
+                // neither does a break the author kept in the gap before the next element's comment.
+                if (flat
+                    && (flags & LineFlags.ArrayElement) != 0
+                    && FilledElementStartedOn(slot.Arg2) is var started
+                    && started >= 0
+                    && started != lastTokenLine) {
+                    flat = false;
+                }
+            }
+
+            if ((flags & LineFlags.ArrayElement) != 0) {
+                filledElementLines.Remove(slot.Arg2);
+                awaitingElement.Add(slot.Arg2);
             }
 
             // ⚠ And a point taken only when the line it creates would not have fit beside it is
@@ -1655,6 +1715,20 @@ public sealed class LayoutWriter {
     /// <summary>Writes a break: the line ends here and the next one begins.</summary>
     void TakeBreak(ref DocNode slot) {
         var kind = (LineKind)slot.Arg0;
+
+        // ⚠ A required break in front of an element — after a `//` comment between two elements — starts
+        // that element on a line no fill point saw, so every fill on record waits for the next token to
+        // say where it starts. Only a break the builder flagged as one: a break kept *inside* an element
+        // is the element spanning lines, which is the thing being measured (#444).
+        if (kind != LineKind.Soft
+            && ((LineFlags)slot.Flags & LineFlags.ArrayElement) != 0
+            && filledElementLines.Count > 0) {
+            foreach (var group in filledElementLines.Keys) {
+                if (!awaitingElement.Contains(group)) {
+                    awaitingElement.Add(group);
+                }
+            }
+        }
 
         // ⚠ An alignment column with nothing on it is a continuation level. `align_multiline_statement_conditions`
         // anchors the condition on the column after the `(` — and when the author broke the line right
@@ -1877,7 +1951,10 @@ public sealed class LayoutWriter {
     ///     <see cref="LineFlags.LastPoint" />.
     /// </remarks>
     (int Segment, int Head) FillSegment(int node, int group, LineFlags flags, Stack<(int Node, int Child)> stack) {
-        var segment = document.SegmentOf(node);
+        // ⚠ An array initializer's element is measured flat with its kept breaks read as spaces and up
+        // to a moved comment's first line — the oracle's measure, and the same number on every pass
+        // (#444, SK-DIV-0208). See DocumentBuilder's `draft`.
+        var segment = (flags & LineFlags.ArrayElement) != 0 ? document.DraftSegmentOf(node) : document.SegmentOf(node);
         var head = document.SegmentHeadOf(node);
         if ((flags & LineFlags.LastPoint) == 0) {
             return (segment, head);

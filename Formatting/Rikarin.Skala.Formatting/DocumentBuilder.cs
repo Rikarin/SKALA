@@ -123,6 +123,23 @@ public sealed class DocumentBuilder {
     int[] ownerWidth = new int[512];
 
     /// <summary>
+    ///     ⚠ The width an array initializer's fill measures an element by (#444, SK-DIV-0208): flat, as if
+    ///     the author's kept breaks were not there, and ending at the first line of a moved block comment
+    ///     that spans lines. Measured on the oracle: <c>Compute(</c> / <c>alpha,</c> / <c>beta</c> / <c>)</c>
+    ///     goes back beside <c>alphaValue, betaValue,</c> because <c>Compute(alpha, beta)</c> fits there, and a
+    ///     <c>new int(…)</c> that does not fit flat stays on its own line however its arguments were broken.
+    ///     The flat width answers neither — a kept break makes it unbounded — and reading the element
+    ///     as unbounded on the pass after it chopped was what made the first attempt not idempotent.
+    /// </summary>
+    int[] draft = new int[512];
+
+    /// <summary>Whether the draft measure ends inside this node — a moved comment's first line.</summary>
+    bool[] draftStops = new bool[512];
+
+    /// <summary>The draft width from a point to the next point of its group. See <see cref="draft" />.</summary>
+    int[] draftSegment = new int[512];
+
+    /// <summary>
     ///     The groups that own <see cref="GroupFacts.BreaksWithOwner" /> links — a binary chain's
     ///     chain-wide group — which answer "does the whole chain fit on one line" and are the one kind of
     ///     container a certain child does not make unbounded.
@@ -200,6 +217,13 @@ public sealed class DocumentBuilder {
             multiline ? FirstLineWidth(value) : TextWidth.Measure(value)
         );
         nodes[pending[index]].Flags = (int)flags;
+
+        // ⚠ A literal that spans lines drafts to its first line, as a moved comment does: the oracle keeps
+        // `"a", """` on the element's line and puts the next element below the closing quotes (SK-DIV-0208).
+        if (multiline) {
+            draft[pending[index]] = FirstLineWidth(value);
+            draftStops[pending[index]] = true;
+        }
     }
 
     /// <summary>Raw text, copied byte-for-byte and never reindented.</summary>
@@ -225,6 +249,11 @@ public sealed class DocumentBuilder {
             multiline ? FirstLineWidth(value) : TextWidth.Measure(value)
         );
         nodes[pending[index]].Flags = (int)flags;
+        if (multiline && (flags & (VerbatimFlags.ShiftWithLine | VerbatimFlags.AlignStarred)) != 0) {
+            draft[pending[index]] = FirstLineWidth(value);
+            draftStops[pending[index]] = true;
+        }
+
         if (sourceLineIndent is not null) {
             nodes[pending[index]].Arg2 = AddString(sourceLineIndent);
         }
@@ -262,6 +291,18 @@ public sealed class DocumentBuilder {
     ///     CRLF stays CRLF — <c>enforce_line_ending_style = false</c> means mixed endings are preserved
     ///     rather than normalised.
     /// </summary>
+    /// <summary>
+    ///     Adds <paramref name="flags" /> to the line just written. <see cref="LineFlags.KeptBreak" /> also
+    ///     makes the line one column wide to the draft measure (see <see cref="draft" />).
+    /// </summary>
+    public void FlagLastLine(LineFlags flags) {
+        var last = pending[^1];
+        nodes[last].Flags |= (int)flags;
+        if ((flags & LineFlags.KeptBreak) != 0) {
+            draft[last] = 1;
+        }
+    }
+
     public void Line(LineKind kind, int blankLines = 0, string? newLine = null) =>
         Leaf(
             DocKind.Line,
@@ -402,10 +443,19 @@ public sealed class DocumentBuilder {
         var childCertain = false;
         byte childOrigin = 0;
         var owned = 0;
+        var drafted = 0;
+        var draftStopped = false;
 
         for (var i = start; i < pending.Count; i++) {
             var child = pending[i];
             children.Add(child);
+            if (!draftStopped) {
+                drafted = drafted >= Document.Unbounded || draft[child] >= Document.Unbounded
+                    ? Document.Unbounded
+                    : drafted + draft[child];
+                draftStopped = draftStops[child];
+            }
+
             childCertain |= certain[child];
             childOrigin = Math.Max(childOrigin, certainOrigin[child]);
             if (width < Document.Unbounded) {
@@ -514,6 +564,13 @@ public sealed class DocumentBuilder {
         }
 
         var index = Allocate(frame.Kind, frame.Arg0, frame.Arg1, default, childStart, width, head);
+        if (frame.Kind == DocKind.IfBroken) {
+            drafted = count > 1 ? draft[children[childStart + 1]] : 0;
+            draftStopped = count > 1 && draftStops[children[childStart + 1]];
+        }
+
+        draft[index] = drafted;
+        draftStops[index] = draftStopped;
         pointWidth[index] = point;
         this.breaks[index] = breaks;
         var selfOrigin = OwnCertainty(frame);
@@ -593,6 +650,7 @@ public sealed class DocumentBuilder {
             afterPoint,
             segment,
             segmentHead,
+            draftSegment,
             breaks,
             [.. facts]
         );
@@ -652,6 +710,10 @@ public sealed class DocumentBuilder {
         // Whether the current segment met a comment that spans lines, which ends it. See Walk.
         var ended = false;
 
+        // The draft measure of the current segment, and whether it has ended. See `draft`.
+        var drafted = 0;
+        var draftEnded = false;
+
         Walk(childStart, count, 0);
 
         // ⚠ The point still open when the walk ends is the group's last, and it is flagged here
@@ -688,11 +750,23 @@ public sealed class DocumentBuilder {
         void Flush() {
             if (current >= 0) {
                 segment[current] = flat;
+                draftSegment[current] = drafted;
                 afterPoint[current] = stopsAtYieldingPoints && !pointStopped && yieldPoint >= 0
                     ? yieldPoint
                     : point;
                 segmentHead[current] = Math.Min(head, flat);
             }
+        }
+
+        void AddDraft(int child) {
+            if (draftEnded) {
+                return;
+            }
+
+            drafted = drafted >= Document.Unbounded || draft[child] >= Document.Unbounded
+                ? Document.Unbounded
+                : drafted + draft[child];
+            draftEnded = draftStops[child];
         }
 
         // Whether a nested group's own points are places a break could land: it breaks always, on
@@ -711,6 +785,8 @@ public sealed class DocumentBuilder {
                     Flush();
                     current = child;
                     ended = false;
+                    drafted = 0;
+                    draftEnded = false;
                     pointDepth = depth;
                     yieldPoint = -1;
                     flat = 0;
@@ -763,6 +839,15 @@ public sealed class DocumentBuilder {
                 // the fill's own points, and measuring one of those as "infinitely wide" makes the
                 // fill point in front of it break — so a byte array written eight per line came back
                 // seven and one.
+                // A required line inside an element is part of the element's draft — a space when it keeps
+                // the author's break; one at the point's own depth ends the segment, as it does the flat one.
+                if (node.Kind == DocKind.Line
+                    && flatWidth[child] >= Document.Unbounded
+                    && current >= 0
+                    && depth > pointDepth) {
+                    AddDraft(child);
+                }
+
                 if (node.Kind == DocKind.Line && flatWidth[child] >= Document.Unbounded) {
                     // A hard break inside a nested item does not end the enclosing fill's
                     // segment. That item has no flat form. Otherwise a break created on pass
@@ -784,6 +869,8 @@ public sealed class DocumentBuilder {
                 if (current < 0) {
                     continue;
                 }
+
+                AddDraft(child);
 
                 // ⚠ A block comment that spans lines ends the segment at its first line rather than
                 // making it infinite (#440). The oracle's fill asks whether the next item fits up to
@@ -867,6 +954,9 @@ public sealed class DocumentBuilder {
             Array.Resize(ref certain, certain.Length * 2);
             Array.Resize(ref certainOrigin, certainOrigin.Length * 2);
             Array.Resize(ref ownerWidth, ownerWidth.Length * 2);
+            Array.Resize(ref draft, draft.Length * 2);
+            Array.Resize(ref draftStops, draftStops.Length * 2);
+            Array.Resize(ref draftSegment, draftSegment.Length * 2);
         }
 
         ref var node = ref nodes[nodeCount];
@@ -891,6 +981,9 @@ public sealed class DocumentBuilder {
         certain[nodeCount] = width >= Document.Unbounded;
         certainOrigin[nodeCount] = width >= Document.Unbounded ? (byte)2 : (byte)0;
         ownerWidth[nodeCount] = width;
+        draft[nodeCount] = width;
+        draftStops[nodeCount] = false;
+        draftSegment[nodeCount] = 0;
         return nodeCount++;
     }
 

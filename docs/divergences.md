@@ -7806,29 +7806,131 @@ of its own, a shape that is about comment placement and not about the closer.
 - options: none.
 - ⚠ status: **resolved**. Pinned by `EmptyContainerCommentIssue444Tests`.
 
-## SK-DIV-0208 — an array initializer's element that spans lines: measured, not wired
+## SK-DIV-0208 — an array initializer's fill measures an element flat, its kept breaks ignored
 
-#444's third shape. Measured with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`; Skala is as it was:
+#444's third shape. Measured with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `alphaValue, betaValue, Compute(` / `alpha,` / `beta` / `), tail` (kept breaks inside the call) | `alphaValue, betaValue, Compute(` / … / `),` / `tail` — and the same from `Compute(` on a line of its own | `Compute(` on a line of its own, `), tail` |
+| an element that does not fit flat — a call, an array, a collection, a lambda, a binary chain | on a line of its own, then wrapped inside | identical |
+| `new[] { 1, Compute(2, /* a` / `b */ 3), 4 }` | `1, Compute(` / … / `),` / `4` | `1,` / `Compute(` / … / `), 4` |
+| any element after one that spanned lines (`tail`, a call, a collection, `[1, 2]`) | on a line of its own | beside the `)` |
+| `first is string,` / `second` / `is string` | `first is string, second` / `is string` | `first is string,` / `second` |
+| `"a", """` / raw / `""", "b"` | `"a", """` / … / `""",` / `"b"` | `"a",` / `"""` / … / `""", "b"` |
+| `), [` with a collection too long for any line, in `pathological/nested-collection-in-generated-*.cs` | the `[` kept beside the `)` | kept by `LineFlags.DelimitedItem` |
+| `1, // a` / `2, 3`, a run of tuples after `//` comments | as written | identical |
+
+So the fill measures an element *flat, as if the author's kept breaks were not there*, and only up to the
+first line of a comment or literal that spans lines; fits, it stays; does not, it moves down. And the
+element after one that spanned lines starts a line of its own.
+
+⚠ The first implementation (reverted before #444's first merge) used "the element has no flat form and
+its head fits", which is not that measure, and was not idempotent on
+`pathological/nested-collection-in-generated-switch.cs`: pass one moved `new int(…)` down because it did
+not fit, its arguments chopped, and pass two found it certain with a head that fitted and moved it back.
+The measure here, `DocumentBuilder.draft`, is the same number on both passes: a kept point counts its flat
+rendering, a required line that keeps the author's break (`LineFlags.KeptBreak`, set where the builder
+writes a break nothing planned) counts as a space, a moved comment or a literal spanning lines counts its
+first line and ends the measure. An array element's fill point (`LineFlags.ArrayElement`) reads it through
+`Document.DraftSegmentOf`. "Spanned lines" is read off the tokens — the line the element's first token
+started on against the line of its last — so neither a comment on a line of its own before an element
+nor a `//` comment after one counts; the builder flags a required break in front of an element so that its
+start is recorded, and the braces' point, the fill's owner, records the first element's.
+
+⚠ The fuzzer refuted one piece on the way (seed 11833788308239883143): keeping a *parenthesised*
+element's head when it fits nowhere whole is not idempotent, because its head ends at a binary operator
+only once that operator's break is the author's. Only a collection expression's `[` keeps its head — the
+pathological row — and its head ends at its own `[` on every pass.
+
+Not a collection expression's own elements: `CollectionAfterEqIssue375Tests` pins a multi-line `((…`
+element of one on a line of its own, and that fill was not re-measured here.
+
+- options: `skala_wrap_array_initializer_style = wrap_if_long`, the exported value.
+- ⚠ status: **resolved**. Pinned by `ArrayElementDraftIssue444Tests` and
+  `constructs/breaks/array-element-draft.cs`.
+
+## SK-DIV-0210 — `is`/`as` breaks before its keyword when only the keyword overflows
+
+#444's first shape. Measured on `return <operand> as string;` and `var value = <operand> is T;` a column at
+a time with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`:
+
+| operand ends at | oracle, `return … as string;` | oracle, `var value = … is T;` | Skala before |
+|---|---|---|---|
+| 114–117 | `… as` / `string;` | `=` / `… is` / `T;` | identical |
+| 118–120 | `…` / `as string;` | `=` / `… is` / `T;` | `… as` / `string;` past the margin |
+| 121–124 | `receiver` / `.Property… as` / `string;` | `receiver` / `.Property… is` / `T;`, no `=` break | `… as` / `string;` past the margin; `=` / … |
+| `x` / `is T` written broken | kept | kept | identical |
+
+The middle row is wired: the gap before the keyword is a point of its own group (`GroupFacts.KeywordWidth`),
+broken exactly when the operand fits on its line and the operand with a space and the keyword does not,
+and planned only where the author did not already break there. The break lands one level past the
+operand's line (SK-DIV-0206).
+
+⚠ Left **open**, the last row: past the margin the oracle wraps *inside a simple member access* —
+`receiver` / `.Property…`, the dot one level in plus one — a break point Skala does not have outside a
+chain of calls, and after an `=` it declines the `=` break to do it. Wiring that is a member-access wrap
+of its own, not this rule.
+
+- options: none.
+- ⚠ status: **resolved** for the band, **open** past it. Pinned by `TypeTestKeywordIssue444Tests`.
+
+## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
+
+#444's second and sixth shapes are one question — when the oracle breaks after an `=` rather than inside
+its value — and no rule tried here survived the next probe, so nothing is wired. The ordering rule Skala
+has (`GroupFacts.PrefersOuterBreak`, its margin `11 + continuation level`) is refuted on both sides by the
+probes below, with `jb cleanupcode` 2025.2.6 under `SkalaFormatOnly`, a column at a time.
+
+**A call** (`<head> = Name(alphaValue, ddd…);`). The value ends at its continuation column + V.
+
+| `<head> =` | `(` lands at | joined line | oracle | Skala |
+|---|---|---|---|---|
+| `public int SSSSSSSSSSS121 =` (field) | 40 | 121–129 | `= Compute(` / arguments chopped | `=` / `Compute(…)` whole |
+| the same | 40 | 131–135 | chopped | chopped |
+| `var localValueName121 =` | 40 | 121–125 | chopped | `=` / call whole |
+| `var vNN =`, the name widened | 33–75 | 122 and 128 | chopped | chopped |
+| the same | 82 | 122 / 128 | `=` / call whole / chopped | chopped / chopped |
+| the same | 89–103 | 122 and 128 | `=` / call whole | chopped |
+
+So the margin depends on where the call's `(` would land: a short head is chopped however well the
+value would fit below, and a long one breaks the `=` up to a value ending at 118 at 89 columns but not at
+82. A fixed margin answers neither column of the table.
+
+**A binary pattern after `is`** (`bool c = <operand> is > 5 and < 10;`, the value at column 12 ending
+at E):
+
+| E | oracle | Skala |
+|---|---|---|
+| ≤ 114 (the joined line fits) | one line | identical |
+| 116–120 | `=` / the value whole | `= … is > 5` / `and < 10;` |
+| 122 | `=` / `… is > 5` / `and < 10;` | the same as 116–120 |
+| `is null or Empty`, the same widths | the same as `> 5 and < 10` | the same |
+| `&& alpha` and `+ alpha` in place of the pattern | the operator breaks, never the `=` | identical |
+| `x is SomeVeryLongTypeName or AnotherVeryLongTypeName` past the margin (SK-DIV-0205's probes) | the `or` breaks, never the `=` | identical |
+
+Breaking the `=` "when the value then fits" explains 116–120 and not 122, and nothing tried separates
+the two pattern shapes that break the `=` from the one that does not.
+
+- options: `skala_wrap_before_eq = false`, the exported value.
+- ⚠ status: **open**, measured. #444 shapes 2 and 6.
+
+## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
+
+Measured beside SK-DIV-0206 (`SearchValuesAnalyzer.cs`) and probed for #444, with `jb cleanupcode`
+2025.2.6 under `SkalaFormatOnly`:
 
 | written | oracle | Skala |
 |---|---|---|
-| `new[] { 1, Compute(2, /* a` / `b */ 3), 4 }` | `1, Compute(` / … / `),` / `4` | `1,` / `Compute(` / … / `), 4` |
-| a nested `new[] { … }` element that spans lines, then `new[] { 4 }` | `},` / `new[] { 4 }` | `}, new[] { 4 }` |
-| `first is string,` / `second` / `is string` | `first is string, second` / `is string` | `first is string,` / `second` |
-| `[.. Source],` / `new int(` / arguments chopped / `), [` / a long collection | kept exactly so, the oracle's own fixed point | identical but `),` / `[` |
-| `"a", """` / raw / `""", "b"` | `"a", """` / … / `""",` / `"b"` | `"a",` / `"""` / … / `""", "b"` |
+| `X x when Compute(alpha, beta, gamma1)` / `=> 1,` with the `when` line at 117 | `when Compute(` / arguments two levels past the arm / `)` one level / `=> 1,` one level | the arguments one level, `)` on the arm's column |
+| the same with the `when` line at 121 and longer | `when Compute(` / arguments one level / `) => 1,` | identical |
+| `when x.All(e => e` / `is T` / `)` / `=> …` (`SearchValuesAnalyzer.cs`) | `)` one level past the arm, `is` two | `)` on the arm's column, `is` one |
 
-⚠ A first implementation was written and reverted, and why is the finding. It kept an element's head on
-the line whenever the element had no flat form and its first line fitted (the tuple's
-`KeepsHeadWhenCertain`), and broke before the element after one that spanned lines. The first half was
-not idempotent on `pathological/nested-collection-in-generated-switch.cs`: on pass one `new int(…)` does
-not fit and moves down, its arguments chop; on pass two those chopped arguments make it certain, its head
-fits after `[.. Source],`, and it moved back. The oracle keeps it down on its own output. So the oracle's
-fill does not ask "has the element a flat form" but measures the element flat, as if its kept breaks were
-not there, with a comment counted to its first line — which `Compute(2, /* a`, `second` and `new int(`
-all agree with, and which Skala has no measure for: a segment holding a kept break is unbounded. The
-second half failed the same file the other way (`), [`, the next element spanning lines too, is kept).
-Both need that measure first.
+So a list in the `when` clause nests from the arm's continuation line when the arrow moves down — #418's
+rule, applied to a construct that opens *before* the group that decides it. ⚠ That is the obstacle: the
+arrow's group opens at the arrow and is decided after the list has been written, and the decision is not
+monotone in width (117 moves the arrow, 121 keeps it), so the list cannot read it from a measure taken
+earlier. Opening the arrow's group at the arm's start would change what it measures. Not wired.
 
-- options: `skala_wrap_array_initializer_style = wrap_if_long`, the exported value.
+- options: none.
 - ⚠ status: **open**, measured.

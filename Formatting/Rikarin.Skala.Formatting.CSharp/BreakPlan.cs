@@ -1599,7 +1599,12 @@ public sealed class BreakPlan {
                 // still chopped. `false` has already decided this construct's shape, so the
                 // author's arrangement inside it no longer governs; that is the same direction the
                 // outer group's own `SourceBroken: … || forced` already reads the key in.
-                JoinsIfFits = joins || forced
+                JoinsIfFits = joins || forced,
+
+                // ⚠ Read by the writer alone, and no fact of the inner group consults it otherwise: the
+                // braces' group is where the line the first element starts on is recorded, because the
+                // point in front of that element is the braces' and not the fill's (#444, SK-DIV-0208).
+                Owner = array ? outer : -1
             }
         );
     }
@@ -3008,6 +3013,17 @@ public sealed class BreakPlan {
                 FromLine: !IsAHeaderCondition(node)
             )
         );
+
+        // ⚠ The break goes *before* the keyword exactly when the operand fits on its line and the operand
+        // with the keyword does not (#444, SK-DIV-0210). Measured on `return <operand> as string;` a
+        // column at a time: with the operand ending at 117 the oracle writes `… as` / `string;`, at 118,
+        // 119 and 120 it writes `…` / `as string;`, and past 120 it wraps inside the operand. A break the
+        // author wrote there is theirs, and is kept unplanned as before.
+        if (node is BinaryExpressionSyntax && !BreaksBefore(keyword)) {
+            var before = NewGroup();
+            Point(keyword, before, lastResort: true);
+            Describe(node, before, GroupMode.Preserve, new GroupFacts(KeywordWidth: keyword.Span.Length));
+        }
     }
 
     /// <summary>

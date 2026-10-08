@@ -2923,6 +2923,9 @@ public sealed partial class CSharpDocumentBuilder {
             ResolveBlankLines(previous, nextPieceIndex, nextToken, newLines - 1),
             options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
         );
+
+        // An author's break nothing planned: the draft measure reads it as a space (SK-DIV-0208).
+        doc.FlagLastLine(LineFlags.KeptBreak);
     }
 
     string DefaultNewLine() =>
@@ -3129,6 +3132,12 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         doc.Line(LineKind.Hard, blanks, newLine);
+
+        // ⚠ A required break in front of an array initializer's element — after a `//` comment — is
+        // where that element starts, and no fill point saw it (#444, SK-DIV-0208).
+        if (StartsAFilledElement(nextToken)) {
+            doc.FlagLastLine(LineFlags.ArrayElement);
+        }
     }
 
     /// <summary>
@@ -4000,6 +4009,20 @@ public sealed partial class CSharpDocumentBuilder {
             flags |= LineFlags.KeepsHeadWhenCertain;
         }
 
+        // ⚠ Every point in front of an element carries the flag, the opener's too, so that the line the
+        // first element starts on is on record for the second element's point. A collection expression
+        // keeps its `[` on the line when it fits nowhere whole: `), [` in
+        // `pathological/nested-collection-in-generated-*.cs`, where `new[] {` in the same place moves down.
+        // ⚠ Not a parenthesised element, which the fuzzer refuted (seed 11833788308239883143): its head
+        // ends at a binary operator only once that operator's break is the author's, so pass two kept on
+        // the line what pass one had moved down. A collection's head ends at its own `[` on both passes.
+        if (StartsAFilledElement(nextToken)) {
+            flags |= LineFlags.ArrayElement;
+            if (nextToken.IsKind(SyntaxKind.OpenBracketToken) && nextToken.Parent is CollectionExpressionSyntax) {
+                flags |= LineFlags.DelimitedItem;
+            }
+        }
+
         return flags;
     }
 
@@ -4019,6 +4042,22 @@ public sealed partial class CSharpDocumentBuilder {
         token.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken
         && token.Parent?.Parent is { } item
         && IsATupleShapedItem(item);
+
+    /// <summary>
+    ///     Whether the token is the first of an array initializer's element — the fill whose elements were
+    ///     measured (#444, SK-DIV-0208). ⚠ Not a collection expression's: the oracle puts a multi-line
+    ///     <c>((…</c> element of one on a line of its own (CollectionAfterEqIssue375Tests).
+    /// </summary>
+    static bool StartsAFilledElement(SyntaxToken token) {
+        for (SyntaxNode? node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
+            if (node.Parent is InitializerExpressionSyntax initializer
+                && initializer.IsKind(SyntaxKind.ArrayInitializerExpression)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>
     ///     Whether the token is the first of any tuple-shaped item — the fills whose identifier-headed
