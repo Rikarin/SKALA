@@ -951,6 +951,12 @@ public sealed class Document {
 ///     (<see cref="Continues" />), so the second pass — which reads the fill's break as the author's —
 ///     gives the same answer as the first.
 /// </param>
+/// <param name="FlatIfHeadOverflows">
+///     ⚠ An assignment's <c>=</c> whose target is a member-access fill (#531, SK-DIV-0330): when the target
+///     with its <c>=</c> does not fit on the line, the target's own dot breaks and the <c>=</c> stays —
+///     <c>A.B.C.D.More</c> / <c>.Value = 1;</c> — where a break after the <c>=</c> would leave the line it
+///     ends as long as it was.
+/// </param>
 /// <param name="HeldCall">
 ///     ⚠ A chain's held first call (#528, SK-DIV-0331), as the columns its line has to end short of the
 ///     margin by, or zero: the point before it breaks exactly when the
@@ -977,4 +983,5 @@ public readonly record struct GroupFacts(
     int Terminator = 0,
     int KeywordWidth = 0,
     int HeldCall = 0,
-    bool ContinuesIfItBreaks = false);
+    bool ContinuesIfItBreaks = false,
+    bool FlatIfHeadOverflows = false);

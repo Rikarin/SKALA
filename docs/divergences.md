@@ -8745,8 +8745,20 @@ boundary is not a width of the head alone or of the body alone: a fourteen-colum
 behind heads of 106 to 116 columns and the dot behind 118, and a twenty-two-column body takes the arrow
 behind 118.
 
+⚠ **Round two (#531), 2026-10-08.** The first row is fixed: the target's fill is planned as
+last-resort points, so the `=`'s break still comes first where the target with its `=` fits, and the
+`=` is told to stay where it does not (`GroupFacts.FlatIfHeadOverflows`), the target's own dot taking
+the break. The second row is fixed by measuring the body *with its comma*: on a 96-arm grid (heads of
+106 to 128 columns, bodies of 2 to 22) every arm whose body and comma fit in fourteen columns fills and
+every wider one breaks the arrow, but for three rows that stay open — a fourteen-column body with its
+comma behind a 106-column head (the arrow, where the rule fills), any body behind a head whose `=>`
+no longer fits on its line (the dot, where the rule breaks before the arrow), and a body with a dot of
+its own, `yyyyyyyyyyy.Z,` (the dot, where Skala breaks the arrow because the body's own fill point
+answers the arrow's head question). Not measured further.
+
 - options: `skala_wrap_chained_method_calls`, `skala_wrap_after_property_in_chained_method_calls`.
-- ⚠ status: **open**, measured.
+- ⚠ status: **narrowed** (#531): the target row and the comma row resolved, pinned by
+  `MemberAccessFillIssue531Tests`; the three arm rows above open.
 
 ## SK-DIV-0331 — a chain's held first call breaks when it does not fit, and Skala chops its arguments
 

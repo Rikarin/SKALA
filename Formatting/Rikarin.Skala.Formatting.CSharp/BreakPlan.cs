@@ -2593,7 +2593,7 @@ public sealed class BreakPlan {
             if (options.KeepsUserBreaksBetweenItems && BreaksBefore(dot)) {
                 Mandatory(dot);
             } else {
-                Point(dot, group, fill: true);
+                Point(dot, group, fill: true, lastResort: IsAssignmentTarget(root));
             }
         }
 
@@ -2602,7 +2602,7 @@ public sealed class BreakPlan {
             new GroupPlan(
                 group,
                 GroupMode.Preserve,
-                new GroupFacts(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: true),
+                new GroupFacts(BreaksIfTooLong: true, HidesFlatWidthWhenBroken: !IsAssignmentTarget(root)),
                 ChainHeadIsParenthesised(root),
                 OwnLevel: !ChainHeadIsParenthesised(root)
             )
@@ -2637,7 +2637,10 @@ public sealed class BreakPlan {
     /// <summary>Whether the property fill is planned in the position <paramref name="root" /> stands in.</summary>
     /// <remarks>
     ///     ⚠ Measured, and the position decides, not the expression. As an assignment's target the
-    ///     <c>=</c> breaks first — <c>A.B.C.D.Value =</c> / <c>yyyyyyyy;</c>. As the operand of <c>is</c>
+    ///     <c>=</c> breaks first — <c>A.B.C.D.Value =</c> / <c>yyyyyyyy;</c> — and the target's dots only
+    ///     when the target with its <c>=</c> overflows by itself (<c>A.B.C.D.More</c> / <c>.Value = 1;</c>,
+    ///     #531): planned there as last-resort points, with the <c>=</c> told to stay
+    ///     (<see cref="GroupFacts.FlatIfHeadOverflows" />). As the operand of <c>is</c>
     ///     or <c>as</c>, the type test's own break, an <c>=</c> or a lambda's arrow is taken instead
     ///     (#440, #444, #445). As a switch arm's pattern, the fill outranks the arrow only for a short
     ///     body: <c>…Dddd</c> / <c>.MoreValue =&gt; yyyyyyyyyyyyy,</c> up to thirteen columns of body,
@@ -2646,12 +2649,19 @@ public sealed class BreakPlan {
     ///     does fill, and a fourteen-column body behind a 118-column head, which it fills too — are
     ///     SK-DIV-0330.
     /// </remarks>
+    static bool IsAssignmentTarget(SyntaxNode root) =>
+        root.Parent is AssignmentExpressionSyntax assignment && assignment.Left == root;
+
     static bool PlansTheFill(SyntaxNode root) =>
         root.Parent switch {
-            AssignmentExpressionSyntax assignment when assignment.Left == root => false,
+            AssignmentExpressionSyntax assignment when assignment.Left == root => true,
             BinaryExpressionSyntax binary when IsTypeTest(binary) && binary.Left == root => false,
             IsPatternExpressionSyntax test when test.Expression == root => false,
-            ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm } => arm.Expression.Span.Length <= 13,
+            // ⚠ The body with its comma, if it has one: a last arm without one fills at fourteen columns
+            // of body, where a comma-led arm of fourteen breaks the arrow (#531).
+            ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm } =>
+                arm.Expression.Span.Length + (arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0)
+                <= 14,
             _ => true
         };
 
@@ -4197,7 +4207,10 @@ public sealed class BreakPlan {
                     // measured from the marker; see GroupFacts.MinimumHead.
                     BreaksOnlyIfTailFits: yieldsToTheBracket,
                     Owner: head,
-                    MinimumHead: yieldsToTheBracket ? MinimumEqualsHead : 0
+                    MinimumHead: yieldsToTheBracket ? MinimumEqualsHead : 0,
+                    FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
+                        && TrailingProperty(target) is not null
+                        && ChainPointCount(target, options) == 0
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:

@@ -306,6 +306,11 @@ public sealed class Fitter {
                         : ResolvedMode.Flat;
                 }
 
+                // ⚠ See GroupFacts.FlatIfHeadOverflows: the head's own point takes the break.
+                if (facts.FlatIfHeadOverflows && !Fits(m.Column, m.PointWidth)) {
+                    return ResolvedMode.Flat;
+                }
+
                 // ⚠ Broken exactly when the receiver fits, the receiver with its call does not, and the
                 // call fits on the line below. See GroupFacts.HeldCall.
                 if (facts.HeldCall > 0) {

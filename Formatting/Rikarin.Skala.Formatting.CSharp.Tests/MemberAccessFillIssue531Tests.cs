@@ -1,0 +1,66 @@
+namespace Rikarin.Skala.Formatting.CSharp.Tests;
+
+/// <summary>
+///     Issue #531: the member-access fill's residues. Every expected string is <c>jb cleanupcode</c>'s own
+///     output, measured 2026-10-08 with <c>Testing ask</c>.
+/// </summary>
+public sealed class MemberAccessFillIssue531Tests {
+    const string Head = "Aaaaaaaaaaaaaaaa.Bbbbbbbbbbbbbbbbbbbb.Cccccccccccccccccccc.Dddddddddddddddddd";
+
+    /// <summary>
+    ///     An assignment's target that overflows by itself breaks at its last dot that fits and keeps its
+    ///     <c>=</c>; one that fits with its <c>=</c> breaks after the <c>=</c>. Before the fix the first came
+    ///     back <c>….Valueeee =</c> / <c>1;</c> past the margin.
+    /// </summary>
+    [Fact]
+    public void AnAssignmentsTarget_BreaksAtItsDot_OnlyWhenItOverflowsByItself() =>
+        Oracle.Agrees(
+            $$"""
+              class T {
+                  void M() {
+                      {{Head}}.Morexxxxxxxxxxxxxxxx.Valueeeeeeeeeeeeeeeee = 1;
+                      {{Head}}.MorexxxxxxxxxxxxxxxValue = yyyyyyyy;
+                  }
+              }
+              """,
+            $$"""
+              class T {
+                  void M() {
+                      {{Head}}.Morexxxxxxxxxxxxxxxx
+                          .Valueeeeeeeeeeeeeeeee = 1;
+                      {{Head}}.MorexxxxxxxxxxxxxxxValue =
+                          yyyyyyyy;
+                  }
+              }
+              """
+        );
+
+    /// <summary>
+    ///     A switch arm's last arm, without a comma, fills at fourteen columns of body; with a comma the
+    ///     arrow breaks. Before the fix both broke the arrow.
+    /// </summary>
+    [Fact]
+    public void AnArmsBody_IsMeasuredWithItsComma() =>
+        Oracle.Agrees(
+            $$"""
+              class T {
+                  object N(object o) =>
+                      o switch {
+                          {{Head}}.MorexxxxxxxxxxxValue => yyyyyyyyyyyyyy,
+                          {{Head}}.MorexxxxxxxxxxxValueeeeee => yyyyyyyyyyyyyy
+                      };
+              }
+              """,
+            $$"""
+              class T {
+                  object N(object o) =>
+                      o switch {
+                          {{Head}}.MorexxxxxxxxxxxValue =>
+                              yyyyyyyyyyyyyy,
+                          {{Head}}
+                              .MorexxxxxxxxxxxValueeeeee => yyyyyyyyyyyyyy
+                      };
+              }
+              """
+        );
+}
