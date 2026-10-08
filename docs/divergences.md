@@ -9123,7 +9123,13 @@ left operand (#457), where the chain takes a level past the operator's.
   Two exceptions keep the late scope, both measured: a broken *binary* condition (`&& c` at one level,
   `? x` at two; `==` the same) and a chain headed by a parenthesis, which shares the level around it
   (SK-DIV-0112; `ArrowBodyChainIssue404Tests` pinned it). A row beside it is a break choice, not this
-  entry's: `var a7aaaa… = chain ? x : y` where the oracle breaks the `=` and keeps the chain whole.
+  entry's: `var a7aaaa… = chain ? x : y` where the oracle breaks the `=` and keeps the chain whole —
+  **resolved** (#553, round three): an `=` whose value is a conditional breaks exactly when the condition
+  does not fit beside it and the head through the `=` is twelve columns or more (`GroupFacts.ValueHeadWidth`,
+  the condition's flat width from the source); a call condition additionally needs to fit below or the `=` to
+  stand at column 40 or left of it; a type-test condition keeps the ordinary rule. Measured on chain, `&&`,
+  identifier and call conditions behind heads of 8 to 66 columns; every row agrees. Pinned by
+  `ConditionalAfterEqIssue553Tests` and `constructs/breaks/conditional-after-eq.cs`.
   Pinned by `TernaryAfterAChoppedConditionIssue530Tests` and
   `constructs/breaks/ternary-after-a-chopped-condition.cs`.
 

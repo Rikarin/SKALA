@@ -995,6 +995,16 @@ public sealed class Document {
 ///     (<see cref="Continues" />), so the second pass — which reads the fill's break as the author's —
 ///     gives the same answer as the first.
 /// </param>
+/// <param name="ValueHeadWidth">
+///     ⚠ An <c>=</c> whose value is a conditional (#553): the flat width of the condition. The oracle
+///     breaks the <c>=</c> exactly when the condition does not fit beside it and the head through the
+///     <c>=</c> reaches <see cref="MinimumHead" /> — whatever the condition's own points could do — or,
+///     with <see cref="ValueHeadFitsBelow" />, when the condition then fits below. Zero for any other value.
+/// </param>
+/// <param name="ValueHeadFitsBelow">
+///     With <see cref="ValueHeadWidth" />: the condition is a call, whose <c>=</c> breaks only when the
+///     condition fits on the line below.
+/// </param>
 /// <param name="FlatIfHeadOverflows">
 ///     ⚠ An assignment's <c>=</c> whose target is a member-access fill (#531, SK-DIV-0330): when the target
 ///     with its <c>=</c> does not fit on the line, the target's own dot breaks and the <c>=</c> stays —
@@ -1035,4 +1045,7 @@ public readonly record struct GroupFacts(
     int ThroughWidth = 0,
     int HeldCall = 0,
     bool ContinuesIfItBreaks = false,
-    bool FlatIfHeadOverflows = false);
+    bool FlatIfHeadOverflows = false,
+    int ValueHeadWidth = 0,
+    bool ValueHeadFitsBelow = false,
+    bool ValueHeadIsWide = false);

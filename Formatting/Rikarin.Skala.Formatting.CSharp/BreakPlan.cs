@@ -4316,6 +4316,16 @@ public sealed class BreakPlan {
         var yieldsToTheBracket = BreakYieldsToTheBracket(value);
         var owner = EqualsOwnerOf(node);
         var callee = owner == EqualsOwner.None ? 0 : CalleeWidthOf(value);
+
+        // ⚠ A conditional value measures its whole condition (#553, GroupFacts.ValueHeadWidth), with the
+        // collection's twelve-column head floor: `var v =` keeps the `=` and chops the chain, `var vvvvvvvvvv
+        // =` breaks it — measured on chain, binary and identifier conditions alike.
+        var conditionHead = owner != EqualsOwner.None
+            && value is ConditionalExpressionSyntax conditional
+            && conditional.Condition is not (IsPatternExpressionSyntax or BinaryExpressionSyntax { RawKind: (int)SyntaxKind.IsExpression or (int)SyntaxKind.AsExpression })
+            ? FlatSourceWidth(conditional.Condition)
+            : 0;
+        var conditionHeadIsWide = conditionHead > 0 && HeadWidthThroughEquals(node, equals) >= MinimumEqualsHead;
         var head = -1;
         if ((yieldsToTheBracket || callee > 0)
             && EqualsHeadStartOf(node) is { RawKind: not 0 } headToken
@@ -4379,7 +4389,12 @@ public sealed class BreakPlan {
                     CalleeOwner: owner,
                     FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
                     && TrailingProperty(target) is not null
-                    && ChainPointCount(target, options) == 0
+                    && ChainPointCount(target, options) == 0,
+                    ValueHeadWidth: conditionHead,
+                    ValueHeadFitsBelow: value is ConditionalExpressionSyntax {
+                        Condition: InvocationExpressionSyntax { Expression: IdentifierNameSyntax or GenericNameSyntax }
+                    },
+                    ValueHeadIsWide: conditionHeadIsWide
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -4532,6 +4547,61 @@ public sealed class BreakPlan {
                 when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) => EqualsOwner.Assignment,
             _ => EqualsOwner.None
         };
+
+    /// <summary>
+    ///     The width a node takes written on one line: its tokens as written, a run of whitespace kept as
+    ///     one space, and a line break that the node's own breaks put in front of a <c>.</c>, a <c>?</c>,
+    ///     a <c>)</c> or a <c>]</c> read as nothing — so the chain the first pass chopped measures on the
+    ///     second pass what it measured flat. See <see cref="GroupFacts.ValueHeadWidth" /> (#553).
+    /// </summary>
+    static int FlatSourceWidth(SyntaxNode node) {
+        var width = 0;
+        var first = true;
+        foreach (var token in node.DescendantTokens()) {
+            if (!first && token.HasLeadingTrivia || !first && token.GetPreviousToken().HasTrailingTrivia) {
+                var breaks = token.LeadingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia))
+                    || token.GetPreviousToken().TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
+                var glued = token.Kind() is SyntaxKind.DotToken
+                        or SyntaxKind.QuestionToken
+                        or SyntaxKind.CloseParenToken
+                        or SyntaxKind.CloseBracketToken
+                    || token.GetPreviousToken().Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
+                if (!(breaks && glued)) {
+                    width++;
+                }
+            }
+
+            width += token.Span.Length;
+            first = false;
+        }
+
+        return width;
+    }
+
+    /// <summary>
+    ///     The flat width from the construct's head token (<see cref="EqualsHeadStartOf" />) through the
+    ///     <c>=</c> — <c>var name =</c> — counted as written, whitespace runs as one space.
+    /// </summary>
+    static int HeadWidthThroughEquals(SyntaxNode node, SyntaxToken equals) {
+        var start = EqualsHeadStartOf(node);
+        if (start.IsKind(SyntaxKind.None)) {
+            start = FirstToken(node);
+        }
+
+        var width = 0;
+        for (var token = start; !token.IsKind(SyntaxKind.None); token = token.GetNextToken()) {
+            if (token != start && (token.HasLeadingTrivia || token.GetPreviousToken().HasTrailingTrivia)) {
+                width++;
+            }
+
+            width += token.Span.Length;
+            if (token == equals) {
+                break;
+            }
+        }
+
+        return width;
+    }
 
     static int CalleeWidthOf(ExpressionSyntax value) =>
         value is InvocationExpressionSyntax {

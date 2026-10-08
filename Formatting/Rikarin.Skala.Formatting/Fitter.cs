@@ -379,6 +379,22 @@ public sealed class Fitter {
                         : ResolvedMode.Flat;
                 }
 
+                // ⚠ A conditional's `=` (#553): broken exactly when the condition does not fit beside it
+                // and the head through the `=` is twelve columns or more — and, for a call, when the call
+                // then fits below or the `=` stands at column 40 or left of it: a call that fits nowhere
+                // behind an `=` further right keeps the `=` and chops its arguments. Measured on chain,
+                // binary, identifier and call conditions behind heads from 17 to 66 columns. See
+                // GroupFacts.ValueHeadWidth.
+                if (facts.ValueHeadWidth > 0) {
+                    var beside = Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadWidth);
+                    var below = Fits(m.ContinuationColumn, facts.ValueHeadWidth);
+                    return !beside
+                        && facts.ValueHeadIsWide
+                        && (!facts.ValueHeadFitsBelow || below || m.Column <= CallConditionColumn)
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                }
+
                 return Worth(facts, m, afterPointRunsToTheEnd);
         }
     }
@@ -607,6 +623,9 @@ public sealed class Fitter {
     ///     </para>
     /// </remarks>
     int OuterBreakMargin(in Measures m) => 11 + m.ContinuationColumn / indentWidth;
+
+    /// <summary>The column a call condition's <c>=</c> breaks at or left of when the call fits nowhere (#553).</summary>
+    const int CallConditionColumn = 40;
 
     bool Fits(int column, int flatWidth, int trailing = 0) =>
         flatWidth < Unbounded && trailing < Unbounded && column + flatWidth + trailing <= width;
