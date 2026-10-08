@@ -372,7 +372,8 @@ public sealed class Fitter {
                     if (facts.HeldCall >= 3) {
                         return Fits(m.Column, receiver)
                             && (paren > width
-                                || facts.HeldCall == 3 && m.Column + m.FlatWidth + m.Trailing == width + 1)
+                                || facts.HeldCall == 3
+                                && m.Column + m.FlatWidth + m.Trailing == width + 1)
                                 ? ResolvedMode.Broken
                                 : ResolvedMode.Flat;
                     }
@@ -754,7 +755,8 @@ public sealed class Fitter {
             case 2:
                 // ⚠ One column over beside it, a lone argument's dot breaks instead, as it does below.
                 if (valueColumn <= continuation
-                    || !facts.HeldValueManyArgs && valueColumn + facts.HeldValueWidth == width + 1) {
+                    || !facts.HeldValueManyArgs
+                    && valueColumn + facts.HeldValueWidth == width + 1) {
                     return false;
                 }
 

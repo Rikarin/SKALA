@@ -2868,16 +2868,18 @@ public sealed class BreakPlan {
         if (value is not InvocationExpressionSyntax {
                 Expression: MemberAccessExpressionSyntax { OperatorToken: var dot, Expression: var receiver }
             } call
-            || kind == 1 && call.ArgumentList.Arguments.Count > 1
+            || kind == 1
+            && call.ArgumentList.Arguments.Count > 1
             // ⚠ Measured on plain arguments only: an argument that breaks inside itself — a lambda's body,
             // an initializer — is #529's and #378's layout, not this table's.
             || call.ArgumentList.DescendantNodes()
                 .Any(static node => node is AnonymousFunctionExpressionSyntax
-                    or InitializerExpressionSyntax
-                    or AnonymousObjectCreationExpressionSyntax
-                    or SwitchExpressionSyntax
-                    or CollectionExpressionSyntax
-                    or WithExpressionSyntax)
+                        or InitializerExpressionSyntax
+                        or AnonymousObjectCreationExpressionSyntax
+                        or SwitchExpressionSyntax
+                        or CollectionExpressionSyntax
+                        or WithExpressionSyntax
+                )
             // ⚠ And behind a `var` or an assignment, on arguments with no call or creation of their own:
             // `var bottom = device.CreateAccelerationStructure(new(…));` and `var listener =
             // fleet.World.Create(AiPerception.Sensing(…), …);` keep the `=` and chop where the table would
@@ -2886,7 +2888,8 @@ public sealed class BreakPlan {
             || kind != 1
             && call.ArgumentList.DescendantNodes()
                 .Any(static node => node is InvocationExpressionSyntax or BaseObjectCreationExpressionSyntax)
-            || IsChainRoot(value) && ChainPointCount(value, options) > 0
+            || IsChainRoot(value)
+            && ChainPointCount(value, options) > 0
             || receiver is InvocationExpressionSyntax or ElementAccessExpressionSyntax
             || BreaksBefore(dot)
             || source.AsSpan(value.SpanStart, value.Span.Length).IndexOfAny('\r', '\n') >= 0) {
@@ -2956,9 +2959,12 @@ public sealed class BreakPlan {
                 new(
                     BreaksIfTooLong: true,
                     HidesFlatWidthWhenBroken: !IsAssignmentTarget(root),
-                    ArmHead: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax } ? FlatSourceWidth(root) : 0,
+                    ArmHead: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax }
+                        ? FlatSourceWidth(root)
+                        : 0,
                     ArmBody: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm }
-                        ? FlatSourceWidth(arm.Expression) + (arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0)
+                        ? FlatSourceWidth(arm.Expression)
+                        + (arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0)
                         : 0
                 ),
                 HeadSharesTheLevelAroundIt(root),
@@ -4724,12 +4730,16 @@ public sealed class BreakPlan {
 
         // ⚠ A conditional value measures its whole condition (#553, GroupFacts.ValueHeadWidth), with the
         // collection's twelve-column head floor: `var v =` keeps the `=` and chops the chain, `var vvvvvvvvvv
-        // =` breaks it — measured on chain, binary and identifier conditions alike.
+        // =` breaks it — measured on chain, binary and identifier conditions alike. ⚠ Only a condition the
+        // author left on one line, chain breaks aside: `var properties = replacement is null` / `|| …` keeps
+        // its `=` in the oracle where the same condition written flat breaks it (Skala's own source, Lint).
         var conditionHead = owner != EqualsOwner.None
             && value is ConditionalExpressionSyntax conditional
-            && conditional.Condition is not (IsPatternExpressionSyntax or BinaryExpressionSyntax { RawKind: (int)SyntaxKind.IsExpression or (int)SyntaxKind.AsExpression })
-            ? FlatSourceWidth(conditional.Condition)
-            : 0;
+            && !HasLooseBreak(conditional.Condition)
+            && conditional.Condition is not (IsPatternExpressionSyntax
+                or BinaryExpressionSyntax { RawKind: (int)SyntaxKind.IsExpression or (int)SyntaxKind.AsExpression })
+                ? FlatSourceWidth(conditional.Condition)
+                : 0;
         var conditionHeadIsWide = conditionHead > 0 && HeadWidthThroughEquals(node, equals) >= MinimumEqualsHead;
 
         // ⚠ A single call on a receiver, as the whole value: moved down at its dot rather than chopped
@@ -4822,7 +4832,8 @@ public sealed class BreakPlan {
                     HeldValue: heldCall is null ? 0 : heldKind,
                     HeldValueWidth: heldCall is null
                         ? 0
-                        : FlatSourceWidth(value) + (value.GetLastToken().GetNextToken().IsKind(SyntaxKind.SemicolonToken) ? 1 : 0),
+                        : FlatSourceWidth(value)
+                        + (value.GetLastToken().GetNextToken().IsKind(SyntaxKind.SemicolonToken) ? 1 : 0),
                     HeldValueReceiver: heldReceiver,
                     HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
                         ? heldCall.ArgumentList.OpenParenToken.Span.End - heldDot.OperatorToken.SpanStart
@@ -5004,6 +5015,33 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
+    ///     Whether a node holds a line break that <see cref="FlatSourceWidth" /> reads as a space: anywhere
+    ///     but before a <c>.</c>, a <c>?</c>, a <c>)</c> or a <c>]</c>, or after a <c>(</c> or a <c>[</c>.
+    /// </summary>
+    static bool HasLooseBreak(SyntaxNode node) {
+        var first = true;
+        foreach (var token in node.DescendantTokens()) {
+            if (!first) {
+                var previous = token.GetPreviousToken();
+                var breaks = token.LeadingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia))
+                    || previous.TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
+                var glued = token.Kind() is SyntaxKind.DotToken
+                    or SyntaxKind.QuestionToken
+                    or SyntaxKind.CloseParenToken
+                    or SyntaxKind.CloseBracketToken
+                    || previous.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
+                if (breaks && !glued) {
+                    return true;
+                }
+            }
+
+            first = false;
+        }
+
+        return false;
+    }
+
+    /// <summary>
     ///     The width a node takes written on one line: its tokens as written, a run of whitespace kept as
     ///     one space, and a line break that the node's own breaks put in front of a <c>.</c>, a <c>?</c>,
     ///     a <c>)</c> or a <c>]</c> read as nothing — so the chain the first pass chopped measures on the
@@ -5017,9 +5055,9 @@ public sealed class BreakPlan {
                 var breaks = token.LeadingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia))
                     || token.GetPreviousToken().TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
                 var glued = token.Kind() is SyntaxKind.DotToken
-                        or SyntaxKind.QuestionToken
-                        or SyntaxKind.CloseParenToken
-                        or SyntaxKind.CloseBracketToken
+                    or SyntaxKind.QuestionToken
+                    or SyntaxKind.CloseParenToken
+                    or SyntaxKind.CloseBracketToken
                     || token.GetPreviousToken().Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
                 if (!(breaks && glued)) {
                     width++;

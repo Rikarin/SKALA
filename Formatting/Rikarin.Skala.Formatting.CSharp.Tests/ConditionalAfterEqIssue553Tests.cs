@@ -41,4 +41,47 @@ public sealed class ConditionalAfterEqIssue553Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     A condition the author already broke at its operators keeps the <c>=</c>: the oracle leaves
+    ///     both rows as written, where the same conditions written on one line break the <c>=</c>. Found on
+    ///     Skala's own source (<c>StaticMemberViaDerivedTypeAnalyzer</c>, <c>LargeStructArgumentAnalyzer</c>),
+    ///     which the first cut of the rule moved.
+    /// </summary>
+    [Fact]
+    public void AConditionAlreadyBrokenAtItsOperators_KeepsTheEquals() =>
+        Oracle.Agrees(
+            """
+            class T {
+                object M() {
+                    var properties = replacement is null
+                        || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(access.SyntaxTree, span)
+                            ? null
+                            : FixEdits.Pack((span, replacement));
+                    var threshold = options.TryGetValue("dotnet_code_quality.SK4007.threshold", out var configured)
+                        && int.TryParse(configured, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+                        && parsed > 0
+                            ? parsed
+                            : 64;
+                    return null;
+                }
+            }
+            """,
+            """
+            class T {
+                object M() {
+                    var properties = replacement is null
+                        || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(access.SyntaxTree, span)
+                            ? null
+                            : FixEdits.Pack((span, replacement));
+                    var threshold = options.TryGetValue("dotnet_code_quality.SK4007.threshold", out var configured)
+                        && int.TryParse(configured, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+                        && parsed > 0
+                            ? parsed
+                            : 64;
+                    return null;
+                }
+            }
+            """
+        );
 }
