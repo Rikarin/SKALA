@@ -9144,7 +9144,11 @@ every `or` one level past the operand's line — under an arrow, after `return`,
 argument, in an `if` condition (its aligned column) and under an `&&` (`&& prev.Parent` / `is A` at 12
 under `&&` at 8) alike; `is` / `not (A` / `or B)` keeps the `or` on the `not`'s column. The broken `is`
 now gets `PlanTypeTest`'s from-the-line level, and the chain under it none (#520's rule, extended to a
-break after the keyword). A break before a pattern's `[` or `{` is still joined.
+break after the keyword). A break before a pattern's `[` or `{` is still joined. ⚠ And a property
+pattern's braces under such an `is` nest from the `is`'s line (`… is not {` / subpatterns one level / `}`):
+`LayoutWriter.LevelForBlock` added a from-the-line scope's absolute level to everything outside it, which
+put the subpatterns three levels past the `is` — invisible until now, because only an unbreakable pattern
+ever opened one.
 
 - options: `keep_user_linebreaks`.
 - ⚠ status: **resolved** (#550). Pinned by `constructs/indentation/a-broken-is-over-a-pattern-chain.cs`.
@@ -9187,4 +9191,18 @@ Found beside #550: `M(object[] xs) =>` / `xs is` / `[1, 2];` comes back from the
 `ABreakBeforeAnOpeningBracket_IsJoinedUnlessTheGapBelongsToAParenthesis` pins). Skala joins both. Not wired.
 
 - options: `keep_user_linebreaks`.
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0397 — a stepped conditional chain as a call's argument: the first `?` a level short
+
+Found beside #548. `M(` / `x,` / `x == 0` / `? 1` / `: b ? 2 : 3` / `)` — the oracle writes `? 1` and `: b`
+one level past `x == 0` and steps the tail; Skala steps the tail (SK-DIV-0390) but leaves the root's `?`
+and `:` on the argument's own column. Before #548 Skala left the tail whole as well. ⚠ And one shape the
+oracle answers the other way inside a whole file: Skala's own `CSharpDocumentBuilder.cs`
+(`Break(` / … / `newLines == 0` / `? DefaultNewLine()` / `: options.EnforceLineEndingStyle ? … : …`)
+comes back from the oracle unindented and unstepped, while the same call cut out on its own comes back
+indented and stepped — `nested_ternary_style = autodetect` ("chop in existing style") may read more than
+the chain. Not wired.
+
+- options: `resharper_csharp_nested_ternary_style` (`autodetect`).
 - ⚠ status: **open**, measured.
