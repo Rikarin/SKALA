@@ -133,10 +133,7 @@ public sealed class ParenthesisedConditionalIssue546Tests {
                                     """;
 
     public static TheoryData<string, string> Cases =>
-        new() {
-            { Owners, OwnersOracle },
-            { Neighbours, NeighboursOracle }
-        };
+        new() { { Owners, OwnersOracle }, { Neighbours, NeighboursOracle } };
 
     [Theory]
     [MemberData(nameof(Cases))]

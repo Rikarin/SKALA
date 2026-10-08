@@ -100,8 +100,8 @@ public static class DocumentationComments {
 
         var named = string.Join(", ", names.Take(NamedInTheMessage))
             + (names.Count > NamedInTheMessage
-                    ? " and " + (names.Count - NamedInTheMessage).ToString(CultureInfo.InvariantCulture) + " more"
-                    : string.Empty);
+                ? " and " + (names.Count - NamedInTheMessage).ToString(CultureInfo.InvariantCulture) + " more"
+                : string.Empty);
 
         return [
             new SkalaDiagnostic(

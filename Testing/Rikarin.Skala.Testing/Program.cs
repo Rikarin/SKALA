@@ -732,8 +732,8 @@ static int Fuzz(string[] args) {
     Console.Error.WriteLine(
         $"fuzzing from seed {FuzzRandom.Format(options.Seed)}, "
         + (options.Cases is { } total
-                ? total.ToString(CultureInfo.InvariantCulture) + " cases"
-                : options.Budget.TotalMinutes.ToString("F1", CultureInfo.InvariantCulture) + " minutes")
+            ? total.ToString(CultureInfo.InvariantCulture) + " cases"
+            : options.Budget.TotalMinutes.ToString("F1", CultureInfo.InvariantCulture) + " minutes")
         + $", mode {options.Mode.ToString().ToLowerInvariant()}…"
     );
 
