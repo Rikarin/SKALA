@@ -2552,7 +2552,7 @@ public sealed class BreakPlan {
     ///     The oracle writes <c>public class</c> / <c>    Name…</c> in two cases, which are the ordering rule's
     ///     two questions: when the line runs past the margin before the header's next point (a name that
     ///     fills the line, <c>Name : IFoo,</c> at 123), and when the joined line overflows by at most four
-    ///     columns whatever the head (eight for a lone base type) and the name is not one that gives way to the
+    ///     columns whatever the head (before a lone base type, at any width) and the name is not one that gives way to the
     ///     competing list's first comma (<see cref="GroupFacts.NameWidth" />). The base list then sits at
     ///     the declaration's own level, not one past the name's line — <c>    Name : IFoo,</c> /
     ///     <c>    IBar {</c> — which <see cref="CSharpDocumentBuilder" /> writes from an anchor the group
@@ -2590,7 +2590,10 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         Point(name, group);
-        var loneBase = type is { ParameterList: null, TypeParameterList: null, BaseList.Types.Count: 1 };
+        // ⚠ Before a lone base type the oracle moves the name down whenever the line is too long — at every
+        // width measured, to 139 columns, behind a type parameter list or not — and breaks after the `:` as
+        // well when that is not enough (round three, SK-DIV-0353).
+        var loneBase = type is { ParameterList: null, BaseList.Types.Count: 1 };
 
         // ⚠ The oracle measures the header as if its body's ` }` followed the `{` even when the body has
         // members and the brace goes below: with `int x;` inside, the name breaks while the line through the
@@ -2616,7 +2619,7 @@ public sealed class BreakPlan {
                 BreaksIfTooLong: true,
                 MeasuresHead: true,
                 PrefersOuterBreak: true,
-                JoinedOverflow: (loneBase ? 8 : 4) - unwrittenBrace,
+                JoinedOverflow: loneBase ? Document.Unbounded : 4 - unwrittenBrace,
                 NameWidth: floor is null ? -1 : name.Span.Length,
                 NameFloor: (floor ?? 0) - 8 * unwrittenBrace,
 

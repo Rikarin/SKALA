@@ -530,4 +530,51 @@ public sealed class TypeNameGapIssue539Tests {
             """
         );
     }
+
+    /// <summary>
+    ///     #539 round three: before a lone base type the name moves down whenever the line is too long, behind a type parameter list too (Serilog's <c>LogEventPropertyValueRewriter</c>), and the <c>:</c> breaks as well when that is not enough.
+    /// </summary>
+    [Fact]
+    public void ALoneBaseType_TakesTheNameBreakAtAnyWidth() {
+        Agrees(
+            """
+            public abstract class LogEventPropertyValueRewriter<TState> : LogEventPropertyValueVisitor<TState, Lzzzzzzzzzzzzzzzzzzzzz> {
+                int x;
+            }
+            """,
+            """
+            public abstract class
+                LogEventPropertyValueRewriter<TState> : LogEventPropertyValueVisitor<TState, Lzzzzzzzzzzzzzzzzzzzzz> {
+                int x;
+            }
+            """
+        );
+        Agrees(
+            """
+            public abstract class LogEventPropertyValueRewriterXXXXXXX : LogEventPropertyValueVisitorBzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz {
+                int x;
+            }
+            """,
+            """
+            public abstract class
+                LogEventPropertyValueRewriterXXXXXXX : LogEventPropertyValueVisitorBzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz {
+                int x;
+            }
+            """
+        );
+        Agrees(
+            """
+            public abstract class LogEventPropertyValueRewriterXXXXXXX : LogEventPropertyValueVisitorBzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz {
+                int x;
+            }
+            """,
+            """
+            public abstract class
+                LogEventPropertyValueRewriterXXXXXXX :
+                LogEventPropertyValueVisitorBzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz {
+                int x;
+            }
+            """
+        );
+    }
 }
