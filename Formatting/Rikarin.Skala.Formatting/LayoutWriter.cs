@@ -1976,6 +1976,25 @@ public sealed class LayoutWriter {
             return true;
         }
 
+        // ⚠ A chain's call link keeps its head and chops its arguments unless, moved down, its line ends
+        // well short of the margin (#484, SK-DIV-0129). See LineFlags.ChainCallLink.
+        // ⚠ An argument list that is certain to break — the oracle's own chopped answer read back on pass
+        // two — keeps the head too, or pass two would move down what pass one kept.
+        if ((flags & LineFlags.ChainCallLink) != 0 && segment >= Document.Unbounded && head < segment) {
+            headStays = Fits(column, head);
+            return headStays;
+        }
+
+        if ((flags & LineFlags.ChainCallLink) != 0 && head < segment) {
+            var room = (flags & LineFlags.ChainCallOneArgument) != 0 ? 30 : 48;
+            // ⚠ The chain's own continuation scope is on the stack by now — the point is inside the
+            // group — so ContinuationColumn, written for a group being entered, would count it twice.
+            var below = ContinuationColumn(group)
+                - (document.FactsOf(group).SpendsIndent ? continuousMultiplier * indentWidth : 0);
+            headStays = Fits(column, head) && below + segment > this.width - room;
+            return headStays;
+        }
+
         // ⚠ An identifier-headed tuple item keeps its head only when the break inside it is certain
         // — the segment is unbounded — and moves whole when it is merely too wide; a delimited item
         // keeps its head either way. See LineFlags.KeepsHeadWhenCertain (SK-DIV-0114).

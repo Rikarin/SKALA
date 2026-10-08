@@ -3418,6 +3418,23 @@ public sealed partial class CSharpDocumentBuilder {
         return -1;
     }
 
+    /// <summary>
+    ///     The call a chain link starting at <paramref name="token" /> ends in — <c>.Other(…)</c>, or a
+    ///     property run feeding one, <c>.Count.ToString()</c> — or null when the link is a property.
+    /// </summary>
+    static InvocationExpressionSyntax? CallLinkAt(SyntaxToken token) {
+        if (!token.IsKind(SyntaxKind.DotToken) || token.Parent is not MemberAccessExpressionSyntax access) {
+            return null;
+        }
+
+        SyntaxNode link = access;
+        while (link.Parent is MemberAccessExpressionSyntax outer && outer.Expression == link) {
+            link = outer;
+        }
+
+        return link.Parent is InvocationExpressionSyntax call && call.Expression == link ? call : null;
+    }
+
     static bool IsChainLinkStart(SyntaxToken token) =>
         token.IsKind(SyntaxKind.DotToken)
         || token.IsKind(SyntaxKind.QuestionToken)
@@ -4297,6 +4314,13 @@ public sealed partial class CSharpDocumentBuilder {
 
         if (StartsATupleItem(nextToken)) {
             flags |= LineFlags.KeepsHeadWhenCertain;
+        }
+
+        if (rule == GapRule.FillPoint && CallLinkAt(nextToken) is { } link) {
+            flags |= LineFlags.ChainCallLink;
+            if (link.ArgumentList.Arguments.Count <= 1) {
+                flags |= LineFlags.ChainCallOneArgument;
+            }
         }
 
         // ⚠ Every point in front of an element carries the flag, the opener's too, so that the line the

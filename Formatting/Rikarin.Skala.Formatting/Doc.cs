@@ -257,7 +257,17 @@ public enum LineFlags {
     ///     A required line that keeps a break the author wrote, which the draft measure reads as a space;
     ///     with <see cref="ArrayElement" />, one in front of an element.
     /// </summary>
-    KeptBreak = 512
+    KeptBreak = 512,
+
+    /// <summary>
+    ///     ⚠ A <c>wrap_if_long</c> chain's fill point before a call link (#484, SK-DIV-0129): the link keeps
+    ///     its head on the line and chops its arguments when, moved down, its line would end past 72
+    ///     columns at the export's 120 — 90 with <see cref="ChainCallOneArgument" />.
+    /// </summary>
+    ChainCallLink = 1024,
+
+    /// <summary>With <see cref="ChainCallLink" />: the link's call has one argument or none.</summary>
+    ChainCallOneArgument = 2048
 }
 
 /// <summary>

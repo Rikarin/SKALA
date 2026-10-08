@@ -6693,6 +6693,28 @@ two layouts that this table does not pin down, and wiring a guess would trade th
 of the table — for one right on a different half. #484 is **blocked**, not fixed; these rows are the
 starting point.
 
+⚠ **Round two, same day: the line the link would take below is the variable, measured on a grid.**
+144 rows — `var a = SomeMethod(a×n).Other(…);` with the `.Other(` ending at 60, 75, 88, 95, 105 and 112,
+one and two arguments, and the dot-broken line (`;` included) from 56 to 110. Where the chain does not
+fit whole:
+
+| link | broken before | held, arguments chopped | rows that disagree |
+|---|---|---|---|
+| two arguments | line ≤ 70 everywhere, ≤ 72 behind 75, 105, 112, ≤ 74 behind 112 | line ≥ 78 everywhere, 72 behind 88 and 95 | 3 |
+| one argument | line ≤ 90 everywhere, 96 behind 60 | line ≥ 102 everywhere, 96 behind 75–112 | 1 |
+
+So the head's column and the link's position do not decide it; the line below does, with a narrow
+band whose edge moves with the head. Wired (`LineFlags.ChainCallLink`, read by
+`LayoutWriter.FillPointStaysFlat`): a fill point before a call link keeps the link's head and lets the
+arguments chop when the link's line below would end past 72 columns, 90 for one argument or none; and
+always when the link's arguments are certain to break, which is the oracle's own chopped answer read
+back on pass two. 140 of the 144 grid rows agree, as do all the rows in the table above but the
+non-monotone 40/50/70 one (it keeps the 71-column link behind the 50-column head). ⚠ Measured as written
+here: `ContinuationColumn` counts the chain's own scope a second time for a point inside the group, so
+the line is taken from it less that scope. The #407 test's input (`.OtherMethodName(` with three
+arguments under a held parenthesis) now settles on the oracle's own answer in one pass. Pinned by
+`ChainFillHeadIssue484Tests`; resolved (#484) but for the four grid rows and the non-monotone one.
+
 ## SK-DIV-0132 — a doc comment kept as written was decided line by line, and the oracle decides it per comment
 
 ⚠ **Filed as issue #382, whose headline claim the oracle refutes.** The issue read
