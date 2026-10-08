@@ -231,7 +231,8 @@ public sealed class CrossFixtureFixTests {
             "SK1072",
             "SK1073",
             "SK1081",
-            "SK1091"
+            "SK1091",
+            "SK1133"
         );
 
     [Theory]

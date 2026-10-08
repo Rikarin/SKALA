@@ -192,7 +192,7 @@ public sealed class CollectionExpressionAnalyzer : DiagnosticAnalyzer {
     ///     has nothing to take a target type from. Walking out to the first member declaration and
     ///     stopping at any lambda in between is how that is asked.
     /// </remarks>
-    static bool HasWrittenReturnType(SyntaxNode node) {
+    internal static bool HasWrittenReturnType(SyntaxNode node) {
         for (var current = node.Parent; current is not null; current = current.Parent) {
             switch (current) {
                 case AnonymousFunctionExpressionSyntax:

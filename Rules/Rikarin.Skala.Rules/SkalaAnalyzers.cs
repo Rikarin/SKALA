@@ -192,6 +192,6 @@ public static class SkalaAnalyzers {
         new AssemblyLoadedOutsideItsContextAnalyzer(), new MistakenTypeArgumentAnalyzer(),
         new RedundantNullableCreationAnalyzer(), new DiscardedOutParameterAnalyzer(),
         new AnonymousMethodWithParameterListAnalyzer(),
-        new TupleElementByPositionAnalyzer()
+        new TupleElementByPositionAnalyzer(), new CollectionExpressionSpreadAnalyzer()
     ];
 }

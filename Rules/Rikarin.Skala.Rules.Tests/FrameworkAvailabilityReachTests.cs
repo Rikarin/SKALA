@@ -123,6 +123,10 @@ public sealed class FrameworkAvailabilityReachTests {
             + "is a member of the very type the lookup found.",
         ["Modernization/CollectionExpressionAnalyzer.cs"] = Recognition
             + " `List<T>` types the source expression; the C# 12 floor is centrally guarded.",
+        ["Modernization/CollectionExpressionSpreadAnalyzer.cs"] = Recognition
+            + " `Enumerable`, `List<T>` and the spans are the method the source call already binds; the fix "
+            + "writes `[..xs]`, which lowers to that same call on netstandard2.0, netstandard2.1 and net10.0 "
+            + "(decompiled, #512), and the C# 14 floor is centrally guarded.",
         ["Modernization/DictionaryLookupAnalyzer.cs"] = Recognition
             + " `Dictionary<K,V>` is the receiver in source; the fix reuses `TryGetValue`, present wherever the type is.",
         ["Modernization/EnumGetValuesAnalyzer.cs"] = Recognition + " `System.Enum`; the fix names a source enum.",
