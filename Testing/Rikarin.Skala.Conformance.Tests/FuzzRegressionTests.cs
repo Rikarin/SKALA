@@ -82,6 +82,10 @@ public sealed class FuzzRegressionTests {
     // kept the `=` by EqualsFloor's extrapolated table and chopped the arguments; pass two read the chop as
     // the author's, lost the floor and broke the `=`. The `(` past the margin now breaks the `=` on both.
     [InlineData(4304693669410283359UL)]
+    // Nightly `fuzz --seed=909`: a typed local's `= context.First` whose receiver ends past the margin. The
+    // `=` yielded to the dot fill (#482), which kept `= context` past the margin and broke at the dot; pass
+    // two read that break as the author's and broke the `=`. GroupFacts.MemberHeadWidth.
+    [InlineData(9552816164132777654UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
@@ -106,6 +110,13 @@ public sealed class FuzzRegressionTests {
     // kept with them.
     [Theory]
     [InlineData(11718305405350914591UL, "constructs/breaks/chain-after-parenthesised-head.cs")]
+    // Nightly `fuzz --seed=909`: `DeserializeObject<Review /* f */ >(x)` behind an `=`. FlatSourceWidth
+    // skipped the comment, so #528's held-call table kept an `=` the comment had pushed past the margin;
+    // pass two, with the arguments chopped, broke it.
+    [InlineData(6285859913225113725UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
+    // `fuzz --seed=3`: the same call with a `// fuzz` after its `;` — the comment, not the call, pushed the line
+    // past the margin, and #528's held-call width did not count it.
+    [InlineData(7754551050098241345UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
     [InlineData(3559808079077978877UL, "constructs/wrapping/lambda-arrow-over-a-property-fill.cs")]
     [InlineData(3423309597191150844UL, "constructs/breaks/conditional-after-eq.cs")]
     [InlineData(

@@ -3293,6 +3293,26 @@ public sealed class BreakPlan {
     static int WidthOfNext(SyntaxNode node, SyntaxKind kind) => node.GetLastToken().GetNextToken().IsKind(kind) ? 1 : 0;
 
     /// <summary>
+    ///     The width a line comment after <paramref name="token" /> adds to its line, with the space before it,
+    ///     or zero.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The comment rides on the value's line wherever the value goes (Nightly <c>fuzz --seed=3</c>, case
+    ///     7754551050098241345): `… = Call&lt;T&gt;(x); // fuzz` past the margin only with the comment. Measured
+    ///     without it, #528's held-call table kept the <c>=</c> and the argument list chopped; pass two, with
+    ///     the arguments chopped, broke the <c>=</c> — the oracle's answer for both inputs.
+    /// </remarks>
+    static int TrailingCommentWidth(SyntaxToken token) {
+        foreach (var trivia in token.TrailingTrivia) {
+            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
+                return 1 + trivia.Span.Length;
+            }
+        }
+
+        return 0;
+    }
+
+    /// <summary>
     ///     A plain path of names — <c>a</c>, <c>a.B.C</c> — with no call, index, <c>!</c> or <c>?.</c> in it.
     /// </summary>
     static bool IsAPathOfNames(ExpressionSyntax expression) =>
@@ -5468,11 +5488,15 @@ public sealed class BreakPlan {
                         Condition: InvocationExpressionSyntax { Expression: IdentifierNameSyntax or GenericNameSyntax }
                     },
                     ValueHeadIsWide: conditionHeadIsWide,
+                    MemberHeadWidth: value is MemberAccessExpressionSyntax plain && IsPlainMemberValue(plain)
+                        ? FlatSourceWidth(ReceiverOf(plain))
+                        : 0,
                     HeldValue: heldCall is null ? 0 : heldKind,
                     HeldValueWidth: heldCall is null
                         ? 0
                         : FlatSourceWidth(value)
-                        + WidthOfNext(value, SyntaxKind.SemicolonToken),
+                        + WidthOfNext(value, SyntaxKind.SemicolonToken)
+                        + TrailingCommentWidth(value.GetLastToken().GetNextToken()),
                     HeldValueReceiver: heldReceiver,
                     HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
@@ -5785,13 +5809,28 @@ public sealed class BreakPlan {
         return width;
     }
 
-    /// <summary>The space the formatter writes between two adjacent tokens on one line.</summary>
-    int GapWidth(SyntaxToken previous, SyntaxToken token) =>
-        SpaceRules.Decide(previous, token, options) switch {
+    /// <summary>The space the formatter writes between two adjacent tokens on one line, comments included.</summary>
+    /// <remarks>
+    ///     ⚠ A block comment in the gap is written, with a space beside it (Nightly <c>fuzz --seed=909</c>, case
+    ///     6285859913225113725): <c>Review /* f */ &gt;(x)</c> measured as <c>Review&gt;(x)</c> let #528's held-call
+    ///     table keep an <c>=</c> whose line the comment pushed past the margin. The formatter writes
+    ///     <c>Review /* f */&gt;</c>: the rules' space, and each comment with one space before it.
+    /// </remarks>
+    int GapWidth(SyntaxToken previous, SyntaxToken token) {
+        var width = SpaceRules.Decide(previous, token, options) switch {
             SpaceKind.Required => 1,
             SpaceKind.Forbidden => 0,
             _ => previous.HasTrailingTrivia || token.HasLeadingTrivia ? 1 : 0
         };
+
+        foreach (var trivia in previous.TrailingTrivia.Concat(token.LeadingTrivia)) {
+            if (trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
+                width += trivia.Span.Length + 1;
+            }
+        }
+
+        return width;
+    }
 
     /// <summary>
     ///     The flat width from the construct's head token (<see cref="EqualsHeadStartOf" />) through the
@@ -7983,6 +8022,16 @@ public sealed class BreakPlan {
     ///     member-access fill (`PlanPropertyFill`), which takes the last dot that fits; only the `=`'s
     ///     yielding to it is read from here.
     /// </summary>
+    /// <summary>The innermost receiver of a plain member access: <c>a</c> in <c>a.b.c.D</c>.</summary>
+    static ExpressionSyntax ReceiverOf(MemberAccessExpressionSyntax access) {
+        ExpressionSyntax current = access;
+        while (current is MemberAccessExpressionSyntax member) {
+            current = member.Expression;
+        }
+
+        return current;
+    }
+
     static bool IsPlainMemberValue(MemberAccessExpressionSyntax access) {
         if (!access.IsKind(SyntaxKind.SimpleMemberAccessExpression)) {
             return false;
