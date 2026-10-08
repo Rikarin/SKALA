@@ -3769,7 +3769,10 @@ public sealed class BreakPlan {
                     // leaving it alone (measured on this branch before the ordering rule existed:
                     // 97.47 % → 96.29 %). Which of a long line's candidate points is taken is
                     // GroupFacts.PrefersOuterBreak's rule, and it is what makes this key observable.
-                    BreaksIfTooLong: true,
+                    // ⚠ Not before a lambda whose arrow takes the break instead: `Func<int, string> f =
+                    // value =>` / `value.ToString() + "…";` at every width measured, where Skala broke the
+                    // `=` because the whole lambda fitted on the line below (#453, SK-DIV-0050).
+                    BreaksIfTooLong: !YieldsToTheLambdaArrow(value),
 
                     // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
                     // Every other right-hand side is measured by what is left of the line and breaks
@@ -4517,7 +4520,42 @@ public sealed class BreakPlan {
     ///     after the arrow is planned; the gap before a lambda's arrow stays <c>keep_user_linebreaks</c>'.
     /// </remarks>
     void PlanLambdaArrow(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
-        PlanArrowBody(lambda, body, new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true));
+        PlanArrowBody(
+            lambda,
+            body,
+            // ⚠ Over an operand chain the arrow always wins (#453, SK-DIV-0050): the oracle breaks the
+            // body's chain in 0 of 5 082 cells of the preference sweep, where an `=` at the same head
+            // width breaks it in 3 664 — so the arrow breaks whenever the body does not fit beside it,
+            // with no ordering question asked.
+            ArrowWinsOverTheChain(lambda)
+                ? new GroupFacts(BreaksIfTooLong: true)
+                : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+        );
+
+    /// <summary>
+    ///     A lambda that is the value of an <c>=</c>, with a binary operand chain for a body the author
+    ///     did not break: the shape the preference sweep measured the arrow winning on (#453).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only as an <c>=</c>'s value, and the boundary is measured on <c>corpus/real/</c>: a sole
+    ///     lambda argument keeps its arrow and breaks the chain — Serilog's
+    ///     <c>.Where(m =&gt; m.IsDefined(…)</c> / <c>&amp;&amp; m.GetParameters()…</c> — and so does a
+    ///     lambda among other arguments whose chain the author broke (<c>x =&gt; x</c> / <c>+ 1</c>).
+    /// </remarks>
+    bool ArrowWinsOverTheChain(LambdaExpressionSyntax lambda) =>
+        lambda.ExpressionBody is BinaryExpressionSyntax binary
+        && !IsTypeTest(binary)
+        && lambda.Parent is EqualsValueClauseSyntax or AssignmentExpressionSyntax
+        && !binary.DescendantNodesAndSelf(static node => node is BinaryExpressionSyntax)
+            .OfType<BinaryExpressionSyntax>()
+            .Any(link => BreaksBefore(link.OperatorToken) || BreaksBefore(FirstToken(link.Right)));
+
+    /// <summary>
+    ///     Whether an <c>=</c>'s value is a lambda whose arrow takes the break the <c>=</c> would
+    ///     otherwise take. See <see cref="ArrowWinsOverTheChain" />.
+    /// </summary>
+    bool YieldsToTheLambdaArrow(ExpressionSyntax value) =>
+        value is LambdaExpressionSyntax lambda && ArrowWinsOverTheChain(lambda);
 
     /// <summary>The group over an arrow's body, opened before the gap that follows the arrow.</summary>
     /// <param name="facts">

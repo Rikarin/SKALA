@@ -2111,10 +2111,29 @@ three profiles that share one; the fourth is in the same table and says somethin
 is the reason the sweep carries four content profiles and grades on the worst, and it is why this
 entry, alone among the family, still needs its grid rather than its constant.
 
+⚠ **#453, 2026-10-08: the break point was not missing any more, and the operand-chain half is fixed.**
+#378 had already planned the gap after a lambda's arrow (`BreakPlan.PlanLambdaArrow`), under the
+switch arm's head rule (`BreaksOnlyIfHeadOverflows`) — so "the lambda's arrow gets nothing" in this
+entry and in the issue was stale; what was missing was the preference. The oracle-free sentence above
+— *over an operand chain the arrow always wins* — is now wired: a lambda that is an `=`'s value, with a
+binary operand chain for a body the author did not break, breaks its arrow whenever the body does not
+fit beside it, and its `=` no longer breaks for width (`ArrowWinsOverTheChain`,
+`YieldsToTheLambdaArrow`). Re-measured with `Testing ask` from 100 to 170 columns in a field, a local,
+an assignment and a `??=`: every row agrees, the chain chopping below the arrow once it does not fit
+there either. ⚠ **Only as an `=`'s value**, and `corpus/real/` drew that boundary: armed for every
+lambda it cost a Serilog file and `constructs/breaks/multiline-item-chops-the-list.cs` — the oracle keeps
+`.Where(m => m.IsDefined(…)` / `&& m.GetParameters()…` (a sole argument) and `x => x` / `+ 1` (a chain
+the author broke). Scoped, `corpus/real/` and every other construct are byte-identical. ⚠ **Still
+open**: a call body (`Action a125 = () =>` / `Call…(firstArgument, secondArgument);`, where Skala keeps
+the arrow and chops the arguments) — the floor `F` above, not wired because the `=` has no floor of
+its own to add nine to — and the parenthesised parameter list (`C2((…, …) =>` / `body`), which Skala
+chops instead.
+
 - options: `skala_wrap_before_arrow_with_expressions`, `skala_keep_user_linebreaks`, `skala_keep_existing_linebreaks`, `skala_place_single_method_argument_lambda_on_same_line`, `skala_wrap_parameters_style`
-- ⚠ status: **open**, measured; the break point is missing. The rule that would arm it is now known
-  to one constant and a three-column wander, both in
-  [sk-div-preference-sweep.md](sk-div-preference-sweep.md).
+- ⚠ status: the operand-chain half **fixed** (#453), pinned by
+  `constructs/wrapping/lambda-arrow-over-a-chain.cs`; the call-body and parameter-list halves
+  **open**, measured. The rule that would arm them is known to one constant and a three-column wander,
+  both in [sk-div-preference-sweep.md](sk-div-preference-sweep.md).
 ## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
 
 ReSharper ships nine keys that **suppress a class of edit** rather than choosing between two
