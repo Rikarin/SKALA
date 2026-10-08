@@ -365,6 +365,13 @@ and 65 without**, also unchanged, and all 65 are in one file
 
 - options: none
 - commands: `skala format --define`, `skala format --load=`, `fidelity preprocessor`
+⚠ **#588: the fidelity gate did not use them.** `Fidelity_DoesNotDecrease` formatted the corpus with no
+symbols, against fixtures the oracle produced with these eighteen, so the gate read 77353/77560 on `real/` where
+`Testing fidelity` printed 77404/77556 — the same files, with `#if` bodies like Serilog's
+`#if !NET8_0_OR_GREATER` reformatted by Skala and left by the oracle. The gate now formats under
+`Corpus.OracleSymbols`, a committed list that `OracleSymbolsTests` holds to a real probe build, and both read
+77404/77556.
+
 - ⚠ status: **closed at M5**, re-verified
 
 ## SK-DIV-0005 — the ordering rule's margin is a fitted constant, and the sweep says it is not a rule
