@@ -9250,7 +9250,9 @@ break after the keyword). A break before a pattern's `[` or `{` is still joined.
 pattern's braces under such an `is` nest from the `is`'s line (`… is not {` / subpatterns one level / `}`):
 `LayoutWriter.LevelForBlock` added a from-the-line scope's absolute level to everything outside it, which
 put the subpatterns three levels past the `is` — invisible until now, because only an unbreakable pattern
-ever opened one.
+ever opened one. ⚠ Except after a member chain headed by a parenthesis, which holds its level as
+SK-DIV-0112 found for its dots: `|| (b ?? c).D` / `is not {` and `(b ?? c).D` / `is A or B` keep the `is`
+on the operand's column (Skala's own `ConcurrentDictionaryMemberAnalyzer.cs`).
 
 - options: `keep_user_linebreaks`.
 - ⚠ status: **resolved** (#550). Pinned by `constructs/indentation/a-broken-is-over-a-pattern-chain.cs`.

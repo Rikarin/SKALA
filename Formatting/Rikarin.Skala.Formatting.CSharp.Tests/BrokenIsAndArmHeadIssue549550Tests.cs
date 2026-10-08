@@ -81,6 +81,49 @@ public sealed class BrokenIsAndArmHeadIssue549550Tests {
         );
 
     [Fact]
+    public void ABrokenIs_AfterAChainHeadedByAParenthesis_KeepsTheOperandsColumn() =>
+        Oracle.Agrees(
+            """
+            class C10 {
+                void A(bool a, Foo b, Foo c) {
+                    if (a
+                        || (b ?? c).Original.Containing
+                        is not { Name: "Enumerable", Namespace: { Name: "Linq", Parent: { Name: "System", IsGlobalNamespace: true } } }) {
+                        return;
+                    }
+
+                    if (a
+                        || b.Original.Containing
+                        is not { Name: "Enumerable", Namespace: { Name: "Linq", Parent: { Name: "System", IsGlobalNamespace: true } } }) {
+                        return;
+                    }
+                }
+            }
+            """,
+            """
+            class C10 {
+                void A(bool a, Foo b, Foo c) {
+                    if (a
+                        || (b ?? c).Original.Containing
+                        is not {
+                            Name: "Enumerable", Namespace: { Name: "Linq", Parent: { Name: "System", IsGlobalNamespace: true } }
+                        }) {
+                        return;
+                    }
+
+                    if (a
+                        || b.Original.Containing
+                            is not {
+                                Name: "Enumerable", Namespace: { Name: "Linq", Parent: { Name: "System", IsGlobalNamespace: true } }
+                            }) {
+                        return;
+                    }
+                }
+            }
+            """
+        );
+
+    [Fact]
     public void AnArmTheAuthorBrokeAfterItsArrow_NestsItsBracesFromTheArmsContinuationLine() =>
         Oracle.Agrees(
             """

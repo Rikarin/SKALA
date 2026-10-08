@@ -3416,6 +3416,11 @@ public sealed class BreakPlan {
     /// </summary>
     bool BreaksAroundTheIs(IsPatternExpressionSyntax test) =>
         options.KeepsUserBreaksBetweenItems
+        // ⚠ Not after a chain headed by a parenthesis, which holds its level (SK-DIV-0112): `|| (b ?? c).D`
+        // / `is not {` and `(b ?? c).D` / `is A or B` keep the `is` on the operand's column, where
+        // `|| b.D` / `is not {` takes the level (measured 2026-10-08; Skala's own
+        // ConcurrentDictionaryMemberAnalyzer.cs).
+        && !(IsChainRoot(test.Expression) && ChainHeadIsParenthesised(test.Expression))
         && (BreaksBefore(test.IsKeyword)
             // ⚠ A break before a pattern's `[` or `{` is not kept: `xs is` / `[1, 2]` comes back joined
             // (constructs/wrapping/patterns.cs).
