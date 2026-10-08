@@ -100,10 +100,7 @@ public sealed class CoalesceChainIssue580Tests {
                                     """;
 
     public static TheoryData<string, string> Cases =>
-        new() {
-            { Owners, OwnersOracle },
-            { Neighbours, NeighboursOracle }
-        };
+        new() { { Owners, OwnersOracle }, { Neighbours, NeighboursOracle } };
 
     [Theory]
     [MemberData(nameof(Cases))]
