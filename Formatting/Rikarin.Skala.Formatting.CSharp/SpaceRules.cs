@@ -192,7 +192,7 @@ public static class SpaceRules {
         prev.IsKind(SyntaxKind.OpenParenToken)
         && prev.Parent
         is ParameterListSyntax { Parameters.Count: 0, Parent: not ParenthesizedLambdaExpressionSyntax }
-            or ArgumentListSyntax { Arguments.Count: 0 }
+        or ArgumentListSyntax { Arguments.Count: 0 }
         && !IsUndocumentedKeywordParenthesis(prev)
         && WithinParentheses(prev.Parent, false, o);
 
@@ -215,23 +215,23 @@ public static class SpaceRules {
             // them as it does in front of any other operand.
             SyntaxKind.OpenParenToken => next.Parent
                 is ArgumentListSyntax
-                    or AttributeArgumentListSyntax
-                    or ParameterListSyntax { Parent: not ParenthesizedLambdaExpressionSyntax }
-                    or IfStatementSyntax
-                    or WhileStatementSyntax
-                    or DoStatementSyntax
-                    or ForStatementSyntax
-                    or CommonForEachStatementSyntax
-                    or SwitchStatementSyntax
-                    or CatchDeclarationSyntax
-                    or CatchFilterClauseSyntax
-                    or LockStatementSyntax
-                    or UsingStatementSyntax
-                    or FixedStatementSyntax
-                    or CheckedExpressionSyntax
-                    or DefaultExpressionSyntax
-                    or SizeOfExpressionSyntax
-                    or TypeOfExpressionSyntax,
+                or AttributeArgumentListSyntax
+                or ParameterListSyntax { Parent: not ParenthesizedLambdaExpressionSyntax }
+                or IfStatementSyntax
+                or WhileStatementSyntax
+                or DoStatementSyntax
+                or ForStatementSyntax
+                or CommonForEachStatementSyntax
+                or SwitchStatementSyntax
+                or CatchDeclarationSyntax
+                or CatchFilterClauseSyntax
+                or LockStatementSyntax
+                or UsingStatementSyntax
+                or FixedStatementSyntax
+                or CheckedExpressionSyntax
+                or DefaultExpressionSyntax
+                or SizeOfExpressionSyntax
+                or TypeOfExpressionSyntax,
             SyntaxKind.OpenBracketToken => next.Parent is BracketedArgumentListSyntax or ArrayRankSpecifierSyntax,
             _ => IsMemberAccessPunctuation(next)
                 || IsTypeAngle(next)
@@ -289,8 +289,8 @@ public static class SpaceRules {
             SyntaxKind.QuestionToken => prev.Parent is ConditionalExpressionSyntax,
             SyntaxKind.ColonToken => prev.Parent
                 is ConditionalExpressionSyntax
-                    or BaseListSyntax
-                    or TypeParameterConstraintClauseSyntax,
+                or BaseListSyntax
+                or TypeParameterConstraintClauseSyntax,
             SyntaxKind.CloseParenToken => prev.Parent is CastExpressionSyntax,
             SyntaxKind.SemicolonToken => prev.Parent is ForStatementSyntax,
             SyntaxKind.NewKeyword => prev.Parent is BaseObjectCreationExpressionSyntax,
@@ -398,11 +398,11 @@ public static class SpaceRules {
         token.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.CloseParenToken
         && token.Parent
         is MakeRefExpressionSyntax
-            or RefTypeExpressionSyntax
-            or RefValueExpressionSyntax
-            or ArgumentListSyntax {
-                Parent: InvocationExpressionSyntax { Expression.RawKind: (int)SyntaxKind.ArgListExpression }
-            };
+        or RefTypeExpressionSyntax
+        or RefValueExpressionSyntax
+        or ArgumentListSyntax {
+            Parent: InvocationExpressionSyntax { Expression.RawKind: (int)SyntaxKind.ArgListExpression }
+        };
 
     /// <summary>
     ///     True for the <c>(</c> of a positional clause whose recursive pattern names a type, which is
@@ -694,7 +694,7 @@ public static class SpaceRules {
             // written identically. `<<` has no such split and closes on both sides.
             if (IsBinaryOperator(prev)
                 && prev.Kind() is SyntaxKind.GreaterThanGreaterThanToken
-                or SyntaxKind.GreaterThanGreaterThanGreaterThanToken) {
+                    or SyntaxKind.GreaterThanGreaterThanGreaterThanToken) {
                 return !ClingsLeft(right);
             }
 
@@ -959,7 +959,7 @@ public static class SpaceRules {
         open.TrailingTrivia.Concat(open.GetNextToken().LeadingTrivia)
             .Any(static trivia => trivia.Kind()
                 is SyntaxKind.MultiLineCommentTrivia
-                    or SyntaxKind.MultiLineDocumentationCommentTrivia
+                or SyntaxKind.MultiLineDocumentationCommentTrivia
             );
 
     /// <summary>

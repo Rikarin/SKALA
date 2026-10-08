@@ -127,7 +127,8 @@ public sealed class Fitter {
                 document.PointWidthOf(node),
                 document.AfterPointOf(node),
                 trailing,
-                line
+                line,
+                document.YieldEndOf(node)
             ),
             document.AfterPointRunsToTheEnd(node),
             document.SegmentOf(node),
@@ -201,7 +202,8 @@ public sealed class Fitter {
         int PointWidth,
         int AfterPoint,
         int Trailing,
-        int Line);
+        int Line,
+        int YieldEnd = 0);
 
     /// <summary>The mode a group resolved to. Flat until the walk reaches it.</summary>
     public ResolvedMode ModeOf(int group) => modes[group];
@@ -294,6 +296,21 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ A lambda's parameter list: broken only when the line through its `=>` overflows.
+                // See GroupFacts.ThroughWidth (#453).
+                if (facts.ThroughWidth > 0) {
+                    return Fits(m.Column, m.FlatWidth + facts.ThroughWidth) ? ResolvedMode.Flat : ResolvedMode.Broken;
+                }
+
+                // ⚠ An `=` before a call: a measured floor on the argument list, at the call's `(`. See
+                // GroupFacts.CalleeWidth and EqualsFloor (#446).
+                if (facts.CalleeWidth > 0
+                    && facts.BreaksIfTooLong
+                    && !Fits(m.Column, m.BreakWidth, m.Trailing)
+                    && (facts.CalleeOwner != EqualsOwner.Field || m.ContinuationColumn - indentWidth == 4)) {
+                    return EqualsBeforeACall(facts, m, lineStart);
+                }
+
                 // ⚠ Broken exactly when the keyword is what overflows. See GroupFacts.KeywordWidth.
                 if (facts.KeywordWidth > 0) {
                     if (m.FlatWidth >= Unbounded || tail >= Unbounded) {
@@ -336,6 +353,22 @@ public sealed class Fitter {
 
                 return Worth(facts, m, afterPointRunsToTheEnd);
         }
+    }
+
+    /// <summary>See <see cref="GroupFacts.CalleeWidth" />.</summary>
+    ResolvedMode EqualsBeforeACall(in GroupFacts facts, in Measures m, int lineStart) {
+        if (m.FlatWidth >= Unbounded || m.PointWidth >= Unbounded || !HeadIsWideEnough(facts, m, lineStart)) {
+            return ResolvedMode.Flat;
+        }
+
+        // The value starts one space past the point; its `(` follows the callee. Columns are 1-based in
+        // the measured table.
+        var paren = m.Column + m.PointWidth + 1 + facts.CalleeWidth + 1;
+        var arguments = m.FlatWidth - m.PointWidth - 1 - facts.CalleeWidth;
+        var indent = m.ContinuationColumn - indentWidth;
+        return arguments < EqualsFloor.Of(paren, indent, facts.CalleeWidth, facts.CalleeOwner)
+            ? ResolvedMode.Broken
+            : ResolvedMode.Flat;
     }
 
     /// <summary>What a <see cref="GroupMode.Preserve" /> group whose source was broken does with the break.</summary>
@@ -447,6 +480,31 @@ public sealed class Fitter {
             }
         } else if (!facts.BreaksOnlyIfHeadOverflows) {
             return ResolvedMode.Broken;
+        }
+
+        // ⚠ The type argument list after the point overflows by itself, so it fills and this group's
+        // break is not the one taken — unless the argument list after it is at least the measured
+        // floor. See GroupFacts.YieldsToOverflowingTypeArguments and ColonFloor (#490).
+        if (facts.YieldsToOverflowingTypeArguments
+            && m.YieldEnd > 0
+            && m.PointWidth < Unbounded
+            && !Fits(m.Column, m.PointWidth + m.YieldEnd)) {
+            var arguments = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth - m.YieldEnd;
+            var floor = facts.ColonFloor + facts.ColonFloorSlope * (m.PointWidth + m.YieldEnd - 118) / 100;
+            if (arguments < floor) {
+                return ResolvedMode.Flat;
+            }
+        } else if (facts.YieldsToOverflowingTypeArguments
+                   && facts.ColonEdgeFloor > 0
+                   && m.YieldEnd > 0
+                   && m.PointWidth < Unbounded
+                   && Fits(m.Column, m.PointWidth + m.YieldEnd)
+                   && !Fits(m.Column, m.PointWidth + m.YieldEnd + 1)) {
+            // ⚠ The `>` lands on the margin itself and only the call's `(` is past it.
+            var arguments = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth - m.YieldEnd;
+            if (arguments < facts.ColonEdgeFloor) {
+                return ResolvedMode.Flat;
+            }
         }
 
         // What lands on *this* line if the group stays flat and the construct inside wraps instead.

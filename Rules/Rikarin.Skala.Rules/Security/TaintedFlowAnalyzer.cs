@@ -57,8 +57,8 @@ public static class TaintedFlow {
             // property expression body and an attribute argument are operation blocks too, and
             // asking for the graph of one that is not a body throws rather than returning null.
             if (block.Kind is not (OperationKind.Block
-                    or OperationKind.MethodBody
-                    or OperationKind.ConstructorBody)) {
+                or OperationKind.MethodBody
+                or OperationKind.ConstructorBody)) {
                 continue;
             }
 

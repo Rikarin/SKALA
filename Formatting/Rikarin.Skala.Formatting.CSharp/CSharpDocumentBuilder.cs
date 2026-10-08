@@ -908,6 +908,26 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
+    ///     Whether a pattern's parenthesis sits under an <c>is</c> the author broke before, which has spent
+    ///     the level already: <c>next.Parent</c> / <c>is not (Alpha</c> / <c>or Beta);</c> keeps the
+    ///     <c>or</c> on the <c>is</c>'s column (#520).
+    /// </summary>
+    bool FollowsABrokenIs(SyntaxNode node) {
+        for (var current = node.Parent; current is not null; current = current.Parent) {
+            switch (current) {
+                case PatternSyntax:
+                    continue;
+                case IsPatternExpressionSyntax test:
+                    return HasLineBreak(test.IsKeyword.GetPreviousToken().Span.End, test.IsKeyword.SpanStart);
+                default:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     ///     An anonymous function or an object creation whose block nests from the line the construct
     ///     starts on.
     /// </summary>
@@ -1714,10 +1734,19 @@ public sealed partial class CSharpDocumentBuilder {
         // aligned one does.
         // ⚠ And so does the outermost one directly in an aligned statement condition: `if (o is (1` /
         // `, (2` puts `, (2` on the condition's column, which already pays the statement's level.
+        // ⚠ And a pattern's own parenthesis inside an aligned statement condition spends nothing: the
+        // oracle writes `if (o is not (Alpha` / `or Beta))` with `or` on the condition's column, and
+        // `while (` / `or` at 15 — where a grouping parenthesis around an *expression* there is a
+        // level of its own (`if ((a` / `== b))`). Under `var b = o is not (Alpha` / `or Beta);` the
+        // parenthesis keeps its level (#520).
         var suppress = aligned
             || IsNestedPositionalList(node)
             || node is PositionalPatternClauseSyntax
-            && DirectlyInAnAlignedHeader();
+            && DirectlyInAnAlignedHeader()
+            || node is ParenthesizedPatternSyntax
+            && (options.AlignMultilineStatementConditions
+                && BreakPlan.IsStatementCondition(node)
+                || FollowsABrokenIs(node));
 
         // ⚠ `skala_align_tuple_components = true`: the column *after* the tuple's `(`, which is a
         // different anchor from every key AlignsFromOwnColumn answers and needs a different place
@@ -1760,8 +1789,14 @@ public sealed partial class CSharpDocumentBuilder {
         // second level it is lifted by a construct that broke after it (`var b = ((` / `1 + 2)` /
         // `* 3);`, LayoutWriter.LiftedLevel), which is what the unconditional scope used to stand in
         // for, and did wrongly everywhere else.
+        // ⚠ And an argument list whose first argument stays behind a comment after its `(` (#521): the
+        // oracle writes `Compute( /* f */ Inner(` / `"…"` two levels in / `)` one / `);` — the outer
+        // list's level counts although the inner one opened on the same line. See
+        // BreakPlan.PlanPastLeadingComments.
         var unconditional = options.PlaceSingleMethodArgumentLambdaOnSameLine
-            && node is ArgumentListSyntax { Arguments: [{ Expression: LambdaExpressionSyntax }] };
+            && node is ArgumentListSyntax { Arguments: [{ Expression: LambdaExpressionSyntax }] }
+            || node is ArgumentListSyntax { Arguments.Count: > 0 } commented
+            && plan.PlansPastALeadingComment(commented.Arguments[0].SpanStart);
 
         // ⚠ A collection expression's elements are elements, like an initializer's: a chain broken
         // inside one takes its own continuation level rather than living off the bracket's.

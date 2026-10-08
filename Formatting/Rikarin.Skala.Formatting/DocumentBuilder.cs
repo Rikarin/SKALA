@@ -40,6 +40,9 @@ public sealed class DocumentBuilder {
     /// <summary>Width from a group's own first break point to the next. <see cref="Document.AfterPointOf" />.</summary>
     int[] afterPoint = new int[512];
 
+    /// <summary><see cref="Document.YieldEndOf" />, by node, for the groups that ask for it.</summary>
+    readonly Dictionary<int, int> yieldEnds = [];
+
     /// <summary>
     ///     The groups that own at least one break point.
     /// </summary>
@@ -585,9 +588,13 @@ public sealed class DocumentBuilder {
         certainOrigin[index] = Math.Max(childOrigin, selfOrigin);
         ownerWidth[index] = owned;
         var afterPointRuns = false;
+        var yieldEnd = 0;
         afterPoint[index] = frame.Kind == DocKind.Group
-            ? MeasureSegments(childStart, count, frame.Arg1, out afterPointRuns, out segment[index])
+            ? MeasureSegments(childStart, count, frame.Arg1, out afterPointRuns, out segment[index], out yieldEnd)
             : 0;
+        if (yieldEnd > 0 && facts[frame.Arg1].YieldsToOverflowingTypeArguments) {
+            yieldEnds[index] = yieldEnd;
+        }
 
         // ⚠ An arrow whose body cannot break is read through by what precedes it (issue #378):
         // `{ … } => 2u,` chops the pattern and `A or B or C => 2u,` chops the chain, where the same
@@ -659,7 +666,8 @@ public sealed class DocumentBuilder {
             segmentHead,
             draftSegment,
             breaks,
-            [..facts]
+            [..facts],
+            yieldEnds
         );
     }
 
@@ -685,7 +693,14 @@ public sealed class DocumentBuilder {
     ///     ⚠ Linear despite the nested loop: the segments partition the children, so each child is
     ///     visited by exactly one of them.
     /// </remarks>
-    int MeasureSegments(int childStart, int count, int group, out bool firstRunsToTheEnd, out int firstSegment) {
+    int MeasureSegments(
+        int childStart,
+        int count,
+        int group,
+        out bool firstRunsToTheEnd,
+        out int firstSegment,
+        out int firstYieldEnd
+    ) {
         // ⚠ An arrow's head ends at a yielding point when nothing ordinary can break after it, and
         // reads through it when something can. The same gap answers the `=`'s question the other way
         // — a type argument list's points are "not taken" for the construct in front of the list, so
@@ -697,6 +712,8 @@ public sealed class DocumentBuilder {
         var stopsAtYieldingPoints = facts[group].BreaksOnlyIfHeadOverflows;
         firstRunsToTheEnd = false;
         firstSegment = 0;
+        firstYieldEnd = 0;
+        var yieldEnd = 0;
         if (!ownPoints.Contains(group)) {
             return 0;
         }
@@ -751,6 +768,8 @@ public sealed class DocumentBuilder {
         if (first >= 0) {
             firstSegment = segment[first];
         }
+
+        firstYieldEnd = yieldEnd;
 
         return first < 0 ? 0 : afterPoint[first];
 
@@ -837,7 +856,20 @@ public sealed class DocumentBuilder {
                         flat = Document.Unbounded;
                     }
 
+                    // The end of the first run of yielding points after the group's first point: a type
+                    // argument list closes with its group, so the point width when it closes reaches
+                    // its `>`. See GroupFacts.YieldsToOverflowingTypeArguments.
+                    var yieldedBefore = yieldPoint >= 0;
                     Walk(node.Payload, node.Count, depth + (node.Kind == DocKind.Group ? 1 : 0));
+                    if (node.Kind == DocKind.Group
+                        && !yieldedBefore
+                        && yieldPoint >= 0
+                        && yieldEnd == 0
+                        && current == first
+                        && !pointStopped) {
+                        yieldEnd = point;
+                    }
+
                     continue;
                 }
 
