@@ -1157,7 +1157,8 @@ public sealed class Document {
 ///     line. Measured over 1 234 cells; see <see cref="LambdaIsSimple" /> for the one exception.
 /// </param>
 /// <param name="LambdaHead">
-///     The width from the lambda's start through its <c>=&gt;</c>. See <see cref="LambdaParameters" />.
+///     The width from the lambda's start through its <c>=&gt;</c>. See
+///     <see cref="LambdaParameters" />.
 /// </param>
 /// <param name="LambdaIsSimple">
 ///     ⚠ A lambda without parentheses: its arrow breaks whenever the lambda starts at column 21 or past it,

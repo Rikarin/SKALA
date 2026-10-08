@@ -1,3 +1,4 @@
+using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Testing;
 using System.Globalization;
 using System.Text.Json;
@@ -56,7 +57,17 @@ public sealed class DifferentialTests {
         var files = Corpus.Files(set).Where(static file => file.HasFixture).ToArray();
         var results = new List<(string File, string Expected, string Actual)>(files.Length);
         foreach (var file in files) {
-            results.Add((file.ToString(), OracleFixture.Read(file), CorpusFormatter.Format(file).Formatted));
+            // ⚠ Under the oracle's own symbols (#588): the fixtures are its output with them, and without them
+            // Skala formats `#if` bodies the oracle never saw as code.
+            var formatted = CSharpFormatter.Format(
+                    file.Path,
+                    CSharpFormatter.Read(file.Path),
+                    CorpusFormatter.OptionsFor(file.Path),
+                    null,
+                    Corpus.OracleSymbols
+                )
+                .Formatted;
+            results.Add((file.ToString(), OracleFixture.Read(file), formatted));
         }
 
         return Fidelity.Compare(results, basis);

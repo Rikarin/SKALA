@@ -75,6 +75,38 @@ public static class Corpus {
     public const string XmlDocPrefix = "xmldoc/";
 
     /// <summary>
+    ///     The preprocessor symbols the oracle's fixtures were produced under: what the SDK defines for the scratch
+    ///     <c>net10.0</c> Debug project <see cref="OracleRunner" /> builds (SK-DIV-0004).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #588. The fidelity gate formatted the corpus with no symbols while every fixture is the oracle's output
+    ///     with these, so a file whose code sits in <c>#if !NET8_0_OR_GREATER</c> (Serilog's <c>TimeProvider.cs</c>)
+    ///     was formatted by Skala and left alone by the oracle, and the gate and <c>Testing fidelity</c>'s headline
+    ///     read two numbers. A typed list is what SK-DIV-0004 warns against, so it is held to the real thing:
+    ///     <c>OracleSymbolsTests</c> builds the probe project and asserts this list is what its binary log says.
+    /// </remarks>
+    public static readonly ImmutableArray<string> OracleSymbols = [
+        "DEBUG",
+        "NET",
+        "NET10_0",
+        "NET10_0_OR_GREATER",
+        "NET5_0_OR_GREATER",
+        "NET6_0_OR_GREATER",
+        "NET7_0_OR_GREATER",
+        "NET8_0_OR_GREATER",
+        "NET9_0_OR_GREATER",
+        "NETCOREAPP",
+        "NETCOREAPP1_0_OR_GREATER",
+        "NETCOREAPP1_1_OR_GREATER",
+        "NETCOREAPP2_0_OR_GREATER",
+        "NETCOREAPP2_1_OR_GREATER",
+        "NETCOREAPP2_2_OR_GREATER",
+        "NETCOREAPP3_0_OR_GREATER",
+        "NETCOREAPP3_1_OR_GREATER",
+        "TRACE"
+    ];
+
+    /// <summary>
     ///     A symbol set that makes a conditional body live, for the properties to be asserted under.
     /// </summary>
     /// <remarks>
