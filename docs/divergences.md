@@ -5674,8 +5674,12 @@ counts unconditionally (`GroupPlan.UnconditionalLevel`) and the `=` spends under
 entry, and fixed since (#518): `b ? a` / `: c` — a single conditional broken at one sign — is chopped by
 the oracle at both, in a declarator, a `return`, an argument and after a comment line (`a` / `/* c */`
 / `? 1` / `: 2`); a conditional *chain* keeps its per-sign pins. `PlanTernary`, pinned by
-`ConditionalChopIssue518Tests`. Still open: a conditional nested in a parenthesis inside another's
-branch (`? (a > 0` / `? a` / `: c)`) puts its signs at 20 where the oracle writes 16.
+`ConditionalChopIssue518Tests`. A conditional nested in a parenthesis inside another's branch
+(`? (a > 0` / `? a` / `: c)`) put its signs at 20 where the oracle writes 16 — **fixed (#546)**: any
+conditional directly inside a grouping parenthesis (after `=`, as an argument, in an `if` condition, as
+a binary operand, before `.ToString()`, behind a cast, in a `return`) lands on the parenthesis's level,
+because its own arm scope and the parenthesis's opened on one line and both counted. A conditional
+that is an argument keeps its level. Pinned by `ParenthesisedConditionalIssue546Tests`.
 ⚠ **The filled-list half closed at #471** (SK-DIV-0117): `new[] { 1` / `+ 2, 3 }` already agreed (the
 array initializer's after rule, #444), and `[1` / `+ 2, 3]` now does too — `+ 2,` / `3`.
 
@@ -7142,8 +7146,15 @@ clings", which wrote `(( [` at `true`). What remains is this entry's: the elemen
 where the oracle writes +1 and +0, and the oracle joining `(` / `[` onto one line. Pinned by
 `BrokenCollectionAfterCastOrParenIssue450485Tests`.
 
+⚠ **The ternary rows: fixed (#546).** A conditional directly inside a grouping parenthesis no longer
+opens its arm scope on the parenthesis's line, so `var x = (c` / `? a` / `: b);`, `return (c` / `? a`,
+`(c` / `? a` / `: b).ToString()` and `1` / `+ (c` / `? a` now land `?` at **+1**, as the oracle does.
+The rows with two groupings (`((c` / `? a`, `((a` / `+ b))`) and the collection rows are the grouping
+model's and stay open.
+
 - options: `skala_space_within_parentheses` (the space only).
-- ⚠ status: **open** for the levels and the join; the `( [` space fixed (#485).
+- ⚠ status: **open** for the grouping-in-grouping levels, the collection levels and the join; the
+  `( [` space fixed (#485) and the single-grouping ternary rows fixed (#546).
 
 ## SK-DIV-0156 — a chopped parenthesis heading a body held its level, and then the chain after it broke
 

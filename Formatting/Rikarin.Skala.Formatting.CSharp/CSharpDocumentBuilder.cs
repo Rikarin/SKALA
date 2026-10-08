@@ -1098,9 +1098,16 @@ public sealed partial class CSharpDocumentBuilder {
                 //     : OperatingSystem.IsMacOS() ? "osx"
                 //     : "linux";
                 // One level per link turns six lines into a staircase six levels deep.
+                // ⚠ And except directly inside a grouping parenthesis, whose level the arms land on
+                // (#546). Measured 2026-10-08: `b ? (a > 0` / `? a` / `: c) : c`, `= (a > 0` / `? a`,
+                // the same as an argument, in an `if` condition, as a binary operand and as a
+                // `WhenFalse` all put the signs one level past the parenthesis's line, where the two
+                // scopes, both opened on that line, counted twice. A conditional that is itself an
+                // argument keeps its level: `F(a > 0` / `? a` is two levels past `F(`'s line.
                 var nested = ternary.Parent is ConditionalExpressionSyntax outer
                     && outer.WhenFalse == ternary
-                    || ternary.WhenFalse is ConditionalExpressionSyntax;
+                    || ternary.WhenFalse is ConditionalExpressionSyntax
+                    || ternary.Parent is ParenthesizedExpressionSyntax;
                 // ⚠ Opened on the condition's *first* line unless the condition is a binary chain
                 // (#530, SK-DIV-0333). A condition that spans lines as a chain or an argument list —
                 // `var t = a.B()` / `.C()` / `? x` / `: y`, `Compute(` / … / `)` / `? x` — puts the
