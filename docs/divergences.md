@@ -2547,9 +2547,21 @@ not predict. That is one break's placement inside a fix whose shape is otherwise
 
 - options: none identified — `skala_wrap_after_property_in_chained_method_calls` is implicated
   but the shape is broken at both of its values
-- ⚠ status: **open**, measured, unfixed. Deliberately not fixed alongside SK-DIV-0030: widening
-  `IsChainRoot` puts a group on every `a.B().C().Prop` in the tree, which is a far larger wrapping
-  change than the `?.` arm and wants its own measurement.
+- ⚠ status: **resolved** (issues #454, #455). `IsChainRoot` reaches a member access, and
+  `ChainLinks` takes a trailing property run as the chain's last link, broken before the run's first
+  dot — which answers the "unknown" above: the oracle writes `.ToList()` / `.Count`, `.Where(beta)` /
+  `.Count.Value` and `.Where(beta)` / `.Count?.Value`, the same rule as a run feeding a call, with
+  nothing after it. ⚠ **A trailing property is a link but not a call**, measured on 2026-10-08:
+  `SomeMethod(…)` / `.Property` and `alpha.SomeMethod(…)` / `.Property` break as chains, while
+  `(\n a)[0].C` — an indexer head and one property — is left whole where `(\n a)[0]` / `.C()` chops;
+  so the chain needs a dotted call or an *invocation* at the head. A `!` ends the receiver and its
+  operand is a chain of its own (`X.Select(…)` / `.Where(gamma)!.Where(beta)` / `.ToList()`); `?[0]`
+  is a call at the head; an indexed property after a call is a link (`.Make()` / `.Items[0]` /
+  `.Select(…)`). ⚠ The recorded `source[0].Children…` claim was already refuted by #455 (#380 had
+  fixed it). One residual, filed as SK-DIV-0331: a `!` makes `source.Select(…)!.Where(beta).ToList()`
+  depend on the first call breaking when it does not fit, which Skala never does. Pinned by
+  `ChainLinksIssue454Tests` and `constructs/breaks/chain-links.cs`; `corpus/real` unchanged,
+  `unformat` 90.21 % → 90.26 % with symbols.
 
 ## SK-DIV-0067 — a property run that *straddles* the `?` is still cut in half
 
@@ -2621,10 +2633,14 @@ keeping: `format --check` on Skala's own repository fails otherwise.
 
 - options: `skala_wrap_after_property_in_chained_method_calls` — read correctly, and conformant on
   every property run that does not straddle a `?`
-- ⚠ status: **open** for shape C only, measured. The remaining fix has to let the run continue past
-  the `?` into the receiver's own property chain, and the walk that would do it is the one the
-  conditional-access arm already performs on `Expression` — so it needs the two not to collect the
-  same dots twice, which is a restructure rather than another arm.
+- ⚠ status: **resolved** (issue #456). `PropertyRun` walks left over member accesses and `?.`
+  bindings alike, and a run that crossed a `?` does not recurse, because the conditional access walks
+  its own receiver — which is the "not collect the same dots twice" condition, met without a
+  restructure. Measured on 2026-10-08 beyond shape C: two properties left of the `?`
+  (`.Self()` / `.Outer.Inner?.Children.Where(…)`), a second `?` inside the run
+  (`.Inner?.Children?.Where(…)`), and a run that begins with `?.` (`.Self()` /
+  `?.Inner?.Children.Where(…)`) all agree. Pinned by `ChainLinksIssue454Tests` and
+  `constructs/breaks/chain-links.cs`.
 
 ## SK-DIV-0068 — three smaller chain-planner divergences, measured together
 
@@ -2695,9 +2711,17 @@ larger in reach than "only observable when the chain chops and the `??` breaks" 
 two went. It stays open because item 3 has no home elsewhere.
 
 - options: none
-- ⚠ status: items 1 and 2 **re-attributed to SK-DIV-0066**, which is where their fix belongs — still
-  unfixed, in both places; item 3 **open**, re-measured, and its recorded control was wrong — the
-  fact is every left binary operand, not `??`
+- ⚠ status: items 1 and 2 **resolved with SK-DIV-0066** (issue #455) — the `!` ends the receiver
+  and `?[0]` is a call at the head; item 3 **resolved** (issue #457). The chain's own continuation
+  scope is flagged `IndentFlags.ChainLevel`, and the writer lifts it past a broken binary operator
+  around it exactly as it lifts a delimited list on that line (#418's `LiftedLevel`), skipping the
+  chain's own group. Measured on 2026-10-08 beyond the issue's `+` and `??`: `&&`, a run of two `+`,
+  an assignment, `return`, an expression body, an argument alone and after another, and an aligned
+  `if` condition — the dots one level past the operator's line in every one; the right operand is
+  unchanged. ⚠ A property-only fill on the left of a pattern `or` must *not* lift (Vixen's
+  `PixelFormat.cs` arms moved four columns when it did), so only a chained-call group's scope carries
+  the flag. Pinned by `ChainInALeftOperandIssue457Tests` and
+  `constructs/breaks/chain-in-a-left-operand.cs`.
 
 ## SK-DIV-0069 — `skala_outdent_dots` spends one amount for the whole chain; the oracle spends one per line
 
@@ -2772,8 +2796,13 @@ changed fixture. ⚠ That practice is the reusable part of this entry and it sho
 
 - options: `skala_outdent_dots` — read correctly, and conformant on every chain whose wrapped
   lines all begin with the same operator, which is every chain the corpus contains
-- ⚠ status: **open**, measured, unfixed. It is an arithmetic in the outdent scope rather than in the
-  chain planner: the amount is computed once for the group and has to be computed per break point.
+- ⚠ status: **resolved** (issue #458). The chain-wide scope keeps the `.`'s amount, and a line that
+  begins with a `?.` inside it opens one more column of outdent for that line alone
+  (`CSharpDocumentBuilder.ExtraOutdentFor`), so `?.SelectName(…)` lands at 10 where `.` lines sit at
+  11. Measured on 2026-10-08 beside the issue's shape: two `?.` lines in one chain, a trailing `?.Count`
+  property (the chain-final property is a chain since #454, and its root's dot now opens the scope
+  too), and a pure member-access fill's `.Value` line — all agree with the oracle at `true`. Pinned by
+  `OutdentDotsIssue458Tests`; still deliberately not a row of `constructs/alignment/outdent.cs`.
 
 ## SK-DIV-0031 — a field with several declarators wraps after the type; Skala wraps at the commas
 
@@ -6339,7 +6368,17 @@ mechanism and none affects idempotency.
   writes the subpatterns at 12 and the `}` at 8. The chain's containment (SK-DIV-0109) is right; the
   operand's own indentation under it is the SK-DIV-0107 family's.
 
-- ⚠ status: the pattern-chain bullet **fixed** (#483); the other two **measured, not fixed**.
+- ⚠ status: the pattern-chain bullet **fixed** (#483); the pure member-access chain **resolved** (#482, below); the rest **measured, not fixed**.
+- #482: a member-access expression that is no chain of calls is a fill over its dots
+  (`PlanPropertyFill`). Measured on 2026-10-08 and **wider than "the last dot"**: it is the last dot
+  that *fits* — `….Dddd` / `.MoreValue.Rest;` keeps `.Rest` on the continuation line — taken in
+  preference to an `=`, to a `return`'s line, inside an argument the list already chopped, past an
+  indexer and after a `?.`. Before a switch arm's arrow it outranks the arrow only for a short body:
+  thirteen columns of body or fewer (comma aside) take the dot, fourteen and more the arrow
+  (`… =>` / `yyyyyyyyyyyyyy,`), at heads of 106 to 116 columns, and the issue's `=> 2u,` row is
+  the first kind. Declined where the oracle takes another break: an assignment's target
+  (`A.B.C.D.Value =` / `yyyyyyyy;`), the operand of `is`/`as`. Rows not reached are SK-DIV-0330.
+  Pinned by `MemberAccessFillIssue482Tests` and `constructs/breaks/member-access-fill.cs`.
 
 ## SK-DIV-0125 — a break before a collection expression was added by the ordering rule and kept by the bracket's fit, and the two rules disagreed across passes
 
@@ -6633,6 +6672,26 @@ check. The export's `chop_if_long` is conformant on every one of these shapes.
 - ⚠ status: **open**, size S–M; measure the last-link/middle-link boundary on a two-, three- and
   four-call chain with each link's width varied before wiring a head measure into the chain fill.
   Recorded in `ChainWithACallRootIssue380Tests`' remarks and deliberately not asserted there.
+
+⚠ **Measured for #484 on 2026-10-08, and the boundary is not "last link against middle link".** With
+`SomeMethod(…)` heads at indent 8, `skala_wrap_chained_method_calls = wrap_if_long`:
+
+| shape | oracle |
+|---|---|
+| `a7`'s middle link `.Other(d35, e22, f8)` followed by `.Third(gg)` | `.Other(` kept, arguments chopped, `).Third(gg);` — a **middle** link's head kept too |
+| `.Other(d35, e22)` with `.Other(` ending anywhere from 90 to 115 | head kept, arguments chopped, at every column |
+| `.Other(eee…, ff)` — a link of 46 columns — after a 3- or 4-call chain or alone, `.Other(`/`.Third(`/`.Fourth(` ending at 100 to 119 | broken before the link, every row |
+| two arguments, the dot-broken line `.Other(e×k, ff);` at 12: k = 36 … 46 (line 61 … 71) | broken before the link |
+| the same, k = 48 … 56 (line 73 … 81) | head kept, arguments chopped |
+| one argument, `.Other(e×k);` at 12: line 61 … 81 | broken before the link |
+| the k = 46 two-argument link behind a head of 40, 50 and 70 columns | broken, **kept**, broken |
+
+So it is neither the link's position, nor the column the head ends at, nor the link's width alone,
+and the last row is not even monotone in the head's width. It reads as a cost comparison between the
+two layouts that this table does not pin down, and wiring a guess would trade the present
+"break before every link that fits on the continuation line" — right on every row in the second half
+of the table — for one right on a different half. #484 is **blocked**, not fixed; these rows are the
+starting point.
 
 ## SK-DIV-0132 — a doc comment kept as written was decided line by line, and the oracle decides it per comment
 
@@ -7720,6 +7779,18 @@ the dots; `)!` / `.Where` breaks after a `!` where the oracle keeps `)!.Where`;
 `source.Select(…).Where(beta).Count` plans no chain at all; `new Foo(a, b).Select(c)` / `.Where` that
 fits after a break before `.Select` is chopped instead; the oracle's own `var x = source` / `.Select(`
 for a three-link chain at a member's first indent, which it does not keep when asked again.
+⚠ Of those, the `!` (#455) and the chain ending in `.Count` (#454) are **resolved** with SK-DIV-0066,
+and the `if` header and lambda-argument level is **resolved** (#495): such a chain takes its level by
+`spendsIndent`'s rule, as a parenthesised head does (`BreakPlan.SharesTheLevelAroundIt`). Measured on
+2026-10-08, the boundary is narrow on both sides. The *whole* condition of an `if`, `else if`, `while`
+or `do`'s `while` puts the dots on the aligned column; `if (!chain`, `if (flag` / `&& chain`, and a
+`switch (`, `foreach (… in` or `using (` header keep the chain's own level past it. The body of a
+call's *sole* lambda argument — `x =>` and `(x, y) =>`, a `!` before the chain included — shares the
+parenthesis's level; after another argument it does not, and nor does it where the call is the
+receiver of a further link (`found.SelectMany(static d => Enumerable.Range(…)` / `.Select(…)` two
+levels in, Skala's own source). Pinned by `ChainInAHeaderIssue495Tests` and
+`constructs/breaks/chain-in-a-header-or-a-sole-lambda.cs`. A break-choice divergence seen beside it is
+SK-DIV-0332.
 
 - options: none behind the divergence; measured at `skala_continuous_indent_multiplier = 2` too.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/chain-first-call-arguments.cs` and
@@ -7748,9 +7819,21 @@ idempotent (`Outer(first: 1, source.Select(` … under `wrap_if_long`). So a fil
 wrong when it breaks after it, idempotent either way. Before #418 a fill lifted every block, which was
 wrong in ten of the thirteen block shapes sampled and right in three.
 
+⚠ **Re-measured for #496 on 2026-10-08**, and the criterion is sharper than "breaks *after* the list":
+the oracle lifts when the fill takes **any** of its points past the list. `source.Select(x => {` … `}`
+/ `).Where(alpha…)` / `.ToList(beta…);` lifts the body to 20 and the `)` to 12 although the chain stays
+whole across `).Where(` — its one break is before `.ToList`, a link later. `…}).Where(beta);` (no point
+taken) and `…}).Where(` / a chopped long argument / `);` (the argument list chopped, no point taken)
+do not lift; a pinned author's `)` / `.Where(beta)` does. So the question the list's scope needs
+answered when it opens is whether the chain's group takes a point anywhere to its right, which is a
+lookahead past the end of the scope — `ChainBreaksInside` runs only the scope's own contents — and the
+pinned break is a required break the watch does not see. ⚠ The third row also shows SK-DIV-0129's
+keep-the-last-head shape, which Skala breaks before (`}` / `)` / `.Where(` / the argument / `);`).
+
 - options: `skala_wrap_chained_method_calls`, `skala_wrap_chained_binary_expressions` at `wrap_if_long`.
-- ⚠ status: **open**, pinned in its current reading by
-  `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`.
+- ⚠ status: **open** — #496 blocked, not fixed: the fix needs a writer lookahead to the end of the
+  chain's group that also counts pinned breaks, and the last attempt at one was not idempotent. Pinned
+  in its current reading by `ChainFirstCallArgumentsIssue418Tests.AFill_KeepsTheOrdinaryLevel`.
 
 ## SK-DIV-0193 — a block comment's lines lose their trailing whitespace; Skala kept it
 
@@ -8605,3 +8688,84 @@ path. That is a construct, not a gap, and nothing above measured its wrapping.
 
 - options: `skala_space_before_trailing_comment` (the comment rows); none of the others moved the hole's own gaps.
 - ⚠ status: **open**, measured. #492.
+
+## SK-DIV-0330 — the member-access fill's rows the position rule does not reach
+
+Measured for #482 on 2026-10-08 with `Testing ask`, the residue of `PlanPropertyFill` (SK-DIV-0124):
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `A.B.C.D.Morexxxx.Valueeee = 1;` — the target alone overflows | `…Morexxxx` / `.Valueeee = 1;` | `…Valueeee =` / `1;` past the margin |
+| an arm `A.B.C.D.MorexxxxxxxxxxxValueeeeee => yyyyyyyyyyyyyy` — fourteen columns of body behind a 118-column head | `…Dddd` / `.More…Valueeeeee => yyyyyyyyyyyyyy` | `… =>` / `yyyyyyyyyyyyyy` |
+| an arm whose short body has a dot of its own, `=> yyyyyyyyyyy.Z,` | `…Dddd` / `.MoreValue => yyyyyyyyyyy.Z,` | `… =>` / `yyyyyyyyyyy.Z,` |
+
+⚠ The first row is why an assignment's target declines the fill rather than yielding to the `=`:
+planned there, the fill also turned `A.B.C.D.Value = yyyyyyyy;` (a target that fits with its `=`)
+into a 122-column line with no break at all, where the oracle breaks the `=`. ⚠ And planned there it
+happened to move five `corpus/real` lines toward the oracle (`CurrentSchema.AdditionalProperties =
+GenerateInternal(` / … in Newtonsoft's `JsonSchemaGenerator.cs`), by changing what the `=`'s group
+measured rather than by breaking a dot; that is SK-DIV-0211's question, not this one's. The arm
+boundary is not a width of the head alone or of the body alone: a fourteen-column body takes the arrow
+behind heads of 106 to 116 columns and the dot behind 118, and a twenty-two-column body takes the arrow
+behind 118.
+
+- options: `skala_wrap_chained_method_calls`, `skala_wrap_after_property_in_chained_method_calls`.
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0331 — a chain's held first call breaks when it does not fit, and Skala chops its arguments
+
+Found beside #455 on 2026-10-08. At `skala_wrap_before_first_method_call = false` the first call stays
+with the receiver — until it does not fit on the receiver's line, when the oracle breaks before it too:
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `var y6 = sourceWithAVeryLongName…e.Select(alpha).Where(b);`, `.Select(alpha)` ending at 123 | `…e` / `.Select(alpha)` / `.Where(b);` | `….Select(` / `alpha` / `)` / `.Where(b);` |
+| `var x = source.Select(a, b, c)!.Where(beta).ToList();`, `!.Where(beta)` ending at 124 | `…)!` / `.Where(beta)` / `.ToList();` | `…)!.Where(` / `beta` / `)` / `.ToList();` |
+| `PrivateConstructor…TestClass c = JsonConvert.DeserializeObject<…>(json);` (Newtonsoft, a one-call chain) | `… c = JsonConvert` / `.DeserializeObject<…>(json);` | `… c =` / `JsonConvert.DeserializeObject<…>(` / `json` / `);` |
+
+⚠ The second row was right before #455 by accident: Skala walked through the `!` and counted
+`!.Where` as the chain's second call. With the `!` read as the oracle reads it — the end of the
+receiver — the row depends on this rule. The third row shows the rule reaches a single call, which is
+not a chain at all to `PlanChainedCalls`. Not wired: it needs a point before the first call that breaks
+only when the call itself overflows the receiver's line, which no group fact says today.
+
+- options: `skala_wrap_before_first_method_call`.
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0332 — a lambda argument's arrow breaks where the chain in its body would have chopped
+
+Found beside #495 on 2026-10-08, and the same on master (`e75f5431`): when the chain that is a lambda's
+body fits whole on the line after the arrow, the oracle breaks the arrow rather than the chain.
+
+| written, flat | oracle | Skala |
+|---|---|---|
+| `var r = items.Where(x => source.Select(a, b, c).Any(predicateValue));` past the margin | `items.Where(x =>` / the chain whole, one level in / `);` | `items.Where(x => source.Select(a, b, c)` / `.Any(predicateValue)` / `);` |
+| the same followed by `.ToList()` | `x =>` / the chain whole two levels in / `)` / `.ToList();` | the inner chain broken |
+
+Where the chain does not fit after the arrow either — `Use(x => source.Select(…)` / `.Where(p)` — both
+engines keep the arrow and break the chain. So the lambda's arrow behaves as an `=` does in front of a
+chain when the tail fits (SK-DIV-0211's question), and Skala's arrow group does not ask it. Not wired.
+
+- options: `skala_wrap_chained_method_calls`, `place_single_method_argument_lambda_on_same_line`.
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0333 — a ternary whose condition is a chopped chain puts its branches a level too deep
+
+Found beside #457 on 2026-10-08, and the same on master (`e75f5431`):
+
+```csharp
+// the oracle
+var t = someParticularThingWithALongName.SelfLink()
+    .SelfLink()
+    .WhereSomething(x => x.IsEnabledAndReady)
+    ? otherFallbackValueName.SomeFallbackProperty
+    : third;
+
+// Skala: `?` and `:` at 16
+```
+
+The chain's dots and the branches share one level in the oracle — the opposite of a binary operator's
+left operand (#457), where the chain takes a level past the operator's. Not wired.
+
+- options: none.
+- ⚠ status: **open**, measured.

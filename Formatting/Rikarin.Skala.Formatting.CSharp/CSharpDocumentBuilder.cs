@@ -73,6 +73,12 @@ public sealed partial class CSharpDocumentBuilder {
     /// </summary>
     int levelsOpenedByOwnGroups;
 
+    /// <summary>
+    ///     How many <c>skala_outdent_dots</c> chain scopes are open, each pulling its wrapped lines back by
+    ///     a <c>.</c>'s width. See <see cref="ExtraOutdentFor" />.
+    /// </summary>
+    int dotOutdents;
+
     /// <summary>Group id to the plan that created it, built on first use by <c>GuessesSpansLines</c>.</summary>
     Dictionary<int, GroupPlan>? groupPlans;
 
@@ -440,7 +446,7 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             for (var level = 0; level < indented[i]; level++) {
-                OpenContinuation(plan, level);
+                OpenContinuation(plan, level, plan.OwnLevel && this.plan.ChainGroupOf(node) == plan.Id);
             }
 
             // ⚠ One level past the operand's line, not stacked on what that line opened (#445).
@@ -460,13 +466,22 @@ public sealed partial class CSharpDocumentBuilder {
         // `skala_outdent_binary_ops` both on, the operands take the expression's own column and the
         // operators sit two to the left of it.
         var outdent = OutdentColumnsFor(node);
+        var dotOutdent = outdent > 0 && BreakPlan.IsChainRoot(node);
         if (outdent > 0) {
             OpenIndent(IndentKind.OutdentColumns, columns: outdent);
+        }
+
+        if (dotOutdent) {
+            dotOutdents++;
         }
 
         levelsOpenedByOwnGroups = indented.Sum() + heldLevels.Count(static held => held);
         VisitInner(node);
         EmitUpTo(node.Span.End);
+
+        if (dotOutdent) {
+            dotOutdents--;
+        }
 
         if (outdent > 0) {
             CloseIndent(IndentKind.OutdentColumns);
@@ -561,13 +576,14 @@ public sealed partial class CSharpDocumentBuilder {
                 && BreakPlan.IsChainRootOperator(pattern):
                 return pattern.OperatorToken;
 
-            case InvocationExpressionSyntax or ConditionalAccessExpressionSyntax
+            case InvocationExpressionSyntax or MemberAccessExpressionSyntax or ConditionalAccessExpressionSyntax
                 when options.OutdentDots
                 && !options.WrapAfterDotInMethodCalls
                 && BreakPlan.IsChainRoot(node):
                 return node switch {
                     InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } =>
                         access.OperatorToken,
+                    MemberAccessExpressionSyntax property => property.OperatorToken,
                     InvocationExpressionSyntax { Expression: MemberBindingExpressionSyntax binding } =>
                         binding.OperatorToken,
                     ConditionalAccessExpressionSyntax conditional => conditional.OperatorToken,
@@ -922,8 +938,7 @@ public sealed partial class CSharpDocumentBuilder {
             or MemberAccessExpressionSyntax
             or ElementAccessExpressionSyntax
             or ConditionalAccessExpressionSyntax
-            or MemberBindingExpressionSyntax
-            or PostfixUnaryExpressionSyntax);
+            or MemberBindingExpressionSyntax);
 
     static bool IsPatternChainRoot(SyntaxNode node) =>
         node is BinaryPatternSyntax && node.Parent is not BinaryPatternSyntax;
@@ -1236,7 +1251,12 @@ public sealed partial class CSharpDocumentBuilder {
     ///     because a break at the group's own point lands one level in. Only the writer, which knows
     ///     whether the group broke, decides whether the level has columns (issue #406, SK-DIV-0157).
     /// </remarks>
-    void OpenContinuation(in GroupPlan planned, int level) {
+    /// <param name="chainLevel">
+    ///     The level is a chained call's own (<see cref="GroupPlan.OwnLevel" /> on a chain root), which
+    ///     nests from a broken binary operator's continuation line when the chain is the operator's left
+    ///     operand: <see cref="IndentFlags.ChainLevel" />.
+    /// </param>
+    void OpenContinuation(in GroupPlan planned, int level, bool chainLevel = false) {
         var conditions = (planned.HoldsLevel & HeldLevel.WhileFlat) != 0
             ? IndentFlags.HeldWhileOwnerFlat
             : IndentFlags.None;
@@ -1252,7 +1272,11 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        OpenIndent(IndentKind.Continuous, planned.UnconditionalLevel);
+        OpenIndent(
+            IndentKind.Continuous,
+            planned.UnconditionalLevel,
+            chainLevel ? IndentFlags.ChainLevel : IndentFlags.None
+        );
     }
 
     void CloseGroupAt((int Indented, bool Held) opened) {
@@ -2374,6 +2398,14 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         var token = piece.Kind == PieceKind.Token ? tokens[piece.TokenIndex] : default;
+
+        // ⚠ Opened before the gap, so that a break in it lands inside, and closed after the token, so
+        // that it covers that one line and no other.
+        var extraOutdent = ExtraOutdentFor(token);
+        if (extraOutdent > 0) {
+            OpenIndent(IndentKind.OutdentColumns, columns: extraOutdent);
+        }
+
         if (piece.Span.Start != gapEmittedAt) {
             EmitGap(index, piece.Kind, piece.Span.Start, token);
         }
@@ -2459,7 +2491,33 @@ public sealed partial class CSharpDocumentBuilder {
                 break;
         }
 
+        if (extraOutdent > 0) {
+            CloseIndent(IndentKind.OutdentColumns);
+        }
+
         lastPiece = index;
+    }
+
+    /// <summary>
+    ///     The columns a wrapped line beginning with <paramref name="token" /> is pulled back past what its
+    ///     chain's <c>skala_outdent_dots</c> scope already pulls it: the rest of a <c>?.</c>'s width.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The scope's amount is one chain-wide number, a <c>.</c>'s width, and the oracle outdents
+    ///     each line by its own leading operator (#458, SK-DIV-0069): <c>?.SelectName(…)</c> at column 10
+    ///     where the <c>.</c> lines sit at 11. The option's own meaning — pull the line back by the width
+    ///     of the operator that starts it — says the same without the oracle.
+    /// </remarks>
+    int ExtraOutdentFor(SyntaxToken token) {
+        if (dotOutdents == 0
+            || !token.IsKind(SyntaxKind.QuestionToken)
+            || token.Parent is not ConditionalAccessExpressionSyntax
+            || !token.GetNextToken().IsKind(SyntaxKind.DotToken)) {
+            return 0;
+        }
+
+        var dot = token.GetNextToken();
+        return token.Text.Length + dot.Text.Length - 1;
     }
 
     /// <summary>

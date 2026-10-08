@@ -478,8 +478,9 @@ public sealed class LayoutWriter {
         // ⚠ A delimited list on the first line of a construct that broke after it nests from that
         // construct's continuation line, and its closer sits on it. See LiftedLevel.
         var lifted = -1;
-        if (kind is IndentKind.Continuous or IndentKind.OneLevel && (flags & IndentFlags.Delimiter) != 0) {
-            lifted = LiftedLevel(ancestors, outer);
+        if (kind is IndentKind.Continuous or IndentKind.OneLevel
+            && (flags & (IndentFlags.Delimiter | IndentFlags.ChainLevel)) != 0) {
+            lifted = LiftedLevel(ancestors, outer, (flags & IndentFlags.ChainLevel) != 0);
             if (lifted >= 0) {
                 outer = lifted;
             }
@@ -659,7 +660,11 @@ public sealed class LayoutWriter {
     ///     order, and a group's continuation scope is its first child, so the ancestor after a scope is
     ///     the group that opened it.
     /// </remarks>
-    int LevelForBlock(Stack<(int Node, int Child)> ancestors) {
+    /// <param name="brokenAt">
+    ///     The index in the path of the broken construct to nest from, when the caller has chosen it;
+    ///     −2 to look for the innermost one. See <see cref="LiftedLevel" />.
+    /// </param>
+    int LevelForBlock(Stack<(int Node, int Child)> ancestors, int brokenAt = -2) {
         var path = ancestors.ToArray();
 
         // ⚠ The pairing of ancestors with scopes is the whole method, so a stack that does not hold
@@ -670,7 +675,7 @@ public sealed class LayoutWriter {
             return LevelForNested();
         }
 
-        var broken = InnermostBrokenConstruct(path);
+        var broken = brokenAt == -2 ? InnermostBrokenConstruct(path) : brokenAt;
         var level = 0;
         var blocked = -1;
         var outside = false;
@@ -843,17 +848,40 @@ public sealed class LayoutWriter {
     ///         ordinary level and the case where it breaks after the list is open (SK-DIV-0185).
     ///     </para>
     /// </remarks>
-    int LiftedLevel(Stack<(int Node, int Child)> ancestors, int nested) {
+    /// <param name="ownerIsAChain">
+    ///     ⚠ <see cref="IndentFlags.ChainLevel" />: the scope is a chain's own, and the chain's group —
+    ///     the scope's owner, at the top of <paramref name="ancestors" /> — is not a construct around it.
+    ///     Without the exclusion a chain that broke would lift its own dots past an <c>=</c> on its
+    ///     line: <c>var x = a.B()</c> / <c>.C()</c> at two levels.
+    /// </param>
+    int LiftedLevel(Stack<(int Node, int Child)> ancestors, int nested, bool ownerIsAChain = false) {
         var path = ancestors.ToArray();
         if (path.Count(frame => document.Nodes[frame.Node].Kind == DocKind.Indent) != scopes.Count) {
             return -1;
         }
 
-        if (InnermostBrokenConstruct(path) < 0) {
+        var brokenAt = -2;
+        if (ownerIsAChain) {
+            if (path.Length == 0 || document.Nodes[path[0].Node].Kind != DocKind.Group) {
+                return -1;
+            }
+
+            var around = InnermostBrokenConstruct(path[1..]);
+            if (around < 0) {
+                return -1;
+            }
+
+            // ⚠ Only a binary operator's: the chain is its left operand. A chain around a chain — a
+            // receiver that is a chain of its own — and a block's owner are not this rule's.
+            brokenAt = around + 1;
+            if (!document.FactsOf(document.Nodes[path[brokenAt].Node].Arg1).ChainLink) {
+                return -1;
+            }
+        } else if (InnermostBrokenConstruct(path) < 0) {
             return -1;
         }
 
-        var level = LevelForBlock(ancestors);
+        var level = LevelForBlock(ancestors, brokenAt);
         return level > nested ? level : -1;
     }
 
