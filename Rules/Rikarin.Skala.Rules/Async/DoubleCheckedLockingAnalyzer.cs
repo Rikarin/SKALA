@@ -118,8 +118,8 @@ public sealed class DoubleCheckedLockingAnalyzer : DiagnosticAnalyzer {
                 return Field(unary.Operand, model, cancellation) is {
                     Type.SpecialType: SpecialType.System_Boolean
                 } flag
-                        ? flag
-                        : null;
+                    ? flag
+                    : null;
 
             default:
                 return null;

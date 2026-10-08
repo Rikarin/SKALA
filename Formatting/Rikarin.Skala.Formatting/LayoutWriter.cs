@@ -296,7 +296,7 @@ public sealed class LayoutWriter {
                                 stack
                             );
                         } else {
-                            Push((IndentKind)slot.Arg0, (IndentFlags)slot.Arg1, slot.Arg2, stack);
+                            Push((IndentKind)slot.Arg0, (IndentFlags)slot.Arg1, slot.Arg2, stack, node);
                         }
 
                         break;
@@ -458,7 +458,13 @@ public sealed class LayoutWriter {
     ///     come out the way ReSharper writes it. A block additionally <em>fixes</em> its level rather
     ///     than adding to whatever is open, because a brace resets the continuation context.
     /// </remarks>
-    void Push(IndentKind kind, IndentFlags flags, int columns, Stack<(int Node, int Child)> ancestors) {
+    void Push(
+        IndentKind kind,
+        IndentFlags flags,
+        int columns,
+        Stack<(int Node, int Child)> ancestors,
+        int node = -1
+    ) {
         var unconditional = (flags & IndentFlags.Unconditional) != 0;
 
 
@@ -480,7 +486,7 @@ public sealed class LayoutWriter {
         var lifted = -1;
         if (kind is IndentKind.Continuous or IndentKind.OneLevel
             && (flags & (IndentFlags.Delimiter | IndentFlags.ChainLevel)) != 0) {
-            lifted = LiftedLevel(ancestors, outer, (flags & IndentFlags.ChainLevel) != 0);
+            lifted = LiftedLevel(ancestors, outer, (flags & IndentFlags.ChainLevel) != 0, node, kind, columns);
             if (lifted >= 0) {
                 outer = lifted;
             }
@@ -772,6 +778,67 @@ public sealed class LayoutWriter {
     ///     resolved <see cref="ResolvedMode.Broken" /> and <see cref="GroupFacts.Continues" />, looked for
     ///     inside the innermost enclosing block only; −1 when there is none.
     /// </summary>
+    /// <summary>
+    ///     <see cref="InnermostBrokenConstruct" /> for a fill chain: the innermost broken group carrying
+    ///     <see cref="GroupFacts.ContinuesIfItBreaks" />, inside the innermost enclosing block; −1 for none.
+    /// </summary>
+    int InnermostBrokenFill((int Node, int Child)[] path) {
+        for (int a = 0, next = scopes.Count - 1; a < path.Length; a++) {
+            ref var slot = ref document.Nodes[path[a].Node];
+            if (slot.Kind == DocKind.Indent && scopes[next--].IsBlock) {
+                break;
+            }
+
+            if (slot.Kind == DocKind.Group
+                && fitter.ModeOf(slot.Arg1) == ResolvedMode.Broken
+                && document.FactsOf(slot.Arg1).ContinuesIfItBreaks) {
+                return a;
+            }
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    ///     Whether the fill chain at <paramref name="pathIndex" /> takes one of its points once the scope at
+    ///     <paramref name="node" /> is written unlifted — the rest of the chain written ahead, watched, and
+    ///     rolled back.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <see cref="ChainBreaksInside" />'s technique, run to the end of the chain's group rather than of
+    ///     the scope, because the point that decides it lies past the list: `source.Select(x => {` … `}` /
+    ///     `).Where(alpha)` / `.ToList(beta)` lifts for the break before <c>.ToList</c>. Sound for the same
+    ///     reason: unlifted is the shallower layout, so a chain that breaks there breaks lifted too.
+    /// </remarks>
+    bool FillBreaksAfter(
+        int node,
+        IndentKind kind,
+        int columns,
+        Stack<(int Node, int Child)> ancestors,
+        int pathIndex
+    ) {
+        var group = document.Nodes[ancestors.ToArray()[pathIndex].Node].Arg1;
+        var (watched, broke) = (watchedChain, watchedChainBroke);
+        var checkpoint = Checkpoint();
+        watchedChain = group;
+        watchedChainBroke = false;
+
+        Push(kind, IndentFlags.None, columns, ancestors);
+        var ahead = new Stack<(int Node, int Child)>(ancestors.Reverse());
+        var floor = ancestors.Count - pathIndex - 1;
+        var children = document.ChildrenOf(node);
+        ahead.Push((node, 1));
+        if (children.Length > 0) {
+            ahead.Push((children[0], 0));
+        }
+
+        Run(ahead, int.MaxValue, floor);
+        var answer = watchedChainBroke;
+        Restore(checkpoint);
+        (watchedChain, watchedChainBroke) = (watched, broke);
+        return answer;
+    }
+
     int InnermostBrokenConstruct((int Node, int Child)[] path) {
         for (int a = 0, next = scopes.Count - 1; a < path.Length; a++) {
             ref var slot = ref document.Nodes[path[a].Node];
@@ -854,10 +921,32 @@ public sealed class LayoutWriter {
     ///     Without the exclusion a chain that broke would lift its own dots past an <c>=</c> on its
     ///     line: <c>var x = a.B()</c> / <c>.C()</c> at two levels.
     /// </param>
-    int LiftedLevel(Stack<(int Node, int Child)> ancestors, int nested, bool ownerIsAChain = false) {
+    /// <param name="node">The scope's own document node, for the fill's lookahead; −1 for none.</param>
+    /// <param name="kind">The scope's kind, pushed unlifted while the lookahead writes ahead.</param>
+    /// <param name="columns">The scope's column count, likewise.</param>
+    int LiftedLevel(
+        Stack<(int Node, int Child)> ancestors,
+        int nested,
+        bool ownerIsAChain = false,
+        int node = -1,
+        IndentKind kind = IndentKind.Continuous,
+        int columns = 0
+    ) {
         var path = ancestors.ToArray();
         if (path.Count(frame => document.Nodes[frame.Node].Kind == DocKind.Indent) != scopes.Count) {
             return -1;
+        }
+
+        // ⚠ A fill chain around the list (#496, SK-DIV-0185): lifted exactly when the chain then takes a
+        // point, which only writing ahead can say. See GroupFacts.ContinuesIfItBreaks.
+        if (!ownerIsAChain && node >= 0 && InnermostBrokenConstruct(path) < 0) {
+            var fill = InnermostBrokenFill(path);
+            if (fill < 0 || !FillBreaksAfter(node, kind, columns, ancestors, fill)) {
+                return -1;
+            }
+
+            var lifted = LevelForBlock(ancestors, fill);
+            return lifted > nested ? lifted : -1;
         }
 
         var brokenAt = -2;
@@ -1974,6 +2063,25 @@ public sealed class LayoutWriter {
         var (segment, head) = FillSegment(node, group, flags, stack);
         if (Fits(column, segment)) {
             return true;
+        }
+
+        // ⚠ A chain's call link keeps its head and chops its arguments unless, moved down, its line ends
+        // well short of the margin (#484, SK-DIV-0129). See LineFlags.ChainCallLink.
+        // ⚠ An argument list that is certain to break — the oracle's own chopped answer read back on pass
+        // two — keeps the head too, or pass two would move down what pass one kept.
+        if ((flags & LineFlags.ChainCallLink) != 0 && segment >= Document.Unbounded && head < segment) {
+            headStays = Fits(column, head);
+            return headStays;
+        }
+
+        if ((flags & LineFlags.ChainCallLink) != 0 && head < segment) {
+            var room = (flags & LineFlags.ChainCallOneArgument) != 0 ? 30 : 48;
+            // ⚠ The chain's own continuation scope is on the stack by now — the point is inside the
+            // group — so ContinuationColumn, written for a group being entered, would count it twice.
+            var below = ContinuationColumn(group)
+                - (document.FactsOf(group).SpendsIndent ? continuousMultiplier * indentWidth : 0);
+            headStays = Fits(column, head) && below + segment > this.width - room;
+            return headStays;
         }
 
         // ⚠ An identifier-headed tuple item keeps its head only when the break inside it is certain

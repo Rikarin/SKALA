@@ -323,6 +323,34 @@ public sealed class Fitter {
                         : ResolvedMode.Flat;
                 }
 
+                // ⚠ See GroupFacts.FlatIfHeadOverflows: the head's own point takes the break.
+                if (facts.FlatIfHeadOverflows && !Fits(m.Column, m.PointWidth)) {
+                    return ResolvedMode.Flat;
+                }
+
+                // ⚠ Broken exactly when the receiver fits, the receiver with its call does not, and the
+                // call fits on the line below. See GroupFacts.HeldCall.
+                if (facts.HeldCall > 0) {
+                    if (m.FlatWidth >= Unbounded || tail >= Unbounded) {
+                        return ResolvedMode.Flat;
+                    }
+
+                    // ⚠ And only a call that leaves room on the line below. The oracle's boundary between
+                    // breaking before the call and holding it to chop its arguments is not one width:
+                    // measured on a grid of heads (40–100) and call lines (50–112), two arguments break
+                    // up to a call line of 82, 74 and 78 behind heads of 60, 80 and 100, one argument up
+                    // to 106 and 96. Every two-argument call line of 76 columns or less breaks in every
+                    // row of the grid and every one-argument line of 96, and nothing that wide holds;
+                    // past them the rows disagree and the call is held, as before. The fact carries how
+                    // far short of the margin the line has to end. SK-DIV-0331 records the grid.
+                    var receiver = m.FlatWidth - tail;
+                    return Fits(m.Column, receiver)
+                        && !Fits(m.Column, m.FlatWidth)
+                        && m.ContinuationColumn + tail <= width - facts.HeldCall
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                }
+
                 // ⚠ Broken exactly when only the terminator overflows. See GroupFacts.Terminator.
                 if (facts.Terminator > 0) {
                     return !Fits(m.Column, m.BreakWidth) && Fits(m.Column, m.BreakWidth - facts.Terminator)
