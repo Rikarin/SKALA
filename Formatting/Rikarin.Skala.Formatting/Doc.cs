@@ -1198,7 +1198,8 @@ public sealed class Document {
 ///     margin's: it grows with the width of <c>new X {</c> and shrinks with the head from the declarator's name
 ///     through the <c>=</c>, by <c>110.5 + 0.6 · prefix − 0.4 · max(name head, 23) − (indent − 8) / 8</c>
 ///     columns, two fewer for a field. Otherwise the braces break. Negative: the head through the <c>=</c> is
-///     under twelve columns, and the braces always break. See <c>Fitter.Worth</c>.
+///     under twelve columns, and the braces always break. ⚠ Only at the 120-column margin it was measured at;
+///     any other margin leaves the decision to the fitted one. See <c>Fitter.Worth</c>.
 /// </param>
 /// <param name="JoinedOverflow">
 ///     ⚠ For a <see cref="PrefersOuterBreak" /> group: its first question asks whether the <em>joined</em> line

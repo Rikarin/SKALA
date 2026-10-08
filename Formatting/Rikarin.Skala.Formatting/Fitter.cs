@@ -677,7 +677,9 @@ public sealed class Fitter {
     ///     </para>
     /// </remarks>
     ResolvedMode Worth(in GroupFacts facts, in Measures m, bool afterPointRunsToTheEnd, int segment, int pointSpace) {
-        if (facts.PrefersOuterBreak && facts.CreationLimit != 0) {
+        // ⚠ Only at the 120-column margin it was measured at; any other margin keeps the fitted one, which the
+        // committed sweep's `max_line_length` rows were taken against.
+        if (facts.PrefersOuterBreak && facts.CreationLimit != 0 && width == CreationLimitWidth) {
             // ⚠ A creation with a one-line initializer moves down whole by its own measured limit, and the
             // braces break otherwise (#581). See GroupFacts.CreationLimit.
             if (segment >= Unbounded || facts.CreationLimit < 0) {
@@ -687,7 +689,7 @@ public sealed class Fitter {
             // ⚠ The segment past the point, not FlatWidth − PointWidth, which counts the point's own space.
             var below = m.ContinuationColumn + segment + m.Trailing;
             var indent = m.ContinuationColumn - indentWidth;
-            return 40 * below <= facts.CreationLimit - 5 * (indent - 8) + 40 * (width - 120)
+            return 40 * below <= facts.CreationLimit - 5 * (indent - 8)
                 ? ResolvedMode.Broken
                 : ResolvedMode.Flat;
         }
@@ -887,6 +889,9 @@ public sealed class Fitter {
     }
 
     int OuterBreakMargin(in Measures m) => 11 + m.ContinuationColumn / indentWidth;
+
+    /// <summary>The margin <see cref="GroupFacts.CreationLimit" /> was measured at (#581).</summary>
+    const int CreationLimitWidth = 120;
 
     /// <summary>
     ///     The widest line a held first call may take below and still be moved there rather than held and
