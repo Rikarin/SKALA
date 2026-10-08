@@ -248,8 +248,8 @@ public sealed class ObjectCreationRule : ArrangementRule {
             TargetTypeOf(node) is { } target
             && Carries(node, target)
             && (Evident(node)
-                ? options.ObjectCreationWhenTypeEvident == ObjectCreationStyle.TargetTyped
-                : options.ObjectCreationWhenTypeNotEvident == ObjectCreationStyle.TargetTyped);
+                    ? options.ObjectCreationWhenTypeEvident == ObjectCreationStyle.TargetTyped
+                    : options.ObjectCreationWhenTypeNotEvident == ObjectCreationStyle.TargetTyped);
 
         /// <summary>Whether <c>new()</c> aimed at <paramref name="target" /> constructs what the creation does.</summary>
         bool Carries(ObjectCreationExpressionSyntax node, ITypeSymbol target) {
@@ -343,7 +343,9 @@ public sealed class ObjectCreationRule : ArrangementRule {
             foreach (var argument in list.Arguments) {
                 if (argument.Expression is not ObjectCreationExpressionSyntax creation
                     || !argument.RefKindKeyword.IsKind(SyntaxKind.None)
-                    || ParameterOf(argument, list, parameters) is not { IsParams: false, RefKind: RefKind.None or RefKind.In } parameter
+                    || ParameterOf(argument, list, parameters) is not {
+                        IsParams: false, RefKind: RefKind.None or RefKind.In
+                    } parameter
                     || !Carries(creation, parameter.Type)) {
                     continue;
                 }
@@ -406,7 +408,10 @@ public sealed class ObjectCreationRule : ArrangementRule {
             }
 
             var info = rewritten switch {
-                ConstructorInitializerSyntax initializer => model.GetSpeculativeSymbolInfo(owner.SpanStart, initializer),
+                ConstructorInitializerSyntax initializer => model.GetSpeculativeSymbolInfo(
+                    owner.SpanStart,
+                    initializer
+                ),
                 PrimaryConstructorBaseTypeSyntax baseType => model.GetSpeculativeSymbolInfo(owner.SpanStart, baseType),
                 // ⚠ A target-typed outer `new(…)` has no type of its own to bind against out of place;
                 // its arguments are left as written rather than guessed at.

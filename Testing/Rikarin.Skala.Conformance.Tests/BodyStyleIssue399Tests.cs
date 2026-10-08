@@ -213,8 +213,16 @@ public sealed class BodyStyleIssue399Tests {
         "public int P { get { return _n; } set { _n = value; // c\n } }",
         "public int P { get => _n; set => _n = value; // c"
     )]
-    [InlineData("false", "public void M() { Console.WriteLine(); // c\n }", "public void M() => Console.WriteLine(); // c")]
-    [InlineData("false", "public void M() { throw new Exception(); // c\n }", "public void M() => throw new Exception(); // c")]
+    [InlineData(
+        "false",
+        "public void M() { Console.WriteLine(); // c\n }",
+        "public void M() => Console.WriteLine(); // c"
+    )]
+    [InlineData(
+        "false",
+        "public void M() { throw new Exception(); // c\n }",
+        "public void M() => throw new Exception(); // c"
+    )]
     public void ATrailingLineComment_RidesBehindTheSemicolon(string heuristics, string member, string expected) {
         var arranged = Arrange(
             member,

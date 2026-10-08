@@ -3154,6 +3154,58 @@ design question of its own and not a detail of the implementation.
   that binds to a *different* symbol of the same name, so that check has to be explicit. ⚠ Needs the
   oracle — the alias preference is exactly the kind of behaviour no specification states.
 
+### ⚠ Re-measured 2026-10-08 for #460 — the specification, and the alias claim refuted
+
+Asked of `jb cleanupcode` 2025.2.6 under `SkalaCleanup` at the export's values, on six probes in a
+net10.0 `ImplicitUsings` project (so `System`, `System.Collections.Generic`, `System.IO`,
+`System.Threading` and `System.Threading.Tasks` are imported everywhere):
+
+| written | oracle | why |
+|---|---|---|
+| `new System.Text.StringBuilder()` with `using System.Text;` | `new StringBuilder()` | the simple name binds to the same type |
+| `global::System.Console.WriteLine(…)` | `Console.WriteLine(…)` | the same, through `global::` |
+| `System.Collections.Generic.List<int>` / `global::System.Collections.Generic.List<int>` | `List<int>` | an implicit using is a using |
+| `System.IO.Stream?`, `(System.IDisposable)x`, `System.StringComparison.Ordinal`, `System.Math.Max` | `Stream?`, `(IDisposable)x`, `StringComparison.Ordinal`, `Math.Max` | every position — nullable, cast, receiver |
+| `typeof(System.Text.StringBuilder)`, `nameof(…)` **with** `using System.Text;` | `typeof(StringBuilder)`, `nameof(StringBuilder)` | |
+| the same **without** the using | unchanged | ⚠ **it never adds a using** |
+| `new System.Text.RegularExpressions.Regex(…)` with only `using System.Text;` | unchanged | ⚠ **no partial shortening** — `RegularExpressions.Regex` is never written |
+| `ProbeShorten6.Outer.Thing` / `global::ProbeShorten6.Outer.Thing` inside `ProbeShorten6.Outer.Inner` | `Thing` | an enclosing namespace is a scope too |
+| `[global::System.Diagnostics.CodeAnalysis.SuppressMessage(…)]`, no using for it | `[System.Diagnostics.CodeAnalysis.SuppressMessage(…)]` | ⚠ `global::` alone is dropped when the rest still binds |
+| `[System.Obsolete]` | `[Obsolete]` | attributes too |
+| `System.Threading.Timer` beside an unimported `System.Timers.Timer` | `Timer`, and `System.Timers.Timer` kept | the short name must bind to *this* type |
+| `new System.Text.StringBuilder()` in a namespace declaring its own `StringBuilder` | unchanged | shadowed |
+| `<see cref="System.Text.StringBuilder"/>`, with or without the using | unchanged | ⚠ a `cref` is never shortened |
+| `global::System.String` in a type argument | `string` | the predefined-type rule then takes it |
+
+⚠ **The alias preference this entry records is refuted on both probes that could show it.** With
+`using System.Text;` and `using Abe = System.Text.StringBuilder;` at file level, `new
+System.Text.StringBuilder()` became `new StringBuilder()` — not `new Abe()` — and the alias was removed
+as unused. With the alias at nested scope in a namespace whose parent declares a conflicting
+`StringBuilder`, the qualified name was left alone and the alias removed: the oracle does not reach for
+an alias even when it is the only short spelling that binds. The probe the old claim came from is not
+recorded, so it cannot be re-run; what can be re-run says "shortest *imported* name or nothing".
+
+⚠ **Not fixed in this session, and the reason is the size, not a missing capability.** Everything above
+is decidable with the semantic model the arranger already holds — speculative binding at the position,
+as `StaticQualifierRule.CanShortenNamespace` and `SK0243` already do. What it costs:
+
+1. a new arrangement rule and id (`SK0219`, `arrange-qualified-reference`), with its `rules.json` entry,
+   `allocated-ids.txt` line and generated `docs/rules/` page;
+2. `resharper_csharp_prefer_qualified_reference` entered in `options.json` and `export-bridge.json`
+   — it is in neither today, so `ArrangementOptions` cannot read it — with the regenerated `docs/site/`;
+3. ⚠ **an ordering hazard with `UsingsRule` that must be designed, not discovered.** The removable-usings
+   set is computed from the text a pass *starts* with. A using that is unused only because every
+   reference to its namespace is fully qualified is in that set; shortening in the same pass makes it
+   needed, `UsingsRule` removes it anyway, and safety layer 2 reverts the whole document on `CS0246`.
+   The oracle shortens and keeps the using. The rule has to either withdraw any using it makes
+   necessary from the set, or decline where the binding comes through a removable using;
+4. `SK0215`'s `global::` refusal (its `falsePositives` text says it preserves `global::`) has to be
+   reconciled with the oracle dropping it at `prefer_qualified_reference = false`.
+
+Items 1 and 2 touch generated registries that parallel work regenerates constantly, and item 3 is the
+kind of cross-rule decision that wants its own review. Recorded here as the specification; the probes
+are reproducible from the table.
+
 ## SK-DIV-0074 — `dotnet_separate_import_directive_groups` was a formatting key in the oracle and an arrangement key in Skala
 
 ⚠ **Fixed 2026-08-30. See the section at the end**, which also corrects this entry's grouping model
@@ -4073,6 +4125,37 @@ And what it leaves alone, each for its own reason:
   predefined keyword rather than `int` and `string`. The triage's *ordering* stands and was re-confirmed
   by the same run: the export sets `true`, the two engines agree at `true`, and `verify` reports
   Conformant.
+
+### ⚠ Fixed 2026-10-08 (#462) — both keys, both directions
+
+Re-measured under `SkalaCleanup`, one key at a time, on a probe holding every predefined keyword in
+every position the language allows:
+
+- at `predefined_type_for_locals_parameters_members = false` the oracle expands field, property,
+  indexer, return, parameter (`ref`/`out`/`params`), delegate, event and operator signatures, type
+  arguments, constraints (`where T : IComparable<Int32>`), arrays, nullables, tuple elements, casts,
+  `checked` casts, `typeof`, `sizeof`, `default(…)`, `as`, type patterns (`case Int32 n`),
+  `stackalloc`, lambda parameter types, local functions and `const`. ⚠ It **keeps** an enum's
+  underlying type (`enum Small : byte`), `nint`, and every member access receiver;
+- ⚠ **the sibling key runs the other way too**: at `predefined_type_for_member_access = false` the
+  oracle writes `Int32.TryParse`, `String.Empty`, `Int32.MaxValue` and touches nothing else. This
+  entry recorded only that the receiver is left alone at the *locals* key's `false`;
+- ⚠ **`System.Int32` when `Int32` is shadowed**: with a `class Int32 { }` in the probe's namespace the
+  oracle wrote `System.Int32 _count;` and kept `String Name()` short. So the issue's question —
+  `Int32` or `System.Int32`? — is answered per site: the simple name where it binds to the type,
+  qualified where it does not.
+
+`PredefinedTypeRule` now has a `PredefinedTypeSyntax` visitor: at the owning key's `false` it looks
+up `Int32`, then `System.Int32`, at the position and writes the first that binds to the same type,
+and keeps the keyword when neither does (a receiver gets the simple name or nothing). It is enabled
+at every value of the pair — before, it was disabled outright when both keys were `false`, the one
+configuration asking most for it. Enum bases, using aliases and `cref`s are left alone.
+
+- ⚠ status: **fixed**. Pinned by `ArrangementRuleTests.PredefinedType_*` at each key's `false`. The
+  committed fixtures are untouched and still agree: `predefined-type-declarations.cs` and
+  `predefined-member-access.cs` are written framework-named, so neither key's sweep row moves; a
+  fixture measuring the expansion needs the keyword spelling and a re-sweep of that row, which is
+  left to the next `Sweep` run rather than hand-edited into the frozen corpus.
 
 ## SK-DIV-0085 — `sort_usings = false` still reorders, and the oracle's unsorted order is not the written one
 

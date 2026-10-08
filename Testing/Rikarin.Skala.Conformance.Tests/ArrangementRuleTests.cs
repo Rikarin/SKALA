@@ -1006,6 +1006,132 @@ public sealed class ArrangementRuleTests {
         Assert.Contains("One(new());", arranged, StringComparison.Ordinal);
     }
 
+    /// <summary>The probe #462's rows are asked of: every predefined keyword, written as one.</summary>
+    const string KeywordProbe = """
+                                using System;
+                                using System.Collections.Generic;
+
+                                namespace P;
+
+                                enum Small : byte { A }
+
+                                delegate int Handler(string s);
+
+                                interface IThing<T> where T : IComparable<int> { }
+
+                                class Keywords {
+                                    int _count;
+                                    public bool Enabled { get; set; }
+                                    event Func<int>? Raised;
+                                    int this[int i] => i;
+                                    public static Keywords operator +(Keywords a, int b) => a;
+                                    (int, string) _tuple;
+                                    int? _maybe;
+                                    nint _native;
+
+                                    string Name() => nameof(Int32);
+
+                                    void M(ref int r, out int o, params int[] rest) {
+                                        o = 1;
+                                        Dictionary<string, int> map = new Dictionary<string, int>();
+                                        long cast = (long)r;
+                                        object boxed = 1;
+                                        var t = typeof(decimal);
+                                        var d = default(double);
+                                        var s = boxed as string;
+                                        var max = int.MaxValue;
+                                        var empty = string.Empty;
+                                        Console.WriteLine(map.Count + cast + t.Name + d + s + max + empty + _count + _maybe + _native);
+                                    }
+                                }
+                                """;
+
+    /// <summary>
+    ///     #462: at <c>predefined_type_for_locals_parameters_members = false</c> the keyword is expanded
+    ///     to its framework name — every row the oracle's, under <c>SkalaCleanup</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("delegate Int32 Handler(String s);")]
+    [InlineData("where T : IComparable<Int32>")]
+    [InlineData("Int32 _count;")]
+    [InlineData("public Boolean Enabled")]
+    [InlineData("event Func<Int32>? Raised;")]
+    [InlineData("Int32 this[Int32 i] => i;")]
+    [InlineData("operator +(Keywords a, Int32 b)")]
+    [InlineData("(Int32, String) _tuple;")]
+    [InlineData("Int32? _maybe;")]
+    [InlineData("String Name() => nameof(Int32);")]
+    [InlineData("void M(ref Int32 r, out Int32 o, params Int32[] rest)")]
+    [InlineData("Dictionary<String, Int32> map = new Dictionary<String, Int32>();")]
+    [InlineData("Int64 cast = (Int64)r;")]
+    [InlineData("Object boxed = 1;")]
+    [InlineData("typeof(Decimal)")]
+    [InlineData("default(Double)")]
+    [InlineData("boxed as String;")]
+    [InlineData("enum Small : byte { A }")]
+    [InlineData("nint _native;")]
+    [InlineData("var max = int.MaxValue;")]
+    [InlineData("var empty = string.Empty;")]
+    public void PredefinedType_AtFalse_ExpandsToTheFrameworkName(string expected) {
+        var arranged = Declined(
+            Attempt(
+                KeywordProbe,
+                ArrangeIds.PredefinedType,
+                overrides: [new("dotnet_style_predefined_type_for_locals_parameters_members", "false")]
+            )
+        );
+        Assert.Contains(expected, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     #462, the sibling key: at <c>predefined_type_for_member_access = false</c> the receiver expands
+    ///     and the declarations, which the other key still owns at <c>true</c>, do not.
+    /// </summary>
+    [Theory]
+    [InlineData("var max = Int32.MaxValue;")]
+    [InlineData("var empty = String.Empty;")]
+    [InlineData("int _count;")]
+    [InlineData("typeof(decimal)")]
+    public void PredefinedType_MemberAccessAtFalse_ExpandsOnlyTheReceiver(string expected) {
+        var arranged = Declined(
+            Attempt(
+                KeywordProbe,
+                ArrangeIds.PredefinedType,
+                overrides: [new("dotnet_style_predefined_type_for_member_access", "false")]
+            )
+        );
+        Assert.Contains(expected, arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #462: where something else answers to <c>Int32</c>, the oracle writes <c>System.Int32</c> —
+    ///     measured with a class of that name beside the field — and <c>String</c>, which nothing shadows,
+    ///     stays short.
+    /// </summary>
+    [Fact]
+    public void PredefinedType_AtFalse_QualifiesAShadowedName() {
+        var arranged = Declined(
+            Attempt(
+                """
+                using System;
+
+                namespace P {
+                    class Int32 { }
+
+                    class Masked {
+                        int _count;
+                        string Name() => "x" + _count;
+                    }
+                }
+                """,
+                ArrangeIds.PredefinedType,
+                overrides: [new("dotnet_style_predefined_type_for_locals_parameters_members", "false")]
+            )
+        );
+        Assert.Contains("System.Int32 _count;", arranged, StringComparison.Ordinal);
+        Assert.Contains("String Name()", arranged, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void NamespaceBody_IsLeftAloneWhenTheFileHasMoreThanOne() {
         // A file-scoped namespace must be the only one in its file, so this is not a style question.

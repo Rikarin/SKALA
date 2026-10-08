@@ -411,7 +411,9 @@ public sealed class BodyStyleRule : ArrangementRule {
         /// </remarks>
         static bool HasTriviaThatBlocksConversion(SyntaxNode node, SyntaxToken exempt = default) {
             foreach (var trivia in node.DescendantTrivia(descendIntoTrivia: true)) {
-                if (!exempt.IsKind(SyntaxKind.None) && trivia.Token == exempt && exempt.TrailingTrivia.Contains(trivia)) {
+                if (!exempt.IsKind(SyntaxKind.None)
+                    && trivia.Token == exempt
+                    && exempt.TrailingTrivia.Contains(trivia)) {
                     continue;
                 }
 
