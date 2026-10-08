@@ -419,7 +419,7 @@ public sealed partial class CSharpDocumentBuilder {
 
             var hangsFrom = RunOwner(start);
             if (hangsFrom is not null && !nextToken.IsKind(SyntaxKind.CloseBraceToken)) {
-                required = Math.Max(required, RequirementFor(hangsFrom, multiLine: true));
+                required = Math.Max(required, RequirementFor(hangsFrom, true));
             }
 
             var under = MemberUnderGap(nextPieceIndex, nextToken);
