@@ -7268,14 +7268,16 @@ public sealed class BreakPlan {
     void SettleParenthesisedCollections(SyntaxNode root) {
         foreach (var paren in root.DescendantNodes().OfType<ParenthesizedExpressionSyntax>()) {
             if (paren.Expression is not CollectionExpressionSyntax { Elements.Count: > 0 } collection
-                || captured is { Count: > 0 } && IsInsideCaptured(paren)) {
+                || captured is { Count: > 0 }
+                && IsInsideCaptured(paren)) {
                 continue;
             }
 
             var open = collection.OpenBracketToken;
             // ⚠ And at `keep_user_linebreaks = false` always: `(` / `[1, 2]);` is joined there too.
             if (!options.KeepsUserBreaksBetweenItems
-                || collection.DescendantTokens().Any(token => token.SpanStart > open.SpanStart && SourceBreakSurvives(token))) {
+                || collection.DescendantTokens()
+                    .Any(token => token.SpanStart > open.SpanStart && SourceBreakSurvives(token))) {
                 gaps[open.SpanStart] = new(GapRule.Flat, -1);
             }
         }
