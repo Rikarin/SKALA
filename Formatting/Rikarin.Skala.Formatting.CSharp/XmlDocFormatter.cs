@@ -447,7 +447,7 @@ public static class XmlDocFormatter {
         // ⚠ The property, as for `///`: the rebuilt block must say what the one-liner said, read back
         // the way the compiler reads it — asterisks as exterior trivia — or nothing is written.
         return Probe(replacement) is { } produced
-            && string.Equals(XmlDocSignature.Of(original), XmlDocSignature.Of(produced), StringComparison.Ordinal)
+            && XmlDocSignature.Matches(XmlDocSignature.Of(original), XmlDocSignature.Of(produced))
                 ? (trivia.FullSpan, replacement)
                 : null;
     }
@@ -589,7 +589,42 @@ public static class XmlDocSignature {
             return false;
         }
 
-        return string.Equals(Of(original, markerSpace), Of(produced, markerSpace), StringComparison.Ordinal);
+        return Matches(Of(original, markerSpace), Of(produced, markerSpace));
+    }
+
+    /// <summary>A word that follows markup glued to it, with nothing between.</summary>
+    const char Glued = '\u0002';
+
+    /// <summary>A word that follows markup on the next line.</summary>
+    const char LineBreak = '\u0001';
+
+    /// <summary>
+    ///     Whether a rewritten comment's signature says what the original's did.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Equality, with one allowance and only one (#541, #542): where the rewritten comment puts a word
+    ///     on the line after an element's end, the original may have had it beside the end tag — spaced or
+    ///     glued. That is the break the oracle takes after every element that is opened across lines or
+    ///     owns its line, <c>&lt;/i&gt;</c> / <c>. A plan</c> and <c>&lt;seealso/&gt;</c> / <c>.</c> included,
+    ///     and it is the one place whitespace is inserted between markup and prose. Every other separator is
+    ///     compared exactly as before; an original line break the rewrite turned into a space is the
+    ///     ordinary re-flow, and one it turned into nothing is still a refusal.
+    /// </remarks>
+    public static bool Matches(string original, string rewritten) {
+        if (original.Length != rewritten.Length) {
+            return false;
+        }
+
+        for (var i = 0; i < original.Length; i++) {
+            var (left, right) = (original[i], rewritten[i]);
+            if (left == right || right == LineBreak && left is ' ' or Glued || left == LineBreak && right == ' ') {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -632,29 +667,33 @@ public static class XmlDocSignature {
     ///     it and change nothing else.
     /// </remarks>
     static string Content(SyntaxList<XmlNodeSyntax> content, bool markerSpace) {
-        var items = new List<(bool IsText, string Text, bool SpaceBefore)>();
+        var items = new List<(bool IsText, string Text, bool SpaceBefore, bool LineBefore)>();
         var pending = false;
 
         foreach (var node in content) {
             if (node is XmlTextSyntax text) {
-                var (words, before, after) = Prose(text);
+                var (words, before, after, line) = Prose(text);
                 if (words.Length == 0) {
                     pending |= before || after;
                     continue;
                 }
 
-                items.Add((true, words, pending || before));
+                items.Add((true, words, pending || before, line));
                 pending = after;
                 continue;
             }
 
-            items.Add((false, Markup(node, markerSpace), pending));
+            items.Add((false, Markup(node, markerSpace), pending, false));
             pending = false;
         }
 
         var builder = new StringBuilder();
         for (var i = 0; i < items.Count; i++) {
-            if (i > 0 && items[i].SpaceBefore && (items[i].IsText || items[i - 1].IsText)) {
+            if (i > 0 && items[i].IsText && !items[i - 1].IsText) {
+                // ⚠ Markup then a word: the separator is always written, as one of three, so `Matches` can
+                // tell a break after an element's end from a space or from glue.
+                builder.Append(items[i].LineBefore ? LineBreak : items[i].SpaceBefore ? ' ' : Glued);
+            } else if (i > 0 && items[i].SpaceBefore && (items[i].IsText || items[i - 1].IsText)) {
                 builder.Append(' ');
             }
 
@@ -750,22 +789,28 @@ public static class XmlDocSignature {
     ///     <c>&amp;#60;</c> and <c>&amp;lt;</c> compare equal, and the sub-formatter would then be free
     ///     to swap one for the other.
     /// </remarks>
-    static (string Words, bool Before, bool After) Prose(XmlTextSyntax text) {
+    /// <returns>
+    ///     The words, whether whitespace leads and trails them, and whether the leading whitespace holds a
+    ///     line break — the one thing <see cref="Matches" /> reads it for.
+    /// </returns>
+    static (string Words, bool Before, bool After, bool LineBefore) Prose(XmlTextSyntax text) {
         var raw = new StringBuilder();
         foreach (var token in text.TextTokens) {
-            raw.Append(token.IsKind(SyntaxKind.XmlTextLiteralNewLineToken) ? " " : token.Text);
+            raw.Append(token.IsKind(SyntaxKind.XmlTextLiteralNewLineToken) ? "\n" : token.Text);
         }
 
         var value = raw.ToString();
         if (value.Length == 0) {
-            return (string.Empty, false, false);
+            return (string.Empty, false, false, false);
         }
 
         var words = value.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        var lead = value.Length - value.TrimStart().Length;
         return (
             string.Join(' ', words),
             char.IsWhiteSpace(value[0]),
-            char.IsWhiteSpace(value[^1])
+            char.IsWhiteSpace(value[^1]),
+            value.AsSpan(0, lead).Contains('\n')
         );
     }
 }

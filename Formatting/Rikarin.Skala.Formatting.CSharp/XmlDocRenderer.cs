@@ -238,11 +238,14 @@ public sealed class XmlDocRenderer {
 
         Open(element);
 
-        // ⚠ No unconditional break after the end tag, and the reason is glue again. Vixen has
-        // `<i>…</i>.` where the sentence's full stop is welded to the closing tag and the italic
-        // text is three lines long; breaking here would move the full stop to a line of its own.
-        // The end tag is left as the current token so that whatever is welded to it lands beside it.
-        if (owns) {
+        // ⚠ A break after the end tag of every element opened across lines, and of every element that
+        // owns its line — what follows starts a line of its own, glued or not (#541, #542). This used to
+        // be "no unconditional break", on the argument that Vixen's `<i>…</i>.` would see its full stop
+        // moved to a line of its own. Measured, that is exactly what the oracle does: `</i>` / `. A plan`,
+        // `</b>` / `, which`, `</b>` / `Ten`. The round-trip signature allows that one break and no other
+        // (`XmlDocSignature.Matches`). In hug mode the end tag sits on the last word's line and nothing
+        // was measured there, so it keeps the old behaviour.
+        if (owns || options.LinebreaksInsideTagsForMultilineElements || element.Verbatim is not null) {
             Break();
         }
     }
@@ -465,7 +468,10 @@ public sealed class XmlDocRenderer {
         } else {
             // ⚠ No carry in hug mode: the content really is on the start tag's line, so the width is
             // already counted and handing it to `Start` a second time would reserve it twice.
-            this.carry = hug ? 0 : carry;
+            // ⚠ And none when the content holds a break the author wrote, measured (#544): a `<remarks>`
+            // whose first line runs `… should end up public` / `in future.` is filled from the plain indent,
+            // where the same prose on one line is filled from the start tag's closing column.
+            this.carry = hug || element.Children.Any(static child => child is XmlDocBreak) ? 0 : carry;
             Nodes(element.Children);
             this.carry = 0;
         }
@@ -580,6 +586,13 @@ public sealed class XmlDocRenderer {
     ///     <c>item</c>, and the same <c>&lt;item&gt;</c> with longer content is opened up and wrapped,
     ///     so that reading is measured false.
     ///     <para>
+    ///         ⚠ Only after a <em>word</em> (#543). When the content ends with an element —
+    ///         <c>… is &lt;code&gt;null&lt;/code&gt;</c>, <c>&lt;c&gt;</c>, <c>&lt;b&gt;</c>, <c>&lt;see/&gt;</c> —
+    ///         the end tag is counted: probed one column at a time, an <c>&lt;exception&gt;</c> ending in
+    ///         <c>&lt;c&gt;null&lt;/c&gt;</c> stays flat while the whole element is 119 columns and opens at 120,
+    ///         while the same element ending in a word stays flat at 119 columns <em>without</em> its end tag.
+    ///     </para>
+    ///     <para>
     ///         ⚠ Everything fits when <c>wrap_lines</c> is false: with no hard wrap there is no width to
     ///         fail, so a long element is left long rather than opened up.
     ///     </para>
@@ -599,7 +612,10 @@ public sealed class XmlDocRenderer {
         || !(options.WrapText || element.HasChildElements)
         || OneWord(element)
         && !HeaderWraps(element)
-        || IndentWidth() + TextWidth.Measure(flat) - element.Name.Length - "</>".Length <= budget;
+        || IndentWidth()
+            + TextWidth.Measure(flat)
+            - (element.Children is [.., XmlDocWord] ? element.Name.Length + "</>".Length : 0)
+            <= budget;
 
     /// <summary>Whether the element's content is one unbreakable word.</summary>
     /// <remarks>

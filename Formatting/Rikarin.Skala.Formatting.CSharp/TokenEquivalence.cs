@@ -60,7 +60,14 @@ public static class TokenEquivalence {
 
         var count = Math.Min(left.Count, right.Count);
         for (var i = 0; i < count; i++) {
-            if (!string.Equals(left[i], right[i], StringComparison.Ordinal)) {
+            // ⚠ A doc comment's signature is compared by `XmlDocSignature.Matches`, which allows the one
+            // break after an element's end the sub-formatter takes (#541, #542) and nothing else; a plain
+            // comment's "C:" text never carries the separator characters that allowance reads.
+            if (!string.Equals(left[i], right[i], StringComparison.Ordinal)
+                && !(xmlDocReflow
+                    && left[i].StartsWith("C:", StringComparison.Ordinal)
+                    && right[i].StartsWith("C:", StringComparison.Ordinal)
+                    && XmlDocSignature.Matches(left[i], right[i]))) {
                 return new(i, left[i], right[i]);
             }
         }

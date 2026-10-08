@@ -1642,6 +1642,17 @@ what is there now.
   `Conformance.Tests/XmlDocOracleTests` and by `XmlDocColumnTests`, which carries the probe
   arithmetic so the model cannot drift back without a diff.
 
+### ⚠ Two edges of rules 2 and 3, measured for #543 and #544 (2026-10-08)
+
+- **Rule 3's end tag is excluded only after a word (#543).** When the content ends with an element —
+  `… is <code>null</code></exception>`, `<c>`, `<b>`, `<see/>` — the end tag is counted: probed a column
+  at a time, such an `<exception>` stays flat at 119 columns *with* its end tag and opens at 120, where
+  the same element ending in a word stays flat at 119 columns *without* it. `XmlDocRenderer.FitsOpen`.
+- **Rule 2's carry is dropped when the content holds a break the author wrote (#544).** A `<remarks>`
+  written `… but should end up public` / `in future.` is filled from the plain indent (`… should end up`
+  / `public` / `in future.`); the same prose on one line is filled from the start tag's column (`… should
+  end` / `up public …`). The same in a `<param>`. `XmlDocRenderer.Open`.
+
 ## SK-DIV-0020 — the oracle opens an element that holds text *and* children; Skala opens one that holds only children
 
 `skala_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements = true` puts an element's
@@ -7899,7 +7910,7 @@ committed fixture never wraps a header, so a sweep over it could not separate th
 - options: `skala_xmldoc_wrap_tags_and_pi`, `skala_xmldoc_attribute_style`, `skala_xmldoc_attribute_indent`
 - ⚠ status: **open**, deliberate until the sweep.
 
-## SK-DIV-0382 — the oracle breaks a word glued to an element's end; Skala refuses the comment
+## SK-DIV-0382 — the oracle breaks a word glued to an element's end; Skala refuses the comment — **RESOLVED (#541, #542)**
 
 `<remarks>Lead. <para>Short.</para>Glued.</remarks>` and a self-closing `<child …/>Body.` written with no
 space after the tag: under `SkalaDocComments` the oracle puts `Glued.` / `Body.` on a line of its own
@@ -7909,8 +7920,32 @@ self-closing case, keeps them on one line). Found beside #451 and #448; not fixe
 break is safe depends on whether whitespace beside a block element is ever significant to a doc renderer,
 which is a decision, not a measurement.
 
+### ✅ Resolved with #541 and #542 (2026-10-08)
+
+The rule, measured on twelve shapes: **after an element that is opened across lines, or that owns its line
+(written directly under the marker, or named by `linebreak_before_elements`), what follows starts a line of
+its own — spaced or glued.** `</b>` / `Ten`, `</i>` / `. A plan says`, `</i>` / `, which`, `</para>` /
+`Glued.`, `<seealso … />` / `.`, `</returns>` / `.`, `</list>` / `trailing.`. A glued word after an inline
+element that ends no line stays glued (`<see … />, then`, `<c>x</c>s`), and so does one after a
+self-closing child that does not own its line (`<child … />Body.` inside a one-line element).
+
+`XmlDocRenderer.Element` breaks after every opened element (it used to break after line-owning ones
+only, and left `</i>.` welded on the argument that the full stop would move — it does). The decision the
+entry left open is taken the oracle's way, and narrowly: the round-trip signature now writes the separator
+between markup and the word after it as one of three — glued, space, line break — and
+`XmlDocSignature.Matches` accepts exactly one difference, a line break in the rewrite where the original
+had a space or glue. A join (a line break in the original, glue in the rewrite) and every other
+separator are compared as before; `TokenEquivalence` uses the same comparison for doc comments.
+
+⚠ Worth 0.6 points of every-line fidelity on `real/` with #543 and #544 beside it — most of the
+"break after an opened inline element" class #449's regeneration exposed (219 hunks) was this.
+
+- pinned by `constructs/trivia/doc-comment-what-follows-an-element.cs` and
+  `XmlDocElementEndIssues541To544Tests` (including the signature's one-directional allowance); each
+  change was sabotaged alone and turned its rows red.
 - options: none.
-- ⚠ status: **open**.
+- ⚠ status: **resolved**. Not measured: hug mode
+  (`linebreaks_inside_tags_for_multiline_elements = false`), which keeps the old behaviour.
 
 ## SK-DIV-0177 — a named argument's colon is a break point by the arrow's rule
 
