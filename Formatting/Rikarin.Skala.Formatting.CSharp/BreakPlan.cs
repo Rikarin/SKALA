@@ -3214,7 +3214,7 @@ public sealed class BreakPlan {
         node.Parent is null ? default : FirstTokenAfterAttributes(node.Parent);
 
     /// <summary>Whether this expression is the condition of an if, while, do, for or switch.</summary>
-    static bool IsStatementCondition(SyntaxNode node) {
+    internal static bool IsStatementCondition(SyntaxNode node) {
         for (var current = node; current is not null; current = current.Parent) {
             switch (current.Parent) {
                 case IfStatementSyntax statement when statement.Condition == current:
@@ -3223,7 +3223,14 @@ public sealed class BreakPlan {
                 case SwitchStatementSyntax statement4 when statement4.Expression == current:
                     return true;
 
-                case ExpressionSyntax:
+                // ⚠ Through the pattern's own nesting — a parenthesised or negated pattern, the `is`, a
+                // grouping parenthesis — and never through an operand of a binary (#520). Measured: the
+                // oracle writes `if (o is not (Alpha` / `or Beta))` and `if (o is (Alpha` / `or Beta))`
+                // with `or` on the condition's column (and `while (` aligns it to 15), while
+                // `if (x && o is Alpha` / `or Beta)` and `if (x` / `|| o is Alpha` / `or Beta)` put it one
+                // level past the operand's line, as anywhere else.
+                case PatternSyntax or IsPatternExpressionSyntax or ParenthesizedExpressionSyntax
+                    or PrefixUnaryExpressionSyntax:
                     continue;
 
                 default:

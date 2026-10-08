@@ -1604,7 +1604,15 @@ public sealed partial class CSharpDocumentBuilder {
         // is exactly why the sweep called this key `SPURIOUS`, with Skala moving where the oracle
         // could not — and separate at any other multiplier. See IndentKind.OneLevel.
         var singleInsideParens = layout == NodeLayout.Parens && !options.UseContinuousIndentInsideParens;
-        var suppress = aligned;
+        // ⚠ And a pattern's own parenthesis inside an aligned statement condition spends nothing: the
+        // oracle writes `if (o is not (Alpha` / `or Beta))` with `or` on the condition's column, and
+        // `while (` / `or` at 15 — where a grouping parenthesis around an *expression* there is a
+        // level of its own (`if ((a` / `== b))`). Under `var b = o is not (Alpha` / `or Beta);` the
+        // parenthesis keeps its level (#520).
+        var suppress = aligned
+            || node is ParenthesizedPatternSyntax
+            && options.AlignMultilineStatementConditions
+            && BreakPlan.IsStatementCondition(node);
 
         // ⚠ `skala_align_tuple_components = true`: the column *after* the tuple's `(`, which is a
         // different anchor from every key AlignsFromOwnColumn answers and needs a different place

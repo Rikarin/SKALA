@@ -8424,3 +8424,26 @@ reads it as an ordinary scope, which is right for `n is not (A` / `or B)` under 
 - options: none.
 - ⚠ status: **fixed** for the list (#446), pinned by
   `constructs/breaks/when-clause-list-under-a-kept-arrow.cs`; the sole lambda's `is` **open**, measured.
+
+## SK-DIV-0370 — a binary pattern chain's level in a statement condition counted the wrong nesting
+
+⚠ **#520, found reformatting Skala's own source for #483.** `BreakPlan.IsStatementCondition` walked up
+through *every* expression, so a pattern chain that was the operand of an `&&` or `||` in an `if` lost
+its own level, and it stopped at a parenthesised pattern, so a chain inside `is not (…)` in an `if`
+kept its level and the parenthesis added another. Measured with `Testing ask` on fifteen shapes:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `if (o is Alpha` / `or Beta)` | `or` on the condition's column (12) | identical |
+| `if (x && o is Alpha` / `or Beta)`, `if (x` / `\|\| o is Alpha` / `or Beta)` | `or` one level past the operand's line (16) | 12 |
+| `if (o is not (Alpha` / `or Beta))`, `if (o is (Alpha` / `or Beta))` | 12 | 16 |
+| `while (o is not (Alpha` / `or Beta))` | 15, the condition's aligned column | 19 |
+| `if (x` / `\|\| o is not (Alpha` / `or Beta))`, `var b = o is not (…`, `return x` / `\|\| o is …`, an argument | one level past the line | identical |
+
+The walk now continues through a pattern, an `is`, a grouping parenthesis and a prefix operator, and
+never through a binary's operand; and under `skala_align_multiline_statement_conditions` a pattern's own
+parenthesis inside the condition spends no level (`CSharpDocumentBuilder.PlanDelimited`). This is what
+moved `ReflectiveTypeTestAnalyzer.cs` and `TaintedFlowAnalyzer.cs` away from the oracle.
+
+- options: `skala_align_multiline_statement_conditions` (the export's `true`; `false` not measured).
+- ⚠ status: **fixed**, pinned by `constructs/indentation/pattern-chain-level-in-a-condition.cs`.
