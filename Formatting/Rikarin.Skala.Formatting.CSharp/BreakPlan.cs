@@ -3358,7 +3358,11 @@ public sealed class BreakPlan {
     /// </summary>
     bool BreaksAroundTheIs(IsPatternExpressionSyntax test) =>
         options.KeepsUserBreaksBetweenItems
-        && (BreaksBefore(test.IsKeyword) || BreaksBefore(FirstToken(test.Pattern)));
+        && (BreaksBefore(test.IsKeyword)
+            // ⚠ A break before a pattern's `[` or `{` is not kept: `xs is` / `[1, 2]` comes back joined
+            // (constructs/wrapping/patterns.cs).
+            || BreaksBefore(FirstToken(test.Pattern))
+            && FirstToken(test.Pattern).Kind() is not (SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken));
 
     /// <summary>
     ///     An <c>is</c> the author broke before or after, over a pattern that can break: one level past
@@ -3388,7 +3392,7 @@ public sealed class BreakPlan {
             new(
                 group,
                 GroupMode.Preserve,
-                new(BreaksIfTooLong: true, Continues: BreaksBefore(node.IsKeyword)),
+                new(BreaksIfTooLong: true),
                 FromLine: !IsAHeaderCondition(node)
             )
         );
@@ -3499,7 +3503,10 @@ public sealed class BreakPlan {
             group,
             GroupMode.Preserve,
             new(
-                options.KeepsUserBreaksBetweenItems && BreaksBefore(value),
+                // ⚠ Not a break before a bare `{`, which the oracle joins (#549): `Parameter:` / `{ … }`
+                // comes back `Parameter: {` / … / `}` in Skala's own PrimaryConstructorWrites.cs, where
+                // `Expression:` / `MemberAccessExpressionSyntax { … }` beside it keeps its break.
+                options.KeepsUserBreaksBetweenItems && BreaksBefore(value) && !value.IsKind(SyntaxKind.OpenBraceToken),
                 BreaksIfTooLong: true,
 
                 // ⚠ The arrow's question, always: the value leaves the name's line only when the line up
@@ -5166,8 +5173,16 @@ public sealed class BreakPlan {
         // `) =>` and `Foo(` / … / `) =>` put the elements *and* the `)` one level past the arm, which
         // is neither nesting (Continues gives two and one) nor not nesting (one and none).
         var nests = !arm.Pattern.DescendantNodesAndSelf().Any(static node => node is PositionalPatternClauseSyntax);
+        // ⚠ And only for a head that opens a delimiter for it to lift: under a bare `1 =>` the level is
+        // the arrow group's to hold for a body headed by a broken parenthesis (#406, SK-DIV-0157).
         var keptAfter = !kept
             && nests
+            && !HeadsWithAChoppedParenthesis(arm.Expression, source, options, out _)
+            && (arm.WhenClause is { } when ? when.Span.End : arm.Pattern.Span.End) is var headEnd
+            && arm.DescendantTokens(Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(arm.Pattern.SpanStart, headEnd))
+                .Any(static token => token.Kind() is SyntaxKind.OpenBraceToken
+                    or SyntaxKind.OpenBracketToken
+                    or SyntaxKind.OpenParenToken)
             && options.KeepsUserBreaksBetweenItems
             && BreaksBefore(FirstToken(arm.Expression));
         if (keptAfter) {
