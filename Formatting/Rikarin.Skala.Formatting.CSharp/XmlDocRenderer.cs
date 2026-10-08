@@ -707,6 +707,9 @@ public sealed class XmlDocRenderer {
     /// <summary>The run of spaces in front of the unit being built. See <see cref="XmlDocWord.Gap" />.</summary>
     int tokenGap = 1;
 
+    /// <summary>⚠ The unit being built is glued to a sibling element: no space before it, but it may wrap (#587).</summary>
+    bool softGlue;
+
     void Push(string text, bool glued, bool tag, Edge lead, Edge trail, int gap = 1) {
         if (breakAfterHeader) {
             breakAfterHeader = false;
@@ -716,6 +719,17 @@ public sealed class XmlDocRenderer {
         }
 
         if (glued) {
+            // ⚠ Two elements glued together are a break point for width, though no space goes between them
+            // (#587, measured): the oracle keeps `<item>A.</item><item>B.</item>` and `<c>a</c><c>b</c>` together
+            // when they fit and breaks between them when the line overflows. An element glued to a *word* is
+            // not: `<c>x</c>tail` rides past the margin in the oracle too.
+            var siblings = lead == Edge.Element
+                && (token.Length > 0 ? tokenTrail.Kind == Edge.Element : placed && lineTrail.Kind == Edge.Element);
+            if (siblings) {
+                Flush();
+                softGlue = true;
+            }
+
             // ⚠ Glue has to survive an empty token buffer. Whatever came before may already be on
             // the line, and forgetting that here is how `<c>x</c>s` becomes `<c>x</c> s`.
             weld |= token.Length == 0;
@@ -760,18 +774,20 @@ public sealed class XmlDocRenderer {
 
         var text = token.ToString();
         var weld = this.weld;
-        var mayWrap = !weld && options.WrapLines && (tokenIsTag || options.WrapText);
+        var soft = softGlue;
+        var mayWrap = (!weld || soft) && options.WrapLines && (tokenIsTag || options.WrapText);
         var gap = tokenGap;
         token.Clear();
         tokenIsTag = false;
         this.weld = false;
+        softGlue = false;
         tokenGap = 1;
 
         // ⚠ A header carrying an author's break moves by its first line only: the rest is on lines of its
         // own whatever this one does.
         var hard = text.IndexOf(HardGap, StringComparison.Ordinal);
         var width = TextWidth.Measure(hard < 0 ? text : text[..hard]);
-        if (!empty && mayWrap && this.width + gap + width > budget) {
+        if (!empty && mayWrap && this.width + (weld ? 0 : gap) + width > budget) {
             EndLine();
         }
 

@@ -44,7 +44,7 @@ public sealed class CompilerPathSplitTests {
     public void ALineWithNoCompiler_IsReturnedWhole() {
         var (compiler, arguments) = BinlogLoader.SplitCompiler("/noconfig /r:x/csc.dll a.cs");
 
-        Assert.Equal("", compiler);
+        Assert.Equal(string.Empty, compiler);
         Assert.Equal("/noconfig /r:x/csc.dll a.cs", arguments);
     }
 }
