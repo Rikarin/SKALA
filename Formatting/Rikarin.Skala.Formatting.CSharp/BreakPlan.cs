@@ -4333,11 +4333,16 @@ public sealed class BreakPlan {
             SyntaxKind.AmpersandToken => 6,
             SyntaxKind.CaretToken => 7,
             SyntaxKind.BarToken => 8,
-            // ⚠ `&&` and `||` are one chain, not two. `a && b || c` is chopped at both operators by
-            // the oracle, which is what `skala_wrap_chained_binary_expressions` means by "chained".
-            SyntaxKind.AmpersandAmpersandToken or SyntaxKind.BarBarToken => 9,
-            SyntaxKind.QuestionQuestionToken => 10,
-            _ => 11
+            // ⚠ `&&` and `||` are two chains, not one (#565). The note here said "`a && b || c` is
+            // chopped at both operators by the oracle", and that holds only where the `&&` is broken
+            // already: measured 2026-10-08 on six conditions too wide for their line — in an `if`, an
+            // `=` and a `return`, with the `&&` before, after and between the `||`s — the oracle chops
+            // every `||` and leaves each `&&` operand whole on its line (`a && b` / `|| c && d` /
+            // `|| e && a`). An `&&` the author broke still breaks its `||`, by containment.
+            SyntaxKind.AmpersandAmpersandToken => 9,
+            SyntaxKind.BarBarToken => 10,
+            SyntaxKind.QuestionQuestionToken => 11,
+            _ => 12
         };
 
     /// <summary>
@@ -7687,9 +7692,7 @@ public sealed class BreakPlan {
             if (!open.IsKind(SyntaxKind.OpenBraceToken)
                 || !CSharpDocumentBuilder.OpensAJoinableBody(open)
                 || (options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(open)) == 0
-                || captured is { Count: > 0 }
-                && open.Parent is { } parent
-                && IsInsideCaptured(parent)) {
+                || captured is { Count: > 0 } && open.Parent is { } parent && IsInsideCaptured(parent)) {
                 continue;
             }
 
@@ -7751,8 +7754,7 @@ public sealed class BreakPlan {
     void SettleParenthesisedCollections(SyntaxNode root) {
         foreach (var paren in root.DescendantNodes().OfType<ParenthesizedExpressionSyntax>()) {
             if (paren.Expression is not CollectionExpressionSyntax { Elements.Count: > 0 } collection
-                || captured is { Count: > 0 }
-                && IsInsideCaptured(paren)) {
+                || captured is { Count: > 0 } && IsInsideCaptured(paren)) {
                 continue;
             }
 
