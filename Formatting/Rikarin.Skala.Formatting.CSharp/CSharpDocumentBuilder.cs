@@ -3061,7 +3061,8 @@ public sealed partial class CSharpDocumentBuilder {
         // beside a `(` goes, and the blank line the oracle adds on its second pass would be Skala's. That
         // one row of #533 — an author's own-line `/** */` — keeps no blank line, and differs.
         if (pieces[index].StartsLine) {
-            return lambda ? LoneComment.None
+            return lambda
+                ? LoneComment.None
                 : pieces[index].Kind == PieceKind.BlockComment
                     && LineStart(pieces[index].Span.Start) == pieces[index].Span.Start
                     ? LoneComment.ColumnZero
