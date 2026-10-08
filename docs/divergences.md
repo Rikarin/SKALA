@@ -1589,11 +1589,37 @@ fixed: Skala breaks after `<remarks>` and the oracle does not. It has no key of 
 fixture reaches it — it is the same "content never left the start tag's line" mechanism as
 SK-DIV-0019's rule 2, applied to a break the width did not force.
 
+### ⚠ #451 (2026-10-08): the `<para>` shape is the oracle's first pass, and Skala already writes its fixed point
+
+Measured under `OracleProfile.DocComments` on 15 shapes, and the rule the oracle follows on a *first*
+pass is real and narrow: the lead stays on the start tag's line exactly when the element was written on
+one line, opens with a word, holds no structural child (a `<list>`), and every line it would then take
+fits — the child taking a line of its own being the only reason it opens. Measured with `<remarks>`,
+`<summary>`, `<param>` and an unknown `<foo>` as the parent; `<para>`, `<para />` and `<returns>` as the
+child; prose and a second `<para>` after it; a 101-column lead (kept) and 150-column lead or tail
+(hoisted); a `<b>` first (hoisted); and the same comment with its end tag on a line of its own
+(hoisted).
+
+⚠ **But the oracle does not keep its own answer.** Given its first-pass output back —
+`/// <remarks>Some leading prose.` / `///     <para>Short.</para>` / `/// </remarks>` — it hoists the lead
+onto a line of its own, on every one of the eight shapes it had kept, because the comment is now written
+across lines (the last control above). Its second pass is Skala's one-pass answer, byte for byte, and a
+third changes nothing. #372's rule for choosing between passes is the fixed point, so this is **refuted
+as a defect**: implementing the first-pass rule was tried and broke `format(format(x)) = format(x)` on the
+first test that asked.
+
+- pinned by `constructs/trivia/doc-comment-lead-prose-given-back-is-hoisted.cs` — the oracle's eight
+  first-pass answers as input, its fixed point as the doc-comment fixture, and Skala agreeing — and by
+  the existing `AnElementHoldingAMultilineChild_HoistsItsProseToo`.
+- ⚠ found beside it, not fixed: `<remarks>Lead. <para>Short.</para>Glued.</remarks>` — a word glued to
+  the end tag of a block child. The oracle breaks it onto its own line (`Glued.` under `<para>`); Skala
+  refuses the comment as `Glue` and leaves it as written.
+
 - options: `skala_xmldoc_linebreak_before_singleline_elements`
 - ⚠ status: **closed on the fixture**, pinned by
   `constructs/xmldoc/skala_xmldoc_linebreak_before_singleline_elements.xmldoc.expected.cs` and by
   `XmlDocColumnTests.AnElementHoldingAMultilineChild_HoistsItsProseToo`; the `<para>` shape above is
-  open and unpinned.
+  the oracle's first pass and Skala writes its fixed point (#451, the section above).
 
 ## SK-DIV-0021 — ~~the oracle leaves an unlisted element's content on one line however long~~ — **REFUTED, and it was SK-DIV-0019**
 
