@@ -4308,6 +4308,9 @@ public sealed partial class CSharpDocumentBuilder {
 
         if (rule == GapRule.FollowingPoint) {
             flags |= LineFlags.BreaksOnlyIfNextLineOverflows;
+            if (IsAShortParameterBehindItsSection(nextToken)) {
+                flags |= LineFlags.ReadThroughWhenBroken;
+            }
         }
 
         if (IsADelimitedTupleItem(nextToken) || StartsATypeArgument(nextToken)) {
@@ -4341,6 +4344,30 @@ public sealed partial class CSharpDocumentBuilder {
 
         return flags;
     }
+
+    /// <summary>
+    ///     Whether the token starts a parameter of at most eleven columns behind its one attribute section.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 (#476, SK-DIV-0352), the section's last column swept
+    ///     one at a time: behind <c>[Obsolete("…", true)]</c>, <c>[Description("…")]</c>, <c>[A("…")]</c> and
+    ///     <c>[A("…", 1)]</c>, <c>int a</c>, <c>string a</c>, <c>ref int a</c>, <c>int a = 5</c> and
+    ///     <c>List&lt;int&gt; a</c> chop the section's arguments exactly when the joined line overflows, and
+    ///     never stand alone below a whole section — at two indents. Longer parameters do not follow one
+    ///     rule: a 16- or 17-column parameter behind <c>[A("…")]</c> stands alone below the section at
+    ///     every width, behind <c>[Obsolete("…", true)]</c> it chops from the joined line's overflow up to
+    ///     17 columns and from a threshold that rises with the parameter from 18, and never at 30. So the
+    ///     rule is wired where every cell agrees, and the gap is left to the section's own answer above
+    ///     eleven columns. ⚠ A parameter with a default value is flagged and not helped: its `=` is a
+    ///     point of its own that ends the arguments' measure first, and `[…] int a =` / `5` past the
+    ///     margin is what Skala writes with or without the flag, where the oracle chops (SK-DIV-0352).
+    /// </remarks>
+    static bool IsAShortParameterBehindItsSection(SyntaxToken token) =>
+        token.Parent?.AncestorsAndSelf().OfType<ParameterSyntax>().FirstOrDefault() is
+            { AttributeLists: [{ Attributes.Count: 1 } section] } parameter
+        && token == section.CloseBracketToken.GetNextToken()
+        && parameter.Span.End - token.SpanStart <= 11
+        && !parameter.SyntaxTree.GetText().ToString(TextSpan.FromBounds(token.SpanStart, parameter.Span.End)).Contains('\n');
 
     /// <summary>
     ///     Whether the token opens a tuple's item with a delimiter — the one fill whose head the oracle

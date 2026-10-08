@@ -8992,8 +8992,30 @@ that overflows on its own (E ≥ 121), which is right for none of the C cells. W
 joined line overflows" would fix the short rows and break the A cells of the long ones; nothing measured
 says where one becomes the other between 16 and 22 columns. Not wired.
 
+**Round two (#476), four more axes, about 450 more cells.** The section's last column swept one at a
+time from 96 to 120 again:
+
+| axis | measured | effect on where the arguments chop |
+|---|---|---|
+| argument count | `[Obsolete("…", true)]` against `[Obsolete("…", true, 1, 2)]`, a 22-column parameter | none (109 both) |
+| the parameter's type | `int a…a` against `string a…a` at 22 columns | none (109 both) |
+| indent | 8 against 12, the same 22-column parameter | one column (109, 110) |
+| the attribute's `(` column | `[A("…")]` against `[Obsolete("…", true)]`, 16 to 22 columns | `[A(` never chops; `[Obsolete(` does |
+| the parameter's width, `[Obsolete(` | 17, 18, 19, 20, 21, 22, 24, 25, 30 columns | 103, 103, 105, 106, 107, 109, 111, 113, never |
+| the parameter's width, `[A(` and `[Description(` | 5, 8, 11 columns; 16, 17 | the joined line's overflow; never |
+
+So below twelve columns every cell — four attributes, two indents, five parameters — chops exactly when
+the joined line overflows, and **that part is now Skala's rule**: the gap between a parameter's one
+section and a parameter of at most eleven columns is read through by the arguments' measure even once
+the section's group has broken (`LineFlags.ReadThroughWhenBroken`), so the arguments chop and the
+parameter goes below them. Above it the boundary rises with the parameter's width, and falls away when
+the attribute's `(` is a few columns further left; no rule tried reproduces both, so the gap stays the
+section's own answer there. A parameter with a default value is still divergent at 111–112
+(`[…] int a =` / `5` past the margin in Skala): its `=` ends the arguments' measure first.
+
 - options: `skala_wrap_arguments_style`; no key for the join.
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved** for parameters of up to eleven columns (#476), pinned by
+  `AttributeArgumentChopIssue476Tests`; **open**, measured, for longer ones.
 
 ## SK-DIV-0353 — a type declaration's keyword and its name: the oracle breaks between them
 

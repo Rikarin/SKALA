@@ -264,7 +264,15 @@ public enum LineFlags {
     ///     A required line that keeps a break the author wrote, which the draft measure reads as a space;
     ///     with <see cref="ArrayElement" />, one in front of an element.
     /// </summary>
-    KeptBreak = 512
+    KeptBreak = 512,
+
+    /// <summary>
+    ///     ⚠ A <see cref="LastResort" /> point that the rest-of-line measure reads through even once its
+    ///     group has resolved Broken: the gap between a parameter's one attribute section and a short
+    ///     parameter (#476, SK-DIV-0352). The oracle chops the section's arguments exactly when the joined
+    ///     line overflows, and puts the parameter below them, rather than moving the parameter alone.
+    /// </summary>
+    ReadThroughWhenBroken = 1024
 }
 
 /// <summary>

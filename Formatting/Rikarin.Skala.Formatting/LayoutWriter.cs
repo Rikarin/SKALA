@@ -1512,7 +1512,8 @@ public sealed class LayoutWriter {
                 // builder's point width, which still counts the point as not taken.
                 var flags = (LineFlags)slot.Flags;
                 if ((LineKind)slot.Arg0 == LineKind.Soft && (flags & LineFlags.LastResort) != 0) {
-                    if ((flags & LineFlags.FillPoint) == 0 && fitter.ModeOf(slot.Arg2) == ResolvedMode.Broken) {
+                    if ((flags & (LineFlags.FillPoint | LineFlags.ReadThroughWhenBroken)) == 0
+                        && fitter.ModeOf(slot.Arg2) == ResolvedMode.Broken) {
                         return true;
                     }
 
