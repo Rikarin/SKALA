@@ -9883,6 +9883,11 @@ list:
 - options: none.
 - ⚠ status: **fixed** (#446), pinned by `constructs/breaks/when-clause-list-under-a-kept-arrow.cs` and
   `constructs/breaks/when-clause-lambda-under-a-kept-arrow.cs`.
+- Re-measured 2026-10-09 on master `166d2a4f` (group P): `jb cleanupcode` on Skala's own
+  `SearchValuesAnalyzer.cs` — the file whose one line #445 had moved away from the oracle — agrees on the `when`
+  arm line by line. The file's remaining two differences are elsewhere: a call's arguments inside an
+  `if (model.GetSpeculativeSymbolInfo(` / … / `).Symbol` / `is not IMethodSymbol creator` condition: the arguments,
+  the `)` and `.Symbol` one level deeper in the oracle (not a switch arm; reported, not filed here).
 
 ## SK-DIV-0310 — a collection expression's spread is spelled one way, which the oracle never does
 
@@ -10823,6 +10828,13 @@ the comma carried to the next line).
   `constructs/breaks/positional-pattern-closer.cs` and `constructs/breaks/positional-pattern-fill.cs`; **open** for the
   two shapes above.
 
+⚠ **#559, round four (2026-10-09): the `=` before the `is` was the `=`'s, not the comma's.** Re-measured on an
+81-row grid (`var x =`, `bool x =`, a 22-column name, `x =` and `return`, the line ending at 118 to 160): a
+*local's* `=` breaks whenever the line overflows, the value fitting below or not, and the fill below it sits a
+level past the value; an assignment's `=` and a `return` keep their head and fill, as Skala did. The carried comma
+is a fill quirk of its own: the oracle moves a comma that would land on column 121 to the next line (`…, int ccc` /
+`, int dddd);`, one row of 81), which Skala does not model. See SK-DIV-0442.
+
 ## SK-DIV-0394 — a pattern chain inside the first operand of an `&&` in a declarator
 
 Found beside #550. `var empty = next.Parent is A { … }` / `or B { … }` / `&& !C(next);` — the oracle puts
@@ -11063,6 +11075,18 @@ an arrow group breaks there under a head that spans lines, and forces the arrow 
 Pinned by `constructs/breaks/arm-braces-under-an-arrow-broken-for-width.cs`. ⚠ Residue: for
 `=> Cast<IReadOnlyDictionary<(…), (…)>, TimeSpan>(…)` the oracle breaks inside the tuple type and keeps the arrow
 (SK-DIV-0024's family). Skala breaks after the arrow and now lifts the braces. Both passes agree (open).
+
+⚠ **#576, re-measured 2026-10-09 (group P), not wired.** Twenty arms with a query body `(from item in items where
+"…" select item)` of 47 to 122 columns behind four heads: a one-line head, a `when Compute(` / … / `) =>` list
+chopped by the author, and a `when Materialise<List<bool>,` / `…>>() =>` type argument list the author broke,
+its last line 103 or 67 columns. Fifteen agree. The five that do not are all the 103-column type-argument head,
+and they show two rules, not one. (1) The arrow on a head that spans lines follows the `=`'s ordering rule, not
+the arm's: the body moves below for a query of 47 to 82 columns although `>>() => (from` would fit, and stays
+for 102 and 122 — and then the query breaks after `from item in`, `items` two levels past the arm, `where` one,
+the shape the seed showed. (2) When the arrow moves, the type argument list's continuation steps two levels past
+the arm (20), the lift #564 gives a `when` list, which stays off for a type argument list (fuzz
+12955079666331923518, above). Neither is reachable without the other, so the residue stays whole: Skala keeps
+the list one level in and moves every one of the five bodies below.
 
 ⚠ **Fuzz 18207060042734210187.** The same rule holds for a `when` clause without braces. For `not null when ("ss"` /
 `?? "…" + "…" - "…")` / `=> …,` the oracle puts the `??` two levels past the arm and chops the chain. The arrow
@@ -11464,3 +11488,78 @@ both times. A break beside a directive is no kept break now, and both passes kee
 
 - status: the idempotency is **fixed**, pinned by `DirectiveInArrayElementTests` and `FuzzRegressionTests`.
   ⚠ The two differences in the element are **open**.
+
+## SK-DIV-0440 — a cast's `)` before an operand with no break point of its own
+
+#591, found fixing fuzz seed 9642682992700587520. Skala had no break point after a cast's `)`, so `("k", var p) =>
+((…) Second))"sss…"` past the margin measured its body as unbreakable and broke the positional pattern instead.
+Measured 2026-10-09 with `Testing ask`, outside switch arms first:
+
+| shape, past the margin | oracle |
+|---|---|
+| `return (string)value;` | `return (string)` / `value;` one level in |
+| `var v = (string)value;` | `var v =` / `(string)value;` while that fits below, then `var v =` / `(string)` / `value;`, the operand on the cast's column |
+| `x = (string)value;` | the same as the local |
+| `Call(a, (string)value);` | `Call(` / `a,` / `(string)` / `value` / `);`, once the chopped argument does not fit |
+| operand `"…"`, `$"…"`, `M()`, `-x`, `x!`, `x++`, inner cast of `(A)(B)x` | the same; `(A)(B)` / `x` past 121 |
+| operand `Method(a, b)`, `a.b.c`, `(a + b)` | breaks inside the operand, never after the cast |
+
+So the gap is a last-resort point (`GapRule.LastResortPoint`), planned only over an operand with no point of its own
+(`BreakPlan.IsACastAtom`), spending the statement's level only where nothing around it has. A break the author wrote
+there is kept. Rows: the statement grid 347 → 447 of 450 and the operand grid 49 of 59 after (the file did not
+parse at first, so there is no before).
+
+In a switch arm the arrow and the cast's `)` compete, and the oracle's choice is a table, not a fit-below question:
+measured on 9 903 rows — heads through `=>` of 6 to 36 columns, casts of 5 to 22, lines ending at 121 to 145, arms at
+indents 12 and 16 and in `return`, `var r =`, expression-bodied and nested-class contexts. With `a` the head's width
+from the arm's first column through `=>` and `L` the column the arm's flat line ends at, comma included, the arrow
+breaks while `3·L ≤ 3·a + 336 − cast` and `8·L ≤ 6·a + 954 − 3·cast`, and the cast's `)` breaks otherwise; at
+`L = 121` the arrow breaks from a head of 7. ⚠ And a band: a cast of eight columns or fewer behind a head from
+`3·cast − 2` to about `34 − cast` keeps the arrow whatever the width (the body then breaks after the cast too once it
+does not fit below). `GroupFacts.ArmCast`, `Fitter.ArmCastBreaksTheArrow`. ⚠ `L` is absolute: at indent 16 the
+boundary sits at the same column as at 12 for the same head. An expression body written `=> s switch {` on its
+member's line first looked four columns lower; that was the oracle (and Skala) moving `s switch {` to its own line,
+which the measurement had not accounted for.
+
+Arm rows agreeing with the oracle: 4 721 of 9 903 before (Skala always broke the arrow), 9 832 after. ⚠ Residue,
+71 rows: one column either side of the first constraint for casts of 9 to 15 over a stretch of heads, where the
+oracle's boundary steps by one the way the band does by the whole line; a postfix `!`, `++` or `[0]` one or two
+columns past the margin, which the oracle breaks before; a generic name, whose type argument list fills before the
+cast breaks until its `<` is past the margin.
+
+- options: none (`skala_space_after_cast = false`, the export's).
+- ⚠ status: **resolved within the residue above** (#591). Pinned by
+  `constructs/breaks/cast-operand-last-resort.cs` and `CastOperandBreakTests`.
+
+## SK-DIV-0441 — the gap between a cast's `)` and a prefix operator
+
+Found beside SK-DIV-0440. `(int)-1`, `(int)~x`, `(bool)!b`, `(long)+x`, `(int)++x` and `a - (int)-x` came back
+`(int) -1` and so on: the space rules answered a prefix operator after any `)` with "a space", the rule for
+`(a) - x`. The oracle keeps them closed at `space_after_cast = false`, written with the space or without, and
+`(a)-x` (not a cast) gets its space. `SpaceRules`: the gap before a prefix operator is the cast's after a cast.
+
+- options: `skala_space_after_cast`.
+- ⚠ status: **resolved**. Pinned by `constructs/spaces/cast-before-a-prefix-operator.cs`.
+
+## SK-DIV-0442 — a local's `=` before `operand is (…)`, a positional pattern
+
+#559, round four. On an 81-row grid — `var x =`, `bool x =`, a 22-column name, `x =` and `return`, the line ending
+at 118 to 160 — a *local's* `=` breaks whenever the line overflows, its `;` included, whether the value then fits
+below or fills there a level past it. An assignment's `=` keeps the line, as `return` does, and the pattern fills.
+Skala yielded the `=` to the fill. `GroupFacts.BreaksIfTheLineOverflows`, planned in `BreakPlan.PlanAroundEquals`.
+Rows: 42 → 72 of 81, and the round-one grid of 40 rows 15 → 27.
+
+⚠ Open, measured and not wired:
+- the closer alone. With the line through the last element at 119 or 120 and only `);` past the margin, the oracle
+  writes `…, int dddd` / `);` with the `)` on the elements' column (8 rows). A group on that `)` resolves right,
+  but the fill's last point still measures through it (`LayoutWriter.FillSegment` adds what trails the fill's
+  group, the `)` included), so `int` / `dddd` breaks as well; reverted.
+- the carried comma, one row (SK-DIV-0393).
+- a positional pattern heading an arm with a short body: `(int a, F { X: 1 }, int b) => 1,` one to six columns past
+  the margin breaks after `=>`, then before it, then before `)`, and only then fills or breaks the braces; Skala
+  fills at once (11 of 20 rows differ) — #378's read-through of a short body leads it there, and the oracle does
+  not read a positional head through.
+
+- options: `keep_user_linebreaks`.
+- ⚠ status: **resolved** for the local's `=`, pinned by `constructs/breaks/positional-pattern-after-a-local-equals.cs`;
+  **open** for the three above.
