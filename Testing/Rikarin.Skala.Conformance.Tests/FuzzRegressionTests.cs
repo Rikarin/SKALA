@@ -100,6 +100,11 @@ public sealed class FuzzRegressionTests {
     // broken the accessor's arrow for the body the kept break made multi-line; pass two re-joined the arrow.
     // The gap is the parenthesis's: the oracle keeps the break, the element one level in.
     [InlineData(11693758747470537505UL)]
+    // Nightly, 6 hits in 81k cases: `}, ["s"` / `#region fuzz` / `, false, …]` in an array initializer. The
+    // draft measure read the breaks beside the directive as spaces, so pass one moved the collection down
+    // whole and pass two, measuring its own broken output, kept `}, [`. A break beside a directive is no
+    // kept break now (#471).
+    [InlineData(12061030311543376894UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

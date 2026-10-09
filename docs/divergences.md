@@ -11244,3 +11244,21 @@ sole-lambda rules (#557, #571), not to #553's condition rule, which now treats e
 single-statement block as on one line.
 
 - ⚠ status: **open**, not idempotent on one row.
+
+## SK-DIV-0379 — a `#region` inside a collection element of an array initializer
+
+Found while fixing Nightly replay 12061030311543376894 (#471's collection fill, 6 hits in 81k cases).
+`new int() { … }, ["s…"` / `#region fuzz` / `, false, …], …` was not idempotent. The draft measure read the
+breaks beside the directive as an author's kept breaks, one space each, so pass one measured the element at
+104 flat columns and moved it down whole one level in. Pass two measured its own broken output as unbounded
+and kept `}, [`. Measured with `Testing ask` on the input and on Skala's first pass: the oracle keeps `}, [`
+both times. A break beside a directive is no kept break now, and both passes keep the bracket.
+
+⚠ Two differences inside the element remain, and both passes agree on them, as master did:
+- Skala indents the `#region` and the element's continuation a level deeper (20 columns where the oracle
+  writes 16).
+- Skala breaks after the comma that opens the line after the directive (`,` / `false, …`); the oracle
+  writes `, false, …`.
+
+- status: the idempotency is **fixed**, pinned by `DirectiveInArrayElementTests` and `FuzzRegressionTests`.
+  ⚠ The two differences in the element are **open**.
