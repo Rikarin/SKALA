@@ -86,6 +86,7 @@ public sealed class FuzzRegressionTests {
     // `=` yielded to the dot fill (#482), which kept `= context` past the margin and broke at the dot; pass
     // two read that break as the author's and broke the `=`. GroupFacts.MemberHeadWidth.
     [InlineData(9552816164132777654UL)]
+    [InlineData(7862808234978504853UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

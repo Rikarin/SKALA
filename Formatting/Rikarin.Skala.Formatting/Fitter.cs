@@ -576,15 +576,13 @@ public sealed class Fitter {
 
     /// <summary>See <see cref="GroupFacts.CalleeWidth" />.</summary>
     ResolvedMode EqualsBeforeACall(in GroupFacts facts, in Measures m, int lineStart) {
-        if (m.FlatWidth >= Unbounded || m.PointWidth >= Unbounded || !HeadIsWideEnough(facts, m, lineStart)) {
+        if (m.PointWidth >= Unbounded || !HeadIsWideEnough(facts, m, lineStart)) {
             return ResolvedMode.Flat;
         }
 
         // The value starts one space past the point; its `(` follows the callee. Columns are 1-based in
         // the measured table.
         var paren = m.Column + m.PointWidth + 1 + facts.CalleeWidth + 1;
-        var arguments = m.FlatWidth - m.PointWidth - 1 - facts.CalleeWidth;
-        var indent = m.ContinuationColumn - indentWidth;
 
         // ⚠ A `(` past the margin breaks the `=` whatever the arguments (Nightly seed 37583856628, case
         // 4304693669410283359). The table was measured with the `(` at 53 to 112 and extrapolated past it,
@@ -592,9 +590,20 @@ public sealed class Fitter {
         // arguments as the author's, lost the floor and broke the `=` — the oracle's answer for both
         // passes. Measured 2026-10-09 with `Testing ask`: a typed and a `var` local, arguments of 20, 60
         // and 140 columns, the `(` at 108 to 127 — every row with the `(` at 121 or further breaks.
+        // ⚠ Read before the flat width, which the `(` does not need: arguments holding a break that is
+        // certain (a switch expression) have no flat width, and this rule returned Flat before it reached
+        // the `(` — `T v = TryGet(` on a 123-column line, which pass two broke (Nightly `fuzz --seed=4242`,
+        // case 7862808234978504853).
         if (paren > width) {
             return ResolvedMode.Broken;
         }
+
+        if (m.FlatWidth >= Unbounded) {
+            return ResolvedMode.Flat;
+        }
+
+        var arguments = m.FlatWidth - m.PointWidth - 1 - facts.CalleeWidth;
+        var indent = m.ContinuationColumn - indentWidth;
 
         return arguments < EqualsFloor.Of(paren, indent, facts.CalleeWidth, facts.CalleeOwner)
             ? ResolvedMode.Broken
