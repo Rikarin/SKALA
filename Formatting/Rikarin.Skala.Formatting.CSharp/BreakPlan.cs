@@ -6281,7 +6281,8 @@ public sealed class BreakPlan {
             .Any(trivia => trivia.SpanStart >= collection.OpenBracketToken.Span.End
                 && trivia.Span.End <= collection.CloseBracketToken.SpanStart
                 && (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                    || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)));
+                    || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia))
+            );
 
     /// <summary>
     ///     Whether a block comment stands right after a call's or creation's <c>(</c>, where the oracle never

@@ -128,49 +128,49 @@ public sealed class CollectionBrokenAfterItsBracketNightlyTests {
     // (a comment after the first, a middle and the last element, short collections, a block comment; four
     // positions).
     const string CommentSource = """"
-        class C {
-            void M() {
-                var v10 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["sssssssssssss", true, // fuzz
-        'c', 47954] };
-                var v21 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["sssssssssssss", // fuzz
-        true, 'c', 47954, "ssssssssssssssssssssss"], 9718, z };
-                var v25 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["s", // fuzz
-        true], 9718, z };
-                var v29 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["sssssssssssss", /* fuzz */ true], 9718, z };
-            }
-        }
-        """";
+                                 class C {
+                                     void M() {
+                                         var v10 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["sssssssssssss", true, // fuzz
+                                 'c', 47954] };
+                                         var v21 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["sssssssssssss", // fuzz
+                                 true, 'c', 47954, "ssssssssssssssssssssss"], 9718, z };
+                                         var v25 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["s", // fuzz
+                                 true], 9718, z };
+                                         var v29 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["sssssssssssss", /* fuzz */ true], 9718, z };
+                                     }
+                                 }
+                                 """";
 
     const string CommentOracle = """"
-        class C {
-            void M() {
-                var v10 = new[] {
-                    """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [
-                        "sssssssssssss", true, // fuzz
-                        'c', 47954
-                    ]
-                };
-                var v21 = new[] {
-                    """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [
-                        "sssssssssssss", // fuzz
-                        true, 'c', 47954, "ssssssssssssssssssssss"
-                    ],
-                    9718, z
-                };
-                var v25 = new[] {
-                    """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [
-                        "s", // fuzz
-                        true
-                    ],
-                    9718, z
-                };
-                var v29 = new[] {
-                    """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}",
-                    ["sssssssssssss", /* fuzz */ true], 9718, z
-                };
-            }
-        }
-        """";
+                                 class C {
+                                     void M() {
+                                         var v10 = new[] {
+                                             """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [
+                                                 "sssssssssssss", true, // fuzz
+                                                 'c', 47954
+                                             ]
+                                         };
+                                         var v21 = new[] {
+                                             """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [
+                                                 "sssssssssssss", // fuzz
+                                                 true, 'c', 47954, "ssssssssssssssssssssss"
+                                             ],
+                                             9718, z
+                                         };
+                                         var v25 = new[] {
+                                             """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [
+                                                 "s", // fuzz
+                                                 true
+                                             ],
+                                             9718, z
+                                         };
+                                         var v29 = new[] {
+                                             """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}",
+                                             ["sssssssssssss", /* fuzz */ true], 9718, z
+                                         };
+                                     }
+                                 }
+                                 """";
 
     // ⚠ Broken inside a spread, after its `..` (Nightly fuzz, case 3601384071467948482): the oracle keeps `..` /
     // `Source` and so the collection broken, with its `[` beside the element before it. The break is at none of
@@ -178,36 +178,36 @@ public sealed class CollectionBrokenAfterItsBracketNightlyTests {
     // ask` on 30 rows (breaks inside a spread, a binary, a call's arguments and after its `(`, before a `.`, a
     // `?`, after an arrow, in a nested collection and a tuple; three positions).
     const string SpreadSource = """
-        class C {
-            void M() {
-                var v01 = new[] { sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [null, ..
-          Source], (1.5d & 86887 || "ss" | 3_000_000L), Compute("sss"), _cache };
-                var v05 = new[] { sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [null, ..
-          Source, 1] };
-            }
-        }
-        """;
+                                class C {
+                                    void M() {
+                                        var v01 = new[] { sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [null, ..
+                                  Source], (1.5d & 86887 || "ss" | 3_000_000L), Compute("sss"), _cache };
+                                        var v05 = new[] { sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [null, ..
+                                  Source, 1] };
+                                    }
+                                }
+                                """;
 
     const string SpreadOracle = """
-        class C {
-            void M() {
-                var v01 = new[] {
-                    sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [
-                        null, ..
-                        Source
-                    ],
-                    (1.5d & 86887 || "ss" | 3_000_000L), Compute("sss"), _cache
-                };
-                var v05 = new[] {
-                    sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [
-                        null, ..
-                        Source,
-                        1
-                    ]
-                };
-            }
-        }
-        """;
+                                class C {
+                                    void M() {
+                                        var v01 = new[] {
+                                            sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [
+                                                null, ..
+                                                Source
+                                            ],
+                                            (1.5d & 86887 || "ss" | 3_000_000L), Compute("sss"), _cache
+                                        };
+                                        var v05 = new[] {
+                                            sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [
+                                                null, ..
+                                                Source,
+                                                1
+                                            ]
+                                        };
+                                    }
+                                }
+                                """;
 
     [Fact]
     public void ACollectionBrokenInsideASpread_StaysBesideThePreviousElement() {
