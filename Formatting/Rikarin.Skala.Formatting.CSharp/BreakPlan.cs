@@ -6108,10 +6108,34 @@ public sealed class BreakPlan {
         && !value.DescendantTrivia()
             .Any(static trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia)
                 || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
             )
+            && !CommentAfterTheParen(value)
             ? CalleeOf(value)
             : 0;
+
+    /// <summary>
+    ///     Whether a block comment stands right after a call's or creation's <c>(</c>, where the oracle never
+    ///     chops: <c>T v =</c> / <c>Callee( /* d */ a, b);</c>, the arguments whole on the line below.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-09 with <c>Testing ask</c> (Nightly <c>fuzz --seed=4242</c>, case
+    ///     10014018092937601535): a <c>/* */</c> or <c>/** */</c> comment after the <c>(</c> breaks the <c>=</c>;
+    ///     the same comment after an argument or a comma leaves the floor's answer standing — the arguments
+    ///     chop, the comment with them. Every block comment used to turn the floor away, which broke the <c>=</c>
+    ///     in the second case; and <c>/** d */</c>, a documentation comment to Roslyn, was not recognised as one,
+    ///     so the floor kept the <c>=</c> in the first and pass two, finding the arguments chopped, broke it.
+    /// </remarks>
+    static bool CommentAfterTheParen(ExpressionSyntax value) {
+        var open = value switch {
+            InvocationExpressionSyntax invocation => invocation.ArgumentList.OpenParenToken,
+            ObjectCreationExpressionSyntax { ArgumentList: { } list } => list.OpenParenToken,
+            _ => default
+        };
+
+        return open.TrailingTrivia.Concat(open.GetNextToken().LeadingTrivia)
+            .Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia));
+    }
 
     /// <summary>
     ///     The callee's width: an identifier's, or <c>new T</c>'s — a creation with arguments is measured as a
