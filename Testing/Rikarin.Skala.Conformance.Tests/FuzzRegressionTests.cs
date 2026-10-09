@@ -103,7 +103,8 @@ public sealed class FuzzRegressionTests {
     [InlineData(11693758747470537505UL)]
     // `byte x when new Func<` / `(…), (…)>("s", 'c', 0xb92) => Handle(…)`: pass one filled the type arguments
     // and broke before the arrow for width; pass two read that arrow break as kept, lifted the type arguments
-    // a level and chopped the call. A `when` clause holding a type argument list no longer lifts.
+    // a level and chopped the call. A `when` clause holding a type argument list stopped lifting; since #576
+    // it lifts again, the width lift lifting pass one as well.
     [InlineData(12955079666331923518UL)]
     // `[_, .. var rest43] when $"…" => $"…{…}",`: a body with no break point is read through by the head
     // before the arrow, so pass one chopped the list pattern and broke the arrow too; pass two, finding the

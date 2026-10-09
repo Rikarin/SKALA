@@ -7116,12 +7116,11 @@ public sealed class BreakPlan {
             );
         }
 
-        // ⚠ Not for a `when` clause holding a type argument list (fuzz 12955079666331923518). Its fill can
-        // break the line on pass one, and the arrow then falls below for width; pass two read that arrow
-        // break as kept, lifted the type arguments a level and chopped the call after them. The oracle
-        // lifts them too (`when new Func<` / the arguments two levels past the arm / `=>`), but only a
-        // kept break can tell the lift is due, so the lift is left to lists that pass one cannot leave a
-        // width break behind — SK-DIV-0399's residue.
+        // ⚠ A `when` clause holding a type argument list lifts too (#576). It was withdrawn for idempotency
+        // (fuzz 12955079666331923518): pass one's type argument fill broke the arrow for width, and pass two
+        // read that break as kept and lifted. The width lift above now lifts pass one as well, so both passes
+        // agree, and the oracle's `when Materialise<List<bool>,` / the type arguments two levels past the arm /
+        // `=>` is what both write.
         var opensAtPattern = kept && (LiftsUnderAKeptArrow(arm) || liftsBraces);
         OpenAt(
             arm,
@@ -7170,11 +7169,11 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     Whether an arm's `when` clause lifts from the arm's pattern under a broken arrow: one without a type
-    ///     argument list (fuzz 12955079666331923518).
+    ///     Whether an arm's `when` clause lifts from the arm's pattern under a broken arrow: every one, a type
+    ///     argument list included since the width lift made that idempotent (#576, fuzz 12955079666331923518).
     /// </summary>
     static bool LiftsUnderAKeptArrow(SwitchExpressionArmSyntax arm) =>
-        arm.WhenClause is { } clause && !clause.DescendantNodes().OfType<TypeArgumentListSyntax>().Any();
+        arm.WhenClause is not null;
 
     /// <summary>A lambda's <c>=&gt;</c>: the gap after it, under the <c>=</c>'s ordering rule.</summary>
     /// <remarks>
@@ -7512,20 +7511,23 @@ public sealed class BreakPlan {
                     or MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax }
                 )
             && FirstToken(node.Condition) is var condition) {
-            var after = NewGroup();
-            Point(condition, after);
-            Describe(
-                node.Condition,
-                after,
-                GroupMode.Preserve,
-                new(
-                    options.KeepsUserBreaksBetweenItems && BreaksBefore(condition),
-                    BreaksIfTooLong: true,
-                    BreaksOnlyIfTailFits: true
-                ),
-                true,
-                true
-            );
+            // ⚠ A break the author kept there stays, whether or not the condition fits below (#576): `X when` /
+            // `Materialise<List<bool>,` / `IReadOnlyDictionary<…>>() =>` comes back from the oracle as written,
+            // where the tail rule re-joined it as `X when Materialise<List<bool>,`.
+            if (options.KeepsUserBreaksBetweenItems && BreaksBefore(condition)) {
+                Mandatory(condition);
+            } else {
+                var after = NewGroup();
+                Point(condition, after);
+                Describe(
+                    node.Condition,
+                    after,
+                    GroupMode.Preserve,
+                    new(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true),
+                    true,
+                    true
+                );
+            }
         }
 
         // ⚠ A `case` label whose `when` the author put on a line of its own nests its pattern's braces from

@@ -11072,8 +11072,38 @@ group now covers every arm whose kept arrow break opens the arm's level at the p
 stays flat, and the builder never counts it as a continuation. While it is broken, the writer holds the arrow
 group's level. Pinned by `constructs/breaks/arm-when-chain-under-an-arrow-broken-for-width.cs`.
 
-- ⚠ status: **resolved** (#576) for the cut-down shapes, pinned by `constructs/breaks/arm-when-condition-below.cs`;
-  **open** for the seed's whole line.
+⚠ **#576, round 3 (2026-10-10).** The type argument list's lift is re-enabled, and it is idempotent now. Fuzz
+12955079666331923518's problem was pass one: it broke the arrow for width without lifting, and pass two read
+that break as kept and lifted. The width lift above (`LiftsIfArrowBreaks`, fuzz 14973596429632421881) came
+later, and it lifts pass one too. So the exclusion only cost the oracle's layout:
+`X when Materialise<List<bool>,` / the type arguments two levels past the arm / `=>`, the same under a kept
+break before the arrow, a kept break after it, and a break for width.
+
+A break the author kept after an arm's `when` is now kept even when the condition does not fit below. The tail
+rule had re-joined `when` / `Materialise<…` into `when Materialise<List<bool>,`, and the oracle keeps it as
+written.
+
+Measured with `Testing ask` on 230 rows: three `when` heads (`Materialise<…>()`, `new Func<…>(…)` and a short
+one), query, call and string bodies of 20 to 126 columns, written flat, broken before the arrow, after it, and
+after the `when`.
+
+- Before: 147 rows diverged.
+- After: 68 diverge, none of them new.
+- Skala's output is a fixed point on every row.
+- Seeds 12955079666331923518 and 857717698562573229 replay clean.
+
+⚠ Still open:
+- Written flat, the oracle breaks after the `when` before a `Materialise<…>()` too wide for the line below, at
+  every body width. Before `new Func<…>(` it does so only from a body of 82 columns. This is the seed's first
+  further rule, still unexplained (27 rows).
+- Under that `when` break, the oracle nests the body's own continuation one level deeper: `=> Handle(` / the
+  arguments at 20 / `)` at 16.
+- Bodies from 90 columns keep `() => (from item` / `in items` beside the arrow, where Skala moves the body
+  below (41 rows with the previous item).
+
+- ⚠ status: **resolved** (#576) for the cut-down shapes, pinned by `constructs/breaks/arm-when-condition-below.cs`,
+  and for the lift and the kept `when` break, pinned by `WhenTypeArgumentsLiftIssue576Tests`; **open** for the
+  seed's whole line.
 
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
