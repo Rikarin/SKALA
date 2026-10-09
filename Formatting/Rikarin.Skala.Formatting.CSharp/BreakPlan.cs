@@ -4139,6 +4139,15 @@ public sealed class BreakPlan {
 
         var pattern = root is BinaryPatternSyntax;
 
+        // ⚠ An operand chain that is the body of a sole lambda whose call is the receiver of a further link takes
+        // a level of its own, as a pattern chain does there (SK-DIV-0420): `var g = i.Where(x => a` / `&& b`
+        // sixteen columns in / `)` / `.ToList();`, one level past the chain's continuation, where Skala wrote the
+        // `&&` on the `)`'s column.
+        var receiverBody = root is BinaryExpressionSyntax
+            && root.Parent is LambdaExpressionSyntax receiverLambda
+            && receiverLambda.ExpressionBody == root
+            && IsTheReceiverOfAFurtherLink(receiverLambda);
+
         Describe(
             root,
             new(
@@ -4162,7 +4171,7 @@ public sealed class BreakPlan {
                 // step, not two:
                 //     if (o is IDisposable
                 //         or IAsyncDisposable) {     ← one, where an argument would take two
-                pattern && root.Parent is not SubpatternSyntax,
+                pattern && root.Parent is not SubpatternSyntax || receiverBody,
                 false,
                 // ⚠ And only the outermost combinator's chain: an `and` chain inside an `or` chain is a
                 // chain of its own since #483, and the oracle writes its links on the `or`s' column —
@@ -4179,7 +4188,8 @@ public sealed class BreakPlan {
                 && root.Parent is not SubpatternSyntax
                 // ⚠ Before the `is` or after it (#550): `keyword is` / `A` / `or B` puts `A` and the `or`s
                 // on one column too.
-                && !(EnclosingTypeTest(root) is { } test && (BreaksBefore(test.IsKeyword) || BreaksAroundTheIs(test))),
+                && !(EnclosingTypeTest(root) is { } test && (BreaksBefore(test.IsKeyword) || BreaksAroundTheIs(test)))
+                || receiverBody,
                 // ⚠ And that level counts although the `&&` or `||` the type test is the left operand of
                 // opened its own on the same line (#560, SK-DIV-0394): `var e = n.P is A` / `or B` /
                 // `&& c;` puts the `or` at 16 and the `&&` at 12, after `return` and `var e =`, and with
@@ -4188,7 +4198,9 @@ public sealed class BreakPlan {
                 && EnclosingTypeTest(root) is { Parent: BinaryExpressionSyntax logical } leftTest
                 && logical.Left == leftTest
                 && logical.Kind() is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression,
-                HoldsLevel: pattern ? HoldForASoleLambda(root, group) | HoldAfterIs(root, group) : HeldLevel.None
+                HoldsLevel: pattern ? HoldForASoleLambda(root, group) | HoldAfterIs(root, group)
+                    : receiverBody ? HoldWhileTheArrowBreaks(root, group)
+                    : HeldLevel.None
             )
         );
     }
@@ -4220,6 +4232,19 @@ public sealed class BreakPlan {
 
         arrowHeldAgainst[group] = arrow;
         return HeldLevel.WhileArrowFlat;
+    }
+
+    /// <summary>
+    ///     A receiver lambda's operand chain gives its own level back once the arrow breaks: <c>x =&gt;</c> /
+    ///     <c>a</c> / <c>&amp;&amp; b</c> on one column, the body's (SK-DIV-0420).
+    /// </summary>
+    HeldLevel HoldWhileTheArrowBreaks(SyntaxNode chain, int group) {
+        if (chain.Parent is not LambdaExpressionSyntax lambda || !arrowGroups.TryGetValue(Key(lambda), out var arrow)) {
+            return HeldLevel.None;
+        }
+
+        arrowHeldAgainst[group] = arrow;
+        return HeldLevel.WhileGroupBroken;
     }
 
     /// <summary>
