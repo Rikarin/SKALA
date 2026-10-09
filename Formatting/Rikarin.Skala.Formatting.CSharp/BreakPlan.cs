@@ -6888,9 +6888,19 @@ public sealed class BreakPlan {
             );
         }
 
+        // ⚠ Not for a `when` clause holding a type argument list (fuzz 12955079666331923518). Its fill can
+        // break the line on pass one, and the arrow then falls below for width; pass two read that arrow
+        // break as kept, lifted the type arguments a level and chopped the call after them. The oracle
+        // lifts them too (`when new Func<` / the arguments two levels past the arm / `=>`), but only a
+        // kept break can tell the lift is due, so the lift is left to lists that pass one cannot leave a
+        // width break behind — SK-DIV-0399's residue.
+        var opensAtPattern = kept
+            && (arm.WhenClause is { } whenClause
+                && !whenClause.DescendantNodes().OfType<TypeArgumentListSyntax>().Any()
+                || liftsBraces);
         OpenAt(
             arm,
-            kept && (arm.WhenClause is not null || liftsBraces) ? arm.Pattern.SpanStart : arrow.SpanStart,
+            opensAtPattern ? arm.Pattern.SpanStart : arrow.SpanStart,
             new(
                 before,
                 GroupMode.Preserve,
@@ -6898,11 +6908,11 @@ public sealed class BreakPlan {
                     kept,
                     BreaksIfTooLong: true,
                     BreaksOnlyIfHeadOverflows: true,
-                    Continues: kept && (arm.WhenClause is not null || liftsBraces),
-                    LiftsThroughInnerBreaks: kept && arm.WhenClause is not null
+                    Continues: opensAtPattern,
+                    LiftsThroughInnerBreaks: opensAtPattern && arm.WhenClause is not null
                 ),
                 true,
-                !(kept && (arm.WhenClause is not null || liftsBraces)),
+                !opensAtPattern,
 
                 // ⚠ The arm's level is this group's, not the body's: it is opened first and the body's
                 // group can spend nothing inside it. So it is this group that holds the level for a

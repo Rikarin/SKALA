@@ -100,6 +100,10 @@ public sealed class FuzzRegressionTests {
     // broken the accessor's arrow for the body the kept break made multi-line; pass two re-joined the arrow.
     // The gap is the parenthesis's: the oracle keeps the break, the element one level in.
     [InlineData(11693758747470537505UL)]
+    // `byte x when new Func<` / `(…), (…)>("s", 'c', 0xb92) => Handle(…)`: pass one filled the type arguments
+    // and broke before the arrow for width; pass two read that arrow break as kept, lifted the type arguments
+    // a level and chopped the call. A `when` clause holding a type argument list no longer lifts.
+    [InlineData(12955079666331923518UL)]
     // Nightly, 6 hits in 81k cases: `}, ["s"` / `#region fuzz` / `, false, …]` in an array initializer. The
     // draft measure read the breaks beside the directive as spaces, so pass one moved the collection down
     // whole and pass two, measuring its own broken output, kept `}, [`. A break beside a directive is no
