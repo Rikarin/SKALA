@@ -118,6 +118,9 @@ public sealed class FuzzRegressionTests {
     // `fuzz --seed=3`: the same call with a `// fuzz` after its `;` — the comment, not the call, pushed the line
     // past the margin, and #528's held-call width did not count it.
     [InlineData(7754551050098241345UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
+    // `fuzz --seed=4242`: `a + (b * c) + (d\n== 0 ? …)` — a nested chain broken in the last operand chopped only
+    // the link holding it, and pass two chopped the first link as well.
+    [InlineData(5604488888367663423UL, "real/vixen/Core/Vixen.Navigation/Agents/LocalAvoidance.cs")]
     [InlineData(3559808079077978877UL, "constructs/wrapping/lambda-arrow-over-a-property-fill.cs")]
     [InlineData(3423309597191150844UL, "constructs/breaks/conditional-after-eq.cs")]
     [InlineData(
