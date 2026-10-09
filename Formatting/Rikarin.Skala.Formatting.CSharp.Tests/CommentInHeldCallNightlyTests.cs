@@ -14,6 +14,41 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     2026-10-09 with <c>Testing ask</c>.
 /// </remarks>
 public sealed class CommentInHeldCallNightlyTests {
+    const string Long1 = "var jsonObjectWithLowercase = JsonConvert.DeserializeObject<GitHubPullRequestRev"
+        + "iew /* f */ >(jsonWithLowercase);";
+
+    const string Long2 = "var jsonObjectWithLowercase = JsonConvert.DeserializeObject<GitHubPullRequestRev"
+        + "iew>(jsonWithLowercase); // fuzz";
+
+    const string Long3 = "var jsonObjectWithUppercase = JsonConvert /** d */ .DeserializeObject<GitHubPull"
+        + "RequestReview>(jsonWithUppercase);";
+
+    const string Long4 = "var jsonObjectWithUppercase = JsonConvert /* d */ .DeserializeObject<GitHubPullR"
+        + "equestReview>(jsonWithUppercase);";
+
+    const string Long5 = "var jsonObjectWithUppercase = JsonConvert /** dd */ .DeserializeObject<GitHubPul"
+        + "lRequestReview>(jsonWithUpper);";
+
+    const string Long6 = "var jsonObjectWithUppercase = JsonConvert.DeserializeObject<GitHubPullRequestRev"
+        + "iew /** d */>(jsonWithUppercase);";
+
+    const string Long7 = "var jsonObjectWithUppercase = JsonConvert.DeserializeObject<GitHubPullRequestRev"
+        + "iew>(jsonWithUppercase /** dddd */);";
+
+    const string Long8 = "JsonConvert /** d */.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercas"
+        + "e);";
+
+    const string Long9 = "JsonConvert /* d */.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase"
+        + ");";
+
+    const string Long10 = "JsonConvert /** dd */.DeserializeObject<GitHubPullRequestReview>(jsonWithUpper);";
+
+    const string Long11 = "JsonConvert.DeserializeObject<GitHubPullRequestReview /** d */>(jsonWithUppercas"
+        + "e);";
+
+    const string Long12 = "JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase /** ddd"
+        + "d */);";
+
     static string FormatWith(string source) {
         var options = new PhaseOneOptions(
             OptionResolver.Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"), []).Options
@@ -24,16 +59,16 @@ public sealed class CommentInHeldCallNightlyTests {
 
     // ⚠ Inside a namespace, as the case was found: at a statement indent of 8 the line is exactly 120 columns
     // and stays whole.
-    const string Minimised = """
-                             namespace N {
-                             class C {
-                               public void M()
-                               {
-                                var jsonObjectWithLowercase = JsonConvert.DeserializeObject<GitHubPullRequestReview /* f */ >(jsonWithLowercase);
+    const string Minimised = $$"""
+                               namespace N {
+                               class C {
+                                 public void M()
+                                 {
+                                  {{Long1}}
+                                 }
                                }
-                             }
-                             }
-                             """;
+                               }
+                               """;
 
     [Fact]
     public void TheMinimisedCase_BreaksTheEquals_AndIsIdempotent() {
@@ -53,16 +88,16 @@ public sealed class CommentInHeldCallNightlyTests {
     /// </summary>
     [Fact]
     public void ATrailingComment_CountsTowardTheHeldValue() {
-        const string source = """
-                              namespace N {
-                              class C {
-                                public void M()
-                                {
-                                 var jsonObjectWithLowercase = JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithLowercase); // fuzz
+        const string source = $$"""
+                                namespace N {
+                                class C {
+                                  public void M()
+                                  {
+                                   {{Long2}}
+                                  }
                                 }
-                              }
-                              }
-                              """;
+                                }
+                                """;
 
         var first = FormatWith(source);
         Assert.Contains(
@@ -82,39 +117,39 @@ public sealed class CommentInHeldCallNightlyTests {
     /// </summary>
     [Fact]
     public void ADocumentationStyleComment_CountsInFull() {
-        const string source = """
-                              namespace N {
-                              class C {
-                                public void M()
-                                {
-                                 var jsonObjectWithUppercase = JsonConvert /** d */ .DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
-                                 var jsonObjectWithUppercase = JsonConvert /* d */ .DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
-                                 var jsonObjectWithUppercase = JsonConvert /** dd */ .DeserializeObject<GitHubPullRequestReview>(jsonWithUpper);
-                                 var jsonObjectWithUppercase = JsonConvert.DeserializeObject<GitHubPullRequestReview /** d */>(jsonWithUppercase);
-                                 var jsonObjectWithUppercase = JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase /** dddd */);
-                                }
-                              }
-                              }
-                              """;
-        const string oracle = """
-                              namespace N {
-                                  class C {
-                                      public void M() {
-                                          var jsonObjectWithUppercase =
-                                              JsonConvert /** d */.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
-                                          var jsonObjectWithUppercase =
-                                              JsonConvert /* d */.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
-                                          var jsonObjectWithUppercase =
-                                              JsonConvert /** dd */.DeserializeObject<GitHubPullRequestReview>(jsonWithUpper);
-                                          var jsonObjectWithUppercase =
-                                              JsonConvert.DeserializeObject<GitHubPullRequestReview /** d */>(jsonWithUppercase);
-                                          var jsonObjectWithUppercase =
-                                              JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase /** dddd */);
-                                      }
+        const string source = $$"""
+                                namespace N {
+                                class C {
+                                  public void M()
+                                  {
+                                   {{Long3}}
+                                   {{Long4}}
+                                   {{Long5}}
+                                   {{Long6}}
+                                   {{Long7}}
                                   }
-                              }
+                                }
+                                }
+                                """;
+        const string oracle = $$"""
+                                namespace N {
+                                    class C {
+                                        public void M() {
+                                            var jsonObjectWithUppercase =
+                                                {{Long8}}
+                                            var jsonObjectWithUppercase =
+                                                {{Long9}}
+                                            var jsonObjectWithUppercase =
+                                                {{Long10}}
+                                            var jsonObjectWithUppercase =
+                                                {{Long11}}
+                                            var jsonObjectWithUppercase =
+                                                {{Long12}}
+                                        }
+                                    }
+                                }
 
-                              """;
+                                """;
 
         var first = FormatWith(source);
         Assert.Equal(oracle, first);
