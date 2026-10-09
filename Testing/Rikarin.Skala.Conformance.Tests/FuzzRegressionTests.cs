@@ -91,6 +91,9 @@ public sealed class FuzzRegressionTests {
     // as well; pass two found the arrow's break kept, measured the pattern up to it and re-joined `var p`.
     // A kept break at that point is now pinned, as the oracle keeps it and as the list's commas are.
     [InlineData(9642682992700587520UL)]
+    [InlineData(7862808234978504853UL)]
+    [InlineData(3776683644240416092UL)]
+    [InlineData(11325995557757886152UL)]
     // `fuzz --seed=7777`: `get => state is (` / `{ Length: > 0 }, ImmutableArray<object?> typed56);`. The
     // property pattern's `{` joined the positional `(` as an opening brace does, after pass one had already
     // broken the accessor's arrow for the body the kept break made multi-line; pass two re-joined the arrow.
@@ -127,6 +130,20 @@ public sealed class FuzzRegressionTests {
     // `fuzz --seed=3`: the same call with a `// fuzz` after its `;` — the comment, not the call, pushed the line
     // past the margin, and #528's held-call width did not count it.
     [InlineData(7754551050098241345UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
+    // Group L's fuzz: `JsonConvert /** d */ .DeserializeObject<T>(x)` — a documentation-style comment, which the
+    // gap width did not count, and whose `/**` lies outside its trivia's span when it does.
+    [InlineData(1267273925188459665UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
+    [InlineData(17998121662372599673UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
+    [InlineData(5160029152501638677UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
+    // `fuzz --seed=4242`: `a + (b * c) + (d\n== 0 ? …)` — a nested chain broken in the last operand chopped only
+    // the link holding it, and pass two chopped the first link as well.
+    [InlineData(5604488888367663423UL, "real/vixen/Core/Vixen.Navigation/Agents/LocalAvoidance.cs")]
+    // `fuzz --seed=7777`: `bool c = o… is A // c` / `or B;` — a line comment in the pattern turned the `=` away
+    // from #446's table, and the `or`s after the `is` break took a level the second pass gave back.
+    [InlineData(16865623964709448456UL, "constructs/breaks/equals-before-a-binary-pattern.cs")]
+    // `fuzz --seed=4242`: `T v = Callee( /** d */ a, b);` — a documentation comment after the `(` passed the
+    // floor's comment test, which kept the `=`; pass two found the arguments chopped and broke it.
+    [InlineData(10014018092937601535UL, "constructs/breaks/equals-before-a-call-floor.cs")]
     [InlineData(3559808079077978877UL, "constructs/wrapping/lambda-arrow-over-a-property-fill.cs")]
     // ⚠ And a kept break after a fill break in the same body (`--seed=31337`): the chain's frame paid a level
     // the from-line scope had already paid (6109074167501724172).

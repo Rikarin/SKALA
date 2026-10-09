@@ -439,7 +439,15 @@ public enum IndentFlags {
     ///     in another's: one level more for each enclosing argument list opened on the line beyond the
     ///     innermost (#585).
     /// </summary>
-    NestedSoleLambda = 4096
+    NestedSoleLambda = 4096,
+
+    /// <summary>
+    ///     ⚠ The mirror of <see cref="HeldWhileGroupFlat" />: a held level spent while the group named beside it
+    ///     stays flat, and held once it resolves broken. The gap after an <c>is</c>, for the pattern chain
+    ///     after it — the broken <c>is</c> has spent the level the chain's <c>or</c>s would take, as an
+    ///     <c>is</c> the author broke has (#520). See <c>HeldLevel.WhileGroupBroken</c>.
+    /// </summary>
+    HeldWhileGroupBroken = 8192
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
@@ -1268,6 +1276,12 @@ public sealed class Document {
 ///     receiver itself does not fit beside it (Nightly <c>fuzz --seed=909</c>): the oracle writes
 ///     <c>T v =</c> / <c>context.First;</c> where no dot can take the break. Zero for any other value.
 /// </param>
+/// <param name="PatternFirstWidth">
+///     ⚠ With <see cref="PatternHead" />: the value's width from the operand through the pattern's first
+///     alternative, <c>operand is A</c>. The <c>=</c> breaks whenever that would end past the margin
+///     beside it, whatever <see cref="EqualsFloor.BreaksBeforeAPattern" /> says (Nightly
+///     <c>fuzz --seed=7777</c>). Zero for any other group.
+/// </param>
 /// <param name="ValueHeadFitsBelow">
 ///     With <see cref="ValueHeadWidth" />: the condition is a call, whose <c>=</c> breaks only when the
 ///     condition fits on the line below.
@@ -1382,7 +1396,8 @@ public readonly record struct GroupFacts(
     int LambdaOperandParameters = 0,
     int LambdaOperandTail = 0,
     int LambdaOperandFirst = 0,
-    int MemberHeadWidth = 0);
+    int MemberHeadWidth = 0,
+    int PatternFirstWidth = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

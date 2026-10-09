@@ -348,9 +348,23 @@ public sealed class Fitter {
                 }
 
                 // ⚠ An `=` before `operand is A or B`: a measured table (#446, SK-DIV-0211).
+                // ⚠ A line comment in the pattern ends the line, so what follows the value does not land on it.
                 if (facts.PatternHead > 0
                     && facts.BreaksIfTooLong
-                    && !Fits(m.Column, m.BreakWidth, m.Trailing)) {
+                    && !Fits(m.Column, m.BreakWidth, m.FlatWidth < Unbounded ? m.Trailing : 0)) {
+                    // ⚠ The line through the first alternative past the margin breaks the `=`, however wide the
+                    // pattern (Nightly `fuzz --seed=7777`, case 16865623964709448456). The table was measured
+                    // with short operands; behind a long one it kept `T v = operand is` and broke after the `is`
+                    // with the `or`s a level past `A`, and pass two, reading that break as the author's, put them
+                    // back on `A`'s column. Measured 2026-10-09 with `Testing ask`: a typed and a `var` local,
+                    // operands of 40 to 110 columns, first alternatives of 5, 15 and 30, two to seven
+                    // alternatives — every row whose first alternative ends at 121 or further breaks the `=`.
+                    if (facts.PatternFirstWidth > 0
+                        && m.PointWidth < Unbounded
+                        && !Fits(m.Column, m.PointWidth + 1 + facts.PatternFirstWidth)) {
+                        return ResolvedMode.Broken;
+                    }
+
                     var end = m.FlatWidth >= Unbounded || m.Trailing >= Unbounded
                         ? int.MaxValue
                         : m.Column + m.FlatWidth + m.Trailing;
@@ -576,15 +590,13 @@ public sealed class Fitter {
 
     /// <summary>See <see cref="GroupFacts.CalleeWidth" />.</summary>
     ResolvedMode EqualsBeforeACall(in GroupFacts facts, in Measures m, int lineStart) {
-        if (m.FlatWidth >= Unbounded || m.PointWidth >= Unbounded || !HeadIsWideEnough(facts, m, lineStart)) {
+        if (m.PointWidth >= Unbounded || !HeadIsWideEnough(facts, m, lineStart)) {
             return ResolvedMode.Flat;
         }
 
         // The value starts one space past the point; its `(` follows the callee. Columns are 1-based in
         // the measured table.
         var paren = m.Column + m.PointWidth + 1 + facts.CalleeWidth + 1;
-        var arguments = m.FlatWidth - m.PointWidth - 1 - facts.CalleeWidth;
-        var indent = m.ContinuationColumn - indentWidth;
 
         // ⚠ A `(` past the margin breaks the `=` whatever the arguments (Nightly seed 37583856628, case
         // 4304693669410283359). The table was measured with the `(` at 53 to 112 and extrapolated past it,
@@ -592,9 +604,20 @@ public sealed class Fitter {
         // arguments as the author's, lost the floor and broke the `=` — the oracle's answer for both
         // passes. Measured 2026-10-09 with `Testing ask`: a typed and a `var` local, arguments of 20, 60
         // and 140 columns, the `(` at 108 to 127 — every row with the `(` at 121 or further breaks.
+        // ⚠ Read before the flat width, which the `(` does not need: arguments holding a break that is
+        // certain (a switch expression) have no flat width, and this rule returned Flat before it reached
+        // the `(` — `T v = TryGet(` on a 123-column line, which pass two broke (Nightly `fuzz --seed=4242`,
+        // case 7862808234978504853).
         if (paren > width) {
             return ResolvedMode.Broken;
         }
+
+        if (m.FlatWidth >= Unbounded) {
+            return ResolvedMode.Flat;
+        }
+
+        var arguments = m.FlatWidth - m.PointWidth - 1 - facts.CalleeWidth;
+        var indent = m.ContinuationColumn - indentWidth;
 
         return arguments < EqualsFloor.Of(paren, indent, facts.CalleeWidth, facts.CalleeOwner)
             ? ResolvedMode.Broken
