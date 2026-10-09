@@ -6881,7 +6881,13 @@ public sealed class BreakPlan {
             // body as `=> (` / `0x237, true),`, breaking inside the tuple, which Skala does not; so the lift
             // stays off where pass one's arrow break can be the width's (SK-DIV-0399).
             && arm.WhenClause?.Condition.DescendantNodesAndSelf()
-                .Any(static node => node is BinaryExpressionSyntax or ConditionalExpressionSyntax) != true;
+                .Any(static node => node is ConditionalExpressionSyntax
+                    // A type test is not a chain: `when d.Parent is T =>` keeps its lift.
+                    || node is BinaryExpressionSyntax binary
+                    && !binary.IsKind(SyntaxKind.IsExpression)
+                    && !binary.IsKind(SyntaxKind.AsExpression)
+                )
+            != true;
         // ⚠ And a `when` clause's argument list (#564), which the lift reaches only once it chops:
         // `when Compute(` / the arguments two levels past the arm / `) =>` one level / the body one
         // level. Measured 2026-10-08 written chopped and written whole: whole, the oracle chops the list
