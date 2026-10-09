@@ -16,7 +16,15 @@ public sealed class ArrowOverAChainReceiverTests {
     static string Wrap(string statement) => "class C {\n    object M() {\n" + statement + "    }\n}\n";
 
     static string Source(int parameter) =>
-        Wrap("        return (" + new string('a', 100) + ", (" + new string('T', parameter) + " x) => " + Body + ", bbbb);\n");
+        Wrap(
+            "        return ("
+            + new string('a', 100)
+            + ", ("
+            + new string('T', parameter)
+            + " x) => "
+            + Body
+            + ", bbbb);\n"
+        );
 
     static void Agrees(string source, string expected) {
         var once = Format.Text(source).ReplaceLineEndings("\n");
@@ -31,7 +39,9 @@ public sealed class ArrowOverAChainReceiverTests {
             Source(94),
             Wrap(
                 Head
-                + "            (" + new string('T', 94) + " x) =>\n"
+                + "            ("
+                + new string('T', 94)
+                + " x) =>\n"
                 + "                builder.Length(\"sssss\")\n"
                 + "                    .First(\"ssssssssssssssssssssssss\")\n"
                 + "                    .Items(\"ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss\"), bbbb);\n"
@@ -45,7 +55,9 @@ public sealed class ArrowOverAChainReceiverTests {
             Source(91),
             Wrap(
                 Head
-                + "            (" + new string('T', 91) + " x) => builder\n"
+                + "            ("
+                + new string('T', 91)
+                + " x) => builder\n"
                 + "                .Length(\"sssss\")\n"
                 + "                .First(\"ssssssssssssssssssssssss\")\n"
                 + "                .Items(\"ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss\"), bbbb);\n"
