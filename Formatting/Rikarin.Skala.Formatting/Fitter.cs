@@ -306,6 +306,18 @@ public sealed class Fitter {
                     return ResolvedMode.Broken;
                 }
 
+                // ⚠ A lambda-valued local's type/name gap breaks when the line through its `=` overflows: pass
+                // one chopped the parameter list behind an `=` past the margin, and pass two, reading the chop
+                // as the author's, filled the type (Nightly replay 13830403873739157460). See
+                // GroupFacts.NameThroughEquals.
+                if (facts.NameThroughEquals > 0 && !Fits(m.Column, 1 + facts.NameThroughEquals)) {
+                    return ResolvedMode.Broken;
+                }
+
+                if (facts is { NameThroughEquals: > 0, OneOverValue: 0 }) {
+                    return ResolvedMode.Flat;
+                }
+
                 // ⚠ A local's type/name gap one column past the margin (#583, SK-DIV-0127): it breaks where
                 // the `=` would, for the names the planner has already let through. See GroupFacts.OneOverValue.
                 if (facts.OneOverValue > 0) {
@@ -915,6 +927,16 @@ public sealed class Fitter {
                 || value >= EqualsFloor.LambdaValue(head)
                     ? ResolvedMode.Flat
                     : ResolvedMode.Broken;
+        }
+
+        // ⚠ A value whose first character lands past the margin leaves the `=` nothing to keep: neither the
+        // parameter list nor the arrow can end the line in time. Kept, `T v = (` chopped its parameters past
+        // the margin and pass two, reading the chop as the author's, broke the `=` (Nightly replay
+        // 13830403873739157460, seed 99991) — the lambda's twin of the `(` rule in EqualsBeforeACall.
+        // Measured with `jb cleanupcode`: the `=` at 119 and 120 breaks for `(x, y) =>` and `x =>` alike, at
+        // 118 the parameters chop.
+        if (head + 2 > width) {
+            return ResolvedMode.Broken;
         }
 
         // ⚠ And once the line through `=>` overflows, the `=` breaks while `(…) =>` reaches no

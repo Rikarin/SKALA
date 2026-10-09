@@ -2868,7 +2868,13 @@ public sealed class BreakPlan {
             // #406), so this group's level would show under the hold — `f = () =>` / `    (` — if it were
             // spent while the group stays flat; it is held at zero until the group breaks, and the group
             // asks nothing but the one-column question.
-            if (oneOver > 0) {
+            // ⚠ And it breaks whenever the line through the `=` runs past the margin, a local's only
+            // (Nightly replay 13830403873739157460). See GroupFacts.NameThroughEquals.
+            var throughEquals = node is { Parent: LocalDeclarationStatementSyntax, Variables.Count: 1 }
+                ? name.Span.Length + 2
+                : 0;
+
+            if (oneOver > 0 || throughEquals > 0) {
                 var lambdaGroup = NewGroup();
                 Point(name, lambdaGroup);
                 Describe(
@@ -2880,13 +2886,23 @@ public sealed class BreakPlan {
                             options.KeepsUserBreaksBetweenItems && BreaksBefore(name),
                             BreaksIfTooLong: true,
                             OneOverValue: oneOver,
-                            OneOverEquals: -2
+                            OneOverEquals: oneOver > 0 ? -2 : -1,
+                            NameThroughEquals: throughEquals
                         ),
                         true,
-                        true
+                        true,
+                        // ⚠ Held while flat before a body that opens with a parenthesis the author broke after:
+                        // spent, a flat gap moved `f = () =>` / `(` a level in (SK-DIV-0101). Every other body
+                        // keeps the level spent, which is the level a broken `=` lands its value on.
+                        HoldsLevel: value is AnonymousFunctionExpressionSyntax { Body: ExpressionSyntax body }
+                            && HeadsWithAChoppedParenthesis(body, source, options, out _)
+                                ? HeldLevel.WhileFlat
+                                : HeldLevel.None
                     )
                 );
-                oneOverLambdas.Add((node.Variables[0], lambdaGroup));
+                if (oneOver > 0) {
+                    oneOverLambdas.Add((node.Variables[0], lambdaGroup));
+                }
             }
 
             return;

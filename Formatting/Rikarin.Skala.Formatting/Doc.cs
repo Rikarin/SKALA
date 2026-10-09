@@ -1249,6 +1249,13 @@ public sealed class Document {
 ///     its <c>=</c>'s group, whose arrow and parameter-list rules are asked at the head the name gives it
 ///     (−2 until the planner links the two); the gap then asks nothing else.
 /// </param>
+/// <param name="NameThroughEquals">
+///     ⚠ For a lambda-valued local's type/name gap: the width of <c>name =</c>, or zero. The gap breaks when the
+///     line through the <c>=</c> runs past the margin, where no rule of the <c>=</c>'s or the lambda's can end
+///     the line in time (Nightly replay 13830403873739157460). Measured with <c>jb cleanupcode</c> on 90 locals
+///     at indent 8, three types and three lambdas, the <c>=</c> ending at 116 to 125: every row ending at 121
+///     or later breaks here, none ending at 120 or before.
+/// </param>
 /// <param name="NameFloor">
 ///     The constant of <see cref="NameWidth" />'s rule, which the planner lowers by three per column of the
 ///     competing list's first item: a longer first item keeps more names on the keyword's line.
@@ -1359,6 +1366,7 @@ public readonly record struct GroupFacts(
     int NameFloor = 0,
     int OneOverValue = 0,
     int OneOverEquals = -1,
+    int NameThroughEquals = 0,
     int TailMargin = -1,
     bool StopsAtYieldingPoints = false,
     bool MeasuresThroughTail = false,
