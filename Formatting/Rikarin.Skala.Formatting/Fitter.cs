@@ -326,6 +326,12 @@ public sealed class Fitter {
                     return ResolvedMode.Broken;
                 }
 
+                // ⚠ A long parameter's one attribute section: by the measured rule, and before the author's
+                // break, which is the rule's own answer on pass two (#476). See GroupFacts.ParameterAfterSection.
+                if (facts.ParameterAfterSection > 0 && ChopsBeforeTheParameter(facts, m, lineStart) is { } sectionMode) {
+                    return sectionMode;
+                }
+
                 if (facts.SourceBroken) {
                     return KeepOrJoin(facts, m, tail);
                 }
@@ -688,6 +694,39 @@ public sealed class Fitter {
         return arguments < EqualsFloor.Of(paren, indent, facts.CalleeWidth, facts.CalleeOwner)
             ? ResolvedMode.Broken
             : ResolvedMode.Flat;
+    }
+
+    /// <summary>
+    ///     Whether a parameter's one attribute section chops its arguments, for a parameter wider than eleven
+    ///     columns behind a section of two or more arguments (#476, SK-DIV-0352); null when the rule does not
+    ///     speak.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 one column at a time, the section ending at 96 to 120
+    ///     (#476, SK-DIV-0352): parameters of 12 to 39 columns, indents 8 to 24, attribute names putting the
+    ///     <c>(</c> 2 to 17 columns past the <c>[</c>, string, integer, <c>typeof</c> and member arguments, two to four
+    ///     of them. The arguments chop exactly when the joined line overflows,
+    ///     <c>24·E ≥ 1695 + 32·w + 11·i + 12·h</c> and <c>5·w + 2·i − h ≤ 155</c>: 5 757 of 5 773 cells over six
+    ///     probes, the last written after the rule and matching 1 284 of 1 288. Neither what the arguments are nor
+    ///     what chopping them saves enters it; the <c>(</c>'s column does. The 16 misses are a threshold that rises
+    ///     faster than the line next to the second condition's edge, where the oracle keeps the section whole a few
+    ///     columns longer. Only for a section that starts its line, which is what was measured: a chopped list.
+    /// </remarks>
+    ResolvedMode? ChopsBeforeTheParameter(in GroupFacts facts, in Measures m, int lineStart) {
+        if (m.Column != lineStart + facts.SectionHead) {
+            return null;
+        }
+
+        var end = lineStart + facts.SectionWidth;
+        var parameter = facts.ParameterAfterSection;
+        if (end > width || end + 1 + parameter <= width) {
+            return null;
+        }
+
+        return 5 * parameter + 2 * lineStart - facts.SectionHead <= 155
+            && 24 * end >= 1695 + 32 * parameter + 11 * lineStart + 12 * facts.SectionHead
+                ? ResolvedMode.Broken
+                : ResolvedMode.Flat;
     }
 
     /// <summary>What a <see cref="GroupMode.Preserve" /> group whose source was broken does with the break.</summary>

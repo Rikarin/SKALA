@@ -685,6 +685,7 @@ public sealed class BreakPlan {
                     wrapBeforeOpen: options.WrapBeforeInvocationLpar
                 );
 
+                PlanSectionBeforeALongParameter(attributeArguments);
                 return;
             }
 
@@ -5926,6 +5927,55 @@ public sealed class BreakPlan {
     ///     second pass what it measured flat. See <see cref="GroupFacts.ValueHeadWidth" /> (#553).
     /// </summary>
     int FormattedWidth(SyntaxNode node) => FormattedWidth(node.GetFirstToken(), node.GetLastToken());
+
+    /// <summary>
+    ///     The arguments of a parameter's one attribute section, two or more of them, in front of a parameter
+    ///     wider than eleven columns: they chop by the measured rule rather than by their own fit (#476,
+    ///     SK-DIV-0352). See <see cref="GroupFacts.ParameterAfterSection" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Eleven columns and narrower is <see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />'s
+    ///     rule, which reads the parameter through. A one-argument section is not this rule's: <c>[A("…")]</c> and
+    ///     <c>[Description("…")]</c> in front of 12 to 20 columns stand alone above the parameter at nearly every width.
+    ///     Nor a named argument, which chops later (<c>DiagnosticId = "X"</c>: from 113 behind a 13-column parameter
+    ///     at indent 8, never at 20), nor a parameter with a default value, whose <c>=</c> breaks instead.
+    ///     Widths are the formatter's (<see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />), and a comment
+    ///     anywhere in the section or the parameter, or a break inside the parameter, leaves the list to its own fit.
+    /// </remarks>
+    void PlanSectionBeforeALongParameter(AttributeArgumentListSyntax arguments) {
+        if (options.KeepExistingInvocationParensArrangement
+            || arguments.Arguments.Count < 2
+            || arguments.Arguments.Any(static argument => argument.NameEquals is not null || argument.NameColon is not null)
+            || arguments.Parent is not AttributeSyntax { Parent: AttributeListSyntax { Attributes.Count: 1 } section }
+            || section.Parent is not ParameterSyntax { Parent: ParameterListSyntax, AttributeLists: [_], Default: null } parameter
+            || CSharpDocumentBuilder.IsAShortParameterBehindItsSection(parameter)) {
+            return;
+        }
+
+        var first = section.CloseBracketToken.GetNextToken();
+        var last = parameter.GetLastToken();
+        if (first.SpanStart > parameter.Span.End
+            || source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny('\r', '\n') >= 0
+            || section.DescendantTrivia().Concat(parameter.DescendantTrivia(Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(first.SpanStart, parameter.Span.End)))
+                .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia))
+            || !groups.TryGetValue(Key(arguments), out var plans)
+            || plans.Count == 0) {
+            return;
+        }
+
+        var plan = plans[^1] with {
+            Facts = plans[^1].Facts with {
+                ParameterAfterSection = FormattedWidth(first, last),
+                SectionHead = FormattedWidth(section.OpenBracketToken, arguments.OpenParenToken) - 1,
+                SectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken)
+            }
+        };
+        plans[^1] = plan;
+        byId[plan.Id] = plan;
+    }
 
     /// <summary>
     ///     The width from <paramref name="first" /> through <paramref name="last" /> as the formatter writes it

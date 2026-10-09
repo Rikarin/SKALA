@@ -1369,6 +1369,16 @@ public sealed class Document {
 ///     through the <c>;</c>. The dot breaks exactly when the operand alone runs past the margin and that line
 ///     fits at the continuation column; otherwise the keyword's own band answers.
 /// </param>
+/// <param name="ParameterAfterSection">
+///     ⚠ A parameter's one attribute section with two or more positional arguments, in front of a parameter wider
+///     than eleven columns (#476, SK-DIV-0352): the parameter's width <c>w</c>. The arguments chop, with the
+///     parameter below them, exactly when the joined line overflows, <c>24·E ≥ 1695 + 32·w + 11·i + 12·h</c> and
+///     <c>5·w + 2·i − h ≤ 155</c> — <c>E</c> the column the section's <c>]</c> ends at, <c>i</c> the section's column,
+///     <c>h</c> the width from its <c>[</c> to its <c>(</c>. Otherwise the section stays whole and the parameter goes
+///     below it alone. See <c>Fitter.ChopsBeforeTheParameter</c>.
+/// </param>
+/// <param name="SectionHead">With <see cref="ParameterAfterSection" />: the width from the <c>[</c> to the <c>(</c>.</param>
+/// <param name="SectionWidth">With <see cref="ParameterAfterSection" />: the section's flat width, <c>[</c> to <c>]</c>.</param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1447,7 +1457,10 @@ public readonly record struct GroupFacts(
     int LiftGroup = -1,
     bool LiftsIfArrowBreaks = false,
     bool DraftsBroken = false,
-    int TypeTestTail = 0);
+    int TypeTestTail = 0,
+    int ParameterAfterSection = 0,
+    int SectionHead = 0,
+    int SectionWidth = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
