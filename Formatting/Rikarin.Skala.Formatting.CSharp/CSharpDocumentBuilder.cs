@@ -1363,12 +1363,24 @@ public sealed partial class CSharpDocumentBuilder {
             HoldContinuationLevel();
         }
 
+        // ⚠ A switch arm's lift for an arrow broken for width (GroupFacts.LiftsIfArrowBreaks): its level is
+        // held while it stays flat and is never the builder's continuation, so the arm's own groups — the
+        // arrow's, the `when` condition's of #576 — still spend theirs. Counted, a held level left them none
+        // (arm-when-condition-below's `D`). Broken, the writer holds the arrow's level instead.
+        if (indented > 0 && planned.Facts.LiftsIfArrowBreaks) {
+            doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileOwnerFlat, -1);
+            return (LiftLevel, false);
+        }
+
         for (var level = 0; level < indented; level++) {
             OpenContinuation(planned, level);
         }
 
         return (indented, held);
     }
+
+    /// <summary><see cref="OpenGroupAt" />'s answer for a lift group's level, which no continuation counts.</summary>
+    const int LiftLevel = -1;
 
     /// <summary>
     ///     Opens one of the continuation levels a group spends — the first as a held level while the
@@ -1427,6 +1439,10 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     void CloseGroupAt((int Indented, bool Held) opened) {
+        if (opened.Indented == LiftLevel) {
+            doc.Close();
+        }
+
         for (var level = 0; level < opened.Indented; level++) {
             CloseIndent(IndentKind.Continuous);
         }

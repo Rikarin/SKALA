@@ -10957,6 +10957,14 @@ Pinned by `constructs/breaks/arm-braces-under-an-arrow-broken-for-width.cs`. ⚠
 `=> Cast<IReadOnlyDictionary<(…), (…)>, TimeSpan>(…)` the oracle breaks inside the tuple type and keeps the arrow
 (SK-DIV-0024's family). Skala breaks after the arrow and now lifts the braces. Both passes agree (open).
 
+⚠ **Fuzz 18207060042734210187.** The same rule holds for a `when` clause without braces. For `not null when ("ss"` /
+`?? "…" + "…" - "…")` / `=> …,` the oracle puts the `??` two levels past the arm and chops the chain. The arrow
+broke for width there, exactly as under a kept break. Measured 2026-10-09 with `Testing ask`. The checked shapes
+agree: an `&&`/`||` chain with the arrow beside it, `when Compute(` chopped, and the braces shapes above. The lift
+group now covers every arm whose kept arrow break opens the arm's level at the pattern. Its level is held while it
+stays flat, and the builder never counts it as a continuation. While it is broken, the writer holds the arrow
+group's level. Pinned by `constructs/breaks/arm-when-chain-under-an-arrow-broken-for-width.cs`.
+
 - ⚠ status: **resolved** (#576) for the cut-down shapes, pinned by `constructs/breaks/arm-when-condition-below.cs`;
   **open** for the seed's whole line.
 

@@ -124,6 +124,10 @@ public sealed class FuzzRegressionTests {
     // width break now lifts the braces too — decided with the arm written ahead unlifted, and kept once the
     // lift moved what was beside it.
     [InlineData(14973596429632421881UL)]
+    // `not null when ("ss"` / `?? "…" + "…" - "…")` / `=> …,` in a `using` header: pass one broke the arrow for
+    // width, pass two read it as kept, opened the arm's level at the pattern and lifted and chopped the chain.
+    // Every arm a kept arrow break lifts from its pattern now lifts under the width's break too.
+    [InlineData(18207060042734210187UL)]
     // Nightly, 6 hits in 81k cases: `}, ["s"` / `#region fuzz` / `, false, …]` in an array initializer. The
     // draft measure read the breaks beside the directive as spaces, so pass one moved the collection down
     // whole and pass two, measuring its own broken output, kept `}, [`. A break beside a directive is no

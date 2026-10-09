@@ -23,6 +23,7 @@ public sealed class GroupLRoundTwoFixtureTests {
     [InlineData("breaks/arm-when-condition-below.cs")]
     [InlineData("breaks/arm-body-without-a-break-point.cs")]
     [InlineData("breaks/arm-braces-under-an-arrow-broken-for-width.cs")]
+    [InlineData("breaks/arm-when-chain-under-an-arrow-broken-for-width.cs")]
     public void TheFixture_ComesBackAsTheOracleWritesIt(string fixture) {
         var root = Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Testing", "corpus", "constructs");
         var source = File.ReadAllText(Path.Combine(root, fixture)).Replace("\r\n", "\n", StringComparison.Ordinal);
