@@ -936,7 +936,10 @@ public sealed class BreakPlan {
 
                 // ⚠ Broken after its `[`, the oracle never joins it: `alpha, [` / `1, 2, 3` / `]` comes back as
                 // written however short (measured 2026-10-09). See GroupFacts.DraftsBroken.
-                if (BreaksBefore(FirstToken(collection.Elements[0]))
+                // ⚠ Nor one broken only before its `]` (Nightly fuzz, case 5848915233203857901): the oracle
+                // breaks it after its `[` as well and keeps `), [` / elements / `]`, so pass one, which writes
+                // that break, must draft it as pass two reads it.
+                if ((BreaksBefore(FirstToken(collection.Elements[0])) || BreaksBefore(collection.CloseBracketToken))
                     && groups.TryGetValue(Key(node), out var listPlans)
                     && listPlans.Count > 0) {
                     var listPlan = listPlans[^1] with { Facts = listPlans[^1].Facts with { DraftsBroken = true } };
