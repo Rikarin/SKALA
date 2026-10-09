@@ -11050,6 +11050,22 @@ defect (group F's), not the arrow's.
 - options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
 - ⚠ status: **fixed** for the arrow, pinned by `constructs/wrapping/lambda-arrow-over-a-sole-chain.cs`.
 
+⚠ **The same arrow when the lambda is not a sole argument, with a receiver past the margin (fuzz
+16278079796336422477).** A tuple element `(((…) x) => builder.Length(…).First(…).Items(…))` had its arrow ending
+at column 113. Elsewhere the arrow breaks only when the body fits below, and here it did not. So Skala kept
+`=> builder`, which ends at 121, and broke at the first dot. Pass two read that break as the author's and broke
+the arrow.
+
+Measured on 2026-10-09 with `Testing ask` on 135 lambdas whose call-chain body never fits below: among a call's
+arguments, in a tuple, and in a chopped tuple, with the arrow ending at 50 to 117 and the chain's first call
+23 to 63 columns wide. The oracle breaks the arrow in exactly the 10 rows where `=> builder` ends past 120, and
+then keeps `builder.Length(…)` together. Skala matched the other 125 rows already, and now matches all 135
+(`GroupFacts.BreaksIfReceiverOverflows`). Pinned by `ArrowOverAChainReceiverTests`.
+
+In the fuzz case's own method, the lambda and chain lines are now the oracle's. The method's header still
+differs: the oracle breaks `Guid?` / `M30<…>(` and moves `p31` below its type. That is a separate divergence,
+and both passes agree on it.
+
 ⚠ **Round 5's other two issues, refuted rather than fixed:**
 - **#573**, a lambda parameter's type/name break. All 36 of round 4's cells where the oracle writes
   `T…` / `p0` match on master. They still differ at 79f15491 (group F round 3) and match from 26321000
