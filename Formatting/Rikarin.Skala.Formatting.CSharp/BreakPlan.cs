@@ -2759,9 +2759,7 @@ public sealed class BreakPlan {
     /// </remarks>
     void PlanPropertyHead(PropertyDeclarationSyntax node) {
         if (node.Type.DescendantTrivia()
-                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                )
+                .Any(static trivia => IsBlockComment(trivia) || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
             || HasBlockCommentBefore(node.Identifier)
             || node.ExplicitInterfaceSpecifier is not null) {
             return;
@@ -2846,9 +2844,7 @@ public sealed class BreakPlan {
         var name = node.Variables[0].Identifier;
         if (HasBlockCommentBefore(name)
             || node.Type.DescendantTrivia()
-                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                )) {
+                .Any(static trivia => IsBlockComment(trivia) || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))) {
             return;
         }
 
@@ -3006,9 +3002,7 @@ public sealed class BreakPlan {
             || node.Parent is not (ParameterListSyntax or BracketedParameterListSyntax)
             || HasBlockCommentBefore(node.Identifier)
             || node.Type.DescendantTrivia()
-                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                )) {
+                .Any(static trivia => IsBlockComment(trivia) || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))) {
             return;
         }
 
@@ -3078,10 +3072,23 @@ public sealed class BreakPlan {
     }
 
     static bool HasBlockCommentBefore(SyntaxToken token) =>
-        token.LeadingTrivia.Concat(token.GetPreviousToken().TrailingTrivia)
-            .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
-            );
+        token.LeadingTrivia.Concat(token.GetPreviousToken().TrailingTrivia).Any(IsBlockComment);
+
+    /// <summary>
+    ///     A <c>/* */</c> comment, or a <c>/** */</c> one — which Roslyn reads as documentation wherever it stands
+    ///     and the formatter writes exactly as a block comment (SK-DIV-0363).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Every test for a block comment goes through here. A dozen tested <c>MultiLineCommentTrivia</c> alone,
+    ///     and each was a place where <c>/** d */</c> slipped through as no comment at all: the held value's width
+    ///     (1267273925188459665), the call floor's comment test (10014018092937601535) and the gap between an
+    ///     attribute list and the parameter after it (Nightly <c>fuzz --seed=55</c>, case 7447388608888272285).
+    ///     Measure one by <see cref="SyntaxTrivia.FullSpan" />: a documentation comment's <c>/**</c> is exterior
+    ///     trivia, outside its <c>Span</c>.
+    /// </remarks>
+    static bool IsBlockComment(SyntaxTrivia trivia) =>
+        trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+        || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia);
 
     /// <summary>
     ///     <c>skala_wrap_chained_method_calls = chop_if_long</c>: every <c>.</c> of a chain that does not fit
@@ -3361,8 +3368,8 @@ public sealed class BreakPlan {
     /// </remarks>
     static int TrailingCommentWidth(SyntaxToken token) {
         foreach (var trivia in token.TrailingTrivia) {
-            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
-                return 1 + trivia.Span.Length;
+            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || IsBlockComment(trivia)) {
+                return 1 + trivia.FullSpan.Length;
             }
         }
 
@@ -3848,9 +3855,7 @@ public sealed class BreakPlan {
 
         if (!name.IsKind(SyntaxKind.None)
             && !name.LeadingTrivia.Concat(name.GetPreviousToken().TrailingTrivia)
-                .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                    || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                )) {
+                .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || IsBlockComment(trivia))) {
             Flat(name);
         }
     }
@@ -5949,9 +5954,7 @@ public sealed class BreakPlan {
         // `=`, where #528's held-value width missed the comment as it once missed `/* */`). ⚠ Its full span:
         // the `/**` is the structure's exterior trivia, outside the trivia's `Span`.
         foreach (var trivia in previous.TrailingTrivia.Concat(token.LeadingTrivia)
-                     .Where(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                         || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
-                     )) {
+                     .Where(IsBlockComment)) {
             width += trivia.FullSpan.Length + 1;
         }
 
@@ -6602,8 +6605,7 @@ public sealed class BreakPlan {
 
     static bool IsInBlockComment(SyntaxTriviaList trivia, int position) {
         foreach (var piece in trivia) {
-            if (piece.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                || piece.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {
+            if (IsBlockComment(piece)) {
                 if (piece.FullSpan.Contains(position)) {
                     return true;
                 }
@@ -8178,7 +8180,9 @@ public sealed class BreakPlan {
     /// </remarks>
     void PlanPastLeadingComments(SyntaxNode root) {
         foreach (var token in root.DescendantTokens(static node => node is not StructuredTriviaSyntax)) {
-            if (!token.TrailingTrivia.Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))) {
+            // ⚠ Or the next token's leading trivia: a `/** d */` after the `(` is always the next token's, being
+            // documentation to Roslyn, where a `/* d */` on the same line is the `(`'s trailing trivia (SK-DIV-0363).
+            if (!token.TrailingTrivia.Any(IsBlockComment) && !token.GetNextToken().LeadingTrivia.Any(IsBlockComment)) {
                 continue;
             }
 
@@ -8231,7 +8235,8 @@ public sealed class BreakPlan {
                 switch (piece.Kind()) {
                     case SyntaxKind.WhitespaceTrivia:
                         continue;
-                    case SyntaxKind.MultiLineCommentTrivia when piece.ToString().AsSpan().IndexOfAny('\n', '\r') < 0:
+                    case SyntaxKind.MultiLineCommentTrivia or SyntaxKind.MultiLineDocumentationCommentTrivia
+                        when piece.ToFullString().AsSpan().IndexOfAny('\n', '\r') < 0:
                         continue;
                     default:
                         return false;
@@ -8439,6 +8444,13 @@ public sealed class BreakPlan {
     ///     </para>
     /// </remarks>
     void PlanAttributes(SyntaxNode node) {
+        // ⚠ A method's or a lambda's parameter is no placement key's, but the comment after its last attribute
+        // section ends the line as a field's does (Nightly `fuzz --seed=55`, case 7447388608888272285).
+        if (node is ParameterSyntax { AttributeLists.Count: > 0, Parent.Parent: not TypeDeclarationSyntax } plain) {
+            PlanCommentedAttributeGap(node, plain.AttributeLists);
+            return;
+        }
+
         var lists = node switch {
             MemberDeclarationSyntax member => member.AttributeLists,
             LocalFunctionStatementSyntax local => local.AttributeLists,
@@ -8548,8 +8560,15 @@ public sealed class BreakPlan {
     ///     at one to three columns past and joined from there, nor an auto-property's initializer, always
     ///     joined: no reading of the overflow alone covers them, so they stay the author's.
     /// </remarks>
+    /// <remarks>
+    ///     ⚠ And a method's parameter (Nightly <c>fuzz --seed=55</c>, case 7447388608888272285): measured 2026-10-09
+    ///     with <c>Testing ask</c>, <c>[NotNull] /* d */ T p</c> and <c>[InlineArray(8)] /** d */ T p</c> in a chopped
+    ///     parameter list come back with the attribute and the comment on their line and the parameter below,
+    ///     at the parameter's own column, whenever the joined line overflows; joined while it fits. Skala kept
+    ///     them joined and broke the attribute's own argument list to make room, and pass two joined that back.
+    /// </remarks>
     void PlanCommentedAttributeGap(SyntaxNode node, SyntaxList<AttributeListSyntax> lists) {
-        if (node is not (FieldDeclarationSyntax or EventFieldDeclarationSyntax)) {
+        if (node is not (FieldDeclarationSyntax or EventFieldDeclarationSyntax or ParameterSyntax)) {
             return;
         }
 
@@ -8558,7 +8577,7 @@ public sealed class BreakPlan {
         if (next.IsKind(SyntaxKind.None)
             || BreaksBefore(next)
             || !close.TrailingTrivia.Concat(next.LeadingTrivia)
-                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))
+                .Any(IsBlockComment)
             || BreaksInsideTheSignature(node, next)) {
             return;
         }
@@ -9284,9 +9303,7 @@ public sealed class BreakPlan {
         }
 
         foreach (var trivia in open.TrailingTrivia.Concat(close.LeadingTrivia)) {
-            if ((trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia))
-                && trivia.ToFullString().Contains('\n')) {
+            if (IsBlockComment(trivia) && trivia.ToFullString().Contains('\n')) {
                 Mandatory(close);
                 return;
             }
@@ -9310,9 +9327,7 @@ public sealed class BreakPlan {
         }
 
         foreach (var trivia in comma.LeadingTrivia.Concat(comma.GetPreviousToken().TrailingTrivia)) {
-            if ((trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia))
-                && trivia.ToFullString().Contains('\n')) {
+            if (IsBlockComment(trivia) && trivia.ToFullString().Contains('\n')) {
                 return true;
             }
         }

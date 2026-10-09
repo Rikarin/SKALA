@@ -11250,7 +11250,22 @@ two tokens is `MultiLineDocumentationCommentTrivia`, not `MultiLineCommentTrivia
 The same line with `/* d */` agrees. Both are stable. The `=` floor's own comment test is fixed
 (`CommentAfterTheParen`); the argument list's points are not.
 
-- ⚠ status: **open**.
+**Resolved in group I's round 5** (Nightly `fuzz --seed=55`, case 7447388608888272285). Every block-comment
+test in `BreakPlan` now goes through `IsBlockComment`, which also accepts `MultiLineDocumentationCommentTrivia`,
+and a comment's width is now counted from its `FullSpan`. `PlanPastLeadingComments` also reads the next token's
+leading trivia, which is where a `/** */` after the `(` lives.
+
+Results:
+- The 168-row grid that found this agrees with the oracle on every row and is idempotent.
+- `DocumentationStyleCommentNightlyTests` pins that ten shapes lay out alike with `/* dd */` and `/** d */`
+  (the two comments are the same width).
+
+Left as they were, and not block-comment width tests:
+- `IntAlign`'s trailing-comment alignment;
+- the formatter-tag scan in `CSharpDocumentBuilder.IsCaptured`;
+- `BlankLines`' comment runs, where a `/** */` before a member is a real doc comment.
+
+- ⚠ status: **resolved** for the layout rules.
 
 ## SK-DIV-0364 — an author's break before a comma in a collection expression: the oracle joins it
 

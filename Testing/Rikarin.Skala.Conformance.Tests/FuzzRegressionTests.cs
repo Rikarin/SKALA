@@ -93,6 +93,7 @@ public sealed class FuzzRegressionTests {
     [InlineData(9642682992700587520UL)]
     [InlineData(7862808234978504853UL)]
     [InlineData(8573762464065711162UL)]
+    [InlineData(7447388608888272285UL)]
     [InlineData(3776683644240416092UL)]
     [InlineData(11325995557757886152UL)]
     // `fuzz --seed=7777`: `get => state is (` / `{ Length: > 0 }, ImmutableArray<object?> typed56);`. The
@@ -109,6 +110,11 @@ public sealed class FuzzRegressionTests {
     // arrow's break kept, lifted the chopped brackets. The oracle reads a body through only up to thirteen
     // columns and breaks after the arrow for a wider one.
     [InlineData(14071685607328961301UL)]
+    // `object` / `C(…) =>` / an arm `… when M(…)` / `=> body` whose arrow broke for width: pass two read the
+    // arrow break as kept, opened the arm's group at its pattern before the arm's frame had started, and the
+    // level was asked of the member's frame, already spent by its broken header — the arrow fell to the arm's
+    // column. A group opened at its node's first token now starts the node's frame first.
+    [InlineData(11550439650966795547UL)]
     // Nightly, 6 hits in 81k cases: `}, ["s"` / `#region fuzz` / `, false, …]` in an array initializer. The
     // draft measure read the breaks beside the directive as spaces, so pass one moved the collection down
     // whole and pass two, measuring its own broken output, kept `}, [`. A break beside a directive is no
