@@ -3318,6 +3318,22 @@ public sealed class BreakPlan {
     static int WidthOfNext(SyntaxNode node, SyntaxKind kind) => node.GetLastToken().GetNextToken().IsKind(kind) ? 1 : 0;
 
     /// <summary>
+    ///     The <c>;</c> after a value, with the gap before it as the formatter writes it, or zero when no <c>;</c>
+    ///     follows.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A block comment between the value's <c>)</c> and its <c>;</c> rides on the value's line (Nightly
+    ///     <c>fuzz --seed=20261009</c>, case 10944625209729174497): <c>… = Call&lt;T&gt;(json) /* f */;</c> measured
+    ///     without it let #528's held-value table keep the <c>=</c> and chop the arguments; pass two, with them
+    ///     chopped, broke the <c>=</c>.
+    /// </remarks>
+    int WidthThroughSemicolon(SyntaxNode node) {
+        var last = node.GetLastToken();
+        var next = last.GetNextToken();
+        return next.IsKind(SyntaxKind.SemicolonToken) ? GapWidth(last, next) + 1 : 0;
+    }
+
+    /// <summary>
     ///     The width a line comment after <paramref name="token" /> adds to its line, with the space before it,
     ///     or zero.
     /// </summary>
@@ -5433,7 +5449,7 @@ public sealed class BreakPlan {
         // its `=` in the oracle where the same condition written flat breaks it (Skala's own source, Lint).
         var conditionHead = owner != EqualsOwner.None
             && value is ConditionalExpressionSyntax conditional
-            && !HasLooseBreak(conditional.Condition)
+            && !HasLooseBreak(conditional.Condition, true)
             && conditional.Condition is not (IsPatternExpressionSyntax
                 or BinaryExpressionSyntax { RawKind: (int)SyntaxKind.IsExpression or (int)SyntaxKind.AsExpression })
                 ? FlatSourceWidth(conditional.Condition)
@@ -5544,7 +5560,7 @@ public sealed class BreakPlan {
                     HeldValueWidth: heldCall is null
                         ? 0
                         : FlatSourceWidth(value)
-                        + WidthOfNext(value, SyntaxKind.SemicolonToken)
+                        + WidthThroughSemicolon(value)
                         + TrailingCommentWidth(value.GetLastToken().GetNextToken()),
                     HeldValueReceiver: heldReceiver,
                     HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
@@ -5790,7 +5806,7 @@ public sealed class BreakPlan {
     ///     Whether a node holds a line break that <see cref="FlatSourceWidth" /> reads as a space: anywhere
     ///     but before a <c>.</c>, a <c>?</c>, a <c>)</c> or a <c>]</c>, or after a <c>(</c>, a <c>[</c> or a <c>.</c>.
     /// </summary>
-    static bool HasLooseBreak(SyntaxNode node) {
+    bool HasLooseBreak(SyntaxNode node, bool joinsBlocks = false) {
         var first = true;
         foreach (var token in node.DescendantTokens()) {
             if (!first) {
@@ -5798,7 +5814,9 @@ public sealed class BreakPlan {
                 // ⚠ After a dot too: the formatter joins `n.` / `Name`, so a condition the author broke
                 // there reads as one written on one line, or pass two answers differently (fuzz seed
                 // 3423309597191150844).
-                var glued = IsGluedGap(previous, token) || previous.IsKind(SyntaxKind.DotToken);
+                var glued = IsGluedGap(previous, token)
+                    || previous.IsKind(SyntaxKind.DotToken)
+                    || joinsBlocks && InsideAJoinableBlock(previous, token);
                 if (SourceBreaksBetween(previous, token) && !glued) {
                     return true;
                 }
@@ -5808,6 +5826,32 @@ public sealed class BreakPlan {
         }
 
         return false;
+    }
+
+    /// <summary>
+    ///     Whether the gap is the one after a single-statement block's <c>{</c> or before its <c>}</c>, in a block
+    ///     the formatter puts back on one line (<see cref="MayShareItsOwnersLine" />): a lambda's
+    ///     <c>{</c> / <c>return x;</c> / <c>}</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Read as glued for a conditional's condition (Nightly <c>fuzz --seed=20261009</c>, case
+    ///     8573762464065711162, through its flipped <c>1 .. ^2</c>): <c>new bool(((x, y) =&gt; {</c> / <c>return …;</c>
+    ///     / <c>})) ? a : b</c> came back with the block on one line, but the break turned #553's condition rule
+    ///     away, the ordering rule's fitted margin kept the <c>=</c>, and pass two — the block now on one line —
+    ///     read the condition, broke the <c>=</c>, and gave the oracle's answer for both inputs.
+    /// </remarks>
+    bool InsideAJoinableBlock(SyntaxToken previous, SyntaxToken token) {
+        var block = previous.IsKind(SyntaxKind.OpenBraceToken) ? previous.Parent as BlockSyntax
+            : token.IsKind(SyntaxKind.CloseBraceToken) ? token.Parent as BlockSyntax
+            : null;
+        // ⚠ Not a sole lambda argument's: `Check(x => {` / `return …;` / `})` keeps its block open and its call
+        // on the `=`'s line in the oracle, the way a sole lambda hugs its call (measured on the same grid).
+        return block is { Statements.Count: 1 }
+            && (previous == block.OpenBraceToken || token == block.CloseBraceToken)
+            && block.Parent is not AnonymousFunctionExpressionSyntax {
+                Parent: ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } }
+            }
+            && MayShareItsOwnersLine(block);
     }
 
     /// <summary>
