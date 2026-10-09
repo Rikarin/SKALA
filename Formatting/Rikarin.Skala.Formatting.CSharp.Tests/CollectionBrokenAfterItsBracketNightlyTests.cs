@@ -25,54 +25,54 @@ public sealed class CollectionBrokenAfterItsBracketNightlyTests {
     }
 
     const string Source = """
-        class C {
-            void M() {
-                var a = new[] { Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"), [
-        57926, "sssssssssssssssssssssss", "sssssssssss", true, "sssssssssssssssssssssssssss", SourceXYZ], (null ? "ss" : 1.5d), [] };
-                var b = new[] { alpha, [
-        1, 2, 3], beta };
-                var c = new[] { Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"), [
-        57926, "sss", SourceXYZ], gamma };
-                var d = new[] { Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"), [57926, "sssssssssssssssssssssss", "sssssssssss", true, "sssssssssssssssssssssssssss", SourceXYZ], (null ? "ss" : 1.5d), [] };
-                var e = new[] { Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"), Compute(
-        57926, "sssssssssssssssssssssss", "sssssssssss", true, "sssssssssssssssssssssssssss", Source), gamma };
-            }
-        }
-        """;
+                          class C {
+                              void M() {
+                                  var a = new[] { Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"), [
+                          57926, "sssssssssssssssssssssss", "sssssssssss", true, "sssssssssssssssssssssssssss", SourceXYZ], (null ? "ss" : 1.5d), [] };
+                                  var b = new[] { alpha, [
+                          1, 2, 3], beta };
+                                  var c = new[] { Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"), [
+                          57926, "sss", SourceXYZ], gamma };
+                                  var d = new[] { Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"), [57926, "sssssssssssssssssssssss", "sssssssssss", true, "sssssssssssssssssssssssssss", SourceXYZ], (null ? "ss" : 1.5d), [] };
+                                  var e = new[] { Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"), Compute(
+                          57926, "sssssssssssssssssssssss", "sssssssssss", true, "sssssssssssssssssssssssssss", Source), gamma };
+                              }
+                          }
+                          """;
 
     const string Oracle = """
-        class C {
-            void M() {
-                var a = new[] {
-                    Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"), [
-                        57926, "sssssssssssssssssssssss", "sssssssssss", true, "sssssssssssssssssssssssssss", SourceXYZ
-                    ],
-                    (null ? "ss" : 1.5d), []
-                };
-                var b = new[] {
-                    alpha, [
-                        1, 2, 3
-                    ],
-                    beta
-                };
-                var c = new[] {
-                    Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"), [
-                        57926, "sss", SourceXYZ
-                    ],
-                    gamma
-                };
-                var d = new[] {
-                    Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"),
-                    [57926, "sssssssssssssssssssssss", "sssssssssss", true, "sssssssssssssssssssssssssss", SourceXYZ],
-                    (null ? "ss" : 1.5d), []
-                };
-                var e = new[] {
-                    Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"),
-                    Compute(57926, "sssssssssssssssssssssss", "sssssssssss", true, "sssssssssssssssssssssssssss", Source), gamma
-                };
-            }
-        }
-        """;
+                          class C {
+                              void M() {
+                                  var a = new[] {
+                                      Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"), [
+                                          57926, "sssssssssssssssssssssss", "sssssssssss", true, "sssssssssssssssssssssssssss", SourceXYZ
+                                      ],
+                                      (null ? "ss" : 1.5d), []
+                                  };
+                                  var b = new[] {
+                                      alpha, [
+                                          1, 2, 3
+                                      ],
+                                      beta
+                                  };
+                                  var c = new[] {
+                                      Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"), [
+                                          57926, "sss", SourceXYZ
+                                      ],
+                                      gamma
+                                  };
+                                  var d = new[] {
+                                      Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"),
+                                      [57926, "sssssssssssssssssssssss", "sssssssssss", true, "sssssssssssssssssssssssssss", SourceXYZ],
+                                      (null ? "ss" : 1.5d), []
+                                  };
+                                  var e = new[] {
+                                      Resolve("sssssssssssssssssssssssssssss", "ssssssssssss", true, name9: x10 => "sssssssssssssssssss"),
+                                      Compute(57926, "sssssssssssssssssssssss", "sssssssssss", true, "sssssssssssssssssssssssssss", Source), gamma
+                                  };
+                              }
+                          }
+                          """;
 
     [Fact]
     public void ACollectionBrokenAfterItsBracket_StaysBesideThePreviousElement() {
