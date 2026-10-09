@@ -401,6 +401,26 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ A wide-named local's `=` before a lambda over a call (#453 round 2): broken exactly by the
+                // measured reach and floor, read from the planner's widths so that a kept break inside the lambda
+                // on pass two does not change the answer. See GroupFacts.EqualsLambdaArguments.
+                if (facts.EqualsLambdaArguments > 0 && m.PointWidth < Unbounded) {
+                    var paren = m.Column + 1 + facts.EqualsLambdaValueHead + 1;
+                    if (paren + facts.EqualsLambdaArguments <= width) {
+                        return ResolvedMode.Flat;
+                    }
+
+                    return EqualsFloor.BreaksBeforeALambdaCall(
+                        facts.EqualsLambdaName,
+                        facts.EqualsLambdaType,
+                        m.Column,
+                        paren,
+                        facts.EqualsLambdaArguments
+                    )
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
+                }
+
                 // ⚠ An `=` before a lambda with a bare name for a body yields to the arrow while the line
                 // through `=>` fits. See GroupFacts.YieldsThroughArrow (#453).
                 if (facts.YieldsThroughArrow > 0
@@ -600,8 +620,8 @@ public sealed class Fitter {
                 if (facts.LambdaCallArguments > 0
                     && m.FlatWidth < Unbounded
                     && EqualsFloor.BreaksTheCallArrow(
-                        m.Column - facts.LambdaHead - 1,
-                        m.Column + facts.LambdaCallCallee + 2,
+                        m.Column - facts.LambdaHead - 1 + (facts.LambdaCallShift ? 8 : 0),
+                        m.Column + facts.LambdaCallCallee + 2 + (facts.LambdaCallShift ? 4 : 0),
                         facts.LambdaCallArguments,
                         facts.LambdaCallSingle
                     )) {

@@ -5553,6 +5553,8 @@ public sealed class BreakPlan {
         var heldReceiver = heldCall?.Expression is MemberAccessExpressionSyntax heldAccess
             ? FlatSourceWidth(heldAccess.Expression)
             : 0;
+        var wideLambdaCall = WideLambdaCallLocalOf(node, value);
+        var lambdaCall = (value as LambdaExpressionSyntax)?.ExpressionBody as InvocationExpressionSyntax;
         var head = -1;
         if ((yieldsToTheBracket || callee > 0)
             && EqualsHeadStartOf(node) is { RawKind: not 0 } headToken
@@ -5668,6 +5670,16 @@ public sealed class BreakPlan {
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
+                    EqualsLambdaName: wideLambdaCall is null
+                        ? 0
+                        : ((VariableDeclaratorSyntax)node.Parent!).Identifier.Span.Length,
+                    EqualsLambdaType: wideLambdaCall is null ? 0 : FormattedWidth(wideLambdaCall.Type),
+                    EqualsLambdaValueHead: wideLambdaCall is null || lambdaCall is null
+                        ? 0
+                        : FormattedWidth(value.GetFirstToken(), lambdaCall.ArgumentList.OpenParenToken.GetPreviousToken()),
+                    EqualsLambdaArguments: wideLambdaCall is null || lambdaCall is null
+                        ? 0
+                        : FormattedWidth(lambdaCall.ArgumentList),
                     CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner)
                 ),
                 true,
@@ -6276,14 +6288,19 @@ public sealed class BreakPlan {
     ///     ⚠ Measured on <c>Func&lt;T…&gt; name = () =&gt; Callee(x, y);</c> over type widths of 2 to 58,
     ///     name widths of 1 to 49, the body's <c>(</c> at the head's end and at columns 80 and 100, and
     ///     line ends of 121 to 150: no name of nine columns or fewer breaks the <c>=</c> in any cell. The
-    ///     arrow or the arguments take the break by Skala's own rules. Wider names break it by a rule that
-    ///     moves with the name, the type and the <c>(</c> separately, and that is not wired.
+    ///     arrow or the arguments take the break by Skala's own rules. Wider names break it by
+    ///     <c>EqualsFloor.BreaksBeforeALambdaCall</c> (round 2). ⚠ A field's single declarator too: of 1 559
+    ///     field cells (names 1 to 9, types 1 to 40, at indent 4) the oracle breaks the <c>=</c> in none, where
+    ///     Skala had broken it in 380.
     /// </remarks>
     static bool KeepsTheEqualsBeforeALambdaCall(SyntaxNode node, ExpressionSyntax value) =>
         value is LambdaExpressionSyntax { ExpressionBody: InvocationExpressionSyntax }
         && node is EqualsValueClauseSyntax {
             Parent: VariableDeclaratorSyntax {
-                Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: LocalDeclarationStatementSyntax }
+                Parent: VariableDeclarationSyntax {
+                    Variables.Count: 1,
+                    Parent: LocalDeclarationStatementSyntax or FieldDeclarationSyntax
+                }
             } declarator
         }
         && declarator.Identifier.Span.Length <= 9;
@@ -7240,7 +7257,10 @@ public sealed class BreakPlan {
                                             call.ArgumentList.OpenParenToken.GetPreviousToken()
                                         ),
                                         LambdaCallArguments: FormattedWidth(call.ArgumentList),
-                                        LambdaCallSingle: call.ArgumentList.Arguments.Count == 1
+                                        LambdaCallSingle: call.ArgumentList.Arguments.Count == 1,
+                                        LambdaCallShift: lambda.Parent is EqualsValueClauseSyntax {
+                                            Parent.Parent.Parent: FieldDeclarationSyntax
+                                        }
                                     )
                                     : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
@@ -7381,13 +7401,52 @@ public sealed class BreakPlan {
     ///     <see cref="KeepsTheEqualsBeforeALambdaCall" />), a call with two or more arguments, written on one
     ///     line; null otherwise. See <c>EqualsFloor.BreaksTheCallArrow</c>.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ Round 2 (#453): also a wide-named local, whose <c>=</c> decides first
+    ///     (<see cref="WideLambdaCallLocalOf" />); a field's single declarator of nine columns or fewer, which reads
+    ///     the floor eight columns of head and four of <c>(</c> later (<see cref="GroupFacts.LambdaCallShift" />);
+    ///     and an assignment statement to a target of four to nine columns — one of three or fewer always chops.
+    /// </remarks>
     InvocationExpressionSyntax? LocalLambdaCallOf(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
         body is InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 } call
-        && lambda.Parent is EqualsValueClauseSyntax equals
-        && KeepsTheEqualsBeforeALambdaCall(equals, lambda)
+        && lambda.Parent switch {
+            EqualsValueClauseSyntax equals => KeepsTheEqualsBeforeALambdaCall(equals, lambda)
+                || WideLambdaCallLocalOf(equals, lambda) is not null
+                || equals.Parent is VariableDeclaratorSyntax {
+                    Identifier.Span.Length: <= 9,
+                    Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: FieldDeclarationSyntax }
+                },
+            AssignmentExpressionSyntax {
+                RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
+                Parent: ExpressionStatementSyntax
+            } assignment => FormattedWidth(assignment.Left) is >= 4 and <= 9,
+            _ => false
+        }
         && lambda.Modifiers.Count == 0
         && source.AsSpan(lambda.SpanStart, lambda.Span.Length).IndexOfAny('\r', '\n') < 0
             ? call
+            : null;
+
+    /// <summary>
+    ///     A single-declarator local whose declarator name is ten columns or wider and whose value is a lambda
+    ///     over a call with an unnamed argument list (#453 round 2): its declaration, for the <c>=</c>'s measured
+    ///     reach and floor (<c>EqualsFloor.BreaksBeforeALambdaCall</c>); null otherwise.
+    /// </summary>
+    static VariableDeclarationSyntax? WideLambdaCallLocalOf(SyntaxNode node, ExpressionSyntax value) =>
+        value is LambdaExpressionSyntax {
+            ExpressionBody: InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 },
+            Modifiers.Count: 0
+        }
+        && node is EqualsValueClauseSyntax {
+            Parent: VariableDeclaratorSyntax {
+                Parent: VariableDeclarationSyntax {
+                    Variables.Count: 1,
+                    Parent: LocalDeclarationStatementSyntax
+                } declaration
+            } declarator
+        }
+        && declarator.Identifier.Span.Length >= 10
+            ? declaration
             : null;
 
     /// <summary>

@@ -1162,6 +1162,23 @@ public sealed class Document {
 ///     head's and the call's <c>(</c>'s columns; otherwise the head rule decides. With
 ///     <see cref="LambdaHead" /> and <see cref="LambdaCallCallee" />.
 /// </param>
+/// <param name="EqualsLambdaArguments">
+///     ⚠ The <c>=</c> of a single-declarator local named in ten columns or more, whose value is a lambda over a
+///     call: the call's argument list width, or zero for any other group (#453 round 2). With
+///     <see cref="EqualsLambdaName" />, <see cref="EqualsLambdaType" /> and <see cref="EqualsLambdaValueHead" />
+///     the <c>=</c> breaks exactly by <c>EqualsFloor.BreaksBeforeALambdaCall</c>, and otherwise stays for the
+///     arrow and the arguments to decide.
+/// </param>
+/// <param name="EqualsLambdaName">The declarator name's width. See <see cref="EqualsLambdaArguments" />.</param>
+/// <param name="EqualsLambdaType">The declared type's width. See <see cref="EqualsLambdaArguments" />.</param>
+/// <param name="EqualsLambdaValueHead">
+///     The value's width before the call's <c>(</c>: <c>() =&gt; Callee</c>. See <see cref="EqualsLambdaArguments" />.
+/// </param>
+/// <param name="LambdaCallShift">
+///     ⚠ A field's lambda: the floor is read with the head eight columns and the <c>(</c> four columns further
+///     right than they stand — fitted on 1 559 field cells at indent 4, 23 differing against 66 unshifted (#453
+///     round 2). See <see cref="LambdaCallArguments" />.
+/// </param>
 /// <param name="LambdaCallSingle">
 ///     The call has a single argument, whose floor is its own. See <see cref="LambdaCallArguments" />.
 /// </param>
@@ -1484,7 +1501,12 @@ public readonly record struct GroupFacts(
     int LambdaOperandPatternLeft = 0,
     int LambdaCallCallee = 0,
     int LambdaCallArguments = 0,
+    int EqualsLambdaName = 0,
+    int EqualsLambdaType = 0,
+    int EqualsLambdaValueHead = 0,
+    int EqualsLambdaArguments = 0,
     bool LambdaCallSingle = false,
+    bool LambdaCallShift = false,
     int MemberHeadWidth = 0,
     int PatternFirstWidth = 0,
     int ArmBodyTrail = 0,
