@@ -941,9 +941,18 @@ public sealed class BreakPlan {
                 // that break, must draft it as pass two reads it.
                 // ⚠ Nor one a line comment inside breaks (Nightly fuzz, case 6430242752800476221, #599): `[a, // c`
                 // / `b]` comes back `), [` / `a, // c` / `b` / `]` in the oracle, however short, as written or not.
-                if ((BreaksBefore(FirstToken(collection.Elements[0]))
-                        || BreaksBefore(collection.CloseBracketToken)
-                        || HoldsALineComment(collection))
+                // ⚠ The author's breaks are certain only while keep_user_linebreaks is; a line comment always is.
+                var keeps = options.KeepsUserBreaksBetweenItems;
+                if ((keeps && BreaksBefore(FirstToken(collection.Elements[0]))
+                        || keeps && BreaksBefore(collection.CloseBracketToken)
+                        || HoldsALineComment(collection)
+                        // ⚠ Nor one whose spread the author broke after its `..` (Nightly fuzz, case
+                        // 3601384071467948482): the oracle keeps `..` / `Source` as written, so the collection
+                        // is broken however short.
+                        || keeps
+                        && collection.Elements.Any(element =>
+                            element is SpreadElementSyntax spread && BreaksBefore(FirstToken(spread.Expression))
+                        ))
                     && groups.TryGetValue(Key(node), out var listPlans)
                     && listPlans.Count > 0) {
                     var listPlan = listPlans[^1] with { Facts = listPlans[^1].Facts with { DraftsBroken = true } };

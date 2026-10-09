@@ -152,6 +152,9 @@ public sealed class FuzzRegressionTests {
     // An array element `["s", // fuzz` / `…]` broken only by its line comment (#599): pass one drafted it flat and
     // moved its `[` down; pass two read the break after the `[` it had written and kept `…, [`, the oracle's answer.
     [InlineData(6430242752800476221UL)]
+    // `[null, ..` / `Source]` as an array element: the break after the spread's `..` is at none of the collection's
+    // own points, so the draft read it flat and pass one moved the `[` down; pass two kept `…, [`, the oracle's answer.
+    [InlineData(3601384071467948482UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

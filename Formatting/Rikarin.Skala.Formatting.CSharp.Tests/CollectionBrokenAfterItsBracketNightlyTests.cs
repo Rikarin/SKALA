@@ -172,6 +172,50 @@ public sealed class CollectionBrokenAfterItsBracketNightlyTests {
         }
         """";
 
+    // ⚠ Broken inside a spread, after its `..` (Nightly fuzz, case 3601384071467948482): the oracle keeps `..` /
+    // `Source` and so the collection broken, with its `[` beside the element before it. The break is at none of
+    // the collection's own points, which is why the draft read it as a space. Measured 2026-10-10 with `Testing
+    // ask` on 30 rows (breaks inside a spread, a binary, a call's arguments and after its `(`, before a `.`, a
+    // `?`, after an arrow, in a nested collection and a tuple; three positions).
+    const string SpreadSource = """
+        class C {
+            void M() {
+                var v01 = new[] { sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [null, ..
+          Source], (1.5d & 86887 || "ss" | 3_000_000L), Compute("sss"), _cache };
+                var v05 = new[] { sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [null, ..
+          Source, 1] };
+            }
+        }
+        """;
+
+    const string SpreadOracle = """
+        class C {
+            void M() {
+                var v01 = new[] {
+                    sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [
+                        null, ..
+                        Source
+                    ],
+                    (1.5d & 86887 || "ss" | 3_000_000L), Compute("sss"), _cache
+                };
+                var v05 = new[] {
+                    sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [
+                        null, ..
+                        Source,
+                        1
+                    ]
+                };
+            }
+        }
+        """;
+
+    [Fact]
+    public void ACollectionBrokenInsideASpread_StaysBesideThePreviousElement() {
+        var formatted = FormatWith(SpreadSource);
+        Assert.Equal(SpreadOracle + "\n", formatted);
+        Assert.Equal(formatted, FormatWith(formatted));
+    }
+
     [Fact]
     public void ACollectionBrokenByALineComment_StaysBesideThePreviousElement() {
         var formatted = FormatWith(CommentSource);
