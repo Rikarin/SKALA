@@ -795,8 +795,13 @@ public sealed partial class CSharpDocumentBuilder {
                     // that group, which knows whether the chain spends one — under `=>` it does, as a whole
                     // `if` condition it does not (#584). An author's break after a comment in front of an
                     // `or` is no point of the group and reaches the frame instead.
+                    // ⚠ And a chain whose group takes its level from its line (#557, #582): that scope is
+                    // the chain's level, and an author's break kept after one of its fill breaks paid a
+                    // second — `U((first) => first.A…India` / `.Juliett` / `.Kilo.Lima` put `.Kilo` a level
+                    // past `.Juliett`, and pass two moved it back (fuzz seed 6109074167501724172).
                     HoldsLevel: IsChainRoot(node) && BreakPlan.HeadSharesTheLevelAroundIt(node)
-                    || IsPatternChainRoot(node) && plan.GroupsOf(node).Count > 0,
+                    || IsPatternChainRoot(node) && plan.GroupsOf(node).Count > 0
+                    || IsChainRoot(node) && plan.GroupsOf(node).Any(static group => group.FromLine),
 
                     // ⚠ And a chain pays its level once. The group half — PlanChainedCalls' OwnLevel —
                     // opens a continuation scope over the whole chain when the chain has points, and
