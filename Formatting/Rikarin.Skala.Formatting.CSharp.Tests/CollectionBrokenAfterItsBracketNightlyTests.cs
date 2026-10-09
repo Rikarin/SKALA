@@ -80,4 +80,45 @@ public sealed class CollectionBrokenAfterItsBracketNightlyTests {
         Assert.Equal(Oracle + "\n", formatted);
         Assert.Equal(formatted, FormatWith(formatted));
     }
+
+    // ⚠ Broken only before its `]` (Nightly fuzz, case 5848915233203857901): the oracle breaks it after its `[`
+    // too and keeps the `[` beside `Compute(…),`, last or not. Pass one drafted it flat and moved the `[` down;
+    // pass two read the break after the `[` it had written and joined it back. Measured 2026-10-09 with
+    // `Testing ask` on 25 rows (breaks before `]`, after `[`, between elements, none; five positions).
+    const string ClosingSource = """
+        class C {
+            void M() {
+                var a = new object[] { this.OrderBy.Where.Where(@"verbatim\path").Value, source?.Value?.Count, Compute(@"verbatim\path", "sssssssssssssssss", x4 => 92651, x5 => true), [3_000_000L, "ss", null, 67712, 1.5d
+        ] };
+                var b = new object[] { Compute(@"verbatim\path", "sssssssssssssssss", x4 => 92651, x5 => true), [3_000_000L, "ss", null, 67712, 1.5d
+        ], beta };
+            }
+        }
+        """;
+
+    const string ClosingOracle = """
+        class C {
+            void M() {
+                var a = new object[] {
+                    this.OrderBy.Where.Where(@"verbatim\path").Value, source?.Value?.Count,
+                    Compute(@"verbatim\path", "sssssssssssssssss", x4 => 92651, x5 => true), [
+                        3_000_000L, "ss", null, 67712, 1.5d
+                    ]
+                };
+                var b = new object[] {
+                    Compute(@"verbatim\path", "sssssssssssssssss", x4 => 92651, x5 => true), [
+                        3_000_000L, "ss", null, 67712, 1.5d
+                    ],
+                    beta
+                };
+            }
+        }
+        """;
+
+    [Fact]
+    public void ACollectionBrokenOnlyBeforeItsClosingBracket_StaysBesideThePreviousElement() {
+        var formatted = FormatWith(ClosingSource);
+        Assert.Equal(ClosingOracle + "\n", formatted);
+        Assert.Equal(formatted, FormatWith(formatted));
+    }
 }

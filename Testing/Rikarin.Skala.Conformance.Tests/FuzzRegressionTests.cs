@@ -142,6 +142,9 @@ public sealed class FuzzRegressionTests {
     // `=> builder` past the margin and broke at the first dot; pass two read that break as the author's and broke
     // the arrow. The arrow now breaks when the chain's receiver does not fit beside it, as the oracle does.
     [InlineData(16278079796336422477UL)]
+    // An array element `[…, 1.5d\n]` broken only before its `]`: pass one drafted it flat and moved its `[` below
+    // `Compute(…),`; pass two read the break after the `[` it had written and kept `), [`, the oracle's answer.
+    [InlineData(5848915233203857901UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
