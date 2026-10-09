@@ -11222,3 +11222,25 @@ otherwise. Skala keeps the break as if the author had broken after the `[`, and 
 Measured on 7 rows of a 60-row grid; all are stable since the `=` fix for a broken collection condition.
 
 - ⚠ status: **open**.
+
+## SK-DIV-0365 — a block comment before a typed local's `;`: the oracle breaks between the type and the name
+
+Found while fixing Nightly `fuzz --seed=20261009` (case 10944625209729174497). Measured 2026-10-09 with
+`Testing ask`: `IList<KeyValuePair<string, int>> v2 = JsonConvert.DeserializeObject<…>(json) /* f */;` at a
+statement indent of 8 ends at 124 to 126 columns. There the oracle writes `IList<…>` / `v2 = …;`. For the
+same line without the comment, at the same width, it breaks the `=`. Skala breaks the `=` in both cases, and
+both passes agree. A `var` local agrees with the oracle. This looks like ReSharper measuring the comment
+differently from the code; it is not wired.
+
+- ⚠ status: **open**.
+
+## SK-DIV-0366 — a sole lambda argument's block in a conditional's condition, `= Check(x => {` / `…` / `}) ? a : b`
+
+Measured on the 96-row grid behind case 8573762464065711162. The oracle hugs the call on the `=`'s line, or
+moves the joined condition down whole, by a rule that changes with the head width and is not monotone.
+Skala differs on 10 rows. One of them (a local, head 30, body 30, the block written open) is not idempotent,
+and that was already true on master: pass one chops the call's `)` onto its own line. This belongs to the
+sole-lambda rules (#557, #571), not to #553's condition rule, which now treats every other joinable
+single-statement block as on one line.
+
+- ⚠ status: **open**, not idempotent on one row.
