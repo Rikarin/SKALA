@@ -321,7 +321,9 @@ public sealed class BreakPlan {
     /// </summary>
     readonly Dictionary<int, int> arrowHeldAgainst = [];
 
-    /// <summary>The group <see cref="PlanAfterIs" /> opened for the gap after each <c>is</c>, by the test's key.</summary>
+    /// <summary>
+    ///     The group <see cref="PlanAfterIs" /> opened for the gap after each <c>is</c>, by the test's key.
+    /// </summary>
     readonly Dictionary<long, int> afterIsGroups = [];
 
     /// <summary>
@@ -5767,6 +5769,23 @@ public sealed class BreakPlan {
         return width + WidthOfNext(root, SyntaxKind.SemicolonToken);
     }
 
+    /// <summary>Whether the source has a line break between two adjacent tokens.</summary>
+    static bool SourceBreaksBetween(SyntaxToken previous, SyntaxToken token) =>
+        token.LeadingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia))
+        || previous.TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
+
+    /// <summary>
+    ///     Whether a break in this gap is one the formatter's own breaks put there and a flat reading takes
+    ///     back as nothing: before a <c>.</c>, a <c>?</c>, a <c>)</c> or a <c>]</c>, or after a <c>(</c> or
+    ///     a <c>[</c>.
+    /// </summary>
+    static bool IsGluedGap(SyntaxToken previous, SyntaxToken token) =>
+        token.Kind() is SyntaxKind.DotToken
+            or SyntaxKind.QuestionToken
+            or SyntaxKind.CloseParenToken
+            or SyntaxKind.CloseBracketToken
+        || previous.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
+
     /// <summary>
     ///     Whether a node holds a line break that <see cref="FlatSourceWidth" /> reads as a space: anywhere
     ///     but before a <c>.</c>, a <c>?</c>, a <c>)</c> or a <c>]</c>, or after a <c>(</c>, a <c>[</c> or a <c>.</c>.
@@ -5776,19 +5795,11 @@ public sealed class BreakPlan {
         foreach (var token in node.DescendantTokens()) {
             if (!first) {
                 var previous = token.GetPreviousToken();
-                var breaks = token.LeadingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia))
-                    || previous.TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
-                var glued = token.Kind() is SyntaxKind.DotToken
-                        or SyntaxKind.QuestionToken
-                        or SyntaxKind.CloseParenToken
-                        or SyntaxKind.CloseBracketToken
-                    // ⚠ After a dot too: the formatter joins `n.` / `Name`, so a condition the author broke
-                    // there reads as one written on one line, or pass two answers differently (fuzz seed
-                    // 3423309597191150844).
-                    || previous.Kind() is SyntaxKind.OpenParenToken
-                        or SyntaxKind.OpenBracketToken
-                        or SyntaxKind.DotToken;
-                if (breaks && !glued) {
+                // ⚠ After a dot too: the formatter joins `n.` / `Name`, so a condition the author broke
+                // there reads as one written on one line, or pass two answers differently (fuzz seed
+                // 3423309597191150844).
+                var glued = IsGluedGap(previous, token) || previous.IsKind(SyntaxKind.DotToken);
+                if (SourceBreaksBetween(previous, token) && !glued) {
                     return true;
                 }
             }
@@ -5814,9 +5825,9 @@ public sealed class BreakPlan {
     /// </summary>
     /// <remarks>
     ///     ⚠ Every measured table keyed on a width reads it here, never off the source's span: a span counts
-    ///     the author's spacing, so `Func <T >` and `( P p0)` moved a table to another row and the formatter's
-    ///     output with them — the fuzzer's whitespace-absorption property, broken by #572's one-column table
-    ///     (seed 37583856628, replay 6225963390046177533). A gap the rules leave to the author
+    ///     the author's spacing, so <c>Func &lt;T &gt;</c> and <c>( P p0)</c> moved a table to another row and
+    ///     the formatter's output with them — the fuzzer's whitespace-absorption property, broken by #572's
+    ///     one-column table (seed 37583856628, replay 6225963390046177533). A gap the rules leave to the author
     ///     (<see cref="SpaceKind.Preserve" />) counts the one space the formatter writes back for it.
     /// </remarks>
     int FormattedWidth(SyntaxToken first, SyntaxToken last) {
@@ -5841,13 +5852,8 @@ public sealed class BreakPlan {
         foreach (var token in node.DescendantTokens()) {
             if (!first) {
                 var previous = token.GetPreviousToken();
-                var breaks = token.LeadingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia))
-                    || previous.TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
-                var glued = token.Kind() is SyntaxKind.DotToken
-                        or SyntaxKind.QuestionToken
-                        or SyntaxKind.CloseParenToken
-                        or SyntaxKind.CloseBracketToken
-                    || previous.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
+                var breaks = SourceBreaksBetween(previous, token);
+                var glued = IsGluedGap(previous, token);
 
                 // ⚠ The space the formatter writes, not the author's (Nightly fuzzer, seed 1 replay
                 // 13096041111892358404): `DeserializeObject<T >(json)` counted a space before the `>` that the
@@ -5878,15 +5884,15 @@ public sealed class BreakPlan {
             _ => previous.HasTrailingTrivia || token.HasLeadingTrivia ? 1 : 0
         };
 
-        foreach (var trivia in previous.TrailingTrivia.Concat(token.LeadingTrivia)) {
-            // ⚠ `/** d */` between tokens is a documentation comment to Roslyn, written exactly as a block one
-            // (Nightly fuzz, case 1267273925188459665: `JsonConvert /** d */ .DeserializeObject<T>(x)` behind an
-            // `=`, where #528's held-value width missed the comment as it once missed `/* */`). ⚠ Its full span:
-            // the `/**` is the structure's exterior trivia, outside the trivia's `Span`.
-            if (trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {
-                width += trivia.FullSpan.Length + 1;
-            }
+        // ⚠ `/** d */` between tokens is a documentation comment to Roslyn, written exactly as a block one
+        // (Nightly fuzz, case 1267273925188459665: `JsonConvert /** d */ .DeserializeObject<T>(x)` behind an
+        // `=`, where #528's held-value width missed the comment as it once missed `/* */`). ⚠ Its full span:
+        // the `/**` is the structure's exterior trivia, outside the trivia's `Span`.
+        foreach (var trivia in previous.TrailingTrivia.Concat(token.LeadingTrivia)
+                     .Where(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                         || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+                     )) {
+            width += trivia.FullSpan.Length + 1;
         }
 
         return width;
@@ -6017,15 +6023,8 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     The pattern's width for <see cref="EqualsFloor.BreaksBeforeAPattern" />, through its first line
-    ///     comment when it has one: the comment ends the line, so what stands on the <c>=</c>'s line is the
-    ///     pattern up to it. ⚠ Measured 2026-10-09 with <c>Testing ask</c>: <c>bool c = o… is A // c</c> /
-    ///     <c>or B … ;</c>, a typed and a <c>var</c> local, one to seven alternatives after the comment (up to
-    ///     132 columns of pattern), the line through the comment ending at 116 to 126 — the <c>=</c> breaks on
-    ///     every row past 120, where the full pattern's width would have chopped the wider ones on the
-    ///     declaration's line.
+    ///     The leftmost operand of a combinator chain: what stands before its first <c>or</c> or <c>and</c>.
     /// </summary>
-    /// <summary>The leftmost operand of a combinator chain: what stands before its first <c>or</c> or <c>and</c>.</summary>
     static PatternSyntax FirstAlternativeOf(PatternSyntax pattern) {
         while (pattern is BinaryPatternSyntax binary) {
             pattern = binary.Left;
@@ -6034,6 +6033,15 @@ public sealed class BreakPlan {
         return pattern;
     }
 
+    /// <summary>
+    ///     The pattern's width for <see cref="EqualsFloor.BreaksBeforeAPattern" />, through its first line
+    ///     comment when it has one: the comment ends the line, so what stands on the <c>=</c>'s line is the
+    ///     pattern up to it. ⚠ Measured 2026-10-09 with <c>Testing ask</c>: <c>bool c = o… is A // c</c> /
+    ///     <c>or B … ;</c>, a typed and a <c>var</c> local, one to seven alternatives after the comment (up to
+    ///     132 columns of pattern), the line through the comment ending at 116 to 126 — the <c>=</c> breaks on
+    ///     every row past 120, where the full pattern's width would have chopped the wider ones on the
+    ///     declaration's line.
+    /// </summary>
     int PatternWidthOf(PatternSyntax pattern) {
         var last = pattern.GetLastToken();
         foreach (var token in pattern.DescendantTokens()) {
