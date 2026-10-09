@@ -2998,8 +2998,10 @@ public sealed class BreakPlan {
             }
             || variable.Identifier.Span.Length > 8
             || BreaksBefore(variable.Identifier)
-            || node.DescendantTrivia(node.Span).Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))) {
+            || node.DescendantTrivia(node.Span)
+                .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                )) {
             return default;
         }
 
@@ -5997,7 +5999,8 @@ public sealed class BreakPlan {
     ///     SK-DIV-0352). See <see cref="GroupFacts.ParameterAfterSection" />.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Eleven columns and narrower is <see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />'s
+    ///     ⚠ Eleven columns and narrower is
+    ///     <see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />'s
     ///     rule, which reads the parameter through. A one-argument section is not this rule's: <c>[A("…")]</c> and
     ///     <c>[Description("…")]</c> in front of 12 to 20 columns stand alone above the parameter at nearly every width.
     ///     Nor a named argument, which chops later (<c>DiagnosticId = "X"</c>: from 113 behind a 13-column parameter
@@ -6008,9 +6011,13 @@ public sealed class BreakPlan {
     void PlanSectionBeforeALongParameter(AttributeArgumentListSyntax arguments) {
         if (options.KeepExistingInvocationParensArrangement
             || arguments.Arguments.Count < 2
-            || arguments.Arguments.Any(static argument => argument.NameEquals is not null || argument.NameColon is not null)
+            || arguments.Arguments.Any(static argument => argument.NameEquals is not null
+                || argument.NameColon is not null
+            )
             || arguments.Parent is not AttributeSyntax { Parent: AttributeListSyntax { Attributes.Count: 1 } section }
-            || section.Parent is not ParameterSyntax { Parent: ParameterListSyntax, AttributeLists: [_], Default: null } parameter
+            || section.Parent is not ParameterSyntax {
+                Parent: ParameterListSyntax, AttributeLists: [_], Default: null
+            } parameter
             || CSharpDocumentBuilder.IsAShortParameterBehindItsSection(parameter)) {
             return;
         }
@@ -6019,11 +6026,17 @@ public sealed class BreakPlan {
         var last = parameter.GetLastToken();
         if (first.SpanStart > parameter.Span.End
             || source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny('\r', '\n') >= 0
-            || section.DescendantTrivia().Concat(parameter.DescendantTrivia(Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(first.SpanStart, parameter.Span.End)))
+            || section.DescendantTrivia()
+                .Concat(
+                    parameter.DescendantTrivia(
+                        Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(first.SpanStart, parameter.Span.End)
+                    )
+                )
                 .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
                     || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
                     || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
-                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia))
+                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+                )
             || !groups.TryGetValue(Key(arguments), out var plans)
             || plans.Count == 0) {
             return;

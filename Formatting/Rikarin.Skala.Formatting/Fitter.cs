@@ -328,7 +328,8 @@ public sealed class Fitter {
 
                 // ⚠ A long parameter's one attribute section: by the measured rule, and before the author's
                 // break, which is the rule's own answer on pass two (#476). See GroupFacts.ParameterAfterSection.
-                if (facts.ParameterAfterSection > 0 && ChopsBeforeTheParameter(facts, m, lineStart) is { } sectionMode) {
+                if (facts.ParameterAfterSection > 0
+                    && ChopsBeforeTheParameter(facts, m, lineStart) is { } sectionMode) {
                     return sectionMode;
                 }
 
@@ -722,7 +723,12 @@ public sealed class Fitter {
     bool FillsAfterTheModifiers(in GroupFacts facts, int lineStart) {
         var head = facts.ModifierFillHead;
         var name = facts.ModifierFillName;
-        var k = head >= 54 ? 324 : head >= 36 ? 325 : head >= 24 ? 326 : head >= 21 ? 330 : head >= 18 ? 334 : head >= 15 ? 336 : 0;
+        var k = head >= 54 ? 324 :
+            head >= 36 ? 325 :
+            head >= 24 ? 326 :
+            head >= 21 ? 330 :
+            head >= 18 ? 334 :
+            head >= 15 ? 336 : 0;
         if (k == 0) {
             return false;
         }
