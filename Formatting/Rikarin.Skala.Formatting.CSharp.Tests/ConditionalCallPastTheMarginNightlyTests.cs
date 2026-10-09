@@ -25,53 +25,53 @@ public sealed class ConditionalCallPastTheMarginNightlyTests {
     }
 
     const string Source = """
-        class C {
-            void M() {
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v025 = Materialise<Task<List<byte>>, ValueTask<DateTime>>(out var o102, (56846 ? @"verbatim\path" : 42592), source?.Items?.Count) ? "sss" : "ttt";
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXX, int> v019 = Materialise<YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY>(out var o102, (56846 ? @"verbatim\path" : 42592), source?.Items?.Count) ? "sss" : "ttt";
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXX, int> v020 = MaterialiseZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ(out var o102, (56846 ? @"verbatim\path" : 42592), source?.Items?.Count) ? "sss" : "ttt";
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXX, int> v017 = Materialise<YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY>(out var o102, (56846 ? @"verbatim\path" : 42592), source?.Items?.Count) ? "sss" : "ttt";
-            }
-        }
-        """;
+                          class C {
+                              void M() {
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v025 = Materialise<Task<List<byte>>, ValueTask<DateTime>>(out var o102, (56846 ? @"verbatim\path" : 42592), source?.Items?.Count) ? "sss" : "ttt";
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXX, int> v019 = Materialise<YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY>(out var o102, (56846 ? @"verbatim\path" : 42592), source?.Items?.Count) ? "sss" : "ttt";
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXX, int> v020 = MaterialiseZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ(out var o102, (56846 ? @"verbatim\path" : 42592), source?.Items?.Count) ? "sss" : "ttt";
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXX, int> v017 = Materialise<YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY>(out var o102, (56846 ? @"verbatim\path" : 42592), source?.Items?.Count) ? "sss" : "ttt";
+                              }
+                          }
+                          """;
 
     const string Oracle = """
-        class C {
-            void M() {
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v025 =
-                    Materialise<Task<List<byte>>, ValueTask<DateTime>>(
-                        out var o102,
-                        (56846 ? @"verbatim\path" : 42592),
-                        source?.Items?.Count
-                    )
-                        ? "sss"
-                        : "ttt";
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXX, int> v019 =
-                    Materialise<YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY>(
-                        out var o102,
-                        (56846 ? @"verbatim\path" : 42592),
-                        source?.Items?.Count
-                    )
-                        ? "sss"
-                        : "ttt";
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXX, int> v020 =
-                    MaterialiseZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ(
-                        out var o102,
-                        (56846 ? @"verbatim\path" : 42592),
-                        source?.Items?.Count
-                    )
-                        ? "sss"
-                        : "ttt";
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXX, int> v017 = Materialise<YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY>(
-                    out var o102,
-                    (56846 ? @"verbatim\path" : 42592),
-                    source?.Items?.Count
-                )
-                    ? "sss"
-                    : "ttt";
-            }
-        }
-        """;
+                          class C {
+                              void M() {
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v025 =
+                                      Materialise<Task<List<byte>>, ValueTask<DateTime>>(
+                                          out var o102,
+                                          (56846 ? @"verbatim\path" : 42592),
+                                          source?.Items?.Count
+                                      )
+                                          ? "sss"
+                                          : "ttt";
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXX, int> v019 =
+                                      Materialise<YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY>(
+                                          out var o102,
+                                          (56846 ? @"verbatim\path" : 42592),
+                                          source?.Items?.Count
+                                      )
+                                          ? "sss"
+                                          : "ttt";
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXX, int> v020 =
+                                      MaterialiseZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ(
+                                          out var o102,
+                                          (56846 ? @"verbatim\path" : 42592),
+                                          source?.Items?.Count
+                                      )
+                                          ? "sss"
+                                          : "ttt";
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXX, int> v017 = Materialise<YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY>(
+                                      out var o102,
+                                      (56846 ? @"verbatim\path" : 42592),
+                                      source?.Items?.Count
+                                  )
+                                      ? "sss"
+                                      : "ttt";
+                              }
+                          }
+                          """;
 
     [Fact]
     public void ACallConditionWhoseParenRunsPastTheMargin_BreaksTheEquals() {
