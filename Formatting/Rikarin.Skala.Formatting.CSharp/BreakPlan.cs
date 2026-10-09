@@ -636,6 +636,7 @@ public sealed class BreakPlan {
         PlanForcedChopCondition(node);
         PlanJoinAfterADot(node);
         PlanCastBeforeACollection(node);
+        PlanCastOperand(node);
 
         switch (node) {
             case EnumDeclarationSyntax enumeration:
@@ -5577,6 +5578,12 @@ public sealed class BreakPlan {
                         )
                         : 0,
                     CalleeOwner: owner,
+                    BreaksIfTheLineOverflows: owner is EqualsOwner.VarLocal or EqualsOwner.TypedLocal
+                    && value is IsPatternExpressionSyntax {
+                        Pattern: RecursivePatternSyntax {
+                            PositionalPatternClause: not null, PropertyPatternClause: null
+                        }
+                    },
                     FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
                     && TrailingProperty(target) is not null
                     && ChainPointCount(target, options) == 0,
@@ -5708,6 +5715,67 @@ public sealed class BreakPlan {
         initializer.Expressions.Count > 0
         && !BreaksBefore(initializer.OpenBraceToken)
         && BreaksBefore(initializer.OpenBraceToken.GetNextToken());
+
+    /// <summary>
+    ///     The break after a cast's <c>)</c> when what it casts has no break point of its own: a last resort,
+    ///     taken only once everything before it on the line has had its chance.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #591, SK-DIV-0440. Measured 2026-10-09 with <c>Testing ask</c> on 450 rows — <c>return</c>, a
+    ///     <c>var</c> local, an assignment, an argument after a first one and a switch arm, the line ending at
+    ///     118 to 135 columns, five operand kinds. Past the margin the oracle writes <c>return (string)</c> /
+    ///     <c>value;</c> one level in, <c>var v =</c> / <c>(string)</c> / <c>value;</c> once the value does not
+    ///     fit beside the <c>=</c> or below it either, and <c>Call(</c> / <c>a,</c> / <c>(string)</c> /
+    ///     <c>value</c> once the chopped argument does not fit: the operand on the cast's own column, no level
+    ///     of its own. The same for a literal, an interpolated string, <c>M()</c>, <c>-x</c> and the inner cast
+    ///     of <c>(A)(B)x</c>. An operand with a point of its own — a call with arguments, a chain, a
+    ///     parenthesised operator — breaks there instead, whichever context. A break the author wrote after the
+    ///     cast is kept. A switch arm's arrow asks its own question about it (<see cref="ArmCastWidth" />).
+    /// </remarks>
+    void PlanCastOperand(SyntaxNode node) {
+        if (node is not CastExpressionSyntax cast || !IsACastAtom(cast.Expression)) {
+            return;
+        }
+
+        var first = FirstToken(cast.Expression);
+        if (options.KeepsUserBreaksBetweenItems && BreaksBefore(first)) {
+            Mandatory(first);
+            return;
+        }
+
+        // ⚠ The level is the statement's, and only when nothing around the cast has spent one: `return
+        // (string)` / `value;` one level in, `var v =` / `(string)` / `value;` on the cast's column. The
+        // builder decides whether it is there to spend (CanSpendAContinuationLevel), as for a ternary chain.
+        var group = NewGroup();
+        Point(first, group, lastResort: true);
+        Describe(cast, group, GroupMode.Preserve, new(BreaksIfTooLong: true), true);
+    }
+
+    /// <summary>
+    ///     An operand with no break point of its own, after which a cast's <c>)</c> is the line's last
+    ///     resort (#591): a name, a literal, an interpolated string, a call on a name with no arguments, and a
+    ///     prefix or postfix operator over one of those. A cast over one is not: the inner cast takes the point.
+    /// </summary>
+    static bool IsACastAtom(ExpressionSyntax expression) =>
+        expression switch {
+            IdentifierNameSyntax or LiteralExpressionSyntax or InterpolatedStringExpressionSyntax => true,
+            InvocationExpressionSyntax { Expression: IdentifierNameSyntax, ArgumentList.Arguments.Count: 0 } => true,
+            PrefixUnaryExpressionSyntax prefix => IsACastAtom(prefix.Operand),
+            PostfixUnaryExpressionSyntax postfix => IsACastAtom(postfix.Operand),
+            _ => false
+        };
+
+    /// <summary>
+    ///     For a switch arm whose body is a cast over an atom (#591): the cast's formatted width through its
+    ///     <c>)</c>, or zero. See <see cref="GroupFacts.ArmCast" />.
+    /// </summary>
+    int ArmCastWidth(ExpressionSyntax body) {
+        if (body is not CastExpressionSyntax cast || !IsACastAtom(cast.Expression) || HasLineBreakIn(cast)) {
+            return 0;
+        }
+
+        return FormattedWidth(cast.OpenParenToken, cast.CloseParenToken);
+    }
 
     /// <summary>
     ///     The break between a cast and the collection expression it casts, which is one of two
@@ -7011,7 +7079,11 @@ public sealed class BreakPlan {
                 LiftGroup: HeadsWithAChoppedParenthesis(arm.Expression, source, options, out _) ? -1 : widthLift,
                 Owner: before,
                 BreaksOnlyIfHeadOverflows: true,
-                FlatIfOwnerBroke: true
+                FlatIfOwnerBroke: true,
+
+                // ⚠ The arrow or the cast's `)` by a measured table (#591). Not under a kept arrow, whose break
+                // is certain.
+                ArmCast: kept ? 0 : ArmCastWidth(arm.Expression)
             )
         );
     }

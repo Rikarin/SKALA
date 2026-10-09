@@ -330,6 +330,17 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ A local's `=` before an `is` over a positional pattern: broken whenever the line overflows
+                // (#559). See GroupFacts.BreaksIfTheLineOverflows.
+                // ⚠ Not over a pattern the author broke inside: `var q = o is P(1, 2` / `);` keeps its `=`.
+                if (facts.BreaksIfTheLineOverflows) {
+                    return m.FlatWidth >= Unbounded
+                        || m.Trailing >= Unbounded
+                        || Fits(m.Column, m.FlatWidth, m.Trailing)
+                            ? ResolvedMode.Flat
+                            : ResolvedMode.Broken;
+                }
+
                 // ⚠ An `=` before a plain member access yields to its dot fill (#482) — unless the receiver
                 // itself does not fit beside the `=`, where no dot can take the break and the oracle breaks
                 // the `=`: `T v =` / `context.First;`. Pass one kept `T v = context` past the margin and
@@ -529,6 +540,16 @@ public sealed class Fitter {
 
                 if (!facts.BreaksIfTooLong || Fits(m.Column, m.BreakWidth, m.Trailing)) {
                     return ResolvedMode.Flat;
+                }
+
+                // ⚠ A switch arm's body that is a cast over an atom: the arrow or the cast's `)`, by the measured
+                // table. See GroupFacts.ArmCast (#591).
+                if (facts.ArmCast > 0
+                    && width == ArmCastMargin
+                    && m.FlatWidth < Unbounded
+                    && m.Trailing < Unbounded
+                    && m.Column > lineStart) {
+                    return ArmCastBreaksTheArrow(facts, m, lineStart) ? ResolvedMode.Broken : ResolvedMode.Flat;
                 }
 
                 // ⚠ A sole lambda argument over a member-access fill: the arrow or the fill, by the
@@ -1001,6 +1022,39 @@ public sealed class Fitter {
     }
 
     int OuterBreakMargin(in Measures m) => 11 + m.ContinuationColumn / indentWidth;
+
+    /// <summary>The margin <see cref="GroupFacts.ArmCast" />'s table was measured at (#591).</summary>
+    const int ArmCastMargin = 120;
+
+    /// <summary>
+    ///     Whether a switch arm whose body is a cast over an atom breaks after its arrow rather than after the
+    ///     cast's <c>)</c> (#591, SK-DIV-0440). See <see cref="GroupFacts.ArmCast" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> on 5 947 rows; the table agrees on 5 817 (always breaking the arrow,
+    ///     as Skala did, agrees on 3 651). The residue is one column either side of the first constraint for
+    ///     casts of 9 to 15 columns, where the oracle's boundary steps by one over a stretch of heads the way the
+    ///     band below does by the whole line. ⚠ The band is not explained, only bounded: a cast of five columns
+    ///     keeps the arrow from a head of 13 to one of 29, of eight only from 22 to 25, and none from nine on;
+    ///     it is the same at indents 12 and 16.
+    /// </remarks>
+    bool ArmCastBreaksTheArrow(in GroupFacts facts, in Measures m, int lineStart) {
+        // ⚠ The group starts at its point, before the space after the arrow: its column is the arrow's end.
+        // A body that would not fit below the arrow either changes nothing: where the table keeps the arrow
+        // the cast's `)` breaks as well, and where it does not the cast's `)` alone.
+        var head = m.Column - lineStart;
+        var cast = facts.ArmCast;
+        var end = m.Column + m.FlatWidth + m.Trailing;
+        if (end == width + 1 && (head >= 7 || cast <= 6)) {
+            return true;
+        }
+
+        if (cast <= 8 && head >= 3 * cast - 2 && head + cast <= (cast >= 7 ? 33 : 34)) {
+            return true;
+        }
+
+        return 3 * end <= 3 * head + 336 - cast && 8 * end <= 6 * head + 954 - 3 * cast;
+    }
 
     /// <summary>The margin <see cref="GroupFacts.CreationLimit" /> was measured at (#581).</summary>
     const int CreationLimitWidth = 120;
