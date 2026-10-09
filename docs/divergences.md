@@ -10929,6 +10929,12 @@ head (a last arm's fourteen-column body without one too, #531); from fifteen it 
 head's width — an interpolated string of 51 and a `[_, .. var r] when …`
 head included. `DocumentBuilder.ShortArrowBody`; pinned by `constructs/breaks/arm-body-without-a-break-point.cs`.
 
+⚠ **Fuzz 5953779247182235391.** `object { P102: null } when (0x116` / `?? …) =>` / body: the oracle writes the body
+`=> (` / `0x237, true),`, breaking inside the tuple after its `(`, where Skala breaks after the arrow; under a break the
+author kept after the arrow the oracle lifts the `??` continuation a level, as for braces (#549). Skala's pass one
+broke the arrow for width and pass two lifted, so a `when` condition holding an operator chain or a conditional
+no longer lifts: stable, the body line and (under a kept break) the `??` line differing from the oracle (open).
+
 ⚠ Its fixture also exposed a spacing defect, fixed beside it: a query clause's keyword (`where "s"`, `select (item)`)
 keeps its space at both `space_between_keyword_and_type = false` and `space_between_keyword_and_expression = false`
 in the oracle, where Skala joined them (`QueryKeywordSpaceTests`).
