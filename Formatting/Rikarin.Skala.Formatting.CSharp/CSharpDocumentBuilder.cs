@@ -1301,7 +1301,7 @@ public sealed partial class CSharpDocumentBuilder {
                 EmitLeadingGapAt(child.SpanStart);
                 foreach (var planned in plans) {
                     if (!planned.LeadingGapInside) {
-                        opened.Add(OpenGroupAt(planned, node));
+                        opened.Add(OpenGroupAt(planned, node, child.SpanStart == node.SpanStart));
                     }
                 }
 
@@ -1337,7 +1337,17 @@ public sealed partial class CSharpDocumentBuilder {
     ///     Opens one of <see cref="BreakPlan.TryOpenedAt" />'s groups with the continuation level it
     ///     spends, or holds, exactly as <see cref="VisitPlanned" /> opens a group described on a node.
     /// </summary>
-    (int Indented, bool Held) OpenGroupAt(GroupPlan planned, SyntaxNode node) {
+    (int Indented, bool Held) OpenGroupAt(GroupPlan planned, SyntaxNode node, bool atNodeStart = false) {
+        // ⚠ A group opened at the node's own first token, after the gap before it, belongs to the node's
+        // frame, which its first piece is about to start (fuzz 11550439650966795547). Unstarted, the frame
+        // was skipped and the level asked of the frame around it: an arm's group opened at its pattern —
+        // a `when` clause's under an arrow the author broke before — spent nothing under a member whose
+        // own header had broken (`object` / `C(…) =>` / … / `=> body` on the arm's column), where the same
+        // arrow broken for width, its group opened at the arrow, landed one level in.
+        if (atNodeStart && !planned.LeadingGapInside) {
+            MarkFramesStarted();
+        }
+
         doc.OpenGroup(planned.Mode, planned.Id);
         var indented = planned.SpendsIndent && CanSpendAContinuationLevel(node, planned.SpendsUnderDelimiters) ? 1 : 0;
         var held = planned.HoldsLevel == HeldLevel.Always && indented > 0;
