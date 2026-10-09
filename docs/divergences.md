@@ -10901,6 +10901,12 @@ continuation two levels, and keeps a query body on the `>>() =>` line breaking i
 keeps its space at both `space_between_keyword_and_type = false` and `space_between_keyword_and_expression = false`
 in the oracle, where Skala joined them (`QueryKeywordSpaceTests`).
 
+⚠ **Fuzz 12955079666331923518.** `byte x when new Func<` / `(…), (…)>("s", 'c', 0xb92)` / `=> Handle(…)`: the
+oracle lifts the type arguments two levels past the arm under a broken arrow, as it lifts a `when` list (#564), but
+Skala's pass one breaks before the arrow for width, so only pass two could see the break as kept — and lifted and
+chopped then. A `when` clause holding a type argument list no longer lifts: stable, one line a level short of the
+oracle (open).
+
 - ⚠ status: **resolved** (#576) for the cut-down shapes, pinned by `constructs/breaks/arm-when-condition-below.cs`;
   **open** for the seed's whole line.
 
