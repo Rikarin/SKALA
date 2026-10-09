@@ -8,13 +8,44 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// <remarks>
 ///     ⚠ The Nightly fuzzer's seed 37583856628 (replay 6225963390046177533, origin
 ///     <c>constructs/breaks/lambda-parameters-one-column-over.cs</c>) found it, and group I's seed 2 (replay
-///     10561489840196222070, origin <c>constructs/breaks/equals-before-a-lambda-floor.cs</c>) the same shape. #572's one-column table and
-///     #583's type/name break read the declaration's type off its source span, so `Func <TTTT >` measured four
-///     columns wider than `Func&lt;TTTT&gt;` and the line broke before the name instead of chopping the
-///     parameters. Every width behind #557, #558, #571, #572, #578 and #528's held call is now
-///     <c>BreakPlan.FormattedWidth</c>.
+///     10561489840196222070, origin <c>constructs/breaks/equals-before-a-lambda-floor.cs</c>) the same
+///     shape. #572's one-column table and #583's type/name break read the declaration's type off its source
+///     span, so <c>Func &lt;TTTT &gt;</c> measured four columns wider than <c>Func&lt;TTTT&gt;</c> and the
+///     line broke before the name instead of chopping the parameters. Every width behind #557, #558, #571,
+///     #572, #578 and #528's held call is now <c>BreakPlan.FormattedWidth</c>.
 /// </remarks>
 public sealed class MeasuredWidthsAbsorbWhitespaceTests {
+    const string Long1 = "private ImmutableArray<((double? First, long Second) First, (CancellationToken F"
+        + """irst, long Second) Second)> f23 = Emit(Materialise<TimeSpan>($"value {97} and {i"""
+        + """""tems[0]}", x24 => source?.Value?.Length, (state is null)), state, """"a { b } """""
+        + """""c"""");""""";
+
+    const string Long2 = "Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2, A a3,"
+        + " A a4, A a5, A a6, A a7, A a8, A a9, A a10x) => vvvvvvvvvvvvvvvvvvvv;";
+
+    const string Long3 = "Func<A, B> fffffffffffffffffffffffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTT"
+        + "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;";
+
+    const string Long4 = "Func<A, B> fffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+        + "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;";
+
+    const string Long5 = "Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2, A a3,"
+        + " A a4, A a5, A a6, A a7, A a8, A a9x) => Name;";
+
+    const string Long6 = "Func<A , B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1 , A  a2, A "
+        + "a3, A a4 , A  a5, A a6, A a7 , A a8,  A a9, A a10x) =>  vvvvvvvvvvvvvvvvvvvv;";
+
+    const string Long7 = "Func<A, B > fffffffffffffffffffffffffffffffffffffffffff = ( TTTTTTTTTTTTTTTTTTTT"
+        + "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT  p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+        + "v;";
+
+    const string Long8 = "Func<A , B> fffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+        + "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT  p0 ) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+        + "v ;";
+
+    const string Long9 = "Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2,  A a3"
+        + ",  A a4, A a5, A a6, A a7,  A a8, A a9x) => Name;";
+
     static string P(int width) => new('P', width);
 
     static string Wrap(string indent, string line) =>
@@ -60,13 +91,16 @@ public sealed class MeasuredWidthsAbsorbWhitespaceTests {
     /// </summary>
     [Theory]
     [InlineData(
-        "Func<A, B> fffffffffffffffffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvv;"
+        "Func<A, B> fffffffffffffffffffffffffffffffffffff = "
+        + "(TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvv;"
     )]
     [InlineData(
-        "Use((Tttttttttt first, U second) => first.Alpha.Bravo.Charlie.Delta.Echo.Foxtrot.Golf.Hotel.India.Juliett.Kilo.Lima.Mike.November);"
+        "Use((Tttttttttt first, U second) => "
+        + "first.Alpha.Bravo.Charlie.Delta.Echo.Foxtrot.Golf.Hotel.India.Juliett.Kilo.Lima.Mike.November);"
     )]
     [InlineData(
-        "UUUUUUUUUUUU(static nnnnnnnn => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccccc);"
+        "UUUUUUUUUUUU(static nnnnnnnn => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa && "
+        + "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccccc);"
     )]
     public void WidenedGaps_FormatAsTheCleanLine(string clean) {
         var widened = clean.Replace("<", " < ")
@@ -118,11 +152,11 @@ public sealed class MeasuredWidthsAbsorbWhitespaceTests {
     /// </summary>
     [Fact]
     public void AnEqualsBeforeACallWhoseParenIsPastTheMargin_IsStableOnTheSecondPass() {
-        const string Source = """""
-                              internal sealed readonly struct T2<T3> {
-                                  private ImmutableArray<((double? First, long Second) First, (CancellationToken First, long Second) Second)> f23 = Emit(Materialise<TimeSpan>($"value {97} and {items[0]}", x24 => source?.Value?.Length, (state is null)), state, """"a { b } c"""");
-                              }
-                              """"";
+        const string Source = $$"""""
+                                internal sealed readonly struct T2<T3> {
+                                    {{Long1}}
+                                }
+                                """"";
         var once = Format.Text(Source);
         Assert.Equal(once, Format.Text(once));
         Assert.Contains(" f23 =\n", once, StringComparison.Ordinal);
@@ -135,30 +169,30 @@ public sealed class MeasuredWidthsAbsorbWhitespaceTests {
     /// </summary>
     [Fact]
     public void TheSeedTwoCase_FormatsAsTheCleanOne() {
-        const string Clean = """
-                             namespace P;
-
-                             class C {
-                                 void M() {
-                                     Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2, A a3, A a4, A a5, A a6, A a7, A a8, A a9, A a10x) => vvvvvvvvvvvvvvvvvvvv;
-                                     Func<A, B> fffffffffffffffffffffffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
-                                     Func<A, B> fffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
-                                     Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2, A a3, A a4, A a5, A a6, A a7, A a8, A a9x) => Name;
-                                 }
-                             }
-                             """;
-        const string Mutated = """
+        const string Clean = $$"""
                                namespace P;
 
-                               class  C {
-                                   void M( ) {
-                                       Func<A , B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1 , A  a2, A a3, A a4 , A  a5, A a6, A a7 , A a8,  A a9, A a10x) =>  vvvvvvvvvvvvvvvvvvvv;
-                                       Func<A, B > fffffffffffffffffffffffffffffffffffffffffff = ( TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT  p0) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
-                                       Func<A , B> fffffffffffffffffffffff = (TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT  p0 ) => vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv ;
-                                       Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2,  A a3,  A a4, A a5, A a6, A a7,  A a8, A a9x) => Name;
+                               class C {
+                                   void M() {
+                                       {{Long2}}
+                                       {{Long3}}
+                                       {{Long4}}
+                                       {{Long5}}
                                    }
                                }
                                """;
+        const string Mutated = $$"""
+                                 namespace P;
+
+                                 class  C {
+                                     void M( ) {
+                                         {{Long6}}
+                                         {{Long7}}
+                                         {{Long8}}
+                                         {{Long9}}
+                                     }
+                                 }
+                                 """;
         Assert.Equal(Format.Text(Clean), Format.Text(Mutated));
     }
 }
