@@ -94,6 +94,11 @@ public sealed class FuzzRegressionTests {
     [InlineData(7862808234978504853UL)]
     [InlineData(3776683644240416092UL)]
     [InlineData(11325995557757886152UL)]
+    // `fuzz --seed=7777`: `get => state is (` / `{ Length: > 0 }, ImmutableArray<object?> typed56);`. The
+    // property pattern's `{` joined the positional `(` as an opening brace does, after pass one had already
+    // broken the accessor's arrow for the body the kept break made multi-line; pass two re-joined the arrow.
+    // The gap is the parenthesis's: the oracle keeps the break, the element one level in.
+    [InlineData(11693758747470537505UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
