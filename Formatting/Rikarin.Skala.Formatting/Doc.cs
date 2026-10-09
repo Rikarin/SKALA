@@ -1382,6 +1382,11 @@ public sealed class Document {
 ///     160-column line on <c>var</c> and typed locals with names of 1 and 22 columns. Not an assignment's and
 ///     not after <c>return</c>, where the oracle keeps the line's head and fills the pattern.
 /// </param>
+/// <param name="TypeTestTail">
+///     ⚠ The member-access fill of a returned type test's operand (#446, SK-DIV-0210): the width from the dot
+///     through the <c>;</c>. The dot breaks exactly when the operand alone runs past the margin and that line
+///     fits at the continuation column; otherwise the keyword's own band answers.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1461,7 +1466,8 @@ public readonly record struct GroupFacts(
     bool LiftsIfArrowBreaks = false,
     bool DraftsBroken = false,
     int ArmCast = 0,
-    bool BreaksIfTheLineOverflows = false);
+    bool BreaksIfTheLineOverflows = false,
+    int TypeTestTail = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

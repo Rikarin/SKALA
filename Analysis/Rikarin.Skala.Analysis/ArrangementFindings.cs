@@ -11,6 +11,32 @@ namespace Rikarin.Skala.Analysis;
 public static class ArrangementFindings {
     public sealed record Result(ImmutableArray<Finding> Findings, bool Failed);
 
+    /// <summary>The ids a finding from <see cref="Collect" /> can carry: one per arrangement rule.</summary>
+    /// <remarks>
+    ///     ⚠ Taken from <see cref="Arranger.Rules" /> rather than listed, so a rule added to the
+    ///     arranger is covered on the day it lands. No analyzer reports under any of them — the
+    ///     <c>SK023x</c>–<c>SK028x</c> cleanup analyzers are a separate range and stay baselineable.
+    /// </remarks>
+    public static ImmutableHashSet<string> RuleIds { get; } =
+        Arranger.Rules().Select(static rule => rule.Id).ToImmutableHashSet(StringComparer.Ordinal);
+
+    /// <summary>
+    ///     ⚠ #592: whether a finding is one the baseline may not accept, because its fix is
+    ///     <c>skala arrange</c>.
+    /// </summary>
+    /// <remarks>
+    ///     <c>arrange --check</c> — Lint, and the arrange half of <c>verify</c> — has no baseline and
+    ///     fails on an unarranged file whatever <c>.skala/baseline.sarif</c> holds, and <c>check</c>
+    ///     does not collect these findings at all. So an accepted arrangement finding suppressed
+    ///     nothing any gate decides on, while <c>baseline update</c> reported it accepted: five
+    ///     <c>SK0210</c> entries went in during a self-gate cleanup, <c>check --gate=ci</c> passed,
+    ///     and Lint stayed red on the same files. An arrangement is switched off in
+    ///     <c>.editorconfig</c>, or applied; there is no third state of "accepted for now", and one
+    ///     finding per file keyed on whichever rule applied first is not a stable identity to accept
+    ///     anyway.
+    /// </remarks>
+    public static bool Owns(string ruleId) => RuleIds.Contains(ruleId);
+
     public static Result Collect(
         string repositoryRoot,
         IReadOnlyList<string> paths,

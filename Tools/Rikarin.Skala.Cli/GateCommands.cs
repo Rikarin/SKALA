@@ -32,9 +32,9 @@ public static partial class SkalaCommandLine {
 
         foreach (var (name, verb, description) in new[] {
                      ("create", BaselineCommand.Verb.Create,
-                         "Accept everything that fires now, replacing any existing baseline."),
+                         "Accept what fires now but arrangement, replacing any existing baseline."),
                      ("update", BaselineCommand.Verb.Update,
-                         "Accept what fires now in addition to what is already accepted. Never removes."),
+                         "Add what fires now to what is accepted. Never an arrangement; never removes."),
                      ("prune", BaselineCommand.Verb.Prune,
                          "⚠ Remove accepted entries that no longer fire. Deliberately separate from `update`."),
                      ("show", BaselineCommand.Verb.Show, "What the baseline holds, and how a fresh run compares to it.")
@@ -95,6 +95,9 @@ public static partial class SkalaCommandLine {
                     BaselinePath = parse.GetValue(file),
                     Define = ParseDefines(parse.GetValue(define)),
                     IncludeFormatting = !parse.GetValue(noFormatting),
+
+                    // ⚠ Collected so that they can be *named*, not accepted (#592): `BaselineCommand`
+                    // keeps every arrangement finding out of the file and lists the unarranged files.
                     IncludeArrangement = true,
 
                     // ⚠ Hints are in the baseline even though they are hidden in the report. A rule

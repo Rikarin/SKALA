@@ -937,7 +937,10 @@ public sealed class BreakPlan {
 
                 // ⚠ Broken after its `[`, the oracle never joins it: `alpha, [` / `1, 2, 3` / `]` comes back as
                 // written however short (measured 2026-10-09). See GroupFacts.DraftsBroken.
-                if (BreaksBefore(FirstToken(collection.Elements[0]))
+                // ⚠ Nor one broken only before its `]` (Nightly fuzz, case 5848915233203857901): the oracle
+                // breaks it after its `[` as well and keeps `), [` / elements / `]`, so pass one, which writes
+                // that break, must draft it as pass two reads it.
+                if ((BreaksBefore(FirstToken(collection.Elements[0])) || BreaksBefore(collection.CloseBracketToken))
                     && groups.TryGetValue(Key(node), out var listPlans)
                     && listPlans.Count > 0) {
                     var listPlan = listPlans[^1] with { Facts = listPlans[^1].Facts with { DraftsBroken = true } };
@@ -3519,7 +3522,8 @@ public sealed class BreakPlan {
                     ArmBody: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm }
                         ? FlatSourceWidth(arm.Expression)
                         + WidthOfNext(arm, SyntaxKind.CommaToken)
-                        : 0
+                        : 0,
+                    TypeTestTail: TypeTestTail(root)
                 ),
                 HeadSharesTheLevelAroundIt(root),
                 OwnLevel: !HeadSharesTheLevelAroundIt(root) && !fromLine,
@@ -3568,10 +3572,42 @@ public sealed class BreakPlan {
     static bool IsAssignmentTarget(SyntaxNode root) =>
         root.Parent is AssignmentExpressionSyntax assignment && assignment.Left == root;
 
+    /// <summary>
+    ///     For the operand of a returned <c>is</c>/<c>as</c> type test that is one plain member access,
+    ///     <c>return r.Property as T;</c>: the width of the line its dot's break would start, from the dot through
+    ///     the <c>;</c>. Zero for every other operand, whose fill stays unplanned.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 (#446, SK-DIV-0210), <c>return r….P… as|is T…;</c> at
+    ///     indent 12, receivers of 1 to 30 columns, types of 1, 6 and 10, the keyword ending at 119 to 136: when
+    ///     the operand alone runs past the margin and <c>.P… as T;</c> fits one level in, the oracle breaks
+    ///     before the dot every time (194 of 194 cells) and keeps the keyword and the type on that line. Where
+    ///     the operand fits, the keyword's own band and its ties with the dot decide, which no rule measured so
+    ///     far reproduces, and where neither fits the oracle nests the dot two levels in — both stay as they
+    ///     were. One dot, a name for a receiver and a <c>return</c>: the shapes measured.
+    /// </remarks>
+    int TypeTestTail(SyntaxNode root) =>
+        root is MemberAccessExpressionSyntax {
+            RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
+            Expression: IdentifierNameSyntax,
+            Parent: BinaryExpressionSyntax { Parent: ReturnStatementSyntax statement } binary
+        } member
+        && IsTypeTest(binary)
+        && binary.Left == root
+        && !statement.SemicolonToken.IsMissing
+        && statement.DescendantTokens()
+            .All(token => token == member.OperatorToken || token == statement.ReturnKeyword || !BreaksBefore(token))
+        && !statement.DescendantTrivia(statement.Span)
+            .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+            )
+            ? FormattedWidth(member.OperatorToken, statement.SemicolonToken)
+            : 0;
+
     bool PlansTheFill(SyntaxNode root) =>
         root.Parent switch {
             AssignmentExpressionSyntax assignment when assignment.Left == root => true,
-            BinaryExpressionSyntax binary when IsTypeTest(binary) && binary.Left == root => false,
+            BinaryExpressionSyntax binary when IsTypeTest(binary) && binary.Left == root => TypeTestTail(root) > 0,
             IsPatternExpressionSyntax test when test.Expression == root => false,
             // ⚠ A switch arm's pattern is always planned, and the Fitter answers by the arm's table
             // (GroupFacts.ArmHead, #531). ⚠ A body short enough for the pattern to fill is not: its own
