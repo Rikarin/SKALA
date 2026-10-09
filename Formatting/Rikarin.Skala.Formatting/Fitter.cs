@@ -65,6 +65,15 @@ public sealed class Fitter {
     /// <summary>How many marks are open; the journal is kept only while one is.</summary>
     int marks;
 
+    /// <summary>
+    ///     The modes <see cref="Force" /> committed groups to, whatever <see cref="Decide" /> would say; null
+    ///     for a group decided the ordinary way.
+    /// </summary>
+    readonly ResolvedMode?[] forced;
+
+    /// <summary>The groups forced since the outermost open <see cref="Mark" />, for <see cref="Rollback" />.</summary>
+    readonly List<int> forcedJournal = [];
+
     public Fitter(Document document, int width, int indentWidth = 4) {
         this.indentWidth = Math.Max(1, indentWidth);
         this.document = document;
@@ -72,6 +81,7 @@ public sealed class Fitter {
         resolved = new bool[Math.Max(1, document.GroupCount)];
         enteredOn = new int[Math.Max(1, document.GroupCount)];
         enteredAt = new int[Math.Max(1, document.GroupCount)];
+        forced = new ResolvedMode?[Math.Max(1, document.GroupCount)];
         this.width = width;
     }
 
@@ -116,27 +126,28 @@ public sealed class Fitter {
         ref var slot = ref document.Nodes[node];
         var id = slot.Arg1;
         var facts = document.FactsOf(id);
-        var mode = Decide(
-            (GroupMode)slot.Arg0,
-            facts,
-            new(
-                column,
-                continuationColumn,
-                document.FlatWidthOf(node),
-                facts.MeasuresThroughTail ? document.ThroughWidthOf(node)
-                : facts.MeasuresHead ? document.HeadWidthOf(node)
-                : document.FlatWidthOf(node),
-                document.PointWidthOf(node),
-                document.AfterPointOf(node),
-                facts.MeasuresThroughTail ? 0 : trailing,
-                line,
-                document.YieldEndOf(node)
-            ),
-            document.AfterPointRunsToTheEnd(node),
-            document.SegmentOf(node),
-            lineStart,
-            document.FirstPointFlatWidthOf(node)
-        );
+        var mode = forced[id]
+            ?? Decide(
+                (GroupMode)slot.Arg0,
+                facts,
+                new(
+                    column,
+                    continuationColumn,
+                    document.FlatWidthOf(node),
+                    facts.MeasuresThroughTail ? document.ThroughWidthOf(node)
+                    : facts.MeasuresHead ? document.HeadWidthOf(node)
+                    : document.FlatWidthOf(node),
+                    document.PointWidthOf(node),
+                    document.AfterPointOf(node),
+                    facts.MeasuresThroughTail ? 0 : trailing,
+                    line,
+                    document.YieldEndOf(node)
+                ),
+                document.AfterPointRunsToTheEnd(node),
+                document.SegmentOf(node),
+                lineStart,
+                document.FirstPointFlatWidthOf(node)
+            );
         modes[id] = mode;
         resolved[id] = true;
         enteredOn[id] = line;
@@ -149,7 +160,7 @@ public sealed class Fitter {
     }
 
     /// <summary>A point to roll the fitter back to: see <see cref="MarkForRollback" />.</summary>
-    public readonly record struct Mark(int Journal, int OwnerUnresolved);
+    public readonly record struct Mark(int Journal, int OwnerUnresolved, int Forced);
 
     /// <summary>
     ///     Starts recording the groups resolved from here on, so that <see cref="Rollback" /> can forget
@@ -163,7 +174,7 @@ public sealed class Fitter {
     /// </remarks>
     public Mark MarkForRollback() {
         marks++;
-        return new(journal.Count, OwnerUnresolved);
+        return new(journal.Count, OwnerUnresolved, forcedJournal.Count);
     }
 
     /// <summary>Forgets every group resolved since <paramref name="mark" />.</summary>
@@ -177,6 +188,11 @@ public sealed class Fitter {
         }
 
         journal.RemoveRange(mark.Journal, journal.Count - mark.Journal);
+        for (var i = forcedJournal.Count - 1; i >= mark.Forced; i--) {
+            forced[forcedJournal[i]] = null;
+        }
+
+        forcedJournal.RemoveRange(mark.Forced, forcedJournal.Count - mark.Forced);
         OwnerUnresolved = mark.OwnerUnresolved;
         marks--;
     }
@@ -207,6 +223,25 @@ public sealed class Fitter {
         int Trailing,
         int Line,
         int YieldEnd = 0);
+
+    /// <summary>
+    ///     Commits a group the walk has not entered yet to a mode: the writer wrote ahead, saw what it took,
+    ///     and lays out what precedes it on that answer, which a later layout must not take back. See
+    ///     <see cref="GroupFacts.LiftsIfArrowBreaks" />.
+    /// </summary>
+    public void Force(int group, ResolvedMode mode) {
+        if (forced[group] is not null) {
+            return;
+        }
+
+        forced[group] = mode;
+        if (marks > 0) {
+            forcedJournal.Add(group);
+        }
+    }
+
+    /// <summary>The mode <see cref="Force" /> committed a group to, or null.</summary>
+    public ResolvedMode? ForcedOf(int group) => forced[group];
 
     /// <summary>The mode a group resolved to. Flat until the walk reaches it.</summary>
     public ResolvedMode ModeOf(int group) => modes[group];

@@ -10945,6 +10945,18 @@ Skala's pass one breaks before the arrow for width, so only pass two could see t
 chopped then. A `when` clause holding a type argument list no longer lifts: stable, one line a level short of the
 oracle (open).
 
+⚠ **Fuzz 14973596429632421881.** `{` / `Kind` / `: not null` / `} when (from … select …)` / `=> body,`: the oracle
+lifts the braces — subpatterns two levels past the arm, `}` one — whenever the arrow breaks, for width as well as
+kept, and decides the arrow first: at 20 columns the `} when (…) =>` line fits, the body does not, the body goes
+below, and the lift then pushes the query past the margin so it chops, the arrow's break staying though the body
+would now fit beside the `select`. Measured 2026-10-09 with `Testing ask` on eleven shapes. Skala lifted only under a
+kept break, so pass two lifted what pass one had not. The writer now writes such an arm ahead unlifted, lifts when
+an arrow group breaks there under a head that spans lines, and forces the arrow groups to the modes they took
+(`GroupFacts.LiftsIfArrowBreaks`, `Fitter.Force`). The body's own lists are not lifted, as under a kept break.
+Pinned by `constructs/breaks/arm-braces-under-an-arrow-broken-for-width.cs`. ⚠ Residue: for
+`=> Cast<IReadOnlyDictionary<(…), (…)>, TimeSpan>(…)` the oracle breaks inside the tuple type and keeps the arrow
+(SK-DIV-0024's family). Skala breaks after the arrow and now lifts the braces. Both passes agree (open).
+
 - ⚠ status: **resolved** (#576) for the cut-down shapes, pinned by `constructs/breaks/arm-when-condition-below.cs`;
   **open** for the seed's whole line.
 
