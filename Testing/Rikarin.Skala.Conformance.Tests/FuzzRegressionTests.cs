@@ -88,6 +88,7 @@ public sealed class FuzzRegressionTests {
     [InlineData(9552816164132777654UL)]
     [InlineData(7862808234978504853UL)]
     [InlineData(3776683644240416092UL)]
+    [InlineData(11325995557757886152UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

@@ -5633,6 +5633,14 @@ public sealed class BreakPlan {
             // on its second pass once the first wrote the brace's break.
             AnonymousObjectCreationExpressionSyntax { Initializers.Count: > 0 } anonymous =>
                 !BreaksBefore(anonymous.OpenBraceToken) && BreaksBefore(anonymous.OpenBraceToken.GetNextToken()),
+
+            // ⚠ And a collection broken after its `[` as a conditional's condition (Nightly `fuzz --seed=7777`,
+            // case 11325995557757886152): the oracle keeps `T v = [` / elements / `]` / `? a` / `: b` wherever
+            // the statement does not fit on one line, for a field and a local, heads of 10 to 85 columns and
+            // elements of 20 and 60 (measured 2026-10-09). Skala broke the `=`, and the fuzzer reached that by
+            // a first pass that kept an author's break before a comma as a break after the `[`.
+            ConditionalExpressionSyntax { Condition: CollectionExpressionSyntax { Elements.Count: > 0 } collection } =>
+                !BreaksBefore(collection.OpenBracketToken) && BreaksBefore(collection.OpenBracketToken.GetNextToken()),
             _ => false
         };
 
