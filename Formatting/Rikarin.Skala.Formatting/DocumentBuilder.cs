@@ -439,7 +439,10 @@ public sealed class DocumentBuilder {
             DocKind.Indent,
             (int)kind,
             (int)(conditions
-                & (IndentFlags.HeldWhileOwnerFlat | IndentFlags.HeldWhileChainWhole | IndentFlags.HeldWhileGroupFlat)),
+                & (IndentFlags.HeldWhileOwnerFlat
+                    | IndentFlags.HeldWhileChainWhole
+                    | IndentFlags.HeldWhileGroupFlat
+                    | IndentFlags.HeldWhileGroupBroken)),
             chainGroup
         );
 

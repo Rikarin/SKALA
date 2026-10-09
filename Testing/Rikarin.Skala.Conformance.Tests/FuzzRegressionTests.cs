@@ -121,6 +121,9 @@ public sealed class FuzzRegressionTests {
     // `fuzz --seed=4242`: `a + (b * c) + (d\n== 0 ? …)` — a nested chain broken in the last operand chopped only
     // the link holding it, and pass two chopped the first link as well.
     [InlineData(5604488888367663423UL, "real/vixen/Core/Vixen.Navigation/Agents/LocalAvoidance.cs")]
+    // `fuzz --seed=7777`: `bool c = o… is A // c` / `or B;` — a line comment in the pattern turned the `=` away
+    // from #446's table, and the `or`s after the `is` break took a level the second pass gave back.
+    [InlineData(16865623964709448456UL, "constructs/breaks/equals-before-a-binary-pattern.cs")]
     [InlineData(3559808079077978877UL, "constructs/wrapping/lambda-arrow-over-a-property-fill.cs")]
     [InlineData(3423309597191150844UL, "constructs/breaks/conditional-after-eq.cs")]
     [InlineData(

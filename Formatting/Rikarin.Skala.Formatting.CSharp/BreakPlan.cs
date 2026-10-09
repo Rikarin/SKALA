@@ -198,7 +198,17 @@ public enum HeldLevel {
     ///     the parenthesis having spent it, and <c>All(x =&gt;</c> / <c>x is A</c> / <c>or B</c> one level past
     ///     the body's line. See <see cref="BreakPlan.ArrowHeldAgainst" />.
     /// </summary>
-    WhileArrowFlat = 8
+    WhileArrowFlat = 8,
+
+    /// <summary>
+    ///     ⚠ Every level the group spends is spent as zero columns once the gap after the <c>is</c> it follows
+    ///     resolves broken, and as columns while that gap stays flat (Nightly <c>fuzz --seed=7777</c>):
+    ///     <c>operand is</c> / <c>A</c> / <c>or B</c> puts <c>A</c> and every <c>or</c> on one column, as an
+    ///     <c>is</c> the author broke does (#520, #550). Spending the chain's level there put the <c>or</c>s a
+    ///     level past <c>A</c>, and pass two, reading the break as the author's, put them back. See
+    ///     <see cref="BreakPlan.ArrowHeldAgainst" />, which names the gap's group.
+    /// </summary>
+    WhileGroupBroken = 16
 }
 
 /// <summary>
@@ -305,8 +315,14 @@ public sealed class BreakPlan {
     /// <summary>The arrow group <see cref="PlanArrowBody" /> opened for each lambda, by the lambda's key.</summary>
     readonly Dictionary<long, int> arrowGroups = [];
 
-    /// <summary>The arrow group each <see cref="HeldLevel.WhileArrowFlat" /> hold is decided by.</summary>
+    /// <summary>
+    ///     The group each <see cref="HeldLevel.WhileArrowFlat" /> or <see cref="HeldLevel.WhileGroupBroken" /> hold
+    ///     is decided by: a sole lambda's arrow, or the gap after an <c>is</c>.
+    /// </summary>
     readonly Dictionary<int, int> arrowHeldAgainst = [];
+
+    /// <summary>The group <see cref="PlanAfterIs" /> opened for the gap after each <c>is</c>, by the test's key.</summary>
+    readonly Dictionary<long, int> afterIsGroups = [];
 
     /// <summary>
     ///     The chain roots whose <c>wrap_chained_binary_*</c> style is <c>wrap_if_long</c>, so that
@@ -4063,7 +4079,7 @@ public sealed class BreakPlan {
                 && EnclosingTypeTest(root) is { Parent: BinaryExpressionSyntax logical } leftTest
                 && logical.Left == leftTest
                 && logical.Kind() is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression,
-                HoldsLevel: pattern ? HoldForASoleLambda(root, group) : HeldLevel.None
+                HoldsLevel: pattern ? HoldForASoleLambda(root, group) | HoldAfterIs(root, group) : HeldLevel.None
             )
         );
     }
@@ -4095,6 +4111,24 @@ public sealed class BreakPlan {
 
         arrowHeldAgainst[group] = arrow;
         return HeldLevel.WhileArrowFlat;
+    }
+
+    /// <summary>
+    ///     The pattern chain right after an <c>is</c> whose gap <see cref="PlanAfterIs" /> planned holds its
+    ///     levels once that gap breaks (<see cref="HeldLevel.WhileGroupBroken" />). The slot
+    ///     <see cref="ArrowHeldAgainst" /> reads carries the gap's group; a chain under a sole lambda never
+    ///     heads a local's value, so the two holds never meet on one group.
+    /// </summary>
+    HeldLevel HoldAfterIs(SyntaxNode pattern, int group) {
+        if (EnclosingTypeTest(pattern) is not { } test
+            || test.Pattern != pattern
+            || !afterIsGroups.TryGetValue(Key(test), out var gap)
+            || arrowHeldAgainst.ContainsKey(group)) {
+            return HeldLevel.None;
+        }
+
+        arrowHeldAgainst[group] = gap;
+        return HeldLevel.WhileGroupBroken;
     }
 
     /// <summary>The <c>is</c> a pattern sits under, through parenthesised and negated patterns.</summary>
@@ -5477,7 +5511,10 @@ public sealed class BreakPlan {
                     OneOverType: value is ParenthesizedLambdaExpressionSyntax oneOver ? OneOverOf(oneOver).Type : 0,
                     PatternHead: PatternHeadOf(node, equals, value),
                     PatternWidth: PatternHeadOf(node, equals, value) > 0
-                        ? FormattedWidth(((IsPatternExpressionSyntax)value).Pattern)
+                        ? PatternWidthOf(((IsPatternExpressionSyntax)value).Pattern)
+                        : 0,
+                    PatternFirstWidth: PatternHeadOf(node, equals, value) > 0
+                        ? FormattedWidth(value.GetFirstToken(), FirstAlternativeOf(((IsPatternExpressionSyntax)value).Pattern).GetLastToken())
                         : 0,
                     CalleeOwner: owner,
                     FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
@@ -5911,15 +5948,79 @@ public sealed class BreakPlan {
     ///     through the <c>=</c>, which turns on <see cref="EqualsFloor.BreaksBeforeAPattern" /> (#446,
     ///     SK-DIV-0211); zero otherwise.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ A line comment inside the pattern is let through, with the line end that is the comment's own
+    ///     (Nightly <c>fuzz --seed=7777</c>, case 16865623964709448456): <c>bool c = o… is A // c</c> /
+    ///     <c>or B;</c> at 124 columns. Turned away, the <c>=</c> fell to the ordering rule, which stayed flat
+    ///     and broke after <c>is</c> with <c>or</c> a level deeper — and pass two, reading that break as the
+    ///     author's, put <c>or</c> back a level. The oracle breaks the <c>=</c> on every row whose line through
+    ///     the comment overflows, whatever the pattern's width after it. See <see cref="PatternWidthOf" />.
+    /// </remarks>
     int PatternHeadOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {
         if (value is not IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } test
             || EqualsOwnerOf(node) is not (EqualsOwner.VarLocal or EqualsOwner.TypedLocal)
-            || test.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+            || test.Expression.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+            || test.IsKeyword.TrailingTrivia.Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+            || !OnlyLineCommentsBreak(test.Pattern)
             || EqualsHeadStartOf(node) is not { RawKind: not 0 } head) {
             return 0;
         }
 
         return FormattedWidth(head, equals);
+    }
+
+    /// <summary>
+    ///     Whether every trivia in <paramref name="node" /> is whitespace, a line comment, or the line end
+    ///     right after a line comment — a node written on one line but for its line comments.
+    /// </summary>
+    static bool OnlyLineCommentsBreak(SyntaxNode node) {
+        var afterComment = false;
+        foreach (var trivia in node.DescendantTrivia()) {
+            switch (trivia.Kind()) {
+                case SyntaxKind.WhitespaceTrivia:
+                    continue;
+                case SyntaxKind.SingleLineCommentTrivia:
+                    afterComment = true;
+                    continue;
+                case SyntaxKind.EndOfLineTrivia when afterComment:
+                    afterComment = false;
+                    continue;
+                default:
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    ///     The pattern's width for <see cref="EqualsFloor.BreaksBeforeAPattern" />, through its first line
+    ///     comment when it has one: the comment ends the line, so what stands on the <c>=</c>'s line is the
+    ///     pattern up to it. ⚠ Measured 2026-10-09 with <c>Testing ask</c>: <c>bool c = o… is A // c</c> /
+    ///     <c>or B … ;</c>, a typed and a <c>var</c> local, one to seven alternatives after the comment (up to
+    ///     132 columns of pattern), the line through the comment ending at 116 to 126 — the <c>=</c> breaks on
+    ///     every row past 120, where the full pattern's width would have chopped the wider ones on the
+    ///     declaration's line.
+    /// </summary>
+    /// <summary>The leftmost operand of a combinator chain: what stands before its first <c>or</c> or <c>and</c>.</summary>
+    static PatternSyntax FirstAlternativeOf(PatternSyntax pattern) {
+        while (pattern is BinaryPatternSyntax binary) {
+            pattern = binary.Left;
+        }
+
+        return pattern;
+    }
+
+    int PatternWidthOf(PatternSyntax pattern) {
+        var last = pattern.GetLastToken();
+        foreach (var token in pattern.DescendantTokens()) {
+            if (token.TrailingTrivia.Any(SyntaxKind.SingleLineCommentTrivia)) {
+                last = token;
+                break;
+            }
+        }
+
+        return FormattedWidth(pattern.GetFirstToken(), last);
     }
 
     /// <summary>
@@ -8088,6 +8189,7 @@ public sealed class BreakPlan {
         }
 
         var group = NewGroup();
+        afterIsGroups[Key(test)] = group;
         Point(first, group);
         Describe(
             test.Pattern,

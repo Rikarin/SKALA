@@ -348,9 +348,23 @@ public sealed class Fitter {
                 }
 
                 // ⚠ An `=` before `operand is A or B`: a measured table (#446, SK-DIV-0211).
+                // ⚠ A line comment in the pattern ends the line, so what follows the value does not land on it.
                 if (facts.PatternHead > 0
                     && facts.BreaksIfTooLong
-                    && !Fits(m.Column, m.BreakWidth, m.Trailing)) {
+                    && !Fits(m.Column, m.BreakWidth, m.FlatWidth < Unbounded ? m.Trailing : 0)) {
+                    // ⚠ The line through the first alternative past the margin breaks the `=`, however wide the
+                    // pattern (Nightly `fuzz --seed=7777`, case 16865623964709448456). The table was measured
+                    // with short operands; behind a long one it kept `T v = operand is` and broke after the `is`
+                    // with the `or`s a level past `A`, and pass two, reading that break as the author's, put them
+                    // back on `A`'s column. Measured 2026-10-09 with `Testing ask`: a typed and a `var` local,
+                    // operands of 40 to 110 columns, first alternatives of 5, 15 and 30, two to seven
+                    // alternatives — every row whose first alternative ends at 121 or further breaks the `=`.
+                    if (facts.PatternFirstWidth > 0
+                        && m.PointWidth < Unbounded
+                        && !Fits(m.Column, m.PointWidth + 1 + facts.PatternFirstWidth)) {
+                        return ResolvedMode.Broken;
+                    }
+
                     var end = m.FlatWidth >= Unbounded || m.Trailing >= Unbounded
                         ? int.MaxValue
                         : m.Column + m.FlatWidth + m.Trailing;
