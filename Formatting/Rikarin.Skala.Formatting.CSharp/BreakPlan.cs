@@ -3980,7 +3980,7 @@ public sealed class BreakPlan {
     /// <remarks>
     ///     A parenthesised head (SK-DIV-0112, see <see cref="PlanChainedCalls" />), and two positions
     ///     measured for #495 (SK-DIV-0184's residue). The whole condition of an <c>if</c>, an
-    ///     <c>else if</c>, a <c>while</c> or a <c>do</c>'s <c>while</c>, where
+    ///     <c>else if</c>, a <c>while</c>, a <c>do</c>'s <c>while</c> or a <c>for</c> (#593), where
     ///     <c>align_multiline_statement_conditions</c> puts the dots on the aligned column:
     ///     <c>if (source.Select(…)</c> / <c>.Any(p)) {</c> with the <c>.</c> under the <c>s</c>. ⚠ Only
     ///     the whole condition: <c>if (!source…</c>, <c>if (flag</c> / <c>&amp;&amp; source…</c>, and a
@@ -3993,10 +3993,26 @@ public sealed class BreakPlan {
     /// </remarks>
     bool SharesTheLevelAroundIt(SyntaxNode root) =>
         HeadSharesTheLevelAroundIt(root)
-        || root.Parent is IfStatementSyntax or WhileStatementSyntax or DoStatementSyntax
-        && IsAHeaderCondition(root)
+        || IsAWholeStatementCondition(root)
         || options.PlaceSingleMethodArgumentLambdaOnSameLine
         && IsTheBodyOfASoleLambda(root);
+
+    /// <summary>
+    ///     Whether a chain is the whole condition of an <c>if</c>, an <c>else if</c>, a <c>while</c>, a
+    ///     <c>do</c>'s <c>while</c> or a <c>for</c>, whose dots sit on the aligned column (#495, #593).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Read by the chain group here and by the chain frame in <see cref="CSharpDocumentBuilder" />, which
+    ///     pays for an author's break before a dot that is no point — the held first call's. Without the frame
+    ///     half, pass one's break before <c>.Select</c> read as the author's on pass two and put every dot a
+    ///     level past the aligned column (#593, fuzz seed 16215088427476222539); the oracle keeps an author's
+    ///     break there on the column too, measured for all four statements. ⚠ And a <c>for</c>'s condition, which
+    ///     #495 never measured: <c>for (var i = 0;</c> / <c>source</c> / <c>.Select(a)</c> puts the dots under
+    ///     the <c>s</c>, the width's break and the author's alike; <c>i &lt; 10</c> / <c>&amp;&amp; source…</c>
+    ///     keeps the chain's own level, as an <c>if</c>'s does.
+    /// </remarks>
+    internal static bool IsAWholeStatementCondition(SyntaxNode root) =>
+        IsAHeaderCondition(root);
 
     /// <summary>
     ///     Whether a chain that shares the level around it takes it from the line it starts on: as a sole

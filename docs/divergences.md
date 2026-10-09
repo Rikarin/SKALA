@@ -8738,6 +8738,16 @@ receiver of a further link (`found.SelectMany(static d => Enumerable.Range(…)`
 levels in, Skala's own source). Pinned by `ChainInAHeaderIssue495Tests` and
 `constructs/breaks/chain-in-a-header-or-a-sole-lambda.cs`. A break-choice divergence seen beside it is
 SK-DIV-0332.
+⚠ #593 (2026-10-09, fuzz seed 16215088427476222539): that rule lived only in the chain's *group*. An
+author's break before the held first call's dot is no point of the group and reached the chain *frame*,
+which paid a level of its own — so pass one's width break, read as the author's on pass two, moved every
+dot a level past the aligned column. The oracle keeps an author's break there on the column: measured on
+33 rows (if, else if, while, do, switch, foreach, using, `!`, `&&` and both lambda shapes; a long, a
+partly broken and a short chain), Skala diverged on the 12 whole-condition rows and now matches all 33.
+The frame reads the same predicate now (`BreakPlan.IsAWholeStatementCondition`). And a `for`'s whole
+condition is one too, which #495 never measured: `for (var i = 0;` / `source` / `.Select(a)` puts the
+dots under the `s`, the width's break and the author's alike (5 rows diverging before, none after);
+`i < 10` / `&& source…` keeps the chain's own level. Pinned by `HeldCallInAHeaderIssue593Tests`.
 
 - options: none behind the divergence; measured at `skala_continuous_indent_multiplier = 2` too.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/chain-first-call-arguments.cs` and
