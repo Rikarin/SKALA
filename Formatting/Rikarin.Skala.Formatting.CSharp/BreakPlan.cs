@@ -3246,6 +3246,10 @@ public sealed class BreakPlan {
                 // CSharpDocumentBuilder's Frame.HoldsLevel.
                 SharesTheLevelAroundIt(root) && !ChainFromItsLine(root),
                 OwnLevel: !SharesTheLevelAroundIt(root),
+                // ⚠ And as the operand of an `is` the author broke before, that level counts beside the `is`'s
+                // although both opened on the operand's line (#597): `return x.M(` / … / `)` / `.Symbol` / `is T`
+                // puts `.Symbol` a level past the `is`.
+                AdditiveLevel: IsAStackedTypeTestsOperand(root),
                 // ⚠ As a sole lambda argument's body the chain is one level past the line it starts on, as
                 // the property fill is (#557): the arrow's line while the arrow stays, the body's once it
                 // breaks — `U(x =>` / `source.A…` / `.Select(…)` one level past the body (#582).
@@ -4611,7 +4615,11 @@ public sealed class BreakPlan {
                 // `Compute(` / … / `) is string` one (#445). Resolving broken is not enough, because this
                 // group resolves broken whenever the expression is too long, whether or not it wraps.
                 new(BreaksIfTooLong: true, Continues: BreaksBefore(keyword)),
-                FromLine: !IsAHeaderCondition(node)
+                // ⚠ Or, where the author broke before the keyword, a level of its own on top of what is open
+                // around it (#597, see StacksItsLevel).
+                FromLine: !IsAHeaderCondition(node) && !StacksItsLevel(node, keyword),
+                OwnLevel: StacksItsLevel(node, keyword),
+                AdditiveLevel: StacksItsLevel(node, keyword) && IsALogicalOperand(node)
             )
         );
 
@@ -4626,6 +4634,57 @@ public sealed class BreakPlan {
             Describe(node, before, GroupMode.Preserve, new(KeywordWidth: keyword.Span.Length));
         }
     }
+
+    /// <summary>
+    ///     Whether a type test the author broke before its <c>is</c> or <c>as</c> spends a level of its own,
+    ///     stacked on what is open around it, rather than one past its operand's line (#597).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-09 with <c>Testing ask</c> on 308 rows: <c>return x.M(</c> / the arguments /
+    ///     <c>)</c> / <c>is not T t</c> puts the arguments two levels in and the <c>)</c> and <c>is</c> one, where
+    ///     Skala wrote the <c>)</c> flush with <c>return</c>; with <c>.Symbol</c> after the <c>)</c> the chain takes
+    ///     a level past the <c>is</c> (<c>.Symbol</c> at two, the arguments at three); and as the left operand
+    ///     of <c>||</c> or <c>&amp;&amp;</c> the <c>is</c> goes a level past the operator, everything under it
+    ///     with it — <c>|| …</c> at one, <c>is</c> at two. The same after <c>return</c>, <c>var x =</c>, an
+    ///     assignment, <c>=&gt;</c>, a ternary's condition, an argument, a lambda's <c>||</c> body and a
+    ///     statement condition (on the aligned column, as a whole condition shares it). Found in Skala's own
+    ///     <c>SearchValuesAnalyzer.cs</c>. ⚠ Not a sole lambda's whole body, which keeps #445's one level past
+    ///     the line (<c>static element =&gt; element</c> / <c>is ExpressionElementSyntax</c>, the same file).
+    /// </remarks>
+    bool StacksItsLevel(SyntaxNode node, SyntaxToken keyword) {
+        if (!BreaksBefore(keyword) || IsAHeaderCondition(node)) {
+            return false;
+        }
+
+        var top = node;
+        while (IsALogicalOperand(top)) {
+            top = top.Parent!;
+        }
+
+        return top.Parent is ReturnStatementSyntax
+                or EqualsValueClauseSyntax
+                or ArrowExpressionClauseSyntax
+                or AssignmentExpressionSyntax
+                or ConditionalExpressionSyntax
+                or ArgumentSyntax
+            || top != node && top.Parent is LambdaExpressionSyntax
+            || IsAHeaderCondition(top);
+    }
+
+    /// <summary>Whether a chain is the operand of a type test that <see cref="StacksItsLevel" />.</summary>
+    bool IsAStackedTypeTestsOperand(SyntaxNode root) =>
+        root.Parent switch {
+            BinaryExpressionSyntax test when IsTypeTest(test) && test.Left == root =>
+                StacksItsLevel(test, test.OperatorToken),
+            IsPatternExpressionSyntax test when test.Expression == root && IsUnbreakablePattern(test.Pattern) =>
+                StacksItsLevel(test, test.IsKeyword),
+            _ => false
+        };
+
+    /// <summary>Whether a node is an operand of <c>&amp;&amp;</c> or <c>||</c>.</summary>
+    static bool IsALogicalOperand(SyntaxNode node) =>
+        node.Parent is BinaryExpressionSyntax logical
+        && logical.Kind() is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression;
 
     /// <summary>
     ///     A property-pattern subpattern's own break point: after its <c>:</c>, landing on the
