@@ -10899,8 +10899,9 @@ continuation two levels, and keeps a query body on the `>>() =>` line breaking i
 - options: none.
 ⚠ **Fuzz 14071685607328961301: the arrow's read-through is for a short body only.** #378 made a body with no
 break point part of the head's line (`{ … } => 2u,` chops the pattern). Measured 2026-10-09 with the `=>` ending at
-104, 112 and 118 and bodies eight to fifteen columns wide: up to thirteen the oracle chops the head; from fourteen
-it breaks after the arrow, whatever the head's width — an interpolated string of 51 and a `[_, .. var r] when …`
+104, 112 and 118 and bodies eight to fifteen columns wide: up to fourteen with the arm's comma the oracle chops the
+head (a last arm's fourteen-column body without one too, #531); from fifteen it breaks after the arrow, whatever the
+head's width — an interpolated string of 51 and a `[_, .. var r] when …`
 head included. `DocumentBuilder.ShortArrowBody`; pinned by `constructs/breaks/arm-body-without-a-break-point.cs`.
 
 ⚠ Its fixture also exposed a spacing defect, fixed beside it: a query clause's keyword (`where "s"`, `select (item)`)
