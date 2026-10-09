@@ -4143,10 +4143,16 @@ public sealed class BreakPlan {
         // a level of its own, as a pattern chain does there (SK-DIV-0420): `var g = i.Where(x => a` / `&& b`
         // sixteen columns in / `)` / `.ToList();`, one level past the chain's continuation, where Skala wrote the
         // `&&` on the `)`'s column.
+        // ⚠ Only where the call's own dot stays on the line it starts: with `.Where(` on a continuation line of its
+        // own the oracle keeps the `&&` one level past that line (Skala's own source, asked 2026-10-10: thirteen
+        // files, every one kept).
         var receiverBody = root is BinaryExpressionSyntax
             && root.Parent is LambdaExpressionSyntax receiverLambda
             && receiverLambda.ExpressionBody == root
-            && IsTheReceiverOfAFurtherLink(receiverLambda);
+            && IsTheReceiverOfAFurtherLink(receiverLambda)
+            && receiverLambda.Parent?.Parent?.Parent is InvocationExpressionSyntax receiverCall
+            && !(receiverCall.Expression is MemberAccessExpressionSyntax receiverAccess
+                && BreaksBefore(receiverAccess.OperatorToken));
 
         Describe(
             root,
@@ -4199,8 +4205,8 @@ public sealed class BreakPlan {
                 && logical.Left == leftTest
                 && logical.Kind() is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression,
                 HoldsLevel: pattern ? HoldForASoleLambda(root, group) | HoldAfterIs(root, group)
-                    : receiverBody ? HoldWhileTheArrowBreaks(root, group)
-                    : HeldLevel.None
+                : receiverBody ? HoldWhileTheArrowBreaks(root, group)
+                : HeldLevel.None
             )
         );
     }
@@ -5701,7 +5707,10 @@ public sealed class BreakPlan {
                     EqualsLambdaType: wideLambdaCall is null ? 0 : FormattedWidth(wideLambdaCall.Type),
                     EqualsLambdaValueHead: wideLambdaCall is null || lambdaCall is null
                         ? 0
-                        : FormattedWidth(value.GetFirstToken(), lambdaCall.ArgumentList.OpenParenToken.GetPreviousToken()),
+                        : FormattedWidth(
+                            value.GetFirstToken(),
+                            lambdaCall.ArgumentList.OpenParenToken.GetPreviousToken()
+                        ),
                     EqualsLambdaArguments: wideLambdaCall is null || lambdaCall is null
                         ? 0
                         : FormattedWidth(lambdaCall.ArgumentList),
@@ -6323,8 +6332,7 @@ public sealed class BreakPlan {
         && node is EqualsValueClauseSyntax {
             Parent: VariableDeclaratorSyntax {
                 Parent: VariableDeclarationSyntax {
-                    Variables.Count: 1,
-                    Parent: LocalDeclarationStatementSyntax or FieldDeclarationSyntax
+                    Variables.Count: 1, Parent: LocalDeclarationStatementSyntax or FieldDeclarationSyntax
                 }
             } declarator
         }
@@ -7442,8 +7450,7 @@ public sealed class BreakPlan {
                     Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: FieldDeclarationSyntax }
                 },
             AssignmentExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
-                Parent: ExpressionStatementSyntax
+                RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax
             } assignment => FormattedWidth(assignment.Left) is >= 4 and <= 9,
             _ => false
         }
@@ -7459,14 +7466,12 @@ public sealed class BreakPlan {
     /// </summary>
     static VariableDeclarationSyntax? WideLambdaCallLocalOf(SyntaxNode node, ExpressionSyntax value) =>
         value is LambdaExpressionSyntax {
-            ExpressionBody: InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 },
-            Modifiers.Count: 0
+            ExpressionBody: InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 }, Modifiers.Count: 0
         }
         && node is EqualsValueClauseSyntax {
             Parent: VariableDeclaratorSyntax {
                 Parent: VariableDeclarationSyntax {
-                    Variables.Count: 1,
-                    Parent: LocalDeclarationStatementSyntax
+                    Variables.Count: 1, Parent: LocalDeclarationStatementSyntax
                 } declaration
             } declarator
         }
