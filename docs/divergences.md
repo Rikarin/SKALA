@@ -11160,3 +11160,29 @@ held-single-call cases that the first sweep had left on the source span:
   breaks the held value on the first pass.
 
 All five cases are pinned in `MeasuredWidthsAbsorbWhitespaceTests`, and each fails against master's sources.
+
+## SK-DIV-0360 — a ternary whose condition breaks inside a chain's operand: the oracle indents `?` one level deeper
+
+Found while fixing Nightly `fuzz --seed=4242` (case 5604488888367663423). Measured 2026-10-09 with
+`Testing ask`: in `a + (b` / `== 0 ? x : y)` the oracle chops the ternary and puts `? x` and `: y` one level
+deeper than `== 0`. Skala puts them at the same level as `== 0`. Both answers are stable over their own
+output. The chain's chop around the operand, which is what the fuzzer found, is fixed (see below); this indent
+is not.
+
+- ⚠ status: **open**, not a decision.
+
+## SK-DIV-0361 — a chain the author broke at one of its own links: the oracle chops every link
+
+Measured beside SK-DIV-0360. `a && b` / `&& (c || d) && e` comes back from the oracle chopped at all three
+`&&`. Skala keeps `a && b` together and breaks only the kept link and the links after it that do not fit.
+This is the asymmetry SK-DIV-0109 records for a chain's own links. Its owner reads them as weak, so a
+chain broken at its outer `||` comes back unchanged. That rule is correct for a single-link outer chain and
+wrong here. The case is stable and was on master before this round.
+
+⚠ **What changed this round is the other direction.** A *nested* chain that spans lines used to reach the
+chain around it as weak certainty too. `a + (b * c) + (d` / `&& e)` then chopped only the link that held
+it, and the second pass chopped the first link as well. A certain chain owner now reports strong
+certainty outward (`DocumentBuilder.Close`). That matches the oracle on all 19 nested shapes measured,
+pinned by `NestedChainOperandNightlyTests`.
+
+- ⚠ status: **open** for the same-chain case; the nested case is **fixed**.
