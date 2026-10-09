@@ -5588,6 +5588,12 @@ public sealed class BreakPlan {
                     MemberHeadWidth: value is MemberAccessExpressionSyntax plain && IsPlainMemberValue(plain)
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,
+                    EqualsName: EqualsNameOf(node, owner, value),
+                    MemberLinks: MemberLinksOf(value),
+                    OrLeft: OrOperandsOf(owner, value) is { } or ? FlatSourceWidth(or.Left) : 0,
+                    OrRight: OrOperandsOf(owner, value) is { } orRight ? FlatSourceWidth(orRight.Right) : 0,
+                    OrHead: OrOperandsOf(owner, value) is not null ? HeadWidthThroughEquals(node, equals) : 0,
+                    OrLeftIsPattern: OrOperandsOf(owner, value)?.Left is IsPatternExpressionSyntax,
                     HeldValue: heldCall is null ? 0 : heldKind,
                     HeldValueWidth: heldCall is null
                         ? 0
@@ -5768,6 +5774,63 @@ public sealed class BreakPlan {
     ///     the callee — the value up to its <c>(</c> — which turns on the measured floor of
     ///     <see cref="GroupFacts.CalleeWidth" /> (#446, SK-DIV-0211); zero for any other value.
     /// </summary>
+    /// <summary>
+    ///     The width of the name an <c>=</c> assigns — a local's identifier, an assignment's left side — under the
+    ///     owners measured for it; zero otherwise. See <see cref="GroupFacts.EqualsName" /> (#589, #590).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A field's too, before a call or a creation only: its floor's "every row chops up to a <c>(</c> at 78" was
+    ///     the name as well. Measured 2026-10-09 on 984 fields at indent 4 — names of 4 to 48, calls and
+    ///     <c>new Foo(…)</c>, the <c>(</c> at 56 to 116 — the gate agrees with every row but four.
+    /// </remarks>
+    int EqualsNameOf(SyntaxNode node, EqualsOwner owner, ExpressionSyntax value) {
+        var call = value is InvocationExpressionSyntax or ObjectCreationExpressionSyntax;
+        if (owner == EqualsOwner.None
+            || owner == EqualsOwner.Field && !call
+            || !call && value is not (MemberAccessExpressionSyntax or ConditionalExpressionSyntax)) {
+            return 0;
+        }
+
+        return node switch {
+            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Identifier: var name } } => name.Span.Length,
+            AssignmentExpressionSyntax assignment => FormattedWidth(assignment.Left),
+            _ => 0
+        };
+    }
+
+    /// <summary>
+    ///     For a plain member value (<see cref="IsPlainMemberValue" />), the widths of its links after the receiver, the
+    ///     <c>.</c> included, in order; null for any other value. See <see cref="GroupFacts.MemberLinks" />.
+    /// </summary>
+    static int[]? MemberLinksOf(ExpressionSyntax value) {
+        if (value is not MemberAccessExpressionSyntax plain || !IsPlainMemberValue(plain)) {
+            return null;
+        }
+
+        var links = new List<int>();
+        for (ExpressionSyntax current = plain;
+             current is MemberAccessExpressionSyntax member;
+             current = member.Expression) {
+            links.Add(1 + member.Name.Span.Length);
+        }
+
+        links.Reverse();
+        return [..links];
+    }
+
+    /// <summary>
+    ///     A local's or an assignment's value <c>X || Y</c> written on one line, <c>X</c> an <c>&amp;&amp;</c> chain or
+    ///     an <c>is</c> pattern: the binary expression, or null. See <see cref="GroupFacts.OrLeft" /> (#579).
+    /// </summary>
+    BinaryExpressionSyntax? OrOperandsOf(EqualsOwner owner, ExpressionSyntax value) =>
+        owner is EqualsOwner.VarLocal or EqualsOwner.TypedLocal or EqualsOwner.Assignment
+        && value is BinaryExpressionSyntax { RawKind: (int)SyntaxKind.LogicalOrExpression } or
+        && or.Left is IsPatternExpressionSyntax
+            or BinaryExpressionSyntax { RawKind: (int)SyntaxKind.LogicalAndExpression }
+        && !HasLooseBreak(or)
+            ? or
+            : null;
+
     /// <summary>The measured owner of an <c>=</c> whose floor <see cref="EqualsFloor" /> knows (#446).</summary>
     /// <remarks>
     ///     ⚠ Each owner is its own curve, measured one column at a time: a local with a written type sits a

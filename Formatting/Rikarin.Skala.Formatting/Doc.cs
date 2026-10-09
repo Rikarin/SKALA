@@ -1308,6 +1308,26 @@ public sealed class Document {
 ///     <c>=</c> reaches <see cref="MinimumHead" /> — whatever the condition's own points could do — or,
 ///     with <see cref="ValueHeadFitsBelow" />, when the condition then fits below. Zero for any other value.
 /// </param>
+/// <param name="EqualsName">
+///     ⚠ The width of the name an <c>=</c> assigns — a local's declared identifier, an assignment's whole left side
+///     — for the owners <see cref="EqualsFloor" /> measures; zero otherwise (#589, #590). The oracle weighs the
+///     <c>=</c>'s break by the name before it and not by the head: a typed local's type acts like indentation.
+///     Before a call the <c>=</c> stays unless <see cref="EqualsFloor.NameReachesTheCall" />; before a plain member
+///     value it breaks by <see cref="EqualsFloor.BreaksBeforeTheValue" />. Zero leaves both rules off.
+/// </param>
+/// <param name="OrLeft">
+///     ⚠ An <c>=</c> whose value is <c>X || Y</c>, written on one line, with <c>X</c> an <c>&amp;&amp;</c> chain or an
+///     <c>is</c> pattern: <c>X</c>'s flat width (#579, SK-DIV-0403). When <c>X</c> does not fit beside the <c>=</c>
+///     the <c>=</c> breaks exactly when the head through it (<see cref="OrHead" />) reaches
+///     <see cref="EqualsFloor.OrHeadFloor" />. Zero for any other value.
+/// </param>
+/// <param name="OrRight">With <see cref="OrLeft" />: <c>Y</c>'s flat width.</param>
+/// <param name="OrHead">With <see cref="OrLeft" />: the head's width from the statement's start through the <c>=</c>.</param>
+/// <param name="OrLeftIsPattern">With <see cref="OrLeft" />: <c>X</c> is an <c>is</c> pattern.</param>
+/// <param name="MemberLinks">
+///     With <see cref="MemberHeadWidth" />: the widths of the value's links after the receiver, each <c>.</c> included,
+///     in order — the dot fill keeps beside the <c>=</c> the receiver and every link that still fits there (#590).
+/// </param>
 /// <param name="MemberHeadWidth">
 ///     ⚠ An <c>=</c> whose value is a plain member access the dot fill breaks (#482): the receiver's flat
 ///     width, before the first <c>.</c>. The <c>=</c> yields to the fill, and breaks after all when the
@@ -1437,6 +1457,12 @@ public readonly record struct GroupFacts(
     int LambdaOperandTail = 0,
     int LambdaOperandFirst = 0,
     int MemberHeadWidth = 0,
+    int EqualsName = 0,
+    int[]? MemberLinks = null,
+    int OrLeft = 0,
+    int OrRight = 0,
+    int OrHead = 0,
+    bool OrLeftIsPattern = false,
     int PatternFirstWidth = 0,
     int ArmBodyTrail = 0,
     int LiftGroup = -1,

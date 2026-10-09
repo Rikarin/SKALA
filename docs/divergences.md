@@ -9748,6 +9748,10 @@ restricted to the `EqualsValueClause` of a local declarator.
 - ⚠ status: **resolved** for both halves within the measured shapes, a creation with arguments too (#555), pinned by
   `constructs/breaks/equals-before-a-call-floor.cs` and `constructs/breaks/equals-before-a-binary-pattern.cs`.
   #444 shapes 2 and 6.
+- ⚠ **Group N, 2026-10-09: the tables were measured under `var`, where the name is the head.** Behind a typed
+  local's long type and short name they broke the `=` the oracle keeps (#589). A gate on the name and the callee
+  against the `(` now runs before them — SK-DIV-0400. The "indent lowers the floor" and "a longer callee moves it
+  left" offsets above are partly the same name, read through the `var` geometry; they were left in place.
 
 ## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
 
@@ -10137,7 +10141,8 @@ left operand (#457), where the chain takes a level past the operator's.
   four- to six-column condition behind a 17- to 28-column head, where the oracle moves the value down at every
   width, past the margin included (then chopping it below) — about a hundred rows, including the issue's own
   `flag` rows at heads 21 and 31 of group F's grid. No rule found in the lengths alone. Pinned by
-  `ConditionalMovesDownWholeIssue577Tests` (the boundary rows, the band left out).
+  `ConditionalMovesDownWholeIssue577Tests` (the boundary rows, the band left out). ⚠ **The band is the name** (Group N, 2026-10-09):
+  under those heads the name is 11 to 22 columns, and a name of six or more always breaks — SK-DIV-0402.
 - ⚠ **#579 — measured, not wired.** `var v = X || Y` with `X` too wide beside the `=`: the oracle breaks the `=`
   from a 12-column head when `Y` is `flag` and `X` is an `&&` chain of any width or an `is … or …` pattern of up
   to 114 columns, keeps it for a wider pattern, and with a wider `Y` breaks it from a head of 9 to 11 columns
@@ -10145,6 +10150,8 @@ left operand (#457), where the chain takes a level past the operator's.
   are identical either way, so no layout cost separates the two answers. The issue's `var glued =` row is the
   11-column head with a 77-column `Y`. Recorded with the grids; no rule wired, because the measured floor moves
   with the far operand and the pattern boundary contradicts it.
+  ⚠ **Wired by Group N, 2026-10-09** as a table on `Y` — SK-DIV-0403; the "pattern boundary" is a `Y` of at
+  most the pattern's width less 108.
 - **#580 — fixed.** A `??` chain past the margin: the oracle writes `a` / `?? b ?? c`, Skala chopped every `??`.
   `??` is right-associative and the oracle breaks it as that tree — before each `??` whose right side does not
   fit (six operands: `?? b` / `?? c` / `?? d` / `?? e ?? f`). Measured under `=`, `return`, an argument, an `if`
@@ -11357,3 +11364,100 @@ both times. A break beside a directive is no kept break now, and both passes kee
 
 - status: the idempotency is **fixed**, pinned by `DirectiveInArrayElementTests` and `FuzzRegressionTests`.
   ⚠ The two differences in the element are **open**.
+
+## SK-DIV-0400 — an `=` before a call: the name it assigns, not the head, decides whether it may break
+
+Group N, 2026-10-09 (#589, #446 item 2, #555). The call floor of SK-DIV-0211 was measured under `var` heads,
+"the name widened to move the `(`": there the name is the whole head, so what read as the head, the indent
+and the callee's offsets was in part the name. ⚠ **The new measurement holds the `(` and the arguments fixed
+and moves columns between a typed local's type and its name.** At a `(` on 82 a type of 28 breaks the `=`
+and a type of 31 chops; on 106 a type of 64 breaks and 67 chops. A typed local with a short name and a long
+type therefore got the `var` answer: `Tyyy… v148 = Select(a, b, x);` with the `(` at 108 to 120 broke the `=`
+where the oracle chops (#589's own grid, which this resolves).
+
+The fitted gate, over integer weights on the name, the `=`'s column, the indent and the callee:
+`2·(name + callee) + column of the ( ≥ 163`, read before `EqualsFloor.Of` (`EqualsFloor.NameReachesTheCall`).
+No weight on the indent improved it. Measured with `Testing ask`:
+
+| grid | cells | master | this |
+|---|---:|---:|---:|
+| typed locals, type and name split at a fixed `(` and callee, names 1–85 | 1 232 | 825 | 1 183 |
+| typed locals, names 1–40, the `(` 60–120, indent 8 / 20 | 2 378 | 1 535 | 2 324 |
+| `var`, `Tyy`, assignments, a 20-column type; callees 4–30; indents 8, 20 | 5 963 | 5 707 | 5 825 |
+| typed locals behind `Compute`, names 1–40 | 1 510 | 654 | 1 468 |
+| fields at indent 4, calls and `new Foo(…)`, names 4–48 | 984 | 492 | 942 |
+| fields, `public`, names 20–56, the `(` 48–99 | 1 316 | 874 | 1 062 |
+
+⚠ A field's name of 30 or more keeps the field's own table: its floor at a `(` far left (a field of 31 at
+`(` 57 breaks the `=` for a line of 121, `CreationEqualsFloorIssue555Tests`) is not the gate's. `var` and a
+three-column type are identical to the column, so `var` is a type here. ⚠ What is left is a column or two off
+the tables' own floor, mostly behind a callee of 30, and #555's attribute-with-comment cells (SK-DIV-0201).
+
+- options: `skala_wrap_before_eq = false`.
+- ⚠ status: **resolved** within the measured shapes (#589). Pinned by `EqualsByTheNameTests.Calls_…`.
+
+## SK-DIV-0401 — a plain member value after `=`: the fill's fragment against the name
+
+Group N, 2026-10-09 (#590). Skala kept the `=` and let the dot fill break unless the receiver itself
+overflowed. The oracle breaks the `=` and moves the value down whole on two questions, and the name is in both
+(`EqualsFloor.BreaksBeforeTheValue`):
+
+- **Is what the fill would keep beside the `=` short against the name?** The fragment is the receiver and
+  every link that still fits beside it. A name of eight or more always breaks; six or seven up to a fragment
+  of 51; a shorter name up to `3·name + 7` (a name of one: 10, two: 13 …), further once the `=` passes column
+  84. Typed locals with the type absorbing the head showed it: the `=`'s column barely matters, the name does.
+- **Does the value fit below?** By a limit near 111 that falls with the fragment (about a column per three past
+  11, never under 99), rises a little for names of 8, 12 and 20, has no bound for a fragment within a column of
+  a quarter of the name, falls a column per four of name past 26, and rises a column per two of the `=`'s
+  column past 84.
+
+Measured with `Testing ask` on 52 599 cells — typed locals, `var` locals and assignments, names of 1 to 100,
+receivers of 3 to 40, links of 1 to 40, two to four links, the `=` at 14 to 115, values of 40 to 107,
+indents 8 and 16: master agrees on 29 150, this on 51 792. ⚠ Not modelled:
+names of 16 to 24 with a fragment of five (about 240 cells), where the oracle breaks the `=` for any value
+that fits below at all.
+
+- ⚠ status: **resolved** within the measured shapes (#590). Pinned by `EqualsByTheNameTests.PlainMembers_…`.
+
+## SK-DIV-0402 — a conditional whose condition fits beside `=`: the name, and #577's band explained
+
+Group N, 2026-10-09 (#577). `ConditionalMovesDownWhole`'s `24·max(0, column of the = − 39)` was the name
+under the `var` heads it was fitted on (`name − 26`), and the band it could not explain — a four- to
+six-column condition behind a 17- to 28-column head moving down at every width — is the fragment question of
+SK-DIV-0401 with the condition as the fragment: under a `var` head of 17 to 28 the name is 11 to 22, past the
+six columns that always break. ⚠ Typed locals with short names were the other half: `T v = flag ? a : b`
+breaks the `=` while the condition is at most `3·name + 7`, and the limit below is the member value's.
+
+So: the fragment question first; then a name of six or more keeps #577's formula with the name in place of the
+column, and a shorter name takes SK-DIV-0401's limit. Measured on 4 788 cells (typed locals, names 1 to 24,
+conditions 4 to 29, `var` locals) and on #577's own 314 boundary rows: master 3 787 and 314, this 4 578 and
+314.
+
+- ⚠ status: **resolved** within the measured shapes (#577). Pinned by `EqualsByTheNameTests.Conditionals_…`
+  and, unchanged, `ConditionalMovesDownWholeIssue577Tests`.
+
+## SK-DIV-0403 — `v = X || Y` with `X` too wide beside `=`: a head floor that a wide `Y` lowers
+
+Group N, 2026-10-09 (#579). The `=` breaks exactly when the head, statement start through the `=`, reaches a
+floor — 12 while `Y` is short, then 11 from a `Y` of 60, 10 from 68, 9 from 73, 8 from 92 and 7 from 93 behind
+an `&&` chain; a pattern holds each step a few columns longer — and a pattern too wide for the line below never
+breaks it while `Y` is at most its own width less 108 (`EqualsFloor.OrHeadFloor`). ⚠ Typed locals, `var` locals
+and assignments give one answer to the column, so here it is the head and not the name: the one place in this
+family where the twelve-column head of #379 is the real variable. The issue's `var glued =` is an 11-column
+head with a 77-column `Y`: it breaks.
+
+Measured with `Testing ask` on 6 056 cells — heads of 7 to 16, chains of 90 to 129, patterns of 100 to 132,
+`Y` of 1 to 100: master agrees on 967 of 3 600, 867 of 1 560 and 116 of 896; this on 3 515, 1 527 and 896.
+
+- ⚠ status: **resolved** within the measured shapes (#579). Pinned by `EqualsByTheNameTests.Ors_…`.
+
+### Across the four, on grids nobody fitted
+
+Two random grids, each statement drawn independently — owner, name 1 to 50, type 1 to 50, indent 8 to 24,
+member values of two to four links, conditionals with identifier, member and call conditions, calls of two to
+four arguments, `X || Y` — formatted by master and by this branch and asked of the oracle:
+
+| seed | cells | master identical | this identical | rows master had and this lost |
+|---|---:|---:|---:|---:|
+| 20261009 (no `||`) | 3 000 | 2 462 | 2 890 | 3 |
+| 99 | 3 500 | 2 819 | 3 340 | 7 |

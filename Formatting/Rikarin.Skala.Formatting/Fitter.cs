@@ -341,6 +341,17 @@ public sealed class Fitter {
                     return ResolvedMode.Broken;
                 }
 
+                // ⚠ And it breaks whenever the fill would leave too short a fragment beside it for the name it
+                // assigns, the value then fitting below by the measured limit (#590). See
+                // EqualsFloor.BreaksBeforeTheValue.
+                if (facts is { MemberHeadWidth: > 0, EqualsName: > 0 }
+                    && m.PointWidth < Unbounded
+                    && tail < Unbounded
+                    && m.Trailing < Unbounded
+                    && !Fits(m.Column, m.FlatWidth, m.Trailing)) {
+                    return BreaksBeforeAPlainMember(facts, m, tail) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                }
+
                 // ⚠ A lambda-valued local's type/name gap breaks when the line through its `=` overflows: pass
                 // one chopped the parameter list behind an `=` past the margin, and pass two, reading the chop
                 // as the author's, filled the type (Nightly replay 13830403873739157460). See
@@ -531,6 +542,14 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ `v = X || Y` with `X` too wide beside the `=`: broken from a head floor that a wide `Y` lowers
+                // (#579). See EqualsFloor.OrHeadFloor.
+                if (facts.OrLeft > 0 && m.PointWidth < Unbounded && !Fits(m.Column, m.PointWidth + 1 + facts.OrLeft)) {
+                    return facts.OrHead >= EqualsFloor.OrHeadFloor(facts.OrLeft, facts.OrRight, facts.OrLeftIsPattern)
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
+                }
+
                 // ⚠ A sole lambda argument over a member-access fill: the arrow or the fill, by the
                 // measured line rather than by whether the body fits below. See
                 // GroupFacts.LambdaParameters (#557).
@@ -604,6 +623,28 @@ public sealed class Fitter {
                     var beside = Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadWidth);
                     var below = Fits(m.ContinuationColumn, facts.ValueHeadWidth);
                     if (beside) {
+                        // ⚠ By the name the `=` assigns when it is known (#577): the fragment question of
+                        // EqualsFloor.BreaksBeforeTheValue, then for a name of six or more ConditionalMovesDownWhole's
+                        // limit with the name in place of the `=`'s column — what that column measured under the `var`
+                        // heads it was fitted on — and for a shorter name the member value's limit.
+                        if (facts.EqualsName > 0
+                            && m.PointWidth < Unbounded
+                            && tail < Unbounded
+                            && m.Trailing < Unbounded) {
+                            var equals = m.Column + m.PointWidth;
+                            return EqualsFloor.FragmentIsShort(equals, facts.EqualsName, facts.ValueHeadWidth)
+                                && (facts.EqualsName >= 6
+                                    ? ConditionalMovesDownWhole(facts, m, tail)
+                                    : EqualsFloor.FitsBelow(
+                                        equals,
+                                        facts.EqualsName,
+                                        facts.ValueHeadWidth,
+                                        m.ContinuationColumn + tail + m.Trailing
+                                    ))
+                                    ? ResolvedMode.Broken
+                                    : ResolvedMode.Flat;
+                        }
+
                         return facts.ValueHeadIsWide && ConditionalMovesDownWhole(facts, m, tail)
                             ? ResolvedMode.Broken
                             : ResolvedMode.Flat;
@@ -638,8 +679,39 @@ public sealed class Fitter {
     /// </remarks>
     bool ConditionalMovesDownWhole(in GroupFacts facts, in Measures m, int tail) {
         var below = m.ContinuationColumn + tail;
+        // ⚠ The `=`'s column was the name: under the `var` heads it was fitted on, column − 39 is name − 26 (#577).
+        var past = facts.EqualsName > 0 ? facts.EqualsName - 26 : m.Column - 39;
         return TailFits(m, tail)
-            && 100 * below + 38 * Math.Min(facts.ValueHeadWidth, 24) + 24 * Math.Max(0, m.Column - 39) <= 11364;
+            && 100 * below + 38 * Math.Min(facts.ValueHeadWidth, 24) + 24 * Math.Max(0, past) <= 11364;
+    }
+
+    /// <summary>See <see cref="GroupFacts.EqualsName" /> and <see cref="EqualsFloor.BreaksBeforeTheValue" />.</summary>
+    /// <remarks>
+    ///     The <c>=</c> ends the group's point, so its 1-based column is the group's column plus the point's width —
+    ///     under a declarator's clause and an assignment, whose group starts at the name, alike. The fragment is the
+    ///     dot fill's first line after the <c>=</c>, read from the formatted widths.
+    /// </remarks>
+    bool BreaksBeforeAPlainMember(in GroupFacts facts, in Measures m, int tail) {
+        var equals = m.Column + m.PointWidth;
+        var end = equals + 1 + facts.MemberHeadWidth;
+        var fragment = facts.MemberHeadWidth;
+        var links = facts.MemberLinks ?? [];
+        for (var i = 0; i < links.Length; i++) {
+            var last = i == links.Length - 1;
+            if (end + links[i] + (last ? m.Trailing : 0) > width) {
+                break;
+            }
+
+            end += links[i];
+            fragment += links[i];
+        }
+
+        return EqualsFloor.BreaksBeforeTheValue(
+            equals,
+            facts.EqualsName,
+            fragment,
+            m.ContinuationColumn + tail + m.Trailing
+        );
     }
 
     /// <summary>See <see cref="GroupFacts.CalleeWidth" />.</summary>
@@ -664,6 +736,15 @@ public sealed class Fitter {
         // case 7862808234978504853).
         if (paren > width) {
             return ResolvedMode.Broken;
+        }
+
+        // ⚠ The name the `=` assigns has to reach the call, or the arguments chop (#589). See
+        // EqualsFloor.NameReachesTheCall.
+        // ⚠ Not a field's name of 30 or more, whose own table has a floor at a `(` far left that the gate would refuse.
+        if (facts.EqualsName > 0
+            && (facts.CalleeOwner != EqualsOwner.Field || facts.EqualsName < 30)
+            && !EqualsFloor.NameReachesTheCall(facts.EqualsName, facts.CalleeWidth, paren)) {
+            return ResolvedMode.Flat;
         }
 
         if (m.FlatWidth >= Unbounded) {
