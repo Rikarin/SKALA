@@ -11667,3 +11667,36 @@ Rows: 42 → 72 of 81, and the round-one grid of 40 rows 15 → 27.
 - options: `keep_user_linebreaks`.
 - ⚠ status: **resolved** for the local's `=`, pinned by `constructs/breaks/positional-pattern-after-a-local-equals.cs`;
   **open** for the three above.
+
+### Round 2 of the name reading (Group N, 2026-10-10)
+
+Measured with `Testing ask`; every rule below was then checked on a probe drawn fresh for it (seed 777, 2 500
+typed locals in the regions the rules touch, indents 8 to 24), where round one agreed on 2 034 and this agrees
+on 2 247, losing 10 rows round one had.
+
+- **#590's residue, names 16 to 24 with a fragment of five: already gone.** Round one's "no bound for a fragment
+  within a column of a quarter of the name" covers it. What was left was a short name (under eight) behind a
+  fragment of 12 to 15, where the limit is 109 like the shorter fragments' rather than falling with the fragment:
+  member grids 51 792 → 51 916 of 52 599. ⚠ Not wired, refuted by the other grids: a bonus for names of 14 to
+  24 behind long fragments (g590j breaks a name of 20 at every fragment up to 83 below 105), which every variant
+  tried lost elsewhere.
+- **Typed conditionals at deep indents (SK-DIV-0402).** Past an `=` at column 84 a name of six or more also takes
+  the member value's limit with its bump, as a shorter name already did: 8 700 conditional cells at indents 8
+  to 24 go 8 051 → 8 215, #577's own 314 stay 314, the 4 788-cell grid 4 578 → 4 656; ⚠ 2 219 short-head
+  rows lose 20 (2 167 → 2 147).
+- **Fields with names of 31 or more, the `(` at 78 or left (SK-DIV-0400).** A floor on the argument list of
+  `62 − (name − 30) / 3` (`EqualsFloor.LongFieldNameFloor`): fields 942 → 956 of 984 and 1 062 → 1 214 of 1 316.
+  ⚠ Not for a field with attributes: `[Obsolete] /* c */ public Foo F(31) = Compute(…);` joined chops where the
+  rule would break the `=`.
+- **The EqualsFloor indent and callee tables are not the name, so they stay.** Re-derived on 3 386 `var` and
+  typed cells over indents 8 to 24 and callees 4 to 30: at the same name and the same `(`, 49 of 135 pairs
+  disagree, a deeper indent lowering the floor by up to six columns. The name explains why a typed local's long
+  type moved the answer; it does not replace the indent.
+- **SK-DIV-0005's `Convert.FromBase64String` example agrees** at 123, on master and here. The class around it is
+  the held single call (#528): on 1 296 cells the oracle never breaks behind a head under twelve
+  (`byte[] da =`) and stops at a line below of about 113 to 116 where Skala's typed rule allows 117. 181 cells
+  differ, identically on master; one more probe did not settle the limit, so it is recorded, not wired.
+- **#555's attribute-with-comment cells:** 408 cells (`[Obsolete] /* c */`, `[Obsolete]`, none; names 1 to 31;
+  calls and creations; lines 118 to 134) differ in 14, all one shape: with the comment and a 31-column name the
+  oracle declines the join from 122 to 128 where it joins and chops for names of 16 or less. Another name
+  effect, inside the attribute join; not wired.
