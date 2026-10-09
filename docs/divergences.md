@@ -11475,6 +11475,29 @@ What remains sits within a grid step of the line boundary, plus the oracle's own
 first operand of 24 (`B..BB.` along the arrow axis). The "not monotone past 36" in #586 is only that: at one
 first-operand width, not the threshold as a whole.
 
+⚠ **#600 (group O, 2026-10-10): a sole lambda as the last operand of an `if` or `while` condition.** The rule
+read the line's end from the lambda's statement. For a header condition that statement is the whole `if`,
+block included, so the line was never on one line and the rule was never armed. The head rule kept the arrow,
+and `expression is T {` opened the property pattern's braces. That is Skala's own
+`FrozenDictionaryAnalyzer.cs`.
+
+Now `LastOperandOfAHeaderCondition` reads the line to the header's `)` plus ` {`. That holds whether the
+lambda's call is the whole condition, sits under a `!`, or is the right operand of the condition's
+`&&`/`||` chain.
+
+Two refinements, each asked of the oracle:
+- **A body that fits by itself stays.** The header's `)` moves down instead (`… or C` / `)) {`).
+- **A chain the author broke at its own operators keeps the arrow while the first segment fits beside it.**
+  The segment is measured up to that break; breaks inside a property pattern's braces do not count, because
+  the oracle re-joins them. Skala's own source was asked on 13 files: every `.All(x => a` / `&& b` kept its
+  arrow, and `FrozenDictionaryAnalyzer.cs`'s `expression is T { … } item` / `&& …` broke it. The file now
+  matches the oracle at that statement; its `.Symbol` chain at line 128 still differs, which is not this rule.
+
+Measured on `if (flag || !i….All(params => body)) {` — `&&` and pattern bodies, three parameter texts, first
+operands of 8 to 44, lines of 118 to 178: 4 264 statements, of which master differs on 3 251 and this
+branch on 20, all near the ceiling with a 20-column parameter text. Pinned by
+`constructs/wrapping/lambda-arrow-in-a-condition.cs`.
+
 ## SK-DIV-0420 — a sole lambda call that is the receiver of a further link: the chain's own decisions
 
 ⚠ **Found by #586's `.ToList()` grid (group O, 2026-10-09).** With the arrow decided (SK-DIV-0377), 536 of

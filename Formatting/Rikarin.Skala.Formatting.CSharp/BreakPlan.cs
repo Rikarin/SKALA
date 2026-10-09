@@ -7263,6 +7263,13 @@ public sealed class BreakPlan {
                             ),
                             LambdaOperandTail: operandTail,
                             LambdaOperandFirst: FirstOperandWidth(body),
+                            LambdaOperandBody: LastOperandOfAHeaderCondition(lambda) is not null
+                            && !IsTheReceiverOfAFurtherLink(lambda)
+                                ? 1 + FormattedWidth(body.GetFirstToken(), KeptSegmentEndOf(body))
+                                : 0,
+                            LambdaOperandKept: LastOperandOfAHeaderCondition(lambda) is not null
+                            && !IsTheReceiverOfAFurtherLink(lambda)
+                            && KeptSegmentEndOf(body) != body.GetLastToken(),
                             LambdaOperandPatternLeft: body is IsPatternExpressionSyntax { Expression: var tested }
                                 ? FormattedWidth(tested)
                                 : 0
@@ -7412,6 +7419,18 @@ public sealed class BreakPlan {
         }
 
         var start = body.SpanStart;
+
+        // ⚠ The last operand of an `if` or `while` condition (#600): the line through the lambda ends at the
+        // header's `)` and its ` {`, whatever the condition's operators do before it — `|| !initializer.Expressions
+        // .All(expression =>` / `expression is T { … } item` / `&& …`, where reading to the statement's end (its
+        // block) never armed the rule and the property pattern's braces broke instead.
+        if (!receiver && LastOperandOfAHeaderCondition(lambda) is { } close) {
+            // ⚠ Whatever breaks the body holds: the oracle breaks the arrow over `expression is T {` / `Count: 2` /
+            // `} item` / `&& …` and over `… item` / `&& …` alike, re-joining the braces. Read from the flat widths,
+            // the answer is the same on pass two as on pass one.
+            return FormattedWidth(body.GetLastToken(), close) - body.GetLastToken().Span.Length + 2;
+        }
+
         var length = statement.Span.End - start;
         if (source.AsSpan(start, length).IndexOfAny('\r', '\n') >= 0) {
             return 0;
@@ -7426,6 +7445,57 @@ public sealed class BreakPlan {
         return receiver
             ? 2
             : FormattedWidth(body.GetLastToken(), statement.GetLastToken()) - body.GetLastToken().Span.Length;
+    }
+
+    /// <summary>
+    ///     The last token before the first break the author wrote in an operand-chain body, a break inside a
+    ///     property pattern's braces aside — the oracle re-joins those — or the body's last token when there is none
+    ///     (#600).
+    /// </summary>
+    SyntaxToken KeptSegmentEndOf(ExpressionSyntax body) {
+        foreach (var token in body.DescendantTokens().Skip(1)) {
+            if (BreaksBefore(token)
+                && !token.Parent!.AncestorsAndSelf()
+                    .TakeWhile(node => node != body)
+                    .Any(static node => node is PropertyPatternClauseSyntax)) {
+                return token.GetPreviousToken();
+            }
+        }
+
+        return body.GetLastToken();
+    }
+
+    /// <summary>
+    ///     The <c>)</c> of the <c>if</c> or <c>while</c> header whose condition ends with this sole lambda's call —
+    ///     the call itself, under a <c>!</c>, or the right operand of the condition's <c>&amp;&amp;</c> and
+    ///     <c>||</c> chain; none otherwise (#600).
+    /// </summary>
+    static SyntaxToken? LastOperandOfAHeaderCondition(LambdaExpressionSyntax lambda) {
+        if (lambda.Parent?.Parent?.Parent is not InvocationExpressionSyntax call) {
+            return null;
+        }
+
+        SyntaxNode node = call;
+        while (true) {
+            switch (node.Parent) {
+                case PrefixUnaryExpressionSyntax prefix:
+                    node = prefix;
+                    continue;
+                case ParenthesizedExpressionSyntax parenthesized:
+                    node = parenthesized;
+                    continue;
+                case BinaryExpressionSyntax binary when binary.Right == node
+                    && binary.Kind() is SyntaxKind.LogicalOrExpression or SyntaxKind.LogicalAndExpression:
+                    node = binary;
+                    continue;
+                case IfStatementSyntax header when header.Condition == node:
+                    return header.CloseParenToken;
+                case WhileStatementSyntax header when header.Condition == node:
+                    return header.CloseParenToken;
+                default:
+                    return null;
+            }
+        }
     }
 
     /// <summary>

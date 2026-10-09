@@ -570,6 +570,27 @@ public sealed class Fitter {
                     return HeldValueBreaks(facts, m) ? ResolvedMode.Broken : ResolvedMode.Flat;
                 }
 
+                // ⚠ The last operand of a header condition: read from the planner's flat widths, breaks the body
+                // already holds aside (#600). See GroupFacts.LambdaOperandBody.
+                if (facts.LambdaOperandBody > 0 && facts.LambdaOperandKept) {
+                    return Fits(m.Column, facts.LambdaOperandBody) ? ResolvedMode.Flat : ResolvedMode.Broken;
+                }
+
+                if (facts.LambdaOperandBody > 0) {
+                    // ⚠ A body that fits by itself stays, and the header's `)` moves down instead.
+                    var bodyEnd = m.Column + facts.LambdaOperandBody + facts.LambdaOperandTail;
+                    return m.Column + facts.LambdaOperandBody > width
+                        && EqualsFloor.BreaksTheOperandArrow(
+                            m.Column,
+                            facts.LambdaOperandParameters,
+                            facts.LambdaOperandFirst,
+                            bodyEnd,
+                            facts.LambdaOperandPatternLeft
+                        )
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                }
+
                 if (!facts.BreaksIfTooLong || Fits(m.Column, m.BreakWidth, m.Trailing)) {
                     return ResolvedMode.Flat;
                 }

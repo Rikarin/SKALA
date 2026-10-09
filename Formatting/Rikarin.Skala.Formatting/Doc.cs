@@ -1185,6 +1185,17 @@ public sealed class Document {
 /// <param name="LambdaCallCallee">
 ///     The width of the call's text before its <c>(</c>. See <see cref="LambdaCallArguments" />.
 /// </param>
+/// <param name="LambdaOperandBody">
+///     ⚠ For the last operand of an <c>if</c> or <c>while</c> condition: the body's flat width with its leading
+///     space, which the line's end is read with in place of the group's measured width, so that breaks the
+///     body already holds do not decide the arrow (#600); zero otherwise. See <see cref="LambdaOperandParameters" />.
+/// </param>
+/// <param name="LambdaOperandKept">
+///     ⚠ The author broke the body's chain: <see cref="LambdaOperandBody" /> is then only its first segment, up to
+///     that break (a property pattern's braces aside), and the arrow breaks exactly when that segment does not fit
+///     beside it — `expression is T { … } item` / `&amp;&amp; …` past the margin breaks it, a chain that fits up to
+///     its first `&amp;&amp;` keeps it (Skala's own source, asked 2026-10-10, #600).
+/// </param>
 /// <param name="LambdaOperandPatternLeft">
 ///     ⚠ For a body that is a type test over a binary pattern, <c>x is A or B</c>: the width of the tested
 ///     expression, <c>x</c>, which the oracle weighs apart from the rest of the first operand (#586); zero for an
@@ -1499,6 +1510,8 @@ public readonly record struct GroupFacts(
     int LambdaOperandTail = 0,
     int LambdaOperandFirst = 0,
     int LambdaOperandPatternLeft = 0,
+    int LambdaOperandBody = 0,
+    bool LambdaOperandKept = false,
     int LambdaCallCallee = 0,
     int LambdaCallArguments = 0,
     int EqualsLambdaName = 0,
