@@ -7080,6 +7080,31 @@ planning no gap; and `public static readonly` /
 type / name, where the oracle also breaks between the modifiers and a type too long for their line —
 Skala fills the type there — resolved for fields by #540, above.
 
+⚠ **A lambda-valued local whose `=` runs past the margin had no gap at all** (Nightly `fuzz --seed=99991`,
+replay 13830403873739157460). The group above was planned for a lambda only where the one-column table let it
+through. `(Span<…> First, Dictionary<…> Second) v204 = (x, y) => Source;`, with the `=` at 124, kept `= (` and
+chopped the parameters past the margin, and pass two filled the type.
+
+Measured on 2026-10-09 with `Testing ask` on 90 locals at indent 8: three types (97, 40 and 70 columns) and
+three lambdas, with the `=` ending at 116 to 125.
+- Every row whose `=` ends at 121 or later breaks between the type and the name (`GroupFacts.NameThroughEquals`).
+- At 119 and 120 the `=` breaks, because the value's first character would land past the margin
+  (`Fitter.EqualsBeforeALambda`, the twin of `EqualsBeforeACall`'s `(` rule).
+- At 118 and before, the rules above decide.
+
+Master matched none of the 121+ rows and was not idempotent on 9 rows of the grid. Now all 90 are stable, and 85
+of them are the oracle's. Pinned by `LambdaLocalEqualsPastTheMarginTests`.
+
+The group holds its level while flat only before a body that opens with a chopped parenthesis (SK-DIV-0101). In
+every other case it spends the level, which is the level a broken `=` lands its value on.
+
+⚠ Still divergent, and both passes agree:
+- **Three rows: the 97-column tuple type with a 46-column value, the `=` ending at 116 to 118.** The oracle
+  breaks the `=`; Skala chops the parameters (#558's floor at this type width). Master did the same.
+- **Five rows: a name moved below its type whose `=` breaks too.** The oracle puts the value two levels in;
+  Skala puts it one level in, at the name's column. A plain value shows the same
+  (`Func<T…> v… =` / `S…;`), so this is the gap's level for any value, not the lambda's.
+
 - options: none — no key governs the type/name gap.
 - ⚠ status: **resolved** for fields and locals (#474), pinned by `TypeNameGapIssue474Tests`, and for parameters (#545); **open** for
   the rows above.
