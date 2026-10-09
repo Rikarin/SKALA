@@ -908,7 +908,9 @@ public sealed class LayoutWriter {
             if (outside) {
                 if (scope.OpenLine <= line && (scope.Unconditional || scope.OpenLine != blocked)) {
                     level += scope.Level;
-                    blocked = scope.OpenLine;
+                    // ⚠ An additive scope stands beside its line's other scopes here as in Level (#597): a chain
+                    // under a broken `is`, under an `||`, lifts its argument list past all three.
+                    blocked = scope.Additive ? blocked : scope.OpenLine;
                 }
 
                 continue;
