@@ -71,10 +71,12 @@ public static class EqualsFloor {
     ///     random), where the chain's constants miss 540 and these 15.
     /// </param>
     public static bool BreaksTheOperandArrow(int arrow, int parameters, int first, int end, int patternLeft = 0) {
+        // ⚠ The cap rises a quarter of a column per column of parameter text past 36 (#586 round 2).
+        var cap = Math.Max(85, 85.5 + 0.25 * (parameters - 36));
         if (patternLeft > 0) {
             var capped = Math.Min(first, patternLeft + 28);
             var patternCeiling = Math.Min(
-                85,
+                cap,
                 Math.Min(
                     (int)Math.Floor(
                         2.75 * (parameters + capped) - 56 - 0.88 * (patternLeft - 1) + (first - capped) / 8.0
@@ -88,7 +90,7 @@ public static class EqualsFloor {
         }
 
         var ceiling = Math.Min(
-            85,
+            cap,
             Math.Min(
                 (int)Math.Floor(2.75 * (parameters + Math.Min(first, 24)) - 52 + Math.Max(0, first - 24) / 8.0),
                 120 - first
