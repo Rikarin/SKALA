@@ -678,6 +678,13 @@ public sealed class Fitter {
                             return EqualsFloor.FragmentIsShort(equals, facts.EqualsName, facts.ValueHeadWidth)
                                 && (facts.EqualsName >= 6
                                     ? ConditionalMovesDownWhole(facts, m, tail)
+                                    || equals >= 84
+                                    && EqualsFloor.FitsBelow(
+                                        equals,
+                                        facts.EqualsName,
+                                        facts.ValueHeadWidth,
+                                        m.ContinuationColumn + tail + m.Trailing
+                                    )
                                     : EqualsFloor.FitsBelow(
                                         equals,
                                         facts.EqualsName,
@@ -795,6 +802,14 @@ public sealed class Fitter {
         }
 
         var arguments = m.FlatWidth - m.PointWidth - 1 - facts.CalleeWidth;
+
+        // ⚠ A field's name of 31 or more with the `(` at 78 or left of it: a floor on the arguments that falls a
+        // column per three of name from 62 (round 2 of #589, SK-DIV-0400). See EqualsFloor.LongFieldNameFloor.
+        if (facts is { CalleeOwner: EqualsOwner.Field, EqualsName: >= 31, EqualsNameAttributed: false } && paren <= 78) {
+            return arguments - 2 <= EqualsFloor.LongFieldNameFloor(facts.EqualsName)
+                ? ResolvedMode.Broken
+                : ResolvedMode.Flat;
+        }
         var indent = m.ContinuationColumn - indentWidth;
 
         return arguments < EqualsFloor.Of(paren, indent, facts.CalleeWidth, facts.CalleeOwner)

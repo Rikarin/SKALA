@@ -1315,6 +1315,10 @@ public sealed class Document {
 ///     Before a call the <c>=</c> stays unless <see cref="EqualsFloor.NameReachesTheCall" />; before a plain member
 ///     value it breaks by <see cref="EqualsFloor.BreaksBeforeTheValue" />. Zero leaves both rules off.
 /// </param>
+/// <param name="EqualsNameAttributed">
+///     With <see cref="EqualsName" />: the field carries attribute lists, whose joined line
+///     <see cref="EqualsFloor.LongFieldNameFloor" /> was not measured on (a joined <c>[A] /* c */</c> line chops).
+/// </param>
 /// <param name="OrLeft">
 ///     ⚠ An <c>=</c> whose value is <c>X || Y</c>, written on one line, with <c>X</c> an <c>&amp;&amp;</c> chain or an
 ///     <c>is</c> pattern: <c>X</c>'s flat width (#579, SK-DIV-0403). When <c>X</c> does not fit beside the <c>=</c>
@@ -1486,6 +1490,7 @@ public readonly record struct GroupFacts(
     int MemberHeadWidth = 0,
     int EqualsName = 0,
     int[]? MemberLinks = null,
+    bool EqualsNameAttributed = false,
     int OrLeft = 0,
     int OrRight = 0,
     int OrHead = 0,
