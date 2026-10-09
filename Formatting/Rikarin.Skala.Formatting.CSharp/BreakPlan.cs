@@ -5521,7 +5521,12 @@ public sealed class BreakPlan {
         // ⚠ No marker when the head starts at the group's own first token — an assignment, a named
         // attribute argument: a marker there would be entered after the group it serves, and the
         // group's own point width is the head.
-        var yieldsToTheBracket = BreakYieldsToTheBracket(value);
+        // ⚠ And a value that is one parenthesis, cast or not (#598, SK-DIV-0445): measured 2026-10-10 on 252 locals
+        // and assignments, `T v =` / `(string)(a + b);` and `T v =` / `(a + b);` move down whole exactly when the
+        // value fits flat below and the head through the `=` is twelve columns or more — `var v = (a` / `+ b);`
+        // and `int v = (a` / `+ b);` keep the `=` — the collection's rule.
+        var yieldsToTheBracket = BreakYieldsToTheBracket(value)
+            || value is ParenthesizedExpressionSyntax or CastExpressionSyntax { Expression: ParenthesizedExpressionSyntax };
         var owner = EqualsOwnerOf(node);
         var callee = owner == EqualsOwner.None ? 0 : CalleeWidthOf(value);
 
