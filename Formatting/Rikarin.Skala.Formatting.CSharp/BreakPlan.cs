@@ -5449,7 +5449,7 @@ public sealed class BreakPlan {
         // its `=` in the oracle where the same condition written flat breaks it (Skala's own source, Lint).
         var conditionHead = owner != EqualsOwner.None
             && value is ConditionalExpressionSyntax conditional
-            && !HasLooseBreak(conditional.Condition, joinsBlocks: true)
+            && !HasLooseBreak(conditional.Condition, true)
             && conditional.Condition is not (IsPatternExpressionSyntax
                 or BinaryExpressionSyntax { RawKind: (int)SyntaxKind.IsExpression or (int)SyntaxKind.AsExpression })
                 ? FlatSourceWidth(conditional.Condition)

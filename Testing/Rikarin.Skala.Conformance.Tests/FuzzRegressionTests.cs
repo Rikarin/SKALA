@@ -135,7 +135,10 @@ public sealed class FuzzRegressionTests {
     // gap width did not count, and whose `/**` lies outside its trivia's span when it does.
     [InlineData(1267273925188459665UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
     // `fuzz --seed=20261009`: `… = Call<T>(json) /* f */ ;` — a comment between the `)` and the `;`.
-    [InlineData(10944625209729174497UL, "real/newtonsoft/Newtonsoft.Json.Tests/Converters/KeyValuePairConverterTests.cs")]
+    [InlineData(
+        10944625209729174497UL,
+        "real/newtonsoft/Newtonsoft.Json.Tests/Converters/KeyValuePairConverterTests.cs"
+    )]
     [InlineData(17998121662372599673UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
     [InlineData(5160029152501638677UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
     // `fuzz --seed=4242`: `a + (b * c) + (d\n== 0 ? …)` — a nested chain broken in the last operand chopped only
