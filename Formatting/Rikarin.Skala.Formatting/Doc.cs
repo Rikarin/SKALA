@@ -1387,6 +1387,10 @@ public sealed class Document {
 ///     through the <c>;</c>. The dot breaks exactly when the operand alone runs past the margin and that line
 ///     fits at the continuation column; otherwise the keyword's own band answers.
 /// </param>
+/// <param name="ValueHeadCallee">
+///     ⚠ With <see cref="ValueHeadWidth" />, a condition that is a call on a name: the width from the name through
+///     its <c>(</c>. The <c>=</c> breaks whenever that <c>(</c> would land past the margin beside it (#596).
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1467,7 +1471,8 @@ public readonly record struct GroupFacts(
     bool DraftsBroken = false,
     int ArmCast = 0,
     bool BreaksIfTheLineOverflows = false,
-    int TypeTestTail = 0);
+    int TypeTestTail = 0,
+    int ValueHeadCallee = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

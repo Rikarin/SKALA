@@ -634,7 +634,17 @@ public sealed class Fitter {
                 // binary, identifier and call conditions behind heads from 17 to 66 columns. See
                 // GroupFacts.ValueHeadWidth.
                 if (facts.ValueHeadWidth > 0) {
-                    var beside = Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadWidth);
+                    // ⚠ A call whose `(` lands past the margin beside the `=` leaves the `=` nothing to keep (#596,
+                    // fuzz 8249044719362511507): pass one kept `T v19 = Select(` at 124 columns and pass two, finding
+                    // the arguments chopped, broke the `=`. Measured 2026-10-10 with `Testing ask`: the `(` at 121 to
+                    // 127 breaks the `=` for short and long argument lists alike. See GroupFacts.ValueHeadCallee.
+                    if (facts.ValueHeadCallee > 0
+                        && m.PointWidth < Unbounded
+                        && !Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadCallee)) {
+                        return ResolvedMode.Broken;
+                    }
+
+                    var beside =Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadWidth);
                     var below = Fits(m.ContinuationColumn, facts.ValueHeadWidth);
                     if (beside) {
                         return facts.ValueHeadIsWide && ConditionalMovesDownWhole(facts, m, tail)
@@ -1019,6 +1029,15 @@ public sealed class Fitter {
         // second gate, while the value is narrow enough for its body; otherwise the parameter
         // list chops (#558). See EqualsFloor.BreaksBeforeAnOverflowingLambda.
         if (facts.LambdaLocal != LambdaLocal.None) {
+            // ⚠ A lambda without parentheses has no list to chop, so the `=` is the only break that can end the
+            // line in time (#595, fuzz 18379797974820457043): `T v13 = static x =>` past the margin kept the `=`, and
+            // pass two, reading the arrow's break as the author's, broke the `=` as well. Measured 2026-10-10 with
+            // `Testing ask`: `x =>` and `static x =>` with the arrow ending at 121 to 131 break the `=` on every row
+            // where the type/name gap does not take the line first.
+            if (facts.LambdaIsSimple) {
+                return ResolvedMode.Broken;
+            }
+
             return EqualsFloor.BreaksBeforeAnOverflowingLambda(
                 head,
                 value,

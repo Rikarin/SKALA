@@ -5602,6 +5602,9 @@ public sealed class BreakPlan {
                     CalleeWidth: callee,
                     YieldsThroughArrow: ArrowYieldWidthOf(value),
                     LambdaLocal: ArrowYieldWidthOf(value) > 0 ? LambdaLocalOf(node) : LambdaLocal.None,
+
+                    // ⚠ Read only with LambdaLocal, past the margin (#595): no parameter list to chop.
+                    LambdaIsSimple: value is SimpleLambdaExpressionSyntax,
                     OneOverType: value is ParenthesizedLambdaExpressionSyntax oneOver ? OneOverOf(oneOver).Type : 0,
                     PatternHead: PatternHeadOf(node, equals, value),
                     PatternWidth: PatternHeadOf(node, equals, value) > 0
@@ -5628,6 +5631,14 @@ public sealed class BreakPlan {
                         Condition: InvocationExpressionSyntax { Expression: IdentifierNameSyntax or GenericNameSyntax }
                     },
                     ValueHeadIsWide: conditionHeadIsWide,
+                    ValueHeadCallee: conditionHead > 0
+                    && value is ConditionalExpressionSyntax {
+                        Condition: InvocationExpressionSyntax {
+                            Expression: IdentifierNameSyntax or GenericNameSyntax
+                        } conditionCall
+                    }
+                        ? FormattedWidth(conditionCall.GetFirstToken(), conditionCall.ArgumentList.OpenParenToken)
+                        : 0,
                     MemberHeadWidth: value is MemberAccessExpressionSyntax plain && IsPlainMemberValue(plain)
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,
