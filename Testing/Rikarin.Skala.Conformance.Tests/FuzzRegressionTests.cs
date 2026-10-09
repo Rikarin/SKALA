@@ -86,6 +86,11 @@ public sealed class FuzzRegressionTests {
     // `=` yielded to the dot fill (#482), which kept `= context` past the margin and broke at the dot; pass
     // two read that break as the author's and broke the `=`. GroupFacts.MemberHeadWidth.
     [InlineData(9552816164132777654UL)]
+    // `fuzz --seed=31337`: an arm's `("k", var p) =>` before a body with no break point of its own. Pass one
+    // took #559's type/name fill point, reading the body as part of the pattern's line, and broke the arrow
+    // as well; pass two found the arrow's break kept, measured the pattern up to it and re-joined `var p`.
+    // A kept break at that point is now pinned, as the oracle keeps it and as the list's commas are.
+    [InlineData(9642682992700587520UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
