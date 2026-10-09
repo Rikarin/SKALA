@@ -330,6 +330,29 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ A local's `=` before an `is` over a positional pattern: broken whenever the line overflows
+                // (#559). See GroupFacts.BreaksIfTheLineOverflows.
+                // ⚠ Not over a pattern the author broke inside: `var q = o is P(1, 2` / `);` keeps its `=`.
+                if (facts.BreaksIfTheLineOverflows) {
+                    return m.FlatWidth >= Unbounded
+                        || m.Trailing >= Unbounded
+                        || Fits(m.Column, m.FlatWidth, m.Trailing)
+                            ? ResolvedMode.Flat
+                            : ResolvedMode.Broken;
+                }
+
+                // ⚠ A returned type test's operand: its dot breaks only where neither the keyword's band nor the
+                // operand's own line can hold it. See GroupFacts.TypeTestTail (#446).
+                if (facts.TypeTestTail > 0) {
+                    // ⚠ Measured at the statement's line plus one level, not at the continuation column: the levels
+                    // the type test stacks there collapse to one on the line the dot starts.
+                    return m.FlatWidth < Unbounded
+                        && !Fits(m.Column, m.FlatWidth)
+                        && Fits(lineStart + indentWidth, facts.TypeTestTail)
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                }
+
                 // ⚠ An `=` before a plain member access yields to its dot fill (#482) — unless the receiver
                 // itself does not fit beside the `=`, where no dot can take the break and the oracle breaks
                 // the `=`: `T v =` / `context.First;`. Pass one kept `T v = context` past the margin and
@@ -550,6 +573,16 @@ public sealed class Fitter {
                         : ResolvedMode.Flat;
                 }
 
+                // ⚠ A switch arm's body that is a cast over an atom: the arrow or the cast's `)`, by the measured
+                // table. See GroupFacts.ArmCast (#591).
+                if (facts.ArmCast > 0
+                    && width == ArmCastMargin
+                    && m.FlatWidth < Unbounded
+                    && m.Trailing < Unbounded
+                    && m.Column > lineStart) {
+                    return ArmCastBreaksTheArrow(facts, m, lineStart) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                }
+
                 // ⚠ A sole lambda argument over a member-access fill: the arrow or the fill, by the
                 // measured line rather than by whether the body fits below. See
                 // GroupFacts.LambdaParameters (#557).
@@ -620,6 +653,16 @@ public sealed class Fitter {
                 // binary, identifier and call conditions behind heads from 17 to 66 columns. See
                 // GroupFacts.ValueHeadWidth.
                 if (facts.ValueHeadWidth > 0) {
+                    // ⚠ A call whose `(` lands past the margin beside the `=` leaves the `=` nothing to keep (#596,
+                    // fuzz 8249044719362511507): pass one kept `T v19 = Select(` at 124 columns and pass two, finding
+                    // the arguments chopped, broke the `=`. Measured 2026-10-10 with `Testing ask`: the `(` at 121 to
+                    // 127 breaks the `=` for short and long argument lists alike. See GroupFacts.ValueHeadCallee.
+                    if (facts.ValueHeadCallee > 0
+                        && m.PointWidth < Unbounded
+                        && !Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadCallee)) {
+                        return ResolvedMode.Broken;
+                    }
+
                     var beside = Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadWidth);
                     var below = Fits(m.ContinuationColumn, facts.ValueHeadWidth);
                     if (beside) {
@@ -1067,6 +1110,15 @@ public sealed class Fitter {
         // second gate, while the value is narrow enough for its body; otherwise the parameter
         // list chops (#558). See EqualsFloor.BreaksBeforeAnOverflowingLambda.
         if (facts.LambdaLocal != LambdaLocal.None) {
+            // ⚠ A lambda without parentheses has no list to chop, so the `=` is the only break that can end the
+            // line in time (#595, fuzz 18379797974820457043): `T v13 = static x =>` past the margin kept the `=`, and
+            // pass two, reading the arrow's break as the author's, broke the `=` as well. Measured 2026-10-10 with
+            // `Testing ask`: `x =>` and `static x =>` with the arrow ending at 121 to 131 break the `=` on every row
+            // where the type/name gap does not take the line first.
+            if (facts.LambdaIsSimple) {
+                return ResolvedMode.Broken;
+            }
+
             return EqualsFloor.BreaksBeforeAnOverflowingLambda(
                 head,
                 value,
@@ -1082,6 +1134,39 @@ public sealed class Fitter {
     }
 
     int OuterBreakMargin(in Measures m) => 11 + m.ContinuationColumn / indentWidth;
+
+    /// <summary>The margin <see cref="GroupFacts.ArmCast" />'s table was measured at (#591).</summary>
+    const int ArmCastMargin = 120;
+
+    /// <summary>
+    ///     Whether a switch arm whose body is a cast over an atom breaks after its arrow rather than after the
+    ///     cast's <c>)</c> (#591, SK-DIV-0440). See <see cref="GroupFacts.ArmCast" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> on 5 947 rows; the table agrees on 5 817 (always breaking the arrow,
+    ///     as Skala did, agrees on 3 651). The residue is one column either side of the first constraint for
+    ///     casts of 9 to 15 columns, where the oracle's boundary steps by one over a stretch of heads the way the
+    ///     band below does by the whole line. ⚠ The band is not explained, only bounded: a cast of five columns
+    ///     keeps the arrow from a head of 13 to one of 29, of eight only from 22 to 25, and none from nine on;
+    ///     it is the same at indents 12 and 16.
+    /// </remarks>
+    bool ArmCastBreaksTheArrow(in GroupFacts facts, in Measures m, int lineStart) {
+        // ⚠ The group starts at its point, before the space after the arrow: its column is the arrow's end.
+        // A body that would not fit below the arrow either changes nothing: where the table keeps the arrow
+        // the cast's `)` breaks as well, and where it does not the cast's `)` alone.
+        var head = m.Column - lineStart;
+        var cast = facts.ArmCast;
+        var end = m.Column + m.FlatWidth + m.Trailing;
+        if (end == width + 1 && (head >= 7 || cast <= 6)) {
+            return true;
+        }
+
+        if (cast <= 8 && head >= 3 * cast - 2 && head + cast <= (cast >= 7 ? 33 : 34)) {
+            return true;
+        }
+
+        return 3 * end <= 3 * head + 336 - cast && 8 * end <= 6 * head + 954 - 3 * cast;
+    }
 
     /// <summary>The margin <see cref="GroupFacts.CreationLimit" /> was measured at (#581).</summary>
     const int CreationLimitWidth = 120;

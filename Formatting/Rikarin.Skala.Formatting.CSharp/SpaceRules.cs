@@ -670,6 +670,13 @@ public static class SpaceRules {
         if (IsPrefixOperator(next)) {
             // ⚠ Behind an assignment it is still the assignment's gap: `f=-(a)` at
             // `space_around_assignment_op = false`, where Skala wrote `f= -(a)` (#525).
+            // ⚠ And behind a cast it is the cast's: `(int)-1`, `(int)~x`, `(bool)!b`, `(long)+x` and `(int)++x`,
+            // written with the space or without, come back without it at `space_after_cast = false` (measured
+            // 2026-10-09 with `Testing ask`, #591, SK-DIV-0441), where Skala wrote `(int) -1`.
+            if (left == SyntaxKind.CloseParenToken && prev.Parent is CastExpressionSyntax) {
+                return o.SpaceAfterCast;
+            }
+
             return IsAssignmentOperator(prev) ? o.SpaceAroundAssignmentOp : !ClingsRight(left);
         }
 

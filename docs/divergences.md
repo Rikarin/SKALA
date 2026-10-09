@@ -7047,6 +7047,30 @@ line from a total width that depends on both the name and the type — 133 to 13
 fills behind the second from 137 too — with no reading of either width alone; Skala moves the type below.
 Pinned by `PropertyHeadIssue540Tests`.
 
+**Round four (group Q, 2026-10-09): the second width is the fill's first line, and the five-letter claim is
+refuted.** Re-measured on master `166d2a4f` with `Testing ask`: `public static readonly <type> N…;` at indent 4,
+the line from 121 to 160 one column at a time, names of 1 to 8 letters, and six type heads chosen so that the
+oracle's fill — `public static readonly Dictionary<string,` / the rest one level in — has a first line `H` of 32,
+42, 45, 57, 72 and 81 columns (1 230 cells; master matches 730). Below the margin's band every row agrees.
+Then the type goes below the modifiers (`M`) up to a line end that rises with the name and falls with `H`, and
+the oracle fills on the modifiers' line (`F`) from there:
+
+| `H` | first `F` for a name of 1, 2, 3, 4, 5, 6, 8 letters |
+|---|---|
+| 32 | never, to 145 |
+| 42 | 133, 135, 136, —, never to 145 |
+| 45 (twice: what follows the comma does not matter) | 132, 134, 135, 137, never to 160 |
+| 57 | 130, 131, 133, —, 136, —, 141 |
+| 72 | 129, 131, 133, —, 136, —, 141 |
+| 81 | 129, 131, 132, 134, 136, 137, — |
+
+⚠ So "every name of five letters or more" holds only behind a short head: behind
+`System.Collections.Generic.IReadOnlyDictionary<string,` a five- and a six-letter name fill from 136 and 137,
+and behind a 57-column head an eight-letter name fills from 141 after one row of `M` with the name below.
+Skala moves the type below in all of them. The first `F` is roughly `c(H) + 1.5·L` columns, `c` falling from
+about 131 at `H` = 42 to 128 at 72 and flat after, with single-column steps no reading of `H` and `L` alone
+reproduces; no rule is wired, and the gap stays the modifiers' as round three left it.
+
 **The parameter's gap is resolved (#545).** A parameter whose line passes the margin once its list is
 chopped puts its name one level below its type: `int` / `            aaa…` at a parameter on column 8.
 Measured with `jb cleanupcode` 2025.2.6 one column at a time: flat to a 120-column parameter line, broken
@@ -8714,6 +8738,16 @@ receiver of a further link (`found.SelectMany(static d => Enumerable.Range(…)`
 levels in, Skala's own source). Pinned by `ChainInAHeaderIssue495Tests` and
 `constructs/breaks/chain-in-a-header-or-a-sole-lambda.cs`. A break-choice divergence seen beside it is
 SK-DIV-0332.
+⚠ #593 (2026-10-09, fuzz seed 16215088427476222539): that rule lived only in the chain's *group*. An
+author's break before the held first call's dot is no point of the group and reached the chain *frame*,
+which paid a level of its own — so pass one's width break, read as the author's on pass two, moved every
+dot a level past the aligned column. The oracle keeps an author's break there on the column: measured on
+33 rows (if, else if, while, do, switch, foreach, using, `!`, `&&` and both lambda shapes; a long, a
+partly broken and a short chain), Skala diverged on the 12 whole-condition rows and now matches all 33.
+The frame reads the same predicate now (`BreakPlan.IsAWholeStatementCondition`). And a `for`'s whole
+condition is one too, which #495 never measured: `for (var i = 0;` / `source` / `.Select(a)` puts the
+dots under the `s`, the width's break and the author's alike (5 rows diverging before, none after);
+`i < 10` / `&& source…` keeps the chain's own level. Pinned by `HeldCallInAHeaderIssue593Tests`.
 
 - options: none behind the divergence; measured at `skala_continuous_indent_multiplier = 2` too.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/chain-first-call-arguments.cs` and
@@ -9378,6 +9412,31 @@ arrow (declined one to two past), and an auto-property's initializer (always joi
 overflow alone covers the three. A call value joined past 122 still breaks its `=` in Skala where the oracle
 chops the call; that is the `=`'s ordering rule, the aside above.
 
+**Round three (group Q, 2026-10-09): the arrow's band is the moved prefix's width, and it is not linear.**
+Re-measured on master `166d2a4f`: the field rows above all agree — #504's own shape,
+`[Obsolete] /* c */ public int F = alphaValue + … ;` at 125 columns, is the oracle's — and a property's arrow (`P => a + b …;`,
+`=> Compute(…)`, `=> name`, `=> a.B.C.D.e`) is declined at one to three columns past and joined from four,
+a method's at one to two, an auto-property's initializer always joined — as recorded. The new idea was to
+vary what the decline moves off the line instead of the overflow: the comment (`/**/` to 37 columns), the
+attribute (`[A]`, `[Obsolete]`, a 31-column name) and the declaration's head (`int P => `, `public int P => `,
+`public static int P => `, `public SomeLongTypeName P => `), the line from 119 to 150 — 1 952 cells.
+
+- **The band is set by the prefix, not by the value or the terminator.** With `Q` the width of
+  `[attribute] /* comment */ `, the last declined line grows with `Q`: behind `public int P => ` it is
+  123, 126, 129, 132, 134, 136, 138, 141, 143, 145 and 148 for `Q` of 19 to 49 in steps of three; a
+  `/**/` (`Q` = 16) or `[A]` with `/* c */` (12) is never declined. So the old "one to three columns" is the
+  `/* c */` row of a table, and a longer comment declines a line fifteen or twenty columns past the margin.
+- **The head moves it the other way**: behind `int P => ` the same rows end at 125 to 150, behind
+  `public static int P => ` at 120 to 145, behind a 29-column head at 120 to 144.
+- **Not linear in either.** The slope in `Q` is one column per column up to `Q` ≈ 28 and about three
+  quarters after it; the best linear rule in `Q` and the head misses 16 of 44 row ends, and summed-cost
+  readings (line widths or slack to any power from 0.5 to 4, the four lines of the two layouts) miss more
+  than 180 of 1 364 cells.
+
+Not wired: no reading survives the grid, and a table over two widths for a comment between an attribute
+and an expression-bodied member would be keyed on a shape the corpus does not hold. The property's and
+method's arrows stay the author's.
+
 - options: the six `skala_place_*_attribute_on_same_line` keys.
 - ⚠ status: **resolved** at `always`; **resolved** for a comment in the gap on fields and event fields (#504),
   pinned by `CommentedAttributeGapIssue504Tests`; **open** for properties and methods. Pinned by
@@ -9601,9 +9660,33 @@ Three of them are settled exactly by which layouts fit:
   that is conditional on a sibling group. Skala writes `K` or `W` in all 1 172 `D` and `x` cells, and is
   right on every `K`, `W` and fits cell.
 
-- ⚠ status: **resolved** for the band and for a plain member access without a type test; **open, blocked**
-  for `is`/`as` past the band, measured as above. Pinned by `TypeTestKeywordIssue444Tests` and
-  `constructs/breaks/member-access-last-dot.cs`.
+**Round 5 (group Q, 2026-10-09): the `D`-only cells are wired.** Re-measured on master `166d2a4f` with
+`Testing ask`: `return r….P… as|is T…;` at indent 12, receivers of 1, 4, 8, 14, 20 and 30, types of 1, 6 and
+10, the keyword ending at 119 to 136 — 648 cells, of which master matched 90. Round 4's feasibility reading
+holds exactly where it needs no tie-break: **whenever the operand alone runs past the margin** (so neither
+`K` nor `W` can fit) **and `.P… as T;` fits one level past the statement, the oracle writes `D`** — 194 of 194
+cells. The construct round 4 found missing is only missing for `x`: `D` is the member-access fill one level
+in, and it needs no level conditional on a sibling, because the keyword's band is flat in every `D` cell.
+`PlansTheFill` now plans the fill for the operand of a returned type test that is one member access on a
+name (`BreakPlan.TypeTestTail`), and its group breaks exactly then (`GroupFacts.TypeTestTail`). ⚠ The line is
+measured from the statement's line plus one level, not from the fitter's continuation column: the type
+test stacks levels there (32 at a `return` on 12) that the writer collapses to one on the dot's line, and
+measuring from it matched 40 of the 194 cells.
+
+The grid now matches 284 of 648 (90 before), every pass idempotent. A second probe, written after the rule —
+indents 8, 12 and 20, `string` and `List<int>`, receivers of 3, 10 and 25 and `this`, `as` and `is`, the
+keyword ending at 118 to 138 (528 cells) — matches all 96 of its `D`-only cells and 204 cells in all; the
+rest are the cells below. Pinned by `TypeTestOperandDotIssue446Tests`.
+
+⚠ Still divergent, as recorded above: the ties (90 cells of the first grid where `K` or `W` fits
+and the oracle still writes `D`; Skala writes `K` or `W`, right in the other 90 cells where they fit), and `x` (274 cells: neither fits, the dot two levels in), where Skala keeps the
+keyword band past the margin. A `this` receiver, an `=` or an argument in front, and more than one dot are
+not planned: not measured.
+
+- ⚠ status: **resolved** for the band, for a plain member access without a type test, and for a returned
+  type test whose operand alone overflows where the dot's line fits (#446); **open, blocked** for the ties
+  and the two-level `x` layout. Pinned by `TypeTestKeywordIssue444Tests`, `TypeTestOperandDotIssue446Tests`
+  and `constructs/breaks/member-access-last-dot.cs`.
 
 ## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
 
@@ -9804,6 +9887,11 @@ list:
 - options: none.
 - ⚠ status: **fixed** (#446), pinned by `constructs/breaks/when-clause-list-under-a-kept-arrow.cs` and
   `constructs/breaks/when-clause-lambda-under-a-kept-arrow.cs`.
+- Re-measured 2026-10-09 on master `166d2a4f` (group P): `jb cleanupcode` on Skala's own
+  `SearchValuesAnalyzer.cs` — the file whose one line #445 had moved away from the oracle — agrees on the `when`
+  arm line by line. The file's remaining two differences are elsewhere: a call's arguments inside an
+  `if (model.GetSpeculativeSymbolInfo(` / … / `).Symbol` / `is not IMethodSymbol creator` condition: the arguments,
+  the `)` and `.Symbol` one level deeper in the oracle (not a switch arm; reported, not filed here).
 
 ## SK-DIV-0310 — a collection expression's spread is spelled one way, which the oracle never does
 
@@ -10449,6 +10537,30 @@ line, with steps of 0 and 2 that no linear reading reproduces — and behind `[A
 parameter never chops at all. The two attributes differ in how much the chop saves (14 columns against 3),
 and only two such values were measured, so a table would have one row per attribute shape it has never seen.
 
+**Round four (group Q, 2026-10-09): a rule found, and refuted by the next probe.** Re-measured on master
+`166d2a4f` with `Testing ask`, the section's last column `E` swept one at a time from 96 to 120:
+
+- Behind `[Obsolete(` — `("…", true)`, four arguments, `("…", true, SomeLongName.Value)` and `(1, "…")` alike —
+  with parameters of 12 to 39 columns (`int a…`, `List<string> a…`, `Dictionary<string, int> a…`, dotted, tuple)
+  at indents 8, 12 and 16, **every one of 2 829 cells** chops exactly when the joined line overflows and
+  `24·E ≥ 32·w + 1892 + 11·(i − 8)`, `w` the parameter and `i` the section's column, provided that threshold
+  is met by column 118 at the latest: one that would first be met at 119 or 120 is never met (30 columns at
+  indent 8, 29 at 12, 27 at 16 stand alone below the section at every width). So the slope is 4/3 a column
+  per column of parameter — round three's "about 1.2, with steps of 0 and 2" is that slope rounded — and
+  neither the arguments nor what chopping them saves enter it. The issue's inference (a rest-of-line reading
+  through to the parameter's first break point) stays refuted: the type's composition does not move a cell.
+- ⚠ **The next probe refuted it** (3 852 cells, indents 8 and 20). `[Range(1, "…")]` and `[Foo(typeof(int), "…")]`,
+  whose `(` lands three and five columns further left, chop one to three columns *earlier* at mid widths and
+  *later* near the margin — a 29-column parameter at indent 8 chops behind `[Range(` only at 120 and behind
+  `[Foo(` never, where `[Obsolete(` chops from 118 — so the threshold bends toward the margin, not a line. A
+  named argument (`DiagnosticId = "X"`) chops later still (`string? a…` of 13 columns: from 113 at indent 8,
+  never at 20). A parameter with a default value breaks at its `=` once the joined line overflows and stays
+  joined to the section. One-argument sections chop only near the margin: `[A("…")]` from 109 to 118 for
+  12 to 15 columns and never from 16, `[Description("…")]` from 113 to 120 for 12 to 17 and never from 18.
+
+The rule was wired and reverted: one attribute shape's table would be right on `[Obsolete(` and wrong by up
+to three columns on the next attribute anyone writes. Nothing changed in the formatter.
+
 - options: `skala_wrap_arguments_style`; no key for the join.
 - ⚠ status: **resolved** for parameters of up to eleven columns, defaults included (#476, #556), pinned by
   `AttributeArgumentChopIssue476Tests`; **open**, measured, for longer ones.
@@ -10723,6 +10835,13 @@ the comma carried to the next line).
   `constructs/breaks/positional-pattern-closer.cs` and `constructs/breaks/positional-pattern-fill.cs`; **open** for the
   two shapes above.
 
+⚠ **#559, round four (2026-10-09): the `=` before the `is` was the `=`'s, not the comma's.** Re-measured on an
+81-row grid (`var x =`, `bool x =`, a 22-column name, `x =` and `return`, the line ending at 118 to 160): a
+*local's* `=` breaks whenever the line overflows, the value fitting below or not, and the fill below it sits a
+level past the value; an assignment's `=` and a `return` keep their head and fill, as Skala did. The carried comma
+is a fill quirk of its own: the oracle moves a comma that would land on column 121 to the next line (`…, int ccc` /
+`, int dddd);`, one row of 81), which Skala does not model. See SK-DIV-0442.
+
 ## SK-DIV-0394 — a pattern chain inside the first operand of an `&&` in a declarator
 
 Found beside #550. `var empty = next.Parent is A { … }` / `or B { … }` / `&& !C(next);` — the oracle puts
@@ -10963,6 +11082,18 @@ an arrow group breaks there under a head that spans lines, and forces the arrow 
 Pinned by `constructs/breaks/arm-braces-under-an-arrow-broken-for-width.cs`. ⚠ Residue: for
 `=> Cast<IReadOnlyDictionary<(…), (…)>, TimeSpan>(…)` the oracle breaks inside the tuple type and keeps the arrow
 (SK-DIV-0024's family). Skala breaks after the arrow and now lifts the braces. Both passes agree (open).
+
+⚠ **#576, re-measured 2026-10-09 (group P), not wired.** Twenty arms with a query body `(from item in items where
+"…" select item)` of 47 to 122 columns behind four heads: a one-line head, a `when Compute(` / … / `) =>` list
+chopped by the author, and a `when Materialise<List<bool>,` / `…>>() =>` type argument list the author broke,
+its last line 103 or 67 columns. Fifteen agree. The five that do not are all the 103-column type-argument head,
+and they show two rules, not one. (1) The arrow on a head that spans lines follows the `=`'s ordering rule, not
+the arm's: the body moves below for a query of 47 to 82 columns although `>>() => (from` would fit, and stays
+for 102 and 122 — and then the query breaks after `from item in`, `items` two levels past the arm, `where` one,
+the shape the seed showed. (2) When the arrow moves, the type argument list's continuation steps two levels past
+the arm (20), the lift #564 gives a `when` list, which stays off for a type argument list (fuzz
+12955079666331923518, above). Neither is reachable without the other, so the residue stays whole: Skala keeps
+the list one level in and moves every one of the five bodies below.
 
 ⚠ **Fuzz 18207060042734210187.** The same rule holds for a `when` clause without braces. For `not null when ("ss"` /
 `?? "…" + "…" - "…")` / `=> …,` the oracle puts the `??` two levels past the arm and chops the chain. The arrow
@@ -11461,3 +11592,78 @@ four arguments, `X || Y` — formatted by master and by this branch and asked of
 |---|---:|---:|---:|---:|
 | 20261009 (no `||`) | 3 000 | 2 462 | 2 890 | 3 |
 | 99 | 3 500 | 2 819 | 3 340 | 7 |
+
+## SK-DIV-0440 — a cast's `)` before an operand with no break point of its own
+
+#591, found fixing fuzz seed 9642682992700587520. Skala had no break point after a cast's `)`, so `("k", var p) =>
+((…) Second))"sss…"` past the margin measured its body as unbreakable and broke the positional pattern instead.
+Measured 2026-10-09 with `Testing ask`, outside switch arms first:
+
+| shape, past the margin | oracle |
+|---|---|
+| `return (string)value;` | `return (string)` / `value;` one level in |
+| `var v = (string)value;` | `var v =` / `(string)value;` while that fits below, then `var v =` / `(string)` / `value;`, the operand on the cast's column |
+| `x = (string)value;` | the same as the local |
+| `Call(a, (string)value);` | `Call(` / `a,` / `(string)` / `value` / `);`, once the chopped argument does not fit |
+| operand `"…"`, `$"…"`, `M()`, `-x`, `x!`, `x++`, inner cast of `(A)(B)x` | the same; `(A)(B)` / `x` past 121 |
+| operand `Method(a, b)`, `a.b.c`, `(a + b)` | breaks inside the operand, never after the cast |
+
+So the gap is a last-resort point (`GapRule.LastResortPoint`), planned only over an operand with no point of its own
+(`BreakPlan.IsACastAtom`), spending the statement's level only where nothing around it has. A break the author wrote
+there is kept. Rows: the statement grid 347 → 447 of 450 and the operand grid 49 of 59 after (the file did not
+parse at first, so there is no before).
+
+In a switch arm the arrow and the cast's `)` compete, and the oracle's choice is a table, not a fit-below question:
+measured on 9 903 rows — heads through `=>` of 6 to 36 columns, casts of 5 to 22, lines ending at 121 to 145, arms at
+indents 12 and 16 and in `return`, `var r =`, expression-bodied and nested-class contexts. With `a` the head's width
+from the arm's first column through `=>` and `L` the column the arm's flat line ends at, comma included, the arrow
+breaks while `3·L ≤ 3·a + 336 − cast` and `8·L ≤ 6·a + 954 − 3·cast`, and the cast's `)` breaks otherwise; at
+`L = 121` the arrow breaks from a head of 7. ⚠ And a band: a cast of eight columns or fewer behind a head from
+`3·cast − 2` to about `34 − cast` keeps the arrow whatever the width (the body then breaks after the cast too once it
+does not fit below). `GroupFacts.ArmCast`, `Fitter.ArmCastBreaksTheArrow`. ⚠ `L` is absolute: at indent 16 the
+boundary sits at the same column as at 12 for the same head. An expression body written `=> s switch {` on its
+member's line first looked four columns lower; that was the oracle (and Skala) moving `s switch {` to its own line,
+which the measurement had not accounted for.
+
+Arm rows agreeing with the oracle: 4 721 of 9 903 before (Skala always broke the arrow), 9 832 after. ⚠ Residue,
+71 rows: one column either side of the first constraint for casts of 9 to 15 over a stretch of heads, where the
+oracle's boundary steps by one the way the band does by the whole line; a postfix `!`, `++` or `[0]` one or two
+columns past the margin, which the oracle breaks before; a generic name, whose type argument list fills before the
+cast breaks until its `<` is past the margin.
+
+- options: none (`skala_space_after_cast = false`, the export's).
+- ⚠ status: **resolved within the residue above** (#591). Pinned by
+  `constructs/breaks/cast-operand-last-resort.cs` and `CastOperandBreakTests`.
+
+## SK-DIV-0441 — the gap between a cast's `)` and a prefix operator
+
+Found beside SK-DIV-0440. `(int)-1`, `(int)~x`, `(bool)!b`, `(long)+x`, `(int)++x` and `a - (int)-x` came back
+`(int) -1` and so on: the space rules answered a prefix operator after any `)` with "a space", the rule for
+`(a) - x`. The oracle keeps them closed at `space_after_cast = false`, written with the space or without, and
+`(a)-x` (not a cast) gets its space. `SpaceRules`: the gap before a prefix operator is the cast's after a cast.
+
+- options: `skala_space_after_cast`.
+- ⚠ status: **resolved**. Pinned by `constructs/spaces/cast-before-a-prefix-operator.cs`.
+
+## SK-DIV-0442 — a local's `=` before `operand is (…)`, a positional pattern
+
+#559, round four. On an 81-row grid — `var x =`, `bool x =`, a 22-column name, `x =` and `return`, the line ending
+at 118 to 160 — a *local's* `=` breaks whenever the line overflows, its `;` included, whether the value then fits
+below or fills there a level past it. An assignment's `=` keeps the line, as `return` does, and the pattern fills.
+Skala yielded the `=` to the fill. `GroupFacts.BreaksIfTheLineOverflows`, planned in `BreakPlan.PlanAroundEquals`.
+Rows: 42 → 72 of 81, and the round-one grid of 40 rows 15 → 27.
+
+⚠ Open, measured and not wired:
+- the closer alone. With the line through the last element at 119 or 120 and only `);` past the margin, the oracle
+  writes `…, int dddd` / `);` with the `)` on the elements' column (8 rows). A group on that `)` resolves right,
+  but the fill's last point still measures through it (`LayoutWriter.FillSegment` adds what trails the fill's
+  group, the `)` included), so `int` / `dddd` breaks as well; reverted.
+- the carried comma, one row (SK-DIV-0393).
+- a positional pattern heading an arm with a short body: `(int a, F { X: 1 }, int b) => 1,` one to six columns past
+  the margin breaks after `=>`, then before it, then before `)`, and only then fills or breaks the braces; Skala
+  fills at once (11 of 20 rows differ) — #378's read-through of a short body leads it there, and the oracle does
+  not read a positional head through.
+
+- options: `keep_user_linebreaks`.
+- ⚠ status: **resolved** for the local's `=`, pinned by `constructs/breaks/positional-pattern-after-a-local-equals.cs`;
+  **open** for the three above.
