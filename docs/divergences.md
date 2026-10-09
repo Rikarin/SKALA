@@ -11552,4 +11552,59 @@ Rows: 42 → 72 of 81, and the round-one grid of 40 rows 15 → 27.
 
 - options: `keep_user_linebreaks`.
 - ⚠ status: **resolved** for the local's `=`, pinned by `constructs/breaks/positional-pattern-after-a-local-equals.cs`;
-  **open** for the three above.
+  the closer and the arm heads are **resolved** in SK-DIV-0443; the carried comma stays **open**.
+
+## SK-DIV-0443 — a positional pattern's `)` and an arm headed by one
+
+#559, round five, the two residues of SK-DIV-0442. Measured 2026-10-10 with `Testing ask` on 168 arms — heads
+`(int a…, int b…, int c…)`, `(int a…, F { X: 1 }, int b…)` and `(1, "…", 2)`, bodies `1`, `null`, `"sssssssss"` and
+`Compute(a, b)`, the line ending at 119 to 132. With a body of no break point the oracle takes the rightmost break
+whose line fits: after the arrow while the line through `=>` fits, then before the arrow, then before the pattern's
+`)`, and only then inside the pattern. Skala read the short body through the head (#378's `ShortArrowBody`, measured
+on property patterns, whose braces do chop there) and filled the pattern at once. A positional head without a `when`
+now never reads the body through (`GroupFacts.PositionalHead`), and the gap before the `)` is a fill point of the
+pattern's own list, in an arm and after an `is` that ends its statement, so `…, int dddd` / `);` and `…, int bbbb` /
+`) => 1,` come out where only the closer and what follows it overflow. (The separate closer group SK-DIV-0442
+tried resolved right, but the fill's last element still measured through it; as a point of the fill it ends that
+element's segment.)
+
+Rows: arms 75 → 162 of 168; the `is` grids 72 → 80 of 81 and 27 → 36 of 40. ⚠ Residue: a body with a break point
+of its own (`Compute(a, b)`) one column past the margin, where the oracle breaks after the arrow and Skala fills; a
+constant head with the body `1` at 129 to 131, where the oracle fills a column later.
+
+- options: `keep_user_linebreaks` (a kept break before the `)` stays the author's).
+- ⚠ status: **resolved within the residue above** (#559). Pinned by `constructs/breaks/positional-pattern-head-and-closer.cs`.
+
+## SK-DIV-0444 — an `=` whose value cannot end the line in time beside it
+
+Two Nightly idempotency failures on master, #595 and #596, each an `=` kept where its value's own break lands past
+the margin:
+
+- `T v13 = static x =>` past the margin (fuzz 18379797974820457043). #558's overflow rule keeps the `=` once the
+  `=>` is more than three columns past the margin, on the reading that the parameter list chops; a lambda without
+  parentheses has none. Measured on 145 locals (`x =>`, `static x =>`, `(x) =>`, `static (x) =>`, the `=>` ending
+  at 116 to 131): every row past the margin breaks the `=` where the type/name gap does not take the line first.
+  `GroupFacts.LambdaIsSimple`, read in `Fitter.EqualsBeforeALambda`. ⚠ Within the margin `static` moves the name
+  gates (`static x =>` breaks the `=` where `x =>` with the same name keeps the arrow): 10 rows of 64 differ, 8 of them
+  `static`, all within the margin, and are left (the gates were measured without the modifier).
+- `T v19 = Select(…) ? … : …` with the `(` at 124 (fuzz 8249044719362511507). #553 keeps the `=` before a call
+  condition that does not fit below; the oracle breaks it whenever the `(` lands past the margin, 121 to 127, short and
+  long arguments alike, as `EqualsBeforeACall` already does for a call value. `GroupFacts.ValueHeadCallee`. ⚠ Within
+  the margin a call condition that fits below keeps the `=` in the oracle (`= Select(` / chopped / `)` / `? …`),
+  where #553 breaks it: 9 of 32 rows, pre-existing, left.
+
+- ⚠ status: **resolved** for both seeds (`FuzzRegressionTests`), pinned by
+  `constructs/breaks/equals-before-a-head-past-the-margin.cs`.
+
+## SK-DIV-0445 — an `=` before a value that is one parenthesis
+
+#598. `var value = (string)(aaaa + b…);` past the margin: measured 2026-10-10 on 252 rows — heads through the `=` of
+7 to 32 columns (`var`, typed, assignment), a cast parenthesis and a bare one, lines 119 to 135. The oracle moves the
+value below whole exactly when it fits flat there and the head is twelve columns or more — the collection's rule
+(#375, #379), `BreaksOnlyIfTailFits` with `MinimumHead`. Skala yielded to the parenthesis's own point at every width.
+Rows 166 → 234 of 252. ⚠ Residue: a typed head of 14 before a *bare* parenthesis stops moving down six columns
+early (the value line ends at 114, not 120); a head under twelve breaks the `=` at exactly 122 columns and at no
+other width.
+
+- options: `skala_wrap_before_eq = false`.
+- ⚠ status: **resolved within the residue above**. Pinned by `constructs/breaks/equals-before-a-parenthesis.cs`.

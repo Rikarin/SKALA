@@ -644,7 +644,7 @@ public sealed class Fitter {
                         return ResolvedMode.Broken;
                     }
 
-                    var beside =Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadWidth);
+                    var beside = Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadWidth);
                     var below = Fits(m.ContinuationColumn, facts.ValueHeadWidth);
                     if (beside) {
                         return facts.ValueHeadIsWide && ConditionalMovesDownWhole(facts, m, tail)

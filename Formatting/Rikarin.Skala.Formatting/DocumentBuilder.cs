@@ -659,7 +659,7 @@ public sealed class DocumentBuilder {
             // the arrow's break kept, lifted the chopped brackets.
             // ⚠ Never behind a positional pattern (#559, SK-DIV-0443): `(int a, …, int c) => 1,` past the margin
             // breaks after the arrow while the line through it fits, whatever the body. See GroupFacts.PositionalHead.
-            arrowRuns =!arrow.PositionalHead && afterPointRuns && segment[index] + arrow.ArmBodyTrail <= ShortArrowBody
+            arrowRuns = !arrow.PositionalHead && afterPointRuns && segment[index] + arrow.ArmBodyTrail <= ShortArrowBody
                 || arrowBodiesRunningToTheEnd.Contains(frame.Arg1);
             if (arrowRuns && arrow.FlatIfOwnerBroke && arrow.Owner >= 0) {
                 arrowBodiesRunningToTheEnd.Add(arrow.Owner);
