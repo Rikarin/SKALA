@@ -2395,6 +2395,50 @@ at the two fixed columns. A table that reproduces every measured cell needs the 
 time across the type × name plane, and that has not been done. Skala's remaining errors in these grids
 are the arrow-versus-arguments cells (`A` where Skala chops) and the `=` past the gates.
 
+⚠ **Round 5 of #453 (group O, 2026-10-09): the call body under a narrow name is wired, and the issue's six
+shapes all agree.** Re-measured on master `166d2a4f` first: `f125`, `f135`, `C2((…) => …)` and the `a2`/`a4`
+controls already agreed (rounds 1–3); `a125`, `a131` and `a141` still chopped the arguments.
+
+Round 4 left "the `(` swept one column at a time" as the blocker. Under a name of nine columns or fewer it
+turns out not to be needed across the type × name plane, because **there the head alone decides**:
+`Func<T…> n = () => C…(xxx, yyy);` with heads of 16 to 76 four apart and the `(` and the argument list one
+column at a time — 53 681 cells, every `(` row one clean threshold — and a second grid of names 1, 5 and 9
+under six types reads the same rows wherever the heads match. The rule:
+
+- With the `(` nearer the head than `min(38, 62 − head/2)` columns, the arguments always chop (round 3's
+  "drop").
+- Past that the arrow breaks while the argument list is narrower than
+  `⌊max(65 − 0.4·(paren − head − 38), 58.25 + 0.41·(head − 16) + 0.18·(paren − 117)) + 0.4⌋`, chopping
+  below as well when the call does not fit there.
+- A single argument has its own floor: the same two lines 21.25 columns higher, falling 0.41, and no drop.
+
+Wired as `EqualsFloor.BreaksTheCallArrow`, read in `Fitter.Decide` through `GroupFacts.LambdaCallArguments`
+and planned by `BreakPlan.LocalLambdaCallOf` — the locals `KeepsTheEqualsBeforeALambdaCall` already keeps
+the `=` on, a body on one line. Measured with `Testing ask`, Skala's differing cells:
+
+| grid | cells | master | now |
+|---|---:|---:|---:|
+| two arguments, heads 16–76, one column at a time | 53 728 | 19 328 | 92 (45 at the floor, 47 the type/name break below) |
+| names 1, 5, 9 × six types | 10 253 | 4 654 | 32 (4 at the floor, 28 the type/name break) |
+| one argument, heads 16–76 | 53 728 | 46 270 | 186 (60 at the floor, the rest the type/name break) |
+| random: `var`/`Action`/`Func`/bare types, six parameter lists, one to four arguments | 4 000 | 1 476 | 11 |
+| random: names, string literals, member paths, calls and `this.` paths as arguments | 4 000 | 1 809 | 10 |
+
+The "master" column is master `166d2a4f`'s own output, built and run on the same inputs; every count is of
+whole statements that differ from the oracle's.
+
+⚠ **What stays open:**
+- **Names over nine columns**, where the `=` breaks past round 4's gates: not wired, unchanged.
+- **Fields and assignments.** Probed on 3 000 random cells; the local's floor is close but not exact there —
+  a field misses 66 of 1 559 cells against master's 779, an assignment 145 of 1 441 against 303, and no shift of
+  the head closes either. Not wired.
+- **The type/name break** (`Func<T…>` / `n = () => …` one level in) that the oracle takes at wide types and
+  narrow `(` columns, 47 + 28 + ~120 cells above: a different decision, Skala keeps the declaration whole.
+
+- ⚠ status: the call body under a declarator name of nine columns or fewer **fixed** (#453), pinned by
+  `constructs/wrapping/lambda-arrow-over-a-call.cs` and `LambdaArrowFloorIssue453586Tests`; the residue above
+  open.
+
 ## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
 
 ReSharper ships nine keys that **suppress a class of edit** rather than choosing between two
@@ -11190,6 +11234,61 @@ writer's trailing measure stops short of.
 - options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
 - ⚠ status: **fixed** within the residue above, pinned by
   `constructs/wrapping/lambda-arrow-over-an-operand-chain.cs`.
+
+⚠ **#586 (group O, 2026-10-09): both named residues fixed.** Re-measured on master `166d2a4f` first; group F's
+probes stood at `p3` 5, `p4` 7, `p5` 50, `p6` 0, `p7` 35 differing lines, as recorded.
+
+- **A binary-pattern body is not an operand chain.** The operand chain's constants had been fitted on `&&`
+  bodies and reused for `x is A or B` with only first operands of 17 measured. Swept on its own the pattern
+  has its own constants and a dimension the chain does not: the width of the tested expression (`x`,
+  `node`, `x.Kind`). With `t = min(first, left + 28)` — the type capped at 24 columns — the ceiling is
+  `⌊2.75·(params + t) − 56 − 0.88·(left − 1) + (first − t)/8⌋` and the line column carries a deficit
+  `max(0, 10 + left − 0.375·t)` instead of the chain's first-operand bonus. Wired as
+  `EqualsFloor.BreaksTheOperandArrow`'s `patternLeft`, set from `GroupFacts.LambdaOperandPatternLeft`.
+- **A lambda call that is the receiver of a further link** (`var g = i….Where(x => …).ToList();`) was left out
+  of the operand rule entirely, because `IsTheBodyOfASoleLambda` excludes it for its level. The oracle decides
+  it by the same rule with the line read to the call's `)` plus one column, as though the statement ended
+  there — the chain breaks before the next link anyway. Wired through `IsTheReceiverOfAFurtherLink`.
+
+Measured with `Testing ask`; whole statements that differ from the oracle, master's own output against this
+branch's:
+
+| grid | statements | master | now |
+|---|---:|---:|---:|
+| pattern: five parameter texts × first operands 8–52 × arrow × lines 116–176, plain and local calls | 13 209 | 568 | 22 |
+| pattern ceiling at a 200-column line, one column at a time, nine parameter texts | 9 450 | 818 | 10 |
+| tested expressions `x`, `node`, `x.Kind`, `abcdefghijkl` × first operands × arrows × four lines | 9 520 | 1 047 | 17 |
+| random patterns (validation, not fitted) | 4 000 | 540 | 15 |
+| split of the two later operands (validation) | 4 520 | 255 | 0 |
+| `.Where(…).ToList()`, `&&` and pattern bodies | 14 672 | 7 824 | 536 |
+| `&&` bodies, the same five-parameter grid (control, unchanged path) | 13 209 | 35 | 35 |
+
+Group F's probes: `p3` 5 → 0, `p4` 7 → 0, `p5` 50 → 4 statements, `p6` 0 → 0, `p7` 35 → 0.
+
+⚠ **Not exact.**
+- The pattern rows that differ are within a column of a boundary, mostly parameter texts of 20 and 30.
+  Of `p5`'s four, three are a lambda call that is the last link of a broken chain (`.Any(static node => …` on
+  the chain's own line), a context none of the grids measured: there the oracle stops breaking the arrow
+  about three columns of body sooner than the rule. The fourth is a top-level call a column from the line
+  boundary.
+- The `.ToList()` grid's 536 are not arrow decisions; they are recorded as SK-DIV-0420.
+
+## SK-DIV-0420 — a sole lambda call that is the receiver of a further link: the chain's own decisions
+
+⚠ **Found by #586's `.ToList()` grid (group O, 2026-10-09).** With the arrow decided (SK-DIV-0377), 536 of
+14 672 statements of `var g = i….Where(params => body).ToList();` still differ from the oracle, in three
+classes, all also wrong on master:
+
+- **The level of a chopped `&&` chain beside the arrow** (about 190): the oracle writes
+  `var g = ii.Where(x => a…` / `&& b…` sixteen columns in / `)` / `.ToList();`, one level past the chain's
+  continuation; Skala writes the `&&` lines at twelve, the `)`'s column. A binary pattern in the same place
+  already takes the sixteen (`HoldForASoleLambda` leaves the receiver case to the chain's own level).
+- **Breaking before `.Where(` instead** (288): the oracle moves `.Where(… whole …)` onto its own line under a
+  receiver of eight or more columns where it fits there whole; Skala keeps `ii.Where(` and breaks the arrow.
+- **A lone `)`** (48): where the line through the body fits but the `)` does not, the oracle keeps the arrow
+  and puts the `)` on its own line; Skala breaks before `.Where(`.
+
+- ⚠ status: **open**. Grid generator `gentolist.py` in the group-O scratch.
 
 ## SK-DIV-0378 — measured widths read off the source broke whitespace absorption
 

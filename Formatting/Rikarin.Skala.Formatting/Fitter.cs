@@ -542,7 +542,8 @@ public sealed class Fitter {
                         m.Column,
                         facts.LambdaOperandParameters,
                         facts.LambdaOperandFirst,
-                        end
+                        end,
+                        facts.LambdaOperandPatternLeft
                     )
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
@@ -558,6 +559,20 @@ public sealed class Fitter {
                         || m.Column >= 21 && start + facts.LambdaChainHead > width
                             ? ResolvedMode.Broken
                             : ResolvedMode.Flat;
+                }
+
+                // ⚠ A local's lambda over a call with two or more arguments (#453): the arrow breaks while the
+                // argument list is narrower than the measured floor; otherwise the head rule below decides. See
+                // GroupFacts.LambdaCallArguments.
+                if (facts.LambdaCallArguments > 0
+                    && m.FlatWidth < Unbounded
+                    && EqualsFloor.BreaksTheCallArrow(
+                        m.Column - facts.LambdaHead - 1,
+                        m.Column + facts.LambdaCallCallee + 2,
+                        facts.LambdaCallArguments,
+                        facts.LambdaCallSingle
+                    )) {
+                    return ResolvedMode.Broken;
                 }
 
                 if (facts.LambdaParameters > 0) {

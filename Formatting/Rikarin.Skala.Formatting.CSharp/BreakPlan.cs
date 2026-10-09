@@ -7078,7 +7078,10 @@ public sealed class BreakPlan {
                                 lambda.ArrowToken.GetPreviousToken()
                             ),
                             LambdaOperandTail: operandTail,
-                            LambdaOperandFirst: FirstOperandWidth(body)
+                            LambdaOperandFirst: FirstOperandWidth(body),
+                            LambdaOperandPatternLeft: body is IsPatternExpressionSyntax { Expression: var tested }
+                                ? FormattedWidth(tested)
+                                : 0
                         )
                         : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
                             ? new GroupFacts(
@@ -7093,7 +7096,19 @@ public sealed class BreakPlan {
                                     BreaksOnlyIfTailFits: true,
                                     BreaksIfReceiverOverflows: true
                                 )
-                                : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+                                : LocalLambdaCallOf(lambda, body) is { } call
+                                    ? new GroupFacts(
+                                        BreaksIfTooLong: true,
+                                        BreaksOnlyIfHeadOverflows: true,
+                                        LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+                                        LambdaCallCallee: FormattedWidth(
+                                            call.GetFirstToken(),
+                                            call.ArgumentList.OpenParenToken.GetPreviousToken()
+                                        ),
+                                        LambdaCallArguments: FormattedWidth(call.ArgumentList),
+                                        LambdaCallSingle: call.ArgumentList.Arguments.Count == 1
+                                    )
+                                    : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
 
     /// <summary>
@@ -7197,8 +7212,9 @@ public sealed class BreakPlan {
     ///     rule does not apply.
     /// </returns>
     int OperandSoleLambdaTail(LambdaExpressionSyntax lambda, ExpressionSyntax body) {
+        var receiver = IsTheReceiverOfAFurtherLink(lambda);
         if (!options.PlaceSingleMethodArgumentLambdaOnSameLine
-            || !IsTheBodyOfASoleLambda(body)
+            || !IsTheBodyOfASoleLambda(body) && !receiver
             || body switch {
                 BinaryExpressionSyntax binary => IsTypeTest(binary),
                 IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax } => false,
@@ -7210,10 +7226,52 @@ public sealed class BreakPlan {
 
         var start = body.SpanStart;
         var length = statement.Span.End - start;
-        return source.AsSpan(start, length).IndexOfAny('\r', '\n') < 0
-            ? FormattedWidth(body.GetLastToken(), statement.GetLastToken()) - body.GetLastToken().Span.Length
-            : 0;
+        if (source.AsSpan(start, length).IndexOfAny('\r', '\n') >= 0) {
+            return 0;
+        }
+
+        // ⚠ A call that is the receiver of a further link, `var g = i….Where(x => …).ToList();`: the oracle reads
+        // the line's end as though the statement ended at the call — its `)` and one column — because the chain
+        // breaks before the next link anyway (#586). Measured on 14 672 cells of that shape, operand chains and
+        // binary patterns, parameter texts of 1 to 20, first operands of 8 to 44, lines of 116 to 179: read to
+        // the `)` plus one, the operand rule misses 8 of the 7 788 arrow-or-chop cells; read to the statement's
+        // end it missed all 7 296 where the oracle breaks the arrow, because the rule was not armed at all.
+        return receiver
+            ? 2
+            : FormattedWidth(body.GetLastToken(), statement.GetLastToken()) - body.GetLastToken().Span.Length;
     }
+
+    /// <summary>
+    ///     The call a local's lambda has for its body, where the arrow is decided by the measured floor (#453):
+    ///     a single declarator named in nine columns or fewer (whose <c>=</c> the oracle never breaks,
+    ///     <see cref="KeepsTheEqualsBeforeALambdaCall" />), a call with two or more arguments, written on one
+    ///     line; null otherwise. See <c>EqualsFloor.BreaksTheCallArrow</c>.
+    /// </summary>
+    InvocationExpressionSyntax? LocalLambdaCallOf(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
+        body is InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 } call
+        && lambda.Parent is EqualsValueClauseSyntax equals
+        && KeepsTheEqualsBeforeALambdaCall(equals, lambda)
+        && lambda.Modifiers.Count == 0
+        && source.AsSpan(lambda.SpanStart, lambda.Span.Length).IndexOfAny('\r', '\n') < 0
+            ? call
+            : null;
+
+    /// <summary>
+    ///     A sole lambda argument whose call is itself the receiver of a further link — <c>items.Where(x =&gt; …)</c>
+    ///     in <c>items.Where(x =&gt; …).ToList()</c> — which <see cref="IsTheBodyOfASoleLambda" /> leaves out for
+    ///     its level, and which the operand rule still decides (#586).
+    /// </summary>
+    static bool IsTheReceiverOfAFurtherLink(LambdaExpressionSyntax lambda) =>
+        lambda is {
+            Parent: ArgumentSyntax {
+                NameColon: null,
+                Parent: ArgumentListSyntax {
+                    Arguments.Count: 1,
+                    Parent: InvocationExpressionSyntax { Parent: MemberAccessExpressionSyntax access } call
+                }
+            }
+        }
+        && access.Expression == call;
 
     /// <remarks>
     ///     ⚠ A body the author broke before one of its dots is still this lambda's: the oracle breaks the arrow

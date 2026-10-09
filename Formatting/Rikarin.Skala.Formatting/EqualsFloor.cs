@@ -56,7 +56,37 @@ public static class EqualsFloor {
     ///     under parameter texts of 36 differ, all within a column of the boundary; past 36 the oracle is not monotone
     ///     and the rule is not measured.
     /// </remarks>
-    public static bool BreaksTheOperandArrow(int arrow, int parameters, int first, int end) {
+    /// <param name="patternLeft">
+    ///     ⚠ For a body that is <c>left is A or B …</c> rather than an operand chain, the width of <c>left</c>; zero
+    ///     for a chain (#586). The pattern's constants are its own. With <c>t = min(first, left + 28)</c> — the
+    ///     first operand, its type capped at 24 columns — the ceiling is
+    ///     <c>⌊2.75·(params + t) − 56 − 0.88·(left − 1) + (first − t)/8⌋</c>, and the line column has no
+    ///     first-operand bonus but a deficit, <c>max(0, 10 + left − 0.375·t)</c>: a wide tested expression lowers
+    ///     both, a wide type raises both until it passes 24. Measured with <c>Testing ask</c> on
+    ///     <c>U(params =&gt; left is A… or B… or C…);</c> and <c>var g = i….Where(…);</c>: parameter texts of 1 to
+    ///     30, tested expressions of 1 to 12, first operands of 8 to 58, the arrow at 15 to 98 one column at a time
+    ///     at a 200-column line and at lines of 116 to 176 — 30 817 cells, of which the operand chain's constants
+    ///     missed 2 433 and these miss 49 — and validated on 3 781 random cells (ten parameter texts, eight tested
+    ///     expressions, types of 3 to 40, lines of 118 to 200, either context, the remaining operands split at
+    ///     random), where the chain's constants miss 540 and these 15.
+    /// </param>
+    public static bool BreaksTheOperandArrow(int arrow, int parameters, int first, int end, int patternLeft = 0) {
+        if (patternLeft > 0) {
+            var capped = Math.Min(first, patternLeft + 28);
+            var patternCeiling = Math.Min(
+                85,
+                Math.Min(
+                    (int)Math.Floor(
+                        2.75 * (parameters + capped) - 56 - 0.88 * (patternLeft - 1) + (first - capped) / 8.0
+                    ),
+                    120 - first
+                )
+            );
+            var patternLine = (27.0 * end + 9 * parameters - 2832) / 30
+                - Math.Max(0, 10 + patternLeft - 0.375 * capped);
+            return arrow >= Math.Max(20, Math.Min(patternCeiling, patternLine));
+        }
+
         var ceiling = Math.Min(
             85,
             Math.Min(
@@ -68,6 +98,46 @@ public static class EqualsFloor {
         return arrow >= Math.Max(20, Math.Min(ceiling, line));
     }
 
+
+    /// <summary>
+    ///     Whether a local's lambda over a call with two or more arguments breaks its arrow past the margin, rather
+    ///     than keeping it and chopping the call's arguments (#453): the <c>=</c> ends at column
+    ///     <paramref name="head" />, the call's <c>(</c> stands at <paramref name="paren" /> and its argument list
+    ///     is <paramref name="arguments" /> wide.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> on <c>Func&lt;T…&gt; n = () =&gt; C…(xxx, yyy);</c>, heads of 16 to 76
+    ///     four apart, the <c>(</c> and the argument list one column at a time — 53 681 cells, every row one clean
+    ///     threshold — and the head alone decides under a name of nine columns or fewer: the same head made of a
+    ///     wider type or a wider name reads the same row. The arrow breaks while the arguments are narrower than
+    ///     a floor that falls 0.4 a column from 65 where the <c>(</c> is 38 columns past the head, and rises 0.18 a
+    ///     column after, 0.41 higher per column of head; with the <c>(</c> nearer the head than
+    ///     <c>min(38, 62 − head/2)</c> columns the arguments always chop. 45 cells differ, within a column of
+    ///     the floor. Validated on 10 225 cells of names of 1, 5 and 9 under six types (4 differ), and on 4 000
+    ///     random cells — <c>var</c>, <c>Action</c>, <c>Func&lt;…&gt;</c> and bare types, six parameter lists, two
+    ///     to four arguments: 9 of 3 173 differ. ⚠ A single argument does not follow it (half of 827 cells
+    ///     differ) and is left to the head rule.
+    /// </remarks>
+    /// <param name="oneArgument">
+    ///     ⚠ The call has one argument (#453). Its floor is the same two lines raised by 21.25 columns, falling
+    ///     0.41 a column, with no column below which the arguments always chop: measured on the same grid with a
+    ///     one-name argument, 53 602 cells, 60 within a column of the floor differ.
+    /// </param>
+    public static bool BreaksTheCallArrow(int head, int paren, int arguments, bool oneArgument = false) {
+        if (oneArgument) {
+            var oneFall = 65 - 0.41 * (paren - head - 38);
+            var oneRise = 58.25 + 0.41 * (head - 16) + 0.18 * (paren - 117);
+            return arguments < Math.Floor(Math.Max(oneFall, oneRise) + 21.25 + 0.3);
+        }
+
+        if (paren < Math.Min(head + 38, 62 + head / 2.0)) {
+            return false;
+        }
+
+        var fall = 65 - 0.4 * (paren - head - 38);
+        var rise = 58.25 + 0.41 * (head - 16) + 0.18 * (paren - 117);
+        return arguments < Math.Floor(Math.Max(fall, rise) + 0.4);
+    }
 
     /// <summary>
     ///     Whether a local's lambda with a bare-name body, on a line that ends exactly one column past the

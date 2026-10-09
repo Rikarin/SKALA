@@ -1155,6 +1155,24 @@ public sealed class Document {
 ///     The width of the body's first operand — <c>a</c> in <c>a &amp;&amp; b</c>, <c>x is A</c> in
 ///     <c>x is A or B</c>. See <see cref="LambdaOperandParameters" />.
 /// </param>
+/// <param name="LambdaCallArguments">
+///     ⚠ The arrow of a local's lambda whose body is a call with two or more arguments, under a declarator name
+///     of at most nine columns: the call's argument list width, or zero for any other group (#453). Past the
+///     margin the arrow breaks while the list is narrower than <c>EqualsFloor.LambdaCallFloor</c>, read at the
+///     head's and the call's <c>(</c>'s columns; otherwise the head rule decides. With
+///     <see cref="LambdaHead" /> and <see cref="LambdaCallCallee" />.
+/// </param>
+/// <param name="LambdaCallSingle">
+///     The call has a single argument, whose floor is its own. See <see cref="LambdaCallArguments" />.
+/// </param>
+/// <param name="LambdaCallCallee">
+///     The width of the call's text before its <c>(</c>. See <see cref="LambdaCallArguments" />.
+/// </param>
+/// <param name="LambdaOperandPatternLeft">
+///     ⚠ For a body that is a type test over a binary pattern, <c>x is A or B</c>: the width of the tested
+///     expression, <c>x</c>, which the oracle weighs apart from the rest of the first operand (#586); zero for an
+///     operand chain. See <see cref="LambdaOperandParameters" />.
+/// </param>
 /// <param name="LambdaOperandTail">
 ///     The width from the body's end to its statement's end — <c>);</c> for a call statement — which the line's
 ///     end is measured with. See <see cref="LambdaOperandParameters" />.
@@ -1436,6 +1454,10 @@ public readonly record struct GroupFacts(
     int LambdaOperandParameters = 0,
     int LambdaOperandTail = 0,
     int LambdaOperandFirst = 0,
+    int LambdaOperandPatternLeft = 0,
+    int LambdaCallCallee = 0,
+    int LambdaCallArguments = 0,
+    bool LambdaCallSingle = false,
     int MemberHeadWidth = 0,
     int PatternFirstWidth = 0,
     int ArmBodyTrail = 0,
