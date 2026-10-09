@@ -138,6 +138,10 @@ public sealed class FuzzRegressionTests {
     // the author's and filled the type. The type/name gap now breaks when the line through the `=` overflows,
     // and an `=` whose value starts past the margin breaks, as the oracle does.
     [InlineData(13830403873739157460UL)]
+    // A tuple element `(((…) x) => builder.Length(…).First(…).Items(…))` whose arrow ends at 113: pass one kept
+    // `=> builder` past the margin and broke at the first dot; pass two read that break as the author's and broke
+    // the arrow. The arrow now breaks when the chain's receiver does not fit beside it, as the oracle does.
+    [InlineData(16278079796336422477UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

@@ -1169,6 +1169,14 @@ public sealed class Document {
 ///     call chain's receiver that is itself a member access, `source.A….Select(…)`, whose dots break only
 ///     once the receiver alone runs past the margin (#582).
 /// </param>
+/// <param name="BreaksIfReceiverOverflows">
+///     ⚠ With <see cref="BreaksOnlyIfTailFits" />, on a lambda's arrow over a call chain the author did not break:
+///     the arrow also breaks when the line through the chain's receiver — up to its first dot — runs past the
+///     margin, where no dot can end the line in time (fuzz 16278079796336422477). Measured with
+///     <c>jb cleanupcode</c> on 135 lambdas among arguments and in tuples, the arrow ending at 50 to 117: the
+///     arrow breaks in exactly the 10 rows where <c>=&gt; builder</c> ends past 120, and the chain then keeps
+///     <c>builder.Length(…)</c> together.
+/// </param>
 /// <param name="LambdaChainHead">
 ///     ⚠ The arrow of a sole lambda argument whose body is a chain of calls: the width from the lambda's start
 ///     to its first call's dot, or zero for any other group (#571). Past the margin the arrow breaks for a
@@ -1423,6 +1431,7 @@ public readonly record struct GroupFacts(
     int OneOverBody = 0,
     int LambdaChainHead = 0,
     bool BreaksIfItOverflows = false,
+    bool BreaksIfReceiverOverflows = false,
     bool HeldCallOnAPath = false,
     int LambdaOperandParameters = 0,
     int LambdaOperandTail = 0,
