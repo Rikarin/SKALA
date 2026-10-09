@@ -1391,6 +1391,12 @@ public sealed class Document {
 ///     ⚠ With <see cref="ValueHeadWidth" />, a condition that is a call on a name: the width from the name through
 ///     its <c>(</c>. The <c>=</c> breaks whenever that <c>(</c> would land past the margin beside it (#596).
 /// </param>
+/// <param name="PositionalHead">
+///     ⚠ A switch arm's body group behind a positional pattern with no <c>when</c> (#559, SK-DIV-0443): the head
+///     never reads a short body through (<c>DocumentBuilder.ShortArrowBody</c>). Measured 2026-10-10 on 168 arms:
+///     the oracle breaks after the arrow while the line through it fits, then before it, then before the
+///     pattern's <c>)</c>, and only then inside the pattern — where a property pattern's braces chop.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1472,7 +1478,8 @@ public readonly record struct GroupFacts(
     int ArmCast = 0,
     bool BreaksIfTheLineOverflows = false,
     int TypeTestTail = 0,
-    int ValueHeadCallee = 0);
+    int ValueHeadCallee = 0,
+    bool PositionalHead = false);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
