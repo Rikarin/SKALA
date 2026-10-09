@@ -9,13 +9,13 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </summary>
 public sealed class DirectiveInArrayElementTests {
     const string Source = """
-        class T12 {
-            public Func<IReadOnlyDictionary<DateTime?, DateTime?>, IReadOnlyDictionary<DateTime?, DateTime?>> P13 { get; } = new[] { (from item in Source where 56664 orderby item.Length descending select null), new int() { P14 = null, P15 = "sssssssssssssssssssss", P16 = "sssssssssssssssssssssssss", P17 = false }, ["sssssssssssssssssssssssssssss"
-        #region fuzz
-           , false, 0xd49, "sssssssssssssssssssss", false, .. Source], new[] { 42613 } };
-        #endregion
-        }
-        """;
+                          class T12 {
+                              public Func<IReadOnlyDictionary<DateTime?, DateTime?>, IReadOnlyDictionary<DateTime?, DateTime?>> P13 { get; } = new[] { (from item in Source where 56664 orderby item.Length descending select null), new int() { P14 = null, P15 = "sssssssssssssssssssss", P16 = "sssssssssssssssssssssssss", P17 = false }, ["sssssssssssssssssssssssssssss"
+                          #region fuzz
+                             , false, 0xd49, "sssssssssssssssssssss", false, .. Source], new[] { 42613 } };
+                          #endregion
+                          }
+                          """;
 
     /// <summary>The oracle keeps the bracket after the element before it, on the first pass as on the second.</summary>
     [Fact]
