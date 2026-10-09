@@ -6931,6 +6931,7 @@ public sealed class BreakPlan {
             arm.Expression,
             new(
                 BreaksIfTooLong: true,
+                ArmBodyTrail: arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0,
                 Owner: before,
                 BreaksOnlyIfHeadOverflows: true,
                 FlatIfOwnerBroke: true
