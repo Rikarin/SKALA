@@ -5869,8 +5869,13 @@ public sealed class BreakPlan {
         };
 
         foreach (var trivia in previous.TrailingTrivia.Concat(token.LeadingTrivia)) {
-            if (trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
-                width += trivia.Span.Length + 1;
+            // ⚠ `/** d */` between tokens is a documentation comment to Roslyn, written exactly as a block one
+            // (Nightly fuzz, case 1267273925188459665: `JsonConvert /** d */ .DeserializeObject<T>(x)` behind an
+            // `=`, where #528's held-value width missed the comment as it once missed `/* */`). ⚠ Its full span:
+            // the `/**` is the structure's exterior trivia, outside the trivia's `Span`.
+            if (trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {
+                width += trivia.FullSpan.Length + 1;
             }
         }
 
