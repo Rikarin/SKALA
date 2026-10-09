@@ -11684,8 +11684,10 @@ on 2 247, losing 10 rows round one had.
   the member value's limit with its bump, as a shorter name already did: 8 700 conditional cells at indents 8
   to 24 go 8 051 → 8 215, #577's own 314 stay 314, the 4 788-cell grid 4 578 → 4 656; ⚠ 2 219 short-head
   rows lose 20 (2 167 → 2 147).
-- **Fields with names of 31 or more, the `(` at 78 or left (SK-DIV-0400).** A floor on the argument list of
-  `62 − (name − 30) / 3` (`EqualsFloor.LongFieldNameFloor`): fields 942 → 956 of 984 and 1 062 → 1 214 of 1 316.
+- **Fields with names of 31 or more, the `(` at 76 or left (SK-DIV-0400).** A floor on the argument list of
+  `62 − (name − 30) / 3` (`EqualsFloor.LongFieldNameFloor`): fields 942 → 956 of 984 and 1 062 → 1 172 of 1 316.
+  ⚠ First cut at 78, and the full gate refuted it: `equals-before-a-call-floor.cs`'s `private static readonly`
+  field of 32 with its `(` at 78 chops where `public` fields of 34 to 48 at 78 break; 77 and 78 stay the table's.
   ⚠ Not for a field with attributes: `[Obsolete] /* c */ public Foo F(31) = Compute(…);` joined chops where the
   rule would break the `=`.
 - **The EqualsFloor indent and callee tables are not the name, so they stay.** Re-derived on 3 386 `var` and

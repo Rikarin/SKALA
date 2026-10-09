@@ -803,10 +803,11 @@ public sealed class Fitter {
 
         var arguments = m.FlatWidth - m.PointWidth - 1 - facts.CalleeWidth;
 
-        // ⚠ A field's name of 31 or more with the `(` at 78 or left of it: a floor on the arguments that falls a
-        // column per three of name from 62 (round 2 of #589, SK-DIV-0400). See EqualsFloor.LongFieldNameFloor.
+        // ⚠ A field's name of 31 or more with the `(` at 76 or left of it: a floor on the arguments that falls a
+        // column per three of name from 62 (round 2 of #589, SK-DIV-0400). ⚠ Not at 77–78, where a
+        // `private static readonly` field of 32 (equals-before-a-call-floor.cs) chops that a `public` one breaks. See EqualsFloor.LongFieldNameFloor.
         if (facts is { CalleeOwner: EqualsOwner.Field, EqualsName: >= 31, EqualsNameAttributed: false }
-            && paren <= 78) {
+            && paren <= 76) {
             return arguments - 2 <= EqualsFloor.LongFieldNameFloor(facts.EqualsName)
                 ? ResolvedMode.Broken
                 : ResolvedMode.Flat;

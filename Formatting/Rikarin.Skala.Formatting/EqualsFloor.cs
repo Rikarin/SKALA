@@ -60,7 +60,7 @@ public static class EqualsFloor {
     public static bool NameReachesTheCall(int name, int callee, int paren) => 2 * (name + callee) + paren >= 163;
 
     /// <summary>
-    ///     A field whose name is 31 columns or more, its call's <c>(</c> at column 78 or left of it: the widest
+    ///     A field whose name is 31 columns or more, its call's <c>(</c> at column 76 or left of it: the widest
     ///     argument list (inside the parentheses) that still breaks the <c>=</c> — 62 at a name of 30, a column less
     ///     per three of name (round 2 of #589, SK-DIV-0400).
     /// </summary>
