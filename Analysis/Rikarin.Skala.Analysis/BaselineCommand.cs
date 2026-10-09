@@ -3,6 +3,7 @@ using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
 
@@ -37,7 +38,10 @@ public static class BaselineCommand {
         /// <summary>Write a baseline holding everything that fires now, replacing any existing one.</summary>
         Create,
 
-        /// <summary>Add what fires now to what is already accepted. ⚠ Never removes.</summary>
+        /// <summary>
+        ///     Add what fires now to what is already accepted. ⚠ Never removes, except an arrangement entry
+        ///     (#592), which was never acceptable.
+        /// </summary>
         Update,
 
         /// <summary>⚠ Remove the accepted entries that no longer fire. Never implicit.</summary>
@@ -149,17 +153,33 @@ public static class BaselineCommand {
             );
         }
 
-        var comparison = existing.Compare(report.Findings);
+        // ⚠ #592: arrangement findings are not baseline material, and neither are arrangement entries
+        // an earlier version wrote. `arrange --check` has no baseline and `check` never collects
+        // them, so accepting one suppressed nothing any gate decides on while this command reported
+        // it accepted — five `SK0210` went in, `check --gate=ci` passed and Lint stayed red. They are
+        // split off here, before every verb, so `create`, `update`, `prune` and `show` cannot
+        // disagree about them, and named in the output rather than dropped: a silent omission is the
+        // same defect from the other side. See `ArrangementFindings.Owns`.
+        var unarranged = report.Findings.Where(static finding => ArrangementFindings.Owns(finding.RuleId))
+            .ToImmutableArray();
+        var accepted = report.Findings.Where(static finding => !ArrangementFindings.Owns(finding.RuleId))
+            .ToImmutableArray();
+        var refused = existing.Entries.Count(static entry => ArrangementFindings.Owns(entry.RuleId));
+        existing = existing.Without(static entry => ArrangementFindings.Owns(entry.RuleId));
+
+        var comparison = existing.Compare(accepted);
         var builder = new StringBuilder();
 
         switch (verb) {
             case Verb.Show:
-                return (new CommandResult(ExitCodes.Ok, Show(existing, comparison, report, path)), report);
+                builder.Append(Show(existing, comparison, accepted.Length, path));
+                Refuse(builder, report, unarranged, refused, verb, apply);
+                return (new CommandResult(ExitCodes.Ok, builder.ToString()), report);
 
             case Verb.Create:
-                Describe(builder, "create", path, existing.Count, report.Findings.Length);
+                Describe(builder, "create", path, existing.Count + refused, accepted.Length);
                 if (apply) {
-                    Baseline.Write(path, report, report.Findings);
+                    Baseline.Write(path, report, accepted);
                 }
 
                 break;
@@ -169,8 +189,7 @@ public static class BaselineCommand {
                 // what was accepted even if it no longer fires — dropping the latter is `prune`,
                 // and doing both in one verb makes "we suppressed these" and "we fixed these"
                 // indistinguishable in the diff.
-                var kept = report.Findings;
-                Describe(builder, "update", path, existing.Count, kept.Length);
+                Describe(builder, "update", path, existing.Count + refused, accepted.Length);
                 builder.Append("  ")
                     .Append(comparison.NewCount.ToString(CultureInfo.InvariantCulture))
                     .AppendLine(" newly accepted");
@@ -197,14 +216,14 @@ public static class BaselineCommand {
                     // not see it. ⚠ The unfired half is `comparison.Fixed` by definition — the same
                     // matching, legacy fallbacks included, that decided the buckets — so it is not
                     // recomputed here with a second notion of identity.
-                    Baseline.Write(path, report, report.Findings, comparison.Fixed);
+                    Baseline.Write(path, report, accepted, comparison.Fixed);
                 }
 
                 break;
             }
 
             case Verb.Prune:
-                Describe(builder, "prune", path, existing.Count, report.Findings.Length);
+                Describe(builder, "prune", path, existing.Count + refused, accepted.Length);
                 builder.Append("  ")
                     .Append(comparison.Fixed.Length.ToString(CultureInfo.InvariantCulture))
                     .AppendLine(" entr(y/ies) no longer fire and would be removed");
@@ -234,6 +253,7 @@ public static class BaselineCommand {
                 break;
         }
 
+        Refuse(builder, report, unarranged, refused, verb, apply);
         builder.AppendLine(
             apply
                 ? "  written."
@@ -254,7 +274,51 @@ public static class BaselineCommand {
             .Append(firing.ToString(CultureInfo.InvariantCulture))
             .AppendLine(" finding(s) firing now");
 
-    static string Show(Baseline baseline, BaselineComparison comparison, RunReport report, string path) {
+    /// <summary>Names what <see cref="ArrangementFindings.Owns" /> kept out of the baseline.</summary>
+    static void Refuse(
+        StringBuilder builder,
+        RunReport report,
+        ImmutableArray<Finding> unarranged,
+        int refused,
+        Verb verb,
+        bool apply
+    ) {
+        if (!unarranged.IsEmpty) {
+            builder.Append("  ⚠ ")
+                .Append(unarranged.Length.ToString(CultureInfo.InvariantCulture))
+                .AppendLine(
+                    " file(s) are not arranged and "
+                    + (verb == Verb.Show ? "cannot be" : "were not")
+                    + " accepted: a baseline cannot accept what `skala arrange` fixes, and "
+                    + "`arrange --check` fails on them whatever the baseline holds. Run `skala arrange` on:"
+                );
+
+            foreach (var finding in unarranged.Take(20)) {
+                builder.Append("    ")
+                    .Append(finding.RuleId)
+                    .Append("  ")
+                    .AppendLine(SarifWriter.Relative(report.RepositoryRoot, finding.Path));
+            }
+
+            if (unarranged.Length > 20) {
+                builder.Append("    … and ")
+                    .Append((unarranged.Length - 20).ToString(CultureInfo.InvariantCulture))
+                    .AppendLine(" more");
+            }
+        }
+
+        if (refused > 0) {
+            builder.Append("  ⚠ ")
+                .Append(refused.ToString(CultureInfo.InvariantCulture))
+                .AppendLine(
+                    " arrangement entr(y/ies) in the existing baseline "
+                    + (verb == Verb.Show ? "are ignored" : apply ? "are dropped" : "would be dropped")
+                    + ": they never suppressed `arrange --check`, and no run compares against them."
+                );
+        }
+    }
+
+    static string Show(Baseline baseline, BaselineComparison comparison, int firing, string path) {
         var builder = new StringBuilder();
         builder.Append(path)
             .Append("  ·  ")
@@ -265,7 +329,7 @@ public static class BaselineCommand {
         builder.Append("  new       ")
             .AppendLine(comparison.NewCount.ToString(CultureInfo.InvariantCulture));
         builder.Append("  existing  ")
-            .AppendLine((report.Findings.Length - comparison.NewCount).ToString(CultureInfo.InvariantCulture));
+            .AppendLine((firing - comparison.NewCount).ToString(CultureInfo.InvariantCulture));
         builder.Append("  fixed     ")
             .AppendLine(comparison.Fixed.Length.ToString(CultureInfo.InvariantCulture));
 

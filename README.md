@@ -123,6 +123,8 @@ Gates live in `skala.jsonc`:
 
 Adopting Skala in a repository that already has findings does not mean fixing them all first —
 `skala baseline create --apply` accepts what exists today, and the gate is then about what you add.
+The one exception is arrangement: an unarranged file is never accepted, because `skala arrange` is
+its only fix and `arrange --check` fails on it whatever the baseline holds.
 
 ## What you get
 
