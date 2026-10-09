@@ -115,6 +115,10 @@ public sealed class FuzzRegressionTests {
     // level was asked of the member's frame, already spent by its broken header — the arrow fell to the arm's
     // column. A group opened at its node's first token now starts the node's frame first.
     [InlineData(11550439650966795547UL)]
+    // `object { P102: null } when (0x116` / `?? … ) =>` / `(0x237, true),` inside a `while` header: pass one broke
+    // the `??` chain and the arrow for width, pass two read the arrow break as kept and lifted the `??` line. A
+    // `when` condition holding an operator chain or a conditional no longer lifts under a break after the arrow.
+    [InlineData(5953779247182235391UL)]
     // Nightly, 6 hits in 81k cases: `}, ["s"` / `#region fuzz` / `, false, …]` in an array initializer. The
     // draft measure read the breaks beside the directive as spaces, so pass one moved the collection down
     // whole and pass two, measuring its own broken output, kept `}, [`. A break beside a directive is no

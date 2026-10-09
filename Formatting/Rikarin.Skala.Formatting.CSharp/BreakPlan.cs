@@ -6873,7 +6873,15 @@ public sealed class BreakPlan {
                     or InitializerExpressionSyntax
                     or CollectionExpressionSyntax
                     or SwitchExpressionSyntax
-                );
+                )
+            // ⚠ Nor a `when` condition holding an operator chain or a conditional (fuzz 5953779247182235391).
+            // Pass one can break the chain for width and the arrow beside it for width — `when (0x116` /
+            // `?? "…" ?? …) =>` / `(0x237, true),` — and pass two then read the arrow break as kept and lifted
+            // the `??` continuation a level. The oracle lifts it under a kept break too, but writes pass one's
+            // body as `=> (` / `0x237, true),`, breaking inside the tuple, which Skala does not; so the lift
+            // stays off where pass one's arrow break can be the width's (SK-DIV-0399).
+            && arm.WhenClause?.Condition.DescendantNodesAndSelf()
+                .Any(static node => node is BinaryExpressionSyntax or ConditionalExpressionSyntax) != true;
         // ⚠ And a `when` clause's argument list (#564), which the lift reaches only once it chops:
         // `when Compute(` / the arguments two levels past the arm / `) =>` one level / the body one
         // level. Measured 2026-10-08 written chopped and written whole: whole, the oracle chops the list
