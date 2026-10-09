@@ -1324,6 +1324,12 @@ public sealed class Document {
 ///     With <see cref="ValueHeadWidth" />: the condition is a call, whose <c>=</c> breaks only when the
 ///     condition fits on the line below.
 /// </param>
+/// <param name="ValueHeadCallee">
+///     ⚠ With <see cref="ValueHeadFitsBelow" />: the call's width through its <c>(</c>. A call whose <c>(</c>
+///     would end past the margin beside the <c>=</c> breaks the <c>=</c>, wherever the <c>=</c> stands (Nightly
+///     fuzz, case 1701945859786365053, #594): kept, pass one wrote the <c>(</c> past the margin or broke the
+///     type arguments after their <c>&lt;</c>, and pass two, finding the condition broken, broke the <c>=</c>.
+/// </param>
 /// <param name="HeldValue">
 ///     ⚠ An <c>=</c> whose value is a single call on a receiver (#528, SK-DIV-0331), by its head, or zero:
 ///     1 a typed local, 2 a <c>var</c> or assignment head under twelve columns, 3 one of twelve or more.
@@ -1416,6 +1422,7 @@ public readonly record struct GroupFacts(
     int ValueHeadWidth = 0,
     bool ValueHeadFitsBelow = false,
     bool ValueHeadIsWide = false,
+    int ValueHeadCallee = 0,
     int HeldValue = 0,
     int HeldValueWidth = 0,
     int HeldValueReceiver = 0,

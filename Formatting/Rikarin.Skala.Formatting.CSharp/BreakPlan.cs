@@ -5621,6 +5621,10 @@ public sealed class BreakPlan {
                         Condition: InvocationExpressionSyntax { Expression: IdentifierNameSyntax or GenericNameSyntax }
                     },
                     ValueHeadIsWide: conditionHeadIsWide,
+                    ValueHeadCallee: conditionHead > 0
+                    && value is ConditionalExpressionSyntax { Condition: InvocationExpressionSyntax conditionCall }
+                        ? FormattedWidth(conditionCall.GetFirstToken(), conditionCall.ArgumentList.OpenParenToken)
+                        : 0,
                     MemberHeadWidth: value is MemberAccessExpressionSyntax plain && IsPlainMemberValue(plain)
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,

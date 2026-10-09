@@ -145,6 +145,10 @@ public sealed class FuzzRegressionTests {
     // An array element `[…, 1.5d\n]` broken only before its `]`: pass one drafted it flat and moved its `[` below
     // `Compute(…),`; pass two read the break after the `[` it had written and kept `), [`, the oracle's answer.
     [InlineData(5848915233203857901UL)]
+    // `T v = Materialise<A, B>(…) ? x : y` with the call's `(` past the margin beside the `=` (#594): pass one kept
+    // the `=` and broke the type arguments after their `<`; pass two, finding the condition broken, broke the `=`.
+    // The `=` now breaks when the call's `(` would end past the margin, as the oracle's does.
+    [InlineData(1701945859786365053UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

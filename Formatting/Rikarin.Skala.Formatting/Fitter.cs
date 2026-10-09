@@ -612,6 +612,8 @@ public sealed class Fitter {
                 // behind an `=` further right keeps the `=` and chops its arguments. Measured on chain,
                 // binary, identifier and call conditions behind heads from 17 to 66 columns. See
                 // GroupFacts.ValueHeadWidth.
+                // ⚠ Unless the call's `(` would itself end past the margin there: the oracle breaks the `=`
+                // (#594). See GroupFacts.ValueHeadCallee.
                 if (facts.ValueHeadWidth > 0) {
                     var beside = Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadWidth);
                     var below = Fits(m.ContinuationColumn, facts.ValueHeadWidth);
@@ -623,7 +625,10 @@ public sealed class Fitter {
 
                     return !beside
                         && facts.ValueHeadIsWide
-                        && (!facts.ValueHeadFitsBelow || below || m.Column <= CallConditionColumn)
+                        && (!facts.ValueHeadFitsBelow
+                            || below
+                            || m.Column <= CallConditionColumn
+                            || !Fits(m.Column, m.PointWidth + 1 + facts.ValueHeadCallee))
                             ? ResolvedMode.Broken
                             : ResolvedMode.Flat;
                 }
