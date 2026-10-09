@@ -3720,7 +3720,14 @@ public sealed partial class CSharpDocumentBuilder {
         );
 
         // An author's break nothing planned: the draft measure reads it as a space (SK-DIV-0208).
-        doc.FlagLastLine(LineFlags.KeptBreak);
+        // ⚠ Not a break beside a directive, which no pass can join: read as a space, it measured a
+        // collection element holding a `#region` as 104 flat columns, so pass one moved the element
+        // down whole, and pass two, measuring its own output, kept `}, [` on the line (#471, Nightly
+        // replay 12061030311543376894). The oracle keeps `}, [` on both passes.
+        if (!previous.IsDirective
+            && !(nextPieceIndex >= 0 && nextPieceIndex < pieces.Length && pieces[nextPieceIndex].IsDirective)) {
+            doc.FlagLastLine(LineFlags.KeptBreak);
+        }
     }
 
     /// <summary>
