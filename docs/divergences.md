@@ -11596,21 +11596,6 @@ the margin:
 - ⚠ status: **resolved** for both seeds (`FuzzRegressionTests`), pinned by
   `constructs/breaks/equals-before-a-head-past-the-margin.cs`.
 
-## SK-DIV-0445 — an `=` before a value that is one parenthesis around a binary operator
-
-#598. `var value = (string)(aaaa + b…);` past the margin: measured 2026-10-10 on 252 rows — heads through the `=` of
-7 to 32 columns (`var`, typed, assignment), a cast parenthesis and a bare one, lines 119 to 135. The oracle moves the
-value below whole exactly when it fits flat there and the head is twelve columns or more — the collection's rule
-(#375, #379), `BreaksOnlyIfTailFits` with `MinimumHead`. Skala yielded to the parenthesis's own point at every width.
-Only a parenthesis around a binary operator, the shape measured: a parenthesised collection (#485) and a
-parenthesised switch keep their own layouts.
-Rows 166 → 234 of 252. ⚠ Residue: a typed head of 14 before a *bare* parenthesis stops moving down six columns
-early (the value line ends at 114, not 120); a head under twelve breaks the `=` at exactly 122 columns and at no
-other width.
-
-- options: `skala_wrap_before_eq = false`.
-- ⚠ status: **resolved within the residue above**. Pinned by `constructs/breaks/equals-before-a-parenthesis.cs`.
-
 ## SK-DIV-0446 — a `when` condition after a kept break, under an arm's width lift
 
 Found by group P's fuzz, `fuzz --replay=16516683683719357238` (a mutation of
