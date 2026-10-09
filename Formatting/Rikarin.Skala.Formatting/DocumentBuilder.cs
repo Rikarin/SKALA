@@ -941,6 +941,20 @@ public sealed class DocumentBuilder {
                     // The end of the first run of yielding points after the group's first point: a type
                     // argument list closes with its group, so the point width when it closes reaches
                     // its `>`. See GroupFacts.YieldsToOverflowingTypeArguments.
+                    // ⚠ And a collection the author broke after its `[` is broken on every pass, so the draft
+                    // measure cannot read that break as a space (Nightly fuzz, case 15104748770501078810):
+                    // `Call(…), [` / elements / `]` drafted 97 flat columns, fitted the continuation line, and
+                    // pass one moved the `[` down, broken all the same; pass two read the `]` it had put on its
+                    // own line as certain and kept `), [`, the oracle's answer for both inputs (measured
+                    // 2026-10-09). Only a collection: a call broken after its `(` goes back beside the elements
+                    // before it when it fits (#444). See GroupFacts.DraftsBroken.
+                    if (current >= 0
+                        && !draftEnded
+                        && node.Kind == DocKind.Group
+                        && facts[node.Arg1] is { DraftsBroken: true, SourceBroken: true }) {
+                        drafted = Document.Unbounded;
+                    }
+
                     var yieldedBefore = yieldPoint >= 0;
                     Walk(node.Payload, node.Count, depth + (node.Kind == DocKind.Group ? 1 : 0));
                     if (node.Kind == DocKind.Group

@@ -933,6 +933,17 @@ public sealed class BreakPlan {
                     keepOutranksChopAlways: true,
                     keepIsTheConstructsAlone: true
                 );
+
+                // ⚠ Broken after its `[`, the oracle never joins it: `alpha, [` / `1, 2, 3` / `]` comes back as
+                // written however short (measured 2026-10-09). See GroupFacts.DraftsBroken.
+                if (BreaksBefore(FirstToken(collection.Elements[0]))
+                    && groups.TryGetValue(Key(node), out var listPlans)
+                    && listPlans.Count > 0) {
+                    var listPlan = listPlans[^1] with { Facts = listPlans[^1].Facts with { DraftsBroken = true } };
+                    listPlans[^1] = listPlan;
+                    byId[listPlan.Id] = listPlan;
+                }
+
                 return;
 
             case ListPatternSyntax listPattern:

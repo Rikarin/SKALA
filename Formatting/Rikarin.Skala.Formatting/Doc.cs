@@ -1049,6 +1049,11 @@ public sealed class Document {
 ///     pattern, which breaks — lifting the pattern's braces — exactly when one of these breaks for width.
 ///     −1 for any other group.
 /// </param>
+/// <param name="DraftsBroken">
+///     ⚠ A collection expression the author broke after its <c>[</c>: the oracle never joins it, so an array
+///     initializer's fill measures it as spanning lines rather than by its flat draft (Nightly fuzz, case
+///     15104748770501078810). See DocumentBuilder's <c>draft</c>.
+/// </param>
 /// <param name="LiftsIfArrowBreaks">
 ///     ⚠ A switch arm's <see cref="Continues" /> group at its pattern that breaks exactly when an arrow group
 ///     naming it in <see cref="LiftGroup" /> breaks with the pattern unlifted (fuzz 14973596429632421881).
@@ -1435,7 +1440,8 @@ public readonly record struct GroupFacts(
     int PatternFirstWidth = 0,
     int ArmBodyTrail = 0,
     int LiftGroup = -1,
-    bool LiftsIfArrowBreaks = false);
+    bool LiftsIfArrowBreaks = false,
+    bool DraftsBroken = false);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
