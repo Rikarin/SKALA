@@ -11,24 +11,24 @@ public sealed class PositionalDesignationBreakTests {
     [Fact]
     public void AKeptBreakBetweenTypeAndName_Stays() {
         const string source = """
-            class C {
-                object A(object state) =>
-                    state switch {
-                        ("k", var
-                            p) => 1,
-                        ("k", int
-                            q) => 2,
-                        _ => default
-                    };
+                              class C {
+                                  object A(object state) =>
+                                      state switch {
+                                          ("k", var
+                                              p) => 1,
+                                          ("k", int
+                                              q) => 2,
+                                          _ => default
+                                      };
 
-                void B(object o) {
-                    var x = o is (int
-                        a, int b);
-                    var (c,
-                        d) = (1, 2);
-                }
-            }
-            """;
+                                  void B(object o) {
+                                      var x = o is (int
+                                          a, int b);
+                                      var (c,
+                                          d) = (1, 2);
+                                  }
+                              }
+                              """;
         Oracle.Agrees(source, source);
     }
 }
