@@ -5526,8 +5526,10 @@ public sealed class BreakPlan {
         // value fits flat below and the head through the `=` is twelve columns or more — `var v = (a` / `+ b);`
         // and `int v = (a` / `+ b);` keep the `=` — the collection's rule.
         var yieldsToTheBracket = BreakYieldsToTheBracket(value)
-            || value is ParenthesizedExpressionSyntax
-                or CastExpressionSyntax { Expression: ParenthesizedExpressionSyntax };
+            // ⚠ Over a binary operator, the one measured: a parenthesised collection keeps `= ([` (#485), a
+            // parenthesised switch its own layout.
+            || value is ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax }
+                or CastExpressionSyntax { Expression: ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax } };
         var owner = EqualsOwnerOf(node);
         var callee = owner == EqualsOwner.None ? 0 : CalleeWidthOf(value);
 
