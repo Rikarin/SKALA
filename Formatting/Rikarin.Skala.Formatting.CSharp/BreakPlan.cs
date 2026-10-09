@@ -3591,9 +3591,12 @@ public sealed class BreakPlan {
         && IsTypeTest(binary)
         && binary.Left == root
         && !statement.SemicolonToken.IsMissing
-        && statement.DescendantTokens().All(token => token == member.OperatorToken || token == statement.ReturnKeyword || !BreaksBefore(token))
-        && !statement.DescendantTrivia(statement.Span).Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-            || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
+        && statement.DescendantTokens()
+            .All(token => token == member.OperatorToken || token == statement.ReturnKeyword || !BreaksBefore(token))
+        && !statement.DescendantTrivia(statement.Span)
+            .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+            )
             ? FormattedWidth(member.OperatorToken, statement.SemicolonToken)
             : 0;
 
