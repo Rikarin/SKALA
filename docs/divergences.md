@@ -11186,3 +11186,39 @@ certainty outward (`DocumentBuilder.Close`). That matches the oracle on all 19 n
 pinned by `NestedChainOperandNightlyTests`.
 
 - ⚠ status: **open** for the same-chain case; the nested case is **fixed**.
+
+## SK-DIV-0362 — an operand too long for `operand is` to fit below the `=`: the oracle breaks before the `is`
+
+Found while fixing Nightly `fuzz --seed=7777` (case 16865623964709448456). Measured 2026-10-09 with
+`Testing ask`. The case is `bool c = o… is A or B…`, where the operand is so long that `o… is` overflows
+even on the continuation line (an operand of 110 columns at a statement indent of 8). Both sides break the
+`=`. After that, the oracle writes `o…` / `is A` / `or B`, and Skala writes `o… is` / `A` / `or B`. Both
+are stable. Every shorter operand on the same 270-row grid agrees once the first-alternative rule is in
+place (`GroupFacts.PatternFirstWidth`).
+
+- ⚠ status: **open**.
+
+## SK-DIV-0363 — `/** d */` inside an argument list is not read as the block comment it is written as
+
+Found while fixing Nightly `fuzz --seed=4242` (case 10014018092937601535). To Roslyn, `/** d */` between
+two tokens is `MultiLineDocumentationCommentTrivia`, not `MultiLineCommentTrivia`. About a dozen places in
+`BreakPlan` test the second kind alone. Example, measured with `Testing ask`:
+
+- Input: `T v = Callee( /** d */ a, b);` with 40-column arguments.
+- The oracle chops after `( /** d */`.
+- Skala breaks the `=`, because the argument list's first point lands after the first argument instead
+  of before it.
+
+The same line with `/* d */` agrees. Both are stable. The `=` floor's own comment test is fixed
+(`CommentAfterTheParen`); the argument list's points are not.
+
+- ⚠ status: **open**.
+
+## SK-DIV-0364 — an author's break before a comma in a collection expression: the oracle joins it
+
+Found while fixing Nightly `fuzz --seed=7777` (case 11325995557757886152). For `[ 'c'` / `, true, …]`
+the oracle writes the collection on one line when it fits, and moves it down whole after the `=`
+otherwise. Skala keeps the break as if the author had broken after the `[`, and chops the elements.
+Measured on 7 rows of a 60-row grid; all are stable since the `=` fix for a broken collection condition.
+
+- ⚠ status: **open**.
