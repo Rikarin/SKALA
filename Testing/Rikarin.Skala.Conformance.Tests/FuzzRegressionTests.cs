@@ -87,6 +87,7 @@ public sealed class FuzzRegressionTests {
     // two read that break as the author's and broke the `=`. GroupFacts.MemberHeadWidth.
     [InlineData(9552816164132777654UL)]
     [InlineData(7862808234978504853UL)]
+    [InlineData(3776683644240416092UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
