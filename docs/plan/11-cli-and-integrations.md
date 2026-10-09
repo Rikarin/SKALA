@@ -343,7 +343,10 @@ The order matters, because the wrong order produces a 40 000-line first diff and
    agent-facing completion gate. It runs `format --check`, `arrange --check`, and
    `check --gate=local`; arrangement remains its own writing command because its structural rewrites
    require an explicit decision.
-6. `skala baseline create --apply` — accept the current analysis findings. ⚠ Commit
+6. `skala baseline create --apply` — accept the current analysis findings. ⚠ Not the arrangement
+   ones (#592): `baseline` lists the unarranged files and writes none of them, because
+   `arrange --check` has no baseline and fails on them regardless. Run `skala arrange` in a commit of
+   its own, like step 4, or switch the arrangement off in `.editorconfig`. ⚠ Commit
    `.skala/baseline.sarif`. It is the one thing under `.skala/` that is not scratch, and the marker
    Skala writes there un-ignores it by name for exactly that reason; everything else in the
    directory — `cache/`, `crash/`, `report.sarif`, `history.jsonl` — stays ignored. Until M9 the

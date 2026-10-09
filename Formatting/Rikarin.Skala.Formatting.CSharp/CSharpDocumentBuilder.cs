@@ -799,7 +799,9 @@ public sealed partial class CSharpDocumentBuilder {
                     // the chain's level, and an author's break kept after one of its fill breaks paid a
                     // second — `U((first) => first.A…India` / `.Juliett` / `.Kilo.Lima` put `.Kilo` a level
                     // past `.Juliett`, and pass two moved it back (fuzz seed 6109074167501724172).
+                    // ⚠ And a chain that is a whole statement condition, on the aligned column (#593).
                     HoldsLevel: IsChainRoot(node) && BreakPlan.HeadSharesTheLevelAroundIt(node)
+                    || IsChainRoot(node) && BreakPlan.IsAWholeStatementCondition(node)
                     || IsPatternChainRoot(node) && plan.GroupsOf(node).Count > 0
                     || IsChainRoot(node) && plan.GroupsOf(node).Any(static group => group.FromLine),
 

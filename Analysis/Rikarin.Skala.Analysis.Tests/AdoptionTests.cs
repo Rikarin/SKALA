@@ -123,6 +123,14 @@ public sealed class AdoptionTests {
 
         Assert.NotEqual(ExitCodes.Ok, VerifyCommand.Run(request, TestContext.Current.CancellationToken).ExitCode);
 
+        // ⚠ #592: arranged first, because "everything" a baseline can accept no longer includes an
+        // arrangement — `skala arrange` is that finding's only remedy and `arrange --check` ignores the
+        // baseline. `BaselineArrangementTests` pins the other side: unarranged, this stays red.
+        Formatting.CSharp.Arrangement.ArrangeCommand.Run(
+            new() { Paths = [scratch.Root], RepositoryRoot = scratch.Root, Quiet = true },
+            TestContext.Current.CancellationToken
+        );
+
         var baselinePath = Path.Combine(scratch.Root, ".skala", "baseline.sarif");
         BaselineCommand.Run(
             BaselineCommand.Verb.Create,

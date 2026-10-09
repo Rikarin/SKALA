@@ -1382,6 +1382,33 @@ public sealed class Document {
 ///     that rest is wider than <c>1.5 · (line − limit) + 9</c> — the longer the rest, the further past the
 ///     limit the oracle moves the call down rather than chop it.
 /// </param>
+/// <param name="ArmCast">
+///     ⚠ A switch arm's arrow whose body is a cast over an operand with no break point (#591, SK-DIV-0440): the
+///     cast's width through its <c>)</c>, or zero. Past the margin the oracle breaks after the arrow or after
+///     the cast's <c>)</c> by a measured table — 5 947 rows, arms at indents 12 and 16 and in five statement and
+///     member contexts, heads through the <c>=&gt;</c> of 6 to 36 columns, casts of 5 to 22 — and not by
+///     whether the body fits below. With <c>a</c> the head's width from the arm's first column through the
+///     <c>=&gt;</c> and <c>L</c> the column the arm's flat line ends at, comma included: the arrow breaks while
+///     <c>3·L ≤ 3·a + 336 − cast</c> and <c>8·L ≤ 6·a + 954 − 3·cast</c>; a line one column past the margin
+///     breaks it from a head of 7; and a cast of eight columns or fewer behind a head from <c>3·cast − 2</c> to
+///     about <c>34 − cast</c> breaks it whatever the width. <c>L</c> is absolute: at indent 16 the boundary
+///     sits at the same column as at 12 for the same head. See <c>Fitter.ArmCastBreaksTheArrow</c>.
+/// </param>
+/// <param name="BreaksIfTheLineOverflows">
+///     ⚠ A local's <c>=</c> whose value is <c>operand is (…)</c>, a positional pattern (#559, SK-DIV-0442): broken
+///     exactly when the line, its <c>;</c> included, overflows — the value fitting below or not, measured to a
+///     160-column line on <c>var</c> and typed locals with names of 1 and 22 columns. Not an assignment's and
+///     not after <c>return</c>, where the oracle keeps the line's head and fills the pattern.
+/// </param>
+/// <param name="TypeTestTail">
+///     ⚠ The member-access fill of a returned type test's operand (#446, SK-DIV-0210): the width from the dot
+///     through the <c>;</c>. The dot breaks exactly when the operand alone runs past the margin and that line
+///     fits at the continuation column; otherwise the keyword's own band answers.
+/// </param>
+/// <param name="ValueHeadCallee">
+///     ⚠ With <see cref="ValueHeadWidth" />, a condition that is a call on a name: the width from the name through
+///     its <c>(</c>. The <c>=</c> breaks whenever that <c>(</c> would land past the margin beside it (#596).
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1463,7 +1490,11 @@ public readonly record struct GroupFacts(
     int ArmBodyTrail = 0,
     int LiftGroup = -1,
     bool LiftsIfArrowBreaks = false,
-    bool DraftsBroken = false);
+    bool DraftsBroken = false,
+    int ArmCast = 0,
+    bool BreaksIfTheLineOverflows = false,
+    int TypeTestTail = 0,
+    int ValueHeadCallee = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

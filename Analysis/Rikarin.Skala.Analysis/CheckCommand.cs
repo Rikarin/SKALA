@@ -708,7 +708,11 @@ public static class CheckCommand {
             }
 
             try {
-                var baseline = Baseline.Read(baselinePath);
+                // ⚠ #592: an arrangement entry — written by a `baseline update` before it refused
+                // them — no longer suppresses its finding, and is not reported fixed by a `check`
+                // that never collects arrangement. See `ArrangementFindings.Owns`.
+                var baseline = Baseline.Read(baselinePath)
+                    .Without(static entry => ArrangementFindings.Owns(entry.RuleId));
                 var comparison = baseline.Compare(report.Findings);
                 report = report with {
                     Findings = comparison.Findings,
