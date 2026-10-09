@@ -31,7 +31,8 @@ public sealed class NestedChainOperandNightlyTests {
     )]
     [InlineData(
         "        var r6 = alpha + beta - (gamma\n            * delta) - epsilon;\n",
-        "        var r6 = alpha\n            + beta\n            - (gamma\n                * delta)\n            - epsilon;\n"
+        "        var r6 = alpha\n            + beta\n            - (gamma\n"
+        + "                * delta)\n            - epsilon;\n"
     )]
     [InlineData(
         "        var r7 = first ?? second ?? (third\n            ?? fourth);\n",
