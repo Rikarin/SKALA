@@ -2929,6 +2929,7 @@ public sealed class BreakPlan {
         if (node.Parent is FieldDeclarationSyntax { Modifiers.Count: > 0 }) {
             var modifiers = NewGroup();
             Point(node.Type.GetFirstToken(), modifiers);
+            var (fillHead, fillType, fillName) = ModifierFillShape(node);
             Describe(
                 node.Type,
                 new(
@@ -2938,7 +2939,10 @@ public sealed class BreakPlan {
                         options.KeepsUserBreaksBetweenItems && BreaksBefore(node.Type.GetFirstToken()),
                         BreaksIfTooLong: true,
                         PrefersOuterBreak: true,
-                        SkipsOuterTail: true
+                        SkipsOuterTail: true,
+                        ModifierFillHead: fillHead,
+                        ModifierFillType: fillType,
+                        ModifierFillName: fillName
                     ),
                     true,
                     true
@@ -2972,6 +2976,38 @@ public sealed class BreakPlan {
                 true,
                 true
             )
+        );
+    }
+
+    /// <summary>
+    ///     For a field's one declarator without a value, of at most eight letters, whose type is generic with two
+    ///     arguments — the shapes measured; a three-argument type behind an eleven-letter name moves below the
+    ///     modifiers where the rule would fill it (<c>ModifierTypeGapIssue540Tests</c>): the
+    ///     type's width through its first argument's comma, the type's width and the name's — the widths
+    ///     <c>Fitter.FillsAfterTheModifiers</c> reads (#540). Zeros for any other declaration.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only the first comma of the outermost argument list: that is where the oracle's fill breaks, and the
+    ///     only fill measured. A comment anywhere in the declaration, or a break before the name, leaves the gap to
+    ///     the ordering rule as before; a break inside the type is pass one's fill, read through.
+    /// </remarks>
+    (int Head, int Type, int Name) ModifierFillShape(VariableDeclarationSyntax node) {
+        if (node is not { Variables: [{ Initializer: null } variable] }
+            || (node.Type is QualifiedNameSyntax qualified ? qualified.Right : node.Type) is not GenericNameSyntax {
+                TypeArgumentList.Arguments: { Count: 2 } arguments
+            }
+            || variable.Identifier.Span.Length > 8
+            || BreaksBefore(variable.Identifier)
+            || node.DescendantTrivia(node.Span).Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))) {
+            return default;
+        }
+
+        var first = node.Type.GetFirstToken();
+        return (
+            FormattedWidth(first, arguments.GetSeparator(0)),
+            FormattedWidth(first, node.Type.GetLastToken()),
+            variable.Identifier.Span.Length
         );
     }
 
@@ -3510,17 +3546,19 @@ public sealed class BreakPlan {
             new(
                 group,
                 GroupMode.Preserve,
-                new(
-                    BreaksIfTooLong: true,
-                    HidesFlatWidthWhenBroken: !IsAssignmentTarget(root),
-                    ArmHead: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax }
-                        ? FlatSourceWidth(root)
-                        : 0,
-                    ArmBody: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm }
-                        ? FlatSourceWidth(arm.Expression)
-                        + WidthOfNext(arm, SyntaxKind.CommaToken)
-                        : 0,
-                    TypeTestTail: TypeTestTail(root)
+                WithTypeTestShape(
+                    new(
+                        BreaksIfTooLong: true,
+                        HidesFlatWidthWhenBroken: !IsAssignmentTarget(root),
+                        ArmHead: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax }
+                            ? FlatSourceWidth(root)
+                            : 0,
+                        ArmBody: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm }
+                            ? FlatSourceWidth(arm.Expression)
+                            + WidthOfNext(arm, SyntaxKind.CommaToken)
+                            : 0
+                    ),
+                    root
                 ),
                 HeadSharesTheLevelAroundIt(root),
                 OwnLevel: !HeadSharesTheLevelAroundIt(root) && !fromLine,
@@ -3600,6 +3638,25 @@ public sealed class BreakPlan {
             )
             ? FormattedWidth(member.OperatorToken, statement.SemicolonToken)
             : 0;
+
+    /// <summary>
+    ///     <see cref="TypeTestTail" />'s facts, for the operand's fill and for the keyword's band in front of it:
+    ///     both ask <c>Fitter.TheDotTakesTheBreak</c> the same question.
+    /// </summary>
+    GroupFacts WithTypeTestShape(GroupFacts facts, SyntaxNode root) {
+        var tail = TypeTestTail(root);
+        if (tail == 0 || root is not MemberAccessExpressionSyntax { Parent: BinaryExpressionSyntax binary } member) {
+            return facts;
+        }
+
+        return facts with {
+            TypeTestTail = tail,
+            TypeTestReceiver = FormattedWidth(member.Expression),
+            TypeTestOperand = FormattedWidth(member),
+            TypeTestKeyword = binary.OperatorToken.Span.Length,
+            TypeTestType = FormattedWidth(binary.Right)
+        };
+    }
 
     bool PlansTheFill(SyntaxNode root) =>
         root.Parent switch {
@@ -4605,7 +4662,13 @@ public sealed class BreakPlan {
         if (node is BinaryExpressionSyntax && !BreaksBefore(keyword)) {
             var before = NewGroup();
             Point(keyword, before, lastResort: true);
-            Describe(node, before, GroupMode.Preserve, new(KeywordWidth: keyword.Span.Length));
+            // ⚠ Behind a returned member access the dot can take the break instead, in a tie as well (#446).
+            Describe(
+                node,
+                before,
+                GroupMode.Preserve,
+                WithTypeTestShape(new(KeywordWidth: keyword.Span.Length), ((BinaryExpressionSyntax)node).Left)
+            );
         }
     }
 
