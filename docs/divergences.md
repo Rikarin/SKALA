@@ -7047,6 +7047,30 @@ line from a total width that depends on both the name and the type — 133 to 13
 fills behind the second from 137 too — with no reading of either width alone; Skala moves the type below.
 Pinned by `PropertyHeadIssue540Tests`.
 
+**Round four (group Q, 2026-10-09): the second width is the fill's first line, and the five-letter claim is
+refuted.** Re-measured on master `166d2a4f` with `Testing ask`: `public static readonly <type> N…;` at indent 4,
+the line from 121 to 160 one column at a time, names of 1 to 8 letters, and six type heads chosen so that the
+oracle's fill — `public static readonly Dictionary<string,` / the rest one level in — has a first line `H` of 32,
+42, 45, 57, 72 and 81 columns (1 230 cells; master matches 730). Below the margin's band every row agrees.
+Then the type goes below the modifiers (`M`) up to a line end that rises with the name and falls with `H`, and
+the oracle fills on the modifiers' line (`F`) from there:
+
+| `H` | first `F` for a name of 1, 2, 3, 4, 5, 6, 8 letters |
+|---|---|
+| 32 | never, to 145 |
+| 42 | 133, 135, 136, —, never to 145 |
+| 45 (twice: what follows the comma does not matter) | 132, 134, 135, 137, never to 160 |
+| 57 | 130, 131, 133, —, 136, —, 141 |
+| 72 | 129, 131, 133, —, 136, —, 141 |
+| 81 | 129, 131, 132, 134, 136, 137, — |
+
+⚠ So "every name of five letters or more" holds only behind a short head: behind
+`System.Collections.Generic.IReadOnlyDictionary<string,` a five- and a six-letter name fill from 136 and 137,
+and behind a 57-column head an eight-letter name fills from 141 after one row of `M` with the name below.
+Skala moves the type below in all of them. The first `F` is roughly `c(H) + 1.5·L` columns, `c` falling from
+about 131 at `H` = 42 to 128 at 72 and flat after, with single-column steps no reading of `H` and `L` alone
+reproduces; no rule is wired, and the gap stays the modifiers' as round three left it.
+
 **The parameter's gap is resolved (#545).** A parameter whose line passes the margin once its list is
 chopped puts its name one level below its type: `int` / `            aaa…` at a parameter on column 8.
 Measured with `jb cleanupcode` 2025.2.6 one column at a time: flat to a 120-column parameter line, broken
@@ -9378,6 +9402,31 @@ arrow (declined one to two past), and an auto-property's initializer (always joi
 overflow alone covers the three. A call value joined past 122 still breaks its `=` in Skala where the oracle
 chops the call; that is the `=`'s ordering rule, the aside above.
 
+**Round three (group Q, 2026-10-09): the arrow's band is the moved prefix's width, and it is not linear.**
+Re-measured on master `166d2a4f`: the field rows above all agree — #504's own shape,
+`[Obsolete] /* c */ public int F = alphaValue + … ;` at 125 columns, is the oracle's — and a property's arrow (`P => a + b …;`,
+`=> Compute(…)`, `=> name`, `=> a.B.C.D.e`) is declined at one to three columns past and joined from four,
+a method's at one to two, an auto-property's initializer always joined — as recorded. The new idea was to
+vary what the decline moves off the line instead of the overflow: the comment (`/**/` to 37 columns), the
+attribute (`[A]`, `[Obsolete]`, a 31-column name) and the declaration's head (`int P => `, `public int P => `,
+`public static int P => `, `public SomeLongTypeName P => `), the line from 119 to 150 — 1 952 cells.
+
+- **The band is set by the prefix, not by the value or the terminator.** With `Q` the width of
+  `[attribute] /* comment */ `, the last declined line grows with `Q`: behind `public int P => ` it is
+  123, 126, 129, 132, 134, 136, 138, 141, 143, 145 and 148 for `Q` of 19 to 49 in steps of three; a
+  `/**/` (`Q` = 16) or `[A]` with `/* c */` (12) is never declined. So the old "one to three columns" is the
+  `/* c */` row of a table, and a longer comment declines a line fifteen or twenty columns past the margin.
+- **The head moves it the other way**: behind `int P => ` the same rows end at 125 to 150, behind
+  `public static int P => ` at 120 to 145, behind a 29-column head at 120 to 144.
+- **Not linear in either.** The slope in `Q` is one column per column up to `Q` ≈ 28 and about three
+  quarters after it; the best linear rule in `Q` and the head misses 16 of 44 row ends, and summed-cost
+  readings (line widths or slack to any power from 0.5 to 4, the four lines of the two layouts) miss more
+  than 180 of 1 364 cells.
+
+Not wired: no reading survives the grid, and a table over two widths for a comment between an attribute
+and an expression-bodied member would be keyed on a shape the corpus does not hold. The property's and
+method's arrows stay the author's.
+
 - options: the six `skala_place_*_attribute_on_same_line` keys.
 - ⚠ status: **resolved** at `always`; **resolved** for a comment in the gap on fields and event fields (#504),
   pinned by `CommentedAttributeGapIssue504Tests`; **open** for properties and methods. Pinned by
@@ -9601,9 +9650,33 @@ Three of them are settled exactly by which layouts fit:
   that is conditional on a sibling group. Skala writes `K` or `W` in all 1 172 `D` and `x` cells, and is
   right on every `K`, `W` and fits cell.
 
-- ⚠ status: **resolved** for the band and for a plain member access without a type test; **open, blocked**
-  for `is`/`as` past the band, measured as above. Pinned by `TypeTestKeywordIssue444Tests` and
-  `constructs/breaks/member-access-last-dot.cs`.
+**Round 5 (group Q, 2026-10-09): the `D`-only cells are wired.** Re-measured on master `166d2a4f` with
+`Testing ask`: `return r….P… as|is T…;` at indent 12, receivers of 1, 4, 8, 14, 20 and 30, types of 1, 6 and
+10, the keyword ending at 119 to 136 — 648 cells, of which master matched 90. Round 4's feasibility reading
+holds exactly where it needs no tie-break: **whenever the operand alone runs past the margin** (so neither
+`K` nor `W` can fit) **and `.P… as T;` fits one level past the statement, the oracle writes `D`** — 194 of 194
+cells. The construct round 4 found missing is only missing for `x`: `D` is the member-access fill one level
+in, and it needs no level conditional on a sibling, because the keyword's band is flat in every `D` cell.
+`PlansTheFill` now plans the fill for the operand of a returned type test that is one member access on a
+name (`BreakPlan.TypeTestTail`), and its group breaks exactly then (`GroupFacts.TypeTestTail`). ⚠ The line is
+measured from the statement's line plus one level, not from the fitter's continuation column: the type
+test stacks levels there (32 at a `return` on 12) that the writer collapses to one on the dot's line, and
+measuring from it matched 40 of the 194 cells.
+
+The grid now matches 284 of 648 (90 before), every pass idempotent. A second probe, written after the rule —
+indents 8, 12 and 20, `string` and `List<int>`, receivers of 3, 10 and 25 and `this`, `as` and `is`, the
+keyword ending at 118 to 138 (528 cells) — matches all 96 of its `D`-only cells and 204 cells in all; the
+rest are the cells below. Pinned by `TypeTestOperandDotIssue446Tests`.
+
+⚠ Still divergent, as recorded above: the ties (90 cells of the first grid where `K` or `W` fits
+and the oracle still writes `D`; Skala writes `K` or `W`, right in the other 90 cells where they fit), and `x` (274 cells: neither fits, the dot two levels in), where Skala keeps the
+keyword band past the margin. A `this` receiver, an `=` or an argument in front, and more than one dot are
+not planned: not measured.
+
+- ⚠ status: **resolved** for the band, for a plain member access without a type test, and for a returned
+  type test whose operand alone overflows where the dot's line fits (#446); **open, blocked** for the ties
+  and the two-level `x` layout. Pinned by `TypeTestKeywordIssue444Tests`, `TypeTestOperandDotIssue446Tests`
+  and `constructs/breaks/member-access-last-dot.cs`.
 
 ## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
 
@@ -10441,6 +10514,30 @@ the oracle keeps whole is 102, 102, 104, 105, 106, 108, 110 and 112 for paramete
 line, with steps of 0 and 2 that no linear reading reproduces — and behind `[A("…")]` a 16- or 17-column
 parameter never chops at all. The two attributes differ in how much the chop saves (14 columns against 3),
 and only two such values were measured, so a table would have one row per attribute shape it has never seen.
+
+**Round four (group Q, 2026-10-09): a rule found, and refuted by the next probe.** Re-measured on master
+`166d2a4f` with `Testing ask`, the section's last column `E` swept one at a time from 96 to 120:
+
+- Behind `[Obsolete(` — `("…", true)`, four arguments, `("…", true, SomeLongName.Value)` and `(1, "…")` alike —
+  with parameters of 12 to 39 columns (`int a…`, `List<string> a…`, `Dictionary<string, int> a…`, dotted, tuple)
+  at indents 8, 12 and 16, **every one of 2 829 cells** chops exactly when the joined line overflows and
+  `24·E ≥ 32·w + 1892 + 11·(i − 8)`, `w` the parameter and `i` the section's column, provided that threshold
+  is met by column 118 at the latest: one that would first be met at 119 or 120 is never met (30 columns at
+  indent 8, 29 at 12, 27 at 16 stand alone below the section at every width). So the slope is 4/3 a column
+  per column of parameter — round three's "about 1.2, with steps of 0 and 2" is that slope rounded — and
+  neither the arguments nor what chopping them saves enter it. The issue's inference (a rest-of-line reading
+  through to the parameter's first break point) stays refuted: the type's composition does not move a cell.
+- ⚠ **The next probe refuted it** (3 852 cells, indents 8 and 20). `[Range(1, "…")]` and `[Foo(typeof(int), "…")]`,
+  whose `(` lands three and five columns further left, chop one to three columns *earlier* at mid widths and
+  *later* near the margin — a 29-column parameter at indent 8 chops behind `[Range(` only at 120 and behind
+  `[Foo(` never, where `[Obsolete(` chops from 118 — so the threshold bends toward the margin, not a line. A
+  named argument (`DiagnosticId = "X"`) chops later still (`string? a…` of 13 columns: from 113 at indent 8,
+  never at 20). A parameter with a default value breaks at its `=` once the joined line overflows and stays
+  joined to the section. One-argument sections chop only near the margin: `[A("…")]` from 109 to 118 for
+  12 to 15 columns and never from 16, `[Description("…")]` from 113 to 120 for 12 to 17 and never from 18.
+
+The rule was wired and reverted: one attribute shape's table would be right on `[Obsolete(` and wrong by up
+to three columns on the next attribute anyone writes. Nothing changed in the formatter.
 
 - options: `skala_wrap_arguments_style`; no key for the join.
 - ⚠ status: **resolved** for parameters of up to eleven columns, defaults included (#476, #556), pinned by
