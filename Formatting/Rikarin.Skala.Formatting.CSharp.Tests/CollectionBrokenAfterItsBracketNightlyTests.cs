@@ -124,17 +124,19 @@ public sealed class CollectionBrokenAfterItsBracketNightlyTests {
 
     // ⚠ Broken by a `//` comment inside it (Nightly fuzz, case 6430242752800476221, #599): the oracle keeps the
     // `[` beside the element before it, however short the collection; pass one drafted it flat and moved the `[`
-    // down. A block comment breaks nothing (the last row). Measured 2026-10-10 with `Testing ask` on 24 rows
-    // (a comment after the first, a middle and the last element, a short collection, a block comment; four
+    // down. A block comment breaks nothing (the last row). Measured 2026-10-10 with `Testing ask` on 32 rows
+    // (a comment after the first, a middle and the last element, short collections, a block comment; four
     // positions).
     const string CommentSource = """"
         class C {
             void M() {
-                var v17 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [1, // fuzz
-        2], 9718, z };
-                var v18 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [1, // fuzz
-        2] };
-                var v21 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["sssssssssssss", /* fuzz */ true], 9718, z };
+                var v10 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["sssssssssssss", true, // fuzz
+        'c', 47954] };
+                var v21 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["sssssssssssss", // fuzz
+        true, 'c', 47954, "ssssssssssssssssssssss"], 9718, z };
+                var v25 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["s", // fuzz
+        true], 9718, z };
+                var v29 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["sssssssssssss", /* fuzz */ true], 9718, z };
             }
         }
         """";
@@ -142,20 +144,27 @@ public sealed class CollectionBrokenAfterItsBracketNightlyTests {
     const string CommentOracle = """"
         class C {
             void M() {
-                var v17 = new[] {
+                var v10 = new[] {
                     """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [
-                        1, // fuzz
-                        2
-                    ],
-                    9718, z
-                };
-                var v18 = new[] {
-                    """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [
-                        1, // fuzz
-                        2
+                        "sssssssssssss", true, // fuzz
+                        'c', 47954
                     ]
                 };
                 var v21 = new[] {
+                    """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [
+                        "sssssssssssss", // fuzz
+                        true, 'c', 47954, "ssssssssssssssssssssss"
+                    ],
+                    9718, z
+                };
+                var v25 = new[] {
+                    """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [
+                        "s", // fuzz
+                        true
+                    ],
+                    9718, z
+                };
+                var v29 = new[] {
                     """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}",
                     ["sssssssssssss", /* fuzz */ true], 9718, z
                 };
