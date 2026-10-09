@@ -95,6 +95,16 @@ public sealed class Baseline {
 
     public static Baseline Empty(string path) => new([], path);
 
+    /// <summary>The same baseline with the entries <paramref name="refused" /> names left out.</summary>
+    /// <remarks>
+    ///     ⚠ #592. For a finding the baseline is not allowed to accept — an arrangement finding, whose
+    ///     only remedy is <c>skala arrange</c> and which <c>arrange --check</c> fails on whatever this
+    ///     file holds. An entry for one written before the rule existed must stop suppressing it, and
+    ///     must not be reported as <em>fixed</em> by a run that never looked for it either.
+    /// </remarks>
+    public Baseline Without(Func<BaselineEntry, bool> refused) =>
+        Entries.Any(refused) ? new([..Entries.Where(entry => !refused(entry))], Path) : this;
+
     /// <summary>
     ///     Reads a baseline, or returns an empty one when the file is absent.
     /// </summary>

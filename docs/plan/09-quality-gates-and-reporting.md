@@ -286,6 +286,22 @@ stopped working look like progress. M6 makes this four verbs — `create`, `upda
 and `update` never removes an entry, so running it can only ever widen what is suppressed and the
 diff shows by exactly how much. Every writing verb needs `--apply`.
 
+⚠ **Arrangement findings are not baseline material (#592).** `baseline create | update | prune`
+collect them only to name them: each unarranged file is listed and none is written, and an
+arrangement entry an earlier version wrote is dropped by the next writing verb and ignored by every
+comparison until then. Measured during a self-gate cleanup: `baseline update` accepted five
+`SK0210` (`using static` out of order), `check --gate=ci` passed, and Lint's `arrange --check` stayed
+red on the same files. The entries had hidden nothing from `check`, which never collects arrangement
+— the issue's "the baseline hides a red Lint" is refuted as stated — but they reported a red Lint as
+accepted, they suppressed the arrange half of `verify --baseline`, the one command where a baseline
+meets an arrangement finding, and a `check` that never collects arrangement reported every one of
+them *fixed*: the `SK7020` misreport below, from the other side. `arrange --check` has no baseline
+and fails on an unarranged file whatever `.skala/baseline.sarif` holds. An arrangement is applied or
+switched off in `.editorconfig`; there is no "accepted for now" state, and a one-per-file finding
+keyed on whichever rule applied first is not a stable identity to accept. `SK0001` stays baseline
+material, because the `formatting: clean` gate condition already ignores the baseline; arrangement
+has no gate condition, so refusing it at the baseline is what keeps the two commands agreeing.
+
 ⚠ The demonstration that the distinction is not theoretical: running `check` against a baseline that
 included `SK7020` entries, but *without* `--duplication`, reported 308 findings as **fixed**. Nothing
 had been fixed; a rule had not run. A self-pruning baseline would have deleted all 308 and called it
