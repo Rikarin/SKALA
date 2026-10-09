@@ -93,6 +93,7 @@ public sealed class FuzzRegressionTests {
     [InlineData(9642682992700587520UL)]
     [InlineData(7862808234978504853UL)]
     [InlineData(8573762464065711162UL)]
+    [InlineData(7447388608888272285UL)]
     [InlineData(3776683644240416092UL)]
     [InlineData(11325995557757886152UL)]
     // `fuzz --seed=7777`: `get => state is (` / `{ Length: > 0 }, ImmutableArray<object?> typed56);`. The
