@@ -1885,7 +1885,8 @@ public sealed class LayoutWriter {
             if (slot.Kind == DocKind.Line
                 && (LineKind)slot.Arg0 == LineKind.Soft
                 && fitter.ForcedOf(slot.Arg2) == ResolvedMode.Flat) {
-                total = total >= Document.Unbounded ? Document.Unbounded
+                total = total >= Document.Unbounded
+                    ? Document.Unbounded
                     : total + (((LineFlags)slot.Flags & LineFlags.FlatSpace) != 0 ? 1 : 0);
                 continue;
             }
@@ -2362,6 +2363,7 @@ public sealed class LayoutWriter {
         if (watchedLifts.Count > state.WatchedLifts) {
             watchedLifts.RemoveRange(state.WatchedLifts, watchedLifts.Count - state.WatchedLifts);
         }
+
         brokenConstructs.Clear();
         brokenConstructs.AddRange(state.BrokenConstructs);
         fitter.Rollback(state.Fitter);

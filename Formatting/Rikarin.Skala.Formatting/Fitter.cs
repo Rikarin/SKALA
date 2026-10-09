@@ -126,27 +126,28 @@ public sealed class Fitter {
         ref var slot = ref document.Nodes[node];
         var id = slot.Arg1;
         var facts = document.FactsOf(id);
-        var mode = forced[id] ?? Decide(
-            (GroupMode)slot.Arg0,
-            facts,
-            new(
-                column,
-                continuationColumn,
-                document.FlatWidthOf(node),
-                facts.MeasuresThroughTail ? document.ThroughWidthOf(node)
-                : facts.MeasuresHead ? document.HeadWidthOf(node)
-                : document.FlatWidthOf(node),
-                document.PointWidthOf(node),
-                document.AfterPointOf(node),
-                facts.MeasuresThroughTail ? 0 : trailing,
-                line,
-                document.YieldEndOf(node)
-            ),
-            document.AfterPointRunsToTheEnd(node),
-            document.SegmentOf(node),
-            lineStart,
-            document.FirstPointFlatWidthOf(node)
-        );
+        var mode = forced[id]
+            ?? Decide(
+                (GroupMode)slot.Arg0,
+                facts,
+                new(
+                    column,
+                    continuationColumn,
+                    document.FlatWidthOf(node),
+                    facts.MeasuresThroughTail ? document.ThroughWidthOf(node)
+                    : facts.MeasuresHead ? document.HeadWidthOf(node)
+                    : document.FlatWidthOf(node),
+                    document.PointWidthOf(node),
+                    document.AfterPointOf(node),
+                    facts.MeasuresThroughTail ? 0 : trailing,
+                    line,
+                    document.YieldEndOf(node)
+                ),
+                document.AfterPointRunsToTheEnd(node),
+                document.SegmentOf(node),
+                lineStart,
+                document.FirstPointFlatWidthOf(node)
+            );
         modes[id] = mode;
         resolved[id] = true;
         enteredOn[id] = line;
