@@ -392,7 +392,10 @@ public sealed class LayoutWriter {
     }
 
     const IndentFlags HeldConditions =
-        IndentFlags.HeldWhileOwnerFlat | IndentFlags.HeldWhileChainWhole | IndentFlags.HeldWhileGroupFlat;
+        IndentFlags.HeldWhileOwnerFlat
+        | IndentFlags.HeldWhileChainWhole
+        | IndentFlags.HeldWhileGroupFlat
+        | IndentFlags.HeldWhileGroupBroken;
 
     /// <summary>
     ///     The kind a conditionally held scope opens as: <see cref="IndentKind.None" /> — a held level —
@@ -420,6 +423,12 @@ public sealed class LayoutWriter {
             && chainGroup >= 0
             && fitter.ModeOf(chainGroup) == ResolvedMode.Broken) {
             return kind;
+        }
+
+        // ⚠ And the mirror: the gap after an `is`, resolved before the pattern chain it heads, spends the
+        // chain's level when it breaks — so the chain's own is spent only while it stays flat.
+        if ((conditions & IndentFlags.HeldWhileGroupBroken) != 0) {
+            return chainGroup >= 0 && fitter.ModeOf(chainGroup) == ResolvedMode.Broken ? IndentKind.None : kind;
         }
 
         if ((conditions & IndentFlags.HeldWhileChainWhole) != 0

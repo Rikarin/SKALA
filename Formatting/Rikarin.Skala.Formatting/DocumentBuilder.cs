@@ -439,7 +439,10 @@ public sealed class DocumentBuilder {
             DocKind.Indent,
             (int)kind,
             (int)(conditions
-                & (IndentFlags.HeldWhileOwnerFlat | IndentFlags.HeldWhileChainWhole | IndentFlags.HeldWhileGroupFlat)),
+                & (IndentFlags.HeldWhileOwnerFlat
+                    | IndentFlags.HeldWhileChainWhole
+                    | IndentFlags.HeldWhileGroupFlat
+                    | IndentFlags.HeldWhileGroupBroken)),
             chainGroup
         );
 
@@ -602,6 +605,17 @@ public sealed class DocumentBuilder {
         certain[index] = childCertain || selfOrigin > 0;
         certainOrigin[index] = Math.Max(childOrigin, selfOrigin);
         ownerWidth[index] = owned;
+
+        // ⚠ A chain's own links' breaks are weak to its own owner alone. To any chain around it, a nested
+        // chain that spans lines is an operand that spans lines, which chops the outer chain as a lambda or a
+        // chopped list in an operand does: `a + (b * c) + (d\n&& e)` chops at both `+`. Kept weak, the outer
+        // owner read the inner break as none of its business, broke only the link holding it — `a + (b * c)`
+        // stayed on one line — and pass two, which read the `+` break as the author's, chopped the first
+        // link too (Nightly `fuzz --seed=4242`, case 5604488888367663423).
+        if (isGroup && certain[index] && chainOwners.Contains(frame.Arg1)) {
+            certainOrigin[index] = 2;
+        }
+
         if (frame.Kind == DocKind.Group && facts[frame.Arg1].TailEndsAt >= 0) {
             var through = 0;
             WidthThrough(childStart, count, facts[frame.Arg1].TailEndsAt, ref through);

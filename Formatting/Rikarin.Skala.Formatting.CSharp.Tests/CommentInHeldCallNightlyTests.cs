@@ -73,4 +73,51 @@ public sealed class CommentInHeldCallNightlyTests {
         );
         Assert.Equal(first, FormatWith(first));
     }
+
+    /// <summary>
+    ///     ⚠ A <c>/** d */</c> comment, which Roslyn reads as documentation, counts as the block comment it is
+    ///     written as — through its <c>/**</c>, which lies outside the trivia's <c>Span</c> (Nightly fuzz, case
+    ///     1267273925188459665). The third row is the line one column too long only with the comment's full
+    ///     width: <c>/** dd */</c> measured as <c>dd */</c> kept its <c>=</c> and chopped the call.
+    /// </summary>
+    [Fact]
+    public void ADocumentationStyleComment_CountsInFull() {
+        const string source = """
+                              namespace N {
+                              class C {
+                                public void M()
+                                {
+                                 var jsonObjectWithUppercase = JsonConvert /** d */ .DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
+                                 var jsonObjectWithUppercase = JsonConvert /* d */ .DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
+                                 var jsonObjectWithUppercase = JsonConvert /** dd */ .DeserializeObject<GitHubPullRequestReview>(jsonWithUpper);
+                                 var jsonObjectWithUppercase = JsonConvert.DeserializeObject<GitHubPullRequestReview /** d */>(jsonWithUppercase);
+                                 var jsonObjectWithUppercase = JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase /** dddd */);
+                                }
+                              }
+                              }
+                              """;
+        const string oracle = """
+                              namespace N {
+                                  class C {
+                                      public void M() {
+                                          var jsonObjectWithUppercase =
+                                              JsonConvert /** d */.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
+                                          var jsonObjectWithUppercase =
+                                              JsonConvert /* d */.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
+                                          var jsonObjectWithUppercase =
+                                              JsonConvert /** dd */.DeserializeObject<GitHubPullRequestReview>(jsonWithUpper);
+                                          var jsonObjectWithUppercase =
+                                              JsonConvert.DeserializeObject<GitHubPullRequestReview /** d */>(jsonWithUppercase);
+                                          var jsonObjectWithUppercase =
+                                              JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase /** dddd */);
+                                      }
+                                  }
+                              }
+
+                              """;
+
+        var first = FormatWith(source);
+        Assert.Equal(oracle, first);
+        Assert.Equal(first, FormatWith(first));
+    }
 }
