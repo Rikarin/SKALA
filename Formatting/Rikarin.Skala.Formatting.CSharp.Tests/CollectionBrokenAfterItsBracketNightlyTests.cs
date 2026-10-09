@@ -121,4 +121,52 @@ public sealed class CollectionBrokenAfterItsBracketNightlyTests {
         Assert.Equal(ClosingOracle + "\n", formatted);
         Assert.Equal(formatted, FormatWith(formatted));
     }
+
+    // ⚠ Broken by a `//` comment inside it (Nightly fuzz, case 6430242752800476221, #599): the oracle keeps the
+    // `[` beside the element before it, however short the collection; pass one drafted it flat and moved the `[`
+    // down. A block comment breaks nothing (the last row). Measured 2026-10-10 with `Testing ask` on 24 rows
+    // (a comment after the first, a middle and the last element, a short collection, a block comment; four
+    // positions).
+    const string CommentSource = """"
+        class C {
+            void M() {
+                var v17 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [1, // fuzz
+        2], 9718, z };
+                var v18 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [1, // fuzz
+        2] };
+                var v21 = new[] { """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", ["sssssssssssss", /* fuzz */ true], 9718, z };
+            }
+        }
+        """";
+
+    const string CommentOracle = """"
+        class C {
+            void M() {
+                var v17 = new[] {
+                    """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [
+                        1, // fuzz
+                        2
+                    ],
+                    9718, z
+                };
+                var v18 = new[] {
+                    """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}", [
+                        1, // fuzz
+                        2
+                    ]
+                };
+                var v21 = new[] {
+                    """<x a="1"/>""", checked(true), $"n={Compute(value_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww)}",
+                    ["sssssssssssss", /* fuzz */ true], 9718, z
+                };
+            }
+        }
+        """";
+
+    [Fact]
+    public void ACollectionBrokenByALineComment_StaysBesideThePreviousElement() {
+        var formatted = FormatWith(CommentSource);
+        Assert.Equal(CommentOracle + "\n", formatted);
+        Assert.Equal(formatted, FormatWith(formatted));
+    }
 }

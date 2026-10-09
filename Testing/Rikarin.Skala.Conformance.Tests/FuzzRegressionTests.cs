@@ -149,6 +149,9 @@ public sealed class FuzzRegressionTests {
     // the `=` and broke the type arguments after their `<`; pass two, finding the condition broken, broke the `=`.
     // The `=` now breaks when the call's `(` would end past the margin, as the oracle's does.
     [InlineData(1701945859786365053UL)]
+    // An array element `["s", // fuzz` / `…]` broken only by its line comment (#599): pass one drafted it flat and
+    // moved its `[` down; pass two read the break after the `[` it had written and kept `…, [`, the oracle's answer.
+    [InlineData(6430242752800476221UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

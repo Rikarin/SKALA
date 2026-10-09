@@ -939,7 +939,11 @@ public sealed class BreakPlan {
                 // ⚠ Nor one broken only before its `]` (Nightly fuzz, case 5848915233203857901): the oracle
                 // breaks it after its `[` as well and keeps `), [` / elements / `]`, so pass one, which writes
                 // that break, must draft it as pass two reads it.
-                if ((BreaksBefore(FirstToken(collection.Elements[0])) || BreaksBefore(collection.CloseBracketToken))
+                // ⚠ Nor one a line comment inside breaks (Nightly fuzz, case 6430242752800476221, #599): `[a, // c`
+                // / `b]` comes back `), [` / `a, // c` / `b` / `]` in the oracle, however short, as written or not.
+                if ((BreaksBefore(FirstToken(collection.Elements[0]))
+                        || BreaksBefore(collection.CloseBracketToken)
+                        || HoldsALineComment(collection))
                     && groups.TryGetValue(Key(node), out var listPlans)
                     && listPlans.Count > 0) {
                     var listPlan = listPlans[^1] with { Facts = listPlans[^1].Facts with { DraftsBroken = true } };
@@ -6258,6 +6262,17 @@ public sealed class BreakPlan {
         && !CommentAfterTheParen(value)
             ? CalleeOf(value)
             : 0;
+
+    /// <summary>
+    ///     Whether a <c>//</c> comment stands between a collection's brackets, which breaks it on every pass
+    ///     (#599). A block comment does not: the oracle keeps <c>[a, /* c */ b]</c> on one line.
+    /// </summary>
+    static bool HoldsALineComment(CollectionExpressionSyntax collection) =>
+        collection.DescendantTrivia()
+            .Any(trivia => trivia.SpanStart >= collection.OpenBracketToken.Span.End
+                && trivia.Span.End <= collection.CloseBracketToken.SpanStart
+                && (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)));
 
     /// <summary>
     ///     Whether a block comment stands right after a call's or creation's <c>(</c>, where the oracle never
