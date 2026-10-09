@@ -1364,6 +1364,11 @@ public sealed class Document {
 ///     that rest is wider than <c>1.5 · (line − limit) + 9</c> — the longer the rest, the further past the
 ///     limit the oracle moves the call down rather than chop it.
 /// </param>
+/// <param name="TypeTestTail">
+///     ⚠ The member-access fill of a returned type test's operand (#446, SK-DIV-0210): the width from the dot
+///     through the <c>;</c>. The dot breaks exactly when the operand alone runs past the margin and that line
+///     fits at the continuation column; otherwise the keyword's own band answers.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1441,7 +1446,8 @@ public readonly record struct GroupFacts(
     int ArmBodyTrail = 0,
     int LiftGroup = -1,
     bool LiftsIfArrowBreaks = false,
-    bool DraftsBroken = false);
+    bool DraftsBroken = false,
+    int TypeTestTail = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
