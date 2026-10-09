@@ -5709,7 +5709,8 @@ public sealed class BreakPlan {
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
-                    CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner)
+                    CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner),
+                    ParenCloseEnd: ParenCloseEndOf(node, value)
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -5722,6 +5723,48 @@ public sealed class BreakPlan {
                 HoldsLevel: HoldFor(group, value)
             )
         );
+    }
+
+    /// <summary>
+    ///     <see cref="GroupFacts.ParenCloseEnd" />: the width from a plain <c>=</c>'s value through the <c>)</c> of
+    ///     the parenthesised expression it opens with, or zero (#598).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 1 572 rows — a local, a field, a property, an
+    ///     assignment, <c>+=</c> and <c>return</c>; <c>(T)</c> casts of 0 to 21 columns; <c>+</c>, <c>&amp;&amp;</c>,
+    ///     <c>??</c>, <c>?:</c> inside; first operands of 4 to 30 columns; indents 8, 12 and 16; one column at a
+    ///     time from 119 to 136. Every row where the oracle breaks the <c>=</c> rather than inside the parentheses
+    ///     has that <c>)</c> on column 121, and none other does — <c>var x = (a + b);</c> at 122 columns,
+    ///     <c>(…).L;</c> at 124, <c>(string)(…) + c;</c> at 126. Not after <c>+=</c> or <c>return</c>, and not a
+    ///     parenthesis behind another operand (<c>yy + (…)</c> breaks the outer <c>+</c>).
+    /// </remarks>
+    int ParenCloseEndOf(SyntaxNode node, ExpressionSyntax value) {
+        if (options.WrapBeforeEq
+            || node is AssignmentExpressionSyntax assignment && !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)) {
+            return 0;
+        }
+
+        var spine = value;
+        while (true) {
+            switch (spine) {
+                case ParenthesizedExpressionSyntax parenthesis:
+                    return FormattedWidth(FirstToken(value), parenthesis.CloseParenToken);
+                case CastExpressionSyntax cast:
+                    spine = cast.Expression;
+                    continue;
+                case MemberAccessExpressionSyntax access:
+                    spine = access.Expression;
+                    continue;
+                case BinaryExpressionSyntax binary:
+                    spine = binary.Left;
+                    continue;
+                case PrefixUnaryExpressionSyntax prefix:
+                    spine = prefix.Operand;
+                    continue;
+                default:
+                    return 0;
+            }
+        }
     }
 
     /// <summary>

@@ -11499,3 +11499,33 @@ regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
 
 - status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`. ⚠ The two residues
   are **open**.
+
+## SK-DIV-0491 — an `=` whose value's leading parenthesis closes one column past the margin
+
+#598: at 122 columns, `var x = (string)(aaaa + b…);`. The oracle breaks after the `=`, and Skala broke inside the
+parentheses. Measured 2026-10-10 with `Testing ask` on 1 860 rows:
+
+- owners: a local, a field, a property, an assignment, `+=` and `return`
+- casts of 0 to 21 columns
+- `+`, `&&`, `??` and `?:` inside the parentheses
+- first operands of 4 to 30 columns
+- indents 8, 12 and 16
+- every width from 119 to 136
+
+The trigger is exact. The oracle breaks the `=` exactly where the parenthesised expression the value opens with
+has its `)` on column 121, and the value through that `)` fits below; nowhere else. Shapes that trigger it:
+`var x = (…);` at 122, `(…).L;` at 124, `(string)(…) + c;` at 126 (the `+ c` then breaks on its own),
+`!(…);` at 122. `+=`, `return` and a parenthesis behind another operand (`yy + (…)`) do not.
+`GroupFacts.ParenCloseEnd`. The rows diverging went from 102 to 25, and none regressed.
+
+⚠ Still open, all as before:
+- 9 rows: `x = (IReadOnlyList<int>)(aaaa + …);` and `return (IReadOnlyList<int>)(…);` at 122 with a first operand
+  of 4 or 12 columns. The oracle breaks after the cast's `)`, `x = (IReadOnlyList<int>)` / `(aaaa + …);`, where
+  the `=` cannot hold the value. The 21-column cast's last-resort point (#591) does not take it, and a
+  30-column first operand breaks inside in the oracle too.
+- 6 rows: `var x = (string)(a + b…).Trim();`. The oracle breaks before `.Trim()` and Skala breaks inside the
+  parentheses: a chain under a cast does not take its dot.
+- 1 row: `var x = ((a + b…));` at 123, where the inner `)` lands on 121. Only the outermost parenthesis is read.
+
+- status: **fixed** for the measured trigger, pinned by `ParenOnePastTheMarginIssue598Tests`. ⚠ The three
+  residues are **open**.

@@ -1369,6 +1369,12 @@ public sealed class Document {
 ///     through the <c>;</c>. The dot breaks exactly when the operand alone runs past the margin and that line
 ///     fits at the continuation column; otherwise the keyword's own band answers.
 /// </param>
+/// <param name="ParenCloseEnd">
+///     ⚠ An <c>=</c>'s value that opens with a parenthesised expression — bare, cast, or the head of a member
+///     access or a binary operand (#598): the width from the value's first token through that expression's
+///     <c>)</c>, or zero. Where the <c>)</c> lands exactly one column past the margin the oracle breaks the
+///     <c>=</c> whenever the value then fits below, and breaks inside the parentheses at every other width.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1447,7 +1453,8 @@ public readonly record struct GroupFacts(
     int LiftGroup = -1,
     bool LiftsIfArrowBreaks = false,
     bool DraftsBroken = false,
-    int TypeTestTail = 0);
+    int TypeTestTail = 0,
+    int ParenCloseEnd = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

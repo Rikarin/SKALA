@@ -330,6 +330,21 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ An `=` whose value's leading parenthesis closes one column past the margin breaks when the
+                // value through that `)` fits below, what follows it breaking on its own (#598): `var x =` /
+                // `(string)(…)` / `+ c;`. See GroupFacts.ParenCloseEnd.
+                if (facts.ParenCloseEnd > 0
+                    && m.PointWidth < Unbounded
+                    && m.FlatWidth < Unbounded
+                    && m.Column + m.PointWidth + 1 + facts.ParenCloseEnd == width + 1
+                    && Fits(
+                        m.ContinuationColumn,
+                        facts.ParenCloseEnd,
+                        facts.ParenCloseEnd == m.FlatWidth - m.PointWidth - 1 ? m.Trailing : 0
+                    )) {
+                    return ResolvedMode.Broken;
+                }
+
                 // ⚠ A returned type test's operand: its dot breaks only where neither the keyword's band nor the
                 // operand's own line can hold it. See GroupFacts.TypeTestTail (#446).
                 if (facts.TypeTestTail > 0) {
