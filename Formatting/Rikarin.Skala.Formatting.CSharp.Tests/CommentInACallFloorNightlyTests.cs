@@ -24,69 +24,69 @@ public sealed class CommentInACallFloorNightlyTests {
     }
 
     const string Minimised = """
-        class EqualsBeforeACallFloor {
-          void M() {
-          var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc( /** d */ xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy);
-          {
-          }
-          }
-        }
-        """;
+                             class EqualsBeforeACallFloor {
+                               void M() {
+                               var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc( /** d */ xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy);
+                               {
+                               }
+                               }
+                             }
+                             """;
 
     const string MinimisedOracle = """
-        class EqualsBeforeACallFloor {
-            void M() {
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                    Cccccccccccccccccccc( /** d */ xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy);
-                { }
-            }
-        }
-        """;
+                                   class EqualsBeforeACallFloor {
+                                       void M() {
+                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                               Cccccccccccccccccccc( /** d */ xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy);
+                                           { }
+                                       }
+                                   }
+                                   """;
 
     const string Positions = """
-        class EqualsBeforeACallFloor {
-            void M() {
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(xxxxxxxxxxxxxxxxxxxxxxx, /* d */ yyyyyyyyyyyyyyyyyyyyyyyy);
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(xxxxxxxxxxxxxxxxxxxxxxx /* d */, yyyyyyyyyyyyyyyyyyyyyyyy);
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(xxxxxxxxxxxxxxxxxxxxxxx /** d */, yyyyyyyyyyyyyyyyyyyyyyyy);
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy /** d */);
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy /* d */);
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(/* d */ xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy);
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(/** d */ xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy);
-            }
-        }
-        """;
+                             class EqualsBeforeACallFloor {
+                                 void M() {
+                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(xxxxxxxxxxxxxxxxxxxxxxx, /* d */ yyyyyyyyyyyyyyyyyyyyyyyy);
+                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(xxxxxxxxxxxxxxxxxxxxxxx /* d */, yyyyyyyyyyyyyyyyyyyyyyyy);
+                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(xxxxxxxxxxxxxxxxxxxxxxx /** d */, yyyyyyyyyyyyyyyyyyyyyyyy);
+                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy /** d */);
+                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy /* d */);
+                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(/* d */ xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy);
+                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(/** d */ xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy);
+                                 }
+                             }
+                             """;
 
     const string PositionsOracle = """
-        class EqualsBeforeACallFloor {
-            void M() {
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(
-                    xxxxxxxxxxxxxxxxxxxxxxx, /* d */
-                    yyyyyyyyyyyyyyyyyyyyyyyy
-                );
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(
-                    xxxxxxxxxxxxxxxxxxxxxxx /* d */,
-                    yyyyyyyyyyyyyyyyyyyyyyyy
-                );
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(
-                    xxxxxxxxxxxxxxxxxxxxxxx /** d */,
-                    yyyyyyyyyyyyyyyyyyyyyyyy
-                );
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(
-                    xxxxxxxxxxxxxxxxxxxxxxx,
-                    yyyyyyyyyyyyyyyyyyyyyyyy /** d */
-                );
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(
-                    xxxxxxxxxxxxxxxxxxxxxxx,
-                    yyyyyyyyyyyyyyyyyyyyyyyy /* d */
-                );
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                    Cccccccccccccccccccc( /* d */ xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy);
-                var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                    Cccccccccccccccccccc( /** d */ xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy);
-            }
-        }
-        """;
+                                   class EqualsBeforeACallFloor {
+                                       void M() {
+                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(
+                                               xxxxxxxxxxxxxxxxxxxxxxx, /* d */
+                                               yyyyyyyyyyyyyyyyyyyyyyyy
+                                           );
+                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(
+                                               xxxxxxxxxxxxxxxxxxxxxxx /* d */,
+                                               yyyyyyyyyyyyyyyyyyyyyyyy
+                                           );
+                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(
+                                               xxxxxxxxxxxxxxxxxxxxxxx /** d */,
+                                               yyyyyyyyyyyyyyyyyyyyyyyy
+                                           );
+                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(
+                                               xxxxxxxxxxxxxxxxxxxxxxx,
+                                               yyyyyyyyyyyyyyyyyyyyyyyy /** d */
+                                           );
+                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Cccccccccccccccccccc(
+                                               xxxxxxxxxxxxxxxxxxxxxxx,
+                                               yyyyyyyyyyyyyyyyyyyyyyyy /* d */
+                                           );
+                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                               Cccccccccccccccccccc( /* d */ xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy);
+                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                               Cccccccccccccccccccc( /** d */ xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyy);
+                                       }
+                                   }
+                                   """;
 
     [Fact]
     public void TheMinimisedCase_BreaksTheEquals_AndIsIdempotent() {

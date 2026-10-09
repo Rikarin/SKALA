@@ -615,6 +615,7 @@ public sealed class DocumentBuilder {
         if (isGroup && certain[index] && chainOwners.Contains(frame.Arg1)) {
             certainOrigin[index] = 2;
         }
+
         if (frame.Kind == DocKind.Group && facts[frame.Arg1].TailEndsAt >= 0) {
             var through = 0;
             WidthThrough(childStart, count, facts[frame.Arg1].TailEndsAt, ref through);

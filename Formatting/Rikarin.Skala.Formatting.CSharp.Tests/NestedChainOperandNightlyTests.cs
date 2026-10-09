@@ -49,7 +49,8 @@ public sealed class NestedChainOperandNightlyTests {
     /// </summary>
     [Fact]
     public void AnOuterBreak_LeavesTheInnerChainWhole() {
-        const string source = "class C {\n    bool M(int a) {\n        return a > 0 && a < 10\n            || a == 20;\n    }\n}\n";
+        const string source =
+            "class C {\n    bool M(int a) {\n        return a > 0 && a < 10\n            || a == 20;\n    }\n}\n";
         Assert.Equal(source, FormatWith(source));
     }
 }

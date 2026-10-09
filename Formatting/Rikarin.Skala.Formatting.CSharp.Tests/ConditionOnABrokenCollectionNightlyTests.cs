@@ -23,177 +23,177 @@ public sealed class ConditionOnABrokenCollectionNightlyTests {
     }
 
     const string Minimised = """
-        namespace Fuzz.N1  {
-          public class T16 {
-          public static readonly Dictionary<CancellationToken, List<CancellationToken>> F17 = [ 'c'
-        , true, true,  3_000_000L, 36269] ? ['c', "sss", "sss", "utf8"u8] : typeof(CancellationToken);
-          }
-        }
-        """;
+                             namespace Fuzz.N1  {
+                               public class T16 {
+                               public static readonly Dictionary<CancellationToken, List<CancellationToken>> F17 = [ 'c'
+                             , true, true,  3_000_000L, 36269] ? ['c', "sss", "sss", "utf8"u8] : typeof(CancellationToken);
+                               }
+                             }
+                             """;
 
     const string Grid = """
-        class C {
-            void M() {
-                object nnnnnnnnnn = [
-        eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnn = [
-        eeeeeeee, eeeeeeee
-        ] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnn = [
-        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnn = [
-        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-        ] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee
-        ] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-        ] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee
-        ] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-        ] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee
-        ] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-        ] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee
-        ] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-        ] ? [1, 2] : typeof(CancellationToken);
-            }
-        }
-        """;
+                        class C {
+                            void M() {
+                                object nnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee
+                        ] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                        ] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee
+                        ] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                        ] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee
+                        ] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                        ] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee
+                        ] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                        ] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee
+                        ] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee] ? [1, 2] : typeof(CancellationToken);
+                                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                        eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                        ] ? [1, 2] : typeof(CancellationToken);
+                            }
+                        }
+                        """;
 
     const string GridOracle = """
-        class C {
-            void M() {
-                object nnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-                object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
-                    eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
-                ]
-                    ? [1, 2]
-                    : typeof(CancellationToken);
-            }
-        }
-        """;
+                              class C {
+                                  void M() {
+                                      object nnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                      object nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = [
+                                          eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee, eeeeeeee
+                                      ]
+                                          ? [1, 2]
+                                          : typeof(CancellationToken);
+                                  }
+                              }
+                              """;
 
     [Fact]
     public void TheMinimisedCase_IsIdempotent() {

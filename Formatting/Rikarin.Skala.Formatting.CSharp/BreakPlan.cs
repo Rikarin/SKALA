@@ -5514,7 +5514,10 @@ public sealed class BreakPlan {
                         ? PatternWidthOf(((IsPatternExpressionSyntax)value).Pattern)
                         : 0,
                     PatternFirstWidth: PatternHeadOf(node, equals, value) > 0
-                        ? FormattedWidth(value.GetFirstToken(), FirstAlternativeOf(((IsPatternExpressionSyntax)value).Pattern).GetLastToken())
+                        ? FormattedWidth(
+                            value.GetFirstToken(),
+                            FirstAlternativeOf(((IsPatternExpressionSyntax)value).Pattern).GetLastToken()
+                        )
                         : 0,
                     CalleeOwner: owner,
                     FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
@@ -6123,7 +6126,7 @@ public sealed class BreakPlan {
                 || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
                 || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
             )
-            && !CommentAfterTheParen(value)
+        && !CommentAfterTheParen(value)
             ? CalleeOf(value)
             : 0;
 

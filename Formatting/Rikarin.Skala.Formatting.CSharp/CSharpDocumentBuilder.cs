@@ -1373,7 +1373,8 @@ public sealed partial class CSharpDocumentBuilder {
     void OpenContinuation(in GroupPlan planned, int level, bool chainLevel = false) {
         // ⚠ Every level, not only the first: a pattern chain after an `is` whose gap broke spends neither its
         // continuation nor its own level (HeldLevel.WhileGroupBroken).
-        if ((planned.HoldsLevel & HeldLevel.WhileGroupBroken) != 0 && plan.ArrowHeldAgainst(planned.Id) is >= 0 and var gap) {
+        if ((planned.HoldsLevel & HeldLevel.WhileGroupBroken) != 0
+            && plan.ArrowHeldAgainst(planned.Id) is >= 0 and var gap) {
             doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileGroupBroken, gap);
             continuousDepth++;
             return;

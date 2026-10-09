@@ -420,272 +420,272 @@ public sealed class CallParenPastTheMarginNightlyTests {
     // and the rule returned Flat before it read the `(` (Nightly `fuzz --seed=4242`, case
     // 7862808234978504853). `<SP>` is a trailing space, as the fuzzer left it.
     const string CertainMinimised = """
-                                  public sealed struct T2<T3, T4, T5> : IDisposable, IEnumerable<bool?>, IComparable<T2<T3, T4, T5>> where T3 : class, new() where T4 : class, new() where T5 : struct {
-                                     internal class T78 : IDisposable, IEnumerable<StringBuilder> {
-                                    public static async ValueTask<bool> M83(ref string p84, IEnumerable<byte?> p85) {
-                                     Func<(CancellationToken First, Task<Guid> Second), (CancellationToken First, Task<Guid> Second)> v116 = TryGet((state with  { P117 = "ss" }), x118 => Select((value is not null), (value switch { not null =>  "sss", _ => 1.0m }), [34507, 1.0m, true, 75570] , new[] { 20066, "sss", 65780, 1.0m, "sss", "s" }), Select(context.OrderBy.First(37062).OrderBy(true).Where(x119 => 94206)), Materialise<object, ValueTask<Guid>>(Compute(), (async x => await @"verbatim\path")));<SP>
+                                    public sealed struct T2<T3, T4, T5> : IDisposable, IEnumerable<bool?>, IComparable<T2<T3, T4, T5>> where T3 : class, new() where T4 : class, new() where T5 : struct {
+                                       internal class T78 : IDisposable, IEnumerable<StringBuilder> {
+                                      public static async ValueTask<bool> M83(ref string p84, IEnumerable<byte?> p85) {
+                                       Func<(CancellationToken First, Task<Guid> Second), (CancellationToken First, Task<Guid> Second)> v116 = TryGet((state with  { P117 = "ss" }), x118 => Select((value is not null), (value switch { not null =>  "sss", _ => 1.0m }), [34507, 1.0m, true, 75570] , new[] { 20066, "sss", 65780, 1.0m, "sss", "s" }), Select(context.OrderBy.First(37062).OrderBy(true).Where(x119 => 94206)), Materialise<object, ValueTask<Guid>>(Compute(), (async x => await @"verbatim\path")));<SP>
+                                      }
+                                      }
                                     }
-                                    }
-                                  }
-                                  """;
+                                    """;
 
     const string CertainGrid = """
-                             class C {
-                                 void M() {
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
-                                     Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
-                                     var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
-                                 }
-                             }
-                             """;
+                               class C {
+                                   void M() {
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
+                                       Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, x switch { 1 => 2, _ => 3 }, b);
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(x switch { 1 => 2, _ => 3 });
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
+                                       var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(a, () => { return 1; });
+                                   }
+                               }
+                               """;
 
     const string CertainGridOracle = """
-                                   class C {
-                                       void M() {
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
-                                               a,
-                                               x switch {
-                                                   1 => 2,
-                                                   _ => 3
-                                               },
-                                               b
-                                           );
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
-                                               a,
-                                               x switch {
-                                                   1 => 2,
-                                                   _ => 3
-                                               },
-                                               b
-                                           );
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   a,
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   },
-                                                   b
-                                               );
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   a,
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   },
-                                                   b
-                                               );
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   a,
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   },
-                                                   b
-                                               );
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   a,
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   },
-                                                   b
-                                               );
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
-                                               x switch {
-                                                   1 => 2,
-                                                   _ => 3
-                                               }
-                                           );
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
-                                               x switch {
-                                                   1 => 2,
-                                                   _ => 3
-                                               }
-                                           );
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   }
-                                               );
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   }
-                                               );
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   }
-                                               );
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   }
-                                               );
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(a, () => { return 1; });
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(a, () => { return 1; });
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(a, () => { return 1; });
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(a, () => { return 1; });
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(a, () => { return 1; });
-                                           Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(a, () => { return 1; });
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
-                                               a,
-                                               x switch {
-                                                   1 => 2,
-                                                   _ => 3
-                                               },
-                                               b
-                                           );
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
-                                               a,
-                                               x switch {
-                                                   1 => 2,
-                                                   _ => 3
-                                               },
-                                               b
-                                           );
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   a,
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   },
-                                                   b
-                                               );
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   a,
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   },
-                                                   b
-                                               );
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   a,
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   },
-                                                   b
-                                               );
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   a,
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   },
-                                                   b
-                                               );
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
-                                               x switch {
-                                                   1 => 2,
-                                                   _ => 3
-                                               }
-                                           );
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
-                                               x switch {
-                                                   1 => 2,
-                                                   _ => 3
-                                               }
-                                           );
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   }
-                                               );
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   }
-                                               );
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   }
-                                               );
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(
-                                                   x switch {
-                                                       1 => 2,
-                                                       _ => 3
-                                                   }
-                                               );
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(a, () => { return 1; });
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(a, () => { return 1; });
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(a, () => { return 1; });
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(a, () => { return 1; });
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(a, () => { return 1; });
-                                           var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
-                                               Fn(a, () => { return 1; });
-                                       }
-                                   }
-                                   """;
+                                     class C {
+                                         void M() {
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
+                                                 a,
+                                                 x switch {
+                                                     1 => 2,
+                                                     _ => 3
+                                                 },
+                                                 b
+                                             );
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
+                                                 a,
+                                                 x switch {
+                                                     1 => 2,
+                                                     _ => 3
+                                                 },
+                                                 b
+                                             );
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     a,
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     },
+                                                     b
+                                                 );
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     a,
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     },
+                                                     b
+                                                 );
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     a,
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     },
+                                                     b
+                                                 );
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     a,
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     },
+                                                     b
+                                                 );
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
+                                                 x switch {
+                                                     1 => 2,
+                                                     _ => 3
+                                                 }
+                                             );
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
+                                                 x switch {
+                                                     1 => 2,
+                                                     _ => 3
+                                                 }
+                                             );
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     }
+                                                 );
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     }
+                                                 );
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     }
+                                                 );
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     }
+                                                 );
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(a, () => { return 1; });
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(a, () => { return 1; });
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(a, () => { return 1; });
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(a, () => { return 1; });
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(a, () => { return 1; });
+                                             Dictionary<string, List<int>> vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(a, () => { return 1; });
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
+                                                 a,
+                                                 x switch {
+                                                     1 => 2,
+                                                     _ => 3
+                                                 },
+                                                 b
+                                             );
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
+                                                 a,
+                                                 x switch {
+                                                     1 => 2,
+                                                     _ => 3
+                                                 },
+                                                 b
+                                             );
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     a,
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     },
+                                                     b
+                                                 );
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     a,
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     },
+                                                     b
+                                                 );
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     a,
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     },
+                                                     b
+                                                 );
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     a,
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     },
+                                                     b
+                                                 );
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
+                                                 x switch {
+                                                     1 => 2,
+                                                     _ => 3
+                                                 }
+                                             );
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = Fn(
+                                                 x switch {
+                                                     1 => 2,
+                                                     _ => 3
+                                                 }
+                                             );
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     }
+                                                 );
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     }
+                                                 );
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     }
+                                                 );
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(
+                                                     x switch {
+                                                         1 => 2,
+                                                         _ => 3
+                                                     }
+                                                 );
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(a, () => { return 1; });
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(a, () => { return 1; });
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(a, () => { return 1; });
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(a, () => { return 1; });
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(a, () => { return 1; });
+                                             var vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv =
+                                                 Fn(a, () => { return 1; });
+                                         }
+                                     }
+                                     """;
 
     [Fact]
     public void TheCertainBreakCase_BreaksTheEquals_AndIsIdempotent() {

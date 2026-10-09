@@ -26,321 +26,321 @@ public sealed class PatternAfterAWideOperandNightlyTests {
     }
 
     const string Minimised = """
-        class EqualsBeforeABinaryPattern {
-          void M() { // fuzz
-          bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-        or Bbbbbbbbbbbbb; // fuzz
-          }
-        }
-        """;
+                             class EqualsBeforeABinaryPattern {
+                               void M() { // fuzz
+                               bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                             or Bbbbbbbbbbbbb; // fuzz
+                               }
+                             }
+                             """;
 
     const string MinimisedOracle = """
-        class EqualsBeforeABinaryPattern {
-            void M() { // fuzz
-                bool c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-                        or Bbbbbbbbbbbbb; // fuzz
-            }
-        }
-        """;
+                                   class EqualsBeforeABinaryPattern {
+                                       void M() { // fuzz
+                                           bool c =
+                                               oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                                                   or Bbbbbbbbbbbbb; // fuzz
+                                       }
+                                   }
+                                   """;
 
     const string Grid = """
-        class C {
-            void M() {
-                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
-            }
-        }
-        """;
+                        class C {
+                            void M() {
+                                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB or BBBBBBBBBBBBBBBBBBBB;
+                            }
+                        }
+                        """;
 
     const string GridOracle = """
-        class C {
-            void M() {
-                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA
-                        or BBBBBBBBBBBBBBBBBBBB;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAA
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAA
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                bool c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA
-                    or BBBBBBBBBBBBBBBBBBBB;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB;
-                var c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB;
-                var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB
-                    or BBBBBBBBBBBBBBBBBBBB;
-                var c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB;
-                var c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAA
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB;
-                var c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB;
-                var c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAA
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB;
-                var c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
-                var c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB
-                        or BBBBBBBBBBBBBBBBBBBB;
-            }
-        }
-        """;
+                              class C {
+                                  void M() {
+                                      bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                      bool c =
+                                          ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                      var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA
+                                          or BBBBBBBBBBBBBBBBBBBB;
+                                      var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB;
+                                      var c =
+                                          ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                      var c =
+                                          ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                      var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is AAAAA
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB
+                                          or BBBBBBBBBBBBBBBBBBBB;
+                                      var c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                      var c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                      var c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                      var c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                      var c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                      var c =
+                                          oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                      var c =
+                                          ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                      var c =
+                                          ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                      var c =
+                                          ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB;
+                                      var c =
+                                          ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                              AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBBBBBBBBB;
+                                  }
+                              }
+                              """;
 
     const string Comments = """
-        class C {
-            void M() {
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-        or Bbbbbbbbbbbbb;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-        or Bbbbbbbbbbbbb;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-        or Bbbbbbbbbbbbb;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-        or Bbbbbbbbbbbbb;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-        or Bbbbbbbbbbbbb;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-        or Bbbbbbbbbbbbb;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-        or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-        or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-        or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB;
-            }
-        }
-        """;
+                            class C {
+                                void M() {
+                                    bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                            or Bbbbbbbbbbbbb;
+                                    bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                            or Bbbbbbbbbbbbb;
+                                    bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                            or Bbbbbbbbbbbbb;
+                                    var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                            or Bbbbbbbbbbbbb;
+                                    var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                            or Bbbbbbbbbbbbb;
+                                    var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                            or Bbbbbbbbbbbbb;
+                                    bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                            or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB;
+                                    bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                            or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB;
+                                    bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                            or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB or BBBBBBBBBBBBB;
+                                }
+                            }
+                            """;
 
     const string CommentsOracle = """
-        class C {
-            void M() {
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-                    or Bbbbbbbbbbbbb;
-                bool c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-                        or Bbbbbbbbbbbbb;
-                bool c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        Aaaaaaaaaaaaa // fuzz
-                        or Bbbbbbbbbbbbb;
-                var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-                    or Bbbbbbbbbbbbb;
-                var c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-                        or Bbbbbbbbbbbbb;
-                var c =
-                    ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        Aaaaaaaaaaaaa // fuzz
-                        or Bbbbbbbbbbbbb;
-                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-                    or BBBBBBBBBBBBB
-                    or BBBBBBBBBBBBB
-                    or BBBBBBBBBBBBB
-                    or BBBBBBBBBBBBB
-                    or BBBBBBBBBBBBB
-                    or BBBBBBBBBBBBB
-                    or BBBBBBBBBBBBB;
-                bool c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
-                        or BBBBBBBBBBBBB
-                        or BBBBBBBBBBBBB
-                        or BBBBBBBBBBBBB
-                        or BBBBBBBBBBBBB
-                        or BBBBBBBBBBBBB
-                        or BBBBBBBBBBBBB
-                        or BBBBBBBBBBBBB;
-                bool c =
-                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
-                        Aaaaaaaaaaaaa // fuzz
-                        or BBBBBBBBBBBBB
-                        or BBBBBBBBBBBBB
-                        or BBBBBBBBBBBBB
-                        or BBBBBBBBBBBBB
-                        or BBBBBBBBBBBBB
-                        or BBBBBBBBBBBBB
-                        or BBBBBBBBBBBBB;
-            }
-        }
-        """;
+                                  class C {
+                                      void M() {
+                                          bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                                              or Bbbbbbbbbbbbb;
+                                          bool c =
+                                              oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                                                  or Bbbbbbbbbbbbb;
+                                          bool c =
+                                              oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                                  Aaaaaaaaaaaaa // fuzz
+                                                  or Bbbbbbbbbbbbb;
+                                          var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                                              or Bbbbbbbbbbbbb;
+                                          var c =
+                                              ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                                                  or Bbbbbbbbbbbbb;
+                                          var c =
+                                              ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                                  Aaaaaaaaaaaaa // fuzz
+                                                  or Bbbbbbbbbbbbb;
+                                          bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                                              or BBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBB
+                                              or BBBBBBBBBBBBB;
+                                          bool c =
+                                              oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Aaaaaaaaaaaaa // fuzz
+                                                  or BBBBBBBBBBBBB
+                                                  or BBBBBBBBBBBBB
+                                                  or BBBBBBBBBBBBB
+                                                  or BBBBBBBBBBBBB
+                                                  or BBBBBBBBBBBBB
+                                                  or BBBBBBBBBBBBB
+                                                  or BBBBBBBBBBBBB;
+                                          bool c =
+                                              oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is
+                                                  Aaaaaaaaaaaaa // fuzz
+                                                  or BBBBBBBBBBBBB
+                                                  or BBBBBBBBBBBBB
+                                                  or BBBBBBBBBBBBB
+                                                  or BBBBBBBBBBBBB
+                                                  or BBBBBBBBBBBBB
+                                                  or BBBBBBBBBBBBB
+                                                  or BBBBBBBBBBBBB;
+                                      }
+                                  }
+                                  """;
 
     [Fact]
     public void TheMinimisedCase_BreaksTheEquals_AndIsIdempotent() {
