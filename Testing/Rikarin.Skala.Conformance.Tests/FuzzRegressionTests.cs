@@ -119,6 +119,11 @@ public sealed class FuzzRegressionTests {
     // the `??` chain and the arrow for width, pass two read the arrow break as kept and lifted the `??` line. A
     // `when` condition holding an operator chain or a conditional no longer lifts under a break after the arrow.
     [InlineData(5953779247182235391UL)]
+    // `{` / `Kind` / `: not null` / `} when (from … select …)` / `=> body,`: pass one broke the arrow for width
+    // with the braces unlifted, pass two read it as kept and lifted them, which chopped the query. The arrow's
+    // width break now lifts the braces too — decided with the arm written ahead unlifted, and kept once the
+    // lift moved what was beside it.
+    [InlineData(14973596429632421881UL)]
     // Nightly, 6 hits in 81k cases: `}, ["s"` / `#region fuzz` / `, false, …]` in an array initializer. The
     // draft measure read the breaks beside the directive as spaces, so pass one moved the collection down
     // whole and pass two, measuring its own broken output, kept `}, [`. A break beside a directive is no

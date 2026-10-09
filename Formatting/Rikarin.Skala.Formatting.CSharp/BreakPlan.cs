@@ -6920,6 +6920,35 @@ public sealed class BreakPlan {
             );
         }
 
+        // ⚠ And a break the width takes around the arrow lifts the braces as a kept one does (fuzz
+        // 14973596429632421881). Measured 2026-10-09 with `Testing ask`: `{` / `Value.Length: > 2,` / … / `}
+        // when (from item in Source where … select …) =>` / the body, at 20 columns — the `} when` line fits,
+        // the body does not — comes back with the subpatterns two levels past the arm, `}` one, and the query
+        // chopped because the lift took it past the margin; the arrow's break stays though the body would
+        // now fit beside the chopped query's `select`. Skala lifted only under the kept break, so pass two
+        // lifted what pass one had not. With the body's own chain breaking instead — `=> source` /
+        // `.Value(…)` — nothing lifts. Whether the arrow breaks is only known once the arm is written, so
+        // the writer writes the arm ahead unlifted and breaks this group, and the arrow group that broke
+        // there, when one did (GroupFacts.LiftsIfArrowBreaks). ⚠ It spends no level of its own: a level it
+        // held while flat is still the continuation the builder hands out, and the arm's other groups —
+        // the `when` condition's of #576 — then spent none (arm-when-condition-below's `D`). The writer
+        // adds its level to what it lifts instead.
+        var widthLift = -1;
+        if (!kept && !keptAfter && liftsBraces) {
+            widthLift = NewGroup();
+            OpenAt(
+                arm,
+                arm.Pattern.SpanStart,
+                new(
+                    widthLift,
+                    GroupMode.Flat,
+                    new(Continues: true, LiftsIfArrowBreaks: true),
+                    false,
+                    false
+                )
+            );
+        }
+
         // ⚠ Not for a `when` clause holding a type argument list (fuzz 12955079666331923518). Its fill can
         // break the line on pass one, and the arrow then falls below for width; pass two read that arrow
         // break as kept, lifted the type arguments a level and chopped the call after them. The oracle
@@ -6941,7 +6970,8 @@ public sealed class BreakPlan {
                     BreaksIfTooLong: true,
                     BreaksOnlyIfHeadOverflows: true,
                     Continues: opensAtPattern,
-                    LiftsThroughInnerBreaks: opensAtPattern && arm.WhenClause is not null
+                    LiftsThroughInnerBreaks: opensAtPattern && arm.WhenClause is not null,
+                    LiftGroup: widthLift
                 ),
                 true,
                 !opensAtPattern,
@@ -6964,6 +6994,10 @@ public sealed class BreakPlan {
             new(
                 BreaksIfTooLong: true,
                 ArmBodyTrail: arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0,
+
+                // ⚠ Not under a body the arrow group holds the level for, which a kept break after the arrow
+                // does not lift either (keptAfter).
+                LiftGroup: HeadsWithAChoppedParenthesis(arm.Expression, source, options, out _) ? -1 : widthLift,
                 Owner: before,
                 BreaksOnlyIfHeadOverflows: true,
                 FlatIfOwnerBroke: true

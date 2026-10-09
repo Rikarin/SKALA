@@ -171,6 +171,12 @@ public sealed class LayoutWriter {
     bool watchedChainBroke;
 
     /// <summary>
+    ///     The groups whose <see cref="GroupFacts.LiftGroup" /> is <see cref="watchedChain" /> resolved since
+    ///     the watch began, with their modes, for <see cref="DecideByTheArrow" /> to force.
+    /// </summary>
+    List<(int Group, ResolvedMode Mode, int Line)> watchedLifts = [];
+
+    /// <summary>
     ///     The groups the walk is inside that resolved broken and carry <see cref="GroupFacts.Continues" />,
     ///     innermost last, each with the depth of <see cref="scopes" /> and the line it was entered at.
     ///     See <see cref="BrokenInsideOnItsLine" />.
@@ -338,6 +344,10 @@ public sealed class LayoutWriter {
                         break;
 
                     case DocKind.Group:
+                        if (document.FactsOf(slot.Arg1).LiftsIfArrowBreaks && watchedChain != slot.Arg1) {
+                            DecideByTheArrow(node, slot.Arg1, stack);
+                        }
+
                         // ⚠ Resolved here, at the column the group's first character will actually
                         // land on, and against the rest of the line as well as its own width. See
                         // Fitter's remarks for why this is not a separate pass, and TrailingWidth
@@ -352,6 +362,10 @@ public sealed class LayoutWriter {
                         );
                         if (fitter.ModeOf(slot.Arg1) == ResolvedMode.Broken && document.FactsOf(slot.Arg1).Continues) {
                             brokenConstructs.Add((slot.Arg1, scopes.Count, line));
+                        }
+
+                        if (watchedChain >= 0 && document.FactsOf(slot.Arg1).LiftGroup == watchedChain) {
+                            watchedLifts.Add((slot.Arg1, fitter.ModeOf(slot.Arg1), line));
                         }
 
                         break;
@@ -803,6 +817,14 @@ public sealed class LayoutWriter {
                 if (blocked == line) {
                     blocked = -1;
                 }
+
+                // ⚠ A switch arm's lift for an arrow broken for width spends no scope of its own, so that
+                // the arm's groups keep theirs while it stays flat; broken, it lifts by the level it would
+                // have spent. See GroupFacts.LiftsIfArrowBreaks.
+                if (document.Nodes[path[a].Node].Kind == DocKind.Group
+                    && document.FactsOf(document.Nodes[path[a].Node].Arg1).LiftsIfArrowBreaks) {
+                    level += indentWidth;
+                }
             }
 
             if (document.Nodes[path[a].Node].Kind != DocKind.Indent) {
@@ -947,6 +969,52 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
+    ///     Decides a <see cref="GroupFacts.LiftsIfArrowBreaks" /> group: writes it ahead flat, watching the
+    ///     groups whose <see cref="GroupFacts.LiftGroup" /> it is, rolls back, and — when one of them broke —
+    ///     forces it broken and them to the modes they took (<see cref="Fitter.Force" />).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <see cref="ChainBreaksInside" />'s technique, for a switch arm whose arrow breaks for width
+    ///     (fuzz 14973596429632421881): the oracle decides the arrow with the pattern unlifted and then
+    ///     lifts it, and keeps the arrow's break even where the lift chopped what was beside it so that the
+    ///     body would now fit. Forcing the arrow group is what makes the lifted walk agree with the
+    ///     unlifted one it was decided on, and pass two reads that break as kept and lifts the same way.
+    /// </remarks>
+    void DecideByTheArrow(int node, int group, Stack<(int Node, int Child)> stack) {
+        var (watched, broke, lifts) = (watchedChain, watchedChainBroke, watchedLifts);
+        var checkpoint = Checkpoint();
+        watchedChain = group;
+        watchedChainBroke = false;
+        watchedLifts = [];
+
+        var ahead = new Stack<(int Node, int Child)>(stack.Reverse());
+        var floor = ahead.Count;
+        var start = line;
+        ahead.Push((node, 0));
+        Run(ahead, int.MaxValue, floor);
+        var forced = watchedLifts.ToArray();
+        Restore(checkpoint);
+        (watchedChain, watchedChainBroke, watchedLifts) = (watched, broke, lifts);
+
+        // ⚠ Only a head that spans lines has anything to lift. Under a pattern on one line the group would
+        // lift nothing of the pattern's and everything opened in the body after it — `{ Length: > 0 } =>` /
+        // `Cast<…,` / `TimeSpan>(` a level deeper on pass one than pass two (ArmArrowIssue378Tests).
+        if (forced.Length == 0
+            || forced[0].Line == start
+            || !forced.Any(static lift => lift.Mode == ResolvedMode.Broken)) {
+            return;
+        }
+
+        // ⚠ Every arrow group to the mode it took, the flat ones too: a break after the arrow decided
+        // unlifted keeps the `=>` beside the `)`, which is what lets the lifted query measure itself with
+        // it and chop.
+        fitter.Force(group, ResolvedMode.Broken);
+        foreach (var (lift, mode, _) in forced) {
+            fitter.Force(lift, mode);
+        }
+    }
+
+    /// <summary>
     ///     The index in <paramref name="path" /> of the innermost group around the top of the stack that
     ///     resolved <see cref="ResolvedMode.Broken" /> and <see cref="GroupFacts.Continues" />, looked for
     ///     inside the innermost enclosing block only; −1 when there is none.
@@ -958,17 +1026,29 @@ public sealed class LayoutWriter {
     ///     which differ only in the fact the broken group must carry.
     /// </summary>
     int InnermostBroken((int Node, int Child)[] path, bool fill) {
+        var arrowOf = -1;
         for (int a = 0, next = scopes.Count - 1; a < path.Length; a++) {
             ref var slot = ref document.Nodes[path[a].Node];
             if (slot.Kind == DocKind.Indent && scopes[next--].IsBlock) {
                 break;
             }
 
-            if (slot.Kind != DocKind.Group || fitter.ModeOf(slot.Arg1) != ResolvedMode.Broken) {
+            if (slot.Kind != DocKind.Group) {
                 continue;
             }
 
             var facts = document.FactsOf(slot.Arg1);
+            if (facts.LiftGroup >= 0) {
+                arrowOf = facts.LiftGroup;
+            }
+
+            // ⚠ A switch arm's lift for an arrow broken for width lifts the pattern and its `when` clause,
+            // never what opens after the arrow: the body's lists nest as they would under the arrow's own
+            // break, as pass two's kept break lays them out (GroupFacts.LiftsIfArrowBreaks).
+            if (fitter.ModeOf(slot.Arg1) != ResolvedMode.Broken || facts.LiftsIfArrowBreaks && slot.Arg1 == arrowOf) {
+                continue;
+            }
+
             if (fill ? facts.ContinuesIfItBreaks : facts.Continues) {
                 return a;
             }
@@ -1798,6 +1878,30 @@ public sealed class LayoutWriter {
         for (var i = child; i < children.Length; i++) {
             var sibling = children[i];
             ref var slot = ref document.Nodes[sibling];
+
+            // ⚠ A group already committed flat is read through, its points as their flat rendering: an
+            // arrow group the writer decided ahead (GroupFacts.LiftsIfArrowBreaks) keeps `) =>` together,
+            // and the query before it measures itself with the arrow (fuzz 14973596429632421881).
+            if (slot.Kind == DocKind.Line
+                && (LineKind)slot.Arg0 == LineKind.Soft
+                && fitter.ForcedOf(slot.Arg2) == ResolvedMode.Flat) {
+                total = total >= Document.Unbounded ? Document.Unbounded
+                    : total + (((LineFlags)slot.Flags & LineFlags.FlatSpace) != 0 ? 1 : 0);
+                continue;
+            }
+
+            if (slot.Kind == DocKind.Group && fitter.ForcedOf(slot.Arg1) == ResolvedMode.Flat
+                || slot.Kind is DocKind.Indent or DocKind.Concat
+                && node >= 0
+                && document.Nodes[node].Kind == DocKind.Group
+                && fitter.ForcedOf(document.Nodes[node].Arg1) == ResolvedMode.Flat) {
+                if (AddRemainingSiblings(sibling, 0, ref total)) {
+                    return true;
+                }
+
+                continue;
+            }
+
             if (slot.Kind == DocKind.Line) {
                 // ⚠ A last-resort point is not the end of the line for anything before it: it is
                 // measured as its flat rendering and the walk goes on. See LineFlags.LastResort.
@@ -2211,6 +2315,7 @@ public sealed class LayoutWriter {
         public int PendingAnchorToken;
         public bool HasPendingAnchor;
         public bool WatchedChainBroke;
+        public int WatchedLifts;
         public (int Group, int Depth, int Line)[] BrokenConstructs;
         public Fitter.Mark Fitter;
     }
@@ -2232,6 +2337,7 @@ public sealed class LayoutWriter {
             PendingAnchorToken = pendingAnchorToken,
             HasPendingAnchor = hasPendingAnchor,
             WatchedChainBroke = watchedChainBroke,
+            WatchedLifts = watchedLifts.Count,
             BrokenConstructs = [..brokenConstructs],
             Fitter = fitter.MarkForRollback()
         };
@@ -2253,6 +2359,9 @@ public sealed class LayoutWriter {
         pendingAnchorToken = state.PendingAnchorToken;
         hasPendingAnchor = state.HasPendingAnchor;
         watchedChainBroke = state.WatchedChainBroke;
+        if (watchedLifts.Count > state.WatchedLifts) {
+            watchedLifts.RemoveRange(state.WatchedLifts, watchedLifts.Count - state.WatchedLifts);
+        }
         brokenConstructs.Clear();
         brokenConstructs.AddRange(state.BrokenConstructs);
         fitter.Rollback(state.Fitter);

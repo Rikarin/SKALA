@@ -1044,6 +1044,19 @@ public sealed class Document {
 ///     nothing for the last arm — which the arrow's read-through measures with the body (fuzz
 ///     14071685607328961301, #531). See <c>DocumentBuilder.ShortArrowBody</c>.
 /// </param>
+/// <param name="LiftGroup">
+///     ⚠ For a switch arm's two arrow groups: the <see cref="LiftsIfArrowBreaks" /> group opened at the arm's
+///     pattern, which breaks — lifting the pattern's braces — exactly when one of these breaks for width.
+///     −1 for any other group.
+/// </param>
+/// <param name="LiftsIfArrowBreaks">
+///     ⚠ A switch arm's <see cref="Continues" /> group at its pattern that breaks exactly when an arrow group
+///     naming it in <see cref="LiftGroup" /> breaks with the pattern unlifted (fuzz 14973596429632421881).
+///     The writer writes the arm ahead with this group flat, watching those groups' points, and forces the
+///     ones that broke along with this one (<see cref="Fitter.Force" />): the oracle decides the arrow
+///     first and lifts after, so <c>} when (from …</c> chopped by the lift keeps the arrow's break even
+///     though the body would now fit beside it.
+/// </param>
 /// <param name="Continues">
 ///     ⚠ A block opening on the construct's first line nests from the construct's continuation line
 ///     once the group broke — the arms of a switch in a binary operator's first operand or in a
@@ -1411,7 +1424,9 @@ public readonly record struct GroupFacts(
     int LambdaOperandFirst = 0,
     int MemberHeadWidth = 0,
     int PatternFirstWidth = 0,
-    int ArmBodyTrail = 0);
+    int ArmBodyTrail = 0,
+    int LiftGroup = -1,
+    bool LiftsIfArrowBreaks = false);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
