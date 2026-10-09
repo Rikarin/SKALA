@@ -330,7 +330,9 @@ public sealed class LayoutWriter {
                         continue;
 
                     case DocKind.Indent:
-                        if (((IndentFlags)slot.Arg1 & HeldConditions) != 0) {
+                        if (HeldByALift(slot, stack)) {
+                            Push(IndentKind.None, IndentFlags.None, 0, stack);
+                        } else if (((IndentFlags)slot.Arg1 & HeldConditions) != 0) {
                             Push(
                                 HeldOrSpent(node, (IndentKind)slot.Arg0, (IndentFlags)slot.Arg1, slot.Arg2, stack),
                                 IndentFlags.None,
@@ -452,6 +454,26 @@ public sealed class LayoutWriter {
         }
 
         return IndentKind.None;
+    }
+
+    /// <summary>
+    ///     Whether <paramref name="slot" /> is the continuation level of a switch arm's arrow group whose lift
+    ///     broke (<see cref="GroupFacts.LiftGroup" />): the lift, opened at the pattern, pays the arm's level, and
+    ///     the arrow's would be a second one — `=&gt;` two levels past the arm instead of one.
+    /// </summary>
+    bool HeldByALift(in DocNode slot, Stack<(int Node, int Child)> stack) {
+        if ((IndentKind)slot.Arg0 != IndentKind.Continuous || stack.Count == 0) {
+            return false;
+        }
+
+        var (owner, child) = stack.Peek();
+        ref var group = ref document.Nodes[owner];
+        if (group.Kind != DocKind.Group || child != 1) {
+            return false;
+        }
+
+        var lift = document.FactsOf(group.Arg1).LiftGroup;
+        return lift >= 0 && fitter.ModeOf(lift) == ResolvedMode.Broken;
     }
 
     /// <summary>Whether the nearest group around the top of <paramref name="stack" /> resolved broken.</summary>
@@ -816,14 +838,6 @@ public sealed class LayoutWriter {
                 outside = true;
                 if (blocked == line) {
                     blocked = -1;
-                }
-
-                // ⚠ A switch arm's lift for an arrow broken for width spends no scope of its own, so that
-                // the arm's groups keep theirs while it stays flat; broken, it lifts by the level it would
-                // have spent. See GroupFacts.LiftsIfArrowBreaks.
-                if (document.Nodes[path[a].Node].Kind == DocKind.Group
-                    && document.FactsOf(document.Nodes[path[a].Node].Arg1).LiftsIfArrowBreaks) {
-                    level += indentWidth;
                 }
             }
 

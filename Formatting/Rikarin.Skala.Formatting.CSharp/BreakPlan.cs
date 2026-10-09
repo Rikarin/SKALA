@@ -6929,12 +6929,15 @@ public sealed class BreakPlan {
         // lifted what pass one had not. With the body's own chain breaking instead — `=> source` /
         // `.Value(…)` — nothing lifts. Whether the arrow breaks is only known once the arm is written, so
         // the writer writes the arm ahead unlifted and breaks this group, and the arrow group that broke
-        // there, when one did (GroupFacts.LiftsIfArrowBreaks). ⚠ It spends no level of its own: a level it
-        // held while flat is still the continuation the builder hands out, and the arm's other groups —
-        // the `when` condition's of #576 — then spent none (arm-when-condition-below's `D`). The writer
-        // adds its level to what it lifts instead.
+        // there, when one did (GroupFacts.LiftsIfArrowBreaks). Its level is held while it stays flat and is
+        // never the builder's continuation (see CSharpDocumentBuilder.OpenGroupAt); broken, it pays the
+        // arm's level and the writer holds the arrow group's (LayoutWriter.HeldByALift).
+        // ⚠ And so for every arm a kept break before the arrow opens at its pattern — a `when` clause without a
+        // type argument list as well as braces (fuzz 18207060042734210187): `not null when ("ss"` / `?? … + …
+        // - …)` / `=> body,` comes back from the oracle with the `??` two levels past the arm and chopped, the
+        // arrow broken for width; pass two read that break as kept and did the same.
         var widthLift = -1;
-        if (!kept && !keptAfter && liftsBraces) {
+        if (!kept && !keptAfter && (liftsBraces || LiftsUnderAKeptArrow(arm))) {
             widthLift = NewGroup();
             OpenAt(
                 arm,
@@ -6942,8 +6945,8 @@ public sealed class BreakPlan {
                 new(
                     widthLift,
                     GroupMode.Flat,
-                    new(Continues: true, LiftsIfArrowBreaks: true),
-                    false,
+                    new(Continues: true, LiftsIfArrowBreaks: true, LiftsThroughInnerBreaks: arm.WhenClause is not null),
+                    true,
                     false
                 )
             );
@@ -6955,10 +6958,7 @@ public sealed class BreakPlan {
         // lifts them too (`when new Func<` / the arguments two levels past the arm / `=>`), but only a
         // kept break can tell the lift is due, so the lift is left to lists that pass one cannot leave a
         // width break behind — SK-DIV-0399's residue.
-        var opensAtPattern = kept
-            && (arm.WhenClause is { } whenClause
-                && !whenClause.DescendantNodes().OfType<TypeArgumentListSyntax>().Any()
-                || liftsBraces);
+        var opensAtPattern = kept && (LiftsUnderAKeptArrow(arm) || liftsBraces);
         OpenAt(
             arm,
             opensAtPattern ? arm.Pattern.SpanStart : arrow.SpanStart,
@@ -7004,6 +7004,13 @@ public sealed class BreakPlan {
             )
         );
     }
+
+    /// <summary>
+    ///     Whether an arm's `when` clause lifts from the arm's pattern under a broken arrow: one without a type
+    ///     argument list (fuzz 12955079666331923518).
+    /// </summary>
+    static bool LiftsUnderAKeptArrow(SwitchExpressionArmSyntax arm) =>
+        arm.WhenClause is { } clause && !clause.DescendantNodes().OfType<TypeArgumentListSyntax>().Any();
 
     /// <summary>A lambda's <c>=&gt;</c>: the gap after it, under the <c>=</c>'s ordering rule.</summary>
     /// <remarks>
