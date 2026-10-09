@@ -790,7 +790,14 @@ public sealed class BreakPlan {
                             VarPatternSyntax { Designation: SingleVariableDesignationSyntax declared } => declared,
                             _ => null
                         };
-                        if (name is not null) {
+                        // ⚠ A break the author kept there stays, as the list's comma breaks do: the oracle
+                        // returns `("k", var` / `p) => 1,`, `("k", int` / `q)` and `o is (int` / `a, int b)`
+                        // as written (measured 2026-10-09). Without the pin pass one could take the point
+                        // for a body measured as running to the end and pass two re-join it once the arrow
+                        // had broken — `fuzz --replay=9642682992700587520`.
+                        if (name is not null && options.KeepsUserBreaksBetweenItems && BreaksBefore(name.Identifier)) {
+                            Mandatory(name.Identifier);
+                        } else if (name is not null) {
                             Point(name.Identifier, fill, true);
                         }
                     }
