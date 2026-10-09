@@ -113,8 +113,8 @@ public sealed class UnsafeAccessorTargetAnalyzer : DiagnosticAnalyzer {
         // unset or the literal `.ctor`, and anything else is a name that will never be looked for.
         // This needs no member list, so it holds for a target in any assembly.
         var declaredName = attribute.NamedArguments
-            .FirstOrDefault(static pair => pair.Key == "Name")
-            .Value.Value
+                .FirstOrDefault(static pair => pair.Key == "Name")
+                .Value.Value
             as string;
 
         if (kind == AccessorKind.Constructor) {

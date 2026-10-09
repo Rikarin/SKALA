@@ -91,6 +91,10 @@ public sealed class FuzzRegressionTests {
     // as well; pass two found the arrow's break kept, measured the pattern up to it and re-joined `var p`.
     // A kept break at that point is now pinned, as the oracle keeps it and as the list's commas are.
     [InlineData(9642682992700587520UL)]
+    // #595: `T v13 = static x =>` past the margin kept the `=`; a lambda without parentheses has no list to chop.
+    [InlineData(18379797974820457043UL)]
+    // #596: a conditional's `= Select(` with the `(` past the margin kept the `=`; pass two broke it.
+    [InlineData(8249044719362511507UL)]
     [InlineData(7862808234978504853UL)]
     [InlineData(8573762464065711162UL)]
     [InlineData(7447388608888272285UL)]
@@ -142,6 +146,9 @@ public sealed class FuzzRegressionTests {
     // `=> builder` past the margin and broke at the first dot; pass two read that break as the author's and broke
     // the arrow. The arrow now breaks when the chain's receiver does not fit beside it, as the oracle does.
     [InlineData(16278079796336422477UL)]
+    // An array element `[…, 1.5d\n]` broken only before its `]`: pass one drafted it flat and moved its `[` below
+    // `Compute(…),`; pass two read the break after the `[` it had written and kept `), [`, the oracle's answer.
+    [InlineData(5848915233203857901UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
@@ -204,6 +211,9 @@ public sealed class FuzzRegressionTests {
         "real/newtonsoft/Newtonsoft.Json.Tests/Converters/KeyValuePairConverterTests.cs"
     )]
     [InlineData(1332581229878653148UL, "constructs/breaks/held-single-call.cs")]
+    // ⚠ Pass one's break before a held first call, in an `if`'s whole condition, read as the author's on pass
+    // two: the chain frame paid the level the aligned condition never spends (#593).
+    [InlineData(16215088427476222539UL, "constructs/breaks/chain-in-a-header-or-a-sole-lambda.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

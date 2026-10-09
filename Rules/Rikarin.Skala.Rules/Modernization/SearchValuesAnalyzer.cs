@@ -83,11 +83,11 @@ public sealed class SearchValuesAnalyzer : DiagnosticAnalyzer {
             + ")"
         );
         if (model.GetSpeculativeSymbolInfo(
-                    initializer.SpanStart,
-                    creation,
-                    SpeculativeBindingOption.BindAsExpression
-                )
-                .Symbol
+                        initializer.SpanStart,
+                        creation,
+                        SpeculativeBindingOption.BindAsExpression
+                    )
+                    .Symbol
                 is not IMethodSymbol creator
             || !SymbolEqualityComparer.Default.Equals(creator.ContainingType, factory)
             || !SymbolEqualityComparer.Default.Equals(creator.ReturnType, searchType)) {
@@ -125,11 +125,11 @@ public sealed class SearchValuesAnalyzer : DiagnosticAnalyzer {
                 SyntaxFactory.ParseExpression("default(global::System.Buffers.SearchValues<char>)")
             );
             if (model.GetSpeculativeSymbolInfo(
-                        invocation.SpanStart,
-                        replacement,
-                        SpeculativeBindingOption.BindAsExpression
-                    )
-                    .Symbol
+                            invocation.SpanStart,
+                            replacement,
+                            SpeculativeBindingOption.BindAsExpression
+                        )
+                        .Symbol
                     is not IMethodSymbol method
                 || !SymbolEqualityComparer.Default.Equals(method.ContainingType, extensions)
                 || method.Parameters.Length is not (1 or 2)

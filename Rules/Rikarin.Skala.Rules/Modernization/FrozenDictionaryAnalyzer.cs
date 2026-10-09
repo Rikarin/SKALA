@@ -126,11 +126,11 @@ public sealed class FrozenDictionaryAnalyzer : DiagnosticAnalyzer {
         );
         var frozenType = frozen.Construct(type.TypeArguments.ToArray());
         if (model.GetSpeculativeSymbolInfo(
-                    creation.SpanStart,
-                    replacement,
-                    SpeculativeBindingOption.BindAsExpression
-                )
-                .Symbol
+                        creation.SpanStart,
+                        replacement,
+                        SpeculativeBindingOption.BindAsExpression
+                    )
+                    .Symbol
                 is not IMethodSymbol method
             || !SymbolEqualityComparer.Default.Equals(method.ContainingType, factory)
             || !SymbolEqualityComparer.Default.Equals(method.ReturnType, frozenType)) {
