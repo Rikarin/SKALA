@@ -104,6 +104,11 @@ public sealed class FuzzRegressionTests {
     // and broke before the arrow for width; pass two read that arrow break as kept, lifted the type arguments
     // a level and chopped the call. A `when` clause holding a type argument list no longer lifts.
     [InlineData(12955079666331923518UL)]
+    // `[_, .. var rest43] when $"…" => $"…{…}",`: a body with no break point is read through by the head
+    // before the arrow, so pass one chopped the list pattern and broke the arrow too; pass two, finding the
+    // arrow's break kept, lifted the chopped brackets. The oracle reads a body through only up to thirteen
+    // columns and breaks after the arrow for a wider one.
+    [InlineData(14071685607328961301UL)]
     // Nightly, 6 hits in 81k cases: `}, ["s"` / `#region fuzz` / `, false, …]` in an array initializer. The
     // draft measure read the breaks beside the directive as spaces, so pass one moved the collection down
     // whole and pass two, measuring its own broken output, kept `}, [`. A break beside a directive is no

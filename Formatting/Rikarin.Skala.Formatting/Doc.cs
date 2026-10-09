@@ -1039,6 +1039,11 @@ public sealed class Document {
 ///     writes, never <c>=&gt;</c> alone on a line. A break the author wrote after the arrow is kept
 ///     regardless; the fact is read after <see cref="SourceBroken" />.
 /// </param>
+/// <param name="ArmBodyTrail">
+///     ⚠ For a switch arm's body group: the width of what follows the body on its line — the arm's comma, or
+///     nothing for the last arm — which the arrow's read-through measures with the body (fuzz
+///     14071685607328961301, #531). See <c>DocumentBuilder.ShortArrowBody</c>.
+/// </param>
 /// <param name="Continues">
 ///     ⚠ A block opening on the construct's first line nests from the construct's continuation line
 ///     once the group broke — the arms of a switch in a binary operator's first operand or in a
@@ -1397,7 +1402,8 @@ public readonly record struct GroupFacts(
     int LambdaOperandTail = 0,
     int LambdaOperandFirst = 0,
     int MemberHeadWidth = 0,
-    int PatternFirstWidth = 0);
+    int PatternFirstWidth = 0,
+    int ArmBodyTrail = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

@@ -649,7 +649,16 @@ public sealed class DocumentBuilder {
         var arrowRuns = false;
         if (frame.Kind == DocKind.Group
             && facts[frame.Arg1] is { BreaksOnlyIfHeadOverflows: true, SourceBroken: false } arrow) {
-            arrowRuns = afterPointRuns || arrowBodiesRunningToTheEnd.Contains(frame.Arg1);
+            // ⚠ Only a short body (fuzz 14071685607328961301). Measured 2026-10-09 on an arm whose head
+            // ends its `=>` at 104, 112 and 118 with a body of no break point eight to fifteen columns wide:
+            // up to fourteen columns with its comma the oracle chops the head and keeps the body beside the
+            // arrow (`{ … } => 2u,`) — and a last arm's fourteen-column body without one (#531) — from
+            // fifteen it breaks after the arrow whatever the head's width, as it does
+            // for an interpolated string of 51 and for list-pattern heads with a `when`. Reading a long
+            // body through made the pattern chop on pass one and the arrow break as well; pass two, finding
+            // the arrow's break kept, lifted the chopped brackets.
+            arrowRuns = afterPointRuns && segment[index] + arrow.ArmBodyTrail <= ShortArrowBody
+                || arrowBodiesRunningToTheEnd.Contains(frame.Arg1);
             if (arrowRuns && arrow.FlatIfOwnerBroke && arrow.Owner >= 0) {
                 arrowBodiesRunningToTheEnd.Add(arrow.Owner);
             }
@@ -690,6 +699,9 @@ public sealed class DocumentBuilder {
 
         return facts[frame.Arg1].ChainLink ? (byte)1 : (byte)2;
     }
+
+    /// <summary>The widest body with no break point of its own that the head before its arrow reads through.</summary>
+    const int ShortArrowBody = 14;
 
     public Document Build() {
         while (stack.Count > 0) {

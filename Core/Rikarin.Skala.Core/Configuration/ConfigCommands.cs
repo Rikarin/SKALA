@@ -163,9 +163,8 @@ public static class ConfigCommands {
             .AppendLine(
                 canonical switch {
                     { Drifted: true } => $"DRIFTED from {canonical.Layout.Marker!.Version} — see SK9008",
-                    {
-                        Behind: true
-                    } => $"{canonical.Layout.Marker!.Version}, intact; {canonical.Tool.Version} available",
+                    { Behind: true } =>
+                        $"{canonical.Layout.Marker!.Version}, intact; {canonical.Tool.Version} available",
                     { Current: true } => $"{canonical.Tool.Version}, intact and current",
                     _ => "unmanaged — `skala config sync --apply` adopts this .editorconfig"
                 }
