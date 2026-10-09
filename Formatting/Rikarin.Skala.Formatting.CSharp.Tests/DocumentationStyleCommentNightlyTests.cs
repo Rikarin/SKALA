@@ -59,7 +59,9 @@ public sealed class DocumentationStyleCommentNightlyTests {
         "        [InlineArray(8)] /** d */\n        Dictionary<AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,\n            BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB> p10\n"
     )]
     public void ACommentAfterAParametersAttributes_EndsTheLine(string parameter, string expected) {
-        var formatted = FormatWith("class C {\n    public static int Create7(bool p8, TimeSpan p9, " + parameter + ") => 1;\n}\n");
+        var formatted = FormatWith(
+            "class C {\n    public static int Create7(bool p8, TimeSpan p9, " + parameter + ") => 1;\n}\n"
+        );
         Assert.Equal(
             "class C {\n    public static int Create7(\n        bool p8,\n        TimeSpan p9,\n"
             + expected

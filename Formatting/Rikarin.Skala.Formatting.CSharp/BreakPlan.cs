@@ -3071,7 +3071,8 @@ public sealed class BreakPlan {
     ///     trivia, outside its <c>Span</c>.
     /// </remarks>
     static bool IsBlockComment(SyntaxTrivia trivia) =>
-        trivia.IsKind(SyntaxKind.MultiLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia);
+        trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+        || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia);
 
     /// <summary>
     ///     <c>skala_wrap_chained_method_calls = chop_if_long</c>: every <c>.</c> of a chain that does not fit
