@@ -5529,7 +5529,9 @@ public sealed class BreakPlan {
             // ⚠ Over a binary operator, the one measured: a parenthesised collection keeps `= ([` (#485), a
             // parenthesised switch its own layout.
             || value is ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax }
-                or CastExpressionSyntax { Expression: ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax } };
+                or CastExpressionSyntax {
+                    Expression: ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax }
+                };
         var owner = EqualsOwnerOf(node);
         var callee = owner == EqualsOwner.None ? 0 : CalleeWidthOf(value);
 
