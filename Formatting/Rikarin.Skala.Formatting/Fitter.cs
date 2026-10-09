@@ -330,6 +330,18 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ A returned type test's operand: its dot breaks only where neither the keyword's band nor the
+                // operand's own line can hold it. See GroupFacts.TypeTestTail (#446).
+                if (facts.TypeTestTail > 0) {
+                    // ⚠ Measured at the statement's line plus one level, not at the continuation column: the levels
+                    // the type test stacks there collapse to one on the line the dot starts.
+                    return m.FlatWidth < Unbounded
+                        && !Fits(m.Column, m.FlatWidth)
+                        && Fits(lineStart + indentWidth, facts.TypeTestTail)
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                }
+
                 // ⚠ An `=` before a plain member access yields to its dot fill (#482) — unless the receiver
                 // itself does not fit beside the `=`, where no dot can take the break and the oracle breaks
                 // the `=`: `T v =` / `context.First;`. Pass one kept `T v = context` past the margin and
