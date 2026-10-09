@@ -17,8 +17,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 public sealed class MeasuredWidthsAbsorbWhitespaceTests {
     const string Long1 = "private ImmutableArray<((double? First, long Second) First, (CancellationToken F"
         + """irst, long Second) Second)> f23 = Emit(Materialise<TimeSpan>($"value {97} and {i"""
-        + "tems[0]}\", x24 => source?.Value?.Length, (state is null)), state, \"\"\"\"a { b } "
-        + "c\"\"\"\");";
+        + """""tems[0]}", x24 => source?.Value?.Length, (state is null)), state, """"a { b } """""
+        + """""c"""");""""";
 
     const string Long2 = "Func<A, B> ffffffffffffffffffffffffffffffffffffffffffffffff = (A a1, A a2, A a3,"
         + " A a4, A a5, A a6, A a7, A a8, A a9, A a10x) => vvvvvvvvvvvvvvvvvvvv;";
