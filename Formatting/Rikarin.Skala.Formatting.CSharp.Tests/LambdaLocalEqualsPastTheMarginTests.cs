@@ -8,7 +8,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     and 120 — where the value's first character would land past the margin — the <c>=</c> breaks.
 /// </summary>
 public sealed class LambdaLocalEqualsPastTheMarginTests {
-    const string Type = "(Span<IReadOnlyDictionary<StringBuilder, StringBuilder>> First, Dictionary<string, long?> Second)";
+    const string Type =
+        "(Span<IReadOnlyDictionary<StringBuilder, StringBuilder>> First, Dictionary<string, long?> Second)";
 
     static string Wrap(string body) => "class C {\n    void M() {\n" + body + "    }\n}\n";
 

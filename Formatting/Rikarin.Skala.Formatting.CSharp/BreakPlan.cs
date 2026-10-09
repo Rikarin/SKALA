@@ -2895,9 +2895,9 @@ public sealed class BreakPlan {
                         // spent, a flat gap moved `f = () =>` / `(` a level in (SK-DIV-0101). Every other body
                         // keeps the level spent, which is the level a broken `=` lands its value on.
                         HoldsLevel: value is AnonymousFunctionExpressionSyntax { Body: ExpressionSyntax body }
-                            && HeadsWithAChoppedParenthesis(body, source, options, out _)
-                                ? HeldLevel.WhileFlat
-                                : HeldLevel.None
+                        && HeadsWithAChoppedParenthesis(body, source, options, out _)
+                            ? HeldLevel.WhileFlat
+                            : HeldLevel.None
                     )
                 );
                 if (oneOver > 0) {
