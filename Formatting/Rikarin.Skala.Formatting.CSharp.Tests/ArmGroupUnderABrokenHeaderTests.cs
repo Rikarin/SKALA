@@ -13,31 +13,31 @@ public sealed class ArmGroupUnderABrokenHeaderTests {
     [Fact]
     public void AKeptArrowBreak_TakesTheArmsLevel_UnderABrokenMemberHeader() {
         const string source = """
-            class C576b {
-                object
-                    C(object owner) =>
-                    owner switch {
-                        DateTime { P25 : not null } when MaterialiseSomethingLongerStill(owner, owner, owner, owner, owner, owner)
-                            => (from item in items where "s" select item),
-                    };
+                              class C576b {
+                                  object
+                                      C(object owner) =>
+                                      owner switch {
+                                          DateTime { P25 : not null } when MaterialiseSomethingLongerStill(owner, owner, owner, owner, owner, owner)
+                                              => (from item in items where "s" select item),
+                                      };
 
-                object
-                    D(object owner) =>
-                    owner switch {
-                        DateTime { P25: not null } when MaterialiseSomethingLongerStill(owner, owner, owner, owner, owner, owner)
-                            => Call(item),
-                        _ => 0
-                    };
+                                  object
+                                      D(object owner) =>
+                                      owner switch {
+                                          DateTime { P25: not null } when MaterialiseSomethingLongerStill(owner, owner, owner, owner, owner, owner)
+                                              => Call(item),
+                                          _ => 0
+                                      };
 
-                object
-                    F(object owner) =>
-                    owner switch {
-                        DateTime x when MaterialiseSomethingLongerStill(owner, owner, owner, owner, owner, owner)
-                            => Call(item),
-                        _ => 0
-                    };
-            }
-            """;
+                                  object
+                                      F(object owner) =>
+                                      owner switch {
+                                          DateTime x when MaterialiseSomethingLongerStill(owner, owner, owner, owner, owner, owner)
+                                              => Call(item),
+                                          _ => 0
+                                      };
+                              }
+                              """;
         Oracle.Agrees(source, source);
     }
 }
