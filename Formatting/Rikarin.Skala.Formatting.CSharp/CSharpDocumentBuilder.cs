@@ -4664,7 +4664,8 @@ public sealed partial class CSharpDocumentBuilder {
             // `state is (` / `{ Length: > 0 }, int y);` with the element one level in, as it keeps
             // `(` / `Foo { … }, …`; joined, pass one laid the arrow out for a multi-line body and pass
             // two re-joined it.
-            if (previousToken.IsKind(SyntaxKind.OpenParenToken) && previousToken.Parent is PositionalPatternClauseSyntax) {
+            if (previousToken.IsKind(SyntaxKind.OpenParenToken)
+                && previousToken.Parent is PositionalPatternClauseSyntax) {
                 return false;
             }
 
