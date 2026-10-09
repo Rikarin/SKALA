@@ -120,6 +120,11 @@ public sealed class FuzzRegressionTests {
     // whole and pass two, measuring its own broken output, kept `}, [`. A break beside a directive is no
     // kept break now (#471).
     [InlineData(12061030311543376894UL)]
+    // `fuzz --seed=99991`: `(Span<…> First, Dictionary<…> Second) v204 = (x, y) => Source;` with its `=` past
+    // the margin. Pass one kept the `=` and chopped the parameters past the margin; pass two read the chop as
+    // the author's and filled the type. The type/name gap now breaks when the line through the `=` overflows,
+    // and an `=` whose value starts past the margin breaks, as the oracle does.
+    [InlineData(13830403873739157460UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
