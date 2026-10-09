@@ -91,6 +91,11 @@ public sealed class FuzzRegressionTests {
     // as well; pass two found the arrow's break kept, measured the pattern up to it and re-joined `var p`.
     // A kept break at that point is now pinned, as the oracle keeps it and as the list's commas are.
     [InlineData(9642682992700587520UL)]
+    // `fuzz --seed=7777`: `get => state is (` / `{ Length: > 0 }, ImmutableArray<object?> typed56);`. The
+    // property pattern's `{` joined the positional `(` as an opening brace does, after pass one had already
+    // broken the accessor's arrow for the body the kept break made multi-line; pass two re-joined the arrow.
+    // The gap is the parenthesis's: the oracle keeps the break, the element one level in.
+    [InlineData(11693758747470537505UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

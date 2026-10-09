@@ -4650,6 +4650,15 @@ public sealed partial class CSharpDocumentBuilder {
             // both measured (#465): `together_same_line`, which is that value's whole meaning, and an
             // empty accessor, lambda, anonymous method or initializer, which stays `{ }` on its owner's
             // line at every value of the empty-block key. See BreakPlan.SettleOpenBraces.
+            // ⚠ Not a property pattern's `{` straight after a positional pattern's `(`: that gap is the
+            // parenthesis's, as #368 found for a `[` (fuzz 11693758747470537505). The oracle keeps
+            // `state is (` / `{ Length: > 0 }, int y);` with the element one level in, as it keeps
+            // `(` / `Foo { … }, …`; joined, pass one laid the arrow out for a multi-line body and pass
+            // two re-joined it.
+            if (previousToken.IsKind(SyntaxKind.OpenParenToken) && previousToken.Parent is PositionalPatternClauseSyntax) {
+                return false;
+            }
+
             return OpensAJoinableBody(nextToken)
                 && ((options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(nextToken)) == 0
                     || IsEmptyBody(nextToken)
