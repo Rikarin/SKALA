@@ -582,6 +582,13 @@ public sealed class Fitter {
                 // read as the author's (#379, the mirror image of #375). See
                 // GroupFacts.BreaksOnlyIfTailFits.
                 if (facts.BreaksOnlyIfTailFits) {
+                    // ⚠ A lambda's arrow over a call chain whose receiver runs past the margin beside it: no dot
+                    // can end the line in time (fuzz 16278079796336422477). Kept, pass two read the dot's break
+                    // as the author's and broke the arrow. See GroupFacts.BreaksIfReceiverOverflows.
+                    if (facts.BreaksIfReceiverOverflows && m.AfterPoint < Unbounded && !Fits(m.Column, m.AfterPoint)) {
+                        return ResolvedMode.Broken;
+                    }
+
                     return TailFits(m, tail) && HeadIsWideEnough(facts, m, lineStart)
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;

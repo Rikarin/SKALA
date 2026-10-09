@@ -7077,7 +7077,11 @@ public sealed class BreakPlan {
                                 LambdaChainHead: chainHead
                             )
                             : ArrowMovesACallChainDown(body)
-                                ? new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true)
+                                ? new GroupFacts(
+                                    BreaksIfTooLong: true,
+                                    BreaksOnlyIfTailFits: true,
+                                    BreaksIfReceiverOverflows: true
+                                )
                                 : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
 
