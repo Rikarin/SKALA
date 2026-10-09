@@ -4011,8 +4011,7 @@ public sealed class BreakPlan {
     ///     the <c>s</c>, the width's break and the author's alike; <c>i &lt; 10</c> / <c>&amp;&amp; source…</c>
     ///     keeps the chain's own level, as an <c>if</c>'s does.
     /// </remarks>
-    internal static bool IsAWholeStatementCondition(SyntaxNode root) =>
-        IsAHeaderCondition(root);
+    internal static bool IsAWholeStatementCondition(SyntaxNode root) => IsAHeaderCondition(root);
 
     /// <summary>
     ///     Whether a chain that shares the level around it takes it from the line it starts on: as a sole
