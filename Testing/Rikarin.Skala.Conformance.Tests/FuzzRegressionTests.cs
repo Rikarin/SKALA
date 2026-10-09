@@ -118,6 +118,9 @@ public sealed class FuzzRegressionTests {
     // past the margin, and #528's held-call width did not count it.
     [InlineData(7754551050098241345UL, "real/newtonsoft/Newtonsoft.Json.Tests/Issues/Issue1566.cs")]
     [InlineData(3559808079077978877UL, "constructs/wrapping/lambda-arrow-over-a-property-fill.cs")]
+    // ⚠ And a kept break after a fill break in the same body (`--seed=31337`): the chain's frame paid a level
+    // the from-line scope had already paid (6109074167501724172).
+    [InlineData(6109074167501724172UL, "constructs/wrapping/lambda-arrow-over-a-property-fill.cs")]
     [InlineData(3423309597191150844UL, "constructs/breaks/conditional-after-eq.cs")]
     [InlineData(
         11806697963186320743UL,
