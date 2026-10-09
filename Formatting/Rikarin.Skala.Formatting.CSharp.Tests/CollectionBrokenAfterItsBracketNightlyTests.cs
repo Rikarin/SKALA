@@ -86,34 +86,34 @@ public sealed class CollectionBrokenAfterItsBracketNightlyTests {
     // pass two read the break after the `[` it had written and joined it back. Measured 2026-10-09 with
     // `Testing ask` on 25 rows (breaks before `]`, after `[`, between elements, none; five positions).
     const string ClosingSource = """
-        class C {
-            void M() {
-                var a = new object[] { this.OrderBy.Where.Where(@"verbatim\path").Value, source?.Value?.Count, Compute(@"verbatim\path", "sssssssssssssssss", x4 => 92651, x5 => true), [3_000_000L, "ss", null, 67712, 1.5d
-        ] };
-                var b = new object[] { Compute(@"verbatim\path", "sssssssssssssssss", x4 => 92651, x5 => true), [3_000_000L, "ss", null, 67712, 1.5d
-        ], beta };
-            }
-        }
-        """;
+                                 class C {
+                                     void M() {
+                                         var a = new object[] { this.OrderBy.Where.Where(@"verbatim\path").Value, source?.Value?.Count, Compute(@"verbatim\path", "sssssssssssssssss", x4 => 92651, x5 => true), [3_000_000L, "ss", null, 67712, 1.5d
+                                 ] };
+                                         var b = new object[] { Compute(@"verbatim\path", "sssssssssssssssss", x4 => 92651, x5 => true), [3_000_000L, "ss", null, 67712, 1.5d
+                                 ], beta };
+                                     }
+                                 }
+                                 """;
 
     const string ClosingOracle = """
-        class C {
-            void M() {
-                var a = new object[] {
-                    this.OrderBy.Where.Where(@"verbatim\path").Value, source?.Value?.Count,
-                    Compute(@"verbatim\path", "sssssssssssssssss", x4 => 92651, x5 => true), [
-                        3_000_000L, "ss", null, 67712, 1.5d
-                    ]
-                };
-                var b = new object[] {
-                    Compute(@"verbatim\path", "sssssssssssssssss", x4 => 92651, x5 => true), [
-                        3_000_000L, "ss", null, 67712, 1.5d
-                    ],
-                    beta
-                };
-            }
-        }
-        """;
+                                 class C {
+                                     void M() {
+                                         var a = new object[] {
+                                             this.OrderBy.Where.Where(@"verbatim\path").Value, source?.Value?.Count,
+                                             Compute(@"verbatim\path", "sssssssssssssssss", x4 => 92651, x5 => true), [
+                                                 3_000_000L, "ss", null, 67712, 1.5d
+                                             ]
+                                         };
+                                         var b = new object[] {
+                                             Compute(@"verbatim\path", "sssssssssssssssss", x4 => 92651, x5 => true), [
+                                                 3_000_000L, "ss", null, 67712, 1.5d
+                                             ],
+                                             beta
+                                         };
+                                     }
+                                 }
+                                 """;
 
     [Fact]
     public void ACollectionBrokenOnlyBeforeItsClosingBracket_StaysBesideThePreviousElement() {
