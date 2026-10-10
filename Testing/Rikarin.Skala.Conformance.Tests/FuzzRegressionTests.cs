@@ -237,6 +237,10 @@ public sealed class FuzzRegressionTests {
     // chain took its own level behind a call whose dot pass one broke for width; pass two read the dot as the
     // author's and gave the level back.
     [InlineData(1322227246888415436UL, "real/vixen/Core/Vixen.Geometry.Uv.Tests/DegenerateSystemTests.cs")]
+    // #614: `E.Get<T>(e).Value = World.Get(body.Handle);` — the target's own held call ended the `=` group's point
+    // width at its dot, so the held value's column was read 36 columns left of the `=` and pass one kept the `=`
+    // and chopped; pass two, the value now broken, broke the `=`.
+    [InlineData(6605302205500226187UL, "real/vixen/Core/Vixen.Physics/Ecs/PhysicsScene.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

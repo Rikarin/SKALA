@@ -12254,3 +12254,18 @@ the ordering rule, unmeasured.
 - options: `skala_wrap_before_eq = false`.
 - status: **resolved** for both shapes, pinned by `constructs/breaks/short-head-generic-fill.cs` and
   `constructs/breaks/equals-before-a-single-argument-call.cs`. ⚠ The three residues above are **open**.
+
+## SK-DIV-0451 — an assignment's held value behind a target that holds a call
+
+#614, Nightly-style fuzz seed 6605302205500226187 on Vixen's `PhysicsScene.cs`:
+`Entities_w….Get<LinearVelocity>(entity).Value = World.GetLinearVelocity(body.Handle);` past the margin. The oracle breaks
+the `=` and keeps the call whole below. Skala kept the `=` and chopped `body.Handle` on pass one, then broke the `=` on
+pass two. The target's own call is a held call with a point at its dot, and the `=` group's point width ended there,
+so `HeldValueBreaks` read the value's column 36 columns left of the `=`, found the value fitting beside it and kept the
+`=`. On pass two the chopped value is no held call, and the ordering rule broke the `=`.
+
+- Fix: `GroupFacts.HeldValueTarget`, the assignment's target through the `=`, and the value's column read from it.
+- Measured 2026-10-10 with `Testing ask` on 300 rows: targets `E.Get<T>(e).Value`, `E.Find(e).Value` and a plain
+  `E.Current.Value`, three held values, indents 8 and 20, lines of 116 to 148. 141 rows differed and now 0 do. The
+  plain targets matched before and still do.
+- status: **fixed**, pinned by `constructs/breaks/held-value-behind-a-target-call.cs` and `FuzzRegressionTests`.
