@@ -774,8 +774,8 @@ public sealed class Fitter {
 
                     // ⚠ And a call condition that would be long below keeps the `=` and chops instead (#596's residue,
                     // SK-DIV-0447): measured 2026-10-10 on 712 locals — `var` and typed, indents 8 and 12, calls of one
-                    // to four arguments, the `=` ending at 18 to 98 and the call 18 to 108 columns wide — the `=` breaks
-                    // only while 9 · (the call's end below) + 2 · (the `=`'s end) + 64 · (its argument count) ≤ 1136.
+                    // to four arguments, the `=` ending at 18 to 98 and the call 18 to 108 columns wide — the `=`
+                    // breaks only while 9 · (the call's end below) + 2 · (the `=`'s end) + 64 · (its argument count) ≤ 1136.
                     // 680 of the 712 rows agree; the rest are one step either side of the boundary.
                     // Only a call that fits below: one that does not is the `=` column's question, as before.
                     if (facts.ValueHeadFitsBelow
