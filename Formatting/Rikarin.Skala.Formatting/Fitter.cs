@@ -646,6 +646,8 @@ public sealed class Fitter {
                 // ⚠ Pass two of a held typed local whose `=` stayed and whose arguments chopped: the first pass's
                 // question again, on the flat widths. See GroupFacts.HeldChoppedWidth.
                 if (facts.HeldChoppedWidth > 0
+                    && m.PointWidth < Unbounded
+                    && Fits(m.Column, m.PointWidth + 1 + facts.HeldChoppedHead)
                     && !EqualsFloor.HeldTypedLocalBreaks(
                         facts.HeldValueTypedHead,
                         m.ContinuationColumn + facts.HeldChoppedWidth,

@@ -1389,6 +1389,10 @@ public sealed class Document {
 ///     <see cref="EqualsFloor.HeldTypedLocalBreaks" /> that kept the <c>=</c>: the value's flat width through its
 ///     <c>;</c>, so that the second pass asks the first pass's question and keeps the <c>=</c> again. Zero otherwise.
 /// </param>
+/// <param name="HeldChoppedHead">
+///     With <see cref="HeldChoppedWidth" />: the value's width through its <c>(</c>. Only a <c>(</c> that ends beside
+///     the <c>=</c> is a chop the held rule could have left (fuzz seed 15487819194531676087).
+/// </param>
 /// <param name="OrLeft">
 ///     ⚠ An <c>=</c> whose value is <c>X || Y</c>, written on one line, with <c>X</c> an <c>&amp;&amp;</c> chain or an
 ///     <c>is</c> pattern: <c>X</c>'s flat width (#579, SK-DIV-0403). When <c>X</c> does not fit beside the <c>=</c>
@@ -1586,6 +1590,7 @@ public readonly record struct GroupFacts(
     int HeldValueTypedHead = 0,
     int HeldValueCallee = 0,
     int HeldChoppedWidth = 0,
+    int HeldChoppedHead = 0,
     int ArmHead = 0,
     int ArmBody = 0,
     bool LiftsThroughInnerBreaks = false,

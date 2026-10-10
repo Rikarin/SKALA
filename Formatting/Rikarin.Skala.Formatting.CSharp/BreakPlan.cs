@@ -5895,6 +5895,9 @@ public sealed class BreakPlan {
                     && heldKind == 1
                         ? FlatSourceWidth(heldCallee.Expression) + heldCallee.Name.Identifier.Span.Length
                         : 0,
+                    HeldChoppedHead: choppedHeld is not null && heldKind == 1
+                        ? FormattedWidth(value.GetFirstToken(), choppedHeld.ArgumentList.OpenParenToken)
+                        : 0,
                     HeldChoppedWidth: choppedHeld is not null && heldKind == 1
                         ? FlatSourceWidth(value)
                         + WidthThroughSemicolon(value)
