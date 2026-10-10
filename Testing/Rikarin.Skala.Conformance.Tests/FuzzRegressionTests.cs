@@ -95,6 +95,8 @@ public sealed class FuzzRegressionTests {
     [InlineData(18379797974820457043UL)]
     // #596: a conditional's `= Select(` with the `(` past the margin kept the `=`; pass two broke it.
     [InlineData(8249044719362511507UL)]
+    // #601: `} when` / a condition on its own line under an arm's width lift sat a level deep on pass one.
+    [InlineData(16516683683719357238UL)]
     [InlineData(7862808234978504853UL)]
     [InlineData(8573762464065711162UL)]
     [InlineData(7447388608888272285UL)]
@@ -228,6 +230,9 @@ public sealed class FuzzRegressionTests {
     // ⚠ Pass one's break before a held first call, in an `if`'s whole condition, read as the author's on pass
     // two: the chain frame paid the level the aligned condition never spends (#593).
     [InlineData(16215088427476222539UL, "constructs/breaks/chain-in-a-header-or-a-sole-lambda.cs")]
+    // #608: `Value` / `= property.` / `Value;` — an author's break before the `=` left the `=` group's flat width
+    // unbounded, and #590's plain-member rule read that as an overflowing line and broke after the `=` on pass two.
+    [InlineData(9342835643250235022UL, "real/serilog/Serilog/Events/LogEventProperty.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
