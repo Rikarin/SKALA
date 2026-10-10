@@ -314,13 +314,6 @@ public sealed class BreakPlan {
 
     /// <summary>The arrow group <see cref="PlanArrowBody" /> opened for each lambda, by the lambda's key.</summary>
     readonly Dictionary<long, int> arrowGroups = [];
-
-    /// <summary>
-    ///     A switch arm's width lift (<see cref="GroupFacts.LiftsIfArrowBreaks" />), by the arm's key, for its
-    ///     <c>when</c> clause to hold its own level under (#601).
-    /// </summary>
-    readonly Dictionary<long, int> armLifts = [];
-
     /// <summary>
     ///     The group each <see cref="HeldLevel.WhileArrowFlat" /> or <see cref="HeldLevel.WhileGroupBroken" /> hold
     ///     is decided by: a sole lambda's arrow, or the gap after an <c>is</c>.
@@ -7105,7 +7098,6 @@ public sealed class BreakPlan {
         var widthLift = -1;
         if (!kept && !keptAfter && (liftsBraces || LiftsUnderAKeptArrow(arm))) {
             widthLift = NewGroup();
-            armLifts[Key(arm)] = widthLift;
             OpenAt(
                 arm,
                 arm.Pattern.SpanStart,
@@ -7577,20 +7569,7 @@ public sealed class BreakPlan {
             new(
                 options.KeepsUserBreaksBetweenItems && BreaksBefore(keyword),
                 BreaksIfTooLong: true,
-                BreaksOnlyIfHeadOverflows: true,
-
-                // ⚠ Under an arm's width lift the clause's own level is the lift's (#601, fuzz
-                // 16516683683719357238): `} when` / `(from …) =>` puts the condition on the `} when` line's column in
-                // the oracle, and pass two — reading the arrow's break as kept — did; pass one spent the clause's
-                // level on top of the lift's.
-                // ⚠ Only for a condition the author put on a line of its own: on the `when` line an operator chain in
-                // it continues two levels past the arm under the lift (`arm-when-chain-under-an-arrow-broken-for-width`).
-                LiftGroup: node.Parent is SwitchExpressionArmSyntax arm
-                && options.KeepsUserBreaksBetweenItems
-                && BreaksBefore(FirstToken(node.Condition))
-                && armLifts.TryGetValue(Key(arm), out var lift)
-                    ? lift
-                    : -1
+                BreaksOnlyIfHeadOverflows: true
             ),
             // spendsIndent, leadingGapInside: the gap before the `when` is the group's own first
             // point, so the group has to open before it (GroupPlan.LeadingGapInside).
