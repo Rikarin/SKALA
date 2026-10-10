@@ -978,7 +978,11 @@ public sealed class BreakPlan {
                         || keeps
                         && collection.Elements.Any(element =>
                             element is SpreadElementSyntax spread && BreaksBefore(FirstToken(spread.Expression))
-                        ))
+                        )
+                        // ⚠ Nor one holding an argument list the author broke after a comma (#607): the list chops,
+                        // `F(` / `a,` / `b` / `)`, so the collection is broken too. A break after the `(` or before a
+                        // comma is joined, and leaves the draft as it was.
+                        || keeps && HoldsAnArgumentListBrokenAfterAComma(collection))
                     && groups.TryGetValue(Key(node), out var listPlans)
                     && listPlans.Count > 0) {
                     var listPlan = listPlans[^1] with { Facts = listPlans[^1].Facts with { DraftsBroken = true } };
@@ -2535,6 +2539,14 @@ public sealed class BreakPlan {
             var other = options.WrapBeforeComma ? next : comma;
             broken |= PlanItemGap(gap, group, true, keeps, yields);
             broken |= PlanOtherSideOfComma(other, keeps);
+
+            // ⚠ And a type argument that ends exactly at the margin carries its comma to the next line, as a positional
+            // pattern's element does (#559, SK-DIV-0448): `Dictionary<A, B, CCC` / `, D> x;`, measured 2026-10-10 in a
+            // local's and a field's type, a generic call and a creation. A yielding point like the list's others, so
+            // what stands before the list still wraps first.
+            if (yields && !options.WrapBeforeComma) {
+                Point(comma, group, true, yields: true);
+            }
         }
 
         // ⚠ The closing `>` is nobody's point — the oracle never gives it a line of its own — and it
@@ -2974,7 +2986,7 @@ public sealed class BreakPlan {
         if (node.Parent is FieldDeclarationSyntax { Modifiers.Count: > 0 }) {
             var modifiers = NewGroup();
             Point(node.Type.GetFirstToken(), modifiers);
-            var (fillHead, fillType, fillName) = ModifierFillShape(node);
+            var (fillHead, fillLastHead, fillType, fillName) = ModifierFillShape(node);
             Describe(
                 node.Type,
                 new(
@@ -2986,6 +2998,7 @@ public sealed class BreakPlan {
                         PrefersOuterBreak: true,
                         SkipsOuterTail: true,
                         ModifierFillHead: fillHead,
+                        ModifierFillLastHead: fillLastHead,
                         ModifierFillType: fillType,
                         ModifierFillName: fillName
                     ),
@@ -3025,21 +3038,22 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     For a field's one declarator without a value, of at most eight letters, whose type is generic with two
-    ///     arguments — the shapes measured; a three-argument type behind an eleven-letter name moves below the
-    ///     modifiers where the rule would fill it (<c>ModifierTypeGapIssue540Tests</c>): the
-    ///     type's width through its first argument's comma, the type's width and the name's — the widths
-    ///     <c>Fitter.FillsAfterTheModifiers</c> reads (#540). Zeros for any other declaration.
+    ///     For a field's one declarator without a value, of at most eight letters, whose type is generic with two or
+    ///     more arguments: the type's width through its first argument's comma and through its last, the type's
+    ///     width and the name's — the widths <c>Fitter.FillsAfterTheModifiers</c> reads (#540, #604). Zeros for any
+    ///     other declaration.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Only the first comma of the outermost argument list: that is where the oracle's fill breaks, and the
-    ///     only fill measured. A comment anywhere in the declaration, or a break before the name, leaves the gap to
-    ///     the ordering rule as before; a break inside the type is pass one's fill, read through.
+    ///     ⚠ A name over eight letters is left to the ordering rule, which moves the type below once it ends past
+    ///     the margin: that is the oracle's answer for names of 11 to 20 letters at every width measured (#604), and
+    ///     for nine letters on all but a few rows where it fills at a line one column short of the rule's. A comment
+    ///     anywhere in the declaration, or a break before the name, leaves the gap to the ordering rule as before; a
+    ///     break inside the type is pass one's fill, read through.
     /// </remarks>
-    (int Head, int Type, int Name) ModifierFillShape(VariableDeclarationSyntax node) {
+    (int Head, int LastHead, int Type, int Name) ModifierFillShape(VariableDeclarationSyntax node) {
         if (node is not { Variables: [{ Initializer: null } variable] }
             || (node.Type is QualifiedNameSyntax qualified ? qualified.Right : node.Type) is not GenericNameSyntax {
-                TypeArgumentList.Arguments: { Count: 2 } arguments
+                TypeArgumentList.Arguments: { Count: >= 2 } arguments
             }
             || variable.Identifier.Span.Length > 8
             || BreaksBefore(variable.Identifier)
@@ -3053,6 +3067,7 @@ public sealed class BreakPlan {
         var first = node.Type.GetFirstToken();
         return (
             FormattedWidth(first, arguments.GetSeparator(0)),
+            FormattedWidth(first, arguments.GetSeparator(arguments.SeparatorCount - 1)),
             FormattedWidth(first, node.Type.GetLastToken()),
             variable.Identifier.Span.Length
         );
@@ -6340,9 +6355,8 @@ public sealed class BreakPlan {
     /// <remarks>
     ///     ⚠ Eleven columns and narrower is
     ///     <see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />'s
-    ///     rule, which reads the parameter through. A one-argument section is not this rule's: <c>[A("…")]</c> and
-    ///     <c>[Description("…")]</c> in front of 12 to 20 columns stand alone above the parameter at nearly every
-    ///     width.
+    ///     rule, which reads the parameter through. A one-argument section is the same rule with its own constants
+    ///     (#603): see <see cref="GroupFacts.SectionSingle" />.
     ///     Nor a named argument, which chops later (<c>DiagnosticId = "X"</c>: from 113 behind a 13-column parameter
     ///     at indent 8, never at 20), nor a parameter with a default value, whose <c>=</c> breaks instead.
     ///     Widths are the formatter's (<see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />), and a comment
@@ -6350,7 +6364,7 @@ public sealed class BreakPlan {
     /// </remarks>
     void PlanSectionBeforeALongParameter(AttributeArgumentListSyntax arguments) {
         if (options.KeepExistingInvocationParensArrangement
-            || arguments.Arguments.Count < 2
+            || arguments.Arguments.Count < 1
             || arguments.Arguments.Any(static argument => argument.NameEquals is not null
                 || argument.NameColon is not null
             )
@@ -6386,7 +6400,8 @@ public sealed class BreakPlan {
             Facts = plans[^1].Facts with {
                 ParameterAfterSection = FormattedWidth(first, last),
                 SectionHead = FormattedWidth(section.OpenBracketToken, arguments.OpenParenToken) - 1,
-                SectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken)
+                SectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken),
+                SectionSingle = arguments.Arguments.Count == 1
             }
         };
         plans[^1] = plan;
@@ -6741,6 +6756,21 @@ public sealed class BreakPlan {
                 && trivia.Span.End <= collection.CloseBracketToken.SpanStart
                 && (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
                     || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia))
+            );
+
+    /// <summary>
+    ///     Whether an argument list inside a collection holds the author's break after a comma, which chops the
+    ///     list and so breaks the collection on every pass (#607). Bracketed arguments count: <c>d[a,</c> /
+    ///     <c>b]</c> keeps its break in the oracle too.
+    /// </summary>
+    bool HoldsAnArgumentListBrokenAfterAComma(CollectionExpressionSyntax collection) =>
+        collection.DescendantNodes()
+            .OfType<BaseArgumentListSyntax>()
+            .Any(list => list.Arguments.GetSeparators()
+                .Any(comma => comma.GetNextToken() is var next
+                    && next != list.GetLastToken()
+                    && BreaksBefore(next)
+                )
             );
 
     /// <summary>
@@ -7560,12 +7590,39 @@ public sealed class BreakPlan {
                 // ⚠ The arrow or the cast's `)` by a measured table (#591). Not under a kept arrow, whose break
                 // is certain.
                 ArmCast: kept ? 0 : ArmCastWidth(arm.Expression),
+                ArmOneOverHead: ArmOneOverHeadOf(arm.Expression),
                 PositionalHead: arm is {
                     WhenClause: null,
                     Pattern: RecursivePatternSyntax { PositionalPatternClause: not null, PropertyPatternClause: null }
                 }
             )
         );
+    }
+
+    /// <summary>
+    ///     The head an arm one column past the margin needs before its arrow breaks rather than a point of its body
+    ///     (#559, SK-DIV-0449), by the body's kind, less the width of the casts in front of it; zero for a body not
+    ///     measured. See <see cref="GroupFacts.ArmOneOverHead" />.
+    /// </summary>
+    int ArmOneOverHeadOf(ExpressionSyntax body) {
+        var casts = 0;
+        var inner = body;
+        while (inner is CastExpressionSyntax cast) {
+            casts += FormattedWidth(cast.OpenParenToken, cast.CloseParenToken);
+            inner = cast.Expression;
+        }
+
+        var head = inner switch {
+            InvocationExpressionSyntax {
+                Expression: IdentifierNameSyntax or GenericNameSyntax, ArgumentList.Arguments.Count: > 0
+            } => 68,
+            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax }
+                or MemberAccessExpressionSyntax => 26,
+            BinaryExpressionSyntax binary when !IsTypeTest(binary) => 24,
+            ParenthesizedExpressionSyntax => 24,
+            _ => 0
+        };
+        return head == 0 ? 0 : Math.Max(1, head - casts);
     }
 
     /// <summary>

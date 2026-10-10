@@ -352,7 +352,7 @@ public sealed class Fitter {
 
                 // ⚠ A field's modifiers and its generic type: the type fills on the modifiers' line by the measured
                 // rule rather than moving below them. See GroupFacts.ModifierFillHead (#540).
-                if (facts.ModifierFillName > 0 && FillsAfterTheModifiers(facts, lineStart)) {
+                if (facts.ModifierFillName > 0 && FillsAfterTheModifiers(facts, lineStart, m.Column)) {
                     return ResolvedMode.Flat;
                 }
 
@@ -383,8 +383,12 @@ public sealed class Fitter {
                 // ⚠ And it breaks whenever the fill would leave too short a fragment beside it for the name it
                 // assigns, the value then fitting below by the measured limit (#590). See
                 // EqualsFloor.BreaksBeforeTheValue.
+                // ⚠ Only on a line the `=` group can measure whole: an author's break before the `=` makes the flat
+                // width unbounded, and reading that as "the line overflows" broke `Value` / `= property.Value;` after
+                // its `=` on pass two (#608, Nightly seed 9342835643250235022).
                 if (facts is { MemberHeadWidth: > 0, EqualsName: > 0 }
                     && m.PointWidth < Unbounded
+                    && m.FlatWidth < Unbounded
                     && tail < Unbounded
                     && m.Trailing < Unbounded
                     && !Fits(m.Column, m.FlatWidth, m.Trailing)) {
@@ -645,6 +649,19 @@ public sealed class Fitter {
                         : ResolvedMode.Flat;
                 }
 
+                // ⚠ A switch arm whose line runs exactly one column past the margin breaks after its arrow once the
+                // head is wide enough for the body's kind (#559, SK-DIV-0449). See GroupFacts.ArmOneOverHead.
+                if (facts.ArmOneOverHead > 0
+                    && m.Column - lineStart >= facts.ArmOneOverHead
+                    && m.Column > lineStart
+                    && !afterPointRunsToTheEnd
+                    && m.FlatWidth < Unbounded
+                    && m.Trailing < Unbounded
+                    && m.Column + m.FlatWidth + m.Trailing == width + 1
+                    && Fits(m.ContinuationColumn, m.FlatWidth, m.Trailing)) {
+                    return ResolvedMode.Broken;
+                }
+
                 // ⚠ A switch arm's body that is a cast over an atom: the arrow or the cast's `)`, by the measured
                 // table. See GroupFacts.ArmCast (#591).
                 if (facts.ArmCast > 0
@@ -789,9 +806,9 @@ public sealed class Fitter {
 
                     // ⚠ And a call condition that would be long below keeps the `=` and chops instead (#596's residue,
                     // SK-DIV-0447): measured 2026-10-10 on 712 locals — `var` and typed, indents 8 and 12, calls of one
-                    // to four arguments, the `=` ending at 18 to 98 and the call 18 to 108 columns wide — the `=` breaks
-                    // only while 9 · (the call's end below) + 2 · (the `=`'s end) + 64 · (its argument count) ≤ 1136.
-                    // 680 of the 712 rows agree; the rest are one step either side of the boundary.
+                    // to four arguments, the `=` ending at 18 to 98 and the call 18 to 108 columns wide — the `=`
+                    // breaks only while 9 · (the call's end below) + 2 · (the `=`'s end) + 64 · (its argument count) ≤
+                    // 1136. 680 of the 712 rows agree; the rest are one step either side of the boundary.
                     // Only a call that fits below: one that does not is the `=` column's question, as before.
                     if (facts.ValueHeadFitsBelow
                         && below
@@ -940,8 +957,16 @@ public sealed class Fitter {
     ///     measured on the line below rather than the line's end. 11 113 of 11 361 cells agree, and a probe written
     ///     after the rule, with three new modifier sets and two new types at two indents, 4 028 of 4 092.
     /// </remarks>
-    bool FillsAfterTheModifiers(in GroupFacts facts, int lineStart) {
-        var head = facts.ModifierFillHead;
+    /// <remarks>
+    ///     ⚠ #604, measured 2026-10-10 on 4 680 more fields: three- and four-argument types read off the same table
+    ///     once <c>h</c> is the fill's own first line — through the last comma that fits on the modifiers' line, where
+    ///     the oracle's fill breaks, not the first. <c>Func&lt;K…, int, List&lt;…&gt;&gt;</c> behind a 16-column
+    ///     <c>Func&lt;K…,</c> reads as 21 and <c>Func&lt;K…, int, long, …&gt;</c> as 27, every row then on the table:
+    ///     3 347 of 3 456 cells where either side moves the type, against 2 992 of 4 680 overall before.
+    /// </remarks>
+    bool FillsAfterTheModifiers(in GroupFacts facts, int lineStart, int column) {
+        // The group starts at the gap before the type; the type's first column is one past it.
+        var head = column + facts.ModifierFillLastHead <= width ? facts.ModifierFillLastHead : facts.ModifierFillHead;
         var name = facts.ModifierFillName;
         var k = head >= 54 ? 324 :
             head >= 36 ? 325 :
@@ -1036,6 +1061,17 @@ public sealed class Fitter {
         var parameter = facts.ParameterAfterSection;
         if (end > width || end + 1 + parameter <= width) {
             return null;
+        }
+
+        // ⚠ One argument (#603): the same slopes, the threshold 17 columns later and its own second condition.
+        // Measured 2026-10-10 on 2 205 cells — `[A(`, `[From(`, `[Description(`, `[JsonPropertyName(`,
+        // `[NotNullIfNotNull(`, parameters of 12 to 24 columns, indents 8, 12 and 20 — with round four's `[A(` and
+        // `[Description(` rows.
+        if (facts.SectionSingle) {
+            return 2 * parameter + lineStart - facts.SectionHead <= 36
+                && 24 * end >= 2106 + 32 * parameter + 11 * lineStart + 11 * facts.SectionHead
+                    ? ResolvedMode.Broken
+                    : ResolvedMode.Flat;
         }
 
         return 5 * parameter + 2 * lineStart - facts.SectionHead <= 155
