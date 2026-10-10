@@ -9128,7 +9128,28 @@ public sealed class BreakPlan {
         var group = NewGroup();
         Point(next, group);
         pastAttributeComments.Add(next.SpanStart);
-        Describe(node, group, GroupMode.Preserve, new(MeasuresHead: true, Terminator: wrapsInside ? 1 : WholeLine));
+        // ⚠ And a field whose value cannot wrap inside an argument list declines only up to a measured line: the head
+        // and the name decide where it joins instead (#555's (e) cells, SK-DIV-0201). See EqualsFloor.DeclinesTheJoin.
+        var declineHead = !wrapsInside
+            && node is FieldDeclarationSyntax {
+                Declaration: { Variables: [{ Initializer: { } equals } declarator] } declaration
+            }
+                ? FormattedWidth(next, equals.EqualsToken) + 1
+                : 0;
+        var declineName = declineHead > 0
+            ? ((FieldDeclarationSyntax)node).Declaration.Variables[0].Identifier.Span.Length
+            : 0;
+        Describe(
+            node,
+            group,
+            GroupMode.Preserve,
+            new(
+                MeasuresHead: true,
+                Terminator: wrapsInside ? 1 : WholeLine,
+                DeclineHead: declineHead,
+                DeclineName: declineName
+            )
+        );
     }
 
     /// <summary>

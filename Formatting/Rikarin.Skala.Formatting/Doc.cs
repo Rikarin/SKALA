@@ -1337,6 +1337,13 @@ public sealed class Document {
 ///     With <see cref="EqualsName" />: the field carries attribute lists, whose joined line
 ///     <see cref="EqualsFloor.LongFieldNameFloor" /> was not measured on (a joined <c>[A] /* c */</c> line chops).
 /// </param>
+/// <param name="DeclineHead">
+///     ⚠ A field's gap after <c>[A] /* c */</c> whose value cannot wrap inside an argument list: the width of the
+///     declaration from its first token through <c>= </c> (SK-DIV-0201, #504/#555). The join is declined —
+///     the attribute and the comment alone on their line — exactly when the joined line overflows and
+///     <see cref="EqualsFloor.DeclinesTheJoin" />; zero for any other group.
+/// </param>
+/// <param name="DeclineName">With <see cref="DeclineHead" />: the declared name's width.</param>
 /// <param name="OrLeft">
 ///     ⚠ An <c>=</c> whose value is <c>X || Y</c>, written on one line, with <c>X</c> an <c>&amp;&amp;</c> chain or an
 ///     <c>is</c> pattern: <c>X</c>'s flat width (#579, SK-DIV-0403). When <c>X</c> does not fit beside the <c>=</c>
@@ -1546,6 +1553,8 @@ public readonly record struct GroupFacts(
     int EqualsName = 0,
     int[]? MemberLinks = null,
     bool EqualsNameAttributed = false,
+    int DeclineHead = 0,
+    int DeclineName = 0,
     int OrLeft = 0,
     int OrRight = 0,
     int OrHead = 0,

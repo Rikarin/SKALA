@@ -562,6 +562,23 @@ public sealed class Fitter {
 
                 // ⚠ Broken exactly when only the terminator overflows. See GroupFacts.Terminator.
                 if (facts.Terminator > 0) {
+                    // ⚠ A field's commented attribute gap declines only up to a measured line. See
+                    // GroupFacts.DeclineHead and EqualsFloor.DeclinesTheJoin.
+                    if (facts.DeclineHead > 0
+                        && m.PointWidth < Unbounded
+                        && m.FlatWidth < Unbounded
+                        && m.Trailing < Unbounded
+                        && !Fits(m.Column, m.FlatWidth, m.Trailing)) {
+                        return EqualsFloor.DeclinesTheJoin(
+                            m.Column + m.FlatWidth + m.Trailing,
+                            m.PointWidth + 2,
+                            facts.DeclineHead,
+                            facts.DeclineName
+                        )
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                    }
+
                     return !Fits(m.Column, m.BreakWidth) && Fits(m.Column, m.BreakWidth - facts.Terminator)
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;

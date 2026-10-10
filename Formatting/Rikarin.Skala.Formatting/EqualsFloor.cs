@@ -34,6 +34,24 @@ public enum EqualsOwner {
 
 public static class EqualsFloor {
     /// <summary>
+    ///     Whether <c>[A] /* c */ public T name = value;</c> past the margin keeps the attribute and the comment on a line
+    ///     of their own (the join declined) rather than joining and breaking after the <c>=</c>: the joined line ending
+    ///     at <paramref name="end" />, the prefix through the comment and its space <paramref name="prefix" /> wide, the
+    ///     declaration through <c>= </c> <paramref name="head" /> wide, the name <paramref name="name" /> wide
+    ///     (SK-DIV-0201, #504 and #555's attribute cells).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 9 000 fields: prefixes of 16 to 28 (<c>/**/</c> to a
+    ///     nine-letter comment), heads of 16 to 40 split between type and name, names of 1, 6 and 12, values that are a
+    ///     binary chain, an identifier, a string, a member chain and a conditional, lines of 121 to 165. The value's
+    ///     shape does not matter and the name does: declined exactly while <c>4·(end − prefix) − 3·head + 5·name ≤ 432</c>,
+    ///     8 874 of 9 000 cells; the 126 others are a column or two off it, most behind a member chain. #504's "declined at
+    ///     every overflowing width" was the band below 134 that measurement swept.
+    /// </remarks>
+    public static bool DeclinesTheJoin(int end, int prefix, int head, int name) =>
+        4 * (end - prefix) - 3 * head + 5 * name <= 432;
+
+    /// <summary>
     ///     Whether an <c>=</c> before a call with two or more arguments may break at all: the name it assigns,
     ///     <paramref name="name" /> columns wide, with the callee, <paramref name="callee" /> wide, has to reach
     ///     far enough for the call's <c>(</c> at <paramref name="paren" /> (1-based) —
