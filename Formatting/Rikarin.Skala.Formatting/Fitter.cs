@@ -428,6 +428,26 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ A wide-named local's `=` before a lambda over a call (#453 round 2): broken exactly by the
+                // measured reach and floor, read from the planner's widths so that a kept break inside the lambda
+                // on pass two does not change the answer. See GroupFacts.EqualsLambdaArguments.
+                if (facts.EqualsLambdaArguments > 0 && m.PointWidth < Unbounded) {
+                    var paren = m.Column + 1 + facts.EqualsLambdaValueHead + 1;
+                    if (paren + facts.EqualsLambdaArguments <= width) {
+                        return ResolvedMode.Flat;
+                    }
+
+                    return EqualsFloor.BreaksBeforeALambdaCall(
+                        facts.EqualsLambdaName,
+                        facts.EqualsLambdaType,
+                        m.Column,
+                        paren,
+                        facts.EqualsLambdaArguments
+                    )
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
+                }
+
                 // ⚠ An `=` before a lambda with a bare name for a body yields to the arrow while the line
                 // through `=>` fits. See GroupFacts.YieldsThroughArrow (#453).
                 if (facts.YieldsThroughArrow > 0
@@ -577,6 +597,27 @@ public sealed class Fitter {
                     return HeldValueBreaks(facts, m) ? ResolvedMode.Broken : ResolvedMode.Flat;
                 }
 
+                // ⚠ The last operand of a header condition: read from the planner's flat widths, breaks the body
+                // already holds aside (#600). See GroupFacts.LambdaOperandBody.
+                if (facts.LambdaOperandBody > 0 && facts.LambdaOperandKept) {
+                    return Fits(m.Column, facts.LambdaOperandBody) ? ResolvedMode.Flat : ResolvedMode.Broken;
+                }
+
+                if (facts.LambdaOperandBody > 0) {
+                    // ⚠ A body that fits by itself stays, and the header's `)` moves down instead.
+                    var bodyEnd = m.Column + facts.LambdaOperandBody + facts.LambdaOperandTail;
+                    return m.Column + facts.LambdaOperandBody > width
+                        && EqualsFloor.BreaksTheOperandArrow(
+                            m.Column,
+                            facts.LambdaOperandParameters,
+                            facts.LambdaOperandFirst,
+                            bodyEnd,
+                            facts.LambdaOperandPatternLeft
+                        )
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                }
+
                 if (!facts.BreaksIfTooLong || Fits(m.Column, m.BreakWidth, m.Trailing)) {
                     return ResolvedMode.Flat;
                 }
@@ -648,8 +689,8 @@ public sealed class Fitter {
                 if (facts.LambdaCallArguments > 0
                     && m.FlatWidth < Unbounded
                     && EqualsFloor.BreaksTheCallArrow(
-                        m.Column - facts.LambdaHead - 1,
-                        m.Column + facts.LambdaCallCallee + 2,
+                        m.Column - facts.LambdaHead - 1 + (facts.LambdaCallShift ? 8 : 0),
+                        m.Column + facts.LambdaCallCallee + 2 + (facts.LambdaCallShift ? 4 : 0),
                         facts.LambdaCallArguments,
                         facts.LambdaCallSingle
                     )) {
@@ -865,7 +906,8 @@ public sealed class Fitter {
 
         // ⚠ A field's name of 31 or more with the `(` at 76 or left of it: a floor on the arguments that falls a
         // column per three of name from 62 (round 2 of #589, SK-DIV-0400). ⚠ Not at 77–78, where a
-        // `private static readonly` field of 32 (equals-before-a-call-floor.cs) chops that a `public` one breaks. See EqualsFloor.LongFieldNameFloor.
+        // `private static readonly` field of 32 (equals-before-a-call-floor.cs) chops that a `public` one breaks.
+        // See EqualsFloor.LongFieldNameFloor.
         if (facts is { CalleeOwner: EqualsOwner.Field, EqualsName: >= 31, EqualsNameAttributed: false }
             && paren <= 76) {
             return arguments - 2 <= EqualsFloor.LongFieldNameFloor(facts.EqualsName)
