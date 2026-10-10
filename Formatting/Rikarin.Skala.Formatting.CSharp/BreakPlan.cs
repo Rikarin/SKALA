@@ -6304,7 +6304,16 @@ public sealed class BreakPlan {
         var type = FormattedWidth(declaration.Type);
         var name = declarator.Identifier.Span.Length;
         var local = LambdaLocal.Measured;
-        if (name <= 10 + (type + 4) / 12) {
+        // ⚠ Past a type of 60 the gate falls again, by a third of a column per column, to a floor of ten (#595's
+        // residue, SK-DIV-0444): measured 2026-10-10 on types of 30 to 98, names of 4 to 23, `x =>` and `static x =>`,
+        // the line ending at 126 and at 145 — the same gates at both lengths, and the same for `static`, whose
+        // apparent difference was this gate measured past the range it was fitted on.
+        var gate = 10 + (type + 4) / 12;
+        if (type > 60) {
+            gate = Math.Max(10, Math.Min(gate, 14 - (type - 60) / 3));
+        }
+
+        if (name <= gate) {
             local |= LambdaLocal.ArrowWhileItFits;
         }
 
