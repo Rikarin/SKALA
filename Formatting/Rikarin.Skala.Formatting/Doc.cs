@@ -1205,6 +1205,11 @@ public sealed class Document {
 ///     The width from the body's end to its statement's end — <c>);</c> for a call statement — which the line's
 ///     end is measured with. See <see cref="LambdaOperandParameters" />.
 /// </param>
+/// <param name="HeldCallLambda">
+///     ⚠ A held first call whose one argument is a lambda, `r.Where(x => …).ToList()`: the line below is limited
+///     by the call's own measured table, which weighs the head before the receiver too (#605). See
+///     <c>Fitter.HeldLambdaLimit</c>.
+/// </param>
 /// <param name="HeldCallOnAPath">
 ///     ⚠ A held first call whose receiver is a plain path of names, `source.A…`: when the receiver alone
 ///     overflows, the call breaks too and every link chops (#582). Not behind a call chain the receiver
@@ -1576,6 +1581,7 @@ public readonly record struct GroupFacts(
     bool BreaksIfItOverflows = false,
     bool BreaksIfReceiverOverflows = false,
     bool HeldCallOnAPath = false,
+    bool HeldCallLambda = false,
     int LambdaOperandParameters = 0,
     int LambdaOperandTail = 0,
     int LambdaOperandFirst = 0,

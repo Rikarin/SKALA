@@ -3428,7 +3428,8 @@ public sealed class BreakPlan {
                 HeldCall: kind,
                 HeldCallHead: callHead,
                 HeldCallRest: rest,
-                HeldCallOnAPath: IsAPathOfNames(((MemberAccessExpressionSyntax)link).Expression)
+                HeldCallOnAPath: IsAPathOfNames(((MemberAccessExpressionSyntax)link).Expression),
+                HeldCallLambda: call.ArgumentList.Arguments is [{ Expression: LambdaExpressionSyntax }]
             )
         );
     }
