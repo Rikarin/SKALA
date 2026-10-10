@@ -71,9 +71,8 @@ public sealed class FrozenDictionaryAnalyzer : DiagnosticAnalyzer {
             } constructed
             || !SymbolEqualityComparer.Default.Equals(constructed.Type, type)
             || !ConstantDependencies.AreFileLocal(model, creation, cancellation)
-            || !initializer.Expressions.All(expression => expression is InitializerExpressionSyntax {
-                    Expressions.Count: 2
-                } item
+            || !initializer.Expressions.All(expression =>
+                expression is InitializerExpressionSyntax { Expressions.Count: 2 } item
                 && item.Expressions.All(value => model.GetConstantValue(value, cancellation).HasValue)
             )) {
             return;

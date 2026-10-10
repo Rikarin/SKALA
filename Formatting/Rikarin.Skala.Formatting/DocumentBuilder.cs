@@ -950,10 +950,13 @@ public sealed class DocumentBuilder {
                     // own line as certain and kept `), [`, the oracle's answer for both inputs (measured
                     // 2026-10-09). Only a collection: a call broken after its `(` goes back beside the elements
                     // before it when it fits (#444). See GroupFacts.DraftsBroken.
+                    // ⚠ The planner sets the fact only where the break is certain, so it is not also gated on
+                    // SourceBroken: a spread broken after its `..` holds no break at the collection's own points
+                    // (Nightly fuzz, case 3601384071467948482).
                     if (current >= 0
                         && !draftEnded
                         && node.Kind == DocKind.Group
-                        && facts[node.Arg1] is { DraftsBroken: true, SourceBroken: true }) {
+                        && facts[node.Arg1].DraftsBroken) {
                         drafted = Document.Unbounded;
                     }
 

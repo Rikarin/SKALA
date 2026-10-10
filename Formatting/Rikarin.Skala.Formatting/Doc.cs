@@ -1162,11 +1162,39 @@ public sealed class Document {
 ///     head's and the call's <c>(</c>'s columns; otherwise the head rule decides. With
 ///     <see cref="LambdaHead" /> and <see cref="LambdaCallCallee" />.
 /// </param>
+/// <param name="EqualsLambdaArguments">
+///     ⚠ The <c>=</c> of a single-declarator local named in ten columns or more, whose value is a lambda over a
+///     call: the call's argument list width, or zero for any other group (#453 round 2). With
+///     <see cref="EqualsLambdaName" />, <see cref="EqualsLambdaType" /> and <see cref="EqualsLambdaValueHead" />
+///     the <c>=</c> breaks exactly by <c>EqualsFloor.BreaksBeforeALambdaCall</c>, and otherwise stays for the
+///     arrow and the arguments to decide.
+/// </param>
+/// <param name="EqualsLambdaName">The declarator name's width. See <see cref="EqualsLambdaArguments" />.</param>
+/// <param name="EqualsLambdaType">The declared type's width. See <see cref="EqualsLambdaArguments" />.</param>
+/// <param name="EqualsLambdaValueHead">
+///     The value's width before the call's <c>(</c>: <c>() =&gt; Callee</c>. See <see cref="EqualsLambdaArguments" />.
+/// </param>
+/// <param name="LambdaCallShift">
+///     ⚠ A field's lambda: the floor is read with the head eight columns and the <c>(</c> four columns further
+///     right than they stand — fitted on 1 559 field cells at indent 4, 23 differing against 66 unshifted (#453
+///     round 2). See <see cref="LambdaCallArguments" />.
+/// </param>
 /// <param name="LambdaCallSingle">
 ///     The call has a single argument, whose floor is its own. See <see cref="LambdaCallArguments" />.
 /// </param>
 /// <param name="LambdaCallCallee">
 ///     The width of the call's text before its <c>(</c>. See <see cref="LambdaCallArguments" />.
+/// </param>
+/// <param name="LambdaOperandBody">
+///     ⚠ For the last operand of an <c>if</c> or <c>while</c> condition: the body's flat width with its leading
+///     space, which the line's end is read with in place of the group's measured width, so that breaks the
+///     body already holds do not decide the arrow (#600); zero otherwise. See <see cref="LambdaOperandParameters" />.
+/// </param>
+/// <param name="LambdaOperandKept">
+///     ⚠ The author broke the body's chain: <see cref="LambdaOperandBody" /> is then only its first segment, up to
+///     that break (a property pattern's braces aside), and the arrow breaks exactly when that segment does not fit
+///     beside it — `expression is T { … } item` / `&amp;&amp; …` past the margin breaks it, a chain that fits up to
+///     its first `&amp;&amp;` keeps it (Skala's own source, asked 2026-10-10, #600).
 /// </param>
 /// <param name="LambdaOperandPatternLeft">
 ///     ⚠ For a body that is a type test over a binary pattern, <c>x is A or B</c>: the width of the tested
@@ -1333,6 +1361,10 @@ public sealed class Document {
 ///     Before a call the <c>=</c> stays unless <see cref="EqualsFloor.NameReachesTheCall" />; before a plain member
 ///     value it breaks by <see cref="EqualsFloor.BreaksBeforeTheValue" />. Zero leaves both rules off.
 /// </param>
+/// <param name="EqualsNameAttributed">
+///     With <see cref="EqualsName" />: the field carries attribute lists, whose joined line
+///     <see cref="EqualsFloor.LongFieldNameFloor" /> was not measured on (a joined <c>[A] /* c */</c> line chops).
+/// </param>
 /// <param name="OrLeft">
 ///     ⚠ An <c>=</c> whose value is <c>X || Y</c>, written on one line, with <c>X</c> an <c>&amp;&amp;</c> chain or an
 ///     <c>is</c> pattern: <c>X</c>'s flat width (#579, SK-DIV-0403). When <c>X</c> does not fit beside the <c>=</c>
@@ -1479,6 +1511,17 @@ public sealed class Document {
 ///     the oracle breaks after the arrow while the line through it fits, then before it, then before the
 ///     pattern's <c>)</c>, and only then inside the pattern — where a property pattern's braces chop.
 /// </param>
+/// <param name="ValueHeadArguments">
+///     With <see cref="ValueHeadCallee" />: the call condition's argument count, which the line below may run to
+///     before the oracle keeps the <c>=</c> and chops the call instead (#596's residue, SK-DIV-0447).
+/// </param>
+/// <param name="ArmOneOverHead">
+///     ⚠ A switch arm's body group (#559, SK-DIV-0449): when the arm's flat line ends exactly one column past the
+///     margin, the arrow breaks — rather than a point of the body's own — once the head through the <c>=&gt;</c>
+///     is at least this wide; zero turns the rule off. Measured 2026-10-10 at arm indents 12 and 16 on lines of 121:
+///     68 before a call on a name, 26 before a member chain, 24 before an operator or a parenthesis, each less the
+///     width of the casts in front of it (a cast counts as head). The planner sets it for those bodies only.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1552,12 +1595,20 @@ public readonly record struct GroupFacts(
     int LambdaOperandTail = 0,
     int LambdaOperandFirst = 0,
     int LambdaOperandPatternLeft = 0,
+    int LambdaOperandBody = 0,
+    bool LambdaOperandKept = false,
     int LambdaCallCallee = 0,
     int LambdaCallArguments = 0,
+    int EqualsLambdaName = 0,
+    int EqualsLambdaType = 0,
+    int EqualsLambdaValueHead = 0,
+    int EqualsLambdaArguments = 0,
     bool LambdaCallSingle = false,
+    bool LambdaCallShift = false,
     int MemberHeadWidth = 0,
     int EqualsName = 0,
     int[]? MemberLinks = null,
+    bool EqualsNameAttributed = false,
     int OrLeft = 0,
     int OrRight = 0,
     int OrHead = 0,
@@ -1583,7 +1634,9 @@ public readonly record struct GroupFacts(
     int SectionHead = 0,
     int SectionWidth = 0,
     bool PositionalHead = false,
-    bool SectionSingle = false);
+    bool SectionSingle = false,
+    int ValueHeadArguments = 0,
+    int ArmOneOverHead = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
