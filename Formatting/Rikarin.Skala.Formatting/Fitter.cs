@@ -339,6 +339,27 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ A cast's `)` before a parenthesised operator: by the measured rule. See
+                // GroupFacts.CastParenFirst (#598).
+                if (facts.CastParenFirst > 0) {
+                    return BreaksAfterTheCast(facts, m, lineStart) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                }
+
+                // ⚠ An `=` whose value's leading parenthesis closes one column past the margin breaks when the
+                // value through that `)` fits below, what follows it breaking on its own (#598): `var x =` /
+                // `(string)(…)` / `+ c;`. See GroupFacts.ParenCloseEnd.
+                if (facts.ParenCloseEnd > 0
+                    && m.PointWidth < Unbounded
+                    && m.FlatWidth < Unbounded
+                    && m.Column + m.PointWidth + 1 + facts.ParenCloseEnd == width + 1
+                    && Fits(
+                        m.ContinuationColumn,
+                        facts.ParenCloseEnd,
+                        facts.ParenCloseEnd == m.FlatWidth - m.PointWidth - 1 ? m.Trailing : 0
+                    )) {
+                    return ResolvedMode.Broken;
+                }
+
                 // ⚠ A local's `=` before an `is` over a positional pattern: broken whenever the line overflows
                 // (#559). See GroupFacts.BreaksIfTheLineOverflows.
                 // ⚠ Not over a pattern the author broke inside: `var q = o is P(1, 2` / `);` keeps its `=`.
@@ -722,6 +743,10 @@ public sealed class Fitter {
                 // the `=` broke on a flat line and was given back to the bracket as soon as it was
                 // read as the author's (#379, the mirror image of #375). See
                 // GroupFacts.BreaksOnlyIfTailFits.
+                if (facts.WhenTable) {
+                    return WhenBreaks(facts, m, tail) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                }
+
                 if (facts.BreaksOnlyIfTailFits) {
                     // ⚠ A lambda's arrow over a call chain whose receiver runs past the margin beside it: no dot
                     // can end the line in time (fuzz 16278079796336422477). Kept, pass two read the dot's break
@@ -730,7 +755,7 @@ public sealed class Fitter {
                         return ResolvedMode.Broken;
                     }
 
-                    return TailFits(m, tail) && HeadIsWideEnough(facts, m, lineStart)
+                    return TailFits(m, tail + facts.TailSpare) && HeadIsWideEnough(facts, m, lineStart)
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
                 }
@@ -1077,7 +1102,7 @@ public sealed class Fitter {
         // and not the head: `= [` always fits, and a bracket that is going to break is the case where
         // the oracle gives the break to the bracket. See GroupFacts.BreaksOnlyIfTailFits (#375).
         if (facts.BreaksOnlyIfTailFits) {
-            return TailFits(m, tail) ? ResolvedMode.Broken : ResolvedMode.Flat;
+            return TailFits(m, tail + facts.TailSpare) ? ResolvedMode.Broken : ResolvedMode.Flat;
         }
 
         return facts.JoinsIfFits && Fits(m.Column, m.FlatWidth, m.Trailing)
@@ -1099,6 +1124,64 @@ public sealed class Fitter {
     ///     the same for an expression body's arrow.
     /// </remarks>
     bool TailFits(in Measures m, int tail) => Fits(m.ContinuationColumn, tail, m.Trailing);
+
+    /// <summary>Whether a cast's <c>)</c> breaks before a parenthesised operator (#598).</summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 450 rows at a statement indent of 8 — <c>x =</c> and
+    ///     <c>return</c>, casts of 6 to 34 columns, first operands of 2 to 30 — and 576 more at 119 to 130 columns.
+    ///     The oracle breaks there only where the operand's <c>)</c> lands one column past the margin (the same
+    ///     column at which an <c>=</c> breaks before it, <see cref="GroupFacts.ParenCloseEnd" />), and then while
+    ///     <c>3·s − a ≥ 64</c>, with <c>s</c> the width from the line's start through the cast's <c>)</c> and
+    ///     <c>a</c> the operator's first operand: a wide cast behind a short first operand. 4 of the 450 miss.
+    /// </remarks>
+    bool BreaksAfterTheCast(in GroupFacts facts, in Measures m, int lineStart) =>
+        m.FlatWidth < Unbounded
+        && m.PointWidth < Unbounded
+        && m.Column + m.FlatWidth == width + 1
+        && Fits(m.ContinuationColumn, m.FlatWidth - m.PointWidth, m.Trailing)
+        && 3 * (m.Column + m.PointWidth - lineStart) - facts.CastParenFirst >= 64;
+
+    /// <summary>
+    ///     Whether an arm's <c>when</c> breaks before a condition whose only break points are type argument lists
+    ///     (#576, SK-DIV-0399). See <see cref="GroupFacts.WhenTable" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 600 arms — the <c>when</c> ending at columns 33 to 72,
+    ///     the line below from 105 to 119 — and 324 more over three pattern heads, two body widths and widths of 60
+    ///     to 128. The condition beside the <c>when</c> is never moved while it fits there through its last token:
+    ///     the arrow's break is taken instead. Past that, before a body too wide to be read through the oracle always
+    ///     breaks after the <c>when</c>, the condition fitting below or not; before one it reads through (a short
+    ///     body, its arm's comma included), it breaks while <c>25·t + 6·h ≤ 3191</c>, with <c>t</c> the line below
+    ///     and <c>h</c> the column the <c>when</c> ends at. That fit misses 2 of 590 cells. ⚠ A condition with no
+    ///     break point at all always breaks once it does not fit beside (#609, fuzz 7256125207651206043): `when` /
+    ///     `SomeVeryLongIdentifier… =&gt;` / `1,` — it has nowhere else to go.
+    /// </remarks>
+    bool WhenBreaks(in GroupFacts facts, in Measures m, int tail) {
+        if (m.FlatWidth >= Unbounded || Fits(m.Column, m.FlatWidth)) {
+            return false;
+        }
+
+        if (facts.WhenAtom) {
+            return true;
+        }
+
+        // ⚠ Under an arrow the author broke, the tail rule: `when Materialise<List<bool>,` / `…>>()` / `=> body`
+        // stays beside the `when` where the condition does not fit below (measured on 108 arms of the #576 grid).
+        if (facts.WhenArrowKept) {
+            return TailFits(m, tail);
+        }
+
+        if (facts.WhenBody <= 0) {
+            return true;
+        }
+
+        if (tail >= Unbounded) {
+            return false;
+        }
+
+        var below = m.ContinuationColumn + tail + facts.WhenBody;
+        return 25 * below + 6 * m.Column <= 3191;
+    }
 
     /// <summary>
     ///     Whether the head — from the owner's first token, the marker <see cref="GroupFacts.Owner" />

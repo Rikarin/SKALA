@@ -11299,8 +11299,72 @@ group now covers every arm whose kept arrow break opens the arm's level at the p
 stays flat, and the builder never counts it as a continuation. While it is broken, the writer holds the arrow
 group's level. Pinned by `constructs/breaks/arm-when-chain-under-an-arrow-broken-for-width.cs`.
 
+⚠ **#576, round 3 (2026-10-10).** The type argument list's lift is re-enabled, and it is idempotent now. Fuzz
+12955079666331923518's problem was pass one: it broke the arrow for width without lifting, and pass two read
+that break as kept and lifted. The width lift above (`LiftsIfArrowBreaks`, fuzz 14973596429632421881) came
+later, and it lifts pass one too. So the exclusion only cost the oracle's layout:
+`X when Materialise<List<bool>,` / the type arguments two levels past the arm / `=>`, the same under a kept
+break before the arrow, a kept break after it, and a break for width.
+
+A break the author kept after an arm's `when` is now kept even when the condition does not fit below. The tail
+rule had re-joined `when` / `Materialise<…` into `when Materialise<List<bool>,`, and the oracle keeps it as
+written.
+
+Measured with `Testing ask` on 230 rows: three `when` heads (`Materialise<…>()`, `new Func<…>(…)` and a short
+one), query, call and string bodies of 20 to 126 columns, written flat, broken before the arrow, after it, and
+after the `when`.
+
+- Before: 147 rows diverged.
+- After: 68 diverge, none of them new.
+- Skala's output is a fixed point on every row.
+- Seeds 12955079666331923518 and 857717698562573229 replay clean.
+
+⚠ Still open:
+- Written flat, the oracle breaks after the `when` before a `Materialise<…>()` too wide for the line below, at
+  every body width. Before `new Func<…>(` it does so only from a body of 82 columns. This is the seed's first
+  further rule, still unexplained (27 rows).
+- Under that `when` break, the oracle nests the body's own continuation one level deeper: `=> Handle(` / the
+  arguments at 20 / `)` at 16.
+- Bodies from 90 columns keep `() => (from item` / `in items` beside the arrow, where Skala moves the body
+  below (41 rows with the previous item).
+
+⚠ **#576 round 4 and #609 (2026-10-10).** The unexplained break after `when` is a measured table
+(`Fitter.WhenBreaks`, `GroupFacts.WhenTable`). Measured with `Testing ask` on 600 arms (the `when` ending at
+columns 33 to 72, the line below from 105 to 119), 180 more at heads 21 to 65, and the 108-row grid over three
+pattern heads and two body widths. Written flat:
+
+- A condition that fits beside the `when`, through its last token, never moves. The arrow takes the break.
+- Past that, before a body too wide to be read through, the `when` always breaks, whether the condition fits
+  below or not.
+- Before a body the arrow reads through, the `when` breaks while `25·t + 6·h ≤ 3191`, `t` being the line below
+  and `h` the column the `when` ends at. 2 of 590 cells miss.
+- Under an arrow the author broke, the old tail rule holds.
+- A condition with no break point at all always breaks once it does not fit beside: `when` /
+  `SomeVeryLongIdentifier… =>` / `1,` (#609, fuzz 7256125207651206043). That was the seed's idempotency failure:
+  pass two's kept arrow break flipped the tail rule.
+- An anonymous object is no longer such a condition: `when new {` / its members / `} => …` is the oracle's (#609,
+  fuzz 11388054215126240053). Skala had broken the `when`, and pass two then lifted the query's `where`.
+
+#601's lift for a kept break after `when` stays off where Skala adds that break itself and the pattern sits on
+one line. The oracle lifts the body's continuation there under its own break too (`where` at 20), which Skala's
+width break does not yet do. So `{ P25: not null } when` / `Name => (from …` / `where` is stable, one level short.
+
+Diverging rows, before and after (none new on the first four grids, one on the 180-arm grid):
+
+| Grid | Before | After |
+|---|---|---|
+| 162-row | 27 | 17 |
+| 108-row | 28 | 17 |
+| 180-arm | 68 | 26 |
+| 600-arm | 189 | 12 |
+
+The cells left are mostly a short body read through by the arrow where the oracle breaks after it, and the
+narrowest heads at a 119-column line.
+
 - ⚠ status: **resolved** (#576) for the cut-down shapes, pinned by `constructs/breaks/arm-when-condition-below.cs`;
-  **open** for the seed's whole line.
+  for the lift and the kept `when` break, pinned by `WhenTypeArgumentsLiftIssue576Tests`; and for the table and
+  #609, pinned by `WhenGapAndCastParenIssue609Tests` and both seeds in `FuzzRegressionTests`. **Open** for the
+  body's nesting under a `when` Skala breaks itself, and for the arrow's read-through cells.
 
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
@@ -12221,3 +12285,65 @@ before a creation call, near `EqualsBeforeACall`'s floor, which does not cover a
 
 - options: `skala_wrap_before_eq = false`.
 - ⚠ status: **open**.
+
+## SK-DIV-0491 — an `=` whose value's leading parenthesis closes one column past the margin
+
+#598: at 122 columns, `var x = (string)(aaaa + b…);`. The oracle breaks after the `=`, and Skala broke inside the
+parentheses. Measured 2026-10-10 with `Testing ask` on 1 860 rows:
+
+- owners: a local, a field, a property, an assignment, `+=` and `return`
+- casts of 0 to 21 columns
+- `+`, `&&`, `??` and `?:` inside the parentheses
+- first operands of 4 to 30 columns
+- indents 8, 12 and 16
+- every width from 119 to 136
+
+The trigger is exact. The oracle breaks the `=` exactly where the parenthesised expression the value opens with
+has its `)` on column 121, and the value through that `)` fits below; nowhere else. Shapes that trigger it:
+`var x = (…);` at 122, `(…).L;` at 124, `(string)(…) + c;` at 126 (the `+ c` then breaks on its own),
+`!(…);` at 122. `+=`, `return` and a parenthesis behind another operand (`yy + (…)`) do not.
+`GroupFacts.ParenCloseEnd`.
+
+That rule is for heads shorter than twelve columns. Behind a wider head, group P measured the collection rule:
+the value moves below whenever it fits there flat (`BreaksOnlyIfTailFits`, `MinimumHead` 12), for one
+parenthesis around a binary operator or a cast, bare or cast itself. They measured 252 rows, with heads of 7 to
+32 columns and lines of 119 to 135. Re-measured here on the same generators:
+
+- Type tests (`(a is B)`) are left to the ordering rule, which already matched them.
+- Behind `string value =`, a bare parenthesis stops moving down while the line below would still be 115
+  columns. That held at indents 8 and 12. A cast, or `Dictionary<string, int> value =`, moves down to 120. So a
+  typed local of a head under twenty columns leaves six columns spare (`GroupFacts.TailSpare`). Only those two
+  heads were measured, so the boundary is placed between them, not measured.
+
+Over the 2 112 rows of all seven grids, 188 diverged before and 25 do now. No row regressed.
+
+⚠ Still open, all as before:
+- 9 rows: `x = (IReadOnlyList<int>)(aaaa + …);` and `return (IReadOnlyList<int>)(…);` at 122 with a first operand
+  of 4 or 12 columns. The oracle breaks after the cast's `)`, `x = (IReadOnlyList<int>)` / `(aaaa + …);`, where
+  the `=` cannot hold the value. The 21-column cast's last-resort point (#591) does not take it, and a
+  30-column first operand breaks inside in the oracle too.
+- 6 rows: `var x = (string)(a + b…).Trim();`. The oracle breaks before `.Trim()` and Skala breaks inside the
+  parentheses: a chain under a cast does not take its dot.
+- 1 row: `var x = ((a + b…));` at 123, where the inner `)` lands on 121. Only the outermost parenthesis is read.
+
+⚠ **Round 4 (2026-10-10): the cast's `)`.** Where the operand's `)` lands on column 121 and the `=` cannot take
+the value (`x =`, `return`), the oracle breaks after the cast's `)` while `3·s − a ≥ 64`. Here `s` is the width
+from the line's start through the cast's `)`, and `a` is the operator's first operand. Measured on 450 rows (casts
+of 6 to 34 columns, first operands of 2 to 30) and 576 more at 119 to 130 columns. `GroupFacts.CastParenFirst`,
+`Fitter.BreaksAfterTheCast`.
+
+| Grid | Before | After |
+|---|---|---|
+| 450-row | 208 | 4 |
+| 576-row | 13 | 0 |
+| first two grids | 18 | 0 |
+
+The 4 left are the fit's misses, 3 of them rows the old code had right.
+
+⚠ The `.Trim()` residue is wider than recorded. It is a family: `(T)(a + b…).M()` behind `var x =`, `x =`,
+`return` and a typed local, measured on 504 rows. The oracle breaks before the first dot, the `=`, or both by
+width. 149 rows diverge before and after. Still **open**, and so is `((…))`.
+
+- status: **fixed** for the measured trigger, pinned by `ParenOnePastTheMarginIssue598Tests`, and for the cast's
+  `)`, pinned by `WhenGapAndCastParenIssue609Tests`. ⚠ The chain under a cast and the double parenthesis are
+  **open**.

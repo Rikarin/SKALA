@@ -1511,6 +1511,30 @@ public sealed class Document {
 ///     the oracle breaks after the arrow while the line through it fits, then before it, then before the
 ///     pattern's <c>)</c>, and only then inside the pattern — where a property pattern's braces chop.
 /// </param>
+/// <param name="ParenCloseEnd">
+///     ⚠ An <c>=</c>'s value that opens with a parenthesised expression — bare, cast, or the head of a member
+///     access or a binary operand (#598): the width from the value's first token through that expression's
+///     <c>)</c>, or zero. Where the <c>)</c> lands exactly one column past the margin the oracle breaks the
+///     <c>=</c> whenever the value then fits below, and breaks inside the parentheses at every other width.
+/// </param>
+/// <param name="TailSpare">
+///     ⚠ Columns a <see cref="BreaksOnlyIfTailFits" /> group's tail must leave free on the continuation line, kept
+///     and added alike (#598): six for a typed local of a short type before a bare parenthesis, zero otherwise.
+/// </param>
+/// <param name="CastParenFirst">
+///     ⚠ The gap after a cast's <c>)</c> before a parenthesised operator, the whole value of a <c>return</c> or a
+///     plain <c>=</c> (#598): the width of the operator's first operand, or zero. See
+///     <c>Fitter.BreaksAfterTheCast</c>.
+/// </param>
+/// <param name="WhenTable">
+///     ⚠ The gap after an arm's <c>when</c> before a condition whose only break points are type argument lists
+///     (#576, SK-DIV-0399), decided by the measured table in <c>Fitter.WhenBreaks</c> rather than by whether the
+///     condition fits below. With <see cref="WhenAtom" />, a condition with no break point at all; with
+///     <see cref="WhenBody" />, the width of <c> =&gt; body</c> and the arm's comma for a body short enough to be
+///     read through, decided from the syntax so that a kept arrow break on pass two does not change it. With
+///     <see cref="WhenArrowKept" />, an arm whose arrow the author broke on either side: there a condition with
+///     type arguments moves below exactly when it fits there, the rule before the table.
+/// </param>
 /// <param name="ValueHeadArguments">
 ///     With <see cref="ValueHeadCallee" />: the call condition's argument count, which the line below may run to
 ///     before the oracle keeps the <c>=</c> and chops the call instead (#596's residue, SK-DIV-0447).
@@ -1636,7 +1660,14 @@ public readonly record struct GroupFacts(
     bool PositionalHead = false,
     int ValueHeadArguments = 0,
     int ArmOneOverHead = 0,
-    bool SectionSingle = false);
+    bool SectionSingle = false,
+    int ParenCloseEnd = 0,
+    int TailSpare = 0,
+    bool WhenTable = false,
+    bool WhenAtom = false,
+    int WhenBody = 0,
+    bool WhenArrowKept = false,
+    int CastParenFirst = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
