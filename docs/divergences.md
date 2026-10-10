@@ -12200,7 +12200,7 @@ of 116 to 150. Two shapes, neither wired:
   / `D…>();` — at every width but 122, where it breaks the `=`. Skala breaks the `=` from 122 on (5 rows, 3 more with
   `(capacity)` from 134). A `var x =` local with the same seven-column head breaks it, as Skala does; so does an
   assignment with a 14-column head.
-- **With an argument, a head of 14 or a typed one breaks the `=`** from 122 to 130 where Skala keeps it and fills (6 rows);
+- **With an argument, a head of 14 or a typed one breaks the `=`** from 122 to 130 where Skala keeps it and fills (7 rows);
   from 134 both break it.
 
 The first is the local-against-assignment split SK-DIV-0442 found for positional patterns; the second is an `=`
