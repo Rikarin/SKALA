@@ -7115,6 +7115,34 @@ Skala moves the type below in all of them. The first `F` is roughly `c(H) + 1.5�
 about 131 at `H` = 42 to 128 at 72 and flat after, with single-column steps no reading of `H` and `L` alone
 reproduces; no rule is wired, and the gap stays the modifiers' as round three left it.
 
+**Round five (group Q round two, 2026-10-10): wired, measured on the line below the modifiers.** A dense
+table first — `public static readonly Dictionary<K…, List<S…>> N…;`, `H` from 39 to 90 every three columns,
+names of 1 to 8 letters, the line from 122 to 150 (3 944 cells) — fits one rule exactly: the oracle fills once
+`3·T ≥ 5·L + K(H)`, `K` falling from 393 at `H` = 42 to 381 from 81, never below 42, and for `H` under 51 only
+while that first `T` is at most `123 + H / 3`. ⚠ **The `(H, L)` table failed its first fresh probe** (other
+modifiers and types): `private readonly` fills where it says move, `internal static readonly` moves two
+columns longer, and `protected static` never moves. A third probe on the modifiers alone (eight sets, 1 656
+cells) gave the reason: the modifiers enter only through the line the type and the name would make *below*
+them. Measured there — `X`, with `h` the type's own width through its first comma rather than `H` — every
+modifier set reads off the same table: the oracle fills once `3·X ≥ 5·L + K(h)`, `K` from 336 at `h` = 15 to 324
+from 54, never under 15, and under 24 only while that first `X` is at most `113 + h / 3`
+(`Fitter.FillsAfterTheModifiers`). 11 113 of 11 361 cells over the five probes agree, and a probe written after
+the rule — `internal readonly`, `protected internal static` and `private static`, `ConcurrentDictionary<…, IList<…>>`
+and `Func<…, …>`, indents 4 and 8 (4 554 cells) — matches 4 490 (master 1 316).
+
+| probe | master | now |
+|---|---|---|
+| round four's two (1 230) | 730 | 1 219 |
+| the dense table (3 944) | 1 960 | 3 943 |
+| the refuting probe (2 116) | 584 | 2 007 |
+| the modifiers' probe (1 656) | 563 | 1 549 |
+| the fresh probe (4 554) | 1 316 | 4 490 |
+
+⚠ Only for one declarator of at most eight letters without a value, behind a two-argument generic type: a
+three-argument type behind an eleven-letter name (`ModifierTypeGapIssue540Tests`) moves below the modifiers where
+the rule would fill it, and nothing longer was measured. A `const` with a value is not this rule's (56 of its
+117 cells differ). Every output is stable on a second pass. Pinned by `ModifierFillIssue540Tests`.
+
 **The parameter's gap is resolved (#545).** A parameter whose line passes the margin once its list is
 chopped puts its name one level below its type: `int` / `            aaa…` at a parameter on column 8.
 Measured with `jb cleanupcode` 2025.2.6 one column at a time: flat to a 120-column parameter line, broken
@@ -9727,10 +9755,39 @@ and the oracle still writes `D`; Skala writes `K` or `W`, right in the other 90 
 keyword band past the margin. A `this` receiver, an `=` or an argument in front, and more than one dot are
 not planned: not measured.
 
-- ⚠ status: **resolved** for the band, for a plain member access without a type test, and for a returned
-  type test whose operand alone overflows where the dot's line fits (#446); **open, blocked** for the ties
-  and the two-level `x` layout. Pinned by `TypeTestKeywordIssue444Tests`, `TypeTestOperandDotIssue446Tests`
-  and `constructs/breaks/member-access-last-dot.cs`.
+**Round 6 (group Q round two, 2026-10-10): the ties, by the dot's line against the keyword's.** Swept where
+the ties sit: types of 1 to 20, `k − d` (the line through the keyword less the dot's line one level in) of 2
+to 14, the keyword line from 110 to 123, indents 8 and 16 (1 404 cells). Indents 8 and 16 decide alike, and
+the line ending one column over the margin is `D` as round four found. Past it:
+- the dot never takes a tie unless `k − d` reaches a floor that rises with the type — 5 for types of 1 and
+  3, 8 for 7, 12 for 12, past 14 for 20 — read as `max(5, ⌈(4t + 12) / 5⌉)`;
+- and then only once `k` reaches 118, a column lower for each two columns past the floor.
+
+That reproduced 1 606 of the 1 608 tie cells it was read from, and ⚠ **a fresh probe refuted the second half**
+(2 988 cells; types 2, 4, 5, 9, 15 and 16, indents 12 and 20, `is` and `as`): types of 15 and 16 never take
+the dot up to `k − d` of 23, at indent 20 the floor is a column lower for three types, and the step in `k`
+comes sooner for 5 and 9 — 510 cells lost. The subset every measured cell agrees on is wired: **a type of at
+most 12 columns, `k − d` past the floor, and `k` at 118 or more** (`Fitter.TheDotTakesTheBreak`, asked by the
+operand's fill and by the keyword's band in front of it, which stays flat when the dot takes the line). It is
+right in all 5 596 tie cells of the three probes, and a second fresh probe written after it — types 1, 3, 8,
+11, 13 and 14 with generic names, indents 8 and 24 — loses no cell to it (2 322 of 2 484, master 1 714; the 162
+left are ties outside the subset, where Skala keeps the keyword's band).
+
+| probe | master | now |
+|---|---|---|
+| round 5's grid (648) | 284 | 364 |
+| round 5's second probe (528) | 204 | 240 |
+| the tie sweep (1 404) | 962 | 1 334 |
+| the first fresh probe (2 992) | 1 898 | 2 746 |
+| the second fresh probe (2 484) | 1 714 | 2 322 |
+
+Every output is stable on a second pass. Pinned by `TypeTestTieIssue446Tests`.
+
+- ⚠ status: **resolved** for the band, for a plain member access without a type test, for a returned type test
+  whose operand alone overflows where the dot's line fits (#446), and for the ties inside the subset above;
+  **open** for the other ties (measured, not modelled) and the two-level `x` layout. Pinned by
+  `TypeTestKeywordIssue444Tests`, `TypeTestOperandDotIssue446Tests`, `TypeTestTieIssue446Tests` and
+  `constructs/breaks/member-access-last-dot.cs`.
 
 ## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
 
@@ -10605,9 +10662,33 @@ and only two such values were measured, so a table would have one row per attrib
 The rule was wired and reverted: one attribute shape's table would be right on `[Obsolete(` and wrong by up
 to three columns on the next attribute anyone writes. Nothing changed in the formatter.
 
+**Round five (group Q round two, 2026-10-10): wired, with the `(`'s column in it.** Tested first whether the
+arguments' kinds explain the refuting probe — they do not: `[Obsolete(1, "…")]` and `[Range(1, "…")]` carry the
+same arguments and differ, while `("…", true)`, four arguments, `typeof` and a member argument behind one name
+never differ. What moves the threshold is the width `h` from the `[` to the `(`. Fitted over all 5 773 cells
+of the six probes (heads 4 to 9, indents 8 to 20), the arguments chop exactly when the joined line overflows,
+`24·E ≥ 1695 + 32·w + 11·i + 12·h` and `5·w + 2·i − h ≤ 155` — the second condition is round four's "threshold
+met by 118", which bends with the head too. A fresh probe written after the rule — `[A(`, `[Display(`,
+`[DefaultValue(`, `[JsonPropertyName(` (heads 2, 8, 13, 17), indents 12 and 24, string, integer and `typeof`
+arguments, `string a…` of 14 to 32 columns — matches 1 284 of 1 288. Over all six probes 5 757 of 5 773; the 16
+misses are the threshold bending upward next to the second condition's edge (the oracle keeps the section whole
+one to four columns longer). Not a named argument (chops later, never at indent 20), a one-argument section,
+or a parameter with a default (breaks at its `=`): measured apart and left to their own fit
+(`BreakPlan.PlanSectionBeforeALongParameter`, `Fitter.ChopsBeforeTheParameter`).
+
+| probe | master | now |
+|---|---|---|
+| rounds one to four (3 265 cells, all four probes) | 2 326 | 3 263 |
+| the refuting probe (4 158) | 2 928 | 3 672 |
+| the fresh probe (1 288) | 927 | 1 284 |
+
+Every output is stable on a second pass. Pinned by `LongParameterSectionChopIssue476Tests`.
+
 - options: `skala_wrap_arguments_style`; no key for the join.
 - ⚠ status: **resolved** for parameters of up to eleven columns, defaults included (#476, #556), pinned by
-  `AttributeArgumentChopIssue476Tests`; **open**, measured, for longer ones.
+  `AttributeArgumentChopIssue476Tests`, and for longer parameters behind a section of two or more positional
+  arguments, pinned by `LongParameterSectionChopIssue476Tests`; **open** for named arguments, one-argument
+  sections and defaults behind long parameters.
 
 ## SK-DIV-0353 — a type declaration's keyword and its name: the oracle breaks between them
 

@@ -1425,9 +1425,33 @@ public sealed class Document {
 /// </param>
 /// <param name="TypeTestTail">
 ///     ⚠ The member-access fill of a returned type test's operand (#446, SK-DIV-0210): the width from the dot
-///     through the <c>;</c>. The dot breaks exactly when the operand alone runs past the margin and that line
-///     fits at the continuation column; otherwise the keyword's own band answers.
+///     through the <c>;</c>. With <see cref="TypeTestReceiver" />, <see cref="TypeTestOperand" />,
+///     <see cref="TypeTestKeyword" /> and <see cref="TypeTestType" />, on the fill's group and on the keyword's
+///     band alike, it answers whether the dot takes the break: see <c>Fitter.TheDotTakesTheBreak</c>.
 /// </param>
+/// <param name="TypeTestReceiver">With <see cref="TypeTestTail" />: the receiver's width, up to the dot.</param>
+/// <param name="TypeTestOperand">With <see cref="TypeTestTail" />: the operand's width, receiver, dot and member.</param>
+/// <param name="TypeTestKeyword">With <see cref="TypeTestTail" />: the keyword's width, <c>is</c> or <c>as</c>.</param>
+/// <param name="TypeTestType">With <see cref="TypeTestTail" />: the type's width, without the <c>;</c>.</param>
+/// <param name="ModifierFillHead">
+///     ⚠ A field's gap between its modifiers and a generic type (#540, SK-DIV-0127): the type's width through the
+///     first comma of its argument list, where the oracle's fill on the modifiers' line breaks. With
+///     <see cref="ModifierFillType" /> and <see cref="ModifierFillName" />, the gap stays and the type fills when the
+///     line the type and the name would make below the modifiers reaches a measured length. See
+///     <c>Fitter.FillsAfterTheModifiers</c>.
+/// </param>
+/// <param name="ModifierFillType">With <see cref="ModifierFillHead" />: the type's width.</param>
+/// <param name="ModifierFillName">With <see cref="ModifierFillHead" />: the name's width.</param>
+/// <param name="ParameterAfterSection">
+///     ⚠ A parameter's one attribute section with two or more positional arguments, in front of a parameter wider
+///     than eleven columns (#476, SK-DIV-0352): the parameter's width <c>w</c>. The arguments chop, with the
+///     parameter below them, exactly when the joined line overflows, <c>24·E ≥ 1695 + 32·w + 11·i + 12·h</c> and
+///     <c>5·w + 2·i − h ≤ 155</c> — <c>E</c> the column the section's <c>]</c> ends at, <c>i</c> the section's column,
+///     <c>h</c> the width from its <c>[</c> to its <c>(</c>. Otherwise the section stays whole and the parameter goes
+///     below it alone. See <c>Fitter.ChopsBeforeTheParameter</c>.
+/// </param>
+/// <param name="SectionHead">With <see cref="ParameterAfterSection" />: the width from the <c>[</c> to the <c>(</c>.</param>
+/// <param name="SectionWidth">With <see cref="ParameterAfterSection" />: the section's flat width, <c>[</c> to <c>]</c>.</param>
 /// <param name="ValueHeadCallee">
 ///     ⚠ With <see cref="ValueHeadWidth" />, a condition that is a call on a name: the width from the name through
 ///     its <c>(</c>. The <c>=</c> breaks whenever that <c>(</c> would land past the margin beside it (#596).
@@ -1523,7 +1547,17 @@ public readonly record struct GroupFacts(
     int ArmCast = 0,
     bool BreaksIfTheLineOverflows = false,
     int TypeTestTail = 0,
-    int ValueHeadCallee = 0);
+    int ValueHeadCallee = 0,
+    int TypeTestReceiver = 0,
+    int TypeTestOperand = 0,
+    int TypeTestKeyword = 0,
+    int TypeTestType = 0,
+    int ModifierFillHead = 0,
+    int ModifierFillType = 0,
+    int ModifierFillName = 0,
+    int ParameterAfterSection = 0,
+    int SectionHead = 0,
+    int SectionWidth = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

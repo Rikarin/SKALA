@@ -686,6 +686,7 @@ public sealed class BreakPlan {
                     wrapBeforeOpen: options.WrapBeforeInvocationLpar
                 );
 
+                PlanSectionBeforeALongParameter(attributeArguments);
                 return;
             }
 
@@ -2936,6 +2937,7 @@ public sealed class BreakPlan {
         if (node.Parent is FieldDeclarationSyntax { Modifiers.Count: > 0 }) {
             var modifiers = NewGroup();
             Point(node.Type.GetFirstToken(), modifiers);
+            var (fillHead, fillType, fillName) = ModifierFillShape(node);
             Describe(
                 node.Type,
                 new(
@@ -2945,7 +2947,10 @@ public sealed class BreakPlan {
                         options.KeepsUserBreaksBetweenItems && BreaksBefore(node.Type.GetFirstToken()),
                         BreaksIfTooLong: true,
                         PrefersOuterBreak: true,
-                        SkipsOuterTail: true
+                        SkipsOuterTail: true,
+                        ModifierFillHead: fillHead,
+                        ModifierFillType: fillType,
+                        ModifierFillName: fillName
                     ),
                     true,
                     true
@@ -2979,6 +2984,40 @@ public sealed class BreakPlan {
                 true,
                 true
             )
+        );
+    }
+
+    /// <summary>
+    ///     For a field's one declarator without a value, of at most eight letters, whose type is generic with two
+    ///     arguments — the shapes measured; a three-argument type behind an eleven-letter name moves below the
+    ///     modifiers where the rule would fill it (<c>ModifierTypeGapIssue540Tests</c>): the
+    ///     type's width through its first argument's comma, the type's width and the name's — the widths
+    ///     <c>Fitter.FillsAfterTheModifiers</c> reads (#540). Zeros for any other declaration.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only the first comma of the outermost argument list: that is where the oracle's fill breaks, and the
+    ///     only fill measured. A comment anywhere in the declaration, or a break before the name, leaves the gap to
+    ///     the ordering rule as before; a break inside the type is pass one's fill, read through.
+    /// </remarks>
+    (int Head, int Type, int Name) ModifierFillShape(VariableDeclarationSyntax node) {
+        if (node is not { Variables: [{ Initializer: null } variable] }
+            || (node.Type is QualifiedNameSyntax qualified ? qualified.Right : node.Type) is not GenericNameSyntax {
+                TypeArgumentList.Arguments: { Count: 2 } arguments
+            }
+            || variable.Identifier.Span.Length > 8
+            || BreaksBefore(variable.Identifier)
+            || node.DescendantTrivia(node.Span)
+                .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                )) {
+            return default;
+        }
+
+        var first = node.Type.GetFirstToken();
+        return (
+            FormattedWidth(first, arguments.GetSeparator(0)),
+            FormattedWidth(first, node.Type.GetLastToken()),
+            variable.Identifier.Span.Length
         );
     }
 
@@ -3521,17 +3560,19 @@ public sealed class BreakPlan {
             new(
                 group,
                 GroupMode.Preserve,
-                new(
-                    BreaksIfTooLong: true,
-                    HidesFlatWidthWhenBroken: !IsAssignmentTarget(root),
-                    ArmHead: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax }
-                        ? FlatSourceWidth(root)
-                        : 0,
-                    ArmBody: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm }
-                        ? FlatSourceWidth(arm.Expression)
-                        + WidthOfNext(arm, SyntaxKind.CommaToken)
-                        : 0,
-                    TypeTestTail: TypeTestTail(root)
+                WithTypeTestShape(
+                    new(
+                        BreaksIfTooLong: true,
+                        HidesFlatWidthWhenBroken: !IsAssignmentTarget(root),
+                        ArmHead: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax }
+                            ? FlatSourceWidth(root)
+                            : 0,
+                        ArmBody: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax arm }
+                            ? FlatSourceWidth(arm.Expression)
+                            + WidthOfNext(arm, SyntaxKind.CommaToken)
+                            : 0
+                    ),
+                    root
                 ),
                 HeadSharesTheLevelAroundIt(root),
                 OwnLevel: !HeadSharesTheLevelAroundIt(root) && !fromLine,
@@ -3611,6 +3652,25 @@ public sealed class BreakPlan {
             )
             ? FormattedWidth(member.OperatorToken, statement.SemicolonToken)
             : 0;
+
+    /// <summary>
+    ///     <see cref="TypeTestTail" />'s facts, for the operand's fill and for the keyword's band in front of it:
+    ///     both ask <c>Fitter.TheDotTakesTheBreak</c> the same question.
+    /// </summary>
+    GroupFacts WithTypeTestShape(GroupFacts facts, SyntaxNode root) {
+        var tail = TypeTestTail(root);
+        if (tail == 0 || root is not MemberAccessExpressionSyntax { Parent: BinaryExpressionSyntax binary } member) {
+            return facts;
+        }
+
+        return facts with {
+            TypeTestTail = tail,
+            TypeTestReceiver = FormattedWidth(member.Expression),
+            TypeTestOperand = FormattedWidth(member),
+            TypeTestKeyword = binary.OperatorToken.Span.Length,
+            TypeTestType = FormattedWidth(binary.Right)
+        };
+    }
 
     bool PlansTheFill(SyntaxNode root) =>
         root.Parent switch {
@@ -4636,7 +4696,13 @@ public sealed class BreakPlan {
         if (node is BinaryExpressionSyntax && !BreaksBefore(keyword)) {
             var before = NewGroup();
             Point(keyword, before, lastResort: true);
-            Describe(node, before, GroupMode.Preserve, new(KeywordWidth: keyword.Span.Length));
+            // ⚠ Behind a returned member access the dot can take the break instead, in a tie as well (#446).
+            Describe(
+                node,
+                before,
+                GroupMode.Preserve,
+                WithTypeTestShape(new(KeywordWidth: keyword.Span.Length), ((BinaryExpressionSyntax)node).Left)
+            );
         }
     }
 
@@ -6151,6 +6217,66 @@ public sealed class BreakPlan {
     ///     second pass what it measured flat. See <see cref="GroupFacts.ValueHeadWidth" /> (#553).
     /// </summary>
     int FormattedWidth(SyntaxNode node) => FormattedWidth(node.GetFirstToken(), node.GetLastToken());
+
+    /// <summary>
+    ///     The arguments of a parameter's one attribute section, two or more of them, in front of a parameter
+    ///     wider than eleven columns: they chop by the measured rule rather than by their own fit (#476,
+    ///     SK-DIV-0352). See <see cref="GroupFacts.ParameterAfterSection" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Eleven columns and narrower is
+    ///     <see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />'s
+    ///     rule, which reads the parameter through. A one-argument section is not this rule's: <c>[A("…")]</c> and
+    ///     <c>[Description("…")]</c> in front of 12 to 20 columns stand alone above the parameter at nearly every width.
+    ///     Nor a named argument, which chops later (<c>DiagnosticId = "X"</c>: from 113 behind a 13-column parameter
+    ///     at indent 8, never at 20), nor a parameter with a default value, whose <c>=</c> breaks instead.
+    ///     Widths are the formatter's (<see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />), and a comment
+    ///     anywhere in the section or the parameter, or a break inside the parameter, leaves the list to its own fit.
+    /// </remarks>
+    void PlanSectionBeforeALongParameter(AttributeArgumentListSyntax arguments) {
+        if (options.KeepExistingInvocationParensArrangement
+            || arguments.Arguments.Count < 2
+            || arguments.Arguments.Any(static argument => argument.NameEquals is not null
+                || argument.NameColon is not null
+            )
+            || arguments.Parent is not AttributeSyntax { Parent: AttributeListSyntax { Attributes.Count: 1 } section }
+            || section.Parent is not ParameterSyntax {
+                Parent: ParameterListSyntax, AttributeLists: [_], Default: null
+            } parameter
+            || CSharpDocumentBuilder.IsAShortParameterBehindItsSection(parameter)) {
+            return;
+        }
+
+        var first = section.CloseBracketToken.GetNextToken();
+        var last = parameter.GetLastToken();
+        if (first.SpanStart > parameter.Span.End
+            || source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny('\r', '\n') >= 0
+            || section.DescendantTrivia()
+                .Concat(
+                    parameter.DescendantTrivia(
+                        Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(first.SpanStart, parameter.Span.End)
+                    )
+                )
+                .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+                )
+            || !groups.TryGetValue(Key(arguments), out var plans)
+            || plans.Count == 0) {
+            return;
+        }
+
+        var plan = plans[^1] with {
+            Facts = plans[^1].Facts with {
+                ParameterAfterSection = FormattedWidth(first, last),
+                SectionHead = FormattedWidth(section.OpenBracketToken, arguments.OpenParenToken) - 1,
+                SectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken)
+            }
+        };
+        plans[^1] = plan;
+        byId[plan.Id] = plan;
+    }
 
     /// <summary>
     ///     The width from <paramref name="first" /> through <paramref name="last" /> as the formatter writes it

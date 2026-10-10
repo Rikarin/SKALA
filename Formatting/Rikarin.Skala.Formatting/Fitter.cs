@@ -328,6 +328,13 @@ public sealed class Fitter {
                     return ResolvedMode.Broken;
                 }
 
+                // ⚠ A long parameter's one attribute section: by the measured rule, and before the author's
+                // break, which is the rule's own answer on pass two (#476). See GroupFacts.ParameterAfterSection.
+                if (facts.ParameterAfterSection > 0
+                    && ChopsBeforeTheParameter(facts, m, lineStart) is { } sectionMode) {
+                    return sectionMode;
+                }
+
                 if (facts.SourceBroken) {
                     return KeepOrJoin(facts, m, tail);
                 }
@@ -343,16 +350,23 @@ public sealed class Fitter {
                             : ResolvedMode.Broken;
                 }
 
-                // ⚠ A returned type test's operand: its dot breaks only where neither the keyword's band nor the
-                // operand's own line can hold it. See GroupFacts.TypeTestTail (#446).
+                // ⚠ A field's modifiers and its generic type: the type fills on the modifiers' line by the measured
+                // rule rather than moving below them. See GroupFacts.ModifierFillHead (#540).
+                if (facts.ModifierFillName > 0 && FillsAfterTheModifiers(facts, lineStart)) {
+                    return ResolvedMode.Flat;
+                }
+
+                // ⚠ A returned type test's operand: the dot takes the break by the measured rule, and the keyword's
+                // band in front of it, entered first, stays flat when it does. See GroupFacts.TypeTestTail (#446).
                 if (facts.TypeTestTail > 0) {
-                    // ⚠ Measured at the statement's line plus one level, not at the continuation column: the levels
-                    // the type test stacks there collapse to one on the line the dot starts.
-                    return m.FlatWidth < Unbounded
-                        && !Fits(m.Column, m.FlatWidth)
-                        && Fits(lineStart + indentWidth, facts.TypeTestTail)
-                            ? ResolvedMode.Broken
-                            : ResolvedMode.Flat;
+                    var dot = m.FlatWidth < Unbounded && TheDotTakesTheBreak(facts, m.Column, lineStart);
+                    if (facts.KeywordWidth == 0) {
+                        return dot ? ResolvedMode.Broken : ResolvedMode.Flat;
+                    }
+
+                    if (dot) {
+                        return ResolvedMode.Flat;
+                    }
                 }
 
                 // ⚠ An `=` before a plain member access yields to its dot fill (#482) — unless the receiver
@@ -817,6 +831,124 @@ public sealed class Fitter {
         return arguments < EqualsFloor.Of(paren, indent, facts.CalleeWidth, facts.CalleeOwner)
             ? ResolvedMode.Broken
             : ResolvedMode.Flat;
+    }
+
+    /// <summary>
+    ///     Whether a field's generic type fills on its modifiers' line rather than moving below them (#540,
+    ///     SK-DIV-0127).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 on 15 000 fields, one column at a time from 121 to 160:
+    ///     eight modifier sets, indents 4 and 8, <c>Dictionary</c>, <c>IReadOnlyDictionary</c>, <c>Func</c>,
+    ///     <c>ConcurrentDictionary</c> and <c>Action</c> types, heads of 4 to 63 columns through the first comma, names
+    ///     of 1 to 8 letters. With <c>X</c> the line the type and the name would make one level below the modifiers,
+    ///     <c>L</c> the name and <c>h</c> the type through its first comma, the oracle fills once
+    ///     <c>3·X ≥ 5·L + K(h)</c>, <c>K</c> falling from 336 at <c>h</c> = 15 to 324 from 54, and never below 15; under
+    ///     24 only while that threshold is at most <c>113 + h / 3</c>. The modifiers enter only through <c>X</c>:
+    ///     round three's <c>public static readonly</c> rows and <c>private readonly</c> ones read off one table once
+    ///     measured on the line below rather than the line's end. 11 113 of 11 361 cells agree, and a probe written
+    ///     after the rule, with three new modifier sets and two new types at two indents, 4 028 of 4 092.
+    /// </remarks>
+    bool FillsAfterTheModifiers(in GroupFacts facts, int lineStart) {
+        var head = facts.ModifierFillHead;
+        var name = facts.ModifierFillName;
+        var k = head >= 54 ? 324 :
+            head >= 36 ? 325 :
+            head >= 24 ? 326 :
+            head >= 21 ? 330 :
+            head >= 18 ? 334 :
+            head >= 15 ? 336 : 0;
+        if (k == 0) {
+            return false;
+        }
+
+        var first = (5 * name + k + 2) / 3;
+        if (head < 24 && first > 113 + head / 3) {
+            return false;
+        }
+
+        var below = lineStart + indentWidth + facts.ModifierFillType + 1 + name + 1;
+        return 3 * below >= 5 * name + k;
+    }
+
+    /// <summary>
+    ///     Whether a returned type test's operand breaks before its dot, <c>return r</c> / <c>.P… as T;</c>, rather
+    ///     than at the keyword (#446, SK-DIV-0210). <paramref name="column" /> is where the operand starts.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 on 4 600 cells, receivers of 1 to 40 columns, types of 1 to
+    ///     20, indents 8 to 20, <c>is</c> and <c>as</c>, the keyword ending at 110 to 136. With <c>k</c> the line
+    ///     through the keyword, <c>d</c> the dot's line one level in and <c>t</c> the type:
+    ///     <list type="bullet">
+    ///         <item>the dot's line must fit, and nothing else breaks when the whole statement does;</item>
+    ///         <item>an operand past the margin by itself always breaks at the dot (194 of 194);</item>
+    ///         <item>one column over the margin the dot breaks unless the receiver is at most <c>(t − 10) / 5</c>;</item>
+    ///         <item>
+    ///             otherwise — a tie, where the keyword's band could hold the line — the dot breaks when the type is
+    ///             at most 12 columns, <c>k − d</c> is past <c>max(5, ⌈(4t + 12) / 5⌉)</c> and <c>k</c> reaches
+    ///             <c>width − 2</c>.
+    ///         </item>
+    ///     </list>
+    ///     ⚠ The ties are wired only where every measured cell agrees. The full boundary read from the first 1 608
+    ///     cells — the floor reached, and <c>k</c> a column lower for each two columns past it — was refuted by
+    ///     the next probe (510 of 2 988 cells): types of 15 and 16 never break at the dot up to <c>k − d</c> of
+    ///     23, at indent 20 the floor is a column lower, and the step in <c>k</c> comes sooner for some types. The
+    ///     subset kept here is right in every one of the 5 596 tie cells of the three probes and was then checked
+    ///     on a fourth. The <c>x</c> layout — neither the keyword's band nor the dot's line fits, and the oracle
+    ///     nests the dot two levels in — is not this rule's and stays the keyword's.
+    /// </remarks>
+    bool TheDotTakesTheBreak(in GroupFacts facts, int column, int lineStart) {
+        var operandEnd = column + facts.TypeTestOperand;
+        var keywordEnd = operandEnd + 1 + facts.TypeTestKeyword;
+        var whole = keywordEnd + 1 + facts.TypeTestType + 1;
+        var dotLine = lineStart + indentWidth + facts.TypeTestTail;
+        if (whole <= width || dotLine > width) {
+            return false;
+        }
+
+        if (operandEnd > width) {
+            return true;
+        }
+
+        if (whole == width + 1) {
+            return 5 * facts.TypeTestReceiver > facts.TypeTestType - 10;
+        }
+
+        var floor = Math.Max(5, (4 * facts.TypeTestType + 12 + 4) / 5);
+        return facts.TypeTestType <= 12 && keywordEnd - dotLine > floor && keywordEnd >= width - 2;
+    }
+
+    /// <summary>
+    ///     Whether a parameter's one attribute section chops its arguments, for a parameter wider than eleven
+    ///     columns behind a section of two or more arguments (#476, SK-DIV-0352); null when the rule does not
+    ///     speak.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>jb cleanupcode</c> 2025.2.6 one column at a time, the section ending at 96 to 120
+    ///     (#476, SK-DIV-0352): parameters of 12 to 39 columns, indents 8 to 24, attribute names putting the
+    ///     <c>(</c> 2 to 17 columns past the <c>[</c>, string, integer, <c>typeof</c> and member arguments, two to four
+    ///     of them. The arguments chop exactly when the joined line overflows,
+    ///     <c>24·E ≥ 1695 + 32·w + 11·i + 12·h</c> and <c>5·w + 2·i − h ≤ 155</c>: 5 757 of 5 773 cells over six
+    ///     probes, the last written after the rule and matching 1 284 of 1 288. Neither what the arguments are nor
+    ///     what chopping them saves enters it; the <c>(</c>'s column does. The 16 misses are a threshold that rises
+    ///     faster than the line next to the second condition's edge, where the oracle keeps the section whole a few
+    ///     columns longer. Only for a section that starts its line, which is what was measured: a chopped list.
+    /// </remarks>
+    ResolvedMode? ChopsBeforeTheParameter(in GroupFacts facts, in Measures m, int lineStart) {
+        if (m.Column != lineStart + facts.SectionHead) {
+            return null;
+        }
+
+        var end = lineStart + facts.SectionWidth;
+        var parameter = facts.ParameterAfterSection;
+        if (end > width || end + 1 + parameter <= width) {
+            return null;
+        }
+
+        return 5 * parameter + 2 * lineStart - facts.SectionHead <= 155
+            && 24 * end >= 1695 + 32 * parameter + 11 * lineStart + 12 * facts.SectionHead
+                ? ResolvedMode.Broken
+                : ResolvedMode.Flat;
     }
 
     /// <summary>What a <see cref="GroupMode.Preserve" /> group whose source was broken does with the break.</summary>
