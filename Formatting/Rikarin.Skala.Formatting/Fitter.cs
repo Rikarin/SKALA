@@ -436,6 +436,18 @@ public sealed class Fitter {
                     return ResolvedMode.Broken;
                 }
 
+                // ⚠ A local's type/name gap before a lambda over a call, one column past the margin (#453 round 8).
+                // See GroupFacts.OneOverCallArguments.
+                if (facts.OneOverCallArguments > 0 && m.PointWidth < Unbounded) {
+                    if (m.FlatWidth < Unbounded
+                        && m.Trailing < Unbounded
+                        && m.Column + m.FlatWidth + m.Trailing == width + 1
+                        && facts.OneOverCallType >= EqualsFloor.TypeNameOneOverType(facts.OneOverCallName)
+                        && facts.OneOverCallArguments <= 35 + (facts.OneOverCallType - 32) / 12) {
+                        return ResolvedMode.Broken;
+                    }
+                }
+
                 if (facts is { NameThroughEquals: > 0, OneOverValue: 0 }) {
                     return ResolvedMode.Flat;
                 }
@@ -471,10 +483,26 @@ public sealed class Fitter {
                 if (facts.EqualsLambdaArguments > 0 && m.PointWidth < Unbounded) {
                     // ⚠ The group starts at the `=` in a declaration and at the target in an assignment: the `=`
                     // ends where its point's head does.
-                    var equalsEnd = m.Column + m.PointWidth - 1;
+                    var equalsEnd = m.Column + m.PointWidth;
                     var paren = equalsEnd + 1 + facts.EqualsLambdaValueHead + 1;
                     if (paren + facts.EqualsLambdaArguments <= width) {
                         return ResolvedMode.Flat;
+                    }
+
+                    // ⚠ A local one column past the margin (#453 round 8): under a type narrower than the type/name
+                    // gap's threshold the `=` breaks wherever the arrow would, the gate aside.
+                    if (facts.EqualsLambdaIsLocal
+                        && m.FlatWidth < Unbounded
+                        && m.Trailing < Unbounded
+                        && m.Column + m.FlatWidth + m.Trailing == width + 1) {
+                        return facts.EqualsLambdaType < EqualsFloor.TypeNameOneOverType(facts.EqualsLambdaName)
+                            && facts.EqualsLambdaType <= 8 * (facts.EqualsLambdaName - 10) + 14
+                            && paren >= equalsEnd
+                            + 36
+                            - 1.6 * (facts.EqualsLambdaName - 11)
+                            + 0.25 * (facts.EqualsLambdaType - 14)
+                                ? ResolvedMode.Broken
+                                : ResolvedMode.Flat;
                     }
 
                     return EqualsFloor.BreaksBeforeALambdaCall(

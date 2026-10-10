@@ -2939,6 +2939,17 @@ public sealed class BreakPlan {
                 ? name.Span.Length + 2
                 : 0;
 
+            // ⚠ A lambda over a call, one column past the margin (#453 round 8): the gap between the type and the
+            // name breaks for a type of at least OneOverCallType's threshold, wherever the arrow or the `=` would
+            // otherwise break. See GroupFacts.OneOverCallArguments.
+            var oneOverCall = throughEquals > 0
+                && value is LambdaExpressionSyntax {
+                    ExpressionBody: InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 } call,
+                    Modifiers.Count: 0
+                } callLambda
+                    ? (Call: call, Lambda: callLambda)
+                    : default;
+
             if (oneOver > 0 || throughEquals > 0) {
                 var lambdaGroup = NewGroup();
                 Point(name, lambdaGroup);
@@ -2952,7 +2963,17 @@ public sealed class BreakPlan {
                             BreaksIfTooLong: true,
                             OneOverValue: oneOver,
                             OneOverEquals: oneOver > 0 ? -2 : -1,
-                            NameThroughEquals: throughEquals
+                            NameThroughEquals: throughEquals,
+                            OneOverCallArguments: oneOverCall.Call is null ? 0 : FormattedWidth(oneOverCall.Call.ArgumentList),
+                            OneOverCallValueHead: oneOverCall.Call is null
+                                ? 0
+                                : FormattedWidth(
+                                    oneOverCall.Lambda.GetFirstToken(),
+                                    oneOverCall.Call.ArgumentList.OpenParenToken.GetPreviousToken()
+                                ),
+                            OneOverCallType: oneOverCall.Call is null ? 0 : FormattedWidth(node.Type),
+                            OneOverCallName: name.Span.Length,
+                            OneOverCallSingle: oneOverCall.Call?.ArgumentList.Arguments.Count == 1
                         ),
                         true,
                         true,
@@ -6015,6 +6036,9 @@ public sealed class BreakPlan {
                     EqualsLambdaName: wideLambdaCall?.Name ?? 0,
                     EqualsLambdaType: wideLambdaCall?.Type ?? 0,
                     EqualsLambdaReach: wideLambdaCall?.Reach ?? 0,
+                    EqualsLambdaIsLocal: wideLambdaCall is not null
+                    && node is EqualsValueClauseSyntax { Parent.Parent.Parent: LocalDeclarationStatementSyntax },
+                    EqualsLambdaSingle: lambdaCall?.ArgumentList.Arguments.Count == 1,
                     EqualsLambdaValueHead: wideLambdaCall is null || lambdaCall is null
                         ? 0
                         : FormattedWidth(

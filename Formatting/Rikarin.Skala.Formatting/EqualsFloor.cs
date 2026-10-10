@@ -335,6 +335,21 @@ public static class EqualsFloor {
 
 
     /// <summary>
+    ///     The narrowest type before which a local's lambda over a call, its `;` one column past the margin, breaks
+    ///     between the type and the name rather than at its arrow or its <c>=</c> (#453 round 8).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> on <c>Func&lt;T…&gt; name = () =&gt; C…(xxx, yyy);</c> ending at 121:
+    ///     names of 1 to 31, types of 14 to 44 two apart, the <c>(</c> five apart — 1 955 cells, each row one
+    ///     clean switch. Where the arguments chop they still chop; elsewhere the gap breaks from a type of
+    ///     <c>39 − name</c> under a name of nine columns or fewer (38 at one, 30 at nine), and from 28 to 32 above
+    ///     it (28 for names of 10 to 14, 30 at 18, 32 from 24), where the <c>=</c> breaks below it instead of the
+    ///     arrow — whatever the wide name's gate says.
+    /// </remarks>
+    public static int TypeNameOneOverType(int name) =>
+        name <= 9 ? 39 - name : Math.Min(32, Math.Max(28, 28 + (name - 14) / 2));
+
+    /// <summary>
     ///     Whether a local's lambda over a call with two or more arguments breaks its arrow past the margin, rather
     ///     than keeping it and chopping the call's arguments (#453): the <c>=</c> ends at column
     ///     <paramref name="head" />, the call's <c>(</c> stands at <paramref name="paren" /> and its argument list

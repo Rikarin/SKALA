@@ -1169,6 +1169,17 @@ public sealed class Document {
 ///     head's and the call's <c>(</c>'s columns; otherwise the head rule decides. With
 ///     <see cref="LambdaHead" /> and <see cref="LambdaCallCallee" />.
 /// </param>
+/// <param name="OneOverCallArguments">
+///     ⚠ A local's type/name gap before a lambda over a call: the call's argument list width, or zero (#453
+///     round 8). Where the statement's `;` lands one column past the margin and the arrow's floor would not
+///     chop the arguments, the gap breaks for a type at least <c>EqualsFloor.TypeNameOneOverType</c> wide.
+///     With <see cref="OneOverCallValueHead" />, <see cref="OneOverCallType" />, <see cref="OneOverCallName" />
+///     and <see cref="OneOverCallSingle" />.
+/// </param>
+/// <param name="OneOverCallValueHead">The value's width before the call's <c>(</c>.</param>
+/// <param name="OneOverCallType">The declared type's width.</param>
+/// <param name="OneOverCallName">The declarator name's width.</param>
+/// <param name="OneOverCallSingle">The call has one argument.</param>
 /// <param name="EqualsLambdaArguments">
 ///     ⚠ The <c>=</c> of a single-declarator local named in ten columns or more, whose value is a lambda over a
 ///     call: the call's argument list width, or zero for any other group (#453 round 2). With
@@ -1178,6 +1189,8 @@ public sealed class Document {
 /// </param>
 /// <param name="EqualsLambdaName">The declarator name's width. See <see cref="EqualsLambdaArguments" />.</param>
 /// <param name="EqualsLambdaType">The declared type's width. See <see cref="EqualsLambdaArguments" />.</param>
+/// <param name="EqualsLambdaIsLocal">The `=` is a local's (round 8's one-column-over rule). See <see cref="EqualsLambdaArguments" />.</param>
+/// <param name="EqualsLambdaSingle">The call has one argument. See <see cref="EqualsLambdaArguments" />.</param>
 /// <param name="EqualsLambdaReach">
 ///     Columns added to the measured reach: 2 for an assignment statement's target, 0 for a declaration. See
 ///     <see cref="EqualsLambdaArguments" />.
@@ -1695,9 +1708,16 @@ public readonly record struct GroupFacts(
     bool LambdaOperandKept = false,
     int LambdaCallCallee = 0,
     int LambdaCallArguments = 0,
+    int OneOverCallArguments = 0,
+    int OneOverCallValueHead = 0,
+    int OneOverCallType = 0,
+    int OneOverCallName = 0,
+    bool OneOverCallSingle = false,
     int EqualsLambdaName = 0,
     int EqualsLambdaType = 0,
     int EqualsLambdaReach = 0,
+    bool EqualsLambdaIsLocal = false,
+    bool EqualsLambdaSingle = false,
     int EqualsLambdaValueHead = 0,
     int EqualsLambdaArguments = 0,
     bool LambdaCallSingle = false,
