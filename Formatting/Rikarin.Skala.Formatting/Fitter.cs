@@ -385,6 +385,10 @@ public sealed class Fitter {
                 // EqualsFloor.BreaksBeforeTheValue.
                 if (facts is { MemberHeadWidth: > 0, EqualsName: > 0 }
                     && m.PointWidth < Unbounded
+                    // ⚠ Not over a head the author broke (#606, Nightly fuzz 10828701791419393416): an unbounded
+                    // flat width "does not fit" by definition, so `var (a, b` / `) = source.First.Value;` broke its
+                    // `=` on a 35-column line. The oracle keeps it.
+                    && m.FlatWidth < Unbounded
                     && tail < Unbounded
                     && m.Trailing < Unbounded
                     && !Fits(m.Column, m.FlatWidth, m.Trailing)) {
