@@ -5851,6 +5851,7 @@ public sealed class BreakPlan {
             _ => 0,
         };
         var heldCall = heldKind > 0 ? PlanHeldSingleCall(value, heldKind) : null;
+        var choppedHeld = heldKind == 1 && heldCall is null ? ChoppedHeldCallOf(value) : null;
         var heldReceiver = heldCall?.Expression is MemberAccessExpressionSyntax heldAccess
             ? FlatSourceWidth(heldAccess.Expression)
             : 0;
@@ -5994,6 +5995,23 @@ public sealed class BreakPlan {
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
+                    HeldValueTypedHead: (heldCall is not null || choppedHeld is not null) && heldKind == 1
+                        ? HeadWidthThroughEquals(node, equals)
+                        : 0,
+                    HeldValueCallee: (heldCall ?? choppedHeld) is {
+                        Expression: MemberAccessExpressionSyntax heldCallee
+                    }
+                    && heldKind == 1
+                        ? FlatSourceWidth(heldCallee.Expression) + heldCallee.Name.Identifier.Span.Length
+                        : 0,
+                    HeldChoppedHead: choppedHeld is not null && heldKind == 1
+                        ? FormattedWidth(value.GetFirstToken(), choppedHeld.ArgumentList.OpenParenToken)
+                        : 0,
+                    HeldChoppedWidth: choppedHeld is not null && heldKind == 1
+                        ? FlatSourceWidth(value)
+                        + WidthThroughSemicolon(value)
+                        + TrailingCommentWidth(value.GetLastToken().GetNextToken())
+                        : 0,
                     EqualsLambdaName: wideLambdaCall?.Name ?? 0,
                     EqualsLambdaType: wideLambdaCall?.Type ?? 0,
                     EqualsLambdaReach: wideLambdaCall?.Reach ?? 0,
@@ -6429,6 +6447,37 @@ public sealed class BreakPlan {
         && !HasLooseBreak(or)
             ? or
             : null;
+
+    /// <summary>
+    ///     A single call on a plain receiver with at most one argument whose only line breaks are inside its argument
+    ///     list — the chop <see cref="EqualsFloor.HeldTypedLocalBreaks" /> leaves behind when it keeps the <c>=</c>;
+    ///     null otherwise. See <see cref="GroupFacts.HeldChoppedWidth" />.
+    /// </summary>
+    InvocationExpressionSyntax? ChoppedHeldCallOf(ExpressionSyntax value) {
+        if (value is not InvocationExpressionSyntax {
+                Expression: MemberAccessExpressionSyntax { Expression: var receiver } access,
+                ArgumentList: { Arguments.Count: <= 1 } list
+            } call
+            || receiver is InvocationExpressionSyntax or ElementAccessExpressionSyntax
+            || list.DescendantNodes()
+                .Any(static node => node is AnonymousFunctionExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or AnonymousObjectCreationExpressionSyntax
+                    or SwitchExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or WithExpressionSyntax
+                )
+            || access.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+            || list.DescendantTrivia()
+                .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                )
+            || source.AsSpan(list.SpanStart, list.Span.Length).IndexOfAny('\r', '\n') < 0) {
+            return null;
+        }
+
+        return call;
+    }
 
     /// <summary>The measured owner of an <c>=</c> whose floor <see cref="EqualsFloor" /> knows (#446).</summary>
     /// <remarks>
@@ -9723,7 +9772,35 @@ public sealed class BreakPlan {
         var group = NewGroup();
         Point(next, group);
         pastAttributeComments.Add(next.SpanStart);
-        Describe(node, group, GroupMode.Preserve, new(MeasuresHead: true, Terminator: wrapsInside ? 1 : WholeLine));
+        // ⚠ And a field whose value cannot wrap inside an argument list declines only up to a measured line: the head
+        // and the name decide where it joins instead (#555's (e) cells, SK-DIV-0201). See EqualsFloor.DeclinesTheJoin.
+        var declineHead = !wrapsInside
+            && node is FieldDeclarationSyntax {
+                Declaration: { Variables: [{ Initializer: { } equals } declarator] } declaration
+            }
+                ? FormattedWidth(next, equals.EqualsToken) + 1
+                : 0;
+        var declineName = declineHead > 0
+            ? ((FieldDeclarationSyntax)node).Declaration.Variables[0].Identifier.Span.Length
+            : 0;
+        Describe(
+            node,
+            group,
+            GroupMode.Preserve,
+            new(
+                MeasuresHead: true,
+                Terminator: wrapsInside ? 1 : WholeLine,
+                DeclineHead: declineHead,
+                DeclineName: declineName,
+                DeclinePrefix: declineHead > 0
+                    ? FormattedWidth(node.GetFirstToken(), close)
+                    + close.TrailingTrivia.Concat(next.LeadingTrivia)
+                        .Where(IsBlockComment)
+                        .Sum(static comment => 1 + comment.Span.Length)
+                    + 1
+                    : 0
+            )
+        );
     }
 
     /// <summary>

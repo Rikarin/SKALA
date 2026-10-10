@@ -1381,6 +1381,34 @@ public sealed class Document {
 ///     With <see cref="EqualsName" />: the field carries attribute lists, whose joined line
 ///     <see cref="EqualsFloor.LongFieldNameFloor" /> was not measured on (a joined <c>[A] /* c */</c> line chops).
 /// </param>
+/// <param name="DeclineHead">
+///     ⚠ A field's gap after <c>[A] /* c */</c> whose value cannot wrap inside an argument list: the width of the
+///     declaration from its first token through <c>= </c> (SK-DIV-0201, #504/#555). The join is declined —
+///     the attribute and the comment alone on their line — exactly when the joined line overflows and
+///     <see cref="EqualsFloor.DeclinesTheJoin" />; zero for any other group.
+/// </param>
+/// <param name="DeclineName">With <see cref="DeclineHead" />: the declared name's width.</param>
+/// <param name="DeclinePrefix">
+///     With <see cref="DeclineHead" />: the width of the attribute sections and the comment, their spaces included —
+///     read from the syntax, since a section's own arguments (<c>[DataMember(Order = 1)]</c>) end the group's point
+///     width early.
+/// </param>
+/// <param name="HeldValueTypedHead">
+///     With <see cref="HeldValue" /> 1, a typed local: the head from the statement's start through the <c>=</c>
+///     (SK-DIV-0005, round 3 of the name reading). See <see cref="EqualsFloor.HeldTypedLocalBreaks" />.
+/// </param>
+/// <param name="HeldValueCallee">
+///     With <see cref="HeldValueTypedHead" />: the receiver's and the method name's widths, type arguments left out.
+/// </param>
+/// <param name="HeldChoppedWidth">
+///     ⚠ A typed local's single call on a receiver whose argument list is already chopped — pass two of a
+///     <see cref="EqualsFloor.HeldTypedLocalBreaks" /> that kept the <c>=</c>: the value's flat width through its
+///     <c>;</c>, so that the second pass asks the first pass's question and keeps the <c>=</c> again. Zero otherwise.
+/// </param>
+/// <param name="HeldChoppedHead">
+///     With <see cref="HeldChoppedWidth" />: the value's width through its <c>(</c>. Only a <c>(</c> that ends beside
+///     the <c>=</c> is a chop the held rule could have left (fuzz seed 15487819194531676087).
+/// </param>
 /// <param name="OrLeft">
 ///     ⚠ An <c>=</c> whose value is <c>X || Y</c>, written on one line, with <c>X</c> an <c>&amp;&amp;</c> chain or an
 ///     <c>is</c> pattern: <c>X</c>'s flat width (#579, SK-DIV-0403). When <c>X</c> does not fit beside the <c>=</c>
@@ -1637,6 +1665,10 @@ public readonly record struct GroupFacts(
     int HeldValueReceiver = 0,
     int HeldValueHead = 0,
     bool HeldValueManyArgs = false,
+    int HeldValueTypedHead = 0,
+    int HeldValueCallee = 0,
+    int HeldChoppedWidth = 0,
+    int HeldChoppedHead = 0,
     int ArmHead = 0,
     int ArmBody = 0,
     bool LiftsThroughInnerBreaks = false,
@@ -1674,6 +1706,9 @@ public readonly record struct GroupFacts(
     int EqualsName = 0,
     int[]? MemberLinks = null,
     bool EqualsNameAttributed = false,
+    int DeclineHead = 0,
+    int DeclineName = 0,
+    int DeclinePrefix = 0,
     int OrLeft = 0,
     int OrRight = 0,
     int OrHead = 0,

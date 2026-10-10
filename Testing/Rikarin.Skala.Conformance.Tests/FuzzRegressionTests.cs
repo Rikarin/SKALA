@@ -262,6 +262,13 @@ public sealed class FuzzRegressionTests {
     // #608: `Value` / `= property.` / `Value;` — an author's break before the `=` left the `=` group's flat width
     // unbounded, and #590's plain-member rule read that as an overflowing line and broke after the `=` on pass two.
     [InlineData(9342835643250235022UL, "real/serilog/Serilog/Events/LogEventProperty.cs")]
+    // Round 3's held typed local (fuzz `--seed=31415926535`): `T c = JsonConvert.DeserializeObject<LongType>(json`↵`);`
+    // read as a chop the held rule had left, though its `(` lands far past the margin; pass one kept the `=` and
+    // broke the type arguments, pass two broke the `=`. Only a `(` beside the `=` is such a chop now.
+    [InlineData(
+        15487819194531676087UL,
+        "real/newtonsoft/Newtonsoft.Json.Tests/Serialization/ConstructorHandlingTests.cs"
+    )]
     // ⚠ #611: `Enumerable.Range(…).Select(index => 1d + (index` / `% 5)).ToArray()` — a receiver lambda's operand
     // chain took its own level behind a call whose dot pass one broke for width; pass two read the dot as the
     // author's and gave the level back.

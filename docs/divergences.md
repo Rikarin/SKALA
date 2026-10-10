@@ -12111,6 +12111,80 @@ Rows: 42 → 72 of 81, and the round-one grid of 40 rows 15 → 27.
 
 - options: `keep_user_linebreaks`.
 - ⚠ status: **resolved** for the local's `=`, pinned by `constructs/breaks/positional-pattern-after-a-local-equals.cs`;
+  **open** for the three above.
+
+### Round 2 of the name reading (Group N, 2026-10-10)
+
+Measured with `Testing ask`; every rule below was then checked on a probe drawn fresh for it (seed 777, 2 500
+typed locals in the regions the rules touch, indents 8 to 24), where round one agreed on 2 034 and this agrees
+on 2 247, losing 10 rows round one had.
+
+- **#590's residue, names 16 to 24 with a fragment of five: already gone.** Round one's "no bound for a fragment
+  within a column of a quarter of the name" covers it. What was left was a short name (under eight) behind a
+  fragment of 12 to 15, where the limit is 109 like the shorter fragments' rather than falling with the fragment:
+  member grids 51 792 → 51 916 of 52 599. ⚠ Not wired, refuted by the other grids: a bonus for names of 14 to
+  24 behind long fragments (g590j breaks a name of 20 at every fragment up to 83 below 105), which every variant
+  tried lost elsewhere.
+- **Typed conditionals at deep indents (SK-DIV-0402).** Past an `=` at column 84 a name of six or more also takes
+  the member value's limit with its bump, as a shorter name already did: 8 700 conditional cells at indents 8
+  to 24 go 8 051 → 8 215, #577's own 314 stay 314, the 4 788-cell grid 4 578 → 4 656; ⚠ 2 219 short-head
+  rows lose 20 (2 167 → 2 147).
+- **Fields with names of 31 or more, the `(` at 76 or left (SK-DIV-0400).** A floor on the argument list of
+  `62 − (name − 30) / 3` (`EqualsFloor.LongFieldNameFloor`): fields 942 → 956 of 984 and 1 062 → 1 172 of 1 316.
+  ⚠ First cut at 78, and the full gate refuted it: `equals-before-a-call-floor.cs`'s `private static readonly`
+  field of 32 with its `(` at 78 chops where `public` fields of 34 to 48 at 78 break; 77 and 78 stay the table's.
+  ⚠ Not for a field with attributes: `[Obsolete] /* c */ public Foo F(31) = Compute(…);` joined chops where the
+  rule would break the `=`.
+- **The EqualsFloor indent and callee tables are not the name, so they stay.** Re-derived on 3 386 `var` and
+  typed cells over indents 8 to 24 and callees 4 to 30: at the same name and the same `(`, 49 of 135 pairs
+  disagree, a deeper indent lowering the floor by up to six columns. The name explains why a typed local's long
+  type moved the answer; it does not replace the indent.
+- **SK-DIV-0005's `Convert.FromBase64String` example agrees** at 123, on master and here. The class around it is
+  the held single call (#528): on 1 296 cells the oracle never breaks behind a head under twelve
+  (`byte[] da =`) and stops at a line below of about 113 to 116 where Skala's typed rule allows 117. 181 cells
+  differ, identically on master; one more probe did not settle the limit, so it is recorded, not wired.
+- **#555's attribute-with-comment cells:** 408 cells (`[Obsolete] /* c */`, `[Obsolete]`, none; names 1 to 31;
+  calls and creations; lines 118 to 134) differ in 14, all one shape: with the comment and a 31-column name the
+  oracle declines the join from 122 to 128 where it joins and chops for names of 16 or less. Another name
+  effect, inside the attribute join; not wired.
+
+## SK-DIV-0490 — a type test broken before its `is` takes a level of its own, stacked on what is open around it
+
+#597, found in Skala's own `SearchValuesAnalyzer.cs`: `if (model.GetSpeculativeSymbolInfo(` / the
+arguments / `).Symbol` / `is not IMethodSymbol creator` / `|| …`. Skala gave a broken `is` one level past
+its operand's *line* (#445's from-the-line scope), so it collapsed with whatever else opened on that line.
+The oracle stacks it. Measured 2026-10-09 with `Testing ask` on 308 rows: if, while, do, else if, return,
+a local, an assignment, `=>`, a ternary's condition, an argument and a lambda; a long call and a short one;
+with and without `.Symbol`; `is not T t`, `is T`, `is null` and `as T`; alone and under `||` and `&&`.
+
+- Alone after `return`, the `is` and the `)` are one level in and the arguments two. Skala wrote the `)`
+  flush with `return`.
+- With `.Symbol` after the `)`, the chain takes a level past the `is`. `.Symbol` is two levels in and the
+  arguments three.
+- As the left operand of `||` or `&&`, the `is` goes a level past the operator, and everything under it
+  goes with it.
+- A whole statement condition keeps the `is` on the aligned column.
+
+With the oracle's breaks left in place, all 48 rows of a control grid without a broken `is` already matched
+and still do. On the broken-`is` rows, Skala diverged on 137 of 260 before and on 10 now, and no row
+regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
+
+- Fix: `BreakPlan.StacksItsLevel` and `IsAStackedTypeTestsOperand`, plus `LayoutWriter.LevelForBlock`. An
+  additive scope no longer blocks the scopes outside a broken construct, which `Level` already honoured.
+
+⚠ The 10 rows still diverging, all as before:
+
+- 7 are a sole lambda's whole body (`Use(x => call(` / … / `)` / `is T`). #445 keeps that one level past
+  the line, and the oracle nests the arguments from the `is`'s level there. The short form already matches
+  and is the test's control.
+- 3 are `as T` broken before `as` as a ternary's condition. The oracle keeps `?` and `:` on the `as`'s
+  column, and Skala puts them a level in.
+
+- status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`. ⚠ The two residues
+  are **open**.
+
+  the closer and the arm heads are **resolved** in SK-DIV-0443; the carried comma stays **open**.
+
   the closer and the arm heads are **resolved** in SK-DIV-0443, the carried comma in SK-DIV-0448.
 
 ## SK-DIV-0490 — a type test broken before its `is` takes a level of its own, stacked on what is open around it
@@ -12218,6 +12292,38 @@ the query whole, on the input and on its own output alike. Skala's pass one, und
 (`GroupFacts.LiftsIfArrowBreaks`), puts it a level deeper and chops the query; pass two, reading the arrow's break as
 kept, writes the oracle's 28 with the query chopped. Not idempotent. Turning `LiftsThroughInnerBreaks` off for this
 shape changed nothing; the extra level comes from the lift's written-ahead walk, not from the list rule.
+
+- ⚠ status: **open**, not idempotent on this seed (pre-existing).
+
+### Round 3 of the name reading (Group N, 2026-10-10)
+
+- **SK-DIV-0201 / #504 / #555 (e): a field's commented attribute join, by the prefix, the head and the name.**
+  `[A] /* c */ public T name = value;` past the margin keeps the attribute and the comment on their own line
+  exactly while the prefix (sections, comment, their spaces) is 13 or more and
+  `4·(end − prefix) − 3·head + 5·min(name, 24) + max(0, prefix − 24) ≤ 436` (`EqualsFloor.DeclinesTheJoin`).
+  Before this Skala declined at every overflowing width — #504's sweep stopped at 134, inside the band. 13 830
+  measured cells (attributes `[A]` to 32 columns, `[DataMember(Order = 1)]`, comments of 4 to 15, heads of 16 to
+  40, names 1 to 12, five value shapes — the shape does not matter): 13 673 agree. ⚠ **The first fresh probe
+  failed it twice over**, and both were recorded before the second cut: the group's point width stops inside
+  `[DataMember(Order = 1)]`'s own arguments (now read from the syntax), and a prefix of 12 or less never declines.
+  Three fresh random probes (1 500 fields each): 828 → 1 462, 875 → 1 462, 841 → 1 465 in the decision; the name
+  cap at 24 was chosen on the first two, so the third is the clean one. ⚠ **The name hypothesis for #504's
+  property arrows is refuted**: at a fixed head, names of 1, 4, 8 and 12 answer identically for `=>` — that
+  half stays group Q's head table. ⚠ Left: on a joined line the oracle breaks a binary or conditional value's `=`
+  where Skala chops it (about 250 of the 13 830 cells), which is the field `=`'s own rule.
+- **SK-DIV-0005: the held single call behind a typed local** (`EqualsFloor.HeldTypedLocalBreaks`). #528's "moves
+  down when it fits below with three columns to spare" (117) was one callee width: the limit is
+  `3·below − 2·callee + indent ≤ 310` with the callee the receiver and the method name (type arguments left out),
+  never past a line below of 118, and a head under twelve never breaks. 2 640 measured cells: #528's rule 1 513, this 2 512; a fresh probe of 1 600
+  typed locals with real receivers, generic methods and two-argument calls at indents 8 to 20: 1 314 → 1 395,
+  losing 16. ⚠ The 118 ceiling is #528's fixture's: `Taaaaaaaaaa c = J(40)` / `.DeserializeObject<G(41)>(json);` keeps
+  the `=` at a line below of 120 where the probe's `_serializer.DeserializeObject<T>("…")` at 120 breaks it; what
+  separates the two is not measured. ⚠ A type term (a type of 24 keeps the `=` a few columns earlier) was fitted and then refuted by
+  Newtonsoft's `ConstructorHandlingTests`, whose 63-column type breaks it; a callee cap was refuted by
+  `DefaultSerializationBinder`. Both are out; corpus/real is unchanged.
+  ⚠ Its own test caught an idempotency hole before it shipped: a kept `=` leaves the argument list chopped, pass
+  two no longer sees a held call, and the ordering rule broke the `=`. Pass two now asks the same question on the
+  flat widths (`GroupFacts.HeldChoppedWidth`); every grid of this round re-formats to itself.
 
 ⚠ **#601, resolved 2026-10-10 (group P, round three).** The written-ahead walk was not the cause: the `when` clause
 spent its own level on top of the lift's. Measured on five conditions — a query that fits and one that chops, a

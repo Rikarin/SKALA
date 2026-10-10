@@ -635,6 +635,23 @@ public sealed class Fitter {
 
                 // ⚠ Broken exactly when only the terminator overflows. See GroupFacts.Terminator.
                 if (facts.Terminator > 0) {
+                    // ⚠ A field's commented attribute gap declines only up to a measured line. See
+                    // GroupFacts.DeclineHead and EqualsFloor.DeclinesTheJoin.
+                    if (facts.DeclineHead > 0
+                        && m.PointWidth < Unbounded
+                        && m.FlatWidth < Unbounded
+                        && m.Trailing < Unbounded
+                        && !Fits(m.Column, m.FlatWidth, m.Trailing)) {
+                        return EqualsFloor.DeclinesTheJoin(
+                            m.Column + m.FlatWidth + m.Trailing,
+                            facts.DeclinePrefix,
+                            facts.DeclineHead,
+                            facts.DeclineName
+                        )
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                    }
+
                     return !Fits(m.Column, m.BreakWidth) && Fits(m.Column, m.BreakWidth - facts.Terminator)
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
@@ -672,6 +689,20 @@ public sealed class Fitter {
                 }
 
                 if (!facts.BreaksIfTooLong || Fits(m.Column, m.BreakWidth, m.Trailing)) {
+                    return ResolvedMode.Flat;
+                }
+
+                // ⚠ Pass two of a held typed local whose `=` stayed and whose arguments chopped: the first pass's
+                // question again, on the flat widths. See GroupFacts.HeldChoppedWidth.
+                if (facts.HeldChoppedWidth > 0
+                    && m.PointWidth < Unbounded
+                    && Fits(m.Column, m.PointWidth + 1 + facts.HeldChoppedHead)
+                    && !EqualsFloor.HeldTypedLocalBreaks(
+                        facts.HeldValueTypedHead,
+                        m.ContinuationColumn + facts.HeldChoppedWidth,
+                        facts.HeldValueCallee,
+                        m.ContinuationColumn - indentWidth
+                    )) {
                     return ResolvedMode.Flat;
                 }
 
@@ -1687,6 +1718,16 @@ public sealed class Fitter {
         var parenBelow = continuation + facts.HeldValueReceiver + facts.HeldValueHead;
         var parenBeside = valueColumn + facts.HeldValueReceiver + facts.HeldValueHead;
         switch (facts.HeldValue) {
+            case 1 when facts.HeldValueTypedHead > 0:
+                // ⚠ By the measured limit on the line below, which the callee's width moves (SK-DIV-0005, round 3);
+                // or, as before, when the head with the receiver beside it is wider than 87 columns.
+                return EqualsFloor.HeldTypedLocalBreaks(
+                        facts.HeldValueTypedHead,
+                        below,
+                        facts.HeldValueCallee,
+                        continuation - indentWidth
+                    )
+                    || valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd;
             case 1:
                 // ⚠ Or when the head with the receiver beside it is wider than 87 columns: `T… c = JsonConvert`
                 // holds to 87 and breaks from 88, counted from the statement (h12 at indent 8, on one call
