@@ -290,7 +290,14 @@ public enum LineFlags {
     ///     would stay on its line before the fill's first wrap are narrower than twelve columns (SK-DIV-0351).
     ///     <c>skala_align_multiline_type_parameter_list = true</c>'s gap after the <c>&lt;</c>.
     /// </summary>
-    AlignedListHead = 8192
+    AlignedListHead = 8192,
+
+    /// <summary>
+    ///     ⚠ A point before a list pattern's element: the element after one that spanned lines starts a line of
+    ///     its own, as <see cref="ArrayElement" />'s does, without that flag's draft measure (#615) — `[1, 2, not (0`
+    ///     / `or 1),` / `3, 4]` in the oracle.
+    /// </summary>
+    ListPatternElement = 16384
 }
 
 /// <summary>

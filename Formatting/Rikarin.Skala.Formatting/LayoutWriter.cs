@@ -2138,7 +2138,7 @@ public sealed class LayoutWriter {
                 // own element (#471, SK-DIV-0110). The head rule outranks the after rule.
                 if (flat
                     && !headStays
-                    && (flags & LineFlags.ArrayElement) != 0
+                    && (flags & (LineFlags.ArrayElement | LineFlags.ListPatternElement)) != 0
                     && FilledElementStartedOn(slot.Arg2) is var started
                     && started >= 0
                     && started != lastTokenLine) {
@@ -2146,7 +2146,7 @@ public sealed class LayoutWriter {
                 }
             }
 
-            if ((flags & LineFlags.ArrayElement) != 0) {
+            if ((flags & (LineFlags.ArrayElement | LineFlags.ListPatternElement)) != 0) {
                 filledElementLines.Remove(slot.Arg2);
                 awaitingElement.Add(slot.Arg2);
             }
@@ -2199,7 +2199,7 @@ public sealed class LayoutWriter {
         // say where it starts. Only a break the builder flagged as one: a break kept *inside* an element
         // is the element spanning lines, which is the thing being measured (#444).
         if (kind != LineKind.Soft
-            && ((LineFlags)slot.Flags & LineFlags.ArrayElement) != 0
+            && ((LineFlags)slot.Flags & (LineFlags.ArrayElement | LineFlags.ListPatternElement)) != 0
             && filledElementLines.Count > 0) {
             foreach (var group in filledElementLines.Keys) {
                 if (!awaitingElement.Contains(group)) {

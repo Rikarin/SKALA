@@ -4319,7 +4319,7 @@ public sealed class BreakPlan {
                 // step, not two:
                 //     if (o is IDisposable
                 //         or IAsyncDisposable) {     ← one, where an argument would take two
-                pattern && root.Parent is not SubpatternSyntax || receiverBody,
+                pattern && root.Parent is not SubpatternSyntax && !IsAnElementsChain(root) || receiverBody,
                 false,
                 // ⚠ And only the outermost combinator's chain: an `and` chain inside an `or` chain is a
                 // chain of its own since #483, and the oracle writes its links on the `or`s' column —
@@ -4334,6 +4334,9 @@ public sealed class BreakPlan {
                 // ⚠ Nor a subpattern's value (#549): `is {` / `Parent: A` / `or B` / `}` puts the `or`s on
                 // `Parent:`'s column, in a switch arm's braces as in an `is`'s (measured 2026-10-08).
                 && root.Parent is not SubpatternSyntax
+                // ⚠ Nor an element's, through a parenthesis or a `not` (#615): `[` / `null, not (0` / `or 1)` / `]`,
+                // `[1, 0` / `or 1]` and `{ P: not (0` / `or 1) }` put the `or`s on the element's column.
+                && !IsAnElementsChain(root)
                 // ⚠ Before the `is` or after it (#550): `keyword is` / `A` / `or B` puts `A` and the `or`s
                 // on one column too.
                 && !(EnclosingTypeTest(root) is { } test && (BreaksBefore(test.IsKeyword) || BreaksAroundTheIs(test)))
@@ -4351,6 +4354,25 @@ public sealed class BreakPlan {
                 : HeldLevel.None
             )
         );
+    }
+
+    /// <summary>
+    ///     Whether a pattern chain is a list pattern's element or a subpattern's value, through parentheses and
+    ///     <c>not</c> (#615): its links sit on the element's column, no level of the chain's own.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c>: <c>x is [not (0</c> / <c>or 1)]</c>, <c>[1, 0</c> /
+    ///     <c>or 1]</c>, <c>[1, (0</c> / <c>or 1)]</c>, <c>{ P: not (0</c> / <c>or 1) }</c> and the fuzz seed's
+    ///     <c>foreach (… in source is [null, not (0 or 1</c> / <c>or 2)])</c> all break the brackets or braces and put
+    ///     every <c>or</c> under the element; Skala put them a level past it.
+    /// </remarks>
+    internal static bool IsAnElementsChain(SyntaxNode root) {
+        var node = root.Parent;
+        while (node is ParenthesizedPatternSyntax or UnaryPatternSyntax) {
+            node = node.Parent;
+        }
+
+        return node is ListPatternSyntax or SubpatternSyntax;
     }
 
     /// <summary>
@@ -4637,8 +4659,10 @@ public sealed class BreakPlan {
             ),
             // ⚠ Except a pattern chain that is a subpattern's value (#549): `is {` / `Parent: A` /
             // `or B` / `}` puts the `or`s on `Parent:`'s column — the subpattern's break spends no
-            // level either (SK-DIV-0081).
+            // level either (SK-DIV-0081). ⚠ Nor one that is a list pattern's element or a subpattern's value
+            // through a parenthesis or a `not` (#615, see IsAnElementsChain).
             ChainRootOf(node).Parent is not SubpatternSyntax
+            && !(ChainRootOf(node) is BinaryPatternSyntax root && IsAnElementsChain(root))
         );
     }
 

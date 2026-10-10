@@ -12473,3 +12473,23 @@ so `HeldValueBreaks` read the value's column 36 columns left of the `=`, found t
   `E.Current.Value`, three held values, indents 8 and 20, lines of 116 to 148. 141 rows differed and now 0 do. The
   plain targets matched before and still do.
 - status: **fixed**, pinned by `constructs/breaks/held-value-behind-a-target-call.cs` and `FuzzRegressionTests`.
+
+## SK-DIV-0492 — a pattern chain inside a list pattern's element or a subpattern's value
+
+#615, found by the fuzzer (seed 7321373205094285321): `foreach (var e43 in source is [null, not (0 or 1` /
+`or 2)])` was not idempotent. Pass one kept `null, not (0` together. Pass two read the chain's breaks as kept,
+found the element's segment certain, and moved the element whole. Measured 2026-10-10 with `Testing ask` on the
+seed's shape, flat and as pass one wrote it, in a `foreach` header, a local and an `if`, and on eight more shapes.
+The oracle:
+
+- keeps the element's head beside the comma when its chain is broken: `null, not (0`. Like a tuple item, a list
+  pattern's element now keeps its head when the break inside it is certain (`LineFlags.KeepsHeadWhenCertain`);
+- puts the chain's links on the element's column: `[1, 0` / `or 1]`, `[not (0` / `or 1)]` and
+  `{ P: not (0` / `or 1) }`. The chain spends no level, its link groups none, and the pattern's parenthesis none
+  (`BreakPlan.IsAnElementsChain`). Skala had them a level deeper;
+- starts the element after a multi-line one on a line of its own: `or 1),` / `3, 4`, as an array element's rule
+  does (`LineFlags.ListPatternElement`, a kept break in front of an element included).
+
+`x is not (0` / `or 1)` and a positional pattern's element keep their levels, unchanged.
+
+- status: **fixed**, pinned by `ListPatternElementChainIssue615Tests` and `FuzzRegressionTests`.
