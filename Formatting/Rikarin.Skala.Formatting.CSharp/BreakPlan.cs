@@ -6384,21 +6384,19 @@ public sealed class BreakPlan {
     ///     ⚠ Eleven columns and narrower is
     ///     <see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />'s
     ///     rule, which reads the parameter through. A one-argument section is the same rule with its own constants
-    ///     (#603): see <see cref="GroupFacts.SectionSingle" />.
-    ///     Nor a named argument, which chops later (<c>DiagnosticId = "X"</c>: from 113 behind a 13-column parameter
-    ///     at indent 8, never at 20), nor a parameter with a default value, whose <c>=</c> breaks instead.
+    ///     (#603): see <see cref="GroupFacts.SectionSingle" />. ⚠ A section with a named argument takes those
+    ///     one-argument constants too, measured on <c>("…", DiagnosticId = "X")</c> (#603). A parameter with a default
+    ///     value is measured whole, its <c>= value</c> included, and its own <c>=</c> answers while the joined line
+    ///     overflows by two columns or less (<see cref="GroupFacts.ParameterDefault" />).
     ///     Widths are the formatter's (<see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />), and a comment
     ///     anywhere in the section or the parameter, or a break inside the parameter, leaves the list to its own fit.
     /// </remarks>
     void PlanSectionBeforeALongParameter(AttributeArgumentListSyntax arguments) {
         if (options.KeepExistingInvocationParensArrangement
             || arguments.Arguments.Count < 1
-            || arguments.Arguments.Any(static argument => argument.NameEquals is not null
-                || argument.NameColon is not null
-            )
             || arguments.Parent is not AttributeSyntax { Parent: AttributeListSyntax { Attributes.Count: 1 } section }
             || section.Parent is not ParameterSyntax {
-                Parent: ParameterListSyntax, AttributeLists: [_], Default: null
+                Parent: ParameterListSyntax, AttributeLists: [_]
             } parameter
             || CSharpDocumentBuilder.IsAShortParameterBehindItsSection(parameter)) {
             return;
@@ -6430,6 +6428,10 @@ public sealed class BreakPlan {
                 SectionHead = FormattedWidth(section.OpenBracketToken, arguments.OpenParenToken) - 1,
                 SectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken),
                 SectionSingle = arguments.Arguments.Count == 1
+                    || arguments.Arguments.Any(static argument => argument.NameEquals is not null
+                        || argument.NameColon is not null
+                    ),
+                ParameterDefault = parameter.Default is { } initial ? FormattedWidth(initial) + 1 : 0
             }
         };
         plans[^1] = plan;

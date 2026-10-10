@@ -1497,6 +1497,10 @@ public sealed class Document {
 ///     With <see cref="ParameterAfterSection" />: the section has one argument, whose threshold sits 17 columns later
 ///     — <c>24·E ≥ 2106 + 32·w + 11·i + 11·h</c> and <c>2·w + i − h ≤ 36</c> (#603).
 /// </param>
+/// <param name="ParameterDefault">
+///     With <see cref="ParameterAfterSection" />: the width of the parameter's <c> = value</c>, or zero. While the joined
+///     line overflows by two columns or less the default's own <c>=</c> answers, as measured (#603).
+/// </param>
 /// <param name="SectionWidth">
 ///     With <see cref="ParameterAfterSection" />: the section's flat width, <c>[</c> to
 ///     <c>]</c>.
@@ -1635,6 +1639,7 @@ public readonly record struct GroupFacts(
     int SectionWidth = 0,
     bool PositionalHead = false,
     bool SectionSingle = false,
+    int ParameterDefault = 0,
     int ValueHeadArguments = 0,
     int ArmOneOverHead = 0);
 

@@ -1048,6 +1048,12 @@ public sealed class Fitter {
             return null;
         }
 
+        // ⚠ A default value: within two columns of the margin the oracle breaks at its `=` or not at all, and the
+        // existing planning answers that (#603, 821 of 840 cells with this cut against 811 without it).
+        if (facts.ParameterDefault > 0 && end + 1 + parameter <= width + 2) {
+            return null;
+        }
+
         // ⚠ One argument (#603): the same slopes, the threshold 17 columns later and its own second condition.
         // Measured 2026-10-10 on 2 205 cells — `[A(`, `[From(`, `[Description(`, `[JsonPropertyName(`,
         // `[NotNullIfNotNull(`, parameters of 12 to 24 columns, indents 8, 12 and 20 — with round four's `[A(` and
