@@ -1606,8 +1606,8 @@ public sealed class Fitter {
     /// </summary>
     /// <remarks>
     ///     ⚠ Measured with <c>Testing ask</c> on
-    ///     <c>var n… = r….Where(x =&gt; a &amp;&amp; b &amp;&amp; c).ToList();</c>, names of 1 to 30, receivers of 2 to 60,
-    ///     links of 86 to 107 one column at a time, at indents 8 and 12 —
+    ///     <c>var n… = r….Where(x =&gt; a &amp;&amp; b &amp;&amp; c).ToList();</c>,
+    ///     names of 1 to 30, receivers of 2 to 60, links of 86 to 107 one column at a time, at indents 8 and 12 —
     ///     9 206 cells. The limit is a cap that falls 0.14 a column of head, a line falling 0.35 a column of
     ///     <c>(</c> (shifted right 0.7 a column of head), and a floor rising a quarter of a column per column of
     ///     <c>(</c>. The kind-1 table (#528) left 1 036 of these cells wrong, two columns short where the head is
