@@ -23,39 +23,39 @@ public sealed class CallConditionArgumentWidthIssue612Tests {
     }
 
     const string Source = """
-        class C {
-            void M() {
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v064 = SelectZZZZZ(aaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbb, ccccccccccccccccccccccccc) ? "sss" : "ttt";
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v400 = SelectZZZZZ(aaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbb, ccccccccccccccccccccccccc) ? Cast<object>(first, second) : context;
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v165 = SelectZZZZZZZZZZZZZZZZZ(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa) ? "sss" : "ttt";
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v410 = SelectZZZZZZZZZZZZZZZZZ(aaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbb, ccccccccccccccccc) ? Cast<object>(first, second) : context;
-            }
-        }
-        """;
+                          class C {
+                              void M() {
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v064 = SelectZZZZZ(aaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbb, ccccccccccccccccccccccccc) ? "sss" : "ttt";
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v400 = SelectZZZZZ(aaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbb, ccccccccccccccccccccccccc) ? Cast<object>(first, second) : context;
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v165 = SelectZZZZZZZZZZZZZZZZZ(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa) ? "sss" : "ttt";
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v410 = SelectZZZZZZZZZZZZZZZZZ(aaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbb, ccccccccccccccccc) ? Cast<object>(first, second) : context;
+                              }
+                          }
+                          """;
 
     const string Oracle = """
-        class C {
-            void M() {
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v064 = SelectZZZZZ(
-                    aaaaaaaaaaaaaaaaaaaaaaa,
-                    bbbbbbbbbbbbbbbbbbbbbbb,
-                    ccccccccccccccccccccccccc
-                )
-                    ? "sss"
-                    : "ttt";
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v400 =
-                    SelectZZZZZ(aaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbb, ccccccccccccccccccccccccc)
-                        ? Cast<object>(first, second)
-                        : context;
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v165 =
-                    SelectZZZZZZZZZZZZZZZZZ(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa) ? "sss" : "ttt";
-                Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v410 =
-                    SelectZZZZZZZZZZZZZZZZZ(aaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbb, ccccccccccccccccc)
-                        ? Cast<object>(first, second)
-                        : context;
-            }
-        }
-        """;
+                          class C {
+                              void M() {
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v064 = SelectZZZZZ(
+                                      aaaaaaaaaaaaaaaaaaaaaaa,
+                                      bbbbbbbbbbbbbbbbbbbbbbb,
+                                      ccccccccccccccccccccccccc
+                                  )
+                                      ? "sss"
+                                      : "ttt";
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v400 =
+                                      SelectZZZZZ(aaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbb, ccccccccccccccccccccccccc)
+                                          ? Cast<object>(first, second)
+                                          : context;
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v165 =
+                                      SelectZZZZZZZZZZZZZZZZZ(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa) ? "sss" : "ttt";
+                                  Dictionary<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, int> v410 =
+                                      SelectZZZZZZZZZZZZZZZZZ(aaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbb, ccccccccccccccccc)
+                                          ? Cast<object>(first, second)
+                                          : context;
+                              }
+                          }
+                          """;
 
     [Fact]
     public void ACallConditionPastATenColumnCallee_ChopsByItsArgumentsAndBranches() {

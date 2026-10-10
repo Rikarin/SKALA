@@ -816,19 +816,21 @@ public sealed class Fitter {
     /// </summary>
     /// <remarks>
     ///     ⚠ Two measured regimes, split at a callee of ten columns through its <c>(</c>. Up to ten, #596's fit:
-    ///     <c>9·(the call's end below) + 2·(the <c>=</c>'s end) + 64·(argument count) &gt; 1136</c>, measured on 712
+    ///     9·(the call's end below) + 2·(the equals sign's end) + 64·(argument count) &gt; 1136, measured on 712
     ///     locals with short callees and long arguments. Past ten its argument count is a proxy for argument width
     ///     (#612): measured 2026-10-10 on 1 444 typed locals with the name held fixed — callee 8 to 64, argument text
     ///     10 to 90 over one to four arguments, the conditional's branches 16 to 56, the <c>=</c> at 44 to 100 — the
-    ///     oracle chops while <c>8·(argument width) − 2·(the <c>=</c>'s end) − callee − 7·(branches) + 160·(two or
-    ///     more arguments) &gt; 424</c> (1 399 of 1 444), and a fresh probe varying the name too agreed on 547 of 572
+    ///     oracle chops while 8·(argument width) − 2·(the equals sign's end) − callee − 7·(branches) + 160·(two or
+    ///     more arguments) &gt; 424
+    ///     (1 399 of 1 444), and a fresh probe varying the name too agreed on 547 of 572
     ///     against 425 before. A single argument almost never chops; long branches make the call's own line the
     ///     cheaper break.
     /// </remarks>
     static bool CallConditionChops(in GroupFacts facts, in Measures m) {
         var equals = m.Column + m.PointWidth;
         if (facts.ValueHeadCallee <= 10 || facts.ValueHeadTail == 0) {
-            return 9 * (m.ContinuationColumn + facts.ValueHeadWidth) + 2 * equals + 64 * facts.ValueHeadArguments > 1136;
+            return 9 * (m.ContinuationColumn + facts.ValueHeadWidth) + 2 * equals + 64 * facts.ValueHeadArguments
+                > 1136;
         }
 
         var arguments = facts.ValueHeadWidth - facts.ValueHeadCallee - 1;

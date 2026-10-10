@@ -23,51 +23,51 @@ public sealed class DeconstructionValueLevelIssue613Tests {
     }
 
     const string Source = """
-        class C {
-            void M() {
-                var (a71, b72
-                    ) = source.OrderBy.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.Value;
-                var (a71,
-                    b72) = Compute(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb);
-                (int a71,
-                    int b72) = source.OrderBy.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.Value;
-                (a71,
-                    b72) = cccccccccccccccccccccccccccccccccccccccccccccccc ? ddddddddddddddddddddddddddddddddddddddddddddddddd : e;
-                (int a71, int b72
-                    ) = Compute(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb);
-                var (a71, b72) = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb;
-            }
-        }
-        """;
+                          class C {
+                              void M() {
+                                  var (a71, b72
+                                      ) = source.OrderBy.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.Value;
+                                  var (a71,
+                                      b72) = Compute(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb);
+                                  (int a71,
+                                      int b72) = source.OrderBy.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.Value;
+                                  (a71,
+                                      b72) = cccccccccccccccccccccccccccccccccccccccccccccccc ? ddddddddddddddddddddddddddddddddddddddddddddddddd : e;
+                                  (int a71, int b72
+                                      ) = Compute(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb);
+                                  var (a71, b72) = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb;
+                              }
+                          }
+                          """;
 
     const string Oracle = """
-        class C {
-            void M() {
-                var (a71, b72
-                    ) = source.OrderBy.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-                    .Value;
-                var (a71,
-                    b72) = Compute(
-                    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
-                    bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-                );
-                (int a71,
-                    int b72) = source.OrderBy.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-                    .Value;
-                (a71,
-                    b72) = cccccccccccccccccccccccccccccccccccccccccccccccc
-                    ? ddddddddddddddddddddddddddddddddddddddddddddddddd
-                    : e;
-                (int a71, int b72
-                    ) = Compute(
-                        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
-                        bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-                    );
-                var (a71, b72) = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-                    + bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb;
-            }
-        }
-        """;
+                          class C {
+                              void M() {
+                                  var (a71, b72
+                                      ) = source.OrderBy.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                                      .Value;
+                                  var (a71,
+                                      b72) = Compute(
+                                      aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
+                                      bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                                  );
+                                  (int a71,
+                                      int b72) = source.OrderBy.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                                      .Value;
+                                  (a71,
+                                      b72) = cccccccccccccccccccccccccccccccccccccccccccccccc
+                                      ? ddddddddddddddddddddddddddddddddddddddddddddddddd
+                                      : e;
+                                  (int a71, int b72
+                                      ) = Compute(
+                                          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
+                                          bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                                      );
+                                  var (a71, b72) = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                                      + bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb;
+                              }
+                          }
+                          """;
 
     [Fact]
     public void AValueBehindABrokenTupleHead_ContinuesFromTheStatement() {
