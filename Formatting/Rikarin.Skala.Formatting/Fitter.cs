@@ -843,8 +843,8 @@ public sealed class Fitter {
     ///     <c>ConcurrentDictionary</c> and <c>Action</c> types, heads of 4 to 63 columns through the first comma, names
     ///     of 1 to 8 letters. With <c>X</c> the line the type and the name would make one level below the modifiers,
     ///     <c>L</c> the name and <c>h</c> the type through its first comma, the oracle fills once
-    ///     <c>3·X ≥ 5·L + K(h)</c>, <c>K</c> falling from 336 at <c>h</c> = 15 to 324 from 54, and never below 15; under
-    ///     24 only while that threshold is at most <c>113 + h / 3</c>. The modifiers enter only through <c>X</c>:
+    ///     <c>3·X ≥ 5·L + K(h)</c>, <c>K</c> falling from 336 at <c>h</c> = 15 to 324 from 54, and never below 15;
+    ///     under 24 only while that threshold is at most <c>113 + h / 3</c>. The modifiers enter only through <c>X</c>:
     ///     round three's <c>public static readonly</c> rows and <c>private readonly</c> ones read off one table once
     ///     measured on the line below rather than the line's end. 11 113 of 11 361 cells agree, and a probe written
     ///     after the rule, with three new modifier sets and two new types at two indents, 4 028 of 4 092.
@@ -882,7 +882,9 @@ public sealed class Fitter {
     ///     <list type="bullet">
     ///         <item>the dot's line must fit, and nothing else breaks when the whole statement does;</item>
     ///         <item>an operand past the margin by itself always breaks at the dot (194 of 194);</item>
-    ///         <item>one column over the margin the dot breaks unless the receiver is at most <c>(t − 10) / 5</c>;</item>
+    ///         <item>
+    ///             one column over the margin the dot breaks unless the receiver is at most <c>(t − 10) / 5</c>;
+    ///         </item>
     ///         <item>
     ///             otherwise — a tie, where the keyword's band could hold the line — the dot breaks when the type is
     ///             at most 12 columns, <c>k − d</c> is past <c>max(5, ⌈(4t + 12) / 5⌉)</c> and <c>k</c> reaches

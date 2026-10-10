@@ -1430,7 +1430,10 @@ public sealed class Document {
 ///     band alike, it answers whether the dot takes the break: see <c>Fitter.TheDotTakesTheBreak</c>.
 /// </param>
 /// <param name="TypeTestReceiver">With <see cref="TypeTestTail" />: the receiver's width, up to the dot.</param>
-/// <param name="TypeTestOperand">With <see cref="TypeTestTail" />: the operand's width, receiver, dot and member.</param>
+/// <param name="TypeTestOperand">
+///     With <see cref="TypeTestTail" />: the operand's width, receiver, dot and
+///     member.
+/// </param>
 /// <param name="TypeTestKeyword">With <see cref="TypeTestTail" />: the keyword's width, <c>is</c> or <c>as</c>.</param>
 /// <param name="TypeTestType">With <see cref="TypeTestTail" />: the type's width, without the <c>;</c>.</param>
 /// <param name="ModifierFillHead">
@@ -1450,8 +1453,14 @@ public sealed class Document {
 ///     <c>h</c> the width from its <c>[</c> to its <c>(</c>. Otherwise the section stays whole and the parameter goes
 ///     below it alone. See <c>Fitter.ChopsBeforeTheParameter</c>.
 /// </param>
-/// <param name="SectionHead">With <see cref="ParameterAfterSection" />: the width from the <c>[</c> to the <c>(</c>.</param>
-/// <param name="SectionWidth">With <see cref="ParameterAfterSection" />: the section's flat width, <c>[</c> to <c>]</c>.</param>
+/// <param name="SectionHead">
+///     With <see cref="ParameterAfterSection" />: the width from the <c>[</c> to the
+///     <c>(</c>.
+/// </param>
+/// <param name="SectionWidth">
+///     With <see cref="ParameterAfterSection" />: the section's flat width, <c>[</c> to
+///     <c>]</c>.
+/// </param>
 /// <param name="ValueHeadCallee">
 ///     ⚠ With <see cref="ValueHeadWidth" />, a condition that is a call on a name: the width from the name through
 ///     its <c>(</c>. The <c>=</c> breaks whenever that <c>(</c> would land past the margin beside it (#596).

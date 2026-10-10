@@ -6241,7 +6241,8 @@ public sealed class BreakPlan {
     ///     ⚠ Eleven columns and narrower is
     ///     <see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />'s
     ///     rule, which reads the parameter through. A one-argument section is not this rule's: <c>[A("…")]</c> and
-    ///     <c>[Description("…")]</c> in front of 12 to 20 columns stand alone above the parameter at nearly every width.
+    ///     <c>[Description("…")]</c> in front of 12 to 20 columns stand alone above the parameter at nearly every
+    ///     width.
     ///     Nor a named argument, which chops later (<c>DiagnosticId = "X"</c>: from 113 behind a 13-column parameter
     ///     at indent 8, never at 20), nor a parameter with a default value, whose <c>=</c> breaks instead.
     ///     Widths are the formatter's (<see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />), and a comment
