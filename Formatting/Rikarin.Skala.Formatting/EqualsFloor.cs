@@ -336,8 +336,8 @@ public static class EqualsFloor {
     ///     21 534 cells. Three conditions, all needed:
     ///     <list type="bullet">
     ///         <item>
-    ///             a type no wider than <c>8·(name − 10) + 12</c> — round 4's two gates as one line, measured in round 3
-    ///             one name at a time from 10 to 14 against types of 8 to 56 four apart (10 790 cells): 12 at a
+    ///             a type no wider than <c>8·(name − 10) + 12</c> — round 4's two gates as one line, measured in
+    ///             round 3 one name at a time from 10 to 14 against types of 8 to 56 four apart (10 790 cells): 12 at a
     ///             ten-column name, 20 at 11, 28 at 12, 36 at 13, 44 at 14, and 56 still open at 16;
     ///         </item>
     ///         <item>
