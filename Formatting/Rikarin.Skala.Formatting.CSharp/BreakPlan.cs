@@ -3429,7 +3429,16 @@ public sealed class BreakPlan {
                 HeldCallHead: callHead,
                 HeldCallRest: rest,
                 HeldCallOnAPath: IsAPathOfNames(((MemberAccessExpressionSyntax)link).Expression),
-                HeldCallLambda: call.ArgumentList.Arguments is [{ Expression: LambdaExpressionSyntax }]
+                // ⚠ Only a lambda over an operand chain or a binary pattern, written on one line, as measured: over
+                // a call the oracle holds `source.Select(a => Foo(` and chops (ChainFirstCallArgumentsIssue418Tests).
+                HeldCallLambda: call.ArgumentList.Arguments is [
+                    {
+                        Expression: LambdaExpressionSyntax {
+                            ExpressionBody: BinaryExpressionSyntax or IsPatternExpressionSyntax
+                        }
+                    }
+                ]
+                && source.AsSpan(call.ArgumentList.SpanStart, call.ArgumentList.Span.Length).IndexOfAny('\r', '\n') < 0
             )
         );
     }
