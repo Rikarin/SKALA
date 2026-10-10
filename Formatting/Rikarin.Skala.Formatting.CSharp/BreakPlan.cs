@@ -5652,6 +5652,14 @@ public sealed class BreakPlan {
                     }
                         ? FormattedWidth(conditionCall.GetFirstToken(), conditionCall.ArgumentList.OpenParenToken)
                         : 0,
+                    ValueHeadArguments: conditionHead > 0
+                    && value is ConditionalExpressionSyntax {
+                        Condition: InvocationExpressionSyntax {
+                            Expression: IdentifierNameSyntax or GenericNameSyntax
+                        } countedCall
+                    }
+                        ? countedCall.ArgumentList.Arguments.Count
+                        : 0,
                     MemberHeadWidth: value is MemberAccessExpressionSyntax plain && IsPlainMemberValue(plain)
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,

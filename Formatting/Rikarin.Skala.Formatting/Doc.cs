@@ -1397,6 +1397,10 @@ public sealed class Document {
 ///     the oracle breaks after the arrow while the line through it fits, then before it, then before the
 ///     pattern's <c>)</c>, and only then inside the pattern — where a property pattern's braces chop.
 /// </param>
+/// <param name="ValueHeadArguments">
+///     With <see cref="ValueHeadCallee" />: the call condition's argument count, which the line below may run to
+///     before the oracle keeps the <c>=</c> and chops the call instead (#596's residue, SK-DIV-0447).
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1479,7 +1483,8 @@ public readonly record struct GroupFacts(
     bool BreaksIfTheLineOverflows = false,
     int TypeTestTail = 0,
     int ValueHeadCallee = 0,
-    bool PositionalHead = false);
+    bool PositionalHead = false,
+    int ValueHeadArguments = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
