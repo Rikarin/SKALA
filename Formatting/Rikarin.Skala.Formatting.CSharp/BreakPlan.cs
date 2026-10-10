@@ -5778,7 +5778,8 @@ public sealed class BreakPlan {
     /// </remarks>
     int ParenCloseEndOf(SyntaxNode node, ExpressionSyntax value) {
         if (options.WrapBeforeEq
-            || node is AssignmentExpressionSyntax assignment && !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)) {
+            || node is AssignmentExpressionSyntax assignment
+            && !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)) {
             return 0;
         }
 
@@ -7210,8 +7211,7 @@ public sealed class BreakPlan {
     ///     Whether an arm's `when` clause lifts from the arm's pattern under a broken arrow: every one, a type
     ///     argument list included since the width lift made that idempotent (#576, fuzz 12955079666331923518).
     /// </summary>
-    static bool LiftsUnderAKeptArrow(SwitchExpressionArmSyntax arm) =>
-        arm.WhenClause is not null;
+    static bool LiftsUnderAKeptArrow(SwitchExpressionArmSyntax arm) => arm.WhenClause is not null;
 
     /// <summary>A lambda's <c>=&gt;</c>: the gap after it, under the <c>=</c>'s ordering rule.</summary>
     /// <remarks>
