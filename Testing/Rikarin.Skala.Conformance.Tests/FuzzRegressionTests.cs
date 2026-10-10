@@ -165,6 +165,10 @@ public sealed class FuzzRegressionTests {
     // `var (a, b` / `) = source.OrderBy.` / `First.Value;` (#606): pass one, the chain broken, kept the `=`; pass two,
     // the chain joined into a plain member, asked whether the broken head fits flat — never — and broke the `=`.
     [InlineData(10828701791419393416UL)]
+    // `int v17 = Convert<IReadOnlyDictionary<…>, …>([…], _cache);` with its gaps widened (#610's generic callee):
+    // the callee was measured by its source span, which counts the author's spaces inside the type arguments, so
+    // the widened copy broke its `=` where the canonical one kept it. Whitespace absorption.
+    [InlineData(17947985453911507632UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

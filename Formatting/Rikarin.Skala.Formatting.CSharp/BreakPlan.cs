@@ -6853,9 +6853,14 @@ public sealed class BreakPlan {
     ///     call whose callee is <c>new</c> and its type (#555): the oracle chops its arguments by the same
     ///     floor.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ Formatted, not the source span: a generic name's span counts the author's spacing inside its type
+    ///     arguments, and the same call written with wider gaps broke its <c>=</c> where the canonical one kept it
+    ///     (fuzz seed 7614614614, case 17947985453911507632: whitespace absorption).
+    /// </remarks>
     int CalleeOf(ExpressionSyntax value) =>
         value switch {
-            InvocationExpressionSyntax invocation => invocation.Expression.Span.Length,
+            InvocationExpressionSyntax invocation => FormattedWidth(invocation.Expression),
             ObjectCreationExpressionSyntax creation => FormattedWidth(
                 creation.GetFirstToken(),
                 creation.ArgumentList!.OpenParenToken.GetPreviousToken()
