@@ -821,6 +821,20 @@ public sealed class BreakPlan {
                             Point(name.Identifier, fill, true);
                         }
                     }
+
+                    // ⚠ And before the `)` (#559, SK-DIV-0443): the oracle writes `…, int dddd` / `);` and
+                    // `…, int bbbb` / `) => 1,` when the line through the last element fits and the `)` with what
+                    // follows it does not — before an arm's arrow and after an `is` that ends its statement, the
+                    // two places it was measured. A break the author kept there stays the unplanned gap it was.
+                    var close = positional.CloseParenToken;
+                    var measured = positional.Parent is RecursivePatternSyntax {
+                            Parent: SwitchExpressionArmSyntax { WhenClause: null }
+                        }
+                        || positional.Parent is RecursivePatternSyntax { Parent: IsPatternExpressionSyntax }
+                        && close.GetNextToken().IsKind(SyntaxKind.SemicolonToken);
+                    if (measured && !(options.KeepsUserBreaksBetweenItems && BreaksBefore(close))) {
+                        Point(close, fill, true);
+                    }
                 }
 
                 return;
@@ -7399,7 +7413,11 @@ public sealed class BreakPlan {
 
                 // ⚠ The arrow or the cast's `)` by a measured table (#591). Not under a kept arrow, whose break
                 // is certain.
-                ArmCast: kept ? 0 : ArmCastWidth(arm.Expression)
+                ArmCast: kept ? 0 : ArmCastWidth(arm.Expression),
+                PositionalHead: arm is {
+                    WhenClause: null,
+                    Pattern: RecursivePatternSyntax { PositionalPatternClause: not null, PropertyPatternClause: null }
+                }
             )
         );
     }

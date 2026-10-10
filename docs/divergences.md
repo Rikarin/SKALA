@@ -11882,3 +11882,60 @@ regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
 
 - status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`. ⚠ The two residues
   are **open**.
+
+  the closer and the arm heads are **resolved** in SK-DIV-0443; the carried comma stays **open**.
+
+## SK-DIV-0443 — a positional pattern's `)` and an arm headed by one
+
+#559, round five, the two residues of SK-DIV-0442. Measured 2026-10-10 with `Testing ask` on 168 arms — heads
+`(int a…, int b…, int c…)`, `(int a…, F { X: 1 }, int b…)` and `(1, "…", 2)`, bodies `1`, `null`, `"sssssssss"` and
+`Compute(a, b)`, the line ending at 119 to 132. With a body of no break point the oracle takes the rightmost break
+whose line fits: after the arrow while the line through `=>` fits, then before the arrow, then before the pattern's
+`)`, and only then inside the pattern. Skala read the short body through the head (#378's `ShortArrowBody`, measured
+on property patterns, whose braces do chop there) and filled the pattern at once. A positional head without a `when`
+now never reads the body through (`GroupFacts.PositionalHead`), and the gap before the `)` is a fill point of the
+pattern's own list, in an arm and after an `is` that ends its statement, so `…, int dddd` / `);` and `…, int bbbb` /
+`) => 1,` come out where only the closer and what follows it overflow. (The separate closer group SK-DIV-0442
+tried resolved right, but the fill's last element still measured through it; as a point of the fill it ends that
+element's segment.)
+
+Rows: arms 75 → 162 of 168; the `is` grids 72 → 80 of 81 and 27 → 36 of 40. ⚠ Residue: a body with a break point
+of its own (`Compute(a, b)`) one column past the margin, where the oracle breaks after the arrow and Skala fills; a
+constant head with the body `1` at 129 to 131, where the oracle fills a column later.
+
+- options: `keep_user_linebreaks` (a kept break before the `)` stays the author's).
+- ⚠ status: **resolved within the residue above** (#559). Pinned by `constructs/breaks/positional-pattern-head-and-closer.cs`.
+
+## SK-DIV-0444 — an `=` whose value cannot end the line in time beside it
+
+Two Nightly idempotency failures on master, #595 and #596, each an `=` kept where its value's own break lands past
+the margin:
+
+- `T v13 = static x =>` past the margin (fuzz 18379797974820457043). #558's overflow rule keeps the `=` once the
+  `=>` is more than three columns past the margin, on the reading that the parameter list chops; a lambda without
+  parentheses has none. Measured on 145 locals (`x =>`, `static x =>`, `(x) =>`, `static (x) =>`, the `=>` ending
+  at 116 to 131): every row past the margin breaks the `=` where the type/name gap does not take the line first.
+  `GroupFacts.LambdaIsSimple`, read in `Fitter.EqualsBeforeALambda`. ⚠ Within the margin `static` moves the name
+  gates (`static x =>` breaks the `=` where `x =>` with the same name keeps the arrow): 10 rows of 64 differ, 8 of them
+  `static`, all within the margin, and are left (the gates were measured without the modifier).
+- `T v19 = Select(…) ? … : …` with the `(` at 124 (fuzz 8249044719362511507). #553 keeps the `=` before a call
+  condition that does not fit below; the oracle breaks it whenever the `(` lands past the margin, 121 to 127, short and
+  long arguments alike, as `EqualsBeforeACall` already does for a call value. `GroupFacts.ValueHeadCallee`. ⚠ Within
+  the margin a call condition that fits below keeps the `=` in the oracle (`= Select(` / chopped / `)` / `? …`),
+  where #553 breaks it: 9 of 32 rows, pre-existing, left.
+
+- ⚠ status: **resolved** for both seeds (`FuzzRegressionTests`), pinned by
+  `constructs/breaks/equals-before-a-head-past-the-margin.cs`.
+
+## SK-DIV-0446 — a `when` condition after a kept break, under an arm's width lift
+
+Found by group P's fuzz, `fuzz --replay=16516683683719357238` (a mutation of
+`constructs/breaks/arm-braces-under-an-arrow-broken-for-width.cs`), and present on master `debd1d61` before group P's
+round two. `{` / subpatterns / `} when` / `(from … select …) =>` / body, the author's break after `when` kept: the
+oracle writes the condition on the `} when` line's column (one level past the arm, 28 under an arm at 24) and keeps
+the query whole, on the input and on its own output alike. Skala's pass one, under the width lift
+(`GroupFacts.LiftsIfArrowBreaks`), puts it a level deeper and chops the query; pass two, reading the arrow's break as
+kept, writes the oracle's 28 with the query chopped. Not idempotent. Turning `LiftsThroughInnerBreaks` off for this
+shape changed nothing; the extra level comes from the lift's written-ahead walk, not from the list rule.
+
+- ⚠ status: **open**, not idempotent on this seed (pre-existing).
