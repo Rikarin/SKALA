@@ -1375,6 +1375,10 @@ public sealed class Document {
 ///     <c>)</c>, or zero. Where the <c>)</c> lands exactly one column past the margin the oracle breaks the
 ///     <c>=</c> whenever the value then fits below, and breaks inside the parentheses at every other width.
 /// </param>
+/// <param name="TailSpare">
+///     ⚠ Columns a <see cref="BreaksOnlyIfTailFits" /> group's tail must leave free on the continuation line, kept
+///     and added alike (#598): six for a typed local of a short type before a bare parenthesis, zero otherwise.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1454,7 +1458,8 @@ public readonly record struct GroupFacts(
     bool LiftsIfArrowBreaks = false,
     bool DraftsBroken = false,
     int TypeTestTail = 0,
-    int ParenCloseEnd = 0);
+    int ParenCloseEnd = 0,
+    int TailSpare = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

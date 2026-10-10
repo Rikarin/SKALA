@@ -66,6 +66,49 @@ public sealed class ParenOnePastTheMarginIssue598Tests {
               """
         );
 
+    /// <summary>
+    ///     Behind a head of twelve columns or more the value moves below whenever it fits there, a collection's
+    ///     rule (group P's measurement) — except that behind <c>string value =</c> a bare parenthesis stops while
+    ///     the line below would be 115 columns. Before the fix all three broke inside the parentheses.
+    /// </summary>
+    [Fact]
+    public void BehindAWideHead_TheValueMovesBelowWhenItFits() =>
+        Oracle.Agrees(
+            $$"""
+              class C {
+                  void M7() {
+                      var valueeeeeeee = (string)(aaaa + {{new string('b', 80)}});
+                  }
+
+                  void M92() {
+                      string value = (aaaa + {{new string('b', 92)}});
+                  }
+
+                  void M93() {
+                      string value = (aaaa + {{new string('b', 93)}});
+                  }
+              }
+              """,
+            $$"""
+              class C {
+                  void M7() {
+                      var valueeeeeeee =
+                          (string)(aaaa + {{new string('b', 80)}});
+                  }
+
+                  void M92() {
+                      string value =
+                          (aaaa + {{new string('b', 92)}});
+                  }
+
+                  void M93() {
+                      string value = (aaaa
+                          + {{new string('b', 93)}});
+                  }
+              }
+              """
+        );
+
     /// <summary>A cast, a member access after the <c>)</c>, a field, a <c>!</c> and a binary operand after it.</summary>
     [Fact]
     public void TheSameBehindACastAMemberAPrefixAndBeforeAnOperator() =>

@@ -616,7 +616,7 @@ public sealed class Fitter {
                         return ResolvedMode.Broken;
                     }
 
-                    return TailFits(m, tail) && HeadIsWideEnough(facts, m, lineStart)
+                    return TailFits(m, tail + facts.TailSpare) && HeadIsWideEnough(facts, m, lineStart)
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
                 }
@@ -717,7 +717,7 @@ public sealed class Fitter {
         // and not the head: `= [` always fits, and a bracket that is going to break is the case where
         // the oracle gives the break to the bracket. See GroupFacts.BreaksOnlyIfTailFits (#375).
         if (facts.BreaksOnlyIfTailFits) {
-            return TailFits(m, tail) ? ResolvedMode.Broken : ResolvedMode.Flat;
+            return TailFits(m, tail + facts.TailSpare) ? ResolvedMode.Broken : ResolvedMode.Flat;
         }
 
         return facts.JoinsIfFits && Fits(m.Column, m.FlatWidth, m.Trailing)

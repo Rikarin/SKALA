@@ -5612,7 +5612,10 @@ public sealed class BreakPlan {
             ? FlatSourceWidth(heldAccess.Expression)
             : 0;
         var head = -1;
-        if ((yieldsToTheBracket || callee > 0)
+        // ⚠ And a value that is one parenthesis around an operator or a cast, bare or cast itself, follows the
+        // collection's rule (#598): see IsAParenthesisedOperator.
+        var parenthesised = owner != EqualsOwner.None && IsAParenthesisedOperator(value);
+        if ((yieldsToTheBracket || callee > 0 || parenthesised)
             && EqualsHeadStartOf(node) is { RawKind: not 0 } headToken
             && headToken != FirstToken(node)
             && !markers.TryGetValue(headToken.SpanStart, out head)) {
@@ -5669,9 +5672,9 @@ public sealed class BreakPlan {
                     // and `=\n[1, 2]` for one that fits there (issues #375 and #379). See
                     // BreakYieldsToTheBracket. An added break also needs a head of twelve columns,
                     // measured from the marker; see GroupFacts.MinimumHead.
-                    BreaksOnlyIfTailFits: yieldsToTheBracket,
+                    BreaksOnlyIfTailFits: yieldsToTheBracket || parenthesised,
                     Owner: head,
-                    MinimumHead: yieldsToTheBracket || callee > 0 ? MinimumEqualsHead : 0,
+                    MinimumHead: yieldsToTheBracket || callee > 0 || parenthesised ? MinimumEqualsHead : 0,
                     CalleeWidth: callee,
                     YieldsThroughArrow: ArrowYieldWidthOf(value),
                     LambdaLocal: ArrowYieldWidthOf(value) > 0 ? LambdaLocalOf(node) : LambdaLocal.None,
@@ -5710,7 +5713,18 @@ public sealed class BreakPlan {
                         : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
                     CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner),
-                    ParenCloseEnd: ParenCloseEndOf(node, value)
+                    ParenCloseEnd: ParenCloseEndOf(node, value),
+
+                    // ⚠ Behind `string value =` a bare parenthesis stops moving down while the line below would
+                    // still be 115 columns (#598, group P's residue): measured at indents 8 and 12, lines 119 to 135.
+                    // A cast before it, or `Dictionary<string, int> value =`, moves down up to 120. Only the
+                    // fourteen-column head was measured short, so the boundary is set between the two heads.
+                    TailSpare: parenthesised
+                    && owner == EqualsOwner.TypedLocal
+                    && value is ParenthesizedExpressionSyntax
+                    && HeadWidthThroughEquals(node, equals) < 20
+                        ? 6
+                        : 0
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -5723,6 +5737,30 @@ public sealed class BreakPlan {
                 HoldsLevel: HoldFor(group, value)
             )
         );
+    }
+
+    /// <summary>
+    ///     Whether an <c>=</c>'s value is one parenthesis around a binary operator or a cast, bare or itself cast:
+    ///     <c>(a + b)</c>, <c>(string)(a + b)</c> (#598).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured by group P on 252 rows (heads of 7 to 32 columns, lines of 119 to 135) and re-measured
+    ///     2026-10-10 on 252 more: the oracle moves such a value below the <c>=</c> exactly when it fits there
+    ///     flat and the head through the <c>=</c> is twelve columns or more — a collection expression's rule
+    ///     (<see cref="GroupFacts.BreaksOnlyIfTailFits" />, <see cref="MinimumEqualsHead" />). A shorter head
+    ///     breaks only where the parenthesis closes one column past the margin (<see cref="ParenCloseEndOf" />).
+    ///     ⚠ Not a parenthesised collection or switch, which have rules of their own (#485, SK-DIV-0148). ⚠ Nor a
+    ///     type test: <c>var x =</c> / <c>(aaaa is B…);</c> moves down behind a seven-column head at 121, 123 and
+    ///     124 columns, which the ordering rule already answers.
+    /// </remarks>
+    static bool IsAParenthesisedOperator(ExpressionSyntax value) {
+        var inner = value is CastExpressionSyntax cast ? cast.Expression : value;
+        return inner is ParenthesizedExpressionSyntax {
+                Expression: BinaryExpressionSyntax or CastExpressionSyntax
+            } parenthesis
+            && parenthesis.Expression is not BinaryExpressionSyntax {
+                RawKind: (int)SyntaxKind.IsExpression or (int)SyntaxKind.AsExpression
+            };
     }
 
     /// <summary>

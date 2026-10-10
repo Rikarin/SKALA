@@ -11546,7 +11546,20 @@ The trigger is exact. The oracle breaks the `=` exactly where the parenthesised 
 has its `)` on column 121, and the value through that `)` fits below; nowhere else. Shapes that trigger it:
 `var x = (…);` at 122, `(…).L;` at 124, `(string)(…) + c;` at 126 (the `+ c` then breaks on its own),
 `!(…);` at 122. `+=`, `return` and a parenthesis behind another operand (`yy + (…)`) do not.
-`GroupFacts.ParenCloseEnd`. The rows diverging went from 102 to 25, and none regressed.
+`GroupFacts.ParenCloseEnd`.
+
+That rule is for heads shorter than twelve columns. Behind a wider head, group P measured the collection rule:
+the value moves below whenever it fits there flat (`BreaksOnlyIfTailFits`, `MinimumHead` 12), for one
+parenthesis around a binary operator or a cast, bare or cast itself. They measured 252 rows, with heads of 7 to
+32 columns and lines of 119 to 135. Re-measured here on the same generators:
+
+- Type tests (`(a is B)`) are left to the ordering rule, which already matched them.
+- Behind `string value =`, a bare parenthesis stops moving down while the line below would still be 115
+  columns. That held at indents 8 and 12. A cast, or `Dictionary<string, int> value =`, moves down to 120. So a
+  typed local of a head under twenty columns leaves six columns spare (`GroupFacts.TailSpare`). Only those two
+  heads were measured, so the boundary is placed between them, not measured.
+
+Over the 2 112 rows of all seven grids, 188 diverged before and 25 do now. No row regressed.
 
 ⚠ Still open, all as before:
 - 9 rows: `x = (IReadOnlyList<int>)(aaaa + …);` and `return (IReadOnlyList<int>)(…);` at 122 with a first operand
