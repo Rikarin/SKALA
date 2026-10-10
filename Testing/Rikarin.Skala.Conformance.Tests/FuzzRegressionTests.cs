@@ -163,6 +163,9 @@ public sealed class FuzzRegressionTests {
     // `[null, ..` / `Source]` as an array element: the break after the spread's `..` is at none of the collection's
     // own points, so the draft read it flat and pass one moved the `[` down; pass two kept `…, [`, the oracle's answer.
     [InlineData(3601384071467948482UL)]
+    // `var (a, b` / `) = source.OrderBy.` / `First.Value;` (#606): pass one, the chain broken, kept the `=`; pass two,
+    // the chain joined into a plain member, asked whether the broken head fits flat — never — and broke the `=`.
+    [InlineData(10828701791419393416UL)]
     // #609: `string { P215 : not null } when new { … } => (from …)` with the gap before the `:` flipped. The `when`
     // broke for width before the anonymous object and pass two, reading that break as kept, lifted the query's
     // `where` a level. The oracle breaks the object's braces there instead, and so does Skala now.
@@ -235,6 +238,13 @@ public sealed class FuzzRegressionTests {
     // ⚠ Pass one's break before a held first call, in an `if`'s whole condition, read as the author's on pass
     // two: the chain frame paid the level the aligned condition never spends (#593).
     [InlineData(16215088427476222539UL, "constructs/breaks/chain-in-a-header-or-a-sole-lambda.cs")]
+    // #608: `Value` / `= property.` / `Value;` — an author's break before the `=` left the `=` group's flat width
+    // unbounded, and #590's plain-member rule read that as an overflowing line and broke after the `=` on pass two.
+    [InlineData(9342835643250235022UL, "real/serilog/Serilog/Events/LogEventProperty.cs")]
+    // ⚠ #611: `Enumerable.Range(…).Select(index => 1d + (index` / `% 5)).ToArray()` — a receiver lambda's operand
+    // chain took its own level behind a call whose dot pass one broke for width; pass two read the dot as the
+    // author's and gave the level back.
+    [InlineData(1322227246888415436UL, "real/vixen/Core/Vixen.Geometry.Uv.Tests/DegenerateSystemTests.cs")]
     // #609: `{ P25: not null } when SomeVeryLongIdentifier… => 1,` past the margin. Pass one kept the `when` and broke
     // the arrow, and pass two, reading the arrow break as kept, broke the `when` by the tail rule. A condition with no
     // break point now breaks after the `when` whenever it does not fit beside it, as the oracle does on both passes.

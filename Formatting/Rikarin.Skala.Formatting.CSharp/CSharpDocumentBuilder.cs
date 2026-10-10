@@ -1145,8 +1145,13 @@ public sealed partial class CSharpDocumentBuilder {
                 // `? x` at two, which is what opening the scope on that last line gives.
                 // ⚠ Nor a chain headed by a parenthesis, which shares the level around it (SK-DIV-0112):
                 // `=>` / `(` / `a)[0]` / `.C()` on the `(`'s column, `? a` one level in.
+                // ⚠ A type test is no binary chain here, though Roslyn calls `as` and `is T` binary: the oracle
+                // puts `? 1` / `: 2` on the column of a broken `as IMethodSymbol` line, as it does under a
+                // broken `is null` (#602, measured 2026-10-10: `return`, `var x =`, `as` and `is T`), where
+                // `== null` takes the signs a level further.
                 var early = !nested
-                    && ternary.Condition is not BinaryExpressionSyntax
+                    && (ternary.Condition is not BinaryExpressionSyntax
+                        || ternary.Condition.Kind() is SyntaxKind.AsExpression or SyntaxKind.IsExpression)
                     && (ternary.Condition is ParenthesizedExpressionSyntax
                         || !BreakPlan.ChainHeadIsParenthesised(ternary.Condition));
                 if (early) {

@@ -7188,6 +7188,22 @@ three-argument type behind an eleven-letter name (`ModifierTypeGapIssue540Tests`
 the rule would fill it, and nothing longer was measured. A `const` with a value is not this rule's (56 of its
 117 cells differ). Every output is stable on a second pass. Pinned by `ModifierFillIssue540Tests`.
 
+**Round six (#604, group Q round four, 2026-10-10): more type arguments, longer names.** 4 680 fields — `Dictionary`
+with names of 9 to 20 letters, `Func<K…, int, List<S…>>` and `Func<K…, int, long, S…>` with names of 1 to 16, heads of
+16 to 55 columns, `public static readonly` and `private readonly`, the line from 122 to 160; master matched 2 992.
+- **The number of type arguments is no variable of its own.** Three- and four-argument types read off the same table
+  once `h` is the fill's actual first line — through the *last* comma of the outermost list that fits on the modifiers'
+  line, where the oracle's fill breaks — not through the first: `Func<K…,` of 16 columns followed by `int,` reads as
+  21, followed by `int, long,` as 27, and every row then sits on the table (`GroupFacts.ModifierFillLastHead`).
+- **Names over eight letters are already the oracle's.** From 11 to 20 letters the oracle moves the type below once it
+  ends past the margin and never fills, which is the ordering rule's answer; at nine letters it fills on a few rows at a
+  line one column short of the table's, so nine stays outside the rule.
+
+3 347 of the 3 456 cells where either side moves the type agree; the probe as a whole matches 4 551 of 4 680, and a
+probe written after the rule — `Tuple<K…, string, IList<S…>>`, `Action<K…, int, bool, S…>`, `Func<K…, A, B, C, S…>`,
+`internal static` and `protected readonly`, indents 4 and 8 — 3 678 of 3 744 (master 888). Pinned by
+`ModifierFillManyArgumentsIssue604Tests`.
+
 **The parameter's gap is resolved (#545).** A parameter whose line passes the margin once its list is
 chopped puts its name one level below its type: `int` / `            aaa…` at a parameter on column 8.
 Measured with `jb cleanupcode` 2025.2.6 one column at a time: flat to a 120-column parameter line, broken
@@ -10732,8 +10748,18 @@ Every output is stable on a second pass. Pinned by `LongParameterSectionChopIssu
 - options: `skala_wrap_arguments_style`; no key for the join.
 - ⚠ status: **resolved** for parameters of up to eleven columns, defaults included (#476, #556), pinned by
   `AttributeArgumentChopIssue476Tests`, and for longer parameters behind a section of two or more positional
-  arguments, pinned by `LongParameterSectionChopIssue476Tests`; **open** for named arguments, one-argument
-  sections and defaults behind long parameters.
+  arguments, pinned by `LongParameterSectionChopIssue476Tests`, and behind a one-argument section (#603), pinned by
+  `OneArgumentSectionChopIssue603Tests`; **open** for named arguments and defaults behind long parameters.
+
+**Round six (#603, group Q round four, 2026-10-10): one argument.** 2 205 cells — `[A(`, `[From(`, `[Description(`,
+`[JsonPropertyName(`, `[NotNullIfNotNull(`, `string a…` of 12 to 24 columns, indents 8, 12 and 20 — with round four's
+`[A(` and `[Description(` rows. A one-argument section is round five's rule with its own constants: the same slopes
+(4/3 a column of parameter, about 11/24 a column of indent and of head), the threshold 17 columns later, and its own
+second condition — `24·E ≥ 2106 + 32·w + 11·i + 11·h` and `2·w + i − h ≤ 36` (`GroupFacts.SectionSingle`). Of 62
+series, 58 start their chop on the column the rule gives and the four others one to five columns later, next to the
+second condition's edge, as round five's misses are. The grid matches 2 199 of 2 205 (master 2 090); a probe written
+after the rule — `[Ab(`, `[Obsolete(`, `[DisplayName(`, `[CallerArgumentExpression(`, `int` and `List<int>` parameters
+of 13 to 21 columns, indents 8, 16 and 24 — 2 510 of 2 520 (master 2 428).
 
 ## SK-DIV-0353 — a type declaration's keyword and its name: the oracle breaks between them
 
@@ -11601,6 +11627,18 @@ Group F's probes: `p3` 5 → 0, `p4` 7 → 0, `p5` 50 → 4 statements, `p6` 0 �
   boundary.
 - The `.ToList()` grid's 536 are not arrow decisions; they are recorded as SK-DIV-0420.
 
+⚠ **#578 re-measured, 2026-10-10 (group P, round five), on master `1bb0b42a`.** #578's own grid, regenerated from
+`gen578*.py` and asked again: 31 671 cells, **48** arrow decisions differ and no layout (the 59 of SK-DIV-0377's count
+included cells the decision reader skips). Per grid: c 4, d 7, e 20, g 4, h 1, t 12. They sit on the boundary: an
+arrow ending exactly on the floored ceiling (`x => …` at 49, 60, 71, 82 for parameter texts of 23 to 35), exactly on
+the line term for parameter texts of 40 and 44, or a column under the 85 cap for texts of 36 to 40 where the oracle
+breaks from 83 or 84. ⚠ No constant closes them: an unfloored ceiling fixes 20 of the 48 and adds 160 elsewhere
+(`gand` 35 → 63, `p578t` 12 → 52); the best of a 1 536-point search over the ceiling's offset, the cap, the line's
+offset and a parameter term past 38 takes the grid from 48 to 36 and moves `gand` 35 → 39 and `glong` 399 → 408, net
+zero over the 135 064 statements of every #578 and #586 grid. Left as it is; the residue is the boundary's own
+jitter. On the same master the other grids stand at `gand` 35, `gpat` 22, `gpatT` 10, `gleft` 17, `grand` 15,
+`gsplit` 0, `glong` 399 and `gtl` 356 (SK-DIV-0420's `.ToList()`, down from 536).
+
 ⚠ **Round 2 (group O, 2026-10-10): parameter text past 35 columns.**
 
 Swept with `Testing ask` on 33 648 cells:
@@ -12019,6 +12057,51 @@ Rows: 42 → 72 of 81, and the round-one grid of 40 rows 15 → 27.
 - ⚠ status: **resolved** for the local's `=`, pinned by `constructs/breaks/positional-pattern-after-a-local-equals.cs`;
   the closer and the arm heads are **resolved** in SK-DIV-0443, the carried comma in SK-DIV-0448.
 
+## SK-DIV-0490 — a type test broken before its `is` takes a level of its own, stacked on what is open around it
+
+#597, found in Skala's own `SearchValuesAnalyzer.cs`: `if (model.GetSpeculativeSymbolInfo(` / the
+arguments / `).Symbol` / `is not IMethodSymbol creator` / `|| …`. Skala gave a broken `is` one level past
+its operand's *line* (#445's from-the-line scope), so it collapsed with whatever else opened on that line.
+The oracle stacks it. Measured 2026-10-09 with `Testing ask` on 308 rows: if, while, do, else if, return,
+a local, an assignment, `=>`, a ternary's condition, an argument and a lambda; a long call and a short one;
+with and without `.Symbol`; `is not T t`, `is T`, `is null` and `as T`; alone and under `||` and `&&`.
+
+- Alone after `return`, the `is` and the `)` are one level in and the arguments two. Skala wrote the `)`
+  flush with `return`.
+- With `.Symbol` after the `)`, the chain takes a level past the `is`. `.Symbol` is two levels in and the
+  arguments three.
+- As the left operand of `||` or `&&`, the `is` goes a level past the operator, and everything under it
+  goes with it.
+- A whole statement condition keeps the `is` on the aligned column.
+
+With the oracle's breaks left in place, all 48 rows of a control grid without a broken `is` already matched
+and still do. On the broken-`is` rows, Skala diverged on 137 of 260 before and on 10 now, and no row
+regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
+
+- Fix: `BreakPlan.StacksItsLevel` and `IsAStackedTypeTestsOperand`, plus `LayoutWriter.LevelForBlock`. An
+  additive scope no longer blocks the scopes outside a broken construct, which `Level` already honoured.
+
+⚠ The 10 rows still diverging, all as before:
+
+- 7 are a sole lambda's whole body (`Use(x => call(` / … / `)` / `is T`). #445 keeps that one level past
+  the line, and the oracle nests the arguments from the `is`'s level there. The short form already matches
+  and is the test's control.
+- 3 are `as T` broken before `as` as a ternary's condition. The oracle keeps `?` and `:` on the `as`'s
+  column, and Skala puts them a level in.
+
+- status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`, and for the ternary
+  residue (#602), pinned by `TernaryAfterABrokenTypeTestIssue602Tests`. The sole-lambda residue is **open**.
+
+**#602 (group Q round four, 2026-10-10): the ternary residue.** The cause was not the type test's level: a ternary
+opens the scope its `?` and `:` take after a *binary* condition, so that a broken `==` chain puts them a level further
+(`return a` / `== null` / `? 1` at two levels, measured), and Roslyn calls `as` and `is T` binary. The oracle treats them
+as it treats `is null`: `? 1` / `: 2` on the column of the keyword's line after `return`, `var x =` and as an argument,
+written broken or flat. All four ternary rows of group S's grid now agree (`CSharpDocumentBuilder`, the ternary's
+`early` scope). ⚠ The six sole-lambda rows — `Use(x => call(` / … / `)` / `is T`, the oracle with the arguments two
+levels in and Skala with them on the `)`'s level — are not attempted: they need the stacked level only when the
+operand itself breaks, which is a layout fact the planner does not have, and group S found the unconditional
+widening regressed six short-form rows.
+
 ## SK-DIV-0443 — a positional pattern's `)` and an arm headed by one
 
 #559, round five, the two residues of SK-DIV-0442. Measured 2026-10-10 with `Testing ask` on 168 arms — heads
@@ -12104,6 +12187,19 @@ side of the boundary.
 
 - ⚠ status: **resolved within the residue above**. Pinned by `constructs/breaks/conditional-call-condition-below.cs`.
 
+⚠ **Re-measured 2026-10-10 by group R (#594's residue), and the argument count is a proxy.** Probes with a long
+callee and short arguments, the reverse of this entry's `Select(aaaa…, bbbb…)`, separate the two. On a controlled
+grid of 303 locals (`var` and typed; the `=` at 24 to 100; callee 8 to 64 columns; argument text 12 to 90 columns
+split over one to three arguments; every call fitting below and not beside), the oracle's answer follows the
+argument *width*: with the call's end below fixed at 107, `C24 + A70` chops at two arguments where `C44 + A50`
+breaks the `=` at any count. Skala agrees on 257 of 303 (all 303 idempotent); the 46 apart are mostly two- and
+three-argument calls with 50 to 90 columns of arguments, both directions. As a stand-alone predictor over that grid,
+#594's 92 rows, 232 rows of mixed simple and `out var`/parenthesised arguments and this entry's 52 fixture rows (583
+in the domain), the formula above agrees on 302; the best linear refit found, `2·below + 2·= + 7·(argument width)
++ 96·(count) ≤ 1058`, on 531 — not clean enough to wire, and the count's coefficient sits at the search bound. Left as
+is; the residue needs a probe designed around argument width, with the name rule (#577) held fixed, since `var` and
+typed heads part on a handful of rows. #594's own 92 rows: 72 agree, all idempotent.
+
 ## SK-DIV-0448 — a comma that would land past the margin
 
 #559, the carried comma of SK-DIV-0442. Measured 2026-10-10 on 73 rows: in a positional pattern (after `return`,
@@ -12114,43 +12210,13 @@ break after the comma before); a type argument list does, and is left to its yie
 comma of the two lists is a fill point that breaks only when the comma itself would overflow
 (`BreakPlan.PlanCarriedCommas`). Grids 42 → 48 of 48 and 23 → 24 of 25 (the type argument list).
 
-- ⚠ status: **resolved** for positional patterns and deconstructions. Pinned by
-  `constructs/breaks/positional-pattern-carried-comma.cs`.
+⚠ **Round four: and a type argument list.** Measured on 25 rows — a local's, a field's and a parameter's type, a
+generic call, a creation behind an `=`: at exactly 120 the oracle writes `Dictionary<A, B, CCC` / `, D> x;` too. A
+yielding point before each comma, like the list's own (`PlanTypeParameters`). Rows 16 → 20 of 25; the five left are
+an assignment's `=` before `new Dictionary<…>()`, which Skala breaks and the oracle keeps, a different question.
 
-## SK-DIV-0490 — a type test broken before its `is` takes a level of its own, stacked on what is open around it
-
-#597, found in Skala's own `SearchValuesAnalyzer.cs`: `if (model.GetSpeculativeSymbolInfo(` / the
-arguments / `).Symbol` / `is not IMethodSymbol creator` / `|| …`. Skala gave a broken `is` one level past
-its operand's *line* (#445's from-the-line scope), so it collapsed with whatever else opened on that line.
-The oracle stacks it. Measured 2026-10-09 with `Testing ask` on 308 rows: if, while, do, else if, return,
-a local, an assignment, `=>`, a ternary's condition, an argument and a lambda; a long call and a short one;
-with and without `.Symbol`; `is not T t`, `is T`, `is null` and `as T`; alone and under `||` and `&&`.
-
-- Alone after `return`, the `is` and the `)` are one level in and the arguments two. Skala wrote the `)`
-  flush with `return`.
-- With `.Symbol` after the `)`, the chain takes a level past the `is`. `.Symbol` is two levels in and the
-  arguments three.
-- As the left operand of `||` or `&&`, the `is` goes a level past the operator, and everything under it
-  goes with it.
-- A whole statement condition keeps the `is` on the aligned column.
-
-With the oracle's breaks left in place, all 48 rows of a control grid without a broken `is` already matched
-and still do. On the broken-`is` rows, Skala diverged on 137 of 260 before and on 10 now, and no row
-regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
-
-- Fix: `BreakPlan.StacksItsLevel` and `IsAStackedTypeTestsOperand`, plus `LayoutWriter.LevelForBlock`. An
-  additive scope no longer blocks the scopes outside a broken construct, which `Level` already honoured.
-
-⚠ The 10 rows still diverging, all as before:
-
-- 7 are a sole lambda's whole body (`Use(x => call(` / … / `)` / `is T`). #445 keeps that one level past
-  the line, and the oracle nests the arguments from the `is`'s level there. The short form already matches
-  and is the test's control.
-- 3 are `as T` broken before `as` as a ternary's condition. The oracle keeps `?` and `:` on the `as`'s
-  column, and Skala puts them a level in.
-
-- status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`. ⚠ The two residues
-  are **open**.
+- ⚠ status: **resolved** for positional patterns, deconstructions and type argument lists. Pinned by
+  `constructs/breaks/positional-pattern-carried-comma.cs` and `constructs/breaks/type-argument-carried-comma.cs`.
 
 ## SK-DIV-0400 – 0403, round 2 of the name reading (Group N, 2026-10-10)
 
@@ -12186,6 +12252,39 @@ on 2 247, losing 10 rows round one had.
   calls and creations; lines 118 to 134) differ in 14, all one shape: with the comment and a 31-column name the
   oracle declines the join from 122 to 128 where it joins and chops for names of 16 or less. Another name
   effect, inside the attribute join; not wired.
+
+## SK-DIV-0449 — a switch arm exactly one column past the margin
+
+#559's last residue: `(int a, …, int c) => Compute(a, b),` at 121 columns breaks after the arrow in the oracle, and
+Skala chopped the call. Measured 2026-10-10 on 206 arms whose line ends at 121, arm indents 12 and 16, heads from 8
+to 94 columns through `=>`, bodies of a call on a name, a member chain, an operator, a parenthesis and a cast in front
+of a call or a parenthesis: the arrow breaks once the head is 68 columns or more before a call on a name, 26 before a
+member chain, 24 before an operator or a parenthesis; below that the body breaks inside, as Skala always did. A cast
+in front of the body counts as head (`(string)Method(…)` breaks from 59 + 8, `(string)(a + b)` from 16 + 8).
+`GroupFacts.ArmOneOverHead`, `BreakPlan.ArmOneOverHeadOf`. ⚠ A first cut that broke the arrow on every one-over arm
+matched the three positional rows and moved two cast rows away; the threshold is per body kind. Rows 203 of 206, the
+three one column of jitter either side; positional arm heads 165 → 168 of 168.
+
+- ⚠ status: **resolved within the residue above** (#559). Pinned by `constructs/breaks/arm-one-column-over.cs`.
+
+## SK-DIV-0450 — an `=` before `new G<…>(…)` whose type argument list fills
+
+Found beside SK-DIV-0448 (group P, round five), measured 2026-10-10 on 78 rows: `x = new Dictionary<A…, B…, C…, D…>();`
+and with `(capacity)`, heads `x =`, `vvvvvvvvvvvvvv =`, `var x =`, `var vvvvvvvvvvvvvv =` and `Dictionary<A, B> x =`, lines
+of 116 to 150. Two shapes, neither wired:
+
+- **An assignment with a short head keeps its `=`** and fills the type arguments one level in — `x = new Dictionary<…,`
+  / `D…>();` — at every width but 122, where it breaks the `=`. Skala breaks the `=` from 122 on (5 rows, 3 more with
+  `(capacity)` from 134). A `var x =` local with the same seven-column head breaks it, as Skala does; so does an
+  assignment with a 14-column head.
+- **With an argument, a head of 14 or a typed one breaks the `=`** from 122 to 130 where Skala keeps it and fills (7 rows);
+  from 134 both break it.
+
+The first is the local-against-assignment split SK-DIV-0442 found for positional patterns; the second is an `=`
+before a creation call, near `EqualsBeforeACall`'s floor, which does not cover a generic type.
+
+- options: `skala_wrap_before_eq = false`.
+- ⚠ status: **open**.
 
 ## SK-DIV-0491 — an `=` whose value's leading parenthesis closes one column past the margin
 
