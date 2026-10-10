@@ -6560,10 +6560,8 @@ public sealed class BreakPlan {
         };
 
         if (list is null
-            || list.Arguments.Any(static argument => argument.DescendantNodesAndSelf().OfType<GenericNameSyntax>().Any())
-            || value.DescendantTrivia()
-                .Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia)
-                    && !trivia.IsKind(SyntaxKind.EndOfLineTrivia))) {
+            || list.Arguments.Any(HoldsAGenericName)
+            || value.DescendantTrivia().Any(IsNeitherSpaceNorLineEnd)) {
             return 0;
         }
 
@@ -6751,6 +6749,11 @@ public sealed class BreakPlan {
         && !lambda.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
             ? FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken)
             : 0;
+
+    static bool HoldsAGenericName(TypeSyntax type) => type.DescendantNodesAndSelf().OfType<GenericNameSyntax>().Any();
+
+    static bool IsNeitherSpaceNorLineEnd(SyntaxTrivia trivia) =>
+        !trivia.IsKind(SyntaxKind.WhitespaceTrivia) && !trivia.IsKind(SyntaxKind.EndOfLineTrivia);
 
     static SeparatedSyntaxList<ArgumentSyntax> ArgumentsOf(ExpressionSyntax value) =>
         value switch {
