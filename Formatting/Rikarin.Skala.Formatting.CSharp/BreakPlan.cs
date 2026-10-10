@@ -968,7 +968,11 @@ public sealed class BreakPlan {
                         || keeps
                         && collection.Elements.Any(element =>
                             element is SpreadElementSyntax spread && BreaksBefore(FirstToken(spread.Expression))
-                        ))
+                        )
+                        // ⚠ Nor one holding an argument list the author broke after a comma (#607): the list chops,
+                        // `F(` / `a,` / `b` / `)`, so the collection is broken too. A break after the `(` or before a
+                        // comma is joined, and leaves the draft as it was.
+                        || keeps && HoldsAnArgumentListBrokenAfterAComma(collection))
                     && groups.TryGetValue(Key(node), out var listPlans)
                     && listPlans.Count > 0) {
                     var listPlan = listPlans[^1] with { Facts = listPlans[^1].Facts with { DraftsBroken = true } };
@@ -6644,6 +6648,21 @@ public sealed class BreakPlan {
                 && trivia.Span.End <= collection.CloseBracketToken.SpanStart
                 && (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
                     || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia))
+            );
+
+    /// <summary>
+    ///     Whether an argument list inside a collection holds the author's break after a comma, which chops the
+    ///     list and so breaks the collection on every pass (#607). Bracketed arguments count: <c>d[a,</c> /
+    ///     <c>b]</c> keeps its break in the oracle too.
+    /// </summary>
+    bool HoldsAnArgumentListBrokenAfterAComma(CollectionExpressionSyntax collection) =>
+        collection.DescendantNodes()
+            .OfType<BaseArgumentListSyntax>()
+            .Any(list => list.Arguments.GetSeparators()
+                .Any(comma => comma.GetNextToken() is var next
+                    && next != list.GetLastToken()
+                    && BreaksBefore(next)
+                )
             );
 
     /// <summary>
