@@ -7465,12 +7465,36 @@ public sealed class BreakPlan {
                 // ⚠ The arrow or the cast's `)` by a measured table (#591). Not under a kept arrow, whose break
                 // is certain.
                 ArmCast: kept ? 0 : ArmCastWidth(arm.Expression),
+                ArmOneOverHead: ArmOneOverHeadOf(arm.Expression),
                 PositionalHead: arm is {
                     WhenClause: null,
                     Pattern: RecursivePatternSyntax { PositionalPatternClause: not null, PropertyPatternClause: null }
                 }
             )
         );
+    }
+
+    /// <summary>
+    ///     The head an arm one column past the margin needs before its arrow breaks rather than a point of its body
+    ///     (#559, SK-DIV-0449), by the body's kind, less the width of the casts in front of it; zero for a body not
+    ///     measured. See <see cref="GroupFacts.ArmOneOverHead" />.
+    /// </summary>
+    int ArmOneOverHeadOf(ExpressionSyntax body) {
+        var casts = 0;
+        var inner = body;
+        while (inner is CastExpressionSyntax cast) {
+            casts += FormattedWidth(cast.OpenParenToken, cast.CloseParenToken);
+            inner = cast.Expression;
+        }
+
+        var head = inner switch {
+            InvocationExpressionSyntax { Expression: IdentifierNameSyntax or GenericNameSyntax, ArgumentList.Arguments.Count: > 0 } => 68,
+            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax } or MemberAccessExpressionSyntax => 26,
+            BinaryExpressionSyntax binary when !IsTypeTest(binary) => 24,
+            ParenthesizedExpressionSyntax => 24,
+            _ => 0
+        };
+        return head == 0 ? 0 : Math.Max(1, head - casts);
     }
 
     /// <summary>

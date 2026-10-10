@@ -589,6 +589,19 @@ public sealed class Fitter {
                         : ResolvedMode.Flat;
                 }
 
+                // ⚠ A switch arm whose line runs exactly one column past the margin breaks after its arrow once the head
+                // is wide enough for the body's kind (#559, SK-DIV-0449). See GroupFacts.ArmOneOverHead.
+                if (facts.ArmOneOverHead > 0
+                    && m.Column - lineStart >= facts.ArmOneOverHead
+                    && m.Column > lineStart
+                    && !afterPointRunsToTheEnd
+                    && m.FlatWidth < Unbounded
+                    && m.Trailing < Unbounded
+                    && m.Column + m.FlatWidth + m.Trailing == width + 1
+                    && Fits(m.ContinuationColumn, m.FlatWidth, m.Trailing)) {
+                    return ResolvedMode.Broken;
+                }
+
                 // ⚠ A switch arm's body that is a cast over an atom: the arrow or the cast's `)`, by the measured
                 // table. See GroupFacts.ArmCast (#591).
                 if (facts.ArmCast > 0
