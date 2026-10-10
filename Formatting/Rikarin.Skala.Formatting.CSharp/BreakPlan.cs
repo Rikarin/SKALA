@@ -6211,7 +6211,10 @@ public sealed class BreakPlan {
         Describe(cast, group, GroupMode.Preserve, new(BreaksIfTooLong: true), true);
     }
 
-    /// <summary>Whether a cast is the whole value of a <c>return</c>, or of a plain assignment or local (#598).</summary>
+    /// <summary>
+    ///     Whether a cast is the whole value of a <c>return</c>, or of a plain assignment or local
+    ///     (#598).
+    /// </summary>
     static bool IsTheWholeValueOfAReturnOrAnEquals(CastExpressionSyntax cast) =>
         cast.Parent is ReturnStatementSyntax
             or AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression }
@@ -6329,8 +6332,7 @@ public sealed class BreakPlan {
 
     /// <summary>
     ///     For a plain member value (<see cref="IsPlainMemberValue" />), the widths of its links after the receiver,
-    ///     the
-    ///     <c>.</c> included, in order; null for any other value. See <see cref="GroupFacts.MemberLinks" />.
+    ///     the <c>.</c> included, in order; null for any other value. See <see cref="GroupFacts.MemberLinks" />.
     /// </summary>
     static int[]? MemberLinksOf(ExpressionSyntax value) {
         if (value is not MemberAccessExpressionSyntax plain || !IsPlainMemberValue(plain)) {
@@ -6692,13 +6694,13 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     For an <c>=</c> whose head is five columns or fewer, before <c>new G&lt;…&gt;(…)</c>, <c>M&lt;…&gt;(…)</c> or
-    ///     <c>default(G&lt;…&gt;)</c>: the width from the value's first token through the type argument list's
+    ///     For an <c>=</c> whose head is five columns or fewer, before <c>new G&lt;…&gt;(…)</c>, <c>M&lt;…&gt;(…)</c>
+    ///     or <c>default(G&lt;…&gt;)</c>: the width from the value's first token through the type argument list's
     ///     <c>&gt;</c>; zero otherwise. See <see cref="GroupFacts.ShortHeadTypeEnd" />.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 2 593 rows (#610, SK-DIV-0450): assignments with heads of 3 to
-    ///     8 columns, <c>a.b</c>, <c>a.bcd</c> and <c>a[0]</c> targets, <c>T v</c>, <c>Tt v</c>, <c>Ttt v</c> and
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 2 593 rows (#610, SK-DIV-0450): assignments with heads of 3
+    ///     to 8 columns, <c>a.b</c>, <c>a.bcd</c> and <c>a[0]</c> targets, <c>T v</c>, <c>Tt v</c>, <c>Ttt v</c> and
     ///     <c>var v</c> locals; creations without arguments, with one and with two, a generic call and
     ///     <c>default(…)</c>; lines of 121 to 150. With the <c>&gt;</c> past the margin, every head through the
     ///     <c>=</c> of five columns or fewer keeps it and fills the list one level in, local or assignment alike, and
@@ -6725,7 +6727,8 @@ public sealed class BreakPlan {
             return 0;
         }
 
-        // ⚠ Line ends are let through: pass one's fill puts one inside the list, and pass two must give the same answer.
+        // ⚠ Line ends are let through: pass one's fill puts one inside the list, and pass two must give the same
+        // answer.
         return FormattedWidth(value.GetFirstToken(), list.GreaterThanToken);
     }
 

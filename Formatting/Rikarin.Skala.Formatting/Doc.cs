@@ -1555,7 +1555,8 @@ public sealed class Document {
 /// </param>
 /// <param name="ShortHeadTypeEnd">
 ///     ⚠ An <c>=</c> with a head of five columns or fewer before a value whose type argument list fills —
-///     <c>new G&lt;…&gt;(…)</c>, <c>M&lt;…&gt;(…)</c>, <c>default(G&lt;…&gt;)</c> (#610, SK-DIV-0450): the width from the
+///     <c>new G&lt;…&gt;(…)</c>, <c>M&lt;…&gt;(…)</c>, <c>default(G&lt;…&gt;)</c> (#610, SK-DIV-0450): the width from
+///     the
 ///     value's first column through the list's <c>&gt;</c>. When the <c>&gt;</c> lands past the margin, the <c>=</c>
 ///     stays and the list fills, where a head of six or more breaks the <c>=</c>; zero turns the rule off.
 /// </param>
