@@ -316,6 +316,12 @@ public sealed class BreakPlan {
     readonly Dictionary<long, int> arrowGroups = [];
 
     /// <summary>
+    ///     A switch arm's width lift (<see cref="GroupFacts.LiftsIfArrowBreaks" />), by the arm's key, for its
+    ///     <c>when</c> clause to hold its own level under (#601).
+    /// </summary>
+    readonly Dictionary<long, int> armLifts = [];
+
+    /// <summary>
     ///     The group each <see cref="HeldLevel.WhileArrowFlat" /> or <see cref="HeldLevel.WhileGroupBroken" /> hold
     ///     is decided by: a sole lambda's arrow, or the gap after an <c>is</c>.
     /// </summary>
@@ -7047,11 +7053,31 @@ public sealed class BreakPlan {
                     or QueryExpressionSyntax
                 );
         var keptAfter = !kept
-            && (liftsBraces || liftsList)
+            && (liftsBraces || liftsList || arm.WhenClause is not null)
             // ⚠ And never under a body the arrow group holds the level for (#406, SK-DIV-0157).
             && !HeadsWithAChoppedParenthesis(arm.Expression, source, options, out _)
             && options.KeepsUserBreaksBetweenItems
-            && BreaksBefore(FirstToken(arm.Expression));
+            && ((liftsBraces || liftsList) && BreaksBefore(FirstToken(arm.Expression))
+                // ⚠ And a break the author kept after the `when`, over braces (#601): `{` / … / `} when` /
+                // `Compute(…) => body…` lifts the braces as a kept arrow break does, whether or not the arrow
+                // breaks — measured 2026-10-10 with the arrow kept and broken, conditions of a query, a call, a name
+                // and a parenthesised `??` chain.
+                // ⚠ Whatever the condition holds — a call, an operator chain — except a type argument list, after
+                // which Skala adds that break for width itself (#576): the break is otherwise only ever the author's.
+                || arm.WhenClause is { } keptWhen
+                && BreaksBefore(FirstToken(keptWhen.Condition))
+                && !keptWhen.Condition.DescendantNodesAndSelf().Any(static node => node is TypeArgumentListSyntax)
+                && arm.Pattern.DescendantNodesAndSelf()
+                    .Any(static node => node is PropertyPatternClauseSyntax or ListPatternSyntax)
+                && !arm.Pattern.DescendantNodesAndSelf()
+                    .Any(static node => node is PositionalPatternClauseSyntax
+                        or BaseArgumentListSyntax
+                        or TypeArgumentListSyntax
+                        or AnonymousFunctionExpressionSyntax
+                        or InitializerExpressionSyntax
+                        or CollectionExpressionSyntax
+                        or SwitchExpressionSyntax
+                    ));
         if (keptAfter) {
             OpenAt(
                 arm,
@@ -7079,6 +7105,7 @@ public sealed class BreakPlan {
         var widthLift = -1;
         if (!kept && !keptAfter && (liftsBraces || LiftsUnderAKeptArrow(arm))) {
             widthLift = NewGroup();
+            armLifts[Key(arm)] = widthLift;
             OpenAt(
                 arm,
                 arm.Pattern.SpanStart,
@@ -7550,7 +7577,20 @@ public sealed class BreakPlan {
             new(
                 options.KeepsUserBreaksBetweenItems && BreaksBefore(keyword),
                 BreaksIfTooLong: true,
-                BreaksOnlyIfHeadOverflows: true
+                BreaksOnlyIfHeadOverflows: true,
+
+                // ⚠ Under an arm's width lift the clause's own level is the lift's (#601, fuzz
+                // 16516683683719357238): `} when` / `(from …) =>` puts the condition on the `} when` line's column in
+                // the oracle, and pass two — reading the arrow's break as kept — did; pass one spent the clause's
+                // level on top of the lift's.
+                // ⚠ Only for a condition the author put on a line of its own: on the `when` line an operator chain in
+                // it continues two levels past the arm under the lift (`arm-when-chain-under-an-arrow-broken-for-width`).
+                LiftGroup: node.Parent is SwitchExpressionArmSyntax arm
+                && options.KeepsUserBreaksBetweenItems
+                && BreaksBefore(FirstToken(node.Condition))
+                && armLifts.TryGetValue(Key(arm), out var lift)
+                    ? lift
+                    : -1
             ),
             // spendsIndent, leadingGapInside: the gap before the `when` is the group's own first
             // point, so the group has to open before it (GroupPlan.LeadingGapInside).
