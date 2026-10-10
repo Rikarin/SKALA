@@ -4729,9 +4729,9 @@ public sealed class BreakPlan {
     /// </summary>
     int WhenBodyWidth(SwitchExpressionArmSyntax arm) {
         var body = arm.Expression is PrefixUnaryExpressionSyntax prefix ? prefix.Operand : arm.Expression;
-        if (body is not (LiteralExpressionSyntax or IdentifierNameSyntax or MemberAccessExpressionSyntax {
-                Expression: IdentifierNameSyntax
-            })) {
+        if (body is not (LiteralExpressionSyntax
+            or IdentifierNameSyntax
+            or MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax })) {
             return 0;
         }
 
@@ -8213,11 +8213,13 @@ public sealed class BreakPlan {
                         BreaksIfTooLong: true,
                         BreaksOnlyIfTailFits: true,
                         WhenTable: true,
-                        WhenAtom: !node.Condition.DescendantNodesAndSelf().Any(static part => part is TypeArgumentListSyntax),
+                        WhenAtom: !node.Condition.DescendantNodesAndSelf()
+                            .Any(static part => part is TypeArgumentListSyntax),
                         WhenBody: WhenBodyWidth((SwitchExpressionArmSyntax)node.Parent!),
                         WhenArrowKept: options.KeepsUserBreaksBetweenItems
                         && node.Parent is SwitchExpressionArmSyntax keptArm
-                        && (BreaksBefore(keptArm.EqualsGreaterThanToken) || BreaksBefore(FirstToken(keptArm.Expression)))
+                        && (BreaksBefore(keptArm.EqualsGreaterThanToken)
+                            || BreaksBefore(FirstToken(keptArm.Expression)))
                     ),
                     true,
                     true

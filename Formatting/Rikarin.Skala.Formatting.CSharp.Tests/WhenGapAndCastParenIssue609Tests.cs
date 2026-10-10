@@ -8,7 +8,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 public sealed class WhenGapAndCastParenIssue609Tests {
     static readonly string Type45 = "T" + new string('y', 27);
 
-    static string Condition(int ts) => "Materialise<List<bool>, IReadOnlyDictionary<int, T" + new string('t', ts) + ">>()";
+    static string Condition(int ts) =>
+        "Materialise<List<bool>, IReadOnlyDictionary<int, T" + new string('t', ts) + ">>()";
 
     /// <summary>
     ///     Before a body read through, the <c>when</c> breaks while <c>25·t + 6·h ≤ 3191</c> (the <c>when</c> ending at
