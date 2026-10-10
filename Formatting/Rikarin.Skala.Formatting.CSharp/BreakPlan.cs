@@ -5882,6 +5882,9 @@ public sealed class BreakPlan {
                     }
                         ? countedCall.ArgumentList.Arguments.Count
                         : 0,
+                    ValueHeadTail: conditionHead > 0 && value is ConditionalExpressionSyntax tailed
+                        ? 1 + FormattedWidth(tailed.QuestionToken, tailed.WhenFalse.GetLastToken())
+                        : 0,
                     MemberHeadWidth: value is MemberAccessExpressionSyntax plain && IsPlainMemberValue(plain)
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,
