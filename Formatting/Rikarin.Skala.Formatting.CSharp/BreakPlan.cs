@@ -5886,7 +5886,6 @@ public sealed class BreakPlan {
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
-<<<<<<< HEAD
                     HeldValueTypedHead: (heldCall is not null || choppedHeld is not null) && heldKind == 1
                         ? HeadWidthThroughEquals(node, equals)
                         : 0,
@@ -5901,7 +5900,6 @@ public sealed class BreakPlan {
                         + WidthThroughSemicolon(value)
                         + TrailingCommentWidth(value.GetLastToken().GetNextToken())
                         : 0,
-=======
                     EqualsLambdaName: wideLambdaCall is null
                         ? 0
                         : ((VariableDeclaratorSyntax)node.Parent!).Identifier.Span.Length,
@@ -5915,7 +5913,6 @@ public sealed class BreakPlan {
                     EqualsLambdaArguments: wideLambdaCall is null || lambdaCall is null
                         ? 0
                         : FormattedWidth(lambdaCall.ArgumentList),
->>>>>>> n-608
                     CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner)
                 ),
                 true,
