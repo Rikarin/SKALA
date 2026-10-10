@@ -1171,6 +1171,10 @@ public sealed class Document {
 /// </param>
 /// <param name="EqualsLambdaName">The declarator name's width. See <see cref="EqualsLambdaArguments" />.</param>
 /// <param name="EqualsLambdaType">The declared type's width. See <see cref="EqualsLambdaArguments" />.</param>
+/// <param name="EqualsLambdaReach">
+///     Columns added to the measured reach: 2 for an assignment statement's target, 0 for a declaration. See
+///     <see cref="EqualsLambdaArguments" />.
+/// </param>
 /// <param name="EqualsLambdaValueHead">
 ///     The value's width before the call's <c>(</c>: <c>() =&gt; Callee</c>. See <see cref="EqualsLambdaArguments" />.
 /// </param>
@@ -1204,6 +1208,11 @@ public sealed class Document {
 /// <param name="LambdaOperandTail">
 ///     The width from the body's end to its statement's end — <c>);</c> for a call statement — which the line's
 ///     end is measured with. See <see cref="LambdaOperandParameters" />.
+/// </param>
+/// <param name="HeldCallLambda">
+///     ⚠ A held first call whose one argument is a lambda, `r.Where(x => …).ToList()`: the line below is limited
+///     by the call's own measured table, which weighs the head before the receiver too (#605). See
+///     <c>Fitter.HeldLambdaLimit</c>.
 /// </param>
 /// <param name="HeldCallOnAPath">
 ///     ⚠ A held first call whose receiver is a plain path of names, `source.A…`: when the receiver alone
@@ -1503,6 +1512,10 @@ public sealed class Document {
 ///     line the type and the name would make below the modifiers reaches a measured length. See
 ///     <c>Fitter.FillsAfterTheModifiers</c>.
 /// </param>
+/// <param name="ModifierFillLastHead">
+///     With <see cref="ModifierFillHead" />: the type's width through the last comma of its argument list. The fill's
+///     first line ends there when that comma fits on the modifiers' line, and the table is read at that width (#604).
+/// </param>
 /// <param name="ModifierFillType">With <see cref="ModifierFillHead" />: the type's width.</param>
 /// <param name="ModifierFillName">With <see cref="ModifierFillHead" />: the name's width.</param>
 /// <param name="ParameterAfterSection">
@@ -1516,6 +1529,10 @@ public sealed class Document {
 /// <param name="SectionHead">
 ///     With <see cref="ParameterAfterSection" />: the width from the <c>[</c> to the
 ///     <c>(</c>.
+/// </param>
+/// <param name="SectionSingle">
+///     With <see cref="ParameterAfterSection" />: the section has one argument, whose threshold sits 17 columns later
+///     — <c>24·E ≥ 2106 + 32·w + 11·i + 11·h</c> and <c>2·w + i − h ≤ 36</c> (#603).
 /// </param>
 /// <param name="SectionWidth">
 ///     With <see cref="ParameterAfterSection" />: the section's flat width, <c>[</c> to
@@ -1531,9 +1548,54 @@ public sealed class Document {
 ///     the oracle breaks after the arrow while the line through it fits, then before it, then before the
 ///     pattern's <c>)</c>, and only then inside the pattern — where a property pattern's braces chop.
 /// </param>
+/// <param name="ParenCloseEnd">
+///     ⚠ An <c>=</c>'s value that opens with a parenthesised expression — bare, cast, or the head of a member
+///     access or a binary operand (#598): the width from the value's first token through that expression's
+///     <c>)</c>, or zero. Where the <c>)</c> lands exactly one column past the margin the oracle breaks the
+///     <c>=</c> whenever the value then fits below, and breaks inside the parentheses at every other width.
+/// </param>
+/// <param name="TailSpare">
+///     ⚠ Columns a <see cref="BreaksOnlyIfTailFits" /> group's tail must leave free on the continuation line, kept
+///     and added alike (#598): six for a typed local of a short type before a bare parenthesis, zero otherwise.
+/// </param>
+/// <param name="CastParenFirst">
+///     ⚠ The gap after a cast's <c>)</c> before a parenthesised operator, the whole value of a <c>return</c> or a
+///     plain <c>=</c> (#598): the width of the operator's first operand, or zero. See
+///     <c>Fitter.BreaksAfterTheCast</c>.
+/// </param>
+/// <param name="WhenTable">
+///     ⚠ The gap after an arm's <c>when</c> before a condition whose only break points are type argument lists
+///     (#576, SK-DIV-0399), decided by the measured table in <c>Fitter.WhenBreaks</c> rather than by whether the
+///     condition fits below. With <see cref="WhenAtom" />, a condition with no break point at all; with
+///     <see cref="WhenBody" />, the width of <c> =&gt; body</c> and the arm's comma for a body short enough to be
+///     read through, decided from the syntax so that a kept arrow break on pass two does not change it. With
+///     <see cref="WhenArrowKept" />, an arm whose arrow the author broke on either side: there a condition with
+///     type arguments moves below exactly when it fits there, the rule before the table.
+/// </param>
 /// <param name="ValueHeadArguments">
 ///     With <see cref="ValueHeadCallee" />: the call condition's argument count, which the line below may run to
 ///     before the oracle keeps the <c>=</c> and chops the call instead (#596's residue, SK-DIV-0447).
+/// </param>
+/// <param name="ArmOneOverHead">
+///     ⚠ A switch arm's body group (#559, SK-DIV-0449): when the arm's flat line ends exactly one column past the
+///     margin, the arrow breaks — rather than a point of the body's own — once the head through the <c>=&gt;</c>
+///     is at least this wide; zero turns the rule off. Measured 2026-10-10 at arm indents 12 and 16 on lines of 121:
+///     68 before a call on a name, 26 before a member chain, 24 before an operator or a parenthesis, each less the
+///     width of the casts in front of it (a cast counts as head). The planner sets it for those bodies only.
+/// </param>
+/// <param name="CalleeArgument">
+///     ⚠ With <see cref="CalleeWidth" />, a call or creation with exactly one argument: that argument's width (#610,
+///     SK-DIV-0450). Behind a head under <see cref="MinimumHead" /> the <c>=</c> breaks when the <c>(</c> lands past
+///     the margin, or when <c>24·(head − 6) − 3·(indent − 8) ≥ 4·argument</c>, the head measured through the
+///     <c>=</c>; otherwise the ordering rule decides, as it did before the floor took one argument — and it decides
+///     whatever the name gate turns away, and every field's. Zero for two or more.
+/// </param>
+/// <param name="ShortHeadTypeEnd">
+///     ⚠ An <c>=</c> with a head of five columns or fewer before a value whose type argument list fills —
+///     <c>new G&lt;…&gt;(…)</c>, <c>M&lt;…&gt;(…)</c>, <c>default(G&lt;…&gt;)</c> (#610, SK-DIV-0450): the width from
+///     the
+///     value's first column through the list's <c>&gt;</c>. When the <c>&gt;</c> lands past the margin, the <c>=</c>
+///     stays and the list fills, where a head of six or more breaks the <c>=</c>; zero turns the rule off.
 /// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
@@ -1608,6 +1670,7 @@ public readonly record struct GroupFacts(
     bool BreaksIfItOverflows = false,
     bool BreaksIfReceiverOverflows = false,
     bool HeldCallOnAPath = false,
+    bool HeldCallLambda = false,
     int LambdaOperandParameters = 0,
     int LambdaOperandTail = 0,
     int LambdaOperandFirst = 0,
@@ -1618,6 +1681,7 @@ public readonly record struct GroupFacts(
     int LambdaCallArguments = 0,
     int EqualsLambdaName = 0,
     int EqualsLambdaType = 0,
+    int EqualsLambdaReach = 0,
     int EqualsLambdaValueHead = 0,
     int EqualsLambdaArguments = 0,
     bool LambdaCallSingle = false,
@@ -1647,13 +1711,25 @@ public readonly record struct GroupFacts(
     int TypeTestKeyword = 0,
     int TypeTestType = 0,
     int ModifierFillHead = 0,
+    int ModifierFillLastHead = 0,
     int ModifierFillType = 0,
     int ModifierFillName = 0,
     int ParameterAfterSection = 0,
     int SectionHead = 0,
     int SectionWidth = 0,
     bool PositionalHead = false,
-    int ValueHeadArguments = 0);
+    int ValueHeadArguments = 0,
+    int ArmOneOverHead = 0,
+    bool SectionSingle = false,
+    int ParenCloseEnd = 0,
+    int TailSpare = 0,
+    bool WhenTable = false,
+    bool WhenAtom = false,
+    int WhenBody = 0,
+    bool WhenArrowKept = false,
+    int CastParenFirst = 0,
+    int ShortHeadTypeEnd = 0,
+    int CalleeArgument = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

@@ -213,7 +213,7 @@ public sealed class LambdaArrowFloorIssue453586Tests {
             + "        );\n"
         );
 
-    /// <summary>A receiver lambda's `&&` chain chopped beside the arrow: one level past the `)`.</summary>
+    /// <summary>A receiver lambda's <c>&amp;&amp;</c> chain chopped beside the arrow: one level past the `)`.</summary>
     [Fact]
     public void ReceiverLambda_OperandChain_TakesItsOwnLevel() =>
         Agrees(

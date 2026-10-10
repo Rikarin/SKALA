@@ -109,7 +109,8 @@ public sealed class FuzzRegressionTests {
     [InlineData(11693758747470537505UL)]
     // `byte x when new Func<` / `(…), (…)>("s", 'c', 0xb92) => Handle(…)`: pass one filled the type arguments
     // and broke before the arrow for width; pass two read that arrow break as kept, lifted the type arguments
-    // a level and chopped the call. A `when` clause holding a type argument list no longer lifts.
+    // a level and chopped the call. A `when` clause holding a type argument list stopped lifting; since #576
+    // it lifts again, the width lift lifting pass one as well.
     [InlineData(12955079666331923518UL)]
     // `[_, .. var rest43] when $"…" => $"…{…}",`: a body with no break point is read through by the head
     // before the arrow, so pass one chopped the list pattern and broke the arrow too; pass two, finding the
@@ -162,6 +163,27 @@ public sealed class FuzzRegressionTests {
     // `[null, ..` / `Source]` as an array element: the break after the spread's `..` is at none of the collection's
     // own points, so the draft read it flat and pass one moved the `[` down; pass two kept `…, [`, the oracle's answer.
     [InlineData(3601384071467948482UL)]
+    // `var (a, b` / `) = source.OrderBy.` / `First.Value;` (#606): pass one, the chain broken, kept the `=`; pass two,
+    // the chain joined into a plain member, asked whether the broken head fits flat — never — and broke the `=`.
+    [InlineData(10828701791419393416UL)]
+    // #609: `string { P215 : not null } when new { … } => (from …)` with the gap before the `:` flipped. The `when`
+    // broke for width before the anonymous object and pass two, reading that break as kept, lifted the query's
+    // `where` a level. The oracle breaks the object's braces there instead, and so does Skala now.
+    [InlineData(11388054215126240053UL)]
+    // #609, group P's third seed: a wrapped `when` before a collection-creation body inside `using (var u81 = value
+    // switch { … })`. Pass one put the elements and `},` at the pattern's indent and pass two moved both a level in.
+    [InlineData(7491390271031329341UL)]
+    // #609, group R's seed: `while (value switch { TimeSpan { P46: null } when default(byte` / `) => new (…)[] { … },
+    // … })`, a `when` condition broken before its `)` with an array-creation body; pass two wanted two indents.
+    [InlineData(16219026686911307001UL)]
+    // #609: `when new { … } => Compute(0x445, …)` inside `return value switch` under a `case … when Materialise<…>(…)`
+    // label; the flipped spelling's `when` broke before the anonymous object and pass two lifted `0x445,` a level.
+    // The object's braces break instead now (#609's anonymous-object rule).
+    [InlineData(699653888302967667UL)]
+    // `var (a, b) = ((Nullable<StringBuilder> First, …))($"…" ?? …);` (#598's cast rule): the gap after the cast's `)`
+    // was planned only for a cast written on one line, so pass two, finding pass one's breaks inside, planned nothing
+    // and filled the cast's type arguments.
+    [InlineData(16385525116333088724UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
@@ -237,6 +259,17 @@ public sealed class FuzzRegressionTests {
         15487819194531676087UL,
         "real/newtonsoft/Newtonsoft.Json.Tests/Serialization/ConstructorHandlingTests.cs"
     )]
+    // ⚠ #611: `Enumerable.Range(…).Select(index => 1d + (index` / `% 5)).ToArray()` — a receiver lambda's operand
+    // chain took its own level behind a call whose dot pass one broke for width; pass two read the dot as the
+    // author's and gave the level back.
+    [InlineData(1322227246888415436UL, "real/vixen/Core/Vixen.Geometry.Uv.Tests/DegenerateSystemTests.cs")]
+    // #609: `{ P25: not null } when SomeVeryLongIdentifier… => 1,` past the margin. Pass one kept the `when` and broke
+    // the arrow, and pass two, reading the arrow break as kept, broke the `when` by the tail rule. A condition with no
+    // break point now breaks after the `when` whenever it does not fit beside it, as the oracle does on both passes.
+    [InlineData(7256125207651206043UL, "constructs/breaks/arm-when-condition-below.cs")]
+    // #609's fourth seed (found on master 10889231): the same construct indented and widened; pass two wanted one more
+    // newline after the `when`. Clean once a name with no break point breaks the `when` whenever it does not fit beside.
+    [InlineData(7196610944795926752UL, "constructs/breaks/arm-when-condition-below.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

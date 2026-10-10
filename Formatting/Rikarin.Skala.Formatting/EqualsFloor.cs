@@ -387,8 +387,9 @@ public static class EqualsFloor {
     ///     21 534 cells. Three conditions, all needed:
     ///     <list type="bullet">
     ///         <item>
-    ///             a name of 13 or more — 10 never breaks it — and at 13 a type of at most 32 (round 4's two
-    ///             gates);
+    ///             a type no wider than <c>8·(name − 10) + 12</c> — round 4's two gates as one line, measured in
+    ///             round 3 one name at a time from 10 to 14 against types of 8 to 56 four apart (10 790 cells): 12 at a
+    ///             ten-column name, 20 at 11, 28 at 12, 36 at 13, 44 at 14, and 56 still open at 16;
     ///         </item>
     ///         <item>
     ///             the line ends no more than <c>min(64, ⌊0.91·type + 0.812·name − 16⌋)</c> columns past the margin:
@@ -404,12 +405,20 @@ public static class EqualsFloor {
     ///     <c>Func&lt;…&gt;</c> and bare types, six parameter lists, one to four arguments, names 10 to 40: 124
     ///     differ, against 1 659 before.
     /// </remarks>
-    public static bool BreaksBeforeALambdaCall(int name, int type, int head, int paren, int arguments) {
-        if (name < 13 || name == 13 && type > 32) {
+    /// <param name="extraReach">Columns added to the reach: 2 for an assignment statement's target (round 3).</param>
+    public static bool BreaksBeforeALambdaCall(
+        int name,
+        int type,
+        int head,
+        int paren,
+        int arguments,
+        int extraReach = 0
+    ) {
+        if (type > 8 * (name - 10) + 12) {
             return false;
         }
 
-        var reach = Math.Min(64, (int)Math.Floor(0.91 * type + 0.812 * name - 16));
+        var reach = Math.Min(64, (int)Math.Floor(0.91 * type + 0.812 * name - 16 + extraReach));
         return paren + arguments - width120 <= reach
             && arguments <= AtSeven(paren, EqualsOwner.TypedLocal) + 0.26 * Math.Max(0, head - 54);
     }
