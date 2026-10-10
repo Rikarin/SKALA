@@ -162,6 +162,9 @@ public sealed class FuzzRegressionTests {
     // `[null, ..` / `Source]` as an array element: the break after the spread's `..` is at none of the collection's
     // own points, so the draft read it flat and pass one moved the `[` down; pass two kept `…, [`, the oracle's answer.
     [InlineData(3601384071467948482UL)]
+    // `var (a, b` / `) = source.OrderBy.` / `First.Value;` (#606): pass one, the chain broken, kept the `=`; pass two,
+    // the chain joined into a plain member, asked whether the broken head fits flat — never — and broke the `=`.
+    [InlineData(10828701791419393416UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
