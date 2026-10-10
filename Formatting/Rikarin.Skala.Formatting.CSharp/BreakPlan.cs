@@ -2964,7 +2964,9 @@ public sealed class BreakPlan {
                             OneOverValue: oneOver,
                             OneOverEquals: oneOver > 0 ? -2 : -1,
                             NameThroughEquals: throughEquals,
-                            OneOverCallArguments: oneOverCall.Call is null ? 0 : FormattedWidth(oneOverCall.Call.ArgumentList),
+                            OneOverCallArguments: oneOverCall.Call is null
+                                ? 0
+                                : FormattedWidth(oneOverCall.Call.ArgumentList),
                             OneOverCallValueHead: oneOverCall.Call is null
                                 ? 0
                                 : FormattedWidth(

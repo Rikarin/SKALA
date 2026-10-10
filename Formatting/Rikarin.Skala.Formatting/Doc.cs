@@ -1189,7 +1189,10 @@ public sealed class Document {
 /// </param>
 /// <param name="EqualsLambdaName">The declarator name's width. See <see cref="EqualsLambdaArguments" />.</param>
 /// <param name="EqualsLambdaType">The declared type's width. See <see cref="EqualsLambdaArguments" />.</param>
-/// <param name="EqualsLambdaIsLocal">The `=` is a local's (round 8's one-column-over rule). See <see cref="EqualsLambdaArguments" />.</param>
+/// <param name="EqualsLambdaIsLocal">
+///     The `=` is a local's (round 8's one-column-over rule). See
+///     <see cref="EqualsLambdaArguments" />.
+/// </param>
 /// <param name="EqualsLambdaSingle">The call has one argument. See <see cref="EqualsLambdaArguments" />.</param>
 /// <param name="EqualsLambdaReach">
 ///     Columns added to the measured reach: 2 for an assignment statement's target, 0 for a declaration. See

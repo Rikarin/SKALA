@@ -491,13 +491,13 @@ public sealed class Fitter {
 
                     // ⚠ A local one column past the margin (#453 round 8): under a type narrower than the type/name
                     // gap's threshold the `=` breaks wherever the arrow would, the gate aside.
-                    if (facts.EqualsLambdaIsLocal
-                        && m.FlatWidth < Unbounded
-                        && m.Trailing < Unbounded
-                        && m.Column + m.FlatWidth + m.Trailing == width + 1) {
+                    // ⚠ Read from the planner's widths: on pass two a chopped argument list leaves the flat width
+                    // unbounded, and the general rule below broke the `=` pass one had kept.
+                    if (facts.EqualsLambdaIsLocal && paren + facts.EqualsLambdaArguments == width + 1) {
                         return facts.EqualsLambdaType < EqualsFloor.TypeNameOneOverType(facts.EqualsLambdaName)
                             && facts.EqualsLambdaType <= 8 * (facts.EqualsLambdaName - 10) + 14
-                            && paren >= equalsEnd
+                            && paren
+                            >= equalsEnd
                             + 36
                             - 1.6 * (facts.EqualsLambdaName - 11)
                             + 0.25 * (facts.EqualsLambdaType - 14)
