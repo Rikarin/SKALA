@@ -569,6 +569,15 @@ public sealed class Fitter {
                     }
 
                     var line = m.ContinuationColumn + tail;
+                    // ⚠ A lambda call whose line overflows by its `)` alone, behind a head and receiver of 16
+                    // columns or fewer, stays and puts the `)` on a line of its own (SK-DIV-0420's lone `)`):
+                    // measured at indents 8 and 12, heads of 8 to 21, every row switching at 16 exactly.
+                    if (facts.HeldCallLambda
+                        && Fits(m.Column, m.FlatWidth - 1)
+                        && m.Column - lineStart + receiver <= 16) {
+                        return ResolvedMode.Flat;
+                    }
+
                     var limit = facts.HeldCallLambda
                         ? HeldLambdaLimit(paren, m.Column - lineStart)
                         : HeldCallLimit(paren, facts.HeldCall);
