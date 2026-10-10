@@ -1529,6 +1529,12 @@ public sealed class Document {
 ///     <c>=</c>; otherwise the ordering rule decides, as it did before the floor took one argument — and it decides
 ///     whatever the name gate turns away, and every field's. Zero for two or more.
 /// </param>
+/// <param name="HeldValueTarget">
+///     ⚠ With <see cref="HeldValue" />, an assignment's: the target's width through the <c>=</c> (#614). A target that
+///     holds a point of its own — <c>E.Get&lt;T&gt;(e).Value =</c>, whose held call breaks at its dot — ends the
+///     group's point width at that dot, and the value's column read from it landed 36 columns left of the
+///     <c>=</c>, so the value "fitted" beside it and the <c>=</c> stayed on pass one, to break on pass two.
+/// </param>
 /// <param name="ShortHeadTypeEnd">
 ///     ⚠ An <c>=</c> with a head of five columns or fewer before a value whose type argument list fills —
 ///     <c>new G&lt;…&gt;(…)</c>, <c>M&lt;…&gt;(…)</c>, <c>default(G&lt;…&gt;)</c> (#610, SK-DIV-0450): the width from the
@@ -1651,7 +1657,8 @@ public readonly record struct GroupFacts(
     int ArmOneOverHead = 0,
     bool SectionSingle = false,
     int ShortHeadTypeEnd = 0,
-    int CalleeArgument = 0);
+    int CalleeArgument = 0,
+    int HeldValueTarget = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

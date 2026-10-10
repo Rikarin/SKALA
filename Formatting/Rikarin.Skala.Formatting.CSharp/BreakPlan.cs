@@ -5920,6 +5920,9 @@ public sealed class BreakPlan {
                         : FormattedWidth(lambdaCall.ArgumentList),
                     CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner),
                     ShortHeadTypeEnd: ShortHeadTypeEndOf(node, equals, value, owner),
+                    HeldValueTarget: heldCall is not null && owner == EqualsOwner.Assignment
+                        ? HeadWidthThroughEquals(node, equals)
+                        : 0,
                     CalleeArgument: callee > 0 && ArgumentsOf(value) is [var sole]
                         ? FormattedWidth(sole)
                         : 0

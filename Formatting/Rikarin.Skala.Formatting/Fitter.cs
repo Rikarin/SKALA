@@ -1535,7 +1535,9 @@ public sealed class Fitter {
     ///     starts at the continuation column has nothing to gain from the break and never takes it.
     /// </remarks>
     bool HeldValueBreaks(in GroupFacts facts, in Measures m) {
-        var valueColumn = m.Column + m.PointWidth + 1;
+        // ⚠ An assignment's target through its `=`, not the point width, which a point inside the target ends early
+        // (#614). See GroupFacts.HeldValueTarget.
+        var valueColumn = m.Column + Math.Max(m.PointWidth, facts.HeldValueTarget) + 1;
         if (valueColumn + facts.HeldValueWidth <= width) {
             return false;
         }
