@@ -180,6 +180,10 @@ public sealed class FuzzRegressionTests {
     // label; the flipped spelling's `when` broke before the anonymous object and pass two lifted `0x445,` a level.
     // The object's braces break instead now (#609's anonymous-object rule).
     [InlineData(699653888302967667UL)]
+    // #615: `foreach (var e43 in source is [null, not (0 or 1` / `or 2)])`. Pass one kept `null, not (0` together;
+    // pass two, reading the chain's breaks as kept, found the element's segment certain and moved it whole. A list
+    // pattern's element now keeps its head when its break is certain, a tuple item's rule.
+    [InlineData(7321373205094285321UL)]
     // `var (a, b) = ((Nullable<StringBuilder> First, …))($"…" ?? …);` (#598's cast rule): the gap after the cast's `)`
     // was planned only for a cast written on one line, so pass two, finding pass one's breaks inside, planned nothing
     // and filled the cast's type arguments.

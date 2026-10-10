@@ -1906,7 +1906,10 @@ public sealed partial class CSharpDocumentBuilder {
             || node is ParenthesizedPatternSyntax
             && (options.AlignMultilineStatementConditions
                 && BreakPlan.IsStatementCondition(node)
-                || FollowsABrokenIs(node));
+                || FollowsABrokenIs(node)
+                // ⚠ And a list pattern's element or a subpattern's value, through a `not` (#615): `[` /
+                // `null, not (0` / `or 1)` / `]` and `{ P: not (0` / `or 1) }` put the `or`s on the element's column.
+                || BreakPlan.IsAnElementsChain(node));
 
         // ⚠ `skala_align_tuple_components = true`: the column *after* the tuple's `(`, which is a
         // different anchor from every key AlignsFromOwnColumn answers and needs a different place
@@ -4012,6 +4015,11 @@ public sealed partial class CSharpDocumentBuilder {
         if (StartsAFilledElement(nextToken)) {
             doc.FlagLastLine(LineFlags.ArrayElement);
         }
+
+        // ⚠ And a kept break in front of a list pattern's element (#615): `or 1),` / `3, 4` keeps `4` beside `3`.
+        if (StartsAListPatternElement(nextToken)) {
+            doc.FlagLastLine(LineFlags.ListPatternElement);
+        }
     }
 
     /// <summary>
@@ -5068,6 +5076,19 @@ public sealed partial class CSharpDocumentBuilder {
             flags |= LineFlags.KeepsHeadWhenCertain;
         }
 
+        // ⚠ And a list pattern's element, the tuple's rule (#615): `[` / `null, not (0` / `or 1` / `or 2)` / `]`
+        // keeps `not (0` beside `null,` in the oracle, its `or`s broken by the author or by the chain, where Skala
+        // moved the element whole once the author's break made its segment certain — pass two, reading pass
+        // one's chain breaks as kept, put `not (0` on a line of its own (fuzz 7321373205094285321).
+        if (StartsAListPatternElement(nextToken)) {
+            // ⚠ The element flag on every break in front of one, a kept one's too, so that the line the element
+            // starts on is on record for the next point — the array element's rule (#444).
+            flags |= LineFlags.ListPatternElement;
+            if (rule is GapRule.FillPoint) {
+                flags |= LineFlags.KeepsHeadWhenCertain;
+            }
+        }
+
         if (rule == GapRule.FillPoint && CallLinkAt(nextToken) is { } link) {
             flags |= LineFlags.ChainCallLink;
             if (link.ArgumentList.Arguments.Count <= 1) {
@@ -5176,6 +5197,17 @@ public sealed partial class CSharpDocumentBuilder {
     static bool StartsACollectionElement(SyntaxToken token) {
         for (SyntaxNode? node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
             if (node is CollectionElementSyntax && node.Parent is CollectionExpressionSyntax) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Whether the token starts an element of a list pattern (#615).</summary>
+    static bool StartsAListPatternElement(SyntaxToken token) {
+        for (SyntaxNode? node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
+            if (node is PatternSyntax { Parent: ListPatternSyntax }) {
                 return true;
             }
         }
