@@ -314,6 +314,7 @@ public sealed class BreakPlan {
 
     /// <summary>The arrow group <see cref="PlanArrowBody" /> opened for each lambda, by the lambda's key.</summary>
     readonly Dictionary<long, int> arrowGroups = [];
+
     /// <summary>
     ///     The group each <see cref="HeldLevel.WhileArrowFlat" /> or <see cref="HeldLevel.WhileGroupBroken" /> hold
     ///     is decided by: a sole lambda's arrow, or the gap after an <c>is</c>.
@@ -842,7 +843,12 @@ public sealed class BreakPlan {
 
             case ParenthesizedVariableDesignationSyntax designation:
                 PlanCarriedCommas(
-                    PlanFilledList(node, designation.OpenParenToken, designation.CloseParenToken, designation.Variables),
+                    PlanFilledList(
+                        node,
+                        designation.OpenParenToken,
+                        designation.CloseParenToken,
+                        designation.Variables
+                    ),
                     designation.Variables.GetSeparators()
                 );
                 return;
