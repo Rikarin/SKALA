@@ -24,21 +24,21 @@ public sealed class EqualsAfterABrokenHeadIssue606Tests {
     }
 
     const string Oracle = """
-        class C {
-            void M() {
-                var (a71, b72
-                    ) = source.OrderBy.First.Value;
-                var (a71, b72
-                    ) = source.Value;
-                (int a71, int b72
-                    ) = source.OrderBy.First.Value;
-                (a71, b72
-                    ) = source.OrderBy.First.Value;
-                var (a71,
-                    b72) = source.OrderBy.First.Value;
-            }
-        }
-        """;
+                          class C {
+                              void M() {
+                                  var (a71, b72
+                                      ) = source.OrderBy.First.Value;
+                                  var (a71, b72
+                                      ) = source.Value;
+                                  (int a71, int b72
+                                      ) = source.OrderBy.First.Value;
+                                  (a71, b72
+                                      ) = source.OrderBy.First.Value;
+                                  var (a71,
+                                      b72) = source.OrderBy.First.Value;
+                              }
+                          }
+                          """;
 
     [Fact]
     public void AnEqualsBehindABrokenHead_StaysBesideAPlainMember() {
@@ -49,22 +49,22 @@ public sealed class EqualsAfterABrokenHeadIssue606Tests {
     [Fact]
     public void TheSeedsShape_IsIdempotent() {
         const string source = """
-            class C {
-                void M() {
-                    var (   a71, b72
-            ) = source.OrderBy.
-            First.Value   ;
-                }
-            }
-            """;
+                              class C {
+                                  void M() {
+                                      var (   a71, b72
+                              ) = source.OrderBy.
+                              First.Value   ;
+                                  }
+                              }
+                              """;
         const string oracle = """
-            class C {
-                void M() {
-                    var (a71, b72
-                        ) = source.OrderBy.First.Value;
-                }
-            }
-            """;
+                              class C {
+                                  void M() {
+                                      var (a71, b72
+                                          ) = source.OrderBy.First.Value;
+                                  }
+                              }
+                              """;
         var formatted = FormatWith(source);
         Assert.Equal(oracle + "\n", formatted);
         Assert.Equal(formatted, FormatWith(formatted));
