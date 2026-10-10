@@ -1171,6 +1171,10 @@ public sealed class Document {
 /// </param>
 /// <param name="EqualsLambdaName">The declarator name's width. See <see cref="EqualsLambdaArguments" />.</param>
 /// <param name="EqualsLambdaType">The declared type's width. See <see cref="EqualsLambdaArguments" />.</param>
+/// <param name="EqualsLambdaReach">
+///     Columns added to the measured reach: 2 for an assignment statement's target, 0 for a declaration. See
+///     <see cref="EqualsLambdaArguments" />.
+/// </param>
 /// <param name="EqualsLambdaValueHead">
 ///     The value's width before the call's <c>(</c>: <c>() =&gt; Callee</c>. See <see cref="EqualsLambdaArguments" />.
 /// </param>
@@ -1204,6 +1208,11 @@ public sealed class Document {
 /// <param name="LambdaOperandTail">
 ///     The width from the body's end to its statement's end — <c>);</c> for a call statement — which the line's
 ///     end is measured with. See <see cref="LambdaOperandParameters" />.
+/// </param>
+/// <param name="HeldCallLambda">
+///     ⚠ A held first call whose one argument is a lambda, `r.Where(x => …).ToList()`: the line below is limited
+///     by the call's own measured table, which weighs the head before the receiver too (#605). See
+///     <c>Fitter.HeldLambdaLimit</c>.
 /// </param>
 /// <param name="HeldCallOnAPath">
 ///     ⚠ A held first call whose receiver is a plain path of names, `source.A…`: when the receiver alone
@@ -1629,6 +1638,7 @@ public readonly record struct GroupFacts(
     bool BreaksIfItOverflows = false,
     bool BreaksIfReceiverOverflows = false,
     bool HeldCallOnAPath = false,
+    bool HeldCallLambda = false,
     int LambdaOperandParameters = 0,
     int LambdaOperandTail = 0,
     int LambdaOperandFirst = 0,
@@ -1639,6 +1649,7 @@ public readonly record struct GroupFacts(
     int LambdaCallArguments = 0,
     int EqualsLambdaName = 0,
     int EqualsLambdaType = 0,
+    int EqualsLambdaReach = 0,
     int EqualsLambdaValueHead = 0,
     int EqualsLambdaArguments = 0,
     bool LambdaCallSingle = false,

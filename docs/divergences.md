@@ -2484,6 +2484,33 @@ and `LambdaArrowFloorIssue453586Tests`.
 - **Wide-named fields and assignments:** not measured, and left to the old rules.
 - **The type/name break** the oracle sometimes takes instead: 64 cells in the first grid.
 
+⚠ **Round 7 of #453 (group O round 3, 2026-10-10).**
+- **Names of 10 to 12 columns.** Swept one name at a time, 10 to 14, against types of 8 to 56 four apart, with
+  the `(` at 100, 108 and 116 and the arguments one column at a time: 10 790 cells. The `=` breaks only under
+  a type of at most `8·(name − 10) + 12`. That is 12 at a ten-column name, then 20, 28, 36 and 44 at 14.
+  Round 2's "13 and up, at 13 a type of at most 32" was two points on this line, read from a coarser grid.
+  The reach and the floor are unchanged. Skala's differing statements: 843 → 337.
+- **Wide-named fields** follow the local's `=` rule unchanged, with the field's shifted arrow floor
+  (`LambdaCallShift`).
+- **Wide assignment targets** follow it with no type and a reach two columns longer (`EqualsLambdaReach`).
+  Every assignment target of four columns or more now reads the arrow floor. ⚠ The `=` group of an
+  assignment starts at its target, not at its `=`, so the `=`'s column is read as the point's end
+  (`m.Column + m.PointWidth − 1`); read as the group's column, it never fired.
+
+Random cells — names 10 to 30, types 1 to 40, one or two arguments — fit on one seed and validated on
+another; whole statements that differ (master is `08be271b`'s output):
+
+| | fit seed: master → now | validation seed: master → now |
+|---|---|---|
+| wide-named fields | 701 → 126 | 652 → 116 |
+| wide assignment targets | 627 → 23 | 634 → 21 |
+
+What the fields miss is mostly the `=` breaking a little further than the local's floor allows there (74 of
+126). Pinned by `constructs/wrapping/lambda-arrow-round-three.cs`.
+
+⚠ **Still open:** the type/name break (`Func<T…>` / `name = …`). It is a separate decision about the gap
+between the type and the name, not about the `=` or the arrow, and is not attempted here.
+
 ## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
 
 ReSharper ships nine keys that **suppress a class of edit** rather than choosing between two
@@ -11717,6 +11744,35 @@ classes, all also wrong on master:
 
 - ⚠ status: the level **fixed**, pinned by `LambdaArrowFloorIssue453586Tests`; the other two classes **open**.
   Grid generator `gentolist.py` in the group-O scratch.
+
+⚠ **Round 3 (group O, 2026-10-10): #605 and the lone `)`.**
+- **#605, the held call's limit.** The kind-1 table (#528) was measured on calls with a plain argument.
+  With a lambda for the one argument, the limit is lower for a narrow head and higher for a wide one.
+  Swept with `Testing ask` on `var n… = r….Where(x => a && b && c).ToList();`:
+  - names of 1 to 30, at indents 8 and 12;
+  - receivers of 2 to 60;
+  - links of 86 to 107, one column at a time;
+  - 9 206 cells in all.
+
+  The limit is `min(113.5 − 0.14·head, max(126.5 − 0.35·(paren − 0.7·head), 80.5 + 0.25·paren))`, where
+  `head` is the width from the statement's start to the receiver. Wired as `Fitter.HeldLambdaLimit` for a
+  held call whose one argument is a lambda (`GroupFacts.HeldCallLambda`). The table left 1 036 of the cells
+  wrong and this rule leaves 267, within a column of the boundary, where the arrow's own break competes.
+- **The lone `)`.** Where only the call's `)` overflows, the oracle keeps the call on the line and puts the
+  `)` on its own line exactly while the head and the receiver together are 16 columns or fewer. Every row
+  switched at 16, at indents 8 and 12, for heads of 8 to 21. Past that it moves `.Where(` below.
+
+| grid | statements | master `08be271b` | now |
+|---|---:|---:|---:|
+| `.ToList()` (this entry's grid) | 14 680 | 536 | 68 |
+| held limit, one column at a time (fit) | 9 206 | 1 036 held decisions | 267 |
+| held lambda calls under three heads (validation) | 4 227 | 178 | 24 |
+
+The 68 left in the `.ToList()` grid are 60 cells where the oracle breaks the arrow on the first line where
+Skala moves `.Where(` below, a column past the limit, plus 8 others. Pinned by
+`constructs/wrapping/lambda-arrow-round-three.cs`.
+
+- ⚠ status: the lone `)` **fixed**; #605 **fixed** within the residue above.
 
 ## SK-DIV-0378 — measured widths read off the source broke whitespace absorption
 

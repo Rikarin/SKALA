@@ -469,7 +469,10 @@ public sealed class Fitter {
                 // measured reach and floor, read from the planner's widths so that a kept break inside the lambda
                 // on pass two does not change the answer. See GroupFacts.EqualsLambdaArguments.
                 if (facts.EqualsLambdaArguments > 0 && m.PointWidth < Unbounded) {
-                    var paren = m.Column + 1 + facts.EqualsLambdaValueHead + 1;
+                    // ⚠ The group starts at the `=` in a declaration and at the target in an assignment: the `=`
+                    // ends where its point's head does.
+                    var equalsEnd = m.Column + m.PointWidth - 1;
+                    var paren = equalsEnd + 1 + facts.EqualsLambdaValueHead + 1;
                     if (paren + facts.EqualsLambdaArguments <= width) {
                         return ResolvedMode.Flat;
                     }
@@ -477,9 +480,10 @@ public sealed class Fitter {
                     return EqualsFloor.BreaksBeforeALambdaCall(
                         facts.EqualsLambdaName,
                         facts.EqualsLambdaType,
-                        m.Column,
+                        equalsEnd,
                         paren,
-                        facts.EqualsLambdaArguments
+                        facts.EqualsLambdaArguments,
+                        facts.EqualsLambdaReach
                     )
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
@@ -607,7 +611,18 @@ public sealed class Fitter {
                     }
 
                     var line = m.ContinuationColumn + tail;
-                    var limit = HeldCallLimit(paren, facts.HeldCall);
+                    // ⚠ A lambda call whose line overflows by its `)` alone, behind a head and receiver of 16
+                    // columns or fewer, stays and puts the `)` on a line of its own (SK-DIV-0420's lone `)`):
+                    // measured at indents 8 and 12, heads of 8 to 21, every row switching at 16 exactly.
+                    if (facts.HeldCallLambda
+                        && Fits(m.Column, m.FlatWidth - 1)
+                        && m.Column - lineStart + receiver <= 16) {
+                        return ResolvedMode.Flat;
+                    }
+
+                    var limit = facts.HeldCallLambda
+                        ? HeldLambdaLimit(paren, m.Column - lineStart)
+                        : HeldCallLimit(paren, facts.HeldCall);
                     return Fits(m.Column, receiver)
                         && !Fits(m.Column, m.FlatWidth)
                         && (line <= limit
@@ -1585,6 +1600,21 @@ public sealed class Fitter {
     ///     reproduces every row; one argument follows the listed thresholds, each the widest line that broke
     ///     plus one (the next measured width, two wider, held), read at the nearest measured head.
     /// </remarks>
+    /// <summary>
+    ///     The widest line a held first call with a lambda for its one argument may take below, by its held
+    ///     <c>(</c> column and the head from the statement's start to the receiver (#605).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> on <c>var n… = r….Where(x =&gt; a &amp;&amp; b &amp;&amp; c).ToList();</c>,
+    ///     names of 1 to 30, receivers of 2 to 60, links of 86 to 107 one column at a time, at indents 8 and 12 —
+    ///     9 206 cells. The limit is a cap that falls 0.14 a column of head, a line falling 0.35 a column of
+    ///     <c>(</c> (shifted right 0.7 a column of head), and a floor rising a quarter of a column per column of
+    ///     <c>(</c>. The kind-1 table (#528) left 1 036 of these cells wrong, two columns short where the head is
+    ///     narrow; this rule leaves 279, a column either side of the boundary next to the arrow's own break.
+    /// </remarks>
+    static double HeldLambdaLimit(int paren, int head) =>
+        Math.Min(113.5 - 0.14 * head, Math.Max(126.5 - 0.35 * (paren - 0.7 * head), 80.5 + 0.25 * paren));
+
     static double HeldCallLimit(int paren, int kind) {
         if (kind != 1) {
             return Math.Max(108.5 - 0.4 * paren, 58 + 0.2 * paren);
