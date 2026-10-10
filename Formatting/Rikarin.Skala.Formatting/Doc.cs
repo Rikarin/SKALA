@@ -1340,7 +1340,10 @@ public sealed class Document {
 ///     <see cref="EqualsFloor.OrHeadFloor" />. Zero for any other value.
 /// </param>
 /// <param name="OrRight">With <see cref="OrLeft" />: <c>Y</c>'s flat width.</param>
-/// <param name="OrHead">With <see cref="OrLeft" />: the head's width from the statement's start through the <c>=</c>.</param>
+/// <param name="OrHead">
+///     With <see cref="OrLeft" />: the head's width from the statement's start through the
+///     <c>=</c>.
+/// </param>
 /// <param name="OrLeftIsPattern">With <see cref="OrLeft" />: <c>X</c> is an <c>is</c> pattern.</param>
 /// <param name="MemberLinks">
 ///     With <see cref="MemberHeadWidth" />: the widths of the value's links after the receiver, each <c>.</c> included,

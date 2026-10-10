@@ -261,7 +261,9 @@ public sealed class Fitter {
     ///     kept <c>=\n[…];</c> whose continuation line is 120 columns stays, and 121 gives the break
     ///     to the bracket.
     /// </param>
-    /// <param name="lineStart">The column the current line's first character landed on; see <see cref="Enter" />.</param>
+    /// <param name="lineStart">
+    ///     The column the current line's first character landed on; see <see cref="Enter" />.
+    /// </param>
     /// <param name="pointSpace">
     ///     What the group's first point renders as when flat; see <see cref="GroupFacts.TailEndsAt" />.
     /// </param>

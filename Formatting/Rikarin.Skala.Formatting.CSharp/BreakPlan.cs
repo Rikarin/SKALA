@@ -1933,7 +1933,8 @@ public sealed class BreakPlan {
     ///         ⚠ <c>wrap_if_long</c> is a <em>fill</em> and not "never wrap". Measured, one key flipped:
     ///         the oracle returns
     ///         <code>
-    /// class LongBaseClassNameHereOkAndMore : SomeVeryLongBaseClassNameIndeed, IFirstInterfaceName, ISecondInterfaceName,
+    /// class LongBaseClassNameHereOkAndMore : SomeVeryLongBaseClassNameIndeed, IFirstInterfaceName,
+    /// ISecondInterfaceName,
     ///     IThirdName { }
     ///         </code>
     ///         — the last comma that still fits, exactly as <see cref="PlanList" /> already fills a
@@ -2119,7 +2120,10 @@ public sealed class BreakPlan {
     /// <summary>The first question's margin for a primary constructor's lone base type (SK-DIV-0198).</summary>
     const int SingleBaseTypeMargin = 31;
 
-    /// <summary>The interfaces' continuation margin at a 49-column head and a twelve-letter base (SK-DIV-0198).</summary>
+    /// <summary>
+    ///     The interfaces' continuation margin at a 49-column head and a twelve-letter base
+    ///     (SK-DIV-0198).
+    /// </summary>
     const int InterfacesTailMargin = 12;
 
     /// <summary>
@@ -4112,7 +4116,8 @@ public sealed class BreakPlan {
     ///         return here without planning anything, so no operator ever broke for width and a
     ///         121-column condition came back whole. Measured, one key flipped, at the export's margin:
     ///         <code>
-    /// if (a &gt; 0 &amp;&amp; b &gt; 0 &amp;&amp; c &gt; 0 &amp;&amp; d &gt; 0 &amp;&amp; a &lt; 100 &amp;&amp; b &lt; 100 &amp;&amp; c &lt; 100 &amp;&amp; d &lt; 100 &amp;&amp; a != b &amp;&amp; c != d
+    /// if (a &gt; 0 &amp;&amp; b &gt; 0 &amp;&amp; c &gt; 0 &amp;&amp; d &gt; 0 &amp;&amp; a &lt; 100 &amp;&amp; b &lt;
+    /// 100 &amp;&amp; c &lt; 100 &amp;&amp; d &lt; 100 &amp;&amp; a != b &amp;&amp; c != d
     ///     &amp;&amp; a != d) {
     ///         </code>
     ///         — one break, at the last operator that fits, and the same answer for a pattern chain. So
@@ -5988,7 +5993,8 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     For a plain member value (<see cref="IsPlainMemberValue" />), the widths of its links after the receiver, the
+    ///     For a plain member value (<see cref="IsPlainMemberValue" />), the widths of its links after the receiver,
+    ///     the
     ///     <c>.</c> included, in order; null for any other value. See <see cref="GroupFacts.MemberLinks" />.
     /// </summary>
     static int[]? MemberLinksOf(ExpressionSyntax value) {
