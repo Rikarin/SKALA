@@ -355,7 +355,14 @@ public static class EqualsFloor {
     ///     differ, against 1 659 before.
     /// </remarks>
     /// <param name="extraReach">Columns added to the reach: 2 for an assignment statement's target (round 3).</param>
-    public static bool BreaksBeforeALambdaCall(int name, int type, int head, int paren, int arguments, int extraReach = 0) {
+    public static bool BreaksBeforeALambdaCall(
+        int name,
+        int type,
+        int head,
+        int paren,
+        int arguments,
+        int extraReach = 0
+    ) {
         if (type > 8 * (name - 10) + 12) {
             return false;
         }

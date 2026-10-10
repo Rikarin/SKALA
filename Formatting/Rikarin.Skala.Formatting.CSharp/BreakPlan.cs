@@ -7893,12 +7893,12 @@ public sealed class BreakPlan {
 
         return node switch {
             EqualsValueClauseSyntax {
-                Parent: VariableDeclaratorSyntax {
-                    Parent: VariableDeclarationSyntax {
-                        Variables.Count: 1, Parent: LocalDeclarationStatementSyntax or FieldDeclarationSyntax
-                    } declaration
-                } declarator
-            } when declarator.Identifier.Span.Length >= 10 =>
+                    Parent: VariableDeclaratorSyntax {
+                        Parent: VariableDeclarationSyntax {
+                            Variables.Count: 1, Parent: LocalDeclarationStatementSyntax or FieldDeclarationSyntax
+                        } declaration
+                    } declarator
+                } when declarator.Identifier.Span.Length >= 10 =>
                 (declarator.Identifier.Span.Length, FormattedWidth(declaration.Type), 0),
             AssignmentExpressionSyntax {
                 RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax
