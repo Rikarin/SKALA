@@ -1443,6 +1443,10 @@ public sealed class Document {
 ///     line the type and the name would make below the modifiers reaches a measured length. See
 ///     <c>Fitter.FillsAfterTheModifiers</c>.
 /// </param>
+/// <param name="ModifierFillLastHead">
+///     With <see cref="ModifierFillHead" />: the type's width through the last comma of its argument list. The fill's
+///     first line ends there when that comma fits on the modifiers' line, and the table is read at that width (#604).
+/// </param>
 /// <param name="ModifierFillType">With <see cref="ModifierFillHead" />: the type's width.</param>
 /// <param name="ModifierFillName">With <see cref="ModifierFillHead" />: the name's width.</param>
 /// <param name="ParameterAfterSection">
@@ -1456,6 +1460,10 @@ public sealed class Document {
 /// <param name="SectionHead">
 ///     With <see cref="ParameterAfterSection" />: the width from the <c>[</c> to the
 ///     <c>(</c>.
+/// </param>
+/// <param name="SectionSingle">
+///     With <see cref="ParameterAfterSection" />: the section has one argument, whose threshold sits 17 columns later
+///     — <c>24·E ≥ 2106 + 32·w + 11·i + 11·h</c> and <c>2·w + i − h ≤ 36</c> (#603).
 /// </param>
 /// <param name="SectionWidth">
 ///     With <see cref="ParameterAfterSection" />: the section's flat width, <c>[</c> to
@@ -1568,12 +1576,14 @@ public readonly record struct GroupFacts(
     int TypeTestKeyword = 0,
     int TypeTestType = 0,
     int ModifierFillHead = 0,
+    int ModifierFillLastHead = 0,
     int ModifierFillType = 0,
     int ModifierFillName = 0,
     int ParameterAfterSection = 0,
     int SectionHead = 0,
     int SectionWidth = 0,
-    bool PositionalHead = false);
+    bool PositionalHead = false,
+    bool SectionSingle = false);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
