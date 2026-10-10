@@ -173,6 +173,13 @@ public sealed class FuzzRegressionTests {
     // #609, group P's third seed: a wrapped `when` before a collection-creation body inside `using (var u81 = value
     // switch { … })`. Pass one put the elements and `},` at the pattern's indent and pass two moved both a level in.
     [InlineData(7491390271031329341UL)]
+    // #609, group R's seed: `while (value switch { TimeSpan { P46: null } when default(byte` / `) => new (…)[] { … },
+    // … })`, a `when` condition broken before its `)` with an array-creation body; pass two wanted two indents.
+    [InlineData(16219026686911307001UL)]
+    // `var (a, b) = ((Nullable<StringBuilder> First, …))($"…" ?? …);` (#598's cast rule): the gap after the cast's `)`
+    // was planned only for a cast written on one line, so pass two, finding pass one's breaks inside, planned nothing
+    // and filled the cast's type arguments.
+    [InlineData(16385525116333088724UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
