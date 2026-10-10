@@ -833,13 +833,18 @@ public sealed class BreakPlan {
                     if (measured && !(options.KeepsUserBreaksBetweenItems && BreaksBefore(close))) {
                         Point(close, fill, true);
                     }
+
+                    PlanCarriedCommas(fill, positional.Subpatterns.GetSeparators());
                 }
 
                 return;
             }
 
             case ParenthesizedVariableDesignationSyntax designation:
-                PlanFilledList(node, designation.OpenParenToken, designation.CloseParenToken, designation.Variables);
+                PlanCarriedCommas(
+                    PlanFilledList(node, designation.OpenParenToken, designation.CloseParenToken, designation.Variables),
+                    designation.Variables.GetSeparators()
+                );
                 return;
 
             case ArrayRankSpecifierSyntax rank when HasASize(rank):
@@ -9586,6 +9591,29 @@ public sealed class BreakPlan {
     ///     ⚠ A required break rather than a point, because it is not a place the list's style would
     ///     ever break at; it is a line the author wrote and the oracle leaves (SK-DIV-0104).
     /// </remarks>
+    /// <summary>
+    ///     The gap before each comma of a positional pattern's or a deconstruction's list as a fill point of its own:
+    ///     it breaks only when the comma alone would land past the margin.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #559, the last residue of SK-DIV-0442 (SK-DIV-0448). Measured 2026-10-10 with `Testing ask`: an element
+    ///     ending exactly at the margin carries its comma to the next line — `…, int ccc` / `, int dddd);` — in a
+    ///     positional pattern after `is` (a declaration, a constant and a call element; after `return` and below a
+    ///     broken `=`) and in `var (a, b, c` / `, d) = Get();`; a column earlier or later the fill breaks after a comma
+    ///     as usual. Not a tuple, an array initializer or a collection expression, which break after the comma
+    ///     before. A type argument list does it too, and is left to its yielding points. A break the author kept
+    ///     before a comma is <see cref="PlanOtherSideOfComma" />'s and stays.
+    /// </remarks>
+    void PlanCarriedCommas(int fill, IEnumerable<SyntaxToken> commas) {
+        if (fill < 0 || options.WrapBeforeComma) {
+            return;
+        }
+
+        foreach (var comma in commas) {
+            Point(comma, fill, true);
+        }
+    }
+
     bool PlanOtherSideOfComma(SyntaxToken other, bool keeps) {
         if (keeps && BreaksBefore(other)) {
             Mandatory(other);
