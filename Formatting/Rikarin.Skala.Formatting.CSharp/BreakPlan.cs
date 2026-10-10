@@ -901,18 +901,16 @@ public sealed class BreakPlan {
                 var inRun = attributeRuns.TryGetValue(Key(single), out var run);
                 var section = inRun ? run.Section : NewGroup();
                 FollowingPoint(after, section);
-                Describe(
-                    node,
-                    section,
-                    GroupMode.Preserve,
-                    new(
-                        options.KeepsUserBreaksBetweenItems && BreaksBefore(after),
-                        true,
-                        true,
-                        BreaksWithOwner: inRun,
-                        Owner: inRun ? run.Run : -1
-                    )
+                var sectionFacts = new GroupFacts(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(after),
+                    true,
+                    true,
+                    BreaksWithOwner: inRun,
+                    Owner: inRun ? run.Run : -1
                 );
+
+                // ⚠ Behind a long parameter's default the gap asks the arguments' own chop rule (#603).
+                Describe(node, section, GroupMode.Preserve, inRun ? sectionFacts : WithADefaultsSection(sectionFacts, single));
 
                 return;
             }
@@ -4858,6 +4856,44 @@ public sealed class BreakPlan {
         return operand is InvocationExpressionSyntax { ArgumentList.Arguments.Count: > 0 } call ? call.ArgumentList : null;
     }
 
+    /// <summary>
+    ///     For a parameter's one attribute section in front of a long parameter with a default value, the section
+    ///     gap's facts: the joined line's width, the default value's, and the widths the measured chop rule reads. See
+    ///     <see cref="GroupFacts.SectionJoinedOverDefault" />.
+    /// </summary>
+    GroupFacts WithADefaultsSection(GroupFacts facts, AttributeListSyntax section) {
+        if (section.Parent is not ParameterSyntax {
+                Parent: ParameterListSyntax, AttributeLists: [_], Default: not null
+            } parameter
+            || section.Attributes[0].ArgumentList is not { Arguments.Count: > 0 } arguments
+            || CSharpDocumentBuilder.IsAShortParameterBehindItsSection(parameter)
+            || options.KeepExistingInvocationParensArrangement) {
+            return facts;
+        }
+
+        var first = section.CloseBracketToken.GetNextToken();
+        if (source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny(LineEnds) >= 0) {
+            return facts;
+        }
+
+        var parameterWidth = FormattedWidth(first, parameter.GetLastToken());
+        var sectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken);
+        return facts with {
+            SectionJoinedOverDefault = sectionWidth + 1 + parameterWidth,
+            DefaultValueWidth = FormattedWidth(parameter.Default!.Value),
+            ParameterAfterSection = parameterWidth,
+            SectionHead = FormattedWidth(section.OpenBracketToken, arguments.OpenParenToken) - 1,
+            SectionWidth = sectionWidth,
+            SectionSingle = arguments.Arguments.Count == 1
+                || arguments.Arguments.Any(static argument => argument.NameEquals is not null
+                    || argument.NameColon is not null
+                )
+        };
+    }
+
+    /// <summary>The two line-break characters, for a span search.</summary>
+    static readonly char[] LineEnds = ['\r', '\n'];
+
     /// <summary>The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the list each is held against.</summary>
     readonly List<(int Group, ArgumentListSyntax Arguments)> pendingTypeTestHolds = [];
 
@@ -6386,8 +6422,8 @@ public sealed class BreakPlan {
     ///     rule, which reads the parameter through. A one-argument section is the same rule with its own constants
     ///     (#603): see <see cref="GroupFacts.SectionSingle" />. ⚠ A section with a named argument takes those
     ///     one-argument constants too, measured on <c>("…", DiagnosticId = "X")</c> (#603). A parameter with a default
-    ///     value is measured whole, its <c>= value</c> included, and its own <c>=</c> answers while the joined line
-    ///     overflows by two columns or less (<see cref="GroupFacts.ParameterDefault" />).
+    ///     value is measured whole, its <c>= value</c> included; the gap after the section agrees with the arguments
+    ///     (<see cref="GroupFacts.SectionJoinedOverDefault" />).
     ///     Widths are the formatter's (<see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />), and a comment
     ///     anywhere in the section or the parameter, or a break inside the parameter, leaves the list to its own fit.
     /// </remarks>
@@ -6430,8 +6466,7 @@ public sealed class BreakPlan {
                 SectionSingle = arguments.Arguments.Count == 1
                     || arguments.Arguments.Any(static argument => argument.NameEquals is not null
                         || argument.NameColon is not null
-                    ),
-                ParameterDefault = parameter.Default is { } initial ? FormattedWidth(initial) + 1 : 0
+                    )
             }
         };
         plans[^1] = plan;

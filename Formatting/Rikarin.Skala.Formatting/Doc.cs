@@ -1497,10 +1497,15 @@ public sealed class Document {
 ///     With <see cref="ParameterAfterSection" />: the section has one argument, whose threshold sits 17 columns later
 ///     — <c>24·E ≥ 2106 + 32·w + 11·i + 11·h</c> and <c>2·w + i − h ≤ 36</c> (#603).
 /// </param>
-/// <param name="ParameterDefault">
-///     With <see cref="ParameterAfterSection" />: the width of the parameter's <c> = value</c>, or zero. While the joined
-///     line overflows by two columns or less the default's own <c>=</c> answers, as measured (#603).
+/// <param name="SectionJoinedOverDefault">
+///     ⚠ On the gap after a parameter's one attribute section, in front of a long parameter with a default: the joined
+///     line's width from the <c>[</c>. Once that line overflows, the gap breaks when the arguments chop by the measured
+///     rule (#603) or when the line through the default's <c>=</c> does not fit either, and stays otherwise, the
+///     <c>=</c> breaking: measured 2026-10-10, the band where the oracle breaks the <c>=</c> is exactly as wide as the
+///     value — eight columns for <c>default</c>, five for <c>null</c> and <c>true</c>, two for <c>5</c>. Measured only
+///     through the <c>=</c>, the gap stayed under chopped arguments, and pass two broke it.
 /// </param>
+/// <param name="DefaultValueWidth">With <see cref="SectionJoinedOverDefault" />: the default value's width.</param>
 /// <param name="SectionWidth">
 ///     With <see cref="ParameterAfterSection" />: the section's flat width, <c>[</c> to
 ///     <c>]</c>.
@@ -1639,7 +1644,8 @@ public readonly record struct GroupFacts(
     int SectionWidth = 0,
     bool PositionalHead = false,
     bool SectionSingle = false,
-    int ParameterDefault = 0,
+    int SectionJoinedOverDefault = 0,
+    int DefaultValueWidth = 0,
     int ValueHeadArguments = 0,
     int ArmOneOverHead = 0);
 
