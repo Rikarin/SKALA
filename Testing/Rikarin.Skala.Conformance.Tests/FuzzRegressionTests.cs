@@ -184,6 +184,10 @@ public sealed class FuzzRegressionTests {
     // was planned only for a cast written on one line, so pass two, finding pass one's breaks inside, planned nothing
     // and filled the cast's type arguments.
     [InlineData(16385525116333088724UL)]
+    // `int v17 = Convert<IReadOnlyDictionary<…>, …>([…], _cache);` with its gaps widened (#610's generic callee):
+    // the callee was measured by its source span, which counts the author's spaces inside the type arguments, so
+    // the widened copy broke its `=` where the canonical one kept it. Whitespace absorption.
+    [InlineData(17947985453911507632UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
@@ -263,6 +267,10 @@ public sealed class FuzzRegressionTests {
     // #609's fourth seed (found on master 10889231): the same construct indented and widened; pass two wanted one more
     // newline after the `when`. Clean once a name with no break point breaks the `when` whenever it does not fit beside.
     [InlineData(7196610944795926752UL, "constructs/breaks/arm-when-condition-below.cs")]
+    // #614: `E.Get<T>(e).Value = World.Get(body.Handle);` — the target's own held call ended the `=` group's point
+    // width at its dot, so the held value's column was read 36 columns left of the `=` and pass one kept the `=`
+    // and chopped; pass two, the value now broken, broke the `=`.
+    [InlineData(6605302205500226187UL, "real/vixen/Core/Vixen.Physics/Ecs/PhysicsScene.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

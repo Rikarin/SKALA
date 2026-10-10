@@ -5993,6 +5993,9 @@ public sealed class BreakPlan {
                         ? 6
                         : 0,
                     ShortHeadTypeEnd: ShortHeadTypeEndOf(node, equals, value, owner),
+                    HeldValueTarget: heldCall is not null && owner == EqualsOwner.Assignment
+                        ? HeadWidthThroughEquals(node, equals)
+                        : 0,
                     CalleeArgument: callee > 0 && ArgumentsOf(value) is [var sole]
                         ? FormattedWidth(sole)
                         : 0
@@ -7019,9 +7022,14 @@ public sealed class BreakPlan {
     ///     call whose callee is <c>new</c> and its type (#555): the oracle chops its arguments by the same
     ///     floor.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ Formatted, not the source span: a generic name's span counts the author's spacing inside its type
+    ///     arguments, and the same call written with wider gaps broke its <c>=</c> where the canonical one kept it
+    ///     (fuzz seed 7614614614, case 17947985453911507632: whitespace absorption).
+    /// </remarks>
     int CalleeOf(ExpressionSyntax value) =>
         value switch {
-            InvocationExpressionSyntax invocation => invocation.Expression.Span.Length,
+            InvocationExpressionSyntax invocation => FormattedWidth(invocation.Expression),
             ObjectCreationExpressionSyntax creation => FormattedWidth(
                 creation.GetFirstToken(),
                 creation.ArgumentList!.OpenParenToken.GetPreviousToken()
