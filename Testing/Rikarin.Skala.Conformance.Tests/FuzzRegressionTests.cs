@@ -184,6 +184,8 @@ public sealed class FuzzRegressionTests {
     // pass two, reading the chain's breaks as kept, found the element's segment certain and moved it whole. A list
     // pattern's element now keeps its head when its break is certain, a tuple item's rule.
     [InlineData(7321373205094285321UL)]
+    // #615's second seed: `public string P34 => value is [{ Length: > 0 }, not (0 or 1` / `or 2)];` under CRLF and tabs.
+    [InlineData(11901297646707830937UL)]
     // `var (a, b) = ((Nullable<StringBuilder> First, …))($"…" ?? …);` (#598's cast rule): the gap after the cast's `)`
     // was planned only for a cast written on one line, so pass two, finding pass one's breaks inside, planned nothing
     // and filled the cast's type arguments.
