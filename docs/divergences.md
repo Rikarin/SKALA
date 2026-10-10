@@ -11978,8 +11978,13 @@ break after the comma before); a type argument list does, and is left to its yie
 comma of the two lists is a fill point that breaks only when the comma itself would overflow
 (`BreakPlan.PlanCarriedCommas`). Grids 42 → 48 of 48 and 23 → 24 of 25 (the type argument list).
 
-- ⚠ status: **resolved** for positional patterns and deconstructions. Pinned by
-  `constructs/breaks/positional-pattern-carried-comma.cs`.
+⚠ **Round four: and a type argument list.** Measured on 25 rows — a local's, a field's and a parameter's type, a
+generic call, a creation behind an `=`: at exactly 120 the oracle writes `Dictionary<A, B, CCC` / `, D> x;` too. A
+yielding point before each comma, like the list's own (`PlanTypeParameters`). Rows 16 → 20 of 25; the five left are
+an assignment's `=` before `new Dictionary<…>()`, which Skala breaks and the oracle keeps, a different question.
+
+- ⚠ status: **resolved** for positional patterns, deconstructions and type argument lists. Pinned by
+  `constructs/breaks/positional-pattern-carried-comma.cs` and `constructs/breaks/type-argument-carried-comma.cs`.
 
 ## SK-DIV-0400 – 0403, round 2 of the name reading (Group N, 2026-10-10)
 
@@ -12015,3 +12020,17 @@ on 2 247, losing 10 rows round one had.
   calls and creations; lines 118 to 134) differ in 14, all one shape: with the comment and a 31-column name the
   oracle declines the join from 122 to 128 where it joins and chops for names of 16 or less. Another name
   effect, inside the attribute join; not wired.
+
+## SK-DIV-0449 — a switch arm exactly one column past the margin
+
+#559's last residue: `(int a, …, int c) => Compute(a, b),` at 121 columns breaks after the arrow in the oracle, and
+Skala chopped the call. Measured 2026-10-10 on 206 arms whose line ends at 121, arm indents 12 and 16, heads from 8
+to 94 columns through `=>`, bodies of a call on a name, a member chain, an operator, a parenthesis and a cast in front
+of a call or a parenthesis: the arrow breaks once the head is 68 columns or more before a call on a name, 26 before a
+member chain, 24 before an operator or a parenthesis; below that the body breaks inside, as Skala always did. A cast
+in front of the body counts as head (`(string)Method(…)` breaks from 59 + 8, `(string)(a + b)` from 16 + 8).
+`GroupFacts.ArmOneOverHead`, `BreakPlan.ArmOneOverHeadOf`. ⚠ A first cut that broke the arrow on every one-over arm
+matched the three positional rows and moved two cast rows away; the threshold is per body kind. Rows 203 of 206, the
+three one column of jitter either side; positional arm heads 165 → 168 of 168.
+
+- ⚠ status: **resolved within the residue above** (#559). Pinned by `constructs/breaks/arm-one-column-over.cs`.
