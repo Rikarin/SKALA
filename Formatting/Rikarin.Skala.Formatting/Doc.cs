@@ -1518,8 +1518,8 @@ public sealed class Document {
 ///     ⚠ With <see cref="CalleeWidth" />, a call or creation with exactly one argument: that argument's width (#610,
 ///     SK-DIV-0450). Behind a head under <see cref="MinimumHead" /> the <c>=</c> breaks when the <c>(</c> lands past
 ///     the margin, or when <c>24·(head − 6) − 3·(indent − 8) ≥ 4·argument</c>, the head measured through the
-///     <c>=</c>; otherwise the ordering rule decides, as it did before the floor took one argument. Zero for two or
-///     more.
+///     <c>=</c>; otherwise the ordering rule decides, as it did before the floor took one argument — and it decides
+///     whatever the name gate turns away, and every field's. Zero for two or more.
 /// </param>
 /// <param name="ShortHeadTypeEnd">
 ///     ⚠ An <c>=</c> with a head of five columns or fewer before a value whose type argument list fills —

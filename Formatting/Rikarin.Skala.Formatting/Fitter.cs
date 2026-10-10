@@ -891,6 +891,11 @@ public sealed class Fitter {
             return ResolvedMode.Flat;
         }
 
+        // ⚠ A field's one argument was not measured: the ordering rule's, as before.
+        if (facts is { CalleeArgument: > 0, CalleeOwner: EqualsOwner.Field }) {
+            return null;
+        }
+
         // ⚠ Behind a head under twelve the `=` breaks when the call's `(` lands past the margin, whatever the arguments
         // (#610): measured 2026-10-10 with `Testing ask` on 896 rows of two arguments, heads of 3 to 10, plain and
         // generic calls and creations, the `(` at 100 to 128 — every row with the `(` at 121 or further breaks, where
@@ -937,7 +942,9 @@ public sealed class Fitter {
         if (facts.EqualsName > 0
             && (facts.CalleeOwner != EqualsOwner.Field || facts.EqualsName < 30)
             && !EqualsFloor.NameReachesTheCall(facts.EqualsName, facts.CalleeWidth, paren)) {
-            return ResolvedMode.Flat;
+            // ⚠ The gate was measured on two arguments or more; one argument it turns away goes back to the ordering
+            // rule, which `T… vwwwwwww = Compute(aaaaaaaaaaaa);` needs to break its `=` (EqualsByTheNameTests).
+            return facts.CalleeArgument > 0 ? null : ResolvedMode.Flat;
         }
 
         if (m.FlatWidth >= Unbounded) {
