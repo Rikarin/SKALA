@@ -835,13 +835,23 @@ public sealed class BreakPlan {
                     if (measured && !(options.KeepsUserBreaksBetweenItems && BreaksBefore(close))) {
                         Point(close, fill, true);
                     }
+
+                    PlanCarriedCommas(fill, positional.Subpatterns.GetSeparators());
                 }
 
                 return;
             }
 
             case ParenthesizedVariableDesignationSyntax designation:
-                PlanFilledList(node, designation.OpenParenToken, designation.CloseParenToken, designation.Variables);
+                PlanCarriedCommas(
+                    PlanFilledList(
+                        node,
+                        designation.OpenParenToken,
+                        designation.CloseParenToken,
+                        designation.Variables
+                    ),
+                    designation.Variables.GetSeparators()
+                );
                 return;
 
             case ArrayRankSpecifierSyntax rank when HasASize(rank):
@@ -955,7 +965,20 @@ public sealed class BreakPlan {
                 // ⚠ Nor one broken only before its `]` (Nightly fuzz, case 5848915233203857901): the oracle
                 // breaks it after its `[` as well and keeps `), [` / elements / `]`, so pass one, which writes
                 // that break, must draft it as pass two reads it.
-                if ((BreaksBefore(FirstToken(collection.Elements[0])) || BreaksBefore(collection.CloseBracketToken))
+                // ⚠ Nor one a line comment inside breaks (Nightly fuzz, case 6430242752800476221, #599): `[a, // c`
+                // / `b]` comes back `), [` / `a, // c` / `b` / `]` in the oracle, however short, as written or not.
+                // ⚠ The author's breaks are certain only while keep_user_linebreaks is; a line comment always is.
+                var keeps = options.KeepsUserBreaksBetweenItems;
+                if ((keeps && BreaksBefore(FirstToken(collection.Elements[0]))
+                        || keeps && BreaksBefore(collection.CloseBracketToken)
+                        || HoldsALineComment(collection)
+                        // ⚠ Nor one whose spread the author broke after its `..` (Nightly fuzz, case
+                        // 3601384071467948482): the oracle keeps `..` / `Source` as written, so the collection
+                        // is broken however short.
+                        || keeps
+                        && collection.Elements.Any(element =>
+                            element is SpreadElementSyntax spread && BreaksBefore(FirstToken(spread.Expression))
+                        ))
                     && groups.TryGetValue(Key(node), out var listPlans)
                     && listPlans.Count > 0) {
                     var listPlan = listPlans[^1] with { Facts = listPlans[^1].Facts with { DraftsBroken = true } };
@@ -4222,6 +4245,21 @@ public sealed class BreakPlan {
 
         var pattern = root is BinaryPatternSyntax;
 
+        // ⚠ An operand chain that is the body of a sole lambda whose call is the receiver of a further link takes
+        // a level of its own, as a pattern chain does there (SK-DIV-0420): `var g = i.Where(x => a` / `&& b`
+        // sixteen columns in / `)` / `.ToList();`, one level past the chain's continuation, where Skala wrote the
+        // `&&` on the `)`'s column.
+        // ⚠ Only where the call's own dot stays on the line it starts: with `.Where(` on a continuation line of its
+        // own the oracle keeps the `&&` one level past that line (Skala's own source, asked 2026-10-10: thirteen
+        // files, every one kept).
+        var receiverBody = root is BinaryExpressionSyntax
+            && root.Parent is LambdaExpressionSyntax receiverLambda
+            && receiverLambda.ExpressionBody == root
+            && IsTheReceiverOfAFurtherLink(receiverLambda)
+            && receiverLambda.Parent?.Parent?.Parent is InvocationExpressionSyntax receiverCall
+            && !(receiverCall.Expression is MemberAccessExpressionSyntax receiverAccess
+                && BreaksBefore(receiverAccess.OperatorToken));
+
         Describe(
             root,
             new(
@@ -4245,7 +4283,7 @@ public sealed class BreakPlan {
                 // step, not two:
                 //     if (o is IDisposable
                 //         or IAsyncDisposable) {     ← one, where an argument would take two
-                pattern && root.Parent is not SubpatternSyntax,
+                pattern && root.Parent is not SubpatternSyntax || receiverBody,
                 false,
                 // ⚠ And only the outermost combinator's chain: an `and` chain inside an `or` chain is a
                 // chain of its own since #483, and the oracle writes its links on the `or`s' column —
@@ -4262,7 +4300,8 @@ public sealed class BreakPlan {
                 && root.Parent is not SubpatternSyntax
                 // ⚠ Before the `is` or after it (#550): `keyword is` / `A` / `or B` puts `A` and the `or`s
                 // on one column too.
-                && !(EnclosingTypeTest(root) is { } test && (BreaksBefore(test.IsKeyword) || BreaksAroundTheIs(test))),
+                && !(EnclosingTypeTest(root) is { } test && (BreaksBefore(test.IsKeyword) || BreaksAroundTheIs(test)))
+                || receiverBody,
                 // ⚠ And that level counts although the `&&` or `||` the type test is the left operand of
                 // opened its own on the same line (#560, SK-DIV-0394): `var e = n.P is A` / `or B` /
                 // `&& c;` puts the `or` at 16 and the `&&` at 12, after `return` and `var e =`, and with
@@ -4271,7 +4310,9 @@ public sealed class BreakPlan {
                 && EnclosingTypeTest(root) is { Parent: BinaryExpressionSyntax logical } leftTest
                 && logical.Left == leftTest
                 && logical.Kind() is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression,
-                HoldsLevel: pattern ? HoldForASoleLambda(root, group) | HoldAfterIs(root, group) : HeldLevel.None
+                HoldsLevel: pattern ? HoldForASoleLambda(root, group) | HoldAfterIs(root, group)
+                : receiverBody ? HoldWhileTheArrowBreaks(root, group)
+                : HeldLevel.None
             )
         );
     }
@@ -4303,6 +4344,19 @@ public sealed class BreakPlan {
 
         arrowHeldAgainst[group] = arrow;
         return HeldLevel.WhileArrowFlat;
+    }
+
+    /// <summary>
+    ///     A receiver lambda's operand chain gives its own level back once the arrow breaks: <c>x =&gt;</c> /
+    ///     <c>a</c> / <c>&amp;&amp; b</c> on one column, the body's (SK-DIV-0420).
+    /// </summary>
+    HeldLevel HoldWhileTheArrowBreaks(SyntaxNode chain, int group) {
+        if (chain.Parent is not LambdaExpressionSyntax lambda || !arrowGroups.TryGetValue(Key(lambda), out var arrow)) {
+            return HeldLevel.None;
+        }
+
+        arrowHeldAgainst[group] = arrow;
+        return HeldLevel.WhileGroupBroken;
     }
 
     /// <summary>
@@ -5698,6 +5752,8 @@ public sealed class BreakPlan {
         var heldReceiver = heldCall?.Expression is MemberAccessExpressionSyntax heldAccess
             ? FlatSourceWidth(heldAccess.Expression)
             : 0;
+        var wideLambdaCall = WideLambdaCallLocalOf(node, value);
+        var lambdaCall = (value as LambdaExpressionSyntax)?.ExpressionBody as InvocationExpressionSyntax;
         var head = -1;
         if ((yieldsToTheBracket || callee > 0)
             && EqualsHeadStartOf(node) is { RawKind: not 0 } headToken
@@ -5799,6 +5855,14 @@ public sealed class BreakPlan {
                     }
                         ? FormattedWidth(conditionCall.GetFirstToken(), conditionCall.ArgumentList.OpenParenToken)
                         : 0,
+                    ValueHeadArguments: conditionHead > 0
+                    && value is ConditionalExpressionSyntax {
+                        Condition: InvocationExpressionSyntax {
+                            Expression: IdentifierNameSyntax or GenericNameSyntax
+                        } countedCall
+                    }
+                        ? countedCall.ArgumentList.Arguments.Count
+                        : 0,
                     MemberHeadWidth: value is MemberAccessExpressionSyntax plain && IsPlainMemberValue(plain)
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,
@@ -5822,6 +5886,7 @@ public sealed class BreakPlan {
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
+<<<<<<< HEAD
                     HeldValueTypedHead: (heldCall is not null || choppedHeld is not null) && heldKind == 1
                         ? HeadWidthThroughEquals(node, equals)
                         : 0,
@@ -5836,6 +5901,21 @@ public sealed class BreakPlan {
                         + WidthThroughSemicolon(value)
                         + TrailingCommentWidth(value.GetLastToken().GetNextToken())
                         : 0,
+=======
+                    EqualsLambdaName: wideLambdaCall is null
+                        ? 0
+                        : ((VariableDeclaratorSyntax)node.Parent!).Identifier.Span.Length,
+                    EqualsLambdaType: wideLambdaCall is null ? 0 : FormattedWidth(wideLambdaCall.Type),
+                    EqualsLambdaValueHead: wideLambdaCall is null || lambdaCall is null
+                        ? 0
+                        : FormattedWidth(
+                            value.GetFirstToken(),
+                            lambdaCall.ArgumentList.OpenParenToken.GetPreviousToken()
+                        ),
+                    EqualsLambdaArguments: wideLambdaCall is null || lambdaCall is null
+                        ? 0
+                        : FormattedWidth(lambdaCall.ArgumentList),
+>>>>>>> n-608
                     CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner)
                 ),
                 true,
@@ -6290,7 +6370,8 @@ public sealed class BreakPlan {
     ///     ⚠ Eleven columns and narrower is
     ///     <see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />'s
     ///     rule, which reads the parameter through. A one-argument section is not this rule's: <c>[A("…")]</c> and
-    ///     <c>[Description("…")]</c> in front of 12 to 20 columns stand alone above the parameter at nearly every width.
+    ///     <c>[Description("…")]</c> in front of 12 to 20 columns stand alone above the parameter at nearly every
+    ///     width.
     ///     Nor a named argument, which chops later (<c>DiagnosticId = "X"</c>: from 113 behind a 13-column parameter
     ///     at indent 8, never at 20), nor a parameter with a default value, whose <c>=</c> breaks instead.
     ///     Widths are the formatter's (<see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />), and a comment
@@ -6593,14 +6674,18 @@ public sealed class BreakPlan {
     ///     ⚠ Measured on <c>Func&lt;T…&gt; name = () =&gt; Callee(x, y);</c> over type widths of 2 to 58,
     ///     name widths of 1 to 49, the body's <c>(</c> at the head's end and at columns 80 and 100, and
     ///     line ends of 121 to 150: no name of nine columns or fewer breaks the <c>=</c> in any cell. The
-    ///     arrow or the arguments take the break by Skala's own rules. Wider names break it by a rule that
-    ///     moves with the name, the type and the <c>(</c> separately, and that is not wired.
+    ///     arrow or the arguments take the break by Skala's own rules. Wider names break it by
+    ///     <c>EqualsFloor.BreaksBeforeALambdaCall</c> (round 2). ⚠ A field's single declarator too: of 1 559
+    ///     field cells (names 1 to 9, types 1 to 40, at indent 4) the oracle breaks the <c>=</c> in none, where
+    ///     Skala had broken it in 380.
     /// </remarks>
     static bool KeepsTheEqualsBeforeALambdaCall(SyntaxNode node, ExpressionSyntax value) =>
         value is LambdaExpressionSyntax { ExpressionBody: InvocationExpressionSyntax }
         && node is EqualsValueClauseSyntax {
             Parent: VariableDeclaratorSyntax {
-                Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: LocalDeclarationStatementSyntax }
+                Parent: VariableDeclarationSyntax {
+                    Variables.Count: 1, Parent: LocalDeclarationStatementSyntax or FieldDeclarationSyntax
+                }
             } declarator
         }
         && declarator.Identifier.Span.Length <= 9;
@@ -6623,7 +6708,16 @@ public sealed class BreakPlan {
         var type = FormattedWidth(declaration.Type);
         var name = declarator.Identifier.Span.Length;
         var local = LambdaLocal.Measured;
-        if (name <= 10 + (type + 4) / 12) {
+        // ⚠ Past a type of 60 the gate falls again, by a third of a column per column, to a floor of ten (#595's
+        // residue, SK-DIV-0444): measured 2026-10-10 on types of 30 to 98, names of 4 to 23, `x =>` and `static x =>`,
+        // the line ending at 126 and at 145 — the same gates at both lengths, and the same for `static`, whose
+        // apparent difference was this gate measured past the range it was fitted on.
+        var gate = 10 + (type + 4) / 12;
+        if (type > 60) {
+            gate = Math.Max(10, Math.Min(gate, 14 - (type - 60) / 3));
+        }
+
+        if (name <= gate) {
             local |= LambdaLocal.ArrowWhileItFits;
         }
 
@@ -6665,6 +6759,18 @@ public sealed class BreakPlan {
         && !CommentAfterTheParen(value)
             ? CalleeOf(value)
             : 0;
+
+    /// <summary>
+    ///     Whether a <c>//</c> comment stands between a collection's brackets, which breaks it on every pass
+    ///     (#599). A block comment does not: the oracle keeps <c>[a, /* c */ b]</c> on one line.
+    /// </summary>
+    static bool HoldsALineComment(CollectionExpressionSyntax collection) =>
+        collection.DescendantTrivia()
+            .Any(trivia => trivia.SpanStart >= collection.OpenBracketToken.Span.End
+                && trivia.Span.End <= collection.CloseBracketToken.SpanStart
+                && (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia))
+            );
 
     /// <summary>
     ///     Whether a block comment stands right after a call's or creation's <c>(</c>, where the oracle never
@@ -7365,11 +7471,31 @@ public sealed class BreakPlan {
                     or QueryExpressionSyntax
                 );
         var keptAfter = !kept
-            && (liftsBraces || liftsList)
+            && (liftsBraces || liftsList || arm.WhenClause is not null)
             // ⚠ And never under a body the arrow group holds the level for (#406, SK-DIV-0157).
             && !HeadsWithAChoppedParenthesis(arm.Expression, source, options, out _)
             && options.KeepsUserBreaksBetweenItems
-            && BreaksBefore(FirstToken(arm.Expression));
+            && ((liftsBraces || liftsList) && BreaksBefore(FirstToken(arm.Expression))
+                // ⚠ And a break the author kept after the `when`, over braces (#601): `{` / … / `} when` /
+                // `Compute(…) => body…` lifts the braces as a kept arrow break does, whether or not the arrow
+                // breaks — measured 2026-10-10 with the arrow kept and broken, conditions of a query, a call, a name
+                // and a parenthesised `??` chain.
+                // ⚠ Whatever the condition holds — a call, an operator chain — except a type argument list, after
+                // which Skala adds that break for width itself (#576): the break is otherwise only ever the author's.
+                || arm.WhenClause is { } keptWhen
+                && BreaksBefore(FirstToken(keptWhen.Condition))
+                && !keptWhen.Condition.DescendantNodesAndSelf().Any(static node => node is TypeArgumentListSyntax)
+                && arm.Pattern.DescendantNodesAndSelf()
+                    .Any(static node => node is PropertyPatternClauseSyntax or ListPatternSyntax)
+                && !arm.Pattern.DescendantNodesAndSelf()
+                    .Any(static node => node is PositionalPatternClauseSyntax
+                        or BaseArgumentListSyntax
+                        or TypeArgumentListSyntax
+                        or AnonymousFunctionExpressionSyntax
+                        or InitializerExpressionSyntax
+                        or CollectionExpressionSyntax
+                        or SwitchExpressionSyntax
+                    ));
         if (keptAfter) {
             OpenAt(
                 arm,
@@ -7534,6 +7660,13 @@ public sealed class BreakPlan {
                             ),
                             LambdaOperandTail: operandTail,
                             LambdaOperandFirst: FirstOperandWidth(body),
+                            LambdaOperandBody: LastOperandOfAHeaderCondition(lambda) is not null
+                            && !IsTheReceiverOfAFurtherLink(lambda)
+                                ? 1 + FormattedWidth(body.GetFirstToken(), KeptSegmentEndOf(body))
+                                : 0,
+                            LambdaOperandKept: LastOperandOfAHeaderCondition(lambda) is not null
+                            && !IsTheReceiverOfAFurtherLink(lambda)
+                            && KeptSegmentEndOf(body) != body.GetLastToken(),
                             LambdaOperandPatternLeft: body is IsPatternExpressionSyntax { Expression: var tested }
                                 ? FormattedWidth(tested)
                                 : 0
@@ -7561,7 +7694,10 @@ public sealed class BreakPlan {
                                             call.ArgumentList.OpenParenToken.GetPreviousToken()
                                         ),
                                         LambdaCallArguments: FormattedWidth(call.ArgumentList),
-                                        LambdaCallSingle: call.ArgumentList.Arguments.Count == 1
+                                        LambdaCallSingle: call.ArgumentList.Arguments.Count == 1,
+                                        LambdaCallShift: lambda.Parent is EqualsValueClauseSyntax {
+                                            Parent.Parent.Parent: FieldDeclarationSyntax
+                                        }
                                     )
                                     : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
@@ -7680,6 +7816,18 @@ public sealed class BreakPlan {
         }
 
         var start = body.SpanStart;
+
+        // ⚠ The last operand of an `if` or `while` condition (#600): the line through the lambda ends at the
+        // header's `)` and its ` {`, whatever the condition's operators do before it — `|| !initializer.Expressions
+        // .All(expression =>` / `expression is T { … } item` / `&& …`, where reading to the statement's end (its
+        // block) never armed the rule and the property pattern's braces broke instead.
+        if (!receiver && LastOperandOfAHeaderCondition(lambda) is { } close) {
+            // ⚠ Whatever breaks the body holds: the oracle breaks the arrow over `expression is T {` / `Count: 2` /
+            // `} item` / `&& …` and over `… item` / `&& …` alike, re-joining the braces. Read from the flat widths,
+            // the answer is the same on pass two as on pass one.
+            return FormattedWidth(body.GetLastToken(), close) - body.GetLastToken().Span.Length + 2;
+        }
+
         var length = statement.Span.End - start;
         if (source.AsSpan(start, length).IndexOfAny('\r', '\n') >= 0) {
             return 0;
@@ -7697,18 +7845,105 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
+    ///     The last token before the first break the author wrote in an operand-chain body, a break inside a
+    ///     property pattern's braces aside — the oracle re-joins those — or the body's last token when there is none
+    ///     (#600).
+    /// </summary>
+    SyntaxToken KeptSegmentEndOf(ExpressionSyntax body) {
+        foreach (var token in body.DescendantTokens().Skip(1)) {
+            if (BreaksBefore(token)
+                && !token.Parent!.AncestorsAndSelf()
+                    .TakeWhile(node => node != body)
+                    .Any(static node => node is PropertyPatternClauseSyntax)) {
+                return token.GetPreviousToken();
+            }
+        }
+
+        return body.GetLastToken();
+    }
+
+    /// <summary>
+    ///     The <c>)</c> of the <c>if</c> or <c>while</c> header whose condition ends with this sole lambda's call —
+    ///     the call itself, under a <c>!</c>, or the right operand of the condition's <c>&amp;&amp;</c> and
+    ///     <c>||</c> chain; none otherwise (#600).
+    /// </summary>
+    static SyntaxToken? LastOperandOfAHeaderCondition(LambdaExpressionSyntax lambda) {
+        if (lambda.Parent?.Parent?.Parent is not InvocationExpressionSyntax call) {
+            return null;
+        }
+
+        SyntaxNode node = call;
+        while (true) {
+            switch (node.Parent) {
+                case PrefixUnaryExpressionSyntax prefix:
+                    node = prefix;
+                    continue;
+                case ParenthesizedExpressionSyntax parenthesized:
+                    node = parenthesized;
+                    continue;
+                case BinaryExpressionSyntax binary when binary.Right == node
+                    && binary.Kind() is SyntaxKind.LogicalOrExpression or SyntaxKind.LogicalAndExpression:
+                    node = binary;
+                    continue;
+                case IfStatementSyntax header when header.Condition == node:
+                    return header.CloseParenToken;
+                case WhileStatementSyntax header when header.Condition == node:
+                    return header.CloseParenToken;
+                default:
+                    return null;
+            }
+        }
+    }
+
+    /// <summary>
     ///     The call a local's lambda has for its body, where the arrow is decided by the measured floor (#453):
     ///     a single declarator named in nine columns or fewer (whose <c>=</c> the oracle never breaks,
     ///     <see cref="KeepsTheEqualsBeforeALambdaCall" />), a call with two or more arguments, written on one
     ///     line; null otherwise. See <c>EqualsFloor.BreaksTheCallArrow</c>.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ Round 2 (#453): also a wide-named local, whose <c>=</c> decides first
+    ///     (<see cref="WideLambdaCallLocalOf" />); a field's single declarator of nine columns or fewer, which reads
+    ///     the floor eight columns of head and four of <c>(</c> later (<see cref="GroupFacts.LambdaCallShift" />);
+    ///     and an assignment statement to a target of four to nine columns — one of three or fewer always chops.
+    /// </remarks>
     InvocationExpressionSyntax? LocalLambdaCallOf(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
         body is InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 } call
-        && lambda.Parent is EqualsValueClauseSyntax equals
-        && KeepsTheEqualsBeforeALambdaCall(equals, lambda)
+        && lambda.Parent switch {
+            EqualsValueClauseSyntax equals => KeepsTheEqualsBeforeALambdaCall(equals, lambda)
+                || WideLambdaCallLocalOf(equals, lambda) is not null
+                || equals.Parent is VariableDeclaratorSyntax {
+                    Identifier.Span.Length: <= 9,
+                    Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: FieldDeclarationSyntax }
+                },
+            AssignmentExpressionSyntax {
+                RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax
+            } assignment => FormattedWidth(assignment.Left) is >= 4 and <= 9,
+            _ => false
+        }
         && lambda.Modifiers.Count == 0
         && source.AsSpan(lambda.SpanStart, lambda.Span.Length).IndexOfAny('\r', '\n') < 0
             ? call
+            : null;
+
+    /// <summary>
+    ///     A single-declarator local whose declarator name is ten columns or wider and whose value is a lambda
+    ///     over a call with an unnamed argument list (#453 round 2): its declaration, for the <c>=</c>'s measured
+    ///     reach and floor (<c>EqualsFloor.BreaksBeforeALambdaCall</c>); null otherwise.
+    /// </summary>
+    static VariableDeclarationSyntax? WideLambdaCallLocalOf(SyntaxNode node, ExpressionSyntax value) =>
+        value is LambdaExpressionSyntax {
+            ExpressionBody: InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 }, Modifiers.Count: 0
+        }
+        && node is EqualsValueClauseSyntax {
+            Parent: VariableDeclaratorSyntax {
+                Parent: VariableDeclarationSyntax {
+                    Variables.Count: 1, Parent: LocalDeclarationStatementSyntax
+                } declaration
+            } declarator
+        }
+        && declarator.Identifier.Span.Length >= 10
+            ? declaration
             : null;
 
     /// <summary>
@@ -9954,6 +10189,29 @@ public sealed class BreakPlan {
     ///     ⚠ A required break rather than a point, because it is not a place the list's style would
     ///     ever break at; it is a line the author wrote and the oracle leaves (SK-DIV-0104).
     /// </remarks>
+    /// <summary>
+    ///     The gap before each comma of a positional pattern's or a deconstruction's list as a fill point of its own:
+    ///     it breaks only when the comma alone would land past the margin.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #559, the last residue of SK-DIV-0442 (SK-DIV-0448). Measured 2026-10-10 with `Testing ask`: an element
+    ///     ending exactly at the margin carries its comma to the next line — `…, int ccc` / `, int dddd);` — in a
+    ///     positional pattern after `is` (a declaration, a constant and a call element; after `return` and below a
+    ///     broken `=`) and in `var (a, b, c` / `, d) = Get();`; a column earlier or later the fill breaks after a comma
+    ///     as usual. Not a tuple, an array initializer or a collection expression, which break after the comma
+    ///     before. A type argument list does it too, and is left to its yielding points. A break the author kept
+    ///     before a comma is <see cref="PlanOtherSideOfComma" />'s and stays.
+    /// </remarks>
+    void PlanCarriedCommas(int fill, IEnumerable<SyntaxToken> commas) {
+        if (fill < 0 || options.WrapBeforeComma) {
+            return;
+        }
+
+        foreach (var comma in commas) {
+            Point(comma, fill, true);
+        }
+    }
+
     bool PlanOtherSideOfComma(SyntaxToken other, bool keeps) {
         if (keeps && BreaksBefore(other)) {
             Mandatory(other);

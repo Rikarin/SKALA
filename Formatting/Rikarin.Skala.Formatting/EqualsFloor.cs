@@ -302,10 +302,12 @@ public static class EqualsFloor {
     ///     random), where the chain's constants miss 540 and these 15.
     /// </param>
     public static bool BreaksTheOperandArrow(int arrow, int parameters, int first, int end, int patternLeft = 0) {
+        // ⚠ The cap rises a quarter of a column per column of parameter text past 36 (#586 round 2).
+        var cap = Math.Max(85, 85.5 + 0.25 * (parameters - 36));
         if (patternLeft > 0) {
             var capped = Math.Min(first, patternLeft + 28);
             var patternCeiling = Math.Min(
-                85,
+                cap,
                 Math.Min(
                     (int)Math.Floor(
                         2.75 * (parameters + capped) - 56 - 0.88 * (patternLeft - 1) + (first - capped) / 8.0
@@ -319,7 +321,7 @@ public static class EqualsFloor {
         }
 
         var ceiling = Math.Min(
-            85,
+            cap,
             Math.Min(
                 (int)Math.Floor(2.75 * (parameters + Math.Min(first, 24)) - 52 + Math.Max(0, first - 24) / 8.0),
                 120 - first
@@ -369,6 +371,49 @@ public static class EqualsFloor {
         var rise = 58.25 + 0.41 * (head - 16) + 0.18 * (paren - 117);
         return arguments < Math.Floor(Math.Max(fall, rise) + 0.4);
     }
+
+    /// <summary>
+    ///     Whether the <c>=</c> of a local named in ten columns or more breaks before a lambda over a call
+    ///     (#453 round 2): the declarator name <paramref name="name" /> and the type <paramref name="type" /> wide,
+    ///     the <c>=</c> at column <paramref name="head" />, the call's <c>(</c> at <paramref name="paren" /> and its
+    ///     argument list <paramref name="arguments" /> wide. Otherwise the <c>=</c> stays, and the arrow or the
+    ///     arguments break by <see cref="BreaksTheCallArrow" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> on <c>Func&lt;T…&gt; name = () =&gt; C…(xxx, yyy);</c>: names of 10 to
+    ///     40, types of 8 to 56, the <c>(</c> at 50 to 117 and the arguments one or three columns at a time —
+    ///     21 534 cells. Three conditions, all needed:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             a name of 13 or more — 10 never breaks it — and at 13 a type of at most 32 (round 4's two
+    ///             gates);
+    ///         </item>
+    ///         <item>
+    ///             the line ends no more than <c>min(64, ⌊0.91·type + 0.812·name − 16⌋)</c> columns past the margin:
+    ///             the reach grows with the name and the type separately, which is why round 4 found no head
+    ///             table;
+    ///         </item>
+    ///         <item>
+    ///             the arguments are no wider than the typed local's <c>=</c> floor before a call at the same
+    ///             <c>(</c> (<see cref="Of" />'s table), plus 0.26 a column of head past 54.
+    ///         </item>
+    ///     </list>
+    ///     561 of the 21 534 cells differ. Validated on 4 000 random cells — <c>var</c>, <c>Action</c>,
+    ///     <c>Func&lt;…&gt;</c> and bare types, six parameter lists, one to four arguments, names 10 to 40: 124
+    ///     differ, against 1 659 before.
+    /// </remarks>
+    public static bool BreaksBeforeALambdaCall(int name, int type, int head, int paren, int arguments) {
+        if (name < 13 || name == 13 && type > 32) {
+            return false;
+        }
+
+        var reach = Math.Min(64, (int)Math.Floor(0.91 * type + 0.812 * name - 16));
+        return paren + arguments - width120 <= reach
+            && arguments <= AtSeven(paren, EqualsOwner.TypedLocal) + 0.26 * Math.Max(0, head - 54);
+    }
+
+    /// <summary>The margin every table here was measured at.</summary>
+    const int width120 = 120;
 
     /// <summary>
     ///     Whether a local's lambda with a bare-name body, on a line that ends exactly one column past the
