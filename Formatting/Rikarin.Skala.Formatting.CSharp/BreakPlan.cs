@@ -5802,6 +5802,9 @@ public sealed class BreakPlan {
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,
                     EqualsName: EqualsNameOf(node, owner, value),
+                    EqualsNameAttributed: node.Parent?.Parent?.Parent is FieldDeclarationSyntax {
+                        AttributeLists.Count: > 0
+                    },
                     MemberLinks: MemberLinksOf(value),
                     OrLeft: OrOperandsOf(owner, value) is { } or ? FlatSourceWidth(or.Left) : 0,
                     OrRight: OrOperandsOf(owner, value) is { } orRight ? FlatSourceWidth(orRight.Right) : 0,
