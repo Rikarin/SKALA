@@ -11846,44 +11846,7 @@ Rows: 42 → 72 of 81, and the round-one grid of 40 rows 15 → 27.
 
 - options: `keep_user_linebreaks`.
 - ⚠ status: **resolved** for the local's `=`, pinned by `constructs/breaks/positional-pattern-after-a-local-equals.cs`;
-  **open** for the three above.
-
-## SK-DIV-0490 — a type test broken before its `is` takes a level of its own, stacked on what is open around it
-
-#597, found in Skala's own `SearchValuesAnalyzer.cs`: `if (model.GetSpeculativeSymbolInfo(` / the
-arguments / `).Symbol` / `is not IMethodSymbol creator` / `|| …`. Skala gave a broken `is` one level past
-its operand's *line* (#445's from-the-line scope), so it collapsed with whatever else opened on that line.
-The oracle stacks it. Measured 2026-10-09 with `Testing ask` on 308 rows: if, while, do, else if, return,
-a local, an assignment, `=>`, a ternary's condition, an argument and a lambda; a long call and a short one;
-with and without `.Symbol`; `is not T t`, `is T`, `is null` and `as T`; alone and under `||` and `&&`.
-
-- Alone after `return`, the `is` and the `)` are one level in and the arguments two. Skala wrote the `)`
-  flush with `return`.
-- With `.Symbol` after the `)`, the chain takes a level past the `is`. `.Symbol` is two levels in and the
-  arguments three.
-- As the left operand of `||` or `&&`, the `is` goes a level past the operator, and everything under it
-  goes with it.
-- A whole statement condition keeps the `is` on the aligned column.
-
-With the oracle's breaks left in place, all 48 rows of a control grid without a broken `is` already matched
-and still do. On the broken-`is` rows, Skala diverged on 137 of 260 before and on 10 now, and no row
-regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
-
-- Fix: `BreakPlan.StacksItsLevel` and `IsAStackedTypeTestsOperand`, plus `LayoutWriter.LevelForBlock`. An
-  additive scope no longer blocks the scopes outside a broken construct, which `Level` already honoured.
-
-⚠ The 10 rows still diverging, all as before:
-
-- 7 are a sole lambda's whole body (`Use(x => call(` / … / `)` / `is T`). #445 keeps that one level past
-  the line, and the oracle nests the arguments from the `is`'s level there. The short form already matches
-  and is the test's control.
-- 3 are `as T` broken before `as` as a ternary's condition. The oracle keeps `?` and `:` on the `as`'s
-  column, and Skala puts them a level in.
-
-- status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`. ⚠ The two residues
-  are **open**.
-
-  the closer and the arm heads are **resolved** in SK-DIV-0443; the carried comma stays **open**.
+  the closer and the arm heads are **resolved** in SK-DIV-0443, the carried comma in SK-DIV-0448.
 
 ## SK-DIV-0443 — a positional pattern's `)` and an arm headed by one
 
@@ -11927,6 +11890,14 @@ the margin:
 - ⚠ status: **resolved** for both seeds (`FuzzRegressionTests`), pinned by
   `constructs/breaks/equals-before-a-head-past-the-margin.cs`.
 
+⚠ **Round three: the `static` rows were not about `static`.** Re-measured on 1 190 locals — types of 30 to 98, names
+of 4 to 23, `x =>` and `static x =>`, the line ending at 126 and at 145: the gate under which the arrow breaks while
+it fits is the same for both lambdas and both lengths. #558's `10 + (type + 4) / 12` holds to a type of 60; past it
+the gate falls a third of a column per column, `14 − (type − 60) / 3`, to a floor of ten. `LambdaLocalOf`. Grids
+525 → 589 and 506 → 570 of 595, 277 → 307 of 309; #595's grids 75 → 78 of 81 and 54 → 64 of 64. Residue: types of 30
+and 34 with long bodies, the floor's region. Pinned by `constructs/breaks/lambda-local-name-gate-past-a-wide-type.cs`.
+The call-condition residue is SK-DIV-0447.
+
 ## SK-DIV-0446 — a `when` condition after a kept break, under an arm's width lift
 
 Found by group P's fuzz, `fuzz --replay=16516683683719357238` (a mutation of
@@ -11938,7 +11909,77 @@ the query whole, on the input and on its own output alike. Skala's pass one, und
 kept, writes the oracle's 28 with the query chopped. Not idempotent. Turning `LiftsThroughInnerBreaks` off for this
 shape changed nothing; the extra level comes from the lift's written-ahead walk, not from the list rule.
 
-- ⚠ status: **open**, not idempotent on this seed (pre-existing).
+⚠ **#601, resolved 2026-10-10 (group P, round three).** The written-ahead walk was not the cause: the `when` clause
+spent its own level on top of the lift's. Measured on five conditions — a query that fits and one that chops, a
+call, a name, a parenthesised `??` chain — with the arrow broken for width and kept: the oracle lifts the braces
+whenever the author broke after `when`, and puts the condition on the `} when` line's column, as under a break kept
+after the arrow. A kept break after `when` now opens that same kept-after lift, for any condition but one holding a
+type argument list (after which Skala adds the break itself, #576).
+
+- ⚠ status: **resolved** (#601). Pinned by `constructs/breaks/arm-when-condition-on-its-own-line.cs` and the seed in
+  `FuzzRegressionTests`.
+
+## SK-DIV-0447 — a call condition that fits below its conditional's `=`
+
+#596's residue. #553 breaks a conditional's `=` before a call condition whenever the call fits on the line below; the
+oracle keeps the `=` and chops the call once that line is long — and how long depends on the argument count.
+Measured 2026-10-10 on 712 locals (`var` and typed, indents 8 and 12, calls of one to four arguments, the `=` ending
+at 18 to 98, calls 18 to 108 columns wide): the `=` breaks only while `9 · (the call's end below) + 2 · (the `=`'s end)
++ 64 · (argument count) ≤ 1136`. ⚠ A first fit on two-argument calls alone, `7 · below + 2 · = ≤ 832`, did not survive
+a fresh probe of three-argument calls at indent 12 (96 of 123); the argument count was the missing variable, and the
+refit was checked on a further probe of one- and four-argument calls before it was wired. A call that does not fit
+below keeps #553's column rule. `GroupFacts.ValueHeadArguments`. Rows 361 → 680 of 712; the rest are one step either
+side of the boundary.
+
+- ⚠ status: **resolved within the residue above**. Pinned by `constructs/breaks/conditional-call-condition-below.cs`.
+
+## SK-DIV-0448 — a comma that would land past the margin
+
+#559, the carried comma of SK-DIV-0442. Measured 2026-10-10 on 73 rows: in a positional pattern (after `return`,
+below a broken `=`; declaration, constant and call elements) and in a deconstruction's designation, an element
+ending exactly at the margin carries its comma to the next line — `…, int ccc` / `, int dddd);`. A column either side
+the fill breaks after a comma as usual. A tuple, an array initializer and a collection expression never do (they
+break after the comma before); a type argument list does, and is left to its yielding points. The gap before each
+comma of the two lists is a fill point that breaks only when the comma itself would overflow
+(`BreakPlan.PlanCarriedCommas`). Grids 42 → 48 of 48 and 23 → 24 of 25 (the type argument list).
+
+- ⚠ status: **resolved** for positional patterns and deconstructions. Pinned by
+  `constructs/breaks/positional-pattern-carried-comma.cs`.
+
+## SK-DIV-0490 — a type test broken before its `is` takes a level of its own, stacked on what is open around it
+
+#597, found in Skala's own `SearchValuesAnalyzer.cs`: `if (model.GetSpeculativeSymbolInfo(` / the
+arguments / `).Symbol` / `is not IMethodSymbol creator` / `|| …`. Skala gave a broken `is` one level past
+its operand's *line* (#445's from-the-line scope), so it collapsed with whatever else opened on that line.
+The oracle stacks it. Measured 2026-10-09 with `Testing ask` on 308 rows: if, while, do, else if, return,
+a local, an assignment, `=>`, a ternary's condition, an argument and a lambda; a long call and a short one;
+with and without `.Symbol`; `is not T t`, `is T`, `is null` and `as T`; alone and under `||` and `&&`.
+
+- Alone after `return`, the `is` and the `)` are one level in and the arguments two. Skala wrote the `)`
+  flush with `return`.
+- With `.Symbol` after the `)`, the chain takes a level past the `is`. `.Symbol` is two levels in and the
+  arguments three.
+- As the left operand of `||` or `&&`, the `is` goes a level past the operator, and everything under it
+  goes with it.
+- A whole statement condition keeps the `is` on the aligned column.
+
+With the oracle's breaks left in place, all 48 rows of a control grid without a broken `is` already matched
+and still do. On the broken-`is` rows, Skala diverged on 137 of 260 before and on 10 now, and no row
+regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
+
+- Fix: `BreakPlan.StacksItsLevel` and `IsAStackedTypeTestsOperand`, plus `LayoutWriter.LevelForBlock`. An
+  additive scope no longer blocks the scopes outside a broken construct, which `Level` already honoured.
+
+⚠ The 10 rows still diverging, all as before:
+
+- 7 are a sole lambda's whole body (`Use(x => call(` / … / `)` / `is T`). #445 keeps that one level past
+  the line, and the oracle nests the arguments from the `is`'s level there. The short form already matches
+  and is the test's control.
+- 3 are `as T` broken before `as` as a ternary's condition. The oracle keeps `?` and `:` on the `as`'s
+  column, and Skala puts them a level in.
+
+- status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`. ⚠ The two residues
+  are **open**.
 
 ## SK-DIV-0400 – 0403, round 2 of the name reading (Group N, 2026-10-10)
 

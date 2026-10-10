@@ -95,6 +95,8 @@ public sealed class FuzzRegressionTests {
     [InlineData(18379797974820457043UL)]
     // #596: a conditional's `= Select(` with the `(` past the margin kept the `=`; pass two broke it.
     [InlineData(8249044719362511507UL)]
+    // #601: `} when` / a condition on its own line under an arm's width lift sat a level deep on pass one.
+    [InlineData(16516683683719357238UL)]
     [InlineData(7862808234978504853UL)]
     [InlineData(8573762464065711162UL)]
     [InlineData(7447388608888272285UL)]

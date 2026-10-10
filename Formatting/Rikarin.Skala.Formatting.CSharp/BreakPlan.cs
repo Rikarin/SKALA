@@ -835,13 +835,23 @@ public sealed class BreakPlan {
                     if (measured && !(options.KeepsUserBreaksBetweenItems && BreaksBefore(close))) {
                         Point(close, fill, true);
                     }
+
+                    PlanCarriedCommas(fill, positional.Subpatterns.GetSeparators());
                 }
 
                 return;
             }
 
             case ParenthesizedVariableDesignationSyntax designation:
-                PlanFilledList(node, designation.OpenParenToken, designation.CloseParenToken, designation.Variables);
+                PlanCarriedCommas(
+                    PlanFilledList(
+                        node,
+                        designation.OpenParenToken,
+                        designation.CloseParenToken,
+                        designation.Variables
+                    ),
+                    designation.Variables.GetSeparators()
+                );
                 return;
 
             case ArrayRankSpecifierSyntax rank when HasASize(rank):
@@ -5798,6 +5808,14 @@ public sealed class BreakPlan {
                     }
                         ? FormattedWidth(conditionCall.GetFirstToken(), conditionCall.ArgumentList.OpenParenToken)
                         : 0,
+                    ValueHeadArguments: conditionHead > 0
+                    && value is ConditionalExpressionSyntax {
+                        Condition: InvocationExpressionSyntax {
+                            Expression: IdentifierNameSyntax or GenericNameSyntax
+                        } countedCall
+                    }
+                        ? countedCall.ArgumentList.Arguments.Count
+                        : 0,
                     MemberHeadWidth: value is MemberAccessExpressionSyntax plain && IsPlainMemberValue(plain)
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,
@@ -6578,7 +6596,16 @@ public sealed class BreakPlan {
         var type = FormattedWidth(declaration.Type);
         var name = declarator.Identifier.Span.Length;
         var local = LambdaLocal.Measured;
-        if (name <= 10 + (type + 4) / 12) {
+        // ⚠ Past a type of 60 the gate falls again, by a third of a column per column, to a floor of ten (#595's
+        // residue, SK-DIV-0444): measured 2026-10-10 on types of 30 to 98, names of 4 to 23, `x =>` and `static x =>`,
+        // the line ending at 126 and at 145 — the same gates at both lengths, and the same for `static`, whose
+        // apparent difference was this gate measured past the range it was fitted on.
+        var gate = 10 + (type + 4) / 12;
+        if (type > 60) {
+            gate = Math.Max(10, Math.Min(gate, 14 - (type - 60) / 3));
+        }
+
+        if (name <= gate) {
             local |= LambdaLocal.ArrowWhileItFits;
         }
 
@@ -7320,11 +7347,31 @@ public sealed class BreakPlan {
                     or QueryExpressionSyntax
                 );
         var keptAfter = !kept
-            && (liftsBraces || liftsList)
+            && (liftsBraces || liftsList || arm.WhenClause is not null)
             // ⚠ And never under a body the arrow group holds the level for (#406, SK-DIV-0157).
             && !HeadsWithAChoppedParenthesis(arm.Expression, source, options, out _)
             && options.KeepsUserBreaksBetweenItems
-            && BreaksBefore(FirstToken(arm.Expression));
+            && ((liftsBraces || liftsList) && BreaksBefore(FirstToken(arm.Expression))
+                // ⚠ And a break the author kept after the `when`, over braces (#601): `{` / … / `} when` /
+                // `Compute(…) => body…` lifts the braces as a kept arrow break does, whether or not the arrow
+                // breaks — measured 2026-10-10 with the arrow kept and broken, conditions of a query, a call, a name
+                // and a parenthesised `??` chain.
+                // ⚠ Whatever the condition holds — a call, an operator chain — except a type argument list, after
+                // which Skala adds that break for width itself (#576): the break is otherwise only ever the author's.
+                || arm.WhenClause is { } keptWhen
+                && BreaksBefore(FirstToken(keptWhen.Condition))
+                && !keptWhen.Condition.DescendantNodesAndSelf().Any(static node => node is TypeArgumentListSyntax)
+                && arm.Pattern.DescendantNodesAndSelf()
+                    .Any(static node => node is PropertyPatternClauseSyntax or ListPatternSyntax)
+                && !arm.Pattern.DescendantNodesAndSelf()
+                    .Any(static node => node is PositionalPatternClauseSyntax
+                        or BaseArgumentListSyntax
+                        or TypeArgumentListSyntax
+                        or AnonymousFunctionExpressionSyntax
+                        or InitializerExpressionSyntax
+                        or CollectionExpressionSyntax
+                        or SwitchExpressionSyntax
+                    ));
         if (keptAfter) {
             OpenAt(
                 arm,
@@ -9881,6 +9928,29 @@ public sealed class BreakPlan {
     ///     ⚠ A required break rather than a point, because it is not a place the list's style would
     ///     ever break at; it is a line the author wrote and the oracle leaves (SK-DIV-0104).
     /// </remarks>
+    /// <summary>
+    ///     The gap before each comma of a positional pattern's or a deconstruction's list as a fill point of its own:
+    ///     it breaks only when the comma alone would land past the margin.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #559, the last residue of SK-DIV-0442 (SK-DIV-0448). Measured 2026-10-10 with `Testing ask`: an element
+    ///     ending exactly at the margin carries its comma to the next line — `…, int ccc` / `, int dddd);` — in a
+    ///     positional pattern after `is` (a declaration, a constant and a call element; after `return` and below a
+    ///     broken `=`) and in `var (a, b, c` / `, d) = Get();`; a column earlier or later the fill breaks after a comma
+    ///     as usual. Not a tuple, an array initializer or a collection expression, which break after the comma
+    ///     before. A type argument list does it too, and is left to its yielding points. A break the author kept
+    ///     before a comma is <see cref="PlanOtherSideOfComma" />'s and stays.
+    /// </remarks>
+    void PlanCarriedCommas(int fill, IEnumerable<SyntaxToken> commas) {
+        if (fill < 0 || options.WrapBeforeComma) {
+            return;
+        }
+
+        foreach (var comma in commas) {
+            Point(comma, fill, true);
+        }
+    }
+
     bool PlanOtherSideOfComma(SyntaxToken other, bool keeps) {
         if (keeps && BreaksBefore(other)) {
             Mandatory(other);
