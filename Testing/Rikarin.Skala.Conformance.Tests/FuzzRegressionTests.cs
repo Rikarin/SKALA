@@ -163,6 +163,10 @@ public sealed class FuzzRegressionTests {
     // `[null, ..` / `Source]` as an array element: the break after the spread's `..` is at none of the collection's
     // own points, so the draft read it flat and pass one moved the `[` down; pass two kept `…, [`, the oracle's answer.
     [InlineData(3601384071467948482UL)]
+    // #609: `string { P215 : not null } when new { … } => (from …)` with the gap before the `:` flipped. The `when`
+    // broke for width before the anonymous object and pass two, reading that break as kept, lifted the query's
+    // `where` a level. The oracle breaks the object's braces there instead, and so does Skala now.
+    [InlineData(11388054215126240053UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
@@ -228,6 +232,10 @@ public sealed class FuzzRegressionTests {
     // ⚠ Pass one's break before a held first call, in an `if`'s whole condition, read as the author's on pass
     // two: the chain frame paid the level the aligned condition never spends (#593).
     [InlineData(16215088427476222539UL, "constructs/breaks/chain-in-a-header-or-a-sole-lambda.cs")]
+    // #609: `{ P25: not null } when SomeVeryLongIdentifier… => 1,` past the margin. Pass one kept the `when` and broke
+    // the arrow, and pass two, reading the arrow break as kept, broke the `when` by the tail rule. A condition with no
+    // break point now breaks after the `when` whenever it does not fit beside it, as the oracle does on both passes.
+    [InlineData(7256125207651206043UL, "constructs/breaks/arm-when-condition-below.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

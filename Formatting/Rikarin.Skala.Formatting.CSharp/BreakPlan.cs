@@ -4697,6 +4697,49 @@ public sealed class BreakPlan {
         );
     }
 
+    /// <summary>
+    ///     Whether the gap after an arm's <c>when</c> is planned (#576): a condition whose only break points, if
+    ///     any, are type argument lists. A condition with a point of its own breaks inside instead.
+    /// </summary>
+    static bool IsAPlannedWhenGap(WhenClauseSyntax node) =>
+        node.Parent is SwitchExpressionArmSyntax
+        && !node.Condition.DescendantNodesAndSelf()
+            .Any(static part => part is ArgumentListSyntax { Arguments.Count: > 0 }
+                or BracketedArgumentListSyntax
+                or PropertyPatternClauseSyntax
+                or ListPatternSyntax
+                or PositionalPatternClauseSyntax
+                or BinaryExpressionSyntax
+                or BinaryPatternSyntax
+                or ConditionalExpressionSyntax
+                or AnonymousFunctionExpressionSyntax
+                or InitializerExpressionSyntax
+                // ⚠ And an anonymous object's braces (#609, fuzz 11388054215126240053): `when new {` / its
+                // members / `} => …` is the oracle's, where the `when` broke and pass two then lifted.
+                or AnonymousObjectCreationExpressionSyntax
+                or CollectionExpressionSyntax
+                or SwitchExpressionSyntax
+                or QueryExpressionSyntax
+                or MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax }
+            );
+
+    /// <summary>
+    ///     For the gap after an arm's <c>when</c>: the width of <c> =&gt; body</c> and the arm's comma when the body is
+    ///     an atom short enough for the head to read through (<c>DocumentBuilder.ShortArrowBody</c>), or zero (#576).
+    /// </summary>
+    int WhenBodyWidth(SwitchExpressionArmSyntax arm) {
+        var body = arm.Expression is PrefixUnaryExpressionSyntax prefix ? prefix.Operand : arm.Expression;
+        if (body is not (LiteralExpressionSyntax or IdentifierNameSyntax or MemberAccessExpressionSyntax {
+                Expression: IdentifierNameSyntax
+            })) {
+            return 0;
+        }
+
+        var comma = arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0;
+        var width = FormattedWidth(arm.Expression) + comma;
+        return width <= 14 ? 4 + width : 0;
+    }
+
     /// <summary>The <c>[</c> of a list pattern written on one line straight after an <c>is</c>.</summary>
     bool IsAOneLineListPatternAfterIs(SyntaxToken open) =>
         open.Parent is ListPatternSyntax { Parent: IsPatternExpressionSyntax } list
@@ -6107,6 +6150,26 @@ public sealed class BreakPlan {
     ///     cast is kept. A switch arm's arrow asks its own question about it (<see cref="ArmCastWidth" />).
     /// </remarks>
     void PlanCastOperand(SyntaxNode node) {
+        if (node is CastExpressionSyntax { Expression: ParenthesizedExpressionSyntax parenthesis } wide
+            && IsTheWholeValueOfAReturnOrAnEquals(wide)
+            && parenthesis.Expression is BinaryExpressionSyntax binary
+            && !binary.IsKind(SyntaxKind.IsExpression)
+            && !binary.IsKind(SyntaxKind.AsExpression)
+            && !HasLineBreakIn(wide)) {
+            // ⚠ Before a parenthesised operator, by the measured rule (#598): see GroupFacts.CastParenFirst.
+            var open = parenthesis.OpenParenToken;
+            var after = NewGroup();
+            Point(open, after);
+            Describe(
+                wide,
+                after,
+                GroupMode.Preserve,
+                new(CastParenFirst: Math.Max(1, FormattedWidth(binary.Left))),
+                true
+            );
+            return;
+        }
+
         if (node is not CastExpressionSyntax cast || !IsACastAtom(cast.Expression)) {
             return;
         }
@@ -6124,6 +6187,13 @@ public sealed class BreakPlan {
         Point(first, group, lastResort: true);
         Describe(cast, group, GroupMode.Preserve, new(BreaksIfTooLong: true), true);
     }
+
+    /// <summary>Whether a cast is the whole value of a <c>return</c>, or of a plain assignment or local (#598).</summary>
+    static bool IsTheWholeValueOfAReturnOrAnEquals(CastExpressionSyntax cast) =>
+        cast.Parent is ReturnStatementSyntax
+            or AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression }
+            or EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax }
+        && (cast.Parent is not AssignmentExpressionSyntax assignment || assignment.Right == cast);
 
     /// <summary>
     ///     An operand with no break point of its own, after which a cast's <c>)</c> is the line's last
@@ -7518,6 +7588,12 @@ public sealed class BreakPlan {
                 || arm.WhenClause is { } keptWhen
                 && BreaksBefore(FirstToken(keptWhen.Condition))
                 && !keptWhen.Condition.DescendantNodesAndSelf().Any(static node => node is TypeArgumentListSyntax)
+                // ⚠ Nor before a condition Skala breaks before itself for width (#609, fuzz 7256125207651206043 and
+                // 11388054215126240053) behind braces on one line: pass one wrote `{ P: x } when` / `Name => (from…`
+                // unlifted, and pass two, reading that break as kept, lifted the query's `where` a level. The oracle
+                // lifts there whether the break is its own or the author's, which Skala's width break cannot yet do
+                // (SK-DIV-0399): stable, the body's continuation one level short of the oracle.
+                && !(IsAPlannedWhenGap(keptWhen) && !HasLineBreakIn(arm.Pattern))
                 && arm.Pattern.DescendantNodesAndSelf()
                     .Any(static node => node is PropertyPatternClauseSyntax or ListPatternSyntax)
                 && !arm.Pattern.DescendantNodesAndSelf()
@@ -8120,24 +8196,7 @@ public sealed class BreakPlan {
         // ⚠ Only a condition with no break point of its own but a type argument list: one that has —
         // `when prev is {` / …, `when Compute(` / … / `) =>` — keeps its head beside the `when` and breaks
         // inside, though it would fit below whole.
-        if (node.Parent is SwitchExpressionArmSyntax
-            && !node.Condition.DescendantNodesAndSelf()
-                .Any(static part => part is ArgumentListSyntax { Arguments.Count: > 0 }
-                    or BracketedArgumentListSyntax
-                    or PropertyPatternClauseSyntax
-                    or ListPatternSyntax
-                    or PositionalPatternClauseSyntax
-                    or BinaryExpressionSyntax
-                    or BinaryPatternSyntax
-                    or ConditionalExpressionSyntax
-                    or AnonymousFunctionExpressionSyntax
-                    or InitializerExpressionSyntax
-                    or CollectionExpressionSyntax
-                    or SwitchExpressionSyntax
-                    or QueryExpressionSyntax
-                    or MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax }
-                )
-            && FirstToken(node.Condition) is var condition) {
+        if (IsAPlannedWhenGap(node) && FirstToken(node.Condition) is var condition) {
             // ⚠ A break the author kept there stays, whether or not the condition fits below (#576): `X when` /
             // `Materialise<List<bool>,` / `IReadOnlyDictionary<…>>() =>` comes back from the oracle as written,
             // where the tail rule re-joined it as `X when Materialise<List<bool>,`.
@@ -8150,7 +8209,16 @@ public sealed class BreakPlan {
                     node.Condition,
                     after,
                     GroupMode.Preserve,
-                    new(BreaksIfTooLong: true, BreaksOnlyIfTailFits: true),
+                    new(
+                        BreaksIfTooLong: true,
+                        BreaksOnlyIfTailFits: true,
+                        WhenTable: true,
+                        WhenAtom: !node.Condition.DescendantNodesAndSelf().Any(static part => part is TypeArgumentListSyntax),
+                        WhenBody: WhenBodyWidth((SwitchExpressionArmSyntax)node.Parent!),
+                        WhenArrowKept: options.KeepsUserBreaksBetweenItems
+                        && node.Parent is SwitchExpressionArmSyntax keptArm
+                        && (BreaksBefore(keptArm.EqualsGreaterThanToken) || BreaksBefore(FirstToken(keptArm.Expression)))
+                    ),
                     true,
                     true
                 );
