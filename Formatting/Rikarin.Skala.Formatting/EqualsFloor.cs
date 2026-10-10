@@ -39,20 +39,22 @@ public static class EqualsFloor {
     ///     line below short enough for the callee (SK-DIV-0005, round 3 of the name reading).
     /// </summary>
     /// <param name="head">The head from the statement's start through the <c>=</c>.</param>
-    /// <param name="type">The written type's width.</param>
     /// <param name="below">The column the value would end at below, its <c>;</c> included, 1-based.</param>
-    /// <param name="callee">The receiver's and the method name's widths together.</param>
+    /// <param name="callee">The receiver's and the method name's widths together, type arguments left out.</param>
     /// <param name="indent">The statement's indent.</param>
     /// <remarks>
     ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 2 640 cells — types of 3 to 24, names of 2 to 16,
     ///     receivers of 4 to 13, method names of 5 and 14, indents 8 and 16, lines below ending at 106 to 121. The #528
     ///     rule's "fits below with three columns to spare" (117) was a single callee width: the limit moves two columns per
-    ///     three of callee, from 107 behind <c>Rrrr.Mmmmm</c> to 118 behind 27 columns of callee, a column lower per three
-    ///     of indent, and lower again behind a type past 16. A head under twelve never breaks (<c>byte[] da =</c>). 2 550
-    ///     of the 2 640 cells agree; #528's rule agreed on 1 513.
+    ///     three of callee, from 107 behind <c>Rrrr.Mmmmm</c> to 118 behind 27 columns of callee, and a column lower per
+    ///     three of indent. A head under twelve never breaks (<c>byte[] da =</c>). 2 512 of the 2 640 cells agree; #528's
+    ///     rule agreed on 1 513. ⚠ Not modelled: behind a type of 24 the oracle keeps the <c>=</c> a few columns earlier
+    ///     (72 cells), but a 63-column type in Newtonsoft's <c>ConstructorHandlingTests</c> breaks it, so the type stays
+    ///     out. ⚠ A type argument on the method does not count: <c>DeserializeObject&lt;LongType&gt;</c> reads as
+    ///     <c>DeserializeObject</c>.
     /// </remarks>
-    public static bool HeldTypedLocalBreaks(int head, int type, int below, int callee, int indent) =>
-        head >= 12 && 3 * below - 2 * callee + indent + Math.Max(0, type - 16) <= 310;
+    public static bool HeldTypedLocalBreaks(int head, int below, int callee, int indent) =>
+        head >= 12 && 3 * below - 2 * callee + indent <= 310;
 
     /// <summary>
     ///     Whether <c>[A] /* c */ public T name = value;</c> past the margin keeps the attribute and the comment on a line
@@ -68,7 +70,8 @@ public static class EqualsFloor {
     ///     shape does not matter and the name does. Then 4 536 more over the attribute's width (<c>[A]</c> to 32 columns,
     ///     <c>[DataMember(Order = 1)]</c> among them) and comments of 4 to 15, after a fresh random probe failed the first
     ///     cut on long attributes: what counts is the whole prefix, and a prefix of 12 or less never declines. Declined
-    ///     exactly while the prefix is 13 or more and <c>4·(end − prefix) − 3·head + 5·min(name, 24) + max(0, prefix − 24) ≤ 436</c>:
+    ///     exactly while the prefix is 13 or more and
+    ///     <c>4·(end − prefix) − 3·head + 5·min(name, 24) + max(0, prefix − 24) ≤ 436</c>:
     ///     13 673 of 13 830 cells, the rest a column or two off it, most behind a member chain; the name stops counting
     ///     past 24 (a second probe's names ran to 30). Three fresh random probes of 1 500 commented fields each — owners,
     ///     attributes, comments, types, names to 30 and values drawn at random — went 828 → 1 440, 875 → 1 462 and

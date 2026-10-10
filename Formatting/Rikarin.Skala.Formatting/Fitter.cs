@@ -598,6 +598,18 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ Pass two of a held typed local whose `=` stayed and whose arguments chopped: the first pass's
+                // question again, on the flat widths. See GroupFacts.HeldChoppedWidth.
+                if (facts.HeldChoppedWidth > 0
+                    && !EqualsFloor.HeldTypedLocalBreaks(
+                        facts.HeldValueTypedHead,
+                        m.ContinuationColumn + facts.HeldChoppedWidth,
+                        facts.HeldValueCallee,
+                        m.ContinuationColumn - indentWidth
+                    )) {
+                    return ResolvedMode.Flat;
+                }
+
                 // ⚠ `v = X || Y` with `X` too wide beside the `=`: broken from a head floor that a wide `Y` lowers
                 // (#579). See EqualsFloor.OrHeadFloor.
                 if (facts.OrLeft > 0 && m.PointWidth < Unbounded && !Fits(m.Column, m.PointWidth + 1 + facts.OrLeft)) {
@@ -1415,9 +1427,8 @@ public sealed class Fitter {
                 // or, as before, when the head with the receiver beside it is wider than 87 columns.
                 return EqualsFloor.HeldTypedLocalBreaks(
                         facts.HeldValueTypedHead,
-                        facts.HeldValueType,
                         below,
-                        facts.HeldValueReceiver + facts.HeldValueHead - 2,
+                        facts.HeldValueCallee,
                         continuation - indentWidth
                     )
                     || valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd;

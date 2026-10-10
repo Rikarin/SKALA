@@ -1353,7 +1353,14 @@ public sealed class Document {
 ///     With <see cref="HeldValue" /> 1, a typed local: the head from the statement's start through the <c>=</c>
 ///     (SK-DIV-0005, round 3 of the name reading). See <see cref="EqualsFloor.HeldTypedLocalBreaks" />.
 /// </param>
-/// <param name="HeldValueType">With <see cref="HeldValueTypedHead" />: the written type's width.</param>
+/// <param name="HeldValueCallee">
+///     With <see cref="HeldValueTypedHead" />: the receiver's and the method name's widths, type arguments left out.
+/// </param>
+/// <param name="HeldChoppedWidth">
+///     ⚠ A typed local's single call on a receiver whose argument list is already chopped — pass two of a
+///     <see cref="EqualsFloor.HeldTypedLocalBreaks" /> that kept the <c>=</c>: the value's flat width through its
+///     <c>;</c>, so that the second pass asks the first pass's question and keeps the <c>=</c> again. Zero otherwise.
+/// </param>
 /// <param name="OrLeft">
 ///     ⚠ An <c>=</c> whose value is <c>X || Y</c>, written on one line, with <c>X</c> an <c>&amp;&amp;</c> chain or an
 ///     <c>is</c> pattern: <c>X</c>'s flat width (#579, SK-DIV-0403). When <c>X</c> does not fit beside the <c>=</c>
@@ -1536,7 +1543,8 @@ public readonly record struct GroupFacts(
     int HeldValueHead = 0,
     bool HeldValueManyArgs = false,
     int HeldValueTypedHead = 0,
-    int HeldValueType = 0,
+    int HeldValueCallee = 0,
+    int HeldChoppedWidth = 0,
     int ArmHead = 0,
     int ArmBody = 0,
     bool LiftsThroughInnerBreaks = false,

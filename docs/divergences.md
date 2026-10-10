@@ -11974,3 +11974,31 @@ kept, writes the oracle's 28 with the query chopped. Not idempotent. Turning `Li
 shape changed nothing; the extra level comes from the lift's written-ahead walk, not from the list rule.
 
 - ⚠ status: **open**, not idempotent on this seed (pre-existing).
+
+### Round 3 of the name reading (Group N, 2026-10-10)
+
+- **SK-DIV-0201 / #504 / #555 (e): a field's commented attribute join, by the prefix, the head and the name.**
+  `[A] /* c */ public T name = value;` past the margin keeps the attribute and the comment on their own line
+  exactly while the prefix (sections, comment, their spaces) is 13 or more and
+  `4·(end − prefix) − 3·head + 5·min(name, 24) + max(0, prefix − 24) ≤ 436` (`EqualsFloor.DeclinesTheJoin`).
+  Before this Skala declined at every overflowing width — #504's sweep stopped at 134, inside the band. 13 830
+  measured cells (attributes `[A]` to 32 columns, `[DataMember(Order = 1)]`, comments of 4 to 15, heads of 16 to
+  40, names 1 to 12, five value shapes — the shape does not matter): 13 673 agree. ⚠ **The first fresh probe
+  failed it twice over**, and both were recorded before the second cut: the group's point width stops inside
+  `[DataMember(Order = 1)]`'s own arguments (now read from the syntax), and a prefix of 12 or less never declines.
+  Three fresh random probes (1 500 fields each): 828 → 1 462, 875 → 1 462, 841 → 1 465 in the decision; the name
+  cap at 24 was chosen on the first two, so the third is the clean one. ⚠ **The name hypothesis for #504's
+  property arrows is refuted**: at a fixed head, names of 1, 4, 8 and 12 answer identically for `=>` — that
+  half stays group Q's head table. ⚠ Left: on a joined line the oracle breaks a binary or conditional value's `=`
+  where Skala chops it (about 250 of the 13 830 cells), which is the field `=`'s own rule.
+- **SK-DIV-0005: the held single call behind a typed local** (`EqualsFloor.HeldTypedLocalBreaks`). #528's "moves
+  down when it fits below with three columns to spare" (117) was one callee width: the limit is
+  `3·below − 2·callee + indent ≤ 310` with the callee the receiver and the method name (type arguments left out),
+  and a head under twelve never breaks. 2 640 measured cells: #528's rule 1 513, this 2 512; a fresh probe of 1 600
+  typed locals with real receivers, generic methods and two-argument calls at indents 8 to 20: 1 314 → 1 410,
+  losing 19. ⚠ A type term (a type of 24 keeps the `=` a few columns earlier) was fitted and then refuted by
+  Newtonsoft's `ConstructorHandlingTests`, whose 63-column type breaks it; a callee cap was refuted by
+  `DefaultSerializationBinder`. Both are out; corpus/real is unchanged.
+  ⚠ Its own test caught an idempotency hole before it shipped: a kept `=` leaves the argument list chopped, pass
+  two no longer sees a held call, and the ordering rule broke the `=`. Pass two now asks the same question on the
+  flat widths (`GroupFacts.HeldChoppedWidth`); every grid of this round re-formats to itself.

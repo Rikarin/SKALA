@@ -5694,6 +5694,7 @@ public sealed class BreakPlan {
             _ => 0,
         };
         var heldCall = heldKind > 0 ? PlanHeldSingleCall(value, heldKind) : null;
+        var choppedHeld = heldKind == 1 && heldCall is null ? ChoppedHeldCallOf(value) : null;
         var heldReceiver = heldCall?.Expression is MemberAccessExpressionSyntax heldAccess
             ? FlatSourceWidth(heldAccess.Expression)
             : 0;
@@ -5821,11 +5822,19 @@ public sealed class BreakPlan {
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
-                    HeldValueTypedHead: heldCall is not null && heldKind == 1 ? HeadWidthThroughEquals(node, equals) : 0,
-                    HeldValueType: heldCall is not null
+                    HeldValueTypedHead: (heldCall is not null || choppedHeld is not null) && heldKind == 1
+                        ? HeadWidthThroughEquals(node, equals)
+                        : 0,
+                    HeldValueCallee: (heldCall ?? choppedHeld) is {
+                        Expression: MemberAccessExpressionSyntax heldCallee
+                    }
                     && heldKind == 1
-                    && node.Parent?.Parent is VariableDeclarationSyntax heldDeclaration
-                        ? FormattedWidth(heldDeclaration.Type)
+                        ? FlatSourceWidth(heldCallee.Expression) + heldCallee.Name.Identifier.Span.Length
+                        : 0,
+                    HeldChoppedWidth: choppedHeld is not null && heldKind == 1
+                        ? FlatSourceWidth(value)
+                        + WidthThroughSemicolon(value)
+                        + TrailingCommentWidth(value.GetLastToken().GetNextToken())
                         : 0,
                     CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner)
                 ),
@@ -6114,6 +6123,37 @@ public sealed class BreakPlan {
         && !HasLooseBreak(or)
             ? or
             : null;
+
+    /// <summary>
+    ///     A single call on a plain receiver with at most one argument whose only line breaks are inside its argument
+    ///     list — the chop <see cref="EqualsFloor.HeldTypedLocalBreaks" /> leaves behind when it keeps the <c>=</c>;
+    ///     null otherwise. See <see cref="GroupFacts.HeldChoppedWidth" />.
+    /// </summary>
+    InvocationExpressionSyntax? ChoppedHeldCallOf(ExpressionSyntax value) {
+        if (value is not InvocationExpressionSyntax {
+                Expression: MemberAccessExpressionSyntax { Expression: var receiver } access,
+                ArgumentList: { Arguments.Count: <= 1 } list
+            } call
+            || receiver is InvocationExpressionSyntax or ElementAccessExpressionSyntax
+            || list.DescendantNodes()
+                .Any(static node => node is AnonymousFunctionExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or AnonymousObjectCreationExpressionSyntax
+                    or SwitchExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or WithExpressionSyntax
+                )
+            || access.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+            || list.DescendantTrivia()
+                .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                )
+            || source.AsSpan(list.SpanStart, list.Span.Length).IndexOfAny('\r', '\n') < 0) {
+            return null;
+        }
+
+        return call;
+    }
 
     /// <summary>The measured owner of an <c>=</c> whose floor <see cref="EqualsFloor" /> knows (#446).</summary>
     /// <remarks>
