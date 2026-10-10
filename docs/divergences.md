@@ -11563,6 +11563,18 @@ Group F's probes: `p3` 5 → 0, `p4` 7 → 0, `p5` 50 → 4 statements, `p6` 0 �
   boundary.
 - The `.ToList()` grid's 536 are not arrow decisions; they are recorded as SK-DIV-0420.
 
+⚠ **#578 re-measured, 2026-10-10 (group P, round five), on master `1bb0b42a`.** #578's own grid, regenerated from
+`gen578*.py` and asked again: 31 671 cells, **48** arrow decisions differ and no layout (the 59 of SK-DIV-0377's count
+included cells the decision reader skips). Per grid: c 4, d 7, e 20, g 4, h 1, t 12. They sit on the boundary: an
+arrow ending exactly on the floored ceiling (`x => …` at 49, 60, 71, 82 for parameter texts of 23 to 35), exactly on
+the line term for parameter texts of 40 and 44, or a column under the 85 cap for texts of 36 to 40 where the oracle
+breaks from 83 or 84. ⚠ No constant closes them: an unfloored ceiling fixes 20 of the 48 and adds 160 elsewhere
+(`gand` 35 → 63, `p578t` 12 → 52); the best of a 1 536-point search over the ceiling's offset, the cap, the line's
+offset and a parameter term past 38 takes the grid from 48 to 36 and moves `gand` 35 → 39 and `glong` 399 → 408, net
+zero over the 135 064 statements of every #578 and #586 grid. Left as it is; the residue is the boundary's own
+jitter. On the same master the other grids stand at `gand` 35, `gpat` 22, `gpatT` 10, `gleft` 17, `grand` 15,
+`gsplit` 0, `glong` 399 and `gtl` 356 (SK-DIV-0420's `.ToList()`, down from 536).
+
 ⚠ **Round 2 (group O, 2026-10-10): parameter text past 35 columns.**
 
 Swept with `Testing ask` on 33 648 cells:
@@ -12177,3 +12189,22 @@ matched the three positional rows and moved two cast rows away; the threshold is
 three one column of jitter either side; positional arm heads 165 → 168 of 168.
 
 - ⚠ status: **resolved within the residue above** (#559). Pinned by `constructs/breaks/arm-one-column-over.cs`.
+
+## SK-DIV-0450 — an `=` before `new G<…>(…)` whose type argument list fills
+
+Found beside SK-DIV-0448 (group P, round five), measured 2026-10-10 on 78 rows: `x = new Dictionary<A…, B…, C…, D…>();`
+and with `(capacity)`, heads `x =`, `vvvvvvvvvvvvvv =`, `var x =`, `var vvvvvvvvvvvvvv =` and `Dictionary<A, B> x =`, lines
+of 116 to 150. Two shapes, neither wired:
+
+- **An assignment with a short head keeps its `=`** and fills the type arguments one level in — `x = new Dictionary<…,`
+  / `D…>();` — at every width but 122, where it breaks the `=`. Skala breaks the `=` from 122 on (5 rows, 3 more with
+  `(capacity)` from 134). A `var x =` local with the same seven-column head breaks it, as Skala does; so does an
+  assignment with a 14-column head.
+- **With an argument, a head of 14 or a typed one breaks the `=`** from 122 to 130 where Skala keeps it and fills (6 rows);
+  from 134 both break it.
+
+The first is the local-against-assignment split SK-DIV-0442 found for positional patterns; the second is an `=`
+before a creation call, near `EqualsBeforeACall`'s floor, which does not cover a generic type.
+
+- options: `skala_wrap_before_eq = false`.
+- ⚠ status: **open**.
