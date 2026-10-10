@@ -1171,6 +1171,10 @@ public sealed class Document {
 /// </param>
 /// <param name="EqualsLambdaName">The declarator name's width. See <see cref="EqualsLambdaArguments" />.</param>
 /// <param name="EqualsLambdaType">The declared type's width. See <see cref="EqualsLambdaArguments" />.</param>
+/// <param name="EqualsLambdaReach">
+///     Columns added to the measured reach: 2 for an assignment statement's target, 0 for a declaration. See
+///     <see cref="EqualsLambdaArguments" />.
+/// </param>
 /// <param name="EqualsLambdaValueHead">
 ///     The value's width before the call's <c>(</c>: <c>() =&gt; Callee</c>. See <see cref="EqualsLambdaArguments" />.
 /// </param>
@@ -1592,6 +1596,7 @@ public readonly record struct GroupFacts(
     int LambdaCallArguments = 0,
     int EqualsLambdaName = 0,
     int EqualsLambdaType = 0,
+    int EqualsLambdaReach = 0,
     int EqualsLambdaValueHead = 0,
     int EqualsLambdaArguments = 0,
     bool LambdaCallSingle = false,

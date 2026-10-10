@@ -354,12 +354,13 @@ public static class EqualsFloor {
     ///     <c>Func&lt;…&gt;</c> and bare types, six parameter lists, one to four arguments, names 10 to 40: 124
     ///     differ, against 1 659 before.
     /// </remarks>
-    public static bool BreaksBeforeALambdaCall(int name, int type, int head, int paren, int arguments) {
+    /// <param name="extraReach">Columns added to the reach: 2 for an assignment statement's target (round 3).</param>
+    public static bool BreaksBeforeALambdaCall(int name, int type, int head, int paren, int arguments, int extraReach = 0) {
         if (type > 8 * (name - 10) + 12) {
             return false;
         }
 
-        var reach = Math.Min(64, (int)Math.Floor(0.91 * type + 0.812 * name - 16));
+        var reach = Math.Min(64, (int)Math.Floor(0.91 * type + 0.812 * name - 16 + extraReach));
         return paren + arguments - width120 <= reach
             && arguments <= AtSeven(paren, EqualsOwner.TypedLocal) + 0.26 * Math.Max(0, head - 54);
     }

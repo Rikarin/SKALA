@@ -432,7 +432,10 @@ public sealed class Fitter {
                 // measured reach and floor, read from the planner's widths so that a kept break inside the lambda
                 // on pass two does not change the answer. See GroupFacts.EqualsLambdaArguments.
                 if (facts.EqualsLambdaArguments > 0 && m.PointWidth < Unbounded) {
-                    var paren = m.Column + 1 + facts.EqualsLambdaValueHead + 1;
+                    // ⚠ The group starts at the `=` in a declaration and at the target in an assignment: the `=`
+                    // ends where its point's head does.
+                    var equalsEnd = m.Column + m.PointWidth - 1;
+                    var paren = equalsEnd + 1 + facts.EqualsLambdaValueHead + 1;
                     if (paren + facts.EqualsLambdaArguments <= width) {
                         return ResolvedMode.Flat;
                     }
@@ -440,9 +443,10 @@ public sealed class Fitter {
                     return EqualsFloor.BreaksBeforeALambdaCall(
                         facts.EqualsLambdaName,
                         facts.EqualsLambdaType,
-                        m.Column,
+                        equalsEnd,
                         paren,
-                        facts.EqualsLambdaArguments
+                        facts.EqualsLambdaArguments,
+                        facts.EqualsLambdaReach
                     )
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;

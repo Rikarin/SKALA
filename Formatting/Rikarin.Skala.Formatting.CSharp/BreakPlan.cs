@@ -5886,10 +5886,9 @@ public sealed class BreakPlan {
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
-                    EqualsLambdaName: wideLambdaCall is null
-                        ? 0
-                        : ((VariableDeclaratorSyntax)node.Parent!).Identifier.Span.Length,
-                    EqualsLambdaType: wideLambdaCall is null ? 0 : FormattedWidth(wideLambdaCall.Type),
+                    EqualsLambdaName: wideLambdaCall?.Name ?? 0,
+                    EqualsLambdaType: wideLambdaCall?.Type ?? 0,
+                    EqualsLambdaReach: wideLambdaCall?.Reach ?? 0,
                     EqualsLambdaValueHead: wideLambdaCall is null || lambdaCall is null
                         ? 0
                         : FormattedWidth(
@@ -7863,14 +7862,10 @@ public sealed class BreakPlan {
         body is InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 } call
         && lambda.Parent switch {
             EqualsValueClauseSyntax equals => KeepsTheEqualsBeforeALambdaCall(equals, lambda)
-                || WideLambdaCallLocalOf(equals, lambda) is not null
-                || equals.Parent is VariableDeclaratorSyntax {
-                    Identifier.Span.Length: <= 9,
-                    Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: FieldDeclarationSyntax }
-                },
+                || WideLambdaCallLocalOf(equals, lambda) is not null,
             AssignmentExpressionSyntax {
                 RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax
-            } assignment => FormattedWidth(assignment.Left) is >= 4 and <= 9,
+            } assignment => FormattedWidth(assignment.Left) >= 4,
             _ => false
         }
         && lambda.Modifiers.Count == 0
@@ -7883,20 +7878,34 @@ public sealed class BreakPlan {
     ///     over a call with an unnamed argument list (#453 round 2): its declaration, for the <c>=</c>'s measured
     ///     reach and floor (<c>EqualsFloor.BreaksBeforeALambdaCall</c>); null otherwise.
     /// </summary>
-    static VariableDeclarationSyntax? WideLambdaCallLocalOf(SyntaxNode node, ExpressionSyntax value) =>
-        value is LambdaExpressionSyntax {
-            ExpressionBody: InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 }, Modifiers.Count: 0
+    /// <remarks>
+    ///     ⚠ Round 3: also a field's single declarator, and an assignment statement to a target of ten columns or
+    ///     more, which has no type and reaches two columns further (<c>reach</c> 2). Measured on 3 000 random
+    ///     cells of each (names 10 to 30): a field misses 125 of 1 518 against 701, an assignment 16 of 1 482
+    ///     against 627.
+    /// </remarks>
+    (int Name, int Type, int Reach)? WideLambdaCallLocalOf(SyntaxNode node, ExpressionSyntax value) {
+        if (value is not LambdaExpressionSyntax {
+                ExpressionBody: InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 }, Modifiers.Count: 0
+            }) {
+            return null;
         }
-        && node is EqualsValueClauseSyntax {
-            Parent: VariableDeclaratorSyntax {
-                Parent: VariableDeclarationSyntax {
-                    Variables.Count: 1, Parent: LocalDeclarationStatementSyntax
-                } declaration
-            } declarator
-        }
-        && declarator.Identifier.Span.Length >= 10
-            ? declaration
-            : null;
+
+        return node switch {
+            EqualsValueClauseSyntax {
+                Parent: VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax {
+                        Variables.Count: 1, Parent: LocalDeclarationStatementSyntax or FieldDeclarationSyntax
+                    } declaration
+                } declarator
+            } when declarator.Identifier.Span.Length >= 10 =>
+                (declarator.Identifier.Span.Length, FormattedWidth(declaration.Type), 0),
+            AssignmentExpressionSyntax {
+                RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax
+            } assignment when FormattedWidth(assignment.Left) >= 10 => (FormattedWidth(assignment.Left), 0, 2),
+            _ => null
+        };
+    }
 
     /// <summary>
     ///     A sole lambda argument whose call is itself the receiver of a further link — <c>items.Where(x =&gt; …)</c>
