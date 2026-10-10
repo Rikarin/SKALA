@@ -12111,9 +12111,11 @@ shape changed nothing; the extra level comes from the lift's written-ahead walk,
 - **SK-DIV-0005: the held single call behind a typed local** (`EqualsFloor.HeldTypedLocalBreaks`). #528's "moves
   down when it fits below with three columns to spare" (117) was one callee width: the limit is
   `3·below − 2·callee + indent ≤ 310` with the callee the receiver and the method name (type arguments left out),
-  and a head under twelve never breaks. 2 640 measured cells: #528's rule 1 513, this 2 512; a fresh probe of 1 600
-  typed locals with real receivers, generic methods and two-argument calls at indents 8 to 20: 1 314 → 1 410,
-  losing 19. ⚠ A type term (a type of 24 keeps the `=` a few columns earlier) was fitted and then refuted by
+  never past a line below of 118, and a head under twelve never breaks. 2 640 measured cells: #528's rule 1 513, this 2 512; a fresh probe of 1 600
+  typed locals with real receivers, generic methods and two-argument calls at indents 8 to 20: 1 314 → 1 395,
+  losing 16. ⚠ The 118 ceiling is #528's fixture's: `Taaaaaaaaaa c = J(40)` / `.DeserializeObject<G(41)>(json);` keeps
+  the `=` at a line below of 120 where the probe's `_serializer.DeserializeObject<T>("…")` at 120 breaks it; what
+  separates the two is not measured. ⚠ A type term (a type of 24 keeps the `=` a few columns earlier) was fitted and then refuted by
   Newtonsoft's `ConstructorHandlingTests`, whose 63-column type breaks it; a callee cap was refuted by
   `DefaultSerializationBinder`. Both are out; corpus/real is unchanged.
   ⚠ Its own test caught an idempotency hole before it shipped: a kept `=` leaves the argument list chopped, pass

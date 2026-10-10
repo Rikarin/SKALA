@@ -47,16 +47,16 @@ public sealed partial class EqualsByTheNameTests {
     static readonly string RoundThreeHeldTypedLocalsSource = $$"""
                                                                class C {
                                                                    void M0() {
-                                                                       byte[] daaaaaaaa = this.Repository.Get("{{R('s', 80)}}");
+                                                                       List<T> daaaaaaa = x.GetBytes("{{R('s', 83)}}");
                                                                    }
                                                                    void M1() {
                                                                        byte[] daaaaaaaaaaa = Convert.FromBase64String({{R('v', 78)}});
                                                                    }
                                                                    void M2() {
-                                                                       int d{{R('a', 18)}} = _serializer.DeserializeObject<T>("{{R('s', 70)}}");
+                                                                       T{{R('y', 15)}} daaaa = x.DeserializeObject<T>("{{R('s', 77)}}");
                                                                    }
                                                                    void M3() {
-                                                                       byte[] daaaaaaaaa = SomeVeryLongServiceName.Parse({{R('v', 74)}});
+                                                                       string d = Encoding.UTF8.CreateInstanceOfTheThing("{{R('s', 62)}}");
                                                                    }
                                                                    void M4() {
                                                                        int d{{R('a', 15)}} = x.Get("{{R('s', 83)}}");
@@ -68,28 +68,28 @@ public sealed partial class EqualsByTheNameTests {
                                                                        string daaaaaaaaa = JsonConvert.CreateInstanceOfTheThing({{R('v', 79)}});
                                                                    }
                                                                    void M7() {
-                                                                       IReadOnlyList<KeyValuePair<string, object>> daaaaaaaaaa = _serializer.CreateInstanceOfTheThing(alpha, {{R('b', 15)}});
+                                                                       Dictionary<string, int> daaa = Encoding.UTF8.GetBytes({{R('v', 58)}});
                                                                    }
                                                                    void M8() {
                                                                        T{{R('y', 15)}} daaaa = JsonConvert.FromBase64String("{{R('s', 58)}}");
                                                                    }
                                                                    void M9() {
-                                                                       IReadOnlyList<KeyValuePair<string, object>> daaaaaaaaaa = Encoding.UTF8.FromBase64String(alpha, {{R('b', 35)}});
+                                                                       IReadOnlyList<KeyValuePair<string, object>> daaaaaa = x.FromBase64String({{R('v', 44)}});
                                                                    }
                                                                    void M10() {
-                                                                       byte[] daaaaaaaaaa = SomeVeryLongServiceName.FromBase64String("{{R('s', 63)}}");
+                                                                       T{{R('y', 15)}} d{{R('a', 12)}} = x.FromBase64String("{{R('s', 73)}}");
                                                                    }
                                                                    void M11() {
-                                                                       T{{R('y', 15)}} daaaaa = SomeVeryLongServiceName.CreateInstanceOfTheThing("{{R('s', 58)}}");
+                                                                       T{{R('y', 15)}} daaaa = _serializer.Get({{R('v', 81)}});
                                                                    }
                                                                    void M12() {
-                                                                       Dictionary<string, int> d{{R('a', 17)}} = JsonConvert.DeserializeObject<T>({{R('v', 55)}});
+                                                                       int daaaaaaaa = Convert.FromBase64String(alpha, {{R('b', 82)}});
                                                                    }
                                                                    void M13() {
-                                                                       Dictionary<string, int> daaaaaaaaaa = _serializer.CreateInstanceOfTheThing("{{R('s', 56)}}");
+                                                                       string daaaaaaaaa = Convert.Parse("{{R('s', 78)}}");
                                                                    }
                                                                    void M14() {
-                                                                       string da = JsonConvert.FromBase64String(alpha, {{R('b', 85)}});
+                                                                       byte[] d{{R('a', 18)}} = this.Repository.Parse({{R('v', 56)}});
                                                                    }
                                                                }
                                                                """;
@@ -150,8 +150,8 @@ public sealed partial class EqualsByTheNameTests {
     static readonly string RoundThreeHeldTypedLocalsOracle = $$"""
                                                                class C {
                                                                    void M0() {
-                                                                       byte[] daaaaaaaa = this.Repository.Get(
-                                                                           "{{R('s', 80)}}"
+                                                                       List<T> daaaaaaa = x.GetBytes(
+                                                                           "{{R('s', 83)}}"
                                                                        );
                                                                    }
 
@@ -162,13 +162,15 @@ public sealed partial class EqualsByTheNameTests {
                                                                    }
 
                                                                    void M2() {
-                                                                       int d{{R('a', 18)}} =
-                                                                           _serializer.DeserializeObject<T>("{{R('s', 70)}}");
+                                                                       T{{R('y', 15)}} daaaa = x.DeserializeObject<T>(
+                                                                           "{{R('s', 77)}}"
+                                                                       );
                                                                    }
 
                                                                    void M3() {
-                                                                       byte[] daaaaaaaaa =
-                                                                           SomeVeryLongServiceName.Parse({{R('v', 74)}});
+                                                                       string d = Encoding.UTF8.CreateInstanceOfTheThing(
+                                                                           "{{R('s', 62)}}"
+                                                                       );
                                                                    }
 
                                                                    void M4() {
@@ -191,8 +193,8 @@ public sealed partial class EqualsByTheNameTests {
                                                                    }
 
                                                                    void M7() {
-                                                                       IReadOnlyList<KeyValuePair<string, object>> daaaaaaaaaa =
-                                                                           _serializer.CreateInstanceOfTheThing(alpha, {{R('b', 15)}});
+                                                                       Dictionary<string, int> daaa =
+                                                                           Encoding.UTF8.GetBytes({{R('v', 58)}});
                                                                    }
 
                                                                    void M8() {
@@ -201,37 +203,35 @@ public sealed partial class EqualsByTheNameTests {
                                                                    }
 
                                                                    void M9() {
-                                                                       IReadOnlyList<KeyValuePair<string, object>> daaaaaaaaaa =
-                                                                           Encoding.UTF8.FromBase64String(alpha, {{R('b', 35)}});
+                                                                       IReadOnlyList<KeyValuePair<string, object>> daaaaaa =
+                                                                           x.FromBase64String({{R('v', 44)}});
                                                                    }
 
                                                                    void M10() {
-                                                                       byte[] daaaaaaaaaa =
-                                                                           SomeVeryLongServiceName.FromBase64String("{{R('s', 63)}}");
+                                                                       T{{R('y', 15)}} d{{R('a', 12)}} =
+                                                                           x.FromBase64String("{{R('s', 73)}}");
                                                                    }
 
                                                                    void M11() {
-                                                                       T{{R('y', 15)}} daaaaa =
-                                                                           SomeVeryLongServiceName.CreateInstanceOfTheThing(
-                                                                               "{{R('s', 58)}}"
-                                                                           );
+                                                                       T{{R('y', 15)}} daaaa = _serializer.Get(
+                                                                           {{R('v', 81)}}
+                                                                       );
                                                                    }
 
                                                                    void M12() {
-                                                                       Dictionary<string, int> d{{R('a', 17)}} =
-                                                                           JsonConvert.DeserializeObject<T>({{R('v', 55)}});
+                                                                       int daaaaaaaa = Convert.FromBase64String(
+                                                                           alpha,
+                                                                           {{R('b', 82)}}
+                                                                       );
                                                                    }
 
                                                                    void M13() {
-                                                                       Dictionary<string, int> daaaaaaaaaa =
-                                                                           _serializer.CreateInstanceOfTheThing("{{R('s', 56)}}");
+                                                                       string daaaaaaaaa =
+                                                                           Convert.Parse("{{R('s', 78)}}");
                                                                    }
 
                                                                    void M14() {
-                                                                       string da = JsonConvert.FromBase64String(
-                                                                           alpha,
-                                                                           {{R('b', 85)}}
-                                                                       );
+                                                                       byte[] d{{R('a', 18)}} = this.Repository.Parse({{R('v', 56)}});
                                                                    }
                                                                }
                                                                """;

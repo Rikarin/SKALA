@@ -51,10 +51,12 @@ public static class EqualsFloor {
     ///     rule agreed on 1 513. ⚠ Not modelled: behind a type of 24 the oracle keeps the <c>=</c> a few columns earlier
     ///     (72 cells), but a 63-column type in Newtonsoft's <c>ConstructorHandlingTests</c> breaks it, so the type stays
     ///     out. ⚠ A type argument on the method does not count: <c>DeserializeObject&lt;LongType&gt;</c> reads as
-    ///     <c>DeserializeObject</c>.
+    ///     <c>DeserializeObject</c>. ⚠ And never past a line below of 118: #528's fixture keeps
+    ///     <c>Taaaaaaaaaa c = J(40)</c> / <c>.DeserializeObject&lt;G(41)&gt;(json);</c> at 120, where a probe's
+    ///     <c>_serializer.DeserializeObject&lt;T&gt;("…")</c> at 120 breaks — what separates them is not measured.
     /// </remarks>
     public static bool HeldTypedLocalBreaks(int head, int below, int callee, int indent) =>
-        head >= 12 && 3 * below - 2 * callee + indent <= 310;
+        head >= 12 && below <= 118 && 3 * below - 2 * callee + indent <= 310;
 
     /// <summary>
     ///     Whether <c>[A] /* c */ public T name = value;</c> past the margin keeps the attribute and the comment on a line
