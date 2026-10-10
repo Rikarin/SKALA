@@ -176,6 +176,10 @@ public sealed class FuzzRegressionTests {
     // #609, group R's seed: `while (value switch { TimeSpan { P46: null } when default(byte` / `) => new (…)[] { … },
     // … })`, a `when` condition broken before its `)` with an array-creation body; pass two wanted two indents.
     [InlineData(16219026686911307001UL)]
+    // #609: `when new { … } => Compute(0x445, …)` inside `return value switch` under a `case … when Materialise<…>(…)`
+    // label; the flipped spelling's `when` broke before the anonymous object and pass two lifted `0x445,` a level.
+    // The object's braces break instead now (#609's anonymous-object rule).
+    [InlineData(699653888302967667UL)]
     // `var (a, b) = ((Nullable<StringBuilder> First, …))($"…" ?? …);` (#598's cast rule): the gap after the cast's `)`
     // was planned only for a cast written on one line, so pass two, finding pass one's breaks inside, planned nothing
     // and filled the cast's type arguments.
