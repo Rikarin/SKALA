@@ -12256,6 +12256,28 @@ in the domain), the formula above agrees on 302; the best linear refit found, `2
 is; the residue needs a probe designed around argument width, with the name rule (#577) held fixed, since `var` and
 typed heads part on a handful of rows. #594's own 92 rows: 72 agree, all idempotent.
 
+⚠ **#612, round four (group R): wired for callees past ten columns.** Four fresh probes, typed locals at indent 8,
+answered by `Testing ask` on 2026-10-10:
+- `a`: callee 8 to 44 (`Select…(`), argument text 10 to 90 over one to four arguments, the `=` at 44 to 100, the
+  name held at four columns, branches ` ? "sss" : "ttt"` — 715 rows;
+- `t`: the same with branches of 16, 40 and 60 columns — 729 rows;
+- `f`: the name varied (4 to 48) independently of the `=`'s column, two branch widths — 572 rows;
+- `s`: callees of 3 to 20 (`Fn(`), argument text swept in steps of 3, this entry's ` ? first : second` — 684 rows.
+
+Findings. The argument count matters only as one against two or more (two, three and four answer alike at equal
+argument width); the branches' width matters a great deal (60 columns of branches and the oracle almost never
+chops); the name has no effect at a fixed `=` column (`f`, every N alike). Fitted on `a` and `t`: the oracle chops
+while `8·(argument width) − 2·(the =) − callee − 7·(branches) + 160·[two or more arguments] > 424`, 1 399 of
+1 444. Checked on `f`, not used in the fit: 547 of 572 as a stand-alone predictor, against 385 for the formula above.
+⚠ It does not hold for short callees: on `s` a callee of three or five columns chops at almost any argument width
+behind an `=` at 40 or 64, which neither formula captures, and on this entry's fixture rows (callees of 3, 7 and 10)
+the refit agrees on 19 of 36 where the formula above, with Skala's other rules, has all 36. So the two are split at
+a callee of ten columns through its `(` (`Fitter.CallConditionChops`): up to ten the formula above, past it the
+refit. Skala's own output, before → after: `a` 559 → 670 / 715, `t` 527 → 658 / 729, `f` 425 → 547 / 572, `s` 526 →
+572 / 684, the three earlier grids 72 → 78 / 92, 211 → 229 / 232 and 257 → 285 / 303, this entry's fixture 36 → 36;
+idempotent throughout. ⚠ The seam at ten is the measurement's, not a mechanism: the short-callee regime (`s`, C ≤ 5)
+is still the largest residue, and it is where the next probe belongs.
+
 ## SK-DIV-0448 — a comma that would land past the margin
 
 #559, the carried comma of SK-DIV-0442. Measured 2026-10-10 on 73 rows: in a positional pattern (after `return`,

@@ -1548,6 +1548,9 @@ public sealed class Document {
 ///     With <see cref="ValueHeadCallee" />: the call condition's argument count, which the line below may run to
 ///     before the oracle keeps the <c>=</c> and chops the call instead (#596's residue, SK-DIV-0447).
 /// </param>
+/// <param name="ValueHeadTail">
+///     With <see cref="ValueHeadArguments" />: the conditional's width after the call condition, <c> ? x : y</c>.
+/// </param>
 /// <param name="ArmOneOverHead">
 ///     ⚠ A switch arm's body group (#559, SK-DIV-0449): when the arm's flat line ends exactly one column past the
 ///     margin, the arrow breaks — rather than a point of the body's own — once the head through the <c>=&gt;</c>
@@ -1690,6 +1693,7 @@ public readonly record struct GroupFacts(
     int SectionWidth = 0,
     bool PositionalHead = false,
     int ValueHeadArguments = 0,
+    int ValueHeadTail = 0,
     int ArmOneOverHead = 0,
     bool SectionSingle = false,
     int ParenCloseEnd = 0,

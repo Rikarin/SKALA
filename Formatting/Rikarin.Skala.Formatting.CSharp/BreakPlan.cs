@@ -5944,6 +5944,9 @@ public sealed class BreakPlan {
                     }
                         ? countedCall.ArgumentList.Arguments.Count
                         : 0,
+                    ValueHeadTail: conditionHead > 0 && value is ConditionalExpressionSyntax tailed
+                        ? 1 + FormattedWidth(tailed.QuestionToken, tailed.WhenFalse.GetLastToken())
+                        : 0,
                     MemberHeadWidth: value is MemberAccessExpressionSyntax plain && IsPlainMemberValue(plain)
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,
@@ -6008,7 +6011,11 @@ public sealed class BreakPlan {
                 // ⚠ The level is held at zero when the value opens with a parenthesis the author
                 // broke after: `var t =\n(\n 1, 2)` puts the `(` at the statement's own indent. See
                 // HeadsWithAChoppedParenthesis and GroupPlan.HoldsLevel (SK-DIV-0101).
-                HoldsLevel: HoldFor(group, value)
+                HoldsLevel: HoldFor(group, value) is var hold and not HeldLevel.None
+                    ? hold
+                    : HoldsBehindATupleHead(node, value)
+                        ? HeldLevel.WhileFlat
+                        : HeldLevel.None
             )
         );
     }
@@ -6079,6 +6086,24 @@ public sealed class BreakPlan {
             }
         }
     }
+
+    /// <summary>
+    ///     Whether an <c>=</c> behind a deconstruction's or a tuple's head holds its level while it stays flat
+    ///     (#613): the value's own continuation counts from the statement, not from the head's last line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c>: <c>var (a71,</c> / <c>b72) = source.OrderBy.F…</c> /
+    ///     <c>.Value;</c> puts the dot at 12, not 16, and so does a chopped call's argument or a binary's operator,
+    ///     for a designation broken anywhere and a tuple broken after a comma. A tuple the author broke only
+    ///     before its <c>)</c> is the exception: <c>(int a, int b</c> / <c>) = Compute(</c> / arguments at 16.
+    ///     ⚠ And a binary value is not this rule's: its operators take the <c>=</c>'s level, which holding would
+    ///     take away (<c>+ b</c> at 8), and the oracle moves the head's own continuation instead (left apart).
+    /// </remarks>
+    bool HoldsBehindATupleHead(SyntaxNode node, ExpressionSyntax value) =>
+        value is not BinaryExpressionSyntax
+        && node is AssignmentExpressionSyntax { Left: var left }
+        && (left is DeclarationExpressionSyntax { Designation: ParenthesizedVariableDesignationSyntax }
+            || left is TupleExpressionSyntax tuple && !BreaksBefore(tuple.CloseParenToken));
 
     /// <summary>
     ///     Whether a break at an <c>=</c> or an <c>=&gt;</c> is one of two alternatives — its own or the

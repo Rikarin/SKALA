@@ -843,18 +843,12 @@ public sealed class Fitter {
                     }
 
                     // ⚠ And a call condition that would be long below keeps the `=` and chops instead (#596's residue,
-                    // SK-DIV-0447): measured 2026-10-10 on 712 locals — `var` and typed, indents 8 and 12, calls of one
-                    // to four arguments, the `=` ending at 18 to 98 and the call 18 to 108 columns wide — the `=`
-                    // breaks only while 9 · (the call's end below) + 2 · (the `=`'s end) + 64 · (its argument count) ≤
-                    // 1136. 680 of the 712 rows agree; the rest are one step either side of the boundary.
-                    // Only a call that fits below: one that does not is the `=` column's question, as before.
+                    // SK-DIV-0447, and #612): see CallConditionChops. Only a call that fits below: one that does not
+                    // is the `=` column's question, as before.
                     if (facts.ValueHeadFitsBelow
                         && below
                         && facts.ValueHeadArguments > 0
-                        && 9 * (m.ContinuationColumn + facts.ValueHeadWidth)
-                        + 2 * (m.Column + m.PointWidth)
-                        + 64 * facts.ValueHeadArguments
-                        > 1136) {
+                        && CallConditionChops(facts, m)) {
                         return ResolvedMode.Flat;
                     }
 
@@ -867,6 +861,38 @@ public sealed class Fitter {
 
                 return Worth(facts, m, afterPointRunsToTheEnd, tail, pointSpace);
         }
+    }
+
+    /// <summary>
+    ///     A call condition that fits below its conditional's <c>=</c>: whether the oracle keeps the <c>=</c> and chops
+    ///     the call instead (#596's residue, SK-DIV-0447; #612).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two measured regimes, split at a callee of ten columns through its <c>(</c>. Up to ten, #596's fit:
+    ///     9·(the call's end below) + 2·(the equals sign's end) + 64·(argument count) &gt; 1136, measured on 712
+    ///     locals with short callees and long arguments. Past ten its argument count is a proxy for argument width
+    ///     (#612): measured 2026-10-10 on 1 444 typed locals with the name held fixed — callee 8 to 64, argument text
+    ///     10 to 90 over one to four arguments, the conditional's branches 16 to 56, the <c>=</c> at 44 to 100 — the
+    ///     oracle chops while 8·(argument width) − 2·(the equals sign's end) − callee − 7·(branches) + 160·(two or
+    ///     more arguments) &gt; 424
+    ///     (1 399 of 1 444), and a fresh probe varying the name too agreed on 547 of 572
+    ///     against 425 before. A single argument almost never chops; long branches make the call's own line the
+    ///     cheaper break.
+    /// </remarks>
+    static bool CallConditionChops(in GroupFacts facts, in Measures m) {
+        var equals = m.Column + m.PointWidth;
+        if (facts.ValueHeadCallee <= 10 || facts.ValueHeadTail == 0) {
+            return 9 * (m.ContinuationColumn + facts.ValueHeadWidth) + 2 * equals + 64 * facts.ValueHeadArguments
+                > 1136;
+        }
+
+        var arguments = facts.ValueHeadWidth - facts.ValueHeadCallee - 1;
+        return 8 * arguments
+            - 2 * equals
+            - facts.ValueHeadCallee
+            - 7 * facts.ValueHeadTail
+            + (facts.ValueHeadArguments >= 2 ? 160 : 0)
+            > 424;
     }
 
     /// <summary>
