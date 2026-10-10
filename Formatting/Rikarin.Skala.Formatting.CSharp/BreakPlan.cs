@@ -4273,8 +4273,13 @@ public sealed class BreakPlan {
             && receiverLambda.ExpressionBody == root
             && IsTheReceiverOfAFurtherLink(receiverLambda)
             && receiverLambda.Parent?.Parent?.Parent is InvocationExpressionSyntax receiverCall
-            && !(receiverCall.Expression is MemberAccessExpressionSyntax receiverAccess
-                && BreaksBefore(receiverAccess.OperatorToken));
+            // ⚠ And only the chain's first call, on a receiver that is a path of names (#611): behind a call —
+            // `Enumerable.Range(…).Select(index => 1d + (index % 5)).ToArray()` — the call's dot is one of the
+            // chain's own points, which pass one breaks for width; pass two read it as the author's and gave the
+            // level back.
+            && receiverCall.Expression is MemberAccessExpressionSyntax receiverAccess
+            && IsAPathOfNames(receiverAccess.Expression)
+            && !BreaksBefore(receiverAccess.OperatorToken);
 
         Describe(
             root,
