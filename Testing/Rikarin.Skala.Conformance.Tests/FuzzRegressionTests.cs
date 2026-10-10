@@ -239,6 +239,9 @@ public sealed class FuzzRegressionTests {
     // the arrow, and pass two, reading the arrow break as kept, broke the `when` by the tail rule. A condition with no
     // break point now breaks after the `when` whenever it does not fit beside it, as the oracle does on both passes.
     [InlineData(7256125207651206043UL, "constructs/breaks/arm-when-condition-below.cs")]
+    // #609's fourth seed (found on master 10889231): the same construct indented and widened; pass two wanted one more
+    // newline after the `when`. Clean once a name with no break point breaks the `when` whenever it does not fit beside.
+    [InlineData(7196610944795926752UL, "constructs/breaks/arm-when-condition-below.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
