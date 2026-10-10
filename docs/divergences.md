@@ -12283,8 +12283,41 @@ of 116 to 150. Two shapes, neither wired:
 The first is the local-against-assignment split SK-DIV-0442 found for positional patterns; the second is an `=`
 before a creation call, near `EqualsBeforeACall`'s floor, which does not cover a generic type.
 
+⚠ **Round six (#610), measured 2026-10-10 with `Testing ask` on 10 159 rows in seven grids. Both readings above were
+wrong in their mechanism.**
+
+- ⚠ **(a) is the head's width, not the owner.** With the type argument list's `>` past the margin, every head of five
+  columns or fewer through the `=` keeps it and fills the list — `v =`, `vvv =`, `a.b =`, and the *local* `T v =` —
+  and every head of six or more breaks it: `vvvv =`, `a[0] =`, `Tt v =`, `var v =`. Generic creations with and without
+  arguments, generic calls and `default(G<…>)` alike; not a nested generic (`Array.Empty<G<…>>()`), whose rows do not
+  follow it. On a line exactly one column over the short head keeps its `=` though the value would fit below.
+  `GroupFacts.ShortHeadTypeEnd`, `BreakPlan.ShortHeadTypeEndOf`.
+- ⚠ **(b) is not about generics: it is one argument.** `CalleeWidthOf` took only two arguments or more and only a plain
+  name, so `vvvvvvvvvvvvvv = new Dictionary<…>(capacity)` fell to the ordering rule — and so did every plain call with
+  one argument. Behind a head of twelve or more the oracle breaks the `=` by the existing floor and name gate; the gate
+  was measured on two arguments, so a single argument it turns away goes back to the ordering rule
+  (`T… vwwwwwww = Compute(aaaaaaaaaaaa);`, `EqualsByTheNameTests`, needs that). Behind a narrower head, one argument
+  breaks the `=` when `24·(head − 6) − 3·(indent − 8) ≥ 4·argument` — a head of 7 for an argument of 4, 8 for 8 to 12,
+  9 for 18, 11 for 26, at indent 8; about a column more at 16 — and otherwise the ordering rule decides as before.
+- ⚠ **And a narrow head breaks the `=` whenever the call's `(` is past the margin**, one argument or several: 896 rows
+  of two arguments, heads 3 to 10, every `(` at 121 or further breaks. The head rule had returned flat before reading
+  the `(`.
+
+Rows differing, master `10889231` → this branch: the original 73 rows 15 → 0; the short-head grid 425 → 0 of 1 300;
+heads × kinds 105 → 9 of 995; other values (binary, chain, ternary, two arguments, `default`, nested generic) 178 → 46
+of 1 225, all 46 the nested generic and `default`'s 121–122 jitter; one argument by callee 1 547 → 167 of 3 600 (the 167
+mostly what happens below an `=` both break, `new` / a 100-column name); one argument by `(` 936 → 39 of 2 070; two
+arguments behind a narrow head 236 → 64 of 896. A probe written after the rules — one argument that is a lambda, a
+string, a nested call, a member chain or a creation — differs on 14 of 840, each the `(` at exactly 120 behind a head
+of 8 or 9. Every #578 and #586 grid is unchanged (906 of 135 064).
+
+⚠ Not wired: two arguments behind a head of 10 break the `=` from a `(` at 118 when they are short (`a, b`); a head
+of exactly 9 with an argument of 18 breaks from a `(` at 107 to 109, not throughout; and a one-argument field is left to
+the ordering rule, unmeasured.
+
 - options: `skala_wrap_before_eq = false`.
-- ⚠ status: **open**.
+- status: **resolved** for both shapes, pinned by `constructs/breaks/short-head-generic-fill.cs` and
+  `constructs/breaks/equals-before-a-single-argument-call.cs`. ⚠ The three residues above are **open**.
 
 ## SK-DIV-0491 — an `=` whose value's leading parenthesis closes one column past the margin
 

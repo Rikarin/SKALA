@@ -5976,6 +5976,10 @@ public sealed class BreakPlan {
                     && value is ParenthesizedExpressionSyntax
                     && HeadWidthThroughEquals(node, equals) < 20
                         ? 6
+                        : 0,
+                    ShortHeadTypeEnd: ShortHeadTypeEndOf(node, equals, value, owner),
+                    CalleeArgument: callee > 0 && ArgumentsOf(value) is [var sole]
+                        ? FormattedWidth(sole)
                         : 0
                 ),
                 true,
@@ -6687,6 +6691,44 @@ public sealed class BreakPlan {
         int WidthThrough(SyntaxToken start, SyntaxToken end) => FormattedWidth(start, end);
     }
 
+    /// <summary>
+    ///     For an <c>=</c> whose head is five columns or fewer, before <c>new G&lt;…&gt;(…)</c>, <c>M&lt;…&gt;(…)</c> or
+    ///     <c>default(G&lt;…&gt;)</c>: the width from the value's first token through the type argument list's
+    ///     <c>&gt;</c>; zero otherwise. See <see cref="GroupFacts.ShortHeadTypeEnd" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 2 593 rows (#610, SK-DIV-0450): assignments with heads of 3 to
+    ///     8 columns, <c>a.b</c>, <c>a.bcd</c> and <c>a[0]</c> targets, <c>T v</c>, <c>Tt v</c>, <c>Ttt v</c> and
+    ///     <c>var v</c> locals; creations without arguments, with one and with two, a generic call and
+    ///     <c>default(…)</c>; lines of 121 to 150. With the <c>&gt;</c> past the margin, every head through the
+    ///     <c>=</c> of five columns or fewer keeps it and fills the list one level in, local or assignment alike, and
+    ///     every head of six or more breaks it. ⚠ The split is the head's width, not the owner: <c>var v =</c> is
+    ///     seven and breaks, <c>T v =</c> is five and keeps. With the <c>&gt;</c> inside the margin the oracle's answer
+    ///     is the one Skala already gave, bar a column of jitter at 121 to 123.
+    ///     ⚠ Not over a nested generic, <c>Array.Empty&lt;G&lt;…&gt;&gt;()</c>, whose rows do not follow it.
+    /// </remarks>
+    int ShortHeadTypeEndOf(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value, EqualsOwner owner) {
+        if (owner == EqualsOwner.None || options.WrapBeforeEq || HeadWidthThroughEquals(node, equals) > 5) {
+            return 0;
+        }
+
+        var list = value switch {
+            ObjectCreationExpressionSyntax { Type: GenericNameSyntax type, Initializer: null } => type.TypeArgumentList,
+            InvocationExpressionSyntax { Expression: GenericNameSyntax name } => name.TypeArgumentList,
+            DefaultExpressionSyntax { Type: GenericNameSyntax type } => type.TypeArgumentList,
+            _ => null
+        };
+
+        if (list is null
+            || list.Arguments.Any(HoldsAGenericName)
+            || value.DescendantTrivia().Any(IsNeitherSpaceNorLineEnd)) {
+            return 0;
+        }
+
+        // ⚠ Line ends are let through: pass one's fill puts one inside the list, and pass two must give the same answer.
+        return FormattedWidth(value.GetFirstToken(), list.GreaterThanToken);
+    }
+
     int HeadWidthThroughEquals(SyntaxNode node, SyntaxToken equals) {
         var start = EqualsHeadStartOf(node);
         if (start.IsKind(SyntaxKind.None)) {
@@ -6868,10 +6910,32 @@ public sealed class BreakPlan {
             ? FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken)
             : 0;
 
+    static bool HoldsAGenericName(TypeSyntax type) => type.DescendantNodesAndSelf().OfType<GenericNameSyntax>().Any();
+
+    static bool IsNeitherSpaceNorLineEnd(SyntaxTrivia trivia) =>
+        !trivia.IsKind(SyntaxKind.WhitespaceTrivia) && !trivia.IsKind(SyntaxKind.EndOfLineTrivia);
+
+    static SeparatedSyntaxList<ArgumentSyntax> ArgumentsOf(ExpressionSyntax value) =>
+        value switch {
+            InvocationExpressionSyntax invocation => invocation.ArgumentList.Arguments,
+            ObjectCreationExpressionSyntax { ArgumentList: { } list } => list.Arguments,
+            _ => default
+        };
+
+    /// <remarks>
+    ///     ⚠ One argument as well as two or more, and a generic name as well as a plain one (#610, SK-DIV-0450): behind
+    ///     a head of twelve or more the oracle breaks <c>vvvvvvvvvv = new Dictionary&lt;…&gt;(capacity)</c> by the same
+    ///     floor and gate as <c>Compute(a, b)</c> — measured 2026-10-10 with <c>Testing ask</c> on 2 070 rows of one
+    ///     argument, the <c>(</c> at 60 to 120, arguments of 4 to 44, heads of 5 to 14, indents 8 and 16, every head of
+    ///     twelve or more breaking — where a generic creation's <c>=</c> fell to the ordering rule, which kept it and
+    ///     chopped the argument. A narrower head has its own rule; see <see cref="GroupFacts.CalleeArgument" />.
+    /// </remarks>
     int CalleeWidthOf(ExpressionSyntax value) =>
-        value is InvocationExpressionSyntax { Expression: IdentifierNameSyntax, ArgumentList.Arguments.Count: >= 2 }
+        value is InvocationExpressionSyntax {
+                Expression: IdentifierNameSyntax or GenericNameSyntax, ArgumentList.Arguments.Count: >= 1
+            }
             or ObjectCreationExpressionSyntax {
-                Type: IdentifierNameSyntax, ArgumentList.Arguments.Count: >= 2, Initializer: null
+                Type: IdentifierNameSyntax or GenericNameSyntax, ArgumentList.Arguments.Count: >= 1, Initializer: null
             }
         && !value.DescendantTrivia()
             .Any(static trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia)

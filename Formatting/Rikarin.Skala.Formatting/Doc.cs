@@ -1546,6 +1546,19 @@ public sealed class Document {
 ///     68 before a call on a name, 26 before a member chain, 24 before an operator or a parenthesis, each less the
 ///     width of the casts in front of it (a cast counts as head). The planner sets it for those bodies only.
 /// </param>
+/// <param name="CalleeArgument">
+///     ⚠ With <see cref="CalleeWidth" />, a call or creation with exactly one argument: that argument's width (#610,
+///     SK-DIV-0450). Behind a head under <see cref="MinimumHead" /> the <c>=</c> breaks when the <c>(</c> lands past
+///     the margin, or when <c>24·(head − 6) − 3·(indent − 8) ≥ 4·argument</c>, the head measured through the
+///     <c>=</c>; otherwise the ordering rule decides, as it did before the floor took one argument — and it decides
+///     whatever the name gate turns away, and every field's. Zero for two or more.
+/// </param>
+/// <param name="ShortHeadTypeEnd">
+///     ⚠ An <c>=</c> with a head of five columns or fewer before a value whose type argument list fills —
+///     <c>new G&lt;…&gt;(…)</c>, <c>M&lt;…&gt;(…)</c>, <c>default(G&lt;…&gt;)</c> (#610, SK-DIV-0450): the width from the
+///     value's first column through the list's <c>&gt;</c>. When the <c>&gt;</c> lands past the margin, the <c>=</c>
+///     stays and the list fills, where a head of six or more breaks the <c>=</c>; zero turns the rule off.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
@@ -1667,7 +1680,9 @@ public readonly record struct GroupFacts(
     bool WhenAtom = false,
     int WhenBody = 0,
     bool WhenArrowKept = false,
-    int CastParenFirst = 0);
+    int CastParenFirst = 0,
+    int ShortHeadTypeEnd = 0,
+    int CalleeArgument = 0);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
