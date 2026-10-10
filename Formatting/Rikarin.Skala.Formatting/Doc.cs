@@ -1354,6 +1354,29 @@ public sealed class Document {
 ///     <c>=</c> reaches <see cref="MinimumHead" /> — whatever the condition's own points could do — or,
 ///     with <see cref="ValueHeadFitsBelow" />, when the condition then fits below. Zero for any other value.
 /// </param>
+/// <param name="EqualsName">
+///     ⚠ The width of the name an <c>=</c> assigns — a local's declared identifier, an assignment's whole left side
+///     — for the owners <see cref="EqualsFloor" /> measures; zero otherwise (#589, #590). The oracle weighs the
+///     <c>=</c>'s break by the name before it and not by the head: a typed local's type acts like indentation.
+///     Before a call the <c>=</c> stays unless <see cref="EqualsFloor.NameReachesTheCall" />; before a plain member
+///     value it breaks by <see cref="EqualsFloor.BreaksBeforeTheValue" />. Zero leaves both rules off.
+/// </param>
+/// <param name="OrLeft">
+///     ⚠ An <c>=</c> whose value is <c>X || Y</c>, written on one line, with <c>X</c> an <c>&amp;&amp;</c> chain or an
+///     <c>is</c> pattern: <c>X</c>'s flat width (#579, SK-DIV-0403). When <c>X</c> does not fit beside the <c>=</c>
+///     the <c>=</c> breaks exactly when the head through it (<see cref="OrHead" />) reaches
+///     <see cref="EqualsFloor.OrHeadFloor" />. Zero for any other value.
+/// </param>
+/// <param name="OrRight">With <see cref="OrLeft" />: <c>Y</c>'s flat width.</param>
+/// <param name="OrHead">
+///     With <see cref="OrLeft" />: the head's width from the statement's start through the
+///     <c>=</c>.
+/// </param>
+/// <param name="OrLeftIsPattern">With <see cref="OrLeft" />: <c>X</c> is an <c>is</c> pattern.</param>
+/// <param name="MemberLinks">
+///     With <see cref="MemberHeadWidth" />: the widths of the value's links after the receiver, each <c>.</c> included,
+///     in order — the dot fill keeps beside the <c>=</c> the receiver and every link that still fits there (#590).
+/// </param>
 /// <param name="MemberHeadWidth">
 ///     ⚠ An <c>=</c> whose value is a plain member access the dot fill breaks (#482): the receiver's flat
 ///     width, before the first <c>.</c>. The <c>=</c> yields to the fill, and breaks after all when the
@@ -1430,12 +1453,42 @@ public sealed class Document {
 /// </param>
 /// <param name="TypeTestTail">
 ///     ⚠ The member-access fill of a returned type test's operand (#446, SK-DIV-0210): the width from the dot
-///     through the <c>;</c>. The dot breaks exactly when the operand alone runs past the margin and that line
-///     fits at the continuation column; otherwise the keyword's own band answers.
+///     through the <c>;</c>. With <see cref="TypeTestReceiver" />, <see cref="TypeTestOperand" />,
+///     <see cref="TypeTestKeyword" /> and <see cref="TypeTestType" />, on the fill's group and on the keyword's
+///     band alike, it answers whether the dot takes the break: see <c>Fitter.TheDotTakesTheBreak</c>.
 /// </param>
+/// <param name="TypeTestReceiver">With <see cref="TypeTestTail" />: the receiver's width, up to the dot.</param>
+/// <param name="TypeTestOperand">With <see cref="TypeTestTail" />: the operand's width, receiver, dot and member.</param>
+/// <param name="TypeTestKeyword">With <see cref="TypeTestTail" />: the keyword's width, <c>is</c> or <c>as</c>.</param>
+/// <param name="TypeTestType">With <see cref="TypeTestTail" />: the type's width, without the <c>;</c>.</param>
+/// <param name="ModifierFillHead">
+///     ⚠ A field's gap between its modifiers and a generic type (#540, SK-DIV-0127): the type's width through the
+///     first comma of its argument list, where the oracle's fill on the modifiers' line breaks. With
+///     <see cref="ModifierFillType" /> and <see cref="ModifierFillName" />, the gap stays and the type fills when the
+///     line the type and the name would make below the modifiers reaches a measured length. See
+///     <c>Fitter.FillsAfterTheModifiers</c>.
+/// </param>
+/// <param name="ModifierFillType">With <see cref="ModifierFillHead" />: the type's width.</param>
+/// <param name="ModifierFillName">With <see cref="ModifierFillHead" />: the name's width.</param>
+/// <param name="ParameterAfterSection">
+///     ⚠ A parameter's one attribute section with two or more positional arguments, in front of a parameter wider
+///     than eleven columns (#476, SK-DIV-0352): the parameter's width <c>w</c>. The arguments chop, with the
+///     parameter below them, exactly when the joined line overflows, <c>24·E ≥ 1695 + 32·w + 11·i + 12·h</c> and
+///     <c>5·w + 2·i − h ≤ 155</c> — <c>E</c> the column the section's <c>]</c> ends at, <c>i</c> the section's column,
+///     <c>h</c> the width from its <c>[</c> to its <c>(</c>. Otherwise the section stays whole and the parameter goes
+///     below it alone. See <c>Fitter.ChopsBeforeTheParameter</c>.
+/// </param>
+/// <param name="SectionHead">With <see cref="ParameterAfterSection" />: the width from the <c>[</c> to the <c>(</c>.</param>
+/// <param name="SectionWidth">With <see cref="ParameterAfterSection" />: the section's flat width, <c>[</c> to <c>]</c>.</param>
 /// <param name="ValueHeadCallee">
 ///     ⚠ With <see cref="ValueHeadWidth" />, a condition that is a call on a name: the width from the name through
 ///     its <c>(</c>. The <c>=</c> breaks whenever that <c>(</c> would land past the margin beside it (#596).
+/// </param>
+/// <param name="PositionalHead">
+///     ⚠ A switch arm's body group behind a positional pattern with no <c>when</c> (#559, SK-DIV-0443): the head
+///     never reads a short body through (<c>DocumentBuilder.ShortArrowBody</c>). Measured 2026-10-10 on 168 arms:
+///     the oracle breaks after the arrow while the line through it fits, then before it, then before the
+///     pattern's <c>)</c>, and only then inside the pattern — where a property pattern's braces chop.
 /// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
@@ -1521,6 +1574,12 @@ public readonly record struct GroupFacts(
     bool LambdaCallSingle = false,
     bool LambdaCallShift = false,
     int MemberHeadWidth = 0,
+    int EqualsName = 0,
+    int[]? MemberLinks = null,
+    int OrLeft = 0,
+    int OrRight = 0,
+    int OrHead = 0,
+    bool OrLeftIsPattern = false,
     int PatternFirstWidth = 0,
     int ArmBodyTrail = 0,
     int LiftGroup = -1,
@@ -1529,7 +1588,18 @@ public readonly record struct GroupFacts(
     int ArmCast = 0,
     bool BreaksIfTheLineOverflows = false,
     int TypeTestTail = 0,
-    int ValueHeadCallee = 0);
+    int ValueHeadCallee = 0,
+    int TypeTestReceiver = 0,
+    int TypeTestOperand = 0,
+    int TypeTestKeyword = 0,
+    int TypeTestType = 0,
+    int ModifierFillHead = 0,
+    int ModifierFillType = 0,
+    int ModifierFillName = 0,
+    int ParameterAfterSection = 0,
+    int SectionHead = 0,
+    int SectionWidth = 0,
+    bool PositionalHead = false);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
