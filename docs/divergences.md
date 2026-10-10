@@ -11955,6 +11955,41 @@ Rows: 42 → 72 of 81, and the round-one grid of 40 rows 15 → 27.
 - ⚠ status: **resolved** for the local's `=`, pinned by `constructs/breaks/positional-pattern-after-a-local-equals.cs`;
   the closer and the arm heads are **resolved** in SK-DIV-0443, the carried comma in SK-DIV-0448.
 
+## SK-DIV-0490 — a type test broken before its `is` takes a level of its own, stacked on what is open around it
+
+#597, found in Skala's own `SearchValuesAnalyzer.cs`: `if (model.GetSpeculativeSymbolInfo(` / the
+arguments / `).Symbol` / `is not IMethodSymbol creator` / `|| …`. Skala gave a broken `is` one level past
+its operand's *line* (#445's from-the-line scope), so it collapsed with whatever else opened on that line.
+The oracle stacks it. Measured 2026-10-09 with `Testing ask` on 308 rows: if, while, do, else if, return,
+a local, an assignment, `=>`, a ternary's condition, an argument and a lambda; a long call and a short one;
+with and without `.Symbol`; `is not T t`, `is T`, `is null` and `as T`; alone and under `||` and `&&`.
+
+- Alone after `return`, the `is` and the `)` are one level in and the arguments two. Skala wrote the `)`
+  flush with `return`.
+- With `.Symbol` after the `)`, the chain takes a level past the `is`. `.Symbol` is two levels in and the
+  arguments three.
+- As the left operand of `||` or `&&`, the `is` goes a level past the operator, and everything under it
+  goes with it.
+- A whole statement condition keeps the `is` on the aligned column.
+
+With the oracle's breaks left in place, all 48 rows of a control grid without a broken `is` already matched
+and still do. On the broken-`is` rows, Skala diverged on 137 of 260 before and on 10 now, and no row
+regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
+
+- Fix: `BreakPlan.StacksItsLevel` and `IsAStackedTypeTestsOperand`, plus `LayoutWriter.LevelForBlock`. An
+  additive scope no longer blocks the scopes outside a broken construct, which `Level` already honoured.
+
+⚠ The 10 rows still diverging, all as before:
+
+- 7 are a sole lambda's whole body (`Use(x => call(` / … / `)` / `is T`). #445 keeps that one level past
+  the line, and the oracle nests the arguments from the `is`'s level there. The short form already matches
+  and is the test's control.
+- 3 are `as T` broken before `as` as a ternary's condition. The oracle keeps `?` and `:` on the `as`'s
+  column, and Skala puts them a level in.
+
+- status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`. ⚠ The two residues
+  are **open**.
+
 ## SK-DIV-0443 — a positional pattern's `)` and an arm headed by one
 
 #559, round five, the two residues of SK-DIV-0442. Measured 2026-10-10 with `Testing ask` on 168 arms — heads
@@ -12050,8 +12085,13 @@ break after the comma before); a type argument list does, and is left to its yie
 comma of the two lists is a fill point that breaks only when the comma itself would overflow
 (`BreakPlan.PlanCarriedCommas`). Grids 42 → 48 of 48 and 23 → 24 of 25 (the type argument list).
 
-- ⚠ status: **resolved** for positional patterns and deconstructions. Pinned by
-  `constructs/breaks/positional-pattern-carried-comma.cs`.
+⚠ **Round four: and a type argument list.** Measured on 25 rows — a local's, a field's and a parameter's type, a
+generic call, a creation behind an `=`: at exactly 120 the oracle writes `Dictionary<A, B, CCC` / `, D> x;` too. A
+yielding point before each comma, like the list's own (`PlanTypeParameters`). Rows 16 → 20 of 25; the five left are
+an assignment's `=` before `new Dictionary<…>()`, which Skala breaks and the oracle keeps, a different question.
+
+- ⚠ status: **resolved** for positional patterns, deconstructions and type argument lists. Pinned by
+  `constructs/breaks/positional-pattern-carried-comma.cs` and `constructs/breaks/type-argument-carried-comma.cs`.
 
 ## SK-DIV-0490 — a type test broken before its `is` takes a level of its own, stacked on what is open around it
 
@@ -12122,3 +12162,17 @@ on 2 247, losing 10 rows round one had.
   calls and creations; lines 118 to 134) differ in 14, all one shape: with the comment and a 31-column name the
   oracle declines the join from 122 to 128 where it joins and chops for names of 16 or less. Another name
   effect, inside the attribute join; not wired.
+
+## SK-DIV-0449 — a switch arm exactly one column past the margin
+
+#559's last residue: `(int a, …, int c) => Compute(a, b),` at 121 columns breaks after the arrow in the oracle, and
+Skala chopped the call. Measured 2026-10-10 on 206 arms whose line ends at 121, arm indents 12 and 16, heads from 8
+to 94 columns through `=>`, bodies of a call on a name, a member chain, an operator, a parenthesis and a cast in front
+of a call or a parenthesis: the arrow breaks once the head is 68 columns or more before a call on a name, 26 before a
+member chain, 24 before an operator or a parenthesis; below that the body breaks inside, as Skala always did. A cast
+in front of the body counts as head (`(string)Method(…)` breaks from 59 + 8, `(string)(a + b)` from 16 + 8).
+`GroupFacts.ArmOneOverHead`, `BreakPlan.ArmOneOverHeadOf`. ⚠ A first cut that broke the arrow on every one-over arm
+matched the three positional rows and moved two cast rows away; the threshold is per body kind. Rows 203 of 206, the
+three one column of jitter either side; positional arm heads 165 → 168 of 168.
+
+- ⚠ status: **resolved within the residue above** (#559). Pinned by `constructs/breaks/arm-one-column-over.cs`.
