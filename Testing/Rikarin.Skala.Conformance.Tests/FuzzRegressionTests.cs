@@ -167,6 +167,9 @@ public sealed class FuzzRegressionTests {
     // broke for width before the anonymous object and pass two, reading that break as kept, lifted the query's
     // `where` a level. The oracle breaks the object's braces there instead, and so does Skala now.
     [InlineData(11388054215126240053UL)]
+    // #609, group P's third seed: a wrapped `when` before a collection-creation body inside `using (var u81 = value
+    // switch { … })`. Pass one put the elements and `},` at the pattern's indent and pass two moved both a level in.
+    [InlineData(7491390271031329341UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
