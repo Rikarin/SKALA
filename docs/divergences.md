@@ -12093,41 +12093,6 @@ an assignment's `=` before `new Dictionary<…>()`, which Skala breaks and the o
 - ⚠ status: **resolved** for positional patterns, deconstructions and type argument lists. Pinned by
   `constructs/breaks/positional-pattern-carried-comma.cs` and `constructs/breaks/type-argument-carried-comma.cs`.
 
-## SK-DIV-0490 — a type test broken before its `is` takes a level of its own, stacked on what is open around it
-
-#597, found in Skala's own `SearchValuesAnalyzer.cs`: `if (model.GetSpeculativeSymbolInfo(` / the
-arguments / `).Symbol` / `is not IMethodSymbol creator` / `|| …`. Skala gave a broken `is` one level past
-its operand's *line* (#445's from-the-line scope), so it collapsed with whatever else opened on that line.
-The oracle stacks it. Measured 2026-10-09 with `Testing ask` on 308 rows: if, while, do, else if, return,
-a local, an assignment, `=>`, a ternary's condition, an argument and a lambda; a long call and a short one;
-with and without `.Symbol`; `is not T t`, `is T`, `is null` and `as T`; alone and under `||` and `&&`.
-
-- Alone after `return`, the `is` and the `)` are one level in and the arguments two. Skala wrote the `)`
-  flush with `return`.
-- With `.Symbol` after the `)`, the chain takes a level past the `is`. `.Symbol` is two levels in and the
-  arguments three.
-- As the left operand of `||` or `&&`, the `is` goes a level past the operator, and everything under it
-  goes with it.
-- A whole statement condition keeps the `is` on the aligned column.
-
-With the oracle's breaks left in place, all 48 rows of a control grid without a broken `is` already matched
-and still do. On the broken-`is` rows, Skala diverged on 137 of 260 before and on 10 now, and no row
-regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
-
-- Fix: `BreakPlan.StacksItsLevel` and `IsAStackedTypeTestsOperand`, plus `LayoutWriter.LevelForBlock`. An
-  additive scope no longer blocks the scopes outside a broken construct, which `Level` already honoured.
-
-⚠ The 10 rows still diverging, all as before:
-
-- 7 are a sole lambda's whole body (`Use(x => call(` / … / `)` / `is T`). #445 keeps that one level past
-  the line, and the oracle nests the arguments from the `is`'s level there. The short form already matches
-  and is the test's control.
-- 3 are `as T` broken before `as` as a ternary's condition. The oracle keeps `?` and `:` on the `as`'s
-  column, and Skala puts them a level in.
-
-- status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`. ⚠ The two residues
-  are **open**.
-
 ## SK-DIV-0400 – 0403, round 2 of the name reading (Group N, 2026-10-10)
 
 Measured with `Testing ask`; every rule below was then checked on a probe drawn fresh for it (seed 777, 2 500
