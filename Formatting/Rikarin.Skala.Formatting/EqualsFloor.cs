@@ -43,15 +43,15 @@ public static class EqualsFloor {
     /// <param name="callee">The receiver's and the method name's widths together, type arguments left out.</param>
     /// <param name="indent">The statement's indent.</param>
     /// <remarks>
-    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 2 640 cells — types of 3 to 24, names of 2 to 16,
-    ///     receivers of 4 to 13, method names of 5 and 14, indents 8 and 16, lines below ending at 106 to 121. The #528
-    ///     rule's "fits below with three columns to spare" (117) was a single callee width: the limit moves two columns per
-    ///     three of callee, from 107 behind <c>Rrrr.Mmmmm</c> to 118 behind 27 columns of callee, and a column lower per
-    ///     three of indent. A head under twelve never breaks (<c>byte[] da =</c>). 2 512 of the 2 640 cells agree; #528's
-    ///     rule agreed on 1 513. ⚠ Not modelled: behind a type of 24 the oracle keeps the <c>=</c> a few columns earlier
-    ///     (72 cells), but a 63-column type in Newtonsoft's <c>ConstructorHandlingTests</c> breaks it, so the type stays
-    ///     out. ⚠ A type argument on the method does not count: <c>DeserializeObject&lt;LongType&gt;</c> reads as
-    ///     <c>DeserializeObject</c>. ⚠ And never past a line below of 118: #528's fixture keeps
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 2 640 cells — types of 3 to 24, names of 2 to 16, receivers
+    ///     of 4 to 13, method names of 5 and 14, indents 8 and 16, lines below ending at 106 to 121. The #528 rule's
+    ///     "fits below with three columns to spare" (117) was a single callee width: the limit moves two columns per
+    ///     three of callee, from 107 behind <c>Rrrr.Mmmmm</c> to 118 behind 27 columns of callee, and a column lower
+    ///     per three of indent. A head under twelve never breaks (<c>byte[] da =</c>). 2 512 of the 2 640 cells agree;
+    ///     #528's rule agreed on 1 513. ⚠ Not modelled: behind a type of 24 the oracle keeps the <c>=</c> a few columns
+    ///     earlier (72 cells), but a 63-column type in Newtonsoft's <c>ConstructorHandlingTests</c> breaks it, so the
+    ///     type stays out. ⚠ A type argument on the method does not count: <c>DeserializeObject&lt;LongType&gt;</c>
+    ///     reads as <c>DeserializeObject</c>. ⚠ And never past a line below of 118: #528's fixture keeps
     ///     <c>Taaaaaaaaaa c = J(40)</c> / <c>.DeserializeObject&lt;G(41)&gt;(json);</c> at 120, where a probe's
     ///     <c>_serializer.DeserializeObject&lt;T&gt;("…")</c> at 120 breaks — what separates them is not measured.
     /// </remarks>
@@ -59,27 +59,27 @@ public static class EqualsFloor {
         head >= 12 && below <= 118 && 3 * below - 2 * callee + indent <= 310;
 
     /// <summary>
-    ///     Whether <c>[A] /* c */ public T name = value;</c> past the margin keeps the attribute and the comment on a line
-    ///     of their own (the join declined) rather than joining and breaking after the <c>=</c>: the joined line ending
-    ///     at <paramref name="end" />, the prefix through the comment and its space <paramref name="prefix" /> wide, the
-    ///     declaration through <c>= </c> <paramref name="head" /> wide, the name <paramref name="name" /> wide
-    ///     (SK-DIV-0201, #504 and #555's attribute cells).
+    ///     Whether <c>[A] /* c */ public T name = value;</c> past the margin keeps the attribute and the comment on a
+    ///     line of their own (the join declined) rather than joining and breaking after the <c>=</c>: the joined line
+    ///     ending at <paramref name="end" />, the prefix through the comment and its space <paramref name="prefix" />
+    ///     wide, the declaration through <c>= </c> <paramref name="head" /> wide, the name <paramref name="name" />
+    ///     wide (SK-DIV-0201, #504 and #555's attribute cells).
     /// </summary>
     /// <remarks>
     ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 9 000 fields: prefixes of 16 to 28 (<c>/**/</c> to a
     ///     nine-letter comment), heads of 16 to 40 split between type and name, names of 1, 6 and 12, values that are a
     ///     binary chain, an identifier, a string, a member chain and a conditional, lines of 121 to 165. The value's
-    ///     shape does not matter and the name does. Then 4 536 more over the attribute's width (<c>[A]</c> to 32 columns,
-    ///     <c>[DataMember(Order = 1)]</c> among them) and comments of 4 to 15, after a fresh random probe failed the first
-    ///     cut on long attributes: what counts is the whole prefix, and a prefix of 12 or less never declines. Declined
-    ///     exactly while the prefix is 13 or more and
-    ///     <c>4·(end − prefix) − 3·head + 5·min(name, 24) + max(0, prefix − 24) ≤ 436</c>:
-    ///     13 673 of 13 830 cells, the rest a column or two off it, most behind a member chain; the name stops counting
-    ///     past 24 (a second probe's names ran to 30). Three fresh random probes of 1 500 commented fields each — owners,
-    ///     attributes, comments, types, names to 30 and values drawn at random — went 828 → 1 440, 875 → 1 462 and
-    ///     841 → 1 465 in the decline decision. ⚠ <c>end − prefix</c> is the
-    ///     declaration's own line: it is declined while that line, the head and the name allow, and #504's "declined at
-    ///     every overflowing width" was the band below 134 that measurement swept.
+    ///     shape does not matter and the name does. Then 4 536 more over the attribute's width (<c>[A]</c> to 32
+    ///     columns, <c>[DataMember(Order = 1)]</c> among them) and comments of 4 to 15, after a fresh random probe
+    ///     failed the first cut on long attributes: what counts is the whole prefix, and a prefix of 12 or less never
+    ///     declines. Declined exactly while the prefix is 13 or more and
+    ///     <c>4·(end − prefix) − 3·head + 5·min(name, 24) + max(0, prefix − 24) ≤ 436</c>: 13 673 of 13 830 cells, the
+    ///     rest a column or two off it, most behind a member chain; the name stops counting past 24 (a second probe's
+    ///     names ran to 30). Three fresh random probes of 1 500 commented fields each — owners, attributes, comments,
+    ///     types, names to 30 and values drawn at random — went 828 → 1 440, 875 → 1 462 and 841 → 1 465 in the decline
+    ///     decision. ⚠ <c>end − prefix</c> is the declaration's own line: it is declined while that line, the head and
+    ///     the name allow, and #504's "declined at every overflowing width" was the band below 134 that measurement
+    ///     swept.
     /// </remarks>
     public static bool DeclinesTheJoin(int end, int prefix, int head, int name) =>
         prefix >= 13 && 4 * (end - prefix) - 3 * head + 5 * Math.Min(name, 24) + Math.Max(0, prefix - 24) <= 436;
