@@ -910,7 +910,12 @@ public sealed class BreakPlan {
                 );
 
                 // ⚠ Behind a long parameter's default the gap asks the arguments' own chop rule (#603).
-                Describe(node, section, GroupMode.Preserve, inRun ? sectionFacts : WithADefaultsSection(sectionFacts, single));
+                Describe(
+                    node,
+                    section,
+                    GroupMode.Preserve,
+                    inRun ? sectionFacts : WithADefaultsSection(sectionFacts, single)
+                );
 
                 return;
             }
@@ -4853,7 +4858,9 @@ public sealed class BreakPlan {
             operand = access.Expression;
         }
 
-        return operand is InvocationExpressionSyntax { ArgumentList.Arguments.Count: > 0 } call ? call.ArgumentList : null;
+        return operand is InvocationExpressionSyntax { ArgumentList.Arguments.Count: > 0 } call
+            ? call.ArgumentList
+            : null;
     }
 
     /// <summary>
@@ -6431,9 +6438,7 @@ public sealed class BreakPlan {
         if (options.KeepExistingInvocationParensArrangement
             || arguments.Arguments.Count < 1
             || arguments.Parent is not AttributeSyntax { Parent: AttributeListSyntax { Attributes.Count: 1 } section }
-            || section.Parent is not ParameterSyntax {
-                Parent: ParameterListSyntax, AttributeLists: [_]
-            } parameter
+            || section.Parent is not ParameterSyntax { Parent: ParameterListSyntax, AttributeLists: [_] } parameter
             || CSharpDocumentBuilder.IsAShortParameterBehindItsSection(parameter)) {
             return;
         }

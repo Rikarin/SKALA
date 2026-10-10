@@ -339,9 +339,10 @@ public sealed class Fitter {
                 // answer on pass two: see GroupFacts.SectionJoinedOverDefault (#603).
                 if (facts.SectionJoinedOverDefault > 0 && m.Column + facts.SectionJoinedOverDefault > width) {
                     var throughEquals = m.Column + facts.SectionJoinedOverDefault - facts.DefaultValueWidth - 1;
-                    return m.Column + facts.SectionWidth <= width && SectionChops(facts, m.Column) || throughEquals > width
-                        ? ResolvedMode.Broken
-                        : ResolvedMode.Flat;
+                    return m.Column + facts.SectionWidth <= width && SectionChops(facts, m.Column)
+                        || throughEquals > width
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
                 }
 
                 if (facts.SourceBroken) {

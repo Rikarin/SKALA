@@ -4,7 +4,8 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     Issue #603: behind a long parameter's default value the oracle breaks the default's = while the line through it fits
+///     Issue #603: behind a long parameter's default value the oracle breaks the default's = while the line through it
+///     fits
 ///     and the arguments do not chop, then puts the parameter below the section. Every expected string is jb cleanupcode
 ///     2025.2.6's own output for the input, from the 2026-10-10 sweeps.
 /// </summary>

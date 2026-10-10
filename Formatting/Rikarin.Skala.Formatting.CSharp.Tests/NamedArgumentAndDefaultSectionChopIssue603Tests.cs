@@ -5,7 +5,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
 ///     Issue #603: a parameter wider than eleven columns behind a section with a named argument, and a parameter with a
-///     default value. Every expected string is jb cleanupcode 2025.2.6's own output for the input, from the 2026-10-10 sweeps.
+///     default value. Every expected string is jb cleanupcode 2025.2.6's own output for the input, from the 2026-10-10
+///     sweeps.
 /// </summary>
 public sealed class NamedArgumentAndDefaultSectionChopIssue603Tests {
     /// <summary>The oracle's answer under the repository's export, and a second pass that changes nothing.</summary>
