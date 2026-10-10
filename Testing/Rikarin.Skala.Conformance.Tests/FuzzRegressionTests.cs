@@ -91,6 +91,10 @@ public sealed class FuzzRegressionTests {
     // as well; pass two found the arrow's break kept, measured the pattern up to it and re-joined `var p`.
     // A kept break at that point is now pinned, as the oracle keeps it and as the list's commas are.
     [InlineData(9642682992700587520UL)]
+    // #595: `T v13 = static x =>` past the margin kept the `=`; a lambda without parentheses has no list to chop.
+    [InlineData(18379797974820457043UL)]
+    // #596: a conditional's `= Select(` with the `(` past the margin kept the `=`; pass two broke it.
+    [InlineData(8249044719362511507UL)]
     [InlineData(7862808234978504853UL)]
     [InlineData(8573762464065711162UL)]
     [InlineData(7447388608888272285UL)]

@@ -1,0 +1,90 @@
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-10-09
+// A sole lambda argument over a binary pattern, `left is A or B …`, written on one line past the margin
+// (#586, SK-DIV-0377): the arrow breaks by the operand rule's two thresholds with the pattern's own constants
+// — the tested expression's width lowering both, the type's raising both until it passes 24 columns. And a
+// lambda call that is the receiver of a further link, `items.Where(…).ToList()`, is decided by the same rule
+// with the line read to the call's `)`, the chain breaking before the next link. Rows taken from the
+// measured grids (EqualsFloor.BreaksTheOperandArrow).
+
+class C {
+    void M() {
+        UUUUUU(static node => x is AAAAAAAAAAAAAAAAAAA
+            or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+            or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        UUUU(x => x is AAAAAAAAAAAAA
+            or BBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+            or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        UUUUUUUUUUUUUUUUU(nnnn => x is AAAAAAAAAAAAAAAAAAAAAAAAAAA
+            or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+            or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        UUUUUUUUUUUU(static node => x is AAAAAAAAAAAAAAAAAAAAAAAAAAA
+            or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+            or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        var g = iiiiiiii.Where(nnnnnnnnnnnnnnnnnnnn => node is AAAAAAAAAAAAAAAAAAA
+            or BBBBBBBBBBBBB
+            or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        U(static node => x.Kind is AAAAAAAAAAAAAA
+            or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+            or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        UUUUUUUUUUUUUUUUUUUUUUUUU((SyntaxNode n) => node is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+            or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+            or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        UUUUUUU(nnnn => x.Kind is AAAAAAAAAAAAAAAAAAAAAA
+            or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+            or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU(static node =>
+            x is AAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBBBB or CCCCCCCCCCCCCCCCCCCCCCC
+        );
+        UUUUUUUUUUUUUUUUUUUUUUUUUUUUU(nnnn =>
+            x is AAAAAAAAAAAAAAAAAAAAAAA
+                or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+                or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU(static node =>
+            x is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+                or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU(nnnn =>
+            x is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBBBBBBB or CCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        UUUUUUUUUUUUUUUUUUUUU(nnnn =>
+            abcdefghijkl is AAAAAAAA
+                or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+                or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        UUUUUUUUUUUUUUUUUUUUU(static n =>
+            node.Parent is AAAAAAAA or BBBBBBBBBBBBBBBBBBBBBB or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        UUUUUUUUUUUUUUUUUUUU(node =>
+            n.Kind() is AAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBB or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        var g = iiiiiiiiiiiiiiiiiiiiiiiiii.Where(item =>
+            n.Kind() is AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+                or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        );
+        var g = iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+            .Where(static node => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbb && cccccccccccccc)
+            .ToList();
+        var g = iiiiiiiiiiiiiiiiiiiiiiiiiiiii
+            .Where(static node => x is AAAAAAAAA or BBBBBBBBBBBBBBB or CCCCCCCCCCCCCCCC)
+            .ToList();
+        var g = iiiiiiii.Where(static node =>
+                aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccc
+            )
+            .ToList();
+        var g = iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii.Where(x =>
+                x is AAAAAAAAAAAAAAAAAAAAAAAAAAA or BBBBBBBBBBBBBBBBBBBB or CCCCCCCCCCCCCCCCCCCCC
+            )
+            .ToList();
+    }
+}
