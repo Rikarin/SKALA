@@ -12123,6 +12123,19 @@ side of the boundary.
 
 - ⚠ status: **resolved within the residue above**. Pinned by `constructs/breaks/conditional-call-condition-below.cs`.
 
+⚠ **Re-measured 2026-10-10 by group R (#594's residue), and the argument count is a proxy.** Probes with a long
+callee and short arguments, the reverse of this entry's `Select(aaaa…, bbbb…)`, separate the two. On a controlled
+grid of 303 locals (`var` and typed; the `=` at 24 to 100; callee 8 to 64 columns; argument text 12 to 90 columns
+split over one to three arguments; every call fitting below and not beside), the oracle's answer follows the
+argument *width*: with the call's end below fixed at 107, `C24 + A70` chops at two arguments where `C44 + A50`
+breaks the `=` at any count. Skala agrees on 257 of 303 (all 303 idempotent); the 46 apart are mostly two- and
+three-argument calls with 50 to 90 columns of arguments, both directions. As a stand-alone predictor over that grid,
+#594's 92 rows, 232 rows of mixed simple and `out var`/parenthesised arguments and this entry's 52 fixture rows (583
+in the domain), the formula above agrees on 302; the best linear refit found, `2·below + 2·= + 7·(argument width)
++ 96·(count) ≤ 1058`, on 531 — not clean enough to wire, and the count's coefficient sits at the search bound. Left as
+is; the residue needs a probe designed around argument width, with the name rule (#577) held fixed, since `var` and
+typed heads part on a handful of rows. #594's own 92 rows: 72 agree, all idempotent.
+
 ## SK-DIV-0448 — a comma that would land past the margin
 
 #559, the carried comma of SK-DIV-0442. Measured 2026-10-10 on 73 rows: in a positional pattern (after `return`,

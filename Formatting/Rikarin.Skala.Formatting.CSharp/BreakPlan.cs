@@ -978,7 +978,11 @@ public sealed class BreakPlan {
                         || keeps
                         && collection.Elements.Any(element =>
                             element is SpreadElementSyntax spread && BreaksBefore(FirstToken(spread.Expression))
-                        ))
+                        )
+                        // ⚠ Nor one holding an argument list the author broke after a comma (#607): the list chops,
+                        // `F(` / `a,` / `b` / `)`, so the collection is broken too. A break after the `(` or before a
+                        // comma is joined, and leaves the draft as it was.
+                        || keeps && HoldsAnArgumentListBrokenAfterAComma(collection))
                     && groups.TryGetValue(Key(node), out var listPlans)
                     && listPlans.Count > 0) {
                     var listPlan = listPlans[^1] with { Facts = listPlans[^1].Facts with { DraftsBroken = true } };
@@ -4268,8 +4272,13 @@ public sealed class BreakPlan {
             && receiverLambda.ExpressionBody == root
             && IsTheReceiverOfAFurtherLink(receiverLambda)
             && receiverLambda.Parent?.Parent?.Parent is InvocationExpressionSyntax receiverCall
-            && !(receiverCall.Expression is MemberAccessExpressionSyntax receiverAccess
-                && BreaksBefore(receiverAccess.OperatorToken));
+            // ⚠ And only the chain's first call, on a receiver that is a path of names (#611): behind a call —
+            // `Enumerable.Range(…).Select(index => 1d + (index % 5)).ToArray()` — the call's dot is one of the
+            // chain's own points, which pass one breaks for width; pass two read it as the author's and gave the
+            // level back.
+            && receiverCall.Expression is MemberAccessExpressionSyntax receiverAccess
+            && IsAPathOfNames(receiverAccess.Expression)
+            && !BreaksBefore(receiverAccess.OperatorToken);
 
         Describe(
             root,
@@ -6796,6 +6805,21 @@ public sealed class BreakPlan {
                 && trivia.Span.End <= collection.CloseBracketToken.SpanStart
                 && (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
                     || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia))
+            );
+
+    /// <summary>
+    ///     Whether an argument list inside a collection holds the author's break after a comma, which chops the
+    ///     list and so breaks the collection on every pass (#607). Bracketed arguments count: <c>d[a,</c> /
+    ///     <c>b]</c> keeps its break in the oracle too.
+    /// </summary>
+    bool HoldsAnArgumentListBrokenAfterAComma(CollectionExpressionSyntax collection) =>
+        collection.DescendantNodes()
+            .OfType<BaseArgumentListSyntax>()
+            .Any(list => list.Arguments.GetSeparators()
+                .Any(comma => comma.GetNextToken() is var next
+                    && next != list.GetLastToken()
+                    && BreaksBefore(next)
+                )
             );
 
     /// <summary>

@@ -162,6 +162,9 @@ public sealed class FuzzRegressionTests {
     // `[null, ..` / `Source]` as an array element: the break after the spread's `..` is at none of the collection's
     // own points, so the draft read it flat and pass one moved the `[` down; pass two kept `…, [`, the oracle's answer.
     [InlineData(3601384071467948482UL)]
+    // `var (a, b` / `) = source.OrderBy.` / `First.Value;` (#606): pass one, the chain broken, kept the `=`; pass two,
+    // the chain joined into a plain member, asked whether the broken head fits flat — never — and broke the `=`.
+    [InlineData(10828701791419393416UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
@@ -230,6 +233,10 @@ public sealed class FuzzRegressionTests {
     // #608: `Value` / `= property.` / `Value;` — an author's break before the `=` left the `=` group's flat width
     // unbounded, and #590's plain-member rule read that as an overflowing line and broke after the `=` on pass two.
     [InlineData(9342835643250235022UL, "real/serilog/Serilog/Events/LogEventProperty.cs")]
+    // ⚠ #611: `Enumerable.Range(…).Select(index => 1d + (index` / `% 5)).ToArray()` — a receiver lambda's operand
+    // chain took its own level behind a call whose dot pass one broke for width; pass two read the dot as the
+    // author's and gave the level back.
+    [InlineData(1322227246888415436UL, "real/vixen/Core/Vixen.Geometry.Uv.Tests/DegenerateSystemTests.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
