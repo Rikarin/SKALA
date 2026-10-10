@@ -6154,8 +6154,7 @@ public sealed class BreakPlan {
             && IsTheWholeValueOfAReturnOrAnEquals(wide)
             && parenthesis.Expression is BinaryExpressionSyntax binary
             && !binary.IsKind(SyntaxKind.IsExpression)
-            && !binary.IsKind(SyntaxKind.AsExpression)
-            && !HasLineBreakIn(wide)) {
+            && !binary.IsKind(SyntaxKind.AsExpression)) {
             // ⚠ Before a parenthesised operator, by the measured rule (#598): see GroupFacts.CastParenFirst.
             var open = parenthesis.OpenParenToken;
             var after = NewGroup();
