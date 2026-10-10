@@ -352,7 +352,7 @@ public sealed class Fitter {
 
                 // ⚠ A field's modifiers and its generic type: the type fills on the modifiers' line by the measured
                 // rule rather than moving below them. See GroupFacts.ModifierFillHead (#540).
-                if (facts.ModifierFillName > 0 && FillsAfterTheModifiers(facts, lineStart)) {
+                if (facts.ModifierFillName > 0 && FillsAfterTheModifiers(facts, lineStart, m.Column)) {
                     return ResolvedMode.Flat;
                 }
 
@@ -942,8 +942,16 @@ public sealed class Fitter {
     ///     measured on the line below rather than the line's end. 11 113 of 11 361 cells agree, and a probe written
     ///     after the rule, with three new modifier sets and two new types at two indents, 4 028 of 4 092.
     /// </remarks>
-    bool FillsAfterTheModifiers(in GroupFacts facts, int lineStart) {
-        var head = facts.ModifierFillHead;
+    /// <remarks>
+    ///     ⚠ #604, measured 2026-10-10 on 4 680 more fields: three- and four-argument types read off the same table
+    ///     once <c>h</c> is the fill's own first line — through the last comma that fits on the modifiers' line, where
+    ///     the oracle's fill breaks, not the first. <c>Func&lt;K…, int, List&lt;…&gt;&gt;</c> behind a 16-column
+    ///     <c>Func&lt;K…,</c> reads as 21 and <c>Func&lt;K…, int, long, …&gt;</c> as 27, every row then on the table:
+    ///     3 347 of 3 456 cells where either side moves the type, against 2 992 of 4 680 overall before.
+    /// </remarks>
+    bool FillsAfterTheModifiers(in GroupFacts facts, int lineStart, int column) {
+        // The group starts at the gap before the type; the type's first column is one past it.
+        var head = column + facts.ModifierFillLastHead <= width ? facts.ModifierFillLastHead : facts.ModifierFillHead;
         var name = facts.ModifierFillName;
         var k = head >= 54 ? 324 :
             head >= 36 ? 325 :
@@ -1038,6 +1046,17 @@ public sealed class Fitter {
         var parameter = facts.ParameterAfterSection;
         if (end > width || end + 1 + parameter <= width) {
             return null;
+        }
+
+        // ⚠ One argument (#603): the same slopes, the threshold 17 columns later and its own second condition.
+        // Measured 2026-10-10 on 2 205 cells — `[A(`, `[From(`, `[Description(`, `[JsonPropertyName(`,
+        // `[NotNullIfNotNull(`, parameters of 12 to 24 columns, indents 8, 12 and 20 — with round four's `[A(` and
+        // `[Description(` rows.
+        if (facts.SectionSingle) {
+            return 2 * parameter + lineStart - facts.SectionHead <= 36
+                && 24 * end >= 2106 + 32 * parameter + 11 * lineStart + 11 * facts.SectionHead
+                    ? ResolvedMode.Broken
+                    : ResolvedMode.Flat;
         }
 
         return 5 * parameter + 2 * lineStart - facts.SectionHead <= 155

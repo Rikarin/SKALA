@@ -7188,6 +7188,22 @@ three-argument type behind an eleven-letter name (`ModifierTypeGapIssue540Tests`
 the rule would fill it, and nothing longer was measured. A `const` with a value is not this rule's (56 of its
 117 cells differ). Every output is stable on a second pass. Pinned by `ModifierFillIssue540Tests`.
 
+**Round six (#604, group Q round four, 2026-10-10): more type arguments, longer names.** 4 680 fields — `Dictionary`
+with names of 9 to 20 letters, `Func<K…, int, List<S…>>` and `Func<K…, int, long, S…>` with names of 1 to 16, heads of
+16 to 55 columns, `public static readonly` and `private readonly`, the line from 122 to 160; master matched 2 992.
+- **The number of type arguments is no variable of its own.** Three- and four-argument types read off the same table
+  once `h` is the fill's actual first line — through the *last* comma of the outermost list that fits on the modifiers'
+  line, where the oracle's fill breaks — not through the first: `Func<K…,` of 16 columns followed by `int,` reads as
+  21, followed by `int, long,` as 27, and every row then sits on the table (`GroupFacts.ModifierFillLastHead`).
+- **Names over eight letters are already the oracle's.** From 11 to 20 letters the oracle moves the type below once it
+  ends past the margin and never fills, which is the ordering rule's answer; at nine letters it fills on a few rows at a
+  line one column short of the table's, so nine stays outside the rule.
+
+3 347 of the 3 456 cells where either side moves the type agree; the probe as a whole matches 4 551 of 4 680, and a
+probe written after the rule — `Tuple<K…, string, IList<S…>>`, `Action<K…, int, bool, S…>`, `Func<K…, A, B, C, S…>`,
+`internal static` and `protected readonly`, indents 4 and 8 — 3 678 of 3 744 (master 888). Pinned by
+`ModifierFillManyArgumentsIssue604Tests`.
+
 **The parameter's gap is resolved (#545).** A parameter whose line passes the margin once its list is
 chopped puts its name one level below its type: `int` / `            aaa…` at a parameter on column 8.
 Measured with `jb cleanupcode` 2025.2.6 one column at a time: flat to a 120-column parameter line, broken
@@ -10732,8 +10748,18 @@ Every output is stable on a second pass. Pinned by `LongParameterSectionChopIssu
 - options: `skala_wrap_arguments_style`; no key for the join.
 - ⚠ status: **resolved** for parameters of up to eleven columns, defaults included (#476, #556), pinned by
   `AttributeArgumentChopIssue476Tests`, and for longer parameters behind a section of two or more positional
-  arguments, pinned by `LongParameterSectionChopIssue476Tests`; **open** for named arguments, one-argument
-  sections and defaults behind long parameters.
+  arguments, pinned by `LongParameterSectionChopIssue476Tests`, and behind a one-argument section (#603), pinned by
+  `OneArgumentSectionChopIssue603Tests`; **open** for named arguments and defaults behind long parameters.
+
+**Round six (#603, group Q round four, 2026-10-10): one argument.** 2 205 cells — `[A(`, `[From(`, `[Description(`,
+`[JsonPropertyName(`, `[NotNullIfNotNull(`, `string a…` of 12 to 24 columns, indents 8, 12 and 20 — with round four's
+`[A(` and `[Description(` rows. A one-argument section is round five's rule with its own constants: the same slopes
+(4/3 a column of parameter, about 11/24 a column of indent and of head), the threshold 17 columns later, and its own
+second condition — `24·E ≥ 2106 + 32·w + 11·i + 11·h` and `2·w + i − h ≤ 36` (`GroupFacts.SectionSingle`). Of 62
+series, 58 start their chop on the column the rule gives and the four others one to five columns later, next to the
+second condition's edge, as round five's misses are. The grid matches 2 199 of 2 205 (master 2 090); a probe written
+after the rule — `[Ab(`, `[Obsolete(`, `[DisplayName(`, `[CallerArgumentExpression(`, `int` and `List<int>` parameters
+of 13 to 21 columns, indents 8, 16 and 24 — 2 510 of 2 520 (master 2 428).
 
 ## SK-DIV-0353 — a type declaration's keyword and its name: the oracle breaks between them
 
@@ -11987,8 +12013,18 @@ regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
 - 3 are `as T` broken before `as` as a ternary's condition. The oracle keeps `?` and `:` on the `as`'s
   column, and Skala puts them a level in.
 
-- status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`. ⚠ The two residues
-  are **open**.
+- status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`, and for the ternary
+  residue (#602), pinned by `TernaryAfterABrokenTypeTestIssue602Tests`. The sole-lambda residue is **open**.
+
+**#602 (group Q round four, 2026-10-10): the ternary residue.** The cause was not the type test's level: a ternary
+opens the scope its `?` and `:` take after a *binary* condition, so that a broken `==` chain puts them a level further
+(`return a` / `== null` / `? 1` at two levels, measured), and Roslyn calls `as` and `is T` binary. The oracle treats them
+as it treats `is null`: `? 1` / `: 2` on the column of the keyword's line after `return`, `var x =` and as an argument,
+written broken or flat. All four ternary rows of group S's grid now agree (`CSharpDocumentBuilder`, the ternary's
+`early` scope). ⚠ The six sole-lambda rows — `Use(x => call(` / … / `)` / `is T`, the oracle with the arguments two
+levels in and Skala with them on the `)`'s level — are not attempted: they need the stacked level only when the
+operand itself breaks, which is a layout fact the planner does not have, and group S found the unconditional
+widening regressed six short-form rows.
 
 ## SK-DIV-0443 — a positional pattern's `)` and an arm headed by one
 

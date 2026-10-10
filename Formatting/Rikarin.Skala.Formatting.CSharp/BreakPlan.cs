@@ -2982,7 +2982,7 @@ public sealed class BreakPlan {
         if (node.Parent is FieldDeclarationSyntax { Modifiers.Count: > 0 }) {
             var modifiers = NewGroup();
             Point(node.Type.GetFirstToken(), modifiers);
-            var (fillHead, fillType, fillName) = ModifierFillShape(node);
+            var (fillHead, fillLastHead, fillType, fillName) = ModifierFillShape(node);
             Describe(
                 node.Type,
                 new(
@@ -2994,6 +2994,7 @@ public sealed class BreakPlan {
                         PrefersOuterBreak: true,
                         SkipsOuterTail: true,
                         ModifierFillHead: fillHead,
+                        ModifierFillLastHead: fillLastHead,
                         ModifierFillType: fillType,
                         ModifierFillName: fillName
                     ),
@@ -3033,21 +3034,22 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     For a field's one declarator without a value, of at most eight letters, whose type is generic with two
-    ///     arguments — the shapes measured; a three-argument type behind an eleven-letter name moves below the
-    ///     modifiers where the rule would fill it (<c>ModifierTypeGapIssue540Tests</c>): the
-    ///     type's width through its first argument's comma, the type's width and the name's — the widths
-    ///     <c>Fitter.FillsAfterTheModifiers</c> reads (#540). Zeros for any other declaration.
+    ///     For a field's one declarator without a value, of at most eight letters, whose type is generic with two or
+    ///     more arguments: the type's width through its first argument's comma and through its last, the type's
+    ///     width and the name's — the widths <c>Fitter.FillsAfterTheModifiers</c> reads (#540, #604). Zeros for any
+    ///     other declaration.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Only the first comma of the outermost argument list: that is where the oracle's fill breaks, and the
-    ///     only fill measured. A comment anywhere in the declaration, or a break before the name, leaves the gap to
-    ///     the ordering rule as before; a break inside the type is pass one's fill, read through.
+    ///     ⚠ A name over eight letters is left to the ordering rule, which moves the type below once it ends past
+    ///     the margin: that is the oracle's answer for names of 11 to 20 letters at every width measured (#604), and
+    ///     for nine letters on all but a few rows where it fills at a line one column short of the rule's. A comment
+    ///     anywhere in the declaration, or a break before the name, leaves the gap to the ordering rule as before; a
+    ///     break inside the type is pass one's fill, read through.
     /// </remarks>
-    (int Head, int Type, int Name) ModifierFillShape(VariableDeclarationSyntax node) {
+    (int Head, int LastHead, int Type, int Name) ModifierFillShape(VariableDeclarationSyntax node) {
         if (node is not { Variables: [{ Initializer: null } variable] }
             || (node.Type is QualifiedNameSyntax qualified ? qualified.Right : node.Type) is not GenericNameSyntax {
-                TypeArgumentList.Arguments: { Count: 2 } arguments
+                TypeArgumentList.Arguments: { Count: >= 2 } arguments
             }
             || variable.Identifier.Span.Length > 8
             || BreaksBefore(variable.Identifier)
@@ -3061,6 +3063,7 @@ public sealed class BreakPlan {
         var first = node.Type.GetFirstToken();
         return (
             FormattedWidth(first, arguments.GetSeparator(0)),
+            FormattedWidth(first, arguments.GetSeparator(arguments.SeparatorCount - 1)),
             FormattedWidth(first, node.Type.GetLastToken()),
             variable.Identifier.Span.Length
         );
@@ -6328,9 +6331,8 @@ public sealed class BreakPlan {
     /// <remarks>
     ///     ⚠ Eleven columns and narrower is
     ///     <see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />'s
-    ///     rule, which reads the parameter through. A one-argument section is not this rule's: <c>[A("…")]</c> and
-    ///     <c>[Description("…")]</c> in front of 12 to 20 columns stand alone above the parameter at nearly every
-    ///     width.
+    ///     rule, which reads the parameter through. A one-argument section is the same rule with its own constants
+    ///     (#603): see <see cref="GroupFacts.SectionSingle" />.
     ///     Nor a named argument, which chops later (<c>DiagnosticId = "X"</c>: from 113 behind a 13-column parameter
     ///     at indent 8, never at 20), nor a parameter with a default value, whose <c>=</c> breaks instead.
     ///     Widths are the formatter's (<see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />), and a comment
@@ -6338,7 +6340,7 @@ public sealed class BreakPlan {
     /// </remarks>
     void PlanSectionBeforeALongParameter(AttributeArgumentListSyntax arguments) {
         if (options.KeepExistingInvocationParensArrangement
-            || arguments.Arguments.Count < 2
+            || arguments.Arguments.Count < 1
             || arguments.Arguments.Any(static argument => argument.NameEquals is not null
                 || argument.NameColon is not null
             )
@@ -6374,7 +6376,8 @@ public sealed class BreakPlan {
             Facts = plans[^1].Facts with {
                 ParameterAfterSection = FormattedWidth(first, last),
                 SectionHead = FormattedWidth(section.OpenBracketToken, arguments.OpenParenToken) - 1,
-                SectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken)
+                SectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken),
+                SectionSingle = arguments.Arguments.Count == 1
             }
         };
         plans[^1] = plan;
