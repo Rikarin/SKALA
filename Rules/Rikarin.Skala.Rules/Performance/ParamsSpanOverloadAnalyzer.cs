@@ -74,11 +74,11 @@ public sealed class ParamsSpanOverloadAnalyzer : DiagnosticAnalyzer {
         );
         var proposed = invocation.ReplaceNode(argument.Expression, replacement);
         if (model.GetSpeculativeSymbolInfo(
-                    invocation.SpanStart,
-                    proposed,
-                    SpeculativeBindingOption.BindAsExpression
-                )
-                .Symbol
+                        invocation.SpanStart,
+                        proposed,
+                        SpeculativeBindingOption.BindAsExpression
+                    )
+                    .Symbol
                 is not IMethodSymbol alternative
             || !SymbolEqualityComparer.Default.Equals(alternative.ContainingType, call.TargetMethod.ContainingType)
             || !SymbolEqualityComparer.Default.Equals(alternative.ReturnType, call.TargetMethod.ReturnType)

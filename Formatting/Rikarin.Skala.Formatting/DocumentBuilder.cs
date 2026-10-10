@@ -657,7 +657,9 @@ public sealed class DocumentBuilder {
             // for an interpolated string of 51 and for list-pattern heads with a `when`. Reading a long
             // body through made the pattern chop on pass one and the arrow break as well; pass two, finding
             // the arrow's break kept, lifted the chopped brackets.
-            arrowRuns = afterPointRuns && segment[index] + arrow.ArmBodyTrail <= ShortArrowBody
+            // ⚠ Never behind a positional pattern (#559, SK-DIV-0443): `(int a, …, int c) => 1,` past the margin
+            // breaks after the arrow while the line through it fits, whatever the body. See GroupFacts.PositionalHead.
+            arrowRuns = !arrow.PositionalHead && afterPointRuns && segment[index] + arrow.ArmBodyTrail <= ShortArrowBody
                 || arrowBodiesRunningToTheEnd.Contains(frame.Arg1);
             if (arrowRuns && arrow.FlatIfOwnerBroke && arrow.Owner >= 0) {
                 arrowBodiesRunningToTheEnd.Add(arrow.Owner);
