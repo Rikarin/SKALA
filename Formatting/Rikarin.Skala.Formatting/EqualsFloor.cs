@@ -34,6 +34,188 @@ public enum EqualsOwner {
 
 public static class EqualsFloor {
     /// <summary>
+    ///     Whether an <c>=</c> before a call with two or more arguments may break at all: the name it assigns,
+    ///     <paramref name="name" /> columns wide, with the callee, <paramref name="callee" /> wide, has to reach
+    ///     far enough for the call's <c>(</c> at <paramref name="paren" /> (1-based) —
+    ///     <c>2·(name + callee) + paren ≥ 163</c> (#589, SK-DIV-0400).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The new measurement is the split of one head between the type and the name. With the <c>(</c> fixed and
+    ///     the arguments fixed, moving columns from the name into a local's type turns the oracle's answer from
+    ///     <c>=</c> / call to <c>= Call(</c> / arguments chopped — at the <c>(</c> on 82 a type of 28 breaks and one of
+    ///     31 chops, on 106 a type of 64 breaks and one of 67 chops. The tables below were measured under
+    ///     <c>var</c>, whose three-column type leaves the name the whole head, and every typed local with a short
+    ///     name and a long type got their <c>var</c> answer: <c>Tyyy… v148 = Select(a, b, x);</c> with the <c>(</c>
+    ///     at 108 to 120 broke the <c>=</c> where the oracle chops (#589).
+    ///     <para>
+    ///         Measured 2026-10-09 with <c>Testing ask</c> on 10 717 cells of two or more arguments: typed locals with
+    ///         types of 1 to 85 columns, <c>var</c> and <c>Tyy</c> (identical to the column), assignments, names of 2
+    ///         to
+    ///         68 columns, callees of 4, 7, 15 and 30, the <c>(</c> at 50 to 120, indents 8 and 20. The tables alone
+    ///         agree on 8 397; the tables behind this gate on 10 476. The gate was fitted over integer weights on the
+    ///         name, the <c>=</c>'s column, the indent and the callee; <c>name + callee</c> against the <c>(</c> is the
+    ///         best of them and no weight on the indent improved it. The 241 cells it misses are a column or two off
+    ///         the tables' own floor, mostly behind a callee of 30.
+    ///     </para>
+    /// </remarks>
+    public static bool NameReachesTheCall(int name, int callee, int paren) => 2 * (name + callee) + paren >= 163;
+
+    /// <summary>
+    ///     A field whose name is 31 columns or more, its call's <c>(</c> at column 76 or left of it: the widest
+    ///     argument list (inside the parentheses) that still breaks the <c>=</c> — 62 at a name of 30, a column less
+    ///     per three of name (round 2 of #589, SK-DIV-0400).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on <c>public T name = Compute(a, …);</c> and
+    ///     <c>new Foo(…)</c> fields at indent 4, names 30 to 56, the <c>(</c> at 48 to 99: 62 at 30, 60 at 34, 58 at 40
+    ///     and 56 at 48, flat in the <c>(</c>. The field table's own rows there read the overflow, which chops all of
+    ///     them; a name of 30 breaks only with the <c>(</c> left of 64 and is left to the table.
+    /// </remarks>
+    public static int LongFieldNameFloor(int name) => 62 - (name - 30) / 3;
+
+    /// <summary>
+    ///     For <c>v = X || Y</c> whose <c>X</c> does not fit beside the <c>=</c>: the head, statement start through the
+    ///     <c>=</c>, from which the <c>=</c> breaks; <see cref="int.MaxValue" /> when it never does (#579,
+    ///     SK-DIV-0403).
+    /// </summary>
+    /// <param name="left">The width of <c>X</c>.</param>
+    /// <param name="right">The width of <c>Y</c>.</param>
+    /// <param name="pattern">
+    ///     Whether <c>X</c> is an <c>is</c> pattern; otherwise it is an <c>&amp;&amp;</c>
+    ///     chain.
+    /// </param>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-09 with <c>Testing ask</c> on 5 160 cells: typed locals, <c>var</c> locals and
+    ///     assignments
+    ///     (one answer to the column for all three, so the head and not the name decides here), heads of 7 to 16,
+    ///     <c>&amp;&amp;</c> chains of 90 to 129 columns and patterns of 100 to 132, <c>Y</c> of 1 to 100. The
+    ///     twelve-column
+    ///     head of #379 and #553 is the floor while <c>Y</c> is short, and a wide <c>Y</c> lowers it — the "the floor
+    ///     moves with the far operand" the first measurement recorded, now a table: 11 from a <c>Y</c> of 60, 10 from
+    ///     68,
+    ///     9 from 73, 8 from 92 and 7 from 93 behind a chain; a pattern holds each step a few columns longer. A pattern
+    ///     too wide for the line below never breaks the <c>=</c> while <c>Y</c> is at most its own width less 108 — the
+    ///     "keeps it for a wider pattern" of the first measurement, which was a <c>Y</c> of four.
+    /// </remarks>
+    public static int OrHeadFloor(int left, int right, bool pattern) {
+        if (pattern) {
+            return right <= left - 108 ? int.MaxValue
+                : right >= 92 ? 8
+                : right >= 76 ? 10
+                : right >= 65 ? 11
+                : 12;
+        }
+
+        return right >= 93 ? 7
+            : right >= 92 ? 8
+            : right >= 73 ? 9
+            : right >= 68 ? 10
+            : right >= 60 ? 11
+            : 12;
+    }
+
+    /// <summary>
+    ///     Whether an <c>=</c> whose line does not fit breaks and moves its value down whole, rather than staying and
+    ///     letting the value break after a fragment of it: a plain member value's dot fill (<c>T name = receiver.A</c>
+    ///     /
+    ///     <c>.B;</c>, #590, SK-DIV-0401) and a conditional's <c>?</c> / <c>:</c> when the condition fits beside the
+    ///     <c>=</c> (#577, SK-DIV-0402).
+    /// </summary>
+    /// <param name="equals">The <c>=</c>'s column, 1-based.</param>
+    /// <param name="name">The width of the name the <c>=</c> assigns.</param>
+    /// <param name="fragment">
+    ///     What would stay beside the <c>=</c>: the receiver and every link after it that fits there, or the condition.
+    /// </param>
+    /// <param name="below">The column the value would end at on the line below, its <c>;</c> included, 1-based.</param>
+    /// <remarks>
+    ///     ⚠ The new measurement is the name. The tables before this were measured under <c>var</c> heads, where the
+    ///     name
+    ///     is the whole head and grows with the <c>=</c>'s column, so what read as "the head" or "the column of the
+    ///     <c>=</c>" was the name: under a typed local whose type takes the head, the <c>=</c>'s column barely matters
+    ///     and the name decides. Two questions, and the name is in both:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             Is the fragment short against the name? A name of eight or more always breaks the <c>=</c>, six or
+    ///             seven up to a fragment of 51; a shorter one breaks it for a fragment up to <c>3·name + 7</c>,
+    ///             further
+    ///             once the <c>=</c> passes column 84 — to 15 for a one-column name, 20 for two, any for three or more.
+    ///         </item>
+    ///         <item>
+    ///             Does the value fit below by the measured limit? About 111 for a short fragment, a column less for
+    ///             every
+    ///             two or three of fragment (never under 99), a column more for names of 8, 12, 16 and 20, none at all
+    ///             for
+    ///             a fragment within a column of a quarter of the name; for names past 26 a column less per four of
+    ///             name; and past an <c>=</c> at column 84 a column more per two.
+    ///         </item>
+    ///     </list>
+    ///     Measured 2026-10-09 with <c>Testing ask</c> on member values, 52 599 cells — typed locals, <c>var</c> locals
+    ///     and assignments, names of 1 to 100, receivers of 3 to 40, links of 1 to 40, two to four links, the <c>=</c>
+    ///     at columns 14 to 115, values of 40 to 107, indents 8 and 16: this agrees on 51 792, keeping the <c>=</c>
+    ///     unless the receiver overflows agreed on 29 150. A conditional takes the fragment question and, under a name
+    ///     shorter than six, the limit (see <c>Fitter</c>'s conditional rule). ⚠ Most of what is left is a column
+    ///     either side of the limit.
+    /// </remarks>
+    public static bool BreaksBeforeTheValue(int equals, int name, int fragment, int below) =>
+        FitsBelow(equals, name, fragment, below) && FragmentIsShort(equals, name, fragment);
+
+    /// <summary>
+    ///     <see cref="BreaksBeforeTheValue" />'s first question: does the value fit below by the measured
+    ///     limit.
+    /// </summary>
+    public static bool FitsBelow(int equals, int name, int fragment, int below) =>
+        below <= ValueLimit(equals, name, fragment);
+
+    /// <summary>
+    ///     <see cref="BreaksBeforeTheValue" />'s second question: is the fragment short against the
+    ///     name.
+    /// </summary>
+    public static bool FragmentIsShort(int equals, int name, int fragment) {
+        if (name >= 6) {
+            return name >= 8 || fragment <= 51;
+        }
+
+        var floor = 3 * name + 7;
+        var bump = equals switch {
+            < 84 => 0,
+            84 => 1,
+            85 => 3,
+            86 => 4,
+            87 => 5,
+            88 => 7,
+            _ => 999
+        };
+
+        var cap = name switch {
+            1 => 15,
+            2 => 20,
+            _ => 999
+        };
+
+        return fragment <= Math.Min(floor + bump, Math.Max(floor, cap));
+    }
+
+    static int ValueLimit(int equals, int name, int fragment) {
+        if (name < 8 && fragment <= 5 && equals >= 88) {
+            return int.MaxValue;
+        }
+
+        var small = name >= 8 && 4 * fragment <= name + 4 ? int.MaxValue / 2
+            : name < 8 && fragment <= 15 ? fragment <= 5 ? 111 : fragment <= 8 ? 110 : 109
+            : fragment > 11 ? (int)Math.Floor(Math.Max(99, 109 - 0.3 * (fragment - 11))) + (name >= 16 ? 1 : 0)
+            : fragment <= 5 ? 112
+            : 109 + (name >= 12 ? 1 : 0) + (name >= 20 ? 1 : 0);
+        var steep = 119 - Math.Max(0, Math.Min(fragment, 11) - 5) / 2.0 - Math.Max(0, fragment - 11) / 3.0;
+        var large = name >= 26 ? (int)Math.Floor(steep - name / 4.0) : int.MaxValue / 2;
+        var bump = Math.Max(0, equals - 83) / 2;
+        if (name < 8) {
+            bump = Math.Min(bump, fragment <= 8 ? 2 : fragment <= 13 ? 1 : 0);
+        }
+
+        return Math.Min(small, large) + bump;
+    }
+
+    /// <summary>
     ///     The column a sole lambda argument's arrow has to reach for it to break over an operand-chain or
     ///     binary-pattern body (#578): the larger of 20 and the smaller of a ceiling the parameters and the
     ///     first operand set and a column that rises with the line's end.
@@ -56,7 +238,37 @@ public static class EqualsFloor {
     ///     under parameter texts of 36 differ, all within a column of the boundary; past 36 the oracle is not monotone
     ///     and the rule is not measured.
     /// </remarks>
-    public static bool BreaksTheOperandArrow(int arrow, int parameters, int first, int end) {
+    /// <param name="patternLeft">
+    ///     ⚠ For a body that is <c>left is A or B …</c> rather than an operand chain, the width of <c>left</c>; zero
+    ///     for a chain (#586). The pattern's constants are its own. With <c>t = min(first, left + 28)</c> — the
+    ///     first operand, its type capped at 24 columns — the ceiling is
+    ///     <c>⌊2.75·(params + t) − 56 − 0.88·(left − 1) + (first − t)/8⌋</c>, and the line column has no
+    ///     first-operand bonus but a deficit, <c>max(0, 10 + left − 0.375·t)</c>: a wide tested expression lowers
+    ///     both, a wide type raises both until it passes 24. Measured with <c>Testing ask</c> on
+    ///     <c>U(params =&gt; left is A… or B… or C…);</c> and <c>var g = i….Where(…);</c>: parameter texts of 1 to
+    ///     30, tested expressions of 1 to 12, first operands of 8 to 58, the arrow at 15 to 98 one column at a time
+    ///     at a 200-column line and at lines of 116 to 176 — 30 817 cells, of which the operand chain's constants
+    ///     missed 2 433 and these miss 49 — and validated on 3 781 random cells (ten parameter texts, eight tested
+    ///     expressions, types of 3 to 40, lines of 118 to 200, either context, the remaining operands split at
+    ///     random), where the chain's constants miss 540 and these 15.
+    /// </param>
+    public static bool BreaksTheOperandArrow(int arrow, int parameters, int first, int end, int patternLeft = 0) {
+        if (patternLeft > 0) {
+            var capped = Math.Min(first, patternLeft + 28);
+            var patternCeiling = Math.Min(
+                85,
+                Math.Min(
+                    (int)Math.Floor(
+                        2.75 * (parameters + capped) - 56 - 0.88 * (patternLeft - 1) + (first - capped) / 8.0
+                    ),
+                    120 - first
+                )
+            );
+            var patternLine = (27.0 * end + 9 * parameters - 2832) / 30
+                - Math.Max(0, 10 + patternLeft - 0.375 * capped);
+            return arrow >= Math.Max(20, Math.Min(patternCeiling, patternLine));
+        }
+
         var ceiling = Math.Min(
             85,
             Math.Min(
@@ -68,6 +280,46 @@ public static class EqualsFloor {
         return arrow >= Math.Max(20, Math.Min(ceiling, line));
     }
 
+
+    /// <summary>
+    ///     Whether a local's lambda over a call with two or more arguments breaks its arrow past the margin, rather
+    ///     than keeping it and chopping the call's arguments (#453): the <c>=</c> ends at column
+    ///     <paramref name="head" />, the call's <c>(</c> stands at <paramref name="paren" /> and its argument list
+    ///     is <paramref name="arguments" /> wide.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> on <c>Func&lt;T…&gt; n = () =&gt; C…(xxx, yyy);</c>, heads of 16 to 76
+    ///     four apart, the <c>(</c> and the argument list one column at a time — 53 681 cells, every row one clean
+    ///     threshold — and the head alone decides under a name of nine columns or fewer: the same head made of a
+    ///     wider type or a wider name reads the same row. The arrow breaks while the arguments are narrower than
+    ///     a floor that falls 0.4 a column from 65 where the <c>(</c> is 38 columns past the head, and rises 0.18 a
+    ///     column after, 0.41 higher per column of head; with the <c>(</c> nearer the head than
+    ///     <c>min(38, 62 − head/2)</c> columns the arguments always chop. 45 cells differ, within a column of
+    ///     the floor. Validated on 10 225 cells of names of 1, 5 and 9 under six types (4 differ), and on 4 000
+    ///     random cells — <c>var</c>, <c>Action</c>, <c>Func&lt;…&gt;</c> and bare types, six parameter lists, two
+    ///     to four arguments: 9 of 3 173 differ. ⚠ A single argument does not follow it (half of 827 cells
+    ///     differ) and is left to the head rule.
+    /// </remarks>
+    /// <param name="oneArgument">
+    ///     ⚠ The call has one argument (#453). Its floor is the same two lines raised by 21.25 columns, falling
+    ///     0.41 a column, with no column below which the arguments always chop: measured on the same grid with a
+    ///     one-name argument, 53 602 cells, 60 within a column of the floor differ.
+    /// </param>
+    public static bool BreaksTheCallArrow(int head, int paren, int arguments, bool oneArgument = false) {
+        if (oneArgument) {
+            var oneFall = 65 - 0.41 * (paren - head - 38);
+            var oneRise = 58.25 + 0.41 * (head - 16) + 0.18 * (paren - 117);
+            return arguments < Math.Floor(Math.Max(oneFall, oneRise) + 21.25 + 0.3);
+        }
+
+        if (paren < Math.Min(head + 38, 62 + head / 2.0)) {
+            return false;
+        }
+
+        var fall = 65 - 0.4 * (paren - head - 38);
+        var rise = 58.25 + 0.41 * (head - 16) + 0.18 * (paren - 117);
+        return arguments < Math.Floor(Math.Max(fall, rise) + 0.4);
+    }
 
     /// <summary>
     ///     Whether a local's lambda with a bare-name body, on a line that ends exactly one column past the
