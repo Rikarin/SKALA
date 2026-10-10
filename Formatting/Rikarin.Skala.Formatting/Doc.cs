@@ -1333,6 +1333,10 @@ public sealed class Document {
 ///     Before a call the <c>=</c> stays unless <see cref="EqualsFloor.NameReachesTheCall" />; before a plain member
 ///     value it breaks by <see cref="EqualsFloor.BreaksBeforeTheValue" />. Zero leaves both rules off.
 /// </param>
+/// <param name="EqualsNameAttributed">
+///     With <see cref="EqualsName" />: the field carries attribute lists, whose joined line
+///     <see cref="EqualsFloor.LongFieldNameFloor" /> was not measured on (a joined <c>[A] /* c */</c> line chops).
+/// </param>
 /// <param name="OrLeft">
 ///     ⚠ An <c>=</c> whose value is <c>X || Y</c>, written on one line, with <c>X</c> an <c>&amp;&amp;</c> chain or an
 ///     <c>is</c> pattern: <c>X</c>'s flat width (#579, SK-DIV-0403). When <c>X</c> does not fit beside the <c>=</c>
@@ -1430,7 +1434,10 @@ public sealed class Document {
 ///     band alike, it answers whether the dot takes the break: see <c>Fitter.TheDotTakesTheBreak</c>.
 /// </param>
 /// <param name="TypeTestReceiver">With <see cref="TypeTestTail" />: the receiver's width, up to the dot.</param>
-/// <param name="TypeTestOperand">With <see cref="TypeTestTail" />: the operand's width, receiver, dot and member.</param>
+/// <param name="TypeTestOperand">
+///     With <see cref="TypeTestTail" />: the operand's width, receiver, dot and
+///     member.
+/// </param>
 /// <param name="TypeTestKeyword">With <see cref="TypeTestTail" />: the keyword's width, <c>is</c> or <c>as</c>.</param>
 /// <param name="TypeTestType">With <see cref="TypeTestTail" />: the type's width, without the <c>;</c>.</param>
 /// <param name="ModifierFillHead">
@@ -1450,8 +1457,14 @@ public sealed class Document {
 ///     <c>h</c> the width from its <c>[</c> to its <c>(</c>. Otherwise the section stays whole and the parameter goes
 ///     below it alone. See <c>Fitter.ChopsBeforeTheParameter</c>.
 /// </param>
-/// <param name="SectionHead">With <see cref="ParameterAfterSection" />: the width from the <c>[</c> to the <c>(</c>.</param>
-/// <param name="SectionWidth">With <see cref="ParameterAfterSection" />: the section's flat width, <c>[</c> to <c>]</c>.</param>
+/// <param name="SectionHead">
+///     With <see cref="ParameterAfterSection" />: the width from the <c>[</c> to the
+///     <c>(</c>.
+/// </param>
+/// <param name="SectionWidth">
+///     With <see cref="ParameterAfterSection" />: the section's flat width, <c>[</c> to
+///     <c>]</c>.
+/// </param>
 /// <param name="ValueHeadCallee">
 ///     ⚠ With <see cref="ValueHeadWidth" />, a condition that is a call on a name: the width from the name through
 ///     its <c>(</c>. The <c>=</c> breaks whenever that <c>(</c> would land past the margin beside it (#596).
@@ -1541,6 +1554,7 @@ public readonly record struct GroupFacts(
     int MemberHeadWidth = 0,
     int EqualsName = 0,
     int[]? MemberLinks = null,
+    bool EqualsNameAttributed = false,
     int OrLeft = 0,
     int OrRight = 0,
     int OrHead = 0,

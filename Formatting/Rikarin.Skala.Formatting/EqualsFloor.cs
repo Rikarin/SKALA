@@ -61,6 +61,19 @@ public static class EqualsFloor {
     public static bool NameReachesTheCall(int name, int callee, int paren) => 2 * (name + callee) + paren >= 163;
 
     /// <summary>
+    ///     A field whose name is 31 columns or more, its call's <c>(</c> at column 76 or left of it: the widest
+    ///     argument list (inside the parentheses) that still breaks the <c>=</c> — 62 at a name of 30, a column less
+    ///     per three of name (round 2 of #589, SK-DIV-0400).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on <c>public T name = Compute(a, …);</c> and
+    ///     <c>new Foo(…)</c> fields at indent 4, names 30 to 56, the <c>(</c> at 48 to 99: 62 at 30, 60 at 34, 58 at 40
+    ///     and 56 at 48, flat in the <c>(</c>. The field table's own rows there read the overflow, which chops all of
+    ///     them; a name of 30 breaks only with the <c>(</c> left of 64 and is left to the table.
+    /// </remarks>
+    public static int LongFieldNameFloor(int name) => 62 - (name - 30) / 3;
+
+    /// <summary>
     ///     For <c>v = X || Y</c> whose <c>X</c> does not fit beside the <c>=</c>: the head, statement start through the
     ///     <c>=</c>, from which the <c>=</c> breaks; <see cref="int.MaxValue" /> when it never does (#579,
     ///     SK-DIV-0403).
@@ -188,8 +201,8 @@ public static class EqualsFloor {
         }
 
         var small = name >= 8 && 4 * fragment <= name + 4 ? int.MaxValue / 2
+            : name < 8 && fragment <= 15 ? fragment <= 5 ? 111 : fragment <= 8 ? 110 : 109
             : fragment > 11 ? (int)Math.Floor(Math.Max(99, 109 - 0.3 * (fragment - 11))) + (name >= 16 ? 1 : 0)
-            : name < 8 ? fragment <= 5 ? 111 : fragment <= 8 ? 110 : 109
             : fragment <= 5 ? 112
             : 109 + (name >= 12 ? 1 : 0) + (name >= 20 ? 1 : 0);
         var steep = 119 - Math.Max(0, Math.Min(fragment, 11) - 5) / 2.0 - Math.Max(0, fragment - 11) / 3.0;
