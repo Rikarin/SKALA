@@ -350,6 +350,18 @@ public sealed class Fitter {
                             : ResolvedMode.Broken;
                 }
 
+                // ⚠ A head of five columns or fewer keeps its `=` once the value's type argument list closes past the
+                // margin, and the list fills (#610). See GroupFacts.ShortHeadTypeEnd.
+                // ⚠ And on a line one column over, though the value would fit below.
+                if (facts.ShortHeadTypeEnd > 0
+                    && m.PointWidth < Unbounded
+                    && (!Fits(m.Column, m.PointWidth + 1 + facts.ShortHeadTypeEnd)
+                        || m.FlatWidth < Unbounded
+                        && m.Trailing < Unbounded
+                        && m.Column + m.FlatWidth + m.Trailing == width + 1)) {
+                    return ResolvedMode.Flat;
+                }
+
                 // ⚠ A field's modifiers and its generic type: the type fills on the modifiers' line by the measured
                 // rule rather than moving below them. See GroupFacts.ModifierFillHead (#540).
                 if (facts.ModifierFillName > 0 && FillsAfterTheModifiers(facts, lineStart)) {
@@ -513,8 +525,9 @@ public sealed class Fitter {
                 if (facts.CalleeWidth > 0
                     && facts.BreaksIfTooLong
                     && !Fits(m.Column, m.BreakWidth, m.Trailing)
-                    && (facts.CalleeOwner != EqualsOwner.Field || m.ContinuationColumn - indentWidth == 4)) {
-                    return EqualsBeforeACall(facts, m, lineStart);
+                    && (facts.CalleeOwner != EqualsOwner.Field || m.ContinuationColumn - indentWidth == 4)
+                    && EqualsBeforeACall(facts, m, lineStart) is { } callMode) {
+                    return callMode;
                 }
 
                 // ⚠ Broken exactly when the keyword is what overflows. See GroupFacts.KeywordWidth.
@@ -869,10 +882,35 @@ public sealed class Fitter {
         );
     }
 
-    /// <summary>See <see cref="GroupFacts.CalleeWidth" />.</summary>
-    ResolvedMode EqualsBeforeACall(in GroupFacts facts, in Measures m, int lineStart) {
-        if (m.PointWidth >= Unbounded || !HeadIsWideEnough(facts, m, lineStart)) {
+    /// <summary>
+    ///     See <see cref="GroupFacts.CalleeWidth" />. Null for a call with one argument behind a head narrower than the
+    ///     floor's that the rule for it does not break, which the ordering rule decides as it always did.
+    /// </summary>
+    ResolvedMode? EqualsBeforeACall(in GroupFacts facts, in Measures m, int lineStart) {
+        if (m.PointWidth >= Unbounded) {
             return ResolvedMode.Flat;
+        }
+
+        // ⚠ Behind a head under twelve the `=` breaks when the call's `(` lands past the margin, whatever the arguments
+        // (#610): measured 2026-10-10 with `Testing ask` on 896 rows of two arguments, heads of 3 to 10, plain and
+        // generic calls and creations, the `(` at 100 to 128 — every row with the `(` at 121 or further breaks, where
+        // the head rule kept the `=` and chopped. ⚠ A generic value whose `>` is past the margin behind a head of five
+        // or fewer has been answered already (GroupFacts.ShortHeadTypeEnd).
+        // ⚠ And with one argument, when the head is wide enough for it by the measured line; otherwise the ordering
+        // rule decides, as it did before the floor took one argument. See GroupFacts.CalleeArgument.
+        if (!HeadIsWideEnough(facts, m, lineStart)) {
+            var open = m.Column + m.PointWidth + 1 + facts.CalleeWidth + 1;
+            if (open > width) {
+                return ResolvedMode.Broken;
+            }
+
+            if (facts.CalleeArgument <= 0) {
+                return ResolvedMode.Flat;
+            }
+
+            var head = HeadWidth(facts, m, lineStart);
+            var statement = m.ContinuationColumn - indentWidth;
+            return 24 * (head - 6) - 3 * (statement - 8) >= 4 * facts.CalleeArgument ? ResolvedMode.Broken : null;
         }
 
         // The value starts one space past the point; its `(` follows the callee. Columns are 1-based in
@@ -1108,6 +1146,17 @@ public sealed class Fitter {
 
         var from = resolved[owner] && enteredOn[owner] == m.Line ? enteredAt[owner] : lineStart;
         return m.Column + m.PointWidth - from >= facts.MinimumHead;
+    }
+
+    /// <summary>The head <see cref="HeadIsWideEnough" /> measures, through the group's own point.</summary>
+    int HeadWidth(in GroupFacts facts, in Measures m, int lineStart) {
+        var owner = facts.Owner;
+        if (owner < 0) {
+            return m.PointWidth;
+        }
+
+        var from = resolved[owner] && enteredOn[owner] == m.Line ? enteredAt[owner] : lineStart;
+        return m.Column + m.PointWidth - from;
     }
 
     /// <summary>
