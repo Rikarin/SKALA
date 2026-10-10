@@ -9147,7 +9147,14 @@ public sealed class BreakPlan {
                 MeasuresHead: true,
                 Terminator: wrapsInside ? 1 : WholeLine,
                 DeclineHead: declineHead,
-                DeclineName: declineName
+                DeclineName: declineName,
+                DeclinePrefix: declineHead > 0
+                    ? FormattedWidth(node.GetFirstToken(), close)
+                    + close.TrailingTrivia.Concat(next.LeadingTrivia)
+                        .Where(IsBlockComment)
+                        .Sum(static comment => 1 + comment.Span.Length)
+                    + 1
+                    : 0
             )
         );
     }

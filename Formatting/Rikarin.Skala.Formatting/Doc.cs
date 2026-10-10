@@ -1344,6 +1344,11 @@ public sealed class Document {
 ///     <see cref="EqualsFloor.DeclinesTheJoin" />; zero for any other group.
 /// </param>
 /// <param name="DeclineName">With <see cref="DeclineHead" />: the declared name's width.</param>
+/// <param name="DeclinePrefix">
+///     With <see cref="DeclineHead" />: the width of the attribute sections and the comment, their spaces included —
+///     read from the syntax, since a section's own arguments (<c>[DataMember(Order = 1)]</c>) end the group's point
+///     width early.
+/// </param>
 /// <param name="OrLeft">
 ///     ⚠ An <c>=</c> whose value is <c>X || Y</c>, written on one line, with <c>X</c> an <c>&amp;&amp;</c> chain or an
 ///     <c>is</c> pattern: <c>X</c>'s flat width (#579, SK-DIV-0403). When <c>X</c> does not fit beside the <c>=</c>
@@ -1555,6 +1560,7 @@ public readonly record struct GroupFacts(
     bool EqualsNameAttributed = false,
     int DeclineHead = 0,
     int DeclineName = 0,
+    int DeclinePrefix = 0,
     int OrLeft = 0,
     int OrRight = 0,
     int OrHead = 0,

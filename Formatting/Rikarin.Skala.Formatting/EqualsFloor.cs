@@ -44,12 +44,19 @@ public static class EqualsFloor {
     ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 9 000 fields: prefixes of 16 to 28 (<c>/**/</c> to a
     ///     nine-letter comment), heads of 16 to 40 split between type and name, names of 1, 6 and 12, values that are a
     ///     binary chain, an identifier, a string, a member chain and a conditional, lines of 121 to 165. The value's
-    ///     shape does not matter and the name does: declined exactly while <c>4·(end − prefix) − 3·head + 5·name ≤ 432</c>,
-    ///     8 874 of 9 000 cells; the 126 others are a column or two off it, most behind a member chain. #504's "declined at
+    ///     shape does not matter and the name does. Then 4 536 more over the attribute's width (<c>[A]</c> to 32 columns,
+    ///     <c>[DataMember(Order = 1)]</c> among them) and comments of 4 to 15, after a fresh random probe failed the first
+    ///     cut on long attributes: what counts is the whole prefix, and a prefix of 12 or less never declines. Declined
+    ///     exactly while the prefix is 13 or more and <c>4·(end − prefix) − 3·head + 5·min(name, 24) + max(0, prefix − 24) ≤ 436</c>:
+    ///     13 673 of 13 830 cells, the rest a column or two off it, most behind a member chain; the name stops counting
+    ///     past 24 (a second probe's names ran to 30). Three fresh random probes of 1 500 commented fields each — owners,
+    ///     attributes, comments, types, names to 30 and values drawn at random — went 828 → 1 440, 875 → 1 462 and
+    ///     841 → 1 465 in the decline decision. ⚠ <c>end − prefix</c> is the
+    ///     declaration's own line: it is declined while that line, the head and the name allow, and #504's "declined at
     ///     every overflowing width" was the band below 134 that measurement swept.
     /// </remarks>
     public static bool DeclinesTheJoin(int end, int prefix, int head, int name) =>
-        4 * (end - prefix) - 3 * head + 5 * name <= 432;
+        prefix >= 13 && 4 * (end - prefix) - 3 * head + 5 * Math.Min(name, 24) + Math.Max(0, prefix - 24) <= 436;
 
     /// <summary>
     ///     Whether an <c>=</c> before a call with two or more arguments may break at all: the name it assigns,

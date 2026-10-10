@@ -571,7 +571,7 @@ public sealed class Fitter {
                         && !Fits(m.Column, m.FlatWidth, m.Trailing)) {
                         return EqualsFloor.DeclinesTheJoin(
                             m.Column + m.FlatWidth + m.Trailing,
-                            m.PointWidth + 2,
+                            facts.DeclinePrefix,
                             facts.DeclineHead,
                             facts.DeclineName
                         )
