@@ -1410,6 +1410,17 @@ public sealed class Fitter {
         var parenBelow = continuation + facts.HeldValueReceiver + facts.HeldValueHead;
         var parenBeside = valueColumn + facts.HeldValueReceiver + facts.HeldValueHead;
         switch (facts.HeldValue) {
+            case 1 when facts.HeldValueTypedHead > 0:
+                // ⚠ By the measured limit on the line below, which the callee's width moves (SK-DIV-0005, round 3);
+                // or, as before, when the head with the receiver beside it is wider than 87 columns.
+                return EqualsFloor.HeldTypedLocalBreaks(
+                        facts.HeldValueTypedHead,
+                        facts.HeldValueType,
+                        below,
+                        facts.HeldValueReceiver + facts.HeldValueHead - 2,
+                        continuation - indentWidth
+                    )
+                    || valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd;
             case 1:
                 // ⚠ Or when the head with the receiver beside it is wider than 87 columns: `T… c = JsonConvert`
                 // holds to 87 and breaks from 88, counted from the statement (h12 at indent 8, on one call

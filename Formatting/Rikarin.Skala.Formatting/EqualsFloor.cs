@@ -34,6 +34,27 @@ public enum EqualsOwner {
 
 public static class EqualsFloor {
     /// <summary>
+    ///     Whether a typed local's <c>=</c> breaks before a single call on a receiver,
+    ///     <c>T name = Receiver.Method(…);</c>, when the value does not fit beside it: a head of twelve or more, and a
+    ///     line below short enough for the callee (SK-DIV-0005, round 3 of the name reading).
+    /// </summary>
+    /// <param name="head">The head from the statement's start through the <c>=</c>.</param>
+    /// <param name="type">The written type's width.</param>
+    /// <param name="below">The column the value would end at below, its <c>;</c> included, 1-based.</param>
+    /// <param name="callee">The receiver's and the method name's widths together.</param>
+    /// <param name="indent">The statement's indent.</param>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 2 640 cells — types of 3 to 24, names of 2 to 16,
+    ///     receivers of 4 to 13, method names of 5 and 14, indents 8 and 16, lines below ending at 106 to 121. The #528
+    ///     rule's "fits below with three columns to spare" (117) was a single callee width: the limit moves two columns per
+    ///     three of callee, from 107 behind <c>Rrrr.Mmmmm</c> to 118 behind 27 columns of callee, a column lower per three
+    ///     of indent, and lower again behind a type past 16. A head under twelve never breaks (<c>byte[] da =</c>). 2 550
+    ///     of the 2 640 cells agree; #528's rule agreed on 1 513.
+    /// </remarks>
+    public static bool HeldTypedLocalBreaks(int head, int type, int below, int callee, int indent) =>
+        head >= 12 && 3 * below - 2 * callee + indent + Math.Max(0, type - 16) <= 310;
+
+    /// <summary>
     ///     Whether <c>[A] /* c */ public T name = value;</c> past the margin keeps the attribute and the comment on a line
     ///     of their own (the join declined) rather than joining and breaking after the <c>=</c>: the joined line ending
     ///     at <paramref name="end" />, the prefix through the comment and its space <paramref name="prefix" /> wide, the

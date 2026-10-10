@@ -1349,6 +1349,11 @@ public sealed class Document {
 ///     read from the syntax, since a section's own arguments (<c>[DataMember(Order = 1)]</c>) end the group's point
 ///     width early.
 /// </param>
+/// <param name="HeldValueTypedHead">
+///     With <see cref="HeldValue" /> 1, a typed local: the head from the statement's start through the <c>=</c>
+///     (SK-DIV-0005, round 3 of the name reading). See <see cref="EqualsFloor.HeldTypedLocalBreaks" />.
+/// </param>
+/// <param name="HeldValueType">With <see cref="HeldValueTypedHead" />: the written type's width.</param>
 /// <param name="OrLeft">
 ///     ⚠ An <c>=</c> whose value is <c>X || Y</c>, written on one line, with <c>X</c> an <c>&amp;&amp;</c> chain or an
 ///     <c>is</c> pattern: <c>X</c>'s flat width (#579, SK-DIV-0403). When <c>X</c> does not fit beside the <c>=</c>
@@ -1530,6 +1535,8 @@ public readonly record struct GroupFacts(
     int HeldValueReceiver = 0,
     int HeldValueHead = 0,
     bool HeldValueManyArgs = false,
+    int HeldValueTypedHead = 0,
+    int HeldValueType = 0,
     int ArmHead = 0,
     int ArmBody = 0,
     bool LiftsThroughInnerBreaks = false,

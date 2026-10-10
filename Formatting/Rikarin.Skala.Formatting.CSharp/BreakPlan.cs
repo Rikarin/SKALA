@@ -5821,6 +5821,12 @@ public sealed class BreakPlan {
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
+                    HeldValueTypedHead: heldCall is not null && heldKind == 1 ? HeadWidthThroughEquals(node, equals) : 0,
+                    HeldValueType: heldCall is not null
+                    && heldKind == 1
+                    && node.Parent?.Parent is VariableDeclarationSyntax heldDeclaration
+                        ? FormattedWidth(heldDeclaration.Type)
+                        : 0,
                     CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner)
                 ),
                 true,
