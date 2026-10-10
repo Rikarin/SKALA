@@ -7496,8 +7496,11 @@ public sealed class BreakPlan {
         }
 
         var head = inner switch {
-            InvocationExpressionSyntax { Expression: IdentifierNameSyntax or GenericNameSyntax, ArgumentList.Arguments.Count: > 0 } => 68,
-            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax } or MemberAccessExpressionSyntax => 26,
+            InvocationExpressionSyntax {
+                Expression: IdentifierNameSyntax or GenericNameSyntax, ArgumentList.Arguments.Count: > 0
+            } => 68,
+            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax }
+                or MemberAccessExpressionSyntax => 26,
             BinaryExpressionSyntax binary when !IsTypeTest(binary) => 24,
             ParenthesizedExpressionSyntax => 24,
             _ => 0
