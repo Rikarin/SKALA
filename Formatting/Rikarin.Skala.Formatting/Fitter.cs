@@ -383,8 +383,12 @@ public sealed class Fitter {
                 // ⚠ And it breaks whenever the fill would leave too short a fragment beside it for the name it
                 // assigns, the value then fitting below by the measured limit (#590). See
                 // EqualsFloor.BreaksBeforeTheValue.
+                // ⚠ Only on a line the `=` group can measure whole: an author's break before the `=` makes the flat
+                // width unbounded, and reading that as "the line overflows" broke `Value` / `= property.Value;` after
+                // its `=` on pass two (#608, Nightly seed 9342835643250235022).
                 if (facts is { MemberHeadWidth: > 0, EqualsName: > 0 }
                     && m.PointWidth < Unbounded
+                    && m.FlatWidth < Unbounded
                     && tail < Unbounded
                     && m.Trailing < Unbounded
                     && !Fits(m.Column, m.FlatWidth, m.Trailing)) {
