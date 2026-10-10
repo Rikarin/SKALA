@@ -16,6 +16,14 @@ public sealed class LambdaArrowFloorIssue453586Tests {
         Assert.Equal(once, Format.Text(once).ReplaceLineEndings("\n"));
     }
 
+    static string WrapInAClass(string member) => "class C {\n" + member + "}\n";
+
+    static void AgreesInAClass(string member, string expected) {
+        var once = Format.Text(WrapInAClass(member)).ReplaceLineEndings("\n");
+        Assert.Equal(WrapInAClass(expected), once);
+        Assert.Equal(once, Format.Text(once).ReplaceLineEndings("\n"));
+    }
+
     /// <summary>Head 20, the <c>(</c> at 86: a 53-column argument list moves below the arrow.</summary>
     [Fact]
     public void TwoArguments_UnderTheFloor_BreakTheArrow() =>
@@ -154,6 +162,65 @@ public sealed class LambdaArrowFloorIssue453586Tests {
             "        var g = ii.Where(static node => x is AAAAAAAAAAAAAAAAAAAAA\n"
             + "                or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\n"
             + "                or CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n"
+            + "            )\n"
+            + "            .ToList();\n"
+        );
+
+    /// <summary>A 22-column name under a 32-column type: the `=` reaches 31 columns past the margin.</summary>
+    [Fact]
+    public void WideName_WithinTheReach_BreaksTheEquals() =>
+        Agrees(
+            "        Func<TTTTTTTTTTTTTTTTTTTTTTTTTT> nnnnnnnnnnnnnnnnnnnnnn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyy);\n",
+            "        Func<TTTTTTTTTTTTTTTTTTTTTTTTTT> nnnnnnnnnnnnnnnnnnnnnn =\n"
+            + "            () => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyy);\n"
+        );
+
+    /// <summary>One column further, and the `=` stays; the arrow decides.</summary>
+    [Fact]
+    public void WideName_PastTheReach_KeepsTheEquals() =>
+        Agrees(
+            "        Func<TTTTTTTTTTTTTTTTTTTTTTTTTT> nnnnnnnnnnnnnnnnnnnnnn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyy);\n",
+            "        Func<TTTTTTTTTTTTTTTTTTTTTTTTTT> nnnnnnnnnnnnnnnnnnnnnn = () =>\n"
+            + "            CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyy);\n"
+        );
+
+    /// <summary>A ten-column name: the `=` never breaks before a lambda over a call.</summary>
+    [Fact]
+    public void TenColumnName_NeverBreaksTheEquals() =>
+        Agrees(
+            "        Func<TTTTTTTTTTTTTT> nnnnnnnnnn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxx, yyyyy);\n",
+            "        Func<TTTTTTTTTTTTTT> nnnnnnnnnn = () =>\n"
+            + "            CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxx, yyyyy);\n"
+        );
+
+    /// <summary>A field: the `=` stays and the arrow breaks below its floor.</summary>
+    [Fact]
+    public void Field_KeepsTheEquals_AndBreaksTheArrow() =>
+        AgreesInAClass(
+            "    Func<TTTTTTTTTTTTTTTTTTTTTTTTT> nnnnnnnnn = () => CCCCCCCCCCCCC(ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp);\n",
+            "    Func<TTTTTTTTTTTTTTTTTTTTTTTTT> nnnnnnnnn = () =>\n"
+            + "        CCCCCCCCCCCCC(ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp);\n"
+        );
+
+    /// <summary>An assignment to a target of three columns or fewer chops the arguments, whatever their width.</summary>
+    [Fact]
+    public void ShortAssignmentTarget_AlwaysChops() =>
+        Agrees(
+            "        nn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(pppppppppppppppp, qqqqqqqqqqqqqqqqq);\n",
+            "        nn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(\n"
+            + "            pppppppppppppppp,\n"
+            + "            qqqqqqqqqqqqqqqqq\n"
+            + "        );\n"
+        );
+
+    /// <summary>A receiver lambda's <c>&amp;&amp;</c> chain chopped beside the arrow: one level past the `)`.</summary>
+    [Fact]
+    public void ReceiverLambda_OperandChain_TakesItsOwnLevel() =>
+        Agrees(
+            "        var g = ii.Where(nnnnnnnnnnnnnnnnnnnn => aaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccccccccccccccccc).ToList();\n",
+            "        var g = ii.Where(nnnnnnnnnnnnnnnnnnnn => aaaaaaaaaaaaaaaaaaaa\n"
+            + "                && bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n"
+            + "                && ccccccccccccccccccccccccccccccccccccc\n"
             + "            )\n"
             + "            .ToList();\n"
         );
