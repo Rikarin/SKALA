@@ -473,6 +473,7 @@ public sealed class BreakPlan {
         plan.SettleOneOverNames();
         plan.SettleOpenBraces(root);
         plan.SettleParenthesisedCollections(root);
+        plan.SettleTypeTestHolds();
         plan.CollectForcedBreaks();
         return plan;
     }
@@ -4749,6 +4750,12 @@ public sealed class BreakPlan {
         // ⚠ And it is one level past that *line*, not past everything open on it (#445): inside a lambda
         // that is an argument, `nodes.Count(c => c.Parent` / `is ArgumentSyntax` is four columns in, not
         // eight. IndentKind.FromLine.
+        // ⚠ A sole lambda's whole body stacks only while its operand's argument list breaks (#602).
+        var heldAgainst = StacksWhileItsArgumentsBreak(node, keyword);
+        if (heldAgainst is not null) {
+            pendingTypeTestHolds.Add((group, heldAgainst));
+        }
+
         Describe(
             node,
             new(
@@ -4761,9 +4768,10 @@ public sealed class BreakPlan {
                 new(BreaksIfTooLong: true, Continues: BreaksBefore(keyword)),
                 // ⚠ Or, where the author broke before the keyword, a level of its own on top of what is open
                 // around it (#597, see StacksItsLevel).
-                FromLine: !IsAHeaderCondition(node) && !StacksItsLevel(node, keyword),
-                OwnLevel: StacksItsLevel(node, keyword),
-                AdditiveLevel: StacksItsLevel(node, keyword) && IsALogicalOperand(node)
+                FromLine: !IsAHeaderCondition(node) && !StacksItsLevel(node, keyword) && heldAgainst is null,
+                OwnLevel: StacksItsLevel(node, keyword) || heldAgainst is not null,
+                AdditiveLevel: StacksItsLevel(node, keyword) && IsALogicalOperand(node),
+                HoldsLevel: heldAgainst is not null ? HeldLevel.WhileArrowFlat : HeldLevel.None
             )
         );
 
@@ -4819,6 +4827,50 @@ public sealed class BreakPlan {
                 or ArgumentSyntax
             || top != node && top.Parent is LambdaExpressionSyntax
             || IsAHeaderCondition(top);
+    }
+
+    /// <summary>
+    ///     For a type test the author broke before its keyword that is a sole lambda's whole body, the argument list
+    ///     on its operand's spine whose break gives the test its stacked level (#602); null otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured by group S on #597's grid: <c>Use(x =&gt; call(</c> / the arguments / <c>)</c> / <c>is T</c> puts the
+    ///     arguments two levels past the statement and the <c>)</c> and <c>is</c> one — the stacked layout — while
+    ///     <c>Use(x =&gt; call(a, b, c)</c> / <c>is T</c> keeps #445's one level past the line. Which one is a layout
+    ///     fact, so the level is held while the list stays flat (<see cref="HeldLevel.WhileArrowFlat" />, its slot
+    ///     naming the list's group, resolved by <see cref="SettleTypeTestHolds" />).
+    /// </remarks>
+    ArgumentListSyntax? StacksWhileItsArgumentsBreak(SyntaxNode node, SyntaxToken keyword) {
+        if (!BreaksBefore(keyword) || IsAHeaderCondition(node) || node.Parent is not LambdaExpressionSyntax) {
+            return null;
+        }
+
+        var operand = node switch {
+            BinaryExpressionSyntax binary => binary.Left,
+            IsPatternExpressionSyntax test => test.Expression,
+            _ => null
+        };
+
+        while (operand is MemberAccessExpressionSyntax access) {
+            operand = access.Expression;
+        }
+
+        return operand is InvocationExpressionSyntax { ArgumentList.Arguments.Count: > 0 } call ? call.ArgumentList : null;
+    }
+
+    /// <summary>The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the list each is held against.</summary>
+    readonly List<(int Group, ArgumentListSyntax Arguments)> pendingTypeTestHolds = [];
+
+    /// <summary>
+    ///     Names each held type test's argument-list group in <see cref="ArrowHeldAgainst" />'s slot, once the walk
+    ///     has planned the list; a list with no group leaves the test unheld, which spends the level.
+    /// </summary>
+    void SettleTypeTestHolds() {
+        foreach (var (group, arguments) in pendingTypeTestHolds) {
+            if (groups.TryGetValue(Key(arguments), out var plans) && plans.Count > 0) {
+                arrowHeldAgainst[group] = plans[^1].Id;
+            }
+        }
     }
 
     /// <summary>Whether a chain is the operand of a type test that <see cref="StacksItsLevel" />.</summary>
