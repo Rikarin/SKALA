@@ -209,6 +209,68 @@ public sealed class CollectionBrokenAfterItsBracketNightlyTests {
                                 }
                                 """;
 
+    // ⚠ Holding an argument list the author broke after a comma (#607): the list chops, so the collection is
+    // broken and its `[` stays beside the element before it. A break before the comma is joined, and the
+    // collection with it (the last row). Measured 2026-10-10 with `Testing ask` on 36 rows (calls, a nested call,
+    // a creation, a member call, a lambda argument, bracketed arguments, breaks after a `(` and before a comma,
+    // a binary and a spread; three positions).
+    const string ArgumentsSource = """
+                                   class C {
+                                       void M() {
+                                           var v01 = new[] { sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [null, F(a,
+                                    b)], (1.5d & 86887 || "ss" | 3_000_000L), Compute("sss"), _cache };
+                                           var v17 = new[] { sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [null, new T(a,
+                                    b)] };
+                                           var v34 = new[] { sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [null, d[a,
+                                    b]], (1.5d & 86887 || "ss" | 3_000_000L), Compute("sss"), _cache };
+                                           var v10 = new[] { sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [null, F(a
+                                   , b)], (1.5d & 86887 || "ss" | 3_000_000L), Compute("sss"), _cache };
+                                       }
+                                   }
+                                   """;
+
+    const string ArgumentsOracle = """
+                                   class C {
+                                       void M() {
+                                           var v01 = new[] {
+                                               sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [
+                                                   null, F(
+                                                       a,
+                                                       b
+                                                   )
+                                               ],
+                                               (1.5d & 86887 || "ss" | 3_000_000L), Compute("sss"), _cache
+                                           };
+                                           var v17 = new[] {
+                                               sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [
+                                                   null, new T(
+                                                       a,
+                                                       b
+                                                   )
+                                               ]
+                                           };
+                                           var v34 = new[] {
+                                               sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" }, [
+                                                   null, d[a,
+                                                       b]
+                                               ],
+                                               (1.5d & 86887 || "ss" | 3_000_000L), Compute("sss"), _cache
+                                           };
+                                           var v10 = new[] {
+                                               sizeof(int), new[] { null, null, 28787, "sssssssssssssssssssssss", 5445, @"verbatim\path" },
+                                               [null, F(a, b)], (1.5d & 86887 || "ss" | 3_000_000L), Compute("sss"), _cache
+                                           };
+                                       }
+                                   }
+                                   """;
+
+    [Fact]
+    public void ACollectionHoldingArgumentsBrokenAfterAComma_StaysBesideThePreviousElement() {
+        var formatted = FormatWith(ArgumentsSource);
+        Assert.Equal(ArgumentsOracle + "\n", formatted);
+        Assert.Equal(formatted, FormatWith(formatted));
+    }
+
     [Fact]
     public void ACollectionBrokenInsideASpread_StaysBesideThePreviousElement() {
         var formatted = FormatWith(SpreadSource);

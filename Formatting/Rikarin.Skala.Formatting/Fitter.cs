@@ -349,6 +349,27 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ A cast's `)` before a parenthesised operator: by the measured rule. See
+                // GroupFacts.CastParenFirst (#598).
+                if (facts.CastParenFirst > 0) {
+                    return BreaksAfterTheCast(facts, m, lineStart) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                }
+
+                // ⚠ An `=` whose value's leading parenthesis closes one column past the margin breaks when the
+                // value through that `)` fits below, what follows it breaking on its own (#598): `var x =` /
+                // `(string)(…)` / `+ c;`. See GroupFacts.ParenCloseEnd.
+                if (facts.ParenCloseEnd > 0
+                    && m.PointWidth < Unbounded
+                    && m.FlatWidth < Unbounded
+                    && m.Column + m.PointWidth + 1 + facts.ParenCloseEnd == width + 1
+                    && Fits(
+                        m.ContinuationColumn,
+                        facts.ParenCloseEnd,
+                        facts.ParenCloseEnd == m.FlatWidth - m.PointWidth - 1 ? m.Trailing : 0
+                    )) {
+                    return ResolvedMode.Broken;
+                }
+
                 // ⚠ A local's `=` before an `is` over a positional pattern: broken whenever the line overflows
                 // (#559). See GroupFacts.BreaksIfTheLineOverflows.
                 // ⚠ Not over a pattern the author broke inside: `var q = o is P(1, 2` / `);` keeps its `=`.
@@ -358,6 +379,18 @@ public sealed class Fitter {
                         || Fits(m.Column, m.FlatWidth, m.Trailing)
                             ? ResolvedMode.Flat
                             : ResolvedMode.Broken;
+                }
+
+                // ⚠ A head of five columns or fewer keeps its `=` once the value's type argument list closes past the
+                // margin, and the list fills (#610). See GroupFacts.ShortHeadTypeEnd.
+                // ⚠ And on a line one column over, though the value would fit below.
+                if (facts.ShortHeadTypeEnd > 0
+                    && m.PointWidth < Unbounded
+                    && (!Fits(m.Column, m.PointWidth + 1 + facts.ShortHeadTypeEnd)
+                        || m.FlatWidth < Unbounded
+                        && m.Trailing < Unbounded
+                        && m.Column + m.FlatWidth + m.Trailing == width + 1)) {
+                    return ResolvedMode.Flat;
                 }
 
                 // ⚠ A field's modifiers and its generic type: the type fills on the modifiers' line by the measured
@@ -446,7 +479,10 @@ public sealed class Fitter {
                 // measured reach and floor, read from the planner's widths so that a kept break inside the lambda
                 // on pass two does not change the answer. See GroupFacts.EqualsLambdaArguments.
                 if (facts.EqualsLambdaArguments > 0 && m.PointWidth < Unbounded) {
-                    var paren = m.Column + 1 + facts.EqualsLambdaValueHead + 1;
+                    // ⚠ The group starts at the `=` in a declaration and at the target in an assignment: the `=`
+                    // ends where its point's head does.
+                    var equalsEnd = m.Column + m.PointWidth - 1;
+                    var paren = equalsEnd + 1 + facts.EqualsLambdaValueHead + 1;
                     if (paren + facts.EqualsLambdaArguments <= width) {
                         return ResolvedMode.Flat;
                     }
@@ -454,9 +490,10 @@ public sealed class Fitter {
                     return EqualsFloor.BreaksBeforeALambdaCall(
                         facts.EqualsLambdaName,
                         facts.EqualsLambdaType,
-                        m.Column,
+                        equalsEnd,
                         paren,
-                        facts.EqualsLambdaArguments
+                        facts.EqualsLambdaArguments,
+                        facts.EqualsLambdaReach
                     )
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
@@ -523,8 +560,9 @@ public sealed class Fitter {
                 if (facts.CalleeWidth > 0
                     && facts.BreaksIfTooLong
                     && !Fits(m.Column, m.BreakWidth, m.Trailing)
-                    && (facts.CalleeOwner != EqualsOwner.Field || m.ContinuationColumn - indentWidth == 4)) {
-                    return EqualsBeforeACall(facts, m, lineStart);
+                    && (facts.CalleeOwner != EqualsOwner.Field || m.ContinuationColumn - indentWidth == 4)
+                    && EqualsBeforeACall(facts, m, lineStart) is { } callMode) {
+                    return callMode;
                 }
 
                 // ⚠ Broken exactly when the keyword is what overflows. See GroupFacts.KeywordWidth.
@@ -583,7 +621,18 @@ public sealed class Fitter {
                     }
 
                     var line = m.ContinuationColumn + tail;
-                    var limit = HeldCallLimit(paren, facts.HeldCall);
+                    // ⚠ A lambda call whose line overflows by its `)` alone, behind a head and receiver of 16
+                    // columns or fewer, stays and puts the `)` on a line of its own (SK-DIV-0420's lone `)`):
+                    // measured at indents 8 and 12, heads of 8 to 21, every row switching at 16 exactly.
+                    if (facts.HeldCallLambda
+                        && Fits(m.Column, m.FlatWidth - 1)
+                        && m.Column - lineStart + receiver <= 16) {
+                        return ResolvedMode.Flat;
+                    }
+
+                    var limit = facts.HeldCallLambda
+                        ? HeldLambdaLimit(paren, m.Column - lineStart)
+                        : HeldCallLimit(paren, facts.HeldCall);
                     return Fits(m.Column, receiver)
                         && !Fits(m.Column, m.FlatWidth)
                         && (line <= limit
@@ -644,8 +693,8 @@ public sealed class Fitter {
                         : ResolvedMode.Flat;
                 }
 
-                // ⚠ A switch arm whose line runs exactly one column past the margin breaks after its arrow once the head
-                // is wide enough for the body's kind (#559, SK-DIV-0449). See GroupFacts.ArmOneOverHead.
+                // ⚠ A switch arm whose line runs exactly one column past the margin breaks after its arrow once the
+                // head is wide enough for the body's kind (#559, SK-DIV-0449). See GroupFacts.ArmOneOverHead.
                 if (facts.ArmOneOverHead > 0
                     && m.Column - lineStart >= facts.ArmOneOverHead
                     && m.Column > lineStart
@@ -732,6 +781,10 @@ public sealed class Fitter {
                 // the `=` broke on a flat line and was given back to the bracket as soon as it was
                 // read as the author's (#379, the mirror image of #375). See
                 // GroupFacts.BreaksOnlyIfTailFits.
+                if (facts.WhenTable) {
+                    return WhenBreaks(facts, m, tail) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                }
+
                 if (facts.BreaksOnlyIfTailFits) {
                     // ⚠ A lambda's arrow over a call chain whose receiver runs past the margin beside it: no dot
                     // can end the line in time (fuzz 16278079796336422477). Kept, pass two read the dot's break
@@ -740,7 +793,7 @@ public sealed class Fitter {
                         return ResolvedMode.Broken;
                     }
 
-                    return TailFits(m, tail) && HeadIsWideEnough(facts, m, lineStart)
+                    return TailFits(m, tail + facts.TailSpare) && HeadIsWideEnough(facts, m, lineStart)
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
                 }
@@ -879,10 +932,40 @@ public sealed class Fitter {
         );
     }
 
-    /// <summary>See <see cref="GroupFacts.CalleeWidth" />.</summary>
-    ResolvedMode EqualsBeforeACall(in GroupFacts facts, in Measures m, int lineStart) {
-        if (m.PointWidth >= Unbounded || !HeadIsWideEnough(facts, m, lineStart)) {
+    /// <summary>
+    ///     See <see cref="GroupFacts.CalleeWidth" />. Null for a call with one argument behind a head narrower than the
+    ///     floor's that the rule for it does not break, which the ordering rule decides as it always did.
+    /// </summary>
+    ResolvedMode? EqualsBeforeACall(in GroupFacts facts, in Measures m, int lineStart) {
+        if (m.PointWidth >= Unbounded) {
             return ResolvedMode.Flat;
+        }
+
+        // ⚠ A field's one argument was not measured: the ordering rule's, as before.
+        if (facts is { CalleeArgument: > 0, CalleeOwner: EqualsOwner.Field }) {
+            return null;
+        }
+
+        // ⚠ Behind a head under twelve the `=` breaks when the call's `(` lands past the margin, whatever the arguments
+        // (#610): measured 2026-10-10 with `Testing ask` on 896 rows of two arguments, heads of 3 to 10, plain and
+        // generic calls and creations, the `(` at 100 to 128 — every row with the `(` at 121 or further breaks, where
+        // the head rule kept the `=` and chopped. ⚠ A generic value whose `>` is past the margin behind a head of five
+        // or fewer has been answered already (GroupFacts.ShortHeadTypeEnd).
+        // ⚠ And with one argument, when the head is wide enough for it by the measured line; otherwise the ordering
+        // rule decides, as it did before the floor took one argument. See GroupFacts.CalleeArgument.
+        if (!HeadIsWideEnough(facts, m, lineStart)) {
+            var open = m.Column + m.PointWidth + 1 + facts.CalleeWidth + 1;
+            if (open > width) {
+                return ResolvedMode.Broken;
+            }
+
+            if (facts.CalleeArgument <= 0) {
+                return ResolvedMode.Flat;
+            }
+
+            var head = HeadWidth(facts, m, lineStart);
+            var statement = m.ContinuationColumn - indentWidth;
+            return 24 * (head - 6) - 3 * (statement - 8) >= 4 * facts.CalleeArgument ? ResolvedMode.Broken : null;
         }
 
         // The value starts one space past the point; its `(` follows the callee. Columns are 1-based in
@@ -909,7 +992,9 @@ public sealed class Fitter {
         if (facts.EqualsName > 0
             && (facts.CalleeOwner != EqualsOwner.Field || facts.EqualsName < 30)
             && !EqualsFloor.NameReachesTheCall(facts.EqualsName, facts.CalleeWidth, paren)) {
-            return ResolvedMode.Flat;
+            // ⚠ The gate was measured on two arguments or more; one argument it turns away goes back to the ordering
+            // rule, which `T… vwwwwwww = Compute(aaaaaaaaaaaa);` needs to break its `=` (EqualsByTheNameTests).
+            return facts.CalleeArgument > 0 ? null : ResolvedMode.Flat;
         }
 
         if (m.FlatWidth >= Unbounded) {
@@ -1093,7 +1178,7 @@ public sealed class Fitter {
         // and not the head: `= [` always fits, and a bracket that is going to break is the case where
         // the oracle gives the break to the bracket. See GroupFacts.BreaksOnlyIfTailFits (#375).
         if (facts.BreaksOnlyIfTailFits) {
-            return TailFits(m, tail) ? ResolvedMode.Broken : ResolvedMode.Flat;
+            return TailFits(m, tail + facts.TailSpare) ? ResolvedMode.Broken : ResolvedMode.Flat;
         }
 
         return facts.JoinsIfFits && Fits(m.Column, m.FlatWidth, m.Trailing)
@@ -1115,6 +1200,64 @@ public sealed class Fitter {
     ///     the same for an expression body's arrow.
     /// </remarks>
     bool TailFits(in Measures m, int tail) => Fits(m.ContinuationColumn, tail, m.Trailing);
+
+    /// <summary>Whether a cast's <c>)</c> breaks before a parenthesised operator (#598).</summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 450 rows at a statement indent of 8 — <c>x =</c> and
+    ///     <c>return</c>, casts of 6 to 34 columns, first operands of 2 to 30 — and 576 more at 119 to 130 columns.
+    ///     The oracle breaks there only where the operand's <c>)</c> lands one column past the margin (the same
+    ///     column at which an <c>=</c> breaks before it, <see cref="GroupFacts.ParenCloseEnd" />), and then while
+    ///     <c>3·s − a ≥ 64</c>, with <c>s</c> the width from the line's start through the cast's <c>)</c> and
+    ///     <c>a</c> the operator's first operand: a wide cast behind a short first operand. 4 of the 450 miss.
+    /// </remarks>
+    bool BreaksAfterTheCast(in GroupFacts facts, in Measures m, int lineStart) =>
+        m.FlatWidth < Unbounded
+        && m.PointWidth < Unbounded
+        && m.Column + m.FlatWidth == width + 1
+        && Fits(m.ContinuationColumn, m.FlatWidth - m.PointWidth, m.Trailing)
+        && 3 * (m.Column + m.PointWidth - lineStart) - facts.CastParenFirst >= 64;
+
+    /// <summary>
+    ///     Whether an arm's <c>when</c> breaks before a condition whose only break points are type argument lists
+    ///     (#576, SK-DIV-0399). See <see cref="GroupFacts.WhenTable" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-10 with <c>Testing ask</c> on 600 arms — the <c>when</c> ending at columns 33 to 72,
+    ///     the line below from 105 to 119 — and 324 more over three pattern heads, two body widths and widths of 60
+    ///     to 128. The condition beside the <c>when</c> is never moved while it fits there through its last token:
+    ///     the arrow's break is taken instead. Past that, before a body too wide to be read through the oracle always
+    ///     breaks after the <c>when</c>, the condition fitting below or not; before one it reads through (a short
+    ///     body, its arm's comma included), it breaks while <c>25·t + 6·h ≤ 3191</c>, with <c>t</c> the line below
+    ///     and <c>h</c> the column the <c>when</c> ends at. That fit misses 2 of 590 cells. ⚠ A condition with no
+    ///     break point at all always breaks once it does not fit beside (#609, fuzz 7256125207651206043): `when` /
+    ///     `SomeVeryLongIdentifier… =&gt;` / `1,` — it has nowhere else to go.
+    /// </remarks>
+    bool WhenBreaks(in GroupFacts facts, in Measures m, int tail) {
+        if (m.FlatWidth >= Unbounded || Fits(m.Column, m.FlatWidth)) {
+            return false;
+        }
+
+        if (facts.WhenAtom) {
+            return true;
+        }
+
+        // ⚠ Under an arrow the author broke, the tail rule: `when Materialise<List<bool>,` / `…>>()` / `=> body`
+        // stays beside the `when` where the condition does not fit below (measured on 108 arms of the #576 grid).
+        if (facts.WhenArrowKept) {
+            return TailFits(m, tail);
+        }
+
+        if (facts.WhenBody <= 0) {
+            return true;
+        }
+
+        if (tail >= Unbounded) {
+            return false;
+        }
+
+        var below = m.ContinuationColumn + tail + facts.WhenBody;
+        return 25 * below + 6 * m.Column <= 3191;
+    }
 
     /// <summary>
     ///     Whether the head — from the owner's first token, the marker <see cref="GroupFacts.Owner" />
@@ -1143,6 +1286,17 @@ public sealed class Fitter {
 
         var from = resolved[owner] && enteredOn[owner] == m.Line ? enteredAt[owner] : lineStart;
         return m.Column + m.PointWidth - from >= facts.MinimumHead;
+    }
+
+    /// <summary>The head <see cref="HeadIsWideEnough" /> measures, through the group's own point.</summary>
+    int HeadWidth(in GroupFacts facts, in Measures m, int lineStart) {
+        var owner = facts.Owner;
+        if (owner < 0) {
+            return m.PointWidth;
+        }
+
+        var from = resolved[owner] && enteredOn[owner] == m.Line ? enteredAt[owner] : lineStart;
+        return m.Column + m.PointWidth - from;
     }
 
     /// <summary>
@@ -1462,6 +1616,22 @@ public sealed class Fitter {
     ///     reproduces every row; one argument follows the listed thresholds, each the widest line that broke
     ///     plus one (the next measured width, two wider, held), read at the nearest measured head.
     /// </remarks>
+    /// <summary>
+    ///     The widest line a held first call with a lambda for its one argument may take below, by its held
+    ///     <c>(</c> column and the head from the statement's start to the receiver (#605).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> on
+    ///     <c>var n… = r….Where(x =&gt; a &amp;&amp; b &amp;&amp; c).ToList();</c>,
+    ///     names of 1 to 30, receivers of 2 to 60, links of 86 to 107 one column at a time, at indents 8 and 12 —
+    ///     9 206 cells. The limit is a cap that falls 0.14 a column of head, a line falling 0.35 a column of
+    ///     <c>(</c> (shifted right 0.7 a column of head), and a floor rising a quarter of a column per column of
+    ///     <c>(</c>. The kind-1 table (#528) left 1 036 of these cells wrong, two columns short where the head is
+    ///     narrow; this rule leaves 279, a column either side of the boundary next to the arrow's own break.
+    /// </remarks>
+    static double HeldLambdaLimit(int paren, int head) =>
+        Math.Min(113.5 - 0.14 * head, Math.Max(126.5 - 0.35 * (paren - 0.7 * head), 80.5 + 0.25 * paren));
+
     static double HeldCallLimit(int paren, int kind) {
         if (kind != 1) {
             return Math.Max(108.5 - 0.4 * paren, 58 + 0.2 * paren);
