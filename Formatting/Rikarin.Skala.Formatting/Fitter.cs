@@ -634,8 +634,8 @@ public sealed class Fitter {
                         : ResolvedMode.Flat;
                 }
 
-                // ⚠ A switch arm whose line runs exactly one column past the margin breaks after its arrow once the head
-                // is wide enough for the body's kind (#559, SK-DIV-0449). See GroupFacts.ArmOneOverHead.
+                // ⚠ A switch arm whose line runs exactly one column past the margin breaks after its arrow once the
+                // head is wide enough for the body's kind (#559, SK-DIV-0449). See GroupFacts.ArmOneOverHead.
                 if (facts.ArmOneOverHead > 0
                     && m.Column - lineStart >= facts.ArmOneOverHead
                     && m.Column > lineStart

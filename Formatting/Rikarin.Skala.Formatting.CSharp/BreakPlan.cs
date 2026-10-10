@@ -2536,10 +2536,10 @@ public sealed class BreakPlan {
             broken |= PlanItemGap(gap, group, true, keeps, yields);
             broken |= PlanOtherSideOfComma(other, keeps);
 
-            // ⚠ And a type argument that ends exactly at the margin carries its comma to the next line, as a
-            // positional pattern's element does (#559, SK-DIV-0448): `Dictionary<A, B, CCC` / `, D> x;`, measured
-            // 2026-10-10 in a local's and a field's type, a generic call and a creation. A yielding point like the list's
-            // others, so what stands before the list still wraps first.
+            // ⚠ And a type argument that ends exactly at the margin carries its comma to the next line, as a positional
+            // pattern's element does (#559, SK-DIV-0448): `Dictionary<A, B, CCC` / `, D> x;`, measured 2026-10-10 in a
+            // local's and a field's type, a generic call and a creation. A yielding point like the list's others, so
+            // what stands before the list still wraps first.
             if (yields && !options.WrapBeforeComma) {
                 Point(comma, group, true, yields: true);
             }
