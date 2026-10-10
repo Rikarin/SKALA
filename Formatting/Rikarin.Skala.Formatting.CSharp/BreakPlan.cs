@@ -3438,7 +3438,13 @@ public sealed class BreakPlan {
                         }
                     }
                 ]
-                && source.AsSpan(call.ArgumentList.SpanStart, call.ArgumentList.Span.Length).IndexOfAny('\r', '\n') < 0
+                // ⚠ A break before the `)` is the lone `)`'s own layout, kept on pass two, not the author's.
+                && source.AsSpan(
+                        call.ArgumentList.SpanStart,
+                        call.ArgumentList.CloseParenToken.GetPreviousToken().Span.End - call.ArgumentList.SpanStart
+                    )
+                    .IndexOfAny('\r', '\n')
+                < 0
             )
         );
     }
