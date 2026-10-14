@@ -558,17 +558,19 @@ public static class EqualsFloor {
     ///     that, only once the line reaches a column that moves five per column of pattern. One cell — a
     ///     head of 11, a pattern of 39, a line of 124 — keeps the pattern where both of its neighbours break
     ///     the <c>=</c>, and it is in the table as measured.
+    ///     <para>
+    ///         ⚠ #446 round 5 (SK-DIV-0211): heads of 5 to 11 swept against the pattern (10 to 49 columns), the first
+    ///         alternative (3 to 30), the line's end (118 to 139) and the indent (8 to 24), 100 164 cells. Under twelve
+    ///         the head breaks the <c>=</c> while <c>10·pattern + 3·first − 2·end + 6·indent</c> stays within a limit
+    ///         per head — −31, 53, 115, 166, 205 and 241 for heads of 6 to 11 — and a head of five or less never does.
+    ///         The boundary has a column of jitter: 115 and 205 are where the committed fixture
+    ///         <c>equals-before-a-binary-pattern.cs</c> puts it, 39 sweep cells a column from where the sweep alone
+    ///         would. The table below was this line read at one indent and one first alternative: it missed a column of
+    ///         pattern per two columns of indent. It still decides behind a line comment.
+    ///     </para>
     /// </remarks>
     /// <param name="first">The first alternative's width; zero keeps the per-head table below.</param>
     /// <param name="indent">The statement's indent, read with <paramref name="first" />.</param>
-    /// <remarks>
-    ///     ⚠ #446 round 5 (SK-DIV-0211): heads of 5 to 11 swept against the pattern (10 to 49 columns, first
-    ///     alternatives of 5, 8 and 9), the line's end (118 to 137) and the indent (8 to 24), 64 260 cells. Under twelve
-    ///     the head breaks the <c>=</c> exactly while <c>10·pattern + 3·first − 2·end + 6·indent</c> stays within a
-    ///     limit per head — −31, 53, 116, 166, 207 and 241 for heads of 6 to 11 — and a head of five or less never
-    ///     does. The table below was this line read at one indent and one first alternative: it missed a column of
-    ///     pattern per two columns of indent. 55 080 of the 55 198 cells of heads 6 to 11; the table had 46 386.
-    /// </remarks>
     public static bool BreaksBeforeAPattern(int head, int pattern, int end, int first = 0, int indent = 0) {
         if (head >= 12) {
             return pattern <= WidestPatternAfterAWideHead(head, end);
@@ -579,7 +581,7 @@ public static class EqualsFloor {
                 return false;
             }
 
-            ReadOnlySpan<int> limit = [-31, 53, 116, 166, 207, 241];
+            ReadOnlySpan<int> limit = [-31, 53, 115, 166, 205, 241];
             return 10 * pattern + 3 * first - 2 * end + 6 * indent <= limit[head - 6];
         }
 

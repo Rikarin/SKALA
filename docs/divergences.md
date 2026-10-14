@@ -10092,6 +10092,10 @@ Fitted as `35·below ≤ max(C, min(A, B))` over `(type, name, callee, indent)` 
 coefficients in its source): 31 197 of the 31 918 cells, against 27 675 for round 3's rule as Skala ran it. The
 `87` receiver rule beside it stays — taking it out improved the grids by 44 cells and left three cells that
 took two passes, a `(` past the margin beside the `=` that the model does not see.
+⚠ **Measured on locals only, and on methods without type arguments**, and the gate refuted both extensions:
+a field (`private static readonly byte[] BinaryFormatterData = TestFixtureBase.HexToBytes(…)`, Newtonsoft) and
+#528's `Taaaaaaaaaa c = J(40)` / `.DeserializeObject<G(41)>(json);` both keep round 3's rule
+(`GroupFacts.HeldValueName` is zero for them).
 
 | probe | cells | master | now |
 |---|---:|---:|---:|
@@ -10111,19 +10115,26 @@ indent coefficient is large and unexplained.
 
 ⚠ **Round 5 (group E, 2026-10-14): the binary pattern behind a head under twelve is one linear rule.** The
 round-3 table (per head 8 to 11: always up to 27/31/35/38, two transitional widths) was measured at one indent
-and one first alternative. Swept now: heads of 5 to 11, patterns of 10 to 49 with first alternatives of five
-(`Alpha or B…`), nine (`Alphaaaaa or B…`) and eight (`not null and not G…`), line ends 118 to 137, indents 8
-to 24 — 64 260 cells. The `=` breaks exactly while
+and one first alternative. Swept now: heads of 5 to 11, patterns of 10 to 49, first alternatives of 3 to 30
+(`A… or B…`, and `not null and not G…`), line ends 118 to 139, indents 8 to 24 — 100 164 cells. The `=` breaks
+exactly while
 
-`10·pattern + 3·first − 2·end + 6·indent ≤ limit(head)`, the limit −31, 53, 116, 166, 207 and 241 for heads of
+`10·pattern + 3·first − 2·end + 6·indent ≤ limit(head)`, the limit −31, 53, 115, 166, 205 and 241 for heads of
 6 to 11,
 
 or while the first alternative itself would end past the margin (the existing check); a head of five or less
-never breaks it. 55 080 of the 55 198 cells of heads 6 to 11, where the table had 46 386. The indent term is
-what the table lacked: two columns of indent are a column of pattern. Exact text against the oracle: the
-sweep 56 086 → 64 662 of 64 800, the first probe of it 6 929 → 8 866 of 8 960, and a **fresh random probe**
-(seed 60117: `T`, `Tt`, `var`, `bool`, `Thing`, `int?` with names of 1 to 6; `A or B`, `not null and not G`,
-`> n and < m`, three alternatives, `null or E`; indents 8 to 40; ends 112 to 140) 2 565 → 2 988 of 3 000.
+never breaks it. The indent term is what the table lacked: two columns of indent are a column of pattern. The
+boundary has a column of jitter — the sweep alone puts heads 8 and 10 at 116 and 207, and the committed fixture
+`constructs/breaks/equals-before-a-binary-pattern.cs` (first alternatives of 12 to 17) at 115 and 205, which costs
+39 sweep cells; the fixture wins. Exact text against the oracle, master → this branch:
+
+| probe | cells | master | now |
+|---|---:|---:|---:|
+| heads 5–11 × three pattern kinds × indents 8–24 | 64 800 | 56 086 | 64 631 |
+| the same, heads 5–9, indents 8 and 16 | 8 960 | 6 929 | 8 866 |
+| first alternatives 3–30, heads 7, 8, 10, 11 | 35 904 | 32 691 | 35 732 |
+| **fresh random probe** (seed 60117: `T`, `Tt`, `var`, `bool`, `Thing`, `int?`, names of 1 to 6; `A or B`, `not null and not G`, `> n and < m`, three alternatives, `null or E`; indents 8–40; ends 112–140) | 3 000 | 2 565 | 2 989 |
+
 Behind a line comment inside the pattern the table still decides (`PatternAfterAWideOperandNightlyTests`).
 Wired in `EqualsFloor.BreaksBeforeAPattern` with `GroupFacts.PatternFirstAlternative`; pinned by
 `PatternNarrowHeadIssue446Tests`.

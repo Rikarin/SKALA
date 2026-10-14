@@ -1400,6 +1400,11 @@ public sealed class Document {
 /// <param name="HeldValueCallee">
 ///     With <see cref="HeldValueTypedHead" />: the receiver's and the method name's widths, type arguments left out.
 /// </param>
+/// <param name="HeldValueName">
+///     With <see cref="HeldValueTypedHead" />: a typed local's declared name, for a method without type arguments, which
+///     <see cref="EqualsFloor.HeldTypedLocalBreaks" /> weighs with the type (#446 round 4); zero otherwise — a method with
+///     type arguments was not measured, and #528's fixture keeps the <c>=</c> where the measured limit would break it.
+/// </param>
 /// <param name="HeldChoppedWidth">
 ///     ⚠ A typed local's single call on a receiver whose argument list is already chopped — pass two of a
 ///     <see cref="EqualsFloor.HeldTypedLocalBreaks" /> that kept the <c>=</c>: the value's flat width through its
@@ -1672,6 +1677,7 @@ public readonly record struct GroupFacts(
     bool HeldValueManyArgs = false,
     int HeldValueTypedHead = 0,
     int HeldValueCallee = 0,
+    int HeldValueName = 0,
     int HeldChoppedWidth = 0,
     int HeldChoppedHead = 0,
     int ArmHead = 0,

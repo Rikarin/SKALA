@@ -6011,6 +6011,13 @@ public sealed class BreakPlan {
                     && heldKind == 1
                         ? FlatSourceWidth(heldCallee.Expression) + heldCallee.Name.Identifier.Span.Length
                         : 0,
+                    HeldValueName: (heldCall ?? choppedHeld) is {
+                        Expression: MemberAccessExpressionSyntax { Name: IdentifierNameSyntax }
+                    }
+                    && heldKind == 1
+                    && owner == EqualsOwner.TypedLocal
+                        ? EqualsNameOf(node, owner, value)
+                        : 0,
                     HeldChoppedHead: choppedHeld is not null && heldKind == 1
                         ? FormattedWidth(value.GetFirstToken(), choppedHeld.ArgumentList.OpenParenToken)
                         : 0,

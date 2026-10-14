@@ -708,7 +708,7 @@ public sealed class Fitter {
                         m.ContinuationColumn + facts.HeldChoppedWidth,
                         facts.HeldValueCallee,
                         m.ContinuationColumn - indentWidth,
-                        facts.EqualsName
+                        facts.HeldValueName
                     )) {
                     return ResolvedMode.Flat;
                 }
@@ -1744,7 +1744,7 @@ public sealed class Fitter {
                         below,
                         facts.HeldValueCallee,
                         continuation - indentWidth,
-                        facts.EqualsName
+                        facts.HeldValueName
                     )
                     || valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd;
             case 1:
