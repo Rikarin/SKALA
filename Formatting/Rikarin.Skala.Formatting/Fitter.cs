@@ -1554,8 +1554,11 @@ public sealed class Fitter {
                 && 24 * end >= 1644 + 42 * parameter + 12 * lineStart + 12 * head - 8 * value;
         }
 
+        // ⚠ A one-argument section's second condition depends on E (#603, SK-DIV-0570): a plane steeper than the
+        // first, so near the margin the threshold bends up — `[A("…")]` behind 15 columns chops from 118, not 113 —
+        // where `2·w + i − h ≤ 36` held it at the first condition until a fixed parameter width and then never.
         if (facts.SectionSingle) {
-            return 2 * parameter + lineStart - head <= 36
+            return 3 * end >= 7 + 20 * parameter + 7 * lineStart - 5 * head
                 && 24 * end >= 2106 + 32 * parameter + 11 * lineStart + 11 * head;
         }
 
