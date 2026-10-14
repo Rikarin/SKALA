@@ -13653,6 +13653,27 @@ none newly differing, every row idempotent before and after.
   `ABraceWhoseLineOverflows_BreaksTheEquals` and `AOneLineCreationWhoseBraceOverflows_BreaksTheEquals`, and
   `FuzzRegressionTests`); the wide head before a brace inside the margin is **open**.
 
+## SK-DIV-0554 — a block comment in front of a break the condition's flat width reads as nothing
+
+#625, fuzz 7876387652505925107 (`--origin=constructs/breaks/conditional-call-condition-below.cs`; fails on
+`adca899a`). Minimal: `string vvvv /* f */ = Fn(zzzz…98… /* f */) ? first : second;`. Pass one kept the `=`, broke
+the call open and wrote `/* f */` / `)` — the oracle's answer, which it leaves alone when given it back. #553's rule
+measures the condition flat (`BreakPlan.FlatSourceWidth`), reading a break before a `)`, `.`, `?` or `]` (or after a
+`(` or `[`) as nothing; that skipped the whole gap, the block comment in it included. Pass two measured the condition
+eight columns narrower than pass one had and broke the `=`. A glued break now still counts its block comments, each
+with its space (`CommentsWidth`, which `GapWidth` shares).
+
+Measured 2026-10-14 with `Testing ask` on a fresh 160-row grid: the comment before the `)`, after the `(`, between two
+arguments and after the second, and none; four heads (`string vvvv =`, `string vvvv /* f */ =`, a 13-column name,
+`var`); arguments of 80 to 101 columns. Pass one is byte-identical to master on every row (one-line input never has
+the glued break); non-idempotent files 1 → 0. The 53 rows that differ from the oracle differ the same way on master:
+mostly a comment beside a two-argument call or after the `(`, and two rows with no comment where the oracle keeps
+`string vvvv = Fn(` and chops while Skala breaks the `=`. Open.
+
+- options: none.
+- status: **fixed** (the seed, pinned by `ConditionCommentBeforeAGluedBreakTests` and `FuzzRegressionTests`); the 53
+  pass-one rows are **open**.
+
 ## SK-DIV-0521 — where a sole lambda breaks after its arrow without a broken test
 
 #620, group C (2026-10-14): SK-DIV-0520's question where the body is not a type test broken before its keyword. Probe

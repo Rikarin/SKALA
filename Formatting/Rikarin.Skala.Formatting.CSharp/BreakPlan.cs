@@ -7299,9 +7299,10 @@ public sealed class BreakPlan {
                 // ⚠ The space the formatter writes, not the author's (Nightly fuzzer, seed 1 replay
                 // 13096041111892358404): `DeserializeObject<T >(json)` counted a space before the `>` that the
                 // formatter removes, and the held value's table read another row.
-                if (!(breaks && glued)) {
-                    width += GapWidth(previous, token);
-                }
+                // ⚠ A glued break still carries the block comments in its gap (#625, fuzz 7876387652505925107):
+                // `Fn(zzzz… /* f */` / `)` lost the comment's eight columns on pass two, the condition measured
+                // narrower than pass one's `Fn(zzzz… /* f */ )`, and the `=` pass one had kept broke.
+                width += breaks && glued ? CommentsWidth(previous, token) : GapWidth(previous, token);
             }
 
             width += token.Span.Length;
@@ -7329,6 +7330,12 @@ public sealed class BreakPlan {
         // (Nightly fuzz, case 1267273925188459665: `JsonConvert /** d */ .DeserializeObject<T>(x)` behind an
         // `=`, where #528's held-value width missed the comment as it once missed `/* */`). ⚠ Its full span:
         // the `/**` is the structure's exterior trivia, outside the trivia's `Span`.
+        return width + CommentsWidth(previous, token);
+    }
+
+    /// <summary>The block comments between two adjacent tokens, each with the space the formatter writes before it.</summary>
+    static int CommentsWidth(SyntaxToken previous, SyntaxToken token) {
+        var width = 0;
         foreach (var trivia in previous.TrailingTrivia.Concat(token.LeadingTrivia)
                      .Where(IsBlockComment)) {
             width += trivia.FullSpan.Length + 1;

@@ -358,6 +358,10 @@ public sealed class FuzzRegressionTests {
     // source, a space run counting one column the formatter removes, and #605's held-lambda limit, rising with the
     // rest, moved `.Where(` below. Now read as formatted.
     [InlineData(1582939963027114583UL, "constructs/wrapping/lambda-arrow-over-a-binary-pattern.cs")]
+    // #625: `string vvvv /* f */ = Fn(zzzz… /* f */) ? first : second;`. Pass one kept the `=` and broke before the
+    // `)`; pass two's flat condition skipped the comment in that glued gap, measured eight columns narrower and broke
+    // the `=`. A glued break still counts its block comments (SK-DIV-0554).
+    [InlineData(7876387652505925107UL, "constructs/breaks/conditional-call-condition-below.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
