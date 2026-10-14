@@ -210,6 +210,14 @@ public sealed class FuzzRegressionTests {
     // #617, group C's seed: an array initializer in a switch arm headed by braces. The arm was written ahead to decide
     // its arrow and the elements' line records outlived the rollback, so pass one broke after the first element.
     [InlineData(718351361052470981UL)]
+    // SK-DIV-0505's fuzz (`--seed=50105`): `Func<…,` / `…> v53 = new Nullable<…>($"…");` — a type that fills onto a second
+    // line leaves only its last line beside the `=`; read whole, the one-argument boundary chopped on pass one what pass
+    // two, finding the type broken, moved below.
+    [InlineData(4769102867181174370UL)]
+    // And `--seed=50106`: `(…) v43 = Select(x44 => new[] { … });` — a lambda argument, whose arrow and initializer have
+    // points of their own the boundary never measured. Only a name, a literal, an interpolated string, a member access over
+    // names or one of those in parentheses takes it now.
+    [InlineData(14568516573920944828UL)]
     // `var (a, b) = Convert<…>(($"…" + (…)));` (#617): pass one kept the `=` and chopped the one argument, and pass
     // two, finding the value spanning lines, read it as having no callee and broke the `=` by the ordering rule. The
     // oracle keeps an author's chop of a lone argument and the `=` beside it (GroupFacts.KeptArgumentCallee).

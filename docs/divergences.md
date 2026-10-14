@@ -13553,3 +13553,81 @@ probe I's 600 members.
 
 - status: **partly resolved** (#620).
 
+## SK-DIV-0505 — one argument behind a head wider than fourteen: one boundary for every owner
+
+This closes the open halves of SK-DIV-0501 (group A, typed locals) and SK-DIV-0530 (group D, `var` locals). Both had
+measured the same thing separately, and neither rule was wired. Group A's fit was
+`10·indent + 10·argument + 4·callee + head < 960`. Group D's was `8·(argument + indent) + 3·callee + 2·head ≤ 799`.
+On #617's first fix, master sent every such `=` to the ordering rule, which chops where the oracle moves the value
+below.
+
+Measured 2026-10-14 with `Testing ask`:
+
+- **Fit grid:** 8 832 rows. Owners: typed locals, `var` locals, assignments and deconstructions. Heads of 15 to 42
+  through the `=`. Callees of 8 to 34 columns, plain and generic. Indents 8, 12 and 16. Lines of 121 to 151.
+- **Check grid:** a fresh 9 216 rows the rule was not fitted on. Heads of 16 to 45, callees of 12 to 40, indents 8,
+  12 and 20.
+
+One rule fits every owner, and its misses split evenly between them. The `=` breaks while both of these hold:
+
+- the value's line below ends at most two columns past the margin;
+- `12·indent + 10·argument + 4·callee + 2·head < 1010`.
+
+So a narrow callee chops an argument the value would still carry below. A wide callee chops only once the value no
+longer fits there. Refitting on both grids together does no better: 502 of 18 048 rows, against this rule's 504.
+
+`EqualsFloor.OneArgumentBreaksTheEquals` implements the rule. The head is read from the syntax
+(`GroupFacts.CalleeArgumentHead`): the fitter's own head starts at the group's marker, which for a deconstruction is
+the tuple's `(`. That had sent `var (a…, b) =` to the narrow-head path.
+
+| Grid | Rows | Before (#617 master `d619f7c3`) | After | Non-idempotent after |
+|---|---:|---:|---:|---:|
+| Fit | 8 832 | 2 282 | 186 | 0 |
+| Check, fresh | 9 216 | 2 930 | 318 | 0 |
+
+Every remaining row is within a step or two of the boundary. The owners' boundaries sit a step apart at some cells,
+which a single rule cannot follow.
+
+Pass two meets pass one's chop as the author's, and group D's `GroupFacts.KeptArgumentCallee` keeps it with its `=`.
+That is the oracle's answer for a kept chop. Group A's parallel `ChoppedArgumentCallee` was dropped as a duplicate.
+
+⚠ The rule is only for an argument with a flat width. One with a certain break of its own, such as a switch
+expression, has no flat width and stays with the ordering rule. Group A's first wiring applied the rule to it and
+broke `CallParenPastTheMarginNightlyTests.AParenPastTheMargin_BreaksTheEquals_OverACertainBreak`. That test is the
+oracle's answer (measured 2026-10-09), so the test was right and the rule was wrong.
+
+⚠ The rule's 30-minute fuzz found one more case (`--seed=50105`, case 4769102867181174370): a head too wide for its
+line, `Func<…,` / `…> v53 = new Nullable<…>($"…");`. The type fills onto a second line, so only its last line stands
+beside the `=`. Read whole, the head chopped the argument on pass one. Pass two found the type broken and moved the
+value below, which is the oracle's answer. The head read is now the fitter's own once the statement's head cannot fit
+on its line (`Fitter.OneArgumentHead`). This is pinned in `FuzzRegressionTests`.
+
+⚠ A second 30-minute fuzz (`--seed=50106`, case 14568516573920944828) found a lambda argument:
+`… v43 = Select(x44 => new[] { … });`. Its arrow and its initializer have break points of their own, which the
+boundary never saw. The rule now takes only arguments with no break point of their own
+(`BreakPlan.IsAMeasuredArgument`):
+
+- a name;
+- a literal;
+- an interpolated string;
+- a member access over names;
+- one of these in parentheses.
+
+Anything else goes to the ordering rule, as on master. A probe of the four non-name kinds, 864 rows, was written
+after this change: string literal, interpolated string, member access and parenthesised name, with typed, `var` and
+assigned heads at indent 12.
+
+| Argument kind | Rows | Master | Branch |
+|---|---:|---:|---:|
+| string literal | 216 | 62 | 12 |
+| interpolated string | 216 | 54 | 36 |
+| member access | 216 | 54 | 0 |
+| parenthesised name | 216 | 46 | 8 |
+| **total** | 864 | 216 | 56 |
+
+No row is non-idempotent.
+
+- status: **fixed** to the measured boundary, pinned by
+  `FuzzIdempotencyIssue617Tests.OneArgumentBehindAWideHead_OneBoundaryForEveryOwner`.
+  ⚠ **Open:** fields behind a wide head, which are not measured and still go to the ordering rule, and the per-owner
+  step at the boundary.
