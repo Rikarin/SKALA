@@ -13750,7 +13750,7 @@ property chain. Left out.
   rule already agrees in 73 of these.
 - On probe J, 39 members where the oracle keeps and master's chain rule breaks, and 17 the other way.
 
-- options: `csharp_place_single_method_argument_lambda_on_same_line` (the rule reads only while it is on).
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the rule reads only while it is on).
 - status: **partly resolved** (#620).
 
 ## SK-DIV-0561 — #620's residue: what was tried and refuted, and a measured rule left unwired
