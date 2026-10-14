@@ -318,8 +318,9 @@ public sealed class BreakPlan {
     /// <summary>See <see cref="ReceiverLiftOf" />.</summary>
     readonly Dictionary<long, (int Group, int Dot)> receiverLifts = [];
 
-    /// <summary>The <see cref="GroupFacts.LiftsIfWhenBreaks" /> group of an arm, keyed by its <c>when</c>
-    /// clause.</summary>
+    /// <summary>
+    ///     The <see cref="GroupFacts.LiftsIfWhenBreaks" /> group of an arm, keyed by its <c>when</c> clause.
+    /// </summary>
     readonly Dictionary<long, int> whenLifts = [];
 
     /// <summary>
@@ -5321,8 +5322,9 @@ public sealed class BreakPlan {
     /// <summary>The two line-break characters, for a span search.</summary>
     static readonly char[] LineEnds = ['\r', '\n'];
 
-    /// <summary>The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the operand each is held
-    /// against.</summary>
+    /// <summary>
+    ///     The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the operand each is held against.
+    /// </summary>
     readonly List<(int Group, ExpressionSyntax Operand)> pendingTypeTestHolds = [];
 
     /// <summary>
@@ -9060,8 +9062,9 @@ public sealed class BreakPlan {
         return first is { ArgumentList.Arguments.Count: >= 2 } && first != operand ? (operand, first) : (null, null);
     }
 
-    /// <summary>The operand of a sole lambda's whole body that is a type test broken before its keyword, or
-    /// null.</summary>
+    /// <summary>
+    ///     The operand of a sole lambda's whole body that is a type test broken before its keyword, or null.
+    /// </summary>
     ExpressionSyntax? BrokenTestedOperandOf(LambdaExpressionSyntax lambda, ExpressionSyntax body) {
         if (!options.PlaceSingleMethodArgumentLambdaOnSameLine || !IsTheBodyOfASoleLambda(body)) {
             return null;

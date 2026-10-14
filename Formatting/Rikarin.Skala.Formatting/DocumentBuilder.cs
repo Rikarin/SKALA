@@ -437,8 +437,9 @@ public sealed class DocumentBuilder {
     ///     fails: <see cref="IndentFlags.HeldWhileOwnerFlat" />, <see cref="IndentFlags.HeldWhileChainWhole" />
     ///     over <paramref name="chainGroup" />, or both.
     /// </summary>
-    /// <param name="countsWithItsLine">Once spent, the scope is a <see cref="IndentFlags.CountsWithItsLine" />
-    /// one.</param>
+    /// <param name="countsWithItsLine">
+    ///     Once spent, the scope is a <see cref="IndentFlags.CountsWithItsLine" /> one.
+    /// </param>
     public void OpenHeldIndent(
         IndentKind kind,
         IndentFlags conditions,
