@@ -2615,7 +2615,7 @@ public sealed class BreakPlan {
                 // while the rest of the list, with `()`, fits on the line below with twelve columns to spare; past that
                 // the list stays and the inner list fills (#576). See GroupFacts.WhenOuterTail.
                 WhenOuterTail: IsAWhenConditionsOuterTypeArguments(node) && node is TypeArgumentListSyntax outer
-                    ? FormattedWidth(outer.Arguments[1].GetFirstToken(), outer.GreaterThanToken)
+                    ? FormattedWidth(outer.Arguments[^1].GetFirstToken(), outer.GreaterThanToken)
                     : 0
             )
         );
@@ -5072,6 +5072,34 @@ public sealed class BreakPlan {
     /// </summary>
     const int WhenReadThroughLimit = 96;
 
+    /// <summary>
+    ///     Whether an arm's body <c>Receiver.Name</c> breaks at its own dot rather than being read through by the head
+    ///     (#576 round 7, SK-DIV-0399). See <see cref="GroupFacts.ArmBodyDot" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c> on arms ending 122 to 134 columns, plain, behind a <c>when</c>
+    ///     and behind a property pattern, receivers of 1 to 9 columns and names of 1 to 10: behind a head with no break
+    ///     point of its own the oracle writes <c>=&gt; Receiver</c> / <c>.Name,</c> exactly when
+    ///     <c>2·name + 3·receiver ≥ 22</c>, where Skala read every body of fourteen columns or fewer through. Behind a
+    ///     pattern that can break instead — braces, brackets, a parenthesised list, <c>or</c> — it chops the pattern up
+    ///     to a higher bar, <c>5·name + 6·receiver ≥ 53</c> at the line ends of 122 to 124 the bar was measured at (it
+    ///     rises two per column of line end, which this rule does not follow).
+    /// </remarks>
+    bool BreaksAtItsOwnDot(SwitchExpressionArmSyntax arm, ExpressionSyntax body) =>
+        body is MemberAccessExpressionSyntax {
+            RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
+            Expression: IdentifierNameSyntax receiver,
+            Name: IdentifierNameSyntax name
+        }
+        && (arm.Pattern.DescendantNodesAndSelf()
+            .Any(static node => node is PropertyPatternClauseSyntax
+                or ListPatternSyntax
+                or PositionalPatternClauseSyntax
+                or BinaryPatternSyntax
+            )
+            ? 5 * FormattedWidth(name) + 6 * FormattedWidth(receiver) >= 53
+            : 2 * FormattedWidth(name) + 3 * FormattedWidth(receiver) >= 22);
+
     static bool ArmWhenHoldsOnlyTypeArguments(SwitchExpressionArmSyntax arm) =>
         arm.WhenClause is { } when
         && IsAPlannedWhenGap(when)
@@ -5111,7 +5139,8 @@ public sealed class BreakPlan {
 
     /// <summary>
     ///     For the gap after an arm's <c>when</c>: the width of <c> =&gt; body</c> and the arm's comma when the body is
-    ///     an atom short enough for the head to read through (<c>DocumentBuilder.ShortArrowBody</c>), or zero (#576).
+    ///     an atom (a literal, a name or <c>Receiver.Name</c>), or zero (#576). ⚠ Round 7: any width, no longer capped
+    ///     at <c>DocumentBuilder.ShortArrowBody</c>; <c>Fitter.WhenBreaks</c> reads the width itself.
     /// </summary>
     int WhenBodyWidth(SwitchExpressionArmSyntax arm) {
         var body = arm.Expression is PrefixUnaryExpressionSyntax prefix ? prefix.Operand : arm.Expression;
@@ -5123,7 +5152,7 @@ public sealed class BreakPlan {
 
         var comma = arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0;
         var width = FormattedWidth(arm.Expression) + comma;
-        return width <= 14 ? 4 + width : 0;
+        return 4 + width;
     }
 
     /// <summary>The <c>[</c> of a list pattern written on one line straight after an <c>is</c>.</summary>
@@ -8747,6 +8776,7 @@ public sealed class BreakPlan {
             new(
                 BreaksIfTooLong: true,
                 ArmBodyTrail: arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0,
+                ArmBodyDot: BreaksAtItsOwnDot(arm, arm.Expression),
 
                 // ⚠ Not under a body the arrow group holds the level for, which a kept break after the arrow
                 // does not lift either (keptAfter).
@@ -8763,10 +8793,27 @@ public sealed class BreakPlan {
                     WhenClause: null,
                     Pattern: RecursivePatternSyntax { PositionalPatternClause: not null, PropertyPatternClause: null }
                 }
+                // ⚠ Nor, past the limit, before an atom of four columns or more with its comma (#576 round 7): under the
+                // `when` it breaks, the oracle breaks after the arrow, `>>() =>` / `"ss",`, not inside the type arguments.
                 || ArmWhenHoldsOnlyTypeArguments(arm)
-                && FormattedWidth(arm.WhenClause!.Condition) <= WhenReadThroughLimit
+                && (FormattedWidth(arm.WhenClause!.Condition) <= WhenReadThroughLimit || WhenBodyWidth(arm) > 7)
             )
         );
+
+        // ⚠ Such a body's own dot is a point, taken when the line overflows (#576 round 7). A pure property path plans
+        // no chain group, so `=> Short.Value12,` had nowhere to break but the arrow.
+        if (arm.Expression is MemberAccessExpressionSyntax dotted && BreaksAtItsOwnDot(arm, dotted)) {
+            var dot = NewGroup();
+            Point(dotted.OperatorToken, dot);
+            Describe(
+                dotted,
+                dot,
+                GroupMode.Preserve,
+                new(options.KeepsUserBreaksBetweenItems && BreaksBefore(dotted.OperatorToken), BreaksIfTooLong: true),
+                true,
+                ownLevel: true
+            );
+        }
     }
 
     /// <summary>

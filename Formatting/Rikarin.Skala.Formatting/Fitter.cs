@@ -357,8 +357,14 @@ public sealed class Fitter {
                 // 10815522948059258787 and 1019535202291160959): pass one kept the list and broke the inner one after
                 // its `<`; pass two, reading that break as the author's, measured this group as unbounded, skipped the
                 // rule and broke the list as well.
+                // ⚠ On the line of its own a broken `when` gives it, the list's continuation is a level past that line,
+                // which the lift adds only after the fact, so the measured continuation is that line's own start (#576
+                // round 7, SK-DIV-0399): measured at conditions 100 to 124 below the `when` at indents 8, 12 and 16.
                 if (facts.WhenOuterTail > 0) {
-                    if (!Fits(m.ContinuationColumn, facts.WhenOuterTail + 14)) {
+                    var continuation = m.ContinuationColumn <= lineStart
+                        ? lineStart + indentWidth
+                        : m.ContinuationColumn;
+                    if (!Fits(continuation, facts.WhenOuterTail + 14)) {
                         return ResolvedMode.Flat;
                     }
 
@@ -969,7 +975,7 @@ public sealed class Fitter {
                 // read as the author's (#379, the mirror image of #375). See
                 // GroupFacts.BreaksOnlyIfTailFits.
                 if (facts.WhenTable) {
-                    return WhenBreaks(facts, m, tail) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                    return WhenBreaks(facts, m, tail, lineStart) ? ResolvedMode.Broken : ResolvedMode.Flat;
                 }
 
                 if (facts.BreaksOnlyIfTailFits) {
@@ -1625,8 +1631,18 @@ public sealed class Fitter {
     ///     and <c>h</c> the column the <c>when</c> ends at. That fit misses 2 of 590 cells. ⚠ A condition with no
     ///     break point at all always breaks once it does not fit beside (#609, fuzz 7256125207651206043): `when` /
     ///     `SomeVeryLongIdentifier… =&gt;` / `1,` — it has nowhere else to go.
+    ///     <para>
+    ///         ⚠ Round 7 (2026-10-14): the table holds for a body of three columns or fewer with its comma only. A
+    ///         wider atom is not read through: the <c>when</c> breaks when the whole arm fits on the line below, and
+    ///         otherwise only inside a band of head widths, <c>max(12, 45 − 6·b) ≤ head</c> and
+    ///         <c>7·head ≤ 19·b + 105</c>, with <c>head</c> the arm through <c>when</c> and <c>b</c> the body with its
+    ///         comma; before a body of fourteen or fewer, also only while the condition on the line below runs at most
+    ///         <c>13 + (b − 5)/2</c> columns past the margin. Measured on 5 600 arms (SK-DIV-0399). The band's upper
+    ///         limit was fitted on <c>Materialise&lt;List&lt;bool&gt;, IReadOnlyDictionary&lt;int, T…&gt;&gt;()</c>;
+    ///         it moves with the condition's shape, which is not modelled.
+    ///     </para>
     /// </remarks>
-    bool WhenBreaks(in GroupFacts facts, in Measures m, int tail) {
+    bool WhenBreaks(in GroupFacts facts, in Measures m, int tail, int lineStart) {
         if (m.FlatWidth >= Unbounded || Fits(m.Column, m.FlatWidth)) {
             return false;
         }
@@ -1643,6 +1659,35 @@ public sealed class Fitter {
 
         if (facts.WhenBody <= 0) {
             return true;
+        }
+
+        // ⚠ A condition one or two columns past the margin beside the `when` moves below, whatever the head or
+        // the body (#576 round 7, SK-DIV-0399).
+        if (Fits(m.Column, m.FlatWidth - 2)) {
+            return true;
+        }
+
+        // ⚠ A body of four columns or more with its comma is not read through: the `when` breaks inside a band
+        // of head widths, the head being the arm through `when`, from twelve columns (more before the narrowest
+        // bodies) to a limit that rises 19/7 of a column per column of body. Past it the type arguments fill
+        // beside the `when`. Measured with `Testing ask` on Materialise<List<bool>, IReadOnlyDictionary<int, T…>>()
+        // and three more conditions with their first argument 1 to 32 columns wide (#576 round 7, SK-DIV-0399).
+        var body = facts.WhenBody - 4;
+        if (body >= 4) {
+            // The whole arm fits on the line below: it moves there.
+            if (tail < Unbounded && m.ContinuationColumn + tail + facts.WhenBody <= width) {
+                return true;
+            }
+
+            // ⚠ And, before a body of fourteen columns or fewer, only while the condition, flat on the line below, runs
+            // at most 13 columns past the margin, half a column more per column of body past five: wider, it fills
+            // beside the `when`. Measured on bodies of four and eight; a wider body was always seen to break.
+            if (body <= 14 && tail < Unbounded && 2 * (m.ContinuationColumn + tail - width) > 26 + body - 5) {
+                return false;
+            }
+
+            var head = m.Column - lineStart;
+            return head >= Math.Max(12, 45 - 6 * body) && 7 * head <= 19 * body + 105;
         }
 
         if (tail >= Unbounded) {
