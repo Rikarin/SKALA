@@ -340,6 +340,14 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ A `when` condition's outer type argument list: see GroupFacts.WhenOuterTail (#576).
+                if (facts.WhenOuterTail > 0 && m.FlatWidth < Unbounded && m.Trailing < Unbounded) {
+                    return !Fits(m.Column, m.FlatWidth, m.Trailing)
+                        && Fits(m.ContinuationColumn, facts.WhenOuterTail + 14)
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                }
+
                 // ⚠ One argument the author put below the call's `(` keeps the `=` while the `(` fits (fuzz
                 // 17150111611241313074). See GroupFacts.KeptArgumentCallee.
                 if (facts.KeptArgumentCallee > 0

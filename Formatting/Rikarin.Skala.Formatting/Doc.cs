@@ -1525,6 +1525,12 @@ public sealed class Document {
 ///     last line, with the call, still overflows: <c>x = (a</c> / <c>&amp;&amp; b…)</c> / <c>.Trim();</c>, the
 ///     operator a level past the dot (#617, <c>BreakPlan.ReceiverLiftOf</c>).
 /// </param>
+/// <param name="WhenOuterTail">
+///     ⚠ The outermost type argument list of an arm's <c>when</c> condition (#576, SK-DIV-0399): the width from its
+///     second argument through its <c>&gt;</c>, or zero. Too long for its line, the list breaks after its first comma
+///     only while what follows, the rest of the line included, fits below with six columns to spare; otherwise it
+///     stays and the inner list fills. See <c>BreakPlan.IsAWhenConditionsOuterTypeArguments</c>.
+/// </param>
 /// <param name="HeldCallRest">
 ///     ⚠ Under <c>wrap_if_long</c> (#552): the flat width of the chain after the held call, through its
 ///     <c>;</c>, or zero. Past the measured table's limit the held call still breaks before itself when
@@ -1710,6 +1716,7 @@ public readonly record struct GroupFacts(
     int HeldCall = 0,
     bool ParenReceiver = false,
     int ParenReceiverTail = 0,
+    int WhenOuterTail = 0,
     int HeldCallHead = 0,
     int HeldCallRest = 0,
     bool ContinuesIfItBreaks = false,
