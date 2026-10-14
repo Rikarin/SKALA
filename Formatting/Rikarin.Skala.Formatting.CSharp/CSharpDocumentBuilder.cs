@@ -208,6 +208,17 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
+        // ⚠ A local's `=` clause once the gap between the type and the name broke: the value continues from the
+        // name's line, a level past it (BreakPlan.TypeNameGapOf).
+        if (plan.TypeNameGapOf(node) is >= 0 and var typeName) {
+            EmitLeadingGap(node);
+            doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileGroupFlat, typeName);
+            VisitPlanned(node);
+            EmitUpTo(node.Span.End);
+            doc.Close();
+            return;
+        }
+
         // ⚠ And the same layout written by the author, which pass two reads (BreakPlan.KeptTypeTestLift).
         if (plan.KeptTypeTestLift(node)) {
             EmitLeadingGap(node);

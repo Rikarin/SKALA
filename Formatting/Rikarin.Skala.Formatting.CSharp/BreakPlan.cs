@@ -324,6 +324,9 @@ public sealed class BreakPlan {
     /// <summary>See <see cref="KeptTypeTestLift" />.</summary>
     readonly HashSet<long> keptTypeTestLifts = [];
 
+    /// <summary>See <see cref="TypeNameGapOf" />.</summary>
+    readonly Dictionary<long, int> typeNameGaps = [];
+
     /// <summary>
     ///     The <see cref="GroupFacts.LiftsIfWhenBreaks" /> group of an arm, keyed by its <c>when</c> clause.
     /// </summary>
@@ -3114,6 +3117,10 @@ public sealed class BreakPlan {
         // the type's first token measured the whole type and moved `local` down.
         var group = NewGroup();
         Point(name, group);
+        if (node is { Parent: LocalDeclarationStatementSyntax, Variables: [{ Initializer: { } initializer }] }) {
+            typeNameGaps[Key(initializer)] = group;
+        }
+
         Describe(
             node.Variables[0],
             new(
@@ -8247,6 +8254,13 @@ public sealed class BreakPlan {
     ///     <c>return r</c> / <c>.P… is</c> at +8 / <c>T;</c> at +4, which is what pass one's <c>x</c> layout writes.
     /// </summary>
     public bool KeptTypeTestLift(SyntaxNode node) => keptTypeTestLifts.Contains(Key(node));
+
+    /// <summary>
+    ///     The group of the gap between a local's type and its name, by the local's <c>=</c> clause: once that gap breaks,
+    ///     the name's line is the line the value continues from, <c>T</c> / <c>name =</c> at +4 / the value at +8 (#446,
+    ///     measured on the held typed local's grids); −1 for every other node.
+    /// </summary>
+    public int TypeNameGapOf(SyntaxNode node) => typeNameGaps.TryGetValue(Key(node), out var group) ? group : -1;
 
     public int ReceiverLiftOf(SyntaxNode node) =>
         receiverLifts.TryGetValue(Key(node), out var lift)
