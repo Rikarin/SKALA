@@ -338,6 +338,10 @@ public sealed class FuzzRegressionTests {
     // #617 (found by group D on adca899a): `candidate is` / `[first, /* f */ second, …]` too wide one level in. Pass one
     // kept the author's break and broke the list there; pass two joined `is [`. Fixed by 773eeafa's whole-list point.
     [InlineData(11861007200823207053UL, "constructs/wrapping/alignment.cs")]
+    // Bisected to the b-arrow merge (72d2af95): `.ToList   ()   ;` — BreakPlan.RestWidth read the chain's rest off the
+    // source, a space run counting one column the formatter removes, and #605's held-lambda limit, rising with the
+    // rest, moved `.Where(` below. Now read as formatted.
+    [InlineData(1582939963027114583UL, "constructs/wrapping/lambda-arrow-over-a-binary-pattern.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

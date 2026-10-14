@@ -7095,23 +7095,17 @@ public sealed class BreakPlan {
 
     /// <summary>
     ///     The flat width of a chain after one of its links, through the <c>;</c> that ends the statement
-    ///     when one does: <c>.Where(p).ToList(q);</c> after <c>.Select(…)</c>. A whitespace run counts as
-    ///     one space, and as nothing where it holds a line break.
+    ///     when one does: <c>.Where(p).ToList(q);</c> after <c>.Select(…)</c>, as the formatter writes it.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ Read as formatted, not off the source (fuzz replay 1582939963027114583): the source reading counted a
+    ///     run of spaces as one, so <c>.ToList   ()   ;</c> read three columns wider than the <c>.ToList();</c> it
+    ///     formats to, and #605's limit, which rises two thirds of a column per column of rest, moved
+    ///     <c>.Where(</c> below where the formatted text keeps it.
+    /// </remarks>
     int RestWidth(SyntaxNode link, SyntaxNode root) {
-        var width = 0;
-        var gap = 0;
-        foreach (var c in source.AsSpan(link.Span.End, root.Span.End - link.Span.End)) {
-            if (c is '\r' or '\n') {
-                gap = 2;
-            } else if (c is ' ' or '\t') {
-                gap = gap == 0 ? 1 : gap;
-            } else {
-                width += gap == 1 ? 2 : 1;
-                gap = 0;
-            }
-        }
-
+        var last = link.GetLastToken();
+        var width = last == root.GetLastToken() ? 0 : FormattedWidth(last.GetNextToken(), root.GetLastToken());
         return width + WidthOfNext(root, SyntaxKind.SemicolonToken);
     }
 
