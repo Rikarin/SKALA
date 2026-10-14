@@ -358,6 +358,10 @@ public sealed class FuzzRegressionTests {
     // source, a space run counting one column the formatter removes, and #605's held-lambda limit, rising with the
     // rest, moved `.Where(` below. Now read as formatted.
     [InlineData(1582939963027114583UL, "constructs/wrapping/lambda-arrow-over-a-binary-pattern.cs")]
+    // #624 (fails on adca899a too): `E.Find(entity)` / `.Value = World.Get(body.Handle, entity.` / `Index, scale);`.
+    // Broken inside, the value was no held call and pass one kept the `=`; pass two, the value joined, read its
+    // column through the whole target as if flat, 32 columns right of `.Value =`, and broke the `=`.
+    [InlineData(15061394490375601826UL, "constructs/breaks/held-value-behind-a-target-call.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
