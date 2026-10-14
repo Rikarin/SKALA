@@ -4983,12 +4983,25 @@ public sealed class BreakPlan {
             ParameterAfterSection = parameterWidth,
             SectionHead = FormattedWidth(section.OpenBracketToken, arguments.OpenParenToken) - 1,
             SectionWidth = sectionWidth,
-            SectionSingle = arguments.Arguments.Count == 1
-                || arguments.Arguments.Any(static argument => argument.NameEquals is not null
-                    || argument.NameColon is not null
-                )
+            SectionSingle = TakesTheOneArgumentConstants(arguments)
         };
     }
+
+    /// <summary>
+    ///     Whether a parameter's one attribute section chops by the one-argument constants
+    ///     (<see cref="GroupFacts.SectionSingle" />): at most one of its arguments is positional (#603).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not "any named argument", which round seven believed from <c>("…", DiagnosticId = "X")</c>,
+    ///     <c>(Name = "…", Order = 1)</c> and <c>("…", Bar = true)</c> — each one positional argument or none. A fresh
+    ///     probe (group C, 2026-10-14) refuted it: <c>Range(1, 99, ErrorMessage = "…")</c> and
+    ///     <c>Option('v', "…", Required = false)</c>, two positional arguments and a named one, chop exactly by the
+    ///     two-argument constants, and by the one-argument constants never. ⚠ Only a property's <c>Name =</c> goes
+    ///     uncounted: a constructor argument's <c>name:</c> is positional to the oracle, <c>Bind(x: 1, y: "…")</c> and
+    ///     <c>MapTo(1, y: "…")</c> chopping by the two-argument constants on a second probe written after the first.
+    /// </remarks>
+    static bool TakesTheOneArgumentConstants(AttributeArgumentListSyntax arguments) =>
+        arguments.Arguments.Count(static argument => argument.NameEquals is null) <= 1;
 
     /// <summary>The two line-break characters, for a span search.</summary>
     static readonly char[] LineEnds = ['\r', '\n'];
@@ -6750,10 +6763,7 @@ public sealed class BreakPlan {
                 ParameterAfterSection = FormattedWidth(first, last),
                 SectionHead = FormattedWidth(section.OpenBracketToken, arguments.OpenParenToken) - 1,
                 SectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken),
-                SectionSingle = arguments.Arguments.Count == 1
-                    || arguments.Arguments.Any(static argument => argument.NameEquals is not null
-                        || argument.NameColon is not null
-                    )
+                SectionSingle = TakesTheOneArgumentConstants(arguments)
             }
         };
         plans[^1] = plan;
