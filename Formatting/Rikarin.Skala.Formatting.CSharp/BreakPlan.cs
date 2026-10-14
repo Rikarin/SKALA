@@ -4983,8 +4983,12 @@ public sealed class BreakPlan {
             return facts;
         }
 
+        // ⚠ Nor a section that spans lines itself (fuzz 9695149764600851630: `[` / `#endif` / `MethodImpl(…)]`): its
+        // joined line is not a line the writer can produce, and the band's `=` break, read on pass two as a break inside
+        // the parameter, turned the rule off and broke the gap.
         var first = section.CloseBracketToken.GetNextToken();
-        if (source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny(LineEnds) >= 0) {
+        if (source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny(LineEnds) >= 0
+            || source.AsSpan(section.SpanStart, section.Span.Length).IndexOfAny(LineEnds) >= 0) {
             return facts;
         }
 

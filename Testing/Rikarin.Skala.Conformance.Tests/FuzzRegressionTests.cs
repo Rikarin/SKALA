@@ -198,6 +198,10 @@ public sealed class FuzzRegressionTests {
     // parameter too wide for any line, which pass one broke and pass two read as the author's break, leaving the
     // section's arguments to their own fit. Latent on master for a parameter without a default.
     [InlineData(16667081197111340728UL)]
+    // ⚠ And a section that spans lines itself (`[` / `#endif` / `MethodImpl(…)]`) in front of a default: pass one
+    // kept the gap and broke the `=` by #603's band, pass two read that `=` break as one inside the parameter, turned
+    // the band off and broke the gap.
+    [InlineData(9695149764600851630UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
