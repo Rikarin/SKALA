@@ -59,4 +59,58 @@ public sealed class InitializerBrokenAfterBraceTests {
             }
             """
         );
+
+    /// <summary>
+    ///     #623, fuzz 13197324971917557925: the brace keeps its break only while the line through it fits. Behind a
+    ///     head that leaves no room for <c>= new T() {</c> the oracle breaks the <c>=</c> and joins the braces; Skala
+    ///     kept the <c>=</c>, broke after <c>new Memory&lt;</c>, and pass two broke the <c>=</c>. Expected output is
+    ///     the oracle's, measured 2026-10-14 with <c>Testing ask</c>.
+    /// </summary>
+    [Fact]
+    public void ABraceWhoseLineOverflows_BreaksTheEquals() =>
+        Oracle.Agrees(
+            """
+            public class C {
+                public ((DateTime First, Span<string> Second) First, Lazy<Dictionary<Guid, List<Guid>>> Second) P2 { get; } = new Memory<decimal>() {
+            P18 = new { Id = @"verbatim\path", Count = "sssssssssssssssss" }, P19 = (1.5d - true) };
+                public ((DateTime First, Span<string> Second) First, Lazy<Dictionary<Guid, List<Guid>>> Second) P4 { get; } = new Memory() {
+            P18 = new {
+            Id = @"verbatim\path", Count = "sssssssssssssssss" }, P19 = (1.5d - true) };
+                public ((DateTime First, Span<string> Second) First, Lazy<Dictionary<Guid, List<Guid>>> Second) F5 = new Memory<decimal>() {
+            P18 = new {
+            Id = @"verbatim\path", Count = "sssssssssssssssss" }, P19 = (1.5d - true) };
+                void M2() {
+                    var vxxxxxxxxxx = new Something {
+            Alpha = someLongerValueName, Beta = anotherLongerValueName, Gamma = "sssssssssssssssss" };
+                }
+                void M11() {
+                    var vxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx = new Something {
+            Alpha = 1, Beta = 2 };
+                }
+            }
+            """,
+            """
+            public class C {
+                public ((DateTime First, Span<string> Second) First, Lazy<Dictionary<Guid, List<Guid>>> Second) P2 { get; } =
+                    new Memory<decimal>() { P18 = new { Id = @"verbatim\path", Count = "sssssssssssssssss" }, P19 = (1.5d - true) };
+
+                public ((DateTime First, Span<string> Second) First, Lazy<Dictionary<Guid, List<Guid>>> Second) P4 { get; } =
+                    new Memory() { P18 = new { Id = @"verbatim\path", Count = "sssssssssssssssss" }, P19 = (1.5d - true) };
+
+                public ((DateTime First, Span<string> Second) First, Lazy<Dictionary<Guid, List<Guid>>> Second) F5 =
+                    new Memory<decimal>() { P18 = new { Id = @"verbatim\path", Count = "sssssssssssssssss" }, P19 = (1.5d - true) };
+
+                void M2() {
+                    var vxxxxxxxxxx = new Something {
+                        Alpha = someLongerValueName, Beta = anotherLongerValueName, Gamma = "sssssssssssssssss"
+                    };
+                }
+
+                void M11() {
+                    var vxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx =
+                        new Something { Alpha = 1, Beta = 2 };
+                }
+            }
+            """
+        );
 }

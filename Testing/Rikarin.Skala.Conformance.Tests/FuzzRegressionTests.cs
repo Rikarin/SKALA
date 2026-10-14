@@ -238,6 +238,10 @@ public sealed class FuzzRegressionTests {
     // below the broken braces for its head through the `>(`, and pass two read that break as the author's and lifted
     // the braces (#575). The oracle keeps the `when` on the `}` line and fills the type arguments (SK-DIV-0552).
     [InlineData(16251829570492293429UL)]
+    // #623: `… P17 { get; } = new Memory<decimal>() {` / members behind a 117-column head. The author's brace break kept
+    // the `=` (SK-DIV-0337), so pass one broke after `new Memory<`; pass two, the brace's break gone, broke the `=`. The
+    // brace now keeps the `=` only while the line through it fits (SK-DIV-0553).
+    [InlineData(13197324971917557925UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
