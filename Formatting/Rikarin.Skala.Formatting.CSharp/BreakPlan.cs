@@ -4898,10 +4898,6 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     Whether the gap after an arm's <c>when</c> is planned (#576): a condition whose only break points, if
-    ///     any, are type argument lists. A condition with a point of its own breaks inside instead.
-    /// </summary>
-    /// <summary>
     ///     Whether an arm's <c>when</c> condition breaks only at type argument lists, with a pattern of no break point
     ///     of its own: the head never reads a short body through (#576, SK-DIV-0399).
     /// </summary>
@@ -4929,6 +4925,10 @@ public sealed class BreakPlan {
                 or BinaryPatternSyntax
             );
 
+    /// <summary>
+    ///     Whether the gap after an arm's <c>when</c> is planned (#576): a condition whose only break points, if
+    ///     any, are type argument lists. A condition with a point of its own breaks inside instead.
+    /// </summary>
     static bool IsAPlannedWhenGap(WhenClauseSyntax node) =>
         node.Parent is SwitchExpressionArmSyntax
         && !node.Condition.DescendantNodesAndSelf()
@@ -8746,6 +8746,17 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         Point(keyword, group);
+
+        // ⚠ A break the author kept between an arm's `when` and a collection expression stays (fuzz
+        // 16565442098129427039): `{ … } when` / `["ss", null] => …` comes back from the oracle as written, the
+        // braces lifted as for any kept break after the `when` (#601). Skala joined it, so pass one lifted the
+        // braces over a `when [` line and pass two, finding no break to lift for, put them back.
+        if (node.Parent is SwitchExpressionArmSyntax
+            && node.Condition is CollectionExpressionSyntax
+            && options.KeepsUserBreaksBetweenItems
+            && BreaksBefore(FirstToken(node.Condition))) {
+            Mandatory(FirstToken(node.Condition));
+        }
 
         // ⚠ And the gap after an arm's `when`, by the collection `=`'s rule (#576): the condition moves
         // below the `when`, one level past the arm, exactly when it fits there flat and not beside it —

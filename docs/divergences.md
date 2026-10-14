@@ -11486,6 +11486,15 @@ bodies split differently at the same width. It is not modelled further.
   about 8 rows across the probes. Skala moves the body below.
 - **A chain body breaking at its dots** (`WTDD`), about 3 rows.
 
+⚠ **Fuzz 16565442098129427039 (group C's run; pre-existing, fails identically on `adca899a`).** The arm was
+`{ Value.Length:` / `> 2, Kind: null } when` / `["ss", null] => …`. The `#region` in the generated file plays no part.
+
+- Skala joined the author's break between the `when` and a collection expression. A collection is no planned `when`
+  gap, so nothing kept the break.
+- Pass one still lifted the braces for that kept break (#601). Pass two found no break and put them back: four edits.
+- The oracle keeps the break, with and without braces on several lines. It is kept now.
+- Pinned by `WhenBeforeACollectionTests` and the seed in `FuzzRegressionTests`.
+
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
 ⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as

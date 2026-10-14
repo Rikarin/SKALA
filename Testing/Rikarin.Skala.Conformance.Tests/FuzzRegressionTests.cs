@@ -198,6 +198,10 @@ public sealed class FuzzRegressionTests {
     // two, finding the value spanning lines, read it as having no callee and broke the `=` by the ordering rule. The
     // oracle keeps an author's chop of a lone argument and the `=` beside it (GroupFacts.KeptArgumentCallee).
     [InlineData(17150111611241313074UL)]
+    // `{ Value.Length:` / `> 2, Kind: null } when` / `["ss", null] => …` (group C's run): the author's break between
+    // the `when` and a collection expression was joined, so pass one lifted the braces for a break it then dropped
+    // and pass two put them back. The oracle keeps that break.
+    [InlineData(16565442098129427039UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
