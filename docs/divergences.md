@@ -13571,6 +13571,37 @@ tail, where the oracle keeps the `=` and opens the block (`v = ((x, y) => {` / `
 - status: **fixed** (the seed, pinned by `JoinedBlockInAConditionNightlyTests` and `FuzzRegressionTests`); the wide
   head with a short tail is **open**.
 
+## SK-DIV-0552 — a case label's `when` on the line of its broken braces
+
+Fuzz 16251829570492293429 (generate, found by group F's 30-minute fuzz at `c0c2e7ea`, whose formatter is master
+`27e4fddd`'s). Minimal: `case { Length: >` / `0 } when Convert<(…), (string First, CancellationToken Second)>(x47 =>
+…, […], […]):`. The `when`'s group breaks only when its head overflows, and that head reads through a type argument
+list to the call's `(` (#378's measurement, taken on labels written on one line). Pass one moved the `when` below the
+broken braces; pass two read that break as the author's and lifted the braces two levels in, as #575 does for a kept
+`when`. The oracle never moves it: with the `}` closing braces that span lines, the `when` stays on the `}` line (or on
+`} s`, a designation after it) and the type argument list fills there — `} when Convert<A, B, C, D,` / `E>(x, y):` —
+where the same label on one line breaks before its `when`. A case label's `when` on such a line now stays flat once its
+braces' group broke (`GroupFacts.FlatIfOwnerBroke`, the owner being the property pattern's brace group, read by the
+writer, so braces broken by width count as braces broken by the author).
+
+Measured 2026-10-14 with `Testing ask`:
+
+| probe | rows | differ before → after | non-idempotent files before → after |
+|---|---:|---:|---:|
+| five pattern shapes × eight conditions × two depths (`>`/`0`'s indent read as equal, below) | 80 | 22 → 18 | 2 → 0 |
+| seven ways to leave the braces broken, by the author or by width, × four conditions | 28 | 12 → 10 | 1 → 0 |
+
+Open, and the same before and after: a broken `>` / `0` subpattern puts the `0` one level deeper than the oracle,
+which writes it on the subpattern's column; the oracle *lifts* the braces two levels at block depth 2 when the
+condition after `} when` breaks at its own top level (an `&&` chain, or after the `when`), not when it breaks inside a
+type argument list; and a `when` past the margin by itself (`} s when someVeryLong…:`) stays on the `}` line where the
+oracle breaks after the `when`. The fuzz case's tuple type arguments fill inside a tuple element in the oracle
+(`(string First, CancellationToken` / `Second)>(`), which Skala's type argument fill never does.
+
+- options: none.
+- status: **fixed** (the seed, pinned by `CaseLabelWhenOnTheBracesLineTests` and `FuzzRegressionTests`); the
+  residues above are **open**.
+
 ## SK-DIV-0521 — where a sole lambda breaks after its arrow without a broken test
 
 #620, group C (2026-10-14): SK-DIV-0520's question where the body is not a type test broken before its keyword. Probe

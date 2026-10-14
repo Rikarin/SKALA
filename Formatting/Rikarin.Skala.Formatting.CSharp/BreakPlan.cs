@@ -346,6 +346,12 @@ public sealed class BreakPlan {
     /// </summary>
     readonly Dictionary<int, long> wholeListPoints = [];
 
+    /// <summary>
+    ///     A property pattern's brace group, by the position of its <c>}</c>: what a case label's <c>when</c> on that
+    ///     line reads (SK-DIV-0552). See <see cref="PlanWhenClause" />.
+    /// </summary>
+    readonly Dictionary<int, int> propertyBraces = [];
+
     readonly Dictionary<int, long> wholeListGroups = [];
 
     /// <summary>
@@ -9450,6 +9456,25 @@ public sealed class BreakPlan {
                 ? armLift
                 : -1;
 
+        // ⚠ A case label's `when` on the line of a property pattern's `}` stays there once the braces broke open
+        // (fuzz 16251829570492293429, SK-DIV-0552): `case {` / `Length: >` / `0` / `} when Convert<…, (string
+        // First,` / `…>(…):` comes back from the oracle with the type argument list filling on the `}` line, where
+        // Skala moved the `when` below for its head through the `>(`; pass two read that break as the author's and
+        // lifted the braces (#575). The same label on one line still breaks before its `when`.
+        // ⚠ And on the line of `} s`, a designation after the braces.
+        var beforeWhen = keyword.GetPreviousToken();
+        if (beforeWhen.Parent is SingleVariableDesignationSyntax {
+                Parent: RecursivePatternSyntax { PropertyPatternClause: { } designated }
+            }) {
+            beforeWhen = designated.CloseBraceToken;
+        }
+
+        var braces = node.Parent is CasePatternSwitchLabelSyntax
+            && !BreaksBefore(keyword)
+            && propertyBraces.TryGetValue(beforeWhen.SpanStart, out var closing)
+                ? closing
+                : -1;
+
         Describe(
             node,
             group,
@@ -9458,7 +9483,9 @@ public sealed class BreakPlan {
                 options.KeepsUserBreaksBetweenItems && BreaksBefore(keyword),
                 BreaksIfTooLong: true,
                 BreaksOnlyIfHeadOverflows: true,
-                LiftGroup: lift
+                LiftGroup: lift,
+                Owner: braces,
+                FlatIfOwnerBroke: braces >= 0
             ),
             // spendsIndent, leadingGapInside: the gap before the `when` is the group's own first
             // point, so the group has to open before it (GroupPlan.LeadingGapInside).
@@ -9533,6 +9560,7 @@ public sealed class BreakPlan {
         var chopsAlways = options.WrapPropertyPattern == WrapStyle.ChopAlways && !keepExisting;
 
         var outer = NewGroup();
+        propertyBraces[close.SpanStart] = outer;
         var first = FirstToken(items[0]);
         var delimiterBroken = BreaksBefore(first) || BreaksBefore(close);
         Point(first, outer);

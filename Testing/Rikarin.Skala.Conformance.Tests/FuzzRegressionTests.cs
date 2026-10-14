@@ -226,6 +226,10 @@ public sealed class FuzzRegressionTests {
     // made the condition read as written across lines, so pass one kept the `=` past #553's rule; pass two, `=> {`
     // joined, broke it — the oracle's answer for both. The gap before the brace now reads as glued (SK-DIV-0551).
     [InlineData(7696270417166025555UL)]
+    // `case { Length: >` / `0 } when Convert<…, (string First, …)>(…):` (group F's fuzz): pass one moved the `when`
+    // below the broken braces for its head through the `>(`, and pass two read that break as the author's and lifted
+    // the braces (#575). The oracle keeps the `when` on the `}` line and fills the type arguments (SK-DIV-0552).
+    [InlineData(16251829570492293429UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
