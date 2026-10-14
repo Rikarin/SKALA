@@ -10802,6 +10802,42 @@ Every output is stable on a second pass. Sabotaged: with named arguments and def
 of `NamedArgumentAndDefaultSectionChopIssue603Tests` fails, and with the band removed its two cells in
 `DefaultValueEqualsBandIssue603Tests` do.
 
+**Round eight (#603, group C, 2026-10-14): which constants, a fuzz failure, and what is left.** Round seven's three
+probes were re-measured with the oracle asked afresh, master → round seven: 3 729 → 4 124 of 4 158, 3 119 → 3 523 of
+3 570 and 1 723 → 2 005 of 2 016, as claimed.
+- ⚠ **Round seven made pass two disagree with pass one** (fuzz `--replay=16667081197111340728`, failing once round seven
+  was merged): `[EditorBrowsable(EditorBrowsableState`↵`.Never)]` in front of a 120-column `Span<(…)> p18 = default`.
+  The rule said flat for a parameter that wide, the parameter overflowed its own line and was broken, and on pass two
+  that break read as the author's, which leaves the list to its own fit by design — so it chopped. ⚠ Latent on master
+  for a parameter without a default; round seven's defaults only reached it. Neither section rule speaks now for a
+  parameter whose line, its comma included, overflows from the section's column (`Fitter.OverflowsItsOwnLine`); the
+  oracle chops that section by the arguments' own fit too. Pinned in `FuzzRegressionTests`.
+- ⚠ **"A named argument takes the one-argument constants" was wrong.** Every section it was read from had one positional
+  argument or none. `Range(1, 99, ErrorMessage = "…")` and `Option('v', "…", Required = false)` chop exactly by the
+  two-argument constants, and a constructor argument's `name:` counts as positional — `Bind(x: 1, y: "…")` and
+  `MapTo(1, y: "…")` chop by the two-argument constants too. The constants follow the positional arguments: one or
+  none, the one-argument rule; two or more, the two-argument rule; a property's `Name =` uncounted
+  (`BreakPlan.TakesTheOneArgumentConstants`), pinned by `PositionalArgumentCountSectionChopIssue603Tests`.
+
+| probe (cells agreeing) | master | round seven | now |
+|---|---|---|---|
+| `Range`, `Option`, `FromQuery`, `DefaultValue`, `Description(…, …)`, `Obsolete(message:)` × six parameters, indents 8/12/16 (3 240) | 2 997 | 3 060 | 3 237 |
+| `(1, "…", B = true)`, `("…", B = true, C = 2)`, three named, three positional and a named, `(x:, y:)`, `(1, y:)` (2 916) | 1 771 | 2 059 | 2 860 |
+| `Column(name:, order:)`, `Sample("…", count:, Strict =)`, two named, three positional, `("…", Culture =)`, indents 8/12/24, written after the rule (2 025) | 1 434 | 1 636 | 1 996 |
+
+Round seven's own probes do not move (no cell in them has two positional arguments and a named one). Every output on
+every grid is stable on a second pass.
+
+⚠ **The residue is the rule's own edge, and no linear rule does better.** Over every grid, 961 families of one section
+shape at one indent and parameter width: 72 have the oracle's first chopped column away from the rule's, and all but
+three on the same side — the oracle keeps the section whole one to four columns longer (eight times never within the
+margin) where the rule has already chopped; the three others chop at 119 or 120 past the second condition's edge. A refit of `24·E ≥ a + b·w + c·i + d·h + e·v`, `v` the default value's
+width, over all of them returns the current coefficients for both sets (47 of 360 two-argument families missed, 25 of
+601 one-argument) and gives the default no weight. Defaults miss more often (48 of 448 families against 24 of 513), but
+not by a constant: `bool flag = false` and `string title = null` behind `Range(1, "…", B = true)` chop 1–4 columns
+late, `long sizeInBytes = 0` on the rule. Cells now apart: 6, 11, 10, 47, 34 and 4 on round four to seven's probes, 3,
+56 and 29 on group C's. Not wired.
+
 **Round six (#603, group Q round four, 2026-10-10): one argument.** 2 205 cells — `[A(`, `[From(`, `[Description(`,
 `[JsonPropertyName(`, `[NotNullIfNotNull(`, `string a…` of 12 to 24 columns, indents 8, 12 and 20 — with round four's
 `[A(` and `[Description(` rows. A one-argument section is round five's rule with its own constants: the same slopes
@@ -12172,41 +12208,6 @@ on 2 247, losing 10 rows round one had.
   oracle declines the join from 122 to 128 where it joins and chops for names of 16 or less. Another name
   effect, inside the attribute join; not wired.
 
-## SK-DIV-0490 — a type test broken before its `is` takes a level of its own, stacked on what is open around it
-
-#597, found in Skala's own `SearchValuesAnalyzer.cs`: `if (model.GetSpeculativeSymbolInfo(` / the
-arguments / `).Symbol` / `is not IMethodSymbol creator` / `|| …`. Skala gave a broken `is` one level past
-its operand's *line* (#445's from-the-line scope), so it collapsed with whatever else opened on that line.
-The oracle stacks it. Measured 2026-10-09 with `Testing ask` on 308 rows: if, while, do, else if, return,
-a local, an assignment, `=>`, a ternary's condition, an argument and a lambda; a long call and a short one;
-with and without `.Symbol`; `is not T t`, `is T`, `is null` and `as T`; alone and under `||` and `&&`.
-
-- Alone after `return`, the `is` and the `)` are one level in and the arguments two. Skala wrote the `)`
-  flush with `return`.
-- With `.Symbol` after the `)`, the chain takes a level past the `is`. `.Symbol` is two levels in and the
-  arguments three.
-- As the left operand of `||` or `&&`, the `is` goes a level past the operator, and everything under it
-  goes with it.
-- A whole statement condition keeps the `is` on the aligned column.
-
-With the oracle's breaks left in place, all 48 rows of a control grid without a broken `is` already matched
-and still do. On the broken-`is` rows, Skala diverged on 137 of 260 before and on 10 now, and no row
-regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
-
-- Fix: `BreakPlan.StacksItsLevel` and `IsAStackedTypeTestsOperand`, plus `LayoutWriter.LevelForBlock`. An
-  additive scope no longer blocks the scopes outside a broken construct, which `Level` already honoured.
-
-⚠ The 10 rows still diverging, all as before:
-
-- 7 are a sole lambda's whole body (`Use(x => call(` / … / `)` / `is T`). #445 keeps that one level past
-  the line, and the oracle nests the arguments from the `is`'s level there. The short form already matches
-  and is the test's control.
-- 3 are `as T` broken before `as` as a ternary's condition. The oracle keeps `?` and `:` on the `as`'s
-  column, and Skala puts them a level in.
-
-- status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`. ⚠ The two residues
-  are **open**.
-
   the closer and the arm heads are **resolved** in SK-DIV-0443; the carried comma stays **open**.
 
   the closer and the arm heads are **resolved** in SK-DIV-0443, the carried comma in SK-DIV-0448.
@@ -12245,7 +12246,8 @@ regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
 
 - status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`, and for the ternary
   residue (#602), pinned by `TernaryAfterABrokenTypeTestIssue602Tests`, and for the sole-lambda residue (#602, group
-  Q round five), pinned by `SoleLambdaBrokenTypeTestIssue602Tests`.
+  Q round five), pinned by `SoleLambdaBrokenTypeTestIssue602Tests`, and for a property pattern and a chain as the operand
+  (group C), pinned by `SoleLambdaBrokenTypeTestIssue602Tests`. The arrow's own break is **open** in SK-DIV-0520.
 
 **#602's sole-lambda rows (group Q round five, 2026-10-10).** The stacked level is right exactly when the operand's
 argument list breaks, and that is a layout fact, so it is decided at layout time: a sole lambda's whole body that is a
@@ -12256,6 +12258,28 @@ it — four calls, `.Symbol` and `.Symbol.OriginalDefinition`, `is`, `is not …
 `(x) =>` and `(int x) =>`, as a statement's argument, a local's, a chain's and nested in a block (280 members) — goes from
 166 members apart to 76, none of them made worse; the 76 that remain differ in where the arrow or the operand's chain
 breaks, not in this level. Sabotaged: with the hold removed the test fails.
+
+**#602, group C (2026-10-14).** Round five's numbers reproduce with the oracle asked afresh: group S's grid 190 → 196
+of 196, its 280-member probe 114 → 204. Two more operands stack, both found on a fresh probe of 576 members (callees of
+one to three arguments and none, `.Value` and `.Value.ContainingType` after them, chains of two calls, a property-only
+chain; `is`, `is not … x`, `as`, `is null`, `is { … }`; a statement's argument, `return`, a local, a nested block;
+`x =>`, `static x =>`, `(Node x) =>`):
+- **A property pattern** (`is { IsStatic: true }`) goes through `PlanBrokenTypeTest`, which the hold never reached.
+- **A chain**: `ctx.GetSelected()` / `.Value.ContainingType` / `is T` and `loader.Open(path)` / `.Resolve(…)` / `.Value`
+  / `is T` stack where no argument list breaks. The hold names the operand's chain group where it is a chain
+  (`SettleTypeTestHolds`), its argument list otherwise.
+
+| probe (members agreeing) | master | round five | now |
+|---|---|---|---|
+| group S's grid (196) | 190 | 196 | 196 |
+| round five's probe (280) | 114 | 204 | 204 |
+| group C's first probe (576) | 279 | 339 | 360 |
+| group C's second, written after both (192: five callee shapes, a bare call, a generic one, `item =>` under `ForEach`, `y =>` under `return`, nested in a loop) | 102 | 126 | 138 |
+
+None made worse on any of them; stable on a second pass. On group C's two probes the rows still apart are, but for
+twelve, all one other matter — where the oracle breaks after the arrow — recorded in SK-DIV-0520; the twelve are a
+property-only chain (`x => a.B.C.D` / `.E` / `is T`) the oracle breaks and Skala does not (8) and a call's arguments
+Skala chops where the oracle keeps them whole and breaks the chain after them instead (4).
 
 **#602 (group Q round four, 2026-10-10): the ternary residue.** The cause was not the type test's level: a ternary
 opens the scope its `?` and `:` take after a *binary* condition, so that a broken `==` chain puts them a level further
@@ -12634,3 +12658,18 @@ The oracle:
 `x is not (0` / `or 1)` and a positional pattern's element keep their levels, unchanged.
 
 - status: **fixed**, pinned by `ListPatternElementChainIssue615Tests` and `FuzzRegressionTests`.
+
+## SK-DIV-0520 — where a sole lambda breaks after its arrow, in front of a broken type test
+
+Found by group C's #602 probes (2026-10-14), not attempted. A sole lambda argument whose whole body is a type test the
+author broke before its keyword, with an operand too long for the line: the oracle either keeps the operand on the
+arrow's line and breaks inside it (`Apply(x => call(` / the arguments / `)` / `is T`), or breaks after the arrow and
+writes the operand whole a level in (`Apply(static x =>` / `call(a, b, c)` / `is T` two levels in). Skala always does
+the first. Which one the oracle takes is not the width before the arrow: counted from the statement's start to the
+arrow's end, `Apply(x =>` (10) and `Use(x =>` (8) keep, `items.ForEach(item =>` (21), `return Check(y =>` (17) and
+`var found = list.Any(x =>` (25) break, but at 14 to 17 both happen in one probe — `Use(static x =>` keeps for one
+callee and breaks for another, `.Select(x =>` inside a chain keeps. Rows apart for this alone, of the members whose
+line overflows: 185 + 19 of 576, 48 + 6 of 192, 70 of 280 (oracle breaks + oracle keeps).
+
+- status: **open**.
+

@@ -85,4 +85,77 @@ public sealed class SoleLambdaBrokenTypeTestIssue602Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     A property pattern stacks with its operand's arguments, and a chain's links breaking stack the level as an
+    ///     argument list's do; the short forms stay one level past the line (group C's probes).
+    /// </summary>
+    [Fact]
+    public void APropertyPatternAndAChainStackToo() =>
+        Oracle.Agrees(
+            """
+            class C {
+                void M169() {
+                    Apply(x => workspaceIndex.ResolveDeclaredSymbolForNode(currentSyntaxNode, semanticModelForTree, cancellationToken)
+            is { IsStatic: true });
+                }
+                void M349() {
+                    Apply(x => compilationContextForTheEntireSolutionWorkspace.GetTheCurrentlySelectedSymbolForTheEditor().Value.ContainingType
+            is ITypeSymbol);
+                }
+                void M487() {
+                    Apply(x => loader.Open(path).ResolveDeclaredSymbolForNode(currentSyntaxNode, semanticModelForTree, cancellationToken).Value
+            is { IsStatic: true });
+                }
+                void N13() {
+                    Apply(x => index.Lookup(first, second)
+            is { Count: > 0 });
+                }
+                void N169() {
+                    Apply(x => a.B(c).D
+            is IMethodSymbol);
+                }
+            }
+            """,
+            """
+            class C {
+                void M169() {
+                    Apply(x => workspaceIndex.ResolveDeclaredSymbolForNode(
+                            currentSyntaxNode,
+                            semanticModelForTree,
+                            cancellationToken
+                        )
+                        is { IsStatic: true }
+                    );
+                }
+
+                void M349() {
+                    Apply(x => compilationContextForTheEntireSolutionWorkspace.GetTheCurrentlySelectedSymbolForTheEditor()
+                            .Value.ContainingType
+                        is ITypeSymbol
+                    );
+                }
+
+                void M487() {
+                    Apply(x => loader.Open(path)
+                            .ResolveDeclaredSymbolForNode(currentSyntaxNode, semanticModelForTree, cancellationToken)
+                            .Value
+                        is { IsStatic: true }
+                    );
+                }
+
+                void N13() {
+                    Apply(x => index.Lookup(first, second)
+                        is { Count: > 0 }
+                    );
+                }
+
+                void N169() {
+                    Apply(x => a.B(c).D
+                        is IMethodSymbol
+                    );
+                }
+            }
+            """
+        );
 }
