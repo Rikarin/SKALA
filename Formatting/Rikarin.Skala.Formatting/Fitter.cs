@@ -354,9 +354,9 @@ public sealed class Fitter {
 
                 // ⚠ A `when` condition's outer type argument list: see GroupFacts.WhenOuterTail (#576).
                 // ⚠ The "stays" half is read off the planner's width, never off the measured one (fuzz
-                // 10815522948059258787 and 1019535202291160959): pass one kept the list and broke the inner one after its
-                // `<`; pass two, reading that break as the author's, measured this group as unbounded, skipped the rule
-                // and broke the list as well.
+                // 10815522948059258787 and 1019535202291160959): pass one kept the list and broke the inner one after
+                // its `<`; pass two, reading that break as the author's, measured this group as unbounded, skipped the
+                // rule and broke the list as well.
                 if (facts.WhenOuterTail > 0) {
                     if (!Fits(m.ContinuationColumn, facts.WhenOuterTail + 14)) {
                         return ResolvedMode.Flat;

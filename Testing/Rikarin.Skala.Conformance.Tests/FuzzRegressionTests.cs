@@ -332,16 +332,18 @@ public sealed class FuzzRegressionTests {
     // and chopped; pass two, the value now broken, broke the `=`.
     [InlineData(6605302205500226187UL, "real/vixen/Core/Vixen.Physics/Ecs/PhysicsScene.cs")]
     // #576 round 6's outer type argument list (GroupFacts.WhenOuterTail): pass one kept `Materialise<List<bool>,
-    // IReadOnlyDictionary_w…<` and broke the inner list after its `<`; pass two, reading that break as kept, measured the
-    // outer list as unbounded, skipped the rule and broke it too. The rule's "stays" half now reads the planner's width.
+    // IReadOnlyDictionary_w…<` and broke the inner list after its `<`; pass two, reading that break as kept, measured
+    // the outer list as unbounded, skipped the rule and broke it too. The rule's "stays" half now reads the planner's
+    // width.
     [InlineData(10815522948059258787UL, "constructs/breaks/arm-when-condition-below.cs")]
     [InlineData(1019535202291160959UL, "constructs/breaks/arm-when-condition-below.cs")]
     // The Nightlies of 2026-10-13 and 2026-10-14, on master adca899a: idempotency on two Vixen files, both clean once
     // the 2026-10-14 merges landed (42ed48b0) without either being targeted. Pinned so neither returns unnoticed.
     [InlineData(14052156207620702103UL, "real/vixen/Core/Vixen.Ecs/Systems/SystemGraph.cs")]
     [InlineData(10618586840755774483UL, "real/vixen/Core/Vixen.Ui.Tests/NineSliceImageTests.cs")]
-    // #617 (found by group D on adca899a): `candidate is` / `[first, /* f */ second, …]` too wide one level in. Pass one
-    // kept the author's break and broke the list there; pass two joined `is [`. Fixed by 773eeafa's whole-list point.
+    // #617 (found by group D on adca899a): `candidate is` / `[first, /* f */ second, …]` too wide one level in. Pass
+    // one kept the author's break and broke the list there; pass two joined `is [`. Fixed by 773eeafa's whole-list
+    // point.
     [InlineData(11861007200823207053UL, "constructs/wrapping/alignment.cs")]
     // Bisected to the b-arrow merge (72d2af95): `.ToList   ()   ;` — BreakPlan.RestWidth read the chain's rest off the
     // source, a space run counting one column the formatter removes, and #605's held-lambda limit, rising with the
