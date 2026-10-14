@@ -158,6 +158,6 @@ public sealed class HeldTypedLocalIssue446Tests {
                 }
             }
             """
-        ),
+        )
     };
 }

@@ -169,6 +169,6 @@ public sealed class PatternNarrowHeadIssue446Tests {
                 }
             }
             """
-        ),
+        )
     };
 }

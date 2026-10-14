@@ -650,6 +650,6 @@ public sealed class TypeTestTieIssue446Tests {
                 }
             }
             """
-        ),
+        )
     };
 }
