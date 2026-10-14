@@ -194,6 +194,10 @@ public sealed class FuzzRegressionTests {
     // the callee was measured by its source span, which counts the author's spaces inside the type arguments, so
     // the widened copy broke its `=` where the canonical one kept it. Whitespace absorption.
     [InlineData(17947985453911507632UL)]
+    // `var (a, b) = Convert<…>(($"…" + (…)));` (#617): pass one kept the `=` and chopped the one argument, and pass
+    // two, finding the value spanning lines, read it as having no callee and broke the `=` by the ordering rule. The
+    // oracle keeps an author's chop of a lone argument and the `=` beside it (GroupFacts.KeptArgumentCallee).
+    [InlineData(17150111611241313074UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

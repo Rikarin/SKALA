@@ -315,6 +315,9 @@ public sealed class BreakPlan {
     /// <summary>The arrow group <see cref="PlanArrowBody" /> opened for each lambda, by the lambda's key.</summary>
     readonly Dictionary<long, int> arrowGroups = [];
 
+    /// <summary>See <see cref="ReceiverLiftOf" />.</summary>
+    readonly Dictionary<long, (int Group, int Dot)> receiverLifts = [];
+
     /// <summary>The <see cref="GroupFacts.LiftsIfWhenBreaks" /> group of an arm, keyed by its <c>when</c> clause.</summary>
     readonly Dictionary<long, int> whenLifts = [];
 
@@ -3566,6 +3569,10 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         Point(dot, group);
+        if (IsACallOnAParenthesisedOperator(call)) {
+            LiftReceiver(dot, receiver, group);
+        }
+
         Describe(
             call,
             group,
@@ -3574,7 +3581,8 @@ public sealed class BreakPlan {
                 BreaksIfTooLong: true,
                 HeldCall: call.ArgumentList.Arguments.Count > 1 ? 4 : 3,
                 HeldCallHead: FormattedWidth(dot, call.ArgumentList.OpenParenToken),
-                ParenReceiver: IsACallOnAParenthesisedOperator(call)
+                ParenReceiver: IsACallOnAParenthesisedOperator(call),
+                ParenReceiverTail: IsACallOnAParenthesisedOperator(call) ? ParenReceiverTailOf(receiver) : 0
             ),
             // ⚠ A level of its own, as a chain's: `var y =` / `R` / `.Call(…)` puts the dot one level past
             // the receiver, and LayoutWriter's one-level-per-line collapse keeps `var y = R` / `.Call(…)` at one.
@@ -3609,7 +3617,18 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         Point(dot, group);
-        Describe(call, group, GroupMode.Preserve, new(BreaksIfTooLong: true, ParenReceiver: true), true);
+        LiftReceiver(dot, ((MemberAccessExpressionSyntax)call.Expression).Expression, group);
+        Describe(
+            call,
+            group,
+            GroupMode.Preserve,
+            new(
+                BreaksIfTooLong: true,
+                ParenReceiver: true,
+                ParenReceiverTail: ParenReceiverTailOf(((MemberAccessExpressionSyntax)call.Expression).Expression)
+            ),
+            true
+        );
     }
 
     /// <summary>
@@ -3674,10 +3693,27 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ One property after one parenthesis around a binary operator, `(a && b…).Length`, is a single call's shape,
+        // not a fill (#617): its dot breaks while the receiver fits, or when the receiver's last line still overflows
+        // with the property, and the receiver's continuation then nests past the dot's line. Measured 2026-10-14 with
+        // `Testing ask` behind `x =`, `var y =`, `return`, a cast and as an argument. A fill's group breaks before
+        // its point does, which the receiver's level cannot wait for. See GroupFacts.ParenReceiver and ReceiverLiftOf.
+        var parenOperator = dots.Count == 1
+            && root is MemberAccessExpressionSyntax {
+                Expression: ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax binary }
+            }
+            && !binary.IsKind(SyntaxKind.IsExpression)
+            && !binary.IsKind(SyntaxKind.AsExpression)
+            && !IsAssignmentTarget(root)
+            && !HasLineBreakIn(root)
+            && IsAMeasuredReceiverContext(root);
         var group = NewGroup();
         foreach (var dot in dots) {
             if (options.KeepsUserBreaksBetweenItems && BreaksBefore(dot)) {
                 Mandatory(dot);
+            } else if (parenOperator) {
+                Point(dot, group);
+                LiftReceiver(dot, ((MemberAccessExpressionSyntax)root).Expression, group);
             } else {
                 Point(dot, group, true, IsAssignmentTarget(root));
             }
@@ -3701,6 +3737,10 @@ public sealed class BreakPlan {
                     new(
                         BreaksIfTooLong: true,
                         HidesFlatWidthWhenBroken: !IsAssignmentTarget(root),
+                        ParenReceiver: parenOperator,
+                        ParenReceiverTail: parenOperator
+                            ? ParenReceiverTailOf(((MemberAccessExpressionSyntax)root).Expression)
+                            : 0,
                         ArmHead: root.Parent is ConstantPatternSyntax { Parent: SwitchExpressionArmSyntax }
                             ? FlatSourceWidth(root)
                             : 0,
@@ -6118,7 +6158,8 @@ public sealed class BreakPlan {
                         : 0,
                     CalleeArgument: callee > 0 && ArgumentsOf(value) is [var sole]
                         ? FormattedWidth(sole)
-                        : 0
+                        : 0,
+                    KeptArgumentCallee: KeptArgumentCalleeOf(owner, value)
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -7134,6 +7175,28 @@ public sealed class BreakPlan {
     ///     twelve or more breaking — where a generic creation's <c>=</c> fell to the ordering rule, which kept it and
     ///     chopped the argument. A narrower head has its own rule; see <see cref="GroupFacts.CalleeArgument" />.
     /// </remarks>
+    /// <summary>See <see cref="GroupFacts.KeptArgumentCallee" />: the callee's width, or zero.</summary>
+    /// <remarks>
+    ///     ⚠ Only an argument written on one line of its own, after a break straight after the <c>(</c>: the shape the
+    ///     oracle was asked about. Not a field's, whose `=` was not measured.
+    /// </remarks>
+    int KeptArgumentCalleeOf(EqualsOwner owner, ExpressionSyntax value) {
+        if (owner is EqualsOwner.None or EqualsOwner.Field
+            || !options.KeepsUserBreaksBetweenItems
+            || value is not InvocationExpressionSyntax {
+                Expression: IdentifierNameSyntax or GenericNameSyntax,
+                ArgumentList: { Arguments: [var sole] } list
+            }
+            || !BreaksBefore(FirstToken(sole))
+            || HasLineBreakIn(sole)
+            || source.AsSpan(value.SpanStart, list.OpenParenToken.Span.End - value.SpanStart).IndexOfAny('\r', '\n') >= 0
+            || list.DescendantTrivia().Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))) {
+            return 0;
+        }
+
+        return CalleeOf(value);
+    }
+
     int CalleeWidthOf(ExpressionSyntax value) =>
         value is InvocationExpressionSyntax {
                 Expression: IdentifierNameSyntax or GenericNameSyntax, ArgumentList.Arguments.Count: >= 1
@@ -7535,6 +7598,69 @@ public sealed class BreakPlan {
 
     /// <summary>The arrow group a <see cref="HeldLevel.WhileArrowFlat" /> hold is decided by, or -1.</summary>
     public int ArrowHeldAgainst(int group) => arrowHeldAgainst.TryGetValue(group, out var arrow) ? arrow : -1;
+
+    /// <summary>
+    ///     The group of the dot after a parenthesised receiver, when the receiver's own continuation nests a level
+    ///     past the dot's line once that dot breaks; −1 otherwise (#617).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c>: <c>x = (a</c> / <c>&amp;&amp; b…)</c> / <c>.Length;</c> puts the
+    ///     <c>&amp;&amp;</c> two levels past the statement and the dot one, behind <c>x =</c>, <c>var y =</c>,
+    ///     <c>return</c> and a cast, for a property and a call alike, and <c>Use(</c> / <c>(a</c> / <c>&amp;&amp; b…)</c> /
+    ///     <c>.Length</c> one level past the argument's line. Pass one put the operator on the dot's column; pass two,
+    ///     reading the dot's break as the author's, nested it (fuzz, the 240-row probe's row 135). Only for a dot pass
+    ///     one breaks itself: a kept one is the frame's (<c>CSharpDocumentBuilder</c>).
+    /// </remarks>
+    /// <remarks>
+    ///     ⚠ Only while the dot is still the group's own point: a statement condition or an argument plans its own
+    ///     there, and a lift held against a group with no point broke the operator a level deep with the dot kept
+    ///     on its line (<c>if ((a</c> / <c>+ b…).Value)</c>, which pass two moved).
+    /// </remarks>
+    public int ReceiverLiftOf(SyntaxNode node) =>
+        receiverLifts.TryGetValue(Key(node), out var lift)
+        && gaps.TryGetValue(lift.Dot, out var gap)
+        && gap.Group == lift.Group
+        && gap.Rule == GapRule.Point
+            ? lift.Group
+            : -1;
+
+    /// <summary>
+    ///     See <see cref="GroupFacts.ParenReceiverTail" />: the width from the last operator of the binary a
+    ///     parenthesised receiver holds through its <c>)</c>, or zero.
+    /// </summary>
+    int ParenReceiverTailOf(ExpressionSyntax receiver) =>
+        receiver is ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax binary } parenthesis
+            ? FormattedWidth(binary.OperatorToken, parenthesis.CloseParenToken)
+            : 0;
+
+    /// <summary>
+    ///     Whether a property after a parenthesised operator stands where #617 measured it: the whole value of an
+    ///     <c>=</c> or a <c>return</c>, cast or not, or a call's only argument.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not a statement condition, whose operator continues on the condition's own column, nor one argument among
+    ///     several: there the dot's line is not the operator's, and the fresh probe's three rows there went
+    ///     non-idempotent.
+    /// </remarks>
+    static bool IsAMeasuredReceiverContext(SyntaxNode root) {
+        var whole = root.Parent is CastExpressionSyntax cast && cast.Expression == root ? cast : root;
+        return whole.Parent switch {
+            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax } => true,
+            AssignmentExpressionSyntax assignment => assignment.Right == whole,
+            ReturnStatementSyntax => true,
+            ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } } => true,
+            _ => false
+        };
+    }
+
+    /// <summary>Registers <see cref="ReceiverLiftOf" /> for a dot group whose receiver is parenthesised.</summary>
+    void LiftReceiver(SyntaxToken dot, ExpressionSyntax receiver, int group) {
+        if (receiver is ParenthesizedExpressionSyntax parenthesis
+            && !BreaksBefore(dot)
+            && !HasLineBreakIn(parenthesis)) {
+            receiverLifts[Key(parenthesis)] = (group, dot.SpanStart);
+        }
+    }
 
     /// <summary>The group <see cref="PlanChainedCalls" /> opened over the chain rooted at this key, or -1.</summary>
     int ChainGroupOf(long root) => chainGroups.TryGetValue(root, out var group) ? group : -1;

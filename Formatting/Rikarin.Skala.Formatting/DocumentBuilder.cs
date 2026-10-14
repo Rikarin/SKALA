@@ -434,15 +434,17 @@ public sealed class DocumentBuilder {
     ///     fails: <see cref="IndentFlags.HeldWhileOwnerFlat" />, <see cref="IndentFlags.HeldWhileChainWhole" />
     ///     over <paramref name="chainGroup" />, or both.
     /// </summary>
-    public void OpenHeldIndent(IndentKind kind, IndentFlags conditions, int chainGroup) =>
+    /// <param name="countsWithItsLine">Once spent, the scope is a <see cref="IndentFlags.CountsWithItsLine" /> one.</param>
+    public void OpenHeldIndent(IndentKind kind, IndentFlags conditions, int chainGroup, bool countsWithItsLine = false) =>
         Open(
             DocKind.Indent,
             (int)kind,
-            (int)(conditions
-                & (IndentFlags.HeldWhileOwnerFlat
-                    | IndentFlags.HeldWhileChainWhole
-                    | IndentFlags.HeldWhileGroupFlat
-                    | IndentFlags.HeldWhileGroupBroken)),
+            (int)((conditions
+                    & (IndentFlags.HeldWhileOwnerFlat
+                        | IndentFlags.HeldWhileChainWhole
+                        | IndentFlags.HeldWhileGroupFlat
+                        | IndentFlags.HeldWhileGroupBroken))
+                | (countsWithItsLine ? IndentFlags.CountsWithItsLine : IndentFlags.None)),
             chainGroup
         );
 
