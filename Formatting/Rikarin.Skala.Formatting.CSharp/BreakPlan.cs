@@ -4946,7 +4946,11 @@ public sealed class BreakPlan {
     ///     naming the list's group, resolved by <see cref="SettleTypeTestHolds" />).
     /// </remarks>
     ExpressionSyntax? StacksWhileItsArgumentsBreak(SyntaxNode node, SyntaxToken keyword) {
-        if (!BreaksBefore(keyword) || IsAHeaderCondition(node) || node.Parent is not LambdaExpressionSyntax) {
+        // ⚠ And a sole lambda's test written on one line (#620): `Run(x => call(` / the arguments two levels in /
+        // `) as T`, as under a broken test.
+        if (!BreaksBefore(keyword) && !IsTheBodyOfASoleLambda(node)
+            || IsAHeaderCondition(node)
+            || node.Parent is not LambdaExpressionSyntax) {
             return null;
         }
 
