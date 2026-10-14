@@ -513,7 +513,9 @@ public sealed class Fitter {
                         equalsEnd,
                         paren,
                         facts.EqualsLambdaArguments,
-                        facts.EqualsLambdaReach
+                        facts.EqualsLambdaReach,
+                        facts.EqualsLambdaSingle,
+                        lineStart
                     )
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;

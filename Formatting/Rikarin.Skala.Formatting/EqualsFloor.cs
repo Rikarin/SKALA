@@ -421,21 +421,63 @@ public static class EqualsFloor {
     ///     differ, against 1 659 before.
     /// </remarks>
     /// <param name="extraReach">Columns added to the reach: 2 for an assignment statement's target (round 3).</param>
+    /// <param name="oneArgument">
+    ///     ⚠ The call has one argument (#453, group B): the reach alone decides. Measured on
+    ///     <c>T name = () =&gt; C…(x…);</c>, names of 12 to 32, types of 6 to 52, the <c>(</c> 10, 20, 35 and 50
+    ///     columns past the <c>=</c> and lines of 121 to 185 one column at a time (8 458 cells): every row breaks the
+    ///     <c>=</c> up to the reach whatever the argument's width or the <c>(</c>'s column, where the floor and
+    ///     <see cref="LambdaCallParen" /> had kept 703 of them.
+    /// </param>
+    /// <param name="indent">The statement's indent, which moves <see cref="LambdaCallParen" />.</param>
     public static bool BreaksBeforeALambdaCall(
         int name,
         int type,
         int head,
         int paren,
         int arguments,
-        int extraReach = 0
+        int extraReach = 0,
+        bool oneArgument = false,
+        int indent = 8
     ) {
         if (type > 8 * (name - 10) + 12) {
             return false;
         }
 
         var reach = Math.Min(64, (int)Math.Floor(0.91 * type + 0.812 * name - 16 + extraReach));
-        return paren + arguments - width120 <= reach
-            && arguments <= AtSeven(paren, EqualsOwner.TypedLocal) + 0.26 * Math.Max(0, head - 54);
+        if (paren + arguments - width120 > reach) {
+            return false;
+        }
+
+        return oneArgument
+            || arguments <= AtSeven(paren, EqualsOwner.TypedLocal) + 0.26 * Math.Max(0, head - 54)
+            && paren >= LambdaCallParen(name, type, indent);
+    }
+
+    /// <summary>
+    ///     The column the call's <c>(</c> must reach before a wide name's <c>=</c> breaks ahead of a lambda over a
+    ///     call with two or more arguments (#453, group B); nearer the head, the arguments chop beside the arrow
+    ///     whatever their width, the line's end or the reach.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> on <c>T name = () =&gt; C…(xxx, yyy);</c> ending at 122, the <c>(</c>
+    ///     one column at a time: names of 10 to 40 and types of 3 to 56 at indent 8 (14 168 cells), every row one
+    ///     clean switch from chopping to breaking the <c>=</c>, and it moves neither with the line's end (the same
+    ///     column at 122 and 130 on a second grid of 9 705 cells), a lambda parameter of <c>x</c> or
+    ///     <c>(int value)</c>, nor in a field. It depends on the type and the name, not on the head they make: a V
+    ///     with its foot at a type of 12, falling 0.45 a column before it and rising 1.25 after it until it meets a
+    ///     slope of 0.6 near 31; names under 22 raise it two thirds of a column each, one third on the slow slope.
+    ///     Each four columns of indent move the steep part five columns and the slow part two and a half (indents
+    ///     12 and 16, 2 074 cells). 35 of the 391 measured switches are a column off. ⚠ Validated on fields at
+    ///     indent 4, which no fit saw: 17 of 21 switches exact, four a column off.
+    /// </remarks>
+    public static double LambdaCallParen(int name, int type, int indent) {
+        var steps = (indent - 8) / 4.0;
+        var shortName = Math.Max(0, 22 - name);
+        var steep = 61.5 + 5 * steps + shortName * 2 / 3.0;
+        var value = type <= 12
+            ? steep + 0.45 * (12 - type)
+            : Math.Min(steep + 1.25 * (type - 12), 66.5 + 0.6 * type + 2.5 * steps + shortName / 3.0);
+        return value - 0.2;
     }
 
     /// <summary>The margin every table here was measured at.</summary>
