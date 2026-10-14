@@ -118,7 +118,12 @@ jobs:
           directory="$RUNNER_TEMP/skala-baseline"
           rm -rf "$directory" && mkdir -p "$directory"
           git archive --format=tar "$reference" | tar -x -C "$directory"
-          ( cd "$directory" && dotnet build Skala.slnx --configuration Release )
+          # ⚠ NuGetAudit off for the previous release only. It is built to be measured, never shipped,
+          # and an advisory published after it was tagged cannot change what it was: on 2026-10-14 five
+          # advisories against System.Security.Cryptography.Xml/Pkcs 10.0.11 (published the day before)
+          # failed v4.3.0's restore here, because NU1902/NU1903 are errors, and every release measurement
+          # failed with it. The tree being released keeps its audit.
+          ( cd "$directory" && dotnet build Skala.slnx --configuration Release -p:NuGetAudit=false )
 
           echo "directory=$directory"                  >> "$GITHUB_OUTPUT"
           echo "version=${reference#v}"                >> "$GITHUB_OUTPUT"
