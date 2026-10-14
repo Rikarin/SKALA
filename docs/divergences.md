@@ -13625,9 +13625,19 @@ and joins the braces wherever the creation fits below, while with 90-column memb
 like #581's creation limit (SK-DIV-0322) reaching the broken brace too, and was not fitted here; past 120 columns the
 oracle's answers are not monotonic (a 126-column typed head keeps a 142-column brace line). Open.
 
+⚠ **That change alone was not idempotent, and this branch's own fuzz found it** (seed 9076957179953969410, which
+passes on `adca899a` and on master): a creation written on *one* line, `f78 = new { … };` behind a tuple-typed field.
+#581's creation limit (`Fitter.Worth`, SK-DIV-0322) kept the `=` with `= new {` at 124 columns and broke the braces;
+pass two read the brace's break as the author's and, by the rule above, broke the `=` — which the oracle does for both
+inputs. Master was wrong the same way, but stable. The creation limit now breaks the `=` whenever the line through the
+`{` does not fit. A fresh 180-row grid of one-line creations (`new Something {`, `new {`, `new List<Something> {`;
+a local, a field and a property; `= new … {` ending at 112 to 130; two member widths): differing rows **37 → 11**,
+none newly differing, every row idempotent before and after.
+
 - options: `skala_keep_user_linebreaks`, `prefer_wrap_around_eq`.
-- status: **fixed** (the seed, pinned by `InitializerBrokenAfterBraceTests.ABraceWhoseLineOverflows_BreaksTheEquals`
-  and `FuzzRegressionTests`); the wide head before a brace inside the margin is **open**.
+- status: **fixed** (the seed and the fuzz's own, pinned by `InitializerBrokenAfterBraceTests`'
+  `ABraceWhoseLineOverflows_BreaksTheEquals` and `AOneLineCreationWhoseBraceOverflows_BreaksTheEquals`, and
+  `FuzzRegressionTests`); the wide head before a brace inside the margin is **open**.
 
 ## SK-DIV-0521 — where a sole lambda breaks after its arrow without a broken test
 

@@ -1719,6 +1719,13 @@ public sealed class Fitter {
         if (facts.PrefersOuterBreak && facts.CreationLimit != 0 && width == CreationLimitWidth) {
             // ⚠ A creation with a one-line initializer moves down whole by its own measured limit, and the
             // braces break otherwise (#581). See GroupFacts.CreationLimit.
+            // ⚠ Unless the line through the `{` does not fit, which leaves the braces nothing to break for (#623,
+            // fuzz 9076957179953969410): the oracle breaks the `=`, and so did Skala's second pass, once the first
+            // had kept it with `= new {` at 124 columns and the brace's break made it a broken initializer.
+            if (m.PointWidth < Unbounded && !Fits(m.Column, m.PointWidth + m.AfterPoint)) {
+                return ResolvedMode.Broken;
+            }
+
             if (segment >= Unbounded || facts.CreationLimit < 0) {
                 return ResolvedMode.Flat;
             }

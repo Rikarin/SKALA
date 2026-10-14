@@ -113,4 +113,47 @@ public sealed class InitializerBrokenAfterBraceTests {
             }
             """
         );
+
+    /// <summary>
+    ///     And a creation written on one line (fuzz 9076957179953969410, found by #623's own fuzz): #581's limit kept the
+    ///     <c>=</c> with <c>= new {</c> past the margin, and the brace's break then made it the case above. Rows where the
+    ///     line through the <c>{</c> ends past the margin, a field under a tuple type, a local and a field; expected output
+    ///     is the oracle's, measured 2026-10-14 with <c>Testing ask</c>.
+    /// </summary>
+    [Fact]
+    public void AOneLineCreationWhoseBraceOverflows_BreaksTheEquals() =>
+        Oracle.Agrees(
+            """"
+            public struct T51<T52> where T52 : IDisposable, new() {
+                public class T75<T76, T77> : IDisposable where T77 : class, new() {
+                    private readonly (Lazy<long> First, Span<Dictionary<CancellationToken, List<CancellationToken>>> Second) f78 = new { Name = new string() { P79 = 3_000_000L, P80 = "ss", P81 = 1.0m }, Count = """<x a="1"/>""" };
+                }
+            }
+            public class C {
+                void M12() {
+                    var M12xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx = new Something { Alpha = someLongerValueName, Beta = anotherLongerValueName, Gamma = "sssssssssssssssss" };
+                }
+
+                private readonly Dictionary<string, int> M32xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx = new Something { Alpha = someLongerValueName, Beta = anotherLongerValueName, Gamma = "sssssssssssssssss" };
+            }
+            """",
+            """"
+            public struct T51<T52> where T52 : IDisposable, new() {
+                public class T75<T76, T77> : IDisposable where T77 : class, new() {
+                    private readonly (Lazy<long> First, Span<Dictionary<CancellationToken, List<CancellationToken>>> Second) f78 =
+                        new { Name = new string() { P79 = 3_000_000L, P80 = "ss", P81 = 1.0m }, Count = """<x a="1"/>""" };
+                }
+            }
+
+            public class C {
+                void M12() {
+                    var M12xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx =
+                        new Something { Alpha = someLongerValueName, Beta = anotherLongerValueName, Gamma = "sssssssssssssssss" };
+                }
+
+                private readonly Dictionary<string, int> M32xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx =
+                    new Something { Alpha = someLongerValueName, Beta = anotherLongerValueName, Gamma = "sssssssssssssssss" };
+            }
+            """"
+        );
 }
