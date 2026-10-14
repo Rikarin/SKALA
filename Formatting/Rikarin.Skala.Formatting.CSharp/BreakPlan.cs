@@ -7184,12 +7184,11 @@ public sealed class BreakPlan {
         if (owner is EqualsOwner.None or EqualsOwner.Field
             || !options.KeepsUserBreaksBetweenItems
             || value is not InvocationExpressionSyntax {
-                Expression: IdentifierNameSyntax or GenericNameSyntax,
-                ArgumentList: { Arguments: [var sole] } list
+                Expression: IdentifierNameSyntax or GenericNameSyntax, ArgumentList: { Arguments: [var sole] } list
             }
             || !BreaksBefore(FirstToken(sole))
             || HasLineBreakIn(sole)
-            || source.AsSpan(value.SpanStart, list.OpenParenToken.Span.End - value.SpanStart).IndexOfAny('\r', '\n') >= 0
+            || source.AsSpan(value.SpanStart, list.OpenParenToken.Span.End - value.SpanStart).Contains('\n')
             || list.DescendantTrivia().Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))) {
             return 0;
         }

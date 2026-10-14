@@ -435,7 +435,12 @@ public sealed class DocumentBuilder {
     ///     over <paramref name="chainGroup" />, or both.
     /// </summary>
     /// <param name="countsWithItsLine">Once spent, the scope is a <see cref="IndentFlags.CountsWithItsLine" /> one.</param>
-    public void OpenHeldIndent(IndentKind kind, IndentFlags conditions, int chainGroup, bool countsWithItsLine = false) =>
+    public void OpenHeldIndent(
+        IndentKind kind,
+        IndentFlags conditions,
+        int chainGroup,
+        bool countsWithItsLine = false
+    ) =>
         Open(
             DocKind.Indent,
             (int)kind,
