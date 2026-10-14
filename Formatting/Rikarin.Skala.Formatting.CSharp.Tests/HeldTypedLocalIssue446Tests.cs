@@ -42,122 +42,122 @@ public sealed class HeldTypedLocalIssue446Tests {
     }
 
     static readonly Dictionary<string, (string Source, string Expected)> Cells = new() {
-            ["ty24_110"] = (
-                """
-                class C
+        ["ty24_110"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
-                    {
-                        Tyyyyyyyyyyyyyyyyyyyyyyy daaaa = xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
-                    }
+                    Tyyyyyyyyyyyyyyyyyyyyyyy daaaa = xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
                 }
-                """,
-                """
-                class C {
-                    object M() {
-                        Tyyyyyyyyyyyyyyyyyyyyyyy daaaa =
-                            xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
-                    }
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    Tyyyyyyyyyyyyyyyyyyyyyyy daaaa =
+                        xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
                 }
-                """
-            ),
-            ["ty24_111"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["ty24_111"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
-                    {
-                        Tyyyyyyyyyyyyyyyyyyyyyyy daaaa = xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
-                    }
+                    Tyyyyyyyyyyyyyyyyyyyyyyy daaaa = xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
                 }
-                """,
-                """
-                class C {
-                    object M() {
-                        Tyyyyyyyyyyyyyyyyyyyyyyy daaaa = xxxx.Mmmmmmmmmmmmmm(
-                            vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-                        );
-                    }
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    Tyyyyyyyyyyyyyyyyyyyyyyy daaaa = xxxx.Mmmmmmmmmmmmmm(
+                        vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+                    );
                 }
-                """
-            ),
-            ["ty63_113"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["ty63_113"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
-                    {
-                        Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy daaaa = xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
-                    }
+                    Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy daaaa = xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
                 }
-                """,
-                """
-                class C {
-                    object M() {
-                        Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy daaaa =
-                            xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
-                    }
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy daaaa =
+                        xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
                 }
-                """
-            ),
-            ["ty63_114"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["ty63_114"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
-                    {
-                        Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy daaaa = xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
-                    }
+                    Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy daaaa = xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
                 }
-                """,
-                """
-                class C {
-                    object M() {
-                        Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy daaaa = xxxx.Mmmmmmmmmmmmmm(
-                            vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-                        );
-                    }
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    Tyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy daaaa = xxxx.Mmmmmmmmmmmmmm(
+                        vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+                    );
                 }
-                """
-            ),
-            ["nm30_108"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["nm30_108"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
-                    {
-                        Tyyyyyyyyy daaaaaaaaaaaaaaaaaaaaaaaaaaaaa = xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
-                    }
+                    Tyyyyyyyyy daaaaaaaaaaaaaaaaaaaaaaaaaaaaa = xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
                 }
-                """,
-                """
-                class C {
-                    object M() {
-                        Tyyyyyyyyy daaaaaaaaaaaaaaaaaaaaaaaaaaaaa =
-                            xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
-                    }
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    Tyyyyyyyyy daaaaaaaaaaaaaaaaaaaaaaaaaaaaa =
+                        xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
                 }
-                """
-            ),
-            ["nm30_109"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["nm30_109"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
-                    {
-                        Tyyyyyyyyy daaaaaaaaaaaaaaaaaaaaaaaaaaaaa = xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
-                    }
+                    Tyyyyyyyyy daaaaaaaaaaaaaaaaaaaaaaaaaaaaa = xxxx.Mmmmmmmmmmmmmm(vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
                 }
-                """,
-                """
-                class C {
-                    object M() {
-                        Tyyyyyyyyy daaaaaaaaaaaaaaaaaaaaaaaaaaaaa = xxxx.Mmmmmmmmmmmmmm(
-                            vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-                        );
-                    }
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    Tyyyyyyyyy daaaaaaaaaaaaaaaaaaaaaaaaaaaaa = xxxx.Mmmmmmmmmmmmmm(
+                        vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+                    );
                 }
-                """
-            ),
+            }
+            """
+        ),
     };
 }

@@ -307,11 +307,12 @@ public sealed class TypeTestTieIssue446Tests {
     }
 
     static readonly Dictionary<string, (string Source, string Expected)> RoundEight = new() {
-            ["t14_i56_r24_118"] = (
-                """
-                class C
+        ["t14_i56_r24_118"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
                     {
                         {
                             {
@@ -324,9 +325,7 @@ public sealed class TypeTestTieIssue446Tests {
                                                         {
                                                             {
                                                                 {
-                                                                    {
-                                                                        return rrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTTTTTT;
-                                                                    }
+                                                                    return rrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTTTTTT;
                                                                 }
                                                             }
                                                         }
@@ -340,10 +339,12 @@ public sealed class TypeTestTieIssue446Tests {
                         }
                     }
                 }
-                """,
-                """
-                class C {
-                    object M() {
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    {
                         {
                             {
                                 {
@@ -355,10 +356,8 @@ public sealed class TypeTestTieIssue446Tests {
                                                         {
                                                             {
                                                                 {
-                                                                    {
-                                                                        return rrrrrrrrrrrrrrrrrrrrrrrr
-                                                                            .PPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTTTTTT;
-                                                                    }
+                                                                    return rrrrrrrrrrrrrrrrrrrrrrrr
+                                                                        .PPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTTTTTT;
                                                                 }
                                                             }
                                                         }
@@ -372,13 +371,15 @@ public sealed class TypeTestTieIssue446Tests {
                         }
                     }
                 }
-                """
-            ),
-            ["t14_i56_r23_118"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["t14_i56_r23_118"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
                     {
                         {
                             {
@@ -391,9 +392,7 @@ public sealed class TypeTestTieIssue446Tests {
                                                         {
                                                             {
                                                                 {
-                                                                    {
-                                                                        return rrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTTTTTT;
-                                                                    }
+                                                                    return rrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTTTTTT;
                                                                 }
                                                             }
                                                         }
@@ -407,10 +406,12 @@ public sealed class TypeTestTieIssue446Tests {
                         }
                     }
                 }
-                """,
-                """
-                class C {
-                    object M() {
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    {
                         {
                             {
                                 {
@@ -422,10 +423,8 @@ public sealed class TypeTestTieIssue446Tests {
                                                         {
                                                             {
                                                                 {
-                                                                    {
-                                                                        return rrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPP as
-                                                                            TTTTTTTTTTTTTT;
-                                                                    }
+                                                                    return rrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPP as
+                                                                        TTTTTTTTTTTTTT;
                                                                 }
                                                             }
                                                         }
@@ -439,70 +438,72 @@ public sealed class TypeTestTieIssue446Tests {
                         }
                     }
                 }
-                """
-            ),
-            ["t10_i8_r27_116"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["t10_i8_r27_116"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
-                    {
-                        return rrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTT;
-                    }
+                    return rrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTT;
                 }
-                """,
-                """
-                class C {
-                    object M() {
-                        return rrrrrrrrrrrrrrrrrrrrrrrrrrr
-                            .PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTT;
-                    }
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    return rrrrrrrrrrrrrrrrrrrrrrrrrrr
+                        .PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTT;
                 }
-                """
-            ),
-            ["t10_i8_r26_116"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["t10_i8_r26_116"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
-                    {
-                        return rrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTT;
-                    }
+                    return rrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTT;
                 }
-                """,
-                """
-                class C {
-                    object M() {
-                        return rrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as
-                            TTTTTTTTTT;
-                    }
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    return rrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as
+                        TTTTTTTTTT;
                 }
-                """
-            ),
-            ["t6_i8_r30_122"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["t6_i8_r30_122"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
-                    {
-                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTT;
-                    }
+                    return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTT;
                 }
-                """,
-                """
-                class C {
-                    object M() {
-                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
-                            .PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTT;
-                    }
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+                        .PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTT;
                 }
-                """
-            ),
-            ["t15_i40_r50_118"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["t15_i40_r50_118"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
                     {
                         {
                             {
@@ -511,9 +512,7 @@ public sealed class TypeTestTieIssue446Tests {
                                         {
                                             {
                                                 {
-                                                    {
-                                                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPP is TTTTTTTTTTTTTTT;
-                                                    }
+                                                    return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPP is TTTTTTTTTTTTTTT;
                                                 }
                                             }
                                         }
@@ -523,37 +522,11 @@ public sealed class TypeTestTieIssue446Tests {
                         }
                     }
                 }
-                """,
-                """
-                class C {
-                    object M() {
-                        {
-                            {
-                                {
-                                    {
-                                        {
-                                            {
-                                                {
-                                                    {
-                                                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPP is
-                                                            TTTTTTTTTTTTTTT;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                """
-            ),
-            ["t13_i40_r53_117"] = (
-                """
-                class C
-                {
-                    object M()
+            }
+            """,
+            """
+            class C {
+                object M() {
                     {
                         {
                             {
@@ -562,9 +535,8 @@ public sealed class TypeTestTieIssue446Tests {
                                         {
                                             {
                                                 {
-                                                    {
-                                                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPP as TTTTTTTTTTTTT;
-                                                    }
+                                                    return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPP is
+                                                        TTTTTTTTTTTTTTT;
                                                 }
                                             }
                                         }
@@ -574,37 +546,15 @@ public sealed class TypeTestTieIssue446Tests {
                         }
                     }
                 }
-                """,
-                """
-                class C {
-                    object M() {
-                        {
-                            {
-                                {
-                                    {
-                                        {
-                                            {
-                                                {
-                                                    {
-                                                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
-                                                            .PPPPPPPPPPPPP as TTTTTTTTTTTTT;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                """
-            ),
-            ["t13_i40_r52_117"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["t13_i40_r53_117"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
                     {
                         {
                             {
@@ -613,9 +563,7 @@ public sealed class TypeTestTieIssue446Tests {
                                         {
                                             {
                                                 {
-                                                    {
-                                                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPP as TTTTTTTTTTTTT;
-                                                    }
+                                                    return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPP as TTTTTTTTTTTTT;
                                                 }
                                             }
                                         }
@@ -625,10 +573,12 @@ public sealed class TypeTestTieIssue446Tests {
                         }
                     }
                 }
-                """,
-                """
-                class C {
-                    object M() {
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    {
                         {
                             {
                                 {
@@ -636,10 +586,8 @@ public sealed class TypeTestTieIssue446Tests {
                                         {
                                             {
                                                 {
-                                                    {
-                                                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPP as
-                                                            TTTTTTTTTTTTT;
-                                                    }
+                                                    return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+                                                        .PPPPPPPPPPPPP as TTTTTTTTTTTTT;
                                                 }
                                             }
                                         }
@@ -649,7 +597,59 @@ public sealed class TypeTestTieIssue446Tests {
                         }
                     }
                 }
-                """
-            ),
+            }
+            """
+        ),
+        ["t13_i40_r52_117"] = (
+            """
+            class C
+            {
+                object M()
+                {
+                    {
+                        {
+                            {
+                                {
+                                    {
+                                        {
+                                            {
+                                                {
+                                                    return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPP as TTTTTTTTTTTTT;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    {
+                        {
+                            {
+                                {
+                                    {
+                                        {
+                                            {
+                                                {
+                                                    return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPP as
+                                                        TTTTTTTTTTTTT;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            """
+        ),
     };
 }

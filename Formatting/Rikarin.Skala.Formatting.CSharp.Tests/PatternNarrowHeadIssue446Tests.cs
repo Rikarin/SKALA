@@ -42,133 +42,133 @@ public sealed class PatternNarrowHeadIssue446Tests {
     }
 
     static readonly Dictionary<string, (string Source, string Expected)> Cells = new() {
-            ["h8_or25_i16_123"] = (
-                """
-                class C
+        ["h8_or25_i16_123"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
                     {
                         {
-                            {
-                                bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Alpha or BBBBBBBBBBBBBBBB;
-                            }
+                            bool c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Alpha or BBBBBBBBBBBBBBBB;
                         }
                     }
                 }
-                """,
-                """
-                class C {
-                    object M() {
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    {
                         {
-                            {
-                                bool c =
-                                    oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Alpha or BBBBBBBBBBBBBBBB;
-                            }
+                            bool c =
+                                oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Alpha or BBBBBBBBBBBBBBBB;
                         }
                     }
                 }
-                """
-            ),
-            ["h8_or25_i16_122"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["h8_or25_i16_122"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
                     {
                         {
-                            {
-                                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Alpha or BBBBBBBBBBBBBBBB;
-                            }
+                            bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Alpha or BBBBBBBBBBBBBBBB;
                         }
                     }
                 }
-                """,
-                """
-                class C {
-                    object M() {
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    {
                         {
-                            {
-                                bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Alpha
-                                    or BBBBBBBBBBBBBBBB;
-                            }
+                            bool c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is Alpha
+                                or BBBBBBBBBBBBBBBB;
                         }
                     }
                 }
-                """
-            ),
-            ["h7_not23_i8_125"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["h7_not23_i8_125"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
-                    {
-                        var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is not null and not GGGGGG;
-                    }
+                    var c = ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is not null and not GGGGGG;
                 }
-                """,
-                """
-                class C {
-                    object M() {
-                        var c =
-                            ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is not null
-                                and not GGGGGG;
-                    }
-                }
-                """
-            ),
-            ["h7_not23_i8_124"] = (
-                """
-                class C
-                {
-                    object M()
-                    {
-                        var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is not null and not GGGGGG;
-                    }
-                }
-                """,
-                """
-                class C {
-                    object M() {
-                        var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is not null
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    var c =
+                        ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is not null
                             and not GGGGGG;
-                    }
                 }
-                """
-            ),
-            ["h10_or9_40_i24_125"] = (
-                """
-                class C
+            }
+            """
+        ),
+        ["h7_not23_i8_124"] = (
+            """
+            class C
+            {
+                object M()
                 {
-                    object M()
+                    var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is not null and not GGGGGG;
+                }
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    var c = oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo is not null
+                        and not GGGGGG;
+                }
+            }
+            """
+        ),
+        ["h10_or9_40_i24_125"] = (
+            """
+            class C
+            {
+                object M()
+                {
                     {
                         {
                             {
                                 {
-                                    {
-                                        bool ccc = ooooooooooooooooooooooooooooooooooooooooooooo is Alphaaaaa or BBBBBBBBBBBBBBBBBBBBBBBBBBB;
-                                    }
+                                    bool ccc = ooooooooooooooooooooooooooooooooooooooooooooo is Alphaaaaa or BBBBBBBBBBBBBBBBBBBBBBBBBBB;
                                 }
                             }
                         }
                     }
                 }
-                """,
-                """
-                class C {
-                    object M() {
+            }
+            """,
+            """
+            class C {
+                object M() {
+                    {
                         {
                             {
                                 {
-                                    {
-                                        bool ccc = ooooooooooooooooooooooooooooooooooooooooooooo is Alphaaaaa
-                                            or BBBBBBBBBBBBBBBBBBBBBBBBBBB;
-                                    }
+                                    bool ccc = ooooooooooooooooooooooooooooooooooooooooooooo is Alphaaaaa
+                                        or BBBBBBBBBBBBBBBBBBBBBBBBBBB;
                                 }
                             }
                         }
                     }
                 }
-                """
-            ),
+            }
+            """
+        ),
     };
 }

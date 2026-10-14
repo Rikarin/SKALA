@@ -5940,9 +5940,9 @@ public sealed class BreakPlan {
                         : 0,
                     // ⚠ Not past a line comment inside the pattern, whose line the measured table still decides.
                     PatternFirstAlternative: PatternHeadOf(node, equals, value) > 0
-                        && !((IsPatternExpressionSyntax)value).Pattern.DescendantTrivia()
-                            .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
-                        && FirstAlternativeOf(((IsPatternExpressionSyntax)value).Pattern) is var firstAlternative
+                    && !((IsPatternExpressionSyntax)value).Pattern.DescendantTrivia()
+                    .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
+                    && FirstAlternativeOf(((IsPatternExpressionSyntax)value).Pattern) is var firstAlternative
                         ? FormattedWidth(firstAlternative.GetFirstToken(), firstAlternative.GetLastToken())
                         : 0,
                     CalleeOwner: owner,

@@ -527,12 +527,12 @@ public sealed class Fitter {
                         ? int.MaxValue
                         : m.Column + m.FlatWidth + m.Trailing;
                     return EqualsFloor.BreaksBeforeAPattern(
-                            facts.PatternHead,
-                            facts.PatternWidth,
-                            end,
-                            facts.PatternFirstAlternative,
-                            lineStart
-                        )
+                        facts.PatternHead,
+                        facts.PatternWidth,
+                        end,
+                        facts.PatternFirstAlternative,
+                        lineStart
+                    )
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
                 }
