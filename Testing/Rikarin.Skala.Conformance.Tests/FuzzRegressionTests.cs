@@ -315,6 +315,10 @@ public sealed class FuzzRegressionTests {
     // width at its dot, so the held value's column was read 36 columns left of the `=` and pass one kept the `=`
     // and chopped; pass two, the value now broken, broke the `=`.
     [InlineData(6605302205500226187UL, "real/vixen/Core/Vixen.Physics/Ecs/PhysicsScene.cs")]
+    // The Nightlies of 2026-10-13 and 2026-10-14, on master adca899a: idempotency on two Vixen files, both clean once
+    // the 2026-10-14 merges landed (42ed48b0) without either being targeted. Pinned so neither returns unnoticed.
+    [InlineData(14052156207620702103UL, "real/vixen/Core/Vixen.Ecs/Systems/SystemGraph.cs")]
+    [InlineData(10618586840755774483UL, "real/vixen/Core/Vixen.Ui.Tests/NineSliceImageTests.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
