@@ -2071,6 +2071,10 @@ public sealed class Fitter {
 
         var continuation = m.ContinuationColumn;
         var below = continuation + facts.HeldValueWidth;
+        if (facts.HeldValueCast && facts.HeldValue != 2) {
+            return CastParenBehindAWideHeadBreaks(facts, valueColumn, continuation);
+        }
+
         var parenBelow = continuation + facts.HeldValueReceiver + facts.HeldValueHead;
         var parenBeside = valueColumn + facts.HeldValueReceiver + facts.HeldValueHead;
         switch (facts.HeldValue) {
@@ -2139,6 +2143,51 @@ public sealed class Fitter {
                     <= HeldCallLimit(parenBeside, facts.HeldValueManyArgs ? 2 : 1);
                 return !moves;
         }
+    }
+
+    /// <summary>
+    ///     Whether the <c>=</c> breaks before <c>(T)(a op b…).M()</c> behind a head of twelve columns or more, a typed
+    ///     local's or a <c>var</c>'s or an assignment's, on a line it does not fit (#598, SK-DIV-0575).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c> on 16 000 rows (heads of 13 to 40 columns through the
+    ///     <c>=</c>, casts of 3 to 25, first operands of 2 to 34, seven operators, six calls, indents 8 to 20, lines of
+    ///     118 to 160), and checked on fresh random probes built after it was chosen. Here <c>s</c> is the statement's
+    ///     width without its head, its indent included: the value's line below less one level.
+    ///     <list type="bullet">
+    ///         <item>
+    ///             While the receiver through its <c>)</c> fits beside the <c>=</c>: one column over, the <c>=</c>
+    ///             breaks when the head and the cast are wider than eighteen; two or three over it always does; past
+    ///             that while <c>10·s − 7·cast ≤ 1033</c> and the value fits below. Otherwise the dot takes the break.
+    ///         </item>
+    ///         <item>
+    ///             Past that, the <c>=</c> stays and the parentheses break inside only while
+    ///             <c>10·s + 4·min(first operand, 24) − 7·cast ≥ 1185</c> and the operator's line fits. The first operand
+    ///             stops counting at 24 columns: the oracle's boundary in the line stops moving there, for every
+    ///             head and cast measured.
+    ///         </item>
+    ///     </list>
+    ///     ⚠ The second boundary is a safe bound, not the oracle's: every row the oracle kept the <c>=</c> on lies
+    ///     above it, and about one row in twelve that it broke does too, which Skala still keeps. No form in these
+    ///     widths separates them exactly (SK-DIV-0575).
+    /// </remarks>
+    bool CastParenBehindAWideHeadBreaks(in GroupFacts facts, int valueColumn, int continuation) {
+        var statement = continuation - indentWidth;
+        var head = valueColumn - statement;
+        var cast = facts.HeldValueCastWidth;
+        var end = valueColumn + facts.HeldValueWidth;
+        var s = continuation + facts.HeldValueWidth - indentWidth;
+        if (valueColumn + facts.HeldValueReceiver <= width) {
+            if (end == width + 1) {
+                return head + cast > 18;
+            }
+
+            return end <= width + 3 || 10 * s - 7 * cast <= 1033 && continuation + facts.HeldValueWidth <= width;
+        }
+
+        var keeps = 10 * s + 4 * Math.Min(facts.HeldValueFirstOperand, 24) - 7 * cast >= 1185
+            && continuation + facts.HeldValueOperatorTail <= width;
+        return !keeps;
     }
 
     /// <summary>

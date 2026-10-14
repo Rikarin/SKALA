@@ -3665,8 +3665,8 @@ public sealed class BreakPlan {
     ///     <c>var zzzzzzzzzzzz</c>, a twenty-column assignment target and typed heads of 15 and 38 columns.
     ///     ⚠ A typed local with more than one argument was not measured and plans nothing.
     /// </remarks>
-    InvocationExpressionSyntax? PlanHeldSingleCall(ExpressionSyntax value, int kind) {
-        value = kind == 2 ? CastOverAParenthesisedCall(value) ?? value : value;
+    InvocationExpressionSyntax? PlanHeldSingleCall(ExpressionSyntax value, int kind, bool unwrapsCast) {
+        value = unwrapsCast ? CastOverAParenthesisedCall(value) ?? value : value;
         if (value is not InvocationExpressionSyntax {
                 Expression: MemberAccessExpressionSyntax { OperatorToken: var dot, Expression: var receiver }
             } call
@@ -6374,7 +6374,18 @@ public sealed class BreakPlan {
                 : 3,
             _ => 0,
         };
-        var heldCall = heldKind > 0 ? PlanHeldSingleCall(value, heldKind) : null;
+        // ⚠ A cast over a parenthesised call is laid out like the uncast call behind a head of twelve columns or more
+        // too, a typed local's included, and its `=` answers by a measured comparison of its own (#598). See
+        // Fitter.CastParenBehindAWideHeadBreaks.
+        var unwrapsCast = heldKind == 2 || heldKind > 0 && HeadWidthThroughEquals(node, equals) >= MinimumEqualsHead;
+        var heldCall = heldKind > 0 ? PlanHeldSingleCall(value, heldKind, unwrapsCast) : null;
+        var heldCast = heldCall is not null && value is CastExpressionSyntax castValue ? castValue : null;
+        var heldBinary = heldCast is not null
+            && heldCall?.Expression is MemberAccessExpressionSyntax {
+                Expression: ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax binaryInside }
+            }
+                ? binaryInside
+                : null;
         var choppedHeld = heldKind == 1 && heldCall is null ? ChoppedHeldCallOf(value) : null;
         var targetKept = false;
         var targetTail = heldCall is not null && owner == EqualsOwner.Assignment
@@ -6562,6 +6573,15 @@ public sealed class BreakPlan {
                     HeldValueReceiver: heldReceiver,
                     HeldValueCast: heldCall is not null && value is CastExpressionSyntax,
                     HeldValueParen: heldCall is not null && IsACallOnAParenthesisedOperator(heldCall),
+                    HeldValueCastWidth: heldCast is null
+                        ? 0
+                        : FormattedWidth(heldCast.OpenParenToken, heldCast.CloseParenToken),
+                    HeldValueFirstOperand: heldBinary is null ? 0 : FlatSourceWidth(heldBinary.Left),
+                    HeldValueOperatorTail: heldBinary is null
+                        ? 0
+                        : FormattedWidth(heldBinary.OperatorToken, value.GetLastToken())
+                        + WidthThroughSemicolon(value)
+                        + TrailingCommentWidth(value.GetLastToken().GetNextToken()),
                     HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
