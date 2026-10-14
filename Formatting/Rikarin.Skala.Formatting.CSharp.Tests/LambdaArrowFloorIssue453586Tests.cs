@@ -357,6 +357,79 @@ public sealed class LambdaArrowFloorIssue453586Tests {
         );
 
     /// <summary>
+    ///     ⚠ Group I (#605): the limit falls 0.38 a column of receiver past about 22. Behind a 56-column receiver at
+    ///     column 16, a line of 99 moves the call down…
+    /// </summary>
+    [Fact]
+    public void LongReceiver_WithinTheLimit_MovesTheLambdaCallDown() =>
+        Agrees(
+            "        var n = rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.Where(x => aaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccc).ToList();\n",
+            "        var n = rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\n"
+            + "            .Where(x => aaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccc)\n"
+            + "            .ToList();\n"
+        );
+
+    /// <summary>…and a line of 100 breaks the arrow, where round 3's limit moved it down to 100.</summary>
+    [Fact]
+    public void LongReceiver_PastTheLimit_BreaksTheArrow() =>
+        Agrees(
+            "        var n = rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.Where(x => aaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccc).ToList();\n",
+            "        var n = rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.Where(x =>\n"
+            + "                aaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccc\n"
+            + "            )\n"
+            + "            .ToList();\n"
+        );
+
+    /// <summary>
+    ///     A receiver at column 75 sits under the steep floor: the call moves down at a line of 109, where the cap
+    ///     alone would break the arrow from 105.
+    /// </summary>
+    [Fact]
+    public void FarRightReceiver_UnderTheSteepFloor_MovesTheLambdaCallDown() =>
+        Agrees(
+            "        var nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = rrrrrrrrrr.Where(x => aaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccccc).ToList();\n",
+            "        var nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = rrrrrrrrrr\n"
+            + "            .Where(x => aaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccccc)\n"
+            + "            .ToList();\n"
+        );
+
+    /// <summary>
+    ///     ⚠ The receiver's column counts the indent: at column 69 the call moves down at a line of 105, a column past
+    ///     round 3's limit, which read the head from the statement's start.
+    /// </summary>
+    [Fact]
+    public void ReceiverColumnCountsTheIndent_MovesTheLambdaCallDown() =>
+        Agrees(
+            "        var nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = rr.Where(x => aaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccc).ToList();\n",
+            "        var nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = rr\n"
+            + "            .Where(x => aaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccc)\n"
+            + "            .ToList();\n"
+        );
+
+    /// <summary>
+    ///     ⚠ A wider call head raises the limit 0.6 a column: <c>.SelectMany(</c>, five columns past <c>.Where(</c>,
+    ///     moves down at a line of 115, where <c>.Where(</c> would break the arrow from 113.
+    /// </summary>
+    [Fact]
+    public void WideCallHead_RaisesTheLimit() =>
+        Agrees(
+            "        var n = rrrrrrrrrrrrrr.SelectMany(x => aaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccccccc).ToList();\n",
+            "        var n = rrrrrrrrrrrrrr\n"
+            + "            .SelectMany(x => aaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccccccc)\n"
+            + "            .ToList();\n"
+        );
+
+    /// <summary>A held line that would overflow through its arrow moves the call down whatever the limit.</summary>
+    [Fact]
+    public void ArrowPastTheMargin_MovesTheLambdaCallDown() =>
+        Agrees(
+            "        IEnumerable<T> nnnnnnnnnnnnnnnnnnnnnnnnnnnn = rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.Where(static node => x is AAAAAAAAA or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB or CCCCCCCCCCCCC).ToList();\n",
+            "        IEnumerable<T> nnnnnnnnnnnnnnnnnnnnnnnnnnnn = rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\n"
+            + "            .Where(static node => x is AAAAAAAAA or BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB or CCCCCCCCCCCCC)\n"
+            + "            .ToList();\n"
+        );
+
+    /// <summary>
     ///     Group B: a three-column target whose head through the arrow, <c>nnn = (a, b) =&gt;</c>, is twelve columns
     ///     reads the arrow floor — a 56-column list moves below the arrow…
     /// </summary>
