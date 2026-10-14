@@ -877,8 +877,10 @@ public sealed class Document {
     public bool ArrowBodyRunsToTheEnd(int node) =>
         Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.ArrowBodyRunsToTheEnd) != 0;
 
-    /// <summary>Whether the node is an arrow group read through to its body's own dot — see
-    /// <see cref="GroupFlags.ArrowBodyRunsToItsDot" />.</summary>
+    /// <summary>
+    ///     Whether the node is an arrow group read through to its body's own dot — see
+    ///     <see cref="GroupFlags.ArrowBodyRunsToItsDot" />.
+    /// </summary>
     public bool ArrowBodyRunsToItsDot(int node) =>
         Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.ArrowBodyRunsToItsDot) != 0;
 

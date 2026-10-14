@@ -361,7 +361,9 @@ public sealed class Fitter {
                 // which the lift adds only after the fact, so the measured continuation is that line's own start (#576
                 // round 7, SK-DIV-0399): measured at conditions 100 to 124 below the `when` at indents 8, 12 and 16.
                 if (facts.WhenOuterTail > 0) {
-                    var continuation = m.ContinuationColumn <= lineStart ? lineStart + indentWidth : m.ContinuationColumn;
+                    var continuation = m.ContinuationColumn <= lineStart
+                        ? lineStart + indentWidth
+                        : m.ContinuationColumn;
                     if (!Fits(continuation, facts.WhenOuterTail + 14)) {
                         return ResolvedMode.Flat;
                     }

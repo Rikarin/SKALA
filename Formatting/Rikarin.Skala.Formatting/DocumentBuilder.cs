@@ -42,6 +42,7 @@ public sealed class DocumentBuilder {
 
     /// <summary><see cref="Document.YieldEndOf" />, by node, for the groups that ask for it.</summary>
     readonly Dictionary<int, int> yieldEnds = [];
+
     readonly Dictionary<int, int> dotTails = [];
     readonly Dictionary<int, int> arrowDotTails = [];
 

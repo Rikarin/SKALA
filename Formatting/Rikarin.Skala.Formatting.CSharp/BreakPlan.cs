@@ -5092,13 +5092,13 @@ public sealed class BreakPlan {
             Name: IdentifierNameSyntax name
         }
         && (arm.Pattern.DescendantNodesAndSelf()
-                .Any(static node => node is PropertyPatternClauseSyntax
-                    or ListPatternSyntax
-                    or PositionalPatternClauseSyntax
-                    or BinaryPatternSyntax
-                )
-                ? 5 * FormattedWidth(name) + 6 * FormattedWidth(receiver) >= 53
-                : 2 * FormattedWidth(name) + 3 * FormattedWidth(receiver) >= 22);
+            .Any(static node => node is PropertyPatternClauseSyntax
+                or ListPatternSyntax
+                or PositionalPatternClauseSyntax
+                or BinaryPatternSyntax
+            )
+            ? 5 * FormattedWidth(name) + 6 * FormattedWidth(receiver) >= 53
+            : 2 * FormattedWidth(name) + 3 * FormattedWidth(receiver) >= 22);
 
     static bool ArmWhenHoldsOnlyTypeArguments(SwitchExpressionArmSyntax arm) =>
         arm.WhenClause is { } when
