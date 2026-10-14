@@ -304,10 +304,12 @@ public static class EqualsFloor {
     ///     random), where the chain's constants miss 540 and these 15.
     /// </param>
     public static bool BreaksTheOperandArrow(int arrow, int parameters, int first, int end, int patternLeft = 0) {
-        // ⚠ The cap rises a quarter of a column per column of parameter text past 36 (#586 round 2).
-        var cap = Math.Max(85, 85.5 + 0.25 * (parameters - 36));
+        // ⚠ The cap rises 0.55 a column per column of parameter text and 0.6 per column of first operand, up to
+        // where the ceiling stops counting it (#586, group B); round 2's max(85, 85.5 + 0.25·(params − 36)) held
+        // only near 30 columns of parameters and a first operand of 24.
+        var capped = Math.Min(first, patternLeft > 0 ? patternLeft + 28 : 24);
+        var cap = (patternLeft > 0 ? 50 : 55) + 0.55 * parameters + 0.6 * capped;
         if (patternLeft > 0) {
-            var capped = Math.Min(first, patternLeft + 28);
             var patternCeiling = Math.Min(
                 cap,
                 Math.Min(
