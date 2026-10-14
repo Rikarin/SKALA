@@ -2615,7 +2615,7 @@ public sealed class BreakPlan {
                 // while the rest of the list, with `()`, fits on the line below with twelve columns to spare; past that
                 // the list stays and the inner list fills (#576). See GroupFacts.WhenOuterTail.
                 WhenOuterTail: IsAWhenConditionsOuterTypeArguments(node) && node is TypeArgumentListSyntax outer
-                    ? FormattedWidth(outer.Arguments[1].GetFirstToken(), outer.GreaterThanToken)
+                    ? FormattedWidth(outer.Arguments[^1].GetFirstToken(), outer.GreaterThanToken)
                     : 0
             )
         );
