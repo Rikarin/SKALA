@@ -9877,6 +9877,53 @@ Every output is stable on a second pass. Pinned by `TypeTestTieIssue446Tests`.
   `TypeTestKeywordIssue444Tests`, `TypeTestOperandDotIssue446Tests`, `TypeTestTieIssue446Tests` and
   `constructs/breaks/member-access-last-dot.cs`.
 
+⚠ **Round 8 (group E, 2026-10-14): the ties are two linear conditions, and the residue rounds 6 and 7 left is
+gone.** The new measurement separated the variables one at a time instead of probing shapes: with
+`k` the line through the keyword, `r` the receiver, `t` the type, `i` the statement's indent and `b` the dot's
+column (`i + 7 + r` after `return`), the tie decision was swept over types 1 to 24, `k − d` 0 to 44, `k` 110 to
+123 and indents 8 to 72 (57 400 cells), then the head was widened to `yield return` to part the indent from
+the property's width (28 700 more). What each sweep showed:
+
+- **The step rounds 6 and 7 read off the shape is a diagonal.** At a fixed type and indent the first `k` that
+  takes the dot falls a column per two and a half columns of receiver: `50·c + 20·r + i − 35·t ≥ 5 944`, `c`
+  the keyword's line capped at `width − 2`. Rows below a receiver of five never take it.
+- **"Types of 14 or more never take the dot" is a second condition read at shallow indents.** The diagonal
+  saturates at a `k` that depends on the type and, weakly, on the dot's column — 56 columns of the dot's
+  column per column of `k`, 38 per column of type: `56·c − (k − c) + b − 38·t ≥ 6 158`. Consistent across
+  every transition the grid crossed: a type of 14 takes the dot at `k = 118` from a dot at column 82 (indent
+  24 needs a receiver of 51, indent 56 one of 24), a type of 13 at 117 from a dot at 100, a type of 15 never.
+- **Past `width − 2` the keyword's line stops helping and starts costing**: at a dot exactly on the
+  saturation boundary `k = 118` takes the dot and 119 and 120 keep the keyword (the `?118` cells round 6
+  could not place). That is the `−(k − c)`.
+- **The head moves both conditions the way the dot's column predicts**: `yield return` shifts the saturation
+  by the six columns of head through `b`, which is why it is read from the dot's column and not the indent.
+  The diagonal under `yield return` is not modelled: the rule is planned only for `return`
+  (`BreakPlan.TypeTestTail`), and the 579 `yield return` cells Skala keeps on the keyword's band are recorded,
+  not wired.
+
+| probe | cells | master | now |
+|---|---:|---:|---:|
+| one-variable sweep, types 1–12, indents 8–48 | 36 050 | 32 810 | 35 997 |
+| types 12–24, indents 8–72 | 17 869 | 16 400 | 17 842 |
+| indent against head (`return`, `yield return`) | 28 119 | 24 828 | 27 530 |
+| round 5's test cells, `x` layout included | 604 | 493 | 596 |
+| **fresh random probe** (seed 44601: `is` and `as`, simple, generic and qualified types, indents 8–64, types 1–17) | 3 834 | 3 264 | 3 696 |
+
+On the fresh probe's tie cells the rule alone predicts 2 905 of 2 909 (round 7's subset: 2 520); the four
+misses are a column from the boundary in the `W` region past the margin. Of the 138 cells left, 134 are
+`is N.Ttt` — a *constant pattern* that is a member access, which the oracle breaks before its own `.Ttt`
+(SK-DIV-0540) — and 4 are those boundary cells. Every grid re-formats to itself. Wired in
+`Fitter.TheDotTakesTheBreak`; pinned by `TypeTestTieIssue446Tests.TakesTheDotByTheTwoConditions` (eight
+oracle cells, each pair a column apart).
+
+⚠ **Refuted on the way**: an additive per-line cost (any `f(width)` summed over the two layouts' lines) — a
+perceptron over one-hot widths stays at 86–92 % on these cells, so the oracle is not comparing summed line
+costs; and the indent as the second condition's variable — it is the dot's column, which `yield return`
+separated.
+
+- ⚠ status: **resolved** for the ties of a returned type test (#446 item 1). **Open**: the `x` layout (both
+  bands overflow; the dot two levels in), `yield return` and other heads, and SK-DIV-0540.
+
 ## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
 
 #444's second and sixth shapes are one question — when the oracle breaks after an `=` rather than inside
@@ -10024,6 +10071,65 @@ restricted to the `EqualsValueClause` of a local declarator.
   local's long type and short name they broke the `=` the oracle keeps (#589). A gate on the name and the callee
   against the `(` now runs before them — SK-DIV-0400. The "indent lowers the floor" and "a longer callee moves it
   left" offsets above are partly the same name, read through the `var` geometry; they were left in place.
+
+⚠ **Round 4 (group E, 2026-10-14): the held typed local's limit, swept one variable at a time — three lines,
+not one.** `T name = receiver.Method(argument);` with the value past the margin beside the `=`. The type
+(3 to 70), the name (1 to 60), the receiver (1 to 40), the method name (3 to 44) and the indent (8 to 44) were
+each swept alone down a column of lines below (98 to 121), then 420 random configurations (seed 5281) the
+same way — 31 918 cells, every row one clean threshold (no row non-monotone). The widest line below that
+breaks the `=`:
+
+- **falls a column per seven of type** (112 at types 6–12, 107 at 42–50) and a column per eight of indent,
+  and **rises three per five of callee**, receiver and method name alike. Round 3's `3·below − 2·callee +
+  indent ≤ 310` had the callee's slope near and the indent's three times too steep, and no type at all;
+- **below that, past a name of about 22, falls two columns per five of name**;
+- **above both, rises about a column per two of type and of name** once the head is long — a 63-column type
+  breaks the `=` up to 113 where a 24-column one stops at 110. ⚠ This is what refuted round 3's type term on
+  Newtonsoft's `ConstructorHandlingTests`: the type lowers the limit and then raises it. And the 118 ceiling
+  was this branch's foot, not a ceiling: long heads break the `=` up to 120.
+
+Fitted as `35·below ≤ max(C, min(A, B))` over `(type, name, callee, indent)` (`EqualsFloor.HeldTypedLocalBreaks`,
+coefficients in its source): 31 197 of the 31 918 cells, against 27 675 for round 3's rule as Skala ran it. The
+`87` receiver rule beside it stays — taking it out improved the grids by 44 cells and left three cells that
+took two passes, a `(` past the margin beside the `=` that the model does not see.
+
+| probe | cells | master | now |
+|---|---:|---:|---:|
+| types × names × callees × indents | 8 256 | 7 336 | 8 032 |
+| one variable at a time (types to 70, names to 60) | 12 003 | 10 517 | 11 584 |
+| random configurations | 9 922 | 8 146 | 9 285 |
+| callee, indent and name alone | 2 671 | 2 422 | 2 638 |
+| **fresh random probe** (seed 91733: generic and array types, identifier and string arguments) | 6 458 | 5 222 | 5 851 |
+
+In the fresh probe the decision alone agrees on 5 753 of 5 846 (round 3's formula 4 340). The 607 cells left
+are mostly not this decision: 290 are heads so long the declaration itself overflows (the oracle breaks the
+argument list or the head's own type), 192 are values that do not fit below either (`=` and a chop, which
+Skala writes as a dot break), and 125 are this decision, the fit's own boundary a column either side. Every grid
+re-formats to itself. Pinned by `HeldTypedLocalIssue446Tests` (a type of 24, a type of 63 and a name of 30,
+each a column pair). ⚠ The fit is a fit: a fourth regime would not surprise anyone, and the name branch's
+indent coefficient is large and unexplained.
+
+⚠ **Round 5 (group E, 2026-10-14): the binary pattern behind a head under twelve is one linear rule.** The
+round-3 table (per head 8 to 11: always up to 27/31/35/38, two transitional widths) was measured at one indent
+and one first alternative. Swept now: heads of 5 to 11, patterns of 10 to 49 with first alternatives of five
+(`Alpha or B…`), nine (`Alphaaaaa or B…`) and eight (`not null and not G…`), line ends 118 to 137, indents 8
+to 24 — 64 260 cells. The `=` breaks exactly while
+
+`10·pattern + 3·first − 2·end + 6·indent ≤ limit(head)`, the limit −31, 53, 116, 166, 207 and 241 for heads of
+6 to 11,
+
+or while the first alternative itself would end past the margin (the existing check); a head of five or less
+never breaks it. 55 080 of the 55 198 cells of heads 6 to 11, where the table had 46 386. The indent term is
+what the table lacked: two columns of indent are a column of pattern. Exact text against the oracle: the
+sweep 56 086 → 64 662 of 64 800, the first probe of it 6 929 → 8 866 of 8 960, and a **fresh random probe**
+(seed 60117: `T`, `Tt`, `var`, `bool`, `Thing`, `int?` with names of 1 to 6; `A or B`, `not null and not G`,
+`> n and < m`, three alternatives, `null or E`; indents 8 to 40; ends 112 to 140) 2 565 → 2 988 of 3 000.
+Behind a line comment inside the pattern the table still decides (`PatternAfterAWideOperandNightlyTests`).
+Wired in `EqualsFloor.BreaksBeforeAPattern` with `GroupFacts.PatternFirstAlternative`; pinned by
+`PatternNarrowHeadIssue446Tests`.
+
+- ⚠ status: the held typed local and the narrow-head pattern **resolved within the measured shapes**
+  (#446 item 2). **Open**: a held value that does not fit below either, a head that overflows by itself.
 
 ## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
 
@@ -12599,3 +12705,14 @@ The oracle:
 `x is not (0` / `or 1)` and a positional pattern's element keep their levels, unchanged.
 
 - status: **fixed**, pinned by `ListPatternElementChainIssue615Tests` and `FuzzRegressionTests`.
+
+## SK-DIV-0540 — a constant pattern that is a member access breaks before its own dot
+
+Found by #446 round 8's fresh probe (group E, 2026-10-14): `return receiver.Property is N.Ttt…;` parses `N.Ttt` as
+a *constant pattern*, not a type, and past the margin the oracle breaks before that pattern's dot —
+`… is N` / `.Ttt;` one level in — in 134 of the probe's 402 qualified `is` cells, including lines whose keyword
+ends at 110, where the keyword's band would hold them. Skala keeps the band (`… is` / `N.Ttt;`). `as N.Ttt` (a
+type) is not affected: SK-DIV-0210's rule decides it. Measured, not wired.
+
+- options: none.
+- status: **open**.
