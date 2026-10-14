@@ -13712,9 +13712,102 @@ Stable on a second pass everywhere. Pinned by `SoleLambdaUnbrokenBodyArrowIssue6
 257 and no line improved on; a hugged call with links after it, whose arguments the oracle stacks two levels in
 (`=> Normalize(` / the arguments / `)` / `.Value`) and Skala one; and a type test on one line under a broken arrow
 whose operand still overflows, where the oracle breaks after `is` and Skala chops the operand's arguments. 165 of
-probe I's 600 members.
+probe I's 600 members. One-argument calls with links: SK-DIV-0560; the rest re-measured in SK-DIV-0561.
 
 - status: **partly resolved** (#620).
+
+## SK-DIV-0560 — a sole lambda over a one-argument call with links after it
+
+#620 residue round, group H (2026-10-14). SK-DIV-0521's open chain bodies, split by what follows the first call. A whole
+body `Use(x => Head(arg).Links)`, no type test. `Head(` is a name, or `recv.Name(`, or `this.f.Name(`. The links are
+properties or calls of one argument or none. Past the margin, **when the call `Head(arg)` does not fit beside the
+arrow and does fit on the line below, the oracle breaks the arrow**.
+
+Measured on group C's probes H and I (2 700 members). Of the 139 such bodies, the oracle breaks the arrow over 129.
+Master's answer agreed with it in 83. Pass one now asks `GroupFacts.LambdaLinkedCall`
+(`BreakPlan.LinkedOneArgumentCallOf`), ahead of the body's other rules. The other rules still decide wherever the
+call fits beside the arrow or does not fit below. A call the author broke inside keeps the arrow, as in SK-DIV-0521.
+
+| probe (members agreeing) | before | now | newly diverging |
+|---|---:|---:|---:|
+| H (2 100) | 1 526 | 1 557 | 0 |
+| I (600) | 435 | 445 | 0 |
+| **J (600, fresh, seed 560201: 13 heads incl. generic, `base.`, `a.b.`; 11 links, one or two; nine argument forms; eight statement kinds; ten parameter lists; indents 8–20)** | 464 | 499 | 0 |
+| #618's A–G | unchanged | unchanged | 0 |
+
+Stable on a second pass everywhere. Pinned by `SoleLambdaLinkedCallArrowIssue620Tests`. A sabotage test that turns the
+rule off fails it.
+
+⚠ **Not behind a receiver of two names or more** (`context.Workspace.CurrentSolution.GetDocument(a)`). There the oracle
+breaks the arrow over 12 and keeps it over 7 of 19, chopping before the call's own dot. That is SK-DIV-0520's open
+property chain. Left out.
+
+⚠ **Still open in this shape:**
+
+- The call does not fit below either. The oracle breaks over 53 and keeps over 32 of 85. It keeps mostly behind
+  short heads such as `Normalize(` and `Analyze(`, with the argument two levels in. No width separates the two:
+  the same head at the same arrow column goes both ways (`M2036` breaks, `M1190` keeps).
+- The call fits beside the arrow but the body does not. The oracle breaks over 52 and keeps over 31 of 83. Master's
+  rule already agrees in 73 of these.
+- On probe J, 39 members where the oracle keeps and master's chain rule breaks, and 17 the other way.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the rule reads only while it is on).
+- status: **partly resolved** (#620).
+
+## SK-DIV-0561 — #620's residue: what was tried and refuted, and a measured rule left unwired
+
+#620 residue round, group H (2026-10-14).
+
+⚠ **The oracle does not choose between the two layouts by lines or width.** Skala's formatter was built with the sole
+lambda's arrow forced kept, and again forced broken. Each was compared against the oracle over probes H and I, where
+the two forced layouts differ (2 266 members). None of the following predicts the oracle's arrow better than master's
+rules:
+
+- fewer lines, ties going either way;
+- the shorter longest line;
+- no line past the margin;
+- no line past the margin, then fewer lines.
+
+The best of them agrees in 1 201 + 348. Master agrees in 1 496 + 418. Per class the comparison wins only for
+one-argument calls with links, which SK-DIV-0560 now covers without it. ⚠ The oracle even takes a layout with a line
+past the margin over one without. For example, `TryFind(static x =>` / `Analyze(` / a 103-column argument at
+column 16 + 4, where keeping the arrow would have fitted. So the decision is made before the arguments are laid out.
+
+**A call of two or more arguments, nothing after it** (`Use(x => Head(a, b, c))`). The oracle keeps the arrow in 85 %
+of such members. ⚠ **The head plays no part; the argument list does.** Fitted on probe K: seed 562001, 1 200 members;
+continuous heads of 4 to 50 columns, plain, `recv.`, `this.f.`, two-name and generic; two to four arguments;
+indents 8 to 20. With the call too wide beside the arrow and narrow enough for the line below, the arrow breaks when
+
+`a − 4·(g + i) ≥ −240`
+
+Here `a` is the columns from the line's start through `=>`, `g` the argument list's width inside its parentheses, and
+`i` the line's start. Wide arguments keep the arrow and chop. A wide head over narrow ones moves the call below.
+
+| probe (members agreeing) | master | rule | fixed | newly diverging |
+|---|---:|---:|---:|---:|
+| K (1 200, fitted) | 997 | 1 106 | 117 | 8 |
+| H / I | 1 557 / 445 | 1 581 / 451 | 26 / 8 | 2 / 2 |
+| **L (1 000, fresh, seed 561777: twelve argument forms, indents 8–24)** | 854 | 927 | 85 | **12** |
+
+⚠ **Not wired: it fails the bar of no newly diverging rows on a fresh probe.** All 12 of probe L's sit within 18
+columns of the boundary (`v` from −240 to −222). No threshold removes them: at −200, eight members the oracle keeps
+still read as breaking, against 85 fixed at −240. A richer search found no line that does better on L (526 to 529 of
+580). It tried the outer call's head and the parameters separately, the head `h`, the argument count and the widest
+argument (which is worse than the whole list, 916 against 950 on K). The patch is kept with the group's scratch as
+`H-wide-call-rule.patch`.
+
+**Still open, unchanged:**
+
+- `open(x).Analyze(a, b)`;
+- property-only chains;
+- a first call of two or more arguments with links after it. For `Normalize(` the oracle keeps where the line
+  overflows far and breaks where it overflows little. No rule was fitted.
+- a no-argument first call with links. Master already agrees in 205 of 228.
+- hugged calls with links, whose arguments the oracle indents two levels;
+- a one-line test under a broken arrow that still overflows.
+
+- options: none.
+- status: **open** (#618, #620).
 
 ## SK-DIV-0505 — one argument behind a head wider than fourteen: one boundary for every owner
 

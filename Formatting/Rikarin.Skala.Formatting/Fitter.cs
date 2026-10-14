@@ -839,6 +839,15 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ A sole lambda over a one-argument call with links after it (#620): the arrow breaks whenever the
+                // call fits below and not beside it. See GroupFacts.LambdaLinkedCall.
+                if (facts.LambdaLinkedCall > 0
+                    && !facts.LambdaLinkedCallKept
+                    && m.Column + 1 + facts.LambdaLinkedCall > width
+                    && m.ContinuationColumn + facts.LambdaLinkedCall <= width) {
+                    return ResolvedMode.Broken;
+                }
+
                 // ⚠ Pass two of a held typed local whose `=` stayed and whose arguments chopped: the first pass's
                 // question again, on the flat widths. See GroupFacts.HeldChoppedWidth.
                 if (facts.HeldChoppedWidth > 0
