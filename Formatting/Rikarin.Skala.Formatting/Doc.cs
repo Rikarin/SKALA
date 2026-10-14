@@ -1268,6 +1268,9 @@ public sealed class Document {
 ///     <see cref="LambdaTestCallHead" /> is the head through that call's <c>(</c>. The arrow breaks when it ends twelve
 ///     columns or more past the line's start and <c>6·k − 6·p + 8·h − 6·w − 8·i ≥ −564</c> (#618).
 /// </param>
+/// <param name="LambdaBodyKind">
+///     With <see cref="LambdaTestCall" />: which of #618's and #620's measured lines the arrow is decided by.
+/// </param>
 /// <param name="LambdaChainHead">
 ///     ⚠ The arrow of a sole lambda argument whose body is a chain of calls: the width from the lambda's start
 ///     to its first call's dot, or zero for any other group (#571). Past the margin the arrow breaks for a
@@ -1725,6 +1728,7 @@ public readonly record struct GroupFacts(
     int LambdaTestCall = 0,
     int LambdaTestCallHead = 0,
     bool LambdaTestLinks = false,
+    LambdaBodyKind LambdaBodyKind = LambdaBodyKind.BrokenTest,
     bool BreaksIfItOverflows = false,
     bool BreaksIfReceiverOverflows = false,
     bool HeldCallOnAPath = false,
@@ -1824,4 +1828,33 @@ public enum LambdaLocal {
     ///     parameter list chops whatever the value's width.
     /// </summary>
     ChopsPastTheParenthesis = 4
+}
+
+/// <summary>
+///     The body a sole lambda's arrow is decided over by <see cref="GroupFacts.LambdaTestCall" />'s measured lines (#618,
+///     #620).
+/// </summary>
+public enum LambdaBodyKind {
+    /// <summary>A type test broken before its keyword (#618).</summary>
+    BrokenTest,
+
+    /// <summary>
+    ///     A type test on one line over an operand whose calls have one argument or none (#620): the arrow breaks whenever
+    ///     the body overflows beside it — 4 apart of 118 on a probe written after it, where keeping it missed 114.
+    /// </summary>
+    InlineTest,
+
+    /// <summary>
+    ///     A type test on one line over an operand whose first call has two or more arguments (#620):
+    ///     <c>6·k + 2·p + 5·h − 9·w − 12·i ≥ −1032</c>, <c>w</c> the whole body's width — 36 apart of 282 fitted, 18 of 71
+    ///     on a later probe where either fixed answer missed 35.
+    /// </summary>
+    InlineTestOfACall,
+
+    /// <summary>
+    ///     A whole body that is a call of one argument and nothing after it (#620): from twelve columns past the line's start,
+    ///     <c>6·k − 8·p + 7·h − 11·w − 10·i ≥ −1108</c> — 35 apart of 224 fitted, 14 of 73 on a later probe where keeping
+    ///     it missed 34.
+    /// </summary>
+    OneArgumentCall
 }

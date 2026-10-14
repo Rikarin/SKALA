@@ -8158,7 +8158,15 @@ public sealed class BreakPlan {
                             testedCall.ArgumentList.OpenParenToken
                         )
                     )
-                    : TestedLinkedCallOfASoleLambda(lambda, body) is ({ } linked, { } firstCall)
+                    : UnbrokenBodyOfASoleLambda(lambda, body) is ({ } unbroken, var unbrokenKind, var unbrokenHead)
+                    ? new GroupFacts(
+                        BreaksIfTooLong: true,
+                        LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+                        LambdaTestCall: FormattedWidth(unbroken),
+                        LambdaTestCallHead: unbrokenHead,
+                        LambdaBodyKind: unbrokenKind
+                    )
+                : TestedLinkedCallOfASoleLambda(lambda, body) is ({ } linked, { } firstCall)
                         ? new GroupFacts(
                             BreaksIfTooLong: true,
                             LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
@@ -8558,6 +8566,51 @@ public sealed class BreakPlan {
         }
 
         return first is { ArgumentList.Arguments.Count: >= 2 } && first != operand ? (operand, first) : (null, null);
+    }
+
+    /// <summary>
+    ///     A sole lambda's whole body that #620's measured lines decide the arrow over — a type test written on one line
+    ///     whose operand's spine holds a call, or a call of one argument with nothing after it — with the line's kind and
+    ///     the head through the first call's <c>(</c>; null otherwise.
+    /// </summary>
+    (ExpressionSyntax? Body, LambdaBodyKind Kind, int Head) UnbrokenBodyOfASoleLambda(
+        LambdaExpressionSyntax lambda,
+        ExpressionSyntax body
+    ) {
+        if (!options.PlaceSingleMethodArgumentLambdaOnSameLine || !IsTheBodyOfASoleLambda(body)) {
+            return (null, default, 0);
+        }
+
+        if (body is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 1 } single) {
+            return (body, LambdaBodyKind.OneArgumentCall,
+                FormattedWidth(single.GetFirstToken(), single.ArgumentList.OpenParenToken));
+        }
+
+        // ⚠ Read from the tree and not the source's breaks, so pass two asks what pass one asked: only a break before
+        // the keyword, which is the author's and kept, makes the test #618's.
+        var operand = body switch {
+            BinaryExpressionSyntax binary when IsTypeTest(binary) && !BreaksBefore(binary.OperatorToken) => binary.Left,
+            IsPatternExpressionSyntax { Pattern: not BinaryPatternSyntax } test when !BreaksBefore(test.IsKeyword) =>
+                test.Expression,
+            _ => null
+        };
+
+        InvocationExpressionSyntax? first = null;
+        var spine = operand;
+        while (spine is MemberAccessExpressionSyntax or InvocationExpressionSyntax) {
+            if (spine is InvocationExpressionSyntax invocation) {
+                first = invocation;
+                spine = invocation.Expression;
+            } else {
+                spine = ((MemberAccessExpressionSyntax)spine).Expression;
+            }
+        }
+
+        return first is null ? (null, default, 0)
+            : first.ArgumentList.Arguments.Count >= 2
+                ? (body, LambdaBodyKind.InlineTestOfACall,
+                    FormattedWidth(operand!.GetFirstToken(), first.ArgumentList.OpenParenToken))
+                : (body, LambdaBodyKind.InlineTest, 0);
     }
 
     /// <summary>The operand of a sole lambda's whole body that is a type test broken before its keyword, or null.</summary>
