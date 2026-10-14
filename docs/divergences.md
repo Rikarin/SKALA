@@ -13549,6 +13549,28 @@ the 27 rows).
 - options: none.
 - status: **fixed** (the seed, by `773eeafa`); the comment right after `[` is **open**.
 
+## SK-DIV-0551 — the break before a lambda's `{` in a conditional's condition
+
+Fuzz 7696270417166025555 (generate; fails on `adca899a` and on master `b9500924`). Minimal: `((char First, …) First,
+(…) Second) v99 = ((x, y) =>` / `{` / `return 97970;` / `}) ? 1.0m : Emit(…, Cast<…>(…));`. #553's rule measures a
+conditional's condition only while the author left it on one line (`HasLooseBreak`), and since the Nightly seed
+8573762464065711162 the gaps after a joinable block's `{` and before its `}` count as joined. The gap *in front of* the
+`{` did not, though the brace style joins it to the arrow just the same: pass one read the condition as written across
+lines, kept the `=` and broke the block open; pass two, given `=> {`, measured the condition, broke the `=` and joined
+the block — the oracle's answer for both. `BreakPlan.InsideAJoinableBlock` now reads that gap as joined too, for a
+lambda's or anonymous method's block while `csharp_new_line_before_open_brace` does not name lambdas.
+
+Measured 2026-10-14 with `Testing ask` on a fresh 96-row grid: the block with its `{` below the arrow at column 0 and
+indented, `=> {`, and on one line; eight heads from `var v =` to the 98-column tuple; three tails, `? 1.0m : 2.0m` to
+the seed's chopped `Emit(…)`. Differing rows 9 → 5, non-idempotent files 2 → 0. The 5 left are all one shape and were
+there before, idempotent and the same for every way the block is written: a head of 80 columns or more with the short
+tail, where the oracle keeps the `=` and opens the block (`v = ((x, y) => {` / `return …;` / `})` / `? 1.0m` /
+`: 2.0m`) and Skala breaks the `=` and keeps the block whole. Open.
+
+- options: `csharp_new_line_before_open_brace` (the gap is a formatter break only while lambdas are not named).
+- status: **fixed** (the seed, pinned by `JoinedBlockInAConditionNightlyTests` and `FuzzRegressionTests`); the wide
+  head with a short tail is **open**.
+
 ## SK-DIV-0521 — where a sole lambda breaks after its arrow without a broken test
 
 #620, group C (2026-10-14): SK-DIV-0520's question where the body is not a type test broken before its keyword. Probe

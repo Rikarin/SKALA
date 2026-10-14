@@ -222,6 +222,10 @@ public sealed class FuzzRegressionTests {
     // the `when` and a collection expression was joined, so pass one lifted the braces for a break it then dropped
     // and pass two put them back. The oracle keeps that break.
     [InlineData(16565442098129427039UL)]
+    // `T v99 = ((x, y) =>` / `{` / `return 97970;` / `}) ? 1.0m : Emit(…)`: the author's break before a lambda's `{`
+    // made the condition read as written across lines, so pass one kept the `=` past #553's rule; pass two, `=> {`
+    // joined, broke it — the oracle's answer for both. The gap before the brace now reads as glued (SK-DIV-0551).
+    [InlineData(7696270417166025555UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

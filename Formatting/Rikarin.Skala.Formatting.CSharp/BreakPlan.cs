@@ -7162,11 +7162,18 @@ public sealed class BreakPlan {
     bool InsideAJoinableBlock(SyntaxToken previous, SyntaxToken token) {
         var block = previous.IsKind(SyntaxKind.OpenBraceToken) ? previous.Parent as BlockSyntax
             : token.IsKind(SyntaxKind.CloseBraceToken) ? token.Parent as BlockSyntax
+            : token.IsKind(SyntaxKind.OpenBraceToken) ? token.Parent as BlockSyntax
             : null;
+        // ⚠ And the gap in front of the `{`, while the brace style keeps a lambda's brace on its arrow's line
+        // (fuzz 7696270417166025555): `v = ((x, y) =>` / `{` / `return …;` / `}) ? a : Emit(…)` read as a
+        // condition written across lines, kept the `=` on pass one, and pass two — `=> {` joined — broke it.
+        var beforeTheBrace = token == block?.OpenBraceToken
+            && block.Parent is AnonymousFunctionExpressionSyntax
+            && (options.NewLineBeforeOpenBraceOwners & BraceOwners.Lambdas) == 0;
         // ⚠ Not a sole lambda argument's: `Check(x => {` / `return …;` / `})` keeps its block open and its call
         // on the `=`'s line in the oracle, the way a sole lambda hugs its call (measured on the same grid).
         return block is { Statements.Count: 1 }
-            && (previous == block.OpenBraceToken || token == block.CloseBraceToken)
+            && (previous == block.OpenBraceToken || token == block.CloseBraceToken || beforeTheBrace)
             && block.Parent is not AnonymousFunctionExpressionSyntax {
                 Parent: ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } }
             }

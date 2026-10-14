@@ -46,4 +46,48 @@ public sealed class JoinedBlockInAConditionNightlyTests {
         Assert.Equal(oracle, first);
         Assert.Equal(first, FormatWith(first));
     }
+
+    /// <summary>
+    ///     Fuzz 7696270417166025555: the author's break is in front of the block's <c>{</c>, which the brace style
+    ///     joins to the arrow just as it joins the block's own gaps. The oracle answers the same for the brace below
+    ///     its arrow (at column 0 and indented), for <c>=&gt; {</c> and for the block on one line.
+    /// </summary>
+    [Theory]
+    [InlineData("=>\n{\n            return 97970;\n        }")]
+    [InlineData("=>\n        {\n            return 97970;\n        }")]
+    [InlineData("=> {\n            return 97970;\n        }")]
+    [InlineData("=> { return 97970; }")]
+    public void ABraceBelowItsArrow_ReadsAsJoined(string body) {
+        var source = """
+                     public class C {
+                         public long M() {
+                             ((char First, ValueTask<byte> Second) First, (Lazy<string> First, string Second) Second) v99 = ((x, y) BODY) ? 1.0m : Emit((true, "ssssss"), Emit("sssssssssssssssssssssssss", x100 => "ssssssssssss", 3_000_000L), Cast<ValueTask<IEnumerable<CancellationToken>>, ImmutableArray<string>>("utf8"u8, 1.5d, 42266, ref null));
+                         }
+                     }
+                     """.Replace("BODY", body, StringComparison.Ordinal);
+        var oracle = """
+                     public class C {
+                         public long M() {
+                             ((char First, ValueTask<byte> Second) First, (Lazy<string> First, string Second) Second) v99 =
+                                 ((x, y) => { return 97970; })
+                                     ? 1.0m
+                                     : Emit(
+                                         (true, "ssssss"),
+                                         Emit("sssssssssssssssssssssssss", x100 => "ssssssssssss", 3_000_000L),
+                                         Cast<ValueTask<IEnumerable<CancellationToken>>, ImmutableArray<string>>(
+                                             "utf8"u8,
+                                             1.5d,
+                                             42266,
+                                             ref null
+                                         )
+                                     );
+                         }
+                     }
+
+                     """;
+
+        var first = FormatWith(source);
+        Assert.Equal(oracle, first);
+        Assert.Equal(first, FormatWith(first));
+    }
 }
