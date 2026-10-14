@@ -688,8 +688,7 @@ public sealed class DocumentBuilder {
             // GroupFlags.ArrowBodyRunsToItsDot.
             // Only a body short enough to be read through otherwise: a longer one already ends the head's line at the
             // arrow, and the oracle breaks there when `=> Receiver` does not fit.
-            dotRuns = !arrow.PositionalHead
-                && arrow.ArmBodyDot
+            dotRuns = arrow is { PositionalHead: false, ArmBodyDot: true }
                 && flatWidth[index] < Document.Unbounded
                 && afterPoint[index] < Document.Unbounded
                 && flatWidth[index] - 1 + arrow.ArmBodyTrail <= ShortArrowBody;
