@@ -1792,8 +1792,9 @@ public sealed class Document {
 ///     ⚠ The gap after an arm's <c>when</c> before a condition whose only break points are type argument lists
 ///     (#576, SK-DIV-0399), decided by the measured table in <c>Fitter.WhenBreaks</c> rather than by whether the
 ///     condition fits below. With <see cref="WhenAtom" />, a condition with no break point at all; with
-///     <see cref="WhenBody" />, the width of <c> =&gt; body</c> and the arm's comma for a body short enough to be
-///     read through, decided from the syntax so that a kept arrow break on pass two does not change it. With
+///     <see cref="WhenBody" />, the width of <c> =&gt; body</c> and the arm's comma for an atom body (round 7: of any
+///     width; <c>Fitter.WhenBreaks</c> reads three columns or fewer through, and decides a wider one by its band),
+///     decided from the syntax so that a kept arrow break on pass two does not change it. With
 ///     <see cref="WhenArrowKept" />, an arm whose arrow the author broke on either side: there a condition with
 ///     type arguments moves below exactly when it fits there, the rule before the table.
 /// </param>

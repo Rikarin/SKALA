@@ -1620,6 +1620,16 @@ public sealed class Fitter {
     ///     and <c>h</c> the column the <c>when</c> ends at. That fit misses 2 of 590 cells. ⚠ A condition with no
     ///     break point at all always breaks once it does not fit beside (#609, fuzz 7256125207651206043): `when` /
     ///     `SomeVeryLongIdentifier… =&gt;` / `1,` — it has nowhere else to go.
+    ///     <para>
+    ///         ⚠ Round 7 (2026-10-14): the table holds for a body of three columns or fewer with its comma only. A
+    ///         wider atom is not read through: the <c>when</c> breaks when the whole arm fits on the line below, and
+    ///         otherwise only inside a band of head widths, <c>max(12, 45 − 6·b) ≤ head</c> and
+    ///         <c>7·head ≤ 19·b + 105</c>, with <c>head</c> the arm through <c>when</c> and <c>b</c> the body with its
+    ///         comma; before a body of fourteen or fewer, also only while the condition on the line below runs at most
+    ///         <c>13 + (b − 5)/2</c> columns past the margin. Measured on 5 600 arms (SK-DIV-0399). The band's upper
+    ///         limit was fitted on <c>Materialise&lt;List&lt;bool&gt;, IReadOnlyDictionary&lt;int, T…&gt;&gt;()</c>;
+    ///         it moves with the condition's shape, which is not modelled.
+    ///     </para>
     /// </remarks>
     bool WhenBreaks(in GroupFacts facts, in Measures m, int tail, int lineStart) {
         if (m.FlatWidth >= Unbounded || Fits(m.Column, m.FlatWidth)) {
