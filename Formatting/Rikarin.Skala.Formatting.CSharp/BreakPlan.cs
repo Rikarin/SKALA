@@ -5054,9 +5054,9 @@ public sealed class BreakPlan {
     ///     of its own: the head never reads a short body through (#576, SK-DIV-0399).
     /// </summary>
     /// <remarks>
-    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c>: <c>T… when Materialise&lt;…&gt;() =&gt; 1,</c> with the condition
-    ///     fitting beside the <c>when</c> breaks after the arrow while the line through it fits and before it after
-    ///     that, where Skala, reading the one-column body through, filled the type arguments.
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c>: <c>T… when Materialise&lt;…&gt;() =&gt; 1,</c> with the
+    ///     condition fitting beside the <c>when</c> breaks after the arrow while the line through it fits and before it
+    ///     after that, where Skala, reading the one-column body through, filled the type arguments.
     /// </remarks>
     /// <summary>
     ///     ⚠ The widest such condition the head stops reading the body through for. Wider, the condition cannot fit
@@ -9143,9 +9143,9 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     A sole lambda's whole body that #620's measured lines decide the arrow over — a type test written on one line
-    ///     whose operand's spine holds a call, or a call of one argument with nothing after it — with the line's kind and
-    ///     the head through the first call's <c>(</c>; null otherwise.
+    ///     A sole lambda's whole body that #620's measured lines decide the arrow over — a type test written on one
+    ///     line whose operand's spine holds a call, or a call of one argument with nothing after it — with the line's
+    ///     kind and the head through the first call's <c>(</c>; null otherwise.
     /// </summary>
     (ExpressionSyntax? Body, LambdaBodyKind Kind, int Head) UnbrokenBodyOfASoleLambda(
         LambdaExpressionSyntax lambda,
