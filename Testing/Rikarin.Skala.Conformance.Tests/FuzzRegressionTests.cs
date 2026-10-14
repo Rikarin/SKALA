@@ -230,6 +230,14 @@ public sealed class FuzzRegressionTests {
     // the `when` and a collection expression was joined, so pass one lifted the braces for a break it then dropped
     // and pass two put them back. The oracle keeps that break.
     [InlineData(16565442098129427039UL)]
+    // `T v99 = ((x, y) =>` / `{` / `return 97970;` / `}) ? 1.0m : Emit(…)`: the author's break before a lambda's `{`
+    // made the condition read as written across lines, so pass one kept the `=` past #553's rule; pass two, `=> {`
+    // joined, broke it — the oracle's answer for both. The gap before the brace now reads as glued (SK-DIV-0551).
+    [InlineData(7696270417166025555UL)]
+    // `case { Length: >` / `0 } when Convert<…, (string First, …)>(…):` (group F's fuzz): pass one moved the `when`
+    // below the broken braces for its head through the `>(`, and pass two read that break as the author's and lifted
+    // the braces (#575). The oracle keeps the `when` on the `}` line and fills the type arguments (SK-DIV-0552).
+    [InlineData(16251829570492293429UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
@@ -327,6 +335,9 @@ public sealed class FuzzRegressionTests {
     // the 2026-10-14 merges landed (42ed48b0) without either being targeted. Pinned so neither returns unnoticed.
     [InlineData(14052156207620702103UL, "real/vixen/Core/Vixen.Ecs/Systems/SystemGraph.cs")]
     [InlineData(10618586840755774483UL, "real/vixen/Core/Vixen.Ui.Tests/NineSliceImageTests.cs")]
+    // #617 (found by group D on adca899a): `candidate is` / `[first, /* f */ second, …]` too wide one level in. Pass one
+    // kept the author's break and broke the list there; pass two joined `is [`. Fixed by 773eeafa's whole-list point.
+    [InlineData(11861007200823207053UL, "constructs/wrapping/alignment.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

@@ -13512,6 +13512,96 @@ and qualified names of more than one dot or with type arguments, which were not 
 
 - status: **resolved** within the measured shapes (#621).
 
+## SK-DIV-0550 — a block comment inside a one-line list pattern below an `is`, and one right after its `[`
+
+#617, fuzz seed 11861007200823207053 (`--origin=constructs/wrapping/alignment.cs`, group D, reported against
+`adca899a`). Minimal: `var matched = candidate is` / `[first…, /* f */ second…, …];`, the list too wide to stay whole
+one level in. On `adca899a` pass one kept the author's break and broke the list one level in; pass two, finding the list
+broken, joined `candidate is [`. ⚠ **Already fixed on master before this entry was opened**, by `773eeafa`
+(SK-DIV-0500's whole-list point, `LineFlags.BreaksOnlyIfListStaysWhole`): a block comment on the list's own line leaves
+it a one-line list, so the same point applies. Confirmed by sabotage — with `LayoutWriter`'s `ListBreaksBelow` switched
+off, the seed and the new test fail again. Nothing in the formatter changed here; the seed and the shape are now pinned
+(`FuzzRegressionTests`, `FuzzIdempotencyIssue617Tests`).
+
+Measured 2026-10-14 with `Testing ask` on a fresh 140-row grid: the comment after the first element, after the third,
+before the `]`, right after the `[`, and none; the list at column 0 and one level in; its line ending at 101 to 140.
+The oracle keeps the break exactly while the list (comment included) fits whole one level in, and joins `is [` one
+column later. Every row re-formats to itself. **126 of 140 rows match**; the 14 that differ are all one shape.
+
+⚠ **Open: a block comment right after the `[`.** `candidate is` / `[/* f */ a, b, …]` too wide for its line, and the
+same comment in a collection expression (`string[] x = [/* f */ a, …]`) and in a list pattern written on one line after
+`is` or `return … is`. Skala writes `[ /* f */` and puts every element below; at most widths the oracle fills elements
+after the comment on the opener's line (`[ /* f */ first, second, third,` / `fourth`). A 54-row probe of those four
+contexts: 27 rows differ, none non-idempotent. Two things make this more than a fill rule to copy:
+
+- in one row the oracle leaves a 134-column line (`string[] matched = [ /* f */ …` with all four elements on it and
+  `];` below) where its own fill would have broken, so it does not weigh the comment the way it weighs an element;
+- the committed fixture `constructs/breaks/comment-before-a-break-point.cs` pins the *other* answer for
+  `int[] ys = [/* f */ alpha…, …, epsilonArgumentVa];` — `[ /* f */` / the elements — the "`[/* f */ a, …` past the
+  margin → identical" row of the #409 table above, and one row of this probe agrees with it. That row holds for its
+  fixture and is refuted as a general rule: at most of these widths the oracle fills.
+
+Where the oracle switches between the two was not found on these grids, and Skala's answer is the fixture's and stays
+inside the margin, so nothing is wired. Also open: a list pattern after `is` written on one line with `[/* f */` whose
+list fits one level in — the oracle breaks after the `is` (#562's rule), Skala breaks after the comment instead (6 of
+the 27 rows).
+
+- options: none.
+- status: **fixed** (the seed, by `773eeafa`); the comment right after `[` is **open**.
+
+## SK-DIV-0551 — the break before a lambda's `{` in a conditional's condition
+
+Fuzz 7696270417166025555 (generate; fails on `adca899a` and on master `b9500924`). Minimal: `((char First, …) First,
+(…) Second) v99 = ((x, y) =>` / `{` / `return 97970;` / `}) ? 1.0m : Emit(…, Cast<…>(…));`. #553's rule measures a
+conditional's condition only while the author left it on one line (`HasLooseBreak`), and since the Nightly seed
+8573762464065711162 the gaps after a joinable block's `{` and before its `}` count as joined. The gap *in front of* the
+`{` did not, though the brace style joins it to the arrow just the same: pass one read the condition as written across
+lines, kept the `=` and broke the block open; pass two, given `=> {`, measured the condition, broke the `=` and joined
+the block — the oracle's answer for both. `BreakPlan.InsideAJoinableBlock` now reads that gap as joined too, for a
+lambda's or anonymous method's block while `csharp_new_line_before_open_brace` does not name lambdas.
+
+Measured 2026-10-14 with `Testing ask` on a fresh 96-row grid: the block with its `{` below the arrow at column 0 and
+indented, `=> {`, and on one line; eight heads from `var v =` to the 98-column tuple; three tails, `? 1.0m : 2.0m` to
+the seed's chopped `Emit(…)`. Differing rows 9 → 5, non-idempotent files 2 → 0. The 5 left are all one shape and were
+there before, idempotent and the same for every way the block is written: a head of 80 columns or more with the short
+tail, where the oracle keeps the `=` and opens the block (`v = ((x, y) => {` / `return …;` / `})` / `? 1.0m` /
+`: 2.0m`) and Skala breaks the `=` and keeps the block whole. Open.
+
+- options: `csharp_new_line_before_open_brace` (the gap is a formatter break only while lambdas are not named).
+- status: **fixed** (the seed, pinned by `JoinedBlockInAConditionNightlyTests` and `FuzzRegressionTests`); the wide
+  head with a short tail is **open**.
+
+## SK-DIV-0552 — a case label's `when` on the line of its broken braces
+
+Fuzz 16251829570492293429 (generate, found by group F's 30-minute fuzz at `c0c2e7ea`, whose formatter is master
+`27e4fddd`'s). Minimal: `case { Length: >` / `0 } when Convert<(…), (string First, CancellationToken Second)>(x47 =>
+…, […], […]):`. The `when`'s group breaks only when its head overflows, and that head reads through a type argument
+list to the call's `(` (#378's measurement, taken on labels written on one line). Pass one moved the `when` below the
+broken braces; pass two read that break as the author's and lifted the braces two levels in, as #575 does for a kept
+`when`. The oracle never moves it: with the `}` closing braces that span lines, the `when` stays on the `}` line (or on
+`} s`, a designation after it) and the type argument list fills there — `} when Convert<A, B, C, D,` / `E>(x, y):` —
+where the same label on one line breaks before its `when`. A case label's `when` on such a line now stays flat once its
+braces' group broke (`GroupFacts.FlatIfOwnerBroke`, the owner being the property pattern's brace group, read by the
+writer, so braces broken by width count as braces broken by the author).
+
+Measured 2026-10-14 with `Testing ask`:
+
+| probe | rows | differ before → after | non-idempotent files before → after |
+|---|---:|---:|---:|
+| five pattern shapes × eight conditions × two depths (`>`/`0`'s indent read as equal, below) | 80 | 22 → 18 | 2 → 0 |
+| seven ways to leave the braces broken, by the author or by width, × four conditions | 28 | 12 → 10 | 1 → 0 |
+
+Open, and the same before and after: a broken `>` / `0` subpattern puts the `0` one level deeper than the oracle,
+which writes it on the subpattern's column; the oracle *lifts* the braces two levels at block depth 2 when the
+condition after `} when` breaks at its own top level (an `&&` chain, or after the `when`), not when it breaks inside a
+type argument list; and a `when` past the margin by itself (`} s when someVeryLong…:`) stays on the `}` line where the
+oracle breaks after the `when`. The fuzz case's tuple type arguments fill inside a tuple element in the oracle
+(`(string First, CancellationToken` / `Second)>(`), which Skala's type argument fill never does.
+
+- options: none.
+- status: **fixed** (the seed, pinned by `CaseLabelWhenOnTheBracesLineTests` and `FuzzRegressionTests`); the
+  residues above are **open**.
+
 ## SK-DIV-0521 — where a sole lambda breaks after its arrow without a broken test
 
 #620, group C (2026-10-14): SK-DIV-0520's question where the body is not a type test broken before its keyword. Probe
