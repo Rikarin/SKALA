@@ -7339,7 +7339,9 @@ public sealed class BreakPlan {
         return width + CommentsWidth(previous, token);
     }
 
-    /// <summary>The block comments between two adjacent tokens, each with the space the formatter writes before it.</summary>
+    /// <summary>
+    ///     The block comments between two adjacent tokens, each with the space the formatter writes before it.
+    /// </summary>
     static int CommentsWidth(SyntaxToken previous, SyntaxToken token) {
         var width = 0;
         foreach (var trivia in previous.TrailingTrivia.Concat(token.LeadingTrivia)
