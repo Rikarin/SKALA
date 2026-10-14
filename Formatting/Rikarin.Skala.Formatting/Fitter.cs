@@ -517,15 +517,15 @@ public sealed class Fitter {
 
                 // ⚠ A local's type/name gap before a lambda over a call, one column past the margin (#453 round 8).
                 // See GroupFacts.OneOverCallArguments.
-                if (facts.OneOverCallArguments > 0 && m.PointWidth < Unbounded) {
-                    if (m.FlatWidth < Unbounded
-                        && m.Trailing < Unbounded
-                        && m.Column + m.FlatWidth + m.Trailing == width + 1
-                        && facts.OneOverCallType >= EqualsFloor.TypeNameOneOverType(facts.OneOverCallName)
-                        && (facts.OneOverCallSingle
-                            || facts.OneOverCallArguments <= 35 + (facts.OneOverCallType - 32) / 12)) {
-                        return ResolvedMode.Broken;
-                    }
+                if (facts.OneOverCallArguments > 0
+                    && m.PointWidth < Unbounded
+                    && m.FlatWidth < Unbounded
+                    && m.Trailing < Unbounded
+                    && m.Column + m.FlatWidth + m.Trailing == width + 1
+                    && facts.OneOverCallType >= EqualsFloor.TypeNameOneOverType(facts.OneOverCallName)
+                    && (facts.OneOverCallSingle
+                        || facts.OneOverCallArguments <= 35 + (facts.OneOverCallType - 32) / 12)) {
+                    return ResolvedMode.Broken;
                 }
 
                 if (facts is { NameThroughEquals: > 0, OneOverValue: 0 }) {
@@ -1469,6 +1469,8 @@ public sealed class Fitter {
                     - 11 * facts.LambdaTestCall
                     - 10 * lineStart
                     >= -1108;
+            case LambdaBodyKind.BrokenTest:
+                break;
         }
 
         return arrowEnd + 1 + facts.LambdaTestCall > width
