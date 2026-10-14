@@ -5453,10 +5453,11 @@ public sealed class BreakPlan {
         // joined line is not a line the writer can produce, and the band's `=` break, read on pass two as a break
         // inside the parameter, turned the rule off and broke the gap. ⚠ The directive and not any line break in the
         // section's source (fuzz 4372692451688483448): the arguments this rule chops on pass one are such a break on
-        // pass two, which turned the rule off there. ⚠ And for the same reason not a line break inside the parameter
-        // either, which is what the band's `=` break is on pass two: see MeasuresOnOneLine.
+        // pass two, which turned the rule off there. ⚠ A line break inside the *parameter* is still read off the source,
+        // on purpose and pass-stably: see PlanSectionBeforeALongParameter's remarks (SK-DIV-0571).
         var first = section.CloseBracketToken.GetNextToken();
-        if (!MeasuresOnOneLine(first, parameter) || section.ContainsDirectives) {
+        if (source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny(LineEnds) >= 0
+            || section.ContainsDirectives) {
             return facts;
         }
 
@@ -5488,44 +5489,8 @@ public sealed class BreakPlan {
     static bool TakesTheOneArgumentConstants(AttributeArgumentListSyntax arguments) =>
         arguments.Arguments.Count(static argument => argument.NameEquals is null) <= 1;
 
-    /// <summary>
-    ///     Whether the parameter from <paramref name="first" /> to its end has a one-line form the section rules can
-    ///     measure (#476, #603): no comment or directive between its tokens and no token whose own text spans lines.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Read off the tree, never off the source's line breaks. A line break inside the parameter used to turn both
-    ///     section rules off, and the only such break the rules can meet on pass two is one pass one wrote — the band's
-    ///     <c>=</c> — so pass two answered a different question from pass one; it agreed only because the parameter's
-    ///     own fit happened to land on the same layout (two fuzz seeds this round came from the same pattern on the
-    ///     section, 9695149764600851630 and 4372692451688483448). Measured flat by
-    ///     <see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />, an author's break inside the parameter is read
-    ///     through and both passes see the same widths.
-    /// </remarks>
-    static bool MeasuresOnOneLine(SyntaxToken first, ParameterSyntax parameter) {
-        var last = parameter.GetLastToken();
-        for (var token = first; ; token = token.GetNextToken()) {
-            if (token.Text.AsSpan().IndexOfAny('\r', '\n') >= 0
-                || token != first && token.LeadingTrivia.Any(IsACommentOrDirective)
-                || token != last && token.TrailingTrivia.Any(IsACommentOrDirective)) {
-                return false;
-            }
-
-            if (token == last || token.RawKind == 0) {
-                return true;
-            }
-        }
-    }
-
-    /// <summary>Whether <paramref name="trivia" /> is a comment of any kind.</summary>
-    static bool IsAComment(SyntaxTrivia trivia) =>
-        trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-        || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-        || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
-        || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia);
-
-    /// <summary>Whether <paramref name="trivia" /> is a comment or a preprocessor directive.</summary>
-    static bool IsACommentOrDirective(SyntaxTrivia trivia) =>
-        IsAComment(trivia) || trivia.IsDirective || trivia.IsKind(SyntaxKind.DisabledTextTrivia);
+    /// <summary>The two line-break characters, for a span search.</summary>
+    static readonly char[] LineEnds = ['\r', '\n'];
 
     /// <summary>
     ///     The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the operand each is held against.
@@ -7394,6 +7359,17 @@ public sealed class BreakPlan {
     ///     (<see cref="GroupFacts.SectionJoinedOverDefault" />).
     ///     Widths are the formatter's (<see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />), and a comment
     ///     anywhere in the section or the parameter, or a break inside the parameter, leaves the list to its own fit.
+    ///     <para>
+    ///         ⚠ The break inside the parameter is read off the source deliberately, and it is pass-stable (SK-DIV-0571).
+    ///         The only break pass one writes inside the parameter while these rules speak is the default band's
+    ///         <c>=</c> (<see cref="GroupFacts.SectionJoinedOverDefault" />), and it is written exactly when the
+    ///         arguments do not chop and the gap stays — the answer the arguments' and the gap's own fits give on pass two,
+    ///         where the section fits and the line ends at the kept <c>=</c>. A parameter the rules leave because it
+    ///         overflows its own line (<c>Fitter.OverflowsItsOwnLine</c>) is left on both passes. ⚠ Measuring through
+    ///         the break instead, off the tree, was tried and refuted: on 1 181 cells with an author's break after the
+    ///         <c>=</c> or the type, 57 outputs changed on a second pass and the oracle's answer was met 456 times
+    ///         against 543 with this read. Pinned by <c>AuthorBrokenParameterSectionIssue603Tests</c>.
+    ///     </para>
     /// </remarks>
     void PlanSectionBeforeALongParameter(AttributeArgumentListSyntax arguments) {
         if (options.KeepExistingInvocationParensArrangement
@@ -7407,8 +7383,18 @@ public sealed class BreakPlan {
         var first = section.CloseBracketToken.GetNextToken();
         var last = parameter.GetLastToken();
         if (first.SpanStart > parameter.Span.End
-            || !MeasuresOnOneLine(first, parameter)
-            || section.DescendantTrivia().Any(IsAComment)
+            || source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny('\r', '\n') >= 0
+            || section.DescendantTrivia()
+                .Concat(
+                    parameter.DescendantTrivia(
+                        Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(first.SpanStart, parameter.Span.End)
+                    )
+                )
+                .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+                )
             || !groups.TryGetValue(Key(arguments), out var plans)
             || plans.Count == 0) {
             return;
@@ -7419,7 +7405,8 @@ public sealed class BreakPlan {
                 ParameterAfterSection = FormattedWidth(first, last),
                 SectionHead = FormattedWidth(section.OpenBracketToken, arguments.OpenParenToken) - 1,
                 SectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken),
-                SectionSingle = TakesTheOneArgumentConstants(arguments)
+                SectionSingle = TakesTheOneArgumentConstants(arguments),
+                DefaultValueWidth = parameter.Default is { } value ? FormattedWidth(value.Value) : 0
             }
         };
         plans[^1] = plan;
