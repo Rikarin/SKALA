@@ -1220,8 +1220,7 @@ public sealed class Fitter {
     ///     asked it. The oracle agrees: <c>[EditorBrowsable(</c> / <c>EditorBrowsableState</c> / <c>.Never</c> / <c>)]</c>
     ///     in front of a 120-column parameter, chopped by the arguments' own fit.
     /// </remarks>
-    bool OverflowsItsOwnLine(in GroupFacts facts, int lineStart) =>
-        lineStart + facts.ParameterAfterSection + 1 > width;
+    bool OverflowsItsOwnLine(in GroupFacts facts, int lineStart) => lineStart + facts.ParameterAfterSection + 1 > width;
 
     /// <summary>
     ///     The measured chop rule itself, for a section starting at <paramref name="lineStart" /> (#476, #603): asked by
