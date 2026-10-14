@@ -25,7 +25,10 @@ public sealed class DefaultBandAndEdgeSectionChopIssue603Tests {
         Assert.True(once == twice, $"took two passes to settle:\n{once}\n--- pass two ---\n{twice}");
     }
 
-    /// <summary>Inside the band where the line through the default's = fits, the = breaks a few columns past the section's own chop, and a one-argument section's never chops there.</summary>
+    /// <summary>
+    ///     Inside the band where the line through the default's = fits, the = breaks a few columns past the section's own
+    ///     chop, and a one-argument section never chops there.
+    /// </summary>
     [Theory]
     [InlineData("c603b:c2_bf_i12_104")]
     [InlineData("c603b:c2_bf_i12_105")]
