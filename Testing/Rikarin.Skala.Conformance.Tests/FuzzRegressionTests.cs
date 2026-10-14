@@ -362,6 +362,10 @@ public sealed class FuzzRegressionTests {
     // `)`; pass two's flat condition skipped the comment in that glued gap, measured eight columns narrower and broke
     // the `=`. A glued break still counts its block comments (SK-DIV-0554).
     [InlineData(7876387652505925107UL, "constructs/breaks/conditional-call-condition-below.cs")]
+    // #624 (fails on adca899a too): `E.Find(entity)` / `.Value = World.Get(body.Handle, entity.` / `Index, scale);`.
+    // Broken inside, the value was no held call and pass one kept the `=`; pass two, the value joined, read its
+    // column through the whole target as if flat, 32 columns right of `.Value =`, and broke the `=`.
+    [InlineData(15061394490375601826UL, "constructs/breaks/held-value-behind-a-target-call.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

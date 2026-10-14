@@ -6374,6 +6374,10 @@ public sealed class BreakPlan {
         };
         var heldCall = heldKind > 0 ? PlanHeldSingleCall(value, heldKind) : null;
         var choppedHeld = heldKind == 1 && heldCall is null ? ChoppedHeldCallOf(value) : null;
+        var targetKept = false;
+        var targetTail = heldCall is not null && owner == EqualsOwner.Assignment
+            ? TargetTailOf(node, equals, out targetKept)
+            : 0;
         var heldReceiver = heldCall?.Expression is MemberAccessExpressionSyntax heldAccess
             ? FormattedWidth(value.GetFirstToken(), heldAccess.Expression.GetLastToken())
             : 0;
@@ -6620,6 +6624,8 @@ public sealed class BreakPlan {
                     HeldValueTarget: heldCall is not null && owner == EqualsOwner.Assignment
                         ? HeadWidthThroughEquals(node, equals)
                         : 0,
+                    HeldValueTargetTail: targetTail,
+                    HeldValueTargetKept: targetKept,
                     CalleeArgument: callee > 0 && ArgumentsOf(value) is [var sole]
                         ? FormattedWidth(sole)
                         : 0,
@@ -7465,6 +7471,51 @@ public sealed class BreakPlan {
             ParenthesizedExpressionSyntax { Expression: var inner } => IsAMeasuredArgument(inner),
             _ => false
         };
+
+    /// <summary>
+    ///     For an assignment whose target is a chain that breaks before its last link: the width from that link's
+    ///     dot through the <c>=</c>; zero otherwise. See GroupFacts.HeldValueTargetTail.
+    /// </summary>
+    /// <remarks>
+    ///     A break the author put before the target's own dot is kept, chain or not. A chopped chain breaks at
+    ///     every link once the author broke any of its dots, so <c>E</c> / <c>.Find(e).Value =</c> ends on
+    ///     <c>.Value =</c> as much as <c>E.Find(e)</c> / <c>.Value =</c> does; and it breaks at every link as well
+    ///     when the target through its <c>=</c> does not fit, which only the fitter knows — so the tail is given for
+    ///     any chopped chain, and <paramref name="kept" /> says whether the break is certain without it. A filled
+    ///     chain keeps only the author's breaks and fills the rest, so only a break before its last link counts.
+    /// </remarks>
+    int TargetTailOf(SyntaxNode node, SyntaxToken equals, out bool kept) {
+        kept = false;
+        if (options.WrapAfterDotInMethodCalls || node is not AssignmentExpressionSyntax { Left: var target }) {
+            return 0;
+        }
+
+        if (options.KeepsUserBreaksBetweenItems
+            && target is MemberAccessExpressionSyntax { OperatorToken: var own }
+            && BreaksBefore(own)) {
+            kept = true;
+            return FormattedWidth(own, equals);
+        }
+
+        var count = ChainPointCount(target, options);
+        if (count == 0) {
+            return 0;
+        }
+
+        var dots = ChainLinks(target, options).Dots;
+        var last = dots[0];
+        switch (options.WrapChainedMethodCalls) {
+            case WrapStyle.WrapIfLong:
+                kept = options.KeepsUserBreaksBetweenItems && BreaksBefore(last);
+                return kept ? FormattedWidth(last, equals) : 0;
+            case WrapStyle.ChopAlways:
+                kept = true;
+                return FormattedWidth(last, equals);
+            default:
+                kept = options.KeepsUserBreaksBetweenItems && dots.Any(BreaksBefore);
+                return FormattedWidth(last, equals);
+        }
+    }
 
     int HeadWidthThroughEquals(SyntaxNode node, SyntaxToken equals) {
         var start = EqualsHeadStartOf(node);

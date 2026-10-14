@@ -2059,7 +2059,12 @@ public sealed class Fitter {
     bool HeldValueBreaks(in GroupFacts facts, in Measures m) {
         // ⚠ An assignment's target through its `=`, not the point width, which a point inside the target ends early
         // (#614). See GroupFacts.HeldValueTarget.
-        var valueColumn = m.Column + Math.Max(m.PointWidth, facts.HeldValueTarget) + 1;
+        // ⚠ And a target that ends on a line of its own — kept, or a chain too wide to stay whole — from the
+        // continuation column that line starts on (#624). See GroupFacts.HeldValueTargetTail.
+        var valueColumn = facts.HeldValueTargetTail > 0
+            && (facts.HeldValueTargetKept || m.Column + facts.HeldValueTarget > width)
+                ? m.ContinuationColumn + facts.HeldValueTargetTail + 1
+                : m.Column + Math.Max(m.PointWidth, facts.HeldValueTarget) + 1;
         if (valueColumn + facts.HeldValueWidth <= width) {
             return false;
         }
