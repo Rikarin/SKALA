@@ -2567,7 +2567,9 @@ What round 8's claims turned out to be:
   fitted on the other convention. ⚠ Neither convention fitted it. Re-measured with the call's `(` far enough right
   that no floor binds (25 900 cells, every row one clean switch), round 2's `⌊0.91·type + 0.812·name − 16⌋` misses
   241 of 356 reaches. Now `EqualsFloor.LambdaCallReach`: a column per column of name up to 22 and 0.6 after,
-  0.86 per column of type, 0.15 less per column of indent past 8. 14 of the 356 are off, by one.
+  0.86 per column of type, 0.15 less per column of indent past 8. 22 of 390 measured reaches at indents 4, 8 and 12
+  are off, by one. ⚠ A constant 0.05 higher misses 15, but breaks the oracle's own `lambda-arrow-round-two` fixture
+  at a type of 8, where the reach bends; the constructs gate caught it.
 - **⚠ Assignments: refuted.** Round 3's assignment reach, "two columns longer", is shorter: `⌊min(n, 22) +
   0.6·(n − 22)⁺ − 18.8⌋` (840 cells). No `=` breaks under a 20-column target.
 - **The single-argument residue at 121.** Round 8 wired `OneOverCallSingle` and `EqualsLambdaSingle` and read
@@ -2591,14 +2593,14 @@ What round 8's claims turned out to be:
 |---|---:|---:|---:|---:|
 | random wide names (typed locals, `Func`, two arguments) | 4 000 | 205 | 150 | 60 |
 | random, ending at 121, one to three arguments | 2 000 | 1 161 | 168 | 42 |
-| random mixed: locals, assignments, five type kinds, six parameter lists, one to four arguments | 3 028 | 158 | 135 | 43 |
+| random mixed: locals, assignments, five type kinds, six parameter lists, one to four arguments | 3 028 | 158 | 135 | 42 |
 | the same probe's fields | 972 | 66 | 54 | 10 |
 | narrow names, random | 3 000 | 18 | 13 | 12 |
-| the `(` column, names 10–40 × types 3–56 (fit) | 14 168 | 4 004 | — | 90 |
-| the `(` column at lines of 122 and 130 | 9 705 | 2 041 | 1 939 | 62 |
+| the `(` column, names 10–40 × types 3–56 (fit) | 14 168 | 4 004 | — | 104 |
+| the `(` column at lines of 122 and 130 | 9 705 | 2 041 | 1 939 | 76 |
 | one argument, the line one column at a time | 8 458 | 864 | — | 77 |
-| reach, the `(` at 104 and 112 (fit) | 25 900 | 974 | — | 299 |
-| reach at indent 12 / fields at indent 4 | 3 780 / 3 780 | 400 / 123 | — | 78 / 46 |
+| reach, the `(` at 104 and 112 (fit) | 25 900 | 974 | — | 306 |
+| reach at indent 12 / fields at indent 4 | 3 780 / 3 780 | 400 / 123 | — | 78 / 45 |
 | arrow floor at indents 4 / 8 / 12 / 16 | 7 002 | 386 | — | 5 |
 | **fresh probe, seed 777, fitted on nothing: locals and assignments / fields** | 3 797 / 1 203 | 175 / 60 | — | 52 / 6 |
 
@@ -2607,7 +2609,7 @@ Pinned by `LambdaArrowFloorIssue453586Tests` (group B's twelve).
 ⚠ **Still open:**
 - The fresh probe's 52: assignments 31 of 1 542, mostly the arrow against the chopped arguments within a column of
   the floor, and locals 21 of 2 255.
-- The reach grid's 299: lines past 165, where the oracle's reach jumps by two to five columns over the formula,
+- The reach grid's 306: lines past 165, where the oracle's reach jumps by two to five columns over the formula,
   and the arrow-versus-chop boundary at the widest heads.
 - Assignments at a line of 124 break the `=` from a `(` of 71, three columns later than `LambdaCallParen` with no
   type gives (19 of 473).

@@ -475,12 +475,13 @@ public static class EqualsFloor {
     ///     and types of 4 to 56 at indent 8 (25 900 cells), every row one clean switch, the same at both columns.
     ///     The reach rises a column per column of name up to 22 and 0.6 after, and 0.86 per column of type.
     ///     Round 2's <c>⌊0.91·type + 0.812·name − 16⌋</c> missed 241 of the 356 measured reaches, mostly by one;
-    ///     this misses 14 of those under 45 columns. A deeper indent shortens it 0.15 a column: indents 4 and 12,
-    ///     another 7 560 cells, 5 of 98 reaches off.
+    ///     this misses 22 of the 390 under 45 columns at indents 4, 8 and 12, all by one. A deeper indent shortens it
+    ///     0.15 a column (indents 4 and 12, another 7 560 cells). ⚠ A constant of 17.85 would miss 15, but breaks the
+    ///     oracle's own <c>lambda-arrow-round-two</c> fixture at a type of 8, where the reach bends.
     /// </remarks>
     public static int LambdaCallReach(int name, int type, int indent, bool assignment = false) {
         var named = Math.Min(name, 22) + 0.6 * Math.Max(0, name - 22) - 0.15 * (indent - 8);
-        return Math.Min(64, (int)Math.Floor(assignment ? named - 18.8 : 0.86 * type + named - 17.85));
+        return Math.Min(64, (int)Math.Floor(assignment ? named - 18.8 : 0.86 * type + named - 17.9));
     }
 
     /// <summary>
