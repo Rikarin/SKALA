@@ -385,4 +385,113 @@ public sealed class FuzzIdempotencyIssue617Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     SK-DIV-0500's residue: <c>xs is</c> / a one-line list pattern, no comment. The oracle keeps the break while the
+    ///     list fits whole one level in (#562) and otherwise joins <c>xs is [</c> and breaks inside. Skala kept the break
+    ///     whatever the width and broke the list one level in; pass two, finding the list broken, joined it.
+    /// </summary>
+    [Fact]
+    public void AOneLineListBelowTheIs_KeepsItsBreakOnlyWhileItStaysWhole() =>
+        Oracle.Agrees(
+            """
+            class C {
+                bool P1 => source is
+                        [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest];
+                bool P2 => source is
+                        [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest];
+                bool M3() {
+                    return source is
+                            [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest];
+                }
+                bool M4() {
+                    return source is
+                            [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest];
+                }
+                void V5() {
+                    var b = source is
+                            [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest];
+                }
+                void V6() {
+                    var b = source is
+                            [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest];
+                }
+                void A7() {
+                    F(source is
+                            [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest]);
+                }
+                void A8() {
+                    F(source is
+                            [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest]);
+                }
+                void I9() {
+                    if (ready && source is
+                            [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest]) { }
+                }
+                void I10() {
+                    if (ready && source is
+                            [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest]) { }
+                }
+            }
+            """,
+            """
+            class C {
+                bool P1 =>
+                    source is
+                        [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest];
+
+                bool P2 =>
+                    source is [
+                        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest
+                    ];
+
+                bool M3() {
+                    return source is
+                        [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest];
+                }
+
+                bool M4() {
+                    return source is
+                        [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest];
+                }
+
+                void V5() {
+                    var b = source is
+                        [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest];
+                }
+
+                void V6() {
+                    var b = source is
+                        [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest];
+                }
+
+                void A7() {
+                    F(
+                        source is
+                            [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest]
+                    );
+                }
+
+                void A8() {
+                    F(
+                        source is
+                            [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest]
+                    );
+                }
+
+                void I9() {
+                    if (ready
+                        && source is
+                            [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest]) { }
+                }
+
+                void I10() {
+                    if (ready
+                        && source is [
+                            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, var rest
+                        ]) { }
+                }
+            }
+            """
+        );
 }
