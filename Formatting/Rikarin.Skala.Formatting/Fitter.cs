@@ -357,8 +357,12 @@ public sealed class Fitter {
                 // 10815522948059258787 and 1019535202291160959): pass one kept the list and broke the inner one after
                 // its `<`; pass two, reading that break as the author's, measured this group as unbounded, skipped the
                 // rule and broke the list as well.
+                // ⚠ On the line of its own a broken `when` gives it, the list's continuation is a level past that line,
+                // which the lift adds only after the fact, so the measured continuation is that line's own start (#576
+                // round 7, SK-DIV-0399): measured at conditions 100 to 124 below the `when` at indents 8, 12 and 16.
                 if (facts.WhenOuterTail > 0) {
-                    if (!Fits(m.ContinuationColumn, facts.WhenOuterTail + 14)) {
+                    var continuation = m.ContinuationColumn <= lineStart ? lineStart + indentWidth : m.ContinuationColumn;
+                    if (!Fits(continuation, facts.WhenOuterTail + 14)) {
                         return ResolvedMode.Flat;
                     }
 
@@ -1652,6 +1656,12 @@ public sealed class Fitter {
             // The whole arm fits on the line below: it moves there.
             if (tail < Unbounded && m.ContinuationColumn + tail + facts.WhenBody <= width) {
                 return true;
+            }
+
+            // ⚠ And only while the condition, flat on the line below, runs at most 13 columns past the margin, half a
+            // column more per column of body past five: wider, it fills beside the `when`.
+            if (tail < Unbounded && 2 * (m.ContinuationColumn + tail - width) > 26 + body - 5) {
+                return false;
             }
 
             var head = m.Column - lineStart;
