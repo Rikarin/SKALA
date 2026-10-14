@@ -473,6 +473,7 @@ public sealed class BreakPlan {
         plan.SettleOneOverNames();
         plan.SettleOpenBraces(root);
         plan.SettleParenthesisedCollections(root);
+        plan.SettleTypeTestHolds();
         plan.CollectForcedBreaks();
         return plan;
     }
@@ -900,17 +901,20 @@ public sealed class BreakPlan {
                 var inRun = attributeRuns.TryGetValue(Key(single), out var run);
                 var section = inRun ? run.Section : NewGroup();
                 FollowingPoint(after, section);
+                var sectionFacts = new GroupFacts(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(after),
+                    true,
+                    true,
+                    BreaksWithOwner: inRun,
+                    Owner: inRun ? run.Run : -1
+                );
+
+                // ⚠ Behind a long parameter's default the gap asks the arguments' own chop rule (#603).
                 Describe(
                     node,
                     section,
                     GroupMode.Preserve,
-                    new(
-                        options.KeepsUserBreaksBetweenItems && BreaksBefore(after),
-                        true,
-                        true,
-                        BreaksWithOwner: inRun,
-                        Owner: inRun ? run.Run : -1
-                    )
+                    inRun ? sectionFacts : WithADefaultsSection(sectionFacts, single)
                 );
 
                 return;
@@ -4841,6 +4845,12 @@ public sealed class BreakPlan {
         // ⚠ And it is one level past that *line*, not past everything open on it (#445): inside a lambda
         // that is an argument, `nodes.Count(c => c.Parent` / `is ArgumentSyntax` is four columns in, not
         // eight. IndentKind.FromLine.
+        // ⚠ A sole lambda's whole body stacks only while its operand's argument list breaks (#602).
+        var heldAgainst = StacksWhileItsArgumentsBreak(node, keyword);
+        if (heldAgainst is not null) {
+            pendingTypeTestHolds.Add((group, heldAgainst));
+        }
+
         Describe(
             node,
             new(
@@ -4853,9 +4863,10 @@ public sealed class BreakPlan {
                 new(BreaksIfTooLong: true, Continues: BreaksBefore(keyword)),
                 // ⚠ Or, where the author broke before the keyword, a level of its own on top of what is open
                 // around it (#597, see StacksItsLevel).
-                FromLine: !IsAHeaderCondition(node) && !StacksItsLevel(node, keyword),
-                OwnLevel: StacksItsLevel(node, keyword),
-                AdditiveLevel: StacksItsLevel(node, keyword) && IsALogicalOperand(node)
+                FromLine: !IsAHeaderCondition(node) && !StacksItsLevel(node, keyword) && heldAgainst is null,
+                OwnLevel: StacksItsLevel(node, keyword) || heldAgainst is not null,
+                AdditiveLevel: StacksItsLevel(node, keyword) && IsALogicalOperand(node),
+                HoldsLevel: heldAgainst is not null ? HeldLevel.WhileArrowFlat : HeldLevel.None
             )
         );
 
@@ -4911,6 +4922,90 @@ public sealed class BreakPlan {
                 or ArgumentSyntax
             || top != node && top.Parent is LambdaExpressionSyntax
             || IsAHeaderCondition(top);
+    }
+
+    /// <summary>
+    ///     For a type test the author broke before its keyword that is a sole lambda's whole body, the argument list
+    ///     on its operand's spine whose break gives the test its stacked level (#602); null otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured by group S on #597's grid: <c>Use(x =&gt; call(</c> / the arguments / <c>)</c> / <c>is T</c> puts the
+    ///     arguments two levels past the statement and the <c>)</c> and <c>is</c> one — the stacked layout — while
+    ///     <c>Use(x =&gt; call(a, b, c)</c> / <c>is T</c> keeps #445's one level past the line. Which one is a layout
+    ///     fact, so the level is held while the list stays flat (<see cref="HeldLevel.WhileArrowFlat" />, its slot
+    ///     naming the list's group, resolved by <see cref="SettleTypeTestHolds" />).
+    /// </remarks>
+    ArgumentListSyntax? StacksWhileItsArgumentsBreak(SyntaxNode node, SyntaxToken keyword) {
+        if (!BreaksBefore(keyword) || IsAHeaderCondition(node) || node.Parent is not LambdaExpressionSyntax) {
+            return null;
+        }
+
+        var operand = node switch {
+            BinaryExpressionSyntax binary => binary.Left,
+            IsPatternExpressionSyntax test => test.Expression,
+            _ => null
+        };
+
+        while (operand is MemberAccessExpressionSyntax access) {
+            operand = access.Expression;
+        }
+
+        return operand is InvocationExpressionSyntax { ArgumentList.Arguments.Count: > 0 } call
+            ? call.ArgumentList
+            : null;
+    }
+
+    /// <summary>
+    ///     For a parameter's one attribute section in front of a long parameter with a default value, the section
+    ///     gap's facts: the joined line's width, the default value's, and the widths the measured chop rule reads. See
+    ///     <see cref="GroupFacts.SectionJoinedOverDefault" />.
+    /// </summary>
+    GroupFacts WithADefaultsSection(GroupFacts facts, AttributeListSyntax section) {
+        if (section.Parent is not ParameterSyntax {
+                Parent: ParameterListSyntax, AttributeLists: [_], Default: not null
+            } parameter
+            || section.Attributes[0].ArgumentList is not { Arguments.Count: > 0 } arguments
+            || CSharpDocumentBuilder.IsAShortParameterBehindItsSection(parameter)
+            || options.KeepExistingInvocationParensArrangement) {
+            return facts;
+        }
+
+        var first = section.CloseBracketToken.GetNextToken();
+        if (source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny(LineEnds) >= 0) {
+            return facts;
+        }
+
+        var parameterWidth = FormattedWidth(first, parameter.GetLastToken());
+        var sectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken);
+        return facts with {
+            SectionJoinedOverDefault = sectionWidth + 1 + parameterWidth,
+            DefaultValueWidth = FormattedWidth(parameter.Default!.Value),
+            ParameterAfterSection = parameterWidth,
+            SectionHead = FormattedWidth(section.OpenBracketToken, arguments.OpenParenToken) - 1,
+            SectionWidth = sectionWidth,
+            SectionSingle = arguments.Arguments.Count == 1
+                || arguments.Arguments.Any(static argument => argument.NameEquals is not null
+                    || argument.NameColon is not null
+                )
+        };
+    }
+
+    /// <summary>The two line-break characters, for a span search.</summary>
+    static readonly char[] LineEnds = ['\r', '\n'];
+
+    /// <summary>The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the list each is held against.</summary>
+    readonly List<(int Group, ArgumentListSyntax Arguments)> pendingTypeTestHolds = [];
+
+    /// <summary>
+    ///     Names each held type test's argument-list group in <see cref="ArrowHeldAgainst" />'s slot, once the walk
+    ///     has planned the list; a list with no group leaves the test unheld, which spends the level.
+    /// </summary>
+    void SettleTypeTestHolds() {
+        foreach (var (group, arguments) in pendingTypeTestHolds) {
+            if (groups.TryGetValue(Key(arguments), out var plans) && plans.Count > 0) {
+                arrowHeldAgainst[group] = plans[^1].Id;
+            }
+        }
     }
 
     /// <summary>Whether a chain is the operand of a type test that <see cref="StacksItsLevel" />.</summary>
@@ -6614,22 +6709,18 @@ public sealed class BreakPlan {
     ///     ⚠ Eleven columns and narrower is
     ///     <see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />'s
     ///     rule, which reads the parameter through. A one-argument section is the same rule with its own constants
-    ///     (#603): see <see cref="GroupFacts.SectionSingle" />.
-    ///     Nor a named argument, which chops later (<c>DiagnosticId = "X"</c>: from 113 behind a 13-column parameter
-    ///     at indent 8, never at 20), nor a parameter with a default value, whose <c>=</c> breaks instead.
+    ///     (#603): see <see cref="GroupFacts.SectionSingle" />. ⚠ A section with a named argument takes those
+    ///     one-argument constants too, measured on <c>("…", DiagnosticId = "X")</c> (#603). A parameter with a default
+    ///     value is measured whole, its <c>= value</c> included; the gap after the section agrees with the arguments
+    ///     (<see cref="GroupFacts.SectionJoinedOverDefault" />).
     ///     Widths are the formatter's (<see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />), and a comment
     ///     anywhere in the section or the parameter, or a break inside the parameter, leaves the list to its own fit.
     /// </remarks>
     void PlanSectionBeforeALongParameter(AttributeArgumentListSyntax arguments) {
         if (options.KeepExistingInvocationParensArrangement
             || arguments.Arguments.Count < 1
-            || arguments.Arguments.Any(static argument => argument.NameEquals is not null
-                || argument.NameColon is not null
-            )
             || arguments.Parent is not AttributeSyntax { Parent: AttributeListSyntax { Attributes.Count: 1 } section }
-            || section.Parent is not ParameterSyntax {
-                Parent: ParameterListSyntax, AttributeLists: [_], Default: null
-            } parameter
+            || section.Parent is not ParameterSyntax { Parent: ParameterListSyntax, AttributeLists: [_] } parameter
             || CSharpDocumentBuilder.IsAShortParameterBehindItsSection(parameter)) {
             return;
         }
@@ -6660,6 +6751,9 @@ public sealed class BreakPlan {
                 SectionHead = FormattedWidth(section.OpenBracketToken, arguments.OpenParenToken) - 1,
                 SectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken),
                 SectionSingle = arguments.Arguments.Count == 1
+                    || arguments.Arguments.Any(static argument => argument.NameEquals is not null
+                        || argument.NameColon is not null
+                    )
             }
         };
         plans[^1] = plan;

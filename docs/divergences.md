@@ -10776,7 +10776,31 @@ Every output is stable on a second pass. Pinned by `LongParameterSectionChopIssu
 - ⚠ status: **resolved** for parameters of up to eleven columns, defaults included (#476, #556), pinned by
   `AttributeArgumentChopIssue476Tests`, and for longer parameters behind a section of two or more positional
   arguments, pinned by `LongParameterSectionChopIssue476Tests`, and behind a one-argument section (#603), pinned by
-  `OneArgumentSectionChopIssue603Tests`; **open** for named arguments and defaults behind long parameters.
+  `OneArgumentSectionChopIssue603Tests`, and with a named argument or a default value (#603, round seven), pinned by
+  `NamedArgumentAndDefaultSectionChopIssue603Tests` and `DefaultValueEqualsBandIssue603Tests`.
+
+**Round seven (#603, group Q round five, 2026-10-10): named arguments and default values.**
+- **A named argument takes the one-argument constants.** `("…", DiagnosticId = "X")` chops from 113, 116 and 120
+  behind 13-, 15- and 17-column parameters at indent 8 and never at 20 — the one-argument rule's cells — and so do
+  `[Display(Name = "…")]`, `[Display(Name = "…", Order = 1)]`, `[Foo("…", Bar = true)]` and
+  `[JsonProperty("…", Required = …)]` on a probe written after it.
+- **A default value is part of the parameter**, measured with it, and adds one layout of its own: while the line through
+  the default's `=` fits and the arguments do not chop, the oracle keeps the section joined and breaks the `=`, so the
+  band where it does so is exactly as wide as the value — eight columns for `default`, five for `null` and `true`, two
+  for `5`. Past the band the parameter goes below the section, the arguments whole or chopped by the rule.
+  ⚠ Skala's gap after the section measured itself only through the `=` point, so under chopped arguments it stayed —
+  `)] int a = default` — and pass two broke it; the gap now asks the arguments' rule and the band
+  (`GroupFacts.SectionJoinedOverDefault`, `Fitter.SectionChops`).
+
+| probe | before | now |
+|---|---|---|
+| round four's refuting probe (4 158) | 3 729 | 4 124 |
+| named arguments and defaults (3 570, the probe the band was read from) | 3 119 | 3 523 |
+| defaults, written after the rule (2 016: `= ""`, `= 0L`, `= Kind.Unspecified`, `= null`, indents 12 and 20) | 1 723 | 2 005 |
+
+Every output is stable on a second pass. Sabotaged: with named arguments and defaults switched off every positive cell
+of `NamedArgumentAndDefaultSectionChopIssue603Tests` fails, and with the band removed its two cells in
+`DefaultValueEqualsBandIssue603Tests` do.
 
 **Round six (#603, group Q round four, 2026-10-10): one argument.** 2 205 cells — `[A(`, `[From(`, `[Description(`,
 `[JsonPropertyName(`, `[NotNullIfNotNull(`, `string a…` of 12 to 24 columns, indents 8, 12 and 20 — with round four's
@@ -12220,7 +12244,18 @@ regressed. `SearchValuesAnalyzer.cs` now matches the oracle.
   column, and Skala puts them a level in.
 
 - status: **fixed** for the stacking, pinned by `BrokenIsStacksItsLevelIssue597Tests`, and for the ternary
-  residue (#602), pinned by `TernaryAfterABrokenTypeTestIssue602Tests`. The sole-lambda residue is **open**.
+  residue (#602), pinned by `TernaryAfterABrokenTypeTestIssue602Tests`, and for the sole-lambda residue (#602, group
+  Q round five), pinned by `SoleLambdaBrokenTypeTestIssue602Tests`.
+
+**#602's sole-lambda rows (group Q round five, 2026-10-10).** The stacked level is right exactly when the operand's
+argument list breaks, and that is a layout fact, so it is decided at layout time: a sole lambda's whole body that is a
+type test broken before its keyword now takes #597's own level, held while its operand's argument list stays flat
+(`HeldLevel.WhileArrowFlat`, its slot naming the list's group — `BreakPlan.StacksWhileItsArgumentsBreak`,
+`SettleTypeTestHolds`). All 196 rows of group S's grid now agree, the six short-form rows included. A probe written after
+it — four calls, `.Symbol` and `.Symbol.OriginalDefinition`, `is`, `is not … x`, `as` and `is null`, `x =>`, `static x =>`,
+`(x) =>` and `(int x) =>`, as a statement's argument, a local's, a chain's and nested in a block (280 members) — goes from
+166 members apart to 76, none of them made worse; the 76 that remain differ in where the arrow or the operand's chain
+breaks, not in this level. Sabotaged: with the hold removed the test fails.
 
 **#602 (group Q round four, 2026-10-10): the ternary residue.** The cause was not the type test's level: a ternary
 opens the scope its `?` and `:` take after a *binary* condition, so that a broken `==` chain puts them a level further
