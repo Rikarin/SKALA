@@ -1326,6 +1326,15 @@ public sealed class Document {
 ///     <see cref="LambdaTestCallHead" /> is the head through that call's <c>(</c>. The arrow breaks when it ends twelve
 ///     columns or more past the line's start and <c>6·k − 6·p + 8·h − 6·w − 8·i ≥ −564</c> (#618).
 /// </param>
+/// <param name="LambdaTestKept">
+///     With <see cref="LambdaTestCall" />: the author broke inside the operand, which keeps the arrow whatever the
+///     measured lines say — the oracle keeps `Throws(static () =&gt; Reading(` / the argument / `)` as written and
+///     breaks the arrow over the same call written flat (#620, group C's probe of eleven members, every class). It is
+///     also pass two's answer to pass one's chop.
+/// </param>
+/// <param name="LambdaBodyKind">
+///     With <see cref="LambdaTestCall" />: which of #618's and #620's measured lines the arrow is decided by.
+/// </param>
 /// <param name="LambdaChainHead">
 ///     ⚠ The arrow of a sole lambda argument whose body is a chain of calls: the width from the lambda's start
 ///     to its first call's dot, or zero for any other group (#571). Past the margin the arrow breaks for a
@@ -1610,6 +1619,12 @@ public sealed class Document {
 ///     last line, with the call, still overflows: <c>x = (a</c> / <c>&amp;&amp; b…)</c> / <c>.Trim();</c>, the
 ///     operator a level past the dot (#617, <c>BreakPlan.ReceiverLiftOf</c>).
 /// </param>
+/// <param name="WhenOuterTail">
+///     ⚠ The outermost type argument list of an arm's <c>when</c> condition (#576, SK-DIV-0399): the width from its
+///     second argument through its <c>&gt;</c>, or zero. Too long for its line, the list breaks after its first comma
+///     only while what follows, the rest of the line included, fits below with six columns to spare; otherwise it
+///     stays and the inner list fills. See <c>BreakPlan.IsAWhenConditionsOuterTypeArguments</c>.
+/// </param>
 /// <param name="HeldCallRest">
 ///     ⚠ Under <c>wrap_if_long</c> (#552): the flat width of the chain after the held call, through its
 ///     <c>;</c>, or zero. Past the measured table's limit the held call still breaks before itself when
@@ -1825,6 +1840,7 @@ public readonly record struct GroupFacts(
     int HeldCall = 0,
     bool ParenReceiver = false,
     int ParenReceiverTail = 0,
+    int WhenOuterTail = 0,
     int HeldCallHead = 0,
     int HeldCallRest = 0,
     int HeldCallLambdaRest = 0,
@@ -1862,6 +1878,8 @@ public readonly record struct GroupFacts(
     int LambdaTestCall = 0,
     int LambdaTestCallHead = 0,
     bool LambdaTestLinks = false,
+    bool LambdaTestKept = false,
+    LambdaBodyKind LambdaBodyKind = LambdaBodyKind.BrokenTest,
     bool BreaksIfItOverflows = false,
     bool BreaksIfReceiverOverflows = false,
     bool HeldCallOnAPath = false,
@@ -1980,4 +1998,34 @@ public enum LambdaLocal {
     ///     parameter list chops whatever the value's width.
     /// </summary>
     ChopsPastTheParenthesis = 4
+}
+
+/// <summary>
+///     The body a sole lambda's arrow is decided over by <see cref="GroupFacts.LambdaTestCall" />'s measured lines
+///     (#618, #620).
+/// </summary>
+public enum LambdaBodyKind {
+    /// <summary>A type test broken before its keyword (#618).</summary>
+    BrokenTest,
+
+    /// <summary>
+    ///     A type test on one line over an operand whose calls have one argument or none (#620): the arrow breaks
+    ///     whenever the body overflows beside it — 4 apart of 118 on a probe written after it, where keeping it missed
+    ///     114.
+    /// </summary>
+    InlineTest,
+
+    /// <summary>
+    ///     A type test on one line over an operand whose first call has two or more arguments (#620):
+    ///     <c>6·k + 2·p + 5·h − 9·w − 12·i ≥ −1032</c>, <c>w</c> the whole body's width — 36 apart of 282 fitted, 18 of
+    ///     71 on a later probe where either fixed answer missed 35.
+    /// </summary>
+    InlineTestOfACall,
+
+    /// <summary>
+    ///     A whole body that is a call of one argument and nothing after it (#620): from twelve columns past the line's
+    ///     start, <c>6·k − 8·p + 7·h − 11·w − 10·i ≥ −1108</c> — 35 apart of 224 fitted, 14 of 73 on a later probe
+    ///     where keeping it missed 34.
+    /// </summary>
+    OneArgumentCall
 }

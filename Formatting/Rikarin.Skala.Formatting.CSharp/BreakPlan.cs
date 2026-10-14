@@ -318,8 +318,9 @@ public sealed class BreakPlan {
     /// <summary>See <see cref="ReceiverLiftOf" />.</summary>
     readonly Dictionary<long, (int Group, int Dot)> receiverLifts = [];
 
-    /// <summary>The <see cref="GroupFacts.LiftsIfWhenBreaks" /> group of an arm, keyed by its <c>when</c>
-    /// clause.</summary>
+    /// <summary>
+    ///     The <see cref="GroupFacts.LiftsIfWhenBreaks" /> group of an arm, keyed by its <c>when</c> clause.
+    /// </summary>
     readonly Dictionary<long, int> whenLifts = [];
 
     /// <summary>
@@ -2603,10 +2604,41 @@ public sealed class BreakPlan {
                 // comes back as `var created =\n new Dictionary<A, B>();` with the list whole, and
                 // arming the list by its own width filled it on the first line instead; a list that
                 // still overflows after the `=` break is filled on the second line.
-                MeasuresHead: node is TypeParameterListSyntax
+                MeasuresHead: node is TypeParameterListSyntax,
+                // ⚠ The outermost type argument list of an arm's `when` condition breaks after its first comma only
+                // while the rest of the list, with `()`, fits on the line below with twelve columns to spare; past that
+                // the list stays and the inner list fills (#576). See GroupFacts.WhenOuterTail.
+                WhenOuterTail: IsAWhenConditionsOuterTypeArguments(node) && node is TypeArgumentListSyntax outer
+                    ? FormattedWidth(outer.Arguments[1].GetFirstToken(), outer.GreaterThanToken)
+                    : 0
             )
         );
     }
+
+    /// <summary>
+    ///     Whether a type argument list is the outermost one of an arm's <c>when</c> condition whose gap is planned
+    ///     (#576, SK-DIV-0399).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c> on
+    ///     <c>
+    ///         when Materialise&lt;List&lt;bool&gt;,
+    ///         IReadOnlyDictionary&lt;int, T…&gt;&gt;()
+    ///     </c>
+    ///     behind short bodies: the oracle breaks after <c>List&lt;bool&gt;,</c> while the line it leaves below,
+    ///     through <c>()</c>, is 108 columns or less, and after <c>&lt;int,</c> beyond that. Skala broke the outer
+    ///     list wherever it overflowed. The boundary is not the whole rule: by the line through the arm's comma, `1`
+    ///     and `Value` bodies part at different widths (SK-DIV-0399).
+    /// </remarks>
+    static bool IsAWhenConditionsOuterTypeArguments(SyntaxNode node) =>
+        node is TypeArgumentListSyntax { Arguments.Count: > 1 } list
+        && list.Arguments.Skip(1)
+            .Any(static argument => argument.DescendantNodes().OfType<TypeArgumentListSyntax>().Any())
+        && !list.Ancestors()
+            .TakeWhile(static ancestor => ancestor is not WhenClauseSyntax)
+            .Any(static ancestor => ancestor is TypeArgumentListSyntax)
+        && list.Ancestors().OfType<WhenClauseSyntax>().FirstOrDefault() is { } when
+        && IsAPlannedWhenGap(when);
 
     /// <summary>
     ///     The <c>where</c> clauses of a generic declaration:
@@ -5018,6 +5050,34 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
+    ///     Whether an arm's <c>when</c> condition breaks only at type argument lists, with a pattern of no break point
+    ///     of its own: the head never reads a short body through (#576, SK-DIV-0399).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c>: <c>T… when Materialise&lt;…&gt;() =&gt; 1,</c> with the
+    ///     condition fitting beside the <c>when</c> breaks after the arrow while the line through it fits and before it
+    ///     after that, where Skala, reading the one-column body through, filled the type arguments.
+    /// </remarks>
+    /// <summary>
+    ///     ⚠ The widest such condition the head stops reading the body through for. Wider, the condition cannot fit
+    ///     beside the <c>when</c> of an arm indented eight columns or more, and where it does not fit below either the
+    ///     oracle fills its type arguments with the short body still beside the arrow, the read-through's answer.
+    ///     Measured on 828 arms: no region-one cell lies past 94 columns and no region-three cell short of 109.
+    /// </summary>
+    const int WhenReadThroughLimit = 96;
+
+    static bool ArmWhenHoldsOnlyTypeArguments(SwitchExpressionArmSyntax arm) =>
+        arm.WhenClause is { } when
+        && IsAPlannedWhenGap(when)
+        && when.Condition.DescendantNodes().Any(static node => node is TypeArgumentListSyntax)
+        && !arm.Pattern.DescendantNodesAndSelf()
+            .Any(static node => node is PropertyPatternClauseSyntax
+                or ListPatternSyntax
+                or PositionalPatternClauseSyntax
+                or BinaryPatternSyntax
+            );
+
+    /// <summary>
     ///     Whether the gap after an arm's <c>when</c> is planned (#576): a condition whose only break points, if
     ///     any, are type argument lists. A condition with a point of its own breaks inside instead.
     /// </summary>
@@ -5244,7 +5304,11 @@ public sealed class BreakPlan {
     ///     naming the list's group, resolved by <see cref="SettleTypeTestHolds" />).
     /// </remarks>
     ExpressionSyntax? StacksWhileItsArgumentsBreak(SyntaxNode node, SyntaxToken keyword) {
-        if (!BreaksBefore(keyword) || IsAHeaderCondition(node) || node.Parent is not LambdaExpressionSyntax) {
+        // ⚠ And a sole lambda's test written on one line (#620): `Run(x => call(` / the arguments two levels in /
+        // `) as T`, as under a broken test.
+        if (!BreaksBefore(keyword) && !IsTheBodyOfASoleLambda(node)
+            || IsAHeaderCondition(node)
+            || node.Parent is not LambdaExpressionSyntax) {
             return null;
         }
 
@@ -5321,8 +5385,9 @@ public sealed class BreakPlan {
     /// <summary>The two line-break characters, for a span search.</summary>
     static readonly char[] LineEnds = ['\r', '\n'];
 
-    /// <summary>The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the operand each is held
-    /// against.</summary>
+    /// <summary>
+    ///     The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the operand each is held against.
+    /// </summary>
     readonly List<(int Group, ExpressionSyntax Operand)> pendingTypeTestHolds = [];
 
     /// <summary>
@@ -8578,6 +8643,8 @@ public sealed class BreakPlan {
                     WhenClause: null,
                     Pattern: RecursivePatternSyntax { PositionalPatternClause: not null, PropertyPatternClause: null }
                 }
+                || ArmWhenHoldsOnlyTypeArguments(arm)
+                && FormattedWidth(arm.WhenClause!.Condition) <= WhenReadThroughLimit
             )
         );
     }
@@ -8653,93 +8720,108 @@ public sealed class BreakPlan {
                         BreaksIfTooLong: true,
                         LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
                         LambdaTestCall: FormattedWidth(testedCall),
+                        LambdaTestKept: HasLineBreakIn(testedCall),
                         LambdaTestCallHead: FormattedWidth(
                             testedCall.GetFirstToken(),
                             testedCall.ArgumentList.OpenParenToken
                         )
                     )
-                    : TestedLinkedCallOfASoleLambda(lambda, body) is ({ } linked, { } firstCall)
+                    : UnbrokenBodyOfASoleLambda(lambda, body) is ({ } unbroken, var unbrokenKind, var unbrokenHead)
                         ? new GroupFacts(
                             BreaksIfTooLong: true,
                             LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
-                            LambdaTestCall: FormattedWidth(linked),
-                            LambdaTestCallHead: FormattedWidth(
-                                linked.GetFirstToken(),
-                                firstCall.ArgumentList.OpenParenToken
-                            ),
-                            LambdaTestLinks: true
+                            LambdaTestCall: FormattedWidth(unbroken),
+                            LambdaTestKept: HasLineBreakIn(unbroken),
+                            LambdaTestCallHead: unbrokenHead,
+                            LambdaBodyKind: unbrokenKind
                         )
-                        : TestedOperandOfASoleLambda(lambda, body) is { } testedOperand
+                        : TestedLinkedCallOfASoleLambda(lambda, body) is ({ } linked, { } firstCall)
                             ? new GroupFacts(
                                 BreaksIfTooLong: true,
                                 LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
-                                LambdaTestCall: FormattedWidth(testedOperand),
-                                LambdaTestCallHead: -1
+                                LambdaTestCall: FormattedWidth(linked),
+                                LambdaTestKept: HasLineBreakIn(linked),
+                                LambdaTestCallHead: FormattedWidth(
+                                    linked.GetFirstToken(),
+                                    firstCall.ArgumentList.OpenParenToken
+                                ),
+                                LambdaTestLinks: true
                             )
-                            : IsAFilledSoleLambda(lambda, body)
+                            : TestedOperandOfASoleLambda(lambda, body) is { } testedOperand
                                 ? new GroupFacts(
                                     BreaksIfTooLong: true,
-                                    LambdaParameters: lambda switch {
-                                        SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
-                                        ParenthesizedLambdaExpressionSyntax parenthesized => FormattedWidth(
-                                            parenthesized.ParameterList
-                                        ),
-                                        _ => 1
-                                    },
                                     LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
-                                    LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
+                                    LambdaTestCall: FormattedWidth(testedOperand),
+                                    LambdaTestKept: HasLineBreakIn(testedOperand),
+                                    LambdaTestCallHead: -1
                                 )
-                                : OperandSoleLambdaTail(lambda, body) is > 0 and var operandTail
+                                : IsAFilledSoleLambda(lambda, body)
                                     ? new GroupFacts(
                                         BreaksIfTooLong: true,
-                                        LambdaOperandParameters: FormattedWidth(
-                                            lambda.GetFirstToken(),
-                                            lambda.ArrowToken.GetPreviousToken()
-                                        ),
-                                        LambdaOperandTail: operandTail,
-                                        LambdaOperandFirst: FirstOperandWidth(body),
-                                        LambdaOperandBody: LastOperandOfAHeaderCondition(lambda) is not null
-                                        && !IsTheReceiverOfAFurtherLink(lambda)
-                                            ? 1 + FormattedWidth(body.GetFirstToken(), KeptSegmentEndOf(body))
-                                            : 0,
-                                        LambdaOperandKept: LastOperandOfAHeaderCondition(lambda) is not null
-                                        && !IsTheReceiverOfAFurtherLink(lambda)
-                                        && KeptSegmentEndOf(body) != body.GetLastToken(),
-                                        LambdaOperandPatternLeft: body is IsPatternExpressionSyntax {
-                                            Expression: var tested
-                                        }
-                                            ? FormattedWidth(tested)
-                                            : 0
+                                        LambdaParameters: lambda switch {
+                                            SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
+                                            ParenthesizedLambdaExpressionSyntax parenthesized => FormattedWidth(
+                                                parenthesized.ParameterList
+                                            ),
+                                            _ => 1
+                                        },
+                                        LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+                                        LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
                                     )
-                                    : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
+                                    : OperandSoleLambdaTail(lambda, body) is > 0 and var operandTail
                                         ? new GroupFacts(
                                             BreaksIfTooLong: true,
-                                            LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
-                                            LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
-                                            LambdaChainHead: chainHead
+                                            LambdaOperandParameters: FormattedWidth(
+                                                lambda.GetFirstToken(),
+                                                lambda.ArrowToken.GetPreviousToken()
+                                            ),
+                                            LambdaOperandTail: operandTail,
+                                            LambdaOperandFirst: FirstOperandWidth(body),
+                                            LambdaOperandBody: LastOperandOfAHeaderCondition(lambda) is not null
+                                            && !IsTheReceiverOfAFurtherLink(lambda)
+                                                ? 1 + FormattedWidth(body.GetFirstToken(), KeptSegmentEndOf(body))
+                                                : 0,
+                                            LambdaOperandKept: LastOperandOfAHeaderCondition(lambda) is not null
+                                            && !IsTheReceiverOfAFurtherLink(lambda)
+                                            && KeptSegmentEndOf(body) != body.GetLastToken(),
+                                            LambdaOperandPatternLeft: body is IsPatternExpressionSyntax {
+                                                Expression: var tested
+                                            }
+                                                ? FormattedWidth(tested)
+                                                : 0
                                         )
-                                        : ArrowMovesACallChainDown(body)
+                                        : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
                                             ? new GroupFacts(
                                                 BreaksIfTooLong: true,
-                                                BreaksOnlyIfTailFits: true,
-                                                BreaksIfReceiverOverflows: true
+                                                LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+                                                LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
+                                                LambdaChainHead: chainHead
                                             )
-                                            : LocalLambdaCallOf(lambda, body) is { } call
+                                            : ArrowMovesACallChainDown(body)
                                                 ? new GroupFacts(
                                                     BreaksIfTooLong: true,
-                                                    BreaksOnlyIfHeadOverflows: true,
-                                                    LambdaHead: FormattedWidth(
-                                                        lambda.GetFirstToken(),
-                                                        lambda.ArrowToken
-                                                    ),
-                                                    LambdaCallCallee: FormattedWidth(
-                                                        call.GetFirstToken(),
-                                                        call.ArgumentList.OpenParenToken.GetPreviousToken()
-                                                    ),
-                                                    LambdaCallArguments: FormattedWidth(call.ArgumentList),
-                                                    LambdaCallSingle: call.ArgumentList.Arguments.Count == 1
+                                                    BreaksOnlyIfTailFits: true,
+                                                    BreaksIfReceiverOverflows: true
                                                 )
-                                                : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+                                                : LocalLambdaCallOf(lambda, body) is { } call
+                                                    ? new GroupFacts(
+                                                        BreaksIfTooLong: true,
+                                                        BreaksOnlyIfHeadOverflows: true,
+                                                        LambdaHead: FormattedWidth(
+                                                            lambda.GetFirstToken(),
+                                                            lambda.ArrowToken
+                                                        ),
+                                                        LambdaCallCallee: FormattedWidth(
+                                                            call.GetFirstToken(),
+                                                            call.ArgumentList.OpenParenToken.GetPreviousToken()
+                                                        ),
+                                                        LambdaCallArguments: FormattedWidth(call.ArgumentList),
+                                                        LambdaCallSingle: call.ArgumentList.Arguments.Count == 1
+                                                    )
+                                                    : new GroupFacts(
+                                                        BreaksIfTooLong: true,
+                                                        BreaksOnlyIfHeadOverflows: true
+                                                    )
         );
 
     /// <summary>
@@ -9060,8 +9142,61 @@ public sealed class BreakPlan {
         return first is { ArgumentList.Arguments.Count: >= 2 } && first != operand ? (operand, first) : (null, null);
     }
 
-    /// <summary>The operand of a sole lambda's whole body that is a type test broken before its keyword, or
-    /// null.</summary>
+    /// <summary>
+    ///     A sole lambda's whole body that #620's measured lines decide the arrow over — a type test written on one
+    ///     line whose operand's spine holds a call, or a call of one argument with nothing after it — with the line's
+    ///     kind and the head through the first call's <c>(</c>; null otherwise.
+    /// </summary>
+    (ExpressionSyntax? Body, LambdaBodyKind Kind, int Head) UnbrokenBodyOfASoleLambda(
+        LambdaExpressionSyntax lambda,
+        ExpressionSyntax body
+    ) {
+        if (!options.PlaceSingleMethodArgumentLambdaOnSameLine || !IsTheBodyOfASoleLambda(body)) {
+            return (null, default, 0);
+        }
+
+        // ⚠ Not over a nested lambda (`() => DotNetTest(settings => settings` / `.Set…`), #585's two levels, which the
+        // probe never held: measured on identifiers and calls only.
+        // ⚠ And a call of its own, not the last link of a chain (`settings.A(x).B(y)`).
+        if (body is InvocationExpressionSyntax { ArgumentList.Arguments: [var argument] } single
+            && !single.Expression.DescendantNodesAndSelf().Any(static node => node is InvocationExpressionSyntax)
+            && !argument.Expression.DescendantNodesAndSelf()
+                .Any(static node => node is AnonymousFunctionExpressionSyntax)) {
+            return (body, LambdaBodyKind.OneArgumentCall,
+                FormattedWidth(single.GetFirstToken(), single.ArgumentList.OpenParenToken));
+        }
+
+        // ⚠ Read from the tree and not the source's breaks, so pass two asks what pass one asked: only a break before
+        // the keyword, which is the author's and kept, makes the test #618's.
+        var operand = body switch {
+            BinaryExpressionSyntax binary when IsTypeTest(binary) && !BreaksBefore(binary.OperatorToken) => binary.Left,
+            IsPatternExpressionSyntax { Pattern: not BinaryPatternSyntax } test when !BreaksBefore(test.IsKeyword) =>
+                test.Expression,
+            _ => null
+        };
+
+        InvocationExpressionSyntax? first = null;
+        var spine = operand;
+        while (spine is MemberAccessExpressionSyntax or InvocationExpressionSyntax) {
+            if (spine is InvocationExpressionSyntax invocation) {
+                first = invocation;
+                spine = invocation.Expression;
+            } else {
+                spine = ((MemberAccessExpressionSyntax)spine).Expression;
+            }
+        }
+
+        return first is null
+            ? (null, default, 0)
+            : first.ArgumentList.Arguments.Count >= 2
+                ? (body, LambdaBodyKind.InlineTestOfACall,
+                    FormattedWidth(operand!.GetFirstToken(), first.ArgumentList.OpenParenToken))
+                : (body, LambdaBodyKind.InlineTest, 0);
+    }
+
+    /// <summary>
+    ///     The operand of a sole lambda's whole body that is a type test broken before its keyword, or null.
+    /// </summary>
     ExpressionSyntax? BrokenTestedOperandOf(LambdaExpressionSyntax lambda, ExpressionSyntax body) {
         if (!options.PlaceSingleMethodArgumentLambdaOnSameLine || !IsTheBodyOfASoleLambda(body)) {
             return null;
@@ -9209,6 +9344,17 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         Point(keyword, group);
+
+        // ⚠ A break the author kept between an arm's `when` and a collection expression stays (fuzz
+        // 16565442098129427039): `{ … } when` / `["ss", null] => …` comes back from the oracle as written, the
+        // braces lifted as for any kept break after the `when` (#601). Skala joined it, so pass one lifted the
+        // braces over a `when [` line and pass two, finding no break to lift for, put them back.
+        if (node.Parent is SwitchExpressionArmSyntax
+            && node.Condition is CollectionExpressionSyntax
+            && options.KeepsUserBreaksBetweenItems
+            && BreaksBefore(FirstToken(node.Condition))) {
+            Mandatory(FirstToken(node.Condition));
+        }
 
         // ⚠ And the gap after an arm's `when`, by the collection `=`'s rule (#576): the condition moves
         // below the `when`, one level past the arm, exactly when it fits there flat and not beside it —

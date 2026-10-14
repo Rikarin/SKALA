@@ -11729,6 +11729,72 @@ Diverging rows (none non-idempotent before or after; no row regressed):
 
 The 108-row and 162-row grids of round 4 were not rebuilt one for one. Their shapes are inside the five grids above.
 
+⚠ **#576 round 6 (2026-10-14, group D): two of the arrow's read-through families.** The arm under study is a
+pattern with no break point of its own, `when Materialise<List<bool>, IReadOnlyDictionary<int, T…>>()`, and a body.
+Measured with `Testing ask` on a new 828-arm grid:
+- six heads;
+- conditions of 52 to 118 columns;
+- bodies `1`, `"ss"` and `Short.Value12`;
+- indents 8 and 16.
+
+**1. The head no longer reads a short body through.** Behind such a condition the oracle never treats a short body
+as part of the head:
+- While the condition fits beside the `when`, it keeps the type arguments whole.
+- It breaks after the arrow while the line through `=>` fits, and before the arrow after that.
+
+Skala read the one-column body through and filled the type arguments at their first comma. Past 96 columns of
+condition the old behaviour is kept. Such a condition cannot fit beside the `when` of an arm indented eight or more,
+and where it does not fit below either, the oracle fills with the short body beside the arrow: the read-through's
+answer. No region-one cell lay past 94 columns and no region-three cell short of 109.
+(`BreakPlan.ArmWhenHoldsOnlyTypeArguments`, `WhenReadThroughLimit`, set through `GroupFacts.PositionalHead`.)
+
+**2. Where the type arguments break.** The outermost list breaks after its first comma (`L`) only while the second
+line it leaves fits with twelve columns to spare: the list's second argument through `>`, plus `()`. Otherwise the
+list stays and the inner list fills after `<int,` (`T`). Skala always broke the outer list. (`GroupFacts.WhenOuterTail`.)
+
+Diverging rows, the branch's start `9e9f4097` → now (no row non-idempotent before or after):
+
+| Grid | Rows | Before | After |
+|---|---|---|---|
+| 828-arm short-body grid | 828 | 318 | 194 |
+| 600-arm grid | 600 | 12 | 2 |
+| 192-arm grid | 192 | 4 | 0 |
+| 200-arm grid | 200 | 12 | 11 |
+| fresh (seed 57601) | 300 | 31 | 25 |
+| fresh (seed 57602) | 300 | 61 | 39 |
+| **fresh** (seed 57603, built after rule 1) | 400 | 110 | 70 |
+| **fresh** (seed 57604, built after both rules; six other generic conditions) | 400 | 68 | 25 |
+
+Only one row regressed, in the last probe:
+
+```
+var v when Pick<int,
+    Func<string, T…69>>() => Value,
+```
+
+The oracle breaks after `int,` there, with a second line of 120 columns that rule 2 puts past the spare. So the
+spare is not the whole rule. Where `L` and `T` meet, it depends on more than the line left below: `1` and `Value`
+bodies split differently at the same width. It is not modelled further.
+
+⚠ Still open (the remaining 194 + 25 + 39 + 70 rows), all measured and none wired:
+- **The `when` gap and the type-argument break interleave.** `WL` against `WT` and `LB` against `WLB` make up most
+  of what is left. The round-4 table (`25·t + 6·h ≤ 3191`) was fitted on body `1`. For `"ss"` and member-access
+  bodies the oracle keeps breaking after the `when` where the table stops.
+- **A member-access body's own dot.** `=> Short` / `.Value12` (`D`) is taken before the arrow at the narrowest
+  conditions. Skala breaks the arrow.
+- **A query or call body kept on the arrow's line.** `=> (from item in items` / `where …`, wrapping inside it,
+  about 8 rows across the probes. Skala moves the body below.
+- **A chain body breaking at its dots** (`WTDD`), about 3 rows.
+
+⚠ **Fuzz 16565442098129427039 (group C's run; pre-existing, fails identically on `adca899a`).** The arm was
+`{ Value.Length:` / `> 2, Kind: null } when` / `["ss", null] => …`. The `#region` in the generated file plays no part.
+
+- Skala joined the author's break between the `when` and a collection expression. A collection is no planned `when`
+  gap, so nothing kept the break.
+- Pass one still lifted the braces for that kept break (#601). Pass two found no break and put them back: four edits.
+- The oracle keeps the break, with and without braces on several lines. It is kept now.
+- Pinned by `WhenBeforeACollectionTests` and the seed in `FuzzRegressionTests`.
+
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
 ⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as
@@ -13482,3 +13548,45 @@ the 27 rows).
 
 - options: none.
 - status: **fixed** (the seed, by `773eeafa`); the comment right after `[` is **open**.
+
+## SK-DIV-0521 — where a sole lambda breaks after its arrow without a broken test
+
+#620, group C (2026-10-14): SK-DIV-0520's question where the body is not a type test broken before its keyword. Probe
+H (2 100 members, seed 620: five operand classes — a call of two or more arguments, of one, either with links after
+it, a no-argument call with links — written plain or with a type test on one line, eight parameter lists, five
+statement kinds, indents 8, 12 and 16) to fit; probe I (600, seed 6200) to check. In every class the arrow keeps while
+the body fits beside it; past that —
+- **a type test on one line whose operand's calls have one argument or none:** the arrow breaks. 4 of 118 apart on
+  probe I, where keeping it missed 114 (`LambdaBodyKind.InlineTest`).
+- **a type test on one line whose operand's first call has two or more:** `6·k + 2·p + 5·h − 9·w − 12·i ≥ −1032`, `w`
+  the whole body (`LambdaBodyKind.InlineTestOfACall`). 36 of 282 fitted; 18 of 71 on probe I, where either fixed
+  answer missed 35. Under the kept arrow the call's arguments stack two levels in while they break, `) as T` one, as
+  under a broken test (#602).
+- **a whole body that is a one-argument call of its own:** from twelve columns past the line's start,
+  `6·k − 8·p + 7·h − 11·w − 10·i ≥ −1108` (`LambdaBodyKind.OneArgumentCall`). 35 of 224 fitted; 14 of 73 on probe I,
+  where keeping it missed 34. ⚠ Not the last link of a chain (`settings.A(x).B(y)`) nor a call whose argument holds a
+  lambda (#585's `DotNetTest(settings => …)`), which the probe never held — `NestedSoleLambdaChainIssue585Tests` caught
+  the first version reading both.
+
+| probe (members agreeing) | before | now |
+|---|---|---|
+| H (2 100, fitted) | 1 017 | 1 526 |
+| I (600, fresh) | 302 | 435 |
+| #618's probes A / G (378 / 450) | 177 / 386 | 242 / 386 |
+
+⚠ **A call the author broke inside keeps the arrow**, in every class of SK-DIV-0520 and this entry: the oracle keeps
+`Throws(static () => Reading(` / the argument / `)` as written and breaks the arrow over the same call written flat —
+eleven members, one per class each way, all agreeing (`GroupFacts.LambdaTestKept`). Found by Lint on Skala's own
+`ProvenanceTests.cs`, which the first version re-wrote. It is also what pass two reads after pass one's chop.
+
+Stable on a second pass everywhere. Pinned by `SoleLambdaUnbrokenBodyArrowIssue620Tests`.
+
+⚠ **Open:** a whole body that is a chain — `call(…).A`, `ctx.Get().B` — where the best linear line still misses 259 of
+796 members; a whole body that is a call of two or more arguments, which the oracle keeps beside the arrow in 229 of
+257 and no line improved on; a hugged call with links after it, whose arguments the oracle stacks two levels in
+(`=> Normalize(` / the arguments / `)` / `.Value`) and Skala one; and a type test on one line under a broken arrow
+whose operand still overflows, where the oracle breaks after `is` and Skala chops the operand's arguments. 165 of
+probe I's 600 members.
+
+- status: **partly resolved** (#620).
+

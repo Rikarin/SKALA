@@ -218,6 +218,10 @@ public sealed class FuzzRegressionTests {
     // kept the gap and broke the `=` by #603's band, pass two read that `=` break as one inside the parameter, turned
     // the band off and broke the gap.
     [InlineData(9695149764600851630UL)]
+    // `{ Value.Length:` / `> 2, Kind: null } when` / `["ss", null] => …` (group C's run): the author's break between
+    // the `when` and a collection expression was joined, so pass one lifted the braces for a break it then dropped
+    // and pass two put them back. The oracle keeps that break.
+    [InlineData(16565442098129427039UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

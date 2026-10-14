@@ -1397,8 +1397,9 @@ public sealed class LayoutWriter {
         return Math.Max(0, level);
     }
 
-    /// <summary>Whether a scope outside the one at <paramref name="index" />, inside its block, opened on its
-    /// line.</summary>
+    /// <summary>
+    ///     Whether a scope outside the one at <paramref name="index" />, inside its block, opened on its line.
+    /// </summary>
     bool OpensWithAnOuterScope(int index) {
         for (var j = index - 1; j >= 0; j--) {
             var outer = scopes[j];
