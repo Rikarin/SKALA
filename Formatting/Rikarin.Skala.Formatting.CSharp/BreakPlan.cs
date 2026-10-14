@@ -8324,22 +8324,23 @@ public sealed class BreakPlan {
     ///     on its line (<c>if ((a</c> / <c>+ b…).Value)</c>, which pass two moved).
     /// </remarks>
     /// <summary>
-    ///     The type test's own group a returned type test's operand holds a level against: spent once that group breaks,
-    ///     which puts the operand's dot two levels in (#446, the <c>x</c> layout); −1 for every other node.
+    ///     The type test's own group a returned type test's operand holds a level against: spent once that group
+    ///     breaks, which puts the operand's dot two levels in (#446, the <c>x</c> layout); −1 for every other node.
     /// </summary>
     public int TypeTestLiftOf(SyntaxNode node) => typeTestLifts.TryGetValue(Key(node), out var group) ? group : -1;
 
     /// <summary>
-    ///     Whether a returned type test's operand is a member access the author broke before its dot, with the type test
-    ///     broken after its keyword and not before it: the oracle keeps both breaks and puts the dot two levels in,
-    ///     <c>return r</c> / <c>.P… is</c> at +8 / <c>T;</c> at +4, which is what pass one's <c>x</c> layout writes.
+    ///     Whether a returned type test's operand is a member access the author broke before its dot, with the type
+    ///     test broken after its keyword and not before it: the oracle keeps both breaks and puts the dot two levels
+    ///     in, <c>return r</c> / <c>.P… is</c> at +8 / <c>T;</c> at +4, which is what pass one's <c>x</c> layout
+    ///     writes.
     /// </summary>
     public bool KeptTypeTestLift(SyntaxNode node) => keptTypeTestLifts.Contains(Key(node));
 
     /// <summary>
-    ///     The group of the gap between a local's type and its name, by the local's <c>=</c> clause: once that gap breaks,
-    ///     the name's line is the line the value continues from, <c>T</c> / <c>name =</c> at +4 / the value at +8 (#446,
-    ///     measured on the held typed local's grids); −1 for every other node.
+    ///     The group of the gap between a local's type and its name, by the local's <c>=</c> clause: once that gap
+    ///     breaks, the name's line is the line the value continues from, <c>T</c> / <c>name =</c> at +4 / the value at
+    ///     +8 (#446, measured on the held typed local's grids); −1 for every other node.
     /// </summary>
     public int TypeNameGapOf(SyntaxNode node) => typeNameGaps.TryGetValue(Key(node), out var group) ? group : -1;
 

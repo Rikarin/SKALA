@@ -1180,13 +1180,14 @@ public sealed class Fitter {
     ///     staying and moving the call below the receiver (#619, group I).
     /// </summary>
     /// <remarks>
-    ///     ⚠ Measured with <c>Testing ask</c> on <c>T n… = r….Where(x =&gt; a &amp;&amp; b &amp;&amp; c).T…();</c> under
-    ///     <c>var</c>, <c>IEnumerable&lt;T&gt;</c> and assignment heads, names of 4 to 40 and receivers of 1 to 9, where
-    ///     the held call always moves (1 998 cells): every cell answers by the name and the receiver alone, the same at
-    ///     two widths of the line below, and the head decides only whether the receiver starts 13 columns or more into
-    ///     the statement. The <c>=</c> breaks while three receivers fit in the name less one and eight receivers and
-    ///     five names in 165 — the receiver allowed rises to six columns at names of 19 to 23 and falls to none past 31.
-    ///     Where the held call would break its arrow instead, the <c>=</c> stays (1 260 cells under <c>.ToList()</c>).
+    ///     ⚠ Measured with <c>Testing ask</c> on <c>T n… = r….Where(x =&gt; a &amp;&amp; b &amp;&amp; c).T…();</c>
+    ///     under <c>var</c>, <c>IEnumerable&lt;T&gt;</c> and assignment heads, names of 4 to 40 and receivers of 1 to
+    ///     9, where the held call always moves (1 998 cells): every cell answers by the name and the receiver alone,
+    ///     the same at two widths of the line below, and the head decides only whether the receiver starts 13 columns
+    ///     or more into the statement. The <c>=</c> breaks while three receivers fit in the name less one and eight
+    ///     receivers and five names in 165 — the receiver allowed rises to six columns at names of 19 to 23 and falls
+    ///     to none past 31. Where the held call would break its arrow instead, the <c>=</c> stays (1 260 cells under
+    ///     <c>.ToList()</c>).
     ///     ⚠ A column or two past the held limit the oracle still breaks the <c>=</c> under the shortest receivers;
     ///     that band is not taken (SK-DIV-0510).
     /// </remarks>
@@ -1515,24 +1516,24 @@ public sealed class Fitter {
     ///     it (#446, round 4's <c>x</c>).
     /// </summary>
     /// <remarks>
-    ///     ⚠ Before a constant pattern that is a member access, <c>is N.T</c>, the oracle often keeps the dot one level in
-    ///     and breaks the pattern's own dot instead (#621); not modelled, and leaving those to the keyword's band was
-    ///     worse on the probe (4 cells right lost, none gained).
+    ///     ⚠ Before a constant pattern that is a member access, <c>is N.T</c>, the oracle often keeps the dot one level
+    ///     in and breaks the pattern's own dot instead (#621); not modelled, and leaving those to the keyword's band
+    ///     was worse on the probe (4 cells right lost, none gained).
     /// </remarks>
     bool TheDotGoesTwoLevelsIn(in GroupFacts facts, int column, int lineStart) =>
         column + facts.TypeTestOperand > width && lineStart + indentWidth + facts.TypeTestTail > width;
 
     /// <summary>
-    ///     With <see cref="TheDotGoesTwoLevelsIn" />: whether the keyword leaves the dot's line too, which it does exactly
-    ///     when it would overflow there (#446).
+    ///     With <see cref="TheDotGoesTwoLevelsIn" />: whether the keyword leaves the dot's line too, which it does
+    ///     exactly when it would overflow there (#446).
     /// </summary>
     bool TheKeywordLeavesTheDotsLine(in GroupFacts facts, int lineStart) =>
         DotsLineTwoLevelsIn(facts, lineStart) + 1 + facts.TypeTestKeyword > width;
 
     /// <summary>
     ///     With <see cref="TheKeywordLeavesTheDotsLine" />: whether the keyword and the type then take a line each,
-    ///     <c>.P…</c> / <c>as</c> / <c>T;</c>, which they do while the dot's line ends at most a column past the margin;
-    ///     past that, <c>as T;</c> share one (#446).
+    ///     <c>.P…</c> / <c>as</c> / <c>T;</c>, which they do while the dot's line ends at most a column past the
+    ///     margin; past that, <c>as T;</c> share one (#446).
     /// </summary>
     bool TheTypeLeavesTheKeywordsLine(in GroupFacts facts, int lineStart) =>
         TheKeywordLeavesTheDotsLine(facts, lineStart) && DotsLineTwoLevelsIn(facts, lineStart) <= width + 1;
@@ -1541,8 +1542,8 @@ public sealed class Fitter {
         lineStart + 2 * indentWidth + facts.TypeTestOperand - facts.TypeTestReceiver;
 
     /// <summary>
-    ///     Whether a resolved group's last-resort points all break, wherever what follows them would fit: the type test's
-    ///     own group in the <c>x</c> layout once the keyword left the dot's line (#446).
+    ///     Whether a resolved group's last-resort points all break, wherever what follows them would fit: the type
+    ///     test's own group in the <c>x</c> layout once the keyword left the dot's line (#446).
     /// </summary>
     public bool BreaksEveryPoint(int group) => chops.Contains(group);
 
