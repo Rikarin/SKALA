@@ -1740,9 +1740,7 @@ public sealed class Fitter {
                         continuation - indentWidth,
                         facts.EqualsName
                     )
-                    || facts.EqualsName == 0
-                    && valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd
-                    || facts.EqualsName > 0 && parenBeside > width;
+                    || valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd;
             case 1:
                 // ⚠ Or when the head with the receiver beside it is wider than 87 columns: `T… c = JsonConvert`
                 // holds to 87 and breaks from 88, counted from the statement (h12 at indent 8, on one call
