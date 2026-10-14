@@ -1139,8 +1139,9 @@ public sealed class Fitter {
     /// </summary>
     /// <summary>
     ///     The head <see cref="EqualsFloor.OneArgumentBreaksTheEquals" /> reads: the statement's, through the <c>=</c>
-    ///     (<see cref="GroupFacts.CalleeArgumentHead" />), while it fits on its line; the fitter's own once it cannot — a
-    ///     type that fills onto a second line leaves only its last line beside the <c>=</c> (fuzz 4769102867181174370).
+    ///     (<see cref="GroupFacts.CalleeArgumentHead" />), while it fits on its line; the fitter's own once it cannot —
+    ///     a type that fills onto a second line leaves only its last line beside the <c>=</c> (fuzz
+    ///     4769102867181174370).
     /// </summary>
     int OneArgumentHead(in GroupFacts facts, in Measures m, int lineStart) =>
         facts.CalleeArgumentHead > 0 && m.ContinuationColumn - indentWidth + facts.CalleeArgumentHead <= width
@@ -1201,11 +1202,12 @@ public sealed class Fitter {
         }
 
         // ⚠ One argument behind a head wider than #610 measured is not the floor of two's (#617, fuzz
-        // 12392120797706766071; SK-DIV-0501, SK-DIV-0530): that floor was confirmed for one argument on heads of 12 to 14
-        // only, and chopped from an argument of 44 behind `IReadOnlyDictionary<decimal, decimal> v =` where the oracle
-        // breaks the `=` into the sixties. Its own measured boundary decides now (EqualsFloor.OneArgumentBreaksTheEquals);
-        // an argument with a certain break of its own, which has no flat width, stays with the ordering rule. Pass two
-        // meets pass one's chop as the author's and keeps it (GroupFacts.KeptArgumentCallee).
+        // 12392120797706766071; SK-DIV-0501, SK-DIV-0530): that floor was confirmed for one argument on heads of 12 to
+        // 14 only, and chopped from an argument of 44 behind `IReadOnlyDictionary<decimal, decimal> v =` where the
+        // oracle breaks the `=` into the sixties. Its own measured boundary decides now
+        // (EqualsFloor.OneArgumentBreaksTheEquals); an argument with a certain break of its own, which has no flat
+        // width, stays with the ordering rule. Pass two meets pass one's chop as the author's and keeps it
+        // (GroupFacts.KeptArgumentCallee).
         if (facts.CalleeArgument > 0
             && OneArgumentHead(facts, m, lineStart) is var wideHead
             && wideHead > OneArgumentMeasuredHead) {

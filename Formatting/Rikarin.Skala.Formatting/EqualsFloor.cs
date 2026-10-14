@@ -139,12 +139,11 @@ public static class EqualsFloor {
     /// </summary>
     /// <remarks>
     ///     ⚠ Fitted 2026-10-14 with <c>Testing ask</c> on 8 832 rows — typed and <c>var</c> locals, assignments and
-    ///     deconstructions; heads of 15 to 42; callees of 8 to 34 columns, plain and generic; indents 8, 12 and 16; lines of
-    ///     121 to 151 — to 186 rows off, where Skala was 2 282 off. Checked on a fresh 9 216-row probe it was not fitted on
-    ///     (heads of 16 to 45, callees of 12 to 40, indents 8, 12 and 20): 318 off, where Skala was 2 930 off. A refit on
-    ///     both together does no better (502 of 18 048). The <c>=</c> breaks while the value's line below ends no more than
-    ///     two columns past the margin (<paramref name="belowOver" />) and
-    ///     <c>
+    ///     deconstructions; heads of 15 to 42; callees of 8 to 34 columns, plain and generic; indents 8, 12 and 16;
+    ///     lines of 121 to 151 — to 186 rows off, where Skala was 2 282 off. Checked on a fresh 9 216-row probe it was
+    ///     not fitted on (heads of 16 to 45, callees of 12 to 40, indents 8, 12 and 20): 318 off, where Skala was 2 930
+    ///     off. A refit on both together does no better (502 of 18 048). The <c>=</c> breaks while the value's line
+    ///     below ends no more than two columns past the margin (<paramref name="belowOver" />) and <c>
     ///         12·indent + 10·argument + 4·callee +
     ///         2·head
     ///     </c>

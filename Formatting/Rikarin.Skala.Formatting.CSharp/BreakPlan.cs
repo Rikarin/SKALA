@@ -7427,13 +7427,13 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     An argument with no break point of its own, the kind SK-DIV-0505's boundary was measured on: a name, a literal,
-    ///     an interpolated string, a member access over names, or one of those in parentheses.
+    ///     An argument with no break point of its own, the kind SK-DIV-0505's boundary was measured on: a name, a
+    ///     literal, an interpolated string, a member access over names, or one of those in parentheses.
     /// </summary>
     /// <remarks>
     ///     ⚠ Not a lambda (fuzz 14568516573920944828): <c>T v = Select(x =&gt; new[] { … });</c> broke its <c>=</c> by
-    ///     the argument's flat width on pass one and chopped on pass two, its arrow and its initializer having points of
-    ///     their own that the boundary never saw.
+    ///     the argument's flat width on pass one and chopped on pass two, its arrow and its initializer having points
+    ///     of their own that the boundary never saw.
     /// </remarks>
     static bool IsAMeasuredArgument(ExpressionSyntax argument) =>
         argument switch {
