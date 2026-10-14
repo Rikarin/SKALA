@@ -5351,12 +5351,14 @@ public sealed class BreakPlan {
             return facts;
         }
 
-        // ⚠ Nor a section that spans lines itself (fuzz 9695149764600851630: `[` / `#endif` / `MethodImpl(…)]`): its
+        // ⚠ Nor a section a directive runs through (fuzz 9695149764600851630: `[` / `#endif` / `MethodImpl(…)]`): its
         // joined line is not a line the writer can produce, and the band's `=` break, read on pass two as a break
-        // inside the parameter, turned the rule off and broke the gap.
+        // inside the parameter, turned the rule off and broke the gap. ⚠ The directive and not any line break in the
+        // section's source (fuzz 4372692451688483448): the arguments this rule chops on pass one are such a break on
+        // pass two, which turned the rule off there.
         var first = section.CloseBracketToken.GetNextToken();
         if (source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny(LineEnds) >= 0
-            || source.AsSpan(section.SpanStart, section.Span.Length).IndexOfAny(LineEnds) >= 0) {
+            || section.ContainsDirectives) {
             return facts;
         }
 
