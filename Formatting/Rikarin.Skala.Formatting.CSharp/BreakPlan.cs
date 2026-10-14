@@ -3535,6 +3535,47 @@ public sealed class BreakPlan {
     /// <summary>
     ///     A plain path of names — <c>a</c>, <c>a.B.C</c> — with no call, index, <c>!</c> or <c>?.</c> in it.
     /// </summary>
+    /// <summary>
+    ///     For an <c>=</c> value that is a chain of two or more calls on a plain name whose first call holds a sole
+    ///     lambda over an operand chain or a binary pattern — <c>r.Where(x =&gt; a &amp;&amp; b).ToList()</c> — the
+    ///     receiver's width; zero for any other value. See <see cref="GroupFacts.HeldChainReceiver" /> (#619).
+    /// </summary>
+    static int HeldLambdaChainReceiverOf(ExpressionSyntax value) {
+        var calls = 0;
+        var current = value;
+        InvocationExpressionSyntax? first = null;
+        while (current is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } call) {
+            calls++;
+            first = call;
+            current = access.Expression;
+        }
+
+        return calls >= 2
+            && current is IdentifierNameSyntax
+            && first!.ArgumentList.Arguments is [
+                {
+                    NameColon: null,
+                    Expression: LambdaExpressionSyntax {
+                        ExpressionBody: BinaryExpressionSyntax or IsPatternExpressionSyntax
+                    }
+                }
+            ]
+                ? current.Span.Length
+                : 0;
+    }
+
+    /// <summary>The innermost call of a chain of calls: <c>r.Where(…)</c> in <c>r.Where(…).ToList()</c>.</summary>
+    static SyntaxNode FirstCallOf(ExpressionSyntax value) {
+        SyntaxNode first = value;
+        var current = value;
+        while (current is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } call) {
+            first = call;
+            current = access.Expression;
+        }
+
+        return first;
+    }
+
     static bool IsAPathOfNames(ExpressionSyntax expression) =>
         expression switch {
             SimpleNameSyntax => true,
@@ -6002,6 +6043,13 @@ public sealed class BreakPlan {
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,
                     EqualsName: EqualsNameOf(node, owner, value),
+                    HeldChainReceiver: owner is EqualsOwner.VarLocal or EqualsOwner.TypedLocal or EqualsOwner.Assignment
+                        ? HeldLambdaChainReceiverOf(value)
+                        : 0,
+                    HeldChainRest: owner is EqualsOwner.VarLocal or EqualsOwner.TypedLocal or EqualsOwner.Assignment
+                    && HeldLambdaChainReceiverOf(value) > 0
+                        ? RestWidth(FirstCallOf(value), value)
+                        : 0,
                     EqualsNameAttributed: node.Parent?.Parent?.Parent is FieldDeclarationSyntax {
                         AttributeLists.Count: > 0
                     },

@@ -1444,6 +1444,16 @@ public sealed class Document {
 ///     With <see cref="MemberHeadWidth" />: the widths of the value's links after the receiver, each <c>.</c> included,
 ///     in order — the dot fill keeps beside the <c>=</c> the receiver and every link that still fits there (#590).
 /// </param>
+/// <param name="HeldChainReceiver">
+///     ⚠ An <c>=</c> whose value is a chain of calls on a plain name whose first call holds a sole lambda,
+///     <c>r.Where(x =&gt; …).ToList()</c>: the receiver's width, or zero (#619, group B). Past the margin the <c>=</c>
+///     breaks by the plain member value's rule, <c>EqualsFloor.BreaksBeforeTheValue</c>, with the receiver for the
+///     fragment the held call would leave beside it, rather than holding the receiver and moving the call down.
+/// </param>
+/// <param name="HeldChainRest">
+///     With <see cref="HeldChainReceiver" />: the chain's width after its first call through the <c>;</c>. Where the
+///     line through the first call fits, the oracle keeps the <c>=</c> and breaks before the next link instead.
+/// </param>
 /// <param name="MemberHeadWidth">
 ///     ⚠ An <c>=</c> whose value is a plain member access the dot fill breaks (#482): the receiver's flat
 ///     width, before the first <c>.</c>. The <c>=</c> yields to the fill, and breaks after all when the
@@ -1729,6 +1739,8 @@ public readonly record struct GroupFacts(
     int EqualsLambdaArguments = 0,
     bool LambdaCallSingle = false,
     int MemberHeadWidth = 0,
+    int HeldChainReceiver = 0,
+    int HeldChainRest = 0,
     int EqualsName = 0,
     int[]? MemberLinks = null,
     bool EqualsNameAttributed = false,
