@@ -327,6 +327,18 @@ public sealed class BreakPlan {
     readonly Dictionary<long, int> afterIsGroups = [];
 
     /// <summary>
+    ///     A broken type test's group, to the key of the list pattern whose group its level is held against. See
+    ///     <see cref="FromLineHeldAgainst" />.
+    /// </summary>
+    readonly Dictionary<int, long> fromLineHeldAgainst = [];
+
+    /// <summary>
+    ///     The width lift <see cref="PlanArmArrow" /> opened at an arm whose head is braces or brackets, by the arm's key,
+    ///     for a <c>when</c> the author put on a line of its own to lift with (#617). See <see cref="PlanWhenClause" />.
+    /// </summary>
+    readonly Dictionary<long, int> armWidthLifts = [];
+
+    /// <summary>
     ///     The chain roots whose <c>wrap_chained_binary_*</c> style is <c>wrap_if_long</c>, so that
     ///     every operator of them plans a fill point rather than an ordinary one.
     /// </summary>
@@ -1602,7 +1614,7 @@ public sealed class BreakPlan {
             // `=> xs is` / `[1, 2]` as joined was not the oracle's answer (re-measured 2026-10-08).
             if (!open.GetPreviousToken().IsKind(SyntaxKind.OpenParenToken)
                 && open.Parent is not (BracketedArgumentListSyntax or AttributeListSyntax)
-                && !IsAOneLineListPatternAfterIs(open)) {
+                && !KeepsTheBreakBeforeAListPattern(open)) {
                 Flat(open);
             }
         }
@@ -4717,7 +4729,36 @@ public sealed class BreakPlan {
             // (constructs/wrapping/patterns.cs).
             || BreaksBefore(FirstToken(test.Pattern))
             && (FirstToken(test.Pattern).Kind() is not (SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken)
-                || IsAOneLineListPatternAfterIs(FirstToken(test.Pattern))));
+                || KeepsTheBreakBeforeAListPattern(FirstToken(test.Pattern))));
+
+    /// <summary>
+    ///     The <c>[</c> of a list pattern straight after an <c>is</c> whose break before it is kept: one the
+    ///     author wrote on one line (#562), or one a line comment between the two puts on a line of its own
+    ///     whatever the author wrote inside it (#617).
+    /// </summary>
+    bool KeepsTheBreakBeforeAListPattern(SyntaxToken open) =>
+        IsAOneLineListPatternAfterIs(open) || IsAListPatternPastALineCommentAfterIs(open);
+
+    /// <summary>
+    ///     The <c>[</c> of a list pattern straight after an <c>is</c> with a line comment in the gap between them:
+    ///     <c>xs is</c> / <c>// c</c> / <c>[1, 2]</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The level is the list's to decide, not the source's (#617, fuzz 14577244967404521905). Measured
+    ///     2026-10-14 with <c>Testing ask</c> under an expression body, after <c>return</c>, after <c>var b =</c>
+    ///     and in an argument: a list that comes out on one line sits one level past the operand's line, and one
+    ///     that comes out broken — kept after a comma or its <c>[</c>, or too wide — sits on the operand's
+    ///     column, however the author wrote either. Skala read <see cref="IsAOneLineListPatternAfterIs" /> off
+    ///     the source, so <c>[_</c> / <c>, .. var rest]</c>, which joins, went flush on pass one and one level in
+    ///     on pass two. The level is now held against the list's group
+    ///     (<see cref="FromLineHeldAgainst" />), which the writer resolves at its own columns.
+    /// </remarks>
+    static bool IsAListPatternPastALineCommentAfterIs(SyntaxToken open) =>
+        open.Parent is ListPatternSyntax { Parent: IsPatternExpressionSyntax }
+        && open.GetPreviousToken() is var keyword
+        && keyword.IsKind(SyntaxKind.IsKeyword)
+        && (keyword.TrailingTrivia.Any(SyntaxKind.SingleLineCommentTrivia)
+            || open.LeadingTrivia.Any(SyntaxKind.SingleLineCommentTrivia));
 
     /// <summary>
     ///     An <c>is</c> the author broke before or after, over a pattern that can break: one level past
@@ -4744,6 +4785,12 @@ public sealed class BreakPlan {
         var after = FirstToken(node.Pattern);
         if (BreaksBefore(after)) {
             Mandatory(after);
+        }
+
+        // ⚠ Past a line comment, a list pattern's own layout decides the level (#617): spent while the list stays
+        // on one line, held once it breaks. Not when the `is` broke too, whose line the level is also for.
+        if (!BreaksBefore(node.IsKeyword) && IsAListPatternPastALineCommentAfterIs(after)) {
+            fromLineHeldAgainst[group] = Key(node.Pattern);
         }
 
         Describe(
@@ -5926,7 +5973,13 @@ public sealed class BreakPlan {
                     LambdaLocal: ArrowYieldWidthOf(value) > 0 ? LambdaLocalOf(node) : LambdaLocal.None,
 
                     // ⚠ Read only with LambdaLocal, past the margin (#595): no parameter list to chop.
-                    LambdaIsSimple: value is SimpleLambdaExpressionSyntax,
+                    // ⚠ Nor has `() =>` (#617, fuzz 52566946029857855): an empty list cannot chop, so `T v = () =>`
+                    // past the margin kept its `=` and broke the arrow, and pass two — which reads the arrow's break as
+                    // the author's and so no longer sees a lambda local — broke the `=` as well. Measured 2026-10-14
+                    // with `Testing ask`: `() =>`, `static () =>` and `async () =>` with the arrow 121 to 131 break the
+                    // `=` on every row where the type/name gap does not take the line first.
+                    LambdaIsSimple: value is SimpleLambdaExpressionSyntax
+                        or ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters.Count: 0 },
                     OneOverType: value is ParenthesizedLambdaExpressionSyntax oneOver ? OneOverOf(oneOver).Type : 0,
                     PatternHead: PatternHeadOf(node, equals, value),
                     PatternWidth: PatternHeadOf(node, equals, value) > 0
@@ -7451,6 +7504,17 @@ public sealed class BreakPlan {
     /// <summary>The arrow group a <see cref="HeldLevel.WhileArrowFlat" /> hold is decided by, or -1.</summary>
     public int ArrowHeldAgainst(int group) => arrowHeldAgainst.TryGetValue(group, out var arrow) ? arrow : -1;
 
+    /// <summary>
+    ///     The list pattern's group a broken type test's from-the-line level is held against — spent unless the
+    ///     list breaks — or -1 (#617). See <see cref="IsAListPatternPastALineCommentAfterIs" />.
+    /// </summary>
+    public int FromLineHeldAgainst(int group) =>
+        fromLineHeldAgainst.TryGetValue(group, out var list)
+        && groups.TryGetValue(list, out var plans)
+        && plans.Count > 0
+            ? plans[^1].Id
+            : -1;
+
     /// <summary>The group <see cref="PlanChainedCalls" /> opened over the chain rooted at this key, or -1.</summary>
     int ChainGroupOf(long root) => chainGroups.TryGetValue(root, out var group) ? group : -1;
 
@@ -7865,6 +7929,10 @@ public sealed class BreakPlan {
                     false
                 )
             );
+
+            if (liftsBraces) {
+                armWidthLifts[Key(arm)] = widthLift;
+            }
         }
 
         // ⚠ A `when` clause holding a type argument list lifts too (#576). It was withdrawn for idempotency
@@ -8517,6 +8585,21 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ An arm's `when` the author put on a line of its own lifts the braces before it once they span lines, as a
+        // case label's does (#575) and whether or not the arrow breaks (#617, fuzz 16267341160299312604). Measured
+        // 2026-10-14 with `Testing ask`: `{ A: > 2, Kind` / `: not null }` / `when (…) => body,` comes back with the
+        // subpatterns two levels past the arm and `}` and `when` one, under a short body and a long one alike; braces
+        // that join (`{` / `A: > 2,` / `Kind: not null` / `}`) do not lift and the `when` takes its own level. Skala
+        // lifted only when the arrow broke for width, and then put the `when` a level deeper; pass two, reading that
+        // arrow break as kept, put it back. As one of the width lift's watched groups the `when`'s kept break lifts
+        // the braces exactly when they span lines (LayoutWriter.DecideByTheArrow), and the lift holds its level.
+        var lift = node.Parent is SwitchExpressionArmSyntax whenArm
+            && options.KeepsUserBreaksBetweenItems
+            && BreaksBefore(keyword)
+            && armWidthLifts.TryGetValue(Key(whenArm), out var armLift)
+                ? armLift
+                : -1;
+
         Describe(
             node,
             group,
@@ -8524,7 +8607,8 @@ public sealed class BreakPlan {
             new(
                 options.KeepsUserBreaksBetweenItems && BreaksBefore(keyword),
                 BreaksIfTooLong: true,
-                BreaksOnlyIfHeadOverflows: true
+                BreaksOnlyIfHeadOverflows: true,
+                LiftGroup: lift
             ),
             // spendsIndent, leadingGapInside: the gap before the `when` is the group's own first
             // point, so the group has to open before it (GroupPlan.LeadingGapInside).

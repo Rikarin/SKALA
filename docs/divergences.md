@@ -12599,3 +12599,132 @@ The oracle:
 `x is not (0` / `or 1)` and a positional pattern's element keep their levels, unchanged.
 
 - status: **fixed**, pinned by `ListPatternElementChainIssue615Tests` and `FuzzRegressionTests`.
+
+## SK-DIV-0500 — a list pattern a line comment puts on its own line after an `is`
+
+#617, fuzz seed 14577244967404521905: `public decimal? this[int index /* f */ ] => source is` / `// fuzz 658` / `[_` /
+`, .. var rest60];`. Minimal: `bool P => source is` / `// c` / `[_` / `, .. var rest];`. Pass one wrote the joined list
+on the operand's column and pass two moved it one level in. `IsAOneLineListPatternAfterIs` read whether the *author*
+had broken the list, and pass one's output had not.
+
+Measured 2026-10-14 with `Testing ask` on 17 shapes: an expression body, `return`, `var b =`, an argument, the comment at
+column 0 and indented, after the `is` on its line, a list joined, kept broken after a comma or its `[`, broken before
+its `]`, and too wide. The oracle puts a list that comes out on one line one level past the operand's line, and one that
+comes out broken on the operand's column, whatever the author wrote. The decision is the writer's now: the broken type
+test's level is held against the list's group (`IndentFlags.HeldIfGroupBreaks`, `BreakPlan.FromLineHeldAgainst`). The
+scope's contents are written ahead with the level spent, and the level is held if the list broke there.
+
+Rows differing from the oracle went from 9 of 17 to 3, and non-idempotent rows from 6 to 0. Three rows stay open:
+
+- An indented comment over a list that stays broken (`source is` / `    // c` / `[_,` / `.. var rest];`). The oracle
+  indents the comment and puts the broken list one level in. Skala writes both on the operand's column. Stable.
+- `source is /* c */` / `[_` / `, .. var rest];`. The oracle keeps the break after the block comment, and Skala joins.
+  Stable.
+- ⚠ Without a comment, `source is` / `[a one-line list too wide for the line]` is **not idempotent**, on master `adca899a`
+  and here. Pass one keeps the break with the level and chops the list. Pass two finds the list broken and joins
+  `source is [`, which is the oracle's answer for both. This needs the *break* before the `[`, not only its level, to
+  depend on the list staying whole. Open.
+
+- status: **fixed** for the comment-forced break, pinned by `FuzzIdempotencyIssue617Tests` and `FuzzRegressionTests`.
+  ⚠ The three residues above are **open**.
+
+## SK-DIV-0501 — one argument behind a head wider than #610 measured
+
+#617, fuzz seed 12392120797706766071 (`P44 => source? .Value?.Length` in the issue was only nearby; the failing statement
+is another): `IReadOnlyDictionary<decimal, decimal> v124 = Materialise<Guid, StringBuilder>((from item in items where
+1.5d select 85306));` at indent 16. Pass one kept the `=` and chopped the argument by `EqualsFloor.Of`, the floor
+measured for two arguments. Pass two found the argument broken. `CalleeWidthOf` turns the floor off for a value
+holding a line break, so the ordering rule broke the `=`.
+
+⚠ SK-DIV-0450 round six says one argument behind a head of twelve or more breaks by the floor of two. That was measured
+on heads of 5 to 14 only. Measured 2026-10-14 with `Testing ask`:
+
+- typed locals with heads of 12 to 45 through the `=`, callees of 16 and 32 columns (plain and generic), indents 8 and
+  16, lines of 116 to 150: 432 rows;
+- the seed's head with four callees, one and two arguments, arguments of 36 to 74: 320 rows.
+
+Behind a wide head the oracle breaks the `=` far past the floor: into the sixties for the seed's callee, where the
+floor chopped from 44. One argument behind a head wider than 14 now goes to the ordering rule, which is what pass two
+already used.
+
+Rows differing from the oracle went from 94 of 432 to 84, and non-idempotent rows from 10 to 0. On the 320-row grid,
+the 6 non-idempotent rows went to 0. Not one row changed for the worse.
+
+⚠ The 84 rows are stable and open. In all of them the oracle breaks the `=` where the ordering rule chops the
+argument. The boundary depends on the head and on the callee's width: for example, a 20-column head breaks to a
+126-column line behind a 16-column callee and to a 136-column line behind a 32-column one. It is not "the value fits
+below". Re-measuring the one-argument floor for wide heads is its own task.
+
+- status: **fixed** for idempotency and the seed's shape, pinned by `FuzzIdempotencyIssue617Tests` and
+  `FuzzRegressionTests`. ⚠ The wide-head boundary is **open**.
+
+## SK-DIV-0502 — `T v = () => body;` with the arrow past the margin
+
+#617, fuzz seed 52566946029857855: `(Memory<double> First, ((decimal First, CancellationToken Second) First,
+Memory<string> Second) Second) v120 = () => value;`. The `=` ends at column 118 and the arrow at 124. Pass one kept the
+`=`, because #558's overflowing-lambda rule lets the parameter list chop. An empty list has nothing to chop, so the
+arrow broke past the margin. Pass two reads that break as the author's, so `ArrowYieldWidthOf` no longer sees a lambda
+local, and it broke the `=`.
+
+Measured 2026-10-14 with `Testing ask` on 671 rows:
+
+- `() =>`, `static () =>` and `async () =>`;
+- the arrow ending at 117 to 133;
+- names of 2 to 20 and bodies of 5 and 30.
+
+The oracle breaks the `=` on every row where the type/name gap does not take the line first, as it does for `x =>`
+(#595). `LambdaIsSimple` (no list to chop) now covers an empty parameter list. Rows differing went from 116 to 0, and
+every one of the 116 was also non-idempotent.
+
+- status: **fixed**, pinned by `FuzzIdempotencyIssue617Tests` and `FuzzRegressionTests`.
+
+## SK-DIV-0503 — an array initializer in a switch arm headed by braces or brackets
+
+#617, group C's fuzz seed 718351361052470981: `switch (state switch { { Value.Length: > 2, Kind: 0 } when $"…" => new
+(byte First, TimeSpan Second)[] { … }, _ => buffer[1..] }) {`. Pass one broke after the initializer's first element
+and filled the rest. Pass two read that break as the author's and filled from the first element. This was not a
+measured rule.
+
+The writer writes such an arm ahead to decide its arrow (`LayoutWriter.DecideByTheArrow`), then rolls back. The rollback
+did not cover the array fills' element records (`filledElementLines`, `awaitingElement`, `lastTokenLine`). The real
+walk then read a line the trial had recorded as the first element spanning lines, and broke after it (`ArrayElement`).
+`Checkpoint` and `Restore` now carry them, so every speculation (`ChainBreaksInside`, `NextLineFitsBeside`,
+`FillBreaksAfter`, `DecideByTheArrow`, #617's `HeldIfGroupBreaks`) leaves them as it found them.
+
+Measured 2026-10-14 with `Testing ask` on six heads:
+
+- `{ Kind: 0 }`, `[1, 2]` and `(1, 2)`;
+- a `byte[]`, an implicit array, a `List<int>` and an initializer inside an argument.
+
+The oracle fills from the first element everywhere, and Skala now does. Before the fix, every braces and brackets
+head broke after the first element.
+
+⚠ Two arms in the seed's family are still open and stable:
+
+- behind a long `when`, the oracle breaks as `=> new` / `byte[] {` and `=> new (byte First,` / `TimeSpan Second)[] {`;
+- Skala breaks after the arrow instead.
+
+- status: **fixed**, pinned by `FuzzIdempotencyIssue617Tests.AnArmsInitializer_FillsFromItsFirstElement` and
+  `FuzzRegressionTests`.
+
+## SK-DIV-0504 — an arm's `when` on a line of its own after braces that span lines
+
+#617, found by this branch's 30-minute fuzz (`--seed=61714`, case 16267341160299312604, mutate of
+`constructs/breaks/arm-braces-under-an-arrow-broken-for-width.cs`). It fails identically on master `adca899a`. The shape
+is `{ Value.Length: > 2, Kind` / `: not null }` / `when (from … select …) => source.Value(…)…,`:
+
+- Pass one lifted the braces only because the arrow broke for width. It put the `when` a level deeper than `}` and
+  chopped the query.
+- Pass two read the arrow's break as kept, took #549's kept-after lift, and put the `when` on `}`'s column.
+
+Measured 2026-10-14 with `Testing ask` on 12 arms in two probes; the second probe was written after the rule. The oracle
+does #575's case-label rule for an arm too: a `when` the author put on its own line lifts braces or brackets that span
+lines. The subpatterns go two levels past the arm, and `}` and `when` one level past it. This happens under a short
+body and a long one, so the arrow does not decide it. Braces that join do not lift, and the `when` then takes its own
+level.
+
+The arm's `when` group now names the arm's width lift as its `LiftGroup`. `DecideByTheArrow` therefore lifts exactly
+when the trial put the `when` on a later line than the arm's start, which means the braces spanned lines.
+`HeldByALift` then holds the `when`'s own level. Arms differing from the oracle went from 5 of 12 on master to 0.
+
+- status: **fixed**, pinned by `FuzzIdempotencyIssue617Tests.AWhenOnItsOwnLine_*` and `FuzzRegressionTests`.
