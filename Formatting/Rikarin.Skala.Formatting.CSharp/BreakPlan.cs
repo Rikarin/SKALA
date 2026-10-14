@@ -3558,6 +3558,47 @@ public sealed class BreakPlan {
     /// <summary>
     ///     A plain path of names — <c>a</c>, <c>a.B.C</c> — with no call, index, <c>!</c> or <c>?.</c> in it.
     /// </summary>
+    /// <summary>
+    ///     For an <c>=</c> value that is a chain of two or more calls on a plain name whose first call holds a sole
+    ///     lambda over an operand chain or a binary pattern — <c>r.Where(x =&gt; a &amp;&amp; b).ToList()</c> — the
+    ///     receiver's width; zero for any other value. See <see cref="GroupFacts.HeldChainReceiver" /> (#619).
+    /// </summary>
+    static int HeldLambdaChainReceiverOf(ExpressionSyntax value) {
+        var calls = 0;
+        var current = value;
+        InvocationExpressionSyntax? first = null;
+        while (current is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } call) {
+            calls++;
+            first = call;
+            current = access.Expression;
+        }
+
+        return calls >= 2
+            && current is IdentifierNameSyntax
+            && first!.ArgumentList.Arguments is [
+                {
+                    NameColon: null,
+                    Expression: LambdaExpressionSyntax {
+                        ExpressionBody: BinaryExpressionSyntax or IsPatternExpressionSyntax
+                    }
+                }
+            ]
+                ? current.Span.Length
+                : 0;
+    }
+
+    /// <summary>The innermost call of a chain of calls: <c>r.Where(…)</c> in <c>r.Where(…).ToList()</c>.</summary>
+    static SyntaxNode FirstCallOf(ExpressionSyntax value) {
+        SyntaxNode first = value;
+        var current = value;
+        while (current is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } call) {
+            first = call;
+            current = access.Expression;
+        }
+
+        return first;
+    }
+
     static bool IsAPathOfNames(ExpressionSyntax expression) =>
         expression switch {
             SimpleNameSyntax => true,
@@ -6319,6 +6360,13 @@ public sealed class BreakPlan {
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,
                     EqualsName: EqualsNameOf(node, owner, value),
+                    HeldChainReceiver: owner is EqualsOwner.VarLocal or EqualsOwner.TypedLocal or EqualsOwner.Assignment
+                        ? HeldLambdaChainReceiverOf(value)
+                        : 0,
+                    HeldChainRest: owner is EqualsOwner.VarLocal or EqualsOwner.TypedLocal or EqualsOwner.Assignment
+                    && HeldLambdaChainReceiverOf(value) > 0
+                        ? RestWidth(FirstCallOf(value), value)
+                        : 0,
                     EqualsNameAttributed: node.Parent?.Parent?.Parent is FieldDeclarationSyntax {
                         AttributeLists.Count: > 0
                     },
@@ -8797,6 +8845,9 @@ public sealed class BreakPlan {
     ///     (<see cref="WideLambdaCallLocalOf" />); a field's single declarator of nine columns or fewer, which reads
     ///     the floor by its indent like any other (group B: round 2's fitted field shift was the indent);
     ///     and an assignment statement to a target of four to nine columns — one of three or fewer always chops.
+    ///     ⚠ Group B (#453): not the target — the head through the arrow. Round 6 measured `()` lambdas only, where a
+    ///     target of four is a twelve-column head. With `item` or `(a, b)` a one- to three-column target reads the
+    ///     floor once <c>target = params =&gt;</c> is twelve columns wide, and chops under it (3 794 cells).
     /// </remarks>
     InvocationExpressionSyntax? LocalLambdaCallOf(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
         body is InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 } call
@@ -8805,7 +8856,7 @@ public sealed class BreakPlan {
                 || WideLambdaCallLocalOf(equals, lambda) is not null,
             AssignmentExpressionSyntax {
                 RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax
-            } assignment => FormattedWidth(assignment.Left) >= 4,
+            } assignment => FormattedWidth(assignment.Left.GetFirstToken(), lambda.ArrowToken) >= 12,
             _ => false
         }
         && lambda.Modifiers.Count == 0

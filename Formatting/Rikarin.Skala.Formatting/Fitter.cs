@@ -458,6 +458,28 @@ public sealed class Fitter {
                     return BreaksBeforeAPlainMember(facts, m, tail) ? ResolvedMode.Broken : ResolvedMode.Flat;
                 }
 
+                // ⚠ An `=` before a held lambda call's chain asks the plain member value's two questions, with the
+                // receiver for the fragment the held call would leave beside it (#619). Only where the value fits
+                // below whole, and only on a line the group can measure whole, as above. See
+                // GroupFacts.HeldChainReceiver.
+                if (facts is { HeldChainReceiver: > 0, EqualsName: > 0 }
+                    && m.PointWidth < Unbounded
+                    && m.FlatWidth < Unbounded
+                    && tail < Unbounded
+                    && m.Trailing < Unbounded
+                    && !Fits(m.Column, m.FlatWidth + m.Trailing - facts.HeldChainRest)
+                    && Fits(m.ContinuationColumn, tail, m.Trailing)) {
+                    // ⚠ The value's end below is read a column short of the plain member's: fitted on 2 713 cells.
+                    return EqualsFloor.BreaksBeforeTheValue(
+                        m.Column + m.PointWidth,
+                        facts.EqualsName,
+                        facts.HeldChainReceiver,
+                        m.ContinuationColumn + tail + m.Trailing - 1
+                    )
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
+                }
+
                 // ⚠ A lambda-valued local's type/name gap breaks when the line through its `=` overflows: pass
                 // one chopped the parameter list behind an `=` past the margin, and pass two, reading the chop
                 // as the author's, filled the type (Nightly replay 13830403873739157460). See

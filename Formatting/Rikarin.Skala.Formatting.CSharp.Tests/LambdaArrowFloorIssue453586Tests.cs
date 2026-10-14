@@ -356,6 +356,29 @@ public sealed class LambdaArrowFloorIssue453586Tests {
             + "            .T();\n"
         );
 
+    /// <summary>
+    ///     Group B: a three-column target whose head through the arrow, <c>nnn = (a, b) =&gt;</c>, is twelve columns
+    ///     reads the arrow floor — a 56-column list moves below the arrow…
+    /// </summary>
+    [Fact]
+    public void ShortTarget_WideHead_UnderTheFloor_BreaksTheArrow() =>
+        Agrees(
+            "        nnn = (a, b) => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyy);\n",
+            "        nnn = (a, b) =>\n"
+            + "            CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyy);\n"
+        );
+
+    /// <summary>…and a 57-column one chops.</summary>
+    [Fact]
+    public void ShortTarget_WideHead_AtTheFloor_Chops() =>
+        Agrees(
+            "        nnn = (a, b) => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyy);\n",
+            "        nnn = (a, b) => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(\n"
+            + "            xxxxxxxxxxxxxxxxxxxxxxxxxxx,\n"
+            + "            yyyyyyyyyyyyyyyyyyyyyyyyyy\n"
+            + "        );\n"
+        );
+
     /// <summary>A receiver lambda's <c>&amp;&amp;</c> chain chopped beside the arrow: one level past the `)`.</summary>
     [Fact]
     public void ReceiverLambda_OperandChain_TakesItsOwnLevel() =>
