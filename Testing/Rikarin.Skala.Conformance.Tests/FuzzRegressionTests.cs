@@ -194,6 +194,10 @@ public sealed class FuzzRegressionTests {
     // the callee was measured by its source span, which counts the author's spaces inside the type arguments, so
     // the widened copy broke its `=` where the canonical one kept it. Whitespace absorption.
     [InlineData(17947985453911507632UL)]
+    // ⚠ #603's defaults (group C): `[EditorBrowsable(EditorBrowsableState`↵`.Never)] Span<(…)> p18 = default` — a
+    // parameter too wide for any line, which pass one broke and pass two read as the author's break, leaving the
+    // section's arguments to their own fit. Latent on master for a parameter without a default.
+    [InlineData(16667081197111340728UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

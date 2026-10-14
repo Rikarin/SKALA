@@ -335,6 +335,18 @@ public sealed class Fitter {
                     return sectionMode;
                 }
 
+                // ⚠ A long parameter's default behind its section, before the author's break, which is this rule's own
+                // answer on pass two: see GroupFacts.SectionJoinedOverDefault (#603).
+                if (facts.SectionJoinedOverDefault > 0
+                    && m.Column + facts.SectionJoinedOverDefault > width
+                    && !OverflowsItsOwnLine(facts, m.Column)) {
+                    var throughEquals = m.Column + facts.SectionJoinedOverDefault - facts.DefaultValueWidth - 1;
+                    return m.Column + facts.SectionWidth <= width && SectionChops(facts, m.Column)
+                        || throughEquals > width
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                }
+
                 if (facts.SourceBroken) {
                     return KeepOrJoin(facts, m, tail);
                 }
@@ -1186,7 +1198,7 @@ public sealed class Fitter {
 
         var end = lineStart + facts.SectionWidth;
         var parameter = facts.ParameterAfterSection;
-        if (end > width || end + 1 + parameter <= width) {
+        if (end > width || end + 1 + parameter <= width || OverflowsItsOwnLine(facts, lineStart)) {
             return null;
         }
 
@@ -1194,17 +1206,36 @@ public sealed class Fitter {
         // Measured 2026-10-10 on 2 205 cells — `[A(`, `[From(`, `[Description(`, `[JsonPropertyName(`,
         // `[NotNullIfNotNull(`, parameters of 12 to 24 columns, indents 8, 12 and 20 — with round four's `[A(` and
         // `[Description(` rows.
+        return SectionChops(facts, lineStart) ? ResolvedMode.Broken : ResolvedMode.Flat;
+    }
+
+    /// <summary>
+    ///     Whether the parameter behind a section starting at <paramref name="lineStart" /> overflows even a line of its
+    ///     own, its <c>,</c> included: then neither section rule speaks, and the arguments and the gap take their own fit.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not an approximation of the oracle but a condition of stability (fuzz seed 16667081197111340728): such a
+    ///     parameter is broken by pass one, and on pass two the break inside it is read as the author's, which leaves
+    ///     the list to its own fit (<c>BreakPlan.PlanSectionBeforeALongParameter</c>), so pass one must already have
+    ///     asked it. The oracle agrees: <c>[EditorBrowsable(</c> / <c>EditorBrowsableState</c> / <c>.Never</c> / <c>)]</c>
+    ///     in front of a 120-column parameter, chopped by the arguments' own fit.
+    /// </remarks>
+    bool OverflowsItsOwnLine(in GroupFacts facts, int lineStart) => lineStart + facts.ParameterAfterSection + 1 > width;
+
+    /// <summary>
+    ///     The measured chop rule itself, for a section starting at <paramref name="lineStart" /> (#476, #603): asked by
+    ///     the arguments' group and, behind a default, by the gap after the section, which must agree.
+    /// </summary>
+    static bool SectionChops(in GroupFacts facts, int lineStart) {
+        var end = lineStart + facts.SectionWidth;
+        var parameter = facts.ParameterAfterSection;
         if (facts.SectionSingle) {
             return 2 * parameter + lineStart - facts.SectionHead <= 36
-                && 24 * end >= 2106 + 32 * parameter + 11 * lineStart + 11 * facts.SectionHead
-                    ? ResolvedMode.Broken
-                    : ResolvedMode.Flat;
+                && 24 * end >= 2106 + 32 * parameter + 11 * lineStart + 11 * facts.SectionHead;
         }
 
         return 5 * parameter + 2 * lineStart - facts.SectionHead <= 155
-            && 24 * end >= 1695 + 32 * parameter + 11 * lineStart + 12 * facts.SectionHead
-                ? ResolvedMode.Broken
-                : ResolvedMode.Flat;
+            && 24 * end >= 1695 + 32 * parameter + 11 * lineStart + 12 * facts.SectionHead;
     }
 
     /// <summary>What a <see cref="GroupMode.Preserve" /> group whose source was broken does with the break.</summary>
