@@ -12719,7 +12719,7 @@ The oracle:
 
 ## SK-DIV-0540 — a constant pattern that is a member access breaks before its own dot
 
-Found by #446 round 8's fresh probe (group E, 2026-10-14): `return receiver.Property is N.Ttt…;` parses `N.Ttt` as
+Found by #446 round 8's fresh probe (group E, 2026-10-14): `return receiver.Property is N.Ttt…;` — Roslyn parses `N.Ttt` as a qualified type name, the oracle reads it as
 a *constant pattern*, not a type, and past the margin the oracle breaks before that pattern's dot —
 `… is N` / `.Ttt;` one level in — in 134 of the probe's 402 qualified `is` cells, including lines whose keyword
 ends at 110, where the keyword's band would hold them. Skala keeps the band (`… is` / `N.Ttt;`). `as N.Ttt` (a
