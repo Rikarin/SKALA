@@ -10047,6 +10047,54 @@ separated.
 - ⚠ status: **resolved** for the ties of a returned type test (#446 item 1). **Open**: the `x` layout (both
   bands overflow; the dot two levels in), `yield return` and other heads, and SK-DIV-0540.
 
+⚠ **Round 9 (group M, 2026-10-14): `yield return` is the measurement origin, and the `x` layout is three facts.**
+
+- **`yield return` reads the line as if its head were `return`.** Round 8 shifted the head and reached 93 %.
+  Shifting *both* the keyword's line and the dot's column six columns short reproduces 13 894 of round 8's 13 900
+  `yield return` cells. Unshifted, the conditions get 9 181, and keeping the keyword's band everywhere gets 13 321.
+  The six columns are what `yield return` is longer than `return`, so the head's width plays no part. The oracle
+  measures from the statement's indent plus the expression, not from where the expression starts. The six misses
+  are all a type of 4 with the keyword's line at 118 to 120, a column from the fit's own boundary.
+  `BreakPlan.TypeTestTail` now plans `yield return` too, and `GroupFacts.TypeTestHead` carries the head.
+- **The `x` layout.** Round 4's reading holds exactly: the dot goes two levels in when the operand overflows by
+  itself and its dot's line one level in does not fit. Below it the type test breaks after its keyword, and the
+  type comes back one level in. The keyword leaves the dot's line exactly when it would overflow there. It then
+  takes a line of its own while the dot's line ends at most a column past the margin (`.P…` / `as` / `T;`).
+  Past that it shares a line with the type (`.P…` / `as T;`). That is 308 of 308 `x` cells on both probes below,
+  with no false positive. ⚠ The level is not conditional on a sibling group, which is what rounds 3 and 4 thought
+  blocked it. The operand holds a level against the type test's own group (`BreakPlan.TypeTestLiftOf`, counted with
+  its line). The fitter keeps that group flat wherever the dot's line one level in holds the type, so `D` is
+  unchanged. The keyword-and-type chop is the fitter telling the writer that the group's last-resort point breaks
+  (`Fitter.BreaksEveryPoint`). Pass two reads the same layout from the author's breaks: the oracle keeps
+  `return r` / `.P… is` / `T;` with the dot two levels in at any width (`BreakPlan.KeptTypeTestLift`).
+- **#597's stacked level covers `yield return`.** `yield return x.M(` / … / `)` / `is T;` nests the arguments two
+  levels in, as `return` does. Without it, pass two of `.P…` / `as` / `T;` under `yield return` moved the dot back
+  a level.
+
+| probe | cells | master | now |
+|---|---:|---:|---:|
+| round 8's `return`/`yield return` grid (g3) | 28 119 | 27 530 | 28 103 |
+| round 5's test cells (t0) | 604 | 596 | 604 |
+| fresh probe fr1 (seed 73519), `return` / `yield return` | 1 505 / 1 495 | 1 402 / 962 | 1 494 / 1 460 |
+| **fresh probe fr2 (seed 51877), written after both rules** | 2 037 / 1 963 | 1 919 / 1 261 | 2 026 / 1 923 |
+
+fr1's `yield return` count is the tie rule alone (1 399). The `x` rule was read off fr1 and confirmed on fr2.
+fr2 has no newly diverging cell, and no cell is unstable on a second pass. Round 8's other grids (g1, g2, f1)
+are unchanged. Pinned by `TypeTestTieIssue446Tests.ReadsYieldReturnAsReturn` and `TypeTestTwoLevelsIssue446Tests`.
+
+Still divergent, measured and not wired:
+- **`is N.T` under `x`**: 31 cells. The oracle mostly keeps the dot one level in and breaks the pattern's own dot
+  (#621). Leaving those cells to the keyword's band lost four right cells and gained none, so they take the rule.
+- **A break after `yield return` itself**: 17 of fr1's 1 495 `yield return` cells. Exactly one column over the
+  margin, the oracle writes `yield return` / the whole expression one level in when the receiver is at most a
+  table of the type: types of 1 and 2 never, then 4, 9, 13, 17 and 22 columns of receiver for types 3 to 7, and
+  every receiver from a type of 8. Indents 8, 24 and 48 are identical, measured on a 4 000-cell sweep. Skala has no
+  point after `yield return`, and whether other expressions take it was not measured.
+- **The ties' `W` side**: a handful of cells per probe a column from the boundary, as round 8 recorded.
+
+- ⚠ status: **resolved** for the `x` layout and for `yield return`'s ties (#446 item 1). **Open**: `is N.T` under
+  `x`, and the break after `yield return`.
+
 ## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
 
 #444's second and sixth shapes are one question — when the oracle breaks after an `=` rather than inside
@@ -10264,6 +10312,45 @@ Wired in `EqualsFloor.BreaksBeforeAPattern` with `GroupFacts.PatternFirstAlterna
 
 - ⚠ status: the held typed local and the narrow-head pattern **resolved within the measured shapes**
   (#446 item 2). **Open**: a held value that does not fit below either, a head that overflows by itself.
+
+⚠ **Round 6 (group M, 2026-10-14): the misses classified first, and a third of them were indentation.** Round 4's
+held-local grids (hf1, h1 to h4) were re-run on master and every miss sorted. A miss either has the oracle's line
+split with other indents, or splits differently:
+
+| miss | cells |
+|---|---:|
+| `E` where the oracle chops, or the reverse (round 4's boundary) | 659 + 265 |
+| the value overflows below too: the oracle writes `=` / `r.M(` / arguments / `);`, Skala `=` / `r` / `.M(…);` | 778 |
+| **same lines, the value at +4 where the oracle writes `T` / `name =` / the value at +8** | **636** |
+| the head breaks before its name and more breaks follow | 85 + 70 + … |
+
+- **The head that overflows by itself is a level, not a decision.** Once the gap between the type and the name breaks
+  (`PlanTypeNameGap`), the oracle lays the rest out from the name's line. The value comes at +8 after a broken `=`,
+  and a chopped call's arguments at +12. Skala put the value at +4, because the `=` group could not spend a level
+  the type-name gap had already spent. The `=` clause now holds one against that gap
+  (`BreakPlan.TypeNameGapOf`), spent exactly when the gap breaks. Locals only, the shape measured. hf1 went
+  5 539 → 5 877 of 6 458 and h3 8 936 → 9 299 of 9 922. A **fresh random probe** written after the change (seed
+  38291: 3 000 typed locals, types of 20 to 80 including `Dictionary<string, …>`, one and two arguments) went
+  2 331 → 2 686, with no newly diverging cell. Its two cells that take two passes do so on master too (below).
+  Pinned by `TypeNameValueLevelIssue446Tests`.
+- **What the name's line then does is measured, not wired.** It either keeps `= r.M(` and chops (448 cells) or
+  breaks the `=` (655). Round 4's rule, read from the name's line with a type of 0, gets 1 027 of 1 103. With
+  fitted offsets (type 6, indent +6, line below +5) it gets 1 077. The offsets mean nothing, so this is not a rule.
+- **A value that fits neither beside nor below is round 4's rule extrapolated.** On the 2 018 cells whose value
+  line below ends at 121 or 122 and whose `T name = r.M(` fits, round 4's rule taken at face value predicts
+  `=` / chop against keeping the `=` in 1 981. Keeping the `=` everywhere gets 1 802. Skala already breaks the `=`
+  there. What it gets wrong is the next break: it breaks before the call's dot where the oracle chops the
+  arguments. That is a change to how a broken `=` value's call breaks, which was not attempted.
+- ⚠ Round 4's "5 222 → 5 851" for hf1 was the decision alone. Exact text on master is 5 539, unchanged since
+  round 4's branch (its own output, re-read, is also 5 539).
+
+Found on the way, not this issue's: `T…(31) d…(48) = xxxx.Mmm(v…);` at indent 36, the value line 132 columns,
+chops the arguments beside the `=` on pass one and breaks the `=` on pass two. It does the same on master
+(`36_31_48_4_3_132_simple_ident_1` and `36_36_44_2_13_134_simple_string_1` in the seed-38291 probe).
+
+- ⚠ status: the held typed local, the narrow-head pattern and the value's level after a type-name break are
+  **resolved within the measured shapes** (#446 item 2). **Open**: the name line's `=` decision, and a value that
+  fits neither beside nor below (`=` / chop, where Skala breaks the dot).
 
 ## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
 
@@ -13523,6 +13610,13 @@ Every grid re-formats to itself; `corpus/` is unchanged. Pinned by `ConstantPatt
 operand breaking at its own dot (`T x = r` / `.P… is N.T;`, #446 item 1's rule is wired for `return` only — under
 `yield return` round 8's two conditions transfer only with a shift of the head, 93 % at best, and are not wired),
 and qualified names of more than one dot or with type arguments, which were not measured.
+
+⚠ **#446 round 9 (group M):** `yield return` is wired now. Its two conditions read the line as if the head were
+`return`, the keyword's line and the dot's column both six columns short (SK-DIV-0210 round 9). Where the operand
+overflows by itself and the dot's line one level in does not fit either, the `x` layout is wired, except before `is N.T`.
+In 31 of those cells across two fresh probes the oracle keeps the dot one level in and breaks this entry's own dot
+instead, which is not modelled. A local's operand breaking at its own dot and qualified names of more than one dot
+were not measured this round.
 
 - status: **resolved** within the measured shapes (#621).
 
