@@ -4750,13 +4750,22 @@ public sealed class BreakPlan {
             Mandatory(after);
         }
 
+        // ⚠ A sole lambda's whole body stacks while its operand's argument list breaks, a property pattern after the
+        // `is` as a type after it does (#602, group C's probe: `is { IsStatic: true }`).
+        var heldAgainst = StacksWhileItsArgumentsBreak(node, node.IsKeyword);
+        if (heldAgainst is not null) {
+            pendingTypeTestHolds.Add((group, heldAgainst));
+        }
+
         Describe(
             node,
             new(
                 group,
                 GroupMode.Preserve,
                 new(BreaksIfTooLong: true),
-                FromLine: !IsAHeaderCondition(node)
+                FromLine: !IsAHeaderCondition(node) && heldAgainst is null,
+                OwnLevel: heldAgainst is not null,
+                HoldsLevel: heldAgainst is not null ? HeldLevel.WhileArrowFlat : HeldLevel.None
             )
         );
     }
