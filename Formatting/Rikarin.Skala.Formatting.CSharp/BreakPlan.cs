@@ -3731,13 +3731,16 @@ public sealed class BreakPlan {
             return facts;
         }
 
-        return facts with {
-            TypeTestTail = tail,
-            TypeTestReceiver = FormattedWidth(member.Expression),
-            TypeTestOperand = FormattedWidth(member),
-            TypeTestKeyword = binary.OperatorToken.Span.Length,
-            TypeTestType = FormattedWidth(binary.Right)
-        };
+        return WithPatternDot(
+            facts with {
+                TypeTestTail = tail,
+                TypeTestReceiver = FormattedWidth(member.Expression),
+                TypeTestOperand = FormattedWidth(member),
+                TypeTestKeyword = binary.OperatorToken.Span.Length,
+                TypeTestType = FormattedWidth(binary.Right)
+            },
+            binary
+        );
     }
 
     bool PlansTheFill(SyntaxNode root) =>
@@ -4850,7 +4853,7 @@ public sealed class BreakPlan {
                 // before the keyword: `Compute(` / … / `)` / `is string` keeps its arguments two levels in,
                 // `Compute(` / … / `) is string` one (#445). Resolving broken is not enough, because this
                 // group resolves broken whenever the expression is too long, whether or not it wraps.
-                new(BreaksIfTooLong: true, Continues: BreaksBefore(keyword)),
+                WithPatternDot(new(BreaksIfTooLong: true, Continues: BreaksBefore(keyword)), node),
                 // ⚠ Or, where the author broke before the keyword, a level of its own on top of what is open
                 // around it (#597, see StacksItsLevel).
                 FromLine: !IsAHeaderCondition(node) && !StacksItsLevel(node, keyword),
@@ -4872,10 +4875,61 @@ public sealed class BreakPlan {
                 node,
                 before,
                 GroupMode.Preserve,
-                WithTypeTestShape(new(KeywordWidth: keyword.Span.Length), ((BinaryExpressionSyntax)node).Left)
+                WithPatternDot(
+                    WithTypeTestShape(new(KeywordWidth: keyword.Span.Length), ((BinaryExpressionSyntax)node).Left),
+                    node
+                )
+            );
+        }
+
+        // ⚠ `operand is N.T`: the oracle reads `N.T` as a constant pattern that is a member access and can break
+        // before its dot, `… is N` / `.T;` (#621, SK-DIV-0540). See Fitter.ThePatternDotTakesTheBreak.
+        if (PatternDotOf(node) is { } qualified) {
+            var dot = NewGroup();
+            Point(qualified.DotToken, dot, lastResort: true);
+            Describe(
+                node,
+                new(dot, GroupMode.Preserve, WithPatternDot(new(PatternDotPoint: true), node), FromLine: true)
             );
         }
     }
+
+    /// <summary>
+    ///     The right side of <c>operand is N.T</c> — two names and one dot, written on one line — which the oracle
+    ///     reads as a constant pattern that is a member access (#621); null for anything else.
+    /// </summary>
+    QualifiedNameSyntax? PatternDotOf(SyntaxNode node) =>
+        node is BinaryExpressionSyntax {
+            RawKind: (int)SyntaxKind.IsExpression,
+            Right: QualifiedNameSyntax { Left: IdentifierNameSyntax, Right: IdentifierNameSyntax } qualified
+        } binary
+        && !binary.OperatorToken.TrailingTrivia.Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+        && !qualified.DescendantTrivia().Any(static trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+        && !HasLineBreakIn(binary)
+            ? qualified
+            : null;
+
+    /// <summary>The <see cref="GroupFacts.PatternDotName" /> facts of a type test, when it has them.</summary>
+    GroupFacts WithPatternDot(GroupFacts facts, SyntaxNode node) =>
+        PatternDotOf(node) is { } qualified
+            ? facts with {
+                PatternDotName = qualified.Right.Span.Length,
+                PatternDotQualifier = qualified.Left.Span.Length,
+                PatternDotOperand = FormattedWidth(((BinaryExpressionSyntax)node).Left),
+                PatternDotHead = PatternDotHeadOf(node)
+            }
+            : facts;
+
+    /// <summary>
+    ///     For a type test that is a local's whole value, the head's width through the <c>=</c>; zero otherwise.
+    ///     See <see cref="GroupFacts.PatternDotHead" />.
+    /// </summary>
+    int PatternDotHeadOf(SyntaxNode node) =>
+        node.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax } clause
+        && EqualsOwnerOf(clause) is EqualsOwner.VarLocal or EqualsOwner.TypedLocal
+        && EqualsHeadStartOf(clause) is { RawKind: not 0 } head
+            ? FormattedWidth(head, clause.EqualsToken)
+            : 0;
 
     /// <summary>
     ///     Whether a type test the author broke before its <c>is</c> or <c>as</c> spends a level of its own,
@@ -5982,6 +6036,18 @@ public sealed class BreakPlan {
                     MemberHeadWidth: value is MemberAccessExpressionSyntax plain && IsPlainMemberValue(plain)
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,
+                    // ⚠ A local's `=` before `operand is N.T` stays where the pattern's dot takes the joined line (#621).
+                    PatternDotName: PatternDotOf(value) is { } equalsDot && PatternDotHeadOf(value) > 0
+                        ? equalsDot.Right.Span.Length
+                        : 0,
+                    PatternDotQualifier: PatternDotOf(value) is { } equalsQualifier && PatternDotHeadOf(value) > 0
+                        ? equalsQualifier.Left.Span.Length
+                        : 0,
+                    PatternDotOperand: PatternDotOf(value) is not null && PatternDotHeadOf(value) > 0
+                        ? FormattedWidth(((BinaryExpressionSyntax)value).Left)
+                        : 0,
+                    PatternDotHead: PatternDotOf(value) is not null ? PatternDotHeadOf(value) : 0,
+                    PatternDotEquals: PatternDotOf(value) is not null && PatternDotHeadOf(value) > 0,
                     EqualsName: EqualsNameOf(node, owner, value),
                     EqualsNameAttributed: node.Parent?.Parent?.Parent is FieldDeclarationSyntax {
                         AttributeLists.Count: > 0

@@ -389,6 +389,24 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ `operand is N.T`: the pattern's own dot takes the line before every other group of the type test
+                // does, which stay flat when it does. See GroupFacts.PatternDotName (#621).
+                if (facts.PatternDotName > 0) {
+                    // A head of five or less never breaks its `=` before the type test (#621: none of 705 cells past the margin).
+                    if (facts.PatternDotEquals && facts.PatternDotHead <= 5) {
+                        return ResolvedMode.Flat;
+                    }
+
+                    var patternDot = ThePatternDotTakesTheBreak(facts, m, lineStart);
+                    if (facts.PatternDotPoint) {
+                        return patternDot ? ResolvedMode.Broken : ResolvedMode.Flat;
+                    }
+
+                    if (patternDot) {
+                        return ResolvedMode.Flat;
+                    }
+                }
+
                 // ⚠ A returned type test's operand: the dot takes the break by the measured rule, and the keyword's
                 // band in front of it, entered first, stays flat when it does. See GroupFacts.TypeTestTail (#446).
                 if (facts.TypeTestTail > 0) {
@@ -1153,6 +1171,66 @@ public sealed class Fitter {
     ///     before it matched 2 520. The <c>x</c> layout — neither the keyword's band nor the dot's line fits, and the
     ///     oracle nests the dot two levels in — is not this rule's and stays the keyword's.
     /// </remarks>
+    /// <summary>
+    ///     Whether <c>operand is N.T</c> breaks before the pattern's dot, <c>… is N</c> / <c>.T;</c> (#621,
+    ///     SK-DIV-0540): the oracle reads <c>N.T</c> after <c>is</c> as a constant pattern that is a member access.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c> on <c>return r….P… is N….T…;</c> — indents 8 to 40, qualifiers
+    ///     of 1, 3, 5 and 8, names of 2 to 24, receivers of 1 to 40, the keyword ending at 104 to 125, 7 432 cells.
+    ///     With <c>k</c> the line through <c>is</c>, <c>q</c> the qualifier and <c>t</c> the name, the line past the
+    ///     margin breaks there exactly when <c>… is N</c> fits and <c>2·k − 8·t − 6·indent − 11·q ≤ 61</c>: 3 778 of
+    ///     3 778 cells where it and the keyword's break compete. The receiver plays no part. One column over the
+    ///     margin the operand's own dot keeps the line, as for a type.
+    /// </remarks>
+    bool ThePatternDotTakesTheBreak(in GroupFacts facts, in Measures m, int lineStart) {
+        // The operand's own fill group measures the operand alone; its type test is a returned one, ending at `;`.
+        var operandGroup = facts.TypeTestTail > 0 && facts.KeywordWidth == 0 || facts.PatternDotEquals;
+        if (!operandGroup && m.Trailing >= Unbounded || facts.PatternDotEquals && m.PointWidth >= Unbounded) {
+            return false;
+        }
+
+        var operand = facts.PatternDotEquals ? m.Column + m.PointWidth + 1 : m.Column;
+        var keywordEnd = operand + facts.PatternDotOperand + 3;
+        var whole = keywordEnd
+            + 1
+            + facts.PatternDotQualifier
+            + 1
+            + facts.PatternDotName
+            + (operandGroup ? 1 : m.Trailing);
+        if (whole <= width + (facts.TypeTestTail > 0 ? 1 : 0) || keywordEnd + 1 + facts.PatternDotQualifier > width) {
+            return false;
+        }
+
+        // ⚠ Beside a local's `=` the limit is the head's; on a line of its own, or after `return`, it is 61.
+        var joined = facts.PatternDotHead > 0 && operand > lineStart;
+        var limit = joined ? PatternDotLimit(facts.PatternDotHead) : 61;
+        return limit > int.MinValue
+            && 2 * keywordEnd - 8 * facts.PatternDotName - 6 * lineStart - 11 * facts.PatternDotQualifier <= limit;
+    }
+
+    /// <summary>
+    ///     The limit <see cref="ThePatternDotTakesTheBreak" /> holds a joined local's line to, by the head through the
+    ///     <c>=</c>; <see cref="int.MinValue" /> where the <c>=</c> always breaks first.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 on 7 040 locals, heads of 5 to 12 (#621): 58, 31, −52, −114, −167, −206 and −240 for
+    ///     heads of 5 to 11, and a head of twelve or more never keeps the pattern beside its <c>=</c>; 5 cells of 3 500
+    ///     a column off. ⚠ From 6 to 11 they are <see cref="EqualsFloor.BreaksBeforeAPattern" />'s narrow-head limits
+    ///     negated, to the column: the same head decides both.
+    /// </remarks>
+    static int PatternDotLimit(int head) =>
+        head switch {
+            <= 5 => 58,
+            6 => 31,
+            7 => -52,
+            8 => -114,
+            9 => -167,
+            10 => -206,
+            11 => -240,
+            _ => int.MinValue
+        };
+
     bool TheDotTakesTheBreak(in GroupFacts facts, int column, int lineStart) {
         var operandEnd = column + facts.TypeTestOperand;
         var keywordEnd = operandEnd + 1 + facts.TypeTestKeyword;
