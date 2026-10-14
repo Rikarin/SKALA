@@ -318,6 +318,12 @@ public sealed class BreakPlan {
     /// <summary>See <see cref="ReceiverLiftOf" />.</summary>
     readonly Dictionary<long, (int Group, int Dot)> receiverLifts = [];
 
+    /// <summary>See <see cref="TypeTestLiftOf" />.</summary>
+    readonly Dictionary<long, int> typeTestLifts = [];
+
+    /// <summary>See <see cref="KeptTypeTestLift" />.</summary>
+    readonly HashSet<long> keptTypeTestLifts = [];
+
     /// <summary>
     ///     The <see cref="GroupFacts.LiftsIfWhenBreaks" /> group of an arm, keyed by its <c>when</c> clause.
     /// </summary>
@@ -5183,6 +5189,25 @@ public sealed class BreakPlan {
             pendingTypeTestHolds.Add((group, heldAgainst));
         }
 
+        if (node is BinaryExpressionSyntax { Left: var operand } && TypeTestTail(operand) > 0) {
+            typeTestLifts[Key(operand)] = group;
+        } else if (node is BinaryExpressionSyntax {
+                Left: MemberAccessExpressionSyntax {
+                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
+                    Expression: IdentifierNameSyntax
+                } member,
+                Parent: ReturnStatementSyntax or YieldStatementSyntax { RawKind: (int)SyntaxKind.YieldReturnStatement }
+            }
+            && broken
+            && BreaksBefore(member.OperatorToken)
+            && !BreaksBefore(keyword)
+            && !node.Parent.DescendantTrivia(node.Parent.Span)
+                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                )) {
+            keptTypeTestLifts.Add(Key(member));
+        }
+
         Describe(
             node,
             new(
@@ -5192,7 +5217,15 @@ public sealed class BreakPlan {
                 // before the keyword: `Compute(` / … / `)` / `is string` keeps its arguments two levels in,
                 // `Compute(` / … / `) is string` one (#445). Resolving broken is not enough, because this
                 // group resolves broken whenever the expression is too long, whether or not it wraps.
-                WithPatternDot(new(BreaksIfTooLong: true, Continues: BreaksBefore(keyword)), node),
+                WithPatternDot(
+                    node is BinaryExpressionSyntax { Left: var left } && TypeTestLiftOf(left) >= 0
+                        ? WithTypeTestShape(
+                            new(BreaksIfTooLong: true, Continues: BreaksBefore(keyword), TypeTestAfterKeyword: true),
+                            left
+                        )
+                        : new(BreaksIfTooLong: true, Continues: BreaksBefore(keyword)),
+                    node
+                ),
                 // ⚠ Or, where the author broke before the keyword, a level of its own on top of what is open
                 // around it (#597, see StacksItsLevel).
                 FromLine: !IsAHeaderCondition(node) && !StacksItsLevel(node, keyword) && heldAgainst is null,
@@ -5297,7 +5330,9 @@ public sealed class BreakPlan {
             top = top.Parent!;
         }
 
+        // ⚠ And `yield return`, measured on #446's kept `x` layouts and on `yield return x.M(` / … / `)` / `is T;`.
         return top.Parent is ReturnStatementSyntax
+                or YieldStatementSyntax { RawKind: (int)SyntaxKind.YieldReturnStatement }
                 or EqualsValueClauseSyntax
                 or ArrowExpressionClauseSyntax
                 or AssignmentExpressionSyntax
@@ -8200,6 +8235,19 @@ public sealed class BreakPlan {
     ///     there, and a lift held against a group with no point broke the operator a level deep with the dot kept
     ///     on its line (<c>if ((a</c> / <c>+ b…).Value)</c>, which pass two moved).
     /// </remarks>
+    /// <summary>
+    ///     The type test's own group a returned type test's operand holds a level against: spent once that group breaks,
+    ///     which puts the operand's dot two levels in (#446, the <c>x</c> layout); −1 for every other node.
+    /// </summary>
+    public int TypeTestLiftOf(SyntaxNode node) => typeTestLifts.TryGetValue(Key(node), out var group) ? group : -1;
+
+    /// <summary>
+    ///     Whether a returned type test's operand is a member access the author broke before its dot, with the type test
+    ///     broken after its keyword and not before it: the oracle keeps both breaks and puts the dot two levels in,
+    ///     <c>return r</c> / <c>.P… is</c> at +8 / <c>T;</c> at +4, which is what pass one's <c>x</c> layout writes.
+    /// </summary>
+    public bool KeptTypeTestLift(SyntaxNode node) => keptTypeTestLifts.Contains(Key(node));
+
     public int ReceiverLiftOf(SyntaxNode node) =>
         receiverLifts.TryGetValue(Key(node), out var lift)
         && gaps.TryGetValue(lift.Dot, out var gap)

@@ -39,6 +39,9 @@ public sealed class Fitter {
 
     readonly Document document;
     readonly ResolvedMode[] modes;
+
+    /// <summary>See <see cref="BreaksEveryPoint" />.</summary>
+    readonly HashSet<int> chops = [];
     readonly bool[] resolved;
 
     /// <summary>
@@ -157,6 +160,17 @@ public sealed class Fitter {
             journal.Add(id);
         }
 
+        // ⚠ The type test's own group under the `x` layout: `.P…` / `as` / `T;` puts the type on a line of its own
+        // although it would fit beside the keyword (#446).
+        if (facts.TypeTestAfterKeyword
+            && mode == ResolvedMode.Broken
+            && TheDotGoesTwoLevelsIn(facts, column, lineStart)
+            && TheTypeLeavesTheKeywordsLine(facts, lineStart)) {
+            chops.Add(id);
+        } else {
+            chops.Remove(id);
+        }
+
         return mode;
     }
 
@@ -183,6 +197,7 @@ public sealed class Fitter {
         for (var i = journal.Count - 1; i >= mark.Journal; i--) {
             var id = journal[i];
             modes[id] = ResolvedMode.Flat;
+            chops.Remove(id);
             resolved[id] = false;
             enteredOn[id] = 0;
             enteredAt[id] = 0;
@@ -457,12 +472,26 @@ public sealed class Fitter {
                 // band in front of it, entered first, stays flat when it does. See GroupFacts.TypeTestTail (#446).
                 if (facts.TypeTestTail > 0) {
                     var dot = m.FlatWidth < Unbounded && TheDotTakesTheBreak(facts, m.Column, lineStart);
-                    if (facts.KeywordWidth == 0) {
-                        return dot ? ResolvedMode.Broken : ResolvedMode.Flat;
-                    }
+                    var twoLevels = m.FlatWidth < Unbounded && TheDotGoesTwoLevelsIn(facts, m.Column, lineStart);
 
-                    if (dot) {
+                    // ⚠ The type test's own group, the point after the keyword: flat where the dot's line holds the
+                    // type, broken where the dot goes two levels in, and the operand nests past it then.
+                    if (facts.TypeTestAfterKeyword) {
+                        // ⚠ And flat behind a dot the author broke before, the only break TypeTestTail allows: that is
+                        // the dot's line one level in, as pass one wrote it.
+                        if (dot || m.FlatWidth >= Unbounded) {
+                            return ResolvedMode.Flat;
+                        }
+
+                        if (twoLevels) {
+                            return ResolvedMode.Broken;
+                        }
+                    } else if (facts.KeywordWidth == 0) {
+                        return dot || twoLevels ? ResolvedMode.Broken : ResolvedMode.Flat;
+                    } else if (dot) {
                         return ResolvedMode.Flat;
+                    } else if (twoLevels) {
+                        return TheKeywordLeavesTheDotsLine(facts, lineStart) ? ResolvedMode.Broken : ResolvedMode.Flat;
                     }
                 }
 
@@ -1361,7 +1390,8 @@ public sealed class Fitter {
     /// </remarks>
     bool ThePatternDotTakesTheBreak(in GroupFacts facts, in Measures m, int lineStart) {
         // The operand's own fill group measures the operand alone; its type test is a returned one, ending at `;`.
-        var operandGroup = facts.TypeTestTail > 0 && facts.KeywordWidth == 0 || facts.PatternDotEquals;
+        var operandGroup = facts.TypeTestTail > 0 && facts.KeywordWidth == 0 && !facts.TypeTestAfterKeyword
+            || facts.PatternDotEquals;
         if (!operandGroup && m.Trailing >= Unbounded || facts.PatternDotEquals && m.PointWidth >= Unbounded) {
             return false;
         }
@@ -1406,6 +1436,43 @@ public sealed class Fitter {
             11 => -240,
             _ => int.MinValue
         };
+
+    /// <summary>
+    ///     Whether a returned type test's operand runs past the margin by itself and its dot's line one level in does
+    ///     not fit either: the oracle then breaks before the dot two levels in, the type test's own break taken below
+    ///     it (#446, round 4's <c>x</c>).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Before a constant pattern that is a member access, <c>is N.T</c>, the oracle often keeps the dot one level in
+    ///     and breaks the pattern's own dot instead (#621); not modelled, and leaving those to the keyword's band was
+    ///     worse on the probe (4 cells right lost, none gained).
+    /// </remarks>
+    bool TheDotGoesTwoLevelsIn(in GroupFacts facts, int column, int lineStart) =>
+        column + facts.TypeTestOperand > width && lineStart + indentWidth + facts.TypeTestTail > width;
+
+    /// <summary>
+    ///     With <see cref="TheDotGoesTwoLevelsIn" />: whether the keyword leaves the dot's line too, which it does exactly
+    ///     when it would overflow there (#446).
+    /// </summary>
+    bool TheKeywordLeavesTheDotsLine(in GroupFacts facts, int lineStart) =>
+        DotsLineTwoLevelsIn(facts, lineStart) + 1 + facts.TypeTestKeyword > width;
+
+    /// <summary>
+    ///     With <see cref="TheKeywordLeavesTheDotsLine" />: whether the keyword and the type then take a line each,
+    ///     <c>.P…</c> / <c>as</c> / <c>T;</c>, which they do while the dot's line ends at most a column past the margin;
+    ///     past that, <c>as T;</c> share one (#446).
+    /// </summary>
+    bool TheTypeLeavesTheKeywordsLine(in GroupFacts facts, int lineStart) =>
+        TheKeywordLeavesTheDotsLine(facts, lineStart) && DotsLineTwoLevelsIn(facts, lineStart) <= width + 1;
+
+    int DotsLineTwoLevelsIn(in GroupFacts facts, int lineStart) =>
+        lineStart + 2 * indentWidth + facts.TypeTestOperand - facts.TypeTestReceiver;
+
+    /// <summary>
+    ///     Whether a resolved group's last-resort points all break, wherever what follows them would fit: the type test's
+    ///     own group in the <c>x</c> layout once the keyword left the dot's line (#446).
+    /// </summary>
+    public bool BreaksEveryPoint(int group) => chops.Contains(group);
 
     bool TheDotTakesTheBreak(in GroupFacts facts, int column, int lineStart) {
         var operandEnd = column + facts.TypeTestOperand;
