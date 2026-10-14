@@ -2072,13 +2072,10 @@ public sealed class Fitter {
         var continuation = m.ContinuationColumn;
         var below = continuation + facts.HeldValueWidth;
         // ⚠ A parenthesised call behind a head of twelve columns or more: cast, by a measured comparison of its own; and
-        // uncast behind a local's head, by its first half, while the receiver fits beside the `=` (#598). Not an
-        // assignment's: the first fresh probe found three of them breaking the `=` where the rule broke the dot. See
-        // ParenCallBehindAWideHeadBreaks.
+        // uncast, by its first half, while the receiver fits beside the `=` (#598). See ParenCallBehindAWideHeadBreaks.
         if (facts.HeldValueParen
             && (facts.HeldValue == 3 || facts.HeldValue == 1 && facts.HeldValueTypedHead >= WideEqualsHead)
-            && (facts.HeldValueCast
-                || facts.HeldValueTarget == 0 && valueColumn + facts.HeldValueReceiver <= width)) {
+            && (facts.HeldValueCast || valueColumn + facts.HeldValueReceiver <= width)) {
             return ParenCallBehindAWideHeadBreaks(facts, valueColumn, continuation);
         }
 
