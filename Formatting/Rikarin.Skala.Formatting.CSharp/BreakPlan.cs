@@ -6376,7 +6376,7 @@ public sealed class BreakPlan {
         };
         // ⚠ A cast over a parenthesised call is laid out like the uncast call behind a head of twelve columns or more
         // too, a typed local's included, and its `=` answers by a measured comparison of its own (#598). See
-        // Fitter.CastParenBehindAWideHeadBreaks.
+        // Fitter.ParenCallBehindAWideHeadBreaks.
         var unwrapsCast = heldKind == 2 || heldKind > 0 && HeadWidthThroughEquals(node, equals) >= MinimumEqualsHead;
         var heldCall = heldKind > 0 ? PlanHeldSingleCall(value, heldKind, unwrapsCast) : null;
         var heldCast = heldCall is not null && value is CastExpressionSyntax castValue ? castValue : null;
