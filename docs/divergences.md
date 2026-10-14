@@ -10353,16 +10353,19 @@ arguments. Pass two read that chop as the author's and broke the `=`. The oracle
 grids and the seed-38291 probe, 0 of 16 110 lines that end `= …(` run past column 120. In #626's probes it broke the
 `=` in 4 207 of 4 243 such cells; the other 36 broke between the type and the name. The held typed local's rule
 now breaks the `=` whenever the call's `(` would land past the margin beside it (`Fitter.HeldValueBreaks`).
-⚠ The exception is a generic method whose line from the dot fits below: the oracle breaks the dot there, `T c =
-JsonConvert` / `.DeserializeObject<…>(json);` (#528's fixture). The first cut of this fix moved that fixture, and
-the constructs ratchet caught it.
+⚠ Not before a generic method, whose dot takes the break instead: `T c = JsonConvert` /
+`.DeserializeObject<…>(json);` (#528's fixture), and `T d = r` / `.M<G…>(` / arguments / `);` where the line from the
+dot does not fit below either. The first cut moved #528's fixture and the constructs ratchet caught it. A second
+cut exempted only a generic method whose dot line fits below; a fresh probe refuted it with one newly diverging cell
+(seed 52361, `48_22_5_19_20_102_array_string_1_g38`).
 - **Sweep** (2 754 cells, the `(` landing at 112 to 128): 1 806 → 2 161 agree, 60 cells that took two passes → 0.
-- **Fresh random probe** (seed 90127, 4 000 cells, a third of them generic methods with type arguments of 1 to 60):
-  3 094 → 3 648 agree, unstable 21 → 1, no newly diverging cell.
+- **Fresh random probe** written after the final rule (seed 61733, 4 000 cells, a third of them generic methods
+  with type arguments of 1 to 60): 3 050 → 3 192 agree, no newly diverging cell. 26 cells took two passes, now 15.
 
-The one cell left unstable writes exactly what the start commit writes. It is #626's neighbour inside a type
-argument list: `T[] d… = x….Mmmm<` / `Ggg…>("…");`, where pass two breaks the `=` too
-(`36_46_19_17_4_111_array_string_1_g15`). Pinned by `HeldParenPastTheMarginIssue626Tests`.
+All 15 still unstable are generic methods and write exactly what the start commit writes. They are a neighbour of
+#626 inside the type argument list: pass one writes `T d… = x….M<` / `Ggg…>(` / arguments / `);`, and pass two breaks
+the `=` (`40_50_20_9_5_138_generic_ident_1_g45`). That is not this fix. Pinned by
+`HeldParenPastTheMarginIssue626Tests`.
 
 - ⚠ status: the held typed local, the narrow-head pattern and the value's level after a type-name break are
   **resolved within the measured shapes** (#446 item 2). **Open**: the name line's `=` decision, and a value that

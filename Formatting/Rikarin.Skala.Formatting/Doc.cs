@@ -1670,10 +1670,8 @@ public sealed class Document {
 /// </param>
 /// <param name="ArmBody">With <see cref="ArmHead" />: the arm's body with its comma, if it has one.</param>
 /// <param name="HeldValueGeneric">
-///     With <see cref="HeldValue" />: the held call's method has type arguments, <c>r.M&lt;T&gt;(…)</c>, whose dot takes
-///     the
-///     break where the <c>(</c> would land past the margin beside the <c>=</c> and the line from the dot fits below
-///     (#626).
+///     With <see cref="HeldValue" />: the held call's method has type arguments, <c>r.M&lt;T&gt;(…)</c>. Its dot takes
+///     the break where the <c>(</c> would land past the margin beside the <c>=</c>, which otherwise breaks (#626).
 /// </param>
 /// <param name="HeldValueManyArgs">With <see cref="HeldValue" />: the call has more than one argument.</param>
 /// <param name="FlatIfHeadOverflows">
