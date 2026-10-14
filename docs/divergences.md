@@ -11088,6 +11088,9 @@ second condition's edge, as round five's misses are. The grid matches 2 199 of 2
 after the rule — `[Ab(`, `[Obsolete(`, `[DisplayName(`, `[CallerArgumentExpression(`, `int` and `List<int>` parameters
 of 13 to 21 columns, indents 8, 16 and 24 — 2 510 of 2 520 (master 2 428).
 
+**Round nine (#603, group J, 2026-10-14): round eight's residue was two mechanisms, not one edge.** See SK-DIV-0570:
+over the nine grids above, 200 cells apart → 35.
+
 ## SK-DIV-0353 — a type declaration's keyword and its name: the oracle breaks between them
 
 #539. Measured with `jb cleanupcode` 2025.2.6 on about 360 class headers — one, two and four type
@@ -13835,6 +13838,58 @@ Every `E.Find(e)` / `.Value = …` row that overflowed when measured flat broke 
   - grid C's 123: `.Items[0].Value`, where Skala breaks before `.Value` and the oracle keeps the run whole (102
     rows). Also an overflowing `Some.Static.…` head, and a trailing comment after a call.
 - status: **fixed**, pinned by `HeldValueBehindABrokenTargetIssue624Tests` and `FuzzRegressionTests`.
+
+## SK-DIV-0570 — a parameter's attribute arguments inside a default's band, and a one-argument section near the margin
+
+#603, round nine of SK-DIV-0352 (group J, 2026-10-14). Round eight left 72 of 961 families whose chop the oracle starts
+one to four columns after the linear rule, and a refit that returned the same coefficients. ⚠ **Classified before fitting,
+the 200 cells apart on master's nine grids are two different things**, and the refit could not see either because it
+pooled them:
+
+| class | cells | what the oracle does |
+|---|---|---|
+| inside a default's band (the joined line overflows, the line through the `=` fits) | 104 | keeps the section joined and breaks the `=` (D) where the rule chops (C) |
+| outside any band, near the margin | 96 | keeps the section whole (A) where the rule chops, 89 cells; the reverse, 7 |
+
+Hypotheses this round refuted or not needed: a different measurement origin for `w` — the parameter's name instead of its
+type, the `,`/`)`, or the default — does not move the A cells (they have no default), and in the band neither `w − v`, nor
+the line through the `=`, nor any constant shift of the rule separates D from C (a shift of four columns is right for 1 255
+of 1 274 band cells and no constant is right for all: `jv7w14_i24` needs ≤ 3.2 columns, `av7w20_i8` more than 4.0).
+Comparing the longest lines of the two layouts is independent of E, so it cannot be the rule either.
+
+**The band has its own threshold.** Inside the band the competitor of the chop is the `=`'s break, not the section alone on
+its line. A one-argument section never chops there (885 of 885 band cells D, master one apart); two or more positional
+arguments chop by `24·E ≥ 1644 + 42·w + 12·i + 12·h − 8·v`, `v` the default's width (with the old second condition) —
+about four columns past the rule, the later the more of the parameter stays on the section's line. Fitted on the nine
+grids and probe J1 (909 cells: `[A(1, "…")]`, `[Range(1, "…")]`, `[JsonProperty("…", 2)]`, defaults of 1 to 9 columns,
+parameters of 14 to 23, indents 8, 16, 24; master 832 of 909). Margins are thin (a sixth of a column), so the form is
+probably not the oracle's own, but it holds on both fresh probes below.
+
+**A one-argument section's second condition depends on E.** Round six's `2·w + i − h ≤ 36` cut the rule off at a fixed
+parameter width; the oracle bends instead: `[A("…")]` behind a 15-column parameter at indent 8 chops from 118 where the
+first condition says 113, behind 16 columns never. The second condition is a plane steeper than the first,
+`4·E ≥ 28·w + 10·i − 7·h − 16`. ⚠ Its first fit, `3·E ≥ 7 + 20·w + 7·i − 5·h`, survived probe J2 and broke one cell of
+probe J3 (`f112`, a 13-column parameter at indent 16, the oracle chopping one column later); refitted with J3 and
+re-checked on J4, written after the refit. The same bend exists for two or more arguments (`4·E ≥ 20·w + 7·i − 4·h − 134`
+fits the nine grids), ⚠ **but it broke three cells of fresh probe J2** (`f079`, `f105`, `f148`) — **not wired**; that
+side keeps `5·w + 2·i − h ≤ 155`.
+
+| probe (cells matching the oracle) | master | now |
+|---|---|---|
+| round four to eight's nine grids (23 938) | 23 738 | 23 903 |
+| J1, the band probe (909) | 832 | 909 |
+| J2, random sections, written after both rules were chosen (3 855, seed 445339869) | 3 817 | 3 848 |
+| J3, random, after the band rule (5 587, seed 595268943) | 5 542 | 5 562 |
+| J4, random one-argument sections, after the edge refit (4 048, seed 243042234) | 4 032 | 4 044 |
+
+No fresh probe has a cell that matched on master and does not now; the nine fitting grids have three (`fw16i8` at 119, the
+oracle chopping one column inside the new edge, and two band cells at 107 one column past the band threshold). Every output
+on every grid is stable on a second pass. What stays apart is one-column boundary noise of the first condition (the oracle
+one column later at indents 20 and 24, and behind heads of 12 to 17) and the two-argument edge.
+
+- options: `skala_wrap_arguments_style`; no key for the join.
+- status: **partially fixed**, pinned by `DefaultBandAndEdgeSectionChopIssue603Tests` (`Fitter.SectionChops`); the
+  two-argument edge and the first condition's one-column misses stay open.
 
 ## SK-DIV-0575 — a cast over a parenthesised call behind a head of twelve columns or more
 
