@@ -13616,6 +13616,43 @@ oracle breaks after the `when`. The fuzz case's tuple type arguments fill inside
 - status: **fixed** (the seed, pinned by `CaseLabelWhenOnTheBracesLineTests` and `FuzzRegressionTests`); the
   residues above are **open**.
 
+## SK-DIV-0553 — a creation broken after its `{` behind a head that leaves no room for the brace
+
+#623, fuzz 13197324971917557925 (generate; fails on `adca899a` and on master `6eff8610`). Minimal: `public ((…) First,
+Lazy<…> Second) P17 { get; } = new Memory<decimal>() {` / `P18 = …, P19 = … };`, the line through the `{` at 144
+columns. SK-DIV-0337 made an author's break after a creation's `{` keep the `=` unconditionally
+(`InitializerBrokenAfterItsBrace` turned the `=`'s `BreaksIfTooLong` off), measured behind heads of 12 to 40 columns.
+Behind this head nothing else could break, so pass one kept the `=` and broke after `new Memory<`; pass two, the
+brace's break gone, broke the `=` — the oracle's answer for both, with the braces joined.
+
+⚠ The brace keeps the `=` only while the line through it fits. The `=` group of such a creation now breaks only when
+its head — the line up to its first point, the `{`'s, a type argument list read through — overflows
+(`BreaksOnlyIfHeadOverflows`, `PrefersOuterBreak` off). The conditional over a collection broken after its `[`
+(fuzz 7777) keeps the unconditional exemption.
+
+Measured 2026-10-14 with `Testing ask` on a fresh 196-row grid: `new Something {`, `new Something() {`,
+`new Memory<decimal>() {` and `new {`, each broken after the brace; `var`, typed, assignment and property heads of 11
+to 146 columns; members of 22 and 90 columns. Differing rows **90 → 54**, none newly differing, non-idempotent files
+1 → 0. ⚠ The 54 left were there before and say SK-DIV-0337's rule is narrower than its measurement: with the brace's
+line *inside* the margin (101 to 117 columns), a head of 85 or more and short members, the oracle still breaks the `=`
+and joins the braces wherever the creation fits below, while with 90-column members it keeps the brace. That looks
+like #581's creation limit (SK-DIV-0322) reaching the broken brace too, and was not fitted here; past 120 columns the
+oracle's answers are not monotonic (a 126-column typed head keeps a 142-column brace line). Open.
+
+⚠ **That change alone was not idempotent, and this branch's own fuzz found it** (seed 9076957179953969410, which
+passes on `adca899a` and on master): a creation written on *one* line, `f78 = new { … };` behind a tuple-typed field.
+#581's creation limit (`Fitter.Worth`, SK-DIV-0322) kept the `=` with `= new {` at 124 columns and broke the braces;
+pass two read the brace's break as the author's and, by the rule above, broke the `=` — which the oracle does for both
+inputs. Master was wrong the same way, but stable. The creation limit now breaks the `=` whenever the line through the
+`{` does not fit. A fresh 180-row grid of one-line creations (`new Something {`, `new {`, `new List<Something> {`;
+a local, a field and a property; `= new … {` ending at 112 to 130; two member widths): differing rows **37 → 11**,
+none newly differing, every row idempotent before and after.
+
+- options: `skala_keep_user_linebreaks`, `prefer_wrap_around_eq`.
+- status: **fixed** (the seed and the fuzz's own, pinned by `InitializerBrokenAfterBraceTests`'
+  `ABraceWhoseLineOverflows_BreaksTheEquals` and `AOneLineCreationWhoseBraceOverflows_BreaksTheEquals`, and
+  `FuzzRegressionTests`); the wide head before a brace inside the margin is **open**.
+
 ## SK-DIV-0521 — where a sole lambda breaks after its arrow without a broken test
 
 #620, group C (2026-10-14): SK-DIV-0520's question where the body is not a type test broken before its keyword. Probe

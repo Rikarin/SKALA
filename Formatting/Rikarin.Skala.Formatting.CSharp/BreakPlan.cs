@@ -6391,6 +6391,8 @@ public sealed class BreakPlan {
             markers[headToken.SpanStart] = head;
         }
 
+        // ⚠ Not a broken collection as a conditional's condition, which keeps its `=` whatever the line (fuzz 7777).
+        var brokenBrace = InitializerBrokenAfterItsBrace(value) && value is not ConditionalExpressionSyntax;
         Describe(
             node,
             new(
@@ -6411,7 +6413,13 @@ public sealed class BreakPlan {
                     BreaksIfTooLong: !YieldsToTheLambdaArrow(value)
                     && !(value is MemberAccessExpressionSyntax member && IsPlainMemberValue(member))
                     && !KeepsTheEqualsBeforeALambdaCall(node, value)
-                    && !InitializerBrokenAfterItsBrace(value),
+                    && !(value is ConditionalExpressionSyntax && InitializerBrokenAfterItsBrace(value)),
+
+                    // ⚠ A creation the author broke after its `{` keeps the `=` (SK-DIV-0337) only while the line
+                    // through that `{` fits (#623, fuzz 13197324971917557925): behind a 117-column head the oracle breaks
+                    // the `=` and joins the braces. Skala kept the `=`, broke after `new Memory<` for want of another
+                    // point, and pass two — the brace's break gone — broke the `=`.
+                    BreaksOnlyIfHeadOverflows: brokenBrace,
 
                     // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
                     // Every other right-hand side is measured by what is left of the line and breaks
@@ -6421,7 +6429,7 @@ public sealed class BreakPlan {
                     // the declaration's line at false and moves it down at true, with nothing else in
                     // the file changing.
                     MeasuresHead: !QueryLeadsTheWay(value),
-                    PrefersOuterBreak: !QueryLeadsTheWay(value),
+                    PrefersOuterBreak: !QueryLeadsTheWay(value) && !brokenBrace,
 
                     // ⚠ A kept `=` break makes whatever list holds the clause multi-line, and a list that
                     // is multi-line chops — "chop if long *or multiline*", the half of chop_if_long a
