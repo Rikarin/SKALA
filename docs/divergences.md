@@ -13735,3 +13735,44 @@ No row is non-idempotent.
   `FuzzIdempotencyIssue617Tests.OneArgumentBehindAWideHead_OneBoundaryForEveryOwner`.
   ⚠ **Open:** fields behind a wide head, which are not measured and still go to the ordering rule, and the per-owner
   step at the boundary.
+
+## SK-DIV-0555 — an assignment's held value behind a target that ends on a line of its own
+
+#624, fuzz `--replay=15061394490375601826 --origin=constructs/breaks/held-value-behind-a-target-call.cs` (it fails on
+`adca899a` too). Minimised: `Entities_w….Find(entity)` / `.Value = World.GetLinearVelocityOf(body.Handle, entity.` /
+`Index, scale);` four blocks in. The value has a break of its own, so it is no held call, and pass one kept the `=`.
+On pass two the value is joined and held. SK-DIV-0451's `HeldValueTarget` then read its column through the whole
+target as if it were flat: column 65, not 33. The value overflowed there, and the `=` broke.
+
+The oracle keeps the `=` on both passes: the line is 93 columns. The flat read was wrong on pass one's input too.
+Every `E.Find(e)` / `.Value = …` row that overflowed when measured flat broke its `=` where the oracle keeps it.
+
+- Fix: `GroupFacts.HeldValueTargetTail` is the width of the target's last line, from its dot through the `=`.
+  `HeldValueTargetKept` says whether that line is certain. When it is, the value's column is read from the
+  continuation column. The line is certain in three cases:
+  - the author broke before the target's own dot;
+  - the target is a chopped chain the author broke at any dot, since a chopped chain breaks at every link;
+  - `chop_always` is set.
+
+  The tail is also used when the target through its `=` does not fit, because a chopped chain must then chop. A filled
+  chain counts only a break before its last link. ⚠ This reads the source, not the fitter's choices. A chain the
+  fitter chops for width comes back on pass two as the author's. Pass one reads the same tail through the
+  does-not-fit test, so both passes agree.
+- Measured 2026-10-14 with `Testing ask` against master `c9e82055`. Indents run from 8 to 24; values have one to five
+  arguments.
+
+| Grid | Built for | Rows | Diverging, master | Diverging, branch | Non-idempotent, master | Non-idempotent, branch |
+|---|---|---:|---:|---:|---:|---:|
+| A: `E.Find`/`E.Get<T>` targets broken at their last dot, value broken, or both | the first fix | 828 | 499 | 304 | 42 | 0 |
+| B: chains broken at the first dot or every dot, `this.` heads, flat targets too wide, property-only targets, `+=` | the chain half | 1080 | 682 | 27 | 3 | 0 |
+| C: generic calls, two-property runs, an indexer in the run, a trailing line comment, static heads (fresh) | nothing | 816 | 582 | 123 | 0 | 0 |
+
+  No row that matched before diverges now.
+- ⚠ **Open**, all present on master and none of them the `=`:
+  - grid A's 304: a value the author broke inside its arguments. Skala chops the arguments beside the `=`, and the
+    oracle moves the call below, or indents the chop differently behind a broken target.
+  - grid B's 27: `+=` is not an assignment owner here (18 rows). In the other 9, a receiver overflows its first line
+    by itself (`this.Items_w…`, `Items_w….Find(`), and the oracle breaks before the first call's dot.
+  - grid C's 123: `.Items[0].Value`, where Skala breaks before `.Value` and the oracle keeps the run whole (102
+    rows). Also an overflowing `Some.Static.…` head, and a trailing comment after a call.
+- status: **fixed**, pinned by `HeldValueBehindABrokenTargetIssue624Tests` and `FuzzRegressionTests`.
