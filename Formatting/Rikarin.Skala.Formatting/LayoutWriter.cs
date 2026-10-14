@@ -2532,6 +2532,10 @@ public sealed class LayoutWriter {
         out bool headStays
     ) {
         headStays = false;
+        if (fitter.BreaksEveryPoint(group)) {
+            return false;
+        }
+
         var width = pendingSpace ? PendingWidth : (flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
         var column = atLineStart
             ? pendingCloserLevel ?? Effective()

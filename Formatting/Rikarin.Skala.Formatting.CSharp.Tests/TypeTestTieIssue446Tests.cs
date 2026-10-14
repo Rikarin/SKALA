@@ -652,4 +652,130 @@ public sealed class TypeTestTieIssue446Tests {
             """
         )
     };
+
+    /// <summary>
+    ///     Round 9: under <c>yield return</c> the same two conditions decide, with the keyword's line and the dot's column
+    ///     read six columns short — as if the head were <c>return</c>. Each pair a column of receiver apart: the first keeps
+    ///     the keyword's band, the second takes the dot.
+    /// </summary>
+    [Theory]
+    [InlineData("y_i8_r16_t1_119")]
+    [InlineData("y_i8_r17_t1_119")]
+    [InlineData("y_i24_r21_t3_118")]
+    [InlineData("y_i24_r22_t3_118")]
+    public void ReadsYieldReturnAsReturn(string cell) {
+        var (source, expected) = RoundNine[cell];
+        Agrees(source, expected);
+    }
+
+    static readonly Dictionary<string, (string Source, string Expected)> RoundNine = new() {
+        ["y_i8_r16_t1_119"] = (
+            """
+            class C
+            {
+                System.Collections.Generic.IEnumerable<object> M()
+                {
+                    yield return rrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as T;
+                }
+            }
+            """,
+            """
+            class C {
+                System.Collections.Generic.IEnumerable<object> M() {
+                    yield return rrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as
+                        T;
+                }
+            }
+            """
+        ),
+        ["y_i8_r17_t1_119"] = (
+            """
+            class C
+            {
+                System.Collections.Generic.IEnumerable<object> M()
+                {
+                    yield return rrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as T;
+                }
+            }
+            """,
+            """
+            class C {
+                System.Collections.Generic.IEnumerable<object> M() {
+                    yield return rrrrrrrrrrrrrrrrr
+                        .PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as T;
+                }
+            }
+            """
+        ),
+        ["y_i24_r21_t3_118"] = (
+            """
+            class C
+            {
+                System.Collections.Generic.IEnumerable<object> M()
+                {
+                    {
+                        {
+                            {
+                                {
+                                    yield return rrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTT;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            """,
+            """
+            class C {
+                System.Collections.Generic.IEnumerable<object> M() {
+                    {
+                        {
+                            {
+                                {
+                                    yield return rrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as
+                                        TTT;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            """
+        ),
+        ["y_i24_r22_t3_118"] = (
+            """
+            class C
+            {
+                System.Collections.Generic.IEnumerable<object> M()
+                {
+                    {
+                        {
+                            {
+                                {
+                                    yield return rrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTT;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            """,
+            """
+            class C {
+                System.Collections.Generic.IEnumerable<object> M() {
+                    {
+                        {
+                            {
+                                {
+                                    yield return rrrrrrrrrrrrrrrrrrrrrr
+                                        .PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTT;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            """
+        )
+    };
 }

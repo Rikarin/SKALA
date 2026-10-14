@@ -197,6 +197,38 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
+        // ⚠ A returned type test's operand whose own line overflows wherever it goes nests its dot two levels in, a
+        // level past the type's line, once the type test's own group breaks (#446, the `x` layout).
+        if (plan.TypeTestLiftOf(node) is >= 0 and var typeTest) {
+            EmitLeadingGap(node);
+            doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileGroupFlat, typeTest, true);
+            VisitPlanned(node);
+            EmitUpTo(node.Span.End);
+            doc.Close();
+            return;
+        }
+
+        // ⚠ A local's `=` clause once the gap between the type and the name broke: the value continues from the
+        // name's line, a level past it (BreakPlan.TypeNameGapOf).
+        if (plan.TypeNameGapOf(node) is >= 0 and var typeName) {
+            EmitLeadingGap(node);
+            doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileGroupFlat, typeName);
+            VisitPlanned(node);
+            EmitUpTo(node.Span.End);
+            doc.Close();
+            return;
+        }
+
+        // ⚠ And the same layout written by the author, which pass two reads (BreakPlan.KeptTypeTestLift).
+        if (plan.KeptTypeTestLift(node)) {
+            EmitLeadingGap(node);
+            doc.OpenIndent(IndentKind.Continuous, false, 0, IndentFlags.CountsWithItsLine);
+            VisitPlanned(node);
+            EmitUpTo(node.Span.End);
+            doc.Close();
+            return;
+        }
+
         if (!AlignsFromOwnColumn(node)) {
             VisitPlanned(node);
             return;

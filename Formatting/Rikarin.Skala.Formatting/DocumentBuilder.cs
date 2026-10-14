@@ -431,7 +431,8 @@ public sealed class DocumentBuilder {
                         | IndentFlags.AnchorAtLine
                         | IndentFlags.Multiplied
                         | IndentFlags.Additive
-                        | IndentFlags.NestedSoleLambda))),
+                        | IndentFlags.NestedSoleLambda
+                        | IndentFlags.CountsWithItsLine))),
             columns
         );
 
