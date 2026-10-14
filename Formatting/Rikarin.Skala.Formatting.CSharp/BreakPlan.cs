@@ -339,6 +339,14 @@ public sealed class BreakPlan {
     readonly Dictionary<int, long> fromLineHeldAgainst = [];
 
     /// <summary>
+    ///     The points before a list pattern taken only while it stays whole, by position, and the type tests' groups that
+    ///     own them, each to the list's key (#617). See <see cref="LineFlags.BreaksOnlyIfListStaysWhole" />.
+    /// </summary>
+    readonly Dictionary<int, long> wholeListPoints = [];
+
+    readonly Dictionary<int, long> wholeListGroups = [];
+
+    /// <summary>
     ///     The width lift <see cref="PlanArmArrow" /> opened at an arm whose head is braces or brackets, by the arm's key,
     ///     for a <c>when</c> the author put on a line of its own to lift with (#617). See <see cref="PlanWhenClause" />.
     /// </summary>
@@ -4963,7 +4971,18 @@ public sealed class BreakPlan {
         }
 
         var after = FirstToken(node.Pattern);
-        if (BreaksBefore(after)) {
+        // ⚠ A one-line list the author put below the `is` keeps the break only while it stays whole there (#617): too
+        // wide for the line, the oracle joins `xs is [` and breaks inside, and pass two, finding the list broken, did
+        // the same where pass one had kept the break and broken the list one level in.
+        var whole = !BreaksBefore(node.IsKeyword)
+            && BreaksBefore(after)
+            && IsAOneLineListPatternAfterIs(after)
+            && !IsAListPatternPastALineCommentAfterIs(after);
+        if (whole) {
+            Point(after, group);
+            wholeListPoints[after.SpanStart] = Key(node.Pattern);
+            wholeListGroups[group] = Key(node.Pattern);
+        } else if (BreaksBefore(after)) {
             Mandatory(after);
         }
 
@@ -4985,7 +5004,7 @@ public sealed class BreakPlan {
             new(
                 group,
                 GroupMode.Preserve,
-                new(BreaksIfTooLong: true),
+                new(whole, BreaksIfTooLong: true),
                 FromLine: !IsAHeaderCondition(node) && heldAgainst is null,
                 OwnLevel: heldAgainst is not null,
                 HoldsLevel: heldAgainst is not null ? HeldLevel.WhileArrowFlat : HeldLevel.None
@@ -7891,6 +7910,14 @@ public sealed class BreakPlan {
     ///     The list pattern's group a broken type test's from-the-line level is held against — spent unless the
     ///     list breaks — or -1 (#617). See <see cref="IsAListPatternPastALineCommentAfterIs" />.
     /// </summary>
+    public bool BreaksOnlyIfListStaysWhole(int position) => wholeListPoints.ContainsKey(position);
+
+    /// <summary>The list pattern's group a type test's point waits on, or −1 (#617).</summary>
+    public int WholeListOf(int group) =>
+        wholeListGroups.TryGetValue(group, out var list) && groups.TryGetValue(list, out var plans) && plans.Count > 0
+            ? plans[^1].Id
+            : -1;
+
     public int FromLineHeldAgainst(int group) =>
         fromLineHeldAgainst.TryGetValue(group, out var list)
         && groups.TryGetValue(list, out var plans)

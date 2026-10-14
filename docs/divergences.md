@@ -13180,10 +13180,20 @@ Rows differing from the oracle went from 9 of 17 to 3, and non-idempotent rows f
 - ⚠ Without a comment, `source is` / `[a one-line list too wide for the line]` is **not idempotent**, on master `adca899a`
   and here. Pass one keeps the break with the level and chops the list. Pass two finds the list broken and joins
   `source is [`, which is the oracle's answer for both. This needs the *break* before the `[`, not only its level, to
-  depend on the list staying whole. Open.
+  depend on the list staying whole. **Fixed on `a-617b`.** The break is now a point
+  (`LineFlags.BreaksOnlyIfListStaysWhole`). The writer takes it ahead, watches the list's group
+  (`GroupFacts.WholeList`) on the line it creates, and joins `source is [` if the list broke there.
 
-- status: **fixed** for the comment-forced break, pinned by `FuzzIdempotencyIssue617Tests` and `FuzzRegressionTests`.
-  ⚠ The three residues above are **open**.
+  Measured 2026-10-14 with `Testing ask` on a fresh 55-row probe:
+
+  - contexts: an expression body, `return`, `var b =`, an argument and `&& source is` in an `if`;
+  - the list's line ending from 110 to 130.
+
+  The oracle keeps the break exactly while the list fits whole one level in. Skala matches every row. Master differed
+  on 98 output lines and was not idempotent on them.
+
+- status: **fixed** for the comment-forced break and the too-wide one-line list, pinned by
+  `FuzzIdempotencyIssue617Tests` and `FuzzRegressionTests`. ⚠ The first two residues above are **open**.
 
 ## SK-DIV-0501 — one argument behind a head wider than #610 measured
 

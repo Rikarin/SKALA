@@ -297,7 +297,15 @@ public enum LineFlags {
     ///     its own, as <see cref="ArrayElement" />'s does, without that flag's draft measure (#615) — `[1, 2, not (0`
     ///     / `or 1),` / `3, 4]` in the oracle.
     /// </summary>
-    ListPatternElement = 16384
+    ListPatternElement = 16384,
+
+    /// <summary>
+    ///     ⚠ A point taken only when the list pattern after it stays on one line once moved down (#617): `xs is` / `[1, 2]`
+    ///     keeps the author's break, and a list too wide for the line joins its `[` to the `is` and breaks inside, as the
+    ///     oracle writes `xs is [` / elements / `]`. The writer takes the break ahead, watches the list's group
+    ///     (<see cref="GroupFacts.WholeList" />) and rolls back.
+    /// </summary>
+    BreaksOnlyIfListStaysWhole = 32768
 }
 
 /// <summary>
@@ -1747,6 +1755,10 @@ public sealed class Document {
 ///     group's point width at that dot, and the value's column read from it landed 36 columns left of the
 ///     <c>=</c>, so the value "fitted" beside it and the <c>=</c> stayed on pass one, to break on pass two.
 /// </param>
+/// <param name="WholeList">
+///     ⚠ With <see cref="LineFlags.BreaksOnlyIfListStaysWhole" /> on the group's point: the list pattern's group whose
+///     staying whole decides the point (#617); −1 otherwise.
+/// </param>
 /// <param name="ShortHeadTypeEnd">
 ///     ⚠ An <c>=</c> with a head of five columns or fewer before a value whose type argument list fills —
 ///     <c>new G&lt;…&gt;(…)</c>, <c>M&lt;…&gt;(…)</c>, <c>default(G&lt;…&gt;)</c> (#610, SK-DIV-0450): the width from
@@ -1911,7 +1923,8 @@ public readonly record struct GroupFacts(
     int ShortHeadTypeEnd = 0,
     int CalleeArgument = 0,
     int KeptArgumentCallee = 0,
-    int HeldValueTarget = 0);
+    int HeldValueTarget = 0,
+    int WholeList = -1);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

@@ -2226,6 +2226,13 @@ public sealed class LayoutWriter {
                 flat = NextLineFitsBeside(ref slot, flags, stack);
             }
 
+            // ⚠ And a point before a list pattern, taken only while the list stays whole on the line it creates (#617).
+            if (!flat
+                && (flags & LineFlags.BreaksOnlyIfListStaysWhole) != 0
+                && document.FactsOf(slot.Arg2).WholeList is >= 0 and var list) {
+                flat = ListBreaksBelow(ref slot, list, stack);
+            }
+
             if (flat) {
                 if ((flags & LineFlags.FlatSpace) != 0) {
                     pendingSpace = true;
@@ -2349,6 +2356,23 @@ public sealed class LayoutWriter {
         Restore(checkpoint);
 
         return Fits(column, width);
+    }
+
+    /// <summary>
+    ///     Whether the list pattern's group <paramref name="list" /> takes one of its points once the break at
+    ///     <paramref name="slot" /> is taken — the line it creates written ahead, watched, and rolled back (#617).
+    /// </summary>
+    bool ListBreaksBelow(ref DocNode slot, int list, Stack<(int Node, int Child)> stack) {
+        var (watched, broke) = (watchedChain, watchedChainBroke);
+        var checkpoint = Checkpoint();
+        watchedChain = list;
+        watchedChainBroke = false;
+        TakeBreak(ref slot);
+        Run(new(stack.Reverse()), line);
+        var answer = watchedChainBroke;
+        Restore(checkpoint);
+        (watchedChain, watchedChainBroke) = (watched, broke);
+        return answer;
     }
 
     /// <summary>The width of the output line beginning at <paramref name="start" />, less its indentation.</summary>

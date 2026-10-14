@@ -445,6 +445,7 @@ public sealed partial class CSharpDocumentBuilder {
             doc.DescribeGroup(
                 plan.Id,
                 plan.Facts with {
+                    WholeList = this.plan.WholeListOf(plan.Id),
                     SpendsIndent = indented[i] > 0 && plan.HoldsLevel != HeldLevel.WhileChainWhole,
                     Continues = plan.Facts.Continues && !aligned
                 }
@@ -5080,6 +5081,10 @@ public sealed partial class CSharpDocumentBuilder {
             && list.Parameters[0].GetFirstToken() == nextToken
             && AlignsTypeParameters(list)) {
             flags |= LineFlags.AlignedListHead;
+        }
+
+        if (rule == GapRule.Point && plan.BreaksOnlyIfListStaysWhole(nextToken.SpanStart)) {
+            flags |= LineFlags.BreaksOnlyIfListStaysWhole;
         }
 
         if (rule == GapRule.FollowingPoint) {
