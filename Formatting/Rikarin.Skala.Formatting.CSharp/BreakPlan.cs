@@ -4934,8 +4934,9 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     For a type test the author broke before its keyword that is a sole lambda's whole body, the argument list
-    ///     on its operand's spine whose break gives the test its stacked level (#602); null otherwise.
+    ///     For a type test the author broke before its keyword that is a sole lambda's whole body, the operand whose
+    ///     chain, or else whose spine's argument list, gives the test its stacked level by breaking (#602); null
+    ///     otherwise.
     /// </summary>
     /// <remarks>
     ///     ⚠ Measured by group S on #597's grid: <c>Use(x =&gt; call(</c> / the arguments / <c>)</c> / <c>is T</c> puts the
@@ -5018,12 +5019,12 @@ public sealed class BreakPlan {
     /// <summary>The two line-break characters, for a span search.</summary>
     static readonly char[] LineEnds = ['\r', '\n'];
 
-    /// <summary>The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the list each is held against.</summary>
+    /// <summary>The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the operand each is held against.</summary>
     readonly List<(int Group, ExpressionSyntax Operand)> pendingTypeTestHolds = [];
 
     /// <summary>
-    ///     Names each held type test's argument-list group in <see cref="ArrowHeldAgainst" />'s slot, once the walk
-    ///     has planned the list; a list with no group leaves the test unheld, which spends the level.
+    ///     Names each held type test's chain or argument-list group in <see cref="ArrowHeldAgainst" />'s slot, once
+    ///     the walk has planned it; an operand with neither leaves the test unheld, which spends the level.
     /// </summary>
     void SettleTypeTestHolds() {
         foreach (var (group, operand) in pendingTypeTestHolds) {
@@ -6748,8 +6749,9 @@ public sealed class BreakPlan {
     ///     ⚠ Eleven columns and narrower is
     ///     <see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />'s
     ///     rule, which reads the parameter through. A one-argument section is the same rule with its own constants
-    ///     (#603): see <see cref="GroupFacts.SectionSingle" />. ⚠ A section with a named argument takes those
-    ///     one-argument constants too, measured on <c>("…", DiagnosticId = "X")</c> (#603). A parameter with a default
+    ///     (#603): see <see cref="GroupFacts.SectionSingle" />. ⚠ So does any section with one positional argument or
+    ///     none, a property's <c>Name =</c> uncounted (<see cref="TakesTheOneArgumentConstants" />). A parameter with a
+    ///     default
     ///     value is measured whole, its <c>= value</c> included; the gap after the section agrees with the arguments
     ///     (<see cref="GroupFacts.SectionJoinedOverDefault" />).
     ///     Widths are the formatter's (<see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />), and a comment

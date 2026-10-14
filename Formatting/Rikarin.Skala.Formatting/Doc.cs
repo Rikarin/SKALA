@@ -1538,7 +1538,8 @@ public sealed class Document {
 ///     <c>(</c>.
 /// </param>
 /// <param name="SectionSingle">
-///     With <see cref="ParameterAfterSection" />: the section has one argument, whose threshold sits 17 columns later
+///     With <see cref="ParameterAfterSection" />: the section has one positional argument or none (a property's
+///     <c>Name =</c> uncounted, a constructor's <c>name:</c> counted), whose threshold sits 17 columns later
 ///     — <c>24·E ≥ 2106 + 32·w + 11·i + 11·h</c> and <c>2·w + i − h ≤ 36</c> (#603).
 /// </param>
 /// <param name="SectionJoinedOverDefault">
