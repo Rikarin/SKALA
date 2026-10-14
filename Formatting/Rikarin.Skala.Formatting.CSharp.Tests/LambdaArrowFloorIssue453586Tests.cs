@@ -213,6 +213,172 @@ public sealed class LambdaArrowFloorIssue453586Tests {
             + "        );\n"
         );
 
+    /// <summary>
+    ///     Group B: a 20-column name under a 20-column type, the call's <c>(</c> at 72, a column short of
+    ///     <c>EqualsFloor.LambdaCallParen</c>: the arguments chop beside the arrow.
+    /// </summary>
+    [Fact]
+    public void WideName_ParenShortOfItsColumn_Chops() =>
+        Agrees(
+            "        TTTTTTTTTTTTTTTTTTTT nnnnnnnnnnnnnnnnnnnn = () => CCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyy);\n",
+            "        TTTTTTTTTTTTTTTTTTTT nnnnnnnnnnnnnnnnnnnn = () => CCCCCCCCCCCCC(\n"
+            + "            xxxxxxxxxxxxxxxxxxxxxxx,\n"
+            + "            yyyyyyyyyyyyyyyyyyyyyyy\n"
+            + "        );\n"
+        );
+
+    /// <summary>The <c>(</c> a column further right, at 73: the <c>=</c> breaks.</summary>
+    [Fact]
+    public void WideName_ParenAtItsColumn_BreaksTheEquals() =>
+        Agrees(
+            "        TTTTTTTTTTTTTTTTTTTT nnnnnnnnnnnnnnnnnnnn = () => CCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyy);\n",
+            "        TTTTTTTTTTTTTTTTTTTT nnnnnnnnnnnnnnnnnnnn =\n"
+            + "            () => CCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyy);\n"
+        );
+
+    /// <summary>
+    ///     Group B: one argument, the line ending at the reach (four columns past the margin) — the <c>=</c> breaks
+    ///     however wide the argument.
+    /// </summary>
+    [Fact]
+    public void OneArgument_WithinTheReach_BreaksTheEquals() =>
+        Agrees(
+            "        TTTTTTTTTTTT nnnnnnnnnnnn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx);\n",
+            "        TTTTTTTTTTTT nnnnnnnnnnnn =\n"
+            + "            () => CCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx);\n"
+        );
+
+    /// <summary>One column past the reach: the arrow breaks.</summary>
+    [Fact]
+    public void OneArgument_PastTheReach_BreaksTheArrow() =>
+        Agrees(
+            "        TTTTTTTTTTTT nnnnnnnnnnnn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx);\n",
+            "        TTTTTTTTTTTT nnnnnnnnnnnn = () =>\n"
+            + "            CCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx);\n"
+        );
+
+    /// <summary>
+    ///     Group B: at indent 12 the arrow floor is four columns lower than at 8 — a 60-column list still moves below
+    ///     the arrow…
+    /// </summary>
+    [Fact]
+    public void IndentTwelve_UnderTheFloor_BreaksTheArrow() =>
+        Agrees(
+            "        {\n"
+            + "            TTTTTTTT nnnnn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyyyy);\n"
+            + "        }\n",
+            "        {\n"
+            + "            TTTTTTTT nnnnn = () =>\n"
+            + "                CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyyyy);\n"
+            + "        }\n"
+        );
+
+    /// <summary>…and a 61-column one chops, where indent 8 at the same columns would still break the arrow.</summary>
+    [Fact]
+    public void IndentTwelve_AtTheFloor_Chops() =>
+        Agrees(
+            "        {\n"
+            + "            TTTTTTTT nnnnn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyyyy);\n"
+            + "        }\n",
+            "        {\n"
+            + "            TTTTTTTT nnnnn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(\n"
+            + "                xxxxxxxxxxxxxxxxxxxxxxxxxxxxx,\n"
+            + "                yyyyyyyyyyyyyyyyyyyyyyyyyyyy\n"
+            + "            );\n"
+            + "        }\n"
+        );
+
+    /// <summary>A field at indent 4: the floor four columns higher than indent 8's, 68 columns break the arrow…</summary>
+    [Fact]
+    public void FieldAtIndentFour_UnderTheFloor_BreaksTheArrow() =>
+        AgreesInAClass(
+            "    TTTTTTTTTTTTTTTT nnnnn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy);\n",
+            "    TTTTTTTTTTTTTTTT nnnnn = () =>\n"
+            + "        CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy);\n"
+        );
+
+    /// <summary>…and 69 chop.</summary>
+    [Fact]
+    public void FieldAtIndentFour_AtTheFloor_Chops() =>
+        AgreesInAClass(
+            "    TTTTTTTTTTTTTTTT nnnnn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy);\n",
+            "    TTTTTTTTTTTTTTTT nnnnn = () => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(\n"
+            + "        xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,\n"
+            + "        yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\n"
+            + "    );\n"
+        );
+
+    /// <summary>
+    ///     Group B (#586): 48 columns of parameters and a 24-column first operand on a 200-column line, the arrow
+    ///     ending at 95 — under the cap of <c>55 + 0.55·48 + 0.6·24</c> — stays.
+    /// </summary>
+    [Fact]
+    public void LongParameters_UnderTheCap_KeepTheArrow() =>
+        Agrees(
+            "        UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU(pppppppppppppppppppppppppppppppppppppppppppppppp => aaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccccccccccccccc);\n",
+            "        UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU(pppppppppppppppppppppppppppppppppppppppppppppppp => aaaaaaaaaaaaaaaaaaaaaaaa\n"
+            + "            && bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n"
+            + "            && ccccccccccccccccccccccccccccccccccc\n"
+            + "        );\n"
+        );
+
+    /// <summary>Ending at 96 it breaks; round 2's cap broke from 89.</summary>
+    [Fact]
+    public void LongParameters_AtTheCap_BreakTheArrow() =>
+        Agrees(
+            "        UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU(pppppppppppppppppppppppppppppppppppppppppppppppp => aaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccccccccccccccc);\n",
+            "        UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU(pppppppppppppppppppppppppppppppppppppppppppppppp =>\n"
+            + "            aaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccccccccccccccc\n"
+            + "        );\n"
+        );
+
+    /// <summary>
+    ///     Group B (#605): a 19-column rest, <c>.TTTTTTTTTTTTTTTTT();</c>, lets <c>.Where(…)</c> move down at a line of
+    ///     the 107 columns that <c>.ToList();</c> would hold.
+    /// </summary>
+    [Fact]
+    public void LongRest_MovesTheLambdaCallDown() =>
+        Agrees(
+            "        var nnnnnnnnnn = rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.Where(x => aaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbb && ccccccccccccccccccccccccccccccccccccccccc).TTTTTTTTTTTTTTTTT();\n",
+            "        var nnnnnnnnnn = rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\n"
+            + "            .Where(x => aaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbb && ccccccccccccccccccccccccccccccccccccccccc)\n"
+            + "            .TTTTTTTTTTTTTTTTT();\n"
+        );
+
+    /// <summary>A five-column rest, <c>.T();</c>, holds the call and breaks its arrow below the limit.</summary>
+    [Fact]
+    public void ShortRest_HoldsTheLambdaCall() =>
+        Agrees(
+            "        var nnnnnnnnn = rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.Where(x => aaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb && ccccccccc).T();\n",
+            "        var nnnnnnnnn = rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.Where(x =>\n"
+            + "                aaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb && ccccccccc\n"
+            + "            )\n"
+            + "            .T();\n"
+        );
+
+    /// <summary>
+    ///     Group B: a three-column target whose head through the arrow, <c>nnn = (a, b) =&gt;</c>, is twelve columns
+    ///     reads the arrow floor — a 56-column list moves below the arrow…
+    /// </summary>
+    [Fact]
+    public void ShortTarget_WideHead_UnderTheFloor_BreaksTheArrow() =>
+        Agrees(
+            "        nnn = (a, b) => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyy);\n",
+            "        nnn = (a, b) =>\n"
+            + "            CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyy);\n"
+        );
+
+    /// <summary>…and a 57-column one chops.</summary>
+    [Fact]
+    public void ShortTarget_WideHead_AtTheFloor_Chops() =>
+        Agrees(
+            "        nnn = (a, b) => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(xxxxxxxxxxxxxxxxxxxxxxxxxxx, yyyyyyyyyyyyyyyyyyyyyyyyyy);\n",
+            "        nnn = (a, b) => CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC(\n"
+            + "            xxxxxxxxxxxxxxxxxxxxxxxxxxx,\n"
+            + "            yyyyyyyyyyyyyyyyyyyyyyyyyy\n"
+            + "        );\n"
+        );
+
     /// <summary>A receiver lambda's <c>&amp;&amp;</c> chain chopped beside the arrow: one level past the `)`.</summary>
     [Fact]
     public void ReceiverLambda_OperandChain_TakesItsOwnLevel() =>

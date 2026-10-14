@@ -198,6 +198,22 @@ public sealed class FuzzRegressionTests {
     // parameter too wide for any line, which pass one broke and pass two read as the author's break, leaving the
     // section's arguments to their own fit. Latent on master for a parameter without a default.
     [InlineData(16667081197111340728UL)]
+    // #617: `source is` / `// fuzz 658` / `[_` / `, .. var rest60];` — a list pattern a line comment put on its own line
+    // took the `is`'s level only when the author had written it on one line, so pass one's joined list moved a level in
+    // on pass two. The level is now held against the list's own group, spent while the list stays whole.
+    [InlineData(14577244967404521905UL)]
+    // #617: `IReadOnlyDictionary<decimal, decimal> v124 = Materialise<…>((from … select 85306));` — one argument behind
+    // a head wider than #610 measured; the floor chopped it, and pass two, reading the chop as the author's, broke the `=`.
+    [InlineData(12392120797706766071UL)]
+    // #617: `(…, (…) Second) v120 = () => value;` with the arrow past the margin — `()` has nothing to chop.
+    [InlineData(52566946029857855UL)]
+    // #617, group C's seed: an array initializer in a switch arm headed by braces. The arm was written ahead to decide
+    // its arrow and the elements' line records outlived the rollback, so pass one broke after the first element.
+    [InlineData(718351361052470981UL)]
+    // `var (a, b) = Convert<…>(($"…" + (…)));` (#617): pass one kept the `=` and chopped the one argument, and pass
+    // two, finding the value spanning lines, read it as having no callee and broke the `=` by the ordering rule. The
+    // oracle keeps an author's chop of a lone argument and the `=` beside it (GroupFacts.KeptArgumentCallee).
+    [InlineData(17150111611241313074UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
@@ -222,6 +238,9 @@ public sealed class FuzzRegressionTests {
     // kept with them.
     [Theory]
     [InlineData(11718305405350914591UL, "constructs/breaks/chain-after-parenthesised-head.cs")]
+    // #617, `fuzz --seed=61714`: `{ Value.Length: > 2, Kind` / `: not null }` / `when (from …) => …` — the `when` on its
+    // own line lifted the braces only once the arrow broke for width, a level too deep; pass two put it back.
+    [InlineData(16267341160299312604UL, "constructs/breaks/arm-braces-under-an-arrow-broken-for-width.cs")]
     // Nightly `fuzz --seed=909`: `DeserializeObject<Review /* f */ >(x)` behind an `=`. FlatSourceWidth
     // skipped the comment, so #528's held-call table kept an `=` the comment had pushed past the margin;
     // pass two, with the arguments chopped, broke it.

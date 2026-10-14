@@ -148,6 +148,7 @@ public sealed class Fitter {
                 lineStart,
                 document.FirstPointFlatWidthOf(node)
             );
+
         modes[id] = mode;
         resolved[id] = true;
         enteredOn[id] = line;
@@ -351,6 +352,14 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ One argument the author put below the call's `(` keeps the `=` while the `(` fits (fuzz
+                // 17150111611241313074). See GroupFacts.KeptArgumentCallee.
+                if (facts.KeptArgumentCallee > 0
+                    && m.PointWidth < Unbounded
+                    && Fits(m.Column, m.PointWidth + 1 + facts.KeptArgumentCallee + 1)) {
+                    return ResolvedMode.Flat;
+                }
+
                 // ⚠ A cast's `)` before a parenthesised operator: by the measured rule. See
                 // GroupFacts.CastParenFirst (#598).
                 if (facts.CastParenFirst > 0) {
@@ -369,6 +378,15 @@ public sealed class Fitter {
                         facts.ParenCloseEnd,
                         facts.ParenCloseEnd == m.FlatWidth - m.PointWidth - 1 ? m.Trailing : 0
                     )) {
+                    return ResolvedMode.Broken;
+                }
+
+                // ⚠ And so does a doubled parenthesis's inner `)` (#598). See GroupFacts.ParenCloseEndInner.
+                if (facts.ParenCloseEndInner > 0
+                    && m.PointWidth < Unbounded
+                    && m.FlatWidth < Unbounded
+                    && m.Column + m.PointWidth + 1 + facts.ParenCloseEndInner == width + 1
+                    && Fits(m.ContinuationColumn, facts.ParenCloseEnd)) {
                     return ResolvedMode.Broken;
                 }
 
@@ -440,12 +458,47 @@ public sealed class Fitter {
                     return BreaksBeforeAPlainMember(facts, m, tail) ? ResolvedMode.Broken : ResolvedMode.Flat;
                 }
 
+                // ⚠ An `=` before a held lambda call's chain asks the plain member value's two questions, with the
+                // receiver for the fragment the held call would leave beside it (#619). Only where the value fits
+                // below whole, and only on a line the group can measure whole, as above. See
+                // GroupFacts.HeldChainReceiver.
+                if (facts is { HeldChainReceiver: > 0, EqualsName: > 0 }
+                    && m.PointWidth < Unbounded
+                    && m.FlatWidth < Unbounded
+                    && tail < Unbounded
+                    && m.Trailing < Unbounded
+                    && !Fits(m.Column, m.FlatWidth + m.Trailing - facts.HeldChainRest)
+                    && Fits(m.ContinuationColumn, tail, m.Trailing)) {
+                    // ⚠ The value's end below is read a column short of the plain member's: fitted on 2 713 cells.
+                    return EqualsFloor.BreaksBeforeTheValue(
+                        m.Column + m.PointWidth,
+                        facts.EqualsName,
+                        facts.HeldChainReceiver,
+                        m.ContinuationColumn + tail + m.Trailing - 1
+                    )
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
+                }
+
                 // ⚠ A lambda-valued local's type/name gap breaks when the line through its `=` overflows: pass
                 // one chopped the parameter list behind an `=` past the margin, and pass two, reading the chop
                 // as the author's, filled the type (Nightly replay 13830403873739157460). See
                 // GroupFacts.NameThroughEquals.
                 if (facts.NameThroughEquals > 0 && !Fits(m.Column, 1 + facts.NameThroughEquals)) {
                     return ResolvedMode.Broken;
+                }
+
+                // ⚠ A local's type/name gap before a lambda over a call, one column past the margin (#453 round 8).
+                // See GroupFacts.OneOverCallArguments.
+                if (facts.OneOverCallArguments > 0 && m.PointWidth < Unbounded) {
+                    if (m.FlatWidth < Unbounded
+                        && m.Trailing < Unbounded
+                        && m.Column + m.FlatWidth + m.Trailing == width + 1
+                        && facts.OneOverCallType >= EqualsFloor.TypeNameOneOverType(facts.OneOverCallName)
+                        && (facts.OneOverCallSingle
+                            || facts.OneOverCallArguments <= 35 + (facts.OneOverCallType - 32) / 12)) {
+                        return ResolvedMode.Broken;
+                    }
                 }
 
                 if (facts is { NameThroughEquals: > 0, OneOverValue: 0 }) {
@@ -483,10 +536,27 @@ public sealed class Fitter {
                 if (facts.EqualsLambdaArguments > 0 && m.PointWidth < Unbounded) {
                     // ⚠ The group starts at the `=` in a declaration and at the target in an assignment: the `=`
                     // ends where its point's head does.
-                    var equalsEnd = m.Column + m.PointWidth - 1;
+                    var equalsEnd = m.Column + m.PointWidth;
                     var paren = equalsEnd + 1 + facts.EqualsLambdaValueHead + 1;
                     if (paren + facts.EqualsLambdaArguments <= width) {
                         return ResolvedMode.Flat;
+                    }
+
+                    // ⚠ A local one column past the margin (#453 round 8): under a type narrower than the type/name
+                    // gap's threshold the `=` breaks wherever the arrow would, the gate aside.
+                    // ⚠ Read from the planner's widths: on pass two a chopped argument list leaves the flat width
+                    // unbounded, and the general rule below broke the `=` pass one had kept.
+                    if (facts.EqualsLambdaIsLocal && paren + facts.EqualsLambdaArguments == width + 1) {
+                        return facts.EqualsLambdaType < EqualsFloor.TypeNameOneOverType(facts.EqualsLambdaName)
+                            && facts.EqualsLambdaType <= 8 * (facts.EqualsLambdaName - 10) + 14
+                            && (facts.EqualsLambdaSingle
+                                || paren
+                                >= equalsEnd
+                                + 36
+                                - 1.6 * (facts.EqualsLambdaName - 11)
+                                + 0.25 * (facts.EqualsLambdaType - 14))
+                                ? ResolvedMode.Broken
+                                : ResolvedMode.Flat;
                     }
 
                     return EqualsFloor.BreaksBeforeALambdaCall(
@@ -495,7 +565,9 @@ public sealed class Fitter {
                         equalsEnd,
                         paren,
                         facts.EqualsLambdaArguments,
-                        facts.EqualsLambdaReach
+                        facts.EqualsLambdaReach > 0,
+                        facts.EqualsLambdaSingle,
+                        lineStart
                     )
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
@@ -538,7 +610,13 @@ public sealed class Fitter {
                     var end = m.FlatWidth >= Unbounded || m.Trailing >= Unbounded
                         ? int.MaxValue
                         : m.Column + m.FlatWidth + m.Trailing;
-                    return EqualsFloor.BreaksBeforeAPattern(facts.PatternHead, facts.PatternWidth, end)
+                    return EqualsFloor.BreaksBeforeAPattern(
+                        facts.PatternHead,
+                        facts.PatternWidth,
+                        end,
+                        facts.PatternFirstAlternative,
+                        lineStart
+                    )
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
                 }
@@ -589,6 +667,26 @@ public sealed class Fitter {
                     return Fits(m.Column, m.FlatWidth) ? ResolvedMode.Flat : ResolvedMode.Broken;
                 }
 
+                // ⚠ A single call on a parenthesised receiver: broken exactly when the line overflows and the
+                // receiver fits on it. See GroupFacts.ParenReceiver (#598).
+                if (facts.ParenReceiver) {
+                    if (m.FlatWidth >= Unbounded || tail >= Unbounded || m.Trailing >= Unbounded) {
+                        return ResolvedMode.Flat;
+                    }
+
+                    // ⚠ And a receiver too wide for its line breaks inside, the dot with it when the receiver's last
+                    // line still overflows with the call (#617). The operator then nests a level past the dot's
+                    // line (BreakPlan.ReceiverLiftOf). See GroupFacts.ParenReceiverTail.
+                    if (!Fits(m.Column, m.FlatWidth - tail)) {
+                        return facts.ParenReceiverTail > 0
+                            && !Fits(lineStart + indentWidth, facts.ParenReceiverTail + tail, m.Trailing)
+                                ? ResolvedMode.Broken
+                                : ResolvedMode.Flat;
+                    }
+
+                    return Fits(m.Column, m.FlatWidth, m.Trailing) ? ResolvedMode.Flat : ResolvedMode.Broken;
+                }
+
                 // ⚠ Broken exactly when the receiver fits, the receiver with its call does not, and the
                 // call fits on the line below. See GroupFacts.HeldCall.
                 if (facts.HeldCall > 0) {
@@ -632,8 +730,10 @@ public sealed class Fitter {
                         return ResolvedMode.Flat;
                     }
 
+                    // ⚠ A lambda call's limit moves with the rest of its chain (#605). See GroupFacts.HeldCallLambdaRest.
                     var limit = facts.HeldCallLambda
                         ? HeldLambdaLimit(paren, m.Column - lineStart)
+                        + (facts.HeldCallLambdaRest > 0 ? (facts.HeldCallLambdaRest - 10) / 1.5 : 0)
                         : HeldCallLimit(paren, facts.HeldCall);
                     return Fits(m.Column, receiver)
                         && !Fits(m.Column, m.FlatWidth)
@@ -713,7 +813,8 @@ public sealed class Fitter {
                         facts.HeldValueTypedHead,
                         m.ContinuationColumn + facts.HeldChoppedWidth,
                         facts.HeldValueCallee,
-                        m.ContinuationColumn - indentWidth
+                        m.ContinuationColumn - indentWidth,
+                        facts.HeldValueName
                     )) {
                     return ResolvedMode.Flat;
                 }
@@ -787,12 +888,16 @@ public sealed class Fitter {
                 // ⚠ A local's lambda over a call with two or more arguments (#453): the arrow breaks while the
                 // argument list is narrower than the measured floor; otherwise the head rule below decides. See
                 // GroupFacts.LambdaCallArguments.
+                // ⚠ The floor was measured at indent 8 and falls a column per column of indent past it (group B):
+                // on `T n = () => C…(xxx, yyy);` at indents 4 (a field), 8, 12 and 16 — head and `(` placed alike, the
+                // arguments one column at a time, 7 002 cells — every row's switch sits exactly 8 − indent columns
+                // from indent 8's at the same columns. Round 2's field shift (head +8, `(` +4) was this, fitted.
                 if (facts.LambdaCallArguments > 0
                     && m.FlatWidth < Unbounded
                     && EqualsFloor.BreaksTheCallArrow(
-                        m.Column - facts.LambdaHead - 1 + (facts.LambdaCallShift ? 8 : 0),
-                        m.Column + facts.LambdaCallCallee + 2 + (facts.LambdaCallShift ? 4 : 0),
-                        facts.LambdaCallArguments,
+                        m.Column - facts.LambdaHead - 1,
+                        m.Column + facts.LambdaCallCallee + 2,
+                        facts.LambdaCallArguments + lineStart - 8,
                         facts.LambdaCallSingle
                     )) {
                     return ResolvedMode.Broken;
@@ -996,9 +1101,13 @@ public sealed class Fitter {
         );
     }
 
+    /// <summary>The widest head #610 measured one argument behind; past it the floor is not used (#617).</summary>
+    const int OneArgumentMeasuredHead = 14;
+
     /// <summary>
     ///     See <see cref="GroupFacts.CalleeWidth" />. Null for a call with one argument behind a head narrower than the
-    ///     floor's that the rule for it does not break, which the ordering rule decides as it always did.
+    ///     floor's that the rule for it does not break, or wider than <see cref="OneArgumentMeasuredHead" />, which the
+    ///     ordering rule decides as it always did.
     /// </summary>
     ResolvedMode? EqualsBeforeACall(in GroupFacts facts, in Measures m, int lineStart) {
         if (m.PointWidth >= Unbounded) {
@@ -1048,6 +1157,15 @@ public sealed class Fitter {
         // case 7862808234978504853).
         if (paren > width) {
             return ResolvedMode.Broken;
+        }
+
+        // ⚠ One argument behind a head wider than #610 measured goes to the ordering rule (#617, fuzz
+        // 12392120797706766071). The floor of two was confirmed for one argument on heads of 12 to 14 only; behind
+        // `IReadOnlyDictionary<decimal, decimal> v =` it chopped from an argument of 44 where the oracle breaks the `=`
+        // into the sixties, and pass two — whose chopped argument the plan reads as the author's, so CalleeWidthOf
+        // turns the floor off — broke the `=`. The ordering rule is what pass two already used, so both passes agree.
+        if (facts.CalleeArgument > 0 && HeadWidth(facts, m, lineStart) > OneArgumentMeasuredHead) {
+            return null;
         }
 
         // ⚠ The name the `=` assigns has to reach the call, or the arguments chop (#589). See
@@ -1146,18 +1264,22 @@ public sealed class Fitter {
     ///             one column over the margin the dot breaks unless the receiver is at most <c>(t − 10) / 5</c>;
     ///         </item>
     ///         <item>
-    ///             otherwise — a tie, where the keyword's band could hold the line — the dot breaks when the type is
-    ///             at most 12 columns, <c>k − d</c> is past <c>max(5, ⌈(4t + 12) / 5⌉)</c> and <c>k</c> reaches
-    ///             <c>width − 2</c>.
+    ///             otherwise — a tie, where the keyword's band could hold the line — with <c>c = min(k, width − 2)</c>,
+    ///             <c>r</c> the receiver, <c>i</c> the statement's indent and <c>b</c> the dot's column: the dot breaks
+    ///             when <c>r ≥ 5</c>, <c>50·c + 20·r + i − 35·t ≥ 5944</c> and
+    ///             <c>56·c − (k − c) + b − 38·t ≥ 6158</c> (at a width of 120).
     ///         </item>
     ///     </list>
-    ///     ⚠ The ties are wired only where every measured cell agrees. The full boundary read from the first 1 608
-    ///     cells — the floor reached, and <c>k</c> a column lower for each two columns past it — was refuted by
-    ///     the next probe (510 of 2 988 cells): types of 15 and 16 never break at the dot up to <c>k − d</c> of
-    ///     23, at indent 20 the floor is a column lower, and the step in <c>k</c> comes sooner for some types. The
-    ///     subset kept here is right in every one of the 5 596 tie cells of the three probes and was then checked
-    ///     on a fourth. The <c>x</c> layout — neither the keyword's band nor the dot's line fits, and the oracle
-    ///     nests the dot two levels in — is not this rule's and stays the keyword's.
+    ///     ⚠ #446 round 8 (SK-DIV-0210): the ties were measured one variable at a time — types of 1 to 24, receivers
+    ///     to 60, indents 8 to 72, and the head widened to <c>yield return</c> to part the indent from the property —
+    ///     78 000 cells. The first condition is the diagonal rounds 6 and 7 saw (a receiver of five more per two
+    ///     columns of keyword line); the second is the saturation they read as "types of 14 or more never take the
+    ///     dot": it moves 56 columns of the dot's column per column of <c>k</c> and 38 per column of type, so a type of
+    ///     14 takes it only from a dot at 82, and one of 15 never can. Past <c>width − 2</c> the keyword's line stops
+    ///     helping, and costs a column of the dot's per column. A fresh random probe (both keywords, generic and
+    ///     qualified types, indents and types off the grid) matched 2 905 of 2 909 tie cells, where the subset rule
+    ///     before it matched 2 520. The <c>x</c> layout — neither the keyword's band nor the dot's line fits, and the
+    ///     oracle nests the dot two levels in — is not this rule's and stays the keyword's.
     /// </remarks>
     bool TheDotTakesTheBreak(in GroupFacts facts, int column, int lineStart) {
         var operandEnd = column + facts.TypeTestOperand;
@@ -1176,8 +1298,15 @@ public sealed class Fitter {
             return 5 * facts.TypeTestReceiver > facts.TypeTestType - 10;
         }
 
-        var floor = Math.Max(5, (4 * facts.TypeTestType + 12 + 4) / 5);
-        return facts.TypeTestType <= 12 && keywordEnd - dotLine > floor && keywordEnd >= width - 2;
+        // ⚠ The tie, as two linear conditions over the keyword's line capped two columns short of the margin (#446
+        // round 8): the receiver against the type, and the dot's column against the type.
+        var capped = Math.Min(keywordEnd, width - 2);
+        var past = keywordEnd - capped;
+        var receiver = facts.TypeTestReceiver;
+        var type = facts.TypeTestType;
+        return receiver >= 5
+            && 50 * (capped - width + 2) + 20 * receiver + lineStart - 35 * type >= 44
+            && 56 * (capped - width + 2) - past + column + receiver - 38 * type >= -450;
     }
 
     /// <summary>
@@ -1804,7 +1933,8 @@ public sealed class Fitter {
                         facts.HeldValueTypedHead,
                         below,
                         facts.HeldValueCallee,
-                        continuation - indentWidth
+                        continuation - indentWidth,
+                        facts.HeldValueName
                     )
                     || valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd;
             case 1:
@@ -1827,7 +1957,16 @@ public sealed class Fitter {
                 // past the margin for the second pass to break once the arguments had chopped (Nightly fuzzer,
                 // seed 1, replay 7536332154113230584: idempotency).
                 if (valueColumn + facts.HeldValueReceiver > width) {
-                    return true;
+                    // ⚠ A cast over the call keeps the `=` unless the receiver ends one column past the margin
+                    // (#598). See GroupFacts.HeldValueCast.
+                    return !facts.HeldValueCast || valueColumn + facts.HeldValueReceiver == width + 1;
+                }
+
+                // ⚠ A parenthesised receiver that fits beside it: broken on a line two or three columns over
+                // (#598). See GroupFacts.HeldValueParen.
+                if (facts.HeldValueParen) {
+                    var end = valueColumn + facts.HeldValueWidth;
+                    return end == width + 2 || end == width + 3;
                 }
 
                 return facts.HeldValueManyArgs

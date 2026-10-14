@@ -297,7 +297,15 @@ public enum LineFlags {
     ///     its own, as <see cref="ArrayElement" />'s does, without that flag's draft measure (#615) — `[1, 2, not (0`
     ///     / `or 1),` / `3, 4]` in the oracle.
     /// </summary>
-    ListPatternElement = 16384
+    ListPatternElement = 16384,
+
+    /// <summary>
+    ///     ⚠ A point taken only when the list pattern after it stays on one line once moved down (#617): `xs is` / `[1, 2]`
+    ///     keeps the author's break, and a list too wide for the line joins its `[` to the `is` and breaks inside, as the
+    ///     oracle writes `xs is [` / elements / `]`. The writer takes the break ahead, watches the list's group
+    ///     (<see cref="GroupFacts.WholeList" />) and rolls back.
+    /// </summary>
+    BreaksOnlyIfListStaysWhole = 32768
 }
 
 /// <summary>
@@ -454,7 +462,23 @@ public enum IndentFlags {
     ///     after it — the broken <c>is</c> has spent the level the chain's <c>or</c>s would take, as an
     ///     <c>is</c> the author broke has (#520). See <c>HeldLevel.WhileGroupBroken</c>.
     /// </summary>
-    HeldWhileGroupBroken = 8192
+    HeldWhileGroupBroken = 8192,
+
+    /// <summary>
+    ///     ⚠ A level spent unless the group named beside it takes one of its points with the level spent, and
+    ///     held once it does. Nothing has resolved that group when the scope opens — it is inside — so the writer
+    ///     lays the scope's contents out spent, watches the group, and rolls back. A broken type test's level over a
+    ///     list pattern a line comment put on a line of its own (#617).
+    /// </summary>
+    HeldIfGroupBreaks = 16384,
+
+    /// <summary>
+    ///     ⚠ A spent scope that counts only on a line a scope outside it opened on too, where the one-level-per-line
+    ///     collapse would otherwise leave the line's constructs a single level between them (#617): a parenthesised
+    ///     receiver's operator under <c>x =</c> sits a level past the dot the receiver broke before, and the same
+    ///     receiver as an argument on a line of its own takes no extra one. See <c>BreakPlan.ReceiverLiftOf</c>.
+    /// </summary>
+    CountsWithItsLine = 32768
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
@@ -1079,6 +1103,21 @@ public sealed class Document {
 ///     first and lifts after, so <c>} when (from …</c> chopped by the lift keeps the arrow's break even
 ///     though the body would now fit beside it.
 /// </param>
+/// <param name="LiftsIfWhenBreaks">
+///     ⚠ A switch arm's <see cref="Continues" /> group at its pattern that breaks exactly when the planned gap after
+///     the arm's <c>when</c> breaks for width (#576, SK-DIV-0399), decided ahead as
+///     <see cref="LiftsIfArrowBreaks" /> is. Under that break the oracle nests what opens after the arrow from the
+///     condition's line, as it does under the author's: <c>X when</c> / <c>Materialise&lt;…&gt;() =&gt; Handle(</c> /
+///     the arguments two levels past the arm / <c>)</c> one level. Unlike the arrow's lift it lifts the body too.
+/// </param>
+/// <param name="KeptArgumentCallee">
+///     ⚠ An <c>=</c> before a call of one argument that the author put on a line of its own, <c>T v = F(</c> /
+///     <c>argument</c> / <c>);</c>: the callee's width, or zero. The <c>=</c> stays while the <c>(</c> fits, and the
+///     chop with it (fuzz 17150111611241313074). Asked about Skala's own first pass on 1 610 such chops behind
+///     <c>var</c>, typed, deconstructing and assigned heads at indents 8 and 12, the oracle kept every one. Skala
+///     read the value as having no callee once it spanned lines (<c>CalleeWidthOf</c>), left the <c>=</c> to the
+///     ordering rule, and broke it on 49 of them.
+/// </param>
 /// <param name="Continues">
 ///     ⚠ A block opening on the construct's first line nests from the construct's continuation line
 ///     once the group broke — the arms of a switch in a binary operator's first operand or in a
@@ -1179,6 +1218,17 @@ public sealed class Document {
 ///     head's and the call's <c>(</c>'s columns; otherwise the head rule decides. With
 ///     <see cref="LambdaHead" /> and <see cref="LambdaCallCallee" />.
 /// </param>
+/// <param name="OneOverCallArguments">
+///     ⚠ A local's type/name gap before a lambda over a call: the call's argument list width, or zero (#453
+///     round 8). Where the statement's `;` lands one column past the margin and the arrow's floor would not
+///     chop the arguments, the gap breaks for a type at least <c>EqualsFloor.TypeNameOneOverType</c> wide.
+///     With <see cref="OneOverCallValueHead" />, <see cref="OneOverCallType" />, <see cref="OneOverCallName" />
+///     and <see cref="OneOverCallSingle" />.
+/// </param>
+/// <param name="OneOverCallValueHead">The value's width before the call's <c>(</c>.</param>
+/// <param name="OneOverCallType">The declared type's width.</param>
+/// <param name="OneOverCallName">The declarator name's width.</param>
+/// <param name="OneOverCallSingle">The call has one argument.</param>
 /// <param name="EqualsLambdaArguments">
 ///     ⚠ The <c>=</c> of a single-declarator local named in ten columns or more, whose value is a lambda over a
 ///     call: the call's argument list width, or zero for any other group (#453 round 2). With
@@ -1188,17 +1238,17 @@ public sealed class Document {
 /// </param>
 /// <param name="EqualsLambdaName">The declarator name's width. See <see cref="EqualsLambdaArguments" />.</param>
 /// <param name="EqualsLambdaType">The declared type's width. See <see cref="EqualsLambdaArguments" />.</param>
+/// <param name="EqualsLambdaIsLocal">
+///     The `=` is a local's (round 8's one-column-over rule). See
+///     <see cref="EqualsLambdaArguments" />.
+/// </param>
+/// <param name="EqualsLambdaSingle">The call has one argument. See <see cref="EqualsLambdaArguments" />.</param>
 /// <param name="EqualsLambdaReach">
-///     Columns added to the measured reach: 2 for an assignment statement's target, 0 for a declaration. See
+///     1 for an assignment statement's target, whose reach is its own (group B), 0 for a declaration. See
 ///     <see cref="EqualsLambdaArguments" />.
 /// </param>
 /// <param name="EqualsLambdaValueHead">
 ///     The value's width before the call's <c>(</c>: <c>() =&gt; Callee</c>. See <see cref="EqualsLambdaArguments" />.
-/// </param>
-/// <param name="LambdaCallShift">
-///     ⚠ A field's lambda: the floor is read with the head eight columns and the <c>(</c> four columns further
-///     right than they stand — fitted on 1 559 field cells at indent 4, 23 differing against 66 unshifted (#453
-///     round 2). See <see cref="LambdaCallArguments" />.
 /// </param>
 /// <param name="LambdaCallSingle">
 ///     The call has a single argument, whose floor is its own. See <see cref="LambdaCallArguments" />.
@@ -1230,6 +1280,14 @@ public sealed class Document {
 ///     ⚠ A held first call whose one argument is a lambda, `r.Where(x => …).ToList()`: the line below is limited
 ///     by the call's own measured table, which weighs the head before the receiver too (#605). See
 ///     <c>Fitter.HeldLambdaLimit</c>.
+/// </param>
+/// <param name="HeldCallLambdaRest">
+///     ⚠ With <see cref="HeldCallLambda" />: the flat width of the chain after the held call through its <c>;</c>,
+///     under any chain wrap style, or zero when the call ends the chain (#605, group B). The limit was measured
+///     behind <c>.ToList();</c>, ten columns; every column of rest past ten moves it two thirds of a column, the
+///     slope <see cref="HeldCallRest" /> has under <c>wrap_if_long</c>. Measured with <c>Testing ask</c> on 5 000
+///     random statements within four columns of the limit and rests of 5 to 22 columns: 1 519 held decisions
+///     differed and 244 do.
 /// </param>
 /// <param name="HeldCallOnAPath">
 ///     ⚠ A held first call whose receiver is a plain path of names, `source.A…`: when the receiver alone
@@ -1432,6 +1490,11 @@ public sealed class Document {
 /// <param name="HeldValueCallee">
 ///     With <see cref="HeldValueTypedHead" />: the receiver's and the method name's widths, type arguments left out.
 /// </param>
+/// <param name="HeldValueName">
+///     With <see cref="HeldValueTypedHead" />: a typed local's declared name, for a method without type arguments, which
+///     <see cref="EqualsFloor.HeldTypedLocalBreaks" /> weighs with the type (#446 round 4); zero otherwise — a method with
+///     type arguments was not measured, and #528's fixture keeps the <c>=</c> where the measured limit would break it.
+/// </param>
 /// <param name="HeldChoppedWidth">
 ///     ⚠ A typed local's single call on a receiver whose argument list is already chopped — pass two of a
 ///     <see cref="EqualsFloor.HeldTypedLocalBreaks" /> that kept the <c>=</c>: the value's flat width through its
@@ -1457,6 +1520,16 @@ public sealed class Document {
 ///     With <see cref="MemberHeadWidth" />: the widths of the value's links after the receiver, each <c>.</c> included,
 ///     in order — the dot fill keeps beside the <c>=</c> the receiver and every link that still fits there (#590).
 /// </param>
+/// <param name="HeldChainReceiver">
+///     ⚠ An <c>=</c> whose value is a chain of calls on a plain name whose first call holds a sole lambda,
+///     <c>r.Where(x =&gt; …).ToList()</c>: the receiver's width, or zero (#619, group B). Past the margin the <c>=</c>
+///     breaks by the plain member value's rule, <c>EqualsFloor.BreaksBeforeTheValue</c>, with the receiver for the
+///     fragment the held call would leave beside it, rather than holding the receiver and moving the call down.
+/// </param>
+/// <param name="HeldChainRest">
+///     With <see cref="HeldChainReceiver" />: the chain's width after its first call through the <c>;</c>. Where the
+///     line through the first call fits, the oracle keeps the <c>=</c> and breaks before the next link instead.
+/// </param>
 /// <param name="MemberHeadWidth">
 ///     ⚠ An <c>=</c> whose value is a plain member access the dot fill breaks (#482): the receiver's flat
 ///     width, before the first <c>.</c>. The <c>=</c> yields to the fill, and breaks after all when the
@@ -1468,6 +1541,11 @@ public sealed class Document {
 ///     alternative, <c>operand is A</c>. The <c>=</c> breaks whenever that would end past the margin
 ///     beside it, whatever <see cref="EqualsFloor.BreaksBeforeAPattern" /> says (Nightly
 ///     <c>fuzz --seed=7777</c>). Zero for any other group.
+/// </param>
+/// <param name="PatternFirstAlternative">
+///     With <see cref="PatternHead" />: the pattern's first alternative alone, <c>A</c> of <c>A or B</c>, which
+///     <see cref="EqualsFloor.BreaksBeforeAPattern" /> weighs beside the whole pattern for a head under twelve
+///     (#446 round 5). Zero for any other group.
 /// </param>
 /// <param name="ValueHeadFitsBelow">
 ///     With <see cref="ValueHeadWidth" />: the condition is a call, whose <c>=</c> breaks only when the
@@ -1484,6 +1562,20 @@ public sealed class Document {
 /// </param>
 /// <param name="HeldValueWidth">With <see cref="HeldValue" />: the value's flat width with its <c>;</c>.</param>
 /// <param name="HeldValueReceiver">With <see cref="HeldValue" />: the receiver's flat width.</param>
+/// <param name="HeldValueCast">
+///     ⚠ With <see cref="HeldValue" />: the value is a cast over the call, <c>(T)(a + b…).M()</c> (#598). Behind a
+///     head of fewer than twelve columns a receiver that runs past the margin beside the <c>=</c> keeps the
+///     <c>=</c> — the parentheses break inside — unless its <c>)</c> lands on column 121 exactly. Measured
+///     2026-10-14 with <c>Testing ask</c> behind <c>var x =</c> and <c>this.x =</c>: 15 of 15 rows at 121 break
+///     the <c>=</c>, 0 of 92 past it do. The same value without the cast breaks the <c>=</c> past it too.
+/// </param>
+/// <param name="HeldValueParen">
+///     ⚠ With <see cref="HeldValue" />: the call's receiver is parenthesised, <c>(a + b…).M()</c>, cast or not
+///     (#598). Behind a head of fewer than twelve columns, while the receiver fits beside the <c>=</c>, the
+///     <c>=</c> breaks exactly when the line overflows by two or three columns, and the dot takes the break
+///     otherwise. Measured 2026-10-14 with <c>Testing ask</c> behind <c>var x =</c> and <c>this.x =</c>, casts of
+///     0 to 31 columns, calls <c>.M()</c>, <c>.Trim()</c> and <c>.ToUpperInvariant()</c>.
+/// </param>
 /// <param name="HeldValueHead">With <see cref="HeldValue" />: the width from the dot through the <c>(</c>.</param>
 /// <param name="ArmHead">
 ///     ⚠ A switch arm's member-access pattern (#531, SK-DIV-0330): the pattern's flat width, with
@@ -1506,6 +1598,19 @@ public sealed class Document {
 ///     continuation line. A receiver that does not fit flat breaks inside itself and leaves the point alone.
 ///     1 and 2 are a chain's first call with one argument and with more; 3 and 4 a single call that is a
 ///     whole <c>=</c> value (<see cref="HeldValue" />) with one argument and with more.
+/// </param>
+/// <param name="ParenReceiver">
+///     ⚠ A single call on a parenthesised receiver, cast or not, as the whole value of an <c>=</c> or a <c>return</c>
+///     (#598, SK-DIV-0491): the point before its dot breaks exactly when the line overflows and the receiver,
+///     through its <c>)</c>, fits on it. Measured 2026-10-14 with <c>Testing ask</c> on <c>(T)(a + b…).M()</c> behind
+///     <c>return</c>, <c>x =</c> and <c>var x =</c>: <c>return (string)(a + b…)</c> / <c>.Trim();</c> wherever that
+///     <c>)</c> lands by column 120, and the parentheses break inside from 121, the cast's rule aside.
+/// </param>
+/// <param name="ParenReceiverTail">
+///     ⚠ With <see cref="ParenReceiver" />: the width from the last operator of the binary the parentheses hold
+///     through their <c>)</c>. A receiver too wide for its line breaks inside, and the dot breaks too when that
+///     last line, with the call, still overflows: <c>x = (a</c> / <c>&amp;&amp; b…)</c> / <c>.Trim();</c>, the
+///     operator a level past the dot (#617, <c>BreakPlan.ReceiverLiftOf</c>).
 /// </param>
 /// <param name="HeldCallRest">
 ///     ⚠ Under <c>wrap_if_long</c> (#552): the flat width of the chain after the held call, through its
@@ -1603,6 +1708,11 @@ public sealed class Document {
 ///     <c>)</c>, or zero. Where the <c>)</c> lands exactly one column past the margin the oracle breaks the
 ///     <c>=</c> whenever the value then fits below, and breaks inside the parentheses at every other width.
 /// </param>
+/// <param name="ParenCloseEndInner">
+///     ⚠ With <see cref="ParenCloseEnd" />: for a value that opens with a doubled parenthesis, <c>((a + b…))</c>, the
+///     width through the inner <c>)</c>, or zero. Its landing on column 121 breaks the <c>=</c> too (#598): measured
+///     2026-10-14 with <c>Testing ask</c>, <c>var x = ((a + b…));</c> breaks at 122 and 123 columns and nowhere else.
+/// </param>
 /// <param name="TailSpare">
 ///     ⚠ Columns a <see cref="BreaksOnlyIfTailFits" /> group's tail must leave free on the continuation line, kept
 ///     and added alike (#598): six for a typed local of a short type before a bare parenthesis, zero otherwise.
@@ -1647,6 +1757,10 @@ public sealed class Document {
 ///     holds a point of its own — <c>E.Get&lt;T&gt;(e).Value =</c>, whose held call breaks at its dot — ends the
 ///     group's point width at that dot, and the value's column read from it landed 36 columns left of the
 ///     <c>=</c>, so the value "fitted" beside it and the <c>=</c> stayed on pass one, to break on pass two.
+/// </param>
+/// <param name="WholeList">
+///     ⚠ With <see cref="LineFlags.BreaksOnlyIfListStaysWhole" /> on the group's point: the list pattern's group whose
+///     staying whole decides the point (#617); −1 otherwise.
 /// </param>
 /// <param name="ShortHeadTypeEnd">
 ///     ⚠ An <c>=</c> with a head of five columns or fewer before a value whose type argument list fills —
@@ -1695,8 +1809,11 @@ public readonly record struct GroupFacts(
     EqualsOwner CalleeOwner = EqualsOwner.None,
     int ThroughWidth = 0,
     int HeldCall = 0,
+    bool ParenReceiver = false,
+    int ParenReceiverTail = 0,
     int HeldCallHead = 0,
     int HeldCallRest = 0,
+    int HeldCallLambdaRest = 0,
     bool ContinuesIfItBreaks = false,
     bool FlatIfHeadOverflows = false,
     int ValueHeadWidth = 0,
@@ -1705,10 +1822,13 @@ public readonly record struct GroupFacts(
     int HeldValue = 0,
     int HeldValueWidth = 0,
     int HeldValueReceiver = 0,
+    bool HeldValueCast = false,
+    bool HeldValueParen = false,
     int HeldValueHead = 0,
     bool HeldValueManyArgs = false,
     int HeldValueTypedHead = 0,
     int HeldValueCallee = 0,
+    int HeldValueName = 0,
     int HeldChoppedWidth = 0,
     int HeldChoppedHead = 0,
     int ArmHead = 0,
@@ -1741,14 +1861,22 @@ public readonly record struct GroupFacts(
     bool LambdaOperandKept = false,
     int LambdaCallCallee = 0,
     int LambdaCallArguments = 0,
+    int OneOverCallArguments = 0,
+    int OneOverCallValueHead = 0,
+    int OneOverCallType = 0,
+    int OneOverCallName = 0,
+    bool OneOverCallSingle = false,
     int EqualsLambdaName = 0,
     int EqualsLambdaType = 0,
     int EqualsLambdaReach = 0,
+    bool EqualsLambdaIsLocal = false,
+    bool EqualsLambdaSingle = false,
     int EqualsLambdaValueHead = 0,
     int EqualsLambdaArguments = 0,
     bool LambdaCallSingle = false,
-    bool LambdaCallShift = false,
     int MemberHeadWidth = 0,
+    int HeldChainReceiver = 0,
+    int HeldChainRest = 0,
     int EqualsName = 0,
     int[]? MemberLinks = null,
     bool EqualsNameAttributed = false,
@@ -1760,9 +1888,11 @@ public readonly record struct GroupFacts(
     int OrHead = 0,
     bool OrLeftIsPattern = false,
     int PatternFirstWidth = 0,
+    int PatternFirstAlternative = 0,
     int ArmBodyTrail = 0,
     int LiftGroup = -1,
     bool LiftsIfArrowBreaks = false,
+    bool LiftsIfWhenBreaks = false,
     bool DraftsBroken = false,
     int ArmCast = 0,
     bool BreaksIfTheLineOverflows = false,
@@ -1787,6 +1917,7 @@ public readonly record struct GroupFacts(
     int SectionJoinedOverDefault = 0,
     int DefaultValueWidth = 0,
     int ParenCloseEnd = 0,
+    int ParenCloseEndInner = 0,
     int TailSpare = 0,
     bool WhenTable = false,
     bool WhenAtom = false,
@@ -1795,7 +1926,9 @@ public readonly record struct GroupFacts(
     int CastParenFirst = 0,
     int ShortHeadTypeEnd = 0,
     int CalleeArgument = 0,
-    int HeldValueTarget = 0);
+    int KeptArgumentCallee = 0,
+    int HeldValueTarget = 0,
+    int WholeList = -1);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the

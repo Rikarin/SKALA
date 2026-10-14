@@ -185,6 +185,18 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
+        // ⚠ A parenthesised receiver whose dot breaks for width nests its own continuation a level past the dot's
+        // line (#617): `x = (a` / `&& b…)` / `.Length;` puts `&&` at 16 and `.Length` at 12, as pass two's kept
+        // breaks do. Held while the dot's group stays flat. See BreakPlan.ReceiverLiftOf.
+        if (plan.ReceiverLiftOf(node) is >= 0 and var dotGroup && !AlignsFromOwnColumn(node)) {
+            EmitLeadingGap(node);
+            doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileGroupFlat, dotGroup, true);
+            VisitPlanned(node);
+            EmitUpTo(node.Span.End);
+            doc.Close();
+            return;
+        }
+
         if (!AlignsFromOwnColumn(node)) {
             VisitPlanned(node);
             return;
@@ -433,6 +445,7 @@ public sealed partial class CSharpDocumentBuilder {
             doc.DescribeGroup(
                 plan.Id,
                 plan.Facts with {
+                    WholeList = this.plan.WholeListOf(plan.Id),
                     SpendsIndent = indented[i] > 0 && plan.HoldsLevel != HeldLevel.WhileChainWhole,
                     Continues = plan.Facts.Continues && !aligned
                 }
@@ -452,11 +465,17 @@ public sealed partial class CSharpDocumentBuilder {
 
             // ⚠ One level past the operand's line, not stacked on what that line opened (#445).
             if (plan.FromLine && !aligned) {
-                OpenIndent(
-                    IndentKind.FromLine,
-                    false,
-                    plan.FromLineNested ? IndentFlags.NestedSoleLambda : IndentFlags.None
-                );
+                // ⚠ Held once a list pattern a line comment put on a line of its own breaks (#617).
+                if (!plan.FromLineNested && this.plan.FromLineHeldAgainst(plan.Id) is >= 0 and var list) {
+                    doc.OpenHeldIndent(IndentKind.FromLine, IndentFlags.HeldIfGroupBreaks, list);
+                    continuousDepth++;
+                } else {
+                    OpenIndent(
+                        IndentKind.FromLine,
+                        false,
+                        plan.FromLineNested ? IndentFlags.NestedSoleLambda : IndentFlags.None
+                    );
+                }
             }
 
             if (i + 1 == gapAfter) {
@@ -1374,7 +1393,7 @@ public sealed partial class CSharpDocumentBuilder {
         // held while it stays flat and is never the builder's continuation, so the arm's own groups — the
         // arrow's, the `when` condition's of #576 — still spend theirs. Counted, a held level left them none
         // (arm-when-condition-below's `D`). Broken, the writer holds the arrow's level instead.
-        if (indented > 0 && planned.Facts.LiftsIfArrowBreaks) {
+        if (indented > 0 && (planned.Facts.LiftsIfArrowBreaks || planned.Facts.LiftsIfWhenBreaks)) {
             doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileOwnerFlat, -1);
             return (LiftLevel, false);
         }
@@ -5062,6 +5081,10 @@ public sealed partial class CSharpDocumentBuilder {
             && list.Parameters[0].GetFirstToken() == nextToken
             && AlignsTypeParameters(list)) {
             flags |= LineFlags.AlignedListHead;
+        }
+
+        if (rule == GapRule.Point && plan.BreaksOnlyIfListStaysWhole(nextToken.SpanStart)) {
+            flags |= LineFlags.BreaksOnlyIfListStaysWhole;
         }
 
         if (rule == GapRule.FollowingPoint) {

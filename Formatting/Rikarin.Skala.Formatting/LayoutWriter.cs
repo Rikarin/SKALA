@@ -333,9 +333,10 @@ public sealed class LayoutWriter {
                         if (HeldByALift(slot, stack)) {
                             Push(IndentKind.None, IndentFlags.None, 0, stack);
                         } else if (((IndentFlags)slot.Arg1 & HeldConditions) != 0) {
+                            // ⚠ A spent scope keeps IndentFlags.CountsWithItsLine (BreakPlan.ReceiverLiftOf).
                             Push(
                                 HeldOrSpent(node, (IndentKind)slot.Arg0, (IndentFlags)slot.Arg1, slot.Arg2, stack),
-                                IndentFlags.None,
+                                (IndentFlags)slot.Arg1 & IndentFlags.CountsWithItsLine,
                                 0,
                                 stack
                             );
@@ -346,7 +347,9 @@ public sealed class LayoutWriter {
                         break;
 
                     case DocKind.Group:
-                        if (document.FactsOf(slot.Arg1).LiftsIfArrowBreaks && watchedChain != slot.Arg1) {
+                        if ((document.FactsOf(slot.Arg1).LiftsIfArrowBreaks
+                                || document.FactsOf(slot.Arg1).LiftsIfWhenBreaks)
+                            && watchedChain != slot.Arg1) {
                             DecideByTheArrow(node, slot.Arg1, stack);
                         }
 
@@ -411,7 +414,8 @@ public sealed class LayoutWriter {
         IndentFlags.HeldWhileOwnerFlat
         | IndentFlags.HeldWhileChainWhole
         | IndentFlags.HeldWhileGroupFlat
-        | IndentFlags.HeldWhileGroupBroken;
+        | IndentFlags.HeldWhileGroupBroken
+        | IndentFlags.HeldIfGroupBreaks;
 
     /// <summary>
     ///     The kind a conditionally held scope opens as: <see cref="IndentKind.None" /> — a held level —
@@ -447,6 +451,12 @@ public sealed class LayoutWriter {
         // chain's level when it breaks — so the chain's own is spent only while it stays flat.
         if ((conditions & IndentFlags.HeldWhileGroupBroken) != 0) {
             return chainGroup >= 0 && fitter.ModeOf(chainGroup) == ResolvedMode.Broken ? IndentKind.None : kind;
+        }
+
+        // ⚠ A list pattern past a comment after an `is` (#617): written ahead with the level spent, and held if
+        // the list broke there — the oracle's list sits one level in only while it stays on one line.
+        if ((conditions & IndentFlags.HeldIfGroupBreaks) != 0) {
+            return chainGroup >= 0 && ChainBreaksInside(node, chainGroup, stack, kind) ? IndentKind.None : kind;
         }
 
         if ((conditions & IndentFlags.HeldWhileChainWhole) != 0
@@ -510,13 +520,22 @@ public sealed class LayoutWriter {
     ///         source and spends the level — the same layout.
     ///     </para>
     /// </remarks>
-    bool ChainBreaksInside(int node, int chainGroup, Stack<(int Node, int Child)> stack) {
+    /// <param name="trial">
+    ///     The kind the scope is written ahead as: held (<see cref="IndentKind.None" />) for a chain, spent for
+    ///     <see cref="IndentFlags.HeldIfGroupBreaks" />, whose group is asked at the deeper of the two layouts.
+    /// </param>
+    bool ChainBreaksInside(
+        int node,
+        int chainGroup,
+        Stack<(int Node, int Child)> stack,
+        IndentKind trial = IndentKind.None
+    ) {
         var (watched, broke) = (watchedChain, watchedChainBroke);
         var checkpoint = Checkpoint();
         watchedChain = chainGroup;
         watchedChainBroke = false;
 
-        Push(IndentKind.None, IndentFlags.None, 0, stack);
+        Push(trial, IndentFlags.None, 0, stack);
         var ahead = new Stack<(int Node, int Child)>(stack.Reverse());
         var floor = ahead.Count;
         var children = document.ChildrenOf(node);
@@ -666,7 +685,8 @@ public sealed class LayoutWriter {
                         Lifted: lifted,
                         IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0,
                         LiftsThrough: liftsThrough,
-                        Additive: (flags & IndentFlags.Additive) != 0
+                        Additive: (flags & IndentFlags.Additive) != 0,
+                        CountsWithItsLine: (flags & IndentFlags.CountsWithItsLine) != 0
                     ),
                 IndentKind.OneLevel =>
                     new Scope(
@@ -1014,12 +1034,19 @@ public sealed class LayoutWriter {
         Restore(checkpoint);
         (watchedChain, watchedChainBroke, watchedLifts) = (watched, broke, lifts);
 
-        // ⚠ Only a head that spans lines has anything to lift. Under a pattern on one line the group would
-        // lift nothing of the pattern's and everything opened in the body after it — `{ Length: > 0 } =>` /
-        // `Cast<…,` / `TimeSpan>(` a level deeper on pass one than pass two (ArmArrowIssue378Tests).
-        if (forced.Length == 0
-            || forced[0].Line == start
-            || !forced.Any(static lift => lift.Mode == ResolvedMode.Broken)) {
+        // ⚠ A `when` lift breaks with the `when` gap alone, which is entered on the arm's first line (#576). See
+        // GroupFacts.LiftsIfWhenBreaks.
+        if (document.FactsOf(group).LiftsIfWhenBreaks) {
+            if (!forced.Any(lift => lift.Mode == ResolvedMode.Broken && document.FactsOf(lift.Group).WhenTable)) {
+                return;
+            }
+        } else if (forced.Length == 0
+                   // ⚠ Only a head that spans lines has anything to lift. Under a pattern on one line the group
+                   // would lift nothing of the pattern's and everything opened in the body after it —
+                   // `{ Length: > 0 } =>` / `Cast<…,` / `TimeSpan>(` a level deeper on pass one than pass two
+                   // (ArmArrowIssue378Tests).
+                   || forced[0].Line == start
+                   || !forced.Any(static lift => lift.Mode == ResolvedMode.Broken)) {
             return;
         }
 
@@ -1340,6 +1367,16 @@ public sealed class LayoutWriter {
                 return Math.Max(0, level + scope.Lifted + (counts ? scope.Level : 0));
             }
 
+            // ⚠ Counted only beside a scope outside it opened on the same line, and never blocking (#617). See
+            // IndentFlags.CountsWithItsLine.
+            if (scope.CountsWithItsLine) {
+                if ((nested ? scope.OpenLine <= line : scope.OpenLine < line) && OpensWithAnOuterScope(i)) {
+                    level += scope.Level;
+                }
+
+                continue;
+            }
+
             if (scope.Unconditional) {
                 if (nested ? scope.OpenLine <= line : scope.OpenLine < line) {
                     level += scope.Level;
@@ -1358,6 +1395,26 @@ public sealed class LayoutWriter {
         // ⚠ Clamped, because a column outdent is the one contribution that can be negative and the
         // file's outermost construct has no level to spend it against.
         return Math.Max(0, level);
+    }
+
+    /// <summary>Whether a scope outside the one at <paramref name="index" />, inside its block, opened on its line.</summary>
+    bool OpensWithAnOuterScope(int index) {
+        for (var j = index - 1; j >= 0; j--) {
+            var outer = scopes[j];
+            if (outer.ColumnOutdent != 0) {
+                continue;
+            }
+
+            if (outer.IsBlock) {
+                return false;
+            }
+
+            if (outer.OpenLine == scopes[index].OpenLine && outer.Level > 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <param name="Unconditional">
@@ -1431,7 +1488,8 @@ public sealed class LayoutWriter {
         bool LiftsThrough = false,
         bool IsFromLine = false,
         bool IsBrokenAfter = false,
-        bool Additive = false);
+        bool Additive = false,
+        bool CountsWithItsLine = false);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     /// <summary>
@@ -2168,6 +2226,13 @@ public sealed class LayoutWriter {
                 flat = NextLineFitsBeside(ref slot, flags, stack);
             }
 
+            // ⚠ And a point before a list pattern, taken only while the list stays whole on the line it creates (#617).
+            if (!flat
+                && (flags & LineFlags.BreaksOnlyIfListStaysWhole) != 0
+                && document.FactsOf(slot.Arg2).WholeList is >= 0 and var list) {
+                flat = ListBreaksBelow(ref slot, list, stack);
+            }
+
             if (flat) {
                 if ((flags & LineFlags.FlatSpace) != 0) {
                     pendingSpace = true;
@@ -2293,6 +2358,23 @@ public sealed class LayoutWriter {
         return Fits(column, width);
     }
 
+    /// <summary>
+    ///     Whether the list pattern's group <paramref name="list" /> takes one of its points once the break at
+    ///     <paramref name="slot" /> is taken — the line it creates written ahead, watched, and rolled back (#617).
+    /// </summary>
+    bool ListBreaksBelow(ref DocNode slot, int list, Stack<(int Node, int Child)> stack) {
+        var (watched, broke) = (watchedChain, watchedChainBroke);
+        var checkpoint = Checkpoint();
+        watchedChain = list;
+        watchedChainBroke = false;
+        TakeBreak(ref slot);
+        Run(new(stack.Reverse()), line);
+        var answer = watchedChainBroke;
+        Restore(checkpoint);
+        (watchedChain, watchedChainBroke) = (watched, broke);
+        return answer;
+    }
+
     /// <summary>The width of the output line beginning at <paramref name="start" />, less its indentation.</summary>
     int LineContentWidth(int start) {
         var end = start;
@@ -2336,6 +2418,9 @@ public sealed class LayoutWriter {
         public bool WatchedChainBroke;
         public int WatchedLifts;
         public (int Group, int Depth, int Line)[] BrokenConstructs;
+        public KeyValuePair<int, int>[] FilledElementLines;
+        public int[] AwaitingElement;
+        public int LastTokenLine;
         public Fitter.Mark Fitter;
     }
 
@@ -2358,6 +2443,9 @@ public sealed class LayoutWriter {
             WatchedChainBroke = watchedChainBroke,
             WatchedLifts = watchedLifts.Count,
             BrokenConstructs = [..brokenConstructs],
+            FilledElementLines = [..filledElementLines],
+            AwaitingElement = [..awaitingElement],
+            LastTokenLine = lastTokenLine,
             Fitter = fitter.MarkForRollback()
         };
 
@@ -2384,6 +2472,19 @@ public sealed class LayoutWriter {
 
         brokenConstructs.Clear();
         brokenConstructs.AddRange(state.BrokenConstructs);
+
+        // ⚠ And the array fills' element records (#617, fuzz 718351361052470981). A switch arm decided by its arrow
+        // (DecideByTheArrow) writes its body ahead; an initializer's elements recorded the lines they started on
+        // there, and the real walk read those as an element spanning lines and broke after the first one. Pass two,
+        // reading that break as the author's, filled the rest differently.
+        filledElementLines.Clear();
+        foreach (var (group, started) in state.FilledElementLines) {
+            filledElementLines[group] = started;
+        }
+
+        awaitingElement.Clear();
+        awaitingElement.AddRange(state.AwaitingElement);
+        lastTokenLine = state.LastTokenLine;
         fitter.Rollback(state.Fitter);
     }
 
