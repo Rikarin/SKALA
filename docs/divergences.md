@@ -11809,6 +11809,107 @@ point there, so the row stays divergent but is now stable.
 - The oracle keeps the break, with and without braces on several lines. It is kept now.
 - Pinned by `WhenBeforeACollectionTests` and the seed in `FuzzRegressionTests`.
 
+⚠ **#576 round 7 (2026-10-14, group L): the read-through limit was wrong, and the `when` gap is a band of head widths.**
+Round 6 had left 194 + 25 + 39 + 70 rows. Classified side by side first: 140 of the 828-arm grid's 194 were the oracle
+breaking after the `when` where Skala filled the type arguments, 77 a member-access body's own dot, the rest the outer
+list's L-against-T choice. None of them is a threshold on the line below.
+
+**1. A body of four columns or more with its comma is not read through.** The table (`25·t + 6·h ≤ 3191`) was fitted
+on `1,` and applied to every atom of fourteen or fewer. Measured on 432 arms (`1`, `12`, `a`, `ab`, `"s"`, `abc`, `A.B`,
+`true`, … `Abcdefghijklm`): only bodies of three columns or fewer with the comma follow the table. From four, the
+oracle breaks after the `when` and then after the arrow (`>>() =>` / `"ss",`) where the table filled the type arguments.
+
+**2. Past that, the `when` breaks only inside a band of head widths.** Swept one column at a time on 4 755 arms: the
+head (`h`, the arm through `when`) from 6 to 65, bodies of 3 to 18 columns, conditions of 97 to 124, indents 8, 12
+and 16. The band is relative to the arm, not to the line, and the same at every condition width up to 112:
+
+- the whole arm fits on the line below: the `when` breaks;
+- otherwise it breaks while `max(12, 45 − 6·b) ≤ h` and `7·h ≤ 19·b + 105`, `b` the body with its comma (the
+  last arm's body, without one, sits two to four columns lower: the comma counts);
+- and, before a body of fourteen or fewer, only while the condition, flat on the line below, runs at most
+  `13 + (b − 5)/2` columns past the margin (measured at bodies of 5 and 9; wider bodies were never seen to stop);
+- a condition one or two columns past the margin beside the `when` breaks it whatever the head.
+
+Past the band the type arguments fill beside the `when`. The fit (an exhaustive integer search) puts every one of the
+seventeen measured upper edges on the line. (`Fitter.WhenBreaks`; `BreakPlan.WhenBodyWidth` no longer caps the
+body.) Under a `when` it breaks, such a body is no longer read through past `WhenReadThroughLimit` either
+(`PositionalHead`), so the arrow takes the break as the oracle's does.
+
+⚠ The band's upper edge moves with the condition's shape, and that is **not modelled**. Fitted on
+`Materialise<List<bool>, IReadOnlyDictionary<int, T…>>()`, it is right for a first argument of 20 to 24 columns. With
+the first argument short (`M<A, T…>()`, `Make<A, B, IList<T…>>()`, `Pick<int, Func<string, T…>>()`) the oracle keeps
+breaking to a head of 46 to 62 at a body of 7; long (`Convert<Dictionary<int, string>, …>`, `M<A…30, …>`) it stops at
+28 to 30. A first-argument term (`hi ≈ 69 − 1.5·s`) fits the plain lists and misses `Pick`, `N<List<bool>, …>` and
+`Is<Holder<T…>, Box<int>>()` by 10 to 30, so it was not wired. 408 of gL5's 800 and 120 of gL6's 449 arms are that
+edge.
+
+**3. Below a broken `when`, the outer list reads its real continuation.** Round 6's rule (the outer list breaks after
+its first comma while its tail fits below with 14 to spare) is the oracle's under a broken `when` too, at indents 8,
+12 and 16 — but the fitter measured from the condition's own line, because the lift that puts the list a level past it
+is added after the fact. Skala broke the outer list for four more columns of condition than the oracle. The rule now
+reads `lineStart + 4` there, and measures the tail from the list's *last* argument, where a fill of three or more
+arguments breaks (`Bind<decimal, float,` / `ISet<T…>>()`, found by the fourth fresh probe).
+
+**4. A member-access body's own dot.** `=> Short` / `.Value12,` is the oracle's while the line through the receiver
+fits, by a bar on the body, not on the line: behind a head with no break point, `2·name + 3·receiver ≥ 22` (108 cells of
+plain arms, one miss); behind a pattern that can break — braces, brackets, `or`, a positional list — it chops the pattern
+up to `5·name + 6·receiver ≥ 53` (192 list-pattern cells at line ends 122 and 124; the bar rises two a column of line end, which is
+not followed). Skala had no point there at all: a pure property path plans no chain group, so it broke after the arrow
+or, before a body of fourteen or fewer, read the body through and chopped the pattern. The arm now plans the dot
+(`GroupFacts.ArmBodyDot`), and a short body is read by the head only to its dot (`GroupFlags.ArrowBodyRunsToItsDot`,
+`Document.DotTailOf`): the pattern chops when `} => Receiver` does not fit, as the oracle's does, and a longer body
+still breaks after the arrow. A first cut held the dot's level on pass one only and was non-idempotent on 32 rows
+of the 828-arm grid; the dot's group now has a level of its own.
+
+Diverging rows, master `d2aeae3a` → branch (no row non-idempotent before or after):
+
+| Grid | Rows | Master | Branch |
+|---|---|---|---|
+| 600-arm (round 4) | 600 | 2 | 2 |
+| 192-arm | 192 | 0 | 0 |
+| 200-arm | 200 | 11 | 9 |
+| 828-arm short-body grid | 828 | 194 | 15 |
+| round 6 fresh, seed 57603 | 400 | 70 | 28 |
+| round 6 fresh, seed 57604 | 400 | 25 | 18 |
+| round 5 fresh, seeds 57601 / 57602 | 300 / 300 | 25 / 39 | 8 / 26 |
+| bodies `1` … `Abcdefghijklm` (fit) | 432 | 130 | 13 |
+| band, heads 18–60 × three bodies (fit) | 903 | 654 | 10 |
+| band, heads × bodies 2–12 × two indents (fit) | 1 692 | 918 | 43 |
+| band, odd and wide bodies at indents 8 and 12 (fit) | 2 160 | 1 013 | 0 |
+| four other conditions, last arm too (fit) | 1 296 | 800 | 408 |
+| first argument and callee widths (fit) | 754 | 449 | 120 |
+| band end, conditions 100–124 (fit) | 300 | 154 | 2 |
+| member-access bodies, three arm kinds (fit) | 240 | 28 | 3 |
+| receiver × name, plain (fit) | 108 | 26 | 1 |
+| receiver × name behind braces / brackets (fit) | 60 / 192 | 11 / 47 | 2 / 6 |
+| fresh, seed 57605 (after rules 1–3; then used for the band end's body limit) | 600 | 182 | 96 |
+| fresh, seed 57606 (after rule 4; then used for its short-body limit) | 500 | 111 | 57 |
+| fresh, seed 57607 (then used for rule 4's second bar) | 700 | 190 | 95 |
+| fresh, seed 57608 (then used for the last-argument tail) | 700 | 166 | 91 |
+| **fresh, seed 57609, built after the last change** | 700 | **184** | **108** |
+
+The last probe has no newly diverging row. The rows it still differs on are spread: the band edge on conditions of
+other shapes, `or`-chain heads before a short body (B where Skala chops, unchanged from master), a few one-column
+boundaries of the dot's bar, and breaks after an inner `<` (`Make<A, B, IList<` / `T…`, `Is<` / `Holder<…>,`) — the
+point the brief named, which the oracle takes after the `<` here, not before it, and only once the long argument
+cannot fit anywhere else. It is not added.
+
+Regressed rows, all on fit grids: 20 and 27 cells of the other-condition grids, where the band's Materialise edge
+is wider than the oracle's for a long first argument (above); 2 on round 6's fresh 57604 (`> 7 when Check<string,` /
+`ValueTuple<…>>` and `var v when Check<string,`, a condition one column past the margin beside the `when` that the
+oracle fills — the "one or two columns past" clause holds on the Materialise grids and the fresh probes (12 rows on seed 57605 alone), and
+misses there); and 3 one-column cells of the dot's bar behind brackets.
+
+⚠ Still open after round 7:
+- the band's upper edge for conditions whose first type argument is far from 23 columns wide;
+- round 6's regressed row `var v when Pick<int,` / `Func<…>>() => Value` (the oracle breaks the outer list at a tail
+  one column past round 6's spare; the line-below rule is not the whole of it);
+- query and call bodies kept on the arrow's line, and chain bodies (not reworked this round);
+- the dot's bar rising with the line's end.
+
+Pinned by `WhenBandIssue576Tests`. Grid scripts: session scratchpad `L-576r2/` (`grids_l.py`, `grids_f*.py`,
+`harness.py`, `band.py`, `bounds.py`, `salt.py`).
+
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
 ⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as
