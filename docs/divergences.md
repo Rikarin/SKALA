@@ -13890,6 +13890,8 @@ Diverging rows, master `d2aeae3a` → branch. No row was non-idempotent on eithe
 | heads of 26 to 40 × lines of 128 to 160 | 2 640 | 1 534 | 156 |
 | random wide heads, seen while fitting (seed 59850) | 500 | 366 | 107 |
 | **fresh**: random heads wide and short, cast or not, calls and properties, built after wiring (seed 59861) | 600 | 226 | 117 |
+| **fresh**: wide heads, half of them uncast, six other calls (seed 59887) | 600 | 351 | 154 |
+| **fresh**: the same generator (seed 59899) | 700 | 361 | 170 |
 | `((…))` (round 5's) | 288 | 27 | 27 |
 
 No row that matched on master diverges on the branch, in any grid.
@@ -13901,8 +13903,14 @@ of 26 to 40 grid was built for it, and the form became `s`.
 ⚠ Still **open**:
 - **The remaining rows of the scoped shape:** an `=` the oracle breaks above the safe bound, mostly `D` with a first
   operand under 10. Also the `E`/`.` boundary off by one column in about 20 of 2 700 rows.
-- **The same value without the cast.** The first rule holds: on 1 200 uncast rows it newly diverges nowhere. The
-  second does not. Master's held table already answers 240 of 242 rows where the oracle breaks the `=`, and misses
+- **The same value without the cast.** The first rule fits on the grid: wired for uncast typed and wide `var` heads
+  while the receiver fits beside the `=`, it fixed 460 more rows of the 5 600-row grid and regressed none. ⚠ It did
+  not survive the fresh probes, so it was reverted:
+  - seed 59887 regressed 3 of 600 rows, all assignments, two of them one column over;
+  - restricted to locals, seed 59899 regressed 1 of 700: `int[] q… = (a * b…).GetEnumerator();` at indent 20,
+    where the `E`/`.` boundary sits one column off.
+
+  The second rule does not hold without the cast. Master's held table already answers 240 of 242 rows where the oracle breaks the `=`, and misses
   all 228 where it keeps it. No bound on `s` and `a` puts any kept row above every broken one: the broken rows reach
   1 436 with a long call, and the lowest kept row is 1 190. So uncast is left on master's table.
 - **The call's width.** Fitted with it, the bound wants about −20 per column of call. There were only 239 such rows
