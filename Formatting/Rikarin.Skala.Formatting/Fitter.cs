@@ -1558,7 +1558,7 @@ public sealed class Fitter {
         // first, so near the margin the threshold bends up — `[A("…")]` behind 15 columns chops from 118, not 113 —
         // where `2·w + i − h ≤ 36` held it at the first condition until a fixed parameter width and then never.
         if (facts.SectionSingle) {
-            return 3 * end >= 7 + 20 * parameter + 7 * lineStart - 5 * head
+            return 4 * end >= -16 + 28 * parameter + 10 * lineStart - 7 * head
                 && 24 * end >= 2106 + 32 * parameter + 11 * lineStart + 11 * head;
         }
 
