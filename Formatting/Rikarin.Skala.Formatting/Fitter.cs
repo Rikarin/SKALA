@@ -513,7 +513,7 @@ public sealed class Fitter {
                         equalsEnd,
                         paren,
                         facts.EqualsLambdaArguments,
-                        facts.EqualsLambdaReach,
+                        facts.EqualsLambdaReach > 0,
                         facts.EqualsLambdaSingle,
                         lineStart
                     )
@@ -652,8 +652,10 @@ public sealed class Fitter {
                         return ResolvedMode.Flat;
                     }
 
+                    // ⚠ A lambda call's limit moves with the rest of its chain (#605). See GroupFacts.HeldCallLambdaRest.
                     var limit = facts.HeldCallLambda
                         ? HeldLambdaLimit(paren, m.Column - lineStart)
+                        + (facts.HeldCallLambdaRest > 0 ? (facts.HeldCallLambdaRest - 10) / 1.5 : 0)
                         : HeldCallLimit(paren, facts.HeldCall);
                     return Fits(m.Column, receiver)
                         && !Fits(m.Column, m.FlatWidth)

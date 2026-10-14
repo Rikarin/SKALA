@@ -3376,7 +3376,7 @@ public sealed class BreakPlan {
             )
         );
 
-        PlanHeldFirstCall(dots, first, fill ? root : null);
+        PlanHeldFirstCall(dots, first, fill ? root : null, root);
 
         bool Link(SyntaxToken gap) {
             var broke = BreaksBefore(gap);
@@ -3404,7 +3404,7 @@ public sealed class BreakPlan {
     ///     <c>source.Select(</c> / … / <c>)</c> / <c>.Where(beta)</c>) — the other half of the same
     ///     rule, and <see cref="GroupFacts.BreaksOnlyIfTailFits" />'s own question.
     /// </remarks>
-    void PlanHeldFirstCall(List<SyntaxToken> dots, int points, SyntaxNode? fillRoot) {
+    void PlanHeldFirstCall(List<SyntaxToken> dots, int points, SyntaxNode? fillRoot, SyntaxNode root) {
         if (points >= dots.Count || dots[^1] is not { Parent: MemberAccessExpressionSyntax access }) {
             return;
         }
@@ -3482,7 +3482,10 @@ public sealed class BreakPlan {
                         call.ArgumentList.CloseParenToken.GetPreviousToken().Span.End - call.ArgumentList.SpanStart
                     )
                     .IndexOfAny('\r', '\n')
-                < 0
+                < 0,
+                // ⚠ And the rest of the chain moves the lambda call's limit whatever the chain's wrap style (#605,
+                // group B); see GroupFacts.HeldCallLambdaRest.
+                HeldCallLambdaRest: call == root ? 0 : RestWidth(call, root)
             )
         );
     }
@@ -8311,7 +8314,7 @@ public sealed class BreakPlan {
     /// </summary>
     /// <remarks>
     ///     ⚠ Round 3: also a field's single declarator, and an assignment statement to a target of ten columns or
-    ///     more, which has no type and reaches two columns further (<c>reach</c> 2). Measured on 3 000 random
+    ///     more, which has no type and its own reach (<c>reach</c> 1, group B). Measured on 3 000 random
     ///     cells of each (names 10 to 30): a field misses 125 of 1 518 against 701, an assignment 16 of 1 482
     ///     against 627.
     /// </remarks>
@@ -8333,7 +8336,7 @@ public sealed class BreakPlan {
                 (declarator.Identifier.Span.Length, FormattedWidth(declaration.Type), 0),
             AssignmentExpressionSyntax {
                 RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax
-            } assignment when FormattedWidth(assignment.Left) >= 10 => (FormattedWidth(assignment.Left), 0, 2),
+            } assignment when FormattedWidth(assignment.Left) >= 10 => (FormattedWidth(assignment.Left), 0, 1),
             _ => null
         };
     }

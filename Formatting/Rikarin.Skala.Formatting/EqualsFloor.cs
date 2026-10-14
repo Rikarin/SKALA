@@ -420,7 +420,12 @@ public static class EqualsFloor {
     ///     <c>Func&lt;…&gt;</c> and bare types, six parameter lists, one to four arguments, names 10 to 40: 124
     ///     differ, against 1 659 before.
     /// </remarks>
-    /// <param name="extraReach">Columns added to the reach: 2 for an assignment statement's target (round 3).</param>
+    /// <param name="assignment">
+    ///     ⚠ An assignment statement's target, which has no type and its own reach (group B):
+    ///     <c>⌊min(name, 22) + 0.6·(name − 22)⁺ − 18.8⌋</c>, measured on names of 10 to 40 with the line one
+    ///     column at a time (840 cells): 1 at a name of 20, 3 at 22, 14 at 40, and none under 20. Round 3's "two
+    ///     columns longer than a declaration's" was read through the old reach, which was itself off.
+    /// </param>
     /// <param name="oneArgument">
     ///     ⚠ The call has one argument (#453, group B): the reach alone decides. Measured on
     ///     <c>T name = () =&gt; C…(x…);</c>, names of 12 to 32, types of 6 to 52, the <c>(</c> 10, 20, 35 and 50
@@ -435,7 +440,7 @@ public static class EqualsFloor {
         int head,
         int paren,
         int arguments,
-        int extraReach = 0,
+        bool assignment = false,
         bool oneArgument = false,
         int indent = 8
     ) {
@@ -443,14 +448,31 @@ public static class EqualsFloor {
             return false;
         }
 
-        var reach = Math.Min(64, (int)Math.Floor(0.91 * type + 0.812 * name - 16 + extraReach));
-        if (paren + arguments - width120 > reach) {
+        if (paren + arguments - width120 > LambdaCallReach(name, type, indent, assignment)) {
             return false;
         }
 
         return oneArgument
             || arguments <= AtSeven(paren, EqualsOwner.TypedLocal) + 0.26 * Math.Max(0, head - 54)
             && paren >= LambdaCallParen(name, type, indent);
+    }
+
+    /// <summary>
+    ///     How many columns past the margin the line may end and a wide name's <c>=</c> still break before a lambda
+    ///     over a call (#453, group B).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Re-measured with the call's <c>(</c> at 104 and 112, where neither the argument floor nor
+    ///     <see cref="LambdaCallParen" /> binds, and the line one column at a time from 121 to 190: names of 10 to 40
+    ///     and types of 4 to 56 at indent 8 (25 900 cells), every row one clean switch, the same at both columns.
+    ///     The reach rises a column per column of name up to 22 and 0.6 after, and 0.86 per column of type.
+    ///     Round 2's <c>⌊0.91·type + 0.812·name − 16⌋</c> missed 241 of the 356 measured reaches, mostly by one;
+    ///     this misses 14 of those under 45 columns. A deeper indent shortens it 0.15 a column: indents 4 and 12,
+    ///     another 7 560 cells, 5 of 98 reaches off.
+    /// </remarks>
+    public static int LambdaCallReach(int name, int type, int indent, bool assignment = false) {
+        var named = Math.Min(name, 22) + 0.6 * Math.Max(0, name - 22) - 0.15 * (indent - 8);
+        return Math.Min(64, (int)Math.Floor(assignment ? named - 18.8 : 0.86 * type + named - 17.85));
     }
 
     /// <summary>

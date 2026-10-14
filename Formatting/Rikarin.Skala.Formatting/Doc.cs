@@ -1195,7 +1195,7 @@ public sealed class Document {
 /// </param>
 /// <param name="EqualsLambdaSingle">The call has one argument. See <see cref="EqualsLambdaArguments" />.</param>
 /// <param name="EqualsLambdaReach">
-///     Columns added to the measured reach: 2 for an assignment statement's target, 0 for a declaration. See
+///     1 for an assignment statement's target, whose reach is its own (group B), 0 for a declaration. See
 ///     <see cref="EqualsLambdaArguments" />.
 /// </param>
 /// <param name="EqualsLambdaValueHead">
@@ -1236,6 +1236,14 @@ public sealed class Document {
 ///     ⚠ A held first call whose one argument is a lambda, `r.Where(x => …).ToList()`: the line below is limited
 ///     by the call's own measured table, which weighs the head before the receiver too (#605). See
 ///     <c>Fitter.HeldLambdaLimit</c>.
+/// </param>
+/// <param name="HeldCallLambdaRest">
+///     ⚠ With <see cref="HeldCallLambda" />: the flat width of the chain after the held call through its <c>;</c>,
+///     under any chain wrap style, or zero when the call ends the chain (#605, group B). The limit was measured
+///     behind <c>.ToList();</c>, ten columns; every column of rest past ten moves it two thirds of a column, the
+///     slope <see cref="HeldCallRest" /> has under <c>wrap_if_long</c>. Measured with <c>Testing ask</c> on 5 000
+///     random statements within four columns of the limit and rests of 5 to 22 columns: 1 519 held decisions
+///     differed and 244 do.
 /// </param>
 /// <param name="HeldCallOnAPath">
 ///     ⚠ A held first call whose receiver is a plain path of names, `source.A…`: when the receiver alone
@@ -1671,6 +1679,7 @@ public readonly record struct GroupFacts(
     int HeldCall = 0,
     int HeldCallHead = 0,
     int HeldCallRest = 0,
+    int HeldCallLambdaRest = 0,
     bool ContinuesIfItBreaks = false,
     bool FlatIfHeadOverflows = false,
     int ValueHeadWidth = 0,
