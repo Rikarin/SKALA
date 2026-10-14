@@ -1784,7 +1784,8 @@ public sealed class Document {
 ///     parameter below them, exactly when the joined line overflows, <c>24·E ≥ 1695 + 32·w + 11·i + 12·h</c> and
 ///     <c>5·w + 2·i − h ≤ 155</c> — <c>E</c> the column the section's <c>]</c> ends at, <c>i</c> the section's column,
 ///     <c>h</c> the width from its <c>[</c> to its <c>(</c>. Otherwise the section stays whole and the parameter goes
-///     below it alone. See <c>Fitter.ChopsBeforeTheParameter</c>.
+///     below it alone. ⚠ Inside a default's band (the line through its <c>=</c> fits) the threshold is its own,
+///     <c>24·E ≥ 1644 + 42·w + 12·i + 12·h − 8·v</c> (SK-DIV-0570). See <c>Fitter.ChopsBeforeTheParameter</c>.
 /// </param>
 /// <param name="SectionHead">
 ///     With <see cref="ParameterAfterSection" />: the width from the <c>[</c> to the
@@ -1793,7 +1794,8 @@ public sealed class Document {
 /// <param name="SectionSingle">
 ///     With <see cref="ParameterAfterSection" />: the section has one positional argument or none (a property's
 ///     <c>Name =</c> uncounted, a constructor's <c>name:</c> counted), whose threshold sits 17 columns later
-///     — <c>24·E ≥ 2106 + 32·w + 11·i + 11·h</c> and <c>2·w + i − h ≤ 36</c> (#603).
+///     — <c>24·E ≥ 2106 + 32·w + 11·i + 11·h</c> and <c>4·E ≥ 28·w + 10·i − 7·h − 16</c> (#603, SK-DIV-0570), and which
+///     never chops inside a default's band.
 /// </param>
 /// <param name="SectionJoinedOverDefault">
 ///     ⚠ On the gap after a parameter's one attribute section, in front of a long parameter with a default: the joined
@@ -1803,7 +1805,10 @@ public sealed class Document {
 ///     value — eight columns for <c>default</c>, five for <c>null</c> and <c>true</c>, two for <c>5</c>. Measured only
 ///     through the <c>=</c>, the gap stayed under chopped arguments, and pass two broke it.
 /// </param>
-/// <param name="DefaultValueWidth">With <see cref="SectionJoinedOverDefault" />: the default value's width.</param>
+/// <param name="DefaultValueWidth">
+///     With <see cref="SectionJoinedOverDefault" /> or <see cref="ParameterAfterSection" />: the default value's width
+///     <c>v</c>, zero without one; the arguments' rule reads it for the band (SK-DIV-0570).
+/// </param>
 /// <param name="SectionWidth">
 ///     With <see cref="ParameterAfterSection" />: the section's flat width, <c>[</c> to
 ///     <c>]</c>.

@@ -1682,16 +1682,31 @@ public sealed class Fitter {
     ///     The measured chop rule itself, for a section starting at <paramref name="lineStart" /> (#476, #603): asked
     ///     by the arguments' group and, behind a default, by the gap after the section, which must agree.
     /// </summary>
-    static bool SectionChops(in GroupFacts facts, int lineStart) {
+    bool SectionChops(in GroupFacts facts, int lineStart) {
         var end = lineStart + facts.SectionWidth;
         var parameter = facts.ParameterAfterSection;
-        if (facts.SectionSingle) {
-            return 2 * parameter + lineStart - facts.SectionHead <= 36
-                && 24 * end >= 2106 + 32 * parameter + 11 * lineStart + 11 * facts.SectionHead;
+        var head = facts.SectionHead;
+        var value = facts.DefaultValueWidth;
+
+        // ⚠ Inside a default's band — the line through the `=` fits — the competitor is the `=`'s break and not the
+        // section alone on its line (#603, SK-DIV-0570): a one-argument section never chops there, and two or more
+        // positional arguments chop about four columns later, the later the more of the parameter stays on the line.
+        if (value > 0 && end + parameter - value <= width) {
+            return !facts.SectionSingle
+                && 5 * parameter + 2 * lineStart - head <= 155
+                && 24 * end >= 1644 + 42 * parameter + 12 * lineStart + 12 * head - 8 * value;
         }
 
-        return 5 * parameter + 2 * lineStart - facts.SectionHead <= 155
-            && 24 * end >= 1695 + 32 * parameter + 11 * lineStart + 12 * facts.SectionHead;
+        // ⚠ A one-argument section's second condition depends on E (#603, SK-DIV-0570): a plane steeper than the
+        // first, so near the margin the threshold bends up — `[A("…")]` behind 15 columns chops from 118, not 113 —
+        // where `2·w + i − h ≤ 36` held it at the first condition until a fixed parameter width and then never.
+        if (facts.SectionSingle) {
+            return 4 * end >= -16 + 28 * parameter + 10 * lineStart - 7 * head
+                && 24 * end >= 2106 + 32 * parameter + 11 * lineStart + 11 * head;
+        }
+
+        return 5 * parameter + 2 * lineStart - head <= 155
+            && 24 * end >= 1695 + 32 * parameter + 11 * lineStart + 12 * head;
     }
 
     /// <summary>What a <see cref="GroupMode.Preserve" /> group whose source was broken does with the break.</summary>

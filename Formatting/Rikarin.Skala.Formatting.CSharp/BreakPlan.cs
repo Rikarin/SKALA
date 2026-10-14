@@ -7393,7 +7393,8 @@ public sealed class BreakPlan {
                 ParameterAfterSection = FormattedWidth(first, last),
                 SectionHead = FormattedWidth(section.OpenBracketToken, arguments.OpenParenToken) - 1,
                 SectionWidth = FormattedWidth(section.OpenBracketToken, section.CloseBracketToken),
-                SectionSingle = TakesTheOneArgumentConstants(arguments)
+                SectionSingle = TakesTheOneArgumentConstants(arguments),
+                DefaultValueWidth = parameter.Default is { } value ? FormattedWidth(value.Value) : 0
             }
         };
         plans[^1] = plan;
