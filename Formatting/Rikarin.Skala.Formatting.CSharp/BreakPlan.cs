@@ -8583,6 +8583,7 @@ public sealed class BreakPlan {
                         BreaksIfTooLong: true,
                         LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
                         LambdaTestCall: FormattedWidth(testedCall),
+                        LambdaTestKept: HasLineBreakIn(testedCall),
                         LambdaTestCallHead: FormattedWidth(
                             testedCall.GetFirstToken(),
                             testedCall.ArgumentList.OpenParenToken
@@ -8593,6 +8594,7 @@ public sealed class BreakPlan {
                             BreaksIfTooLong: true,
                             LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
                             LambdaTestCall: FormattedWidth(unbroken),
+                            LambdaTestKept: HasLineBreakIn(unbroken),
                             LambdaTestCallHead: unbrokenHead,
                             LambdaBodyKind: unbrokenKind
                         )
@@ -8601,6 +8603,7 @@ public sealed class BreakPlan {
                                 BreaksIfTooLong: true,
                                 LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
                                 LambdaTestCall: FormattedWidth(linked),
+                                LambdaTestKept: HasLineBreakIn(linked),
                                 LambdaTestCallHead: FormattedWidth(
                                     linked.GetFirstToken(),
                                     firstCall.ArgumentList.OpenParenToken
@@ -8612,6 +8615,7 @@ public sealed class BreakPlan {
                                     BreaksIfTooLong: true,
                                     LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
                                     LambdaTestCall: FormattedWidth(testedOperand),
+                                    LambdaTestKept: HasLineBreakIn(testedOperand),
                                     LambdaTestCallHead: -1
                                 )
                                 : IsAFilledSoleLambda(lambda, body)

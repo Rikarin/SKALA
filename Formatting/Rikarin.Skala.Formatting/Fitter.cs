@@ -1357,7 +1357,7 @@ public sealed class Fitter {
     bool BreaksTheTestArrow(in GroupFacts facts, int arrowEnd, int lineStart) {
         var parameters = facts.LambdaHead;
         var callee = arrowEnd - 1 - parameters - lineStart;
-        if (arrowEnd + 1 + facts.LambdaTestCall <= width) {
+        if (facts.LambdaTestKept || arrowEnd + 1 + facts.LambdaTestCall <= width) {
             return false;
         }
 

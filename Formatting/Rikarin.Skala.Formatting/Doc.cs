@@ -1326,6 +1326,12 @@ public sealed class Document {
 ///     <see cref="LambdaTestCallHead" /> is the head through that call's <c>(</c>. The arrow breaks when it ends twelve
 ///     columns or more past the line's start and <c>6·k − 6·p + 8·h − 6·w − 8·i ≥ −564</c> (#618).
 /// </param>
+/// <param name="LambdaTestKept">
+///     With <see cref="LambdaTestCall" />: the author broke inside the operand, which keeps the arrow whatever the
+///     measured lines say — the oracle keeps `Throws(static () =&gt; Reading(` / the argument / `)` as written and breaks
+///     the arrow over the same call written flat (#620, group C's probe of eleven members, every class). It is also
+///     pass two's answer to pass one's chop.
+/// </param>
 /// <param name="LambdaBodyKind">
 ///     With <see cref="LambdaTestCall" />: which of #618's and #620's measured lines the arrow is decided by.
 /// </param>
@@ -1848,6 +1854,7 @@ public readonly record struct GroupFacts(
     int LambdaTestCall = 0,
     int LambdaTestCallHead = 0,
     bool LambdaTestLinks = false,
+    bool LambdaTestKept = false,
     LambdaBodyKind LambdaBodyKind = LambdaBodyKind.BrokenTest,
     bool BreaksIfItOverflows = false,
     bool BreaksIfReceiverOverflows = false,

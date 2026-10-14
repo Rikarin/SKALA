@@ -13435,6 +13435,11 @@ the body fits beside it; past that —
 | I (600, fresh) | 302 | 435 |
 | #618's probes A / G (378 / 450) | 177 / 386 | 242 / 386 |
 
+⚠ **A call the author broke inside keeps the arrow**, in every class of SK-DIV-0520 and this entry: the oracle keeps
+`Throws(static () => Reading(` / the argument / `)` as written and breaks the arrow over the same call written flat —
+eleven members, one per class each way, all agreeing (`GroupFacts.LambdaTestKept`). Found by Lint on Skala's own
+`ProvenanceTests.cs`, which the first version re-wrote. It is also what pass two reads after pass one's chop.
+
 Stable on a second pass everywhere. Pinned by `SoleLambdaUnbrokenBodyArrowIssue620Tests`.
 
 ⚠ **Open:** a whole body that is a chain — `call(…).A`, `ctx.Get().B` — where the best linear line still misses 259 of

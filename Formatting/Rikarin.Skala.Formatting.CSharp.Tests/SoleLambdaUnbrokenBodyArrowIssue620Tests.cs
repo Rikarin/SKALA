@@ -78,4 +78,86 @@ public sealed class SoleLambdaUnbrokenBodyArrowIssue620Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     A call the author broke inside keeps the arrow, in every class; the same call written flat breaks it.
+    /// </summary>
+    [Fact]
+    public void AnOperandTheAuthorBrokeKeepsTheArrow() =>
+        Oracle.Agrees(
+            """
+            public sealed class C {
+                public void M1() {
+                    var refused = Assert.Throws<InvalidOperationException>(static () => OracleEditorConfig.Reading(
+                            Corpus.RepositoryEditorConfigPathAndSomeMoreText
+                        )
+                    );
+                }
+                public void M3() {
+                    var found = registry.Where(static x => provider.GetServiceOfTheGivenKind(
+                            someVeryLongIdentifierNameOfTheServiceTypeToLookUp
+                        ) is IMethodSymbol
+                    );
+                }
+                public void M4() {
+                    var found = registry.Where(static x => provider.GetServiceOfTheGivenKind(
+                            someVeryLongIdentifierNameOfTheServiceType,
+                            anotherArgument
+                        ) as INamedTypeSymbol
+                    );
+                }
+                public void M5() {
+                    var found = registry.Where(static x => provider.GetServiceOfTheGivenKind(
+                            someVeryLongIdentifierNameOfTheServiceType,
+                            anotherArgument
+                        )
+                        is IMethodSymbol
+                    );
+                }
+                public void M7() {
+                    var refused = Assert.Throws<InvalidOperationException>(static () => OracleEditorConfig.Reading(Corpus.RepositoryEditorConfigPathAndSomeMoreText));
+                }
+            }
+            """,
+            """
+            public sealed class C {
+                public void M1() {
+                    var refused = Assert.Throws<InvalidOperationException>(static () => OracleEditorConfig.Reading(
+                            Corpus.RepositoryEditorConfigPathAndSomeMoreText
+                        )
+                    );
+                }
+
+                public void M3() {
+                    var found = registry.Where(static x => provider.GetServiceOfTheGivenKind(
+                            someVeryLongIdentifierNameOfTheServiceTypeToLookUp
+                        ) is IMethodSymbol
+                    );
+                }
+
+                public void M4() {
+                    var found = registry.Where(static x => provider.GetServiceOfTheGivenKind(
+                            someVeryLongIdentifierNameOfTheServiceType,
+                            anotherArgument
+                        ) as INamedTypeSymbol
+                    );
+                }
+
+                public void M5() {
+                    var found = registry.Where(static x => provider.GetServiceOfTheGivenKind(
+                            someVeryLongIdentifierNameOfTheServiceType,
+                            anotherArgument
+                        )
+                        is IMethodSymbol
+                    );
+                }
+
+                public void M7() {
+                    var refused = Assert.Throws<InvalidOperationException>(static () =>
+                        OracleEditorConfig.Reading(Corpus.RepositoryEditorConfigPathAndSomeMoreText)
+                    );
+                }
+            }
+            """
+        );
 }
