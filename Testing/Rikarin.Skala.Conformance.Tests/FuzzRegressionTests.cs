@@ -242,8 +242,9 @@ public sealed class FuzzRegressionTests {
     // the `=` (SK-DIV-0337), so pass one broke after `new Memory<`; pass two, the brace's break gone, broke the `=`. The
     // brace now keeps the `=` only while the line through it fits (SK-DIV-0553).
     [InlineData(13197324971917557925UL)]
-    // And a creation written on one line (#623's own fuzz): #581's limit kept `= new {` at 124 columns, and pass two read
-    // the brace's break as the author's. The `=` now breaks when the line through the `{` does not fit (SK-DIV-0553).
+    // And a creation written on one line (#623's own fuzz): #581's limit kept `= new {` at 124 columns, and pass two
+    // read the brace's break as the author's. The `=` now breaks when the line through the `{` does not fit
+    // (SK-DIV-0553).
     [InlineData(9076957179953969410UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
@@ -269,8 +270,8 @@ public sealed class FuzzRegressionTests {
     // kept with them.
     [Theory]
     [InlineData(11718305405350914591UL, "constructs/breaks/chain-after-parenthesised-head.cs")]
-    // #617, `fuzz --seed=61714`: `{ Value.Length: > 2, Kind` / `: not null }` / `when (from …) => …` — the `when` on its
-    // own line lifted the braces only once the arrow broke for width, a level too deep; pass two put it back.
+    // #617, `fuzz --seed=61714`: `{ Value.Length: > 2, Kind` / `: not null }` / `when (from …) => …` — the `when` on
+    // its own line lifted the braces only once the arrow broke for width, a level too deep; pass two put it back.
     [InlineData(16267341160299312604UL, "constructs/breaks/arm-braces-under-an-arrow-broken-for-width.cs")]
     // Nightly `fuzz --seed=909`: `DeserializeObject<Review /* f */ >(x)` behind an `=`. FlatSourceWidth
     // skipped the comment, so #528's held-call table kept an `=` the comment had pushed past the margin;
@@ -332,7 +333,8 @@ public sealed class FuzzRegressionTests {
     // break point now breaks after the `when` whenever it does not fit beside it, as the oracle does on both passes.
     [InlineData(7256125207651206043UL, "constructs/breaks/arm-when-condition-below.cs")]
     // #609's fourth seed (found on master 10889231): the same construct indented and widened; pass two wanted one more
-    // newline after the `when`. Clean once a name with no break point breaks the `when` whenever it does not fit beside.
+    // newline after the `when`. Clean once a name with no break point breaks the `when` whenever it does not fit
+    // beside.
     [InlineData(7196610944795926752UL, "constructs/breaks/arm-when-condition-below.cs")]
     // #614: `E.Get<T>(e).Value = World.Get(body.Handle);` — the target's own held call ended the `=` group's point
     // width at its dot, so the held value's column was read 36 columns left of the `=` and pass one kept the `=`
