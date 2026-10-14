@@ -3582,7 +3582,7 @@ public sealed class BreakPlan {
             // a chain's parenthesised head does (SK-DIV-0112): `var x =` / `(a + b…)` / `.Trim();` puts the dot
             // on the `(`'s column. Pass one wrote it a level deeper and pass two, reading the break as the
             // author's, put it back (#598).
-            spendsIndent: IsACallOnAParenthesisedOperator(call),
+            IsACallOnAParenthesisedOperator(call),
             ownLevel: !IsACallOnAParenthesisedOperator(call)
         );
         return call;
