@@ -1137,6 +1137,16 @@ public sealed class Fitter {
     ///     floor's that the rule for it does not break, or wider than <see cref="OneArgumentMeasuredHead" />, which the
     ///     ordering rule decides as it always did.
     /// </summary>
+    /// <summary>
+    ///     The head <see cref="EqualsFloor.OneArgumentBreaksTheEquals" /> reads: the statement's, through the <c>=</c>
+    ///     (<see cref="GroupFacts.CalleeArgumentHead" />), while it fits on its line; the fitter's own once it cannot — a
+    ///     type that fills onto a second line leaves only its last line beside the <c>=</c> (fuzz 4769102867181174370).
+    /// </summary>
+    int OneArgumentHead(in GroupFacts facts, in Measures m, int lineStart) =>
+        facts.CalleeArgumentHead > 0 && m.ContinuationColumn - indentWidth + facts.CalleeArgumentHead <= width
+            ? facts.CalleeArgumentHead
+            : HeadWidth(facts, m, lineStart);
+
     ResolvedMode? EqualsBeforeACall(in GroupFacts facts, in Measures m, int lineStart) {
         if (m.PointWidth >= Unbounded) {
             return ResolvedMode.Flat;
@@ -1154,7 +1164,10 @@ public sealed class Fitter {
         // or fewer has been answered already (GroupFacts.ShortHeadTypeEnd).
         // ⚠ And with one argument, when the head is wide enough for it by the measured line; otherwise the ordering
         // rule decides, as it did before the floor took one argument. See GroupFacts.CalleeArgument.
-        if (!HeadIsWideEnough(facts, m, lineStart)) {
+        // ⚠ Not one argument behind a statement head wider than fourteen whose marker starts later — a deconstruction's
+        // `(` — and so reads it narrow: the one-argument boundary below was measured on the whole head (SK-DIV-0501).
+        if (!HeadIsWideEnough(facts, m, lineStart)
+            && !(facts.CalleeArgument > 0 && OneArgumentHead(facts, m, lineStart) > OneArgumentMeasuredHead)) {
             var open = m.Column + m.PointWidth + 1 + facts.CalleeWidth + 1;
             if (open > width) {
                 return ResolvedMode.Broken;
@@ -1187,13 +1200,29 @@ public sealed class Fitter {
             return ResolvedMode.Broken;
         }
 
-        // ⚠ One argument behind a head wider than #610 measured goes to the ordering rule (#617, fuzz
-        // 12392120797706766071). The floor of two was confirmed for one argument on heads of 12 to 14 only; behind
-        // `IReadOnlyDictionary<decimal, decimal> v =` it chopped from an argument of 44 where the oracle breaks the `=`
-        // into the sixties, and pass two — whose chopped argument the plan reads as the author's, so CalleeWidthOf
-        // turns the floor off — broke the `=`. The ordering rule is what pass two already used, so both passes agree.
-        if (facts.CalleeArgument > 0 && HeadWidth(facts, m, lineStart) > OneArgumentMeasuredHead) {
-            return null;
+        // ⚠ One argument behind a head wider than #610 measured is not the floor of two's (#617, fuzz
+        // 12392120797706766071; SK-DIV-0501, SK-DIV-0530): that floor was confirmed for one argument on heads of 12 to 14
+        // only, and chopped from an argument of 44 behind `IReadOnlyDictionary<decimal, decimal> v =` where the oracle
+        // breaks the `=` into the sixties. Its own measured boundary decides now (EqualsFloor.OneArgumentBreaksTheEquals);
+        // an argument with a certain break of its own, which has no flat width, stays with the ordering rule. Pass two
+        // meets pass one's chop as the author's and keeps it (GroupFacts.KeptArgumentCallee).
+        if (facts.CalleeArgument > 0
+            && OneArgumentHead(facts, m, lineStart) is var wideHead
+            && wideHead > OneArgumentMeasuredHead) {
+            if (facts.CalleeArgumentHead <= 0 || m.FlatWidth >= Unbounded) {
+                return null;
+            }
+
+            var below = m.ContinuationColumn + facts.CalleeWidth + facts.CalleeArgument + 2 + m.Trailing;
+            return EqualsFloor.OneArgumentBreaksTheEquals(
+                m.ContinuationColumn - indentWidth,
+                wideHead,
+                facts.CalleeWidth,
+                facts.CalleeArgument,
+                below - width
+            )
+                ? ResolvedMode.Broken
+                : ResolvedMode.Flat;
         }
 
         // ⚠ The name the `=` assigns has to reach the call, or the arguments chop (#589). See

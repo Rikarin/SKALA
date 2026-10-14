@@ -1110,6 +1110,14 @@ public sealed class Document {
 ///     condition's line, as it does under the author's: <c>X when</c> / <c>Materialise&lt;…&gt;() =&gt; Handle(</c> /
 ///     the arguments two levels past the arm / <c>)</c> one level. Unlike the arrow's lift it lifts the body too.
 /// </param>
+/// <param name="CalleeArgumentHead">
+///     ⚠ With <see cref="CalleeArgument" />: the statement's head through the <c>=</c>, read from the syntax
+///     (SK-DIV-0505). The fitter's own head starts at the group's marker, which for a deconstruction is the tuple's
+///     <c>(</c>, four columns short of <c>var (a, b) =</c>; the one-argument boundary was measured on the whole head.
+///     ⚠ Capped at the part on the <c>=</c>'s own line: a type that fills onto a second line leaves only its last line
+///     beside the <c>=</c>, and the whole head read there chopped on pass one what pass two, finding the type broken,
+///     moved below (fuzz 4769102867181174370).
+/// </param>
 /// <param name="KeptArgumentCallee">
 ///     ⚠ An <c>=</c> before a call of one argument that the author put on a line of its own, <c>T v = F(</c> /
 ///     <c>argument</c> / <c>);</c>: the callee's width, or zero. The <c>=</c> stays while the <c>(</c> fits, and the
@@ -1964,6 +1972,7 @@ public readonly record struct GroupFacts(
     int ShortHeadTypeEnd = 0,
     int CalleeArgument = 0,
     int KeptArgumentCallee = 0,
+    int CalleeArgumentHead = 0,
     int HeldValueTarget = 0,
     int WholeList = -1);
 

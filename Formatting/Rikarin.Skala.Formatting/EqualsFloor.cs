@@ -133,6 +133,27 @@ public static class EqualsFloor {
     ///         the tables' own floor, mostly behind a callee of 30.
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     Whether an <c>=</c> breaks before a call or creation with one argument behind a head wider than fourteen
+    ///     columns through the <c>=</c> (SK-DIV-0501, SK-DIV-0530).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Fitted 2026-10-14 with <c>Testing ask</c> on 8 832 rows — typed and <c>var</c> locals, assignments and
+    ///     deconstructions; heads of 15 to 42; callees of 8 to 34 columns, plain and generic; indents 8, 12 and 16; lines of
+    ///     121 to 151 — to 186 rows off, where Skala was 2 282 off. Checked on a fresh 9 216-row probe it was not fitted on
+    ///     (heads of 16 to 45, callees of 12 to 40, indents 8, 12 and 20): 318 off, where Skala was 2 930 off. A refit on
+    ///     both together does no better (502 of 18 048). The <c>=</c> breaks while the value's line below ends no more than
+    ///     two columns past the margin (<paramref name="belowOver" />) and
+    ///     <c>
+    ///         12·indent + 10·argument + 4·callee +
+    ///         2·head
+    ///     </c>
+    ///     stays under 1 010: a narrow callee chops an argument the value would still carry below. One rule for
+    ///     every owner: the misses split evenly between them.
+    /// </remarks>
+    public static bool OneArgumentBreaksTheEquals(int indent, int head, int callee, int argument, int belowOver) =>
+        belowOver <= 2 && 12 * indent + 10 * argument + 4 * callee + 2 * head < 1010;
+
     public static bool NameReachesTheCall(int name, int callee, int paren) => 2 * (name + callee) + paren >= 163;
 
     /// <summary>

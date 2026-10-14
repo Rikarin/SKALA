@@ -494,4 +494,59 @@ public sealed class FuzzIdempotencyIssue617Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     SK-DIV-0501 and SK-DIV-0530's residue, one rule: one argument behind a head wider than fourteen breaks the
+    ///     <c>=</c> while <c>12·indent + 10·argument + 4·callee + 2·head</c> stays under 1 010 and the value fits below,
+    ///     behind a typed local, a <c>var</c> local, an assignment and a deconstruction alike. A row each side of the
+    ///     boundary, two steps in, per owner.
+    /// </summary>
+    [Fact]
+    public void OneArgumentBehindAWideHead_OneBoundaryForEveryOwner() =>
+        Oracle.Agrees(
+            """
+            class C {
+                void M() {
+                    if (a) {
+                        List<int> v294xxxxxxxxx = Cxxxxxxxxxxxxxxxxxxx(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                        List<int> v297xxxxxxxxx = Cxxxxxxxxxxxxxxxxxxx(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                        var v1063xxxxxxxxxxxxxx = Cxxxxxxxxxxxxxxxxxxx(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                        var v1066xxxxxxxxxxxxxx = Cxxxxxxxxxxxxxxxxxxx(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                        v1831xxxxxxxxxxxxxxxxxx = Cxxxxxxxxxxxxxxxxxxx(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                        v1834xxxxxxxxxxxxxxxxxx = Cxxxxxxxxxxxxxxxxxxx(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                        var (v2599xxxxxxxxx, b) = Cxxxxxxxxxxxxxxxxxxx(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                        var (v2602xxxxxxxxx, b) = Cxxxxxxxxxxxxxxxxxxx(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                    }
+                }
+            }
+            """,
+            """
+            class C {
+                void M() {
+                    if (a) {
+                        List<int> v294xxxxxxxxx =
+                            Cxxxxxxxxxxxxxxxxxxx(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                        List<int> v297xxxxxxxxx = Cxxxxxxxxxxxxxxxxxxx(
+                            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                        );
+                        var v1063xxxxxxxxxxxxxx =
+                            Cxxxxxxxxxxxxxxxxxxx(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                        var v1066xxxxxxxxxxxxxx = Cxxxxxxxxxxxxxxxxxxx(
+                            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                        );
+                        v1831xxxxxxxxxxxxxxxxxx =
+                            Cxxxxxxxxxxxxxxxxxxx(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                        v1834xxxxxxxxxxxxxxxxxx = Cxxxxxxxxxxxxxxxxxxx(
+                            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                        );
+                        var (v2599xxxxxxxxx, b) =
+                            Cxxxxxxxxxxxxxxxxxxx(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                        var (v2602xxxxxxxxx, b) = Cxxxxxxxxxxxxxxxxxxx(
+                            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                        );
+                    }
+                }
+            }
+            """
+        );
 }
