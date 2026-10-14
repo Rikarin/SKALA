@@ -55,8 +55,32 @@ public static class EqualsFloor {
     ///     <c>Taaaaaaaaaa c = J(40)</c> / <c>.DeserializeObject&lt;G(41)&gt;(json);</c> at 120, where a probe's
     ///     <c>_serializer.DeserializeObject&lt;T&gt;("…")</c> at 120 breaks — what separates them is not measured.
     /// </remarks>
-    public static bool HeldTypedLocalBreaks(int head, int below, int callee, int indent) =>
-        head >= 12 && below <= 118 && 3 * below - 2 * callee + indent <= 310;
+    /// <param name="name">The declared name's width; zero when unknown, which keeps the round-3 rule.</param>
+    /// <remarks>
+    ///     ⚠ #446 round 4 (SK-DIV-0211): the type, the name, the callee and the indent swept one at a time, then 420
+    ///     random configurations, each down a column of lines below (31 918 cells). The limit is not one line but three:
+    ///     a level that falls a column per seven of type and of indent and rises three per five of callee; below it,
+    ///     once the name passes about 22, a limit falling two per five of name; and above both, a limit that rises
+    ///     about a column per two of type and of name — so a long head breaks the <c>=</c> whatever the line below,
+    ///     which is why a 63-column type in Newtonsoft breaks it while a type of 24 holds it earlier. The 118 ceiling
+    ///     was the second branch's foot. 31 197 of 31 918 cells, where round 3's rule had 27 675; a fresh random probe
+    ///     (generic and array types, string arguments) 5 753 of 5 846, round 3 4 723.
+    /// </remarks>
+    public static bool HeldTypedLocalBreaks(int head, int below, int callee, int indent, int name = 0) {
+        if (head < 12) {
+            return false;
+        }
+
+        if (name <= 0) {
+            return below <= 118 && 3 * below - 2 * callee + indent <= 310;
+        }
+
+        var type = head - name - 3;
+        var level = 3651 - 5 * type - name + 21 * callee - 5 * indent;
+        var byName = 3300 - 3 * type - 14 * name + 21 * callee + 73 * indent;
+        var byHead = 2013 + 16 * type + 14 * name + 42 * callee + 17 * indent;
+        return 35 * below <= Math.Max(byHead, Math.Min(level, byName));
+    }
 
     /// <summary>
     ///     Whether <c>[A] /* c */ public T name = value;</c> past the margin keeps the attribute and the comment on a
@@ -622,10 +646,31 @@ public static class EqualsFloor {
     ///     that, only once the line reaches a column that moves five per column of pattern. One cell — a
     ///     head of 11, a pattern of 39, a line of 124 — keeps the pattern where both of its neighbours break
     ///     the <c>=</c>, and it is in the table as measured.
+    ///     <para>
+    ///         ⚠ #446 round 5 (SK-DIV-0211): heads of 5 to 11 swept against the pattern (10 to 49 columns), the first
+    ///         alternative (3 to 30), the line's end (118 to 139) and the indent (8 to 24), 100 164 cells. Under twelve
+    ///         the head breaks the <c>=</c> while <c>10·pattern + 3·first − 2·end + 6·indent</c> stays within a limit
+    ///         per head — −31, 53, 115, 166, 205 and 241 for heads of 6 to 11 — and a head of five or less never does.
+    ///         The boundary has a column of jitter: 115 and 205 are where the committed fixture
+    ///         <c>equals-before-a-binary-pattern.cs</c> puts it, 39 sweep cells a column from where the sweep alone
+    ///         would. The table below was this line read at one indent and one first alternative: it missed a column of
+    ///         pattern per two columns of indent. It still decides behind a line comment.
+    ///     </para>
     /// </remarks>
-    public static bool BreaksBeforeAPattern(int head, int pattern, int end) {
+    /// <param name="first">The first alternative's width; zero keeps the per-head table below.</param>
+    /// <param name="indent">The statement's indent, read with <paramref name="first" />.</param>
+    public static bool BreaksBeforeAPattern(int head, int pattern, int end, int first = 0, int indent = 0) {
         if (head >= 12) {
             return pattern <= WidestPatternAfterAWideHead(head, end);
+        }
+
+        if (first > 0) {
+            if (head <= 5) {
+                return false;
+            }
+
+            ReadOnlySpan<int> limit = [-31, 53, 115, 166, 205, 241];
+            return 10 * pattern + 3 * first - 2 * end + 6 * indent <= limit[head - 6];
         }
 
         // Per head 8 … 11: the widest pattern that always breaks the `=`, then the line ends from which the

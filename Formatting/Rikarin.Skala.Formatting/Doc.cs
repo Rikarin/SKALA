@@ -1479,6 +1479,11 @@ public sealed class Document {
 /// <param name="HeldValueCallee">
 ///     With <see cref="HeldValueTypedHead" />: the receiver's and the method name's widths, type arguments left out.
 /// </param>
+/// <param name="HeldValueName">
+///     With <see cref="HeldValueTypedHead" />: a typed local's declared name, for a method without type arguments, which
+///     <see cref="EqualsFloor.HeldTypedLocalBreaks" /> weighs with the type (#446 round 4); zero otherwise — a method with
+///     type arguments was not measured, and #528's fixture keeps the <c>=</c> where the measured limit would break it.
+/// </param>
 /// <param name="HeldChoppedWidth">
 ///     ⚠ A typed local's single call on a receiver whose argument list is already chopped — pass two of a
 ///     <see cref="EqualsFloor.HeldTypedLocalBreaks" /> that kept the <c>=</c>: the value's flat width through its
@@ -1515,6 +1520,11 @@ public sealed class Document {
 ///     alternative, <c>operand is A</c>. The <c>=</c> breaks whenever that would end past the margin
 ///     beside it, whatever <see cref="EqualsFloor.BreaksBeforeAPattern" /> says (Nightly
 ///     <c>fuzz --seed=7777</c>). Zero for any other group.
+/// </param>
+/// <param name="PatternFirstAlternative">
+///     With <see cref="PatternHead" />: the pattern's first alternative alone, <c>A</c> of <c>A or B</c>, which
+///     <see cref="EqualsFloor.BreaksBeforeAPattern" /> weighs beside the whole pattern for a head under twelve
+///     (#446 round 5). Zero for any other group.
 /// </param>
 /// <param name="ValueHeadFitsBelow">
 ///     With <see cref="ValueHeadWidth" />: the condition is a call, whose <c>=</c> breaks only when the
@@ -1793,6 +1803,7 @@ public readonly record struct GroupFacts(
     bool HeldValueManyArgs = false,
     int HeldValueTypedHead = 0,
     int HeldValueCallee = 0,
+    int HeldValueName = 0,
     int HeldChoppedWidth = 0,
     int HeldChoppedHead = 0,
     int ArmHead = 0,
@@ -1849,6 +1860,7 @@ public readonly record struct GroupFacts(
     int OrHead = 0,
     bool OrLeftIsPattern = false,
     int PatternFirstWidth = 0,
+    int PatternFirstAlternative = 0,
     int ArmBodyTrail = 0,
     int LiftGroup = -1,
     bool LiftsIfArrowBreaks = false,

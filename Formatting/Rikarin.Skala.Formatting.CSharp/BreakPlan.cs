@@ -6274,6 +6274,13 @@ public sealed class BreakPlan {
                             FirstAlternativeOf(((IsPatternExpressionSyntax)value).Pattern).GetLastToken()
                         )
                         : 0,
+                    // ⚠ Not past a line comment inside the pattern, whose line the measured table still decides.
+                    PatternFirstAlternative: PatternHeadOf(node, equals, value) > 0
+                    && !((IsPatternExpressionSyntax)value).Pattern.DescendantTrivia()
+                    .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
+                    && FirstAlternativeOf(((IsPatternExpressionSyntax)value).Pattern) is var firstAlternative
+                        ? FormattedWidth(firstAlternative.GetFirstToken(), firstAlternative.GetLastToken())
+                        : 0,
                     CalleeOwner: owner,
                     BreaksIfTheLineOverflows: owner is EqualsOwner.VarLocal or EqualsOwner.TypedLocal
                     && value is IsPatternExpressionSyntax {
@@ -6341,6 +6348,13 @@ public sealed class BreakPlan {
                     }
                     && heldKind == 1
                         ? FlatSourceWidth(heldCallee.Expression) + heldCallee.Name.Identifier.Span.Length
+                        : 0,
+                    HeldValueName: (heldCall ?? choppedHeld) is {
+                        Expression: MemberAccessExpressionSyntax { Name: IdentifierNameSyntax }
+                    }
+                    && heldKind == 1
+                    && owner == EqualsOwner.TypedLocal
+                        ? EqualsNameOf(node, owner, value)
                         : 0,
                     HeldChoppedHead: choppedHeld is not null && heldKind == 1
                         ? FormattedWidth(value.GetFirstToken(), choppedHeld.ArgumentList.OpenParenToken)

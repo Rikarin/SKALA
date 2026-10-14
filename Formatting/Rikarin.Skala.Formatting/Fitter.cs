@@ -588,7 +588,13 @@ public sealed class Fitter {
                     var end = m.FlatWidth >= Unbounded || m.Trailing >= Unbounded
                         ? int.MaxValue
                         : m.Column + m.FlatWidth + m.Trailing;
-                    return EqualsFloor.BreaksBeforeAPattern(facts.PatternHead, facts.PatternWidth, end)
+                    return EqualsFloor.BreaksBeforeAPattern(
+                        facts.PatternHead,
+                        facts.PatternWidth,
+                        end,
+                        facts.PatternFirstAlternative,
+                        lineStart
+                    )
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
                 }
@@ -785,7 +791,8 @@ public sealed class Fitter {
                         facts.HeldValueTypedHead,
                         m.ContinuationColumn + facts.HeldChoppedWidth,
                         facts.HeldValueCallee,
-                        m.ContinuationColumn - indentWidth
+                        m.ContinuationColumn - indentWidth,
+                        facts.HeldValueName
                     )) {
                     return ResolvedMode.Flat;
                 }
@@ -1235,18 +1242,22 @@ public sealed class Fitter {
     ///             one column over the margin the dot breaks unless the receiver is at most <c>(t − 10) / 5</c>;
     ///         </item>
     ///         <item>
-    ///             otherwise — a tie, where the keyword's band could hold the line — the dot breaks when the type is
-    ///             at most 12 columns, <c>k − d</c> is past <c>max(5, ⌈(4t + 12) / 5⌉)</c> and <c>k</c> reaches
-    ///             <c>width − 2</c>.
+    ///             otherwise — a tie, where the keyword's band could hold the line — with <c>c = min(k, width − 2)</c>,
+    ///             <c>r</c> the receiver, <c>i</c> the statement's indent and <c>b</c> the dot's column: the dot breaks
+    ///             when <c>r ≥ 5</c>, <c>50·c + 20·r + i − 35·t ≥ 5944</c> and
+    ///             <c>56·c − (k − c) + b − 38·t ≥ 6158</c> (at a width of 120).
     ///         </item>
     ///     </list>
-    ///     ⚠ The ties are wired only where every measured cell agrees. The full boundary read from the first 1 608
-    ///     cells — the floor reached, and <c>k</c> a column lower for each two columns past it — was refuted by
-    ///     the next probe (510 of 2 988 cells): types of 15 and 16 never break at the dot up to <c>k − d</c> of
-    ///     23, at indent 20 the floor is a column lower, and the step in <c>k</c> comes sooner for some types. The
-    ///     subset kept here is right in every one of the 5 596 tie cells of the three probes and was then checked
-    ///     on a fourth. The <c>x</c> layout — neither the keyword's band nor the dot's line fits, and the oracle
-    ///     nests the dot two levels in — is not this rule's and stays the keyword's.
+    ///     ⚠ #446 round 8 (SK-DIV-0210): the ties were measured one variable at a time — types of 1 to 24, receivers
+    ///     to 60, indents 8 to 72, and the head widened to <c>yield return</c> to part the indent from the property —
+    ///     78 000 cells. The first condition is the diagonal rounds 6 and 7 saw (a receiver of five more per two
+    ///     columns of keyword line); the second is the saturation they read as "types of 14 or more never take the
+    ///     dot": it moves 56 columns of the dot's column per column of <c>k</c> and 38 per column of type, so a type of
+    ///     14 takes it only from a dot at 82, and one of 15 never can. Past <c>width − 2</c> the keyword's line stops
+    ///     helping, and costs a column of the dot's per column. A fresh random probe (both keywords, generic and
+    ///     qualified types, indents and types off the grid) matched 2 905 of 2 909 tie cells, where the subset rule
+    ///     before it matched 2 520. The <c>x</c> layout — neither the keyword's band nor the dot's line fits, and the
+    ///     oracle nests the dot two levels in — is not this rule's and stays the keyword's.
     /// </remarks>
     bool TheDotTakesTheBreak(in GroupFacts facts, int column, int lineStart) {
         var operandEnd = column + facts.TypeTestOperand;
@@ -1265,8 +1276,15 @@ public sealed class Fitter {
             return 5 * facts.TypeTestReceiver > facts.TypeTestType - 10;
         }
 
-        var floor = Math.Max(5, (4 * facts.TypeTestType + 12 + 4) / 5);
-        return facts.TypeTestType <= 12 && keywordEnd - dotLine > floor && keywordEnd >= width - 2;
+        // ⚠ The tie, as two linear conditions over the keyword's line capped two columns short of the margin (#446
+        // round 8): the receiver against the type, and the dot's column against the type.
+        var capped = Math.Min(keywordEnd, width - 2);
+        var past = keywordEnd - capped;
+        var receiver = facts.TypeTestReceiver;
+        var type = facts.TypeTestType;
+        return receiver >= 5
+            && 50 * (capped - width + 2) + 20 * receiver + lineStart - 35 * type >= 44
+            && 56 * (capped - width + 2) - past + column + receiver - 38 * type >= -450;
     }
 
     /// <summary>
@@ -1874,7 +1892,8 @@ public sealed class Fitter {
                         facts.HeldValueTypedHead,
                         below,
                         facts.HeldValueCallee,
-                        continuation - indentWidth
+                        continuation - indentWidth,
+                        facts.HeldValueName
                     )
                     || valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd;
             case 1:
