@@ -685,10 +685,13 @@ public sealed class DocumentBuilder {
                 || arrowBodiesRunningToTheEnd.Contains(frame.Arg1);
             // ⚠ A body that breaks at its own dot is read to the dot, the arrow before it included (#576 round 7). See
             // GroupFlags.ArrowBodyRunsToItsDot.
+            // Only a body short enough to be read through otherwise: a longer one already ends the head's line at the
+            // arrow, and the oracle breaks there when `=> Receiver` does not fit.
             dotRuns = !arrow.PositionalHead
                 && arrow.ArmBodyDot
                 && flatWidth[index] < Document.Unbounded
-                && afterPoint[index] < Document.Unbounded;
+                && afterPoint[index] < Document.Unbounded
+                && flatWidth[index] - 1 + arrow.ArmBodyTrail <= ShortArrowBody;
             if (arrowRuns && arrow.FlatIfOwnerBroke && arrow.Owner >= 0) {
                 arrowBodiesRunningToTheEnd.Add(arrow.Owner);
             }
