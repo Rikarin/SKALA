@@ -214,6 +214,10 @@ public sealed class FuzzRegressionTests {
     // two, finding the value spanning lines, read it as having no callee and broke the `=` by the ordering rule. The
     // oracle keeps an author's chop of a lone argument and the `=` beside it (GroupFacts.KeptArgumentCallee).
     [InlineData(17150111611241313074UL)]
+    // ⚠ And a section that spans lines itself (`[` / `#endif` / `MethodImpl(…)]`) in front of a default: pass one
+    // kept the gap and broke the `=` by #603's band, pass two read that `=` break as one inside the parameter, turned
+    // the band off and broke the gap.
+    [InlineData(9695149764600851630UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
