@@ -5123,7 +5123,7 @@ public sealed class BreakPlan {
 
         var comma = arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0;
         var width = FormattedWidth(arm.Expression) + comma;
-        return width <= 14 ? 4 + width : 0;
+        return 4 + width;
     }
 
     /// <summary>The <c>[</c> of a list pattern written on one line straight after an <c>is</c>.</summary>
@@ -8744,7 +8744,7 @@ public sealed class BreakPlan {
                     Pattern: RecursivePatternSyntax { PositionalPatternClause: not null, PropertyPatternClause: null }
                 }
                 || ArmWhenHoldsOnlyTypeArguments(arm)
-                && FormattedWidth(arm.WhenClause!.Condition) <= WhenReadThroughLimit
+                && (FormattedWidth(arm.WhenClause!.Condition) <= WhenReadThroughLimit || WhenBodyWidth(arm) > 7)
             )
         );
     }

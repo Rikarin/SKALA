@@ -960,7 +960,7 @@ public sealed class Fitter {
                 // read as the author's (#379, the mirror image of #375). See
                 // GroupFacts.BreaksOnlyIfTailFits.
                 if (facts.WhenTable) {
-                    return WhenBreaks(facts, m, tail) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                    return WhenBreaks(facts, m, tail, lineStart) ? ResolvedMode.Broken : ResolvedMode.Flat;
                 }
 
                 if (facts.BreaksOnlyIfTailFits) {
@@ -1617,7 +1617,7 @@ public sealed class Fitter {
     ///     break point at all always breaks once it does not fit beside (#609, fuzz 7256125207651206043): `when` /
     ///     `SomeVeryLongIdentifier… =&gt;` / `1,` — it has nowhere else to go.
     /// </remarks>
-    bool WhenBreaks(in GroupFacts facts, in Measures m, int tail) {
+    bool WhenBreaks(in GroupFacts facts, in Measures m, int tail, int lineStart) {
         if (m.FlatWidth >= Unbounded || Fits(m.Column, m.FlatWidth)) {
             return false;
         }
@@ -1634,6 +1634,28 @@ public sealed class Fitter {
 
         if (facts.WhenBody <= 0) {
             return true;
+        }
+
+        // ⚠ A condition one or two columns past the margin beside the `when` moves below, whatever the head or
+        // the body (#576 round 7, SK-DIV-0399).
+        if (Fits(m.Column, m.FlatWidth - 2)) {
+            return true;
+        }
+
+        // ⚠ A body of four columns or more with its comma is not read through: the `when` breaks inside a band
+        // of head widths, the head being the arm through `when`, from twelve columns (more before the narrowest
+        // bodies) to a limit that rises 19/7 of a column per column of body. Past it the type arguments fill
+        // beside the `when`. Measured with `Testing ask` on Materialise<List<bool>, IReadOnlyDictionary<int, T…>>()
+        // and three more conditions with their first argument 1 to 32 columns wide (#576 round 7, SK-DIV-0399).
+        var body = facts.WhenBody - 4;
+        if (body >= 4) {
+            // The whole arm fits on the line below: it moves there.
+            if (tail < Unbounded && m.ContinuationColumn + tail + facts.WhenBody <= width) {
+                return true;
+            }
+
+            var head = m.Column - lineStart;
+            return head >= Math.Max(12, 45 - 6 * body) && 7 * head <= 19 * body + 105;
         }
 
         if (tail >= Unbounded) {
