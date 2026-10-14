@@ -13409,3 +13409,40 @@ type) is not affected: SK-DIV-0210's rule decides it. Measured, not wired.
 
 - options: none.
 - status: **open**.
+
+## SK-DIV-0521 — where a sole lambda breaks after its arrow without a broken test
+
+#620, group C (2026-10-14): SK-DIV-0520's question where the body is not a type test broken before its keyword. Probe
+H (2 100 members, seed 620: five operand classes — a call of two or more arguments, of one, either with links after
+it, a no-argument call with links — written plain or with a type test on one line, eight parameter lists, five
+statement kinds, indents 8, 12 and 16) to fit; probe I (600, seed 6200) to check. In every class the arrow keeps while
+the body fits beside it; past that —
+- **a type test on one line whose operand's calls have one argument or none:** the arrow breaks. 4 of 118 apart on
+  probe I, where keeping it missed 114 (`LambdaBodyKind.InlineTest`).
+- **a type test on one line whose operand's first call has two or more:** `6·k + 2·p + 5·h − 9·w − 12·i ≥ −1032`, `w`
+  the whole body (`LambdaBodyKind.InlineTestOfACall`). 36 of 282 fitted; 18 of 71 on probe I, where either fixed
+  answer missed 35. Under the kept arrow the call's arguments stack two levels in while they break, `) as T` one, as
+  under a broken test (#602).
+- **a whole body that is a one-argument call of its own:** from twelve columns past the line's start,
+  `6·k − 8·p + 7·h − 11·w − 10·i ≥ −1108` (`LambdaBodyKind.OneArgumentCall`). 35 of 224 fitted; 14 of 73 on probe I,
+  where keeping it missed 34. ⚠ Not the last link of a chain (`settings.A(x).B(y)`) nor a call whose argument holds a
+  lambda (#585's `DotNetTest(settings => …)`), which the probe never held — `NestedSoleLambdaChainIssue585Tests` caught
+  the first version reading both.
+
+| probe (members agreeing) | before | now |
+|---|---|---|
+| H (2 100, fitted) | 1 017 | 1 526 |
+| I (600, fresh) | 302 | 435 |
+| #618's probes A / G (378 / 450) | 177 / 386 | 242 / 386 |
+
+Stable on a second pass everywhere. Pinned by `SoleLambdaUnbrokenBodyArrowIssue620Tests`.
+
+⚠ **Open:** a whole body that is a chain — `call(…).A`, `ctx.Get().B` — where the best linear line still misses 259 of
+796 members; a whole body that is a call of two or more arguments, which the oracle keeps beside the arrow in 229 of
+257 and no line improved on; a hugged call with links after it, whose arguments the oracle stacks two levels in
+(`=> Normalize(` / the arguments / `)` / `.Value`) and Skala one; and a type test on one line under a broken arrow
+whose operand still overflows, where the oracle breaks after `is` and Skala chops the operand's arguments. 165 of
+probe I's 600 members.
+
+- status: **partly resolved** (#620).
+
