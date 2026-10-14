@@ -4944,7 +4944,7 @@ public sealed class BreakPlan {
     ///     fact, so the level is held while the list stays flat (<see cref="HeldLevel.WhileArrowFlat" />, its slot
     ///     naming the list's group, resolved by <see cref="SettleTypeTestHolds" />).
     /// </remarks>
-    ArgumentListSyntax? StacksWhileItsArgumentsBreak(SyntaxNode node, SyntaxToken keyword) {
+    ExpressionSyntax? StacksWhileItsArgumentsBreak(SyntaxNode node, SyntaxToken keyword) {
         if (!BreaksBefore(keyword) || IsAHeaderCondition(node) || node.Parent is not LambdaExpressionSyntax) {
             return null;
         }
@@ -4955,13 +4955,16 @@ public sealed class BreakPlan {
             _ => null
         };
 
-        while (operand is MemberAccessExpressionSyntax access) {
-            operand = access.Expression;
+        var spine = operand;
+        while (spine is MemberAccessExpressionSyntax access) {
+            spine = access.Expression;
         }
 
-        return operand is InvocationExpressionSyntax { ArgumentList.Arguments.Count: > 0 } call
-            ? call.ArgumentList
-            : null;
+        // ⚠ Only where SettleTypeTestHolds will find a group to hold against: an unheld level is spent.
+        return operand is not null && IsChainRoot(operand) && ChainPointCount(operand, options) > 0
+            || spine is InvocationExpressionSyntax { ArgumentList.Arguments.Count: > 0 }
+                ? operand
+                : null;
     }
 
     /// <summary>
@@ -5016,15 +5019,29 @@ public sealed class BreakPlan {
     static readonly char[] LineEnds = ['\r', '\n'];
 
     /// <summary>The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the list each is held against.</summary>
-    readonly List<(int Group, ArgumentListSyntax Arguments)> pendingTypeTestHolds = [];
+    readonly List<(int Group, ExpressionSyntax Operand)> pendingTypeTestHolds = [];
 
     /// <summary>
     ///     Names each held type test's argument-list group in <see cref="ArrowHeldAgainst" />'s slot, once the walk
     ///     has planned the list; a list with no group leaves the test unheld, which spends the level.
     /// </summary>
     void SettleTypeTestHolds() {
-        foreach (var (group, arguments) in pendingTypeTestHolds) {
-            if (groups.TryGetValue(Key(arguments), out var plans) && plans.Count > 0) {
+        foreach (var (group, operand) in pendingTypeTestHolds) {
+            // ⚠ The operand's chain where it has one: its links breaking stack the level as its arguments do
+            // (#602, group C's probe — `ctx.Get()` / `.Value` / `is T`).
+            if (chainGroups.TryGetValue(Key(operand), out var chain)) {
+                arrowHeldAgainst[group] = chain;
+                continue;
+            }
+
+            var spine = operand;
+            while (spine is MemberAccessExpressionSyntax access) {
+                spine = access.Expression;
+            }
+
+            if (spine is InvocationExpressionSyntax { ArgumentList: { Arguments.Count: > 0 } arguments }
+                && groups.TryGetValue(Key(arguments), out var plans)
+                && plans.Count > 0) {
                 arrowHeldAgainst[group] = plans[^1].Id;
             }
         }
