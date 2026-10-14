@@ -13105,5 +13105,46 @@ arrow's end, `Apply(x =>` (10) and `Use(x =>` (8) keep, `items.ForEach(item =>` 
 callee and breaks for another, `.Select(x =>` inside a chain keeps. Rows apart for this alone, of the members whose
 line overflows: 185 + 19 of 576, 48 + 6 of 192, 70 of 280 (oracle breaks + oracle keeps).
 
-- status: **open**.
+**#618, group C (2026-10-14): what decides it.** None of the candidates alone — the callee's name, a chain around
+the call, the statement kind, the body's width or argument count, whether the operand fits whole a level in. Probes
+of 4 434 members asked with `Testing ask` (callees of 1 to 24 columns, parameter lists of 4 to 14, call heads of 5 to 60
+through the `(`, one to five arguments, operands of 70 to 127, indents 8 to 20) give three classes by the operand's
+calls, each with a boundary of its own. In every class the arrow keeps while the operand fits beside it or the arrow
+ends less than twelve columns past the line's start (`k + p ≥ 11` below); past that —
+- **a call of two or more arguments, nothing after it:** `6·k − 3·p + 5·h − 8·w − 6·i ≥ −658` (`k` the columns to the
+  outer call's `(`, `p` the lambda's head through `=>`, `h` the call's head through its `(`, `w` the call's width,
+  `i` the line's start; `GroupFacts.LambdaTestCall`). ⚠ A wider call keeps the arrow, as a longer parameter list does.
+  1 482 members fitted, 20 apart; a probe written after it (480: five statement kinds, six heads, six parameter
+  lists, four tests, indents 8/12/20), 15 apart in the arrow, where keeping it throughout missed 138.
+- **a first call of two or more arguments with links after it:** `6·k − 6·p + 8·h − 6·w − 8·i ≥ −564`, `h` through
+  the first call's `(` (`GroupFacts.LambdaTestLinks`). 720 overflowing members fitted, 32 apart; 31 of a later probe,
+  3 apart where keeping the arrow missed 19.
+- **a last call of one argument or none (`Resolve(x.GetRoot())`, `ctx.Current()` / `.Value`):** always — there is
+  nothing to chop beside the arrow. ⚠ Not "when it fits below": the oracle breaks the arrow over 346 of 390 such
+  members, 166 of them too wide for the line below as well.
+
+Under a broken arrow the test is a level past the operand's line and the operand's links a level past the test, so
+the test's held level (#602) is spent when its operand breaks *or* its arrow does (`Document.SecondHoldOf`), and the
+links' level counts beside it (`IsAStackedTypeTestsOperand`).
+
+| probe (members agreeing) | before | now |
+|---|---|---|
+| A: head × parameter × body shape × tail (378) | 99 | 177 |
+| B: parameter forms and indents (1 008) | 280 | 705 |
+| C: operand widths (720) | 308 | 592 |
+| D: call heads and argument counts (1 008) | 654 | 994 |
+| E: written after the two-argument rule (480) | 342 | 459 |
+| F: written after the one-argument rule (390) | 65 | 347 |
+| G: every class, written after all three (450) | 233 | 386 |
+| group C's #602 probes (576 / 192 / 280) | 360 / 138 / 204 | 503 / 174 / 234 |
+
+Stable on a second pass everywhere. ⚠ **Still open:** a first call of one argument followed by a call of more
+(`open(x).Analyze(a, b)`), a property-only chain (`x => a.B.C.D` / `.E` / `is T`), a one-argument call too wide for the
+line below, where the oracle keeps the arrow and breaks after the `(` (asking for that lost more than it won on two
+probes), a no-argument link it breaks before (`…Name` / `.Build()`) and the boundary cells of each rule. ⚠ And the same
+question without a broken test — the test written on one line, or a whole body that is a chain or a one-argument
+call, `Use(static x =>` / `call(…).A.B` — where the oracle breaks the arrow by the same kind of line and Skala keeps
+it: 504 of the 632 members probes A to C still differ in (the broken-test rows there: 52), not attempted.
+
+- status: **partly resolved** (#618): the three classes above, pinned by `SoleLambdaTestArrowIssue618Tests`; the rest **open**.
 
