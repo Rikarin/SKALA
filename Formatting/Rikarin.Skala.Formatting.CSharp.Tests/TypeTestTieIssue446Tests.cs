@@ -285,4 +285,371 @@ public sealed class TypeTestTieIssue446Tests {
 
         Agrees(source, expected);
     }
+
+    /// <summary>
+    ///     Round 8: the tie as two linear conditions. The first of each pair takes the dot, the second, a column of
+    ///     receiver or of the dot's column short, keeps the keyword's band: a type of 14 behind a dot at 87 and at 86,
+    ///     a type of 10 whose receiver reaches the diagonal at 116, a type of 13 whose dot reaches column 100 at 117, a
+    ///     keyword line past the margin, and a type of 15 that never takes it.
+    /// </summary>
+    [Theory]
+    [InlineData("t14_i56_r24_118")]
+    [InlineData("t14_i56_r23_118")]
+    [InlineData("t10_i8_r27_116")]
+    [InlineData("t10_i8_r26_116")]
+    [InlineData("t13_i40_r53_117")]
+    [InlineData("t13_i40_r52_117")]
+    [InlineData("t6_i8_r30_122")]
+    [InlineData("t15_i40_r50_118")]
+    public void TakesTheDotByTheTwoConditions(string cell) {
+        var (source, expected) = RoundEight[cell];
+        Agrees(source, expected);
+    }
+
+    static readonly Dictionary<string, (string Source, string Expected)> RoundEight = new() {
+            ["t14_i56_r24_118"] = (
+                """
+                class C
+                {
+                    object M()
+                    {
+                        {
+                            {
+                                {
+                                    {
+                                        {
+                                            {
+                                                {
+                                                    {
+                                                        {
+                                                            {
+                                                                {
+                                                                    {
+                                                                        return rrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTTTTTT;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                """,
+                """
+                class C {
+                    object M() {
+                        {
+                            {
+                                {
+                                    {
+                                        {
+                                            {
+                                                {
+                                                    {
+                                                        {
+                                                            {
+                                                                {
+                                                                    {
+                                                                        return rrrrrrrrrrrrrrrrrrrrrrrr
+                                                                            .PPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTTTTTT;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                """
+            ),
+            ["t14_i56_r23_118"] = (
+                """
+                class C
+                {
+                    object M()
+                    {
+                        {
+                            {
+                                {
+                                    {
+                                        {
+                                            {
+                                                {
+                                                    {
+                                                        {
+                                                            {
+                                                                {
+                                                                    {
+                                                                        return rrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTTTTTT;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                """,
+                """
+                class C {
+                    object M() {
+                        {
+                            {
+                                {
+                                    {
+                                        {
+                                            {
+                                                {
+                                                    {
+                                                        {
+                                                            {
+                                                                {
+                                                                    {
+                                                                        return rrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPP as
+                                                                            TTTTTTTTTTTTTT;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                """
+            ),
+            ["t10_i8_r27_116"] = (
+                """
+                class C
+                {
+                    object M()
+                    {
+                        return rrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTT;
+                    }
+                }
+                """,
+                """
+                class C {
+                    object M() {
+                        return rrrrrrrrrrrrrrrrrrrrrrrrrrr
+                            .PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTT;
+                    }
+                }
+                """
+            ),
+            ["t10_i8_r26_116"] = (
+                """
+                class C
+                {
+                    object M()
+                    {
+                        return rrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTTTTTT;
+                    }
+                }
+                """,
+                """
+                class C {
+                    object M() {
+                        return rrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as
+                            TTTTTTTTTT;
+                    }
+                }
+                """
+            ),
+            ["t6_i8_r30_122"] = (
+                """
+                class C
+                {
+                    object M()
+                    {
+                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTT;
+                    }
+                }
+                """,
+                """
+                class C {
+                    object M() {
+                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+                            .PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP as TTTTTT;
+                    }
+                }
+                """
+            ),
+            ["t15_i40_r50_118"] = (
+                """
+                class C
+                {
+                    object M()
+                    {
+                        {
+                            {
+                                {
+                                    {
+                                        {
+                                            {
+                                                {
+                                                    {
+                                                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPP is TTTTTTTTTTTTTTT;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                """,
+                """
+                class C {
+                    object M() {
+                        {
+                            {
+                                {
+                                    {
+                                        {
+                                            {
+                                                {
+                                                    {
+                                                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPPPPP is
+                                                            TTTTTTTTTTTTTTT;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                """
+            ),
+            ["t13_i40_r53_117"] = (
+                """
+                class C
+                {
+                    object M()
+                    {
+                        {
+                            {
+                                {
+                                    {
+                                        {
+                                            {
+                                                {
+                                                    {
+                                                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPP as TTTTTTTTTTTTT;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                """,
+                """
+                class C {
+                    object M() {
+                        {
+                            {
+                                {
+                                    {
+                                        {
+                                            {
+                                                {
+                                                    {
+                                                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+                                                            .PPPPPPPPPPPPP as TTTTTTTTTTTTT;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                """
+            ),
+            ["t13_i40_r52_117"] = (
+                """
+                class C
+                {
+                    object M()
+                    {
+                        {
+                            {
+                                {
+                                    {
+                                        {
+                                            {
+                                                {
+                                                    {
+                                                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPP as TTTTTTTTTTTTT;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                """,
+                """
+                class C {
+                    object M() {
+                        {
+                            {
+                                {
+                                    {
+                                        {
+                                            {
+                                                {
+                                                    {
+                                                        return rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.PPPPPPPPPPPPPP as
+                                                            TTTTTTTTTTTTT;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                """
+            ),
+    };
 }
