@@ -1646,6 +1646,22 @@ public sealed class Document {
 /// </param>
 /// <param name="TypeTestKeyword">With <see cref="TypeTestTail" />: the keyword's width, <c>is</c> or <c>as</c>.</param>
 /// <param name="TypeTestType">With <see cref="TypeTestTail" />: the type's width, without the <c>;</c>.</param>
+/// <param name="PatternDotName">
+///     ⚠ <c>operand is N.T</c>, whose right side the oracle reads as a constant pattern that is a member access (#621,
+///     SK-DIV-0540): the width of <c>T</c>, on every group the type test plans, which then asks
+///     <c>Fitter.ThePatternDotTakesTheBreak</c> whether <c>… is N</c> / <c>.T</c> takes the line. Zero otherwise.
+/// </param>
+/// <param name="PatternDotQualifier">With <see cref="PatternDotName" />: the width of <c>N</c>.</param>
+/// <param name="PatternDotOperand">With <see cref="PatternDotName" />: the operand's width before the keyword.</param>
+/// <param name="PatternDotPoint">With <see cref="PatternDotName" />: this group is the point before the dot.</param>
+/// <param name="PatternDotHead">
+///     With <see cref="PatternDotName" />: the head through the <c>=</c> when the type test is a local's whole value,
+///     whose width sets the limit on the joined line (<c>Fitter.PatternDotLimit</c>); zero after <c>return</c>.
+/// </param>
+/// <param name="PatternDotEquals">
+///     With <see cref="PatternDotName" />: this group is a local's <c>=</c> before the type test, whose operand starts a
+///     space past the <c>=</c>; it stays flat when the pattern's dot takes the line.
+/// </param>
 /// <param name="ModifierFillHead">
 ///     ⚠ A field's gap between its modifiers and a generic type (#540, SK-DIV-0127): the type's width through the
 ///     first comma of its argument list, where the oracle's fill on the modifiers' line breaks. With
@@ -1898,6 +1914,12 @@ public readonly record struct GroupFacts(
     int TypeTestOperand = 0,
     int TypeTestKeyword = 0,
     int TypeTestType = 0,
+    int PatternDotName = 0,
+    int PatternDotQualifier = 0,
+    int PatternDotOperand = 0,
+    bool PatternDotPoint = false,
+    bool PatternDotEquals = false,
+    int PatternDotHead = 0,
     int ModifierFillHead = 0,
     int ModifierFillLastHead = 0,
     int ModifierFillType = 0,

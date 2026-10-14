@@ -13401,11 +13401,47 @@ it: 504 of the 632 members probes A to C still differ in (the broken-test rows t
 
 ## SK-DIV-0540 — a constant pattern that is a member access breaks before its own dot
 
-Found by #446 round 8's fresh probe (group E, 2026-10-14): `return receiver.Property is N.Ttt…;` parses `N.Ttt` as
+Found by #446 round 8's fresh probe (group E, 2026-10-14): `return receiver.Property is N.Ttt…;` — Roslyn parses `N.Ttt` as a qualified type name, the oracle reads it as
 a *constant pattern*, not a type, and past the margin the oracle breaks before that pattern's dot —
 `… is N` / `.Ttt;` one level in — in 134 of the probe's 402 qualified `is` cells, including lines whose keyword
 ends at 110, where the keyword's band would hold them. Skala keeps the band (`… is` / `N.Ttt;`). `as N.Ttt` (a
 type) is not affected: SK-DIV-0210's rule decides it. Measured, not wired.
 
 - options: none.
-- status: **open**.
+
+⚠ **#621 (group E, 2026-10-14): measured one variable at a time and wired.** `return r….P… is N….T…;` swept over
+indents 8 to 40, qualifiers `N…` of 1, 3, 5 and 8, names `T…` of 2 to 24 and receivers of 1 to 40, the keyword
+ending at 104 to 125 (7 432 cells). With `k` the line through `is`, `q` the qualifier and `t` the name, past the
+margin the oracle writes `… is N` / `.T;` (one level in) exactly when `… is N` fits and
+
+`2·k − 8·t − 6·indent − 11·q ≤ 61`
+
+— 3 778 of 3 778 cells where it competes with the keyword's break; the receiver plays no part, and one column
+over the margin the operand's own dot keeps the line as it does for a type. Beside a local's `=` (heads of 5 to
+12, 7 040 cells) the same line holds with a limit per head: 58, 31, −52, −114, −167, −206 and −240 for heads of 5
+to 11, none from 12. ⚠ **From 6 to 11 those are SK-DIV-0211 round 5's narrow-head pattern limits negated, to the
+column** — the oracle weighs a narrow head the same way before both constructs. Once the `=` has broken, the value's
+own line takes the 61 again (2 753 of 2 806 broken `=` cells go on to break before the pattern's dot), and a head of
+five or less never breaks its `=` here (none of 705 cells).
+
+`BreakPlan.PatternDotOf` plans a point before the dot of a two-name `N.T` after `is` written on one line;
+`Fitter.ThePatternDotTakesTheBreak` decides it, and the keyword's bands and the operand's dot stay flat when it
+takes the line; `Fitter.PatternDotLimit` holds the head table. Exact text against the oracle, master → this branch:
+
+| probe | cells | master | now |
+|---|---:|---:|---:|
+| receivers, qualifiers, names (`return`) | 1 600 | 994 | 1 490 |
+| indents × qualifiers × names (`return`) | 5 832 | 2 834 | 5 832 |
+| locals, heads `bool b =` / 17 / 27 | 2 112 | 1 418 | 2 024 |
+| locals `var`, `bool`, a head of 17 | 5 940 | 2 430 | 5 816 |
+| locals, heads of 5 to 12 | 7 040 | 2 543 | 6 812 |
+| **fresh random probe** (seed 62101: `return`, `yield return`, `var x =`, `bool b =`; indents 8–48, qualifiers 1–10, names 1–25, receivers 1–30) | 3 000 | 1 374 | 2 822 |
+
+Every grid re-formats to itself; `corpus/` is unchanged. Pinned by `ConstantPatternDotIssue621Tests`.
+
+⚠ Left, all outside this rule: the operand overflowing by itself (the dot two levels in, #446's `x`), a local's
+operand breaking at its own dot (`T x = r` / `.P… is N.T;`, #446 item 1's rule is wired for `return` only — under
+`yield return` round 8's two conditions transfer only with a shift of the head, 93 % at best, and are not wired),
+and qualified names of more than one dot or with type arguments, which were not measured.
+
+- status: **resolved** within the measured shapes (#621).
