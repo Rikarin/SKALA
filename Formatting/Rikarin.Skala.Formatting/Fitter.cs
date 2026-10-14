@@ -2057,7 +2057,7 @@ public sealed class Fitter {
         var valueColumn = facts.HeldValueTargetTail > 0
             && (facts.HeldValueTargetKept || m.Column + facts.HeldValueTarget > width)
                 ? m.ContinuationColumn + facts.HeldValueTargetTail + 1
-            : m.Column + Math.Max(m.PointWidth, facts.HeldValueTarget) + 1;
+                : m.Column + Math.Max(m.PointWidth, facts.HeldValueTarget) + 1;
         if (valueColumn + facts.HeldValueWidth <= width) {
             return false;
         }
