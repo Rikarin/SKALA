@@ -1795,6 +1795,19 @@ public sealed class Document {
 ///     group's point width at that dot, and the value's column read from it landed 36 columns left of the
 ///     <c>=</c>, so the value "fitted" beside it and the <c>=</c> stayed on pass one, to break on pass two.
 /// </param>
+/// <param name="HeldValueTargetTail">
+///     ⚠ With <see cref="HeldValue" />, an assignment's whose target may end on a line of its own —
+///     <c>E.Find(e)</c> / <c>.Value =</c> — the width of that last line from its dot through the <c>=</c> (#624);
+///     zero otherwise. When the line is certain (<see cref="HeldValueTargetKept" />), or the target through the
+///     <c>=</c> does not fit and its chain must chop, the value's column is read from the continuation column, not
+///     through the whole target. Measured flat, <c>E_w….Find(e)</c> / <c>.Value = World.Get(…, e.Index, s);</c> at 93
+///     columns broke its <c>=</c>, which the oracle keeps; and a value with a break of its own is no held call, so
+///     the fuzzer's pass one kept the <c>=</c> and pass two, the value now joined, broke it.
+/// </param>
+/// <param name="HeldValueTargetKept">
+///     With <see cref="HeldValueTargetTail" />: whether the target's last line is certain from the syntax — the
+///     author's break before its dot, or before any dot of a chopped chain, kept.
+/// </param>
 /// <param name="WholeList">
 ///     ⚠ With <see cref="LineFlags.BreaksOnlyIfListStaysWhole" /> on the group's point: the list pattern's group whose
 ///     staying whole decides the point (#617); −1 otherwise.
@@ -1974,6 +1987,8 @@ public readonly record struct GroupFacts(
     int KeptArgumentCallee = 0,
     int CalleeArgumentHead = 0,
     int HeldValueTarget = 0,
+    int HeldValueTargetTail = 0,
+    bool HeldValueTargetKept = false,
     int WholeList = -1);
 
 /// <summary>
