@@ -1366,12 +1366,18 @@ public sealed class Fitter {
             case LambdaBodyKind.InlineTest:
                 return true;
             case LambdaBodyKind.InlineTestOfACall:
-                return 6 * callee + 2 * parameters + 5 * facts.LambdaTestCallHead - 9 * facts.LambdaTestCall
+                return 6 * callee
+                    + 2 * parameters
+                    + 5 * facts.LambdaTestCallHead
+                    - 9 * facts.LambdaTestCall
                     - 12 * lineStart
                     >= -1032;
             case LambdaBodyKind.OneArgumentCall:
                 return callee + parameters >= 11
-                    && 6 * callee - 8 * parameters + 7 * facts.LambdaTestCallHead - 11 * facts.LambdaTestCall
+                    && 6 * callee
+                    - 8 * parameters
+                    + 7 * facts.LambdaTestCallHead
+                    - 11 * facts.LambdaTestCall
                     - 10 * lineStart
                     >= -1108;
         }
