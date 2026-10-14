@@ -494,4 +494,71 @@ public sealed class FuzzIdempotencyIssue617Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     Fuzz 11861007200823207053: the same break with a block comment between the list's elements, or before its
+    ///     <c>]</c>. The comment stays on the list's line, so the list is still one line and the rule above holds: the
+    ///     break is kept while the list fits whole one level in (a list line ending at 119) and joined a column later.
+    ///     Non-idempotent on adca899a, where the kept break broke the list one level in; fixed by 773eeafa.
+    /// </summary>
+    [Fact]
+    public void AOneLineListBelowTheIs_WithABlockCommentInside_KeepsItsBreakOnlyWhileItStaysWhole() =>
+        Oracle.Agrees(
+            """
+            class C {
+                void Seed(object candidate) {
+                    var matched = candidate is
+            [firstElementPatternName, /* f */  secondElementPatternName, thirdElementPatternName, fourthElementPatternName, fifthElementPatternName];
+                }
+                void M98(object candidate) {
+                    var matched = candidate is
+            [firstElementPatternName, /* f */ secondElementPatternName, thirdElementPatternName, fxxxxxxxxxxxxxxxxxxx];
+                }
+                void M101(object candidate) {
+                    var matched = candidate is
+            [firstElementPatternName, /* f */ secondElementPatternName, thirdElementPatternName, fxxxxxxxxxxxxxxxxxxxxxx];
+                }
+                void C98(object candidate) {
+                    var matched = candidate is
+                        [firstElementPatternName, secondElementPatternName, thirdElementPatternName, fxxxxxxxxxxxxxxxxxxx /* f */];
+                }
+                void C101(object candidate) {
+                    var matched = candidate is
+                        [firstElementPatternName, secondElementPatternName, thirdElementPatternName, fxxxxxxxxxxxxxxxxxxxxxx /* f */];
+                }
+            }
+            """,
+            """
+            class C {
+                void Seed(object candidate) {
+                    var matched = candidate is [
+                        firstElementPatternName, /* f */ secondElementPatternName, thirdElementPatternName,
+                        fourthElementPatternName, fifthElementPatternName
+                    ];
+                }
+
+                void M98(object candidate) {
+                    var matched = candidate is
+                        [firstElementPatternName, /* f */ secondElementPatternName, thirdElementPatternName, fxxxxxxxxxxxxxxxxxxx];
+                }
+
+                void M101(object candidate) {
+                    var matched = candidate is [
+                        firstElementPatternName, /* f */ secondElementPatternName, thirdElementPatternName, fxxxxxxxxxxxxxxxxxxxxxx
+                    ];
+                }
+
+                void C98(object candidate) {
+                    var matched = candidate is
+                        [firstElementPatternName, secondElementPatternName, thirdElementPatternName, fxxxxxxxxxxxxxxxxxxx /* f */];
+                }
+
+                void C101(object candidate) {
+                    var matched = candidate is [
+                        firstElementPatternName, secondElementPatternName, thirdElementPatternName, fxxxxxxxxxxxxxxxxxxxxxx /* f */
+                    ];
+                }
+            }
+            """
+        );
 }

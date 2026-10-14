@@ -311,6 +311,9 @@ public sealed class FuzzRegressionTests {
     // width at its dot, so the held value's column was read 36 columns left of the `=` and pass one kept the `=`
     // and chopped; pass two, the value now broken, broke the `=`.
     [InlineData(6605302205500226187UL, "real/vixen/Core/Vixen.Physics/Ecs/PhysicsScene.cs")]
+    // #617 (found by group D on adca899a): `candidate is` / `[first, /* f */ second, …]` too wide one level in. Pass one
+    // kept the author's break and broke the list there; pass two joined `is [`. Fixed by 773eeafa's whole-list point.
+    [InlineData(11861007200823207053UL, "constructs/wrapping/alignment.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
