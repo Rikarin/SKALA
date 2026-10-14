@@ -3961,9 +3961,8 @@ public sealed class BreakPlan {
             RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
             Expression: IdentifierNameSyntax,
             Parent: BinaryExpressionSyntax {
-                Parent: StatementSyntax statement and (ReturnStatementSyntax or YieldStatementSyntax {
-                    RawKind: (int)SyntaxKind.YieldReturnStatement
-                })
+                Parent: StatementSyntax statement
+                and (ReturnStatementSyntax or YieldStatementSyntax { RawKind: (int)SyntaxKind.YieldReturnStatement })
             } binary
         } member
         && IsTypeTest(binary)
@@ -3979,7 +3978,9 @@ public sealed class BreakPlan {
             : 0;
 
     static SyntaxToken SemicolonOf(StatementSyntax statement) =>
-        statement is YieldStatementSyntax yield ? yield.SemicolonToken : ((ReturnStatementSyntax)statement).SemicolonToken;
+        statement is YieldStatementSyntax yield
+            ? yield.SemicolonToken
+            : ((ReturnStatementSyntax)statement).SemicolonToken;
 
     /// <summary>
     ///     <see cref="TypeTestTail" />'s facts, for the operand's fill and for the keyword's band in front of it:
@@ -5198,20 +5199,7 @@ public sealed class BreakPlan {
 
         if (node is BinaryExpressionSyntax { Left: var operand } && TypeTestTail(operand) > 0) {
             typeTestLifts[Key(operand)] = group;
-        } else if (node is BinaryExpressionSyntax {
-                Left: MemberAccessExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                    Expression: IdentifierNameSyntax
-                } member,
-                Parent: ReturnStatementSyntax or YieldStatementSyntax { RawKind: (int)SyntaxKind.YieldReturnStatement }
-            }
-            && broken
-            && BreaksBefore(member.OperatorToken)
-            && !BreaksBefore(keyword)
-            && !node.Parent.DescendantTrivia(node.Parent.Span)
-                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                )) {
+        } else if (broken && KeptTwoLevelOperand(node, keyword) is { } member) {
             keptTypeTestLifts.Add(Key(member));
         }
 
@@ -5272,6 +5260,30 @@ public sealed class BreakPlan {
                 new(dot, GroupMode.Preserve, WithPatternDot(new(PatternDotPoint: true), node), FromLine: true)
             );
         }
+    }
+
+    /// <summary>
+    ///     The operand of a returned type test the author broke before its dot and not before the keyword, with no
+    ///     comment in the statement — <see cref="KeptTypeTestLift" />'s shape, once the break after the keyword is
+    ///     known; null otherwise.
+    /// </summary>
+    MemberAccessExpressionSyntax? KeptTwoLevelOperand(SyntaxNode node, SyntaxToken keyword) {
+        if (node is not BinaryExpressionSyntax {
+                Left: MemberAccessExpressionSyntax {
+                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Expression: IdentifierNameSyntax
+                } member,
+                Parent: StatementSyntax statement
+            }
+            || statement is not (ReturnStatementSyntax
+                or YieldStatementSyntax { RawKind: (int)SyntaxKind.YieldReturnStatement })) {
+            return null;
+        }
+
+        var commented = statement.DescendantTrivia(statement.Span)
+            .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+            );
+        return BreaksBefore(member.OperatorToken) && !BreaksBefore(keyword) && !commented ? member : null;
     }
 
     /// <summary>

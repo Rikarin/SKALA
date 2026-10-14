@@ -42,6 +42,7 @@ public sealed class Fitter {
 
     /// <summary>See <see cref="BreaksEveryPoint" />.</summary>
     readonly HashSet<int> chops = [];
+
     readonly bool[] resolved;
 
     /// <summary>
