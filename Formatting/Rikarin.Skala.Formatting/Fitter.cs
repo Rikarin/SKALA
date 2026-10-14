@@ -1235,7 +1235,7 @@ public sealed class Fitter {
                 >= -564
                 : facts.LambdaTestCallHead < 0
                 || 6 * callee - 3 * parameters + 5 * facts.LambdaTestCallHead - 8 * facts.LambdaTestCall - 6 * lineStart
-            >= -658);
+                >= -658);
     }
 
     /// <summary>

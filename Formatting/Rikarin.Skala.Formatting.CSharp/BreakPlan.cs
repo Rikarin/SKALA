@@ -5068,7 +5068,8 @@ public sealed class BreakPlan {
         // ⚠ And a sole lambda's broken test of a call with links after it (#618): `Run(x =>` / `call(…)` / `.Result`
         // two levels past the call / `is T` one.
         || root.Parent is ExpressionSyntax { Parent: LambdaExpressionSyntax lambda } body
-        && (TestedOperandOfASoleLambda(lambda, body) == root || TestedLinkedCallOfASoleLambda(lambda, body).Operand == root);
+        && (TestedOperandOfASoleLambda(lambda, body) == root
+            || TestedLinkedCallOfASoleLambda(lambda, body).Operand == root);
 
     /// <summary>Whether a node is an operand of <c>&amp;&amp;</c> or <c>||</c>.</summary>
     static bool IsALogicalOperand(SyntaxNode node) =>
@@ -8152,85 +8153,96 @@ public sealed class BreakPlan {
                         BreaksIfTooLong: true,
                         LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
                         LambdaTestCall: FormattedWidth(testedCall),
-                        LambdaTestCallHead: FormattedWidth(testedCall.GetFirstToken(), testedCall.ArgumentList.OpenParenToken)
+                        LambdaTestCallHead: FormattedWidth(
+                            testedCall.GetFirstToken(),
+                            testedCall.ArgumentList.OpenParenToken
+                        )
                     )
-                : TestedLinkedCallOfASoleLambda(lambda, body) is ({ } linked, { } firstCall)
-                    ? new GroupFacts(
-                        BreaksIfTooLong: true,
-                        LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
-                        LambdaTestCall: FormattedWidth(linked),
-                        LambdaTestCallHead: FormattedWidth(linked.GetFirstToken(), firstCall.ArgumentList.OpenParenToken),
-                        LambdaTestLinks: true
-                    )
-                : TestedOperandOfASoleLambda(lambda, body) is { } testedOperand
-                    ? new GroupFacts(
-                        BreaksIfTooLong: true,
-                        LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
-                        LambdaTestCall: FormattedWidth(testedOperand),
-                        LambdaTestCallHead: -1
-                    )
-                : IsAFilledSoleLambda(lambda, body)
-                    ? new GroupFacts(
-                        BreaksIfTooLong: true,
-                        LambdaParameters: lambda switch {
-                            SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
-                            ParenthesizedLambdaExpressionSyntax parenthesized => FormattedWidth(
-                                parenthesized.ParameterList
-                            ),
-                            _ => 1
-                        },
-                        LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
-                        LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
-                    )
-                    : OperandSoleLambdaTail(lambda, body) is > 0 and var operandTail
+                    : TestedLinkedCallOfASoleLambda(lambda, body) is ({ } linked, { } firstCall)
                         ? new GroupFacts(
                             BreaksIfTooLong: true,
-                            LambdaOperandParameters: FormattedWidth(
-                                lambda.GetFirstToken(),
-                                lambda.ArrowToken.GetPreviousToken()
+                            LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+                            LambdaTestCall: FormattedWidth(linked),
+                            LambdaTestCallHead: FormattedWidth(
+                                linked.GetFirstToken(),
+                                firstCall.ArgumentList.OpenParenToken
                             ),
-                            LambdaOperandTail: operandTail,
-                            LambdaOperandFirst: FirstOperandWidth(body),
-                            LambdaOperandBody: LastOperandOfAHeaderCondition(lambda) is not null
-                            && !IsTheReceiverOfAFurtherLink(lambda)
-                                ? 1 + FormattedWidth(body.GetFirstToken(), KeptSegmentEndOf(body))
-                                : 0,
-                            LambdaOperandKept: LastOperandOfAHeaderCondition(lambda) is not null
-                            && !IsTheReceiverOfAFurtherLink(lambda)
-                            && KeptSegmentEndOf(body) != body.GetLastToken(),
-                            LambdaOperandPatternLeft: body is IsPatternExpressionSyntax { Expression: var tested }
-                                ? FormattedWidth(tested)
-                                : 0
+                            LambdaTestLinks: true
                         )
-                        : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
+                        : TestedOperandOfASoleLambda(lambda, body) is { } testedOperand
                             ? new GroupFacts(
                                 BreaksIfTooLong: true,
                                 LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
-                                LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
-                                LambdaChainHead: chainHead
+                                LambdaTestCall: FormattedWidth(testedOperand),
+                                LambdaTestCallHead: -1
                             )
-                            : ArrowMovesACallChainDown(body)
+                            : IsAFilledSoleLambda(lambda, body)
                                 ? new GroupFacts(
                                     BreaksIfTooLong: true,
-                                    BreaksOnlyIfTailFits: true,
-                                    BreaksIfReceiverOverflows: true
+                                    LambdaParameters: lambda switch {
+                                        SimpleLambdaExpressionSyntax simple => simple.Parameter.Span.Length,
+                                        ParenthesizedLambdaExpressionSyntax parenthesized => FormattedWidth(
+                                            parenthesized.ParameterList
+                                        ),
+                                        _ => 1
+                                    },
+                                    LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+                                    LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax
                                 )
-                                : LocalLambdaCallOf(lambda, body) is { } call
+                                : OperandSoleLambdaTail(lambda, body) is > 0 and var operandTail
                                     ? new GroupFacts(
                                         BreaksIfTooLong: true,
-                                        BreaksOnlyIfHeadOverflows: true,
-                                        LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
-                                        LambdaCallCallee: FormattedWidth(
-                                            call.GetFirstToken(),
-                                            call.ArgumentList.OpenParenToken.GetPreviousToken()
+                                        LambdaOperandParameters: FormattedWidth(
+                                            lambda.GetFirstToken(),
+                                            lambda.ArrowToken.GetPreviousToken()
                                         ),
-                                        LambdaCallArguments: FormattedWidth(call.ArgumentList),
-                                        LambdaCallSingle: call.ArgumentList.Arguments.Count == 1,
-                                        LambdaCallShift: lambda.Parent is EqualsValueClauseSyntax {
-                                            Parent.Parent.Parent: FieldDeclarationSyntax
+                                        LambdaOperandTail: operandTail,
+                                        LambdaOperandFirst: FirstOperandWidth(body),
+                                        LambdaOperandBody: LastOperandOfAHeaderCondition(lambda) is not null
+                                        && !IsTheReceiverOfAFurtherLink(lambda)
+                                            ? 1 + FormattedWidth(body.GetFirstToken(), KeptSegmentEndOf(body))
+                                            : 0,
+                                        LambdaOperandKept: LastOperandOfAHeaderCondition(lambda) is not null
+                                        && !IsTheReceiverOfAFurtherLink(lambda)
+                                        && KeptSegmentEndOf(body) != body.GetLastToken(),
+                                        LambdaOperandPatternLeft: body is IsPatternExpressionSyntax {
+                                            Expression: var tested
                                         }
+                                            ? FormattedWidth(tested)
+                                            : 0
                                     )
-                                    : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
+                                    : ChainHeadOfASoleLambda(lambda, body) is > 0 and var chainHead
+                                        ? new GroupFacts(
+                                            BreaksIfTooLong: true,
+                                            LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+                                            LambdaIsSimple: lambda is SimpleLambdaExpressionSyntax,
+                                            LambdaChainHead: chainHead
+                                        )
+                                        : ArrowMovesACallChainDown(body)
+                                            ? new GroupFacts(
+                                                BreaksIfTooLong: true,
+                                                BreaksOnlyIfTailFits: true,
+                                                BreaksIfReceiverOverflows: true
+                                            )
+                                            : LocalLambdaCallOf(lambda, body) is { } call
+                                                ? new GroupFacts(
+                                                    BreaksIfTooLong: true,
+                                                    BreaksOnlyIfHeadOverflows: true,
+                                                    LambdaHead: FormattedWidth(
+                                                        lambda.GetFirstToken(),
+                                                        lambda.ArrowToken
+                                                    ),
+                                                    LambdaCallCallee: FormattedWidth(
+                                                        call.GetFirstToken(),
+                                                        call.ArgumentList.OpenParenToken.GetPreviousToken()
+                                                    ),
+                                                    LambdaCallArguments: FormattedWidth(call.ArgumentList),
+                                                    LambdaCallSingle: call.ArgumentList.Arguments.Count == 1,
+                                                    LambdaCallShift: lambda.Parent is EqualsValueClauseSyntax {
+                                                        Parent.Parent.Parent: FieldDeclarationSyntax
+                                                    }
+                                                )
+                                                : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
 
     /// <summary>
