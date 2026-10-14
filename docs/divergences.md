@@ -2616,6 +2616,24 @@ Pinned by `LambdaArrowFloorIssue453586Tests` (group B's twelve).
 
 - ⚠ status: #453's names over nine columns, fields and assignments **fixed** within the residue above.
 
+⚠ **Group B round 2 (2026-10-14): the assignment residue.** 25 of the fresh probe's 31 assignment misses had a
+one- to three-column target that the oracle breaks at the arrow. ⚠ Round 6's "a target of three columns or fewer
+always chops" holds only for `()` lambdas. The gate is the head through the arrow:
+
+- with `item`, `(a, b)`, `(int value)` or `(string s, int i)`, a short target reads the arrow floor once
+  `target = params =>` is twelve columns wide;
+- with `()`, a four-column target is the first twelve-column head.
+
+Swept on 3 794 cells, 667 → 12 differing; the `()` grids (4 427 cells) are unchanged at 28.
+
+| probe | statements | before | now |
+|---|---:|---:|---:|
+| **fresh assignments, seed 888** | 3 004 | 63 | 8 |
+| fresh, seed 777 (locals and assignments) | 3 797 | 52 | 27 |
+| mixed random, seed 103 | 3 028 | 42 | 20 |
+
+Pinned by `LambdaArrowFloorIssue453586Tests.ShortTarget_WideHead_*`.
+
 ## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
 
 ReSharper ships nine keys that **suppress a class of edit** rather than choosing between two
@@ -11957,6 +11975,15 @@ The `.ToList()` grid's 258 are still unexplained by any term. What dominates eve
 recorded as SK-DIV-0510.
 
 - ⚠ status: #605 **fixed** for the rest of the chain; the one-column residue on `.ToList()` is left open.
+
+⚠ **Group B round 2 (2026-10-14): the `.ToList()` residue, searched again.** A Python replica of the limit matches
+Skala on every held decision of four probes. It was refitted on the 9 206-cell grid:
+- the seven constants, about ±1 each, find no better optimum;
+- an added hinge term `a·max(0, x − x0)` was tried on the receiver, the first operand, the head, the name, the
+  `(` column and the indent.
+
+The best hinge is 258 → 250, which is no rule. Of the misses, 56 of the first 60 lie within one column of the limit.
+Nothing is wired; the residue stays recorded as the limit's own jitter.
 
 ## SK-DIV-0378 — measured widths read off the source broke whitespace absorption
 
