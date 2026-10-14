@@ -42,6 +42,8 @@ public sealed class DocumentBuilder {
 
     /// <summary><see cref="Document.YieldEndOf" />, by node, for the groups that ask for it.</summary>
     readonly Dictionary<int, int> yieldEnds = [];
+    readonly Dictionary<int, int> dotTails = [];
+    readonly Dictionary<int, int> arrowDotTails = [];
 
     /// <summary><see cref="Document.SecondHoldOf" />, by the group a held level is first held against.</summary>
     readonly Dictionary<int, int> secondHolds = [];
@@ -666,6 +668,7 @@ public sealed class DocumentBuilder {
         // names it as its owner. A kept arrow break is a break the head sees, so a source-broken
         // arrow is never read through. See GroupFlags.ArrowBodyRunsToTheEnd.
         var arrowRuns = false;
+        var dotRuns = false;
         if (frame.Kind == DocKind.Group
             && facts[frame.Arg1] is { BreaksOnlyIfHeadOverflows: true, SourceBroken: false } arrow) {
             // ⚠ Only a short body (fuzz 14071685607328961301). Measured 2026-10-09 on an arm whose head
@@ -680,15 +683,31 @@ public sealed class DocumentBuilder {
             // breaks after the arrow while the line through it fits, whatever the body. See GroupFacts.PositionalHead.
             arrowRuns = !arrow.PositionalHead && afterPointRuns && segment[index] + arrow.ArmBodyTrail <= ShortArrowBody
                 || arrowBodiesRunningToTheEnd.Contains(frame.Arg1);
+            // ⚠ A body that breaks at its own dot is read to the dot, the arrow before it included (#576 round 7). See
+            // GroupFlags.ArrowBodyRunsToItsDot.
+            dotRuns = !arrow.PositionalHead
+                && arrow.ArmBodyDot
+                && flatWidth[index] < Document.Unbounded
+                && afterPoint[index] < Document.Unbounded;
             if (arrowRuns && arrow.FlatIfOwnerBroke && arrow.Owner >= 0) {
                 arrowBodiesRunningToTheEnd.Add(arrow.Owner);
             }
+
+            if (dotRuns && arrow.FlatIfOwnerBroke && arrow.Owner >= 0) {
+                arrowDotTails[arrow.Owner] = flatWidth[index] - afterPoint[index];
+            }
+        }
+
+        if (frame.Kind == DocKind.Group && arrowDotTails.TryGetValue(frame.Arg1, out var dotTail)) {
+            dotRuns = true;
+            dotTails[index] = dotTail;
         }
 
         nodes[index].Count = count;
         nodes[index].Flags = (alignsCloser ? 1 : 0)
             | (afterPointRuns ? (int)GroupFlags.AfterPointRunsToTheEnd : 0)
             | (arrowRuns ? (int)GroupFlags.ArrowBodyRunsToTheEnd : 0)
+            | (dotRuns ? (int)GroupFlags.ArrowBodyRunsToItsDot : 0)
             | (firstFlatSpace ? (int)GroupFlags.FirstPointFlatSpace : 0);
         nodes[index].Arg2 = frame.Kind == DocKind.Group ? facts[frame.Arg1].Owner : frame.Arg2;
 
@@ -748,7 +767,8 @@ public sealed class DocumentBuilder {
             yieldEnds,
             throughWidth,
             alignedItems,
-            secondHolds
+            secondHolds,
+            dotTails
         );
     }
 

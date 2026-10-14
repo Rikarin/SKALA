@@ -100,7 +100,16 @@ public enum GroupFlags {
     ///     <see cref="GroupFacts.TailEndsAt" />: the line that point stays on counts the space, the
     ///     segment after it does not.
     /// </summary>
-    FirstPointFlatSpace = 8
+    FirstPointFlatSpace = 8,
+
+    /// <summary>
+    ///     ⚠ An arm's body <c>Receiver.Name</c> that breaks at its own dot (<see cref="GroupFacts.ArmBodyDot" />):
+    ///     what precedes the arrow is measured through the arrow and the receiver, where the line ends when the dot
+    ///     breaks, rather than through the whole body or the arrow alone (#576 round 7, SK-DIV-0399). Behind a property
+    ///     pattern the oracle keeps the braces and breaks at the dot while <c>} =&gt; Receiver</c> fits, and chops the
+    ///     braces past that, as it does before any short body.
+    /// </summary>
+    ArrowBodyRunsToItsDot = 16
 }
 
 /// <summary>What a <see cref="DocKind.Line" /> node carries in <see cref="DocNode.Flags" />.</summary>
@@ -663,6 +672,7 @@ public sealed class Document {
     readonly bool[] hasBreak;
     readonly GroupFacts[] facts;
     readonly IReadOnlyDictionary<int, int> yieldEnds;
+    readonly Dictionary<int, int> dotTails;
     readonly Dictionary<int, int> throughWidth;
     readonly Dictionary<int, int[]> alignedItems;
     readonly Dictionary<int, int> secondHolds;
@@ -686,7 +696,8 @@ public sealed class Document {
         IReadOnlyDictionary<int, int> yieldEnds,
         Dictionary<int, int>? throughWidth = null,
         Dictionary<int, int[]>? alignedItems = null,
-        Dictionary<int, int>? secondHolds = null
+        Dictionary<int, int>? secondHolds = null,
+        Dictionary<int, int>? dotTails = null
     ) {
         Nodes = nodes;
         NodeCount = nodeCount;
@@ -707,6 +718,7 @@ public sealed class Document {
         this.throughWidth = throughWidth ?? [];
         this.alignedItems = alignedItems ?? [];
         this.secondHolds = secondHolds ?? [];
+        this.dotTails = dotTails ?? [];
     }
 
     /// <summary>
@@ -864,6 +876,18 @@ public sealed class Document {
     /// </summary>
     public bool ArrowBodyRunsToTheEnd(int node) =>
         Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.ArrowBodyRunsToTheEnd) != 0;
+
+    /// <summary>Whether the node is an arrow group read through to its body's own dot — see
+    /// <see cref="GroupFlags.ArrowBodyRunsToItsDot" />.</summary>
+    public bool ArrowBodyRunsToItsDot(int node) =>
+        Nodes[node].Kind == DocKind.Group && (Nodes[node].Flags & (int)GroupFlags.ArrowBodyRunsToItsDot) != 0;
+
+    /// <summary>
+    ///     For an arrow group before a body read to its dot (<see cref="GroupFlags.ArrowBodyRunsToItsDot" />): the
+    ///     flat width from the body's dot to its end, which its flat width includes and the line does not; −1 for the
+    ///     body's own group, which is measured through its own point instead.
+    /// </summary>
+    public int DotTailOf(int node) => dotTails.TryGetValue(node, out var tail) ? tail : -1;
 
     /// <summary>What the fitter needs to know about one group beyond its mode and its width.</summary>
     public GroupFacts FactsOf(int group) => facts[group];
@@ -1084,6 +1108,11 @@ public sealed class Document {
 ///     ⚠ For a switch arm's body group: the width of what follows the body on its line — the arm's comma, or
 ///     nothing for the last arm — which the arrow's read-through measures with the body (fuzz
 ///     14071685607328961301, #531). See <c>DocumentBuilder.ShortArrowBody</c>.
+/// </param>
+/// <param name="ArmBodyDot">
+///     ⚠ For a switch arm's body group: a body <c>Receiver.Name</c> the arrow never reads through, however short,
+///     because the oracle breaks at its own dot (<c>=&gt; Short</c> / <c>.Value12,</c>) while the line through the
+///     receiver fits: exactly when <c>2·name + 3·receiver ≥ 22</c> (#576 round 7, SK-DIV-0399).
 /// </param>
 /// <param name="LiftGroup">
 ///     ⚠ For a switch arm's two arrow groups: the <see cref="LiftsIfArrowBreaks" /> group opened at the arm's
@@ -1942,6 +1971,7 @@ public readonly record struct GroupFacts(
     int PatternFirstWidth = 0,
     int PatternFirstAlternative = 0,
     int ArmBodyTrail = 0,
+    bool ArmBodyDot = false,
     int LiftGroup = -1,
     bool LiftsIfArrowBreaks = false,
     bool LiftsIfWhenBreaks = false,

@@ -2024,6 +2024,18 @@ public sealed class LayoutWriter {
             // counts only what precedes it — the oracle writes `{ P14: "k" } when _cache => """`
             // whole. And because the chop then moved the `when` down, pass two found the pattern
             // short and re-joined it: fourteen consecutive Nightly runs, one defect.
+            // ⚠ A body that breaks at its own dot is read to the dot: the line ends there when the dot breaks.
+            if (document.ArrowBodyRunsToItsDot(sibling)) {
+                var dotTail = document.DotTailOf(sibling);
+                var through = dotTail >= 0
+                    ? document.FlatWidthOf(sibling) - dotTail
+                    : document.PointWidthOf(sibling) + document.AfterPointOf(sibling);
+                total = total >= Document.Unbounded || through >= Document.Unbounded
+                    ? Document.Unbounded
+                    : total + through;
+                return true;
+            }
+
             if (document.ArrowBodyRunsToTheEnd(sibling)) {
                 var flat = document.FlatWidthOf(sibling);
                 if (flat >= Document.Unbounded) {
