@@ -1446,6 +1446,31 @@ public sealed class Fitter {
     bool BreaksTheTestArrow(in GroupFacts facts, int arrowEnd, int lineStart) {
         var parameters = facts.LambdaHead;
         var callee = arrowEnd - 1 - parameters - lineStart;
+        if (facts.LambdaTestKept || arrowEnd + 1 + facts.LambdaTestCall <= width) {
+            return false;
+        }
+
+        // ⚠ Without a broken test (#620): a type test written on one line, or a body that is a one-argument call.
+        switch (facts.LambdaBodyKind) {
+            case LambdaBodyKind.InlineTest:
+                return true;
+            case LambdaBodyKind.InlineTestOfACall:
+                return 6 * callee
+                    + 2 * parameters
+                    + 5 * facts.LambdaTestCallHead
+                    - 9 * facts.LambdaTestCall
+                    - 12 * lineStart
+                    >= -1032;
+            case LambdaBodyKind.OneArgumentCall:
+                return callee + parameters >= 11
+                    && 6 * callee
+                    - 8 * parameters
+                    + 7 * facts.LambdaTestCallHead
+                    - 11 * facts.LambdaTestCall
+                    - 10 * lineStart
+                    >= -1108;
+        }
+
         return arrowEnd + 1 + facts.LambdaTestCall > width
             && callee + parameters >= 11
             && (facts.LambdaTestLinks
