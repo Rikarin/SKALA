@@ -1340,6 +1340,16 @@ public sealed class Document {
 ///     breaks the arrow over the same call written flat (#620, group C's probe of eleven members, every class). It is
 ///     also pass two's answer to pass one's chop.
 /// </param>
+/// <param name="LambdaLinkedCall">
+///     ⚠ The arrow of a sole lambda argument whose whole body is a call of one argument with links after it —
+///     <c>Use(x =&gt; Analyze(a).Value)</c>, <c>this.model.Get(a).ToList()</c> — and no type test: that call's width
+///     through its <c>)</c>, or zero for any other group (#620, SK-DIV-0560). Past the margin the arrow breaks when the
+///     call does not fit beside it and does fit on the line below; otherwise the body's other rules decide.
+/// </param>
+/// <param name="LambdaLinkedCallKept">
+///     With <see cref="LambdaLinkedCall" />: the author broke inside the call, which keeps the arrow to the other
+///     rules, as <see cref="LambdaTestKept" /> does.
+/// </param>
 /// <param name="LambdaBodyKind">
 ///     With <see cref="LambdaTestCall" />: which of #618's and #620's measured lines the arrow is decided by.
 /// </param>
@@ -1897,6 +1907,8 @@ public readonly record struct GroupFacts(
     int OneOverBody = 0,
     int LambdaChainHead = 0,
     int LambdaTestCall = 0,
+    int LambdaLinkedCall = 0,
+    bool LambdaLinkedCallKept = false,
     int LambdaTestCallHead = 0,
     bool LambdaTestLinks = false,
     bool LambdaTestKept = false,

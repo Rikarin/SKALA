@@ -8809,6 +8809,20 @@ public sealed class BreakPlan {
         PlanArrowBody(
             lambda,
             body,
+            WithTheLinkedCall(lambda, body, ArrowFactsOf(lambda, body))
+        );
+
+    /// <summary>
+    ///     <paramref name="facts" /> with <see cref="GroupFacts.LambdaLinkedCall" /> set where the body is a one-argument
+    ///     call with links after it (<see cref="LinkedOneArgumentCallOf" />).
+    /// </summary>
+    GroupFacts WithTheLinkedCall(LambdaExpressionSyntax lambda, ExpressionSyntax body, GroupFacts facts) =>
+        LinkedOneArgumentCallOf(lambda, body) is { } linked
+            ? facts with { LambdaLinkedCall = FormattedWidth(linked), LambdaLinkedCallKept = HasLineBreakIn(linked) }
+            : facts;
+
+    /// <summary>The facts a lambda's arrow is decided by, before <see cref="WithTheLinkedCall" />.</summary>
+    GroupFacts ArrowFactsOf(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
             // ⚠ Over an operand chain the arrow always wins (#453, SK-DIV-0050): the oracle breaks the
             // body's chain in 0 of 5 082 cells of the preference sweep, where an `=` at the same head
             // width breaks it in 3 664 — so the arrow breaks whenever the body does not fit beside it,
@@ -8921,8 +8935,7 @@ public sealed class BreakPlan {
                                                     : new GroupFacts(
                                                         BreaksIfTooLong: true,
                                                         BreaksOnlyIfHeadOverflows: true
-                                                    )
-        );
+                                                    );
 
     /// <summary>
     ///     A sole lambda argument whose body is a member access the property fill breaks: its arrow is
@@ -9292,6 +9305,60 @@ public sealed class BreakPlan {
                 ? (body, LambdaBodyKind.InlineTestOfACall,
                     FormattedWidth(operand!.GetFirstToken(), first.ArgumentList.OpenParenToken))
                 : (body, LambdaBodyKind.InlineTest, 0);
+    }
+
+    /// <summary>
+    ///     The call a sole lambda's whole body starts with where that call has one argument and links follow it —
+    ///     <c>Analyze(a).Value</c>, <c>this.model.Get(a).Where(y =&gt; y.Ok)</c> — every later call taking one argument or
+    ///     none and the call's receiver at most a name or <c>this.</c> and a name; null otherwise. Its arrow breaks
+    ///     whenever the call fits below it and not beside it (<see cref="GroupFacts.LambdaLinkedCall" />, #620).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c> on group C's probes H and I (2 700 members): of the 139 such
+    ///     bodies whose call fits below and not beside the arrow the oracle breaks the arrow over 129, where master's
+    ///     measured lines broke it over 83. ⚠ Not behind a receiver of two names or more
+    ///     (<c>context.Workspace.Solution.Get(a)</c>): there the oracle may keep the arrow and break before the call's
+    ///     own dot, 12 to 7 of 19, which is SK-DIV-0520's open property chain. ⚠ Nor where the call does not fit below
+    ///     either (53 to 32 of 85) or fits beside the arrow, which the body's other rules decide.
+    /// </remarks>
+    InvocationExpressionSyntax? LinkedOneArgumentCallOf(LambdaExpressionSyntax lambda, ExpressionSyntax body) {
+        if (!options.PlaceSingleMethodArgumentLambdaOnSameLine
+            || !IsTheBodyOfASoleLambda(body)
+            || body is not (MemberAccessExpressionSyntax or InvocationExpressionSyntax)) {
+            return null;
+        }
+
+        InvocationExpressionSyntax? first = null;
+        SyntaxNode spine = body;
+        while (spine is MemberAccessExpressionSyntax or InvocationExpressionSyntax) {
+            if (spine is InvocationExpressionSyntax invocation) {
+                if (first is not null && first.ArgumentList.Arguments.Count > 1) {
+                    return null;
+                }
+
+                first = invocation;
+                spine = invocation.Expression;
+            } else {
+                spine = ((MemberAccessExpressionSyntax)spine).Expression;
+            }
+        }
+
+        if (first is not { ArgumentList.Arguments: [var argument] }
+            || first == body
+            || argument.Expression.DescendantNodesAndSelf().Any(static node => node is AnonymousFunctionExpressionSyntax)) {
+            return null;
+        }
+
+        return first.Expression switch {
+            IdentifierNameSyntax or GenericNameSyntax => first,
+            MemberAccessExpressionSyntax {
+                Expression: IdentifierNameSyntax or ThisExpressionSyntax or BaseExpressionSyntax
+                or MemberAccessExpressionSyntax {
+                    Expression: ThisExpressionSyntax or BaseExpressionSyntax, Name: IdentifierNameSyntax
+                }
+            } => first,
+            _ => null
+        };
     }
 
     /// <summary>
