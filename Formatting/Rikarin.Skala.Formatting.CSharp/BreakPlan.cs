@@ -318,7 +318,8 @@ public sealed class BreakPlan {
     /// <summary>See <see cref="ReceiverLiftOf" />.</summary>
     readonly Dictionary<long, (int Group, int Dot)> receiverLifts = [];
 
-    /// <summary>The <see cref="GroupFacts.LiftsIfWhenBreaks" /> group of an arm, keyed by its <c>when</c> clause.</summary>
+    /// <summary>The <see cref="GroupFacts.LiftsIfWhenBreaks" /> group of an arm, keyed by its <c>when</c>
+    /// clause.</summary>
     readonly Dictionary<long, int> whenLifts = [];
 
     /// <summary>
@@ -339,16 +340,17 @@ public sealed class BreakPlan {
     readonly Dictionary<int, long> fromLineHeldAgainst = [];
 
     /// <summary>
-    ///     The points before a list pattern taken only while it stays whole, by position, and the type tests' groups that
-    ///     own them, each to the list's key (#617). See <see cref="LineFlags.BreaksOnlyIfListStaysWhole" />.
+    ///     The points before a list pattern taken only while it stays whole, by position, and the type tests' groups
+    ///     that own them, each to the list's key (#617). See <see cref="LineFlags.BreaksOnlyIfListStaysWhole" />.
     /// </summary>
     readonly Dictionary<int, long> wholeListPoints = [];
 
     readonly Dictionary<int, long> wholeListGroups = [];
 
     /// <summary>
-    ///     The width lift <see cref="PlanArmArrow" /> opened at an arm whose head is braces or brackets, by the arm's key,
-    ///     for a <c>when</c> the author put on a line of its own to lift with (#617). See <see cref="PlanWhenClause" />.
+    ///     The width lift <see cref="PlanArmArrow" /> opened at an arm whose head is braces or brackets, by the arm's
+    ///     key, for a <c>when</c> the author put on a line of its own to lift with (#617). See
+    ///     <see cref="PlanWhenClause" />.
     /// </summary>
     readonly Dictionary<long, int> armWidthLifts = [];
 
@@ -5235,8 +5237,8 @@ public sealed class BreakPlan {
     ///     otherwise.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Measured by group S on #597's grid: <c>Use(x =&gt; call(</c> / the arguments / <c>)</c> / <c>is T</c> puts the
-    ///     arguments two levels past the statement and the <c>)</c> and <c>is</c> one — the stacked layout — while
+    ///     ⚠ Measured by group S on #597's grid: <c>Use(x =&gt; call(</c> / the arguments / <c>)</c> / <c>is T</c> puts
+    ///     the arguments two levels past the statement and the <c>)</c> and <c>is</c> one — the stacked layout — while
     ///     <c>Use(x =&gt; call(a, b, c)</c> / <c>is T</c> keeps #445's one level past the line. Which one is a layout
     ///     fact, so the level is held while the list stays flat (<see cref="HeldLevel.WhileArrowFlat" />, its slot
     ///     naming the list's group, resolved by <see cref="SettleTypeTestHolds" />).
@@ -5280,8 +5282,8 @@ public sealed class BreakPlan {
         }
 
         // ⚠ Nor a section that spans lines itself (fuzz 9695149764600851630: `[` / `#endif` / `MethodImpl(…)]`): its
-        // joined line is not a line the writer can produce, and the band's `=` break, read on pass two as a break inside
-        // the parameter, turned the rule off and broke the gap.
+        // joined line is not a line the writer can produce, and the band's `=` break, read on pass two as a break
+        // inside the parameter, turned the rule off and broke the gap.
         var first = section.CloseBracketToken.GetNextToken();
         if (source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny(LineEnds) >= 0
             || source.AsSpan(section.SpanStart, section.Span.Length).IndexOfAny(LineEnds) >= 0) {
@@ -5319,7 +5321,8 @@ public sealed class BreakPlan {
     /// <summary>The two line-break characters, for a span search.</summary>
     static readonly char[] LineEnds = ['\r', '\n'];
 
-    /// <summary>The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the operand each is held against.</summary>
+    /// <summary>The type tests <see cref="StacksWhileItsArgumentsBreak" /> holds, with the operand each is held
+    /// against.</summary>
     readonly List<(int Group, ExpressionSyntax Operand)> pendingTypeTestHolds = [];
 
     /// <summary>
@@ -6436,7 +6439,8 @@ public sealed class BreakPlan {
                     MemberHeadWidth: value is MemberAccessExpressionSyntax plain && IsPlainMemberValue(plain)
                         ? FlatSourceWidth(ReceiverOf(plain))
                         : 0,
-                    // ⚠ A local's `=` before `operand is N.T` stays where the pattern's dot takes the joined line (#621).
+                    // ⚠ A local's `=` before `operand is N.T` stays where the pattern's dot takes the joined line
+                    // (#621).
                     PatternDotName: PatternDotOf(value) is { } equalsDot && PatternDotHeadOf(value) > 0
                         ? equalsDot.Right.Span.Length
                         : 0,
@@ -7996,8 +8000,8 @@ public sealed class BreakPlan {
             : -1;
 
     /// <summary>
-    ///     For a sole lambda's broken type test held while its operand stays flat, the lambda's arrow group, which spends
-    ///     the level too when it breaks (#618); −1 otherwise.
+    ///     For a sole lambda's broken type test held while its operand stays flat, the lambda's arrow group, which
+    ///     spends the level too when it breaks (#618); −1 otherwise.
     /// </summary>
     public int TestArrowHeldAgainst(int group) => testArrowHolds.TryGetValue(group, out var arrow) ? arrow : -1;
 
@@ -8009,12 +8013,12 @@ public sealed class BreakPlan {
     ///     past the dot's line once that dot breaks; −1 otherwise (#617).
     /// </summary>
     /// <remarks>
-    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c>: <c>x = (a</c> / <c>&amp;&amp; b…)</c> / <c>.Length;</c> puts the
-    ///     <c>&amp;&amp;</c> two levels past the statement and the dot one, behind <c>x =</c>, <c>var y =</c>,
-    ///     <c>return</c> and a cast, for a property and a call alike, and <c>Use(</c> / <c>(a</c> / <c>&amp;&amp; b…)</c> /
-    ///     <c>.Length</c> one level past the argument's line. Pass one put the operator on the dot's column; pass two,
-    ///     reading the dot's break as the author's, nested it (fuzz, the 240-row probe's row 135). Only for a dot pass
-    ///     one breaks itself: a kept one is the frame's (<c>CSharpDocumentBuilder</c>).
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c>: <c>x = (a</c> / <c>&amp;&amp; b…)</c> / <c>.Length;</c> puts
+    ///     the <c>&amp;&amp;</c> two levels past the statement and the dot one, behind <c>x =</c>, <c>var y =</c>,
+    ///     <c>return</c> and a cast, for a property and a call alike, and <c>Use(</c> / <c>(a</c> /
+    ///     <c>&amp;&amp; b…)</c> / <c>.Length</c> one level past the argument's line. Pass one put the operator on the
+    ///     dot's column; pass two, reading the dot's break as the author's, nested it (fuzz, the 240-row probe's row
+    ///     135). Only for a dot pass one breaks itself: a kept one is the frame's (<c>CSharpDocumentBuilder</c>).
     /// </remarks>
     /// <remarks>
     ///     ⚠ Only while the dot is still the group's own point: a statement condition or an argument plans its own
@@ -9056,7 +9060,8 @@ public sealed class BreakPlan {
         return first is { ArgumentList.Arguments.Count: >= 2 } && first != operand ? (operand, first) : (null, null);
     }
 
-    /// <summary>The operand of a sole lambda's whole body that is a type test broken before its keyword, or null.</summary>
+    /// <summary>The operand of a sole lambda's whole body that is a type test broken before its keyword, or
+    /// null.</summary>
     ExpressionSyntax? BrokenTestedOperandOf(LambdaExpressionSyntax lambda, ExpressionSyntax body) {
         if (!options.PlaceSingleMethodArgumentLambdaOnSameLine || !IsTheBodyOfASoleLambda(body)) {
             return null;

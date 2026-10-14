@@ -437,7 +437,8 @@ public sealed class DocumentBuilder {
     ///     fails: <see cref="IndentFlags.HeldWhileOwnerFlat" />, <see cref="IndentFlags.HeldWhileChainWhole" />
     ///     over <paramref name="chainGroup" />, or both.
     /// </summary>
-    /// <param name="countsWithItsLine">Once spent, the scope is a <see cref="IndentFlags.CountsWithItsLine" /> one.</param>
+    /// <param name="countsWithItsLine">Once spent, the scope is a <see cref="IndentFlags.CountsWithItsLine" />
+    /// one.</param>
     public void OpenHeldIndent(
         IndentKind kind,
         IndentFlags conditions,
@@ -460,8 +461,8 @@ public sealed class DocumentBuilder {
     public void OpenConcat() => Open(DocKind.Concat, 0, 0);
 
     /// <summary>
-    ///     A level held while <paramref name="group" /> stays flat is also spent when <paramref name="second" /> breaks.
-    ///     See <see cref="Document.SecondHoldOf" />.
+    ///     A level held while <paramref name="group" /> stays flat is also spent when <paramref name="second" />
+    ///     breaks. See <see cref="Document.SecondHoldOf" />.
     /// </summary>
     public void HoldAlsoAgainst(int group, int second) => secondHolds[group] = second;
 

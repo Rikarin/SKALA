@@ -300,9 +300,9 @@ public enum LineFlags {
     ListPatternElement = 16384,
 
     /// <summary>
-    ///     ⚠ A point taken only when the list pattern after it stays on one line once moved down (#617): `xs is` / `[1, 2]`
-    ///     keeps the author's break, and a list too wide for the line joins its `[` to the `is` and breaks inside, as the
-    ///     oracle writes `xs is [` / elements / `]`. The writer takes the break ahead, watches the list's group
+    ///     ⚠ A point taken only when the list pattern after it stays on one line once moved down (#617): `xs is` / `[1,
+    ///     2]` keeps the author's break, and a list too wide for the line joins its `[` to the `is` and breaks inside,
+    ///     as the oracle writes `xs is [` / elements / `]`. The writer takes the break ahead, watches the list's group
     ///     (<see cref="GroupFacts.WholeList" />) and rolls back.
     /// </summary>
     BreaksOnlyIfListStaysWhole = 32768
@@ -710,9 +710,9 @@ public sealed class Document {
     }
 
     /// <summary>
-    ///     The second group a level held while <paramref name="group" /> stays flat is held against, or −1: the level is
-    ///     spent when either breaks (#618 — a sole lambda's broken type test stacks when its arguments break and when its
-    ///     arrow does).
+    ///     The second group a level held while <paramref name="group" /> stays flat is held against, or −1: the level
+    ///     is spent when either breaks (#618 — a sole lambda's broken type test stacks when its arguments break and
+    ///     when its arrow does).
     /// </summary>
     public int SecondHoldOf(int group) => secondHolds.TryGetValue(group, out var second) ? second : -1;
 
@@ -1488,9 +1488,10 @@ public sealed class Document {
 ///     With <see cref="HeldValueTypedHead" />: the receiver's and the method name's widths, type arguments left out.
 /// </param>
 /// <param name="HeldValueName">
-///     With <see cref="HeldValueTypedHead" />: a typed local's declared name, for a method without type arguments, which
-///     <see cref="EqualsFloor.HeldTypedLocalBreaks" /> weighs with the type (#446 round 4); zero otherwise — a method with
-///     type arguments was not measured, and #528's fixture keeps the <c>=</c> where the measured limit would break it.
+///     With <see cref="HeldValueTypedHead" />: a typed local's declared name, for a method without type arguments,
+///     which <see cref="EqualsFloor.HeldTypedLocalBreaks" /> weighs with the type (#446 round 4); zero otherwise — a
+///     method with type arguments was not measured, and #528's fixture keeps the <c>=</c> where the measured limit
+///     would break it.
 /// </param>
 /// <param name="HeldChoppedWidth">
 ///     ⚠ A typed local's single call on a receiver whose argument list is already chopped — pass two of a
@@ -1659,8 +1660,8 @@ public sealed class Document {
 ///     whose width sets the limit on the joined line (<c>Fitter.PatternDotLimit</c>); zero after <c>return</c>.
 /// </param>
 /// <param name="PatternDotEquals">
-///     With <see cref="PatternDotName" />: this group is a local's <c>=</c> before the type test, whose operand starts a
-///     space past the <c>=</c>; it stays flat when the pattern's dot takes the line.
+///     With <see cref="PatternDotName" />: this group is a local's <c>=</c> before the type test, whose operand starts
+///     a space past the <c>=</c>; it stays flat when the pattern's dot takes the line.
 /// </param>
 /// <param name="ModifierFillHead">
 ///     ⚠ A field's gap between its modifiers and a generic type (#540, SK-DIV-0127): the type's width through the

@@ -422,7 +422,8 @@ public sealed class Fitter {
                 // ⚠ `operand is N.T`: the pattern's own dot takes the line before every other group of the type test
                 // does, which stay flat when it does. See GroupFacts.PatternDotName (#621).
                 if (facts.PatternDotName > 0) {
-                    // A head of five or less never breaks its `=` before the type test (#621: none of 705 cells past the margin).
+                    // A head of five or less never breaks its `=` before the type test (#621: none of 705 cells past
+                    // the margin).
                     if (facts.PatternDotEquals && facts.PatternDotHead <= 5) {
                         return ResolvedMode.Flat;
                     }
@@ -748,7 +749,8 @@ public sealed class Fitter {
                         return ResolvedMode.Flat;
                     }
 
-                    // ⚠ A lambda call's limit moves with the rest of its chain (#605). See GroupFacts.HeldCallLambdaRest.
+                    // ⚠ A lambda call's limit moves with the rest of its chain (#605). See
+                    // GroupFacts.HeldCallLambdaRest.
                     var limit = facts.HeldCallLambda
                         ? HeldLambdaLimit(paren, m.Column - lineStart)
                         + (facts.HeldCallLambdaRest > 0 ? (facts.HeldCallLambdaRest - 10) / 1.5 : 0)
@@ -1429,8 +1431,9 @@ public sealed class Fitter {
     /// <remarks>
     ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c> on 1 482 members — callees of 1 to 24 columns, seven parameter
     ///     lists, call heads of 5 to 60 columns, two to five arguments, calls of 92 to 118 columns, indents 8 and 16 —
-    ///     20 apart; and on a probe written after it (480 members: five statement kinds, six heads, six parameter lists,
-    ///     four tests, indents 8, 12 and 20), 15 apart where the arrow had been kept in all 138 the oracle breaks.
+    ///     20 apart; and on a probe written after it (480 members: five statement kinds, six heads, six parameter
+    ///     lists, four tests, indents 8, 12 and 20), 15 apart where the arrow had been kept in all 138 the oracle
+    ///     breaks.
     /// </remarks>
     bool BreaksTheTestArrow(in GroupFacts facts, int arrowEnd, int lineStart) {
         var parameters = facts.LambdaHead;
@@ -1446,21 +1449,22 @@ public sealed class Fitter {
     }
 
     /// <summary>
-    ///     Whether the parameter behind a section starting at <paramref name="lineStart" /> overflows even a line of its
-    ///     own, its <c>,</c> included: then neither section rule speaks, and the arguments and the gap take their own fit.
+    ///     Whether the parameter behind a section starting at <paramref name="lineStart" /> overflows even a line of
+    ///     its own, its <c>,</c> included: then neither section rule speaks, and the arguments and the gap take their
+    ///     own fit.
     /// </summary>
     /// <remarks>
     ///     ⚠ Not an approximation of the oracle but a condition of stability (fuzz seed 16667081197111340728): such a
     ///     parameter is broken by pass one, and on pass two the break inside it is read as the author's, which leaves
     ///     the list to its own fit (<c>BreakPlan.PlanSectionBeforeALongParameter</c>), so pass one must already have
-    ///     asked it. The oracle agrees: <c>[EditorBrowsable(</c> / <c>EditorBrowsableState</c> / <c>.Never</c> / <c>)]</c>
-    ///     in front of a 120-column parameter, chopped by the arguments' own fit.
+    ///     asked it. The oracle agrees: <c>[EditorBrowsable(</c> / <c>EditorBrowsableState</c> / <c>.Never</c> /
+    ///     <c>)]</c> in front of a 120-column parameter, chopped by the arguments' own fit.
     /// </remarks>
     bool OverflowsItsOwnLine(in GroupFacts facts, int lineStart) => lineStart + facts.ParameterAfterSection + 1 > width;
 
     /// <summary>
-    ///     The measured chop rule itself, for a section starting at <paramref name="lineStart" /> (#476, #603): asked by
-    ///     the arguments' group and, behind a default, by the gap after the section, which must agree.
+    ///     The measured chop rule itself, for a section starting at <paramref name="lineStart" /> (#476, #603): asked
+    ///     by the arguments' group and, behind a default, by the gap after the section, which must agree.
     /// </summary>
     static bool SectionChops(in GroupFacts facts, int lineStart) {
         var end = lineStart + facts.SectionWidth;

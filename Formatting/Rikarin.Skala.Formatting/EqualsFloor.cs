@@ -58,9 +58,9 @@ public static class EqualsFloor {
     /// <param name="name">The declared name's width; zero when unknown, which keeps the round-3 rule.</param>
     /// <remarks>
     ///     ⚠ #446 round 4 (SK-DIV-0211): the type, the name, the callee and the indent swept one at a time, then 420
-    ///     random configurations, each down a column of lines below (31 918 cells). The limit is not one line but three:
-    ///     a level that falls a column per seven of type and of indent and rises three per five of callee; below it,
-    ///     once the name passes about 22, a limit falling two per five of name; and above both, a limit that rises
+    ///     random configurations, each down a column of lines below (31 918 cells). The limit is not one line but
+    ///     three: a level that falls a column per seven of type and of indent and rises three per five of callee; below
+    ///     it, once the name passes about 22, a limit falling two per five of name; and above both, a limit that rises
     ///     about a column per two of type and of name — so a long head breaks the <c>=</c> whatever the line below,
     ///     which is why a 63-column type in Newtonsoft breaks it while a type of 24 holds it earlier. The 118 ceiling
     ///     was the second branch's foot. 31 197 of 31 918 cells, where round 3's rule had 27 675; a fresh random probe
