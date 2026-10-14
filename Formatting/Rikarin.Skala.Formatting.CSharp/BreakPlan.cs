@@ -9316,7 +9316,7 @@ public sealed class BreakPlan {
     /// <remarks>
     ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c> on group C's probes H and I (2 700 members): of the 139 such
     ///     bodies whose call fits below and not beside the arrow the oracle breaks the arrow over 129, where master's
-    ///     measured lines broke it over 83. ⚠ Not behind a receiver of two names or more
+    ///     answer agreed with it in 83; on probe J (600, written after the rule) 136 members apart → 101, none newly. ⚠ Not behind a receiver of two names or more
     ///     (<c>context.Workspace.Solution.Get(a)</c>): there the oracle may keep the arrow and break before the call's
     ///     own dot, 12 to 7 of 19, which is SK-DIV-0520's open property chain. ⚠ Nor where the call does not fit below
     ///     either (53 to 32 of 85) or fits beside the arrow, which the body's other rules decide.
