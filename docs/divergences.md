@@ -13128,6 +13128,7 @@ indent 16, is a property and not this shape. It is pre-existing and unchanged.
   `)`, pinned by `WhenGapAndCastParenIssue609Tests`. **Fixed** for the chain under a cast behind `return` and heads
   under twelve columns, and for the inner `)` of `((…))`, pinned by `CastChainAndWhenLiftIssue598And576Tests`.
   ⚠ **Open** for typed locals and wide heads (the `o` triangle), and for the dot breaking beside a broken receiver.
+  The cast form of the triangle is **partially fixed** in SK-DIV-0575; the uncast form is still open.
 
 ## SK-DIV-0530 — a parenthesised receiver's operator past the dot it broke before, and a lone argument the author chopped
 
@@ -13834,3 +13835,88 @@ Every `E.Find(e)` / `.Value = …` row that overflowed when measured flat broke 
   - grid C's 123: `.Items[0].Value`, where Skala breaks before `.Value` and the oracle keeps the run whole (102
     rows). Also an overflowing `Some.Static.…` head, and a trailing comment after a call.
 - status: **fixed**, pinned by `HeldValueBehindABrokenTargetIssue624Tests` and `FuzzRegressionTests`.
+
+## SK-DIV-0575 — a cast over a parenthesised call behind a head of twelve columns or more
+
+#598, round six: `string value = (T)(a + b…).M();`, `var valueeeeeeee = (T)(…).M();` and `this.name = (T)(…).M();`
+past the margin. The oracle chooses between five layouts: the dot beside the `=` (`.`), the value below whole (`E`),
+below and broken at its dot (`D`), below and broken inside, with the dot or without (`X`, `Y`), and the `=` kept with
+the parentheses broken inside (`o`). Skala always wrote `o`: a cast stopped #528's held call, which only `var x =`
+heads under twelve columns had looked through (SK-DIV-0491, round 5).
+
+Measured 2026-10-14 with `Testing ask`. Every grid's rows were classified before anything was fitted; 20 misses of
+each grid were read side by side first.
+
+⚠ **Refuted: a layout comparison.** Every candidate layout was built for each row and compared.
+- Lexicographic orders over fewer lines, less overflow, a shorter longest line and a shallower indent: at best
+  1 502 of 6 936 rows. `o` and `E` are both two lines that both fit, so they tie on every one of these.
+- A linear cost over the candidates (break kinds, line counts, hinge and quadratic penalties on line length at 40 to
+  120 columns), fitted by perceptron: 4 929 of 6 936, and 774 of 1 536 on a second grid.
+- A squared-raggedness cost, on the clean `E`-versus-`.` boundary: the margin between the two costs changes sign
+  between indents 8 and 12, so no penalty separates them.
+
+What did separate them, once the rows were tabulated by head and cast:
+- **The first operand stops counting at 24 columns.** For every head and cast measured, the `o` region's first line
+  stops moving left once the first operand reaches 24. A linear form in the raw first operand cannot follow that,
+  which is where round 5's best form lost its 248 rows.
+- **The head and the line enter only as their difference.** Call it `s`, the statement's width without its head,
+  its indent included. That is the value's line below, less one level. At the plateau, `o` starts where that line
+  would be 116 columns, behind heads of 13 and of 40 columns alike. Round 5's "differs between `int[] items =` and
+  `List<int> s =`" is a one-column step that remains between some cells, not a separate head term.
+- **The indent does not move either boundary** when the line is measured from column 0.
+
+The rule (`Fitter.CastParenBehindAWideHeadBreaks`). The head is the `=`'s through `=`, 12 columns or more, of a typed
+local, a `var` or an assignment:
+- Where the receiver through its `)` fits beside the `=`:
+  - one column over, the `=` breaks when head and cast together are wider than 18 (`head` counted through the space
+    after `=`);
+  - two or three over, it always breaks (as SK-DIV-0491's short heads);
+  - further over, it breaks while `10·s − 7·cast ≤ 1033` and the value fits below;
+  - otherwise the dot breaks.
+- Further right, the `=` stays only while `10·s + 4·min(a, 24) − 7·cast ≥ 1185` and the operator's line fits; `a`
+  is the first operand. ⚠ That is a **safe bound, not the oracle's boundary**: every measured row where the oracle
+  kept the `=` lies above it, and about one row in twelve where it broke the `=` lies above it too. Skala keeps those,
+  as master did.
+
+Below the `=`, the dot and the inside are SK-DIV-0491's and SK-DIV-0530's rules, unchanged.
+
+Diverging rows, master `d2aeae3a` → branch. No row was non-idempotent on either side:
+
+| Grid | Rows | Master | Branch |
+|---|---:|---:|---:|
+| typed locals × six casts × `a` 2–34 × 124–140 (round 5's) | 6 936 | 4 414 | 307 |
+| typed locals × two casts × indents 8–16 × 122–137 (round 5's) | 1 536 | 1 005 | 114 |
+| seven heads (typed, `var`, `long n =`) × cast or none × `.M()`, `.ToUpperInvariant()` × 121–140 | 5 600 | 4 099 | 1 390 |
+| heads of 26 to 40 × lines of 128 to 160 | 2 640 | 1 534 | 156 |
+| random wide heads, seen while fitting (seed 59850) | 500 | 366 | 107 |
+| **fresh**: random heads wide and short, cast or not, calls and properties, built after wiring (seed 59861) | 600 | 226 | 117 |
+| **fresh**: wide heads, half of them uncast, six other calls (seed 59887) | 600 | 351 | 154 |
+| **fresh**: the same generator (seed 59899) | 700 | 361 | 170 |
+| `((…))` (round 5's) | 288 | 27 | 27 |
+
+No row that matched on master diverges on the branch, in any grid.
+
+The seeded probe at 59850 found two rows where the first form, `10·w − 12·head`, broke an `=` the oracle kept behind
+`Dictionary<int, string> vvvvv =` at 150 columns. The head term was too steep past the fit grid's widths. The heads
+of 26 to 40 grid was built for it, and the form became `s`.
+
+⚠ Still **open**:
+- **The remaining rows of the scoped shape:** an `=` the oracle breaks above the safe bound, mostly `D` with a first
+  operand under 10. Also the `E`/`.` boundary off by one column in about 20 of 2 700 rows.
+- **The same value without the cast.** The first rule fits on the grid: wired for uncast typed and wide `var` heads
+  while the receiver fits beside the `=`, it fixed 460 more rows of the 5 600-row grid and regressed none. ⚠ It did
+  not survive the fresh probes, so it was reverted:
+  - seed 59887 regressed 3 of 600 rows, all assignments, two of them one column over;
+  - restricted to locals, seed 59899 regressed 1 of 700: `int[] q… = (a * b…).GetEnumerator();` at indent 20,
+    where the `E`/`.` boundary sits one column off.
+
+  The second rule does not hold without the cast. Master's held table already answers 240 of 242 rows where the oracle breaks the `=`, and misses
+  all 228 where it keeps it. No bound on `s` and `a` puts any kept row above every broken one: the broken rows reach
+  1 436 with a long call, and the lowest kept row is 1 190. So uncast is left on master's table.
+- **The call's width.** Fitted with it, the bound wants about −20 per column of call. There were only 239 such rows
+  with a call other than `.M()`, so it is not wired. Leaving it out errs toward keeping the `=`, as master did.
+- **Short typed heads with a cast** (`long n = (T)(…).M();`): these are on master's path, and the oracle there follows
+  the short-head table.
+- **Typed `((…))`:** not attempted this round. Still SK-DIV-0491's.
+
+- status: **partially fixed**, pinned by `CastParenBehindAWideHeadIssue598Tests`.

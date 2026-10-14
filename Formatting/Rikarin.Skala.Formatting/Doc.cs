@@ -1591,6 +1591,16 @@ public sealed class Document {
 ///     otherwise. Measured 2026-10-14 with <c>Testing ask</c> behind <c>var x =</c> and <c>this.x =</c>, casts of
 ///     0 to 31 columns, calls <c>.M()</c>, <c>.Trim()</c> and <c>.ToUpperInvariant()</c>.
 /// </param>
+/// <param name="HeldValueCastWidth">
+///     With <see cref="HeldValueCast" />: the cast's width through its <c>)</c>, <c>(T)</c> being three.
+/// </param>
+/// <param name="HeldValueFirstOperand">
+///     With <see cref="HeldValueCast" />: the width of the left operand of the binary the receiver's parentheses hold.
+/// </param>
+/// <param name="HeldValueOperatorTail">
+///     With <see cref="HeldValueCast" />: the width from that binary's operator through the value's <c>;</c>, the line
+///     the parentheses' inside break leaves below.
+/// </param>
 /// <param name="HeldValueHead">With <see cref="HeldValue" />: the width from the dot through the <c>(</c>.</param>
 /// <param name="ArmHead">
 ///     ⚠ A switch arm's member-access pattern (#531, SK-DIV-0330): the pattern's flat width, with
@@ -1875,6 +1885,9 @@ public readonly record struct GroupFacts(
     int HeldValueReceiver = 0,
     bool HeldValueCast = false,
     bool HeldValueParen = false,
+    int HeldValueCastWidth = 0,
+    int HeldValueFirstOperand = 0,
+    int HeldValueOperatorTail = 0,
     int HeldValueHead = 0,
     bool HeldValueManyArgs = false,
     int HeldValueTypedHead = 0,
