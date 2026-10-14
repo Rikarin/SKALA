@@ -1184,6 +1184,17 @@ public sealed class Document {
 ///     head's and the call's <c>(</c>'s columns; otherwise the head rule decides. With
 ///     <see cref="LambdaHead" /> and <see cref="LambdaCallCallee" />.
 /// </param>
+/// <param name="OneOverCallArguments">
+///     ⚠ A local's type/name gap before a lambda over a call: the call's argument list width, or zero (#453
+///     round 8). Where the statement's `;` lands one column past the margin and the arrow's floor would not
+///     chop the arguments, the gap breaks for a type at least <c>EqualsFloor.TypeNameOneOverType</c> wide.
+///     With <see cref="OneOverCallValueHead" />, <see cref="OneOverCallType" />, <see cref="OneOverCallName" />
+///     and <see cref="OneOverCallSingle" />.
+/// </param>
+/// <param name="OneOverCallValueHead">The value's width before the call's <c>(</c>.</param>
+/// <param name="OneOverCallType">The declared type's width.</param>
+/// <param name="OneOverCallName">The declarator name's width.</param>
+/// <param name="OneOverCallSingle">The call has one argument.</param>
 /// <param name="EqualsLambdaArguments">
 ///     ⚠ The <c>=</c> of a single-declarator local named in ten columns or more, whose value is a lambda over a
 ///     call: the call's argument list width, or zero for any other group (#453 round 2). With
@@ -1193,17 +1204,17 @@ public sealed class Document {
 /// </param>
 /// <param name="EqualsLambdaName">The declarator name's width. See <see cref="EqualsLambdaArguments" />.</param>
 /// <param name="EqualsLambdaType">The declared type's width. See <see cref="EqualsLambdaArguments" />.</param>
+/// <param name="EqualsLambdaIsLocal">
+///     The `=` is a local's (round 8's one-column-over rule). See
+///     <see cref="EqualsLambdaArguments" />.
+/// </param>
+/// <param name="EqualsLambdaSingle">The call has one argument. See <see cref="EqualsLambdaArguments" />.</param>
 /// <param name="EqualsLambdaReach">
-///     Columns added to the measured reach: 2 for an assignment statement's target, 0 for a declaration. See
+///     1 for an assignment statement's target, whose reach is its own (group B), 0 for a declaration. See
 ///     <see cref="EqualsLambdaArguments" />.
 /// </param>
 /// <param name="EqualsLambdaValueHead">
 ///     The value's width before the call's <c>(</c>: <c>() =&gt; Callee</c>. See <see cref="EqualsLambdaArguments" />.
-/// </param>
-/// <param name="LambdaCallShift">
-///     ⚠ A field's lambda: the floor is read with the head eight columns and the <c>(</c> four columns further
-///     right than they stand — fitted on 1 559 field cells at indent 4, 23 differing against 66 unshifted (#453
-///     round 2). See <see cref="LambdaCallArguments" />.
 /// </param>
 /// <param name="LambdaCallSingle">
 ///     The call has a single argument, whose floor is its own. See <see cref="LambdaCallArguments" />.
@@ -1235,6 +1246,14 @@ public sealed class Document {
 ///     ⚠ A held first call whose one argument is a lambda, `r.Where(x => …).ToList()`: the line below is limited
 ///     by the call's own measured table, which weighs the head before the receiver too (#605). See
 ///     <c>Fitter.HeldLambdaLimit</c>.
+/// </param>
+/// <param name="HeldCallLambdaRest">
+///     ⚠ With <see cref="HeldCallLambda" />: the flat width of the chain after the held call through its <c>;</c>,
+///     under any chain wrap style, or zero when the call ends the chain (#605, group B). The limit was measured
+///     behind <c>.ToList();</c>, ten columns; every column of rest past ten moves it two thirds of a column, the
+///     slope <see cref="HeldCallRest" /> has under <c>wrap_if_long</c>. Measured with <c>Testing ask</c> on 5 000
+///     random statements within four columns of the limit and rests of 5 to 22 columns: 1 519 held decisions
+///     differed and 244 do.
 /// </param>
 /// <param name="HeldCallOnAPath">
 ///     ⚠ A held first call whose receiver is a plain path of names, `source.A…`: when the receiver alone
@@ -1707,6 +1726,7 @@ public readonly record struct GroupFacts(
     bool ParenReceiver = false,
     int HeldCallHead = 0,
     int HeldCallRest = 0,
+    int HeldCallLambdaRest = 0,
     bool ContinuesIfItBreaks = false,
     bool FlatIfHeadOverflows = false,
     int ValueHeadWidth = 0,
@@ -1749,13 +1769,19 @@ public readonly record struct GroupFacts(
     bool LambdaOperandKept = false,
     int LambdaCallCallee = 0,
     int LambdaCallArguments = 0,
+    int OneOverCallArguments = 0,
+    int OneOverCallValueHead = 0,
+    int OneOverCallType = 0,
+    int OneOverCallName = 0,
+    bool OneOverCallSingle = false,
     int EqualsLambdaName = 0,
     int EqualsLambdaType = 0,
     int EqualsLambdaReach = 0,
+    bool EqualsLambdaIsLocal = false,
+    bool EqualsLambdaSingle = false,
     int EqualsLambdaValueHead = 0,
     int EqualsLambdaArguments = 0,
     bool LambdaCallSingle = false,
-    bool LambdaCallShift = false,
     int MemberHeadWidth = 0,
     int EqualsName = 0,
     int[]? MemberLinks = null,

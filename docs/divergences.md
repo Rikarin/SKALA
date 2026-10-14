@@ -2511,6 +2511,111 @@ What the fields miss is mostly the `=` breaking a little further than the local'
 ⚠ **Still open:** the type/name break (`Func<T…>` / `name = …`). It is a separate decision about the gap
 between the type and the name, not about the `=` or the arrow, and is not attempted here.
 
+⚠ **Round 8 of #453 (group O round 4, 2026-10-10): one column past the margin, and an off-by-one in round 2.**
+
+- **The type/name break happens only one column past the margin.** Every such cell in the earlier grids ends
+  at 121. Swept there with `Testing ask`:
+  - names of 1 to 31;
+  - types of 14 to 44;
+  - the `(` one column at a time;
+  - 2 142 cells, plus 1 955 on a coarser grid.
+
+  Where the arguments would chop, they still chop. Elsewhere:
+  - **The type/name gap breaks** from a type of `39 − name` under a name of nine columns or fewer, and from
+    28 to 32 for wider names (`EqualsFloor.TypeNameOneOverType`). This holds while the argument list is at
+    most `35 + (type − 32)/12` columns.
+  - **Below that type, a name of ten or more breaks its `=`.** Here the gate is two columns wider,
+    `type ≤ 8·(name − 10) + 14`, and the call's `(` must stand at least `36 − 1.6·(name − 11) + 0.25·(type − 14)`
+    columns past the `=`.
+  - **A narrower name keeps the arrow rule.**
+
+  Wired on the declarator's group (`GroupFacts.OneOverCallArguments`) and in the wide name's `=` branch.
+- ⚠ **Refuted: round 2's own implementation of the `=` column.** It read the `=` one column early: `m.Column` is
+  where the group starts, and the `=` ends a point's width later. The wide-name rule and the floor were fitted
+  on true columns and run one column off. Fixing it moves every wide-name grid; the counts below include the
+  fix.
+- ⚠ **And pass two.** A chopped argument list leaves the `=` group's flat width unbounded. The 121 rule
+  therefore reads the line's end from the planner's widths: read from the measured flat width, every chopped
+  row at 121 broke its `=` on pass two.
+
+Measured against master `ff41f139`, whole statements that differ from the oracle:
+
+| grid | statements | master | now |
+|---|---:|---:|---:|
+| 121, one column at a time (fit) | 2 142 | 893 | 12 |
+| 121, coarser grid | 1 955 | 794 | 13 |
+| 121, random types, names, parameter lists and argument counts (fresh probe, not fitted) | 2 017 | 1 200 | 188 |
+| wide names × types (round 2's grid) | 7 800 | 431 | 230 |
+| wide names, reach and floor | 13 849 | 494 | 294 |
+| names 10–14 | 10 790 | 337 | 153 |
+| two arguments, heads 16–76 | 53 728 | 92 | 47 |
+
+Pinned by `constructs/wrapping/lambda-call-one-column-over.cs`.
+
+- ⚠ status: **closeable** for the shapes measured. The residue is near-boundary cells in each grid above, plus
+  the 188 of the fresh probe. On that probe's indent-8 half the misses concentrate where the grids did not
+  reach: single arguments (92 of 566) and the six-column `Action` (67 of 367 with several arguments). `Func<…>`,
+  `List<…>` and bare types with several arguments miss 9 of 351, 7 of 344 and 12 of 386.
+
+⚠ **Round 9 of #453 (group B, 2026-10-14): round 8 re-measured; four rules wired.** Round 8 (`o-r4`) was not merged:
+it failed its own `WideName_WithinTheReach_BreaksTheEquals`. It was cherry-picked onto master `adca899a` and every
+claim re-measured on fresh grids (`Testing ask`, whole statements that differ from the oracle).
+
+What round 8's claims turned out to be:
+- **The `=` column off by one: confirmed, and incomplete.** The oracle does break the test's `=` at a line of 151 and
+  keeps it at 152, so the test was right. Moving the column moved the reach one column, because the reach had been
+  fitted on the other convention. ⚠ Neither convention fitted it. Re-measured with the call's `(` far enough right
+  that no floor binds (25 900 cells, every row one clean switch), round 2's `⌊0.91·type + 0.812·name − 16⌋` misses
+  241 of 356 reaches. Now `EqualsFloor.LambdaCallReach`: a column per column of name up to 22 and 0.6 after,
+  0.86 per column of type, 0.15 less per column of indent past 8. 22 of 390 measured reaches at indents 4, 8 and 12
+  are off, by one. ⚠ A constant 0.05 higher misses 15, but breaks the oracle's own `lambda-arrow-round-two` fixture
+  at a type of 8, where the reach bends; the constructs gate caught it.
+- **⚠ Assignments: refuted.** Round 3's assignment reach, "two columns longer", is shorter: `⌊min(n, 22) +
+  0.6·(n − 22)⁺ − 18.8⌋` (840 cells). No `=` breaks under a 20-column target.
+- **The single-argument residue at 121.** Round 8 wired `OneOverCallSingle` and `EqualsLambdaSingle` and read
+  neither. On names 1–31 × types 14–46 × the `(` two apart (2 952 cells), a single argument's type/name break and
+  `=` depend on the type alone. That grid goes 602 → 0.
+- **"Closeable": refuted.** The largest residue was not near a boundary. Below a column set by the type, the name and
+  the indent, the oracle chops a two-argument call beside the arrow whatever its width, the line's end or the reach.
+  Skala broke the `=` there: 1 888 of 9 705 cells on one grid. Now `EqualsFloor.LambdaCallParen`.
+  - Swept on 14 168 cells, every row one clean switch.
+  - Independent of the line's end (122 and 130), of `x` or `(int value)` parameters, and of fields.
+  - A V over the type with its foot at 12, raised two thirds of a column per column of name under 22.
+  - Moved five columns per four of indent on its steep side, two and a half on its slow side.
+  - Validated on fields at indent 4, which no fit saw: 17 of 21 switches exact.
+- **A single argument never reads the argument floor.** Its `=` breaks up to the reach at every `(` column and
+  argument width (8 458 cells).
+- **⚠ The arrow floor depends on the indent, and round 2's field shift was that.** At indents 4, 8, 12 and 16, with
+  the head and the `(` placed alike (7 002 cells), every row's switch sits exactly `8 − indent` columns from indent
+  8's. Round 2's `LambdaCallShift` for fields (head +8, `(` +4) was this indent term, fitted. It is removed.
+
+| grid | statements | master | `o-r4` | now |
+|---|---:|---:|---:|---:|
+| random wide names (typed locals, `Func`, two arguments) | 4 000 | 205 | 150 | 60 |
+| random, ending at 121, one to three arguments | 2 000 | 1 161 | 168 | 42 |
+| random mixed: locals, assignments, five type kinds, six parameter lists, one to four arguments | 3 028 | 158 | 135 | 42 |
+| the same probe's fields | 972 | 66 | 54 | 10 |
+| narrow names, random | 3 000 | 18 | 13 | 12 |
+| the `(` column, names 10–40 × types 3–56 (fit) | 14 168 | 4 004 | — | 104 |
+| the `(` column at lines of 122 and 130 | 9 705 | 2 041 | 1 939 | 76 |
+| one argument, the line one column at a time | 8 458 | 864 | — | 77 |
+| reach, the `(` at 104 and 112 (fit) | 25 900 | 974 | — | 306 |
+| reach at indent 12 / fields at indent 4 | 3 780 / 3 780 | 400 / 123 | — | 78 / 45 |
+| arrow floor at indents 4 / 8 / 12 / 16 | 7 002 | 386 | — | 5 |
+| **fresh probe, seed 777, fitted on nothing: locals and assignments / fields** | 3 797 / 1 203 | 175 / 60 | — | 52 / 6 |
+
+Pinned by `LambdaArrowFloorIssue453586Tests` (group B's twelve).
+
+⚠ **Still open:**
+- The fresh probe's 52: assignments 31 of 1 542, mostly the arrow against the chopped arguments within a column of
+  the floor, and locals 21 of 2 255.
+- The reach grid's 306: lines past 165, where the oracle's reach jumps by two to five columns over the formula,
+  and the arrow-versus-chop boundary at the widest heads.
+- Assignments at a line of 124 break the `=` from a `(` of 71, three columns later than `LambdaCallParen` with no
+  type gives (19 of 473).
+
+- ⚠ status: #453's names over nine columns, fields and assignments **fixed** within the residue above.
+
 ## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
 
 ReSharper ships nine keys that **suppress a class of edit** rather than choosing between two
@@ -11788,6 +11893,47 @@ What remains sits within a grid step of the line boundary, plus the oracle's own
 first operand of 24 (`B..BB.` along the arrow axis). The "not monotone past 36" in #586 is only that: at one
 first-operand width, not the threshold as a whole.
 
+⚠ **Round 4 (group O, 2026-10-10): #586's residue, final.** The long-parameter grid stands at 399 of
+33 648 and its random probe at 43 of 4 000. Both were re-measured on `o-r4`. A refit of the line column's
+parameter term past a knee (`9·min(p, P0) + k·max(0, p − P0)`) gained 32 cells over all grids together, which
+is not a rule worth a constant. The misses sit within one grid step (four columns of line end) of the
+boundary, or among the oracle's own non-monotone cells at a first operand of 24.
+
+- ⚠ status: **closeable** with this residue.
+
+⚠ **Group B (2026-10-14): round 4 refuted; the cap was wrong, and the threshold is monotone.**
+- **Monotone.** Swept with `Testing ask` along the arrow axis, one column at a time:
+  - parameter texts of 32 to 48;
+  - first operands of 12 to 36, a first operand of 24 included;
+  - `&&` and pattern bodies;
+  - lines of 130, 150 and 200.
+
+  That is 150 rows and 8 122 cells, and every row is one clean switch.
+- **The cap.** The misses sat at the 200-column line, the ceiling's regime. There the oracle's threshold kept
+  rising past round 2's cap, `max(85, 85.5 + 0.25·(params − 36))`, by up to 7 columns. It rises 0.55 a column per
+  column of parameter text and 0.6 per column of first operand, which saturates where the ceiling stops counting
+  it:
+  - `55 + 0.55·params + 0.6·min(first, 24)` for a chain;
+  - `50 + 0.55·params + 0.6·min(first, left + 28)` for a pattern.
+
+  On 137 measured thresholds at parameter texts of 8 to 48, 59 were off, by up to 7 columns. Now 26 are, all by
+  one. Wired in `EqualsFloor.BreaksTheOperandArrow`.
+
+| grid | statements | master | now |
+|---|---:|---:|---:|
+| **fresh random probe: parameter texts 30–50, plain calls and `.Where(` locals, indents 8 and 12, lines 116–200** | 5 000 | 127 | 95 |
+| the monotonicity grid (fit) | 8 122 | 115 | 32 |
+| parameter texts 8–34 at a 200-column line (fit) | 6 624 | 48 | 10 |
+| `glong` (round 2's long-parameter grid) | 33 648 | 399 | 287 |
+| `p578e` / `p578t` | 3 239 / 7 304 | 20 / 12 | 15 / 11 |
+| `gpatT` | 9 450 | 10 | 9 |
+| `gand`, `gpat`, `gleft`, `grand`, `gsplit`, `gtl` | 59 109 | 147 | 147 |
+
+The fresh probe's 95 are spread evenly over the parameter widths: 2.4 % at 30–34 and 2.3 % at 45–49. They are
+decisions near the boundary.
+
+- ⚠ status: #586's parameter-text residue **fixed** within the residue above; the "not monotone" note is refuted.
+
 ⚠ **#600 (group O, 2026-10-10): a sole lambda as the last operand of an `if` or `while` condition.** The rule
 read the line's end from the lambda's statement. For a header condition that statement is the whole `if`,
 block included, so the line was never on one line and the rule was never armed. The head rule kept the arrow,
@@ -11869,6 +12015,44 @@ Skala moves `.Where(` below, a column past the limit, plus 8 others. Pinned by
 `constructs/wrapping/lambda-arrow-round-three.cs`.
 
 - ⚠ status: the lone `)` **fixed**; #605 **fixed** within the residue above.
+
+⚠ **Round 4 (group O, 2026-10-10): the residues, re-examined. Nothing new is wired.**
+- **#605's 267 of 9 206.** Each lies within a column of the limit. Neither a first-operand term nor the arrow
+  rule's own answer separates them; the arrow rule breaks in every cell of the grid. The best refit of the
+  limit, first operand included, misses 278.
+- **The `.ToList()` grid's 60 arrow-versus-move-below cells.** Six per file at one receiver width, across every
+  parameter text and both body kinds: the same one-column limit residue.
+- ⚠ status: **closeable** with this residue.
+
+⚠ **Group B (2026-10-14): the limit moves with the rest of the chain.** Round 3's limit was measured behind
+`.ToList();` alone. Round 4's "nothing separates the residue" holds on that grid: re-built here (9 206 cells),
+it still misses 258 held decisions. ⚠ But off it the rest decides.
+
+- **The probe.** 5 000 random statements within four columns of the limit:
+  - names of 1 to 30 and receivers of 2 to 50;
+  - five parameter texts and both body kinds;
+  - `var`, typed and bare targets, at indents 8 and 12;
+  - rests `.T…();` of 5 to 22 columns.
+- **The rule.** Fitting an offset per rest width gives −3.5 at 5 columns, 0 at 10 and +4.25 at 17: two thirds of a
+  column per column of rest. That is the slope `HeldCallRest` already has under `wrap_if_long`. Wired as
+  `GroupFacts.HeldCallLambdaRest`, under any chain wrap style. The limit is now `HeldLambdaLimit + (rest − 10)/1.5`.
+- **No cap.** A cap at 25 columns of rest doubled the miss count on the fresh probe, so the rest is not capped.
+
+Held decisions (move `.Where(` below or break the arrow) that differ:
+
+| probe | statements | master | now |
+|---|---:|---:|---:|
+| rests of 5–22 columns near the limit (fit) | 5 000 | 1 519 | 244 |
+| **fresh: rests of 5–46 columns, multi-link rests, lines up to 20 past the limit** | 5 000 | 2 004 | 166 |
+| fresh random: `.ToList()`, `.Count()`, `.First()` | 5 000 / 5 000 | 41 / 48 | 32 / 25 |
+| round 3's `.ToList()` grid, rebuilt | 9 206 | 258 | 258 |
+
+Pinned by `LambdaArrowFloorIssue453586Tests.LongRest_MovesTheLambdaCallDown` and `ShortRest_HoldsTheLambdaCall`.
+
+The `.ToList()` grid's 258 are still unexplained by any term. What dominates every probe now is a different decision,
+recorded as SK-DIV-0510.
+
+- ⚠ status: #605 **fixed** for the rest of the chain; the one-column residue on `.ToList()` is left open.
 
 ## SK-DIV-0378 — measured widths read off the source broke whitespace absorption
 
@@ -12883,6 +13067,31 @@ when the trial put the `when` on a later line than the arm's start, which means 
 `HeldByALift` then holds the `when`'s own level. Arms differing from the oracle went from 5 of 12 on master to 0.
 
 - status: **fixed**, pinned by `FuzzIdempotencyIssue617Tests.AWhenOnItsOwnLine_*` and `FuzzRegressionTests`.
+
+## SK-DIV-0510 — an `=` before a held lambda call's chain: the oracle breaks the `=`, Skala moves `.Where(` below
+
+⚠ **Found by group B's #605 probes (2026-10-14), not fixed.** On `var n… = r….Where(x => …).ToList();`, at a head
+from the statement's start to the receiver of 20 columns or more, the oracle often breaks after the `=` and keeps
+the whole chain on the line below (`=` / `r….Where(…).ToList();`). Skala keeps the `=` and moves `.Where(` below
+(`= r…` / `.Where(…)` / `.ToList();`).
+
+Measured with `Testing ask` on two random probes of 5 000 statements each (seeds 605 and 6050). Of the
+statements where the oracle breaks the `=`:
+
+| head | statements | oracle breaks the `=` | Skala agrees | Skala moves `.Where(` |
+|---:|---:|---:|---:|---:|
+| 8–15 | 2 391 | 1 | 0 | 0 |
+| 16–23 | 2 634 | 36 | 16 | 18 |
+| 24–31 | 2 556 | 293 | 163 | 126 |
+| 32–39 | 1 476 | 310 | 212 | 98 |
+| 40–55 | 506 | 168 | 112 | 56 |
+
+This is about 300 of 10 000 statements, the largest class left in every #605 probe. It is the `=`'s decision against
+the held call (`HeldValue` and `HeldCallLimit`'s owner), not the lambda's arrow or the held limit, and it was not
+attempted here: no rule was fitted, and none is wired.
+
+- options: `skala_wrap_before_first_method_call`, `prefer_wrap_around_eq`.
+- status: **open**. The probes are generated by `gen_w.py` in group B's scratch, `scratch-b/`, which is not committed.
 
 ## SK-DIV-0520 — where a sole lambda breaks after its arrow, in front of a broken type test
 

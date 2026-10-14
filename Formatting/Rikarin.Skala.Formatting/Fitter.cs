@@ -457,6 +457,19 @@ public sealed class Fitter {
                     return ResolvedMode.Broken;
                 }
 
+                // ⚠ A local's type/name gap before a lambda over a call, one column past the margin (#453 round 8).
+                // See GroupFacts.OneOverCallArguments.
+                if (facts.OneOverCallArguments > 0 && m.PointWidth < Unbounded) {
+                    if (m.FlatWidth < Unbounded
+                        && m.Trailing < Unbounded
+                        && m.Column + m.FlatWidth + m.Trailing == width + 1
+                        && facts.OneOverCallType >= EqualsFloor.TypeNameOneOverType(facts.OneOverCallName)
+                        && (facts.OneOverCallSingle
+                            || facts.OneOverCallArguments <= 35 + (facts.OneOverCallType - 32) / 12)) {
+                        return ResolvedMode.Broken;
+                    }
+                }
+
                 if (facts is { NameThroughEquals: > 0, OneOverValue: 0 }) {
                     return ResolvedMode.Flat;
                 }
@@ -492,10 +505,27 @@ public sealed class Fitter {
                 if (facts.EqualsLambdaArguments > 0 && m.PointWidth < Unbounded) {
                     // ⚠ The group starts at the `=` in a declaration and at the target in an assignment: the `=`
                     // ends where its point's head does.
-                    var equalsEnd = m.Column + m.PointWidth - 1;
+                    var equalsEnd = m.Column + m.PointWidth;
                     var paren = equalsEnd + 1 + facts.EqualsLambdaValueHead + 1;
                     if (paren + facts.EqualsLambdaArguments <= width) {
                         return ResolvedMode.Flat;
+                    }
+
+                    // ⚠ A local one column past the margin (#453 round 8): under a type narrower than the type/name
+                    // gap's threshold the `=` breaks wherever the arrow would, the gate aside.
+                    // ⚠ Read from the planner's widths: on pass two a chopped argument list leaves the flat width
+                    // unbounded, and the general rule below broke the `=` pass one had kept.
+                    if (facts.EqualsLambdaIsLocal && paren + facts.EqualsLambdaArguments == width + 1) {
+                        return facts.EqualsLambdaType < EqualsFloor.TypeNameOneOverType(facts.EqualsLambdaName)
+                            && facts.EqualsLambdaType <= 8 * (facts.EqualsLambdaName - 10) + 14
+                            && (facts.EqualsLambdaSingle
+                                || paren
+                                >= equalsEnd
+                                + 36
+                                - 1.6 * (facts.EqualsLambdaName - 11)
+                                + 0.25 * (facts.EqualsLambdaType - 14))
+                                ? ResolvedMode.Broken
+                                : ResolvedMode.Flat;
                     }
 
                     return EqualsFloor.BreaksBeforeALambdaCall(
@@ -504,7 +534,9 @@ public sealed class Fitter {
                         equalsEnd,
                         paren,
                         facts.EqualsLambdaArguments,
-                        facts.EqualsLambdaReach
+                        facts.EqualsLambdaReach > 0,
+                        facts.EqualsLambdaSingle,
+                        lineStart
                     )
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
@@ -656,8 +688,10 @@ public sealed class Fitter {
                         return ResolvedMode.Flat;
                     }
 
+                    // ⚠ A lambda call's limit moves with the rest of its chain (#605). See GroupFacts.HeldCallLambdaRest.
                     var limit = facts.HeldCallLambda
                         ? HeldLambdaLimit(paren, m.Column - lineStart)
+                        + (facts.HeldCallLambdaRest > 0 ? (facts.HeldCallLambdaRest - 10) / 1.5 : 0)
                         : HeldCallLimit(paren, facts.HeldCall);
                     return Fits(m.Column, receiver)
                         && !Fits(m.Column, m.FlatWidth)
@@ -806,12 +840,16 @@ public sealed class Fitter {
                 // ⚠ A local's lambda over a call with two or more arguments (#453): the arrow breaks while the
                 // argument list is narrower than the measured floor; otherwise the head rule below decides. See
                 // GroupFacts.LambdaCallArguments.
+                // ⚠ The floor was measured at indent 8 and falls a column per column of indent past it (group B):
+                // on `T n = () => C…(xxx, yyy);` at indents 4 (a field), 8, 12 and 16 — head and `(` placed alike, the
+                // arguments one column at a time, 7 002 cells — every row's switch sits exactly 8 − indent columns
+                // from indent 8's at the same columns. Round 2's field shift (head +8, `(` +4) was this, fitted.
                 if (facts.LambdaCallArguments > 0
                     && m.FlatWidth < Unbounded
                     && EqualsFloor.BreaksTheCallArrow(
-                        m.Column - facts.LambdaHead - 1 + (facts.LambdaCallShift ? 8 : 0),
-                        m.Column + facts.LambdaCallCallee + 2 + (facts.LambdaCallShift ? 4 : 0),
-                        facts.LambdaCallArguments,
+                        m.Column - facts.LambdaHead - 1,
+                        m.Column + facts.LambdaCallCallee + 2,
+                        facts.LambdaCallArguments + lineStart - 8,
                         facts.LambdaCallSingle
                     )) {
                     return ResolvedMode.Broken;
