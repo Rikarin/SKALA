@@ -331,6 +331,11 @@ public sealed class FuzzRegressionTests {
     // width at its dot, so the held value's column was read 36 columns left of the `=` and pass one kept the `=`
     // and chopped; pass two, the value now broken, broke the `=`.
     [InlineData(6605302205500226187UL, "real/vixen/Core/Vixen.Physics/Ecs/PhysicsScene.cs")]
+    // #576 round 6's outer type argument list (GroupFacts.WhenOuterTail): pass one kept `Materialise<List<bool>,
+    // IReadOnlyDictionary_w…<` and broke the inner list after its `<`; pass two, reading that break as kept, measured the
+    // outer list as unbounded, skipped the rule and broke it too. The rule's "stays" half now reads the planner's width.
+    [InlineData(10815522948059258787UL, "constructs/breaks/arm-when-condition-below.cs")]
+    [InlineData(1019535202291160959UL, "constructs/breaks/arm-when-condition-below.cs")]
     // The Nightlies of 2026-10-13 and 2026-10-14, on master adca899a: idempotency on two Vixen files, both clean once
     // the 2026-10-14 merges landed (42ed48b0) without either being targeted. Pinned so neither returns unnoticed.
     [InlineData(14052156207620702103UL, "real/vixen/Core/Vixen.Ecs/Systems/SystemGraph.cs")]
