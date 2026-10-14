@@ -2071,12 +2071,8 @@ public sealed class Fitter {
 
         var continuation = m.ContinuationColumn;
         var below = continuation + facts.HeldValueWidth;
-        // ⚠ A parenthesised call behind a head of twelve columns or more: cast, by a measured comparison of its own; and
-        // uncast, by its first half, while the receiver fits beside the `=` (#598). See ParenCallBehindAWideHeadBreaks.
-        if (facts.HeldValueParen
-            && (facts.HeldValue == 3 || facts.HeldValue == 1 && facts.HeldValueTypedHead >= WideEqualsHead)
-            && (facts.HeldValueCast || valueColumn + facts.HeldValueReceiver <= width)) {
-            return ParenCallBehindAWideHeadBreaks(facts, valueColumn, continuation);
+        if (facts.HeldValueCast && facts.HeldValue != 2) {
+            return CastParenBehindAWideHeadBreaks(facts, valueColumn, continuation);
         }
 
         var parenBelow = continuation + facts.HeldValueReceiver + facts.HeldValueHead;
@@ -2151,8 +2147,7 @@ public sealed class Fitter {
 
     /// <summary>
     ///     Whether the <c>=</c> breaks before <c>(T)(a op b…).M()</c> behind a head of twelve columns or more, a typed
-    ///     local's or a <c>var</c>'s or an assignment's, on a line it does not fit (#598, SK-DIV-0575). Without the cast,
-    ///     only while the receiver fits beside the <c>=</c>: past that the held table answers, as before.
+    ///     local's or a <c>var</c>'s or an assignment's, on a line it does not fit (#598, SK-DIV-0575).
     /// </summary>
     /// <remarks>
     ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c> on 16 000 rows (heads of 13 to 40 columns through the
@@ -2176,7 +2171,7 @@ public sealed class Fitter {
     ///     above it, and about one row in twelve that it broke does too, which Skala still keeps. No form in these
     ///     widths separates them exactly (SK-DIV-0575).
     /// </remarks>
-    bool ParenCallBehindAWideHeadBreaks(in GroupFacts facts, int valueColumn, int continuation) {
+    bool CastParenBehindAWideHeadBreaks(in GroupFacts facts, int valueColumn, int continuation) {
         var statement = continuation - indentWidth;
         var head = valueColumn - statement;
         var cast = facts.HeldValueCastWidth;
@@ -2194,12 +2189,6 @@ public sealed class Fitter {
             && continuation + facts.HeldValueOperatorTail <= width;
         return !keeps;
     }
-
-    /// <summary>
-    ///     The narrowest head through its <c>=</c> that <see cref="ParenCallBehindAWideHeadBreaks" /> answers for: the
-    ///     planner's twelve-column floor between a short head and a long one.
-    /// </summary>
-    const int WideEqualsHead = 12;
 
     /// <summary>
     ///     The widest a typed local's head and held receiver may be beside its <c>=</c>, from the statement's
