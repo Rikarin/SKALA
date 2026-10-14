@@ -286,8 +286,11 @@ public static class EqualsFloor {
     ///     rises 2.75 columns per column of parameters and of first operand up to 24, then about one per eight, and
     ///     never past where the first operand still fits beside the arrow; the end's column moves 0.9 per column of
     ///     line and 0.3 per column of parameters, three and a quarter later once the first operand passes 18. 28 cells
-    ///     under parameter texts of 36 differ, all within a column of the boundary; past 36 the oracle is not monotone
-    ///     and the rule is not measured.
+    ///     under parameter texts of 36 differ, all within a column of the boundary.
+    ///     ⚠ Group B (#586): the ceiling is also capped at <c>55 + 0.55·params + 0.6·min(first, 24)</c> for a chain
+    ///     and <c>50 + 0.55·params + 0.6·min(first, left + 28)</c> for a pattern. "Past 36 the oracle is not
+    ///     monotone" is refuted: at parameter texts of 32 to 48 (8 122 cells along the arrow axis) every row is one
+    ///     clean switch, and what had looked erratic was round 2's flat cap.
     /// </remarks>
     /// <param name="patternLeft">
     ///     ⚠ For a body that is <c>left is A or B …</c> rather than an operand chain, the width of <c>left</c>; zero
@@ -409,13 +412,16 @@ public static class EqualsFloor {
     ///             ten-column name, 20 at 11, 28 at 12, 36 at 13, 44 at 14, and 56 still open at 16;
     ///         </item>
     ///         <item>
-    ///             the line ends no more than <c>min(64, ⌊0.91·type + 0.812·name − 16⌋)</c> columns past the margin:
-    ///             the reach grows with the name and the type separately, which is why round 4 found no head
-    ///             table;
+    ///             the line ends no more than <see cref="LambdaCallReach" /> columns past the margin: the reach grows
+    ///             with the name and the type separately, which is why round 4 found no head table (round 2's
+    ///             <c>⌊0.91·type + 0.812·name − 16⌋</c>, re-measured by group B);
     ///         </item>
     ///         <item>
     ///             the arguments are no wider than the typed local's <c>=</c> floor before a call at the same
-    ///             <c>(</c> (<see cref="Of" />'s table), plus 0.26 a column of head past 54.
+    ///             <c>(</c> (<see cref="Of" />'s table), plus 0.26 a column of head past 54;
+    ///         </item>
+    ///         <item>
+    ///             ⚠ (group B) the call's <c>(</c> stands at <see cref="LambdaCallParen" /> or further right.
     ///         </item>
     ///     </list>
     ///     561 of the 21 534 cells differ. Validated on 4 000 random cells — <c>var</c>, <c>Action</c>,
