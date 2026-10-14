@@ -6699,6 +6699,9 @@ public sealed class BreakPlan {
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
+                    HeldValueGeneric: heldCall is {
+                        Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax }
+                    },
                     HeldValueTypedHead: (heldCall is not null || choppedHeld is not null) && heldKind == 1
                         ? HeadWidthThroughEquals(node, equals)
                         : 0,

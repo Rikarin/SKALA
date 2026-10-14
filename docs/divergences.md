@@ -10344,9 +10344,25 @@ split with other indents, or splits differently:
 - ⚠ Round 4's "5 222 → 5 851" for hf1 was the decision alone. Exact text on master is 5 539, unchanged since
   round 4's branch (its own output, re-read, is also 5 539).
 
-Found on the way, not this issue's: `T…(31) d…(48) = xxxx.Mmm(v…);` at indent 36, the value line 132 columns,
-chops the arguments beside the `=` on pass one and breaks the `=` on pass two. It does the same on master
-(`36_31_48_4_3_132_simple_ident_1` and `36_36_44_2_13_134_simple_string_1` in the seed-38291 probe).
+Found on the way and filed as #626 (fixed below): `T…(31) d…(48) = xxxx.Mmm(v…);` at indent 36, the value line
+132 columns, chopped the arguments beside the `=` on pass one and broke the `=` on pass two.
+
+⚠ **#626 (group M, 2026-10-15): fixed.** The pass-two instability above came from pass one. When a typed local's
+`T name = r.M(` reached past the margin, pass one kept the `=`, put the `(` past the margin and chopped the
+arguments. Pass two read that chop as the author's and broke the `=`. The oracle never keeps such a line: in #446's
+grids and the seed-38291 probe, 0 of 16 110 lines that end `= …(` run past column 120. In #626's probes it broke the
+`=` in 4 207 of 4 243 such cells; the other 36 broke between the type and the name. The held typed local's rule
+now breaks the `=` whenever the call's `(` would land past the margin beside it (`Fitter.HeldValueBreaks`).
+⚠ The exception is a generic method whose line from the dot fits below: the oracle breaks the dot there, `T c =
+JsonConvert` / `.DeserializeObject<…>(json);` (#528's fixture). The first cut of this fix moved that fixture, and
+the constructs ratchet caught it.
+- **Sweep** (2 754 cells, the `(` landing at 112 to 128): 1 806 → 2 161 agree, 60 cells that took two passes → 0.
+- **Fresh random probe** (seed 90127, 4 000 cells, a third of them generic methods with type arguments of 1 to 60):
+  3 094 → 3 648 agree, unstable 21 → 1, no newly diverging cell.
+
+The one cell left unstable writes exactly what the start commit writes. It is #626's neighbour inside a type
+argument list: `T[] d… = x….Mmmm<` / `Ggg…>("…");`, where pass two breaks the `=` too
+(`36_46_19_17_4_111_array_string_1_g15`). Pinned by `HeldParenPastTheMarginIssue626Tests`.
 
 - ⚠ status: the held typed local, the narrow-head pattern and the value's level after a type-name break are
   **resolved within the measured shapes** (#446 item 2). **Open**: the name line's `=` decision, and a value that

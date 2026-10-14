@@ -2301,7 +2301,14 @@ public sealed class Fitter {
                         continuation - indentWidth,
                         facts.HeldValueName
                     )
-                    || valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd;
+                    || valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd
+                    // ⚠ And when the call's `(` would land past the margin beside it (#626). The oracle never keeps
+                    // `T name = r.M(` past the margin — 0 of 16 110 lines in #446's grids — and breaks the `=`, in
+                    // 4 207 of 4 243 such cells of #626's probes (the rest broke between the type and the name). Pass
+                    // two, reading pass one's chop as the author's, broke the `=` that pass one kept. ⚠ A generic
+                    // method's dot takes the break instead where the line from the dot fits below:
+                    // `T c = JsonConvert` / `.DeserializeObject<…>(json);` (#528).
+                    || parenBeside > width && (!facts.HeldValueGeneric || below - facts.HeldValueReceiver > width);
             case 1:
                 // ⚠ Or when the head with the receiver beside it is wider than 87 columns: `T… c = JsonConvert`
                 // holds to 87 and breaks from 88, counted from the statement (h12 at indent 8, on one call
