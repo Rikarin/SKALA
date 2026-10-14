@@ -454,7 +454,15 @@ public enum IndentFlags {
     ///     after it — the broken <c>is</c> has spent the level the chain's <c>or</c>s would take, as an
     ///     <c>is</c> the author broke has (#520). See <c>HeldLevel.WhileGroupBroken</c>.
     /// </summary>
-    HeldWhileGroupBroken = 8192
+    HeldWhileGroupBroken = 8192,
+
+    /// <summary>
+    ///     ⚠ A level spent unless the group named beside it takes one of its points with the level spent, and
+    ///     held once it does. Nothing has resolved that group when the scope opens — it is inside — so the writer
+    ///     lays the scope's contents out spent, watches the group, and rolls back. A broken type test's level over a
+    ///     list pattern a line comment put on a line of its own (#617).
+    /// </summary>
+    HeldIfGroupBreaks = 16384
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>

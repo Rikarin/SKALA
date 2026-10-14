@@ -1015,9 +1015,13 @@ public sealed class Fitter {
         );
     }
 
+    /// <summary>The widest head #610 measured one argument behind; past it the floor is not used (#617).</summary>
+    const int OneArgumentMeasuredHead = 14;
+
     /// <summary>
     ///     See <see cref="GroupFacts.CalleeWidth" />. Null for a call with one argument behind a head narrower than the
-    ///     floor's that the rule for it does not break, which the ordering rule decides as it always did.
+    ///     floor's that the rule for it does not break, or wider than <see cref="OneArgumentMeasuredHead" />, which the
+    ///     ordering rule decides as it always did.
     /// </summary>
     ResolvedMode? EqualsBeforeACall(in GroupFacts facts, in Measures m, int lineStart) {
         if (m.PointWidth >= Unbounded) {
@@ -1067,6 +1071,15 @@ public sealed class Fitter {
         // case 7862808234978504853).
         if (paren > width) {
             return ResolvedMode.Broken;
+        }
+
+        // ⚠ One argument behind a head wider than #610 measured goes to the ordering rule (#617, fuzz
+        // 12392120797706766071). The floor of two was confirmed for one argument on heads of 12 to 14 only; behind
+        // `IReadOnlyDictionary<decimal, decimal> v =` it chopped from an argument of 44 where the oracle breaks the `=`
+        // into the sixties, and pass two — whose chopped argument the plan reads as the author's, so CalleeWidthOf
+        // turns the floor off — broke the `=`. The ordering rule is what pass two already used, so both passes agree.
+        if (facts.CalleeArgument > 0 && HeadWidth(facts, m, lineStart) > OneArgumentMeasuredHead) {
+            return null;
         }
 
         // ⚠ The name the `=` assigns has to reach the call, or the arguments chop (#589). See

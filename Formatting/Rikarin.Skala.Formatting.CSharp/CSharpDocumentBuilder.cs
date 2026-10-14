@@ -452,11 +452,17 @@ public sealed partial class CSharpDocumentBuilder {
 
             // ⚠ One level past the operand's line, not stacked on what that line opened (#445).
             if (plan.FromLine && !aligned) {
-                OpenIndent(
-                    IndentKind.FromLine,
-                    false,
-                    plan.FromLineNested ? IndentFlags.NestedSoleLambda : IndentFlags.None
-                );
+                // ⚠ Held once a list pattern a line comment put on a line of its own breaks (#617).
+                if (!plan.FromLineNested && this.plan.FromLineHeldAgainst(plan.Id) is >= 0 and var list) {
+                    doc.OpenHeldIndent(IndentKind.FromLine, IndentFlags.HeldIfGroupBreaks, list);
+                    continuousDepth++;
+                } else {
+                    OpenIndent(
+                        IndentKind.FromLine,
+                        false,
+                        plan.FromLineNested ? IndentFlags.NestedSoleLambda : IndentFlags.None
+                    );
+                }
             }
 
             if (i + 1 == gapAfter) {

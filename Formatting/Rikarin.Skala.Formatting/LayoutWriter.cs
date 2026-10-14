@@ -413,7 +413,8 @@ public sealed class LayoutWriter {
         IndentFlags.HeldWhileOwnerFlat
         | IndentFlags.HeldWhileChainWhole
         | IndentFlags.HeldWhileGroupFlat
-        | IndentFlags.HeldWhileGroupBroken;
+        | IndentFlags.HeldWhileGroupBroken
+        | IndentFlags.HeldIfGroupBreaks;
 
     /// <summary>
     ///     The kind a conditionally held scope opens as: <see cref="IndentKind.None" /> — a held level —
@@ -447,6 +448,12 @@ public sealed class LayoutWriter {
         // chain's level when it breaks — so the chain's own is spent only while it stays flat.
         if ((conditions & IndentFlags.HeldWhileGroupBroken) != 0) {
             return chainGroup >= 0 && fitter.ModeOf(chainGroup) == ResolvedMode.Broken ? IndentKind.None : kind;
+        }
+
+        // ⚠ A list pattern past a comment after an `is` (#617): written ahead with the level spent, and held if
+        // the list broke there — the oracle's list sits one level in only while it stays on one line.
+        if ((conditions & IndentFlags.HeldIfGroupBreaks) != 0) {
+            return chainGroup >= 0 && ChainBreaksInside(node, chainGroup, stack, kind) ? IndentKind.None : kind;
         }
 
         if ((conditions & IndentFlags.HeldWhileChainWhole) != 0
@@ -510,13 +517,22 @@ public sealed class LayoutWriter {
     ///         source and spends the level — the same layout.
     ///     </para>
     /// </remarks>
-    bool ChainBreaksInside(int node, int chainGroup, Stack<(int Node, int Child)> stack) {
+    /// <param name="trial">
+    ///     The kind the scope is written ahead as: held (<see cref="IndentKind.None" />) for a chain, spent for
+    ///     <see cref="IndentFlags.HeldIfGroupBreaks" />, whose group is asked at the deeper of the two layouts.
+    /// </param>
+    bool ChainBreaksInside(
+        int node,
+        int chainGroup,
+        Stack<(int Node, int Child)> stack,
+        IndentKind trial = IndentKind.None
+    ) {
         var (watched, broke) = (watchedChain, watchedChainBroke);
         var checkpoint = Checkpoint();
         watchedChain = chainGroup;
         watchedChainBroke = false;
 
-        Push(IndentKind.None, IndentFlags.None, 0, stack);
+        Push(trial, IndentFlags.None, 0, stack);
         var ahead = new Stack<(int Node, int Child)>(stack.Reverse());
         var floor = ahead.Count;
         var children = document.ChildrenOf(node);
@@ -2343,6 +2359,9 @@ public sealed class LayoutWriter {
         public bool WatchedChainBroke;
         public int WatchedLifts;
         public (int Group, int Depth, int Line)[] BrokenConstructs;
+        public KeyValuePair<int, int>[] FilledElementLines;
+        public int[] AwaitingElement;
+        public int LastTokenLine;
         public Fitter.Mark Fitter;
     }
 
@@ -2365,6 +2384,9 @@ public sealed class LayoutWriter {
             WatchedChainBroke = watchedChainBroke,
             WatchedLifts = watchedLifts.Count,
             BrokenConstructs = [..brokenConstructs],
+            FilledElementLines = [..filledElementLines],
+            AwaitingElement = [..awaitingElement],
+            LastTokenLine = lastTokenLine,
             Fitter = fitter.MarkForRollback()
         };
 
@@ -2391,6 +2413,19 @@ public sealed class LayoutWriter {
 
         brokenConstructs.Clear();
         brokenConstructs.AddRange(state.BrokenConstructs);
+
+        // ⚠ And the array fills' element records (#617, fuzz 718351361052470981). A switch arm decided by its arrow
+        // (DecideByTheArrow) writes its body ahead; an initializer's elements recorded the lines they started on
+        // there, and the real walk read those as an element spanning lines and broke after the first one. Pass two,
+        // reading that break as the author's, filled the rest differently.
+        filledElementLines.Clear();
+        foreach (var (group, started) in state.FilledElementLines) {
+            filledElementLines[group] = started;
+        }
+
+        awaitingElement.Clear();
+        awaitingElement.AddRange(state.AwaitingElement);
+        lastTokenLine = state.LastTokenLine;
         fitter.Rollback(state.Fitter);
     }
 

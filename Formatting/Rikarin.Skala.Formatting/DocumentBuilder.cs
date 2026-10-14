@@ -442,7 +442,8 @@ public sealed class DocumentBuilder {
                 & (IndentFlags.HeldWhileOwnerFlat
                     | IndentFlags.HeldWhileChainWhole
                     | IndentFlags.HeldWhileGroupFlat
-                    | IndentFlags.HeldWhileGroupBroken)),
+                    | IndentFlags.HeldWhileGroupBroken
+                    | IndentFlags.HeldIfGroupBreaks)),
             chainGroup
         );
 
