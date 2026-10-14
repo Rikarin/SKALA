@@ -1320,6 +1320,15 @@ public sealed class Document {
 ///     by the call's own measured table, which weighs the head before the receiver too (#605). See
 ///     <c>Fitter.HeldLambdaLimit</c>.
 /// </param>
+/// <param name="HeldCallLambdaArrow">
+///     ⚠ With <see cref="HeldCallLambda" />: the width of the lambda from its first token through its <c>=&gt;</c>,
+///     which the held call's line would end with if the arrow broke. Where that line would not fit, the oracle
+///     moves the call below whatever the measured limit says (#605, group I): 15 of the 88 held decisions two
+///     random probes of 5 000 statements still differed in. ⚠ Short of that, a wider head lowers the limit a
+///     fiftieth of a column per column past <c>x =&gt;</c>'s four: the best offset per head, over 43 126 held
+///     decisions under seven parameter texts, runs from 0 at four columns to −0.35 at twenty-three, and taking it
+///     halves what the limit alone left on every probe but the one-parameter grid it was measured on.
+/// </param>
 /// <param name="HeldCallLambdaRest">
 ///     ⚠ With <see cref="HeldCallLambda" />: the flat width of the chain after the held call through its <c>;</c>,
 ///     under any chain wrap style, or zero when the call ends the chain (#605, group B). The limit was measured
@@ -1585,6 +1594,16 @@ public sealed class Document {
 /// <param name="HeldChainRest">
 ///     With <see cref="HeldChainReceiver" />: the chain's width after its first call through the <c>;</c>. Where the
 ///     line through the first call fits, the oracle keeps the <c>=</c> and breaks before the next link instead.
+/// </param>
+/// <param name="HeldChainArrow">
+///     ⚠ With <see cref="HeldChainReceiver" />: the width of the first call's lambda from its first token through its
+///     <c>=&gt;</c>. Where the value does not fit below, the <c>=</c> breaks when the held call would move below
+///     and the receiver is short against the name (#619, group I); this places the held call's own limit
+///     (<see cref="HeldCallLambdaArrow" />).
+/// </param>
+/// <param name="HeldChainCallHead">
+///     With <see cref="HeldChainArrow" />: the first call's head from its dot through its <c>(</c>, which moves the
+///     held call's limit (<see cref="HeldCallHead" />).
 /// </param>
 /// <param name="MemberHeadWidth">
 ///     ⚠ An <c>=</c> whose value is a plain member access the dot fill breaks (#482): the receiver's flat
@@ -1926,6 +1945,7 @@ public readonly record struct GroupFacts(
     int HeldCallHead = 0,
     int HeldCallRest = 0,
     int HeldCallLambdaRest = 0,
+    int HeldCallLambdaArrow = 0,
     bool ContinuesIfItBreaks = false,
     bool FlatIfHeadOverflows = false,
     int ValueHeadWidth = 0,
@@ -1995,6 +2015,8 @@ public readonly record struct GroupFacts(
     int MemberHeadWidth = 0,
     int HeldChainReceiver = 0,
     int HeldChainRest = 0,
+    int HeldChainArrow = 0,
+    int HeldChainCallHead = 0,
     int EqualsName = 0,
     int[]? MemberLinks = null,
     bool EqualsNameAttributed = false,

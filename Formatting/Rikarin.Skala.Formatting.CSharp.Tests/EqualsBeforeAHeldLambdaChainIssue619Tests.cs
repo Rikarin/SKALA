@@ -41,4 +41,58 @@ public sealed class EqualsBeforeAHeldLambdaChainIssue619Tests {
             "        var nnnnnnnnnnnnnnnnnn = rrrrrrrrrrrr.Where(x => aaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbb && ccccccccccccccccc)\n"
             + "            .ToList();\n"
         );
+
+    /// <summary>
+    ///     ⚠ Group I: the value does not fit below, and the held call would move. A 16-column name and a 5-column
+    ///     receiver: three receivers fit in the name less one, so the <c>=</c> breaks and the call stays with its
+    ///     receiver.
+    /// </summary>
+    [Fact]
+    public void ValueTooWideBelow_ShortReceiver_BreaksTheEquals() =>
+        Agrees(
+            "        var nnnnnnnnnnnnnnnn = rrrrr.Where(x => aaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccccc).TTTTTTTTTTTTTTTTTTTT();\n",
+            "        var nnnnnnnnnnnnnnnn =\n"
+            + "            rrrrr.Where(x => aaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccccc)\n"
+            + "                .TTTTTTTTTTTTTTTTTTTT();\n"
+        );
+
+    /// <summary>A receiver one column wider than that: the <c>=</c> stays and the call moves below the receiver.</summary>
+    [Fact]
+    public void ValueTooWideBelow_WiderReceiver_MovesTheCall() =>
+        Agrees(
+            "        var nnnnnnnnnnnnnnnn = rrrrrr.Where(x => aaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccccc).TTTTTTTTTTTTTTTTTTTT();\n",
+            "        var nnnnnnnnnnnnnnnn = rrrrrr\n"
+            + "            .Where(x => aaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccccc)\n"
+            + "            .TTTTTTTTTTTTTTTTTTTT();\n"
+        );
+
+    /// <summary>A 31-column name still breaks the <c>=</c> over a one-column receiver: eight and five names make 163.</summary>
+    [Fact]
+    public void ValueTooWideBelow_LongName_BreaksTheEquals() =>
+        Agrees(
+            "        var nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = r.Where(x => aaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccc).TTTTTTTTTTTTTTTTTTTT();\n",
+            "        var nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn =\n"
+            + "            r.Where(x => aaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccc)\n"
+            + "                .TTTTTTTTTTTTTTTTTTTT();\n"
+        );
+
+    /// <summary>A 32-column name does not: 168 is past 165.</summary>
+    [Fact]
+    public void ValueTooWideBelow_LongerName_MovesTheCall() =>
+        Agrees(
+            "        var nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = r.Where(x => aaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccc).TTTTTTTTTTTTTTTTTTTT();\n",
+            "        var nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn = r\n"
+            + "            .Where(x => aaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbb && cccccccccccccccccccccccc)\n"
+            + "            .TTTTTTTTTTTTTTTTTTTT();\n"
+        );
+
+    /// <summary>An assignment whose receiver starts twelve columns into the statement keeps the <c>=</c>.</summary>
+    [Fact]
+    public void ValueTooWideBelow_ShortHead_MovesTheCall() =>
+        Agrees(
+            "        nnnnnnnnn = r.Where(x => aaaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccccccc).TTTTTTTTTTTTTTTTTTTT();\n",
+            "        nnnnnnnnn = r\n"
+            + "            .Where(x => aaaaaaaaaaaaaaaaaaaaaaaaaa && bbbbbbbbbbbbbbbbbbbbbbbbbbb && ccccccccccccccccccccccccccc)\n"
+            + "            .TTTTTTTTTTTTTTTTTTTT();\n"
+        );
 }

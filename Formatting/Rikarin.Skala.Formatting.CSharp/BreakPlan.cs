@@ -3569,7 +3569,12 @@ public sealed class BreakPlan {
                 < 0,
                 // ⚠ And the rest of the chain moves the lambda call's limit whatever the chain's wrap style (#605,
                 // group B); see GroupFacts.HeldCallLambdaRest.
-                HeldCallLambdaRest: call == root ? 0 : RestWidth(call, root)
+                HeldCallLambdaRest: call == root ? 0 : RestWidth(call, root),
+                // ⚠ And the held line through the arrow must fit for the arrow to break there (#605, group I); see
+                // GroupFacts.HeldCallLambdaArrow.
+                HeldCallLambdaArrow: call.ArgumentList.Arguments is [{ Expression: LambdaExpressionSyntax lambda }]
+                    ? FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken)
+                    : 0
             )
         );
     }
@@ -6648,6 +6653,21 @@ public sealed class BreakPlan {
                     HeldChainRest: owner is EqualsOwner.VarLocal or EqualsOwner.TypedLocal or EqualsOwner.Assignment
                     && HeldLambdaChainReceiverOf(value) > 0
                         ? RestWidth(FirstCallOf(value), value)
+                        : 0,
+                    // ⚠ The held call's own limit weighs its lambda's head (#605); see GroupFacts.HeldChainArrow.
+                    HeldChainArrow: owner is EqualsOwner.VarLocal or EqualsOwner.TypedLocal or EqualsOwner.Assignment
+                    && HeldLambdaChainReceiverOf(value) > 0
+                    && FirstCallOf(value) is InvocationExpressionSyntax {
+                        ArgumentList.Arguments: [{ Expression: LambdaExpressionSyntax heldLambda }]
+                    }
+                        ? FormattedWidth(heldLambda.GetFirstToken(), heldLambda.ArrowToken)
+                        : 0,
+                    HeldChainCallHead: owner is EqualsOwner.VarLocal or EqualsOwner.TypedLocal or EqualsOwner.Assignment
+                    && HeldLambdaChainReceiverOf(value) > 0
+                    && FirstCallOf(value) is InvocationExpressionSyntax {
+                        Expression: MemberAccessExpressionSyntax chainAccess
+                    } chainCall
+                        ? FormattedWidth(chainAccess.OperatorToken, chainCall.ArgumentList.OpenParenToken)
                         : 0,
                     EqualsNameAttributed: node.Parent?.Parent?.Parent is FieldDeclarationSyntax {
                         AttributeLists.Count: > 0

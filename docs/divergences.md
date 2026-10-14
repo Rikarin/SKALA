@@ -12466,6 +12466,57 @@ Skala on every held decision of four probes. It was refitted on the 9 206-cell g
 The best hinge is 258 → 250, which is no rule. Of the misses, 56 of the first 60 lie within one column of the limit.
 Nothing is wired; the residue stays recorded as the limit's own jitter.
 
+⚠ **Group I (2026-10-14): the "jitter" was the measurement's origin, not the oracle.** Every refit before this one
+measured the head from the statement's start and read the `(` column. Tabulated per cell instead — the widest line
+that moves `.Where(…)` down, for each indent, name and receiver of the 9 206-cell grid — every one of the 378
+boundaries inside the grid is a single clean switch, and the table is three straight pieces in the receiver's column
+**counting the indent** (`H`), the receiver's width (`r`) and the call's head from its dot through its `(` (`c`, seven
+for `.Where(`).
+
+- **The pieces, each solved exactly** (every boundary is a whole column, so a piece is a set of linear inequalities,
+  not a fit): a cap `114.92 − 0.14·H`; under it, past receivers of about 22, `123.35 − 0.38·r − 0.13·H`; and above
+  both where the receiver ends far right, a floor `min(72.04 + 0.55·r + 0.42·H, 78.94 + 0.2·r + 0.44·H)`. The steep
+  half of the floor only shows past `H` of about 55, which the round 3 grid never reached; a grid of heads 51 to 83
+  and one at indent 16 (6 862 cells) found it.
+  Of the 670 boundaries in the three grids, 19 are a column off.
+- ⚠ **The call's head moves every piece, and the floor twice as fast.** All of the above was measured under `.Where(`.
+  Under callees of 3 to 19 columns (6 660 cells, 257 boundaries) the cap and the falling line rise `0.6·(c − 7)` and
+  the floor `1.18·(c − 7)`; 7 of the 257 boundaries are a column off. Without it a fresh probe over ten callees missed
+  1 426 of 6 000 statements; with it, 85. The steep half's slope in `c` was not measured on its own (no grid has a
+  wide callee past `H` of 55) and is taken as the floor's. Wired as `Fitter.HeldLambdaLimit(column, receiver, callHead)`.
+- **A lambda head past `x =>`'s four columns lowers the limit a fiftieth of a column per column.** The best offset per
+  parameter text over 43 126 held decisions runs from 0 at `x =>` to −0.35 at a 23-column head; taking it halves what
+  is left on every probe but the one-parameter grid, which it cannot move.
+- **A held line that would overflow through its own `=>` moves the call below** while the call fits there:
+  `… = r….Where(static node =>` past the margin is never the oracle's answer. Skala wrote it, past 120, on 15 of the 88
+  held decisions two random probes still missed (`GroupFacts.HeldCallLambdaArrow`).
+- ⚠ **Refuted: "a comparison between two candidate layouts".** With the body coupled to the link, the two layouts'
+  second lines differ by a constant, so line count, longest line and summed squares all reduce to the same threshold
+  on one width; a sum of squares even predicts the wrong sign for the receiver. The three pieces do not come from any
+  of them.
+
+Statements that differ from the oracle (grids `I-held/` in the session scratchpad; `f*` were generated after the
+rule they test was chosen):
+
+| probe | statements | master | now |
+|---|---:|---:|---:|
+| round 3's grid (`wg`, fit) | 9 206 | 303 | 16 |
+| wide heads / indent 16 (`wh`, `wi`, fit for the steep floor) | 4 410 / 2 452 | 1 132 / 199 | 18 / 4 |
+| group B's probes (`w1`–`w5`) | 26 000 | 991 | 224 |
+| **fresh, near the new limit, heads to 77, indents 8–16 (`f4`)** | 6 000 | 1 862 | 67 |
+| **fresh, near the new limit, written after every rule (`f7`)** | 5 000 | 1 584 | 50 |
+| **fresh random (`f5`, `f6`)** | 5 000 / 5 000 | 77 / 81 | 46 / 26 |
+| callees of 3 to 19 columns (`wc`, `wc2`, fit for the call head) | 2 529 / 6 660 | 433 / 1 329 | 6 / 30 |
+| **fresh, near the new limit, ten callees, heads to 77 (`f9`)** | 6 000 | 2 531 | 85 |
+| group O's `.ToList()` and held grids (`gtl`, `gheld`, `gheld2`; diff hunks) | — | 68 / 21 / 270 | 20 / 7 / 14 |
+
+None of the probes has a statement the second pass changes. What still differs is held decisions within a column of
+the limit, under half of them newly so (`f7`: 14 of 50), and the classes other entries own.
+Pinned by `LambdaArrowFloorIssue453586Tests.LongReceiver_*`, `FarRightReceiver_*`, `ReceiverColumnCountsTheIndent_*`,
+`WideCallHead_*` and `ArrowPastTheMargin_*`.
+
+- status: #605 **fixed**; the residue is a column either side of the limit.
+
 ## SK-DIV-0378 — measured widths read off the source broke whitespace absorption
 
 ⚠ **Nightly fuzzer, seed 37583856628.** Replay 6225963390046177533 of
@@ -13612,6 +13663,39 @@ Pinned by `EqualsBeforeAHeldLambdaChainIssue619Tests`. #578/#586's grids, `gtl` 
   breaks the `=` about a third of the time and breaks the chain below (`=` / `rr.Where(…)` / `.ToList();`). Over
   10 226 such cells no two-feature separator does better than 257 errors against 340 positives.
 - status: #619 **fixed** where the value fits below; the short-receiver remainder **open**.
+
+⚠ **Group I (2026-10-14): the short-receiver remainder is two questions, and neither is a width.** Asked one
+receiver and one name at a time with a long rest, so that the held call always moves (1 998 cells: `var`,
+`IEnumerable<T>` and assignment heads, names of 4 to 40, receivers of 1 to 9, two lines below), every cell answers by
+the name and the receiver alone — the same at both widths of the line below, at indents 8 and 12:
+
+- the `=` breaks, `=` / `r.Where(…)` / `.T…();`, exactly while `3·receiver ≤ name − 1` and `8·receiver + 5·name ≤ 165`:
+  the receiver allowed rises a column per three of name to six at names of 19 to 23 and falls to none past 31;
+- and only where the receiver starts 13 columns or more into the statement — `var nnnnn = r` (12) never breaks,
+  `var nnnnnn = r` (13) and `IEnumerable<T> nnnn = r` (22) do; ⚠ an absolute column of 21 fitted the indent-8 grid
+  and failed at indent 12.
+- **Where the held call would break its arrow instead,** the `=` stays: that is the held call's own limit, read with
+  the receiver where the kept `=` leaves it.
+- **The line below may overflow by its `)` alone**, which then stands on a line of its own (27 statements of two
+  probes).
+
+Why B's search failed: the value's width below, the head and the `=`'s column carry no information here, and the
+held decision under the `=` hides the rule in every random probe. Wired as `Fitter.HeldChainBreaksTheEquals` with
+`GroupFacts.HeldChainArrow`.
+
+| probe | statements | master | now |
+|---|---:|---:|---:|
+| names × receivers (`en`, fit) | 1 998 | 531 | 10 |
+| receivers × the line below, `.ToList()` and a 22-column rest (`eg`, `eg2`) | 1 260 / 3 024 | 149 / 924 | 40 / 40 |
+| **fresh random: receivers of 1 to 10, values too wide below, five heads, indents 8–16 (`f8`)** | 5 000 | 701 | 57 |
+| **the same under six callees (`f10`)** | 4 000 | 888 | 49 |
+| group B's fits-below grid (`e1`) | 2 713 | 97 | 70 |
+
+- ⚠ **Open: the `=` breaks a few columns past the held limit.** Under a short receiver the oracle keeps `r.Where(…)`
+  whole below a broken `=` up to a line about two columns longer than the one that moves the call below a kept `=`
+  (`e2 ≤ 113` for receivers of 1 and 2, rising half a column per column of receiver, lower past names of 24): 36 of
+  `eg`'s 40 and 32 of `f8`'s 57. Measured, not wired.
+- status: #619 **fixed** for the value that does not fit below; the band past the held limit **open**.
 
 ## SK-DIV-0520 — where a sole lambda breaks after its arrow, in front of a broken type test
 
