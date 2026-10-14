@@ -5068,7 +5068,7 @@ public sealed class BreakPlan {
         // ⚠ And a sole lambda's broken test of a call with links after it (#618): `Run(x =>` / `call(…)` / `.Result`
         // two levels past the call / `is T` one.
         || root.Parent is ExpressionSyntax { Parent: LambdaExpressionSyntax lambda } body
-        && TestedOperandOfASoleLambda(lambda, body) == root;
+        && (TestedOperandOfASoleLambda(lambda, body) == root || TestedLinkedCallOfASoleLambda(lambda, body).Operand == root);
 
     /// <summary>Whether a node is an operand of <c>&amp;&amp;</c> or <c>||</c>.</summary>
     static bool IsALogicalOperand(SyntaxNode node) =>
@@ -8154,6 +8154,14 @@ public sealed class BreakPlan {
                         LambdaTestCall: FormattedWidth(testedCall),
                         LambdaTestCallHead: FormattedWidth(testedCall.GetFirstToken(), testedCall.ArgumentList.OpenParenToken)
                     )
+                : TestedLinkedCallOfASoleLambda(lambda, body) is ({ } linked, { } firstCall)
+                    ? new GroupFacts(
+                        BreaksIfTooLong: true,
+                        LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+                        LambdaTestCall: FormattedWidth(linked),
+                        LambdaTestCallHead: FormattedWidth(linked.GetFirstToken(), firstCall.ArgumentList.OpenParenToken),
+                        LambdaTestLinks: true
+                    )
                 : TestedOperandOfASoleLambda(lambda, body) is { } testedOperand
                     ? new GroupFacts(
                         BreaksIfTooLong: true,
@@ -8501,15 +8509,43 @@ public sealed class BreakPlan {
             return null;
         }
 
-        // ⚠ The last call on the spine with one argument or none: a call of two or more followed by links keeps the
-        // arrow for longer heads than this (group C's probes, `call(a, b, c).Symbol` behind `static x =>`), by a rule
-        // not found.
+        // ⚠ The last call on the spine with one argument or none: a first call of two or more followed by links has a
+        // measured line of its own (TestedLinkedCallOfASoleLambda), and a first call of one argument followed by a call
+        // of more keeps the arrow by a rule not found.
+        if (TestedLinkedCallOfASoleLambda(lambda, body).Operand is not null) {
+            return null;
+        }
+
         var spine = operand;
         while (spine is MemberAccessExpressionSyntax access) {
             spine = access.Expression;
         }
 
         return spine is InvocationExpressionSyntax { ArgumentList.Arguments.Count: <= 1 } ? operand : null;
+    }
+
+    /// <summary>
+    ///     The operand a sole lambda's broken type test tests where its first call has two or more arguments and links
+    ///     follow — <c>call(a, b).Symbol</c>, <c>open(a, b).Analyze(c)</c> — with that first call; nulls otherwise. Its
+    ///     arrow is decided by <see cref="GroupFacts.LambdaTestLinks" />' measured line (#618).
+    /// </summary>
+    (ExpressionSyntax? Operand, InvocationExpressionSyntax? First) TestedLinkedCallOfASoleLambda(
+        LambdaExpressionSyntax lambda,
+        ExpressionSyntax body
+    ) {
+        var operand = BrokenTestedOperandOf(lambda, body);
+        InvocationExpressionSyntax? first = null;
+        var spine = operand;
+        while (spine is MemberAccessExpressionSyntax or InvocationExpressionSyntax) {
+            if (spine is InvocationExpressionSyntax invocation) {
+                first = invocation;
+                spine = invocation.Expression;
+            } else {
+                spine = ((MemberAccessExpressionSyntax)spine).Expression;
+            }
+        }
+
+        return first is { ArgumentList.Arguments.Count: >= 2 } && first != operand ? (operand, first) : (null, null);
     }
 
     /// <summary>The operand of a sole lambda's whole body that is a type test broken before its keyword, or null.</summary>

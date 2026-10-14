@@ -1263,6 +1263,11 @@ public sealed class Document {
 ///     call's spine — one argument or none, or links after the call — whose arrow breaks whenever the operand does not
 ///     fit beside it and the arrow ends twelve columns or more past the line's start (#618).
 /// </param>
+/// <param name="LambdaTestLinks">
+///     With <see cref="LambdaTestCall" />: the operand's first call has two or more arguments and links follow it, and
+///     <see cref="LambdaTestCallHead" /> is the head through that call's <c>(</c>. The arrow breaks when it ends twelve
+///     columns or more past the line's start and <c>6·k − 6·p + 8·h − 6·w − 8·i ≥ −564</c> (#618).
+/// </param>
 /// <param name="LambdaChainHead">
 ///     ⚠ The arrow of a sole lambda argument whose body is a chain of calls: the width from the lambda's start
 ///     to its first call's dot, or zero for any other group (#571). Past the margin the arrow breaks for a
@@ -1719,6 +1724,7 @@ public readonly record struct GroupFacts(
     int LambdaChainHead = 0,
     int LambdaTestCall = 0,
     int LambdaTestCallHead = 0,
+    bool LambdaTestLinks = false,
     bool BreaksIfItOverflows = false,
     bool BreaksIfReceiverOverflows = false,
     bool HeldCallOnAPath = false,
