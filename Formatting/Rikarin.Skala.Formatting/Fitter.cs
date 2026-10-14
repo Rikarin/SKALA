@@ -148,6 +148,7 @@ public sealed class Fitter {
                 lineStart,
                 document.FirstPointFlatWidthOf(node)
             );
+
         modes[id] = mode;
         resolved[id] = true;
         enteredOn[id] = line;
@@ -349,6 +350,14 @@ public sealed class Fitter {
 
                 if (facts.SourceBroken) {
                     return KeepOrJoin(facts, m, tail);
+                }
+
+                // ⚠ One argument the author put below the call's `(` keeps the `=` while the `(` fits (fuzz
+                // 17150111611241313074). See GroupFacts.KeptArgumentCallee.
+                if (facts.KeptArgumentCallee > 0
+                    && m.PointWidth < Unbounded
+                    && Fits(m.Column, m.PointWidth + 1 + facts.KeptArgumentCallee + 1)) {
+                    return ResolvedMode.Flat;
                 }
 
                 // ⚠ A cast's `)` before a parenthesised operator: by the measured rule. See
@@ -632,17 +641,22 @@ public sealed class Fitter {
 
                 // ⚠ A single call on a parenthesised receiver: broken exactly when the line overflows and the
                 // receiver fits on it. See GroupFacts.ParenReceiver (#598).
-                // ⚠ The oracle breaks the dot too when the receiver's last line, broken inside, still overflows with
-                // the call — `x = (a` / `+ b…)` / `.M();` — and nests the operator a level deeper then, which pass one
-                // cannot give (open, SK-DIV-0491).
                 if (facts.ParenReceiver) {
-                    return m.FlatWidth < Unbounded
-                        && tail < Unbounded
-                        && m.Trailing < Unbounded
-                        && Fits(m.Column, m.FlatWidth - tail)
-                        && !Fits(m.Column, m.FlatWidth, m.Trailing)
-                            ? ResolvedMode.Broken
-                            : ResolvedMode.Flat;
+                    if (m.FlatWidth >= Unbounded || tail >= Unbounded || m.Trailing >= Unbounded) {
+                        return ResolvedMode.Flat;
+                    }
+
+                    // ⚠ And a receiver too wide for its line breaks inside, the dot with it when the receiver's last
+                    // line still overflows with the call (#617). The operator then nests a level past the dot's
+                    // line (BreakPlan.ReceiverLiftOf). See GroupFacts.ParenReceiverTail.
+                    if (!Fits(m.Column, m.FlatWidth - tail)) {
+                        return facts.ParenReceiverTail > 0
+                            && !Fits(lineStart + indentWidth, facts.ParenReceiverTail + tail, m.Trailing)
+                                ? ResolvedMode.Broken
+                                : ResolvedMode.Flat;
+                    }
+
+                    return Fits(m.Column, m.FlatWidth, m.Trailing) ? ResolvedMode.Flat : ResolvedMode.Broken;
                 }
 
                 // ⚠ Broken exactly when the receiver fits, the receiver with its call does not, and the

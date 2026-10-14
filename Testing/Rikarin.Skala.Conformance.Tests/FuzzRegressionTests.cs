@@ -210,6 +210,10 @@ public sealed class FuzzRegressionTests {
     // #617, group C's seed: an array initializer in a switch arm headed by braces. The arm was written ahead to decide
     // its arrow and the elements' line records outlived the rollback, so pass one broke after the first element.
     [InlineData(718351361052470981UL)]
+    // `var (a, b) = Convert<…>(($"…" + (…)));` (#617): pass one kept the `=` and chopped the one argument, and pass
+    // two, finding the value spanning lines, read it as having no callee and broke the `=` by the ordering rule. The
+    // oracle keeps an author's chop of a lone argument and the `=` beside it (GroupFacts.KeptArgumentCallee).
+    [InlineData(17150111611241313074UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

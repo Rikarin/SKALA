@@ -333,9 +333,10 @@ public sealed class LayoutWriter {
                         if (HeldByALift(slot, stack)) {
                             Push(IndentKind.None, IndentFlags.None, 0, stack);
                         } else if (((IndentFlags)slot.Arg1 & HeldConditions) != 0) {
+                            // ⚠ A spent scope keeps IndentFlags.CountsWithItsLine (BreakPlan.ReceiverLiftOf).
                             Push(
                                 HeldOrSpent(node, (IndentKind)slot.Arg0, (IndentFlags)slot.Arg1, slot.Arg2, stack),
-                                IndentFlags.None,
+                                (IndentFlags)slot.Arg1 & IndentFlags.CountsWithItsLine,
                                 0,
                                 stack
                             );
@@ -684,7 +685,8 @@ public sealed class LayoutWriter {
                         Lifted: lifted,
                         IsBrokenAfter: (flags & IndentFlags.BrokenAfter) != 0,
                         LiftsThrough: liftsThrough,
-                        Additive: (flags & IndentFlags.Additive) != 0
+                        Additive: (flags & IndentFlags.Additive) != 0,
+                        CountsWithItsLine: (flags & IndentFlags.CountsWithItsLine) != 0
                     ),
                 IndentKind.OneLevel =>
                     new Scope(
@@ -1365,6 +1367,16 @@ public sealed class LayoutWriter {
                 return Math.Max(0, level + scope.Lifted + (counts ? scope.Level : 0));
             }
 
+            // ⚠ Counted only beside a scope outside it opened on the same line, and never blocking (#617). See
+            // IndentFlags.CountsWithItsLine.
+            if (scope.CountsWithItsLine) {
+                if ((nested ? scope.OpenLine <= line : scope.OpenLine < line) && OpensWithAnOuterScope(i)) {
+                    level += scope.Level;
+                }
+
+                continue;
+            }
+
             if (scope.Unconditional) {
                 if (nested ? scope.OpenLine <= line : scope.OpenLine < line) {
                     level += scope.Level;
@@ -1383,6 +1395,26 @@ public sealed class LayoutWriter {
         // ⚠ Clamped, because a column outdent is the one contribution that can be negative and the
         // file's outermost construct has no level to spend it against.
         return Math.Max(0, level);
+    }
+
+    /// <summary>Whether a scope outside the one at <paramref name="index" />, inside its block, opened on its line.</summary>
+    bool OpensWithAnOuterScope(int index) {
+        for (var j = index - 1; j >= 0; j--) {
+            var outer = scopes[j];
+            if (outer.ColumnOutdent != 0) {
+                continue;
+            }
+
+            if (outer.IsBlock) {
+                return false;
+            }
+
+            if (outer.OpenLine == scopes[index].OpenLine && outer.Level > 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <param name="Unconditional">
@@ -1456,7 +1488,8 @@ public sealed class LayoutWriter {
         bool LiftsThrough = false,
         bool IsFromLine = false,
         bool IsBrokenAfter = false,
-        bool Additive = false);
+        bool Additive = false,
+        bool CountsWithItsLine = false);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     /// <summary>

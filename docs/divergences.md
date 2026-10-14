@@ -12892,7 +12892,8 @@ indent 16, is a property and not this shape. It is pre-existing and unchanged.
   regressed 531, and fixed about 800 rows behind `var valueeeeeeee =` but regressed 88. So it was not wired.
 - **The dot as well as the inside** (`x = (a` / `+ b…)` / `.M();`), when the receiver's last line still overflows
   with the call. The oracle also nests the operator a level deeper then. Pass one cannot write that level: wired,
-  it was 108 non-idempotent rows on the 4 950-row grid. So it was taken out again.
+  it was 108 non-idempotent rows on the 4 950-row grid. So it was taken out again. ⚠ **Fixed in SK-DIV-0530**,
+  which gives pass one that level.
 - **The cast's `)` under a call.** `return (IDictionary<int, string>)` / `(…).M();` on a line two or three over, or
   with the operand's `)` on 121. `3·s − a ≥ 64` does not hold for this shape, and the rule stays off it.
 - **A doubled parenthesis behind a typed local.** It follows the same triangle. Treating `((a + b))` as `(a + b)` in
@@ -12903,6 +12904,79 @@ indent 16, is a property and not this shape. It is pre-existing and unchanged.
   `)`, pinned by `WhenGapAndCastParenIssue609Tests`. **Fixed** for the chain under a cast behind `return` and heads
   under twelve columns, and for the inner `)` of `((…))`, pinned by `CastChainAndWhenLiftIssue598And576Tests`.
   ⚠ **Open** for typed locals and wide heads (the `o` triangle), and for the dot breaking beside a broken receiver.
+
+## SK-DIV-0530 — a parenthesised receiver's operator past the dot it broke before, and a lone argument the author chopped
+
+#617, two non-idempotencies.
+
+**1. A parenthesised receiver.** `x = (T)(a && b…).Length;` at indent 16, found by #598's fresh probe. Pass one
+wrote `x = (T)(a` / `&& b…)` / `.Length;` with the `&&` on the dot's column. Pass two read the dot's break as the
+author's and nested the `&&` a level deeper, through the chain frame. The oracle writes pass two's layout from the
+flat line too.
+
+Measured 2026-10-14 with `Testing ask`:
+- Behind `x =`, `var y =`, `return` and a cast, for a property and a call alike, the operator sits two levels past
+  the statement and the dot one.
+- As a call's only argument, the operator sits one level past the argument's line and the dot on it.
+- In other words, the operator always sits one level past the dot's line.
+
+Pass one could not write that layout. The receiver is written before the dot, and the one-level-per-line rule
+collapsed the operator's level into the `=`'s.
+
+The fix:
+- The dot group is decided on entry. The receiver now opens a level held while that group stays flat
+  (`BreakPlan.ReceiverLiftOf`, `IndentFlags.HeldWhileGroupFlat`).
+- That level counts only on a line a scope outside it opened on too (`IndentFlags.CountsWithItsLine`). That is the
+  collapse it undoes. An argument on a line of its own has no such scope, and takes none.
+- A single property after `(a op b)` was a fill. A fill's group breaks before its point does, so the receiver's
+  level could not wait for it. It is now a point with the call's rule (`GroupFacts.ParenReceiver`).
+- The dot also breaks when the receiver breaks inside and its last line, measured from the receiver line's own
+  continuation, still overflows (`GroupFacts.ParenReceiverTail`). This is SK-DIV-0491's dot-plus-inside rule,
+  re-wired now that pass one can write its level.
+- Only where it was measured: the whole value of an `=` or a `return`, cast or not, or a call's only argument. A
+  statement condition (`if ((a` / `+ b…).Value)`) and one argument among several went non-idempotent on the first
+  fresh probe, so they are left out (`IsAMeasuredReceiverContext`).
+
+**2. A lone argument the author chopped.** Fuzz 17150111611241313074:
+`var (a34…, b35) = Convert<…>(($"value {…}" + ('c', 3_000_000L)));`.
+- Pass one kept the `=` and chopped the one argument.
+- Pass two found the value spanning lines. `CalleeWidthOf` reads a value with a line break as having no callee, so
+  the ordering rule decided the `=` and broke it.
+- Asked about Skala's own pass one on 1 610 chopped one-argument calls, the oracle kept every one. That covered
+  `var`, typed, deconstructing and assigned heads at indents 8 and 12. Skala had moved 49 of them.
+- Now an `=` before a call whose lone argument the author put below the `(` stays while the `(` fits
+  (`GroupFacts.KeptArgumentCallee`).
+
+⚠ **Pass one on the flat seed still differs from the oracle.** The oracle breaks the `=`:
+`var (a34…, b35) =` / `Convert<…>((…));`. Skala keeps it and chops, and is now stable on that.
+
+This is a wider gap. A one-argument call behind a head of twelve columns or more falls to the ordering rule
+(`EqualsBeforeACall` returns null), and that chops where the oracle moves the value below. On a 1 769-row grid, 477
+rows diverge on pass one, the same before and after this fix.
+
+The oracle is monotone in the argument's width. For heads under thirty columns the boundary is `8·a + 3·c ≤ 685`
+(argument `a`, callee `c`) at indent 8. It shifts with the indent and, past thirty, with the head.
+`8·(a + indent) + 3·c + 2·head ≤ 799` misses 18 of 331 `var` rows. That is not good enough to wire, so it is
+recorded here, not wired. ⚠ Group A owns #610's table; this is its one-argument half.
+
+Diverging rows, the branch's start `f8e97e9c` → now (non-idempotent rows in brackets):
+
+| Grid | Rows | Before | After |
+|---|---|---|---|
+| one-argument calls, var/deconstruction/typed heads | 648 | 182 [46] | 182 [0] |
+| one-argument calls, `var NAME =` | 600 | 243 [96] | 243 [0] |
+| one-argument calls, five owners, two indents | 1 769 | 477 [49] | 477 [0] |
+| `(T)(a + b…).M()` behind short heads | 4 950 | 928 | 820 |
+| `(T)(a + b…).M()` owners × methods | 1 520 | 331 | 314 |
+| #598 fresh probe (seed 59801) | 240 | 57 [1] | 52 [0] |
+| **fresh**: parenthesised receivers, eight contexts (seed 61701) | 400 | 87 | 59 |
+| **fresh** (seed 61702) | 400 | 73 | 45 |
+| **fresh**, built after the last change (seed 61703) | 400 | 70 | 52 [0] |
+
+No row regressed on any grid.
+
+- status: **fixed** (both idempotency failures), pinned by `ParenthesisedReceiverIssue617Tests` and seed
+  17150111611241313074 in `FuzzRegressionTests`. ⚠ **Open:** the one-argument `=` on pass one.
 
 ## SK-DIV-0451 — an assignment's held value behind a target that holds a call
 

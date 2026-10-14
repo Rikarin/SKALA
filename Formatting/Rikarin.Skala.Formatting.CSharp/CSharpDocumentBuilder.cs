@@ -185,6 +185,18 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
+        // ⚠ A parenthesised receiver whose dot breaks for width nests its own continuation a level past the dot's
+        // line (#617): `x = (a` / `&& b…)` / `.Length;` puts `&&` at 16 and `.Length` at 12, as pass two's kept
+        // breaks do. Held while the dot's group stays flat. See BreakPlan.ReceiverLiftOf.
+        if (plan.ReceiverLiftOf(node) is >= 0 and var dotGroup && !AlignsFromOwnColumn(node)) {
+            EmitLeadingGap(node);
+            doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileGroupFlat, dotGroup, true);
+            VisitPlanned(node);
+            EmitUpTo(node.Span.End);
+            doc.Close();
+            return;
+        }
+
         if (!AlignsFromOwnColumn(node)) {
             VisitPlanned(node);
             return;

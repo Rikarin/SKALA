@@ -462,7 +462,15 @@ public enum IndentFlags {
     ///     lays the scope's contents out spent, watches the group, and rolls back. A broken type test's level over a
     ///     list pattern a line comment put on a line of its own (#617).
     /// </summary>
-    HeldIfGroupBreaks = 16384
+    HeldIfGroupBreaks = 16384,
+
+    /// <summary>
+    ///     ⚠ A spent scope that counts only on a line a scope outside it opened on too, where the one-level-per-line
+    ///     collapse would otherwise leave the line's constructs a single level between them (#617): a parenthesised
+    ///     receiver's operator under <c>x =</c> sits a level past the dot the receiver broke before, and the same
+    ///     receiver as an argument on a line of its own takes no extra one. See <c>BreakPlan.ReceiverLiftOf</c>.
+    /// </summary>
+    CountsWithItsLine = 32768
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
@@ -1094,6 +1102,14 @@ public sealed class Document {
 ///     condition's line, as it does under the author's: <c>X when</c> / <c>Materialise&lt;…&gt;() =&gt; Handle(</c> /
 ///     the arguments two levels past the arm / <c>)</c> one level. Unlike the arrow's lift it lifts the body too.
 /// </param>
+/// <param name="KeptArgumentCallee">
+///     ⚠ An <c>=</c> before a call of one argument that the author put on a line of its own, <c>T v = F(</c> /
+///     <c>argument</c> / <c>);</c>: the callee's width, or zero. The <c>=</c> stays while the <c>(</c> fits, and the
+///     chop with it (fuzz 17150111611241313074). Asked about Skala's own first pass on 1 610 such chops behind
+///     <c>var</c>, typed, deconstructing and assigned heads at indents 8 and 12, the oracle kept every one. Skala
+///     read the value as having no callee once it spanned lines (<c>CalleeWidthOf</c>), left the <c>=</c> to the
+///     ordering rule, and broke it on 49 of them.
+/// </param>
 /// <param name="Continues">
 ///     ⚠ A block opening on the construct's first line nests from the construct's continuation line
 ///     once the group broke — the arms of a switch in a binary operator's first operand or in a
@@ -1559,6 +1575,12 @@ public sealed class Document {
 ///     <c>return</c>, <c>x =</c> and <c>var x =</c>: <c>return (string)(a + b…)</c> / <c>.Trim();</c> wherever that
 ///     <c>)</c> lands by column 120, and the parentheses break inside from 121, the cast's rule aside.
 /// </param>
+/// <param name="ParenReceiverTail">
+///     ⚠ With <see cref="ParenReceiver" />: the width from the last operator of the binary the parentheses hold
+///     through their <c>)</c>. A receiver too wide for its line breaks inside, and the dot breaks too when that
+///     last line, with the call, still overflows: <c>x = (a</c> / <c>&amp;&amp; b…)</c> / <c>.Trim();</c>, the
+///     operator a level past the dot (#617, <c>BreakPlan.ReceiverLiftOf</c>).
+/// </param>
 /// <param name="HeldCallRest">
 ///     ⚠ Under <c>wrap_if_long</c> (#552): the flat width of the chain after the held call, through its
 ///     <c>;</c>, or zero. Past the measured table's limit the held call still breaks before itself when
@@ -1753,6 +1775,7 @@ public readonly record struct GroupFacts(
     int ThroughWidth = 0,
     int HeldCall = 0,
     bool ParenReceiver = false,
+    int ParenReceiverTail = 0,
     int HeldCallHead = 0,
     int HeldCallRest = 0,
     int HeldCallLambdaRest = 0,
@@ -1863,6 +1886,7 @@ public readonly record struct GroupFacts(
     int CastParenFirst = 0,
     int ShortHeadTypeEnd = 0,
     int CalleeArgument = 0,
+    int KeptArgumentCallee = 0,
     int HeldValueTarget = 0);
 
 /// <summary>
