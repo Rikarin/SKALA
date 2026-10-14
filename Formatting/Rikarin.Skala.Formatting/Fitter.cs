@@ -2162,9 +2162,9 @@ public sealed class Fitter {
     ///         </item>
     ///         <item>
     ///             Past that, the <c>=</c> stays and the parentheses break inside only while
-    ///             <c>10·s + 4·min(first operand, 24) − 7·cast ≥ 1185</c> and the operator's line fits. The first operand
-    ///             stops counting at 24 columns: the oracle's boundary in the line stops moving there, for every
-    ///             head and cast measured.
+    ///             <c>10·s + 4·min(first operand, 24) − 7·cast ≥ 1185</c> and the operator's line fits. The first
+    ///             operand stops counting at 24 columns: the oracle's boundary in the line stops moving there, for
+    ///             every head and cast measured.
     ///         </item>
     ///     </list>
     ///     ⚠ The second boundary is a safe bound, not the oracle's: every row the oracle kept the <c>=</c> on lies
