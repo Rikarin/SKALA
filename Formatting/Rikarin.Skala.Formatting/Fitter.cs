@@ -353,11 +353,18 @@ public sealed class Fitter {
                 }
 
                 // ⚠ A `when` condition's outer type argument list: see GroupFacts.WhenOuterTail (#576).
-                if (facts.WhenOuterTail > 0 && m.FlatWidth < Unbounded && m.Trailing < Unbounded) {
-                    return !Fits(m.Column, m.FlatWidth, m.Trailing)
-                        && Fits(m.ContinuationColumn, facts.WhenOuterTail + 14)
-                            ? ResolvedMode.Broken
-                            : ResolvedMode.Flat;
+                // ⚠ The "stays" half is read off the planner's width, never off the measured one (fuzz
+                // 10815522948059258787 and 1019535202291160959): pass one kept the list and broke the inner one after
+                // its `<`; pass two, reading that break as the author's, measured this group as unbounded, skipped the
+                // rule and broke the list as well.
+                if (facts.WhenOuterTail > 0) {
+                    if (!Fits(m.ContinuationColumn, facts.WhenOuterTail + 14)) {
+                        return ResolvedMode.Flat;
+                    }
+
+                    if (m.FlatWidth < Unbounded && m.Trailing < Unbounded) {
+                        return Fits(m.Column, m.FlatWidth, m.Trailing) ? ResolvedMode.Flat : ResolvedMode.Broken;
+                    }
                 }
 
                 // ⚠ One argument the author put below the call's `(` keeps the `=` while the `(` fits (fuzz

@@ -11786,6 +11786,20 @@ bodies split differently at the same width. It is not modelled further.
   about 8 rows across the probes. Skala moves the body below.
 - **A chain body breaking at its dots** (`WTDD`), about 3 rows.
 
+⚠ **Fuzz 10815522948059258787 and 1019535202291160959: a regression from rule 2 above, fixed.** Both seeds come
+from `arm-when-condition-below.cs`, on `Materialise<List<bool>, IReadOnlyDictionary_w…<(int? First, TimeSpan Second),
+(…)>>()`.
+
+- Pass one kept the outer list, as rule 2 says, and broke the inner list after its `<`.
+- Pass two read that break as the author's. The outer group's measured flat width was then unbounded, the rule was
+  skipped, and the outer list broke too.
+- The "stays" half of the rule now reads the planner's width (`WhenOuterTail`), which a kept break cannot change.
+- Both seeds replay clean.
+- The grids above are unchanged by the fix: the 828-arm grid stays at 194, and the fresh probes at 25, 70 and 39.
+
+⚠ The oracle breaks *before* the inner `<` here (`…IReadOnlyDictionary_w…` / `<(int? First, …), …>>()`). Skala has no
+point there, so the row stays divergent but is now stable.
+
 ⚠ **Fuzz 16565442098129427039 (group C's run; pre-existing, fails identically on `adca899a`).** The arm was
 `{ Value.Length:` / `> 2, Kind: null } when` / `["ss", null] => …`. The `#region` in the generated file plays no part.
 
