@@ -8336,6 +8336,9 @@ public sealed class BreakPlan {
     ///     (<see cref="WideLambdaCallLocalOf" />); a field's single declarator of nine columns or fewer, which reads
     ///     the floor by its indent like any other (group B: round 2's fitted field shift was the indent);
     ///     and an assignment statement to a target of four to nine columns — one of three or fewer always chops.
+    ///     ⚠ Group B (#453): not the target — the head through the arrow. Round 6 measured `()` lambdas only, where a
+    ///     target of four is a twelve-column head. With `item` or `(a, b)` a one- to three-column target reads the
+    ///     floor once <c>target = params =&gt;</c> is twelve columns wide, and chops under it (3 794 cells).
     /// </remarks>
     InvocationExpressionSyntax? LocalLambdaCallOf(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
         body is InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 1 } call
@@ -8344,7 +8347,7 @@ public sealed class BreakPlan {
                 || WideLambdaCallLocalOf(equals, lambda) is not null,
             AssignmentExpressionSyntax {
                 RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax
-            } assignment => FormattedWidth(assignment.Left) >= 4,
+            } assignment => FormattedWidth(assignment.Left.GetFirstToken(), lambda.ArrowToken) >= 12,
             _ => false
         }
         && lambda.Modifiers.Count == 0
