@@ -526,7 +526,13 @@ public sealed class Fitter {
                     var end = m.FlatWidth >= Unbounded || m.Trailing >= Unbounded
                         ? int.MaxValue
                         : m.Column + m.FlatWidth + m.Trailing;
-                    return EqualsFloor.BreaksBeforeAPattern(facts.PatternHead, facts.PatternWidth, end)
+                    return EqualsFloor.BreaksBeforeAPattern(
+                            facts.PatternHead,
+                            facts.PatternWidth,
+                            end,
+                            facts.PatternFirstAlternative,
+                            lineStart
+                        )
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
                 }

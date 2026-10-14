@@ -1437,6 +1437,11 @@ public sealed class Document {
 ///     beside it, whatever <see cref="EqualsFloor.BreaksBeforeAPattern" /> says (Nightly
 ///     <c>fuzz --seed=7777</c>). Zero for any other group.
 /// </param>
+/// <param name="PatternFirstAlternative">
+///     With <see cref="PatternHead" />: the pattern's first alternative alone, <c>A</c> of <c>A or B</c>, which
+///     <see cref="EqualsFloor.BreaksBeforeAPattern" /> weighs beside the whole pattern for a head under twelve
+///     (#446 round 5). Zero for any other group.
+/// </param>
 /// <param name="ValueHeadFitsBelow">
 ///     With <see cref="ValueHeadWidth" />: the condition is a call, whose <c>=</c> breaks only when the
 ///     condition fits on the line below.
@@ -1714,6 +1719,7 @@ public readonly record struct GroupFacts(
     int OrHead = 0,
     bool OrLeftIsPattern = false,
     int PatternFirstWidth = 0,
+    int PatternFirstAlternative = 0,
     int ArmBodyTrail = 0,
     int LiftGroup = -1,
     bool LiftsIfArrowBreaks = false,

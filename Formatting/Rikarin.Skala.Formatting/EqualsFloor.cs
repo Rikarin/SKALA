@@ -559,9 +559,28 @@ public static class EqualsFloor {
     ///     head of 11, a pattern of 39, a line of 124 — keeps the pattern where both of its neighbours break
     ///     the <c>=</c>, and it is in the table as measured.
     /// </remarks>
-    public static bool BreaksBeforeAPattern(int head, int pattern, int end) {
+    /// <param name="first">The first alternative's width; zero keeps the per-head table below.</param>
+    /// <param name="indent">The statement's indent, read with <paramref name="first" />.</param>
+    /// <remarks>
+    ///     ⚠ #446 round 5 (SK-DIV-0211): heads of 5 to 11 swept against the pattern (10 to 49 columns, first
+    ///     alternatives of 5, 8 and 9), the line's end (118 to 137) and the indent (8 to 24), 64 260 cells. Under twelve
+    ///     the head breaks the <c>=</c> exactly while <c>10·pattern + 3·first − 2·end + 6·indent</c> stays within a
+    ///     limit per head — −31, 53, 116, 166, 207 and 241 for heads of 6 to 11 — and a head of five or less never
+    ///     does. The table below was this line read at one indent and one first alternative: it missed a column of
+    ///     pattern per two columns of indent. 55 080 of the 55 198 cells of heads 6 to 11; the table had 46 386.
+    /// </remarks>
+    public static bool BreaksBeforeAPattern(int head, int pattern, int end, int first = 0, int indent = 0) {
         if (head >= 12) {
             return pattern <= WidestPatternAfterAWideHead(head, end);
+        }
+
+        if (first > 0) {
+            if (head <= 5) {
+                return false;
+            }
+
+            ReadOnlySpan<int> limit = [-31, 53, 116, 166, 207, 241];
+            return 10 * pattern + 3 * first - 2 * end + 6 * indent <= limit[head - 6];
         }
 
         // Per head 8 … 11: the widest pattern that always breaks the `=`, then the line ends from which the
