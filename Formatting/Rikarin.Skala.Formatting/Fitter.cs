@@ -1658,9 +1658,10 @@ public sealed class Fitter {
                 return true;
             }
 
-            // ⚠ And only while the condition, flat on the line below, runs at most 13 columns past the margin, half a
-            // column more per column of body past five: wider, it fills beside the `when`.
-            if (tail < Unbounded && 2 * (m.ContinuationColumn + tail - width) > 26 + body - 5) {
+            // ⚠ And, before a body of fourteen columns or fewer, only while the condition, flat on the line below, runs
+            // at most 13 columns past the margin, half a column more per column of body past five: wider, it fills
+            // beside the `when`. Measured on bodies of four and eight; a wider body was always seen to break.
+            if (body <= 14 && tail < Unbounded && 2 * (m.ContinuationColumn + tail - width) > 26 + body - 5) {
                 return false;
             }
 
