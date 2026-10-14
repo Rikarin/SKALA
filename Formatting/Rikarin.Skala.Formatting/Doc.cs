@@ -641,6 +641,7 @@ public sealed class Document {
     readonly IReadOnlyDictionary<int, int> yieldEnds;
     readonly Dictionary<int, int> throughWidth;
     readonly Dictionary<int, int[]> alignedItems;
+    readonly Dictionary<int, int> secondHolds;
 
     internal Document(
         DocNode[] nodes,
@@ -660,7 +661,8 @@ public sealed class Document {
         GroupFacts[] facts,
         IReadOnlyDictionary<int, int> yieldEnds,
         Dictionary<int, int>? throughWidth = null,
-        Dictionary<int, int[]>? alignedItems = null
+        Dictionary<int, int[]>? alignedItems = null,
+        Dictionary<int, int>? secondHolds = null
     ) {
         Nodes = nodes;
         NodeCount = nodeCount;
@@ -680,7 +682,15 @@ public sealed class Document {
         this.yieldEnds = yieldEnds;
         this.throughWidth = throughWidth ?? [];
         this.alignedItems = alignedItems ?? [];
+        this.secondHolds = secondHolds ?? [];
     }
+
+    /// <summary>
+    ///     The second group a level held while <paramref name="group" /> stays flat is held against, or −1: the level is
+    ///     spent when either breaks (#618 — a sole lambda's broken type test stacks when its arguments break and when its
+    ///     arrow does).
+    /// </summary>
+    public int SecondHoldOf(int group) => secondHolds.TryGetValue(group, out var second) ? second : -1;
 
     public DocNode[] Nodes { get; }
 
@@ -1239,6 +1249,16 @@ public sealed class Document {
 ///     arrow breaks in exactly the 10 rows where <c>=&gt; builder</c> ends past 120, and the chain then keeps
 ///     <c>builder.Length(…)</c> together.
 /// </param>
+/// <param name="LambdaTestCall">
+///     ⚠ The arrow of a sole lambda argument whose whole body is a type test the author broke before its keyword, over
+///     a call of two or more arguments: the call's width, or zero for any other group (#618). Past the margin the arrow
+///     breaks when it ends twelve columns or more past the line's start and <c>6·k − 3·p + 5·h − 8·w − 6·i ≥ −658</c>
+///     — <c>k</c> the columns from the line's start to the outer call's <c>(</c>, <c>p</c> the lambda's head through
+///     <c>=&gt;</c> (<see cref="LambdaHead" />), <c>h</c> the inner call's head through its <c>(</c>
+///     (<see cref="LambdaTestCallHead" />), <c>w</c> this width, <c>i</c> the line's start. Otherwise the arrow stays
+///     and the arguments chop. A wider call, a narrower head or a longer parameter list keeps the arrow.
+/// </param>
+/// <param name="LambdaTestCallHead">With <see cref="LambdaTestCall" />: the inner call's head through its <c>(</c>.</param>
 /// <param name="LambdaChainHead">
 ///     ⚠ The arrow of a sole lambda argument whose body is a chain of calls: the width from the lambda's start
 ///     to its first call's dot, or zero for any other group (#571). Past the margin the arrow breaks for a
@@ -1693,6 +1713,8 @@ public readonly record struct GroupFacts(
     int OneOverType = 0,
     int OneOverBody = 0,
     int LambdaChainHead = 0,
+    int LambdaTestCall = 0,
+    int LambdaTestCallHead = 0,
     bool BreaksIfItOverflows = false,
     bool BreaksIfReceiverOverflows = false,
     bool HeldCallOnAPath = false,

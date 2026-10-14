@@ -43,6 +43,9 @@ public sealed class DocumentBuilder {
     /// <summary><see cref="Document.YieldEndOf" />, by node, for the groups that ask for it.</summary>
     readonly Dictionary<int, int> yieldEnds = [];
 
+    /// <summary><see cref="Document.SecondHoldOf" />, by the group a held level is first held against.</summary>
+    readonly Dictionary<int, int> secondHolds = [];
+
     /// <summary>
     ///     The groups that own at least one break point.
     /// </summary>
@@ -448,6 +451,12 @@ public sealed class DocumentBuilder {
 
     public void OpenConcat() => Open(DocKind.Concat, 0, 0);
 
+    /// <summary>
+    ///     A level held while <paramref name="group" /> stays flat is also spent when <paramref name="second" /> breaks.
+    ///     See <see cref="Document.SecondHoldOf" />.
+    /// </summary>
+    public void HoldAlsoAgainst(int group, int second) => secondHolds[group] = second;
+
     /// <summary>Opens an <see cref="DocKind.IfBroken" /> over a group; its two children are Then and Else.</summary>
     public void OpenIfBroken(int groupId) => Open(DocKind.IfBroken, groupId, 0);
 
@@ -728,7 +737,8 @@ public sealed class DocumentBuilder {
             [..facts],
             yieldEnds,
             throughWidth,
-            alignedItems
+            alignedItems,
+            secondHolds
         );
     }
 

@@ -437,7 +437,9 @@ public sealed class LayoutWriter {
         // ⚠ A named group's: a sole lambda's arrow, resolved before the body it encloses (#566).
         if ((conditions & IndentFlags.HeldWhileGroupFlat) != 0
             && chainGroup >= 0
-            && fitter.ModeOf(chainGroup) == ResolvedMode.Broken) {
+            && (fitter.ModeOf(chainGroup) == ResolvedMode.Broken
+                || document.SecondHoldOf(chainGroup) is >= 0 and var second
+                && fitter.ModeOf(second) == ResolvedMode.Broken)) {
             return kind;
         }
 

@@ -1429,6 +1429,9 @@ public sealed partial class CSharpDocumentBuilder {
             && plan.ArrowHeldAgainst(planned.Id) is >= 0 and var arrow) {
             conditions |= IndentFlags.HeldWhileGroupFlat;
             chain = arrow;
+            if (plan.TestArrowHeldAgainst(planned.Id) is >= 0 and var testArrow) {
+                doc.HoldAlsoAgainst(arrow, testArrow);
+            }
         }
 
         if (level == 0 && conditions != IndentFlags.None) {

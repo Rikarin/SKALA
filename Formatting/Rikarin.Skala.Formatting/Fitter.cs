@@ -767,6 +767,11 @@ public sealed class Fitter {
                         : ResolvedMode.Flat;
                 }
 
+                // ⚠ A sole lambda argument over a broken type test of a call (#618). See GroupFacts.LambdaTestCall.
+                if (facts.LambdaTestCall > 0) {
+                    return BreaksTheTestArrow(facts, m.Column, lineStart) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                }
+
                 // ⚠ A sole lambda argument over a chain of calls (#571). See GroupFacts.LambdaChainHead.
                 if (facts.LambdaChainHead > 0) {
                     var start = m.Column - facts.LambdaHead;
@@ -1207,6 +1212,26 @@ public sealed class Fitter {
         // `[NotNullIfNotNull(`, parameters of 12 to 24 columns, indents 8, 12 and 20 — with round four's `[A(` and
         // `[Description(` rows.
         return SectionChops(facts, lineStart) ? ResolvedMode.Broken : ResolvedMode.Flat;
+    }
+
+    /// <summary>
+    ///     Whether a sole lambda's arrow breaks over a type test of a call, the arrow ending at
+    ///     <paramref name="arrowEnd" /> on a line starting at <paramref name="lineStart" /> (#618). See
+    ///     <see cref="GroupFacts.LambdaTestCall" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c> on 1 482 members — callees of 1 to 24 columns, seven parameter
+    ///     lists, call heads of 5 to 60 columns, two to five arguments, calls of 92 to 118 columns, indents 8 and 16 —
+    ///     20 apart; and on a probe written after it (480 members: five statement kinds, six heads, six parameter lists,
+    ///     four tests, indents 8, 12 and 20), 15 apart where the arrow had been kept in all 138 the oracle breaks.
+    /// </remarks>
+    bool BreaksTheTestArrow(in GroupFacts facts, int arrowEnd, int lineStart) {
+        var parameters = facts.LambdaHead;
+        var callee = arrowEnd - 1 - parameters - lineStart;
+        return arrowEnd + 1 + facts.LambdaTestCall > width
+            && callee + parameters >= 11
+            && 6 * callee - 3 * parameters + 5 * facts.LambdaTestCallHead - 8 * facts.LambdaTestCall - 6 * lineStart
+            >= -658;
     }
 
     /// <summary>

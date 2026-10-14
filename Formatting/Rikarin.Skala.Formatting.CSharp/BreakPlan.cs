@@ -5028,6 +5028,14 @@ public sealed class BreakPlan {
     /// </summary>
     void SettleTypeTestHolds() {
         foreach (var (group, operand) in pendingTypeTestHolds) {
+            // ⚠ Under an arrow the measured rule may break (#618), the operand then starts its own line and the test
+            // stacks on it: `Use(x =>` / `call(a, b)` / `is T` a level past the call.
+            if (operand.Parent is { Parent: LambdaExpressionSyntax lambda } test
+                && TestedCallOfASoleLambda(lambda, (ExpressionSyntax)test) is not null
+                && arrowGroups.TryGetValue(Key(lambda), out var arrow)) {
+                testArrowHolds[group] = arrow;
+            }
+
             // ⚠ The operand's chain where it has one: its links breaking stack the level as its arguments do
             // (#602, group C's probe — `ctx.Get()` / `.Value` / `is T`).
             if (chainGroups.TryGetValue(Key(operand), out var chain)) {
@@ -7583,6 +7591,15 @@ public sealed class BreakPlan {
     /// <summary>The arrow group a <see cref="HeldLevel.WhileArrowFlat" /> hold is decided by, or -1.</summary>
     public int ArrowHeldAgainst(int group) => arrowHeldAgainst.TryGetValue(group, out var arrow) ? arrow : -1;
 
+    /// <summary>
+    ///     For a sole lambda's broken type test held while its operand stays flat, the lambda's arrow group, which spends
+    ///     the level too when it breaks (#618); −1 otherwise.
+    /// </summary>
+    public int TestArrowHeldAgainst(int group) => testArrowHolds.TryGetValue(group, out var arrow) ? arrow : -1;
+
+    /// <summary>See <see cref="TestArrowHeldAgainst" />.</summary>
+    readonly Dictionary<int, int> testArrowHolds = [];
+
     /// <summary>The group <see cref="PlanChainedCalls" /> opened over the chain rooted at this key, or -1.</summary>
     int ChainGroupOf(long root) => chainGroups.TryGetValue(root, out var group) ? group : -1;
 
@@ -8126,6 +8143,13 @@ public sealed class BreakPlan {
             // with no ordering question asked.
             ArrowWinsOverTheChain(lambda)
                 ? new GroupFacts(BreaksIfTooLong: true)
+                : TestedCallOfASoleLambda(lambda, body) is { } testedCall
+                    ? new GroupFacts(
+                        BreaksIfTooLong: true,
+                        LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+                        LambdaTestCall: FormattedWidth(testedCall),
+                        LambdaTestCallHead: FormattedWidth(testedCall.GetFirstToken(), testedCall.ArgumentList.OpenParenToken)
+                    )
                 : IsAFilledSoleLambda(lambda, body)
                     ? new GroupFacts(
                         BreaksIfTooLong: true,
@@ -8442,6 +8466,27 @@ public sealed class BreakPlan {
             } assignment when FormattedWidth(assignment.Left) >= 10 => (FormattedWidth(assignment.Left), 0, 2),
             _ => null
         };
+    }
+
+    /// <summary>
+    ///     The call a sole lambda's whole body tests, where that body is a type test the author broke before its
+    ///     keyword — <c>Use(x =&gt; call(a, b)</c> / <c>is T)</c> — and the call has two or more arguments and nothing
+    ///     after its <c>)</c>; null otherwise. Its arrow is decided by <see cref="GroupFacts.LambdaTestCall" /> (#618).
+    /// </summary>
+    InvocationExpressionSyntax? TestedCallOfASoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) {
+        if (!options.PlaceSingleMethodArgumentLambdaOnSameLine || !IsTheBodyOfASoleLambda(body)) {
+            return null;
+        }
+
+        var (operand, keyword) = body switch {
+            BinaryExpressionSyntax binary when IsTypeTest(binary) => (binary.Left, binary.OperatorToken),
+            IsPatternExpressionSyntax { Pattern: not BinaryPatternSyntax } test => (test.Expression, test.IsKeyword),
+            _ => (null, default)
+        };
+
+        return operand is InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 2 } call && BreaksBefore(keyword)
+            ? call
+            : null;
     }
 
     /// <summary>
