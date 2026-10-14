@@ -11393,6 +11393,42 @@ narrowest heads at a 119-column line.
   #609, pinned by `WhenGapAndCastParenIssue609Tests` and both seeds in `FuzzRegressionTests`. **Open** for the
   body's nesting under a `when` Skala breaks itself, and for the arrow's read-through cells.
 
+⚠ **#576 round 5 (2026-10-14, group D): the body under a `when` Skala breaks itself.** The grids were gone, so they
+were rebuilt from scripts. The 600-arm grid reproduces the recorded 12 exactly.
+
+The rule: whenever the planned gap after the `when` breaks, the oracle nests what opens after the arrow from the
+condition's line. That covers a call's arguments, a creation's arguments and a query's clauses: `X when` /
+`Materialise<…>() => Handle(` / the arguments two levels past the arm / `)` one level, and `=> (from item in items`
+/ `where` two levels. It holds with and without braces in the pattern, at indents 8, 12 and 16. Skala nested them
+from the arm.
+
+The arm now opens a lift at its pattern (`GroupFacts.LiftsIfWhenBreaks`). The writer decides the lift ahead, as it
+does the arrow's lift, and breaks it exactly when the `when` gap broke. Unlike the arrow's lift, it also lifts the
+body. An author's kept break there lifts outright, which is how pass two reads pass one. #601's kept-break lift
+still stays off for a planned gap, because this group covers it.
+
+Diverging rows (none non-idempotent before or after; no row regressed):
+
+| Grid | Rows | Master | Branch |
+|---|---|---|---|
+| 600-arm (`when` ending 33–72, line below 105–119, body `1`) | 600 | 12 | 12 |
+| heads 21–65 × four line widths × four bodies | 192 | 4 | 4 |
+| five pattern heads × conditions 52–106 × four bodies | 200 | 19 | 12 |
+| fresh, eight heads, six bodies (seed 57601) | 300 | 60 | 31 |
+| **fresh**, built after the rule, other heads and bodies (seed 57602) | 300 | 83 | 61 |
+
+⚠ Still open, all outside this rule:
+
+- **The arrow's read-through cells.** The 600-arm and 192-arm grids are unchanged.
+- **A type argument list broken after `<int,` rather than after `<List<bool>,`.** The oracle writes
+  `Materialise<List<bool>, IReadOnlyDictionary<int,` / `Ttt…>>()` once the condition is that wide; Skala keeps
+  breaking after the first argument.
+- **A body on the arrow's line rather than below it.** Before a query or a call, the oracle keeps the body on the
+  arrow's line and breaks inside it (`>>() => (from item in items`), where Skala moves the body below.
+- **A chain body.** `v….Where(…)` / `.Select(…)` breaks at its dots in the oracle.
+
+The 108-row and 162-row grids of round 4 were not rebuilt one for one. Their shapes are inside the five grids above.
+
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
 ⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as
@@ -12561,9 +12597,69 @@ The 4 left are the fit's misses, 3 of them rows the old code had right.
 `return` and a typed local, measured on 504 rows. The oracle breaks before the first dot, the `=`, or both by
 width. 149 rows diverge before and after. Still **open**, and so is `((…))`.
 
+⚠ **Round 5 (2026-10-14, group D): the chain under a cast.** The 504-row grid was gone, so it was rebuilt from
+scripts. Every grid was measured with `Testing ask` on master `adca899a` and on the branch. Every rule was then
+checked on a seeded random probe it was not fitted on.
+
+- **The cast was a wall.** Without the cast, `var x = (a + b…).Trim();` and `x = (…).Trim();` already went through
+  #528's held single call (`PlanHeldSingleCall`). The cast stopped that, so the parentheses always broke inside. The
+  oracle lays out `(T)(a + b…).M()` exactly as it lays out the same value without the cast
+  (`CastOverAParenthesisedCall`).
+- **The dot.** For a call with no arguments on a parenthesised operator, the dot breaks exactly when the line
+  overflows and the receiver through its `)` fits on the line (`GroupFacts.ParenReceiver`). This holds behind
+  `return` too, which had no point there at all (`PlanReturnedParenthesisedCall`). It also fixes `x = (a + b…).M();`
+  at 122 columns, which Skala had left flat past the margin.
+- **The `=` behind a head under twelve columns.** While the receiver fits beside it, the `=` breaks only on a line
+  two or three columns over (`GroupFacts.HeldValueParen`). That held for `var x =` and `this.x =`, casts of 0 to 31
+  columns, and `.M()`, `.Trim()` and `.ToUpperInvariant()`. Past the margin, a cast keeps the `=` unless the
+  receiver ends on column 121 (`GroupFacts.HeldValueCast`): 15 of 15 rows there broke the `=`, and 0 of 92 past it
+  did.
+- ⚠ **The level.** Behind a parenthesised receiver, the dot's level is now spent only when nothing else spends
+  one, as a chain's parenthesised head does (SK-DIV-0112). Pass one had written `var x =` / `(…)` / `.Trim();`
+  with the dot a level too deep, and pass two put it back. On master that was 28 non-idempotent rows of the
+  1 520-row grid (uncast) and 19 of the 400-row fresh probe. Both are 0 now.
+- **A doubled parenthesis.** Its inner `)` landing on column 121 breaks the `=` too
+  (`GroupFacts.ParenCloseEndInner`).
+
+Diverging rows (non-idempotent rows in brackets):
+
+| Grid | Rows | Master | Branch |
+|---|---|---|---|
+| owners × casts 0–31 × `.Trim()`/`.ToUpperInvariant()` × 118–136 | 1 520 | 821 [28] | 331 [0] |
+| short heads and `return` × casts × first operands 2–34 × 119–140 | 4 950 | 1 918 | 928 |
+| owners × 2 casts × odd widths | 432 | 325 | 103 |
+| **fresh**: random owners, casts, operators, calls, indents (seed 59801) | 240 | 111 [1] | 57 [1] |
+| **fresh**: random short heads, uncast and cast (seed 59803) | 400 | 227 [19] | 27 [0] |
+| `((…))` | 288 | 39 | 27 |
+| **fresh** `((…))` (seed 59802) | 200 | 10 | 7 |
+| typed locals × 6 casts × first operands 2–34 × 124–140 | 6 936 | 4 414 | 4 414 |
+
+No row regressed on any grid. The one non-idempotent row in the first fresh probe, `x = (T)(a && b…).Length;` at
+indent 16, is a property and not this shape. It is pre-existing and unchanged.
+
+⚠ Still open, measured but not wired:
+
+- **Typed locals, and `var` heads of twelve columns or more.** They are left on master's behaviour: the `=` stays
+  and the parentheses break inside. The oracle moves the value below when it fits (`E`), breaks the dot too when
+  only that fits (`D`), and keeps the `=` (`o`) in a triangle that grows with the first operand `a` and the line.
+  For `string value = (T)(a + b…).M();` the `o` boundary runs from 133 at `a = 8` to 127 at `a = 24`. It moves about
+  one column per cast column and does not move with the indent. It differs between `int[] items =` and
+  `List<int> s =`, which are the same width. No linear form in the line, `a`, the cast and the head separates it:
+  the best one misses 248 of 6 120 rows. On a 1 536-row typed grid, routing these heads through the held table fixed 804 rows but
+  regressed 531, and fixed about 800 rows behind `var valueeeeeeee =` but regressed 88. So it was not wired.
+- **The dot as well as the inside** (`x = (a` / `+ b…)` / `.M();`), when the receiver's last line still overflows
+  with the call. The oracle also nests the operator a level deeper then. Pass one cannot write that level: wired,
+  it was 108 non-idempotent rows on the 4 950-row grid. So it was taken out again.
+- **The cast's `)` under a call.** `return (IDictionary<int, string>)` / `(…).M();` on a line two or three over, or
+  with the operand's `)` on 121. `3·s − a ≥ 64` does not hold for this shape, and the rule stays off it.
+- **A doubled parenthesis behind a typed local.** It follows the same triangle. Treating `((a + b))` as `(a + b)` in
+  the collection rule fitted the 288-row grid (39 → 7) but regressed 9 rows of the fresh probe and made 3 of them
+  non-idempotent, so it was reverted.
+
 - status: **fixed** for the measured trigger, pinned by `ParenOnePastTheMarginIssue598Tests`, and for the cast's
-  `)`, pinned by `WhenGapAndCastParenIssue609Tests`. ⚠ The chain under a cast and the double parenthesis are
-  **open**.
+  `)`, pinned by `WhenGapAndCastParenIssue609Tests`. **Fixed** for the chain under a cast behind `return` and heads
+  under twelve columns, and for the inner `)` of `((…))`, pinned by `CastChainAndWhenLiftIssue598And576Tests`.
+  ⚠ **Open** for typed locals and wide heads (the `o` triangle), and for the dot breaking beside a broken receiver.
 
 ## SK-DIV-0451 — an assignment's held value behind a target that holds a call
 

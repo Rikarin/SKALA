@@ -360,6 +360,15 @@ public sealed class Fitter {
                     return ResolvedMode.Broken;
                 }
 
+                // ⚠ And so does a doubled parenthesis's inner `)` (#598). See GroupFacts.ParenCloseEndInner.
+                if (facts.ParenCloseEndInner > 0
+                    && m.PointWidth < Unbounded
+                    && m.FlatWidth < Unbounded
+                    && m.Column + m.PointWidth + 1 + facts.ParenCloseEndInner == width + 1
+                    && Fits(m.ContinuationColumn, facts.ParenCloseEnd)) {
+                    return ResolvedMode.Broken;
+                }
+
                 // ⚠ A local's `=` before an `is` over a positional pattern: broken whenever the line overflows
                 // (#559). See GroupFacts.BreaksIfTheLineOverflows.
                 // ⚠ Not over a pattern the author broke inside: `var q = o is P(1, 2` / `);` keeps its `=`.
@@ -575,6 +584,21 @@ public sealed class Fitter {
                 // ⚠ See GroupFacts.BreaksIfItOverflows: a receiver's own dots (#582).
                 if (facts.BreaksIfItOverflows) {
                     return Fits(m.Column, m.FlatWidth) ? ResolvedMode.Flat : ResolvedMode.Broken;
+                }
+
+                // ⚠ A single call on a parenthesised receiver: broken exactly when the line overflows and the
+                // receiver fits on it. See GroupFacts.ParenReceiver (#598).
+                // ⚠ The oracle breaks the dot too when the receiver's last line, broken inside, still overflows with
+                // the call — `x = (a` / `+ b…)` / `.M();` — and nests the operator a level deeper then, which pass one
+                // cannot give (open, SK-DIV-0491).
+                if (facts.ParenReceiver) {
+                    return m.FlatWidth < Unbounded
+                        && tail < Unbounded
+                        && m.Trailing < Unbounded
+                        && Fits(m.Column, m.FlatWidth - tail)
+                        && !Fits(m.Column, m.FlatWidth, m.Trailing)
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
                 }
 
                 // ⚠ Broken exactly when the receiver fits, the receiver with its call does not, and the
@@ -1748,7 +1772,16 @@ public sealed class Fitter {
                 // past the margin for the second pass to break once the arguments had chopped (Nightly fuzzer,
                 // seed 1, replay 7536332154113230584: idempotency).
                 if (valueColumn + facts.HeldValueReceiver > width) {
-                    return true;
+                    // ⚠ A cast over the call keeps the `=` unless the receiver ends one column past the margin
+                    // (#598). See GroupFacts.HeldValueCast.
+                    return !facts.HeldValueCast || valueColumn + facts.HeldValueReceiver == width + 1;
+                }
+
+                // ⚠ A parenthesised receiver that fits beside it: broken on a line two or three columns over
+                // (#598). See GroupFacts.HeldValueParen.
+                if (facts.HeldValueParen) {
+                    var end = valueColumn + facts.HeldValueWidth;
+                    return end == width + 2 || end == width + 3;
                 }
 
                 return facts.HeldValueManyArgs

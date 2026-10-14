@@ -1069,6 +1069,13 @@ public sealed class Document {
 ///     first and lifts after, so <c>} when (from …</c> chopped by the lift keeps the arrow's break even
 ///     though the body would now fit beside it.
 /// </param>
+/// <param name="LiftsIfWhenBreaks">
+///     ⚠ A switch arm's <see cref="Continues" /> group at its pattern that breaks exactly when the planned gap after
+///     the arm's <c>when</c> breaks for width (#576, SK-DIV-0399), decided ahead as
+///     <see cref="LiftsIfArrowBreaks" /> is. Under that break the oracle nests what opens after the arrow from the
+///     condition's line, as it does under the author's: <c>X when</c> / <c>Materialise&lt;…&gt;() =&gt; Handle(</c> /
+///     the arguments two levels past the arm / <c>)</c> one level. Unlike the arrow's lift it lifts the body too.
+/// </param>
 /// <param name="Continues">
 ///     ⚠ A block opening on the construct's first line nests from the construct's continuation line
 ///     once the group broke — the arms of a switch in a binary operator's first operand or in a
@@ -1452,6 +1459,20 @@ public sealed class Document {
 /// </param>
 /// <param name="HeldValueWidth">With <see cref="HeldValue" />: the value's flat width with its <c>;</c>.</param>
 /// <param name="HeldValueReceiver">With <see cref="HeldValue" />: the receiver's flat width.</param>
+/// <param name="HeldValueCast">
+///     ⚠ With <see cref="HeldValue" />: the value is a cast over the call, <c>(T)(a + b…).M()</c> (#598). Behind a
+///     head of fewer than twelve columns a receiver that runs past the margin beside the <c>=</c> keeps the
+///     <c>=</c> — the parentheses break inside — unless its <c>)</c> lands on column 121 exactly. Measured
+///     2026-10-14 with <c>Testing ask</c> behind <c>var x =</c> and <c>this.x =</c>: 15 of 15 rows at 121 break
+///     the <c>=</c>, 0 of 92 past it do. The same value without the cast breaks the <c>=</c> past it too.
+/// </param>
+/// <param name="HeldValueParen">
+///     ⚠ With <see cref="HeldValue" />: the call's receiver is parenthesised, <c>(a + b…).M()</c>, cast or not
+///     (#598). Behind a head of fewer than twelve columns, while the receiver fits beside the <c>=</c>, the
+///     <c>=</c> breaks exactly when the line overflows by two or three columns, and the dot takes the break
+///     otherwise. Measured 2026-10-14 with <c>Testing ask</c> behind <c>var x =</c> and <c>this.x =</c>, casts of
+///     0 to 31 columns, calls <c>.M()</c>, <c>.Trim()</c> and <c>.ToUpperInvariant()</c>.
+/// </param>
 /// <param name="HeldValueHead">With <see cref="HeldValue" />: the width from the dot through the <c>(</c>.</param>
 /// <param name="ArmHead">
 ///     ⚠ A switch arm's member-access pattern (#531, SK-DIV-0330): the pattern's flat width, with
@@ -1474,6 +1495,13 @@ public sealed class Document {
 ///     continuation line. A receiver that does not fit flat breaks inside itself and leaves the point alone.
 ///     1 and 2 are a chain's first call with one argument and with more; 3 and 4 a single call that is a
 ///     whole <c>=</c> value (<see cref="HeldValue" />) with one argument and with more.
+/// </param>
+/// <param name="ParenReceiver">
+///     ⚠ A single call on a parenthesised receiver, cast or not, as the whole value of an <c>=</c> or a <c>return</c>
+///     (#598, SK-DIV-0491): the point before its dot breaks exactly when the line overflows and the receiver,
+///     through its <c>)</c>, fits on it. Measured 2026-10-14 with <c>Testing ask</c> on <c>(T)(a + b…).M()</c> behind
+///     <c>return</c>, <c>x =</c> and <c>var x =</c>: <c>return (string)(a + b…)</c> / <c>.Trim();</c> wherever that
+///     <c>)</c> lands by column 120, and the parentheses break inside from 121, the cast's rule aside.
 /// </param>
 /// <param name="HeldCallRest">
 ///     ⚠ Under <c>wrap_if_long</c> (#552): the flat width of the chain after the held call, through its
@@ -1560,6 +1588,11 @@ public sealed class Document {
 ///     access or a binary operand (#598): the width from the value's first token through that expression's
 ///     <c>)</c>, or zero. Where the <c>)</c> lands exactly one column past the margin the oracle breaks the
 ///     <c>=</c> whenever the value then fits below, and breaks inside the parentheses at every other width.
+/// </param>
+/// <param name="ParenCloseEndInner">
+///     ⚠ With <see cref="ParenCloseEnd" />: for a value that opens with a doubled parenthesis, <c>((a + b…))</c>, the
+///     width through the inner <c>)</c>, or zero. Its landing on column 121 breaks the <c>=</c> too (#598): measured
+///     2026-10-14 with <c>Testing ask</c>, <c>var x = ((a + b…));</c> breaks at 122 and 123 columns and nowhere else.
 /// </param>
 /// <param name="TailSpare">
 ///     ⚠ Columns a <see cref="BreaksOnlyIfTailFits" /> group's tail must leave free on the continuation line, kept
@@ -1653,6 +1686,7 @@ public readonly record struct GroupFacts(
     EqualsOwner CalleeOwner = EqualsOwner.None,
     int ThroughWidth = 0,
     int HeldCall = 0,
+    bool ParenReceiver = false,
     int HeldCallHead = 0,
     int HeldCallRest = 0,
     bool ContinuesIfItBreaks = false,
@@ -1663,6 +1697,8 @@ public readonly record struct GroupFacts(
     int HeldValue = 0,
     int HeldValueWidth = 0,
     int HeldValueReceiver = 0,
+    bool HeldValueCast = false,
+    bool HeldValueParen = false,
     int HeldValueHead = 0,
     bool HeldValueManyArgs = false,
     int HeldValueTypedHead = 0,
@@ -1717,6 +1753,7 @@ public readonly record struct GroupFacts(
     int ArmBodyTrail = 0,
     int LiftGroup = -1,
     bool LiftsIfArrowBreaks = false,
+    bool LiftsIfWhenBreaks = false,
     bool DraftsBroken = false,
     int ArmCast = 0,
     bool BreaksIfTheLineOverflows = false,
@@ -1739,6 +1776,7 @@ public readonly record struct GroupFacts(
     int ArmOneOverHead = 0,
     bool SectionSingle = false,
     int ParenCloseEnd = 0,
+    int ParenCloseEndInner = 0,
     int TailSpare = 0,
     bool WhenTable = false,
     bool WhenAtom = false,
