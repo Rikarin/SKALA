@@ -443,7 +443,8 @@ public sealed class Fitter {
                         && m.Trailing < Unbounded
                         && m.Column + m.FlatWidth + m.Trailing == width + 1
                         && facts.OneOverCallType >= EqualsFloor.TypeNameOneOverType(facts.OneOverCallName)
-                        && facts.OneOverCallArguments <= 35 + (facts.OneOverCallType - 32) / 12) {
+                        && (facts.OneOverCallSingle
+                            || facts.OneOverCallArguments <= 35 + (facts.OneOverCallType - 32) / 12)) {
                         return ResolvedMode.Broken;
                     }
                 }
@@ -496,11 +497,12 @@ public sealed class Fitter {
                     if (facts.EqualsLambdaIsLocal && paren + facts.EqualsLambdaArguments == width + 1) {
                         return facts.EqualsLambdaType < EqualsFloor.TypeNameOneOverType(facts.EqualsLambdaName)
                             && facts.EqualsLambdaType <= 8 * (facts.EqualsLambdaName - 10) + 14
-                            && paren
-                            >= equalsEnd
-                            + 36
-                            - 1.6 * (facts.EqualsLambdaName - 11)
-                            + 0.25 * (facts.EqualsLambdaType - 14)
+                            && (facts.EqualsLambdaSingle
+                                || paren
+                                >= equalsEnd
+                                + 36
+                                - 1.6 * (facts.EqualsLambdaName - 11)
+                                + 0.25 * (facts.EqualsLambdaType - 14))
                                 ? ResolvedMode.Broken
                                 : ResolvedMode.Flat;
                     }
