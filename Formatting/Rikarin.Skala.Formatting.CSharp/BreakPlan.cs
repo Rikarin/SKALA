@@ -8585,7 +8585,12 @@ public sealed class BreakPlan {
             return (null, default, 0);
         }
 
-        if (body is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 1 } single) {
+        // ⚠ Not over a nested lambda (`() => DotNetTest(settings => settings` / `.Set…`), #585's two levels, which the
+        // probe never held: measured on identifiers and calls only.
+        // ⚠ And a call of its own, not the last link of a chain (`settings.A(x).B(y)`).
+        if (body is InvocationExpressionSyntax { ArgumentList.Arguments: [var argument] } single
+            && !single.Expression.DescendantNodesAndSelf().Any(static node => node is InvocationExpressionSyntax)
+            && !argument.Expression.DescendantNodesAndSelf().Any(static node => node is AnonymousFunctionExpressionSyntax)) {
             return (body, LambdaBodyKind.OneArgumentCall,
                 FormattedWidth(single.GetFirstToken(), single.ArgumentList.OpenParenToken));
         }
