@@ -11729,6 +11729,72 @@ Diverging rows (none non-idempotent before or after; no row regressed):
 
 The 108-row and 162-row grids of round 4 were not rebuilt one for one. Their shapes are inside the five grids above.
 
+⚠ **#576 round 6 (2026-10-14, group D): two of the arrow's read-through families.** The arm under study is a
+pattern with no break point of its own, `when Materialise<List<bool>, IReadOnlyDictionary<int, T…>>()`, and a body.
+Measured with `Testing ask` on a new 828-arm grid:
+- six heads;
+- conditions of 52 to 118 columns;
+- bodies `1`, `"ss"` and `Short.Value12`;
+- indents 8 and 16.
+
+**1. The head no longer reads a short body through.** Behind such a condition the oracle never treats a short body
+as part of the head:
+- While the condition fits beside the `when`, it keeps the type arguments whole.
+- It breaks after the arrow while the line through `=>` fits, and before the arrow after that.
+
+Skala read the one-column body through and filled the type arguments at their first comma. Past 96 columns of
+condition the old behaviour is kept. Such a condition cannot fit beside the `when` of an arm indented eight or more,
+and where it does not fit below either, the oracle fills with the short body beside the arrow: the read-through's
+answer. No region-one cell lay past 94 columns and no region-three cell short of 109.
+(`BreakPlan.ArmWhenHoldsOnlyTypeArguments`, `WhenReadThroughLimit`, set through `GroupFacts.PositionalHead`.)
+
+**2. Where the type arguments break.** The outermost list breaks after its first comma (`L`) only while the second
+line it leaves fits with twelve columns to spare: the list's second argument through `>`, plus `()`. Otherwise the
+list stays and the inner list fills after `<int,` (`T`). Skala always broke the outer list. (`GroupFacts.WhenOuterTail`.)
+
+Diverging rows, the branch's start `9e9f4097` → now (no row non-idempotent before or after):
+
+| Grid | Rows | Before | After |
+|---|---|---|---|
+| 828-arm short-body grid | 828 | 318 | 194 |
+| 600-arm grid | 600 | 12 | 2 |
+| 192-arm grid | 192 | 4 | 0 |
+| 200-arm grid | 200 | 12 | 11 |
+| fresh (seed 57601) | 300 | 31 | 25 |
+| fresh (seed 57602) | 300 | 61 | 39 |
+| **fresh** (seed 57603, built after rule 1) | 400 | 110 | 70 |
+| **fresh** (seed 57604, built after both rules; six other generic conditions) | 400 | 68 | 25 |
+
+Only one row regressed, in the last probe:
+
+```
+var v when Pick<int,
+    Func<string, T…69>>() => Value,
+```
+
+The oracle breaks after `int,` there, with a second line of 120 columns that rule 2 puts past the spare. So the
+spare is not the whole rule. Where `L` and `T` meet, it depends on more than the line left below: `1` and `Value`
+bodies split differently at the same width. It is not modelled further.
+
+⚠ Still open (the remaining 194 + 25 + 39 + 70 rows), all measured and none wired:
+- **The `when` gap and the type-argument break interleave.** `WL` against `WT` and `LB` against `WLB` make up most
+  of what is left. The round-4 table (`25·t + 6·h ≤ 3191`) was fitted on body `1`. For `"ss"` and member-access
+  bodies the oracle keeps breaking after the `when` where the table stops.
+- **A member-access body's own dot.** `=> Short` / `.Value12` (`D`) is taken before the arrow at the narrowest
+  conditions. Skala breaks the arrow.
+- **A query or call body kept on the arrow's line.** `=> (from item in items` / `where …`, wrapping inside it,
+  about 8 rows across the probes. Skala moves the body below.
+- **A chain body breaking at its dots** (`WTDD`), about 3 rows.
+
+⚠ **Fuzz 16565442098129427039 (group C's run; pre-existing, fails identically on `adca899a`).** The arm was
+`{ Value.Length:` / `> 2, Kind: null } when` / `["ss", null] => …`. The `#region` in the generated file plays no part.
+
+- Skala joined the author's break between the `when` and a collection expression. A collection is no planned `when`
+  gap, so nothing kept the break.
+- Pass one still lifted the braces for that kept break (#601). Pass two found no break and put them back: four edits.
+- The oracle keeps the break, with and without braces on several lines. It is kept now.
+- Pinned by `WhenBeforeACollectionTests` and the seed in `FuzzRegressionTests`.
+
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
 ⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as

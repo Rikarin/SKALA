@@ -2604,10 +2604,41 @@ public sealed class BreakPlan {
                 // comes back as `var created =\n new Dictionary<A, B>();` with the list whole, and
                 // arming the list by its own width filled it on the first line instead; a list that
                 // still overflows after the `=` break is filled on the second line.
-                MeasuresHead: node is TypeParameterListSyntax
+                MeasuresHead: node is TypeParameterListSyntax,
+                // ⚠ The outermost type argument list of an arm's `when` condition breaks after its first comma only
+                // while the rest of the list, with `()`, fits on the line below with twelve columns to spare; past that
+                // the list stays and the inner list fills (#576). See GroupFacts.WhenOuterTail.
+                WhenOuterTail: IsAWhenConditionsOuterTypeArguments(node) && node is TypeArgumentListSyntax outer
+                    ? FormattedWidth(outer.Arguments[1].GetFirstToken(), outer.GreaterThanToken)
+                    : 0
             )
         );
     }
+
+    /// <summary>
+    ///     Whether a type argument list is the outermost one of an arm's <c>when</c> condition whose gap is planned
+    ///     (#576, SK-DIV-0399).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c> on
+    ///     <c>
+    ///         when Materialise&lt;List&lt;bool&gt;,
+    ///         IReadOnlyDictionary&lt;int, T…&gt;&gt;()
+    ///     </c>
+    ///     behind short bodies: the oracle breaks after <c>List&lt;bool&gt;,</c> while the line it leaves below,
+    ///     through <c>()</c>, is 108 columns or less, and after <c>&lt;int,</c> beyond that. Skala broke the outer
+    ///     list wherever it overflowed. The boundary is not the whole rule: by the line through the arm's comma, `1`
+    ///     and `Value` bodies part at different widths (SK-DIV-0399).
+    /// </remarks>
+    static bool IsAWhenConditionsOuterTypeArguments(SyntaxNode node) =>
+        node is TypeArgumentListSyntax { Arguments.Count: > 1 } list
+        && list.Arguments.Skip(1)
+            .Any(static argument => argument.DescendantNodes().OfType<TypeArgumentListSyntax>().Any())
+        && !list.Ancestors()
+            .TakeWhile(static ancestor => ancestor is not WhenClauseSyntax)
+            .Any(static ancestor => ancestor is TypeArgumentListSyntax)
+        && list.Ancestors().OfType<WhenClauseSyntax>().FirstOrDefault() is { } when
+        && IsAPlannedWhenGap(when);
 
     /// <summary>
     ///     The <c>where</c> clauses of a generic declaration:
@@ -5017,6 +5048,34 @@ public sealed class BreakPlan {
             )
         );
     }
+
+    /// <summary>
+    ///     Whether an arm's <c>when</c> condition breaks only at type argument lists, with a pattern of no break point
+    ///     of its own: the head never reads a short body through (#576, SK-DIV-0399).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c>: <c>T… when Materialise&lt;…&gt;() =&gt; 1,</c> with the condition
+    ///     fitting beside the <c>when</c> breaks after the arrow while the line through it fits and before it after
+    ///     that, where Skala, reading the one-column body through, filled the type arguments.
+    /// </remarks>
+    /// <summary>
+    ///     ⚠ The widest such condition the head stops reading the body through for. Wider, the condition cannot fit
+    ///     beside the <c>when</c> of an arm indented eight columns or more, and where it does not fit below either the
+    ///     oracle fills its type arguments with the short body still beside the arrow, the read-through's answer.
+    ///     Measured on 828 arms: no region-one cell lies past 94 columns and no region-three cell short of 109.
+    /// </summary>
+    const int WhenReadThroughLimit = 96;
+
+    static bool ArmWhenHoldsOnlyTypeArguments(SwitchExpressionArmSyntax arm) =>
+        arm.WhenClause is { } when
+        && IsAPlannedWhenGap(when)
+        && when.Condition.DescendantNodes().Any(static node => node is TypeArgumentListSyntax)
+        && !arm.Pattern.DescendantNodesAndSelf()
+            .Any(static node => node is PropertyPatternClauseSyntax
+                or ListPatternSyntax
+                or PositionalPatternClauseSyntax
+                or BinaryPatternSyntax
+            );
 
     /// <summary>
     ///     Whether the gap after an arm's <c>when</c> is planned (#576): a condition whose only break points, if
@@ -8580,6 +8639,8 @@ public sealed class BreakPlan {
                     WhenClause: null,
                     Pattern: RecursivePatternSyntax { PositionalPatternClause: not null, PropertyPatternClause: null }
                 }
+                || ArmWhenHoldsOnlyTypeArguments(arm)
+                && FormattedWidth(arm.WhenClause!.Condition) <= WhenReadThroughLimit
             )
         );
     }
@@ -9212,6 +9273,17 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         Point(keyword, group);
+
+        // ⚠ A break the author kept between an arm's `when` and a collection expression stays (fuzz
+        // 16565442098129427039): `{ … } when` / `["ss", null] => …` comes back from the oracle as written, the
+        // braces lifted as for any kept break after the `when` (#601). Skala joined it, so pass one lifted the
+        // braces over a `when [` line and pass two, finding no break to lift for, put them back.
+        if (node.Parent is SwitchExpressionArmSyntax
+            && node.Condition is CollectionExpressionSyntax
+            && options.KeepsUserBreaksBetweenItems
+            && BreaksBefore(FirstToken(node.Condition))) {
+            Mandatory(FirstToken(node.Condition));
+        }
 
         // ⚠ And the gap after an arm's `when`, by the collection `=`'s rule (#576): the condition moves
         // below the `when`, one level past the arm, exactly when it fits there flat and not beside it —
