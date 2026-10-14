@@ -3947,19 +3947,26 @@ public sealed class BreakPlan {
         root is MemberAccessExpressionSyntax {
             RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
             Expression: IdentifierNameSyntax,
-            Parent: BinaryExpressionSyntax { Parent: ReturnStatementSyntax statement } binary
+            Parent: BinaryExpressionSyntax {
+                Parent: StatementSyntax statement and (ReturnStatementSyntax or YieldStatementSyntax {
+                    RawKind: (int)SyntaxKind.YieldReturnStatement
+                })
+            } binary
         } member
         && IsTypeTest(binary)
         && binary.Left == root
-        && !statement.SemicolonToken.IsMissing
+        && !SemicolonOf(statement).IsMissing
         && statement.DescendantTokens()
-            .All(token => token == member.OperatorToken || token == statement.ReturnKeyword || !BreaksBefore(token))
+            .All(token => token == member.OperatorToken || token == statement.GetFirstToken() || !BreaksBefore(token))
         && !statement.DescendantTrivia(statement.Span)
             .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
                 || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
             )
-            ? FormattedWidth(member.OperatorToken, statement.SemicolonToken)
+            ? FormattedWidth(member.OperatorToken, SemicolonOf(statement))
             : 0;
+
+    static SyntaxToken SemicolonOf(StatementSyntax statement) =>
+        statement is YieldStatementSyntax yield ? yield.SemicolonToken : ((ReturnStatementSyntax)statement).SemicolonToken;
 
     /// <summary>
     ///     <see cref="TypeTestTail" />'s facts, for the operand's fill and for the keyword's band in front of it:
@@ -3977,7 +3984,10 @@ public sealed class BreakPlan {
                 TypeTestReceiver = FormattedWidth(member.Expression),
                 TypeTestOperand = FormattedWidth(member),
                 TypeTestKeyword = binary.OperatorToken.Span.Length,
-                TypeTestType = FormattedWidth(binary.Right)
+                TypeTestType = FormattedWidth(binary.Right),
+                TypeTestHead = binary.Parent is YieldStatementSyntax yield
+                    ? FormattedWidth(yield.YieldKeyword, yield.ReturnOrBreakKeyword) + 1
+                    : 7
             },
             binary
         );

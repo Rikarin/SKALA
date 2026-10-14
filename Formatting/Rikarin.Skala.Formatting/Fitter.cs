@@ -1425,14 +1425,17 @@ public sealed class Fitter {
         }
 
         // ⚠ The tie, as two linear conditions over the keyword's line capped two columns short of the margin (#446
-        // round 8): the receiver against the type, and the dot's column against the type.
-        var capped = Math.Min(keywordEnd, width - 2);
-        var past = keywordEnd - capped;
+        // round 8): the receiver against the type, and the dot's column against the type. ⚠ Both read the line as if
+        // the head were `return`: under `yield return` the keyword's line and the dot's column count six columns
+        // short, so the head's width plays no part (#446 round 9).
+        var head = facts.TypeTestHead - 7;
+        var capped = Math.Min(keywordEnd - head, width - 2);
+        var past = keywordEnd - head - capped;
         var receiver = facts.TypeTestReceiver;
         var type = facts.TypeTestType;
         return receiver >= 5
             && 50 * (capped - width + 2) + 20 * receiver + lineStart - 35 * type >= 44
-            && 56 * (capped - width + 2) - past + column + receiver - 38 * type >= -450;
+            && 56 * (capped - width + 2) - past + column - head + receiver - 38 * type >= -450;
     }
 
     /// <summary>

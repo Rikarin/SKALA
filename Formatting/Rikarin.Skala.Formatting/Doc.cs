@@ -1670,6 +1670,10 @@ public sealed class Document {
 /// </param>
 /// <param name="TypeTestKeyword">With <see cref="TypeTestTail" />: the keyword's width, <c>is</c> or <c>as</c>.</param>
 /// <param name="TypeTestType">With <see cref="TypeTestTail" />: the type's width, without the <c>;</c>.</param>
+/// <param name="TypeTestHead">
+///     With <see cref="TypeTestTail" />: the statement's head through the space after it, 7 for <c>return</c> and 13
+///     for <c>yield return</c>. ⚠ The tie reads the line as if the head were <c>return</c> (#446 round 9).
+/// </param>
 /// <param name="PatternDotName">
 ///     ⚠ <c>operand is N.T</c>, whose right side the oracle reads as a constant pattern that is a member access (#621,
 ///     SK-DIV-0540): the width of <c>T</c>, on every group the type test plans, which then asks
@@ -1954,6 +1958,7 @@ public readonly record struct GroupFacts(
     int TypeTestOperand = 0,
     int TypeTestKeyword = 0,
     int TypeTestType = 0,
+    int TypeTestHead = 0,
     int PatternDotName = 0,
     int PatternDotQualifier = 0,
     int PatternDotOperand = 0,
