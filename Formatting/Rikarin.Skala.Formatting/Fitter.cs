@@ -1230,8 +1230,9 @@ public sealed class Fitter {
         var callee = arrowEnd - 1 - parameters - lineStart;
         return arrowEnd + 1 + facts.LambdaTestCall > width
             && callee + parameters >= 11
-            && 6 * callee - 3 * parameters + 5 * facts.LambdaTestCallHead - 8 * facts.LambdaTestCall - 6 * lineStart
-            >= -658;
+            && (facts.LambdaTestCallHead < 0
+                || 6 * callee - 3 * parameters + 5 * facts.LambdaTestCallHead - 8 * facts.LambdaTestCall - 6 * lineStart
+            >= -658);
     }
 
     /// <summary>

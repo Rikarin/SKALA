@@ -1258,7 +1258,11 @@ public sealed class Document {
 ///     (<see cref="LambdaTestCallHead" />), <c>w</c> this width, <c>i</c> the line's start. Otherwise the arrow stays
 ///     and the arguments chop. A wider call, a narrower head or a longer parameter list keeps the arrow.
 /// </param>
-/// <param name="LambdaTestCallHead">With <see cref="LambdaTestCall" />: the inner call's head through its <c>(</c>.</param>
+/// <param name="LambdaTestCallHead">
+///     With <see cref="LambdaTestCall" />: the inner call's head through its <c>(</c>; or −1 for any other operand on a
+///     call's spine — one argument or none, or links after the call — whose arrow breaks whenever the operand does not
+///     fit beside it and the arrow ends twelve columns or more past the line's start (#618).
+/// </param>
 /// <param name="LambdaChainHead">
 ///     ⚠ The arrow of a sole lambda argument whose body is a chain of calls: the width from the lambda's start
 ///     to its first call's dot, or zero for any other group (#571). Past the margin the arrow breaks for a

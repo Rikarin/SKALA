@@ -5031,7 +5031,7 @@ public sealed class BreakPlan {
             // ⚠ Under an arrow the measured rule may break (#618), the operand then starts its own line and the test
             // stacks on it: `Use(x =>` / `call(a, b)` / `is T` a level past the call.
             if (operand.Parent is { Parent: LambdaExpressionSyntax lambda } test
-                && TestedCallOfASoleLambda(lambda, (ExpressionSyntax)test) is not null
+                && BrokenTestedOperandOf(lambda, (ExpressionSyntax)test) is not null
                 && arrowGroups.TryGetValue(Key(lambda), out var arrow)) {
                 testArrowHolds[group] = arrow;
             }
@@ -5064,7 +5064,11 @@ public sealed class BreakPlan {
             IsPatternExpressionSyntax test when test.Expression == root && IsUnbreakablePattern(test.Pattern) =>
                 StacksItsLevel(test, test.IsKeyword),
             _ => false
-        };
+        }
+        // ⚠ And a sole lambda's broken test of a call with links after it (#618): `Run(x =>` / `call(…)` / `.Result`
+        // two levels past the call / `is T` one.
+        || root.Parent is ExpressionSyntax { Parent: LambdaExpressionSyntax lambda } body
+        && TestedOperandOfASoleLambda(lambda, body) == root;
 
     /// <summary>Whether a node is an operand of <c>&amp;&amp;</c> or <c>||</c>.</summary>
     static bool IsALogicalOperand(SyntaxNode node) =>
@@ -8150,6 +8154,13 @@ public sealed class BreakPlan {
                         LambdaTestCall: FormattedWidth(testedCall),
                         LambdaTestCallHead: FormattedWidth(testedCall.GetFirstToken(), testedCall.ArgumentList.OpenParenToken)
                     )
+                : TestedOperandOfASoleLambda(lambda, body) is { } testedOperand
+                    ? new GroupFacts(
+                        BreaksIfTooLong: true,
+                        LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+                        LambdaTestCall: FormattedWidth(testedOperand),
+                        LambdaTestCallHead: -1
+                    )
                 : IsAFilledSoleLambda(lambda, body)
                     ? new GroupFacts(
                         BreaksIfTooLong: true,
@@ -8473,7 +8484,36 @@ public sealed class BreakPlan {
     ///     keyword — <c>Use(x =&gt; call(a, b)</c> / <c>is T)</c> — and the call has two or more arguments and nothing
     ///     after its <c>)</c>; null otherwise. Its arrow is decided by <see cref="GroupFacts.LambdaTestCall" /> (#618).
     /// </summary>
-    InvocationExpressionSyntax? TestedCallOfASoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) {
+    InvocationExpressionSyntax? TestedCallOfASoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
+        BrokenTestedOperandOf(lambda, body) is InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 2 } call
+            ? call
+            : null;
+
+    /// <summary>
+    ///     The operand a sole lambda's broken type test tests where its last call has one argument or none, links after
+    ///     it or not (<c>Resolve(x.GetRoot())</c>, <c>ctx.Get()</c> / <c>.Value</c>); null otherwise. Its arrow breaks
+    ///     whenever the operand does not fit beside it and the arrow ends twelve columns or more past the line's start
+    ///     (#618, <see cref="GroupFacts.LambdaTestCallHead" /> −1).
+    /// </summary>
+    ExpressionSyntax? TestedOperandOfASoleLambda(LambdaExpressionSyntax lambda, ExpressionSyntax body) {
+        var operand = BrokenTestedOperandOf(lambda, body);
+        if (operand is null or InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 2 }) {
+            return null;
+        }
+
+        // ⚠ The last call on the spine with one argument or none: a call of two or more followed by links keeps the
+        // arrow for longer heads than this (group C's probes, `call(a, b, c).Symbol` behind `static x =>`), by a rule
+        // not found.
+        var spine = operand;
+        while (spine is MemberAccessExpressionSyntax access) {
+            spine = access.Expression;
+        }
+
+        return spine is InvocationExpressionSyntax { ArgumentList.Arguments.Count: <= 1 } ? operand : null;
+    }
+
+    /// <summary>The operand of a sole lambda's whole body that is a type test broken before its keyword, or null.</summary>
+    ExpressionSyntax? BrokenTestedOperandOf(LambdaExpressionSyntax lambda, ExpressionSyntax body) {
         if (!options.PlaceSingleMethodArgumentLambdaOnSameLine || !IsTheBodyOfASoleLambda(body)) {
             return null;
         }
@@ -8484,9 +8524,7 @@ public sealed class BreakPlan {
             _ => (null, default)
         };
 
-        return operand is InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 2 } call && BreaksBefore(keyword)
-            ? call
-            : null;
+        return operand is not null && BreaksBefore(keyword) ? operand : null;
     }
 
     /// <summary>
