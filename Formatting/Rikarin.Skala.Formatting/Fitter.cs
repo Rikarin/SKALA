@@ -804,12 +804,16 @@ public sealed class Fitter {
                 // ⚠ A local's lambda over a call with two or more arguments (#453): the arrow breaks while the
                 // argument list is narrower than the measured floor; otherwise the head rule below decides. See
                 // GroupFacts.LambdaCallArguments.
+                // ⚠ The floor was measured at indent 8 and falls a column per column of indent past it (group B):
+                // on `T n = () => C…(xxx, yyy);` at indents 4 (a field), 8, 12 and 16 — head and `(` placed alike, the
+                // arguments one column at a time, 7 002 cells — every row's switch sits exactly 8 − indent columns
+                // from indent 8's at the same columns. Round 2's field shift (head +8, `(` +4) was this, fitted.
                 if (facts.LambdaCallArguments > 0
                     && m.FlatWidth < Unbounded
                     && EqualsFloor.BreaksTheCallArrow(
-                        m.Column - facts.LambdaHead - 1 + (facts.LambdaCallShift ? 8 : 0),
-                        m.Column + facts.LambdaCallCallee + 2 + (facts.LambdaCallShift ? 4 : 0),
-                        facts.LambdaCallArguments,
+                        m.Column - facts.LambdaHead - 1,
+                        m.Column + facts.LambdaCallCallee + 2,
+                        facts.LambdaCallArguments + lineStart - 8,
                         facts.LambdaCallSingle
                     )) {
                     return ResolvedMode.Broken;

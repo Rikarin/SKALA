@@ -1201,11 +1201,6 @@ public sealed class Document {
 /// <param name="EqualsLambdaValueHead">
 ///     The value's width before the call's <c>(</c>: <c>() =&gt; Callee</c>. See <see cref="EqualsLambdaArguments" />.
 /// </param>
-/// <param name="LambdaCallShift">
-///     ⚠ A field's lambda: the floor is read with the head eight columns and the <c>(</c> four columns further
-///     right than they stand — fitted on 1 559 field cells at indent 4, 23 differing against 66 unshifted (#453
-///     round 2). See <see cref="LambdaCallArguments" />.
-/// </param>
 /// <param name="LambdaCallSingle">
 ///     The call has a single argument, whose floor is its own. See <see cref="LambdaCallArguments" />.
 /// </param>
@@ -1733,7 +1728,6 @@ public readonly record struct GroupFacts(
     int EqualsLambdaValueHead = 0,
     int EqualsLambdaArguments = 0,
     bool LambdaCallSingle = false,
-    bool LambdaCallShift = false,
     int MemberHeadWidth = 0,
     int EqualsName = 0,
     int[]? MemberLinks = null,

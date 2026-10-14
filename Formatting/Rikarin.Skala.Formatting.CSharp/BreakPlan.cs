@@ -8079,10 +8079,7 @@ public sealed class BreakPlan {
                                             call.ArgumentList.OpenParenToken.GetPreviousToken()
                                         ),
                                         LambdaCallArguments: FormattedWidth(call.ArgumentList),
-                                        LambdaCallSingle: call.ArgumentList.Arguments.Count == 1,
-                                        LambdaCallShift: lambda.Parent is EqualsValueClauseSyntax {
-                                            Parent.Parent.Parent: FieldDeclarationSyntax
-                                        }
+                                        LambdaCallSingle: call.ArgumentList.Arguments.Count == 1
                                     )
                                     : new GroupFacts(BreaksIfTooLong: true, BreaksOnlyIfHeadOverflows: true)
         );
@@ -8289,7 +8286,7 @@ public sealed class BreakPlan {
     /// <remarks>
     ///     ⚠ Round 2 (#453): also a wide-named local, whose <c>=</c> decides first
     ///     (<see cref="WideLambdaCallLocalOf" />); a field's single declarator of nine columns or fewer, which reads
-    ///     the floor eight columns of head and four of <c>(</c> later (<see cref="GroupFacts.LambdaCallShift" />);
+    ///     the floor by its indent like any other (group B: round 2's fitted field shift was the indent);
     ///     and an assignment statement to a target of four to nine columns — one of three or fewer always chops.
     /// </remarks>
     InvocationExpressionSyntax? LocalLambdaCallOf(LambdaExpressionSyntax lambda, ExpressionSyntax body) =>
