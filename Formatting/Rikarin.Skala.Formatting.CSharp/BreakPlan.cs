@@ -6416,9 +6416,9 @@ public sealed class BreakPlan {
                     && !(value is ConditionalExpressionSyntax && InitializerBrokenAfterItsBrace(value)),
 
                     // ⚠ A creation the author broke after its `{` keeps the `=` (SK-DIV-0337) only while the line
-                    // through that `{` fits (#623, fuzz 13197324971917557925): behind a 117-column head the oracle breaks
-                    // the `=` and joins the braces. Skala kept the `=`, broke after `new Memory<` for want of another
-                    // point, and pass two — the brace's break gone — broke the `=`.
+                    // through that `{` fits (#623, fuzz 13197324971917557925): behind a 117-column head the oracle
+                    // breaks the `=` and joins the braces. Skala kept the `=`, broke after `new Memory<` for want of
+                    // another point, and pass two — the brace's break gone — broke the `=`.
                     BreaksOnlyIfHeadOverflows: brokenBrace,
 
                     // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
