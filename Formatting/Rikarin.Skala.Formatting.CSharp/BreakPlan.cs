@@ -315,6 +315,9 @@ public sealed class BreakPlan {
     /// <summary>The arrow group <see cref="PlanArrowBody" /> opened for each lambda, by the lambda's key.</summary>
     readonly Dictionary<long, int> arrowGroups = [];
 
+    /// <summary>The <see cref="GroupFacts.LiftsIfWhenBreaks" /> group of an arm, keyed by its <c>when</c> clause.</summary>
+    readonly Dictionary<long, int> whenLifts = [];
+
     /// <summary>
     ///     The group each <see cref="HeldLevel.WhileArrowFlat" /> or <see cref="HeldLevel.WhileGroupBroken" /> hold
     ///     is decided by: a sole lambda's arrow, or the gap after an <c>is</c>.
@@ -3241,6 +3244,7 @@ public sealed class BreakPlan {
         var first = ChainPointCount(root, options);
         if (first == 0) {
             PlanPropertyFill(root);
+            PlanReturnedParenthesisedCall(root);
             return;
         }
 
@@ -3532,6 +3536,7 @@ public sealed class BreakPlan {
     ///     ⚠ A typed local with more than one argument was not measured and plans nothing.
     /// </remarks>
     InvocationExpressionSyntax? PlanHeldSingleCall(ExpressionSyntax value, int kind) {
+        value = kind == 2 ? CastOverAParenthesisedCall(value) ?? value : value;
         if (value is not InvocationExpressionSyntax {
                 Expression: MemberAccessExpressionSyntax { OperatorToken: var dot, Expression: var receiver }
             } call
@@ -3572,14 +3577,78 @@ public sealed class BreakPlan {
             new(
                 BreaksIfTooLong: true,
                 HeldCall: call.ArgumentList.Arguments.Count > 1 ? 4 : 3,
-                HeldCallHead: FormattedWidth(dot, call.ArgumentList.OpenParenToken)
+                HeldCallHead: FormattedWidth(dot, call.ArgumentList.OpenParenToken),
+                ParenReceiver: IsACallOnAParenthesisedOperator(call)
             ),
             // ⚠ A level of its own, as a chain's: `var y =` / `R` / `.Call(…)` puts the dot one level past
             // the receiver, and LayoutWriter's one-level-per-line collapse keeps `var y = R` / `.Call(…)` at one.
-            ownLevel: true
+            // ⚠ Except behind a parenthesised receiver, which takes the level only if nothing else spends one, as
+            // a chain's parenthesised head does (SK-DIV-0112): `var x =` / `(a + b…)` / `.Trim();` puts the dot
+            // on the `(`'s column. Pass one wrote it a level deeper and pass two, reading the break as the
+            // author's, put it back (#598).
+            IsACallOnAParenthesisedOperator(call),
+            ownLevel: !IsACallOnAParenthesisedOperator(call)
         );
         return call;
     }
+
+    /// <summary>
+    ///     A single call on a parenthesised receiver, cast or not, as the whole value of a <c>return</c>: its dot is a
+    ///     point, taken while the receiver fits (#598). See <see cref="GroupFacts.ParenReceiver" />.
+    /// </summary>
+    void PlanReturnedParenthesisedCall(SyntaxNode root) {
+        if (root is not InvocationExpressionSyntax {
+                Expression: MemberAccessExpressionSyntax { OperatorToken: var dot }
+            } call
+            || !IsACallOnAParenthesisedOperator(call)
+            || BreaksBefore(dot)
+            || HasLineBreakIn(call)) {
+            return;
+        }
+
+        var whole = call.Parent is CastExpressionSyntax cast && cast.Expression == call ? cast : (ExpressionSyntax)call;
+        if (whole.Parent is not ReturnStatementSyntax) {
+            return;
+        }
+
+        var group = NewGroup();
+        Point(dot, group);
+        Describe(call, group, GroupMode.Preserve, new(BreaksIfTooLong: true, ParenReceiver: true), true);
+    }
+
+    /// <summary>
+    ///     The call a cast holds when it casts a single call on a parenthesised receiver,
+    ///     <c>(T)(a + b).M()</c>, or null (#598, SK-DIV-0491).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c>: the oracle lays out <c>var x = (T)(a + b…).M();</c> and
+    ///     <c>x = (T)(…).M();</c> exactly as it lays out the same value without the cast, breaking before the dot
+    ///     while the receiver fits, where Skala only ever broke inside the parentheses. The cast is part of the
+    ///     receiver: it stays on the receiver's line.
+    /// </remarks>
+    static InvocationExpressionSyntax? CastOverAParenthesisedCall(ExpressionSyntax value) =>
+        value is CastExpressionSyntax { Expression: InvocationExpressionSyntax call }
+        && IsACallOnAParenthesisedOperator(call)
+            ? call
+            : null;
+
+    /// <summary>
+    ///     Whether a call takes no arguments and its receiver is one parenthesis around a binary operator,
+    ///     <c>(a + b).M()</c>: the shape #598's rules were measured on (<see cref="GroupFacts.ParenReceiver" />).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not a call with arguments: <c>(SomeMethod(…)).Other(d, e, f)</c> keeps its dot and chops the arguments
+    ///     (ChainWithACallRootIssue380Tests), the held table's answer.
+    /// </remarks>
+    static bool IsACallOnAParenthesisedOperator(InvocationExpressionSyntax call) =>
+        call is {
+            ArgumentList.Arguments.Count: 0,
+            Expression: MemberAccessExpressionSyntax {
+                Expression: ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax binary }
+            }
+        }
+        && !binary.IsKind(SyntaxKind.IsExpression)
+        && !binary.IsKind(SyntaxKind.AsExpression);
 
     /// <summary>
     ///     A member-access expression that is no chain of calls — <c>A.B.C.D.Value</c> — breaks at the last
@@ -5988,7 +6057,7 @@ public sealed class BreakPlan {
         var heldCall = heldKind > 0 ? PlanHeldSingleCall(value, heldKind) : null;
         var choppedHeld = heldKind == 1 && heldCall is null ? ChoppedHeldCallOf(value) : null;
         var heldReceiver = heldCall?.Expression is MemberAccessExpressionSyntax heldAccess
-            ? FlatSourceWidth(heldAccess.Expression)
+            ? FormattedWidth(value.GetFirstToken(), heldAccess.Expression.GetLastToken())
             : 0;
         var wideLambdaCall = WideLambdaCallLocalOf(node, value);
         var lambdaCall = (value as LambdaExpressionSyntax)?.ExpressionBody as InvocationExpressionSyntax;
@@ -6126,6 +6195,8 @@ public sealed class BreakPlan {
                         + WidthThroughSemicolon(value)
                         + TrailingCommentWidth(value.GetLastToken().GetNextToken()),
                     HeldValueReceiver: heldReceiver,
+                    HeldValueCast: heldCall is not null && value is CastExpressionSyntax,
+                    HeldValueParen: heldCall is not null && IsACallOnAParenthesisedOperator(heldCall),
                     HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
                         : 0,
@@ -6161,6 +6232,10 @@ public sealed class BreakPlan {
                         : FormattedWidth(lambdaCall.ArgumentList),
                     CreationLimit: QueryLeadsTheWay(value) ? 0 : CreationLimitOf(node, equals, value, owner),
                     ParenCloseEnd: ParenCloseEndOf(node, value),
+                    ParenCloseEndInner: ParenCloseEndOf(node, value) > 0
+                    && LeadingParenthesisOf(value) is { Expression: ParenthesizedExpressionSyntax inner }
+                        ? FormattedWidth(FirstToken(value), inner.CloseParenToken)
+                        : 0,
 
                     // ⚠ Behind `string value =` a bare parenthesis stops moving down while the line below would
                     // still be 115 columns (#598, group P's residue): measured at indents 8 and 12, lines 119 to 135.
@@ -6241,11 +6316,21 @@ public sealed class BreakPlan {
             return 0;
         }
 
+        return LeadingParenthesisOf(value) is { } parenthesis
+            ? FormattedWidth(FirstToken(value), parenthesis.CloseParenToken)
+            : 0;
+    }
+
+    /// <summary>
+    ///     The parenthesised expression a value opens with, down its spine of casts, member accesses, binary left
+    ///     operands and prefix operators, or null. See <see cref="ParenCloseEndOf" />.
+    /// </summary>
+    static ParenthesizedExpressionSyntax? LeadingParenthesisOf(ExpressionSyntax value) {
         var spine = value;
         while (true) {
             switch (spine) {
                 case ParenthesizedExpressionSyntax parenthesis:
-                    return FormattedWidth(FirstToken(value), parenthesis.CloseParenToken);
+                    return parenthesis;
                 case CastExpressionSyntax cast:
                     spine = cast.Expression;
                     continue;
@@ -6259,7 +6344,7 @@ public sealed class BreakPlan {
                     spine = prefix.Operand;
                     continue;
                 default:
-                    return 0;
+                    return null;
             }
         }
     }
@@ -7999,6 +8084,36 @@ public sealed class BreakPlan {
             );
         }
 
+        // ⚠ And a planned gap after the `when` lifts the arm whenever it breaks, for width or kept (#576, SK-DIV-0399):
+        // the oracle nests the body's lists and query clauses from the condition's line then — `X when` /
+        // `Materialise<…>() => Handle(` / the arguments two levels past the arm / `)` one level — with or without
+        // braces in the pattern. Measured 2026-10-14 with `Testing ask` on 300 generated arms. The lift is decided
+        // ahead, as the arrow's is (GroupFacts.LiftsIfWhenBreaks); a break the author kept there lifts outright,
+        // which is pass one's answer read back.
+        if (!kept && !keptAfter && arm.WhenClause is { } gap && IsAPlannedWhenGap(gap)) {
+            var gapLift = NewGroup();
+            var keptGap = options.KeepsUserBreaksBetweenItems && BreaksBefore(FirstToken(gap.Condition));
+            if (!keptGap) {
+                whenLifts[Key(gap)] = gapLift;
+            }
+
+            if (widthLift < 0) {
+                widthLift = gapLift;
+            }
+
+            OpenAt(
+                arm,
+                arm.Pattern.SpanStart,
+                new(
+                    gapLift,
+                    keptGap ? GroupMode.Preserve : GroupMode.Flat,
+                    keptGap ? new(true, Continues: true) : new(Continues: true, LiftsIfWhenBreaks: true),
+                    true,
+                    false
+                )
+            );
+        }
+
         // ⚠ A `when` clause holding a type argument list lifts too (#576). It was withdrawn for idempotency
         // (fuzz 12955079666331923518): pass one's type argument fill broke the arrow for width, and pass two
         // read that break as kept and lifted. The width lift above now lifts pass one as well, so both passes
@@ -8610,7 +8725,8 @@ public sealed class BreakPlan {
                         WhenArrowKept: options.KeepsUserBreaksBetweenItems
                         && node.Parent is SwitchExpressionArmSyntax keptArm
                         && (BreaksBefore(keptArm.EqualsGreaterThanToken)
-                            || BreaksBefore(FirstToken(keptArm.Expression)))
+                            || BreaksBefore(FirstToken(keptArm.Expression))),
+                        LiftGroup: whenLifts.TryGetValue(Key(node), out var whenLift) ? whenLift : -1
                     ),
                     true,
                     true

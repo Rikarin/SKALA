@@ -1374,7 +1374,7 @@ public sealed partial class CSharpDocumentBuilder {
         // held while it stays flat and is never the builder's continuation, so the arm's own groups — the
         // arrow's, the `when` condition's of #576 — still spend theirs. Counted, a held level left them none
         // (arm-when-condition-below's `D`). Broken, the writer holds the arrow's level instead.
-        if (indented > 0 && planned.Facts.LiftsIfArrowBreaks) {
+        if (indented > 0 && (planned.Facts.LiftsIfArrowBreaks || planned.Facts.LiftsIfWhenBreaks)) {
             doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileOwnerFlat, -1);
             return (LiftLevel, false);
         }

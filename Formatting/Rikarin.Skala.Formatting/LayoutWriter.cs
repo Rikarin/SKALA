@@ -346,7 +346,9 @@ public sealed class LayoutWriter {
                         break;
 
                     case DocKind.Group:
-                        if (document.FactsOf(slot.Arg1).LiftsIfArrowBreaks && watchedChain != slot.Arg1) {
+                        if ((document.FactsOf(slot.Arg1).LiftsIfArrowBreaks
+                                || document.FactsOf(slot.Arg1).LiftsIfWhenBreaks)
+                            && watchedChain != slot.Arg1) {
                             DecideByTheArrow(node, slot.Arg1, stack);
                         }
 
@@ -1012,12 +1014,19 @@ public sealed class LayoutWriter {
         Restore(checkpoint);
         (watchedChain, watchedChainBroke, watchedLifts) = (watched, broke, lifts);
 
-        // ⚠ Only a head that spans lines has anything to lift. Under a pattern on one line the group would
-        // lift nothing of the pattern's and everything opened in the body after it — `{ Length: > 0 } =>` /
-        // `Cast<…,` / `TimeSpan>(` a level deeper on pass one than pass two (ArmArrowIssue378Tests).
-        if (forced.Length == 0
-            || forced[0].Line == start
-            || !forced.Any(static lift => lift.Mode == ResolvedMode.Broken)) {
+        // ⚠ A `when` lift breaks with the `when` gap alone, which is entered on the arm's first line (#576). See
+        // GroupFacts.LiftsIfWhenBreaks.
+        if (document.FactsOf(group).LiftsIfWhenBreaks) {
+            if (!forced.Any(lift => lift.Mode == ResolvedMode.Broken && document.FactsOf(lift.Group).WhenTable)) {
+                return;
+            }
+        } else if (forced.Length == 0
+                   // ⚠ Only a head that spans lines has anything to lift. Under a pattern on one line the group
+                   // would lift nothing of the pattern's and everything opened in the body after it —
+                   // `{ Length: > 0 } =>` / `Cast<…,` / `TimeSpan>(` a level deeper on pass one than pass two
+                   // (ArmArrowIssue378Tests).
+                   || forced[0].Line == start
+                   || !forced.Any(static lift => lift.Mode == ResolvedMode.Broken)) {
             return;
         }
 
