@@ -231,6 +231,10 @@ public sealed class FuzzRegressionTests {
     // ⚠ And the regression that fix made: it read any line break in the section's source, so the arguments #476's rule
     // chopped on pass one turned the band off on pass two (`[InlineArray( /* f */ 8)] List<…> p8 = default`).
     [InlineData(4372692451688483448UL)]
+    // ⚠ And the one that narrowing left: the author's break after the `[` (`[` / `SuppressMessage(…)] … p9 = default`)
+    // has no one-line form either; pass one measured the band through it and broke the `=`, which turned the band off
+    // on pass two. A break the chop never writes — after the `[`, before the `(`, before the `]` — now leaves it (#622).
+    [InlineData(18336076134128140574UL)]
     // `{ Value.Length:` / `> 2, Kind: null } when` / `["ss", null] => …` (group C's run): the author's break between
     // the `when` and a collection expression was joined, so pass one lifted the braces for a break it then dropped
     // and pass two put them back. The oracle keeps that break.

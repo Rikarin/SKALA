@@ -5458,9 +5458,18 @@ public sealed class BreakPlan {
         // section's source (fuzz 4372692451688483448): the arguments this rule chops on pass one are such a break on
         // pass two, which turned the rule off there. ⚠ A line break inside the *parameter* is still read off the
         // source, on purpose and pass-stably: see PlanSectionBeforeALongParameter's remarks (SK-DIV-0571).
+        // ⚠ Nor a section the author broke where the arguments' chop never breaks — after the `[`, before the `(`, or
+        // between the `)` and the `]` (fuzz 18336076134128140574: `[` / `SuppressMessage(…)] … p9 = default`): its
+        // joined line is not the line the writer produces either, and on pass two the band's `=` break turned the rule
+        // off. Those three gaps are pass-stable to read: the chop writes its breaks after the `(`, after each `,` and
+        // before the `)`, never there, and an author's break there is kept.
         var first = section.CloseBracketToken.GetNextToken();
+        var attribute = section.Attributes[0];
         if (source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny(LineEnds) >= 0
-            || section.ContainsDirectives) {
+            || section.ContainsDirectives
+            || BreaksBefore(attribute.GetFirstToken())
+            || BreaksBefore(arguments.OpenParenToken)
+            || BreaksBefore(section.CloseBracketToken)) {
             return facts;
         }
 
