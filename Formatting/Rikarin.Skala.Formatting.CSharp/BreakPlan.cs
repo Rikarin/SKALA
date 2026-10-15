@@ -3507,12 +3507,11 @@ public sealed class BreakPlan {
         // point planned there never broke before the call (#582). #528 was measured on single-name
         // receivers, where the two are the same dot.
         var dot = ((MemberAccessExpressionSyntax)link).OperatorToken;
-        if (BreaksBefore(dot)) {
-            return;
-        }
 
         // ⚠ And the receiver's own dots break once the receiver alone overflows: `source` / `.A…` /
         // `.Select(…)` / `.Where(…)`, every link chopped (#582).
+        // ⚠ Behind an author's break before the call too, which is pass one's own output: the oracle chops
+        // `source.A…` / `.Select(…)` by the same rule, and with no group here pass two broke the `=` (#631).
         if (((MemberAccessExpressionSyntax)link).Expression is MemberAccessExpressionSyntax receiver
             && IsAPathOfNames(receiver)) {
             var receiverGroup = NewGroup();
@@ -3528,6 +3527,10 @@ public sealed class BreakPlan {
                 GroupMode.Preserve,
                 new(BreaksIfTooLong: true, BreaksIfItOverflows: true)
             );
+        }
+
+        if (BreaksBefore(dot)) {
+            return;
         }
 
         // ⚠ The argument count picks the measured table (one argument or none, or more), and the call's

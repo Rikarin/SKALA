@@ -387,6 +387,12 @@ public sealed class FuzzRegressionTests {
     // flat through the `=`, found it overflowing and kept the `=`; pass two, reading the target's dot break as the
     // author's, measured the point width to that dot, found the head fitting and broke the `=`.
     [InlineData(10722289349277649158UL, "constructs/breaks/member-access-fill.cs")]
+    // #631 (fails on adca899a too): `var q = source.A… /** d */ .Select(…).Where(…);`. The receiver's own group
+    // measured `source.A…` without the comment after it and stayed whole at 128 columns; pass two, the comment
+    // ending the line and the break before `.Select` the author's, planned no receiver group and broke the `=`.
+    [InlineData(10820374509567880048UL, "constructs/wrapping/chain-head-past-the-margin.cs")]
+    // #631 again with a block comment (fails on adca899a too): `var q = source.A… /* f */ .Select(y => y).Where(…);`.
+    [InlineData(14288782122367440787UL, "constructs/wrapping/chain-head-past-the-margin.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
