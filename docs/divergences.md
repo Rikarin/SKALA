@@ -14417,6 +14417,12 @@ nine are SK-DIV-0551's wide head with a short tail (the oracle keeps the `=` and
 body chops the parameters, `= ((` / `x,` / `y` / `) => 42)`), and four are a break before the arrow at the shallow
 depth, where Skala chops the parameter list and the oracle breaks the `=`.
 
+⚠ **It also closes a divergence a test had pinned as the answer.** `ConditionOnABrokenCollectionNightlyTests`'
+minimised case (`F17 = [ 'c'` / `, true, …] ? … : …`, Nightly seed 7777) asserted `F17 = [` / … broken open, and its
+own remarks called that a stable divergence the oracle joins. With the comma's break glued Skala gives the oracle's
+answer — `F17 =` / `['c', true, …] ? … : …;` — for that input, for it written on one line and, unchanged, for a break
+after the comma (`[` / `'c',` / `true, …` / `]`); the assertion now pins the oracle's text.
+
 - options: none (the comma's placement is not configurable).
 - status: **fixed** (the seed, pinned by `JoinedBlockInAConditionNightlyTests.ABreakBeforeACommaInTheParameters_*`
   and `FuzzRegressionTests`); the residues above are **open** under SK-DIV-0551.

@@ -205,11 +205,28 @@ public sealed class ConditionOnABrokenCollectionNightlyTests {
                                           }
                                           """;
 
+    /// <remarks>
+    ///     ⚠ This asserted <c>F17 = [</c> / … until #629, which was the divergence the class remarks describe pinned
+    ///     as if it were the answer. A break before a comma now reads as joined (SK-DIV-0593), so the condition is
+    ///     the one-line collection it formats to, the <c>=</c> breaks, and the output is the oracle's, measured
+    ///     2026-10-15 with <c>Testing ask</c>.
+    /// </remarks>
     [Fact]
     public void TheMinimisedCase_IsIdempotent() {
         var first = FormatWith(Minimised);
         Assert.Equal(first, FormatWith(first));
-        Assert.Contains("F17 = [\n", first, StringComparison.Ordinal);
+        Assert.Equal(
+            """
+            namespace Fuzz.N1 {
+                public class T16 {
+                    public static readonly Dictionary<CancellationToken, List<CancellationToken>> F17 =
+                        ['c', true, true, 3_000_000L, 36269] ? ['c', "sss", "sss", "utf8"u8] : typeof(CancellationToken);
+                }
+            }
+
+            """,
+            first
+        );
     }
 
     /// <summary>
