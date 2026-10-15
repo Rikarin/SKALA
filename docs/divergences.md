@@ -14211,7 +14211,6 @@ Every `E.Find(e)` / `.Value = …` row that overflowed when measured flat broke 
     rows). Also an overflowing `Some.Static.…` head, and a trailing comment after a call.
 - status: **fixed**, pinned by `HeldValueBehindABrokenTargetIssue624Tests` and `FuzzRegressionTests`.
 
-<<<<<<< HEAD
 ## SK-DIV-0570 — a parameter's attribute arguments inside a default's band, and a one-argument section near the margin
 
 #603, round nine of SK-DIV-0352 (group J, 2026-10-14). Round eight left 72 of 961 families whose chop the oracle starts
@@ -14263,7 +14262,7 @@ one column later at indents 20 and 24, and behind heads of 12 to 17) and the two
 - options: `skala_wrap_arguments_style`; no key for the join.
 - status: **partially fixed**, pinned by `DefaultBandAndEdgeSectionChopIssue603Tests` (`Fitter.SectionChops`); the
   two-argument edge and the first condition's one-column misses stay open.
-=======
+
 ## SK-DIV-0571 — a line break inside a long parameter behind its section: read off the source, and pass-stable
 
 #603 follow-up (group J, 2026-10-15). `BreakPlan.WithADefaultsSection` and `PlanSectionBeforeALongParameter` turn the
@@ -14287,7 +14286,6 @@ second pass. Kept as it is, documented at both sites, and pinned by `AuthorBroke
 cells fail with the tree read).
 
 - status: **no change**; the read stays.
->>>>>>> 80e0ecf73
 
 ## SK-DIV-0575 — a cast over a parenthesised call behind a head of twelve columns or more
 
