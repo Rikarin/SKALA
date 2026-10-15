@@ -107,15 +107,15 @@ public sealed class CastCloserIssue632Tests {
     [Fact]
     public void ACastsCloserBeforeARawLiteral_SettlesInOnePass() {
         const string source = """"
-            class C {
-                object M() {
-                    return (DateTime?
-            )"""
-                        line of text
-                        """;
-                }
-            }
-            """";
+                              class C {
+                                  object M() {
+                                      return (DateTime?
+                              )"""
+                                          line of text
+                                          """;
+                                  }
+                              }
+                              """";
         var once = Format.Text(source);
         Assert.Contains("return (DateTime?\n            )\n", once.Replace("\r\n", "\n"));
         Assert.Equal(once, Format.Text(once));
