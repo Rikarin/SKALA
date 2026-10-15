@@ -9229,6 +9229,13 @@ public sealed class BreakPlan {
     ///     The width of an operand chain's first operand — the leftmost — or of <c>x is A</c> before a binary
     ///     pattern's first combinator (#578).
     /// </summary>
+    /// <remarks>
+    ///     ⚠ A block comment between the first operand and its combinator is the first operand's line's (#633,
+    ///     SK-DIV-0601): `x is A /* f */ or B` breaks with the comment ending `x is A`'s line, so the oracle reads
+    ///     the comment as part of the width that must fit beside the arrow. Without it, pass one kept an arrow
+    ///     whose first line ran past the margin, and pass two — reading the comment through the kept break's
+    ///     flat width — broke it.
+    /// </remarks>
     int FirstOperandWidth(ExpressionSyntax body) {
         switch (body) {
             case IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax pattern } test:
@@ -9237,14 +9244,16 @@ public sealed class BreakPlan {
                     left = binary.Left;
                 }
 
-                return FormattedWidth(test.GetFirstToken(), left.GetLastToken());
+                var last = left.GetLastToken();
+                return FormattedWidth(test.GetFirstToken(), last) + CommentsWidth(last, last.GetNextToken());
             default:
                 var node = body;
                 while (node is BinaryExpressionSyntax binary && !IsTypeTest(binary)) {
                     node = binary.Left;
                 }
 
-                return FormattedWidth(node);
+                var end = node.GetLastToken();
+                return FormattedWidth(node) + CommentsWidth(end, end.GetNextToken());
         }
     }
 
