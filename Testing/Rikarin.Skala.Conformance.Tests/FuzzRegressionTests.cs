@@ -184,7 +184,8 @@ public sealed class FuzzRegressionTests {
     // pass two, reading the chain's breaks as kept, found the element's segment certain and moved it whole. A list
     // pattern's element now keeps its head when its break is certain, a tuple item's rule.
     [InlineData(7321373205094285321UL)]
-    // #615's second seed: `public string P34 => value is [{ Length: > 0 }, not (0 or 1` / `or 2)];` under CRLF and tabs.
+    // #615's second seed: `public string P34 => value is [{ Length: > 0 }, not (0 or 1` / `or 2)];` under CRLF and
+    // tabs.
     [InlineData(11901297646707830937UL)]
     // `var (a, b) = ((Nullable<StringBuilder> First, …))($"…" ?? …);` (#598's cast rule): the gap after the cast's `)`
     // was planned only for a cast written on one line, so pass two, finding pass one's breaks inside, planned nothing
@@ -198,25 +199,26 @@ public sealed class FuzzRegressionTests {
     // parameter too wide for any line, which pass one broke and pass two read as the author's break, leaving the
     // section's arguments to their own fit. Latent on master for a parameter without a default.
     [InlineData(16667081197111340728UL)]
-    // #617: `source is` / `// fuzz 658` / `[_` / `, .. var rest60];` — a list pattern a line comment put on its own line
-    // took the `is`'s level only when the author had written it on one line, so pass one's joined list moved a level in
-    // on pass two. The level is now held against the list's own group, spent while the list stays whole.
+    // #617: `source is` / `// fuzz 658` / `[_` / `, .. var rest60];` — a list pattern a line comment put on its own
+    // line took the `is`'s level only when the author had written it on one line, so pass one's joined list moved a
+    // level in on pass two. The level is now held against the list's own group, spent while the list stays whole.
     [InlineData(14577244967404521905UL)]
     // #617: `IReadOnlyDictionary<decimal, decimal> v124 = Materialise<…>((from … select 85306));` — one argument behind
-    // a head wider than #610 measured; the floor chopped it, and pass two, reading the chop as the author's, broke the `=`.
+    // a head wider than #610 measured; the floor chopped it, and pass two, reading the chop as the author's, broke the
+    // `=`.
     [InlineData(12392120797706766071UL)]
     // #617: `(…, (…) Second) v120 = () => value;` with the arrow past the margin — `()` has nothing to chop.
     [InlineData(52566946029857855UL)]
     // #617, group C's seed: an array initializer in a switch arm headed by braces. The arm was written ahead to decide
     // its arrow and the elements' line records outlived the rollback, so pass one broke after the first element.
     [InlineData(718351361052470981UL)]
-    // SK-DIV-0505's fuzz (`--seed=50105`): `Func<…,` / `…> v53 = new Nullable<…>($"…");` — a type that fills onto a second
-    // line leaves only its last line beside the `=`; read whole, the one-argument boundary chopped on pass one what pass
-    // two, finding the type broken, moved below.
+    // SK-DIV-0505's fuzz (`--seed=50105`): `Func<…,` / `…> v53 = new Nullable<…>($"…");` — a type that fills onto a
+    // second line leaves only its last line beside the `=`; read whole, the one-argument boundary chopped on pass one
+    // what pass two, finding the type broken, moved below.
     [InlineData(4769102867181174370UL)]
     // And `--seed=50106`: `(…) v43 = Select(x44 => new[] { … });` — a lambda argument, whose arrow and initializer have
-    // points of their own the boundary never measured. Only a name, a literal, an interpolated string, a member access over
-    // names or one of those in parentheses takes it now.
+    // points of their own the boundary never measured. Only a name, a literal, an interpolated string, a member access
+    // over names or one of those in parentheses takes it now.
     [InlineData(14568516573920944828UL)]
     // `var (a, b) = Convert<…>(($"…" + (…)));` (#617): pass one kept the `=` and chopped the one argument, and pass
     // two, finding the value spanning lines, read it as having no callee and broke the `=` by the ordering rule. The
@@ -241,17 +243,17 @@ public sealed class FuzzRegressionTests {
     // below the broken braces for its head through the `>(`, and pass two read that break as the author's and lifted
     // the braces (#575). The oracle keeps the `when` on the `}` line and fills the type arguments (SK-DIV-0552).
     [InlineData(16251829570492293429UL)]
-    // #623: `… P17 { get; } = new Memory<decimal>() {` / members behind a 117-column head. The author's brace break kept
-    // the `=` (SK-DIV-0337), so pass one broke after `new Memory<`; pass two, the brace's break gone, broke the `=`. The
-    // brace now keeps the `=` only while the line through it fits (SK-DIV-0553).
+    // #623: `… P17 { get; } = new Memory<decimal>() {` / members behind a 117-column head. The author's brace break
+    // kept the `=` (SK-DIV-0337), so pass one broke after `new Memory<`; pass two, the brace's break gone, broke the
+    // `=`. The brace now keeps the `=` only while the line through it fits (SK-DIV-0553).
     [InlineData(13197324971917557925UL)]
     // And a creation written on one line (#623's own fuzz): #581's limit kept `= new {` at 124 columns, and pass two
     // read the brace's break as the author's. The `=` now breaks when the line through the `{` does not fit
     // (SK-DIV-0553).
     [InlineData(9076957179953969410UL)]
-    // #629: `T v75 = ((x` / `, y) => {` / `return …;` / `}) ? a : b`: the author's break before the lambda's `,` read as
-    // a condition written across lines, so pass one kept the `=` past #553's rule; pass two, the comma joined, broke it.
-    // A break before a comma now reads as glued, as the formatter never keeps one (SK-DIV-0593).
+    // #629: `T v75 = ((x` / `, y) => {` / `return …;` / `}) ? a : b`: the author's break before the lambda's `,` read
+    // as a condition written across lines, so pass one kept the `=` past #553's rule; pass two, the comma joined, broke
+    // it. A break before a comma now reads as glued, as the formatter never keeps one (SK-DIV-0593).
     [InlineData(5989313709516589063UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
