@@ -14301,6 +14301,30 @@ one column later at indents 20 and 24, and behind heads of 12 to 17) and the two
 - status: **partially fixed**, pinned by `DefaultBandAndEdgeSectionChopIssue603Tests` (`Fitter.SectionChops`); the
   two-argument edge and the first condition's one-column misses stay open.
 
+## SK-DIV-0571 — a line break inside a long parameter behind its section: read off the source, and pass-stable
+
+#603 follow-up (group J, 2026-10-15). `BreakPlan.WithADefaultsSection` and `PlanSectionBeforeALongParameter` turn the
+section rules (#476, #603) off when the source has a line break between the section's `]` and the parameter's end. Two
+fuzz regressions this session came from reading pass one's own breaks back as the author's on the *section*
+(9695149764600851630, 4372692451688483448), so the same read on the parameter was suspect.
+
+**Why it is pass-stable.** While the rules speak (the joined line overflows, the parameter fits its own line), pass one
+writes a break inside the parameter in one layout only: the default band's `=`, written exactly when the arguments do not
+chop and the gap stays. On pass two the read turns the rules off, and the arguments' own fit (the section fits) and the
+gap's own fit (the line ends at the kept `=`) give the same layout. A chopped or whole section puts the parameter alone on
+a line it fits, with no break inside it; a parameter that overflows its own line is left by both passes
+(`Fitter.OverflowsItsOwnLine`). Measured: every output on the thirteen #603 grids (38 337 cells, D layouts included)
+is unchanged by a second pass.
+
+⚠ **Replacing the read refuted.** Reading a one-line parameter off the tree — no comment, directive or multi-line token
+inside, the widths measured flat through any break — makes both passes see the same widths, but the author's break then
+stops counting. On probe J5 (1 181 of J2's and J3's cells with an author's break after the `=` or before the name, asked
+afresh): master matches the oracle on 543 and is stable on all; the tree read matches on 456 and changes 57 outputs on a
+second pass. Kept as it is, documented at both sites, and pinned by `AuthorBrokenParameterSectionIssue603Tests` (its two
+cells fail with the tree read).
+
+- status: **no change**; the read stays.
+
 ## SK-DIV-0575 — a cast over a parenthesised call behind a head of twelve columns or more
 
 #598, round six: `string value = (T)(a + b…).M();`, `var valueeeeeeee = (T)(…).M();` and `this.name = (T)(…).M();`
@@ -14385,3 +14409,24 @@ of 26 to 40 grid was built for it, and the form became `s`.
 - **Typed `((…))`:** not attempted this round. Still SK-DIV-0491's.
 
 - status: **partially fixed**, pinned by `CastParenBehindAWideHeadIssue598Tests`.
+
+## SK-DIV-0565 — a held single call behind a parenthesised receiver that is no operator: the dot's level
+
+⚠ **Found by the fuzzer (#627, seed 6141772401922034799, `real/vixen/Core/Vixen.Terrain.Tests/TerrainBrushTests.cs`),
+pre-existing on master d2aeae3a and 25fe2a773.** `var alpha = (Brush(radius: 4f) with { … }).FootprintOf_w…(stamp);`
+past the margin: pass one broke the `=` and wrote `.FootprintOf…` a level past the `(`; pass two, reading the `=` break as
+the author's, wrote it on the `(`'s column. The held single-call plan (#528) gave the dot its own level unless the
+receiver was a parenthesised *operator* with no arguments (#598); any other parenthesised receiver took the level.
+
+- **The oracle.** Asked with `Testing ask` under eight receivers — `with`, `as`, `await`, a cast, `?:`, `!`, `??` and
+  `new … { }` — behind `var` and an assignment, names of 4 to 40, calls of 10 to 55 columns, one and two arguments,
+  the `=` already broken (512 statements): the dot sits on the `(`'s column every time, as SK-DIV-0112's
+  parenthesised chain head does. Skala now takes the level only when nothing else spends one for any parenthesised
+  receiver: 104 → 8 apart, 96 → 0 statements a second pass changes.
+- ⚠ **Not fixed: the decisions from a one-line source.** The same 512 statements on one line still differ in 77, all
+  of them the `=` and the dot's choice (the oracle breaks the `=` and keeps the call, or chops its arguments, where
+  Skala keeps the `=` and breaks the dot), unchanged from master; the 8 left above are `(new … { })` receivers that
+  Skala chops. Neither is a second-pass difference.
+
+- status: the idempotency **fixed**, pinned by `FuzzRegressionTests` and
+  `ParenthesisedReceiverIssue617Tests.AnyParenthesisedReceiver_*`; the decisions **open**.
