@@ -376,6 +376,10 @@ public sealed class FuzzRegressionTests {
     // the 2026-10-14 merges landed (42ed48b0) without either being targeted. Pinned so neither returns unnoticed.
     [InlineData(14052156207620702103UL, "real/vixen/Core/Vixen.Ecs/Systems/SystemGraph.cs")]
     [InlineData(10618586840755774483UL, "real/vixen/Core/Vixen.Ui.Tests/NineSliceImageTests.cs")]
+    // The Nightlies of 2026-10-11 and 2026-10-12, also on master adca899a: both clean on b394db0a. Pinned for the same
+    // reason.
+    [InlineData(3085243223913594365UL, "real/vixen/Platform/Vixen.Graphics.Null.Tests/AccelerationStructureTests.cs")]
+    [InlineData(3263308823075996448UL, "real/serilog/Serilog/Policies/ByteArrayScalarConversionPolicy.cs")]
     // #617 (found by group D on adca899a): `candidate is` / `[first, /* f */ second, …]` too wide one level in. Pass
     // one kept the author's break and broke the list there; pass two joined `is [`. Fixed by 773eeafa's whole-list
     // point.
