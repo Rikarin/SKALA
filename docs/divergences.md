@@ -14578,3 +14578,36 @@ cast — idempotent, and a separate decision.
 - options: none.
 - status: **fixed** (the second pass), pinned by `FuzzRegressionTests.ReportedGeneratedSeeds_HaveNoViolations` and
   `CastCloserIssue632Tests`.
+
+## SK-DIV-0601 — a block comment after a sole lambda's first operand
+
+⚠ **Found by the fuzzer (#633, `fuzz --seed=4417093`: seed 10236841228984116565 from
+`constructs/wrapping/lambda-arrow-over-an-operand-chain.cs`), pre-existing on adca899a and on 35b2b7abb.**
+`UUUUUUUU(x… => x… is Aaaaaaaaaaaa /* f */  or Bbbb… or CCCC…);`: pass one kept the arrow and broke the pattern,
+leaving `… is Aaaaaaaaaaaa /* f */` ending at column 125; pass two broke the arrow.
+
+SK-DIV-0377's arrow rule (`EqualsFloor.BreaksTheOperandArrow`) reads the body's first operand — `x is A` before a
+binary pattern's first combinator, or an operand chain's leftmost operand — and caps the arrow where that operand
+would no longer fit beside it (`120 − first`). `BreakPlan.FirstOperandWidth` stopped at the operand's last token, so
+a block comment between the operand and its `or` or `&&` was in no width: the comment ends the first operand's line
+once the body breaks. Pass two read the comment through the kept break and answered differently. The oracle counts
+it: with `/* f */` the arrow breaks, and without it (117 columns) the arrow stays. A `//` comment there breaks the
+arrow on both sides already, and a comment after the combinator (`or /* f */ B`) belongs to the next line and counts
+for nothing, as before.
+
+Measured with `Testing ask`, one statement per method under `UUUUUUUU(params => …);`:
+- 432 cells, the first operand's line ending from 114 to 123 with the comment, parameter texts of 5, 20 and 40,
+  first patterns of 8, 12 and 20, comments of 0, 5, 9 and 14 columns, over a binary pattern and over a `&&` chain.
+  The start commit differed from the oracle in 204 and a second pass changed 180 (90 of each shape); now 24 and 0.
+- A fresh grid of 180 the change was not fitted on (parameter texts 9, 27, 33; patterns 6 and 15; comments 7, 11,
+  20; the line ending from 118 to 122): 110 and 108 on the start commit, now 2 and 0.
+
+⚠ **Not fixed, and not this issue's:** the 24 are comment-free cells near SK-DIV-0377's fitted boundary, where the
+oracle breaks an arrow whose line ends at 114 to 118; the 2 fresh ones are the same boundary with a comment (a line
+ending at 118). All of them differ identically on the start commit and none changes on a second pass. Separately,
+a comment between the tested expression and `is` (`x /* f */ is A or …`) is laid out differently by the oracle,
+which breaks before `is` and keeps the arrow.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
+- status: **fixed** (the second pass), pinned by `FuzzRegressionTests.ReportedMutateSeeds_HaveNoViolations` and
+  `LambdaFirstOperandCommentIssue633Tests`.

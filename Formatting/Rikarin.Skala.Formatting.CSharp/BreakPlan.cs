@@ -9234,7 +9234,8 @@ public sealed class BreakPlan {
     ///     SK-DIV-0601): `x is A /* f */ or B` breaks with the comment ending `x is A`'s line, so the oracle reads
     ///     the comment as part of the width that must fit beside the arrow. Without it, pass one kept an arrow
     ///     whose first line ran past the margin, and pass two — reading the comment through the kept break's
-    ///     flat width — broke it.
+    ///     flat width — broke it. An operand chain's <c>a /* f */ &amp;&amp; b</c> is the same miss: 90 of 216 cells at
+    ///     the margin changed on a second pass without the comment counted, and none does with it.
     /// </remarks>
     int FirstOperandWidth(ExpressionSyntax body) {
         switch (body) {

@@ -288,6 +288,10 @@ public sealed class FuzzRegressionTests {
     // kept with them.
     [Theory]
     [InlineData(11718305405350914591UL, "constructs/breaks/chain-after-parenthesised-head.cs")]
+    // #633, `fuzz --seed=4417093`: `U(x… => x… is A /* f */  or B or C…)`. The sole lambda's first operand was
+    // measured without the comment that ends its line once the pattern breaks, so pass one kept an arrow whose line
+    // ran to 125; pass two, the comment now ending the line, broke it (SK-DIV-0601).
+    [InlineData(10236841228984116565UL, "constructs/wrapping/lambda-arrow-over-an-operand-chain.cs")]
     // #617, `fuzz --seed=61714`: `{ Value.Length: > 2, Kind` / `: not null }` / `when (from …) => …` — the `when` on
     // its own line lifted the braces only once the arrow broke for width, a level too deep; pass two put it back.
     [InlineData(16267341160299312604UL, "constructs/breaks/arm-braces-under-an-arrow-broken-for-width.cs")]
