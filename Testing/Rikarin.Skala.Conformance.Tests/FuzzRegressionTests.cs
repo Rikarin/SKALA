@@ -249,6 +249,10 @@ public sealed class FuzzRegressionTests {
     // read the brace's break as the author's. The `=` now breaks when the line through the `{` does not fit
     // (SK-DIV-0553).
     [InlineData(9076957179953969410UL)]
+    // #629: `T v75 = ((x` / `, y) => {` / `return …;` / `}) ? a : b`: the author's break before the lambda's `,` read as
+    // a condition written across lines, so pass one kept the `=` past #553's rule; pass two, the comma joined, broke it.
+    // A break before a comma now reads as glued, as the formatter never keeps one (SK-DIV-0593).
+    [InlineData(5989313709516589063UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

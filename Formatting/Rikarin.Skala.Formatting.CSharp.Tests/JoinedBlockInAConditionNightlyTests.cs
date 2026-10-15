@@ -90,4 +90,56 @@ public sealed class JoinedBlockInAConditionNightlyTests {
         Assert.Equal(oracle, first);
         Assert.Equal(first, FormatWith(first));
     }
+
+    /// <summary>
+    ///     Fuzz 5989313709516589063 (#629): the author's break is in front of a comma in the lambda's parameter list,
+    ///     which the formatter always joins to its item. The oracle answers the same as for the list written on one
+    ///     line, one break or two.
+    /// </summary>
+    [Theory]
+    [InlineData("(x, y)")]
+    [InlineData("(x\n, y)")]
+    [InlineData("(x\n    , y)")]
+    public void ABreakBeforeACommaInTheParameters_ReadsAsJoined(string parameters) {
+        var source = """
+                     namespace N {
+                         public class C {
+                             public void M() {
+                                 switch (a) {
+                                     case [_, .. var rest52]:
+                                         if (c) {
+                                             Dictionary<(Task<string> First, Memory<int> Second), List<(Task<string> First, Memory<int> Second)>> v75 = (PARAMETERS => {
+                                                 return @"verbatim\path";
+                                             }) ? this.Items : (source is > 0 and < 100);
+                                         }
+                                         break;
+                                 }
+                             }
+                         }
+                     }
+                     """.Replace("PARAMETERS", parameters, StringComparison.Ordinal);
+        var oracle = """
+                     namespace N {
+                         public class C {
+                             public void M() {
+                                 switch (a) {
+                                     case [_, .. var rest52]:
+                                         if (c) {
+                                             Dictionary<(Task<string> First, Memory<int> Second),
+                                                 List<(Task<string> First, Memory<int> Second)>> v75 =
+                                                 ((x, y) => { return @"verbatim\path"; }) ? this.Items : (source is > 0 and < 100);
+                                         }
+
+                                         break;
+                                 }
+                             }
+                         }
+                     }
+
+                     """;
+
+        var first = FormatWith(source);
+        Assert.Equal(oracle, first);
+        Assert.Equal(first, FormatWith(first));
+    }
 }
