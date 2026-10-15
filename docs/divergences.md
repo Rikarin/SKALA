@@ -14395,8 +14395,8 @@ receiver was a parenthesised *operator* with no arguments (#598); any other pare
 
 ## SK-DIV-0596 — a comment after a chain's receiver, and an author's break before its first call
 
-⚠ **Found by the fuzzer (#631, seed 10820374509567880048, `constructs/wrapping/chain-head-past-the-margin.cs`),
-pre-existing on adca899a and on 4fae2117d.** `var q = source.A… /** d */ .Select /** d */ (y => y).Where (z => z.Bb);`
+⚠ **Found by the fuzzer (#631, seeds 10820374509567880048 and 14288782122367440787, the second with a `/* f */`,
+both from `constructs/wrapping/chain-head-past-the-margin.cs`), pre-existing on adca899a and on 4fae2117d.** `var q = source.A… /** d */ .Select /** d */ (y => y).Where (z => z.Bb);`
 with the receiver ending at 119: pass one kept `var q = source.A… /** d */` at 128 columns and broke before
 `.Select`; pass two broke the `=`. Two defects, each enough on its own to make the seed settle:
 
