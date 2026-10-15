@@ -741,8 +741,10 @@ public sealed class Fitter {
                         : ResolvedMode.Flat;
                 }
 
-                // ⚠ See GroupFacts.FlatIfHeadOverflows: the head's own point takes the break.
-                if (facts.FlatIfHeadOverflows && !Fits(m.Column, m.PointWidth)) {
+                // ⚠ See GroupFacts.FlatIfHeadOverflows: the head's own point takes the break. ⚠ Read from the
+                // planner's width, never the measured point width, which ends at the target's dot once pass one
+                // has broken it (#628).
+                if (facts.FlatIfHeadOverflows > 0 && !Fits(m.Column, facts.FlatIfHeadOverflows)) {
                     return ResolvedMode.Flat;
                 }
 
