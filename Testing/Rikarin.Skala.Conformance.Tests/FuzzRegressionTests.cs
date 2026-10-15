@@ -373,6 +373,10 @@ public sealed class FuzzRegressionTests {
     // Broken inside, the value was no held call and pass one kept the `=`; pass two, the value joined, read its
     // column through the whole target as if flat, 32 columns right of `.Value =`, and broke the `=`.
     [InlineData(15061394490375601826UL, "constructs/breaks/held-value-behind-a-target-call.cs")]
+    // #628 (fails on b86a1c49c too): `A….B….C…_w….D…` / `.More…Value = yyyyyyyy;`. Pass one measured the target
+    // flat through the `=`, found it overflowing and kept the `=`; pass two, reading the target's dot break as the
+    // author's, measured the point width to that dot, found the head fitting and broke the `=`.
+    [InlineData(10722289349277649158UL, "constructs/breaks/member-access-fill.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
