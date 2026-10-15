@@ -10367,6 +10367,25 @@ All 15 still unstable are generic methods and write exactly what the start commi
 the `=` (`40_50_20_9_5_138_generic_ident_1_g45`). That is not this fix. Pinned by
 `HeldParenPastTheMarginIssue626Tests`.
 
+⚠ **#630 (group M, 2026-10-15): fixed.** Those cells share one fact: the receiver itself runs past the margin beside
+the `=`, so no dot can take the break. The generic exemption then left the type argument list as the only point
+before the `(`. Pass one broke there, `= r.M<` / `G…>(`, a line the oracle never writes. Pass two read it as the
+author's and broke the `=`. Across #626's six probes the oracle breaks the `=` in 122 of 122 cells whose receiver
+ends past the margin beside it; the others broke between the type and the name. A generic method's exemption now
+ends there (`Fitter.HeldValueBreaks`).
+- **Fresh random probe** written after the change (seed 70371, 4 000 cells, a third generic): 3 205 → 3 215 agree,
+  cells that took two passes 10 → 0, no newly diverging cell.
+- **Generic sweep** (4 220 cells, the `(` landing at 118 to 128): unchanged, 2 161.
+
+Pinned by `HeldGenericReceiverPastTheMarginIssue630Tests`.
+
+Measured and **not wired**: whether a generic held call whose `(` overflows beside the `=` breaks the `=` or its dot.
+Skala keeps #528's dot. In the sweep the oracle breaks the dot behind a head under twelve (322 of 336) and almost
+never from twelve up (80 of 2 352), so Skala's dot is wrong in 1 324 cells there. No rule over the dot's line, the
+head and the receiver separates the 80 (best 2 322 of 2 352). The obvious one — break unless the head is under
+twelve, or the dot's line plus twice the head ends by 133 — newly diverged 16 cells of #528's shape (receivers of 11
+and 20, an argument of four), so it was not taken.
+
 - ⚠ status: the held typed local, the narrow-head pattern and the value's level after a type-name break are
   **resolved within the measured shapes** (#446 item 2). **Open**: the name line's `=` decision, and a value that
   fits neither beside nor below (`=` / chop, where Skala breaks the dot).
