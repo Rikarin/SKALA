@@ -6609,7 +6609,9 @@ public sealed class BreakPlan {
                     },
                     FlatIfHeadOverflows: node is AssignmentExpressionSyntax { Left: var target }
                     && TrailingProperty(target) is not null
-                    && ChainPointCount(target, options) == 0,
+                    && ChainPointCount(target, options) == 0
+                        ? HeadWidthThroughEquals(node, equals)
+                        : 0,
                     ValueHeadWidth: conditionHead,
                     ValueHeadFitsBelow: value is ConditionalExpressionSyntax {
                         Condition: InvocationExpressionSyntax { Expression: IdentifierNameSyntax or GenericNameSyntax }

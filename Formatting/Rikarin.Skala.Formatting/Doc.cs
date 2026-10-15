@@ -1678,7 +1678,11 @@ public sealed class Document {
 ///     ⚠ An assignment's <c>=</c> whose target is a member-access fill (#531, SK-DIV-0330): when the target
 ///     with its <c>=</c> does not fit on the line, the target's own dot breaks and the <c>=</c> stays —
 ///     <c>A.B.C.D.More</c> / <c>.Value = 1;</c> — where a break after the <c>=</c> would leave the line it
-///     ends as long as it was.
+///     ends as long as it was. The target's width through the <c>=</c> as the formatter writes it on one line, or
+///     zero. ⚠ Read from the syntax, never from the group's measured point width (#628, fuzz
+///     10722289349277649158): once pass one has broken the target's dot, pass two reads that break as the
+///     author's, the point width ends at it, the head fits, and the ordering rule broke the <c>=</c> pass one
+///     had kept.
 /// </param>
 /// <param name="HeldCall">
 ///     ⚠ A chain's held first call (#528, SK-DIV-0331), as the columns its line has to end short of the
@@ -1956,7 +1960,7 @@ public readonly record struct GroupFacts(
     int HeldCallLambdaRest = 0,
     int HeldCallLambdaArrow = 0,
     bool ContinuesIfItBreaks = false,
-    bool FlatIfHeadOverflows = false,
+    int FlatIfHeadOverflows = 0,
     int ValueHeadWidth = 0,
     bool ValueHeadFitsBelow = false,
     bool ValueHeadIsWide = false,
