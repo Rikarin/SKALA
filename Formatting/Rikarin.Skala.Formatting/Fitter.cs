@@ -368,6 +368,13 @@ public sealed class Fitter {
                     return KeepOrJoin(facts, m, tail);
                 }
 
+                // ⚠ See GroupFacts.FlatIfHeadOverflows: the head's own point takes the break. ⚠ Read from the
+                // planner's width, never the measured point width, which ends at the target's dot once pass one
+                // has broken it (#628).
+                if (facts.FlatIfHeadOverflows > 0 && !Fits(m.Column, facts.FlatIfHeadOverflows)) {
+                    return ResolvedMode.Flat;
+                }
+
                 // ⚠ A `when` condition's outer type argument list: see GroupFacts.WhenOuterTail (#576).
                 // ⚠ The "stays" half is read off the planner's width, never off the measured one (fuzz
                 // 10815522948059258787 and 1019535202291160959): pass one kept the list and broke the inner one after
@@ -739,13 +746,6 @@ public sealed class Fitter {
                     return Fits(m.Column, operand) && !Fits(m.Column, operand + 1 + facts.KeywordWidth)
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
-                }
-
-                // ⚠ See GroupFacts.FlatIfHeadOverflows: the head's own point takes the break. ⚠ Read from the
-                // planner's width, never the measured point width, which ends at the target's dot once pass one
-                // has broken it (#628).
-                if (facts.FlatIfHeadOverflows > 0 && !Fits(m.Column, facts.FlatIfHeadOverflows)) {
-                    return ResolvedMode.Flat;
                 }
 
                 // ⚠ See GroupFacts.BreaksIfItOverflows: a receiver's own dots (#582).
