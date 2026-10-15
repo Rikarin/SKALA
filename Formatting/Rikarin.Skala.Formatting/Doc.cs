@@ -1669,6 +1669,10 @@ public sealed class Document {
 ///     <c>Fitter.ArmFills</c>.
 /// </param>
 /// <param name="ArmBody">With <see cref="ArmHead" />: the arm's body with its comma, if it has one.</param>
+/// <param name="HeldValueGeneric">
+///     With <see cref="HeldValue" />: the held call's method has type arguments, <c>r.M&lt;T&gt;(…)</c>. Its dot takes
+///     the break where the <c>(</c> would land past the margin beside the <c>=</c>, which otherwise breaks (#626).
+/// </param>
 /// <param name="HeldValueManyArgs">With <see cref="HeldValue" />: the call has more than one argument.</param>
 /// <param name="FlatIfHeadOverflows">
 ///     ⚠ An assignment's <c>=</c> whose target is a member-access fill (#531, SK-DIV-0330): when the target
@@ -1966,6 +1970,7 @@ public readonly record struct GroupFacts(
     int HeldValueOperatorTail = 0,
     int HeldValueHead = 0,
     bool HeldValueManyArgs = false,
+    bool HeldValueGeneric = false,
     int HeldValueTypedHead = 0,
     int HeldValueCallee = 0,
     int HeldValueName = 0,
