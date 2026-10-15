@@ -14539,3 +14539,42 @@ whole and Skala chops every dot. None is a second-pass difference.
 - options: `skala_wrap_before_first_method_call = false` (the export's value).
 - status: **fixed**, pinned by `FuzzRegressionTests.ReportedMutateSeeds_HaveNoViolations` and
   `ChainReceiverCommentIssue631Tests`.
+
+## SK-DIV-0600 — a cast's `)` kept on a line of its own, and what follows it
+
+⚠ **Found by the fuzzer (#632, generated seed 17289469222180178780), pre-existing on adca899a and on 9d2913046.**
+The issue's case carried `#region`, `#if`, tabs and a `try` / `finally`; none of them is needed. The minimal shape is
+
+```
+return (DateTime?
+)"""
+    x
+    """;
+```
+
+Pass one broke after the `)` — before the multi-line raw literal, which Skala writes on a line of its own — and put
+the `)` one level in, as it does for `return (DateTime?` / `)x;`. Pass two read its own output, where the `)` is now
+followed by a break, and put the `)` on the statement's level. The cause was in `IsContinuation`: a closing
+parenthesis counts as the start of a unit (`StartsAUnit`), which spends no continuation level, and only `)x`'s shape
+reached a level by another road. **The oracle does not care what follows the `)`**: `return (DateTime?` / `)` / `x;`,
+`throw …`, `yield return …`, `(int` / `)` / `(long` / `)` / `x` and `)x.Y` / `.Z()` all put the `)` one level in. A
+cast's `)` is now a continuation line, exactly as #505 made a grouping parenthesis's, under the same exception: a
+cast broken after its `(` closes on its opener's level.
+
+Measured with `Testing ask`. The issue's neighbourhood (34 statements: the raw literal and a `$"""` after the cast,
+a plain string, a name, a chain, a switch, `return` / `throw` / `var` / `=` / an argument / a lambda, nested and
+chained casts): 20 differed from the oracle and 2 changed on a second pass, now 10 and 0. A fresh generated probe of
+500 statements the rule was not fitted on (ten heads — `return`, `throw`, `yield return`, `var v =`, `v =`, an
+argument, `??`, a conditional's branch, `await`, `_ =` — five cast types, ten operands, with and without a break
+after the `)`, the `)` flush or indented): 191 differed on the start commit, 57 now, none newly, and no second-pass
+change before or after.
+
+⚠ **Open, and not this issue's:** the 57 are three other shapes, each differing identically on the start commit — a
+switch expression after the cast nests its arms a level short (45), `)` / `(a + b)` is joined where the oracle keeps
+the break (10), and `await (T` / `)` / `- x` (2). The issue's own shape still differs in one place: the oracle keeps
+`)"""` on one line and aligns the literal to its quotes, where Skala breaks before a multi-line raw literal behind a
+cast — idempotent, and a separate decision.
+
+- options: none.
+- status: **fixed** (the second pass), pinned by `FuzzRegressionTests.ReportedGeneratedSeeds_HaveNoViolations` and
+  `CastCloserIssue632Tests`.
