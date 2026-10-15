@@ -747,8 +747,10 @@ public sealed class Fitter {
                 }
 
                 // ⚠ See GroupFacts.BreaksIfItOverflows: a receiver's own dots (#582).
+                // ⚠ With a comment after the receiver counted: `source.A… /** d */` / `.Select(…)` chops at 121 as
+                // a bare receiver would (#631). Nothing else stands between the receiver and the held call's dot.
                 if (facts.BreaksIfItOverflows) {
-                    return Fits(m.Column, m.FlatWidth) ? ResolvedMode.Flat : ResolvedMode.Broken;
+                    return Fits(m.Column, m.FlatWidth, m.Trailing) ? ResolvedMode.Flat : ResolvedMode.Broken;
                 }
 
                 // ⚠ A single call on a parenthesised receiver: broken exactly when the line overflows and the
