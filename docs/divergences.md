@@ -14392,3 +14392,31 @@ receiver was a parenthesised *operator* with no arguments (#598); any other pare
 
 - status: the idempotency **fixed**, pinned by `FuzzRegressionTests` and
   `ParenthesisedReceiverIssue617Tests.AnyParenthesisedReceiver_*`; the decisions **open**.
+
+## SK-DIV-0593 — a line break before a comma in a conditional's condition
+
+Fuzz 5989313709516589063 (#629, generate; fails on `d2aeae3a` and on this branch's start `4fae2117`). Minimal, inside a
+`switch` section deep enough that the tuple-typed local's type wraps: `Dictionary<(…), List<(…)>> v75 = ((x` / `, y)
+=> {` / `return …;` / `}) ? this.Items : (…);`. #553's rule measures a conditional's condition only while the author
+left it on one line (`HasLooseBreak`), and SK-DIV-0551 taught it the gaps a lambda's joined block puts back. A break
+before a `,` was still read as the author's, though the formatter never keeps one: pass one turned the rule away, kept
+the `=` and opened the block; pass two, the comma joined, measured the condition, broke the `=` and joined the block —
+the oracle's answer for the input. `BreakPlan.IsGluedGap` now reads the gap before a `,` as glued, as it reads the gaps
+before a `)` or a `]`; `FlatSourceWidth` already wrote no space there, so only the reading of the break changes.
+
+Measured 2026-10-15 with `Testing ask`. Fitting grid, 80 rows: four heads (the seed's type at the seed's depth, a
+narrower type, `var`, the seed's type four levels shallower), five parameter lists (`(x, y)`, a break before the comma,
+after it, before the arrow, `(x` / `, y` / `, z)`), a block or an expression body, the seed's tail or `? a : b`: rows
+apart from the oracle 19 → 14, non-idempotent files 4 → 0, none newly apart. Fresh grid, 36 rows (other names and
+types, the comma's break indented or at column 0, one or two of them, the `{` on or below the arrow, the seed-like or a
+long chopping tail): 13 → 1 apart, 6 → 0 non-idempotent. ⚠ With the fix the oracle and Skala answer the comma's break
+exactly as the list on one line in every row but one shape, which was apart before and is the oracle's own: a
+mid-width type, `{` on the arrow, the seed's tail, where the oracle opens the block for `(x, y)` and joins it for `(x`
+/ `, y)` — Skala gives the joined answer for both. The other 13 left on the fitting grid are pre-existing and unchanged:
+nine are SK-DIV-0551's wide head with a short tail (the oracle keeps the `=` and opens the block, or with an expression
+body chops the parameters, `= ((` / `x,` / `y` / `) => 42)`), and four are a break before the arrow at the shallow
+depth, where Skala chops the parameter list and the oracle breaks the `=`.
+
+- options: none (the comma's placement is not configurable).
+- status: **fixed** (the seed, pinned by `JoinedBlockInAConditionNightlyTests.ABreakBeforeACommaInTheParameters_*`
+  and `FuzzRegressionTests`); the residues above are **open** under SK-DIV-0551.
