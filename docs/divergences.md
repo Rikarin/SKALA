@@ -14392,3 +14392,45 @@ receiver was a parenthesised *operator* with no arguments (#598); any other pare
 
 - status: the idempotency **fixed**, pinned by `FuzzRegressionTests` and
   `ParenthesisedReceiverIssue617Tests.AnyParenthesisedReceiver_*`; the decisions **open**.
+
+## SK-DIV-0590 — an assignment target too wide with its `=`: read the width flat, and ask before the value's rules
+
+⚠ **Found by the fuzzer (#628, seed 10722289349277649158, `constructs/breaks/member-access-fill.cs`). It is
+pre-existing: it fails on b86a1c49c and on this branch's start, 4fae2117d.** Minimised to
+`A….B….C…_w….D…` / `.More…Value = yyyyyyyy;`. The target with its `=` runs past the margin, so the target's dot takes
+the break and the `=` stays (#531, `GroupFacts.FlatIfHeadOverflows`). Pass one read the head from the group's measured
+point width, which was flat, so it overflowed and the `=` stayed. Pass two read pass one's dot break as the author's.
+The point width then ended at that dot, 112 columns, so the head fitted, and the ordering rule broke the `=`. The oracle
+keeps the `=` on both passes.
+
+- Fix: `FlatIfHeadOverflows` now holds the target's formatted width through the `=` (`HeadWidthThroughEquals`), and
+  the Fitter reads that width on both passes.
+- ⚠ **And the rule is asked earlier, before the value-specific rules**: the plain member value (`MemberHeadWidth`,
+  #482), the callee floor (#446) and the rest. Each of those read the same overflowing head as a reason to break the
+  `=`. That gave `A.B.C.D` / `.Value =` / `oo.P;` and `=` / `M(a, b);` on pass one, where the oracle keeps the `=` on
+  the target's last line for every value kind measured. Those rows were stable, so the fuzzer never saw them.
+- Measured 2026-10-15 with `Testing ask`. Rows are plain member targets of three to five links at indents 8 to 24.
+  The text before the last dot ends at columns 96 to 121, and the last link is 8 to 40 wide. Values are identifiers
+  of 2 to 60 columns, a member access or a two-argument call. Each row is written three ways: flat, broken by the
+  author before the last dot, and broken before the dot before it.
+
+| Grid | Built for | Rows | Diverging, start | Diverging, branch | Non-idempotent, start | Non-idempotent, branch |
+|---|---|---:|---:|---:|---:|---:|
+| A: fixed names, `=` ending at 112 to 151 | the first look | 600 | 60 | 27 | 0 | 0 |
+| B: seed 628 | the fix and the reordering | 600 | 140 | 39 | 2 | 0 |
+| **fresh**, built after the last change (seed 62901) | — | 450 | 93 | 21 | 3 | 0 |
+
+No row regressed on any grid.
+
+- ⚠ **Open, and none of it is a second-pass difference:** an author's break at a dot *before* the last one
+  (`A` / `.C….More…Value = y;`). The oracle reads that break as a broken chain. It puts the remaining links two levels
+  in, one per line, and breaks the `=` one level in. Skala keeps the rest of the target on the one line and keeps the
+  `=`. Every remaining row on grids B and C is of this form, bar one. In that one, the fill itself broke at the dot
+  before the last, because the text before the last dot ended past the margin. Grid A has 21 rows of this form.
+- ⚠ **Open, also stable:** a target's last line that still overflows with its value
+  (`.More…Value = y…;` at 151, six rows of grid A, flat or broken at the last dot). The oracle then breaks the `=`
+  as well and puts the dot two levels in. Skala keeps the `=`, as it did at the start.
+
+- status: **fixed** (the idempotency, and the value kinds on a target broken at its last dot), pinned by
+  `AssignmentTargetFillIssue628Tests` and seed 10722289349277649158 in `FuzzRegressionTests`. ⚠ **Open:** a target
+  broken before an earlier dot.
