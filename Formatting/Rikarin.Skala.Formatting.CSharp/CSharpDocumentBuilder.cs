@@ -4287,6 +4287,18 @@ public sealed partial class CSharpDocumentBuilder {
             return true;
         }
 
+        // ⚠ So is a cast's `)` (#632, SK-DIV-0600), whatever follows it: `return (DateTime?` / `    )x;`
+        // and `return (DateTime?` / `    )` / `    x;` take the same one level. The `)` used to count as
+        // a unit only where a break followed it, so a pass that broke after the `)` — before a
+        // multi-line raw string literal, RawLiteralPlan — moved it a level out on the next pass.
+        // A cast broken after its `(` is left as it was: the oracle closes that one on its opener's
+        // level, as #443's list does.
+        if (nextToken.IsKind(SyntaxKind.CloseParenToken)
+            && nextToken.Parent is CastExpressionSyntax cast
+            && !HasLineBreak(cast.OpenParenToken.Span.End, cast.Type.SpanStart)) {
+            return true;
+        }
+
         return !StartsAUnit(nextToken);
     }
 

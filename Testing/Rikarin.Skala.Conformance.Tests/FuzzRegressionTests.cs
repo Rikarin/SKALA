@@ -260,6 +260,10 @@ public sealed class FuzzRegressionTests {
     // as a condition written across lines, so pass one kept the `=` past #553's rule; pass two, the comma joined, broke
     // it. A break before a comma now reads as glued, as the formatter never keeps one (SK-DIV-0593).
     [InlineData(5989313709516589063UL)]
+    // #632: `return (DateTime?` / `)"""` over a multi-line raw literal. Pass one broke after the cast's `)` and
+    // kept it a level in; pass two, the `)` now alone on its line, read it as a unit and put it a level out. A
+    // cast's `)` is a continuation line whether or not a break follows it (SK-DIV-0600).
+    [InlineData(17289469222180178780UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
