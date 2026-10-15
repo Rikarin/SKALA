@@ -3739,8 +3739,11 @@ public sealed class BreakPlan {
             // a chain's parenthesised head does (SK-DIV-0112): `var x =` / `(a + b…)` / `.Trim();` puts the dot
             // on the `(`'s column. Pass one wrote it a level deeper and pass two, reading the break as the
             // author's, put it back (#598).
-            IsACallOnAParenthesisedOperator(call),
-            ownLevel: !IsACallOnAParenthesisedOperator(call)
+            // ⚠ Any parenthesised receiver, not only an operator's, and with arguments too: `var x =` /
+            // `(b with { … })` / `.M(s);` puts the dot on the `(`'s column as well (#627, fuzz seed
+            // 6141772401922034799, measured under `with`, `as`, `await`, a cast, `?:`, `!`, `??` and `new { }`).
+            receiver is ParenthesizedExpressionSyntax,
+            ownLevel: receiver is not ParenthesizedExpressionSyntax
         );
         return call;
     }

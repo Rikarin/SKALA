@@ -14347,3 +14347,24 @@ of 26 to 40 grid was built for it, and the form became `s`.
 - **Typed `((…))`:** not attempted this round. Still SK-DIV-0491's.
 
 - status: **partially fixed**, pinned by `CastParenBehindAWideHeadIssue598Tests`.
+
+## SK-DIV-0565 — a held single call behind a parenthesised receiver that is no operator: the dot's level
+
+⚠ **Found by the fuzzer (#627, seed 6141772401922034799, `real/vixen/Core/Vixen.Terrain.Tests/TerrainBrushTests.cs`),
+pre-existing on master d2aeae3a and 25fe2a773.** `var alpha = (Brush(radius: 4f) with { … }).FootprintOf_w…(stamp);`
+past the margin: pass one broke the `=` and wrote `.FootprintOf…` a level past the `(`; pass two, reading the `=` break as
+the author's, wrote it on the `(`'s column. The held single-call plan (#528) gave the dot its own level unless the
+receiver was a parenthesised *operator* with no arguments (#598); any other parenthesised receiver took the level.
+
+- **The oracle.** Asked with `Testing ask` under eight receivers — `with`, `as`, `await`, a cast, `?:`, `!`, `??` and
+  `new … { }` — behind `var` and an assignment, names of 4 to 40, calls of 10 to 55 columns, one and two arguments,
+  the `=` already broken (512 statements): the dot sits on the `(`'s column every time, as SK-DIV-0112's
+  parenthesised chain head does. Skala now takes the level only when nothing else spends one for any parenthesised
+  receiver: 104 → 8 apart, 96 → 0 statements a second pass changes.
+- ⚠ **Not fixed: the decisions from a one-line source.** The same 512 statements on one line still differ in 77, all
+  of them the `=` and the dot's choice (the oracle breaks the `=` and keeps the call, or chops its arguments, where
+  Skala keeps the `=` and breaks the dot), unchanged from master; the 8 left above are `(new … { })` receivers that
+  Skala chops. Neither is a second-pass difference.
+
+- status: the idempotency **fixed**, pinned by `FuzzRegressionTests` and
+  `ParenthesisedReceiverIssue617Tests.AnyParenthesisedReceiver_*`; the decisions **open**.

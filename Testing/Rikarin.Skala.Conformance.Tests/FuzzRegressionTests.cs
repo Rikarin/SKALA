@@ -348,6 +348,10 @@ public sealed class FuzzRegressionTests {
     // the outer list as unbounded, skipped the rule and broke it too. The rule's "stays" half now reads the planner's
     // width.
     [InlineData(10815522948059258787UL, "constructs/breaks/arm-when-condition-below.cs")]
+    // #627: `var alpha = (Brush(radius: 4f) with { … }).FootprintOf_w…(stamp);` — a held single call behind a
+    // parenthesised receiver that is no operator. Pass one broke the `=` and put the dot a level past the `(`; pass
+    // two, reading the `=` break as the author's, put it on the `(`'s column, as the oracle does.
+    [InlineData(6141772401922034799UL, "real/vixen/Core/Vixen.Terrain.Tests/TerrainBrushTests.cs")]
     [InlineData(1019535202291160959UL, "constructs/breaks/arm-when-condition-below.cs")]
     // The Nightlies of 2026-10-13 and 2026-10-14, on master adca899a: idempotency on two Vixen files, both clean once
     // the 2026-10-14 merges landed (42ed48b0) without either being targeted. Pinned so neither returns unnoticed.

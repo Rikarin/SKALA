@@ -6,6 +6,55 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </summary>
 public sealed class ParenthesisedReceiverIssue617Tests {
     /// <summary>
+    ///     ⚠ #627: a held single call behind a parenthesised receiver that is no operator — <c>with</c>, <c>as</c>, a
+    ///     cast — below a broken <c>=</c> puts its dot on the <c>(</c>'s column, as the oracle does. Pass one put it a
+    ///     level past the <c>(</c> and pass two pulled it back (fuzz seed 6141772401922034799).
+    /// </summary>
+    [Fact]
+    public void AnyParenthesisedReceiver_BelowABrokenEquals_PutsTheDotOnTheParenthesis() =>
+        Oracle.Agrees(
+            """
+            class C {
+                void M1() {
+                    var nnnnnnnnnnnn =
+                        (Brush(radius: 4f) with { Shape = BrushShape.Alpha }).Ffffffffffffffffffffffffffffffffffffffffffffffffffffffff(stamp);
+                }
+
+                void M2() {
+                    var nnnnnnnnnnnn =
+                        (itemFromTheCollectionOfAllThings as ThingOfInterest).Ffffffffffffffffffffffffffffffffffffffffffffffffffffffff(stamp);
+                }
+
+                void M3() {
+                    var nnnnnnnnnnnn =
+                        ((ThingOfInterest)objectFromTheCollectionOfAllThings).Ffffffffffffffffffffffffffffffffffffffffffffffffffffffff(stamp);
+                }
+            }
+            """,
+            """
+            class C {
+                void M1() {
+                    var nnnnnnnnnnnn =
+                        (Brush(radius: 4f) with { Shape = BrushShape.Alpha })
+                        .Ffffffffffffffffffffffffffffffffffffffffffffffffffffffff(stamp);
+                }
+
+                void M2() {
+                    var nnnnnnnnnnnn =
+                        (itemFromTheCollectionOfAllThings as ThingOfInterest)
+                        .Ffffffffffffffffffffffffffffffffffffffffffffffffffffffff(stamp);
+                }
+
+                void M3() {
+                    var nnnnnnnnnnnn =
+                        ((ThingOfInterest)objectFromTheCollectionOfAllThings)
+                        .Ffffffffffffffffffffffffffffffffffffffffffffffffffffffff(stamp);
+                }
+            }
+            """
+        );
+
+    /// <summary>
     ///     A dot broken after a parenthesised operator puts the operator a level past the dot: behind <c>x =</c>, a cast and a
     ///     <c>return</c>, for a property and a call, and as an argument one level past the argument's line. Before the
     ///     fix pass one wrote the operator on the dot's column and pass two nested it; M7 broke only inside.
