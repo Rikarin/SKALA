@@ -7,8 +7,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </summary>
 public sealed class ChainReceiverCommentIssue631Tests {
     /// <summary>
-    ///     Fuzz 10820374509567880048's statement: the receiver ends at 111 and its comment at 120, which stays; one column more
-    ///     and the receiver's own dot breaks as well, whatever the margin says of the receiver alone.
+    ///     Fuzz 10820374509567880048's statement: the receiver ends at 111 and its comment at 120, which stays; one
+    ///     column more and the receiver's own dot breaks as well, whatever the margin says of the receiver alone.
     /// </summary>
     [Fact]
     public void TheFuzzShape_CountsTheCommentAfterTheReceiver() =>
@@ -128,5 +128,4 @@ public sealed class ChainReceiverCommentIssue631Tests {
             }
             """
         );
-
 }
