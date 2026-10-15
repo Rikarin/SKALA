@@ -5456,8 +5456,8 @@ public sealed class BreakPlan {
         // joined line is not a line the writer can produce, and the band's `=` break, read on pass two as a break
         // inside the parameter, turned the rule off and broke the gap. ⚠ The directive and not any line break in the
         // section's source (fuzz 4372692451688483448): the arguments this rule chops on pass one are such a break on
-        // pass two, which turned the rule off there. ⚠ A line break inside the *parameter* is still read off the source,
-        // on purpose and pass-stably: see PlanSectionBeforeALongParameter's remarks (SK-DIV-0571).
+        // pass two, which turned the rule off there. ⚠ A line break inside the *parameter* is still read off the
+        // source, on purpose and pass-stably: see PlanSectionBeforeALongParameter's remarks (SK-DIV-0571).
         var first = section.CloseBracketToken.GetNextToken();
         if (source.AsSpan(first.SpanStart, parameter.Span.End - first.SpanStart).IndexOfAny(LineEnds) >= 0
             || section.ContainsDirectives) {
@@ -7363,15 +7363,16 @@ public sealed class BreakPlan {
     ///     Widths are the formatter's (<see cref="FormattedWidth(SyntaxToken, SyntaxToken)" />), and a comment
     ///     anywhere in the section or the parameter, or a break inside the parameter, leaves the list to its own fit.
     ///     <para>
-    ///         ⚠ The break inside the parameter is read off the source deliberately, and it is pass-stable (SK-DIV-0571).
-    ///         The only break pass one writes inside the parameter while these rules speak is the default band's
-    ///         <c>=</c> (<see cref="GroupFacts.SectionJoinedOverDefault" />), and it is written exactly when the
-    ///         arguments do not chop and the gap stays — the answer the arguments' and the gap's own fits give on pass two,
-    ///         where the section fits and the line ends at the kept <c>=</c>. A parameter the rules leave because it
-    ///         overflows its own line (<c>Fitter.OverflowsItsOwnLine</c>) is left on both passes. ⚠ Measuring through
-    ///         the break instead, off the tree, was tried and refuted: on 1 181 cells with an author's break after the
-    ///         <c>=</c> or the type, 57 outputs changed on a second pass and the oracle's answer was met 456 times
-    ///         against 543 with this read. Pinned by <c>AuthorBrokenParameterSectionIssue603Tests</c>.
+    ///         ⚠ The break inside the parameter is read off the source deliberately, and it is pass-stable
+    ///         (SK-DIV-0571). The only break pass one writes inside the parameter while these rules speak is the
+    ///         default band's <c>=</c> (<see cref="GroupFacts.SectionJoinedOverDefault" />), and it is written exactly
+    ///         when the arguments do not chop and the gap stays — the answer the arguments' and the gap's own fits give
+    ///         on pass two, where the section fits and the line ends at the kept <c>=</c>. A parameter the rules leave
+    ///         because it overflows its own line (<c>Fitter.OverflowsItsOwnLine</c>) is left on both passes. ⚠
+    ///         Measuring through the break instead, off the tree, was tried and refuted: on 1 181 cells with an
+    ///         author's break after the <c>=</c> or the type, 57 outputs changed on a second pass and the oracle's
+    ///         answer was met 456 times against 543 with this read. Pinned by
+    ///         <c>AuthorBrokenParameterSectionIssue603Tests</c>.
     ///     </para>
     /// </remarks>
     void PlanSectionBeforeALongParameter(AttributeArgumentListSyntax arguments) {
