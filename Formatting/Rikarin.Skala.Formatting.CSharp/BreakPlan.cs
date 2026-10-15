@@ -7268,15 +7268,23 @@ public sealed class BreakPlan {
         || previous.TrailingTrivia.Any(static t => t.IsKind(SyntaxKind.EndOfLineTrivia));
 
     /// <summary>
-    ///     Whether a break in this gap is one the formatter's own breaks put there and a flat reading takes
-    ///     back as nothing: before a <c>.</c>, a <c>?</c>, a <c>)</c> or a <c>]</c>, or after a <c>(</c> or
-    ///     a <c>[</c>.
+    ///     Whether a break in this gap is one the formatter's own breaks put there, or one it never keeps, and a
+    ///     flat reading takes back as nothing: before a <c>.</c>, a <c>?</c>, a <c>)</c>, a <c>]</c> or a <c>,</c>, or
+    ///     after a <c>(</c> or a <c>[</c>.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ Before a <c>,</c> too (#629, fuzz 5989313709516589063): the formatter always writes the comma on its
+    ///     item's line, so <c>v = ((x</c> / <c>, y) =&gt; {</c> / <c>return …;</c> / <c>}) ? a : b</c> comes back as
+    ///     <c>((x, y) =&gt; {</c>. Read as the author's break, it turned #553's condition rule away on pass one, which
+    ///     kept the <c>=</c> and opened the block; pass two, the comma joined, measured the condition and broke the
+    ///     <c>=</c> — the oracle's answer for the input.
+    /// </remarks>
     static bool IsGluedGap(SyntaxToken previous, SyntaxToken token) =>
         token.Kind() is SyntaxKind.DotToken
             or SyntaxKind.QuestionToken
             or SyntaxKind.CloseParenToken
             or SyntaxKind.CloseBracketToken
+            or SyntaxKind.CommaToken
         || previous.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken;
 
     /// <summary>
