@@ -14392,3 +14392,36 @@ receiver was a parenthesised *operator* with no arguments (#598); any other pare
 
 - status: the idempotency **fixed**, pinned by `FuzzRegressionTests` and
   `ParenthesisedReceiverIssue617Tests.AnyParenthesisedReceiver_*`; the decisions **open**.
+
+## SK-DIV-0596 — a comment after a chain's receiver, and an author's break before its first call
+
+⚠ **Found by the fuzzer (#631, seed 10820374509567880048, `constructs/wrapping/chain-head-past-the-margin.cs`),
+pre-existing on adca899a and on 4fae2117d.** `var q = source.A… /** d */ .Select /** d */ (y => y).Where (z => z.Bb);`
+with the receiver ending at 119: pass one kept `var q = source.A… /** d */` at 128 columns and broke before
+`.Select`; pass two broke the `=`. Two defects, each enough on its own to make the seed settle:
+
+- **The receiver group did not count the comment.** #582's receiver group (`GroupFacts.BreaksIfItOverflows`) broke
+  only when `source.A…` alone overflowed. The comment is the receiver's trailing trivia, between the group's end and
+  the held call's dot, so it was in neither. The oracle counts it, as a `/** */`, a `/* */` or a `//`: the receiver's
+  dot breaks once the comment ends past 120. The group now reads the line's trailing width up to the next point,
+  which is exactly that comment.
+- **Behind an author's break before the call there was no receiver group at all.** `PlanHeldFirstCall` returned
+  before planning it. Pass one's own output (the comment ending the line, `.Select` below) is such a source, and so
+  is any author's `source.A…` / `.Select(…)`, comment or none. The oracle chops the receiver there by the same rule.
+
+Measured with `Testing ask` on 600 statements: receivers `source.A…` of 88 to 117 columns behind `var q =` and as a
+statement, under ten shapes (no comment, the issue's two comments, a `/** */` or `/* */` before the dot, one after the
+name, and the author's break before the call with a `/** */`, a `//` or no comment, the rest of the chain on one line
+or chopped). The start commit differed from the oracle in 258 and a second pass changed 26; now 0 and 0. A fresh
+probe of 320 statements the rule was not fitted on (seeded generator: indents 8 to 16, heads `var`, `=`, `return`,
+a typed local and an argument; receivers `source.A…`, `this.items.A…` and `a.B.A…`; four calls; comments of 5 to 20
+columns) fixed 12 statements and changed no other.
+
+⚠ **Not fixed, and not this issue's: shapes #582 never measured.** The fresh probe's remaining 106 differing
+statements, all differing on the start commit too, are receivers that are no plain path of names (`this.items.A…`:
+`this` is no name), single-call chains (`source.A….First()`), and three-name paths, where the oracle keeps `a.B`
+whole and Skala chops every dot. None is a second-pass difference.
+
+- options: `skala_wrap_before_first_method_call = false` (the export's value).
+- status: **fixed**, pinned by `FuzzRegressionTests.ReportedMutateSeeds_HaveNoViolations` and
+  `ChainReceiverCommentIssue631Tests`.

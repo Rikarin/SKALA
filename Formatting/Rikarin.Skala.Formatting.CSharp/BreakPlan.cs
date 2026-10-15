@@ -3510,7 +3510,8 @@ public sealed class BreakPlan {
 
         // ⚠ And the receiver's own dots break once the receiver alone overflows: `source` / `.A…` /
         // `.Select(…)` / `.Where(…)`, every link chopped (#582).
-        // ⚠ Behind an author's break before the call too: `source.A…` / `.Select(…)` chops the receiver the same way (#631).
+        // ⚠ Behind an author's break before the call too, which is pass one's own output: the oracle chops
+        // `source.A…` / `.Select(…)` by the same rule, and with no group here pass two broke the `=` (#631).
         if (((MemberAccessExpressionSyntax)link).Expression is MemberAccessExpressionSyntax receiver
             && IsAPathOfNames(receiver)) {
             var receiverGroup = NewGroup();

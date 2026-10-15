@@ -1343,9 +1343,10 @@ public sealed class Document {
 ///     ends with a `!` or a `?.`, which the oracle keeps holding (ChainLinksIssue454Tests).
 /// </param>
 /// <param name="BreaksIfItOverflows">
-///     ⚠ Broken exactly when the group's own flat width, nothing after it counted, overflows its line: a
-///     call chain's receiver that is itself a member access, `source.A….Select(…)`, whose dots break only
-///     once the receiver alone runs past the margin (#582).
+///     ⚠ Broken exactly when the group's own flat width overflows its line, nothing after it counted but what
+///     stands before the next point — a comment after the receiver (#631): a call chain's receiver that is
+///     itself a member access, `source.A….Select(…)`, whose dots break only once the receiver alone runs past
+///     the margin (#582). ⚠ Planned behind an author's break before the call too.
 /// </param>
 /// <param name="BreaksIfReceiverOverflows">
 ///     ⚠ With <see cref="BreaksOnlyIfTailFits" />, on a lambda's arrow over a call chain the author did not break:
