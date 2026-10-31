@@ -1360,8 +1360,8 @@ public sealed class Document {
 ///     ⚠ With <see cref="BreaksOnlyIfTailFits" />: the tail ends at a last-resort point nested in the value — the
 ///     <c>)</c> of a cast over an atom — as it ends at the break an author wrote there, which the cast keeps as a
 ///     required line at the <c>=</c>'s own depth (fuzz 3254860842460080159). Measured through it, a value
-///     <c>(A)(((B)x)</c> too wide below kept its <c>=</c> and broke after <c>(B)</c> past the margin; pass two, the tail
-///     ending at that break, broke the <c>=</c> — the oracle's answer for both inputs.
+///     <c>(A)(((B)x)</c> too wide below kept its <c>=</c> and broke after <c>(B)</c> past the margin; pass two, the
+///     tail ending at that break, broke the <c>=</c> — the oracle's answer for both inputs.
 /// </param>
 /// <param name="LambdaTestCall">
 ///     ⚠ The arrow of a sole lambda argument whose whole body is a type test the author broke before its keyword, over
