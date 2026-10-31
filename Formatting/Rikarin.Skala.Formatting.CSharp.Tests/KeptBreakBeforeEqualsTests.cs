@@ -57,6 +57,85 @@ public sealed class KeptBreakBeforeEqualsTests {
         );
 
     /// <summary>
+    ///     Fuzz 7310017 on held-value-behind-a-target-call, minimised: a block comment after an assignment's <c>=</c>
+    ///     stays on the target's line, so the held call's table counts it. Uncounted, the value "fitted" at 120 columns
+    ///     where the line is 128; pass one kept the <c>=</c> and chopped the arguments, and pass two, the value no held
+    ///     call once broken, broke the <c>=</c>. The oracle breaks after the comment wherever the line overflows.
+    /// </summary>
+    [Fact]
+    public void ABlockCommentAfterTheEquals_CountsTowardTheHeldValue() =>
+        Oracle.Agrees(
+            """
+            class C {
+                void M1() {
+                    {
+                        {
+                            {
+                                Entities_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww.Find(entity).Value = /* f */  World.GetLinearVelocity(body.Handle);
+                            }
+                        }
+                    }
+                }
+
+                void M3() {
+                    {
+                        {
+                            {
+                                Entities_wwwwwwwwwwwwwwwwwwwwww.Find(entity).Value = /* f */ World.GetLinearVelocity(body.Handle);
+                            }
+                        }
+                    }
+                }
+
+                void M4() {
+                    {
+                        {
+                            {
+                                Entities_wwwwwwwwwwwwwwwwwwwwwwwwww.Find(entity).Value = /* f */ World.GetLinearVelocity(body.Handle);
+                            }
+                        }
+                    }
+                }
+            }
+            """,
+            """
+            class C {
+                void M1() {
+                    {
+                        {
+                            {
+                                Entities_wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww.Find(entity).Value = /* f */
+                                    World.GetLinearVelocity(body.Handle);
+                            }
+                        }
+                    }
+                }
+
+                void M3() {
+                    {
+                        {
+                            {
+                                Entities_wwwwwwwwwwwwwwwwwwwwww.Find(entity).Value = /* f */ World.GetLinearVelocity(body.Handle);
+                            }
+                        }
+                    }
+                }
+
+                void M4() {
+                    {
+                        {
+                            {
+                                Entities_wwwwwwwwwwwwwwwwwwwwwwwwww.Find(entity).Value = /* f */
+                                    World.GetLinearVelocity(body.Handle);
+                            }
+                        }
+                    }
+                }
+            }
+            """
+        );
+
+    /// <summary>
     ///     A value too wide even beside the kept <c>=</c> chops its own arguments; one that is an initializer or a binary
     ///     breaks there too. And a break the author put after the <c>=</c> as well is kept, <c>=</c> alone on its line.
     /// </summary>
