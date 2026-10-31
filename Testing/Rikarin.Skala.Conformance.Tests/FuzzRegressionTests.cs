@@ -406,6 +406,11 @@ public sealed class FuzzRegressionTests {
     [InlineData(10820374509567880048UL, "constructs/wrapping/chain-head-past-the-margin.cs")]
     // #631 again with a block comment (fails on adca899a too): `var q = source.A… /* f */ .Select(y => y).Where(…);`.
     [InlineData(14288782122367440787UL, "constructs/wrapping/chain-head-past-the-margin.cs")]
+    // Nightly 2026-10-25 (fails on adca899a and a9ea77a2 too): `E….Get<T>(entity).Value` / `= World.` /
+    // `GetLinearVelocity(body.Handle);`. Broken after `World.`, the value was no held call and pass one kept the line;
+    // pass two measured the joined value beside the target through the `=` and broke after the `=` too. A kept break
+    // before the `=` now takes the `=`'s break.
+    [InlineData(16130008065409407106UL, "constructs/breaks/held-value-behind-a-target-call.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

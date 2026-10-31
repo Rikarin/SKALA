@@ -6449,6 +6449,18 @@ public sealed class BreakPlan {
         if (options.WrapBeforeEq) {
             Point(equals, group);
             broken = BreaksBefore(equals);
+        } else if (BreaksBefore(equals)
+            && !(options.KeepsUserBreaksBetweenItems && BreaksBefore(FirstToken(value)))) {
+            // ⚠ And a break the author put before the `=` is the `=`'s break: no break is added after it, however
+            // wide the value. Measured 2026-10-31 with `Testing ask`: `target` / `= World.M(b);` keeps the value
+            // beside the `=` behind targets of 15 to 90 columns, and a value too wide for that line chops its own
+            // arguments, an initializer or a binary instead — never `=` alone on a line, unless the author wrote it
+            // so (`int G` / `=` / `5;` is kept, which is why only an unbroken side is made flat). Skala broke after
+            // the `=` too wherever the held call's table (#614, #624) measured the value beside the target through
+            // the `=` — so pass one, whose value still held the author's break after `World.` and so planned no held
+            // call, kept the line, and pass two broke it (Nightly 2026-10-25, fuzz seed 16130008065409407106).
+            Flat(FirstToken(value));
+            broken = false;
         } else {
             Point(FirstToken(value), group);
             broken = BreaksBefore(FirstToken(value));
