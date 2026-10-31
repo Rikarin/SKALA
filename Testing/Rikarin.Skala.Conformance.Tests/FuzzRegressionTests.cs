@@ -406,6 +406,10 @@ public sealed class FuzzRegressionTests {
     [InlineData(10820374509567880048UL, "constructs/wrapping/chain-head-past-the-margin.cs")]
     // #631 again with a block comment (fails on adca899a too): `var q = source.A… /* f */ .Select(y => y).Where(…);`.
     [InlineData(14288782122367440787UL, "constructs/wrapping/chain-head-past-the-margin.cs")]
+    // Nightly 2026-10-24 (fails on adca899a too): `Compute( /* f */ some…Ver as string);`. Pass one broke before
+    // the `as` one level past the line; pass two, reading that break as the author's, stacked #597's level on the
+    // level the list had already spent on the `(`'s line behind the comment (SK-DIV-0602).
+    [InlineData(4378889735950361705UL, "constructs/breaks/multi-line-comment-neighbours.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
