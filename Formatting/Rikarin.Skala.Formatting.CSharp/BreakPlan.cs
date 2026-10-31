@@ -6450,7 +6450,7 @@ public sealed class BreakPlan {
             Point(equals, group);
             broken = BreaksBefore(equals);
         } else if (BreaksBefore(equals)
-            && !(options.KeepsUserBreaksBetweenItems && BreaksBefore(FirstToken(value)))) {
+                   && !(options.KeepsUserBreaksBetweenItems && BreaksBefore(FirstToken(value)))) {
             // ⚠ And a break the author put before the `=` is the `=`'s break: no break is added after it, however
             // wide the value. Measured 2026-10-31 with `Testing ask`: `target` / `= World.M(b);` keeps the value
             // beside the `=` behind targets of 15 to 90 columns, and a value too wide for that line chops its own
