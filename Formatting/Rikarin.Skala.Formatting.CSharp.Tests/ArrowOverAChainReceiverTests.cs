@@ -48,6 +48,34 @@ public sealed class ArrowOverAChainReceiverTests {
             )
         );
 
+    /// <summary>
+    ///     ⚠ Fuzz 6497386119263376933: the arrow ends at 120 and the chain below it, one column too wide for the
+    ///     continuation the tail is measured at, does fit at the column it lands on. Pass one broke the arrow by the
+    ///     receiver rule; pass two read the break as the author's, asked only whether the tail fits below, joined the
+    ///     arrow and wrote <c>(() =&gt; this.Items.Items(</c> eighteen columns past the margin. <c>jb cleanupcode</c>
+    ///     keeps pass one's answer as written.
+    /// </summary>
+    [Fact]
+    public void AKeptArrowOverAnOverflowingReceiver_StaysBroken() {
+        const string Kept =
+            "                foreach (var e22 in (Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm,\n"
+            + "                             Resolve(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb), (() =>\n"
+            + "                                 this.Items.Items(null).Value(\"sssssssssssssss\").First(x28 => \"ssssssssssssssssss\")))) {\n";
+
+        static string Loop(string header) =>
+            "namespace N {\n    class T2 {\n        void M() {\n            {\n"
+            + header
+            + "                    // c\n                }\n            }\n        }\n    }\n}\n";
+
+        Agrees(
+            Loop(
+                "                foreach (var e22 in (Mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm, Resolve(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb), (() => this.Items.Items(null).Value(\"sssssssssssssss\").First(x28 => \"ssssssssssssssssss\")))) {\n"
+            ),
+            Loop(Kept)
+        );
+        Agrees(Loop(Kept), Loop(Kept));
+    }
+
     /// <summary>The arrow at 110: <c>=&gt; builder</c> ends at 118, and the chain breaks at its dots.</summary>
     [Fact]
     public void AReceiverThatFits_KeepsTheArrow() =>
