@@ -14631,7 +14631,9 @@ Measured 2026-10-31 with `Testing ask` on 20 shapes: `#region`, `#pragma`, `#if`
 comment and nothing; under an arrow on its own line, `=> xs is` on one line, after `return`, after `var b =` and in an
 argument; the list joined, broken before its `,`, broken after it, and too wide. Every list that comes out on one line
 sits one level past the operand's line, as past a line comment; Skala now matches every such row and is idempotent on
-all 20. Before, the three directive rows with a list broken in the source were not idempotent.
+all 20. On a9ea77a2, 8 of the 20 took two passes: every directive row whose list was broken in the source (`#region`,
+`#pragma`, `#if`/`#endif` live and disabled, under an arrow and in an argument), and both too-wide lists past a
+directive, which pass one broke one level in behind the whole-list point and pass two put on the operand's column.
 
 ⚠ **Where Skala differs, on purpose:** a list that stays broken past a directive (kept after a comma, or too wide). The
 oracle joins the `[` onto the directive's line — `#pragma warning disable CS0168 [`, `#region r [` — which makes the
