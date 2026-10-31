@@ -14683,3 +14683,44 @@ Skala to `object D() => xs is [1, 2];` where the oracle keeps `xs is` / `[1, 2];
 
 - status: **fixed**, pinned by `FuzzRegressionTests.ReportedMutateSeeds_HaveNoViolations` and
   `ListPatternPastADirectiveTests`.
+
+## SK-DIV-0607 — a switch arm's lift over a head that spans lines paid the arm's level twice
+
+⚠ **Found by R3's fuzz of 2026-10-31** (`fuzz --replay=1037321270251332292 --origin=constructs/breaks/case-label-when.cs`),
+**pre-existing on a9ea77a2 and dd8fbfd0**. Minimal: an arm `SomeLongConstant` / `.Value when xxx… => 1,` whose
+condition and arrow both break for width. Pass one wrote the condition two levels past the arm, and pass two wrote it one
+level past. A kept break before the `when` (`.Value` / `when xxx…`) did the same to the `when` itself.
+
+The arm's lifts (`GroupFacts.LiftsIfArrowBreaks`, `LiftsIfWhenBreaks`) open at the pattern and pay the arm's level once
+they break. So that the arm's own groups still spend theirs while a lift stays flat, the builder counts no continuation
+for a lift (`CSharpDocumentBuilder.OpenGroupAt`). The writer then held only the arrow group's level under a broken lift
+(`LayoutWriter.HeldByALift`). The `when` group and the planned condition group spent theirs as well:
+- On the arm's first line this collapsed into the lift's level by the one-level-per-line rule.
+- On a later line of the head, behind a dot or a positional pattern's comma the author broke, it counted a second
+  time.
+
+Pass two read the arrow's break as kept. It opened the arm's group at the pattern as an ordinary continuation, counted
+it, and nothing inside spent again.
+
+The fix: the first continuation level spent inside a lift, with nothing counted since the lift opened, is held against
+that lift (`IndentFlags.HeldWhileGroupBroken`). It is spent while the lift stays flat and held once the lift, or a lift
+around it, breaks (`Document.SecondHoldOf`). A depth read after a reset, inside a block, a lambda or an element, no
+longer matches the lift's.
+
+Measured 2026-10-31 with `Testing ask`:
+- 70 generated arms: seven heads that span lines (a dot, two dots, `or`, `and`, property braces, a positional
+  pattern, a nested type), five conditions (a long atom, a short one, a call, an `&&` chain, a type argument list) and
+  two bodies.
+- 30 hand-made ones: the broken dot at five source columns, kept breaks before the `when`, after it and before the
+  arrow.
+
+On dd8fbfd0, 5 of the 70 and 16 of the 30 took two passes; now none does. Every output the change moved agrees with the
+oracle on the condition's and the `when`'s lines. The oracle-agreement count is otherwise
+unchanged (49 of 70).
+
+⚠ **Open, stable, and not this fix's:** the oracle puts a dot the author broke inside the pattern two levels past the
+arm (`SomeLongConstant` / `.Value when` at 20 under an arm at 12) and a positional pattern's second line one level past
+the arm. Skala writes 16 and 20 on both passes, on dd8fbfd0 as now.
+
+- status: **fixed** (the second pass), pinned by `FuzzRegressionTests.ReportedMutateSeeds_HaveNoViolations` and
+  `ArmLiftOverABrokenHeadTests`.

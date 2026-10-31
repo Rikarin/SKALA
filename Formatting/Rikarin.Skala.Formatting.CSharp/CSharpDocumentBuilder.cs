@@ -67,6 +67,19 @@ public sealed partial class CSharpDocumentBuilder {
     int continuousDepth;
 
     /// <summary>
+    ///     The switch arm lifts open around the walk whose level no continuation counts (<see cref="LiftLevel" />):
+    ///     each one's group, the <see cref="continuousDepth" /> it opened at, and the <see cref="depthResets" /> then.
+    ///     See <see cref="OpenContinuation" />.
+    /// </summary>
+    readonly List<(int Group, int Depth, int Resets)> uncountedLifts = [];
+
+    /// <summary>
+    ///     How many times <see cref="continuousDepth" /> has been reset to zero inside a block, a lambda or an
+    ///     element. A depth read after a reset says nothing about the scopes outside it.
+    /// </summary>
+    int depthResets;
+
+    /// <summary>
     ///     How many continuation levels the groups of the node being entered opened themselves — the
     ///     count <see cref="VisitPlanned" /> hands <see cref="VisitInner" /> so that a chain frame can
     ///     tell its own group's level from the depth outside the chain. See <see cref="Frame.EntryDepth" />.
@@ -1427,6 +1440,14 @@ public sealed partial class CSharpDocumentBuilder {
         // (arm-when-condition-below's `D`). Broken, the writer holds the arrow's level instead.
         if (indented > 0 && (planned.Facts.LiftsIfArrowBreaks || planned.Facts.LiftsIfWhenBreaks)) {
             doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileOwnerFlat, -1);
+
+            // ⚠ A lift inside another pays the arm's level when either breaks: the arrow's lift and the `when`
+            // gap's open together at the pattern.
+            if (OuterUncountedLift() is >= 0 and var outer) {
+                doc.HoldAlsoAgainst(planned.Id, outer);
+            }
+
+            uncountedLifts.Add((planned.Id, continuousDepth, depthResets));
             return (LiftLevel, false);
         }
 
@@ -1439,6 +1460,18 @@ public sealed partial class CSharpDocumentBuilder {
 
     /// <summary><see cref="OpenGroupAt" />'s answer for a lift group's level, which no continuation counts.</summary>
     const int LiftLevel = -1;
+
+    /// <summary>
+    ///     The innermost open switch arm lift with no continuation counted since it opened, or −1. See
+    ///     <see cref="uncountedLifts" />.
+    /// </summary>
+    int OuterUncountedLift() =>
+        uncountedLifts.Count > 0
+        && uncountedLifts[^1] is var (group, depth, resets)
+        && depth == continuousDepth
+        && resets == depthResets
+            ? group
+            : -1;
 
     /// <summary>
     ///     Opens one of the continuation levels a group spends — the first as a held level while the
@@ -1491,6 +1524,18 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
+        // ⚠ The first level spent inside a switch arm's lift with nothing counted since it opened stands for the arm's
+        // level, which the lift pays once it breaks (Nightly 2026-10-31, fuzz 1037321270251332292, SK-DIV-0607). The
+        // lift's level is no continuation the builder counts, so that the arm's own groups still spend theirs while it
+        // stays flat; broken, it paid the arm's level a second time for a group that opened on a later line of the
+        // head than the arm's first — `SomeLongConstant` / `.Value when` / the condition two levels past the arm,
+        // where pass two, the arrow's break kept and counted, put it one level past, as the oracle does.
+        if (level == 0 && OuterUncountedLift() is >= 0 and var lift) {
+            doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileGroupBroken, lift);
+            continuousDepth++;
+            return;
+        }
+
         OpenIndent(
             IndentKind.Continuous,
             planned.UnconditionalLevel || planned.AdditiveLevel,
@@ -1501,6 +1546,7 @@ public sealed partial class CSharpDocumentBuilder {
 
     void CloseGroupAt((int Indented, bool Held) opened) {
         if (opened.Indented == LiftLevel) {
+            uncountedLifts.RemoveAt(uncountedLifts.Count - 1);
             doc.Close();
         }
 
@@ -1772,6 +1818,7 @@ public sealed partial class CSharpDocumentBuilder {
             if (nameOpen && child.AsNode() is BaseListSyntax baseList) {
                 var savedDepth = continuousDepth;
                 continuousDepth = 0;
+                depthResets++;
                 OpenIndent(IndentKind.AnchoredBrace);
                 VisitConstrainedChild(node, baseList, ref run);
                 EmitUpTo(baseList.Span.End);
@@ -2218,6 +2265,7 @@ public sealed partial class CSharpDocumentBuilder {
                     if (element) {
                         savedDepth = continuousDepth;
                         continuousDepth = 0;
+                        depthResets++;
                         frames.Add(new(FrameKind.Unit, false));
                     }
                 }
@@ -2865,6 +2913,7 @@ public sealed partial class CSharpDocumentBuilder {
 
         blockStack.Add(continuousDepth);
         continuousDepth = 0;
+        depthResets++;
 
         // ⚠ A block is a frame boundary. A continuation level spent inside it must be closed inside
         // it too, or the document builder's Close pops the wrong container and the whole brace
@@ -3539,6 +3588,7 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             continuousDepth = 0;
+            depthResets++;
 
             // ⚠ Every frame the same walk has just started sits inside this one, so it restores to
             // the reset value rather than to the depth it captured before the reset happened.

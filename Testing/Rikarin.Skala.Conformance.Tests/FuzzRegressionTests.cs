@@ -415,6 +415,10 @@ public sealed class FuzzRegressionTests {
     // one-line list and stepped it a level in. A directive now puts the list past the `is` as a line comment does
     // (SK-DIV-0604).
     [InlineData(3751787007369975606UL, "constructs/wrapping/list-pattern-after-a-broken-is.cs")]
+    // Found by R3's fuzz of 2026-10-31 (fails on a9ea77a2 and dd8fbfd0 too): `SomeLongConstant` / `.Value when xxx… =>
+    // Body(…)`. The arm's lift paid the arm's level, and the condition's group, opened on the head's second line, paid
+    // it again; pass two, the arrow's break kept and counted, put the condition one level past the arm (SK-DIV-0607).
+    [InlineData(1037321270251332292UL, "constructs/breaks/case-label-when.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
