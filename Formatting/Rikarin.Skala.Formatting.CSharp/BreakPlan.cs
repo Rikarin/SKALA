@@ -5263,7 +5263,13 @@ public sealed class BreakPlan {
                 ),
                 // ⚠ Or, where the author broke before the keyword, a level of its own on top of what is open
                 // around it (#597, see StacksItsLevel).
-                FromLine: !IsAHeaderCondition(node) && !StacksItsLevel(node, keyword) && heldAgainst is null,
+                // ⚠ Neither for a first argument kept behind a comment after its `(` (SK-DIV-0602): the list's own
+                // level is the test's there. From the line, `Compute( /* f */ x.Call(` / `alpha,` wrote the call's
+                // arguments one level in, where the oracle keeps them at the list's two with `)` and `as` at one.
+                FromLine: !IsAHeaderCondition(node)
+                && !StacksItsLevel(node, keyword)
+                && heldAgainst is null
+                && !IsAnArgumentPastALeadingComment(node),
                 OwnLevel: StacksItsLevel(node, keyword) || heldAgainst is not null,
                 AdditiveLevel: StacksItsLevel(node, keyword) && IsALogicalOperand(node),
                 HoldsLevel: heldAgainst is not null ? HeldLevel.WhileArrowFlat : HeldLevel.None
@@ -5387,6 +5393,15 @@ public sealed class BreakPlan {
         var top = node;
         while (IsALogicalOperand(top)) {
             top = top.Parent!;
+        }
+
+        // ⚠ Not a first argument kept on its `(`'s line behind a block comment (SK-DIV-0602): the list's level is
+        // already open on the line the operand starts (the builder's unconditional scope, #521), so stacking one on
+        // it wrote `as` two levels past the statement where the oracle writes one — one past the level pass one gave
+        // the break it planned there, and so pass two moved it after reading that break back as the author's. ⚠ Only
+        // the test itself: as a logical operand (`… x` / `is string || other`) it still stacks, as the oracle does.
+        if (top == node && IsAnArgumentPastALeadingComment(node)) {
+            return false;
         }
 
         // ⚠ And `yield return`, measured on #446's kept `x` layouts and on `yield return x.M(` / … / `)` / `is T;`.
@@ -10755,22 +10770,46 @@ public sealed class BreakPlan {
                 OpenAt(owner, next.SpanStart, planned);
             }
         }
+    }
 
-        static bool OnlyOneLineBlockComments(SyntaxTriviaList trivia) {
-            foreach (var piece in trivia) {
-                switch (piece.Kind()) {
-                    case SyntaxKind.WhitespaceTrivia:
-                        continue;
-                    case SyntaxKind.MultiLineCommentTrivia or SyntaxKind.MultiLineDocumentationCommentTrivia
-                        when piece.ToFullString().AsSpan().IndexOfAny('\n', '\r') < 0:
-                        continue;
-                    default:
-                        return false;
-                }
+    /// <summary>
+    ///     Whether <paramref name="node" /> is an argument list's first argument, on the <c>(</c>'s line behind one-line
+    ///     block comments as the author wrote it (SK-DIV-0602). See <see cref="SitsPastALeadingComment" />.
+    /// </summary>
+    static bool IsAnArgumentPastALeadingComment(SyntaxNode node) =>
+        node.Parent is ArgumentSyntax { Parent: ArgumentListSyntax list } argument
+        && list.Arguments[0] == argument
+        && SitsPastALeadingComment(list);
+
+    /// <summary>
+    ///     Whether an argument list's first argument sits on the <c>(</c>'s line behind one-line block comments: the
+    ///     shape <see cref="PlanPastLeadingComments" /> plans, read from the trivia alone so that it can be asked
+    ///     during the walk, before that pass runs. A break the author wrote after the comment is end-of-line trivia,
+    ///     which answers no.
+    /// </summary>
+    static bool SitsPastALeadingComment(ArgumentListSyntax list) {
+        var open = list.OpenParenToken;
+        var next = open.GetNextToken();
+        return list.Arguments.Count > 0
+            && (open.TrailingTrivia.Any(IsBlockComment) || next.LeadingTrivia.Any(IsBlockComment))
+            && OnlyOneLineBlockComments(open.TrailingTrivia)
+            && OnlyOneLineBlockComments(next.LeadingTrivia);
+    }
+
+    static bool OnlyOneLineBlockComments(SyntaxTriviaList trivia) {
+        foreach (var piece in trivia) {
+            switch (piece.Kind()) {
+                case SyntaxKind.WhitespaceTrivia:
+                    continue;
+                case SyntaxKind.MultiLineCommentTrivia or SyntaxKind.MultiLineDocumentationCommentTrivia
+                    when piece.ToFullString().AsSpan().IndexOfAny('\n', '\r') < 0:
+                    continue;
+                default:
+                    return false;
             }
-
-            return true;
         }
+
+        return true;
     }
 
     /// <summary>

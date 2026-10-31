@@ -14611,3 +14611,40 @@ which breaks before `is` and keeps the arrow.
 - options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
 - status: **fixed** (the second pass), pinned by `FuzzRegressionTests.ReportedMutateSeeds_HaveNoViolations` and
   `LambdaFirstOperandCommentIssue633Tests`.
+
+## SK-DIV-0602 — a type test kept on its `(`'s line behind a block comment
+
+⚠ **Found by the Nightly of 2026-10-24** (`fuzz --replay=4378889735950361705
+--origin=constructs/breaks/multi-line-comment-neighbours.cs`, fails on adca899a and on a9ea77a2 too). Minimal:
+`var d1 = Compute( /* f */ some…Ver as string);` inside a method, the operand ending at column 120. Pass one kept the
+operand behind the comment (SK-DIV-0165's planned point, whose head fits) and broke before `as`, one level past the
+statement — #445's level from the operand's line. Pass two read that break as the author's, and #597 stacked a level
+of its own on what is open around the test: the list's level, which the builder opens unconditionally for an argument
+list whose first argument stays behind such a comment (#521). `as` moved to two levels.
+
+The oracle writes one level for both: given pass one's output back it leaves it, and an `as` the author wrote two levels
+in comes back at one. Neither #445's nor #597's level applies there — the list's level is the test's — and a type test
+written that way no longer takes either (`BreakPlan.IsAnArgumentPastALeadingComment`). Taking only #597's away was not
+enough: from the line, `Compute( /* f */ x.Call(alpha,` / `beta)` / `as string` wrote the call's arguments at one level,
+where the oracle keeps them at two with `)` and `as` at one. A test that is a logical operand still stacks
+(`… x` / `is string` two levels in / `|| other` one), as the oracle does.
+
+Measured 2026-10-31 with `Testing ask` on 43 rows, and on pass one's output for 17 of them fed back: the minimal
+shape with `as` and `is`, `(/* f */` and `( /* f */`, the comment absent and after the operand, a second argument, a
+dotted operand, `is not`, a declaration pattern, a logical operand on either side, a call operand broken inside, an
+object creation, a `/** */` comment, an `if` condition, a sole lambda's body and `return`; and each kept-break layout
+written at one level and at two. Every kept-break row now equals the oracle (several moved from two levels to one, a
+call's arguments from three to two, a sole lambda's `as` / `string` from one level to two); every row is idempotent,
+where the start commit failed on three.
+
+⚠ **Open, and not this fix's:** given the one-line input, the oracle breaks after the comment whenever the whole first
+argument does not fit behind it — `Compute( /* f */` / `some…Ver as string` / `);`, and the same for `+` — where Skala's
+planned point measures only to the item's first break point, the one before `as`, and keeps the operand. That is
+SK-DIV-0165's rule read on a type test or binary first item, and differs identically on the start commit. And where the
+oracle keeps an operand behind the comment and breaks *after* the keyword (`Compute( /* f */ some… as` / `string,` /
+`b`), the type sits two levels in and Skala's at one, unchanged by this.
+
+- options: none.
+- status: **fixed** (the second pass and the kept-break layouts), pinned by
+  `FuzzRegressionTests.ReportedMutateSeeds_HaveNoViolations` and `TypeTestPastALeadingCommentNightlyTests`; the
+  one-line rows are **open**.
