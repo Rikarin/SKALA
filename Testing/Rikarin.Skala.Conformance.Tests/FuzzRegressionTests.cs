@@ -410,6 +410,11 @@ public sealed class FuzzRegressionTests {
     // the `as` one level past the line; pass two, reading that break as the author's, stacked #597's level on the
     // level the list had already spent on the `(`'s line behind the comment (SK-DIV-0602).
     [InlineData(4378889735950361705UL, "constructs/breaks/multi-line-comment-neighbours.cs")]
+    // The Nightly of 2026-10-31 (fails on adca899a and a9ea77a2 too): `xs is` / `#region fuzz` / `[1` / `, 2];` under a
+    // broken arrow. Pass one read the broken list off the source, joined it flush with the operand; pass two read a
+    // one-line list and stepped it a level in. A directive now puts the list past the `is` as a line comment does
+    // (SK-DIV-0604).
+    [InlineData(3751787007369975606UL, "constructs/wrapping/list-pattern-after-a-broken-is.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
