@@ -4999,16 +4999,15 @@ public sealed class BreakPlan {
 
     /// <summary>
     ///     The <c>[</c> of a list pattern straight after an <c>is</c> whose break before it is kept: one the
-    ///     author wrote on one line (#562), or one a line comment or a directive between the two puts on a line of its own
-    ///     whatever the author wrote inside it (#617).
+    ///     author wrote on one line (#562), or one a line comment or a directive between the two puts on a line of its
+    ///     own whatever the author wrote inside it (#617).
     /// </summary>
     bool KeepsTheBreakBeforeAListPattern(SyntaxToken open) =>
         IsAOneLineListPatternAfterIs(open) || IsAListPatternPastALineCommentOrDirectiveAfterIs(open);
 
     /// <summary>
-    ///     The <c>[</c> of a list pattern straight after an <c>is</c> with a line comment or a preprocessor directive in the
-    ///     gap between them:
-    ///     <c>xs is</c> / <c>// c</c> / <c>[1, 2]</c>.
+    ///     The <c>[</c> of a list pattern straight after an <c>is</c> with a line comment or a preprocessor directive
+    ///     in the gap between them: <c>xs is</c> / <c>// c</c> / <c>[1, 2]</c>.
     /// </summary>
     /// <remarks>
     ///     ⚠ The level is the list's to decide, not the source's (#617, fuzz 14577244967404521905). Measured
@@ -10803,8 +10802,8 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     Whether <paramref name="node" /> is an argument list's first argument, on the <c>(</c>'s line behind one-line
-    ///     block comments as the author wrote it (SK-DIV-0602). See <see cref="SitsPastALeadingComment" />.
+    ///     Whether <paramref name="node" /> is an argument list's first argument, on the <c>(</c>'s line behind
+    ///     one-line block comments as the author wrote it (SK-DIV-0602). See <see cref="SitsPastALeadingComment" />.
     /// </summary>
     static bool IsAnArgumentPastALeadingComment(SyntaxNode node) =>
         node.Parent is ArgumentSyntax { Parent: ArgumentListSyntax list } argument
