@@ -4999,14 +4999,14 @@ public sealed class BreakPlan {
 
     /// <summary>
     ///     The <c>[</c> of a list pattern straight after an <c>is</c> whose break before it is kept: one the
-    ///     author wrote on one line (#562), or one a line comment between the two puts on a line of its own
+    ///     author wrote on one line (#562), or one a line comment or a directive between the two puts on a line of its own
     ///     whatever the author wrote inside it (#617).
     /// </summary>
     bool KeepsTheBreakBeforeAListPattern(SyntaxToken open) =>
-        IsAOneLineListPatternAfterIs(open) || IsAListPatternPastALineCommentAfterIs(open);
+        IsAOneLineListPatternAfterIs(open) || IsAListPatternPastALineCommentOrDirectiveAfterIs(open);
 
     /// <summary>
-    ///     The <c>[</c> of a list pattern straight after an <c>is</c> with a line comment in the gap between them:
+    ///     The <c>[</c> of a list pattern straight after an <c>is</c> with a line comment or a preprocessor directive in the gap between them:
     ///     <c>xs is</c> / <c>// c</c> / <c>[1, 2]</c>.
     /// </summary>
     /// <remarks>
@@ -5018,13 +5018,21 @@ public sealed class BreakPlan {
     ///     the source, so <c>[_</c> / <c>, .. var rest]</c>, which joins, went flush on pass one and one level in
     ///     on pass two. The level is now held against the list's group
     ///     (<see cref="FromLineHeldAgainst" />), which the writer resolves at its own columns.
+    ///     <para>
+    ///         ⚠ A preprocessor directive puts the <c>[</c> on a line of its own exactly as a line comment does, and
+    ///         was left out (SK-DIV-0604, fuzz 3751787007369975606): <c>xs is</c> / <c>#region r</c> / <c>[1</c> /
+    ///         <c>, 2]</c> under a broken arrow read the source's broken list, went flush and joined on pass one, then
+    ///         read a one-line list on pass two and stepped in. Measured 2026-10-31 with <c>Testing ask</c>: with a
+    ///         <c>#region</c> or a <c>#pragma</c> in the gap the joined list sits one level past the operand's line
+    ///         whether the author broke it or not, after an arrow on its own line and after <c>return</c> alike.
+    ///     </para>
     /// </remarks>
-    static bool IsAListPatternPastALineCommentAfterIs(SyntaxToken open) =>
+    static bool IsAListPatternPastALineCommentOrDirectiveAfterIs(SyntaxToken open) =>
         open.Parent is ListPatternSyntax { Parent: IsPatternExpressionSyntax }
         && open.GetPreviousToken() is var keyword
         && keyword.IsKind(SyntaxKind.IsKeyword)
         && (keyword.TrailingTrivia.Any(SyntaxKind.SingleLineCommentTrivia)
-            || open.LeadingTrivia.Any(SyntaxKind.SingleLineCommentTrivia));
+            || open.LeadingTrivia.Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsDirective));
 
     /// <summary>
     ///     An <c>is</c> the author broke before or after, over a pattern that can break: one level past
@@ -5055,7 +5063,7 @@ public sealed class BreakPlan {
         var whole = !BreaksBefore(node.IsKeyword)
             && BreaksBefore(after)
             && IsAOneLineListPatternAfterIs(after)
-            && !IsAListPatternPastALineCommentAfterIs(after);
+            && !IsAListPatternPastALineCommentOrDirectiveAfterIs(after);
         if (whole) {
             Point(after, group);
             wholeListPoints[after.SpanStart] = Key(node.Pattern);
@@ -5073,7 +5081,7 @@ public sealed class BreakPlan {
 
         // ⚠ Past a line comment, a list pattern's own layout decides the level (#617): spent while the list stays
         // on one line, held once it breaks. Not when the `is` broke too, whose line the level is also for.
-        if (heldAgainst is null && !BreaksBefore(node.IsKeyword) && IsAListPatternPastALineCommentAfterIs(after)) {
+        if (heldAgainst is null && !BreaksBefore(node.IsKeyword) && IsAListPatternPastALineCommentOrDirectiveAfterIs(after)) {
             fromLineHeldAgainst[group] = Key(node.Pattern);
         }
 
@@ -8322,7 +8330,7 @@ public sealed class BreakPlan {
 
     /// <summary>
     ///     The list pattern's group a broken type test's from-the-line level is held against — spent unless the
-    ///     list breaks — or -1 (#617). See <see cref="IsAListPatternPastALineCommentAfterIs" />.
+    ///     list breaks — or -1 (#617). See <see cref="IsAListPatternPastALineCommentOrDirectiveAfterIs" />.
     /// </summary>
     public bool BreaksOnlyIfListStaysWhole(int position) => wholeListPoints.ContainsKey(position);
 

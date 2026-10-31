@@ -406,6 +406,11 @@ public sealed class FuzzRegressionTests {
     [InlineData(10820374509567880048UL, "constructs/wrapping/chain-head-past-the-margin.cs")]
     // #631 again with a block comment (fails on adca899a too): `var q = source.A… /* f */ .Select(y => y).Where(…);`.
     [InlineData(14288782122367440787UL, "constructs/wrapping/chain-head-past-the-margin.cs")]
+    // The Nightly of 2026-10-31 (fails on adca899a and a9ea77a2 too): `xs is` / `#region fuzz` / `[1` / `, 2];` under a
+    // broken arrow. Pass one read the broken list off the source, joined it flush with the operand; pass two read a
+    // one-line list and stepped it a level in. A directive now puts the list past the `is` as a line comment does
+    // (SK-DIV-0604).
+    [InlineData(3751787007369975606UL, "constructs/wrapping/list-pattern-after-a-broken-is.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

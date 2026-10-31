@@ -14611,3 +14611,36 @@ which breaks before `is` and keeps the arrow.
 - options: `skala_place_single_method_argument_lambda_on_same_line` (the export's value).
 - status: **fixed** (the second pass), pinned by `FuzzRegressionTests.ReportedMutateSeeds_HaveNoViolations` and
   `LambdaFirstOperandCommentIssue633Tests`.
+
+## SK-DIV-0604 — a list pattern a preprocessor directive puts on its own line after an `is`
+
+⚠ **Found by the Nightly of 2026-10-31** (`fuzz --replay=3751787007369975606
+--origin=constructs/wrapping/list-pattern-after-a-broken-is.cs`), **pre-existing on adca899a and a9ea77a2**. Minimal:
+`object D() =>` / `xs is` / `#region fuzz` / `[1` / `, 2];` / `#endregion`. Pass one wrote the joined `[1, 2]` flush with
+the operand; pass two moved it (and the `#region`) one level in. The second member and the `, 2` on a line of its own
+did not matter; the list being broken in the source did.
+
+SK-DIV-0500 made the level the list's to decide past a line comment, because the comment forces the `[` onto a line
+of its own whatever the author wrote. A directive forces the same line, and `IsAListPatternPastALineCommentAfterIs`
+looked only for `//`. Past a directive the level was still read off `IsAOneLineListPatternAfterIs` — whether the
+*author* had broken the list — which pass one's output answers differently. The predicate is now
+`IsAListPatternPastALineCommentOrDirectiveAfterIs`: any directive in the `[`'s leading trivia (`#region`, `#pragma`,
+`#if`/`#endif`, disabled text between them) takes the held level of SK-DIV-0500.
+
+Measured 2026-10-31 with `Testing ask` on 20 shapes: `#region`, `#pragma`, `#if`/`#endif` live and disabled, a line
+comment and nothing; under an arrow on its own line, `=> xs is` on one line, after `return`, after `var b =` and in an
+argument; the list joined, broken before its `,`, broken after it, and too wide. Every list that comes out on one line
+sits one level past the operand's line, as past a line comment; Skala now matches every such row and is idempotent on
+all 20. Before, the three directive rows with a list broken in the source were not idempotent.
+
+⚠ **Where Skala differs, on purpose:** a list that stays broken past a directive (kept after a comma, or too wide). The
+oracle joins the `[` onto the directive's line — `#pragma warning disable CS0168 [`, `#region r [` — which makes the
+bracket part of the directive and the file no longer compiles. Skala keeps the `[` on a line of its own on the
+operand's column, which is where the oracle's own elements and `]` imply it and SK-DIV-0500's answer past a line
+comment.
+
+Unrelated and unchanged: with no comment and no directive, `object D() =>` / `xs is` / `[1` / `, 2];` is joined by
+Skala to `object D() => xs is [1, 2];` where the oracle keeps `xs is` / `[1, 2];` under the broken arrow. Stable.
+
+- status: **fixed**, pinned by `FuzzRegressionTests.ReportedMutateSeeds_HaveNoViolations` and
+  `ListPatternPastADirectiveTests`.
