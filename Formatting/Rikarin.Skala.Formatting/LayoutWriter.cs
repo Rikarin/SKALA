@@ -449,8 +449,14 @@ public sealed class LayoutWriter {
 
         // ⚠ And the mirror: the gap after an `is`, resolved before the pattern chain it heads, spends the
         // chain's level when it breaks — so the chain's own is spent only while it stays flat.
+        // ⚠ Or a switch arm's lift, for the first level spent inside it, and the lift around it (SK-DIV-0607).
         if ((conditions & IndentFlags.HeldWhileGroupBroken) != 0) {
-            return chainGroup >= 0 && fitter.ModeOf(chainGroup) == ResolvedMode.Broken ? IndentKind.None : kind;
+            return chainGroup >= 0
+                && (fitter.ModeOf(chainGroup) == ResolvedMode.Broken
+                    || document.SecondHoldOf(chainGroup) is >= 0 and var outerLift
+                    && fitter.ModeOf(outerLift) == ResolvedMode.Broken)
+                    ? IndentKind.None
+                    : kind;
         }
 
         // ⚠ A list pattern past a comment after an `is` (#617): written ahead with the level spent, and held if
