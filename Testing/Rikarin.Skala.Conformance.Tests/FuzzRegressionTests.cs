@@ -149,6 +149,11 @@ public sealed class FuzzRegressionTests {
     // `=> builder` past the margin and broke at the first dot; pass two read that break as the author's and broke
     // the arrow. The arrow now breaks when the chain's receiver does not fit beside it, as the oracle does.
     [InlineData(16278079796336422477UL)]
+    // `foreach (var e22 in (…,` / `Resolve(…), (() =>` / `this.Items.Items(null).Value(…).First(…)))) {` with the arrow
+    // ending at 120: pass one broke the arrow because the chain's receiver overflowed beside it; pass two read the
+    // break as the author's, asked only whether the tail fits below, and joined it. A kept arrow now asks the
+    // receiver question too.
+    [InlineData(6497386119263376933UL)]
     // An array element `[…, 1.5d\n]` broken only before its `]`: pass one drafted it flat and moved its `[` below
     // `Compute(…),`; pass two read the break after the `[` it had written and kept `), [`, the oracle's answer.
     [InlineData(5848915233203857901UL)]

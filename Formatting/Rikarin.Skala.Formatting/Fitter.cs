@@ -1038,7 +1038,7 @@ public sealed class Fitter {
                     // ⚠ A lambda's arrow over a call chain whose receiver runs past the margin beside it: no dot
                     // can end the line in time (fuzz 16278079796336422477). Kept, pass two read the dot's break
                     // as the author's and broke the arrow. See GroupFacts.BreaksIfReceiverOverflows.
-                    if (facts.BreaksIfReceiverOverflows && m.AfterPoint < Unbounded && !Fits(m.Column, m.AfterPoint)) {
+                    if (ReceiverOverflows(facts, m)) {
                         return ResolvedMode.Broken;
                     }
 
@@ -1725,6 +1725,15 @@ public sealed class Fitter {
         // and not the head: `= [` always fits, and a bracket that is going to break is the case where
         // the oracle gives the break to the bracket. See GroupFacts.BreaksOnlyIfTailFits (#375).
         if (facts.BreaksOnlyIfTailFits) {
+            // ⚠ The receiver half of the rule too, in the kept direction (fuzz 6497386119263376933): a lambda's arrow
+            // over a chain whose receiver runs past the margin beside it broke on pass one for exactly that reason,
+            // with the chain below one column too wide for the continuation the tail is measured at; pass two, reading
+            // the break as the author's, asked only the tail question, joined the arrow and wrote `=> this.Items(`
+            // eighteen columns past the margin. See GroupFacts.BreaksIfReceiverOverflows.
+            if (ReceiverOverflows(facts, m)) {
+                return ResolvedMode.Broken;
+            }
+
             return TailFits(m, tail + facts.TailSpare) ? ResolvedMode.Broken : ResolvedMode.Flat;
         }
 
@@ -1732,6 +1741,13 @@ public sealed class Fitter {
             ? ResolvedMode.Flat
             : ResolvedMode.Broken;
     }
+
+    /// <summary>
+    ///     Whether a lambda's arrow over an unbroken call chain breaks because the line through the chain's receiver
+    ///     runs past the margin beside it. See <see cref="GroupFacts.BreaksIfReceiverOverflows" />.
+    /// </summary>
+    bool ReceiverOverflows(in GroupFacts facts, in Measures m) =>
+        facts.BreaksIfReceiverOverflows && m.AfterPoint < Unbounded && !Fits(m.Column, m.AfterPoint);
 
     /// <summary>
     ///     Whether what follows the group's own point fits flat on the continuation line — the one
