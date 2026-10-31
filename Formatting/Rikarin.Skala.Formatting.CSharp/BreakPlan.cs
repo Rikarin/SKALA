@@ -5006,7 +5006,8 @@ public sealed class BreakPlan {
         IsAOneLineListPatternAfterIs(open) || IsAListPatternPastALineCommentOrDirectiveAfterIs(open);
 
     /// <summary>
-    ///     The <c>[</c> of a list pattern straight after an <c>is</c> with a line comment or a preprocessor directive in the gap between them:
+    ///     The <c>[</c> of a list pattern straight after an <c>is</c> with a line comment or a preprocessor directive in the
+    ///     gap between them:
     ///     <c>xs is</c> / <c>// c</c> / <c>[1, 2]</c>.
     /// </summary>
     /// <remarks>
@@ -5032,7 +5033,8 @@ public sealed class BreakPlan {
         && open.GetPreviousToken() is var keyword
         && keyword.IsKind(SyntaxKind.IsKeyword)
         && (keyword.TrailingTrivia.Any(SyntaxKind.SingleLineCommentTrivia)
-            || open.LeadingTrivia.Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsDirective));
+            || open.LeadingTrivia.Any(static trivia => trivia.IsDirective)
+            || open.LeadingTrivia.Any(SyntaxKind.SingleLineCommentTrivia));
 
     /// <summary>
     ///     An <c>is</c> the author broke before or after, over a pattern that can break: one level past
@@ -5081,7 +5083,9 @@ public sealed class BreakPlan {
 
         // ⚠ Past a line comment, a list pattern's own layout decides the level (#617): spent while the list stays
         // on one line, held once it breaks. Not when the `is` broke too, whose line the level is also for.
-        if (heldAgainst is null && !BreaksBefore(node.IsKeyword) && IsAListPatternPastALineCommentOrDirectiveAfterIs(after)) {
+        if (heldAgainst is null
+            && !BreaksBefore(node.IsKeyword)
+            && IsAListPatternPastALineCommentOrDirectiveAfterIs(after)) {
             fromLineHeldAgainst[group] = Key(node.Pattern);
         }
 

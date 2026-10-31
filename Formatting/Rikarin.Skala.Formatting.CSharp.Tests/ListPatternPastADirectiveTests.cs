@@ -131,8 +131,20 @@ public sealed class ListPatternPastADirectiveTests {
     ///     oracle's own <c>]</c> and elements imply, and SK-DIV-0500's answer past a line comment.
     /// </summary>
     [Fact]
-    public void AListThatStaysBrokenPastADirective_KeepsItsBracketOffTheDirectivesLine() {
-        const string expected = """
+    public void AListThatStaysBrokenPastADirective_KeepsItsBracketOffTheDirectivesLine() =>
+        SkalaWrites(
+            """
+            class C {
+                bool E1 => source is
+            #pragma warning disable CS0168
+            [_, var aaaaaaaaaaaaaaaaaaaaaa, var bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, var cccccccccccccccccccccc, var ddddddddddddd, .. var rest];
+                bool B1 => source is
+            #pragma warning disable CS0168
+            [_,
+                .. var rest];
+            }
+            """,
+            """
             class C {
                 bool E1 =>
                     source is
@@ -150,20 +162,12 @@ public sealed class ListPatternPastADirectiveTests {
                         .. var rest
                     ];
             }
-            """;
-        var once = Format.Text(
-            """
-            class C {
-                bool E1 => source is
-            #pragma warning disable CS0168
-            [_, var aaaaaaaaaaaaaaaaaaaaaa, var bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, var cccccccccccccccccccccc, var ddddddddddddd, .. var rest];
-                bool B1 => source is
-            #pragma warning disable CS0168
-            [_,
-                .. var rest];
-            }
             """
         );
+
+    /// <summary>Skala's own answer where the oracle's does not compile, and a second pass changes nothing.</summary>
+    static void SkalaWrites(string source, string expected) {
+        var once = Format.Text(source);
         Assert.Equal(expected, once.TrimEnd('\n'));
         Assert.Equal(once, Format.Text(once));
     }
