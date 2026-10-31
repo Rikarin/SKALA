@@ -264,6 +264,14 @@ public sealed class FuzzRegressionTests {
     // kept it a level in; pass two, the `)` now alone on its line, read it as a unit and put it a level out. A
     // cast's `)` is a continuation line whether or not a break follows it (SK-DIV-0600).
     [InlineData(17289469222180178780UL)]
+    // `T v = ((A …))(((B …))$"…");` at 135 columns (fails on a9ea77a2 and f77b22d3 too). The `=` measured its tail
+    // through the inner cast's last-resort `)`, found it too wide below and stayed; the cast broke past the margin.
+    // Pass two, the tail ending at that kept break, broke the `=`. The tail now ends at the last resort either way.
+    [InlineData(3254860842460080159UL)]
+    // And not at any other last resort (found by that fix's own fuzz, clean on a962b7c1): `T v = (C)(a.M(…) || … |
+    // ((x, y) => {` / `}) + […]);`. Ending the tail inside the parenthesised operator broke the `=` on pass one;
+    // pass two, the lambda's body joined, kept it. Only a parenthesised cast over an atom ends its tail there.
+    [InlineData(7852776670216566259UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
