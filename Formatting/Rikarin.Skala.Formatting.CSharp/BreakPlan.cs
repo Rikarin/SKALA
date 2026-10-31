@@ -6476,6 +6476,18 @@ public sealed class BreakPlan {
         if (options.WrapBeforeEq) {
             Point(equals, group);
             broken = BreaksBefore(equals);
+        } else if (BreaksBefore(equals)
+                   && !(options.KeepsUserBreaksBetweenItems && BreaksBefore(FirstToken(value)))) {
+            // ⚠ And a break the author put before the `=` is the `=`'s break: no break is added after it, however
+            // wide the value. Measured 2026-10-31 with `Testing ask`: `target` / `= World.M(b);` keeps the value
+            // beside the `=` behind targets of 15 to 90 columns, and a value too wide for that line chops its own
+            // arguments, an initializer or a binary instead — never `=` alone on a line, unless the author wrote it
+            // so (`int G` / `=` / `5;` is kept, which is why only an unbroken side is made flat). Skala broke after
+            // the `=` too wherever the held call's table (#614, #624) measured the value beside the target through
+            // the `=` — so pass one, whose value still held the author's break after `World.` and so planned no held
+            // call, kept the line, and pass two broke it (Nightly 2026-10-25, fuzz seed 16130008065409407106).
+            Flat(FirstToken(value));
+            broken = false;
         } else {
             Point(FirstToken(value), group);
             broken = BreaksBefore(FirstToken(value));
@@ -6529,9 +6541,15 @@ public sealed class BreakPlan {
                 : null;
         var choppedHeld = heldKind == 1 && heldCall is null ? ChoppedHeldCallOf(value) : null;
         var targetKept = false;
+        // ⚠ A block comment after the `=` sits on the target's line beside it, ahead of the value (fuzz 7310017 on
+        // held-value-behind-a-target-call): `E….Value = /* f */ World.Get(b);` measured the value from the `=` and
+        // found it fitting at 120 columns where the line is 128, so pass one kept the `=` and chopped the arguments,
+        // and pass two, the value no held call once broken, broke the `=` — the oracle's answer on both.
+        var commentAfterEquals = CommentsWidth(equals, equals.GetNextToken());
         var targetTail = heldCall is not null && owner == EqualsOwner.Assignment
             ? TargetTailOf(node, equals, out targetKept)
             : 0;
+        targetTail = targetTail > 0 ? targetTail + commentAfterEquals : 0;
         var heldReceiver = heldCall?.Expression is MemberAccessExpressionSyntax heldAccess
             ? FormattedWidth(value.GetFirstToken(), heldAccess.Expression.GetLastToken())
             : 0;
@@ -6805,7 +6823,7 @@ public sealed class BreakPlan {
                         : 0,
                     ShortHeadTypeEnd: ShortHeadTypeEndOf(node, equals, value, owner),
                     HeldValueTarget: heldCall is not null && owner == EqualsOwner.Assignment
-                        ? HeadWidthThroughEquals(node, equals)
+                        ? HeadWidthThroughEquals(node, equals) + commentAfterEquals
                         : 0,
                     HeldValueTargetTail: targetTail,
                     HeldValueTargetKept: targetKept,

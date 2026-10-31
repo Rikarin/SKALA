@@ -1887,7 +1887,8 @@ public sealed class Document {
 ///     ⚠ With <see cref="HeldValue" />, an assignment's: the target's width through the <c>=</c> (#614). A target that
 ///     holds a point of its own — <c>E.Get&lt;T&gt;(e).Value =</c>, whose held call breaks at its dot — ends the
 ///     group's point width at that dot, and the value's column read from it landed 36 columns left of the
-///     <c>=</c>, so the value "fitted" beside it and the <c>=</c> stayed on pass one, to break on pass two.
+///     <c>=</c>, so the value "fitted" beside it and the <c>=</c> stayed on pass one, to break on pass two. ⚠ With any
+///     block comment after the <c>=</c>, which stays on that line — and so does <see cref="HeldValueTargetTail" />.
 /// </param>
 /// <param name="HeldValueTargetTail">
 ///     ⚠ With <see cref="HeldValue" />, an assignment's whose target may end on a line of its own —

@@ -419,6 +419,16 @@ public sealed class FuzzRegressionTests {
     // Body(…)`. The arm's lift paid the arm's level, and the condition's group, opened on the head's second line, paid
     // it again; pass two, the arrow's break kept and counted, put the condition one level past the arm (SK-DIV-0607).
     [InlineData(1037321270251332292UL, "constructs/breaks/case-label-when.cs")]
+    // Nightly 2026-10-25 (fails on adca899a and a9ea77a2 too): `E….Get<T>(entity).Value` / `= World.` /
+    // `GetLinearVelocity(body.Handle);`. Broken after `World.`, the value was no held call and pass one kept the line;
+    // pass two measured the joined value beside the target through the `=` and broke after the `=` too. A kept break
+    // before the `=` now takes the `=`'s break.
+    [InlineData(16130008065409407106UL, "constructs/breaks/held-value-behind-a-target-call.cs")]
+    // Found by the fixture loop for the seed above (fails on a9ea77a2 too): `E….Find(entity).Value = /* f */
+    // World.GetLinearVelocity(body.Handle);` at 128 columns. The held call's table measured the value from the `=`,
+    // without the comment, found it fitting at 120 and kept the `=`, chopping the arguments; pass two, the value no
+    // held call once broken, broke the `=`.
+    [InlineData(7310017UL, "constructs/breaks/held-value-behind-a-target-call.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
