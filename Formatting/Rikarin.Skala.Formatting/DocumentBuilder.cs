@@ -818,6 +818,7 @@ public sealed class DocumentBuilder {
         var stopsAtYieldingPoints = facts[group].BreaksOnlyIfHeadOverflows;
         var stopsAtEveryYield = facts[group].StopsAtYieldingPoints;
         var tailEndsAt = facts[group].TailEndsAt;
+        var stopsAtLastResort = facts[group].TailStopsAtLastResort;
         firstRunsToTheEnd = false;
         firstSegment = 0;
         firstFlatSpace = false;
@@ -958,6 +959,19 @@ public sealed class DocumentBuilder {
                     && nodes[child].Kind == DocKind.Line
                     && (LineKind)nodes[child].Arg0 == LineKind.Soft
                     && nodes[child].Arg2 == tailEndsAt) {
+                    Flush();
+                    current = -1;
+                    continue;
+                }
+
+                // ⚠ A last-resort point nested in an `=`'s value ends the tail, as the required line an author's
+                // break there becomes does (GroupFacts.TailStopsAtLastResort).
+                if (stopsAtLastResort
+                    && current >= 0
+                    && depth > pointDepth
+                    && nodes[child].Kind == DocKind.Line
+                    && (LineKind)nodes[child].Arg0 == LineKind.Soft
+                    && ((LineFlags)nodes[child].Flags & LineFlags.LastResort) != 0) {
                     Flush();
                     current = -1;
                     continue;

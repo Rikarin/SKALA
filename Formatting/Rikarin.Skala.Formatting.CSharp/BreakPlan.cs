@@ -6625,6 +6625,7 @@ public sealed class BreakPlan {
                     // BreakYieldsToTheBracket. An added break also needs a head of twelve columns,
                     // measured from the marker; see GroupFacts.MinimumHead.
                     BreaksOnlyIfTailFits: yieldsToTheBracket || parenthesised,
+                    TailStopsAtLastResort: parenthesised,
                     Owner: head,
                     MinimumHead: yieldsToTheBracket || callee > 0 || parenthesised ? MinimumEqualsHead : 0,
                     CalleeWidth: callee,
