@@ -6625,7 +6625,7 @@ public sealed class BreakPlan {
                     // BreakYieldsToTheBracket. An added break also needs a head of twelve columns,
                     // measured from the marker; see GroupFacts.MinimumHead.
                     BreaksOnlyIfTailFits: yieldsToTheBracket || parenthesised,
-                    TailStopsAtLastResort: parenthesised,
+                    TailStopsAtLastResort: parenthesised && HoldsACastOverAnAtom(value),
                     Owner: head,
                     MinimumHead: yieldsToTheBracket || callee > 0 || parenthesised ? MinimumEqualsHead : 0,
                     CalleeWidth: callee,
@@ -7098,6 +7098,23 @@ public sealed class BreakPlan {
         Point(first, group, lastResort: true);
         Describe(cast, group, GroupMode.Preserve, new(BreaksIfTooLong: true), true);
     }
+
+    /// <summary>
+    ///     Whether a parenthesised value, cast or not, holds a cast over an atom and nothing else — <c>((B)x)</c>,
+    ///     <c>(A)((B)x)</c> — so that the only point inside it is that cast's last resort (#591). See
+    ///     GroupFacts.TailStopsAtLastResort.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only that shape (fuzz 7852776670216566259): a parenthesised operator holds last-resort points of its own,
+    ///     none of them a break an author keeps at the <c>=</c>'s depth. Ending the tail at one broke the <c>=</c> of
+    ///     <c>T v = (C)(a.M(…)</c> / <c>|| … ((x, y) =&gt; {</c> / <c>}) + […]);</c> on pass one, and pass two, the
+    ///     lambda's body joined, kept it.
+    /// </remarks>
+    static bool HoldsACastOverAnAtom(ExpressionSyntax value) =>
+        (value is CastExpressionSyntax outer ? outer.Expression : value) is ParenthesizedExpressionSyntax {
+            Expression: CastExpressionSyntax inner
+        }
+        && IsACastAtom(inner.Expression);
 
     /// <summary>
     ///     Whether a cast is the whole value of a <c>return</c>, or of a plain assignment or local
