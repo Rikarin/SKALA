@@ -5267,9 +5267,9 @@ public sealed class BreakPlan {
                 // level is the test's there. From the line, `Compute( /* f */ x.Call(` / `alpha,` wrote the call's
                 // arguments one level in, where the oracle keeps them at the list's two with `)` and `as` at one.
                 FromLine: !IsAHeaderCondition(node)
-                    && !StacksItsLevel(node, keyword)
-                    && heldAgainst is null
-                    && !IsAnArgumentPastALeadingComment(node),
+                && !StacksItsLevel(node, keyword)
+                && heldAgainst is null
+                && !IsAnArgumentPastALeadingComment(node),
                 OwnLevel: StacksItsLevel(node, keyword) || heldAgainst is not null,
                 AdditiveLevel: StacksItsLevel(node, keyword) && IsALogicalOperand(node),
                 HoldsLevel: heldAgainst is not null ? HeldLevel.WhileArrowFlat : HeldLevel.None

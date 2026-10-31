@@ -1,11 +1,10 @@
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     SK-DIV-0602 (Nightly 2026-10-24, <c>fuzz --replay=4378889735950361705
-///     --origin=constructs/breaks/multi-line-comment-neighbours.cs</c>): a type test that is an argument list's first
-///     argument, kept on the <c>(</c>'s line behind a block comment, breaks before its keyword at the list's level. The
-///     expected strings of the kept-break rows are <c>jb cleanupcode</c>'s own output for the input, measured 2026-10-31
-///     with <c>Testing ask</c>.
+///     SK-DIV-0602 (Nightly 2026-10-24, seed 4378889735950361705 on <c>multi-line-comment-neighbours.cs</c>): a type
+///     test that is an argument list's first argument, kept on the <c>(</c>'s line behind a block comment, breaks
+///     before its keyword at the list's level. The expected strings of the kept-break rows are <c>jb cleanupcode</c>'s
+///     own output for the input, measured 2026-10-31 with <c>Testing ask</c>.
 /// </summary>
 /// <remarks>
 ///     ⚠ The list's level is already spent on the <c>(</c>'s line there (the builder's unconditional scope, #521), so
