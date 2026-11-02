@@ -297,9 +297,7 @@ public static class AnalyzerHost {
     ///     decide the bucket.
     /// </remarks>
     static readonly FrozenSet<string> PerFileRoslynIds =
-        new[] { RoslynCodeStyle.NamingDiagnosticId, RoslynCodeStyle.UnusedValueId }.ToFrozenSet(
-            StringComparer.Ordinal
-        );
+        new[] { RoslynCodeStyle.NamingDiagnosticId, RoslynCodeStyle.UnusedValueId }.ToFrozenSet(StringComparer.Ordinal);
 
     static AnalysisOutcome Execute(
         CompilationUnit unit,

@@ -248,10 +248,8 @@ public static class RoslynCodeStyle {
         ) is not null;
 
     static readonly FrozenSet<string> FixerTypeNames = new[] {
-        "NamingStyleCodeFixProvider",
-        "CSharpRemoveUnusedMembersCodeFixProvider",
-        "CSharpRemoveUnusedValuesCodeFixProvider",
-        "CSharpUsePrimaryConstructorCodeFixProvider"
+        "NamingStyleCodeFixProvider", "CSharpRemoveUnusedMembersCodeFixProvider",
+        "CSharpRemoveUnusedValuesCodeFixProvider", "CSharpUsePrimaryConstructorCodeFixProvider"
     }.ToFrozenSet(StringComparer.Ordinal);
 
     static RoslynCodeStyleResult Failed(string path, string message) =>

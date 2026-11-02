@@ -303,8 +303,20 @@ public sealed class HostedRoslynDefaultsTests {
     [InlineData("IDE0290", "csharp_style_prefer_primary_constructors", "true:none", true, ReportDiagnostic.Suppress)]
     [InlineData("IDE0290", "csharp_style_prefer_primary_constructors", "true:warning", true, ReportDiagnostic.Warn)]
     [InlineData("IDE0290", "csharp_style_prefer_primary_constructors", "true", true, ReportDiagnostic.Info)]
-    [InlineData("IDE0059", "csharp_style_unused_value_assignment_preference", "discard_variable:warning", true, ReportDiagnostic.Warn)]
-    [InlineData("IDE0290", "dotnet_analyzer_diagnostic.category-Style.severity", "none", false, ReportDiagnostic.Default)]
+    [InlineData(
+        "IDE0059",
+        "csharp_style_unused_value_assignment_preference",
+        "discard_variable:warning",
+        true,
+        ReportDiagnostic.Warn
+    )]
+    [InlineData(
+        "IDE0290",
+        "dotnet_analyzer_diagnostic.category-Style.severity",
+        "none",
+        false,
+        ReportDiagnostic.Default
+    )]
     [InlineData("IDE0290", "dotnet_analyzer_diagnostic.severity", "warning", false, ReportDiagnostic.Default)]
     [InlineData("SK1002", null, null, false, ReportDiagnostic.Default)]
     public void TheDefault_IsTheLowestPrecedence(
@@ -352,7 +364,13 @@ public sealed class HostedRoslynDefaultsTests {
         return report;
     }
 
-    static Scratch Tree(string? editorConfig, string source, string project, out string sourcePath, out string projectPath) {
+    static Scratch Tree(
+        string? editorConfig,
+        string source,
+        string project,
+        out string sourcePath,
+        out string projectPath
+    ) {
         var scratch = new Scratch();
         scratch.Write("Directory.Build.props", "<Project />");
         scratch.Write("Directory.Build.targets", "<Project />");
@@ -365,11 +383,10 @@ public sealed class HostedRoslynDefaultsTests {
         return scratch;
     }
 
-    static string[] HostedIn(RunReport report) =>
-        [
-            ..report.Reportable.Select(static finding => finding.RuleId)
-                .Where(static id => Hosted.Contains(id))
-                .Distinct(StringComparer.Ordinal)
-                .Order(StringComparer.Ordinal)
-        ];
+    static string[] HostedIn(RunReport report) => [
+        ..report.Reportable.Select(static finding => finding.RuleId)
+            .Where(static id => Hosted.Contains(id))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+    ];
 }

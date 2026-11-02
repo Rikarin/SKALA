@@ -104,8 +104,9 @@ public static class NamingFixCommand {
                     // ⚠ Only the naming analyzer. The selection also carries the unused-code and
                     // primary-constructor analyzers, and this loop runs its analyzers once per rename.
                     [
-                        ..codeStyle.Analyzers.Where(static analyzer => analyzer.SupportedDiagnostics.Any(
-                                static descriptor => descriptor.Id == RoslynCodeStyle.NamingDiagnosticId
+                        ..codeStyle.Analyzers.Where(static analyzer =>
+                            analyzer.SupportedDiagnostics.Any(static descriptor => descriptor.Id
+                                == RoslynCodeStyle.NamingDiagnosticId
                             )
                         )
                     ],

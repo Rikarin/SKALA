@@ -82,8 +82,8 @@ public static class HostedCodeFixes {
 
         return [
             ..findings.Select(finding => edits.TryGetValue(Key(finding), out var edit)
-                ? finding with { Fix = [edit], FixIsSafe = false }
-                : finding
+                    ? finding with { Fix = [edit], FixIsSafe = false }
+                    : finding
             )
         ];
     }
@@ -160,7 +160,8 @@ public static class HostedCodeFixes {
             }
 
             var path = Path.GetFullPath(tree.FilePath);
-            var key = (path, diagnostic.Id, diagnostic.Location.SourceSpan.Start, diagnostic.Location.SourceSpan.Length);
+            var key = (path, diagnostic.Id, diagnostic.Location.SourceSpan.Start,
+                diagnostic.Location.SourceSpan.Length);
             if (!targets.Contains(key) || solution.GetDocument(tree) is not { } document) {
                 continue;
             }
@@ -204,8 +205,8 @@ public static class HostedCodeFixes {
             var changedDocuments = changed.GetChanges(document.Project.Solution)
                 .GetProjectChanges()
                 .SelectMany(static change => change.GetChangedDocuments(true)
-                    .Concat(change.GetAddedDocuments())
-                    .Concat(change.GetRemovedDocuments())
+                        .Concat(change.GetAddedDocuments())
+                        .Concat(change.GetRemovedDocuments())
                 )
                 .ToList();
             if (changedDocuments.Count != 1 || changedDocuments[0] != document.Id) {
