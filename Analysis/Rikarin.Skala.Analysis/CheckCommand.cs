@@ -1073,11 +1073,11 @@ public static class Supersession {
     ///     because the winner is not a catalogue rule.
     /// </remarks>
     static readonly (string Superseded, string Winner)[] CompilerWins = [
-        (Hosting.RoslynCodeStyle.UnusedMemberId, "CS0169"),
-        (Hosting.RoslynCodeStyle.UnusedMemberId, "CS0414"),
-        (Hosting.RoslynCodeStyle.UnreadMemberId, "CS0169"),
-        (Hosting.RoslynCodeStyle.UnreadMemberId, "CS0414"),
-        (Hosting.RoslynCodeStyle.UnusedValueId, "CS0219")
+        (RoslynCodeStyle.UnusedMemberId, "CS0169"),
+        (RoslynCodeStyle.UnusedMemberId, "CS0414"),
+        (RoslynCodeStyle.UnreadMemberId, "CS0169"),
+        (RoslynCodeStyle.UnreadMemberId, "CS0414"),
+        (RoslynCodeStyle.UnusedValueId, "CS0219")
     ];
 
     // ⚠ After `CompilerWins`, which `Build` reads: static initializers run in textual order.

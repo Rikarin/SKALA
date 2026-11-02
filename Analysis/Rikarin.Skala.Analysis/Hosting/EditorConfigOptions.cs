@@ -79,7 +79,7 @@ public static class EditorConfigOptions {
         // with no configuration is exactly the one those defaults are for.
         var severities = new SeverityProvider(
             set,
-            new HostedSeverityDefaults(unit.Compilation.Options.SpecificDiagnosticOptions)
+            new(unit.Compilation.Options.SpecificDiagnosticOptions)
         );
 
         if (set is null) {
