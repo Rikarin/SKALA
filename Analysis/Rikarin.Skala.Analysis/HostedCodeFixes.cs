@@ -42,7 +42,20 @@ public static class HostedCodeFixes {
     ///     <paramref name="findings" /> with Roslyn's fix attached to every one of <paramref name="ids" />
     ///     that has one.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ The one synchronous boundary, for the still-synchronous <see cref="FixCommand" />, for the
+    ///     reason <see cref="NamingFixCommand.Run" /> gives: every Roslyn call underneath is awaited.
+    /// </remarks>
     public static ImmutableArray<Finding> Attach(
+        ImmutableArray<Finding> findings,
+        LoadedProject? loaded,
+        string repositoryRoot,
+        IReadOnlyCollection<string> ids,
+        CancellationToken cancellation
+    ) =>
+        AttachAsync(findings, loaded, repositoryRoot, ids, cancellation).GetAwaiter().GetResult();
+
+    public static async Task<ImmutableArray<Finding>> AttachAsync(
         ImmutableArray<Finding> findings,
         LoadedProject? loaded,
         string repositoryRoot,
@@ -65,18 +78,12 @@ public static class HostedCodeFixes {
         var codeStyle = RoslynCodeStyle.Load();
         var edits = new Dictionary<(string Path, string RuleId, int Start, int Length), FixEdit>();
         foreach (var unit in loaded.Units) {
-            var mine = wanted.Where(finding => unit.ReportablePaths.Contains(finding.Path)
-                    && !edits.ContainsKey(Key(finding))
-                )
-                .ToList();
-            if (mine.Count == 0) {
-                continue;
-            }
-
-            foreach (var (key, edit) in ForUnit(unit, repositoryRoot, mine, codeStyle, cancellation)
-                         .GetAwaiter()
-                         .GetResult()) {
-                edits.TryAdd(key, edit);
+            // ⚠ A multi-targeted file is in several units; the first unit to fix a finding wins.
+            if (Unfixed(unit, wanted, edits) is { Count: > 0 } mine) {
+                foreach (var (key, edit) in await ForUnit(unit, repositoryRoot, mine, codeStyle, cancellation)
+                             .ConfigureAwait(false)) {
+                    edits.TryAdd(key, edit);
+                }
             }
         }
 
@@ -87,6 +94,17 @@ public static class HostedCodeFixes {
             )
         ];
     }
+
+    static List<Finding> Unfixed(
+        CompilationUnit unit,
+        List<Finding> wanted,
+        Dictionary<(string Path, string RuleId, int Start, int Length), FixEdit> edits
+    ) =>
+        [
+            ..wanted.Where(finding => unit.ReportablePaths.Contains(finding.Path)
+                && !edits.ContainsKey(Key(finding))
+            )
+        ];
 
     static (string, string, int, int) Key(Finding finding) =>
         (finding.Path, finding.RuleId.ToUpperInvariant(), finding.Start, finding.Length);

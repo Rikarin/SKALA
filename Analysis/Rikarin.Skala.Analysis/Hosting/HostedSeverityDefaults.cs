@@ -122,7 +122,7 @@ public sealed class HostedSeverityDefaults(ImmutableDictionary<string, ReportDia
             "suggestion" => ReportDiagnostic.Info,
             "warning" => ReportDiagnostic.Warn,
             "error" => ReportDiagnostic.Error,
-            "default" => null,
+            // `default` included: it names no severity of its own, so the analyzer decides.
             _ => null
         };
 }

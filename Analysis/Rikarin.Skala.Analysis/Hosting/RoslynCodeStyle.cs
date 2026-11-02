@@ -32,13 +32,13 @@ namespace Rikarin.Skala.Analysis.Hosting;
 public static class RoslynCodeStyle {
     public const string NamingDiagnosticId = "IDE1006";
 
-    public const string UnusedMemberId = "IDE0051";
+    public static string UnusedMemberId => "IDE0051";
 
-    public const string UnreadMemberId = "IDE0052";
+    public static string UnreadMemberId => "IDE0052";
 
-    public const string UnusedValueId = "IDE0059";
+    public static string UnusedValueId => "IDE0059";
 
-    public const string PrimaryConstructorId = "IDE0290";
+    public static string PrimaryConstructorId => "IDE0290";
 
     /// <summary>
     ///     What a hosted id reports at when nothing in the project configures it.
@@ -184,10 +184,8 @@ public static class RoslynCodeStyle {
                         continue;
                     }
 
-                    foreach (var id in candidate.FixableDiagnosticIds) {
-                        if (id == NamingDiagnosticId || EditFixableIds.Contains(id)) {
-                            fixers.TryAdd(id, candidate);
-                        }
+                    foreach (var id in candidate.FixableDiagnosticIds.Where(IsFixedHere)) {
+                        fixers.TryAdd(id, candidate);
                     }
                 }
             } catch (Exception exception) when (exception is IOException
@@ -251,6 +249,8 @@ public static class RoslynCodeStyle {
         "NamingStyleCodeFixProvider", "CSharpRemoveUnusedMembersCodeFixProvider",
         "CSharpRemoveUnusedValuesCodeFixProvider", "CSharpUsePrimaryConstructorCodeFixProvider"
     }.ToFrozenSet(StringComparer.Ordinal);
+
+    static bool IsFixedHere(string id) => id == NamingDiagnosticId || EditFixableIds.Contains(id);
 
     static RoslynCodeStyleResult Failed(string path, string message) =>
         new(

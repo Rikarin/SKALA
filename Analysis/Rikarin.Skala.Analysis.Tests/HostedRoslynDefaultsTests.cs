@@ -19,6 +19,12 @@ namespace Rikarin.Skala.Analysis.Tests;
 /// </remarks>
 [Collection(SerialWorkspace.Name)]
 public sealed class HostedRoslynDefaultsTests {
+    const string PrimaryConstructor = "IDE0290";
+
+    const string UnusedMember = "IDE0051";
+
+    const string UnusedValue = "IDE0059";
+
     const string Project = """
                            <Project Sdk="Microsoft.NET.Sdk">
                              <PropertyGroup>
@@ -82,7 +88,7 @@ public sealed class HostedRoslynDefaultsTests {
                          dotnet_diagnostic.IDE0058.severity = warning
                          """;
 
-    static readonly string[] Hosted = ["IDE0051", "IDE0052", "IDE0058", "IDE0059", "IDE0060", "IDE0290"];
+    static readonly string[] Hosted = [UnusedMember, "IDE0052", "IDE0058", UnusedValue, "IDE0060", PrimaryConstructor];
 
     /// <summary>
     ///     ⚠ The request this exists for: no <c>.editorconfig</c>, no <c>skala config init</c>, and
@@ -93,9 +99,9 @@ public sealed class HostedRoslynDefaultsTests {
     public void WithNoConfiguration_IDE0290IsASuggestion_AndNothingElseReports() {
         var report = Check(null, Shapes);
 
-        var primary = Assert.Single(report.Reportable, static finding => finding.RuleId == "IDE0290");
+        var primary = Assert.Single(report.Reportable, static finding => finding.RuleId == PrimaryConstructor);
         Assert.Equal(SkalaSeverity.Info, primary.Severity);
-        Assert.Equal(["IDE0290"], HostedIn(report));
+        Assert.Equal([PrimaryConstructor], HostedIn(report));
     }
 
     [Fact]
@@ -117,12 +123,12 @@ public sealed class HostedRoslynDefaultsTests {
     public void AnOptIn_ReportsTheUnusedCodeIds_ButNeverIDE0058OrIDE0060() {
         var report = Check(OptIn, Shapes);
 
-        Assert.Equal(["IDE0051", "IDE0052", "IDE0059", "IDE0290"], HostedIn(report));
+        Assert.Equal([UnusedMember, "IDE0052", UnusedValue, PrimaryConstructor], HostedIn(report));
         Assert.Equal(
             SkalaSeverity.Warning,
-            Assert.Single(report.Reportable, static finding => finding.RuleId == "IDE0059").Severity
+            Assert.Single(report.Reportable, static finding => finding.RuleId == UnusedValue).Severity
         );
-        Assert.Contains("NeverCalled", Assert.Single(report.Reportable, static f => f.RuleId == "IDE0051").Message);
+        Assert.Contains("NeverCalled", Assert.Single(report.Reportable, static f => f.RuleId == UnusedMember).Message);
     }
 
     /// <summary>
@@ -148,7 +154,7 @@ public sealed class HostedRoslynDefaultsTests {
 
         Assert.Contains(report.Reportable, static finding => finding.RuleId == "CS0169");
         Assert.Contains(report.Reportable, static finding => finding.RuleId == "CS0219");
-        Assert.DoesNotContain(report.Reportable, static finding => finding.RuleId is "IDE0051" or "IDE0059");
+        Assert.DoesNotContain(report.Reportable, static finding => finding.RuleId is UnusedMember or UnusedValue);
         Assert.Equal(
             2,
             report.Findings.Count(static finding => finding.Suppression == SuppressionKind.Superseded)
@@ -197,7 +203,7 @@ public sealed class HostedRoslynDefaultsTests {
                 Paths = [scratch.Root],
                 Mode = LoadMode.Workspace,
                 SafeOnly = false,
-                Include = ["IDE0051", "IDE0059", "IDE0290"]
+                Include = [UnusedMember, UnusedValue, PrimaryConstructor]
             },
             TestContext.Current.CancellationToken
         );
@@ -289,34 +295,46 @@ public sealed class HostedRoslynDefaultsTests {
         Assert.Empty(codeStyle.Diagnostics);
         Assert.Equal(["IDE0058", "IDE0060"], codeStyle.SilencedIds.Order(StringComparer.Ordinal));
         Assert.Equal(
-            ["IDE0051", "IDE0059", "IDE0290", "IDE1006"],
+            [UnusedMember, UnusedValue, PrimaryConstructor, "IDE1006"],
             codeStyle.Fixers.Keys.Order(StringComparer.Ordinal)
         );
     }
 
     /// <summary>Each setting a project can make about an id outranks the default, and none is needed.</summary>
     [Theory]
-    [InlineData("IDE0290", null, null, true, ReportDiagnostic.Info)]
-    [InlineData("IDE0059", null, null, true, ReportDiagnostic.Suppress)]
+    [InlineData(PrimaryConstructor, null, null, true, ReportDiagnostic.Info)]
+    [InlineData(UnusedValue, null, null, true, ReportDiagnostic.Suppress)]
     [InlineData("IDE0060", null, null, true, ReportDiagnostic.Suppress)]
-    [InlineData("IDE0290", "csharp_style_prefer_primary_constructors", "true:none", true, ReportDiagnostic.Suppress)]
-    [InlineData("IDE0290", "csharp_style_prefer_primary_constructors", "true:warning", true, ReportDiagnostic.Warn)]
-    [InlineData("IDE0290", "csharp_style_prefer_primary_constructors", "true", true, ReportDiagnostic.Info)]
     [InlineData(
-        "IDE0059",
+        PrimaryConstructor,
+        "csharp_style_prefer_primary_constructors",
+        "true:none",
+        true,
+        ReportDiagnostic.Suppress
+    )]
+    [InlineData(
+        PrimaryConstructor,
+        "csharp_style_prefer_primary_constructors",
+        "true:warning",
+        true,
+        ReportDiagnostic.Warn
+    )]
+    [InlineData(PrimaryConstructor, "csharp_style_prefer_primary_constructors", "true", true, ReportDiagnostic.Info)]
+    [InlineData(
+        UnusedValue,
         "csharp_style_unused_value_assignment_preference",
         "discard_variable:warning",
         true,
         ReportDiagnostic.Warn
     )]
     [InlineData(
-        "IDE0290",
+        PrimaryConstructor,
         "dotnet_analyzer_diagnostic.category-Style.severity",
         "none",
         false,
         ReportDiagnostic.Default
     )]
-    [InlineData("IDE0290", "dotnet_analyzer_diagnostic.severity", "warning", false, ReportDiagnostic.Default)]
+    [InlineData(PrimaryConstructor, "dotnet_analyzer_diagnostic.severity", "warning", false, ReportDiagnostic.Default)]
     [InlineData("SK1002", null, null, false, ReportDiagnostic.Default)]
     public void TheDefault_IsTheLowestPrecedence(
         string id,
@@ -339,10 +357,10 @@ public sealed class HostedRoslynDefaultsTests {
     [Fact]
     public void TheCompilersOwnOptions_OutrankTheDefault() {
         var defaults = new HostedSeverityDefaults(
-            ImmutableDictionary<string, ReportDiagnostic>.Empty.Add("IDE0290", ReportDiagnostic.Suppress)
+            ImmutableDictionary<string, ReportDiagnostic>.Empty.Add(PrimaryConstructor, ReportDiagnostic.Suppress)
         );
 
-        Assert.False(defaults.TryGet("IDE0290", null, null, out _));
+        Assert.False(defaults.TryGet(PrimaryConstructor, null, null, out _));
     }
 
     static RunReport Check(string? editorConfig, string source, string project = Project) {
